@@ -42,6 +42,7 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(const Options &opts)
       subtask_generators(opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks")),
       max_states(opts.get<int>("max_states")),
       timer(new utils::CountdownTimer(opts.get<double>("max_time"))),
+      cost_partitioning(static_cast<CostPartitioning>(opts.get_enum("cost_partitioning"))),
       use_general_costs(opts.get<bool>("use_general_costs")),
       pick_split(static_cast<PickSplit>(opts.get<int>("pick"))),
       num_abstractions(0),
@@ -201,6 +202,11 @@ static Heuristic *_parse(OptionParser &parser) {
     pick_strategies.push_back("MAX_HADD");
     parser.add_enum_option(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
+    vector<string> cp_types;
+    cp_types.push_back("SATURATED");
+    cp_types.push_back("OPTIMAL");
+    parser.add_enum_option(
+        "cost_partitioning", cp_types, "cost partitioning method", "SATURATED");
     parser.add_option<bool>(
         "use_general_costs", "allow negative costs in cost partitioning", "true");
     Heuristic::add_options_to_parser(parser);

@@ -62,6 +62,11 @@ namespace cegar {
 class CartesianHeuristic;
 class SubtaskGenerator;
 
+enum class CostPartitioning {
+    SATURATED,
+    OPTIMAL
+};
+
 /*
   TODO: All members except "heuristics" are needed only for creating
   the heuristic. Think about splitting heuristic creation and usage as
@@ -71,6 +76,7 @@ class AdditiveCartesianHeuristic : public Heuristic {
     std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators;
     const int max_states;
     std::unique_ptr<utils::CountdownTimer> timer;
+    CostPartitioning cost_partitioning;
     bool use_general_costs;
     PickSplit pick_split;
     std::vector<int> remaining_costs;
