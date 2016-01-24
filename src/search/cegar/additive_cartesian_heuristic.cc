@@ -10,6 +10,8 @@
 #include "../plugin.h"
 #include "../task_tools.h"
 
+#include "../operator_counting/operator_counting_heuristic.h"
+
 #include "../tasks/modified_operator_costs_task.h"
 
 #include "../utils/logging.h"
@@ -42,7 +44,8 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(const Options &opts)
       subtask_generators(opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks")),
       max_states(opts.get<int>("max_states")),
       timer(new utils::CountdownTimer(opts.get<double>("max_time"))),
-      cost_partitioning(static_cast<CostPartitioning>(opts.get_enum("cost_partitioning"))),
+      cost_partitioning_type(
+          static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"))),
       use_general_costs(opts.get<bool>("use_general_costs")),
       pick_split(static_cast<PickSplit>(opts.get<int>("pick"))),
       num_abstractions(0),
@@ -207,14 +210,24 @@ static Heuristic *_parse(OptionParser &parser) {
     cp_types.push_back("OPTIMAL");
     parser.add_enum_option(
         "cost_partitioning", cp_types, "cost partitioning method", "SATURATED");
+    lp::add_lp_solver_option_to_parser(parser);
     parser.add_option<bool>(
         "use_general_costs", "allow negative costs in cost partitioning", "true");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
-    else
+
+    CostPartitioningType cost_partitioning_type =
+        static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"));
+    if (cost_partitioning_type == CostPartitioningType::SATURATED) {
         return new AdditiveCartesianHeuristic(opts);
+    } else {
+        Options oc_options(opts);
+        oc_options.set<vector<shared_ptr<operator_counting::ConstraintGenerator>>>(
+            "constraint_generators", {});
+        return new operator_counting::OperatorCountingHeuristic(oc_options);
+    }
 }
 
 static Plugin<Heuristic> _plugin("cegar", _parse);

@@ -62,7 +62,7 @@ namespace cegar {
 class CartesianHeuristic;
 class SubtaskGenerator;
 
-enum class CostPartitioning {
+enum class CostPartitioningType {
     SATURATED,
     OPTIMAL
 };
@@ -76,7 +76,7 @@ class AdditiveCartesianHeuristic : public Heuristic {
     std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators;
     const int max_states;
     std::unique_ptr<utils::CountdownTimer> timer;
-    CostPartitioning cost_partitioning;
+    CostPartitioningType cost_partitioning_type;
     bool use_general_costs;
     PickSplit pick_split;
     std::vector<int> remaining_costs;
