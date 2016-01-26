@@ -55,6 +55,18 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(const Options &opts)
 
     for (OperatorProxy op : task_proxy.get_operators())
         remaining_costs.push_back(op.get_cost());
+
+    g_log << "Initializing additive Cartesian heuristic..." << endl;
+    utils::reserve_extra_memory_padding(memory_padding_in_mb);
+    for (shared_ptr<SubtaskGenerator> subtask_generator : subtask_generators) {
+        SharedTasks subtasks = subtask_generator->get_subtasks(task);
+        build_abstractions(subtasks);
+        if (!may_build_another_abstraction())
+            break;
+    }
+    if (utils::extra_memory_padding_is_reserved())
+        utils::release_extra_memory_padding();
+    print_statistics();
 }
 
 void AdditiveCartesianHeuristic::reduce_remaining_costs(
@@ -124,17 +136,6 @@ void AdditiveCartesianHeuristic::build_abstractions(
 }
 
 void AdditiveCartesianHeuristic::initialize() {
-    g_log << "Initializing additive Cartesian heuristic..." << endl;
-    utils::reserve_extra_memory_padding(memory_padding_in_mb);
-    for (shared_ptr<SubtaskGenerator> subtask_generator : subtask_generators) {
-        SharedTasks subtasks = subtask_generator->get_subtasks(task);
-        build_abstractions(subtasks);
-        if (!may_build_another_abstraction())
-            break;
-    }
-    if (utils::extra_memory_padding_is_reserved())
-        utils::release_extra_memory_padding();
-    print_statistics();
 }
 
 void AdditiveCartesianHeuristic::print_statistics() const {
