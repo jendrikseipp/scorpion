@@ -21,21 +21,25 @@ OCPConstraints::OCPConstraints(
     // Helper data structures.
     unordered_map<int, vector<int>> operator_to_transitions;
     unordered_map<AbstractState *, vector<int>> state_to_incoming_transitions;
-    for (AbstractState *abstract_state : abstraction.states) {
+    unordered_map<AbstractState *, vector<int>> state_to_outgoing_transitions;
+    unordered_set<AbstractState *> states = abstraction.states;
+    unordered_set<AbstractState *> goals = abstraction.goals;
+    for (AbstractState *abstract_state : states) {
         for (const Arc transition : abstract_state->get_outgoing_arcs()) {
             OperatorProxy op = transition.first;
             AbstractState *succ_state = transition.second;
             operator_to_transitions[op.get_id()].push_back(num_transitions);
             state_to_incoming_transitions[succ_state].push_back(num_transitions);
+            state_to_outgoing_transitions[abstract_state].push_back(num_transitions);
             ++num_transitions;
         }
     }
 
     // \sum(s' \in G) G_{s'} = 1
     ocp_constraints.emplace_back(1, 1);
-    lp::LPConstraint &goals = ocp_constraints.back();
+    lp::LPConstraint &constraint = ocp_constraints.back();
     for (int i = 0; i < num_goals; ++i) {
-        goals.insert(goals_offset + i, 1);
+        constraint.insert(goals_offset + i, 1);
     }
 
     /*     Y_o = \sum_{t \in T, t labeled with o} T_t
@@ -52,21 +56,19 @@ OCPConstraints::OCPConstraints(
     /* \sum_{t \in T, t ends in s'} T_t - \sum{t \in T, t starts in s'} T_t
         - G_{s'}[s' \in G] - I[s' = \alpha(s)] = 0 */
     State initial_state = subtask_proxy.get_initial_state();
-    for (AbstractState *abstract_state : abstraction.states) {
+    for (AbstractState *abstract_state : states) {
         ocp_constraints.emplace_back(0, 0);
         lp::LPConstraint &constraint = ocp_constraints.back();
-        for (const Arc transition : abstract_state->get_outgoing_arcs()) {
-            utils::unused_variable(transition);
-            constraint.insert(num_transitions, -1);
-            ++num_transitions;
-        }
         for (int transition_id : state_to_incoming_transitions[abstract_state]) {
             constraint.insert(transition_id, 1);
         }
+        for (int transition_id : state_to_outgoing_transitions[abstract_state]) {
+            constraint.insert(transition_id, -1);
+        }
         // Use O(log n) inclusion test first. Only do O(n) lookup for goal states.
-        if (abstraction.goals.count(abstract_state) != 0) {
+        if (goals.count(abstract_state) != 0) {
             int goal_state_id = 0;
-            for (AbstractState *goal : abstraction.goals) {
+            for (AbstractState *goal : goals) {
                 if (goal == abstract_state) {
                     constraint.insert(goals_offset + goal_state_id, -1);
                     break;
