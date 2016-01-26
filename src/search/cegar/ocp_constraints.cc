@@ -34,10 +34,6 @@ void OCPConstraints::initialize_variables(
     vector<lp::LPVariable> &variables,
     double infinity) {
 
-    // -inf <= I <= inf
-    init_offset = variables.size();
-    variables.emplace_back(-infinity, infinity, 0);
-
     // 0 <= G_{s'} <= inf for all s' \in G
     goals_offset = variables.size();
     for (int i = 0; i < num_goals; ++i) {
@@ -75,9 +71,17 @@ void OCPConstraints::initialize_constraints(
         }
     }
 
-    /* \sum_{t \in T, t ends in s'} T_t - \sum{t \in T, t starts in s'} T_t
-        - G_{s'}[s' \in G] + I[s' = \alpha(s)] = 0 */
+    /* \sum_{t \in T, t ends in s'} T_t - \sum{t \in T, t starts in s'}
+    T_t - G_{s'}[s' \in G] + I[s' = \alpha(s)] = 0
+
+    Since we need I only for the abstract state corresponding to s and
+    I is unrestricted, we don't introduce I and add the constraint only
+    for all other abstract states.
+    */
     for (AbstractState *abstract_state : states) {
+        if (abstract_state == initial_state) {
+            continue;
+        }
         constraints.emplace_back(0, 0);
         lp::LPConstraint &constraint = constraints.back();
         for (int transition_id : state_to_incoming_transitions[abstract_state]) {
@@ -96,9 +100,6 @@ void OCPConstraints::initialize_constraints(
                 }
             }
             ++goal_state_id;
-        }
-        if (abstract_state == initial_state) {
-            constraint.insert(init_offset, 1);
         }
     }
 }

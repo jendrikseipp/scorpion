@@ -16,7 +16,6 @@ class OCPConstraints : public operator_counting::ConstraintGenerator {
     std::vector<lp::LPConstraint> ocp_constraints;
     int num_transitions;
     int num_goals;
-    std::size_t init_offset;
     std::size_t goals_offset;
     std::size_t transitions_offset;
     std::unordered_map<int, std::vector<int>> operator_to_transitions;
@@ -34,7 +33,6 @@ public:
         const std::shared_ptr<AbstractTask> task,
         std::vector<lp::LPVariable> &variables,
         double infinity) override;
-
 
     virtual void initialize_constraints(
         const std::shared_ptr<AbstractTask> task,
