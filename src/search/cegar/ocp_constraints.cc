@@ -76,15 +76,15 @@ void OCPConstraints::initialize_constraints(
     }
 
     /* \sum_{t \in T, t ends in s'} T_t - \sum{t \in T, t starts in s'} T_t
-        - G_{s'}[s' \in G] - I[s' = \alpha(s)] = 0 */
+        - G_{s'}[s' \in G] + I[s' = \alpha(s)] = 0 */
     for (AbstractState *abstract_state : states) {
         constraints.emplace_back(0, 0);
         lp::LPConstraint &constraint = constraints.back();
         for (int transition_id : state_to_incoming_transitions[abstract_state]) {
-            constraint.insert(transition_id, 1);
+            constraint.insert(transitions_offset + transition_id, 1);
         }
         for (int transition_id : state_to_outgoing_transitions[abstract_state]) {
-            constraint.insert(transition_id, -1);
+            constraint.insert(transitions_offset + transition_id, -1);
         }
         // Use O(log n) inclusion test first. Only do O(n) lookup for goal states.
         if (goals.count(abstract_state) != 0) {
@@ -95,6 +95,7 @@ void OCPConstraints::initialize_constraints(
                     break;
                 }
             }
+            ++goal_state_id;
         }
         if (abstract_state == initial_state) {
             constraint.insert(init_offset, 1);
@@ -103,6 +104,10 @@ void OCPConstraints::initialize_constraints(
 }
 
 bool OCPConstraints::update_constraints(const State &, lp::LPSolver &) {
+    /* Currently, we compute the cost partitioning only once for the
+       initial state and use it for the whole search. If we ever want
+       to make this state-dependent, we must enable the previously
+       disabled constraint and disable the one corresponding to state. */
     return false;
 }
 }
