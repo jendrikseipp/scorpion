@@ -96,18 +96,25 @@ void AdditiveCartesianHeuristic::build_abstractions(
         ++num_abstractions;
         num_states += abstraction.get_num_states();
         assert(num_states <= max_states);
+
+        // Always reduce costs, even for OCP. Then OCP dominates SCP.
         vector<int> needed_costs = abstraction.get_needed_costs();
         reduce_remaining_costs(needed_costs);
-        int init_h = abstraction.get_h_value_of_initial_state();
 
-        if (init_h > 0) {
-            Options opts;
-            opts.set<int>("cost_type", NORMAL);
-            opts.set<shared_ptr<AbstractTask>>("transform", subtask);
-            opts.set<bool>("cache_estimates", cache_h_values);
-            heuristics.push_back(
-                utils::make_unique_ptr<CartesianHeuristic>(
-                    opts, abstraction.get_refinement_hierarchy()));
+        if (cost_partitioning_type == CostPartitioningType::SATURATED) {
+            int init_h = abstraction.get_h_value_of_initial_state();
+            if (init_h > 0) {
+                Options opts;
+                opts.set<int>("cost_type", NORMAL);
+                opts.set<shared_ptr<AbstractTask>>("transform", subtask);
+                opts.set<bool>("cache_estimates", cache_h_values);
+                heuristics.push_back(
+                    utils::make_unique_ptr<CartesianHeuristic>(
+                        opts, abstraction.get_refinement_hierarchy()));
+            }
+        } else {
+            assert(cost_partitioning_type == CostPartitioningType::OPTIMAL);
+            constraints.push_back(make_shared<OCPConstraints>(TaskProxy(*subtask), abstraction));
         }
         if (!may_build_another_abstraction())
             break;
@@ -223,9 +230,10 @@ static Heuristic *_parse(OptionParser &parser) {
     if (cost_partitioning_type == CostPartitioningType::SATURATED) {
         return new AdditiveCartesianHeuristic(opts);
     } else {
+        AdditiveCartesianHeuristic ach(opts);
         Options oc_options(opts);
         oc_options.set<vector<shared_ptr<operator_counting::ConstraintGenerator>>>(
-            "constraint_generators", {});
+            "constraint_generators", ach.extract_constraints());
         return new operator_counting::OperatorCountingHeuristic(oc_options);
     }
 }

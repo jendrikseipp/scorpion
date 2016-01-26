@@ -54,12 +54,17 @@
       Contains helper nodes for splits that split off multiple facts.
 */
 
+namespace operator_counting {
+class ConstraintGenerator;
+}
+
 namespace utils {
 class CountdownTimer;
 }
 
 namespace cegar {
 class CartesianHeuristic;
+class OCPConstraints;
 class SubtaskGenerator;
 
 enum class CostPartitioningType {
@@ -82,6 +87,7 @@ class AdditiveCartesianHeuristic : public Heuristic {
     std::vector<int> remaining_costs;
     // TODO: Store split trees or thin wrappers directly.
     std::vector<std::unique_ptr<CartesianHeuristic>> heuristics;
+    std::vector<std::shared_ptr<operator_counting::ConstraintGenerator>> constraints;
     int num_abstractions;
     int num_states;
 
@@ -100,6 +106,10 @@ protected:
 public:
     explicit AdditiveCartesianHeuristic(const options::Options &options);
     ~AdditiveCartesianHeuristic() = default;
+
+    std::vector<std::shared_ptr<operator_counting::ConstraintGenerator>> &&extract_constraints() {
+        return move(constraints);
+    }
 };
 }
 
