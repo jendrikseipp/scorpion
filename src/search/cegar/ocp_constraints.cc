@@ -1,32 +1,114 @@
 #include "ocp_constraints.h"
 
+#include "abstraction.h"
+
 #include "../lp/lp_solver.h"
 
 #include <cassert>
-#include <limits>
-#include <memory>
-#include <vector>
+#include <unordered_map>
 
 using namespace std;
 
 namespace cegar {
-OCPConstraints::OCPConstraints(const Abstraction &abstraction) {
-    utils::unused_variable(abstraction);
+OCPConstraints::OCPConstraints(
+    const TaskProxy &task_proxy, const Abstraction &abstraction)
+      : num_transitions(0),
+        num_goals(abstraction.goals.size()),
+        init_offset(task_proxy.get_operators().size()),
+        transitions_offset(init_offset + 1),
+        goals_offset(transitions_offset + num_transitions) {
+
+    // Helper data structures.
+    unordered_map<int, vector<int>> operator_to_transitions;
+    unordered_map<AbstractState *, vector<int>> state_to_incoming_transitions;
+    for (AbstractState *abstract_state : abstraction.states) {
+        for (const Arc transition : abstract_state->get_outgoing_arcs()) {
+            OperatorProxy op = transition.first;
+            AbstractState *succ_state = transition.second;
+            operator_to_transitions[op.get_id()].push_back(num_transitions);
+            state_to_incoming_transitions[succ_state].push_back(num_transitions);
+            ++num_transitions;
+        }
+    }
+
+    // \sum(s' \in G) G_{s'} = 1
+    ocp_constraints.emplace_back(1, 1);
+    lp::LPConstraint &goals = ocp_constraints.back();
+    for (size_t i = 0; i < abstraction.goals.size(); ++i) {
+        goals.insert(goals_offset + i, 1);
+    }
+
+    /*     Y_o = \sum_{t \in T, t labeled with o} T_t
+       <=> Y_o - \sum_{t \in T, t labeled with o} T_t = 0 */
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        ocp_constraints.emplace_back(0, 0);
+        lp::LPConstraint &constraint = ocp_constraints.back();
+        constraint.insert(op.get_id(), 1);
+        for (int transition_id : operator_to_transitions[op.get_id()]) {
+            constraint.insert(transitions_offset + transition_id, -1);
+        }
+    }
+
+    /* \sum_{t \in T, t ends in s'} T_t - \sum{t \in T, t starts in s'} T_t
+        - G_{s'}[s' \in G] - I[s' = \alpha(s)] = 0 */
+    State initial_state = task_proxy.get_initial_state();
+    for (AbstractState *abstract_state : abstraction.states) {
+        ocp_constraints.emplace_back(0, 0);
+        lp::LPConstraint &constraint = ocp_constraints.back();
+        for (const Arc transition : abstract_state->get_outgoing_arcs()) {
+            utils::unused_variable(transition);
+            constraint.insert(num_transitions, -1);
+            ++num_transitions;
+        }
+        for (int transition_id : state_to_incoming_transitions[abstract_state]) {
+            constraint.insert(transition_id, 1);
+        }
+        // Use O(log n) inclusion test first. Only do O(n) lookup for goal states.
+        if (abstraction.goals.count(abstract_state) != 0) {
+            int goal_state_id = 0;
+            for (AbstractState *goal : abstraction.goals) {
+                if (goal == abstract_state) {
+                    constraint.insert(goals_offset + goal_state_id, -1);
+                    break;
+                }
+            }
+        }
+        if (abstract_state->includes(initial_state)) {
+            constraint.insert(init_offset, 1);
+        }
+    }
+}
+
+void OCPConstraints::initialize_variables(
+    const std::shared_ptr<AbstractTask>,
+    vector<lp::LPVariable> &variables,
+    double infinity) {
+
+    // -inf <= I <= inf
+    assert(init_offset == variables.size());
+    variables.emplace_back(-infinity, infinity, 0);
+
+    // 0 <= T_t <= inf for all t \in T
+    assert(transitions_offset == variables.size());
+    for (int i = 0; i < num_transitions; ++i) {
+        variables.emplace_back(0, infinity, 0);
+    }
+
+    // 0 <= G_{s'} <= inf for all s' \in G
+    assert(goals_offset == variables.size());
+    for (int i = 0; i < num_goals; ++i) {
+        variables.emplace_back(0, infinity, 0);
+    }
 }
 
 void OCPConstraints::initialize_constraints(
-    const std::shared_ptr<AbstractTask> task,
+    const std::shared_ptr<AbstractTask>,
     vector<lp::LPConstraint> &constraints,
-    double infinity) {
-    utils::unused_variable(task);
-    utils::unused_variable(constraints);
-    utils::unused_variable(infinity);
+    double) {
+    constraints.insert(constraints.end(), ocp_constraints.begin(), ocp_constraints.end());
 }
 
-bool OCPConstraints::update_constraints(const State &state,
-                                        lp::LPSolver &lp_solver) {
-    utils::unused_variable(state);
-    utils::unused_variable(lp_solver);
+bool OCPConstraints::update_constraints(const State &, lp::LPSolver &) {
     return false;
 }
 }

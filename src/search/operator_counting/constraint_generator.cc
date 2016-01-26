@@ -2,7 +2,15 @@
 
 #include "../plugin.h"
 
+using namespace std;
+
 namespace operator_counting {
+void ConstraintGenerator::initialize_variables(
+    const shared_ptr<AbstractTask>,
+    vector<lp::LPVariable> &,
+    double) {
+}
+
 void ConstraintGenerator::initialize_constraints(
     const std::shared_ptr<AbstractTask>, std::vector<lp::LPConstraint> &, double) {
 }

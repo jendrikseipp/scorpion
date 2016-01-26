@@ -29,6 +29,7 @@ void OperatorCountingHeuristic::initialize() {
     }
     vector<lp::LPConstraint> constraints;
     for (auto generator : constraint_generators) {
+        generator->initialize_variables(task, variables, infinity);
         generator->initialize_constraints(task, constraints, infinity);
     }
     lp_solver.load_problem(lp::LPObjectiveSense::MINIMIZE, variables, constraints);
