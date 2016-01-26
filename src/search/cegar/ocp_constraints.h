@@ -13,12 +13,12 @@ class OCPConstraints : public operator_counting::ConstraintGenerator {
     int num_transitions;
     int num_goals;
     std::size_t init_offset;
-    std::size_t transitions_offset;
     std::size_t goals_offset;
+    std::size_t transitions_offset;
 
 public:
     explicit OCPConstraints(
-        const TaskProxy &task_proxy, const Abstraction &abstraction);
+        const TaskProxy &subtask_proxy, const Abstraction &abstraction);
     ~OCPConstraints() = default;
 
     virtual void initialize_variables(

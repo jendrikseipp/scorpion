@@ -11,12 +11,12 @@ using namespace std;
 
 namespace cegar {
 OCPConstraints::OCPConstraints(
-    const TaskProxy &task_proxy, const Abstraction &abstraction)
+    const TaskProxy &subtask_proxy, const Abstraction &abstraction)
       : num_transitions(0),
         num_goals(abstraction.goals.size()),
-        init_offset(task_proxy.get_operators().size()),
-        transitions_offset(init_offset + 1),
-        goals_offset(transitions_offset + num_transitions) {
+        init_offset(subtask_proxy.get_operators().size()),
+        goals_offset(init_offset + 1),
+        transitions_offset(goals_offset + num_goals) {
 
     // Helper data structures.
     unordered_map<int, vector<int>> operator_to_transitions;
@@ -34,13 +34,13 @@ OCPConstraints::OCPConstraints(
     // \sum(s' \in G) G_{s'} = 1
     ocp_constraints.emplace_back(1, 1);
     lp::LPConstraint &goals = ocp_constraints.back();
-    for (size_t i = 0; i < abstraction.goals.size(); ++i) {
+    for (int i = 0; i < num_goals; ++i) {
         goals.insert(goals_offset + i, 1);
     }
 
     /*     Y_o = \sum_{t \in T, t labeled with o} T_t
        <=> Y_o - \sum_{t \in T, t labeled with o} T_t = 0 */
-    for (OperatorProxy op : task_proxy.get_operators()) {
+    for (OperatorProxy op : subtask_proxy.get_operators()) {
         ocp_constraints.emplace_back(0, 0);
         lp::LPConstraint &constraint = ocp_constraints.back();
         constraint.insert(op.get_id(), 1);
@@ -51,7 +51,7 @@ OCPConstraints::OCPConstraints(
 
     /* \sum_{t \in T, t ends in s'} T_t - \sum{t \in T, t starts in s'} T_t
         - G_{s'}[s' \in G] - I[s' = \alpha(s)] = 0 */
-    State initial_state = task_proxy.get_initial_state();
+    State initial_state = subtask_proxy.get_initial_state();
     for (AbstractState *abstract_state : abstraction.states) {
         ocp_constraints.emplace_back(0, 0);
         lp::LPConstraint &constraint = ocp_constraints.back();
@@ -88,15 +88,15 @@ void OCPConstraints::initialize_variables(
     assert(init_offset == variables.size());
     variables.emplace_back(-infinity, infinity, 0);
 
-    // 0 <= T_t <= inf for all t \in T
-    assert(transitions_offset == variables.size());
-    for (int i = 0; i < num_transitions; ++i) {
-        variables.emplace_back(0, infinity, 0);
-    }
-
     // 0 <= G_{s'} <= inf for all s' \in G
     assert(goals_offset == variables.size());
     for (int i = 0; i < num_goals; ++i) {
+        variables.emplace_back(0, infinity, 0);
+    }
+
+    // 0 <= T_t <= inf for all t \in T
+    assert(transitions_offset == variables.size());
+    for (int i = 0; i < num_transitions; ++i) {
         variables.emplace_back(0, infinity, 0);
     }
 }
