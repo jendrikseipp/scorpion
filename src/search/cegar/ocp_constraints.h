@@ -23,11 +23,11 @@ class OCPConstraints : public operator_counting::ConstraintGenerator {
     std::unordered_map<AbstractState *, std::vector<int>> state_to_incoming_transitions;
     std::unordered_map<AbstractState *, std::vector<int>> state_to_outgoing_transitions;
     std::unordered_set<AbstractState *> states;
+    AbstractState *initial_state;
     std::unordered_set<AbstractState *> goals;
 
 public:
-    explicit OCPConstraints(
-        const TaskProxy &subtask_proxy, const Abstraction &abstraction);
+    explicit OCPConstraints(const Abstraction &abstraction);
     ~OCPConstraints() = default;
 
     virtual void initialize_variables(
