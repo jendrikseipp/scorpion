@@ -3,9 +3,13 @@
 
 #include "../operator_counting/constraint_generator.h"
 
+#include <unordered_map>
+#include <unordered_set>
+
 class TaskProxy;
 
 namespace cegar {
+class AbstractState;
 class Abstraction;
 
 class OCPConstraints : public operator_counting::ConstraintGenerator {
@@ -15,6 +19,11 @@ class OCPConstraints : public operator_counting::ConstraintGenerator {
     std::size_t init_offset;
     std::size_t goals_offset;
     std::size_t transitions_offset;
+    std::unordered_map<int, std::vector<int>> operator_to_transitions;
+    std::unordered_map<AbstractState *, std::vector<int>> state_to_incoming_transitions;
+    std::unordered_map<AbstractState *, std::vector<int>> state_to_outgoing_transitions;
+    std::unordered_set<AbstractState *> states;
+    std::unordered_set<AbstractState *> goals;
 
 public:
     explicit OCPConstraints(

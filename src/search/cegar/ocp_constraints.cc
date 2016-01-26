@@ -5,7 +5,6 @@
 #include "../lp/lp_solver.h"
 
 #include <cassert>
-#include <unordered_map>
 
 using namespace std;
 
@@ -16,14 +15,11 @@ OCPConstraints::OCPConstraints(
         num_goals(abstraction.goals.size()),
         init_offset(subtask_proxy.get_operators().size()),
         goals_offset(init_offset + 1),
-        transitions_offset(goals_offset + num_goals) {
+        transitions_offset(goals_offset + num_goals),
+        states(abstraction.states),
+        goals(abstraction.goals) {
 
-    // Helper data structures.
-    unordered_map<int, vector<int>> operator_to_transitions;
-    unordered_map<AbstractState *, vector<int>> state_to_incoming_transitions;
-    unordered_map<AbstractState *, vector<int>> state_to_outgoing_transitions;
-    unordered_set<AbstractState *> states = abstraction.states;
-    unordered_set<AbstractState *> goals = abstraction.goals;
+    // Store transition system.
     for (AbstractState *abstract_state : states) {
         for (const Arc transition : abstract_state->get_outgoing_arcs()) {
             OperatorProxy op = transition.first;
