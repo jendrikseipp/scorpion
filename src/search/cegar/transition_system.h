@@ -3,12 +3,15 @@
 
 #include "refinement_hierarchy.h"
 
+#include "../task_proxy.h"
+
 #include "../utils/collections.h"
 
 #include <limits>
 #include <unordered_map>
 #include <vector>
 
+class AbstractTask;
 class OperatorProxy;
 class State;
 
@@ -27,6 +30,8 @@ struct Transition {
 };
 
 class TransitionSystem {
+    std::shared_ptr<AbstractTask> task;
+    TaskProxy task_proxy;
     int num_states;
     const RefinementHierarchy refinement_hierarchy;
     std::unordered_map<Node *, int> node_to_state_id;
@@ -35,7 +40,8 @@ class TransitionSystem {
     std::vector<int> goal_indices;
 
 public:
-    explicit TransitionSystem(const Abstraction &abstraction);
+    explicit TransitionSystem(
+        const std::shared_ptr<AbstractTask> &task, const Abstraction &abstraction);
     ~TransitionSystem() = default;
 
     int get_num_abstract_states() const {
