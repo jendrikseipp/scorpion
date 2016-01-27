@@ -21,9 +21,14 @@ OCPConstraints::OCPConstraints(const Abstraction &abstraction)
         for (const Arc transition : abstract_state->get_outgoing_arcs()) {
             OperatorProxy op = transition.first;
             AbstractState *succ_state = transition.second;
-            // TODO: Consider self-loops.
             operator_to_transitions[op.get_id()].push_back(num_transitions);
             state_to_incoming_transitions[succ_state].push_back(num_transitions);
+            state_to_outgoing_transitions[abstract_state].push_back(num_transitions);
+            ++num_transitions;
+        }
+        for (const OperatorProxy &op : abstract_state->get_loops()) {
+            operator_to_transitions[op.get_id()].push_back(num_transitions);
+            state_to_incoming_transitions[abstract_state].push_back(num_transitions);
             state_to_outgoing_transitions[abstract_state].push_back(num_transitions);
             ++num_transitions;
         }
