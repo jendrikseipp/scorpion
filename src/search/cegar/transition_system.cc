@@ -1,24 +1,42 @@
 #include "transition_system.h"
 
+#include "abstraction.h"
+
 #include <cassert>
 
 using namespace std;
 
 namespace cegar {
-TransitionSystem::TransitionSystem(const shared_ptr<AbstractTask> &task, const Abstraction &)
-      : task_proxy(*task) {
-    /*
-    // Store transition system.
-    for (AbstractState *abstract_state : states) {
-        for (const Arc transition : abstract_state->get_outgoing_arcs()) {
+TransitionSystem::TransitionSystem(
+    const shared_ptr<AbstractTask> &task, const Abstraction &abstraction)
+      : task_proxy(*task),
+        num_states(abstraction.get_num_states()),
+        operator_induces_self_loop(task_proxy.get_operators().size(), false) {
+
+    unordered_map<AbstractState *, int> state_to_id;
+    int state_id = 0;
+    for (AbstractState *state : abstraction.states) {
+        state_to_id[state] = state_id++;
+    }
+
+    // Store transitions.
+    for (AbstractState *state : abstraction.states) {
+        int start = state_to_id[state];
+        for (const Arc transition : state->get_outgoing_arcs()) {
             OperatorProxy op = transition.first;
             AbstractState *succ_state = transition.second;
-            operator_to_transitions[op.get_id()].push_back(num_transitions);
-            state_to_incoming_transitions[succ_state].push_back(num_transitions);
-            state_to_outgoing_transitions[abstract_state].push_back(num_transitions);
-            ++num_transitions;
+            transitions.emplace_back(start, op.get_id(), state_to_id[succ_state]);
         }
-    }*/
+        for (const OperatorProxy &loop : state->get_loops()) {
+            transitions.emplace_back(start, loop.get_id(), start);
+            operator_induces_self_loop[loop.get_id()] = true;
+        }
+    }
+
+    // Store goals.
+    for (AbstractState *goal : abstraction.goals) {
+        goal_indices.push_back(state_to_id[goal]);
+    }
 }
 
 bool TransitionSystem::induces_self_loop(int op_id) const {

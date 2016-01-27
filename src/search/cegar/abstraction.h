@@ -27,6 +27,7 @@ struct Flaw;
 
 class Abstraction {
     friend class OCPConstraints;
+    friend class TransitionSystem;
 
     const TaskProxy task_proxy;
     const int max_states;
