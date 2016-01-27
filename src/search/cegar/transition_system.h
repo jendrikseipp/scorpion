@@ -14,8 +14,8 @@ struct Transition {
     int op;
     int end;
 
-    Transition(int s1_id, int op_id, int s2_id)
-      : start(s1_id), op(op_id), end(s2_id) {
+    Transition(int start, int op, int end)
+      : start(start), op(op), end(end) {
     }
     ~Transition() = default;
 };
