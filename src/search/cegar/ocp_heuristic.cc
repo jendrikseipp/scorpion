@@ -29,7 +29,7 @@ using namespace std;
 
 namespace cegar {
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
-    const options::Options &opts, const vector<TransitionSystem> &&abstractions)
+    const options::Options &opts, const vector<shared_ptr<TransitionSystem>> &&abstractions)
     : Heuristic(opts),
       abstractions(move(abstractions)),
       allow_negative_costs(opts.get<bool>("allow_negative_costs")) {
@@ -48,7 +48,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     cout << "LP initial solve time: " << timer << endl;
     current_abstract_state_vars.resize(abstractions.size());
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
-        int initial_state_index = abstractions[id].get_abstract_state_index(g_initial_state());
+        int initial_state_index = abstractions[id]->get_abstract_state_index(g_initial_state());
         current_abstract_state_vars[id] = distance_variables[id][initial_state_index];
     }
 }
@@ -57,8 +57,8 @@ OptimalCostPartitioningHeuristic::~OptimalCostPartitioningHeuristic() {
 }
 
 void OptimalCostPartitioningHeuristic::clear_memory() {
-    for (TransitionSystem &abstraction : abstractions) {
-        abstraction.release_memory();
+    for (shared_ptr<TransitionSystem> &abstraction : abstractions) {
+        abstraction->release_memory();
     }
     utils::release_vector_memory(heuristic_variables);
     utils::release_vector_memory(action_cost_variables);
@@ -68,15 +68,15 @@ int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &state
     // Set upper bound for distance of current abstract states to 0 and for all other
     // abstract states to infinity.
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
-        TransitionSystem &abstraction = abstractions[id];
-        if (abstraction.is_dead_end(state)) {
+        shared_ptr<TransitionSystem> &abstraction = abstractions[id];
+        if (abstraction->is_dead_end(state)) {
             return DEAD_END;
         }
         int old_state_var = current_abstract_state_vars[id];
         lp_solver->setColUpper(old_state_var, lp_solver->getInfinity());
         if (allow_negative_costs)
             lp_solver->setColLower(old_state_var, -lp_solver->getInfinity());
-        int new_state_var = distance_variables[id][abstraction.get_abstract_state_index(state)];
+        int new_state_var = distance_variables[id][abstraction->get_abstract_state_index(state)];
         lp_solver->setColUpper(new_state_var, 0);
         if (allow_negative_costs)
             lp_solver->setColLower(new_state_var, 0);
@@ -131,9 +131,9 @@ void OptimalCostPartitioningHeuristic::generateLP() {
     // No need to store upper bounds (they are all +inf)
 
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
-        TransitionSystem &abstraction = abstractions[id];
-        introduce_abstraction_variables(abstraction, id, variable_lower_bounds);
-        add_abstraction_constraints(abstraction, id, matrix_entries, constraint_upper_bounds);
+        shared_ptr<TransitionSystem> &abstraction = abstractions[id];
+        introduce_abstraction_variables(*abstraction, id, variable_lower_bounds);
+        add_abstraction_constraints(*abstraction, id, matrix_entries, constraint_upper_bounds);
 //        abstraction.release_memory();
     }
     add_action_cost_constraints(matrix_entries, constraint_upper_bounds);

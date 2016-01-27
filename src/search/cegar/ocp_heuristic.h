@@ -29,7 +29,7 @@ public:
         }
     };
 
-    std::vector<TransitionSystem> abstractions;
+    std::vector<std::shared_ptr<TransitionSystem>> abstractions;
     bool allow_negative_costs;
 #ifdef USE_LP
     std::unique_ptr<OsiSolverInterface> lp_solver;
@@ -71,7 +71,7 @@ protected:
 public:
     OptimalCostPartitioningHeuristic(
             const options::Options &opts,
-            const std::vector<TransitionSystem> &&abstractions);
+            const std::vector<std::shared_ptr<TransitionSystem>> &&abstractions);
     ~OptimalCostPartitioningHeuristic();
 };
 }
