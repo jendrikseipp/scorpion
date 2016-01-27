@@ -30,10 +30,6 @@ TransitionSystem::TransitionSystem(
             AbstractState *succ_state = transition.second;
             transitions.emplace_back(start, op.get_id(), state_to_id[succ_state]);
         }
-        for (const OperatorProxy &loop : state->get_loops()) {
-            transitions.emplace_back(start, loop.get_id(), start);
-            operator_induces_self_loop[loop.get_id()] = true;
-        }
     }
 
     // Store goals.
