@@ -10,16 +10,21 @@ using namespace std;
 
 namespace cegar {
 TransitionSystem::TransitionSystem(
-    const shared_ptr<AbstractTask> &task, const Abstraction &abstraction)
+    const shared_ptr<AbstractTask> &task, Abstraction &abstraction)
       : task(task),
         task_proxy(*task),
         num_states(abstraction.get_num_states()),
+        refinement_hierarchy(abstraction.get_refinement_hierarchy()),
         operator_induces_self_loop(task_proxy.get_operators().size(), false) {
 
     unordered_map<AbstractState *, int> state_to_id;
     int state_id = 0;
     for (AbstractState *state : abstraction.states) {
         state_to_id[state] = state_id++;
+    }
+
+    for (AbstractState *state : abstraction.states) {
+        node_to_state_id[state->node] = state_to_id[state];
     }
 
     // Store transitions.
@@ -29,6 +34,9 @@ TransitionSystem::TransitionSystem(
             OperatorProxy op = transition.first;
             AbstractState *succ_state = transition.second;
             transitions.emplace_back(start, op.get_id(), state_to_id[succ_state]);
+        }
+        for (const OperatorProxy &op : state->get_loops()) {
+            operator_induces_self_loop[op.get_id()] = true;
         }
     }
 

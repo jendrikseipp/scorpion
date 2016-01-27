@@ -24,6 +24,8 @@ using Loops = std::vector<OperatorProxy>;
 
 class AbstractState {
 private:
+    friend class TransitionSystem;
+
     // Abstract domains for all variables.
     const Domains domains;
 
