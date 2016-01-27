@@ -222,6 +222,7 @@ static Heuristic *_parse(OptionParser &parser) {
     vector<string> cp_types;
     cp_types.push_back("SATURATED");
     cp_types.push_back("OPTIMAL");
+    cp_types.push_back("OPTIMAL_OPERATOR_COUNTING");
     parser.add_enum_option(
         "cost_partitioning", cp_types, "cost partitioning method", "SATURATED");
     lp::add_lp_solver_option_to_parser(parser);
