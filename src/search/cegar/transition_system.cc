@@ -1,5 +1,7 @@
 #include "transition_system.h"
 
+#include "../task_proxy.h"
+
 #include <cassert>
 
 using namespace std;
@@ -18,5 +20,10 @@ TransitionSystem::TransitionSystem(const Abstraction &) {
             ++num_transitions;
         }
     }*/
+}
+
+bool TransitionSystem::induces_self_loop(const OperatorProxy &op) const {
+    assert(utils::in_bounds(op.get_id(), operator_induces_self_loop));
+    return operator_induces_self_loop[op.get_id()];
 }
 }
