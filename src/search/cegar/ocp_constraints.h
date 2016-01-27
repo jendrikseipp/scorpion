@@ -13,7 +13,6 @@ class AbstractState;
 class Abstraction;
 
 class OCPConstraints : public operator_counting::ConstraintGenerator {
-    std::vector<lp::LPConstraint> ocp_constraints;
     int num_transitions;
     int num_goals;
     std::size_t goals_offset;

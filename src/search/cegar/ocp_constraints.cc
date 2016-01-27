@@ -102,6 +102,11 @@ void OCPConstraints::initialize_constraints(
             ++goal_state_id;
         }
     }
+    std::unordered_map<int, std::vector<int>>().swap(operator_to_transitions);
+    std::unordered_map<AbstractState *, std::vector<int>>().swap(state_to_incoming_transitions);
+    std::unordered_map<AbstractState *, std::vector<int>>().swap(state_to_outgoing_transitions);
+    std::unordered_set<AbstractState *>().swap(states);
+    std::unordered_set<AbstractState *>().swap(goals);
 }
 
 bool OCPConstraints::update_constraints(const State &, lp::LPSolver &) {
