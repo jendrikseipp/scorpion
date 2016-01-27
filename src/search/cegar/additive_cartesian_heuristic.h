@@ -66,10 +66,12 @@ namespace cegar {
 class CartesianHeuristic;
 class OCPConstraints;
 class SubtaskGenerator;
+class TransitionSystem;
 
 enum class CostPartitioningType {
     SATURATED,
-    OPTIMAL
+    OPTIMAL,
+    OPTIMAL_OPERATOR_COUNTING
 };
 
 /*
@@ -88,6 +90,7 @@ class AdditiveCartesianHeuristic : public Heuristic {
     // TODO: Store split trees or thin wrappers directly.
     std::vector<std::unique_ptr<CartesianHeuristic>> heuristics;
     std::vector<std::shared_ptr<operator_counting::ConstraintGenerator>> constraints;
+    std::vector<std::shared_ptr<TransitionSystem>> transition_systems;
     int num_abstractions;
     int num_states;
 
@@ -109,6 +112,10 @@ public:
 
     std::vector<std::shared_ptr<operator_counting::ConstraintGenerator>> &&extract_constraints() {
         return move(constraints);
+    }
+
+    std::vector<std::shared_ptr<TransitionSystem>> &&extract_transition_systems() {
+        return move(transition_systems);
     }
 };
 }

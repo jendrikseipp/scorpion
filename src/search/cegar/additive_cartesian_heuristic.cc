@@ -2,6 +2,7 @@
 
 #include "abstraction.h"
 #include "cartesian_heuristic.h"
+#include "ocp_heuristic.h"
 #include "subtask_generators.h"
 #include "utils.h"
 
@@ -124,8 +125,12 @@ void AdditiveCartesianHeuristic::build_abstractions(
                     utils::make_unique_ptr<CartesianHeuristic>(
                         opts, abstraction.get_refinement_hierarchy()));
             }
-        } else {
+        } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
             assert(cost_partitioning_type == CostPartitioningType::OPTIMAL);
+            assert(TaskProxy(*subtask).get_operators().size() == task_proxy.get_operators().size());
+            transition_systems.emplace_back(subtask, abstraction);
+        } else {
+            assert(cost_partitioning_type == CostPartitioningType::OPTIMAL_OPERATOR_COUNTING);
             assert(TaskProxy(*subtask).get_operators().size() == task_proxy.get_operators().size());
             constraints.push_back(make_shared<OCPConstraints>(abstraction));
         }
@@ -231,6 +236,9 @@ static Heuristic *_parse(OptionParser &parser) {
         static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"));
     if (cost_partitioning_type == CostPartitioningType::SATURATED) {
         return new AdditiveCartesianHeuristic(opts);
+    } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
+        AdditiveCartesianHeuristic ach(opts);
+        return new OptimalCostPartitioningHeuristic(opts, ach.extract_transition_systems());
     } else {
         AdditiveCartesianHeuristic ach(opts);
         Options oc_options(opts);
