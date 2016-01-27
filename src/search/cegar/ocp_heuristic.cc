@@ -32,7 +32,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts, const vector<shared_ptr<TransitionSystem>> &&abstractions)
     : Heuristic(opts),
       abstractions(move(abstractions)),
-      allow_negative_costs(opts.get<bool>("allow_negative_costs")) {
+      allow_negative_costs(opts.get<bool>("use_general_costs")) {
     utils::Timer timer;
     lp_solver = lp::create_lp_solver(lp::LPSolverType(opts.get_enum("lpsolver")));
     lp_solver->messageHandler()->setLogLevel(0);
@@ -129,16 +129,21 @@ void OptimalCostPartitioningHeuristic::generateLP() {
     // No need to store lower bounds (they are all 0)
     vector<double> variable_lower_bounds;
     // No need to store upper bounds (they are all +inf)
+    constraint_count = 0;
+    variable_count = 0;
 
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
+        cout << "Add abstraction " << id+1 << " of " << abstractions.size()
+             << " to LP" << endl;
         shared_ptr<TransitionSystem> &abstraction = abstractions[id];
         introduce_abstraction_variables(*abstraction, id, variable_lower_bounds);
         add_abstraction_constraints(*abstraction, id, matrix_entries, constraint_upper_bounds);
-//        abstraction.release_memory();
+        abstraction->release_memory();
     }
     add_action_cost_constraints(matrix_entries, constraint_upper_bounds);
 
     int matrix_entry_count = matrix_entries.size();
+    cout << "Non-zero matrix entries: " << matrix_entry_count << endl;
     int *rowIndices = new int[matrix_entry_count];
     int *colIndices = new int[matrix_entry_count];
     double *elements = new double[matrix_entry_count];
@@ -225,6 +230,8 @@ void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
     //    * For <s', a, s''> in abstract transitions of PDB p
     //        distance[p][s''] <= distance[p][s'] + action_cost[p][a]
     //        0 <= distance[p][s'] + action_cost[p][a] - distance[p][s''] <= \infty
+    cout << "Handling " << abstraction.get_transitions().size() << " transitions" << endl;
+    cout << "    constraint_count: " << constraint_count << endl;
     for (const Transition &transition : abstraction.get_transitions()) {
         int row = constraint_count++;
         int from_col = distance_variables[id][transition.start];
