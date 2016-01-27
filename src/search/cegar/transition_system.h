@@ -42,17 +42,19 @@ public:
         return num_states;
     }
 
-    int get_abstract_state_index(const State &concrete_state) const {
-        Node *node = refinement_hierarchy.get_node(concrete_state);
+    int get_abstract_state_index(const GlobalState &concrete_state) const {
+        State local_state = task_proxy.convert_global_state(concrete_state);
+        Node *node = refinement_hierarchy.get_node(local_state);
         return node_to_state_id.at(node);
     }
 
-    bool is_dead_end(const State &concrete_state) const {
-        Node *node = refinement_hierarchy.get_node(concrete_state);
+    bool is_dead_end(const GlobalState &concrete_state) const {
+        State local_state = task_proxy.convert_global_state(concrete_state);
+        Node *node = refinement_hierarchy.get_node(local_state);
         return node->get_h_value() == std::numeric_limits<int>::max();
     }
 
-    bool induces_self_loop(const OperatorProxy &op) const;
+    bool induces_self_loop(int op_id) const;
 
     const std::vector<int> &get_goal_indices() const {
         return goal_indices;
@@ -61,6 +63,8 @@ public:
     const std::vector<Transition> &get_transitions() const {
         return transitions;
     }
+
+    void release_memory();
 };
 }
 
