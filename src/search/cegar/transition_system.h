@@ -41,7 +41,7 @@ class TransitionSystem {
 
 public:
     explicit TransitionSystem(
-        const std::shared_ptr<AbstractTask> &task, Abstraction &abstraction);
+        const std::shared_ptr<AbstractTask> &task, Abstraction &&abstraction);
     ~TransitionSystem() = default;
 
     int get_num_abstract_states() const {

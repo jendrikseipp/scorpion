@@ -10,7 +10,7 @@ using namespace std;
 
 namespace cegar {
 TransitionSystem::TransitionSystem(
-    const shared_ptr<AbstractTask> &task, Abstraction &abstraction)
+    const shared_ptr<AbstractTask> &task, Abstraction &&abstraction)
       : task(task),
         task_proxy(*task),
         num_states(abstraction.get_num_states()),

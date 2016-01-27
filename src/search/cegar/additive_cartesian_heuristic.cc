@@ -128,7 +128,7 @@ void AdditiveCartesianHeuristic::build_abstractions(
         } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
             assert(cost_partitioning_type == CostPartitioningType::OPTIMAL);
             assert(TaskProxy(*subtask).get_operators().size() == task_proxy.get_operators().size());
-            transition_systems.push_back(make_shared<TransitionSystem>(subtask, abstraction));
+            transition_systems.push_back(make_shared<TransitionSystem>(subtask, move(abstraction)));
         } else {
             assert(cost_partitioning_type == CostPartitioningType::OPTIMAL_OPERATOR_COUNTING);
             assert(TaskProxy(*subtask).get_operators().size() == task_proxy.get_operators().size());
