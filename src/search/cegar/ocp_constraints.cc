@@ -50,20 +50,20 @@ void OCPConstraints::initialize_variables(
 void OCPConstraints::initialize_constraints(
     const std::shared_ptr<AbstractTask> task,
     vector<lp::LPConstraint> &constraints,
-    double) {
+    double infinity) {
 
-    // \sum(s' \in G) G_{s'} = 1
-    constraints.emplace_back(1, 1);
+    // \sum(s' \in G) G_{s'} >= 1
+    constraints.emplace_back(1, infinity);
     lp::LPConstraint &constraint = constraints.back();
     for (int i = 0; i < num_goals; ++i) {
         constraint.insert(goals_offset + i, 1);
     }
 
     /*     Y_o = \sum_{t \in T, t labeled with o} T_t
-       <=> Y_o - \sum_{t \in T, t labeled with o} T_t = 0 */
+       <=> Y_o - \sum_{t \in T, t labeled with o} T_t >= 0 */
     TaskProxy task_proxy(*task);
     for (OperatorProxy op : task_proxy.get_operators()) {
-        constraints.emplace_back(0, 0);
+        constraints.emplace_back(0, infinity);
         lp::LPConstraint &constraint = constraints.back();
         constraint.insert(op.get_id(), 1);
         for (int transition_id : operator_to_transitions[op.get_id()]) {
@@ -72,7 +72,7 @@ void OCPConstraints::initialize_constraints(
     }
 
     /* \sum_{t \in T, t ends in s'} T_t - \sum{t \in T, t starts in s'}
-    T_t - G_{s'}[s' \in G] + I[s' = \alpha(s)] = 0
+    T_t - G_{s'}[s' \in G] + I[s' = \alpha(s)] >= 0
 
     Since we need I only for the abstract state corresponding to s and
     I is unrestricted, we don't introduce I and add the constraint only
@@ -82,7 +82,7 @@ void OCPConstraints::initialize_constraints(
         if (abstract_state == initial_state) {
             continue;
         }
-        constraints.emplace_back(0, 0);
+        constraints.emplace_back(0, infinity);
         lp::LPConstraint &constraint = constraints.back();
         for (int transition_id : state_to_incoming_transitions[abstract_state]) {
             constraint.insert(transitions_offset + transition_id, 1);
