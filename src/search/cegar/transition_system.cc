@@ -11,7 +11,8 @@ using namespace std;
 namespace cegar {
 TransitionSystem::TransitionSystem(
     const shared_ptr<AbstractTask> &task, const Abstraction &abstraction)
-      : task_proxy(*task),
+      : task(task),
+        task_proxy(*task),
         num_states(abstraction.get_num_states()),
         operator_induces_self_loop(task_proxy.get_operators().size(), false) {
 

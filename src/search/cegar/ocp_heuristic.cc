@@ -230,8 +230,6 @@ void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
     //    * For <s', a, s''> in abstract transitions of PDB p
     //        distance[p][s''] <= distance[p][s'] + action_cost[p][a]
     //        0 <= distance[p][s'] + action_cost[p][a] - distance[p][s''] <= \infty
-    cout << "Handling " << abstraction.get_transitions().size() << " transitions" << endl;
-    cout << "    constraint_count: " << constraint_count << endl;
     for (const Transition &transition : abstraction.get_transitions()) {
         int row = constraint_count++;
         int from_col = distance_variables[id][transition.start];
