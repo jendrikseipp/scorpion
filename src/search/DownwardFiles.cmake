@@ -352,6 +352,7 @@ fast_downward_plugin(
         cegar/cartesian_heuristic.cc
         cegar/domains.cc
         cegar/ocp_constraints.cc
+        cegar/ocp_heuristic.cc
         cegar/refinement_hierarchy.cc
         cegar/split_selector.cc
         cegar/subtask_generators.cc
