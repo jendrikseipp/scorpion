@@ -56,7 +56,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
 OptimalCostPartitioningHeuristic::~OptimalCostPartitioningHeuristic() {
 }
 
-void OptimalCostPartitioningHeuristic::clear_memory() {
+void OptimalCostPartitioningHeuristic::release_memory() {
     for (shared_ptr<TransitionSystem> &abstraction : abstractions) {
         abstraction->release_memory();
     }

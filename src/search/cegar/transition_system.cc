@@ -2,6 +2,8 @@
 
 #include "abstraction.h"
 
+#include "../utils/collections.h"
+
 #include <cassert>
 
 using namespace std;
@@ -42,5 +44,11 @@ TransitionSystem::TransitionSystem(
 bool TransitionSystem::induces_self_loop(int op_id) const {
     assert(utils::in_bounds(op_id, operator_induces_self_loop));
     return operator_induces_self_loop[op_id];
+}
+
+void TransitionSystem::release_memory() {
+    utils::release_vector_memory(operator_induces_self_loop);
+    utils::release_vector_memory(transitions);
+    utils::release_vector_memory(goal_indices);
 }
 }

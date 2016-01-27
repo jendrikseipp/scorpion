@@ -65,7 +65,7 @@ public:
                                      std::vector<double> &constraint_upper_bounds);
     void add_action_cost_constraints(std::vector<MatrixEntry> &matrix_entries,
                                      std::vector<double> &constraint_upper_bounds);
-    void clear_memory();
+    void release_memory();
 protected:
     virtual int compute_heuristic(const GlobalState &state);
 public:
