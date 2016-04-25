@@ -31,12 +31,12 @@ TransitionSystem::TransitionSystem(
     for (AbstractState *state : abstraction.states) {
         int start = state_to_id[state];
         for (const Arc transition : state->get_outgoing_arcs()) {
-            OperatorProxy op = transition.first;
+            int op_id = transition.first;
             AbstractState *succ_state = transition.second;
-            transitions.emplace_back(start, op.get_id(), state_to_id[succ_state]);
+            transitions.emplace_back(start, op_id, state_to_id[succ_state]);
         }
-        for (const OperatorProxy &op : state->get_loops()) {
-            operator_induces_self_loop[op.get_id()] = true;
+        for (int op_id : state->get_loops()) {
+            operator_induces_self_loop[op_id] = true;
         }
     }
 

@@ -2,6 +2,9 @@ set(PLANNER_SOURCES
         planner.cc
 )
 
+# See http://www.fast-downward.org/ForDevelopers/AddingSourceFiles
+# for general information on adding source files and CMake plugins.
+#
 # If you're adding a file to the codebase which *isn't* a plugin, add
 # it to the following list. We assume that every *.cc file has a
 # corresponding *.h file and add headers to the project automatically.
@@ -11,8 +14,6 @@ set(CORE_SOURCES
         abstract_task.cc
         axioms.cc
         causal_graph.cc
-        cost_adapted_task.cc
-        delegating_task.cc
         equivalence_relation.cc
         evaluation_context.cc
         evaluation_result.cc
@@ -27,6 +28,7 @@ set(CORE_SOURCES
         option_parser_util.h
         per_state_information.cc
         plugin.h
+        pruning_method.cc
         priority_queue.cc
         root_task.cc
         sampling.cc
@@ -131,6 +133,7 @@ fast_downward_plugin(
         utils/math.cc
         utils/memory.cc
         utils/rng.cc
+        utils/rng_options.cc
         utils/system.cc
         utils/system_unix.cc
         utils/system_windows.cc
@@ -190,6 +193,37 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME NULL_PRUNING_METHOD
+    HELP "Pruning method that does nothing"
+    SOURCES
+        pruning/null_pruning_method.cc
+)
+
+fast_downward_plugin(
+    NAME STUBBORN_SETS
+    HELP "Base class for all stubborn set partial order reduction methods"
+    SOURCES
+        pruning/stubborn_sets.cc
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME STUBBORN_SETS_SIMPLE
+    HELP "Stubborn sets simple"
+    SOURCES
+        pruning/stubborn_sets_simple.cc
+    DEPENDS STUBBORN_SETS
+)
+
+fast_downward_plugin(
+    NAME StubbornSetsEC
+    HELP "Stubborn set method that dominates expansion core"
+    SOURCES
+        pruning/stubborn_sets_ec.cc
+    DEPENDS STUBBORN_SETS
+)
+
+fast_downward_plugin(
     NAME SEARCH_COMMON
     HELP "Basic classes used for all search engines"
     SOURCES
@@ -203,7 +237,7 @@ fast_downward_plugin(
     HELP "Eager search algorithm"
     SOURCES
         search_engines/eager_search.cc
-    DEPENDS SEARCH_COMMON
+    DEPENDS SEARCH_COMMON NULL_PRUNING_METHOD
 )
 
 fast_downward_plugin(
@@ -244,13 +278,6 @@ fast_downward_plugin(
     SOURCES
         heuristics/relaxation_heuristic.cc
     DEPENDENCY_ONLY
-)
-
-fast_downward_plugin(
-    NAME IPC_MAX_HEURISTIC
-    HELP "The IPC max heuristic"
-    SOURCES
-        heuristics/ipc_max_heuristic.cc
 )
 
 fast_downward_plugin(
@@ -331,6 +358,15 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME CORE_TASKS
+    HELP "Core task transformations"
+    SOURCES
+        tasks/cost_adapted_task.cc
+        tasks/delegating_task.cc
+    CORE_PLUGIN
+)
+
+fast_downward_plugin(
     NAME EXTRA_TASKS
     HELP "Non-core task transformations"
     SOURCES
@@ -359,7 +395,7 @@ fast_downward_plugin(
         cegar/transition_system.cc
         cegar/utils.cc
         cegar/utils_landmarks.cc
-    DEPENDS EXTRA_TASKS
+    DEPENDS ADDITIVE_HEURISTIC EXTRA_TASKS LANDMARKS
 )
 
 fast_downward_plugin(

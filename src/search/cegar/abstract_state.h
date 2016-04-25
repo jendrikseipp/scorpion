@@ -3,28 +3,66 @@
 
 #include "domains.h"
 
+#include "../task_proxy.h"
+
 #include <string>
 #include <utility>
 #include <vector>
-
-class ConditionsProxy;
-class FactProxy;
-class OperatorProxy;
-class State;
-class TaskProxy;
 
 namespace cegar {
 class AbstractState;
 class Node;
 
-// TODO: Use operator indices instead of proxies to save space.
-using Arc = std::pair<OperatorProxy, AbstractState *>;
+// Transitions are pairs of operator index and AbstractState pointers.
+using Arc = std::pair<int, AbstractState *>;
 using Arcs = std::vector<Arc>;
-using Loops = std::vector<OperatorProxy>;
+
+// To save space we store self-loops (operator indices) separately.
+using Loops = std::vector<int>;
+
+class AbstractSearchInfo {
+    int g;
+    Arc incoming_arc;
+
+    static const int UNDEFINED_OPERATOR;
+
+public:
+    AbstractSearchInfo() {
+        reset();
+    }
+
+    ~AbstractSearchInfo() = default;
+
+    void reset() {
+        g = std::numeric_limits<int>::max();
+        incoming_arc = Arc(UNDEFINED_OPERATOR, nullptr);
+    }
+
+    void decrease_g_value(int new_g) {
+        assert(new_g <= g);
+        g = new_g;
+    }
+
+    int get_g_value() const {
+        return g;
+    }
+
+    void set_incoming_arc(const Arc &arc) {
+        incoming_arc = arc;
+    }
+
+    const Arc &get_incoming_arc() const {
+        assert(incoming_arc.first >= 0 && incoming_arc.second);
+        return incoming_arc;
+    }
+};
 
 class AbstractState {
 private:
     friend class TransitionSystem;
+
+    // Since the abstraction owns the state we don't need AbstractTask.
+    const TaskProxy &task_proxy;
 
     // Abstract domains for all variables.
     const Domains domains;
@@ -39,15 +77,18 @@ private:
     // Self-loops.
     Loops loops;
 
+    AbstractSearchInfo search_info;
+
     // Construct instances with factory methods.
-    AbstractState(const Domains &domains, Node *node);
+    AbstractState(
+        const TaskProxy &task_proxy, const Domains &domains, Node *node);
 
-    void add_arc(OperatorProxy op, AbstractState *other);
-    void add_loop(OperatorProxy op);
+    void add_arc(int op_id, AbstractState *other);
+    void add_loop(int op_id);
 
-    void remove_arc(Arcs &arcs, OperatorProxy op, AbstractState *other);
-    void remove_incoming_arc(OperatorProxy op, AbstractState *other);
-    void remove_outgoing_arc(OperatorProxy op, AbstractState *other);
+    void remove_arc(Arcs &arcs, int op_id, AbstractState *other);
+    void remove_incoming_arc(int op_id, AbstractState *other);
+    void remove_outgoing_arc(int op_id, AbstractState *other);
 
     void split_incoming_arcs(int var, AbstractState *v1, AbstractState *v2);
     void split_outgoing_arcs(int var, AbstractState *v1, AbstractState *v2);
@@ -90,6 +131,8 @@ public:
     const Arcs &get_incoming_arcs() const {return incoming_arcs; }
     const Loops &get_loops() const {return loops; }
 
+    AbstractSearchInfo &get_search_info() {return search_info; }
+
     friend std::ostream &operator<<(std::ostream &os, const AbstractState &state) {
         return os << state.domains;
     }
@@ -101,11 +144,11 @@ public:
       TODO: Return unique_ptr?
     */
     static AbstractState *get_trivial_abstract_state(
-        TaskProxy task_proxy, Node *root_node);
+        const TaskProxy &task_proxy, Node *root_node);
 
     // Create the Cartesian set that corresponds to the given fact conditions.
     static AbstractState get_abstract_state(
-        TaskProxy task_proxy, const ConditionsProxy &conditions);
+        const TaskProxy &task_proxy, const ConditionsProxy &conditions);
 };
 }
 

@@ -27,6 +27,7 @@ using namespace std;
 // TODO (post-issue586): Remove this once we no longer need it.
 class AbstractTask;
 class OpenListFactory;
+class PruningMethod;
 class SearchEngine;
 
 namespace cegar {
@@ -100,6 +101,7 @@ static void get_help(string k) {
     get_help_templ<shared_ptr<operator_counting::ConstraintGenerator>>(pt);
     get_help_templ<shared_ptr<pdbs::PatternCollectionGenerator>>(pt);
     get_help_templ<shared_ptr<pdbs::PatternGenerator>>(pt);
+    get_help_templ<shared_ptr<PruningMethod>>(pt);
 }
 
 template<typename T>
@@ -129,6 +131,7 @@ static void get_full_help() {
     get_full_help_templ<shared_ptr<operator_counting::ConstraintGenerator>>();
     get_full_help_templ<shared_ptr<pdbs::PatternCollectionGenerator>>();
     get_full_help_templ<shared_ptr<pdbs::PatternGenerator>>();
+    get_full_help_templ<shared_ptr<PruningMethod>>();
 }
 
 
@@ -315,7 +318,7 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
                 throw ArgError("missing argument after --random-seed");
             ++i;
             int seed = parse_int_arg(arg, args[i]);
-            g_rng.seed(seed);
+            g_rng()->seed(seed);
             cout << "random seed: " << seed << endl;
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;

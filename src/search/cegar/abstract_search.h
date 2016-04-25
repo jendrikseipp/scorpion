@@ -5,10 +5,8 @@
 #include "abstract_state.h"
 
 #include "../priority_queue.h"
-#include "../task_proxy.h"
 
 #include <deque>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -18,15 +16,12 @@ using AbstractStates = std::unordered_set<AbstractState *>;
 using Solution = std::deque<Arc>;
 
 class AbstractSearch {
+    const std::vector<int> operator_costs;
+    AbstractStates &states;
     const bool use_general_costs;
 
     AdaptiveQueue<AbstractState *> open_queue;
-    /* TODO: Storing paths and g-values in unordered_maps is expensive.
-       We should store them elsewhere. If we stick with unordered_maps,
-       we should use one unordered_map for both infos. */
-    std::unordered_map<AbstractState *, Arc> prev_arc;
     Solution solution;
-    std::unordered_map<AbstractState *, int> g_values;
 
     void reset();
 
@@ -40,7 +35,10 @@ class AbstractSearch {
         std::vector<int> *needed_costs = nullptr);
 
 public:
-    explicit AbstractSearch(bool use_general_costs);
+    AbstractSearch(
+        std::vector<int> &&operator_costs,
+        AbstractStates &states,
+        bool use_general_costs);
     ~AbstractSearch() = default;
 
     bool find_solution(AbstractState *init, AbstractStates &goals);
@@ -57,8 +55,6 @@ public:
     const Solution &get_solution() {
         return solution;
     }
-
-    int get_g_value(AbstractState *state) const;
 };
 }
 

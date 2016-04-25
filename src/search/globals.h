@@ -10,6 +10,7 @@ class AbstractTask;
 class Axiom;
 class AxiomEvaluator;
 class CausalGraph;
+struct Fact;
 class GlobalOperator;
 class GlobalState;
 class IntPacker;
@@ -43,7 +44,7 @@ void verify_no_axioms_no_conditional_effects();
 
 void check_magic(std::istream &in, std::string magic);
 
-bool are_mutex(const std::pair<int, int> &a, const std::pair<int, int> &b);
+bool are_mutex(const Fact &a, const Fact &b);
 
 extern bool g_use_metric;
 extern int g_min_action_cost;
@@ -73,7 +74,7 @@ extern SuccessorGenerator *g_successor_generator;
 extern std::string g_plan_filename;
 extern int g_num_previously_generated_plans;
 extern bool g_is_part_of_anytime_portfolio;
-extern utils::RandomNumberGenerator g_rng;
+extern std::shared_ptr<utils::RandomNumberGenerator> g_rng();
 // Only one global object for now. Could later be changed to use one instance
 // for each problem in this case the method GlobalState::get_id would also have to be
 // changed.
