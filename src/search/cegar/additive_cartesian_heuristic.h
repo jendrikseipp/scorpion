@@ -5,6 +5,8 @@
 
 #include "../heuristic.h"
 
+#include "../utils/countdown_timer.h"
+
 #include <memory>
 #include <vector>
 
@@ -58,10 +60,6 @@ namespace operator_counting {
 class ConstraintGenerator;
 }
 
-namespace utils {
-class CountdownTimer;
-}
-
 namespace cegar {
 class CartesianHeuristic;
 class OCPConstraints;
@@ -82,7 +80,7 @@ enum class CostPartitioningType {
 class AdditiveCartesianHeuristic : public Heuristic {
     std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators;
     const int max_states;
-    std::unique_ptr<utils::CountdownTimer> timer;
+    utils::CountdownTimer timer;
     CostPartitioningType cost_partitioning_type;
     bool use_general_costs;
     PickSplit pick_split;
@@ -94,7 +92,7 @@ class AdditiveCartesianHeuristic : public Heuristic {
     int num_abstractions;
     int num_states;
 
-    void reduce_remaining_costs(const std::vector<int> &needed_costs);
+    void reduce_remaining_costs(const std::vector<int> &saturated_costs);
     std::shared_ptr<AbstractTask> get_remaining_costs_task(
         std::shared_ptr<AbstractTask> &parent) const;
     bool may_build_another_abstraction();

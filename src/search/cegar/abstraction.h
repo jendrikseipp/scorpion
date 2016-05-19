@@ -31,6 +31,7 @@ class Abstraction {
 
     const TaskProxy task_proxy;
     const int max_states;
+    const bool use_general_costs;
 
     AbstractSearch abstract_search;
     SplitSelector split_selector;
@@ -95,7 +96,7 @@ class Abstraction {
     std::unique_ptr<Flaw> find_flaw(const Solution &solution);
 
     // Perform Dijkstra's algorithm from the goal states to update the h-values.
-    void update_h_values();
+    void update_h_and_g_values();
 
     void print_statistics();
 
@@ -120,11 +121,11 @@ public:
         return states.size();
     }
 
-    /* For each operator calculate the mimimum cost that is needed to preserve
-       all abstract goal distances. */
-    // TODO: Use information from last Dijkstra run instead of performing
-    // another Dijkstra run.
-    std::vector<int> get_needed_costs();
+    /*
+      For each operator calculate the mimimum cost that is needed to
+      preserve the abstract goal distances of all reachable states.
+    */
+    std::vector<int> get_saturated_costs();
 
     int get_h_value_of_initial_state() const;
 };

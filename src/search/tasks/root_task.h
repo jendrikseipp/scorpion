@@ -1,9 +1,9 @@
-#ifndef ROOT_TASK_H
-#define ROOT_TASK_H
+#ifndef TASKS_ROOT_TASK_H
+#define TASKS_ROOT_TASK_H
 
-#include "abstract_task.h"
+#include "../abstract_task.h"
 
-
+namespace tasks {
 class RootTask : public AbstractTask {
 public:
     virtual int get_num_variables() const override;
@@ -36,5 +36,6 @@ public:
     virtual std::vector<int> get_initial_state_values() const override;
     virtual std::vector<int> get_state_values(const GlobalState &global_state) const override;
 };
+}
 
 #endif
