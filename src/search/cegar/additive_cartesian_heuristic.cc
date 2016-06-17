@@ -11,8 +11,6 @@
 #include "../plugin.h"
 #include "../task_tools.h"
 
-#include "../operator_counting/operator_counting_heuristic.h"
-
 #include "../tasks/modified_operator_costs_task.h"
 
 #include "../utils/logging.h"
@@ -135,13 +133,10 @@ void AdditiveCartesianHeuristic::build_abstractions(
                     abstraction.extract_refinement_hierarchy()));
             }
         } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
-            assert(cost_partitioning_type == CostPartitioningType::OPTIMAL);
             assert(TaskProxy(*subtask).get_operators().size() == task_proxy.get_operators().size());
             transition_systems.push_back(make_shared<TransitionSystem>(subtask, move(abstraction)));
         } else {
-            assert(cost_partitioning_type == CostPartitioningType::OPTIMAL_OPERATOR_COUNTING);
-            assert(TaskProxy(*subtask).get_operators().size() == task_proxy.get_operators().size());
-            constraints.push_back(make_shared<OCPConstraints>(abstraction));
+            ABORT("Invalid cost partitioning type");
         }
         if (!may_build_another_abstraction())
             break;
@@ -257,11 +252,7 @@ static Heuristic *_parse(OptionParser &parser) {
         AdditiveCartesianHeuristic ach(opts);
         return new OptimalCostPartitioningHeuristic(opts, ach.extract_transition_systems());
     } else {
-        AdditiveCartesianHeuristic ach(opts);
-        Options oc_options(opts);
-        oc_options.set<vector<shared_ptr<operator_counting::ConstraintGenerator>>>(
-            "constraint_generators", ach.extract_constraints());
-        return new operator_counting::OperatorCountingHeuristic(oc_options);
+        ABORT("Invalid cost partitioning type");
     }
 }
 

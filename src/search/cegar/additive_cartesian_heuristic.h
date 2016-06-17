@@ -56,20 +56,14 @@
       Contains helper nodes for splits that split off multiple facts.
 */
 
-namespace operator_counting {
-class ConstraintGenerator;
-}
-
 namespace cegar {
 class CartesianHeuristicFunction;
-class OCPConstraints;
 class SubtaskGenerator;
 class TransitionSystem;
 
 enum class CostPartitioningType {
     SATURATED,
-    OPTIMAL,
-    OPTIMAL_OPERATOR_COUNTING
+    OPTIMAL
 };
 
 /*
@@ -86,7 +80,6 @@ class AdditiveCartesianHeuristic : public Heuristic {
     PickSplit pick_split;
     std::vector<int> remaining_costs;
     std::vector<std::unique_ptr<CartesianHeuristicFunction>> heuristic_functions;
-    std::vector<std::shared_ptr<operator_counting::ConstraintGenerator>> constraints;
     std::vector<std::shared_ptr<TransitionSystem>> transition_systems;
     int num_abstractions;
     int num_states;
@@ -108,10 +101,6 @@ protected:
 public:
     explicit AdditiveCartesianHeuristic(const options::Options &options);
     ~AdditiveCartesianHeuristic() = default;
-
-    std::vector<std::shared_ptr<operator_counting::ConstraintGenerator>> &&extract_constraints() {
-        return move(constraints);
-    }
 
     std::vector<std::shared_ptr<TransitionSystem>> &&extract_transition_systems() {
         return move(transition_systems);

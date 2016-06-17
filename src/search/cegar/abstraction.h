@@ -2,7 +2,6 @@
 #define CEGAR_ABSTRACTION_H
 
 #include "abstract_search.h"
-#include "ocp_constraints.h"
 #include "refinement_hierarchy.h"
 #include "split_selector.h"
 
@@ -26,7 +25,6 @@ class AbstractState;
 struct Flaw;
 
 class Abstraction {
-    friend class OCPConstraints;
     friend class TransitionSystem;
 
     const TaskProxy task_proxy;
