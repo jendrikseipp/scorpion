@@ -68,14 +68,18 @@ protected:
     void set_preferred(OperatorProxy op);
     // TODO: Remove once all heuristics use the TaskProxy class.
     int get_adjusted_cost(const GlobalOperator &op) const;
-    // TODO: Make private once all heuristics use the TaskProxy class.
+    /* TODO: Make private and use State instead of GlobalState once all
+       heuristics use the TaskProxy class. */
     State convert_global_state(const GlobalState &global_state) const;
 
 public:
     Heuristic(const options::Options &options);
     virtual ~Heuristic() override;
 
-    virtual bool reach_state(
+    virtual void notify_initial_state(const GlobalState & /*initial_state*/) {
+    }
+
+    virtual bool notify_state_transition(
         const GlobalState &parent_state, const GlobalOperator &op,
         const GlobalState &state);
 

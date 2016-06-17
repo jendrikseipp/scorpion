@@ -40,7 +40,7 @@ class TransitionSystem {
     std::vector<int> goal_indices;
 
 public:
-    explicit TransitionSystem(
+    TransitionSystem(
         const std::shared_ptr<AbstractTask> &task, Abstraction &&abstraction);
     ~TransitionSystem() = default;
 
@@ -48,17 +48,9 @@ public:
         return num_states;
     }
 
-    int get_abstract_state_index(const GlobalState &concrete_state) const {
-        State local_state = task_proxy.convert_global_state(concrete_state);
-        Node *node = refinement_hierarchy.get_node(local_state);
-        return node_to_state_id.at(node);
-    }
+    int get_abstract_state_index(const State &concrete_state) const;
 
-    bool is_dead_end(const GlobalState &concrete_state) const {
-        State local_state = task_proxy.convert_global_state(concrete_state);
-        Node *node = refinement_hierarchy.get_node(local_state);
-        return node->get_h_value() == std::numeric_limits<int>::max();
-    }
+    bool is_dead_end(const State &concrete_state) const;
 
     bool induces_self_loop(int op_id) const;
 

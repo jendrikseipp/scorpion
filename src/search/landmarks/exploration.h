@@ -96,13 +96,16 @@ class Exploration : public Heuristic {
     void build_unary_operators(const GlobalOperator &op);
     void simplify();
 
-    void setup_exploration_queue(const GlobalState &state,
+    /* HACK: switching Exploration to the task interface should get rid of the
+       strange mix of State and GlobalOperator* here. */
+    void setup_exploration_queue(const State &state,
                                  const std::vector<std::pair<int, int>> &excluded_props,
                                  const std::unordered_set<const GlobalOperator *> &excluded_ops,
                                  bool use_h_max);
-    inline void setup_exploration_queue(const GlobalState &state, bool h_max) {
+    void setup_exploration_queue(const GlobalState &global_state, bool h_max) {
         std::vector<std::pair<int, int>> excluded_props;
         std::unordered_set<const GlobalOperator *> excluded_ops;
+        State state = convert_global_state(global_state);
         setup_exploration_queue(state, excluded_props, excluded_ops, h_max);
     }
     void relaxed_exploration(bool use_h_max, bool level_out);
@@ -119,7 +122,7 @@ class Exploration : public Heuristic {
     void increase_cost(int &cost, int amount);
     void write_overflow_warning();
 protected:
-    virtual int compute_heuristic(const GlobalState &state);
+    virtual int compute_heuristic(const GlobalState &state) override;
 public:
     void set_additional_goals(const std::vector<std::pair<int, int>> &goals);
     void set_recompute_heuristic() {heuristic_recomputation_needed = true; }
@@ -135,8 +138,8 @@ public:
     // via "exported_ops". (This is the real reason why you might want to call this.)
     bool plan_for_disj(std::vector<std::pair<int, int>> &disj_goal, const GlobalState &state);
 
-    Exploration(const options::Options &opts);
-    ~Exploration();
+    explicit Exploration(const options::Options &opts);
+    virtual ~Exploration() override = default;
 };
 }
 

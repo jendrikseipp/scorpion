@@ -4,6 +4,7 @@
 #include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../state_registry.h"
 
 #include "../utils/collections.h"
 
@@ -105,16 +106,18 @@ Fact RootTask::get_goal_fact(int index) const {
 }
 
 vector<int> RootTask::get_initial_state_values() const {
-    return get_state_values(g_initial_state());
+    // TODO: think about a better way to do this.
+    static StateRegistry state_registry(*g_state_packer,
+                                        *g_axiom_evaluator,
+                                        g_initial_state_data);
+    return state_registry.get_initial_state().get_values();
 }
 
-vector<int> RootTask::get_state_values(const GlobalState &global_state) const {
-    // TODO: Use unpacked values directly once issue348 is merged.
-    int num_vars = g_variable_domain.size();
-    vector<int> values(num_vars);
-    for (int var = 0; var < num_vars; ++var)
-        values[var] = global_state[var];
-    return values;
+void RootTask::convert_state_values(
+    vector<int> &, const AbstractTask *ancestor_task) const {
+    if (this != ancestor_task) {
+        ABORT("Invalid state conversion");
+    }
 }
 
 static shared_ptr<AbstractTask> _parse(OptionParser &parser) {

@@ -67,7 +67,7 @@ public:
                                      std::vector<double> &constraint_upper_bounds);
     void release_memory();
 protected:
-    virtual int compute_heuristic(const GlobalState &state);
+    virtual int compute_heuristic(const GlobalState &global_state);
 public:
     OptimalCostPartitioningHeuristic(
             const options::Options &opts,

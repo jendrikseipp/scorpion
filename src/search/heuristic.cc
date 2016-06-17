@@ -40,7 +40,7 @@ void Heuristic::set_preferred(OperatorProxy op) {
     set_preferred(op.get_global_operator());
 }
 
-bool Heuristic::reach_state(
+bool Heuristic::notify_state_transition(
     const GlobalState & /*parent_state*/,
     const GlobalOperator & /*op*/,
     const GlobalState & /*state*/) {
@@ -52,7 +52,8 @@ int Heuristic::get_adjusted_cost(const GlobalOperator &op) const {
 }
 
 State Heuristic::convert_global_state(const GlobalState &global_state) const {
-    return task_proxy.convert_global_state(global_state);
+    State state(*g_root_task(), global_state.get_values());
+    return task_proxy.convert_ancestor_state(state);
 }
 
 void Heuristic::add_options_to_parser(OptionParser &parser) {

@@ -8,19 +8,13 @@ LandmarkStatusManager::LandmarkStatusManager(LandmarkGraph &graph)
     do_intersection = true;
 }
 
-
-LandmarkStatusManager::~LandmarkStatusManager() {
-}
-
-
 vector<bool> &LandmarkStatusManager::get_reached_landmarks(const GlobalState &state) {
     return reached_lms[state];
 }
 
 
-void LandmarkStatusManager::set_landmarks_for_initial_state() {
-    // TODO use correct state registry here.
-    const GlobalState &initial_state = g_initial_state();
+void LandmarkStatusManager::set_landmarks_for_initial_state(
+    const GlobalState &initial_state) {
     vector<bool> &reached = get_reached_landmarks(initial_state);
     reached.resize(lm_graph.number_of_landmarks());
     //cout << "NUMBER OF LANDMARKS: " << lm_graph.number_of_landmarks() << endl;
@@ -179,7 +173,7 @@ bool LandmarkStatusManager::update_lm_status(const GlobalState &state) {
 bool LandmarkStatusManager::check_lost_landmark_children_needed_again(const LandmarkNode &node) const {
     for (const auto &child : node.children) {
         LandmarkNode *child_node = child.first;
-        if (child.second >= greedy_necessary && child_node->status == lm_not_reached)
+        if (child.second >= EdgeType::greedy_necessary && child_node->status == lm_not_reached)
             return true;
     }
     return false;

@@ -17,14 +17,16 @@ private:
     bool check_lost_landmark_children_needed_again(const LandmarkNode &node) const;
 public:
     LandmarkStatusManager(LandmarkGraph &graph);
-    virtual ~LandmarkStatusManager();
+    virtual ~LandmarkStatusManager() = default;
 
     std::vector<bool> &get_reached_landmarks(const GlobalState &state);
 
     bool update_lm_status(const GlobalState &state);
 
-    void set_landmarks_for_initial_state();
-    bool update_reached_lms(const GlobalState &parent_state, const GlobalOperator &op, const GlobalState &state);
+    void set_landmarks_for_initial_state(const GlobalState &initial_state);
+    bool update_reached_lms(const GlobalState &parent_state,
+                            const GlobalOperator &op,
+                            const GlobalState &state);
 };
 }
 
