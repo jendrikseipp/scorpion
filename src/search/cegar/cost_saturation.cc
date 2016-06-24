@@ -69,6 +69,10 @@ CostSaturation::CostSaturation(const Options &opts)
     print_statistics();
 }
 
+std::vector<unique_ptr<Abstraction>> CostSaturation::extract_abstractions() {
+    return move(abstractions);
+}
+
 vector<CartesianHeuristicFunction> CostSaturation::extract_heuristic_functions() {
     return move(heuristic_functions);
 }
@@ -144,6 +148,11 @@ void CostSaturation::build_abstractions(
                     subtask,
                     abstraction->extract_refinement_hierarchy(),
                     abstraction->compute_h_map());
+            }
+        } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
+            int init_h = abstraction->get_h_value_of_initial_state();
+            if (init_h > 0) {
+                abstractions.push_back(move(abstraction));
             }
         } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
             assert(TaskProxy(*subtask).get_operators().size() ==
@@ -226,6 +235,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
     vector<string> cp_types;
     cp_types.push_back("SATURATED");
+    cp_types.push_back("SATURATED_POSTHOC");
     cp_types.push_back("OPTIMAL");
     cp_types.push_back("OPTIMAL_OPERATOR_COUNTING");
     parser.add_enum_option(
@@ -262,6 +272,18 @@ static Heuristic *_parse(OptionParser &parser) {
         heuristic_opts.set<int>("lpsolver", opts.get_enum("lpsolver"));
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
+    } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
+        vector<unique_ptr<Abstraction>> abstractions =
+            cost_saturation.extract_abstractions();
+        vector<CartesianHeuristicFunction> heuristic_functions;
+        for (unique_ptr<Abstraction> &abstraction : abstractions) {
+            heuristic_functions.emplace_back(
+                abstraction->get_task(),
+                abstraction->extract_refinement_hierarchy(),
+                abstraction->compute_h_map());
+        }
+        return new AdditiveCartesianHeuristic(
+            heuristic_opts, move(heuristic_functions));
     } else {
         ABORT("Invalid cost partitioning type");
     }

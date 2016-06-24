@@ -58,12 +58,14 @@
 */
 
 namespace cegar {
+class Abstraction;
 class CartesianHeuristicFunction;
 class SubtaskGenerator;
 class TransitionSystem;
 
 enum class CostPartitioningType {
     SATURATED,
+    SATURATED_POSTHOC,
     OPTIMAL
 };
 
@@ -76,6 +78,7 @@ class CostSaturation {
     bool use_general_costs;
     PickSplit pick_split;
     std::vector<int> remaining_costs;
+    std::vector<std::unique_ptr<Abstraction>> abstractions;
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<std::shared_ptr<TransitionSystem>> transition_systems;
     int num_abstractions;
@@ -94,6 +97,8 @@ class CostSaturation {
 public:
     explicit CostSaturation(const options::Options &opts);
     ~CostSaturation() = default;
+
+    std::vector<std::unique_ptr<Abstraction>> extract_abstractions();
 
     std::vector<CartesianHeuristicFunction> extract_heuristic_functions();
     

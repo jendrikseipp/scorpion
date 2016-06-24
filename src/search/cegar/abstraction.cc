@@ -72,7 +72,8 @@ Abstraction::Abstraction(
     bool use_general_costs,
     PickSplit pick,
     bool debug)
-    : task_proxy(*task),
+    : task(task),
+      task_proxy(*task),
       max_states(max_states),
       use_general_costs(use_general_costs),
       abstract_search(get_operator_costs(task_proxy), states),

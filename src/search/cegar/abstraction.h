@@ -28,6 +28,7 @@ struct Flaw;
 class Abstraction {
     friend class TransitionSystem;
 
+    const std::shared_ptr<AbstractTask> task;
     const TaskProxy task_proxy;
     const int max_states;
     const bool use_general_costs;
@@ -111,6 +112,10 @@ public:
 
     Abstraction(const Abstraction &) = delete;
     Abstraction &operator=(const Abstraction &) = delete;
+
+    std::shared_ptr<AbstractTask> get_task() const {
+        return task;
+    }
 
     RefinementHierarchy extract_refinement_hierarchy() {
         assert(refinement_hierarchy.get_root());
