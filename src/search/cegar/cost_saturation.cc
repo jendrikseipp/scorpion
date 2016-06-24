@@ -123,7 +123,7 @@ void CostSaturation::build_abstractions(
         subtask = get_remaining_costs_task(subtask);
 
         assert(num_states < max_states);
-        Abstraction abstraction(
+        unique_ptr<Abstraction> abstraction = utils::make_unique_ptr<Abstraction>(
             subtask,
             max(1, (max_states - num_states) / rem_subtasks),
             timer.get_remaining_time() / rem_subtasks,
@@ -131,25 +131,25 @@ void CostSaturation::build_abstractions(
             pick_split);
 
         ++num_abstractions;
-        num_states += abstraction.get_num_states();
+        num_states += abstraction->get_num_states();
         assert(num_states <= max_states);
 
         // Always reduce costs, even for OCP. Then OCP dominates SCP.
-        reduce_remaining_costs(abstraction.get_saturated_costs());
+        reduce_remaining_costs(abstraction->get_saturated_costs());
 
         if (cost_partitioning_type == CostPartitioningType::SATURATED) {
-            int init_h = abstraction.get_h_value_of_initial_state();
+            int init_h = abstraction->get_h_value_of_initial_state();
             if (init_h > 0) {
                 heuristic_functions.emplace_back(
                     subtask,
-                    abstraction.extract_refinement_hierarchy(),
-                    abstraction.compute_h_map());
+                    abstraction->extract_refinement_hierarchy(),
+                    abstraction->compute_h_map());
             }
         } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
             assert(TaskProxy(*subtask).get_operators().size() ==
                    TaskProxy(*task).get_operators().size());
             transition_systems.push_back(
-                make_shared<TransitionSystem>(subtask, move(abstraction)));
+                make_shared<TransitionSystem>(subtask, move(*abstraction)));
         } else {
             ABORT("Invalid cost partitioning type");
         }
