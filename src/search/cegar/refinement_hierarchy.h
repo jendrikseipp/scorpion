@@ -14,7 +14,7 @@ class Node;
 /*
   This class stores the refinement hierarchy of a Cartesian abstraction.
 
-  It is used for efficient lookup of heuristic values during search.
+  It is used for efficient lookup of abstract states during search.
 
   Inner nodes correspond to abstract states that have been split (or
   helper nodes, see below). Leaf nodes correspond to the current
@@ -54,9 +54,6 @@ class Node {
     int var;
     int value;
 
-    // Estimated cost to nearest goal state from this node's state.
-    int h;
-
 public:
     Node();
     ~Node();
@@ -90,15 +87,6 @@ public:
     }
 
     Node *get_child(int value) const;
-
-    void increase_h_value_to(int new_h) {
-        assert(new_h >= h);
-        h = new_h;
-    }
-
-    int get_h_value() const {
-        return h;
-    }
 };
 }
 

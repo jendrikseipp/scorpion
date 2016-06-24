@@ -47,6 +47,11 @@ TransitionSystem::TransitionSystem(
     for (AbstractState *goal : abstraction.goals) {
         goal_indices.push_back(state_to_id[goal]);
     }
+
+    // Store heuristic values.
+    for (AbstractState *state : abstraction.states) {
+        h_values.push_back(state->get_h_value());
+    }
 }
 
 int TransitionSystem::get_abstract_state_index(
@@ -59,7 +64,7 @@ int TransitionSystem::get_abstract_state_index(
 bool TransitionSystem::is_dead_end(const State &concrete_state) const {
     State abstract_state = task_proxy.convert_ancestor_state(concrete_state);
     Node *node = refinement_hierarchy.get_node(abstract_state);
-    return node->get_h_value() == std::numeric_limits<int>::max();
+    return h_values[node_to_state_id.at(node)] == std::numeric_limits<int>::max();
 }
 
 bool TransitionSystem::induces_self_loop(int op_id) const {

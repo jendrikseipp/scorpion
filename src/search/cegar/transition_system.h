@@ -35,6 +35,7 @@ class TransitionSystem {
     int num_states;
     const RefinementHierarchy refinement_hierarchy;
     std::unordered_map<Node *, int> node_to_state_id;
+    std::vector<int> h_values;
     std::vector<bool> operator_induces_self_loop;
     std::vector<Transition> transitions;
     std::vector<int> goal_indices;

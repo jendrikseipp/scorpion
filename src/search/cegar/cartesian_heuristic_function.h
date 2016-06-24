@@ -6,6 +6,7 @@
 #include "../task_proxy.h"
 
 #include <memory>
+#include <unordered_map>
 
 class AbstractTask;
 class State;
@@ -16,10 +17,13 @@ class CartesianHeuristicFunction {
     TaskProxy task_proxy;
     // Note: for move-semantics to work, this member can't be const.
     RefinementHierarchy refinement_hierarchy;
+    std::unordered_map<const Node *, int> h_map;
+
 public:
     CartesianHeuristicFunction(
         const std::shared_ptr<AbstractTask> &task,
-        RefinementHierarchy &&hierarchy);
+        RefinementHierarchy &&hierarchy,
+        std::unordered_map<const Node *, int> &&h_map);
     ~CartesianHeuristicFunction() = default;
 
     CartesianHeuristicFunction(CartesianHeuristicFunction &&other) = default;

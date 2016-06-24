@@ -102,6 +102,14 @@ Abstraction::~Abstraction() {
         delete state;
 }
 
+unordered_map<const Node *, int> Abstraction::compute_h_map() const {
+    unordered_map<const Node *, int> h_map;
+    for (const AbstractState *state: states) {
+        h_map[state->get_node()] = state->get_h_value();
+    }
+    return h_map;
+}
+
 bool Abstraction::is_goal(AbstractState *state) const {
     return goals.count(state) == 1;
 }

@@ -224,7 +224,7 @@ pair<AbstractState *, AbstractState *> AbstractState::split(
     split_loops(var, v1, v2);
 
     // Since h-values only increase we can assign the h-value to the children.
-    int h = node->get_h_value();
+    int h = get_h_value();
     v1->set_h_value(h);
     v2->set_h_value(h);
 
@@ -261,13 +261,11 @@ bool AbstractState::is_more_general_than(const AbstractState &other) const {
 }
 
 void AbstractState::set_h_value(int new_h) {
-    assert(node);
-    node->increase_h_value_to(new_h);
+    search_info.increase_h_value_to(new_h);
 }
 
 int AbstractState::get_h_value() const {
-    assert(node);
-    return node->get_h_value();
+    return search_info.get_h_value();
 }
 
 AbstractState *AbstractState::get_trivial_abstract_state(

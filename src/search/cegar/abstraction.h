@@ -12,6 +12,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -115,6 +116,8 @@ public:
         assert(refinement_hierarchy.get_root());
         return std::move(refinement_hierarchy);
     }
+
+    std::unordered_map<const Node *, int> compute_h_map() const;
 
     int get_num_states() const {
         return states.size();

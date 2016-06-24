@@ -142,7 +142,8 @@ void CostSaturation::build_abstractions(
             if (init_h > 0) {
                 heuristic_functions.emplace_back(
                     subtask,
-                    abstraction.extract_refinement_hierarchy());
+                    abstraction.extract_refinement_hierarchy(),
+                    abstraction.compute_h_map());
             }
         } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
             assert(TaskProxy(*subtask).get_operators().size() ==

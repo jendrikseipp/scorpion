@@ -21,13 +21,15 @@ using Loops = std::vector<int>;
 
 class AbstractSearchInfo {
     int g;
+    int h;
     Arc incoming_arc;
 
     static const int UNDEFINED_OPERATOR;
 
 public:
     AbstractSearchInfo()
-        : incoming_arc(UNDEFINED_OPERATOR, nullptr) {
+        : h(0),
+          incoming_arc(UNDEFINED_OPERATOR, nullptr) {
         reset();
     }
 
@@ -45,6 +47,15 @@ public:
 
     int get_g_value() const {
         return g;
+    }
+
+    void increase_h_value_to(int new_h) {
+        assert(new_h >= h);
+        h = new_h;
+    }
+
+    int get_h_value() const {
+        return h;
     }
 
     void set_incoming_arc(const Arc &arc) {
@@ -125,6 +136,10 @@ public:
     const Loops &get_loops() const {return loops; }
 
     AbstractSearchInfo &get_search_info() {return search_info; }
+
+    const Node *get_node() const {
+        return node;
+    }
 
     friend std::ostream &operator<<(std::ostream &os, const AbstractState &state) {
         return os << state.domains;
