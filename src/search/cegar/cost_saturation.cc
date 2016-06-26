@@ -18,6 +18,7 @@
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/memory.h"
+#include "../utils/rng.h"
 
 #include <algorithm>
 #include <cassert>
@@ -272,6 +273,10 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "use_general_costs",
         "allow negative costs in cost partitioning",
         "true");
+    parser.add_option<int>(
+        "orders",
+        "number of abstraction orders to maximize over",
+        "1");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -303,7 +308,22 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
-        return create_additive_cartesian_heuristic(abstractions, heuristic_opts);
+        int num_orders = opts.get<int>("orders");
+        if (num_orders == 1) {
+            return create_additive_cartesian_heuristic(
+                abstractions, heuristic_opts);
+        }
+
+        vector<ScalarEvaluator *> additive_heuristics;
+        for (int order = 0; order < num_orders; ++order) {
+            g_rng()->shuffle(abstractions);
+            additive_heuristics.push_back(
+                create_additive_cartesian_heuristic(abstractions, heuristic_opts));
+        }
+
+        Options max_evaluator_opts;
+        max_evaluator_opts.set("evals", additive_heuristics);
+        return new max_evaluator::MaxEvaluator(max_evaluator_opts);
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
