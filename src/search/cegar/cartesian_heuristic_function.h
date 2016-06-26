@@ -16,13 +16,13 @@ class CartesianHeuristicFunction {
     const std::shared_ptr<AbstractTask> task;
     TaskProxy task_proxy;
     // Note: for move-semantics to work, this member can't be const.
-    RefinementHierarchy refinement_hierarchy;
+    std::shared_ptr<RefinementHierarchy> refinement_hierarchy;
     std::unordered_map<const Node *, int> h_map;
 
 public:
     CartesianHeuristicFunction(
         const std::shared_ptr<AbstractTask> &task,
-        RefinementHierarchy &&hierarchy,
+        const std::shared_ptr<RefinementHierarchy> &hierarchy,
         std::unordered_map<const Node *, int> &&h_map);
     ~CartesianHeuristicFunction() = default;
 

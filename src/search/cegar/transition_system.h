@@ -33,7 +33,7 @@ class TransitionSystem {
     std::shared_ptr<AbstractTask> task;
     TaskProxy task_proxy;
     int num_states;
-    const RefinementHierarchy refinement_hierarchy;
+    const std::shared_ptr<RefinementHierarchy> refinement_hierarchy;
     std::unordered_map<Node *, int> node_to_state_id;
     std::vector<int> h_values;
     std::vector<bool> operator_induces_self_loop;

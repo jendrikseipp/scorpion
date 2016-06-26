@@ -18,7 +18,7 @@ TransitionSystem::TransitionSystem(
       : task(task),
         task_proxy(*task),
         num_states(abstraction.get_num_states()),
-        refinement_hierarchy(abstraction.extract_refinement_hierarchy()),
+        refinement_hierarchy(abstraction.get_refinement_hierarchy()),
         operator_induces_self_loop(task_proxy.get_operators().size(), false) {
 
     unordered_map<AbstractState *, int> state_to_id;
@@ -57,13 +57,13 @@ TransitionSystem::TransitionSystem(
 int TransitionSystem::get_abstract_state_index(
     const State &concrete_state) const {
     State abstract_state = task_proxy.convert_ancestor_state(concrete_state);
-    Node *node = refinement_hierarchy.get_node(abstract_state);
+    Node *node = refinement_hierarchy->get_node(abstract_state);
     return node_to_state_id.at(node);
 }
 
 bool TransitionSystem::is_dead_end(const State &concrete_state) const {
     State abstract_state = task_proxy.convert_ancestor_state(concrete_state);
-    Node *node = refinement_hierarchy.get_node(abstract_state);
+    Node *node = refinement_hierarchy->get_node(abstract_state);
     return h_values[node_to_state_id.at(node)] == std::numeric_limits<int>::max();
 }
 

@@ -83,6 +83,7 @@ Abstraction::Abstraction(
       deviations(0),
       unmet_preconditions(0),
       unmet_goals(0),
+      refinement_hierarchy(make_shared<RefinementHierarchy>()),
       debug(debug) {
     assert(max_states >= 1);
     g_log << "Start building abstraction." << endl;
@@ -141,7 +142,7 @@ void Abstraction::separate_facts_unreachable_before_goal() {
 
 void Abstraction::create_trivial_abstraction() {
     init = AbstractState::get_trivial_abstract_state(
-        task_proxy, refinement_hierarchy.get_root());
+        task_proxy, refinement_hierarchy->get_root());
     goals.insert(init);
     states.insert(init);
 }

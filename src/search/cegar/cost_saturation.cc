@@ -148,7 +148,7 @@ void CostSaturation::build_abstractions(
             if (init_h > 0) {
                 heuristic_functions.emplace_back(
                     subtask,
-                    abstraction->extract_refinement_hierarchy(),
+                    abstraction->get_refinement_hierarchy(),
                     abstraction->compute_h_map());
             }
         } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
@@ -287,7 +287,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             abstraction->set_operator_costs(remaining_costs);
             heuristic_functions.emplace_back(
                 abstraction->get_task(),
-                abstraction->extract_refinement_hierarchy(),
+                abstraction->get_refinement_hierarchy(),
                 abstraction->compute_h_map());
             reduce_costs(remaining_costs, abstraction->get_saturated_costs());
         }

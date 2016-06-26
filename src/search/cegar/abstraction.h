@@ -63,7 +63,7 @@ class Abstraction {
 
     /* DAG with inner nodes for all split states and leaves for all
        current states. */
-    RefinementHierarchy refinement_hierarchy;
+    std::shared_ptr<RefinementHierarchy> refinement_hierarchy;
 
     const bool debug;
 
@@ -117,9 +117,8 @@ public:
         return task;
     }
 
-    RefinementHierarchy extract_refinement_hierarchy() {
-        assert(refinement_hierarchy.get_root());
-        return std::move(refinement_hierarchy);
+    std::shared_ptr<RefinementHierarchy> get_refinement_hierarchy() {
+        return refinement_hierarchy;
     }
 
     std::unordered_map<const Node *, int> compute_h_map() const;
