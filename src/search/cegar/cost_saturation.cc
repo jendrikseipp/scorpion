@@ -11,6 +11,8 @@
 #include "../plugin.h"
 #include "../task_tools.h"
 
+#include "../evaluators/max_evaluator.h"
+
 #include "../tasks/modified_operator_costs_task.h"
 
 #include "../utils/logging.h"
@@ -138,8 +140,7 @@ void CostSaturation::build_abstractions(
         num_states += abstraction->get_num_states();
         assert(num_states <= max_states);
 
-        // Reduce costs for OCP to make it dominate SCP.
-        if (cost_partitioning_type != CostPartitioningType::SATURATED_POSTHOC) {
+        if (cost_partitioning_type == CostPartitioningType::SATURATED) {
             reduce_costs(remaining_costs, abstraction->get_saturated_costs());
         }
 
@@ -151,7 +152,9 @@ void CostSaturation::build_abstractions(
                     abstraction->get_refinement_hierarchy(),
                     abstraction->compute_h_map());
             }
-        } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
+        } else if (
+            cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
+            cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
             int init_h = abstraction->get_h_value_of_initial_state();
             if (init_h > 0) {
                 abstractions.push_back(move(abstraction));
@@ -178,6 +181,27 @@ void CostSaturation::print_statistics() const {
          << heuristic_functions.size() << endl;
     cout << "Cartesian states: " << num_states << endl;
     cout << endl;
+}
+
+static AdditiveCartesianHeuristic *create_additive_cartesian_heuristic(
+    vector<unique_ptr<Abstraction>> &abstractions,
+    const Options &opts) {
+    shared_ptr<AbstractTask> task(get_task_from_options(opts));
+
+    vector<int> remaining_costs;
+    for (OperatorProxy op : TaskProxy(*task).get_operators())
+        remaining_costs.push_back(op.get_cost());
+
+    vector<CartesianHeuristicFunction> heuristic_functions;
+    for (unique_ptr<Abstraction> &abstraction : abstractions) {
+        abstraction->set_operator_costs(remaining_costs);
+        heuristic_functions.emplace_back(
+            abstraction->get_task(),
+            abstraction->get_refinement_hierarchy(),
+            abstraction->compute_h_map());
+        reduce_costs(remaining_costs, abstraction->get_saturated_costs());
+    }
+    return new AdditiveCartesianHeuristic(opts, move(heuristic_functions));
 }
 
 static ScalarEvaluator *_parse(OptionParser &parser) {
@@ -238,6 +262,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     vector<string> cp_types;
     cp_types.push_back("SATURATED");
     cp_types.push_back("SATURATED_POSTHOC");
+    cp_types.push_back("SATURATED_MAX");
     cp_types.push_back("OPTIMAL");
     cp_types.push_back("OPTIMAL_OPERATOR_COUNTING");
     parser.add_enum_option(
@@ -276,23 +301,22 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
-        vector<int> remaining_costs;
-        for (OperatorProxy op : TaskProxy(*task).get_operators())
-            remaining_costs.push_back(op.get_cost());
-
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
-        vector<CartesianHeuristicFunction> heuristic_functions;
-        for (unique_ptr<Abstraction> &abstraction : abstractions) {
-            abstraction->set_operator_costs(remaining_costs);
-            heuristic_functions.emplace_back(
-                abstraction->get_task(),
-                abstraction->get_refinement_hierarchy(),
-                abstraction->compute_h_map());
-            reduce_costs(remaining_costs, abstraction->get_saturated_costs());
-        }
-        return new AdditiveCartesianHeuristic(
-            heuristic_opts, move(heuristic_functions));
+        return create_additive_cartesian_heuristic(abstractions, heuristic_opts);
+    } else if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
+        vector<unique_ptr<Abstraction>> abstractions =
+            cost_saturation.extract_abstractions();
+        sort(abstractions.begin(), abstractions.end());
+        vector<ScalarEvaluator *> additive_heuristics;
+        do {
+            additive_heuristics.push_back(
+                create_additive_cartesian_heuristic(abstractions, heuristic_opts));
+        } while (next_permutation(abstractions.begin(), abstractions.end()));
+
+        Options max_evaluator_opts;
+        max_evaluator_opts.set("evals", additive_heuristics);
+        return new max_evaluator::MaxEvaluator(max_evaluator_opts);
     } else {
         ABORT("Invalid cost partitioning type");
     }

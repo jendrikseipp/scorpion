@@ -66,6 +66,7 @@ class TransitionSystem;
 enum class CostPartitioningType {
     SATURATED,
     SATURATED_POSTHOC,
+    SATURATED_MAX,
     OPTIMAL
 };
 
