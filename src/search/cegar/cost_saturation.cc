@@ -35,6 +35,27 @@ namespace cegar {
 */
 static const int memory_padding_in_mb = 75;
 
+static void reduce_costs(
+    vector<int> &remaining_costs, const vector<int> &saturated_costs) {
+    assert(remaining_costs.size() == saturated_costs.size());
+    for (size_t i = 0; i < remaining_costs.size(); ++i) {
+        int &remaining = remaining_costs[i];
+        const int &saturated = saturated_costs[i];
+        assert(saturated <= remaining);
+        /* Since we ignore transitions from states s with h(s)=INF, all
+           saturated costs (h(s)-h(s')) are finite or -INF. */
+        assert(saturated != INF);
+        if (remaining == INF) {
+            // INF - x = INF for finite values x.
+        } else if (saturated == -INF) {
+            remaining = INF;
+        } else {
+            remaining -= saturated;
+        }
+        assert(remaining >= 0);
+    }
+}
+
 CostSaturation::CostSaturation(const Options &opts)
     : task(get_task_from_options(opts)),
       subtask_generators(opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks")),
@@ -77,27 +98,6 @@ vector<CartesianHeuristicFunction> CostSaturation::extract_heuristic_functions()
     return move(heuristic_functions);
 }
 
-void CostSaturation::reduce_remaining_costs(
-    const vector<int> &saturated_costs) {
-    assert(remaining_costs.size() == saturated_costs.size());
-    for (size_t i = 0; i < remaining_costs.size(); ++i) {
-        int &remaining = remaining_costs[i];
-        const int &saturated = saturated_costs[i];
-        assert(saturated <= remaining);
-        /* Since we ignore transitions from states s with h(s)=INF, all
-           saturated costs (h(s)-h(s')) are finite or -INF. */
-        assert(saturated != INF);
-        if (remaining == INF) {
-            // INF - x = INF for finite values x.
-        } else if (saturated == -INF) {
-            remaining = INF;
-        } else {
-            remaining -= saturated;
-        }
-        assert(remaining >= 0);
-    }
-}
-
 shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
     shared_ptr<AbstractTask> &parent) const {
     vector<int> costs = remaining_costs;
@@ -138,8 +138,10 @@ void CostSaturation::build_abstractions(
         num_states += abstraction->get_num_states();
         assert(num_states <= max_states);
 
-        // Always reduce costs, even for OCP. Then OCP dominates SCP.
-        reduce_remaining_costs(abstraction->get_saturated_costs());
+        // Reduce costs for OCP to make it dominate SCP.
+        if (cost_partitioning_type != CostPartitioningType::SATURATED_POSTHOC) {
+            reduce_costs(remaining_costs, abstraction->get_saturated_costs());
+        }
 
         if (cost_partitioning_type == CostPartitioningType::SATURATED) {
             int init_h = abstraction->get_h_value_of_initial_state();
@@ -253,9 +255,10 @@ static Heuristic *_parse(OptionParser &parser) {
 
     CostSaturation cost_saturation(opts);
 
+    shared_ptr<AbstractTask> task(get_task_from_options(opts));
     Options heuristic_opts;
     heuristic_opts.set<shared_ptr<AbstractTask>>(
-        "transform", get_task_from_options(opts));
+        "transform", task);
     heuristic_opts.set<int>(
         "cost_type", NORMAL);
     heuristic_opts.set<bool>(
@@ -273,14 +276,20 @@ static Heuristic *_parse(OptionParser &parser) {
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
+        vector<int> remaining_costs;
+        for (OperatorProxy op : TaskProxy(*task).get_operators())
+            remaining_costs.push_back(op.get_cost());
+
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
         vector<CartesianHeuristicFunction> heuristic_functions;
         for (unique_ptr<Abstraction> &abstraction : abstractions) {
+            abstraction->set_operator_costs(remaining_costs);
             heuristic_functions.emplace_back(
                 abstraction->get_task(),
                 abstraction->extract_refinement_hierarchy(),
                 abstraction->compute_h_map());
+            reduce_costs(remaining_costs, abstraction->get_saturated_costs());
         }
         return new AdditiveCartesianHeuristic(
             heuristic_opts, move(heuristic_functions));

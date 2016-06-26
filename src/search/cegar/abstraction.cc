@@ -282,7 +282,7 @@ unique_ptr<Flaw> Abstraction::find_flaw(const Solution &solution) {
 void Abstraction::update_h_and_g_values() {
     abstract_search.backwards_dijkstra(goals);
     for (AbstractState *state : states) {
-        state->set_h_value(state->get_search_info().get_g_value());
+        state->increase_h_value_to(state->get_search_info().get_g_value());
     }
     // Update g values.
     // TODO: updating h values overwrites g values. Find better solution.
@@ -291,6 +291,14 @@ void Abstraction::update_h_and_g_values() {
 
 int Abstraction::get_h_value_of_initial_state() const {
     return init->get_h_value();
+}
+
+void Abstraction::set_operator_costs(const vector<int> &new_costs) {
+    abstract_search.set_operator_costs(new_costs);
+    abstract_search.backwards_dijkstra(goals);
+    for (AbstractState *state : states) {
+        state->set_h_value(state->get_search_info().get_g_value());
+    }
 }
 
 vector<int> Abstraction::get_saturated_costs() {

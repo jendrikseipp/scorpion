@@ -54,6 +54,10 @@ public:
         h = new_h;
     }
 
+    void set_h_value(int new_h) {
+        h = new_h;
+    }
+
     int get_h_value() const {
         return h;
     }
@@ -128,6 +132,7 @@ public:
 
     bool includes(const State &concrete_state) const;
 
+    void increase_h_value_to(int new_h);
     void set_h_value(int new_h);
     int get_h_value() const;
 
@@ -156,7 +161,7 @@ public:
 
     // Create the Cartesian set that corresponds to the given fact conditions.
     static AbstractState get_abstract_state(
-        const TaskProxy &task_proxy, const ConditionsProxy &conditions);
+            const TaskProxy &task_proxy, const ConditionsProxy &conditions);
 };
 }
 

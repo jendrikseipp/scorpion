@@ -51,6 +51,11 @@ void AbstractSearch::backwards_dijkstra(const AbstractStates goals) {
     astar_search(false, false);
 }
 
+void AbstractSearch::set_operator_costs(const vector<int> &costs) {
+    operator_costs = costs;
+    reset();
+}
+
 AbstractState *AbstractSearch::astar_search(
     bool forward, bool use_h, AbstractStates *goals) {
     assert((forward && use_h && goals) ||
@@ -110,7 +115,7 @@ void AbstractSearch::extract_solution(AbstractState *init, AbstractState *goal) 
         assert(utils::in_bounds(prev.op_id, operator_costs));
         const int prev_op_cost = operator_costs[prev.op_id];
         assert(prev_op_cost != INF);
-        prev.target->set_h_value(current->get_h_value() + prev_op_cost);
+        prev.target->increase_h_value_to(current->get_h_value() + prev_op_cost);
         assert(prev.target != current);
         current = prev.target;
     }

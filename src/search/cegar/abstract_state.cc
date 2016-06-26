@@ -225,8 +225,8 @@ pair<AbstractState *, AbstractState *> AbstractState::split(
 
     // Since h-values only increase we can assign the h-value to the children.
     int h = get_h_value();
-    v1->set_h_value(h);
-    v2->set_h_value(h);
+    v1->increase_h_value_to(h);
+    v2->increase_h_value_to(h);
 
     return make_pair(v1, v2);
 }
@@ -260,8 +260,12 @@ bool AbstractState::is_more_general_than(const AbstractState &other) const {
     return domains.is_superset_of(other.domains);
 }
 
-void AbstractState::set_h_value(int new_h) {
+void AbstractState::increase_h_value_to(int new_h) {
     search_info.increase_h_value_to(new_h);
+}
+
+void AbstractState::set_h_value(int new_h) {
+    search_info.set_h_value(new_h);
 }
 
 int AbstractState::get_h_value() const {

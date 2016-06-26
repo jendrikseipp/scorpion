@@ -135,6 +135,8 @@ public:
     std::vector<int> get_saturated_costs();
 
     int get_h_value_of_initial_state() const;
+
+    void set_operator_costs(const std::vector<int> &new_costs);
 };
 }
 

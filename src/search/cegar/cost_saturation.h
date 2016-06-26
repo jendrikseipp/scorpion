@@ -85,7 +85,6 @@ class CostSaturation {
     int num_states;
     State initial_state;
 
-    void reduce_remaining_costs(const std::vector<int> &saturated_costs);
     std::shared_ptr<AbstractTask> get_remaining_costs_task(
         std::shared_ptr<AbstractTask> &parent) const;
     bool initial_state_is_dead_end() const;

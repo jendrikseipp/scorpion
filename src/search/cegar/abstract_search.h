@@ -16,7 +16,7 @@ using AbstractStates = std::unordered_set<AbstractState *>;
 using Solution = std::deque<Arc>;
 
 class AbstractSearch {
-    const std::vector<int> operator_costs;
+    std::vector<int> operator_costs;
     AbstractStates &states;
 
     AdaptiveQueue<AbstractState *> open_queue;
@@ -45,6 +45,8 @@ public:
     const Solution &get_solution() {
         return solution;
     }
+
+    void set_operator_costs(const std::vector<int> &costs);
 };
 }
 
