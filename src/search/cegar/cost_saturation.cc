@@ -180,7 +180,7 @@ void CostSaturation::print_statistics() const {
     cout << endl;
 }
 
-static Heuristic *_parse(OptionParser &parser) {
+static ScalarEvaluator *_parse(OptionParser &parser) {
     parser.document_synopsis(
         "Additive CEGAR heuristic",
         "See the paper introducing Counterexample-guided Abstraction "
@@ -298,5 +298,5 @@ static Heuristic *_parse(OptionParser &parser) {
     }
 }
 
-static Plugin<Heuristic> _plugin("cegar", _parse);
+static Plugin<ScalarEvaluator> _plugin("cegar", _parse);
 }
