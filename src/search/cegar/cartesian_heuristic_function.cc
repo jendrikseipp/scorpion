@@ -1,5 +1,7 @@
 #include "cartesian_heuristic_function.h"
 
+#include "refinement_hierarchy.h"
+
 using namespace std;
 
 namespace cegar {
