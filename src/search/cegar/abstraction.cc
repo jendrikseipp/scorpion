@@ -150,7 +150,7 @@ void Abstraction::create_trivial_abstraction() {
 bool Abstraction::may_keep_refining() const {
     /* TODO: Think about whether we really want to go to the memory limit.
        Without doing so, the algorithm would be more deterministic. */
-    return utils::extra_memory_padding_is_reserved() &&
+    return !utils::is_out_of_memory() &&
            get_num_states() < max_states &&
            !timer.is_expired();
 }
@@ -233,7 +233,7 @@ unique_ptr<Flaw> Abstraction::find_flaw(const Solution &solution) {
         cout << "  Initial abstract state: " << *abstract_state << endl;
 
     for (const Arc &step : solution) {
-        if (!utils::extra_memory_padding_is_reserved())
+        if (utils::is_out_of_memory())
             break;
         OperatorProxy op = task_proxy.get_operators()[step.op_id];
         AbstractState *next_abstract_state = step.target;

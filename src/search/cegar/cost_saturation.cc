@@ -86,7 +86,7 @@ void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
         [&] () {
             return num_states >= max_states ||
                    timer.is_expired() ||
-                   !utils::extra_memory_padding_is_reserved() ||
+                   utils::is_out_of_memory() ||
                    state_is_dead_end(initial_state);
         };
 
