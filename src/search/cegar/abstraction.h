@@ -25,6 +25,12 @@ namespace cegar {
 class AbstractState;
 struct Flaw;
 
+/*
+  Store the set of AbstractStates, use AbstractSearch to find abstract
+  solutions, find flaws, use SplitSelector to select splits in case of
+  ambiguities, break spurious solutions and maintain the
+  RefinementHierarchy.
+*/
 class Abstraction {
     friend class TransitionSystem;
 
@@ -101,7 +107,7 @@ class Abstraction {
     void print_statistics();
 
 public:
-    explicit Abstraction(
+    Abstraction(
         const std::shared_ptr<AbstractTask> task,
         int max_states,
         double max_time,
@@ -111,7 +117,6 @@ public:
     ~Abstraction();
 
     Abstraction(const Abstraction &) = delete;
-    Abstraction &operator=(const Abstraction &) = delete;
 
     std::shared_ptr<AbstractTask> get_task() const {
         return task;

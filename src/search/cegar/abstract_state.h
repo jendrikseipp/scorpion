@@ -33,8 +33,6 @@ public:
         reset();
     }
 
-    ~AbstractSearchInfo() = default;
-
     void reset() {
         g = std::numeric_limits<int>::max();
         incoming_arc = Arc(UNDEFINED_OPERATOR, nullptr);
@@ -72,6 +70,9 @@ public:
     }
 };
 
+/*
+  Store and update abstract Domains and transitions.
+*/
 class AbstractState {
 private:
     friend class TransitionSystem;
@@ -114,6 +115,10 @@ private:
     bool is_more_general_than(const AbstractState &other) const;
 
 public:
+    AbstractState(const AbstractState &) = delete;
+
+    AbstractState(AbstractState &&other);
+
     // Return the size of var's abstract domain for this state.
     int count(int var) const;
 

@@ -33,6 +33,10 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     : Heuristic(opts),
       abstractions(move(abstractions)),
       allow_negative_costs(opts.get<bool>("use_general_costs")) {
+    if (TaskProxy(*task).get_operators().size() != g_operators.size()) {
+        ABORT("OptimalCostPartitioningHeuristic doesn't work for task "
+              "transformations that add or remove operators");
+    }
     utils::Timer timer;
     lp_solver = lp::create_lp_solver(lp::LPSolverType(opts.get_enum("lpsolver")));
     lp_solver->messageHandler()->setLogLevel(0);

@@ -3,26 +3,20 @@
 #include "abstraction.h"
 #include "additive_cartesian_heuristic.h"
 #include "cartesian_heuristic_function.h"
-#include "ocp_heuristic.h"
 #include "subtask_generators.h"
+#include "transition_system.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
 #include "../task_tools.h"
-
-#include "../evaluators/max_evaluator.h"
 
 #include "../tasks/modified_operator_costs_task.h"
 
+#include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
-#include "../utils/markup.h"
 #include "../utils/memory.h"
-#include "../utils/rng.h"
 
 #include <algorithm>
 #include <cassert>
-#include <string>
 
 using namespace std;
 
@@ -38,7 +32,7 @@ namespace cegar {
 */
 static const int memory_padding_in_mb = 75;
 
-static void reduce_costs(
+void reduce_costs(
     vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
     for (size_t i = 0; i < remaining_costs.size(); ++i) {
@@ -59,33 +53,48 @@ static void reduce_costs(
     }
 }
 
-CostSaturation::CostSaturation(const Options &opts)
-    : task(get_task_from_options(opts)),
-      subtask_generators(opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks")),
-      max_states(opts.get<int>("max_states")),
-      timer(opts.get<double>("max_time")),
-      cost_partitioning_type(
-          static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"))),
-      use_general_costs(opts.get<bool>("use_general_costs")),
-      pick_split(static_cast<PickSplit>(opts.get<int>("pick"))),
+CostSaturation::CostSaturation(
+    CostPartitioningType cost_partitioning_type,
+    vector<shared_ptr<SubtaskGenerator>> subtask_generators,
+    int max_states,
+    double max_time,
+    bool use_general_costs,
+    PickSplit pick_split)
+    : cost_partitioning_type(cost_partitioning_type),
+      subtask_generators(subtask_generators),
+      max_states(max_states),
+      max_time(max_time),
+      use_general_costs(use_general_costs),
+      pick_split(pick_split),
       num_abstractions(0),
-      num_states(0),
-      initial_state(TaskProxy(*task).get_initial_state()) {
-    g_log << "Initializing additive Cartesian heuristic..." << endl;
+      num_states(0) {
+}
+
+void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
+    utils::CountdownTimer timer(max_time);
 
     TaskProxy task_proxy(*task);
 
     verify_no_axioms(task_proxy);
     verify_no_conditional_effects(task_proxy);
 
-    for (OperatorProxy op : task_proxy.get_operators())
-        remaining_costs.push_back(op.get_cost());
+    reset(task_proxy);
+
+    State initial_state = TaskProxy(*task).get_initial_state();
+
+    function<bool()> should_abort =
+        [&] () {
+            return num_states >= max_states ||
+                   timer.is_expired() ||
+                   !utils::extra_memory_padding_is_reserved() ||
+                   state_is_dead_end(initial_state);
+        };
 
     utils::reserve_extra_memory_padding(memory_padding_in_mb);
     for (shared_ptr<SubtaskGenerator> subtask_generator : subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task);
-        build_abstractions(subtasks);
-        if (!may_build_another_abstraction())
+        build_abstractions(subtasks, timer, should_abort);
+        if (should_abort())
             break;
     }
     if (utils::extra_memory_padding_is_reserved())
@@ -93,12 +102,16 @@ CostSaturation::CostSaturation(const Options &opts)
     print_statistics();
 }
 
-std::vector<unique_ptr<Abstraction>> CostSaturation::extract_abstractions() {
-    return move(abstractions);
-}
+void CostSaturation::reset(const TaskProxy &task_proxy) {
+    assert(heuristic_functions.empty());
 
-vector<CartesianHeuristicFunction> CostSaturation::extract_heuristic_functions() {
-    return move(heuristic_functions);
+    remaining_costs.clear();
+    remaining_costs.reserve(task_proxy.get_operators().size());
+    for (OperatorProxy op : task_proxy.get_operators())
+        remaining_costs.push_back(op.get_cost());
+
+    num_abstractions = 0;
+    num_states = 0;
 }
 
 shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
@@ -108,23 +121,18 @@ shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
         parent, move(costs));
 }
 
-bool CostSaturation::initial_state_is_dead_end() const {
-    for (const CartesianHeuristicFunction &func : heuristic_functions) {
-        if (func.get_value(initial_state) == INF)
+bool CostSaturation::state_is_dead_end(const State &state) const {
+    for (const CartesianHeuristicFunction &function : heuristic_functions) {
+        if (function.get_value(state) == INF)
             return true;
     }
     return false;
 }
 
-bool CostSaturation::may_build_another_abstraction() {
-    return num_states < max_states &&
-           !timer.is_expired() &&
-           utils::extra_memory_padding_is_reserved() &&
-           !initial_state_is_dead_end();
-}
-
 void CostSaturation::build_abstractions(
-    const vector<shared_ptr<AbstractTask>> &subtasks) {
+    const vector<shared_ptr<AbstractTask>> &subtasks,
+    const utils::CountdownTimer &timer,
+    function<bool()> should_abort) {
     int rem_subtasks = subtasks.size();
     for (shared_ptr<AbstractTask> subtask : subtasks) {
         subtask = get_remaining_costs_task(subtask);
@@ -161,14 +169,12 @@ void CostSaturation::build_abstractions(
                 abstractions.push_back(move(abstraction));
             }
         } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
-            assert(TaskProxy(*subtask).get_operators().size() ==
-                   TaskProxy(*task).get_operators().size());
             transition_systems.push_back(
                 make_shared<TransitionSystem>(subtask, move(*abstraction)));
         } else {
             ABORT("Invalid cost partitioning type");
         }
-        if (!may_build_another_abstraction())
+        if (should_abort())
             break;
 
         --rem_subtasks;
@@ -183,164 +189,4 @@ void CostSaturation::print_statistics() const {
     cout << "Cartesian states: " << num_states << endl;
     cout << endl;
 }
-
-static AdditiveCartesianHeuristic *create_additive_cartesian_heuristic(
-    vector<unique_ptr<Abstraction>> &abstractions,
-    const Options &opts) {
-    shared_ptr<AbstractTask> task(get_task_from_options(opts));
-
-    vector<int> remaining_costs;
-    for (OperatorProxy op : TaskProxy(*task).get_operators())
-        remaining_costs.push_back(op.get_cost());
-
-    vector<CartesianHeuristicFunction> heuristic_functions;
-    for (unique_ptr<Abstraction> &abstraction : abstractions) {
-        abstraction->set_operator_costs(remaining_costs);
-        heuristic_functions.emplace_back(
-            abstraction->get_task(),
-            abstraction->get_refinement_hierarchy(),
-            abstraction->compute_h_map());
-        reduce_costs(remaining_costs, abstraction->get_saturated_costs());
-    }
-    return new AdditiveCartesianHeuristic(opts, move(heuristic_functions));
-}
-
-static ScalarEvaluator *_parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Additive CEGAR heuristic",
-        "See the paper introducing Counterexample-guided Abstraction "
-        "Refinement (CEGAR) for classical planning:" +
-        utils::format_paper_reference(
-            {"Jendrik Seipp", "Malte Helmert"},
-            "Counterexample-guided Cartesian Abstraction Refinement",
-            "http://ai.cs.unibas.ch/papers/seipp-helmert-icaps2013.pdf",
-            "Proceedings of the 23rd International Conference on Automated "
-            "Planning and Scheduling (ICAPS 2013)",
-            "347-351",
-            "AAAI Press 2013") +
-        "and the paper showing how to make the abstractions additive:" +
-        utils::format_paper_reference(
-            {"Jendrik Seipp", "Malte Helmert"},
-            "Diverse and Additive Cartesian Abstraction Heuristics",
-            "http://ai.cs.unibas.ch/papers/seipp-helmert-icaps2014.pdf",
-            "Proceedings of the 24th International Conference on "
-            "Automated Planning and Scheduling (ICAPS 2014)",
-            "289-297",
-            "AAAI Press 2014"));
-    parser.document_language_support("action costs", "supported");
-    parser.document_language_support("conditional effects", "not supported");
-    parser.document_language_support("axioms", "not supported");
-    parser.document_property("admissible", "yes");
-    // TODO: Is the additive version consistent as well?
-    parser.document_property("consistent", "yes");
-    parser.document_property("safe", "yes");
-    parser.document_property("preferred operators", "no");
-
-    parser.add_list_option<shared_ptr<SubtaskGenerator>>(
-        "subtasks",
-        "subtask generators",
-        "[landmarks(),goals()]");
-    parser.add_option<int>(
-        "max_states",
-        "maximum sum of abstract states over all abstractions",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time in seconds for building abstractions",
-        "900",
-        Bounds("0.0", "infinity"));
-    vector<string> pick_strategies;
-    pick_strategies.push_back("RANDOM");
-    pick_strategies.push_back("MIN_UNWANTED");
-    pick_strategies.push_back("MAX_UNWANTED");
-    pick_strategies.push_back("MIN_REFINED");
-    pick_strategies.push_back("MAX_REFINED");
-    pick_strategies.push_back("MIN_HADD");
-    pick_strategies.push_back("MAX_HADD");
-    parser.add_enum_option(
-        "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
-    vector<string> cp_types;
-    cp_types.push_back("SATURATED");
-    cp_types.push_back("SATURATED_POSTHOC");
-    cp_types.push_back("SATURATED_MAX");
-    cp_types.push_back("OPTIMAL");
-    cp_types.push_back("OPTIMAL_OPERATOR_COUNTING");
-    parser.add_enum_option(
-        "cost_partitioning", cp_types, "cost partitioning method", "SATURATED");
-    lp::add_lp_solver_option_to_parser(parser);
-    parser.add_option<bool>(
-        "use_general_costs",
-        "allow negative costs in cost partitioning",
-        "true");
-    parser.add_option<int>(
-        "orders",
-        "number of abstraction orders to maximize over",
-        "1");
-    Heuristic::add_options_to_parser(parser);
-    Options opts = parser.parse();
-
-    if (parser.dry_run())
-        return nullptr;
-
-    CostSaturation cost_saturation(opts);
-
-    shared_ptr<AbstractTask> task(get_task_from_options(opts));
-    Options heuristic_opts;
-    heuristic_opts.set<shared_ptr<AbstractTask>>(
-        "transform", task);
-    heuristic_opts.set<int>(
-        "cost_type", NORMAL);
-    heuristic_opts.set<bool>(
-        "cache_estimates", opts.get<bool>("cache_estimates"));
-
-    CostPartitioningType cost_partitioning_type =
-        static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"));
-    if (cost_partitioning_type == CostPartitioningType::SATURATED) {
-        return new AdditiveCartesianHeuristic(
-            heuristic_opts, cost_saturation.extract_heuristic_functions());
-    } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
-        heuristic_opts.set<bool>(
-            "use_general_costs", opts.get<bool>("use_general_costs"));
-        heuristic_opts.set<int>("lpsolver", opts.get_enum("lpsolver"));
-        return new OptimalCostPartitioningHeuristic(
-            heuristic_opts, cost_saturation.extract_transition_systems());
-    } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
-        vector<unique_ptr<Abstraction>> abstractions =
-            cost_saturation.extract_abstractions();
-        int num_orders = opts.get<int>("orders");
-        if (num_orders == 1) {
-            return create_additive_cartesian_heuristic(
-                abstractions, heuristic_opts);
-        }
-
-        vector<ScalarEvaluator *> additive_heuristics;
-        for (int order = 0; order < num_orders; ++order) {
-            g_rng()->shuffle(abstractions);
-            additive_heuristics.push_back(
-                create_additive_cartesian_heuristic(abstractions, heuristic_opts));
-        }
-
-        Options max_evaluator_opts;
-        max_evaluator_opts.set("evals", additive_heuristics);
-        return new max_evaluator::MaxEvaluator(max_evaluator_opts);
-    } else if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
-        vector<unique_ptr<Abstraction>> abstractions =
-            cost_saturation.extract_abstractions();
-        sort(abstractions.begin(), abstractions.end());
-        vector<ScalarEvaluator *> additive_heuristics;
-        do {
-            additive_heuristics.push_back(
-                create_additive_cartesian_heuristic(abstractions, heuristic_opts));
-        } while (next_permutation(abstractions.begin(), abstractions.end()));
-
-        Options max_evaluator_opts;
-        max_evaluator_opts.set("evals", additive_heuristics);
-        return new max_evaluator::MaxEvaluator(max_evaluator_opts);
-    } else {
-        ABORT("Invalid cost partitioning type");
-    }
-}
-
-static Plugin<ScalarEvaluator> _plugin("cegar", _parse);
 }
