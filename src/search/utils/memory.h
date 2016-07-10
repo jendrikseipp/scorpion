@@ -28,6 +28,7 @@ std::unique_ptr<T> make_unique_ptr(Args && ... args) {
 extern void reserve_extra_memory_padding(int memory_in_mb);
 extern void release_extra_memory_padding();
 extern bool extra_memory_padding_is_reserved();
+extern bool is_out_of_memory();
 }
 
 #endif
