@@ -133,6 +133,21 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "maximum time in seconds for building abstractions",
         "900",
         Bounds("0.0", "infinity"));
+    /*
+      We reserve some memory to be able to recover from out-of-memory
+      situations gracefully. When the memory runs out, we stop refining and
+      start the next refinement or the search. Due to memory fragmentation
+      the memory used for building the abstraction (states, transitions,
+      etc.) often can't be reused for things that require big continuous
+      blocks of memory. It is for this reason that we require such a large
+      amount of memory padding.
+    */
+    parser.add_option<int>(
+        "extra_memory_padding",
+        "amount of extra memory in MB to reserve for recovering from"
+        " out-of-memory situations gracefully (75 MB work well for CEGAR)",
+        "0",
+        Bounds("0", "infinity"));
     vector<string> pick_strategies;
     pick_strategies.push_back("RANDOM");
     pick_strategies.push_back("MIN_UNWANTED");
@@ -169,6 +184,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     shared_ptr<AbstractTask> task(get_task_from_options(opts));
     CostPartitioningType cost_partitioning_type =
         static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"));
+    int extra_memory_padding_in_mb = opts.get<int>("extra_memory_padding");
 
     Options heuristic_opts;
     heuristic_opts.set<shared_ptr<AbstractTask>>(
@@ -185,7 +201,11 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
         static_cast<PickSplit>(opts.get<int>("pick")));
+    if (extra_memory_padding_in_mb > 0)
+        utils::reserve_extra_memory_padding(extra_memory_padding_in_mb);
     cost_saturation.initialize(task);
+    if (utils::extra_memory_padding_is_reserved())
+        utils::release_extra_memory_padding();
 
     if (cost_partitioning_type == CostPartitioningType::SATURATED) {
         return new AdditiveCartesianHeuristic(

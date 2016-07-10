@@ -21,17 +21,6 @@
 using namespace std;
 
 namespace cegar {
-/*
-  We reserve some memory to be able to recover from out-of-memory
-  situations gracefully. When the memory runs out, we stop refining and
-  start the next refinement or the search. Due to memory fragmentation
-  the memory used for building the abstraction (states, transitions,
-  etc.) often can't be reused for things that require big continuous
-  blocks of memory. It is for this reason that we require such a large
-  amount of memory padding.
-*/
-static const int memory_padding_in_mb = 75;
-
 void reduce_costs(
     vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
@@ -90,15 +79,12 @@ void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
                    state_is_dead_end(initial_state);
         };
 
-    utils::reserve_extra_memory_padding(memory_padding_in_mb);
     for (shared_ptr<SubtaskGenerator> subtask_generator : subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task);
         build_abstractions(subtasks, timer, should_abort);
         if (should_abort())
             break;
     }
-    if (utils::extra_memory_padding_is_reserved())
-        utils::release_extra_memory_padding();
     print_statistics();
 }
 
