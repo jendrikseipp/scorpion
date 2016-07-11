@@ -397,7 +397,7 @@ fast_downward_plugin(
         cegar/transition_updater.cc
         cegar/utils.cc
         cegar/utils_landmarks.cc
-    DEPENDS ADDITIVE_HEURISTIC EXTRA_TASKS LANDMARKS
+    DEPENDS ADDITIVE_HEURISTIC EXTRA_TASKS LANDMARKS MAX_EVALUATOR
 )
 
 fast_downward_plugin(
