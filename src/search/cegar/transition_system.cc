@@ -2,6 +2,7 @@
 
 #include "abstraction.h"
 #include "abstract_state.h"
+#include "utils.h"
 
 #include "../global_state.h"
 #include "../globals.h"
@@ -40,6 +41,11 @@ TransitionSystem::TransitionSystem(
         }
         for (int op_id : state->get_loops()) {
             operator_induces_self_loop[op_id] = true;
+        }
+    }
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        if (operator_is_noop(op)) {
+            operator_induces_self_loop[op.get_id()] = true;
         }
     }
 
