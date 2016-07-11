@@ -19,14 +19,9 @@ OperatorsProxy TransitionUpdater::get_operators() const {
 }
 
 void TransitionUpdater::add_loops_to_trivial_abstract_state(AbstractState *state) {
-    int num_noops = 0;
     for (OperatorProxy op : get_operators()) {
-        if (!operator_is_noop(op))
-            add_loop(state, op.get_id());
-        else
-            ++num_noops;
+        add_loop(state, op.get_id());
     }
-    cout << "No-ops/Ops: " << num_noops << "/" << get_operators().size() << endl;
 }
 
 void TransitionUpdater::add_transition(

@@ -306,12 +306,7 @@ int Abstraction::get_h_value_of_initial_state() const {
 }
 
 void Abstraction::compress_self_loops() {
-    OperatorsProxy operators = task_proxy.get_operators();
-    operator_induces_self_loop.resize(operators.size());
-    for (OperatorProxy op : operators) {
-        if (operator_is_noop(op))
-            operator_induces_self_loop[op.get_id()] = true;
-    }
+    operator_induces_self_loop.resize(task_proxy.get_operators().size());
     for (AbstractState *state : states) {
         for (int op_id : state->get_loops()) {
             operator_induces_self_loop[op_id] = true;

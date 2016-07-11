@@ -38,7 +38,6 @@ extern std::vector<int> get_operator_costs(const TaskProxy &task);
 extern int get_pre(const OperatorProxy &op, int var_id);
 extern int get_eff(const OperatorProxy &op, int var_id);
 extern int get_post(const OperatorProxy &op, int var_id);
-extern bool operator_is_noop(const OperatorProxy &op);
 }
 
 /*
