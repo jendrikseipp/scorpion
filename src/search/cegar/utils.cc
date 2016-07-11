@@ -121,4 +121,15 @@ int get_post(const OperatorProxy &op, int var_id) {
         return eff;
     return get_pre(op, var_id);
 }
+
+bool operator_is_noop(const OperatorProxy &op) {
+    for (EffectProxy effect: op.get_effects()) {
+        FactProxy effect_fact = effect.get_fact();
+        int pre_value = get_pre(op, effect_fact.get_variable().get_id());
+        if (effect_fact.get_value() != pre_value) {
+            return false;
+        }
+    }
+    return true;
+}
 }
