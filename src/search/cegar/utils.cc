@@ -126,7 +126,8 @@ bool operator_is_noop(const OperatorProxy &op) {
     for (EffectProxy effect: op.get_effects()) {
         FactProxy effect_fact = effect.get_fact();
         int pre_value = get_pre(op, effect_fact.get_variable().get_id());
-        if (effect_fact.get_value() != pre_value) {
+        if (effect_fact.get_value() != pre_value &&
+            effect_fact.get_variable().get_domain_size() > 1) {
             return false;
         }
     }
