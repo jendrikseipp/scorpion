@@ -18,15 +18,15 @@ class State;
 namespace cegar {
 class Abstraction;
 
-struct Transition {
+struct ExplicitTransition {
     int start;
     int op;
     int end;
 
-    Transition(int start, int op, int end)
+    ExplicitTransition(int start, int op, int end)
       : start(start), op(op), end(end) {
     }
-    ~Transition() = default;
+    ~ExplicitTransition() = default;
 };
 
 class TransitionSystem {
@@ -37,7 +37,7 @@ class TransitionSystem {
     std::unordered_map<Node *, int> node_to_state_id;
     std::vector<int> h_values;
     std::vector<bool> operator_induces_self_loop;
-    std::vector<Transition> transitions;
+    std::vector<ExplicitTransition> transitions;
     std::vector<int> goal_indices;
 
 public:
@@ -59,7 +59,7 @@ public:
         return goal_indices;
     }
 
-    const std::vector<Transition> &get_transitions() const {
+    const std::vector<ExplicitTransition> &get_transitions() const {
         return transitions;
     }
 

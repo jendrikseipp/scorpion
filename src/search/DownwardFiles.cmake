@@ -385,7 +385,6 @@ fast_downward_plugin(
         cegar/abstract_search.cc
         cegar/abstract_state.cc
         cegar/additive_cartesian_heuristic.cc
-        cegar/arc.cc
         cegar/cartesian_heuristic_function.cc
         cegar/cost_saturation.cc
         cegar/domains.cc
@@ -393,7 +392,9 @@ fast_downward_plugin(
         cegar/refinement_hierarchy.cc
         cegar/split_selector.cc
         cegar/subtask_generators.cc
+        cegar/transition.cc
         cegar/transition_system.cc
+        cegar/transition_updater.cc
         cegar/utils.cc
         cegar/utils_landmarks.cc
     DEPENDS ADDITIVE_HEURISTIC EXTRA_TASKS LANDMARKS

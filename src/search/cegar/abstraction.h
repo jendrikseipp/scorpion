@@ -4,6 +4,7 @@
 #include "abstract_search.h"
 #include "refinement_hierarchy.h"
 #include "split_selector.h"
+#include "transition_updater.h"
 
 #include "../task_proxy.h"
 
@@ -37,10 +38,12 @@ class Abstraction {
     const std::shared_ptr<AbstractTask> task;
     const TaskProxy task_proxy;
     const int max_states;
+    const int max_non_looping_transitions;
     const bool use_general_costs;
 
     AbstractSearch abstract_search;
     SplitSelector split_selector;
+    TransitionUpdater transition_updater;
 
     // Limit the time for building the abstraction.
     utils::CountdownTimer timer;
@@ -110,6 +113,7 @@ public:
     Abstraction(
         const std::shared_ptr<AbstractTask> task,
         int max_states,
+        int max_non_looping_transitions,
         double max_time,
         bool use_general_costs,
         PickSplit pick,
@@ -130,6 +134,10 @@ public:
 
     int get_num_states() const {
         return states.size();
+    }
+
+    int get_num_non_looping_transitions() const {
+        return transition_updater.get_num_non_loops();
     }
 
     /*

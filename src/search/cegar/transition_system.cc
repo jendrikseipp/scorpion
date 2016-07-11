@@ -34,7 +34,7 @@ TransitionSystem::TransitionSystem(
     // Store transitions.
     for (AbstractState *state : abstraction.states) {
         int start = state_to_id[state];
-        for (const Arc &transition : state->get_outgoing_arcs()) {
+        for (const Transition &transition : state->get_outgoing_transitions()) {
             transitions.emplace_back(
                 start, transition.op_id, state_to_id[transition.target]);
         }

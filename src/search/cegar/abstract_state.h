@@ -1,8 +1,8 @@
 #ifndef CEGAR_ABSTRACT_STATE_H
 #define CEGAR_ABSTRACT_STATE_H
 
-#include "arc.h"
 #include "domains.h"
+#include "transition.h"
 
 #include "../task_proxy.h"
 
@@ -14,7 +14,7 @@ namespace cegar {
 class AbstractState;
 class Node;
 
-using Arcs = std::vector<Arc>;
+using Transitions = std::vector<Transition>;
 
 // To save space we store self-loops (operator indices) separately.
 using Loops = std::vector<int>;
@@ -22,20 +22,20 @@ using Loops = std::vector<int>;
 class AbstractSearchInfo {
     int g;
     int h;
-    Arc incoming_arc;
+    Transition incoming_transition;
 
     static const int UNDEFINED_OPERATOR;
 
 public:
     AbstractSearchInfo()
         : h(0),
-          incoming_arc(UNDEFINED_OPERATOR, nullptr) {
+          incoming_transition(UNDEFINED_OPERATOR, nullptr) {
         reset();
     }
 
     void reset() {
         g = std::numeric_limits<int>::max();
-        incoming_arc = Arc(UNDEFINED_OPERATOR, nullptr);
+        incoming_transition = Transition(UNDEFINED_OPERATOR, nullptr);
     }
 
     void decrease_g_value_to(int new_g) {
@@ -60,13 +60,14 @@ public:
         return h;
     }
 
-    void set_incoming_arc(const Arc &arc) {
-        incoming_arc = arc;
+    void set_incoming_transition(const Transition &transition) {
+        incoming_transition = transition;
     }
 
-    const Arc &get_incoming_arc() const {
-        assert(incoming_arc.op_id != UNDEFINED_OPERATOR && incoming_arc.target);
-        return incoming_arc;
+    const Transition &get_incoming_transition() const {
+        assert(incoming_transition.op_id != UNDEFINED_OPERATOR &&
+               incoming_transition.target);
+        return incoming_transition;
     }
 };
 
@@ -74,7 +75,6 @@ public:
   Store and update abstract Domains and transitions.
 */
 class AbstractState {
-private:
     friend class TransitionSystem;
 
     // Since the abstraction owns the state we don't need AbstractTask.
@@ -87,8 +87,8 @@ private:
     Node *node;
 
     // Transitions from and to other abstract states.
-    Arcs incoming_arcs;
-    Arcs outgoing_arcs;
+    Transitions incoming_transitions;
+    Transitions outgoing_transitions;
 
     // Self-loops.
     Loops loops;
@@ -99,18 +99,8 @@ private:
     AbstractState(
         const TaskProxy &task_proxy, const Domains &domains, Node *node);
 
-    void add_arc(int op_id, AbstractState *other);
-    void add_loop(int op_id);
-
-    void remove_arc(Arcs &arcs, int op_id, AbstractState *other);
-    void remove_incoming_arc(int op_id, AbstractState *other);
-    void remove_outgoing_arc(int op_id, AbstractState *other);
-
-    void split_incoming_arcs(int var, AbstractState *v1, AbstractState *v2);
-    void split_outgoing_arcs(int var, AbstractState *v1, AbstractState *v2);
-    void split_loops(int var, AbstractState *v1, AbstractState *v2);
-
-    bool domains_intersect(const AbstractState *other, int var) const;
+    void remove_non_looping_transition(
+        Transitions &transitions, int op_id, AbstractState *other);
 
     bool is_more_general_than(const AbstractState &other) const;
 
@@ -119,10 +109,20 @@ public:
 
     AbstractState(AbstractState &&other);
 
+    void add_outgoing_transition(int op_id, AbstractState *target);
+    void add_incoming_transition(int op_id, AbstractState *src);
+    void add_loop(int op_id);
+
+    void remove_incoming_transition(int op_id, AbstractState *other);
+    void remove_outgoing_transition(int op_id, AbstractState *other);
+
+    bool domains_intersect(const AbstractState *other, int var) const;
+
     // Return the size of var's abstract domain for this state.
     int count(int var) const;
 
     bool contains(FactProxy fact) const;
+    bool contains(int var, int value) const;
 
     // Return the abstract state in which applying "op" leads to this state.
     AbstractState regress(OperatorProxy op) const;
@@ -141,15 +141,23 @@ public:
     void set_h_value(int new_h);
     int get_h_value() const;
 
-    const Arcs &get_outgoing_arcs() const {return outgoing_arcs; }
-    const Arcs &get_incoming_arcs() const {return incoming_arcs; }
-    const Loops &get_loops() const {return loops; }
+    const Transitions &get_outgoing_transitions() const {
+        return outgoing_transitions;
+    }
 
-    AbstractSearchInfo &get_search_info() {return search_info; }
+    const Transitions &get_incoming_transitions() const {
+        return incoming_transitions;
+    }
+
+    const Loops &get_loops() const {
+        return loops;
+    }
 
     const Node *get_node() const {
         return node;
     }
+
+    AbstractSearchInfo &get_search_info() {return search_info; }
 
     friend std::ostream &operator<<(std::ostream &os, const AbstractState &state) {
         return os << state.domains;
@@ -166,7 +174,7 @@ public:
 
     // Create the Cartesian set that corresponds to the given fact conditions.
     static AbstractState get_abstract_state(
-            const TaskProxy &task_proxy, const ConditionsProxy &conditions);
+        const TaskProxy &task_proxy, const ConditionsProxy &conditions);
 };
 }
 

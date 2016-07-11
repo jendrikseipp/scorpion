@@ -46,17 +46,20 @@ CostSaturation::CostSaturation(
     CostPartitioningType cost_partitioning_type,
     vector<shared_ptr<SubtaskGenerator>> subtask_generators,
     int max_states,
+    int max_non_looping_transitions,
     double max_time,
     bool use_general_costs,
     PickSplit pick_split)
     : cost_partitioning_type(cost_partitioning_type),
       subtask_generators(subtask_generators),
       max_states(max_states),
+      max_non_looping_transitions(max_non_looping_transitions),
       max_time(max_time),
       use_general_costs(use_general_costs),
       pick_split(pick_split),
       num_abstractions(0),
-      num_states(0) {
+      num_states(0),
+      num_non_looping_transitions(0) {
 }
 
 void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
@@ -127,6 +130,8 @@ void CostSaturation::build_abstractions(
         unique_ptr<Abstraction> abstraction = utils::make_unique_ptr<Abstraction>(
             subtask,
             max(1, (max_states - num_states) / rem_subtasks),
+            max(1, (max_non_looping_transitions - num_non_looping_transitions) /
+                rem_subtasks),
             timer.get_remaining_time() / rem_subtasks,
             use_general_costs,
             pick_split);

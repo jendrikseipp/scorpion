@@ -29,6 +29,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning")),
         opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),
         opts.get<int>("max_states"),
+        opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
         static_cast<PickSplit>(opts.get<int>("pick")));
@@ -128,10 +129,16 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "maximum sum of abstract states over all abstractions",
         "infinity",
         Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_transitions",
+        "maximum sum of real transitions (excluding self-loops) over "
+        " all abstractions",
+        "2000000",
+        Bounds("0", "infinity"));
     parser.add_option<double>(
         "max_time",
         "maximum time in seconds for building abstractions",
-        "900",
+        "infinity",
         Bounds("0.0", "infinity"));
     /*
       We reserve some memory to be able to recover from out-of-memory
@@ -198,6 +205,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         cost_partitioning_type,
         opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),
         opts.get<int>("max_states"),
+        opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
         static_cast<PickSplit>(opts.get<int>("pick")));

@@ -34,6 +34,7 @@ class CostSaturation {
     const CostPartitioningType cost_partitioning_type;
     const std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators;
     const int max_states;
+    const int max_non_looping_transitions;
     const double max_time;
     const bool use_general_costs;
     const PickSplit pick_split;
@@ -50,6 +51,7 @@ class CostSaturation {
     std::vector<std::shared_ptr<TransitionSystem>> transition_systems;
     int num_abstractions;
     int num_states;
+    int num_non_looping_transitions;
 
     void reset(const TaskProxy &task_proxy);
     std::shared_ptr<AbstractTask> get_remaining_costs_task(
@@ -66,6 +68,7 @@ public:
         CostPartitioningType cost_partitioning_type,
         std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators,
         int max_states,
+        int max_non_looping_transitions,
         double max_time,
         bool use_general_costs,
         PickSplit pick_split);
