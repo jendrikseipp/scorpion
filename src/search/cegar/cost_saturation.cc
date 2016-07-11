@@ -77,6 +77,7 @@ void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
     function<bool()> should_abort =
         [&] () {
             return num_states >= max_states ||
+                   num_non_looping_transitions >= max_non_looping_transitions ||
                    timer.is_expired() ||
                    utils::is_out_of_memory() ||
                    state_is_dead_end(initial_state);
@@ -139,6 +140,7 @@ void CostSaturation::build_abstractions(
         ++num_abstractions;
         num_states += abstraction->get_num_states();
         assert(num_states <= max_states);
+        num_non_looping_transitions += abstraction->get_num_non_looping_transitions();
 
         if (cost_partitioning_type == CostPartitioningType::SATURATED) {
             reduce_costs(remaining_costs, abstraction->get_saturated_costs());
@@ -178,6 +180,8 @@ void CostSaturation::print_statistics() const {
     cout << "Cartesian heuristic functions stored: "
          << heuristic_functions.size() << endl;
     cout << "Cartesian states: " << num_states << endl;
+    cout << "Total number of non-looping transitions: "
+         << num_non_looping_transitions << endl;
     cout << endl;
 }
 }

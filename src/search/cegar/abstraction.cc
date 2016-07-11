@@ -154,8 +154,6 @@ void Abstraction::create_trivial_abstraction() {
 }
 
 bool Abstraction::may_keep_refining() const {
-    /* TODO: Think about whether we really want to go to the memory limit.
-       Without doing so, the algorithm would be more deterministic. */
     return !utils::is_out_of_memory() &&
            get_num_states() < max_states &&
            transition_updater.get_num_non_loops() < max_non_looping_transitions &&
