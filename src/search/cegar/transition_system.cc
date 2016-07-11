@@ -19,8 +19,7 @@ TransitionSystem::TransitionSystem(
       : task(task),
         task_proxy(*task),
         num_states(abstraction.get_num_states()),
-        refinement_hierarchy(abstraction.get_refinement_hierarchy()),
-        operator_induces_self_loop(task_proxy.get_operators().size(), false) {
+        refinement_hierarchy(abstraction.get_refinement_hierarchy()) {
 
     unordered_map<AbstractState *, int> state_to_id;
     int state_id = 0;
@@ -29,7 +28,7 @@ TransitionSystem::TransitionSystem(
     }
 
     for (AbstractState *state : abstraction.states) {
-        node_to_state_id[state->node] = state_to_id[state];
+        node_to_state_id[state->get_node()] = state_to_id[state];
     }
 
     // Store transitions.
@@ -39,15 +38,10 @@ TransitionSystem::TransitionSystem(
             transitions.emplace_back(
                 start, transition.op_id, state_to_id[transition.target]);
         }
-        for (int op_id : state->get_loops()) {
-            operator_induces_self_loop[op_id] = true;
-        }
     }
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        if (operator_is_noop(op)) {
-            operator_induces_self_loop[op.get_id()] = true;
-        }
-    }
+    // Store self-loop info.
+    operator_induces_self_loop = abstraction.extract_operator_induces_self_loop();
+    assert(!operator_induces_self_loop.empty());
 
     // Store goals.
     for (AbstractState *goal : abstraction.goals) {

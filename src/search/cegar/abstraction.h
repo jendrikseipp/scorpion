@@ -74,6 +74,8 @@ class Abstraction {
        current states. */
     std::shared_ptr<RefinementHierarchy> refinement_hierarchy;
 
+    std::vector<bool> operator_induces_self_loop;
+
     const bool debug;
 
     void create_trivial_abstraction();
@@ -108,6 +110,8 @@ class Abstraction {
     void update_h_and_g_values();
 
     void print_statistics();
+
+    void compress_self_loops();
 
 public:
     Abstraction(
@@ -147,6 +151,8 @@ public:
     std::vector<int> get_saturated_costs();
 
     int get_h_value_of_initial_state() const;
+
+    std::vector<bool> extract_operator_induces_self_loop();
 
     void set_operator_costs(const std::vector<int> &new_costs);
 };

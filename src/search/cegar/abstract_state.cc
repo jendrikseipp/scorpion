@@ -3,6 +3,8 @@
 #include "refinement_hierarchy.h"
 #include "utils.h"
 
+#include "../utils/collections.h"
+
 #include <algorithm>
 #include <cassert>
 #include <unordered_set>
@@ -157,8 +159,12 @@ int AbstractState::get_h_value() const {
     return search_info.get_h_value();
 }
 
+void AbstractState::remove_loops() {
+    utils::release_vector_memory(loops);
+}
+
 AbstractState *AbstractState::get_trivial_abstract_state(
-    const TaskProxy &task_proxy, Node *root_node) {
+        const TaskProxy &task_proxy, Node *root_node) {
     AbstractState *abstract_state = new AbstractState(
         task_proxy, Domains(get_domain_sizes(task_proxy)), root_node);
     return abstract_state;

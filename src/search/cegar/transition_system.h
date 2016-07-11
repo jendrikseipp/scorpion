@@ -34,7 +34,7 @@ class TransitionSystem {
     TaskProxy task_proxy;
     int num_states;
     const std::shared_ptr<RefinementHierarchy> refinement_hierarchy;
-    std::unordered_map<Node *, int> node_to_state_id;
+    std::unordered_map<const Node *, int> node_to_state_id;
     std::vector<int> h_values;
     std::vector<bool> operator_induces_self_loop;
     std::vector<ExplicitTransition> transitions;

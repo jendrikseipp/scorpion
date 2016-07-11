@@ -75,8 +75,6 @@ public:
   Store and update abstract Domains and transitions.
 */
 class AbstractState {
-    friend class TransitionSystem;
-
     // Since the abstraction owns the state we don't need AbstractTask.
     const TaskProxy &task_proxy;
 
@@ -152,6 +150,8 @@ public:
     const Loops &get_loops() const {
         return loops;
     }
+
+    void remove_loops();
 
     const Node *get_node() const {
         return node;

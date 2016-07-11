@@ -102,6 +102,7 @@ Abstraction::Abstraction(
     update_h_and_g_values();
 
     print_statistics();
+    compress_self_loops();
 }
 
 Abstraction::~Abstraction() {
@@ -304,6 +305,25 @@ int Abstraction::get_h_value_of_initial_state() const {
     return init->get_h_value();
 }
 
+void Abstraction::compress_self_loops() {
+    OperatorsProxy operators = task_proxy.get_operators();
+    operator_induces_self_loop.resize(operators.size());
+    for (OperatorProxy op : operators) {
+        if (operator_is_noop(op))
+            operator_induces_self_loop[op.get_id()] = true;
+    }
+    for (AbstractState *state : states) {
+        for (int op_id : state->get_loops()) {
+            operator_induces_self_loop[op_id] = true;
+        }
+        state->remove_loops();
+    }
+}
+
+std::vector<bool> Abstraction::extract_operator_induces_self_loop() {
+    return move(operator_induces_self_loop);
+}
+
 void Abstraction::set_operator_costs(const vector<int> &new_costs) {
     abstract_search.set_operator_costs(new_costs);
     abstract_search.backwards_dijkstra(goals);
@@ -317,6 +337,16 @@ vector<int> Abstraction::get_saturated_costs() {
     // Use value greater than -INF to avoid arithmetic difficulties.
     const int min_cost = use_general_costs ? -INF : 0;
     vector<int> saturated_costs(num_ops, min_cost);
+    if (use_general_costs) {
+        /* To prevent negative cost cycles, all operators inducing
+           self-loops must have non-negative costs. */
+        assert(!operator_induces_self_loop.empty());
+        for (size_t op_id = 0; op_id < operator_induces_self_loop.size(); ++op_id) {
+            if (operator_induces_self_loop[op_id]) {
+                saturated_costs[op_id] = 0;
+            }
+        }
+    }
     for (AbstractState *state : states) {
         const int g = state->get_search_info().get_g_value();
         const int h = state->get_h_value();
@@ -342,14 +372,6 @@ vector<int> Abstraction::get_saturated_costs() {
 
             int needed = h - succ_h;
             saturated_costs[op_id] = max(saturated_costs[op_id], needed);
-        }
-
-        if (use_general_costs) {
-            /* To prevent negative cost cycles, all operators inducing
-               self-loops must have non-negative costs. */
-            for (int op_id : state->get_loops()) {
-                saturated_costs[op_id] = max(saturated_costs[op_id], 0);
-            }
         }
     }
     return saturated_costs;
