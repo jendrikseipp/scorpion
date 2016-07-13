@@ -57,14 +57,14 @@ vector<MaxCartesianHeuristic::HMap> MaxCartesianHeuristic::create_additive_h_map
 }
 
 int MaxCartesianHeuristic::compute_sum(
-    const vector<State> &local_states, const vector<HMap> &order_h_maps) const {
+    const vector<const Node *> &nodes,
+    const vector<HMap> &order_h_maps) const {
     int sum_h = 0;
-    assert(local_states.size() == order_h_maps.size());
-    assert(local_states.size() == refinement_hierarchies.size());
-    for (size_t i = 0; i < local_states.size(); ++i) {
-        const State &local_state = local_states[i];
+    assert(nodes.size() == order_h_maps.size());
+    assert(nodes.size() == refinement_hierarchies.size());
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        const Node *node = nodes[i];
         const HMap &h_map = order_h_maps[i];
-        const Node *node = refinement_hierarchies[i]->get_node(local_state);
         int value = h_map.at(node);
         assert(value >= 0);
         if (value == INF)
@@ -76,15 +76,18 @@ int MaxCartesianHeuristic::compute_sum(
 }
 
 int MaxCartesianHeuristic::compute_heuristic(const State &state) {
-    vector<State> local_states;
-    local_states.reserve(subtasks.size());
-    for (const shared_ptr<AbstractTask> subtask : subtasks) {
+    vector<const Node *> nodes;
+    nodes.reserve(subtasks.size());
+    for (size_t i = 0; i < subtasks.size(); ++i) {
+        const shared_ptr<AbstractTask> subtask = subtasks[i];
         TaskProxy subtask_proxy(*subtask);
-        local_states.push_back(subtask_proxy.convert_ancestor_state(state));
+        State local_state = subtask_proxy.convert_ancestor_state(state);
+        const Node *node = refinement_hierarchies[i]->get_node(local_state);
+        nodes.push_back(node);
     }
     int max_h = 0;
     for (const vector<HMap> &order_h_maps : h_maps) {
-        int sum_h = compute_sum(local_states, order_h_maps);
+        int sum_h = compute_sum(nodes, order_h_maps);
         max_h = max(max_h, sum_h);
     }
     return max_h;

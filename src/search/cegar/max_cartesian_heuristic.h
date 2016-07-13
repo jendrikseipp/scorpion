@@ -25,7 +25,7 @@ class MaxCartesianHeuristic : public Heuristic {
         const std::vector<int> &order) const;
 
     int compute_sum(
-        const std::vector<State> &local_states,
+        const std::vector<const Node *> &nodes,
         const std::vector<HMap> &order_h_maps) const;
 
 protected:
