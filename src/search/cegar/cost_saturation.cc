@@ -92,6 +92,18 @@ void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
     print_statistics();
 }
 
+vector<unique_ptr<Abstraction>> CostSaturation::extract_abstractions() {
+    return move(abstractions);
+}
+
+vector<CartesianHeuristicFunction> CostSaturation::extract_heuristic_functions() {
+    return move(heuristic_functions);
+}
+
+vector<shared_ptr<TransitionSystem>> CostSaturation::extract_transition_systems() {
+    return move(transition_systems);
+}
+
 void CostSaturation::reset(const TaskProxy &task_proxy) {
     assert(heuristic_functions.empty());
 

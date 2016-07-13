@@ -75,17 +75,9 @@ public:
 
     void initialize(const std::shared_ptr<AbstractTask> &task);
 
-    std::vector<std::unique_ptr<Abstraction>> extract_abstractions() {
-        return std::move(abstractions);
-    }
-
-    std::vector<CartesianHeuristicFunction> extract_heuristic_functions() {
-        return std::move(heuristic_functions);
-    }
-    
-    std::vector<std::shared_ptr<TransitionSystem>> extract_transition_systems() {
-        return std::move(transition_systems);
-    }
+    std::vector<std::unique_ptr<Abstraction>> extract_abstractions();
+    std::vector<CartesianHeuristicFunction> extract_heuristic_functions();
+    std::vector<std::shared_ptr<TransitionSystem>> extract_transition_systems();
 };
 
 extern void reduce_costs(

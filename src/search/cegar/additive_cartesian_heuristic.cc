@@ -3,6 +3,7 @@
 #include "abstraction.h"
 #include "cartesian_heuristic_function.h"
 #include "cost_saturation.h"
+#include "max_cartesian_heuristic.h"
 #include "ocp_heuristic.h"
 #include "utils.h"
 
@@ -225,24 +226,10 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
-        vector<unique_ptr<Abstraction>> abstractions =
-            cost_saturation.extract_abstractions();
-        int num_orders = opts.get<int>("orders");
-        if (num_orders == 1) {
-            return create_additive_cartesian_heuristic(
-                abstractions, heuristic_opts);
-        }
-
-        vector<ScalarEvaluator *> additive_heuristics;
-        for (int order = 0; order < num_orders; ++order) {
-            g_rng()->shuffle(abstractions);
-            additive_heuristics.push_back(
-                create_additive_cartesian_heuristic(abstractions, heuristic_opts));
-        }
-
-        Options max_evaluator_opts;
-        max_evaluator_opts.set("evals", additive_heuristics);
-        return new max_evaluator::MaxEvaluator(max_evaluator_opts);
+        return new MaxCartesianHeuristic(
+            heuristic_opts,
+            cost_saturation.extract_abstractions(),
+            opts.get<int>("orders"));
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
