@@ -31,11 +31,12 @@ MaxCartesianHeuristic::MaxCartesianHeuristic(
             // Always keep original order in the set of orders.
             g_rng()->shuffle(indices);
         }
-        h_maps.push_back(create_additive_h_maps(abstractions, indices));
+        h_values_by_orders.push_back(
+            compute_saturated_cost_partitioning(abstractions, indices));
     }
 }
 
-vector<MaxCartesianHeuristic::HMap> MaxCartesianHeuristic::create_additive_h_maps(
+vector<vector<int>> MaxCartesianHeuristic::compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order) const {
     assert(abstractions.size() == order.size());
@@ -46,25 +47,26 @@ vector<MaxCartesianHeuristic::HMap> MaxCartesianHeuristic::create_additive_h_map
         remaining_costs.push_back(op.get_cost());
     }
 
-    vector<HMap> h_maps(abstractions.size());
+    vector<vector<int>> h_values_by_abstraction(abstractions.size());
     for (int pos : order) {
         const unique_ptr<Abstraction> &abstraction = abstractions[pos];
         abstraction->set_operator_costs(remaining_costs);
-        h_maps[pos] = abstraction->compute_h_map();
+        h_values_by_abstraction[pos] = abstraction->get_h_values();
         reduce_costs(remaining_costs, abstraction->get_saturated_costs());
     }
-    return h_maps;
+    return h_values_by_abstraction;
 }
 
 int MaxCartesianHeuristic::compute_sum(
-    const vector<const Node *> &nodes,
-    const vector<HMap> &order_h_maps) const {
+    const vector<int> &local_state_ids,
+    const vector<vector<int>> &h_values_by_abstraction) const {
     int sum_h = 0;
-    assert(nodes.size() == order_h_maps.size());
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        const Node *node = nodes[i];
-        const HMap &h_map = order_h_maps[i];
-        int value = h_map.at(node);
+    assert(local_state_ids.size() == h_values_by_abstraction.size());
+    for (size_t i = 0; i < local_state_ids.size(); ++i) {
+        int state_id = local_state_ids[i];
+        const vector<int> &h_values = h_values_by_abstraction[i];
+        assert(utils::in_bounds(state_id, h_values));
+        int value = h_values[state_id];
         assert(value >= 0);
         if (value == INF)
             return INF;
@@ -75,17 +77,18 @@ int MaxCartesianHeuristic::compute_sum(
 }
 
 int MaxCartesianHeuristic::compute_heuristic(const State &state) {
-    vector<const Node *> nodes;
-    nodes.reserve(subtasks.size());
+    vector<int> local_state_ids;
+    local_state_ids.reserve(subtasks.size());
     for (size_t i = 0; i < subtasks.size(); ++i) {
         const AbstractTask &subtask = *subtasks[i];
         TaskProxy subtask_proxy(subtask);
         State local_state = subtask_proxy.convert_ancestor_state(state);
-        nodes.push_back(refinement_hierarchies[i]->get_node(local_state));
+        local_state_ids.push_back(
+            refinement_hierarchies[i]->get_node(local_state)->get_state_id());
     }
     int max_h = 0;
-    for (const vector<HMap> &order_h_maps : h_maps) {
-        int sum_h = compute_sum(nodes, order_h_maps);
+    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_orders) {
+        int sum_h = compute_sum(local_state_ids, h_values_by_abstraction);
         if (sum_h == INF) {
             return DEAD_END;
         }

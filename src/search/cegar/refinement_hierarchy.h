@@ -52,6 +52,9 @@ class Node {
     int var;
     int value;
 
+    // Set when the hierarchy is finished.
+    int state_id;
+
 public:
     Node();
     ~Node();
@@ -86,6 +89,17 @@ public:
     }
 
     Node *get_child(int value) const;
+
+    int get_state_id() const {
+        assert(!is_split());
+        assert(state_id != -1);
+        return state_id;
+    }
+
+    void set_state_id(int id) {
+        assert(!is_split());
+        state_id = id;
+    }
 };
 }
 

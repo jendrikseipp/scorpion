@@ -9,7 +9,8 @@ Node::Node()
     : left_child(nullptr),
       right_child(nullptr),
       var(LEAF_NODE),
-      value(LEAF_NODE) {
+      value(LEAF_NODE),
+      state_id(-1) {
 }
 
 Node::~Node() {

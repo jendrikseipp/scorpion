@@ -153,7 +153,7 @@ public:
 
     void remove_loops();
 
-    const Node *get_node() const {
+    Node *get_node() const {
         return node;
     }
 

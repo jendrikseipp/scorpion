@@ -7,26 +7,23 @@
 
 namespace cegar {
 class Abstraction;
-class Node;
 class RefinementHierarchy;
 
 /*
   Compute maximum over a set of additive cost partitionings.
 */
 class MaxCartesianHeuristic : public Heuristic {
-    using HMap = std::unordered_map<const Node *, int>;
-
     std::vector<std::shared_ptr<AbstractTask>> subtasks;
     std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
-    std::vector<std::vector<std::unordered_map<const Node *, int>>> h_maps;
+    std::vector<std::vector<std::vector<int>>> h_values_by_orders;
 
-    std::vector<HMap> create_additive_h_maps(
+    std::vector<std::vector<int>> compute_saturated_cost_partitioning(
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &order) const;
 
     int compute_sum(
-        const std::vector<const Node *> &nodes,
-        const std::vector<HMap> &order_h_maps) const;
+        const std::vector<int> &local_state_ids,
+        const std::vector<std::vector<int>> &h_values_by_abstraction) const;
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state);

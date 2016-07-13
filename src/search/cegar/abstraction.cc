@@ -134,6 +134,18 @@ unordered_map<const Node *, int> Abstraction::compute_h_map() const {
     return h_map;
 }
 
+vector<int> Abstraction::get_h_values() const {
+    vector<int> h_values;
+    h_values.reserve(states.size());
+    int state_id = 0;
+    for (const AbstractState *state: states) {
+        state->get_node()->set_state_id(state_id);
+        h_values.push_back(state->get_h_value());
+        ++state_id;
+    }
+    return h_values;
+}
+
 bool Abstraction::is_goal(AbstractState *state) const {
     return goals.count(state) == 1;
 }

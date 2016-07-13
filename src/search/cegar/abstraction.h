@@ -135,6 +135,7 @@ public:
     }
 
     std::unordered_map<const Node *, int> compute_h_map() const;
+    std::vector<int> get_h_values() const;
 
     int get_num_states() const {
         return states.size();
