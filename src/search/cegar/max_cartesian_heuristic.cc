@@ -27,10 +27,7 @@ MaxCartesianHeuristic::MaxCartesianHeuristic(
     iota(indices.begin(), indices.end(), 0);
 
     for (int order = 0; order < num_orders; ++order) {
-        if (order != 0) {
-            // Always keep original order in the set of orders.
-            g_rng()->shuffle(indices);
-        }
+        g_rng()->shuffle(indices);
         h_values_by_orders.push_back(
             compute_saturated_cost_partitioning(abstractions, indices));
     }
