@@ -56,15 +56,14 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
             task_proxy.get_initial_state());
         current_abstract_state_vars[id] = distance_variables[id][initial_state_index];
     }
+    release_memory();
 }
 
 OptimalCostPartitioningHeuristic::~OptimalCostPartitioningHeuristic() {
 }
 
 void OptimalCostPartitioningHeuristic::release_memory() {
-    for (shared_ptr<TransitionSystem> &abstraction : abstractions) {
-        abstraction->release_memory();
-    }
+    // TransitionSystem::release_memory() is called in generateLP().
     utils::release_vector_memory(heuristic_variables);
     utils::release_vector_memory(action_cost_variables);
 }
