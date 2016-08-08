@@ -111,6 +111,7 @@ class Abstraction {
 
     void print_statistics();
 
+    void set_state_ids();
     void compress_self_loops();
 
 public:

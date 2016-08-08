@@ -119,6 +119,7 @@ Abstraction::Abstraction(
 
     print_statistics();
     compress_self_loops();
+    set_state_ids();
 }
 
 Abstraction::~Abstraction() {
@@ -135,13 +136,13 @@ unordered_map<const Node *, int> Abstraction::compute_h_map() const {
 }
 
 vector<int> Abstraction::get_h_values() const {
-    vector<int> h_values;
-    h_values.reserve(states.size());
-    int state_id = 0;
+    vector<int> h_values(states.size(), -1);
     for (const AbstractState *state: states) {
-        state->get_node()->set_state_id(state_id);
-        h_values.push_back(state->get_h_value());
-        ++state_id;
+        int state_id = state->get_node()->get_state_id();
+        h_values[state_id] = state->get_h_value();
+    }
+    for (int h : h_values) {
+        assert(h != -1);
     }
     return h_values;
 }
@@ -331,6 +332,13 @@ void Abstraction::update_h_and_g_values() {
 
 int Abstraction::get_h_value_of_initial_state() const {
     return init->get_h_value();
+}
+
+void Abstraction::set_state_ids() {
+    int state_id = 0;
+    for (const AbstractState *state: states) {
+        state->get_node()->set_state_id(state_id++);
+    }
 }
 
 void Abstraction::compress_self_loops() {
