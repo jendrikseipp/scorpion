@@ -2,14 +2,15 @@
 
 #include "abstraction.h"
 #include "abstract_state.h"
+#include "refinement_hierarchy.h"
 #include "utils.h"
 
-#include "../global_state.h"
-#include "../globals.h"
+#include "../task_proxy.h"
 
 #include "../utils/collections.h"
 
 #include <cassert>
+#include <limits>
 
 using namespace std;
 
@@ -17,59 +18,56 @@ namespace cegar {
 TransitionSystem::TransitionSystem(
     const shared_ptr<AbstractTask> &task, Abstraction &&abstraction)
       : task(task),
-        task_proxy(*task),
         num_states(abstraction.get_num_states()),
-        refinement_hierarchy(abstraction.get_refinement_hierarchy()) {
-
-    unordered_map<AbstractState *, int> state_to_id;
-    int state_id = 0;
-    for (AbstractState *state : abstraction.states) {
-        state_to_id[state] = state_id++;
-    }
-
-    for (AbstractState *state : abstraction.states) {
-        node_to_state_id[state->get_node()] = state_to_id[state];
-    }
-
-    // Store transitions.
-    for (AbstractState *state : abstraction.states) {
-        int start = state_to_id[state];
+        refinement_hierarchy(abstraction.get_refinement_hierarchy()),
+        h_values(abstraction.get_h_values()) {
+    // Store non-looping transitions.
+    for (const AbstractState *state : abstraction.states) {
+        int start = state->get_node()->get_state_id();
         for (const Transition &transition : state->get_outgoing_transitions()) {
-            transitions.emplace_back(
-                start, transition.op_id, state_to_id[transition.target]);
+            int end = transition.target->get_node()->get_state_id();
+            transitions.emplace_back(start, transition.op_id, end);
         }
     }
+
     // Store self-loop info.
     operator_induces_self_loop = abstraction.extract_operator_induces_self_loop();
     assert(!operator_induces_self_loop.empty());
 
     // Store goals.
-    for (AbstractState *goal : abstraction.goals) {
-        goal_indices.push_back(state_to_id[goal]);
-    }
-
-    // Store heuristic values.
-    for (AbstractState *state : abstraction.states) {
-        h_values.push_back(state->get_h_value());
+    for (const AbstractState *goal : abstraction.goals) {
+        goal_indices.push_back(goal->get_node()->get_state_id());
     }
 }
 
-int TransitionSystem::get_abstract_state_index(
-    const State &concrete_state) const {
-    State abstract_state = task_proxy.convert_ancestor_state(concrete_state);
-    Node *node = refinement_hierarchy->get_node(abstract_state);
-    return node_to_state_id.at(node);
+int TransitionSystem::get_num_abstract_states() const {
+    return num_states;
+}
+
+int TransitionSystem::get_abstract_state_index(const State &concrete_state) const {
+    State abstract_state = TaskProxy(*task).convert_ancestor_state(concrete_state);
+    const Node *node = refinement_hierarchy->get_node(abstract_state);
+    return node->get_state_id();
 }
 
 bool TransitionSystem::is_dead_end(const State &concrete_state) const {
-    State abstract_state = task_proxy.convert_ancestor_state(concrete_state);
-    Node *node = refinement_hierarchy->get_node(abstract_state);
-    return h_values[node_to_state_id.at(node)] == std::numeric_limits<int>::max();
+    return h_values[get_abstract_state_index(concrete_state)] ==
+        std::numeric_limits<int>::max();
 }
 
 bool TransitionSystem::induces_self_loop(int op_id) const {
     assert(utils::in_bounds(op_id, operator_induces_self_loop));
     return operator_induces_self_loop[op_id];
+}
+
+const std::vector<int> &TransitionSystem::get_goal_indices() const {
+    assert(!goal_indices.empty());
+    return goal_indices;
+}
+
+const std::vector<ExplicitTransition> &TransitionSystem::get_transitions() const {
+    assert(!transitions.empty());
+    return transitions;
 }
 
 void TransitionSystem::release_memory() {
