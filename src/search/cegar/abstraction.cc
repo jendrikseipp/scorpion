@@ -6,6 +6,7 @@
 #include "../globals.h"
 #include "../task_tools.h"
 
+#include "../utils/language.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
 #include "../utils/memory.h"
@@ -142,6 +143,7 @@ vector<int> Abstraction::get_h_values() const {
         h_values[state_id] = state->get_h_value();
     }
     for (int h : h_values) {
+        utils::unused_variable(h);
         assert(h != -1);
     }
     return h_values;
