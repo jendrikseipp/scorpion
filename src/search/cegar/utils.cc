@@ -94,6 +94,7 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
 
 vector<int> get_operator_costs(const TaskProxy &task) {
     vector<int> costs;
+    costs.reserve(task.get_operators().size());
     for (OperatorProxy op : task.get_operators())
         costs.push_back(op.get_cost());
     return costs;

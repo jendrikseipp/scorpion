@@ -11,6 +11,22 @@
 using namespace std;
 
 namespace cegar {
+static vector<vector<int>> compute_saturated_cost_partitioning(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &order,
+    const vector<int> &operator_costs) {
+    assert(abstractions.size() == order.size());
+    vector<int> remaining_costs = operator_costs;
+    vector<vector<int>> h_values_by_abstraction(abstractions.size());
+    for (int pos : order) {
+        const unique_ptr<Abstraction> &abstraction = abstractions[pos];
+        abstraction->set_operator_costs(remaining_costs);
+        h_values_by_abstraction[pos] = abstraction->get_h_values();
+        reduce_costs(remaining_costs, abstraction->get_saturated_costs());
+    }
+    return h_values_by_abstraction;
+}
+
 MaxCartesianHeuristic::MaxCartesianHeuristic(
     const options::Options &opts,
     std::vector<std::unique_ptr<Abstraction>> &&abstractions,
@@ -26,32 +42,13 @@ MaxCartesianHeuristic::MaxCartesianHeuristic(
     vector<int> indices(abstractions.size());
     iota(indices.begin(), indices.end(), 0);
 
+    vector<int> operator_costs = get_operator_costs(task_proxy);
     for (int order = 0; order < num_orders; ++order) {
         g_rng()->shuffle(indices);
         h_values_by_orders.push_back(
-            compute_saturated_cost_partitioning(abstractions, indices));
+            compute_saturated_cost_partitioning(
+                abstractions, indices, operator_costs));
     }
-}
-
-vector<vector<int>> MaxCartesianHeuristic::compute_saturated_cost_partitioning(
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &order) const {
-    assert(abstractions.size() == order.size());
-
-    vector<int> remaining_costs;
-    remaining_costs.reserve(task_proxy.get_operators().size());
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        remaining_costs.push_back(op.get_cost());
-    }
-
-    vector<vector<int>> h_values_by_abstraction(abstractions.size());
-    for (int pos : order) {
-        const unique_ptr<Abstraction> &abstraction = abstractions[pos];
-        abstraction->set_operator_costs(remaining_costs);
-        h_values_by_abstraction[pos] = abstraction->get_h_values();
-        reduce_costs(remaining_costs, abstraction->get_saturated_costs());
-    }
-    return h_values_by_abstraction;
 }
 
 int MaxCartesianHeuristic::compute_sum(
