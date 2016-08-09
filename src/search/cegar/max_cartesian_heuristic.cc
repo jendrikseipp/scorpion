@@ -19,10 +19,10 @@ static vector<vector<int>> compute_saturated_cost_partitioning(
     vector<int> remaining_costs = operator_costs;
     vector<vector<int>> h_values_by_abstraction(abstractions.size());
     for (int pos : order) {
-        const unique_ptr<Abstraction> &abstraction = abstractions[pos];
-        abstraction->set_operator_costs(remaining_costs);
-        h_values_by_abstraction[pos] = abstraction->get_h_values();
-        reduce_costs(remaining_costs, abstraction->get_saturated_costs());
+        Abstraction &abstraction = *abstractions[pos];
+        abstraction.set_operator_costs(remaining_costs);
+        h_values_by_abstraction[pos] = abstraction.get_h_values();
+        reduce_costs(remaining_costs, abstraction.get_saturated_costs());
     }
     return h_values_by_abstraction;
 }
