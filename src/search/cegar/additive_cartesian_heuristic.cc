@@ -226,10 +226,15 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
+        vector<unique_ptr<Abstraction>> abstractions =
+            cost_saturation.extract_abstractions();
+        vector<vector<vector<int>>> h_values_by_orders =
+            compute_saturated_cost_partitionings(
+            abstractions, get_operator_costs(TaskProxy(*task)), opts.get<int>("orders"));
         return new MaxCartesianHeuristic(
             heuristic_opts,
-            cost_saturation.extract_abstractions(),
-            opts.get<int>("orders"));
+            move(abstractions),
+            move(h_values_by_orders));
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();

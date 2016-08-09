@@ -11,6 +11,12 @@
 using namespace std;
 
 namespace cegar {
+static vector<int> get_default_order(int n) {
+    vector<int> indices(n);
+    iota(indices.begin(), indices.end(), 0);
+    return indices;
+}
+
 static vector<vector<int>> compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
@@ -27,27 +33,32 @@ static vector<vector<int>> compute_saturated_cost_partitioning(
     return h_values_by_abstraction;
 }
 
-MaxCartesianHeuristic::MaxCartesianHeuristic(
-    const options::Options &opts,
-    std::vector<std::unique_ptr<Abstraction>> &&abstractions,
-    int num_orders)
-    : Heuristic(opts) {
-    subtasks.reserve(abstractions.size());
-    refinement_hierarchies.reserve(abstractions.size());
-    for (auto &abstraction : abstractions) {
-        subtasks.push_back(abstraction->get_task());
-        refinement_hierarchies.push_back(abstraction->get_refinement_hierarchy());
-    }
-
-    vector<int> indices(abstractions.size());
-    iota(indices.begin(), indices.end(), 0);
-
-    vector<int> operator_costs = get_operator_costs(task_proxy);
+vector<vector<vector<int>>> compute_saturated_cost_partitionings(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> operator_costs,
+    int num_orders) {
+    vector<int> indices = get_default_order(abstractions.size());
+    vector<vector<vector<int>>> h_values_by_orders;
     for (int order = 0; order < num_orders; ++order) {
         g_rng()->shuffle(indices);
         h_values_by_orders.push_back(
             compute_saturated_cost_partitioning(
                 abstractions, indices, operator_costs));
+    }
+    return h_values_by_orders;
+}
+
+MaxCartesianHeuristic::MaxCartesianHeuristic(
+    const options::Options &opts,
+    vector<unique_ptr<Abstraction>> &&abstractions,
+    vector<vector<vector<int>>> &&h_values_by_orders)
+    : Heuristic(opts),
+      h_values_by_orders(move(h_values_by_orders)) {
+    subtasks.reserve(abstractions.size());
+    refinement_hierarchies.reserve(abstractions.size());
+    for (auto &abstraction : abstractions) {
+        subtasks.push_back(abstraction->get_task());
+        refinement_hierarchies.push_back(abstraction->get_refinement_hierarchy());
     }
 }
 

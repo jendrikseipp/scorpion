@@ -29,8 +29,14 @@ public:
     MaxCartesianHeuristic(
         const options::Options &opts,
         std::vector<std::unique_ptr<Abstraction>> &&abstractions,
-        int num_orders);
+        std::vector<std::vector<std::vector<int>>> &&h_values_by_orders);
 };
+
+std::vector<std::vector<std::vector<int>>>
+compute_saturated_cost_partitionings(
+    const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+    const std::vector<int> operator_costs,
+    int num_orders);
 }
 
 #endif
