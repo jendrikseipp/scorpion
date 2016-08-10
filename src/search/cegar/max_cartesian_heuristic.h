@@ -21,6 +21,10 @@ class MaxCartesianHeuristic : public Heuristic {
         const std::vector<int> &local_state_ids,
         const std::vector<std::vector<int>> &h_values_by_abstraction) const;
 
+    int compute_max(
+        const std::vector<int> &local_state_ids,
+        const std::vector<std::vector<std::vector<int>>> &h_values_by_order) const;
+
 protected:
     virtual int compute_heuristic(const GlobalState &global_state);
     int compute_heuristic(const State &state);

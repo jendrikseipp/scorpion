@@ -81,6 +81,20 @@ int MaxCartesianHeuristic::compute_sum(
     return sum_h;
 }
 
+int MaxCartesianHeuristic::compute_max(
+    const vector<int> &local_state_ids,
+    const vector<vector<vector<int>>> &h_values_by_order) const {
+    int max_h = 0;
+    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
+        int sum_h = compute_sum(local_state_ids, h_values_by_abstraction);
+        if (sum_h == INF) {
+            return INF;
+        }
+        max_h = max(max_h, sum_h);
+    }
+    return max_h;
+}
+
 int MaxCartesianHeuristic::compute_heuristic(const State &state) {
     vector<int> local_state_ids;
     local_state_ids.reserve(subtasks.size());
@@ -91,13 +105,9 @@ int MaxCartesianHeuristic::compute_heuristic(const State &state) {
         local_state_ids.push_back(
             refinement_hierarchies[i]->get_node(local_state)->get_state_id());
     }
-    int max_h = 0;
-    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_orders) {
-        int sum_h = compute_sum(local_state_ids, h_values_by_abstraction);
-        if (sum_h == INF) {
-            return DEAD_END;
-        }
-        max_h = max(max_h, sum_h);
+    int max_h = compute_max(local_state_ids, h_values_by_orders);
+    if (max_h == INF) {
+        return DEAD_END;
     }
     return max_h;
 }
