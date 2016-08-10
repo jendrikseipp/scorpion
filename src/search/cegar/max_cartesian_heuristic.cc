@@ -95,7 +95,11 @@ int MaxCartesianHeuristic::compute_max(
     return max_h;
 }
 
-int MaxCartesianHeuristic::compute_heuristic(const State &state) {
+static vector<int> get_local_state_ids(
+    const vector<shared_ptr<AbstractTask>> &subtasks,
+    const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
+    const State &state) {
+    assert(subtasks.size() == refinement_hierarchies.size());
     vector<int> local_state_ids;
     local_state_ids.reserve(subtasks.size());
     for (size_t i = 0; i < subtasks.size(); ++i) {
@@ -105,6 +109,12 @@ int MaxCartesianHeuristic::compute_heuristic(const State &state) {
         local_state_ids.push_back(
             refinement_hierarchies[i]->get_node(local_state)->get_state_id());
     }
+    return local_state_ids;
+}
+
+int MaxCartesianHeuristic::compute_heuristic(const State &state) {
+    vector<int> local_state_ids = get_local_state_ids(
+        subtasks, refinement_hierarchies, state);
     int max_h = compute_max(local_state_ids, h_values_by_orders);
     if (max_h == INF) {
         return DEAD_END;
