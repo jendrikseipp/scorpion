@@ -17,10 +17,6 @@ class MaxCartesianHeuristic : public Heuristic {
     std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
     std::vector<std::vector<std::vector<int>>> h_values_by_orders;
 
-    int compute_sum(
-        const std::vector<int> &local_state_ids,
-        const std::vector<std::vector<int>> &h_values_by_abstraction) const;
-
     int compute_max(
         const std::vector<int> &local_state_ids,
         const std::vector<std::vector<std::vector<int>>> &h_values_by_order) const;

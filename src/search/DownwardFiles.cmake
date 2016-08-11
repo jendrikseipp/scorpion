@@ -391,6 +391,7 @@ fast_downward_plugin(
         cegar/max_cartesian_heuristic.cc
         cegar/ocp_heuristic.cc
         cegar/refinement_hierarchy.cc
+        cegar/scp_optimizer.cc
         cegar/split_selector.cc
         cegar/subtask_generators.cc
         cegar/transition.cc
