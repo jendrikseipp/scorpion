@@ -5,6 +5,7 @@
 #include "cost_saturation.h"
 #include "max_cartesian_heuristic.h"
 #include "ocp_heuristic.h"
+#include "scp_optimizer.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -182,7 +183,13 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     parser.add_option<int>(
         "orders",
         "number of abstraction orders to maximize over",
-        "1");
+        "1",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "samples",
+        "number of sample states to optimize for",
+        "0",
+        Bounds("0", "infinity"));
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -226,14 +233,39 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
+        int num_orders = opts.get<int>("orders");
+        int num_samples = opts.get<int>("samples");
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
-        vector<vector<vector<int>>> h_values_by_orders =
-            compute_saturated_cost_partitionings(
-            abstractions, get_operator_costs(TaskProxy(*task)), opts.get<int>("orders"));
+        // TODO: add RefinementHierarchy::get_task().
+        vector<shared_ptr<AbstractTask>> subtasks;
+        subtasks.reserve(abstractions.size());
+        vector<shared_ptr<RefinementHierarchy>> refinement_hierarchies;
+        refinement_hierarchies.reserve(abstractions.size());
+        for (unique_ptr<Abstraction> &abstraction : abstractions) {
+            subtasks.push_back(abstraction->get_task());
+            refinement_hierarchies.push_back(abstraction->get_refinement_hierarchy());
+        }
+        vector<int> operator_costs = get_operator_costs(TaskProxy(*task));
+        vector<vector<vector<int>>> h_values_by_orders;
+        if (num_samples == 0) {
+            h_values_by_orders = compute_saturated_cost_partitionings(
+                abstractions,
+                operator_costs,
+                num_orders);
+        } else {
+            // TODO: add samples.
+            vector<State> samples = {TaskProxy(*task).get_initial_state()};
+            SCPOptimizer scp_optimizer(
+                move(abstractions), subtasks, refinement_hierarchies, operator_costs, samples);
+            for (int i = 0; i < num_orders; ++i) {
+                //h_values_by_orders.push_back(scp_optimizer.extract_order());
+            }
+        }
         return new MaxCartesianHeuristic(
             heuristic_opts,
-            move(abstractions),
+            move(subtasks),
+            move(refinement_hierarchies),
             move(h_values_by_orders));
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
         vector<unique_ptr<Abstraction>> abstractions =

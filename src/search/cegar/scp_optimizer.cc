@@ -42,8 +42,8 @@ static vector<vector<int>> get_local_state_ids_by_state(
 
 SCPOptimizer::SCPOptimizer(
     vector<unique_ptr<Abstraction>> &&abstractions,
-    vector<shared_ptr<AbstractTask>> &&subtasks,
-    vector<shared_ptr<RefinementHierarchy>> &&refinement_hierarchies,
+    const vector<shared_ptr<AbstractTask>> &subtasks,
+    const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const vector<int> &operator_costs,
     const vector<State> &states)
     : abstractions(move(abstractions)),

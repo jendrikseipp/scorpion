@@ -29,16 +29,13 @@ vector<vector<vector<int>>> compute_saturated_cost_partitionings(
 
 MaxCartesianHeuristic::MaxCartesianHeuristic(
     const options::Options &opts,
-    vector<unique_ptr<Abstraction>> &&abstractions,
+    vector<shared_ptr<AbstractTask>> &&subtasks,
+    vector<shared_ptr<RefinementHierarchy>> &&refinement_hierarchies,
     vector<vector<vector<int>>> &&h_values_by_orders)
     : Heuristic(opts),
+      subtasks(move(subtasks)),
+      refinement_hierarchies(move(refinement_hierarchies)),
       h_values_by_orders(move(h_values_by_orders)) {
-    subtasks.reserve(abstractions.size());
-    refinement_hierarchies.reserve(abstractions.size());
-    for (auto &abstraction : abstractions) {
-        subtasks.push_back(abstraction->get_task());
-        refinement_hierarchies.push_back(abstraction->get_refinement_hierarchy());
-    }
 }
 
 int MaxCartesianHeuristic::compute_max(

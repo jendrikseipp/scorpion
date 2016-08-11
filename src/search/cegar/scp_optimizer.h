@@ -12,7 +12,7 @@ class Abstraction;
 class RefinementHierarchy;
 
 class SCPOptimizer {
-    const std::vector<std::unique_ptr<Abstraction>> &&abstractions;
+    const std::vector<std::unique_ptr<Abstraction>> abstractions;
     const std::vector<std::shared_ptr<AbstractTask>> subtasks;
     const std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
     const std::vector<std::vector<int>> local_state_ids_by_state;
@@ -28,8 +28,8 @@ class SCPOptimizer {
 public:
     SCPOptimizer(
         std::vector<std::unique_ptr<Abstraction>> &&abstractions,
-        std::vector<std::shared_ptr<AbstractTask>> &&subtasks,
-        std::vector<std::shared_ptr<RefinementHierarchy>> &&refinement_hierarchies,
+        const std::vector<std::shared_ptr<AbstractTask>> &subtasks,
+        const std::vector<std::shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
         const std::vector<int> &operator_costs,
         const std::vector<State> &states);
 
