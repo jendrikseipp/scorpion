@@ -27,7 +27,7 @@ public:
     CartesianHeuristicFunction(
         const std::shared_ptr<AbstractTask> &task,
         const std::shared_ptr<RefinementHierarchy> &hierarchy,
-        std::unordered_map<const Node *, int> &&h_map);
+            std::unordered_map<const Node *, int> &&h_map = {});
 
     int get_value(const State &parent_state) const;
 
