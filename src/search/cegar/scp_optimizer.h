@@ -15,11 +15,13 @@ class SCPOptimizer {
     const std::vector<std::unique_ptr<Abstraction>> abstractions;
     const std::vector<std::shared_ptr<AbstractTask>> subtasks;
     const std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
-    const std::vector<std::vector<int>> local_state_ids_by_state;
     const std::vector<int> operator_costs;
 
+    std::vector<std::vector<int>> local_state_ids_by_state;
     std::vector<int> incumbent_order;
     int incumbent_total_h_value;
+
+    mutable int evaluations;
 
     int evaluate(const std::vector<int> &order) const;
 
@@ -30,10 +32,10 @@ public:
         std::vector<std::unique_ptr<Abstraction>> &&abstractions,
         const std::vector<std::shared_ptr<AbstractTask>> &subtasks,
         const std::vector<std::shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
-        const std::vector<int> &operator_costs,
-        const std::vector<State> &states);
+        const std::vector<int> &operator_costs);
 
-    std::vector<int> extract_order();
+    std::vector<std::vector<int>> find_cost_partitioning(
+        const std::vector<State> &states);
 };
 
 extern std::vector<int> get_default_order(int n);

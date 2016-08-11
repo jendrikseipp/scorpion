@@ -257,9 +257,9 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             // TODO: add samples.
             vector<State> samples = {TaskProxy(*task).get_initial_state()};
             SCPOptimizer scp_optimizer(
-                move(abstractions), subtasks, refinement_hierarchies, operator_costs, samples);
+                move(abstractions), subtasks, refinement_hierarchies, operator_costs);
             for (int i = 0; i < num_orders; ++i) {
-                //h_values_by_orders.push_back(scp_optimizer.extract_order());
+                h_values_by_orders.push_back(scp_optimizer.find_cost_partitioning(samples));
             }
         }
         return new MaxCartesianHeuristic(

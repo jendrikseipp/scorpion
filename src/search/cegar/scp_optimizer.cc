@@ -44,19 +44,11 @@ SCPOptimizer::SCPOptimizer(
     vector<unique_ptr<Abstraction>> &&abstractions,
     const vector<shared_ptr<AbstractTask>> &subtasks,
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
-    const vector<int> &operator_costs,
-    const vector<State> &states)
+    const vector<int> &operator_costs)
     : abstractions(move(abstractions)),
-      subtasks(move(subtasks)),
-      refinement_hierarchies(move(refinement_hierarchies)),
-      local_state_ids_by_state(get_local_state_ids_by_state(
-          subtasks, refinement_hierarchies, states)),
-      operator_costs(operator_costs),
-      incumbent_order(get_shuffled_order(subtasks.size())),
-      incumbent_total_h_value(evaluate(incumbent_order)) {
-    while (search_improving_successor()) {
-        cout << "Incumbent total h value: " << incumbent_total_h_value << endl;
-    }
+      subtasks(subtasks),
+      refinement_hierarchies(refinement_hierarchies),
+      operator_costs(operator_costs) {
 }
 
 int SCPOptimizer::evaluate(const vector<int> &order) const {
@@ -70,13 +62,14 @@ int SCPOptimizer::evaluate(const vector<int> &order) const {
                     h_values_by_abstraction);
         total_h += sum_h;
     }
+    ++evaluations;
     return total_h;
 }
 
 bool SCPOptimizer::search_improving_successor() {
-    int num_samples = local_state_ids_by_state.size();
-    for (int i = 0; i < num_samples; ++i) {
-        for (int j = i + 1; j < num_samples; ++j) {
+    int num_abstractions = abstractions.size();
+    for (int i = 0; i < num_abstractions; ++i) {
+        for (int j = i + 1; j < num_abstractions; ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
             int total_h = evaluate(incumbent_order);
             if (total_h > incumbent_total_h_value) {
@@ -92,9 +85,20 @@ bool SCPOptimizer::search_improving_successor() {
     return false;
 }
 
-vector<int> SCPOptimizer::extract_order() {
-    assert(!incumbent_order.empty());
-    return move(incumbent_order);
+vector<vector<int>> SCPOptimizer::find_cost_partitioning(
+    const vector<State> &states) {
+    incumbent_order = get_shuffled_order(subtasks.size());
+    incumbent_total_h_value = evaluate(incumbent_order);
+    local_state_ids_by_state = get_local_state_ids_by_state(
+        subtasks, refinement_hierarchies, states);
+    evaluations = 0;
+    do {
+        cout << "Incumbent total h value: " << incumbent_total_h_value << endl;
+    } while ((search_improving_successor()));
+    cout << "Order evaluations: " << evaluations << endl;
+
+    return compute_saturated_cost_partitioning(
+        abstractions, incumbent_order, operator_costs);
 }
 
 
