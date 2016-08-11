@@ -90,16 +90,17 @@ bool SCPOptimizer::search_improving_successor() {
 
 vector<vector<int>> SCPOptimizer::find_cost_partitioning(
     const vector<State> &states) {
-    incumbent_order = get_shuffled_order(subtasks.size());
-    local_state_ids_by_state = get_local_state_ids_by_state(
-        subtasks, refinement_hierarchies, states);
-    incumbent_total_h_value = evaluate(incumbent_order);
     evaluations = 0;
-    do {
-        cout << "Incumbent total h value: " << incumbent_total_h_value << endl;
-    } while ((search_improving_successor()));
+    incumbent_order = get_shuffled_order(subtasks.size());
+    if (!states.empty()) {
+        local_state_ids_by_state = get_local_state_ids_by_state(
+            subtasks, refinement_hierarchies, states);
+        incumbent_total_h_value = evaluate(incumbent_order);
+        do {
+            cout << "Incumbent total h value: " << incumbent_total_h_value << endl;
+        } while ((search_improving_successor()));
+    }
     cout << "Order evaluations: " << evaluations << endl;
-
     return compute_saturated_cost_partitioning(
         abstractions, incumbent_order, operator_costs);
 }
