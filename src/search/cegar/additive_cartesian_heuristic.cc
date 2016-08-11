@@ -10,6 +10,9 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../sampling.h"
+#include "../successor_generator.h"
+#include "../task_tools.h"
 
 #include "../evaluators/max_evaluator.h"
 
@@ -197,6 +200,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         return nullptr;
 
     shared_ptr<AbstractTask> task(get_task_from_options(opts));
+    TaskProxy task_proxy(*task);
     CostPartitioningType cost_partitioning_type =
         static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"));
     int extra_memory_padding_in_mb = opts.get<int>("extra_memory_padding");
@@ -246,7 +250,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             subtasks.push_back(abstraction->get_task());
             refinement_hierarchies.push_back(abstraction->get_refinement_hierarchy());
         }
-        vector<int> operator_costs = get_operator_costs(TaskProxy(*task));
+        vector<int> operator_costs = get_operator_costs(task_proxy);
         vector<vector<vector<int>>> h_values_by_orders;
         if (num_samples == 0) {
             h_values_by_orders = compute_saturated_cost_partitionings(
@@ -254,11 +258,31 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 operator_costs,
                 num_orders);
         } else {
-            // TODO: add samples.
-            vector<State> samples = {TaskProxy(*task).get_initial_state()};
+            vector<vector<int>> h_values_by_abstraction =
+                compute_saturated_cost_partitioning(
+                    abstractions, get_default_order(abstractions.size()), operator_costs);
+            State initial_state = task_proxy.get_initial_state();
+            vector<int> local_state_ids = get_local_state_ids(
+                subtasks, refinement_hierarchies, initial_state);
+            int init_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+            cout << "Initial h value for default order: " << init_h << endl;
+            SuccessorGenerator successor_generator(task);
             SCPOptimizer scp_optimizer(
                 move(abstractions), subtasks, refinement_hierarchies, operator_costs);
+            function<bool(const State &state)> dead_end_function =
+                    [&](const State &state) {
+                vector<int> local_state_ids = get_local_state_ids(
+                    subtasks, refinement_hierarchies, state);
+                return compute_sum_h(local_state_ids, h_values_by_abstraction) == INF;
+            };
             for (int i = 0; i < num_orders; ++i) {
+                vector<State> samples = sample_states_with_random_walks(
+                    task_proxy,
+                    successor_generator,
+                    num_samples,
+                    init_h,
+                    get_average_operator_cost(task_proxy),
+                    dead_end_function);
                 h_values_by_orders.push_back(scp_optimizer.find_cost_partitioning(samples));
             }
         }

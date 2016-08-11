@@ -52,14 +52,17 @@ SCPOptimizer::SCPOptimizer(
 }
 
 int SCPOptimizer::evaluate(const vector<int> &order) const {
+    assert(!local_state_ids_by_state.empty());
     vector<vector<int>> h_values_by_abstraction =
         compute_saturated_cost_partitioning(abstractions, order, operator_costs);
     int total_h = 0;
     for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
-        // TODO: handle INF.
         int sum_h = compute_sum_h(
-                    local_state_ids_by_state[sample_id],
-                    h_values_by_abstraction);
+            local_state_ids_by_state[sample_id],
+            h_values_by_abstraction);
+        if (sum_h == INF) {
+            ABORT("Dead-end sample should have been filtered.");
+        }
         total_h += sum_h;
     }
     ++evaluations;
@@ -88,9 +91,9 @@ bool SCPOptimizer::search_improving_successor() {
 vector<vector<int>> SCPOptimizer::find_cost_partitioning(
     const vector<State> &states) {
     incumbent_order = get_shuffled_order(subtasks.size());
-    incumbent_total_h_value = evaluate(incumbent_order);
     local_state_ids_by_state = get_local_state_ids_by_state(
         subtasks, refinement_hierarchies, states);
+    incumbent_total_h_value = evaluate(incumbent_order);
     evaluations = 0;
     do {
         cout << "Incumbent total h value: " << incumbent_total_h_value << endl;
