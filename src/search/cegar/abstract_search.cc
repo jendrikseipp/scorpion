@@ -53,7 +53,6 @@ void AbstractSearch::backwards_dijkstra(const AbstractStates goals) {
 
 void AbstractSearch::set_operator_costs(const vector<int> &costs) {
     operator_costs = costs;
-    reset();
 }
 
 AbstractState *AbstractSearch::astar_search(

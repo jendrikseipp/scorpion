@@ -367,12 +367,13 @@ void Abstraction::set_operator_costs(const vector<int> &new_costs) {
 
 vector<int> Abstraction::get_saturated_costs() {
     const int num_ops = task_proxy.get_operators().size();
-    // Use value greater than -INF to avoid arithmetic difficulties.
     const int min_cost = use_general_costs ? -INF : 0;
+
     vector<int> saturated_costs(num_ops, min_cost);
+
+    /* To prevent negative cost cycles, all operators inducing
+       self-loops must have non-negative costs. */
     if (use_general_costs) {
-        /* To prevent negative cost cycles, all operators inducing
-           self-loops must have non-negative costs. */
         assert(static_cast<int>(operator_induces_self_loop.size()) == num_ops);
         for (int op_id = 0; op_id < num_ops; ++op_id) {
             if (operator_induces_self_loop[op_id]) {
@@ -380,6 +381,7 @@ vector<int> Abstraction::get_saturated_costs() {
             }
         }
     }
+
     for (AbstractState *state : states) {
         const int g = state->get_search_info().get_g_value();
         const int h = state->get_h_value();
@@ -396,14 +398,14 @@ vector<int> Abstraction::get_saturated_costs() {
             continue;
 
         for (const Transition &transition: state->get_outgoing_transitions()) {
-            int op_id = transition.op_id;
-            AbstractState *successor = transition.target;
+            const AbstractState *successor = transition.target;
             const int succ_h = successor->get_h_value();
 
             if (succ_h == INF)
                 continue;
 
-            int needed = h - succ_h;
+            const int op_id = transition.op_id;
+            const int needed = h - succ_h;
             saturated_costs[op_id] = max(saturated_costs[op_id], needed);
         }
     }
