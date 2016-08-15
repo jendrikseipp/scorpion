@@ -29,11 +29,9 @@ vector<vector<vector<int>>> compute_saturated_cost_partitionings(
 
 MaxCartesianHeuristic::MaxCartesianHeuristic(
     const options::Options &opts,
-    vector<shared_ptr<AbstractTask>> &&subtasks,
     vector<shared_ptr<RefinementHierarchy>> &&refinement_hierarchies,
     vector<vector<vector<int>>> &&h_values_by_orders)
     : Heuristic(opts),
-      subtasks(move(subtasks)),
       refinement_hierarchies(move(refinement_hierarchies)),
       h_values_by_orders(move(h_values_by_orders)) {
 }
@@ -54,7 +52,7 @@ int MaxCartesianHeuristic::compute_max(
 
 int MaxCartesianHeuristic::compute_heuristic(const State &state) {
     vector<int> local_state_ids = get_local_state_ids(
-        subtasks, refinement_hierarchies, state);
+        refinement_hierarchies, state);
     int max_h = compute_max(local_state_ids, h_values_by_orders);
     if (max_h == INF) {
         return DEAD_END;

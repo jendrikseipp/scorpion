@@ -28,13 +28,12 @@ static vector<int> get_shuffled_order(int n) {
 }
 
 static vector<vector<int>> get_local_state_ids_by_state(
-    const vector<shared_ptr<AbstractTask>> &subtasks,
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const vector<State> &states) {
     vector<vector<int>> local_state_ids_by_state;
     for (const State &state : states) {
         local_state_ids_by_state.push_back(
-                    get_local_state_ids(subtasks, refinement_hierarchies, state));
+            get_local_state_ids(refinement_hierarchies, state));
     }
     return local_state_ids_by_state;
 }
@@ -42,11 +41,9 @@ static vector<vector<int>> get_local_state_ids_by_state(
 
 SCPOptimizer::SCPOptimizer(
     vector<unique_ptr<Abstraction>> &&abstractions,
-    const vector<shared_ptr<AbstractTask>> &subtasks,
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const vector<int> &operator_costs)
     : abstractions(move(abstractions)),
-      subtasks(subtasks),
       refinement_hierarchies(refinement_hierarchies),
       operator_costs(operator_costs) {
 }
@@ -91,10 +88,10 @@ bool SCPOptimizer::search_improving_successor() {
 vector<vector<int>> SCPOptimizer::find_cost_partitioning(
     const vector<State> &states) {
     evaluations = 0;
-    incumbent_order = get_shuffled_order(subtasks.size());
+    incumbent_order = get_shuffled_order(abstractions.size());
     if (!states.empty()) {
         local_state_ids_by_state = get_local_state_ids_by_state(
-            subtasks, refinement_hierarchies, states);
+            refinement_hierarchies, states);
         incumbent_total_h_value = evaluate(incumbent_order);
         do {
             cout << "Incumbent total h value: " << incumbent_total_h_value << endl;
@@ -123,18 +120,12 @@ vector<vector<int> > compute_saturated_cost_partitioning(
 }
 
 vector<int> get_local_state_ids(
-    const vector<shared_ptr<AbstractTask>> &subtasks,
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const State &state) {
-    assert(subtasks.size() == refinement_hierarchies.size());
     vector<int> local_state_ids;
-    local_state_ids.reserve(subtasks.size());
-    for (size_t i = 0; i < subtasks.size(); ++i) {
-        const AbstractTask &subtask = *subtasks[i];
-        TaskProxy subtask_proxy(subtask);
-        State local_state = subtask_proxy.convert_ancestor_state(state);
-        local_state_ids.push_back(
-                    refinement_hierarchies[i]->get_node(local_state)->get_state_id());
+    local_state_ids.reserve(refinement_hierarchies.size());
+    for (const shared_ptr<RefinementHierarchy> &hierarchy : refinement_hierarchies) {
+        local_state_ids.push_back(hierarchy->get_local_state_id(state));
     }
     return local_state_ids;
 }

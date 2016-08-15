@@ -60,4 +60,10 @@ Node *RefinementHierarchy::get_node(const State &state) const {
     }
     return current;
 }
+
+int RefinementHierarchy::get_local_state_id(const State &state) const {
+    TaskProxy subtask_proxy(*task);
+    State subtask_state = subtask_proxy.convert_ancestor_state(state);
+    return get_node(subtask_state)->get_state_id();
+}
 }

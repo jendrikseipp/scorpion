@@ -239,17 +239,16 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
         int num_orders = opts.get<int>("orders");
         int num_samples = opts.get<int>("samples");
+
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
-        // TODO: add RefinementHierarchy::get_subtask().
-        vector<shared_ptr<AbstractTask>> subtasks;
-        subtasks.reserve(abstractions.size());
+
         vector<shared_ptr<RefinementHierarchy>> refinement_hierarchies;
         refinement_hierarchies.reserve(abstractions.size());
         for (unique_ptr<Abstraction> &abstraction : abstractions) {
-            subtasks.push_back(abstraction->get_task());
             refinement_hierarchies.push_back(abstraction->get_refinement_hierarchy());
         }
+
         vector<int> operator_costs = get_operator_costs(task_proxy);
 
         vector<vector<vector<int>>> h_values_by_orders;
@@ -258,16 +257,16 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 abstractions, get_default_order(abstractions.size()), operator_costs);
         State initial_state = task_proxy.get_initial_state();
         vector<int> local_state_ids = get_local_state_ids(
-            subtasks, refinement_hierarchies, initial_state);
+            refinement_hierarchies, initial_state);
         int init_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
         cout << "Initial h value for default order: " << init_h << endl;
         SuccessorGenerator successor_generator(task);
         SCPOptimizer scp_optimizer(
-            move(abstractions), subtasks, refinement_hierarchies, operator_costs);
+            move(abstractions), refinement_hierarchies, operator_costs);
         function<bool(const State &state)> dead_end_function =
                 [&](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(
-                subtasks, refinement_hierarchies, state);
+                refinement_hierarchies, state);
             return compute_sum_h(local_state_ids, h_values_by_abstraction) == INF;
         };
         for (int i = 0; i < num_orders; ++i) {
@@ -285,7 +284,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         }
         return new MaxCartesianHeuristic(
             heuristic_opts,
-            move(subtasks),
             move(refinement_hierarchies),
             move(h_values_by_orders));
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {

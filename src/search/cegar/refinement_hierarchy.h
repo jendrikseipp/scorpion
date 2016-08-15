@@ -35,6 +35,8 @@ public:
     Node *get_root() const {
         return root.get();
     }
+
+    int get_local_state_id(const State &state) const;
 };
 
 

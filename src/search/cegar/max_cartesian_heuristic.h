@@ -13,7 +13,6 @@ class RefinementHierarchy;
   Compute maximum over a set of additive cost partitionings.
 */
 class MaxCartesianHeuristic : public Heuristic {
-    const std::vector<std::shared_ptr<AbstractTask>> subtasks;
     const std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
     const std::vector<std::vector<std::vector<int>>> h_values_by_orders;
 
@@ -28,7 +27,6 @@ protected:
 public:
     MaxCartesianHeuristic(
         const options::Options &opts,
-        std::vector<std::shared_ptr<AbstractTask>> &&subtasks,
         std::vector<std::shared_ptr<RefinementHierarchy>> &&refinement_hierarchies,
         std::vector<std::vector<std::vector<int>>> &&h_values_by_orders);
 };
