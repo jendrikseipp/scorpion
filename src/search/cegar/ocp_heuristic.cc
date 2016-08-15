@@ -93,7 +93,6 @@ int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
         return DEAD_END;
     }
     double h_val = lp_solver->getObjValue();
-    // TODO avoid code duplication with landmark count heuristic
     double epsilon = 0.01;
     return ceil(h_val - epsilon);
 }

@@ -73,24 +73,18 @@ int AdditiveCartesianHeuristic::compute_heuristic(const State &state) {
     return sum_h;
 }
 
-static AdditiveCartesianHeuristic *create_additive_cartesian_heuristic(
-    vector<unique_ptr<Abstraction>> &abstractions,
-    const Options &opts) {
-    shared_ptr<AbstractTask> task(get_task_from_options(opts));
+static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> operator_costs) {
+    vector<int> indices = get_default_order(abstractions.size());
 
-    vector<int> remaining_costs;
-    for (OperatorProxy op : TaskProxy(*task).get_operators())
-        remaining_costs.push_back(op.get_cost());
-
-    vector<CartesianHeuristicFunction> heuristic_functions;
-    for (unique_ptr<Abstraction> &abstraction : abstractions) {
-        abstraction->set_operator_costs(remaining_costs);
-        heuristic_functions.emplace_back(
-            abstraction->get_refinement_hierarchy(),
-            abstraction->get_h_values());
-        reduce_costs(remaining_costs, abstraction->get_saturated_costs());
-    }
-    return new AdditiveCartesianHeuristic(opts, move(heuristic_functions));
+    vector<vector<vector<int>>> h_values_by_orders;
+    do {
+        h_values_by_orders.push_back(
+            compute_saturated_cost_partitioning(
+                abstractions, indices, operator_costs));
+    } while (next_permutation(indices.begin(), indices.end()));
+    return h_values_by_orders;
 }
 
 static ScalarEvaluator *_parse(OptionParser &parser) {
@@ -235,7 +229,8 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         heuristic_opts.set<int>("lpsolver", opts.get_enum("lpsolver"));
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
-    } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC) {
+    } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
+               cost_partitioning_type ==CostPartitioningType::SATURATED_MAX) {
         int num_orders = opts.get<int>("orders");
         int num_samples = opts.get<int>("samples");
 
@@ -249,6 +244,16 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         }
 
         vector<int> operator_costs = get_operator_costs(task_proxy);
+
+        if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
+            vector<vector<vector<int>>> h_values_by_orders =
+                compute_all_saturated_cost_partitionings(
+                    abstractions, operator_costs);
+            return new MaxCartesianHeuristic(
+                heuristic_opts,
+                move(refinement_hierarchies),
+                move(h_values_by_orders));
+        }
 
         vector<vector<vector<int>>> h_values_by_orders;
         vector<vector<int>> h_values_by_abstraction =
@@ -285,19 +290,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             heuristic_opts,
             move(refinement_hierarchies),
             move(h_values_by_orders));
-    } else if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
-        vector<unique_ptr<Abstraction>> abstractions =
-            cost_saturation.extract_abstractions();
-        sort(abstractions.begin(), abstractions.end());
-        vector<ScalarEvaluator *> additive_heuristics;
-        do {
-            additive_heuristics.push_back(
-                create_additive_cartesian_heuristic(abstractions, heuristic_opts));
-        } while (next_permutation(abstractions.begin(), abstractions.end()));
-
-        Options max_evaluator_opts;
-        max_evaluator_opts.set("evals", additive_heuristics);
-        return new max_evaluator::MaxEvaluator(max_evaluator_opts);
     } else {
         ABORT("Invalid cost partitioning type");
     }
