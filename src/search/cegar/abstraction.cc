@@ -373,8 +373,8 @@ vector<int> Abstraction::get_saturated_costs() {
     if (use_general_costs) {
         /* To prevent negative cost cycles, all operators inducing
            self-loops must have non-negative costs. */
-        assert(!operator_induces_self_loop.empty());
-        for (size_t op_id = 0; op_id < operator_induces_self_loop.size(); ++op_id) {
+        assert(static_cast<int>(operator_induces_self_loop.size()) == num_ops);
+        for (int op_id = 0; op_id < num_ops; ++op_id) {
             if (operator_induces_self_loop[op_id]) {
                 saturated_costs[op_id] = 0;
             }
