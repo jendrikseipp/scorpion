@@ -241,7 +241,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         int num_samples = opts.get<int>("samples");
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
-        // TODO: add RefinementHierarchy::get_task().
+        // TODO: add RefinementHierarchy::get_subtask().
         vector<shared_ptr<AbstractTask>> subtasks;
         subtasks.reserve(abstractions.size());
         vector<shared_ptr<RefinementHierarchy>> refinement_hierarchies;

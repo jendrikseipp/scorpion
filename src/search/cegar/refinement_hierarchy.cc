@@ -46,8 +46,10 @@ Node *Node::get_child(int value) const {
 }
 
 
-RefinementHierarchy::RefinementHierarchy()
-    : root(new Node()) {
+RefinementHierarchy::RefinementHierarchy(
+    const shared_ptr<AbstractTask> &task)
+    : task(task),
+      root(new Node()) {
 }
 
 Node *RefinementHierarchy::get_node(const State &state) const {
