@@ -124,6 +124,8 @@ shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
 }
 
 bool CostSaturation::state_is_dead_end(const State &state) const {
+    // TODO: Since we don't store heuristic_functions for SATURATED_POSTHOC,
+    //       we don't recognize dead ends for SATURATED_POSTHOC.
     for (const CartesianHeuristicFunction &function : heuristic_functions) {
         if (function.get_value(state) == INF)
             return true;

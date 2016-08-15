@@ -271,13 +271,16 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             return compute_sum_h(local_state_ids, h_values_by_abstraction) == INF;
         };
         for (int i = 0; i < num_orders; ++i) {
-            vector<State> samples = sample_states_with_random_walks(
-                task_proxy,
-                successor_generator,
-                num_samples,
-                init_h,
-                get_average_operator_cost(task_proxy),
-                dead_end_function);
+            vector<State> samples;
+            if (init_h != INF) {
+                samples = sample_states_with_random_walks(
+                    task_proxy,
+                    successor_generator,
+                    num_samples,
+                    init_h,
+                    get_average_operator_cost(task_proxy),
+                    dead_end_function);
+            }
             h_values_by_orders.push_back(scp_optimizer.find_cost_partitioning(samples));
         }
         return new MaxCartesianHeuristic(
