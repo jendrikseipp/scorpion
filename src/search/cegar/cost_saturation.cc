@@ -164,9 +164,8 @@ void CostSaturation::build_abstractions(
             int init_h = abstraction->get_h_value_of_initial_state();
             if (init_h > 0) {
                 heuristic_functions.emplace_back(
-                    subtask,
                     abstraction->get_refinement_hierarchy(),
-                    abstraction->compute_h_map());
+                    abstraction->get_h_values());
             }
         } else if (
             cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||

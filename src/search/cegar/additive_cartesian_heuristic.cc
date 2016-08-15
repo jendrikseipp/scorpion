@@ -86,9 +86,8 @@ static AdditiveCartesianHeuristic *create_additive_cartesian_heuristic(
     for (unique_ptr<Abstraction> &abstraction : abstractions) {
         abstraction->set_operator_costs(remaining_costs);
         heuristic_functions.emplace_back(
-            abstraction->get_task(),
             abstraction->get_refinement_hierarchy(),
-            abstraction->compute_h_map());
+            abstraction->get_h_values());
         reduce_costs(remaining_costs, abstraction->get_saturated_costs());
     }
     return new AdditiveCartesianHeuristic(opts, move(heuristic_functions));

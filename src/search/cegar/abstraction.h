@@ -13,7 +13,6 @@
 #include <limits>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -135,7 +134,6 @@ public:
         return refinement_hierarchy;
     }
 
-    std::unordered_map<const Node *, int> compute_h_map() const;
     std::vector<int> get_h_values() const;
 
     int get_num_states() const {

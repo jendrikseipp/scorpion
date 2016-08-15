@@ -128,24 +128,13 @@ Abstraction::~Abstraction() {
         delete state;
 }
 
-unordered_map<const Node *, int> Abstraction::compute_h_map() const {
-    unordered_map<const Node *, int> h_map;
-    for (const AbstractState *state: states) {
-        h_map[state->get_node()] = state->get_h_value();
-    }
-    return h_map;
-}
-
 vector<int> Abstraction::get_h_values() const {
     vector<int> h_values(states.size(), -1);
     for (const AbstractState *state: states) {
         int state_id = state->get_node()->get_state_id();
         h_values[state_id] = state->get_h_value();
     }
-    for (int h : h_values) {
-        utils::unused_variable(h);
-        assert(h != -1);
-    }
+    assert(all_of(h_values.begin(), h_values.end(), [](int h) {return h != -1;}));
     return h_values;
 }
 
