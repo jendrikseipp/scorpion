@@ -12,21 +12,6 @@
 using namespace std;
 
 namespace cegar {
-vector<vector<vector<int>>> compute_saturated_cost_partitionings(
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> operator_costs,
-    int num_orders) {
-    vector<int> indices = get_default_order(abstractions.size());
-    vector<vector<vector<int>>> h_values_by_orders;
-    for (int order = 0; order < num_orders; ++order) {
-        g_rng()->shuffle(indices);
-        h_values_by_orders.push_back(
-            compute_saturated_cost_partitioning(
-                abstractions, indices, operator_costs));
-    }
-    return h_values_by_orders;
-}
-
 MaxCartesianHeuristic::MaxCartesianHeuristic(
     const options::Options &opts,
     vector<shared_ptr<RefinementHierarchy>> &&refinement_hierarchies,
