@@ -6,6 +6,7 @@
 
 #include "../globals.h"
 
+#include "../utils/logging.h"
 #include "../utils/rng.h"
 
 #include <algorithm>
@@ -86,18 +87,23 @@ bool SCPOptimizer::search_improving_successor() {
 }
 
 vector<vector<int>> SCPOptimizer::find_cost_partitioning(
-    const vector<State> &states) {
+    const vector<State> &states, double max_time) {
     evaluations = 0;
     incumbent_order = get_shuffled_order(abstractions.size());
+    utils::CountdownTimer timer(max_time);
     if (!states.empty()) {
         local_state_ids_by_state = get_local_state_ids_by_state(
             refinement_hierarchies, states);
         incumbent_total_h_value = evaluate(incumbent_order);
         do {
-            cout << "Incumbent total h value: " << incumbent_total_h_value << endl;
-        } while ((search_improving_successor()));
+            g_log << "Incumbent total h value: " << incumbent_total_h_value << endl;
+            if (timer.is_expired()) {
+                g_log << "Optimization time limit reached." << endl;
+                break;
+            }
+        } while (search_improving_successor());
     }
-    cout << "Order evaluations: " << evaluations << endl;
+    g_log << "Order evaluations: " << evaluations << endl;
     return compute_saturated_cost_partitioning(
         abstractions, incumbent_order, operator_costs);
 }
