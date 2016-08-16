@@ -22,12 +22,6 @@ vector<int> get_default_order(int n) {
     return indices;
 }
 
-static vector<int> get_shuffled_order(int n) {
-    vector<int> order = get_default_order(n);
-    g_rng()->shuffle(order);
-    return order;
-}
-
 static vector<vector<int>> get_local_state_ids_by_state(
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const vector<State> &states) {
@@ -87,9 +81,12 @@ bool SCPOptimizer::search_improving_successor() {
 }
 
 vector<vector<int>> SCPOptimizer::find_cost_partitioning(
-    const vector<State> &states, double max_time) {
+    const vector<State> &states, double max_time, bool shuffle) {
     evaluations = 0;
-    incumbent_order = get_shuffled_order(abstractions.size());
+    incumbent_order = get_default_order(abstractions.size());
+    if (shuffle) {
+        g_rng()->shuffle(incumbent_order);
+    }
     utils::CountdownTimer timer(max_time);
     if (!states.empty()) {
         local_state_ids_by_state = get_local_state_ids_by_state(

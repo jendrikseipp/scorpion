@@ -191,6 +191,10 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "maximum time in seconds for optimizing each order",
         "infinity",
         Bounds("0.0", "infinity"));
+    parser.add_option<bool>(
+        "shuffle",
+        "shuffle order before optimizing it",
+        "true");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -239,6 +243,12 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         int num_orders = opts.get<int>("orders");
         int num_samples = opts.get<int>("samples");
         int max_optimization_time = opts.get<double>("max_optimization_time");
+        bool shuffle = opts.get<bool>("shuffle");
+
+        if (num_orders > 1 && !shuffle) {
+            cerr << "When using more than one order set shuffle=true" << endl;
+            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        }
 
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
@@ -261,7 +271,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 move(h_values_by_orders));
         }
 
-        vector<vector<vector<int>>> h_values_by_orders;
         vector<vector<int>> h_values_by_abstraction =
             compute_saturated_cost_partitioning(
                 abstractions, get_default_order(abstractions.size()), operator_costs);
@@ -273,12 +282,15 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         SuccessorGenerator successor_generator(task);
         SCPOptimizer scp_optimizer(
             move(abstractions), refinement_hierarchies, operator_costs);
+
         function<bool(const State &state)> dead_end_function =
                 [&](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(
                 refinement_hierarchies, state);
             return compute_sum_h(local_state_ids, h_values_by_abstraction) == INF;
         };
+
+        vector<vector<vector<int>>> h_values_by_orders;
         for (int i = 0; i < num_orders; ++i) {
             vector<State> samples;
             if (init_h != INF) {
@@ -291,7 +303,8 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     dead_end_function);
             }
             h_values_by_orders.push_back(
-                scp_optimizer.find_cost_partitioning(samples, max_optimization_time));
+                scp_optimizer.find_cost_partitioning(
+                    samples, max_optimization_time, shuffle));
         }
         return new MaxCartesianHeuristic(
             heuristic_opts,

@@ -33,7 +33,7 @@ public:
         const std::vector<int> &operator_costs);
 
     std::vector<std::vector<int>> find_cost_partitioning(
-        const std::vector<State> &states, double max_time);
+        const std::vector<State> &states, double max_time, bool shuffle);
 };
 
 extern std::vector<int> get_default_order(int n);
