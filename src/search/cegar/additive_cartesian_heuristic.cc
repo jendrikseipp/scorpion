@@ -195,6 +195,10 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "shuffle",
         "shuffle order before optimizing it",
         "true");
+    parser.add_option<bool>(
+        "diversify",
+        "search for orders that complement the portfolio",
+        "false");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -240,10 +244,11 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             heuristic_opts, cost_saturation.extract_transition_systems());
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
                cost_partitioning_type ==CostPartitioningType::SATURATED_MAX) {
-        int num_orders = opts.get<int>("orders");
-        int num_samples = opts.get<int>("samples");
-        int max_optimization_time = opts.get<double>("max_optimization_time");
-        bool shuffle = opts.get<bool>("shuffle");
+        const int num_orders = opts.get<int>("orders");
+        const int num_samples = opts.get<int>("samples");
+        const int max_optimization_time = opts.get<double>("max_optimization_time");
+        const bool shuffle = opts.get<bool>("shuffle");
+        const bool diversify = opts.get<bool>("diversify");
 
         if (num_orders > 1 && !shuffle) {
             cerr << "When using more than one order set shuffle=true" << endl;
@@ -302,10 +307,22 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     get_average_operator_cost(task_proxy),
                     dead_end_function);
             }
-            h_values_by_orders.push_back(
-                scp_optimizer.find_cost_partitioning(
-                    samples, max_optimization_time, shuffle));
+            if (diversify) {
+                h_values_by_orders.push_back(
+                    scp_optimizer.find_cost_partitioning(
+                        samples,
+                        max_optimization_time,
+                        shuffle,
+                        h_values_by_orders));
+            } else {
+                h_values_by_orders.push_back(
+                    scp_optimizer.find_cost_partitioning(
+                        samples,
+                        max_optimization_time,
+                        shuffle));
+            }
         }
+        cout << "Orders: " << h_values_by_orders.size() << endl;
         return new MaxCartesianHeuristic(
             heuristic_opts,
             move(refinement_hierarchies),

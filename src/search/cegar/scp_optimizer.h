@@ -22,9 +22,12 @@ class SCPOptimizer {
 
     mutable int evaluations;
 
-    int evaluate(const std::vector<int> &order) const;
+    int evaluate(
+        const std::vector<int> &order,
+        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders) const;
 
-    bool search_improving_successor();
+    bool search_improving_successor(
+        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders);
 
 public:
     SCPOptimizer(
@@ -33,7 +36,10 @@ public:
         const std::vector<int> &operator_costs);
 
     std::vector<std::vector<int>> find_cost_partitioning(
-        const std::vector<State> &states, double max_time, bool shuffle);
+        const std::vector<State> &states,
+        double max_time,
+        bool shuffle,
+        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders = {});
 };
 
 extern std::vector<int> get_default_order(int n);

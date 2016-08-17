@@ -43,30 +43,35 @@ SCPOptimizer::SCPOptimizer(
       operator_costs(operator_costs) {
 }
 
-int SCPOptimizer::evaluate(const vector<int> &order) const {
+int SCPOptimizer::evaluate(
+    const vector<int> &order,
+    const vector<vector<vector<int>>> &h_values_by_orders) const {
     assert(!local_state_ids_by_state.empty());
     vector<vector<int>> h_values_by_abstraction =
         compute_saturated_cost_partitioning(abstractions, order, operator_costs);
     int total_h = 0;
     for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
-        int sum_h = compute_sum_h(
-            local_state_ids_by_state[sample_id],
-            h_values_by_abstraction);
+        const vector<int> &local_state_ids = local_state_ids_by_state[sample_id];
+        int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
         if (sum_h == INF) {
             ABORT("Dead-end sample should have been filtered.");
         }
-        total_h += sum_h;
+        int portfolio_sum_h = compute_max_h(local_state_ids, h_values_by_orders);
+        if (h_values_by_orders.empty())
+            assert(portfolio_sum_h == 0);
+        total_h += max(0, sum_h - portfolio_sum_h);
     }
     ++evaluations;
     return total_h;
 }
 
-bool SCPOptimizer::search_improving_successor() {
+bool SCPOptimizer::search_improving_successor(
+    const vector<vector<vector<int>>> &h_values_by_orders) {
     int num_abstractions = abstractions.size();
     for (int i = 0; i < num_abstractions; ++i) {
         for (int j = i + 1; j < num_abstractions; ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
-            int total_h = evaluate(incumbent_order);
+            int total_h = evaluate(incumbent_order, h_values_by_orders);
             if (total_h > incumbent_total_h_value) {
                 // Set new incumbent.
                 incumbent_total_h_value = total_h;
@@ -81,7 +86,10 @@ bool SCPOptimizer::search_improving_successor() {
 }
 
 vector<vector<int>> SCPOptimizer::find_cost_partitioning(
-    const vector<State> &states, double max_time, bool shuffle) {
+    const vector<State> &states,
+    double max_time,
+    bool shuffle,
+    const vector<vector<vector<int>>> &h_values_by_orders) {
     evaluations = 0;
     incumbent_order = get_default_order(abstractions.size());
     if (shuffle) {
@@ -91,14 +99,14 @@ vector<vector<int>> SCPOptimizer::find_cost_partitioning(
     if (!states.empty()) {
         local_state_ids_by_state = get_local_state_ids_by_state(
             refinement_hierarchies, states);
-        incumbent_total_h_value = evaluate(incumbent_order);
+        incumbent_total_h_value = evaluate(incumbent_order, h_values_by_orders);
         do {
             g_log << "Incumbent total h value: " << incumbent_total_h_value << endl;
             if (timer.is_expired()) {
                 g_log << "Optimization time limit reached." << endl;
                 break;
             }
-        } while (search_improving_successor());
+        } while (search_improving_successor(h_values_by_orders));
     }
     g_log << "Order evaluations: " << evaluations << endl;
     return compute_saturated_cost_partitioning(
