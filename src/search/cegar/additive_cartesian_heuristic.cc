@@ -246,12 +246,28 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                cost_partitioning_type ==CostPartitioningType::SATURATED_MAX) {
         const int num_orders = opts.get<int>("orders");
         const int num_samples = opts.get<int>("samples");
-        const int max_optimization_time = opts.get<double>("max_optimization_time");
+        const double max_optimization_time = opts.get<double>("max_optimization_time");
         const bool shuffle = opts.get<bool>("shuffle");
         const bool diversify = opts.get<bool>("diversify");
 
         if (num_orders > 1 && !shuffle) {
             cerr << "When using more than one order set shuffle=true" << endl;
+            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        }
+        if (diversify && num_orders == 1) {
+            cerr << "When diversifying set orders > 1" << endl;
+            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        }
+        if (diversify && !shuffle) {
+            cerr << "When diversifying set shuffle=true" << endl;
+            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        }
+        if (diversify && num_samples == 0) {
+            cerr << "When diversifying set samples >= 1" << endl;
+            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        }
+        if (num_samples == 0 && max_optimization_time != numeric_limits<double>::max()) {
+            cerr << "Option max_optimization_time has no effect when samples == 0" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
 
