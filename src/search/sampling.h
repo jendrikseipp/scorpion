@@ -16,6 +16,12 @@ class CountdownTimer;
 
 struct SamplingTimeout : public std::exception {};
 
+State sample_state_with_random_walk(
+    const TaskProxy &task_proxy,
+    const SuccessorGenerator &successor_generator,
+    int init_h,
+    double average_operator_cost);
+
 /*
   Perform 'num_samples' random walks with biomially distributed walk
   lenghts. Whenever a dead end is detected or a state has no
@@ -26,7 +32,7 @@ struct SamplingTimeout : public std::exception {};
   possibly return less than 'num_samples' states.
 */
 std::vector<State> sample_states_with_random_walks(
-    TaskProxy task_proxy,
+    const TaskProxy &task_proxy,
     const SuccessorGenerator &successor_generator,
     int num_samples,
     int init_h,

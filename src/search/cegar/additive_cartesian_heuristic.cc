@@ -321,15 +321,23 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         SCPOptimizer scp_optimizer(
             move(abstractions), refinement_hierarchies, operator_costs);
         SuccessorGenerator successor_generator(task);
+        utils::Timer sampling_timer;
+        sampling_timer.stop();
         vector<vector<vector<int>>> h_values_by_orders;
         for (int i = 0; i < num_orders; ++i) {
-            vector<State> samples = sample_states_with_random_walks(
-                task_proxy,
-                successor_generator,
-                num_samples,
-                init_h,
-                get_average_operator_cost(task_proxy),
-                dead_end_function);
+            sampling_timer.resume();
+            vector<State> samples;
+            while (static_cast<int>(samples.size()) < num_samples) {
+                State sample = sample_state_with_random_walk(
+                    task_proxy,
+                    successor_generator,
+                    init_h,
+                    get_average_operator_cost(task_proxy));
+                if (!dead_end_function(sample)) {
+                    samples.push_back(move(sample));
+                }
+            }
+            sampling_timer.stop();
             vector<vector<int>> h_values_by_abstraction;
             if (diversify) {
                 h_values_by_abstraction = scp_optimizer.find_cost_partitioning(
@@ -349,6 +357,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
             }
         }
+        cout << "Sampling time: " << sampling_timer << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
         return new MaxCartesianHeuristic(
             heuristic_opts,
