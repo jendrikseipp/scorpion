@@ -114,7 +114,7 @@ vector<vector<int>> SCPOptimizer::find_cost_partitioning(
 }
 
 
-vector<vector<int> > compute_saturated_cost_partitioning(
+vector<vector<int>> compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
     const vector<int> &operator_costs) {

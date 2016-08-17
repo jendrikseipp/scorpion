@@ -276,37 +276,45 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 move(h_values_by_orders));
         }
 
-        vector<vector<int>> h_values_by_abstraction =
+        vector<vector<int>> h_values_by_abstraction_for_default_order =
             compute_saturated_cost_partitioning(
                 abstractions, get_default_order(abstractions.size()), operator_costs);
+
         State initial_state = task_proxy.get_initial_state();
-        vector<int> local_state_ids = get_local_state_ids(
+        vector<int> local_state_ids_for_initial_state = get_local_state_ids(
             refinement_hierarchies, initial_state);
-        int init_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+        int init_h = compute_sum_h(
+            local_state_ids_for_initial_state,
+            h_values_by_abstraction_for_default_order);
         cout << "Initial h value for default order: " << init_h << endl;
-        SuccessorGenerator successor_generator(task);
-        SCPOptimizer scp_optimizer(
-            move(abstractions), refinement_hierarchies, operator_costs);
+        if (init_h == INF) {
+            return new MaxCartesianHeuristic(
+                heuristic_opts,
+                move(refinement_hierarchies),
+                {move(h_values_by_abstraction_for_default_order)});
+        }
 
         function<bool(const State &state)> dead_end_function =
                 [&](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(
                 refinement_hierarchies, state);
-            return compute_sum_h(local_state_ids, h_values_by_abstraction) == INF;
+            return compute_sum_h(
+                local_state_ids, h_values_by_abstraction_for_default_order) == INF;
         };
 
+        SCPOptimizer scp_optimizer(
+            move(abstractions), refinement_hierarchies, operator_costs);
+        SuccessorGenerator successor_generator(task);
         vector<vector<vector<int>>> h_values_by_orders;
         for (int i = 0; i < num_orders; ++i) {
             vector<State> samples;
-            if (init_h != INF) {
-                samples = sample_states_with_random_walks(
-                    task_proxy,
-                    successor_generator,
-                    num_samples,
-                    init_h,
-                    get_average_operator_cost(task_proxy),
-                    dead_end_function);
-            }
+            samples = sample_states_with_random_walks(
+                task_proxy,
+                successor_generator,
+                num_samples,
+                init_h,
+                get_average_operator_cost(task_proxy),
+                dead_end_function);
             if (diversify) {
                 h_values_by_orders.push_back(
                     scp_optimizer.find_cost_partitioning(
