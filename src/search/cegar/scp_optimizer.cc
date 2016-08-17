@@ -45,6 +45,7 @@ SCPOptimizer::SCPOptimizer(
 
 int SCPOptimizer::evaluate(
     const vector<int> &order,
+    const vector<vector<int>> &local_state_ids_by_state,
     const vector<vector<vector<int>>> &h_values_by_orders) const {
     assert(!local_state_ids_by_state.empty());
     vector<vector<int>> h_values_by_abstraction =
@@ -67,12 +68,16 @@ int SCPOptimizer::evaluate(
 
 bool SCPOptimizer::search_improving_successor(
     const utils::CountdownTimer &timer,
-    const vector<vector<vector<int>>> &h_values_by_orders) {
+    const vector<vector<int>> &local_state_ids_by_state,
+    vector<int> &incumbent_order,
+    int &incumbent_total_h_value,
+    const vector<vector<vector<int>>> &h_values_by_orders) const {
     int num_abstractions = abstractions.size();
     for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
-            int total_h = evaluate(incumbent_order, h_values_by_orders);
+            int total_h = evaluate(
+                incumbent_order, local_state_ids_by_state, h_values_by_orders);
             if (total_h > incumbent_total_h_value) {
                 // Set new incumbent.
                 incumbent_total_h_value = total_h;
@@ -90,27 +95,31 @@ vector<vector<int>> SCPOptimizer::find_cost_partitioning(
     const vector<State> &states,
     double max_time,
     bool shuffle,
-    const vector<vector<vector<int>>> &h_values_by_orders) {
+    const vector<vector<vector<int>>> &h_values_by_orders) const {
+    utils::CountdownTimer timer(max_time);
     evaluations = 0;
-    incumbent_order = get_default_order(abstractions.size());
+    vector<int> incumbent_order = get_default_order(abstractions.size());
     if (shuffle) {
         g_rng()->shuffle(incumbent_order);
     }
-    utils::CountdownTimer timer(max_time);
+    int incumbent_total_h_value = 0;
     if (!states.empty()) {
-        local_state_ids_by_state = get_local_state_ids_by_state(
-            refinement_hierarchies, states);
-        incumbent_total_h_value = evaluate(incumbent_order, h_values_by_orders);
+        vector<vector<int>> local_state_ids_by_state =
+            get_local_state_ids_by_state(refinement_hierarchies, states);
+        incumbent_total_h_value = evaluate(
+            incumbent_order, local_state_ids_by_state, h_values_by_orders);
         do {
             g_log << "Incumbent total h value: " << incumbent_total_h_value << endl;
         } while (
-            search_improving_successor(timer, h_values_by_orders) &&
+            search_improving_successor(
+                timer, local_state_ids_by_state, incumbent_order,
+                incumbent_total_h_value, h_values_by_orders) &&
             !timer.is_expired());
         if (timer.is_expired()) {
             g_log << "Optimization time limit reached." << endl;
         }
     }
-    g_log << "Order evaluations: " << evaluations << endl;
+    g_log << "Evaluated orders: " << evaluations << endl;
     if (h_values_by_orders.empty() || incumbent_total_h_value > 0) {
         return compute_saturated_cost_partitioning(
             abstractions, incumbent_order, operator_costs);

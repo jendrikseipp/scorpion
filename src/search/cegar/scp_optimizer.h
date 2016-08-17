@@ -20,19 +20,19 @@ class SCPOptimizer {
     const std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
     const std::vector<int> operator_costs;
 
-    std::vector<std::vector<int>> local_state_ids_by_state;
-    std::vector<int> incumbent_order;
-    int incumbent_total_h_value;
-
     mutable int evaluations;
 
     int evaluate(
         const std::vector<int> &order,
+        const std::vector<std::vector<int>> &local_state_ids_by_state,
         const std::vector<std::vector<std::vector<int>>> &h_values_by_orders) const;
 
     bool search_improving_successor(
         const utils::CountdownTimer &timer,
-        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders);
+        const std::vector<std::vector<int>> &local_state_ids_by_state,
+        std::vector<int> &incumbent_order,
+        int &incumbent_total_h_value,
+        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders) const;
 
 public:
     SCPOptimizer(
@@ -44,7 +44,7 @@ public:
         const std::vector<State> &states,
         double max_time,
         bool shuffle,
-        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders = {});
+        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders = {}) const;
 };
 
 extern std::vector<int> get_default_order(int n);
