@@ -307,8 +307,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         SuccessorGenerator successor_generator(task);
         vector<vector<vector<int>>> h_values_by_orders;
         for (int i = 0; i < num_orders; ++i) {
-            vector<State> samples;
-            samples = sample_states_with_random_walks(
+            vector<State> samples = sample_states_with_random_walks(
                 task_proxy,
                 successor_generator,
                 num_samples,
@@ -328,7 +327,9 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     max_optimization_time,
                     shuffle);
             }
-            if (!h_values_by_abstraction.empty()) {
+            if (h_values_by_abstraction.empty()) {
+                break;
+            } else {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
             }
         }
