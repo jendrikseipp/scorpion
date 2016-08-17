@@ -21,24 +21,10 @@ MaxCartesianHeuristic::MaxCartesianHeuristic(
       h_values_by_orders(move(h_values_by_orders)) {
 }
 
-int MaxCartesianHeuristic::compute_max(
-    const vector<int> &local_state_ids,
-    const vector<vector<vector<int>>> &h_values_by_order) const {
-    int max_h = 0;
-    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
-        int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
-        if (sum_h == INF) {
-            return INF;
-        }
-        max_h = max(max_h, sum_h);
-    }
-    return max_h;
-}
-
 int MaxCartesianHeuristic::compute_heuristic(const State &state) {
     vector<int> local_state_ids = get_local_state_ids(
         refinement_hierarchies, state);
-    int max_h = compute_max(local_state_ids, h_values_by_orders);
+    int max_h = compute_max_h(local_state_ids, h_values_by_orders);
     if (max_h == INF) {
         return DEAD_END;
     }

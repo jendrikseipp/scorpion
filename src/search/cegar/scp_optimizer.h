@@ -50,6 +50,10 @@ extern std::vector<std::vector<int>> compute_saturated_cost_partitioning(
 extern int compute_sum_h(
     const std::vector<int> &local_state_ids,
     const std::vector<std::vector<int>> &h_values_by_abstraction);
+
+extern int compute_max_h(
+    const std::vector<int> &local_state_ids,
+    const std::vector<std::vector<std::vector<int>>> &h_values_by_order);
 }
 
 #endif

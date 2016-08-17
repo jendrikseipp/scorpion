@@ -151,4 +151,18 @@ int compute_sum_h(
     assert(sum_h >= 0);
     return sum_h;
 }
+
+int compute_max_h(
+    const vector<int> &local_state_ids,
+    const vector<vector<vector<int>>> &h_values_by_order) {
+    int max_h = 0;
+    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
+        int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+        if (sum_h == INF) {
+            return INF;
+        }
+        max_h = max(max_h, sum_h);
+    }
+    return max_h;
+}
 }
