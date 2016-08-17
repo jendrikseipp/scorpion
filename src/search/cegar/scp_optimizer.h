@@ -7,6 +7,10 @@
 class AbstractTask;
 class State;
 
+namespace utils {
+    class CountdownTimer;
+}
+
 namespace cegar {
 class Abstraction;
 class RefinementHierarchy;
@@ -27,6 +31,7 @@ class SCPOptimizer {
         const std::vector<std::vector<std::vector<int>>> &h_values_by_orders) const;
 
     bool search_improving_successor(
+        const utils::CountdownTimer &timer,
         const std::vector<std::vector<std::vector<int>>> &h_values_by_orders);
 
 public:

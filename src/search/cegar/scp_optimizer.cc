@@ -66,10 +66,11 @@ int SCPOptimizer::evaluate(
 }
 
 bool SCPOptimizer::search_improving_successor(
+    const utils::CountdownTimer &timer,
     const vector<vector<vector<int>>> &h_values_by_orders) {
     int num_abstractions = abstractions.size();
-    for (int i = 0; i < num_abstractions; ++i) {
-        for (int j = i + 1; j < num_abstractions; ++j) {
+    for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
+        for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
             int total_h = evaluate(incumbent_order, h_values_by_orders);
             if (total_h > incumbent_total_h_value) {
@@ -102,11 +103,12 @@ vector<vector<int>> SCPOptimizer::find_cost_partitioning(
         incumbent_total_h_value = evaluate(incumbent_order, h_values_by_orders);
         do {
             g_log << "Incumbent total h value: " << incumbent_total_h_value << endl;
-            if (timer.is_expired()) {
-                g_log << "Optimization time limit reached." << endl;
-                break;
-            }
-        } while (search_improving_successor(h_values_by_orders));
+        } while (
+            search_improving_successor(timer, h_values_by_orders) &&
+            !timer.is_expired());
+        if (timer.is_expired()) {
+            g_log << "Optimization time limit reached." << endl;
+        }
     }
     g_log << "Order evaluations: " << evaluations << endl;
     if (h_values_by_orders.empty() || incumbent_total_h_value > 0) {
