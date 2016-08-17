@@ -266,7 +266,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             cerr << "When diversifying set samples >= 1" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
-        if (num_samples == 0 && max_optimization_time != numeric_limits<double>::max()) {
+        if (num_samples == 0 && max_optimization_time != numeric_limits<double>::infinity()) {
             cerr << "Option max_optimization_time has no effect when samples == 0" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
