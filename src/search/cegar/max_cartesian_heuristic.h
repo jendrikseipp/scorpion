@@ -13,7 +13,7 @@ class RefinementHierarchy;
 */
 class MaxCartesianHeuristic : public Heuristic {
     const std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
-    const std::vector<std::vector<std::vector<int>>> h_values_by_orders;
+    const std::vector<std::vector<std::vector<int>>> h_values_by_order;
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state);
@@ -23,7 +23,7 @@ public:
     MaxCartesianHeuristic(
         const options::Options &opts,
         std::vector<std::shared_ptr<RefinementHierarchy>> &&refinement_hierarchies,
-        std::vector<std::vector<std::vector<int>>> &&h_values_by_orders);
+        std::vector<std::vector<std::vector<int>>> &&h_values_by_order);
 };
 }
 
