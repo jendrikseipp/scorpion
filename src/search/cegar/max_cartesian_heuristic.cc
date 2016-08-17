@@ -1,13 +1,7 @@
 #include "max_cartesian_heuristic.h"
 
-#include "abstraction.h"
-#include "cost_saturation.h"
 #include "scp_optimizer.h"
 #include "utils.h"
-
-#include "../utils/rng.h"
-
-#include <cassert>
 
 using namespace std;
 

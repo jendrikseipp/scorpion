@@ -6,7 +6,6 @@
 #include <vector>
 
 namespace cegar {
-class Abstraction;
 class RefinementHierarchy;
 
 /*
