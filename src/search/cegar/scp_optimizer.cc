@@ -109,8 +109,12 @@ vector<vector<int>> SCPOptimizer::find_cost_partitioning(
         } while (search_improving_successor(h_values_by_orders));
     }
     g_log << "Order evaluations: " << evaluations << endl;
-    return compute_saturated_cost_partitioning(
-        abstractions, incumbent_order, operator_costs);
+    if (h_values_by_orders.empty() || incumbent_total_h_value > 0) {
+        return compute_saturated_cost_partitioning(
+            abstractions, incumbent_order, operator_costs);
+    } else {
+        return {};
+    }
 }
 
 

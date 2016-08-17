@@ -315,19 +315,21 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 init_h,
                 get_average_operator_cost(task_proxy),
                 dead_end_function);
+            vector<vector<int>> h_values_by_abstraction;
             if (diversify) {
-                h_values_by_orders.push_back(
-                    scp_optimizer.find_cost_partitioning(
-                        samples,
-                        max_optimization_time,
-                        shuffle,
-                        h_values_by_orders));
+                h_values_by_abstraction = scp_optimizer.find_cost_partitioning(
+                    samples,
+                    max_optimization_time,
+                    shuffle,
+                    h_values_by_orders);
             } else {
-                h_values_by_orders.push_back(
-                    scp_optimizer.find_cost_partitioning(
-                        samples,
-                        max_optimization_time,
-                        shuffle));
+                h_values_by_abstraction = scp_optimizer.find_cost_partitioning(
+                    samples,
+                    max_optimization_time,
+                    shuffle);
+            }
+            if (!h_values_by_abstraction.empty()) {
+                h_values_by_orders.push_back(move(h_values_by_abstraction));
             }
         }
         cout << "Orders: " << h_values_by_orders.size() << endl;
