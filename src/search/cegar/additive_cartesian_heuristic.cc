@@ -200,8 +200,12 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "search for orders that complement the portfolio",
         "false");
     parser.add_option<bool>(
-        "keep_non_diverse_orders",
+        "keep_failed_orders",
         "keep orders that failed to improve upon portfolio",
+        "true");
+    parser.add_option<bool>(
+        "abort_after_first_failed_order",
+        "stop optimizing orders after the first order failed",
         "false");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
@@ -253,7 +257,9 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         const double max_optimization_time = opts.get<double>("max_optimization_time");
         const bool shuffle = opts.get<bool>("shuffle");
         const bool diversify = opts.get<bool>("diversify");
-        const bool keep_non_diverse_orders = opts.get<bool>("keep_non_diverse_orders");
+        const bool keep_failed_orders = opts.get<bool>("keep_failed_orders");
+        const bool abort_after_first_failed_order = opts.get<bool>(
+            "abort_after_first_failed_order");
 
         if (num_orders > 1 && !shuffle) {
             cerr << "When using more than one order set shuffle=true" << endl;
@@ -269,6 +275,11 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         }
         if (diversify && num_samples == 0) {
             cerr << "When diversifying set samples >= 1" << endl;
+            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        }
+        if (keep_failed_orders && abort_after_first_failed_order) {
+            cerr << "abort_after_first_failed_order can only be true "
+                 << "when keep_failed_orders is false" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
         if (num_samples == 0 && max_optimization_time != numeric_limits<double>::infinity()) {
@@ -358,9 +369,9 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             }
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second;
-            if (!diversify || keep_non_diverse_orders || total_h_value > 0) {
+            if (!diversify || keep_failed_orders || total_h_value > 0) {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
-            } else {
+            } else if (abort_after_first_failed_order) {
                 break;
             }
         }
