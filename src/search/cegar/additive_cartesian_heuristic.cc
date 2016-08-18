@@ -369,7 +369,8 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             }
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second;
-            if (!diversify || keep_failed_orders || total_h_value > 0) {
+            if (!diversify || keep_failed_orders || total_h_value > 0 ||
+                h_values_by_orders.empty()) {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
             } else if (abort_after_first_failed_order) {
                 break;
