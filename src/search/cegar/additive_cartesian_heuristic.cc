@@ -199,6 +199,10 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "diversify",
         "search for orders that complement the portfolio",
         "false");
+    parser.add_option<bool>(
+        "keep_non_diverse_orders",
+        "keep orders that failed to improve upon portfolio",
+        "false");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -249,6 +253,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         const double max_optimization_time = opts.get<double>("max_optimization_time");
         const bool shuffle = opts.get<bool>("shuffle");
         const bool diversify = opts.get<bool>("diversify");
+        const bool keep_non_diverse_orders = opts.get<bool>("keep_non_diverse_orders");
 
         if (num_orders > 1 && !shuffle) {
             cerr << "When using more than one order set shuffle=true" << endl;
@@ -353,7 +358,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             }
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second;
-            if (!diversify || total_h_value > 0) {
+            if (!diversify || keep_non_diverse_orders || total_h_value > 0) {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
             } else {
                 break;
