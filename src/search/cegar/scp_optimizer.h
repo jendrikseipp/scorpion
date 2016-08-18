@@ -40,7 +40,7 @@ public:
         const std::vector<std::shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
         const std::vector<int> &operator_costs);
 
-    std::vector<std::vector<int>> find_cost_partitioning(
+    std::pair<std::vector<std::vector<int>>, int> find_cost_partitioning(
         const std::vector<State> &states,
         double max_time,
         bool shuffle,

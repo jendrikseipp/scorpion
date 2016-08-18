@@ -91,7 +91,7 @@ bool SCPOptimizer::search_improving_successor(
     return false;
 }
 
-vector<vector<int>> SCPOptimizer::find_cost_partitioning(
+pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
     const vector<State> &states,
     double max_time,
     bool shuffle,
@@ -120,12 +120,10 @@ vector<vector<int>> SCPOptimizer::find_cost_partitioning(
         }
     }
     g_log << "Evaluated orders: " << evaluations << endl;
-    if (h_values_by_orders.empty() || incumbent_total_h_value > 0) {
-        return compute_saturated_cost_partitioning(
-            abstractions, incumbent_order, operator_costs);
-    } else {
-        return {};
-    }
+    return {
+        compute_saturated_cost_partitioning(
+            abstractions, incumbent_order, operator_costs),
+        incumbent_total_h_value};
 }
 
 

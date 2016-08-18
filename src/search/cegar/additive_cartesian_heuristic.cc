@@ -338,23 +338,25 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 }
             }
             sampling_timer.stop();
-            vector<vector<int>> h_values_by_abstraction;
+            pair<vector<vector<int>>, int> result;
             if (diversify) {
-                h_values_by_abstraction = scp_optimizer.find_cost_partitioning(
+                result = scp_optimizer.find_cost_partitioning(
                     samples,
                     max_optimization_time,
                     shuffle,
                     h_values_by_orders);
             } else {
-                h_values_by_abstraction = scp_optimizer.find_cost_partitioning(
+                result = scp_optimizer.find_cost_partitioning(
                     samples,
                     max_optimization_time,
                     shuffle);
             }
-            if (h_values_by_abstraction.empty()) {
-                break;
-            } else {
+            vector<vector<int>> h_values_by_abstraction = move(result.first);
+            int total_h_value = result.second;
+            if (!diversify || total_h_value > 0) {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
+            } else {
+                break;
             }
         }
         cout << "Sampling time: " << sampling_timer << endl;
