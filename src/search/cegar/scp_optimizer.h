@@ -25,14 +25,14 @@ class SCPOptimizer {
     int evaluate(
         const std::vector<int> &order,
         const std::vector<std::vector<int>> &local_state_ids_by_state,
-        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders) const;
+        const std::vector<int> &portfolio_h_values) const;
 
     bool search_improving_successor(
         const utils::CountdownTimer &timer,
         const std::vector<std::vector<int>> &local_state_ids_by_state,
         std::vector<int> &incumbent_order,
         int &incumbent_total_h_value,
-        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders) const;
+        const std::vector<int> &portfolio_h_values) const;
 
 public:
     SCPOptimizer(
