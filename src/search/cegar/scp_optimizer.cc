@@ -16,12 +16,6 @@
 using namespace std;
 
 namespace cegar {
-vector<int> get_default_order(int n) {
-    vector<int> indices(n);
-    iota(indices.begin(), indices.end(), 0);
-    return indices;
-}
-
 static vector<vector<int>> get_local_state_ids_by_state(
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const vector<State> &states) {
@@ -141,6 +135,12 @@ pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
         incumbent_total_h_value};
 }
 
+
+vector<int> get_default_order(int n) {
+    vector<int> indices(n);
+    iota(indices.begin(), indices.end(), 0);
+    return indices;
+}
 
 vector<vector<int>> compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
