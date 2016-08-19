@@ -190,6 +190,8 @@ void CostSaturation::build_abstractions(
 void CostSaturation::print_statistics() const {
     g_log << "Done initializing additive Cartesian heuristic" << endl;
     cout << "Cartesian abstractions built: " << num_abstractions << endl;
+    cout << "Abstractions stored: " << abstractions.size() << endl;
+    cout << "Transition systems stored: " << transition_systems.size() << endl;
     cout << "Cartesian heuristic functions stored: "
          << heuristic_functions.size() << endl;
     cout << "Cartesian states: " << num_states << endl;
