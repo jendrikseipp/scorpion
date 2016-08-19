@@ -339,6 +339,8 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         SuccessorGenerator successor_generator(task);
         utils::Timer sampling_timer;
         sampling_timer.stop();
+        utils::Timer optimization_timer;
+        optimization_timer.stop();
         vector<vector<vector<int>>> h_values_by_orders;
         for (int i = 0; i < num_orders; ++i) {
             sampling_timer.resume();
@@ -354,6 +356,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 }
             }
             sampling_timer.stop();
+            optimization_timer.resume();
             pair<vector<vector<int>>, int> result;
             if (diversify) {
                 result = scp_optimizer.find_cost_partitioning(
@@ -367,6 +370,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     max_optimization_time,
                     shuffle);
             }
+            optimization_timer.stop();
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second;
             if (!diversify || keep_failed_orders || total_h_value > 0 ||
@@ -377,6 +381,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             }
         }
         cout << "Sampling time: " << sampling_timer << endl;
+        cout << "Optimization time: " << optimization_timer << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
         return new MaxCartesianHeuristic(
             heuristic_opts,
