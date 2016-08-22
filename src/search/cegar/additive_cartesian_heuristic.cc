@@ -196,6 +196,10 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "shuffle order before optimizing it",
         "true");
     parser.add_option<bool>(
+        "reverse_order",
+        "reverse order before optimizing it (to obtain hadd-up order)",
+        "false");
+    parser.add_option<bool>(
         "diversify",
         "search for orders that complement the portfolio",
         "false");
@@ -256,6 +260,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         const int num_samples = opts.get<int>("samples");
         const double max_optimization_time = opts.get<double>("max_optimization_time");
         const bool shuffle = opts.get<bool>("shuffle");
+        const bool reverse_order = opts.get<bool>("reverse_order");
         const bool diversify = opts.get<bool>("diversify");
         const bool keep_failed_orders = opts.get<bool>("keep_failed_orders");
         const bool abort_after_first_failed_order = opts.get<bool>(
@@ -263,6 +268,10 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
 
         if (num_orders > 1 && !shuffle) {
             cerr << "When using more than one order set shuffle=true" << endl;
+            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        }
+        if (reverse_order && (num_orders > 1 || shuffle)) {
+            cerr << "Use reverse=true only with shuffle=false and orders=1" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
         if (diversify && num_orders == 1) {
