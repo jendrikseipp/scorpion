@@ -44,6 +44,7 @@ public:
         const std::vector<State> &states,
         double max_time,
         bool shuffle,
+        bool reverse,
         const std::vector<std::vector<std::vector<int>>> &h_values_by_orders = {}) const;
 };
 

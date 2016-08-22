@@ -16,6 +16,9 @@ class AdditiveHeuristic;
 }
 
 namespace cegar {
+// TODO: Remove.
+extern int hacked_num_landmarks;
+
 const int UNDEFINED_VALUE = -1;
 
 // Positive infinity. The name "INFINITY" is taken by an ISO C99 macro.

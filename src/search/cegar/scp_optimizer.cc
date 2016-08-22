@@ -102,12 +102,31 @@ pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
     const vector<State> &states,
     double max_time,
     bool shuffle,
+    bool reverse_order,
     const vector<vector<vector<int>>> &h_values_by_orders) const {
     utils::CountdownTimer timer(max_time);
     evaluations = 0;
     vector<int> incumbent_order = get_default_order(abstractions.size());
+    assert(shuffle ^ reverse_order);
     if (shuffle) {
         g_rng()->shuffle(incumbent_order);
+    }
+    if (reverse_order) {
+        if (hacked_num_landmarks == -1) {
+            ABORT("Number of landmarks is not set");
+        }
+        if (hacked_num_landmarks > static_cast<int>(abstractions.size())) {
+            ABORT("Number of landmarks exceeds number of abstractions");
+        }
+        reverse(incumbent_order.begin(), incumbent_order.begin() + hacked_num_landmarks);
+        reverse(incumbent_order.begin() + hacked_num_landmarks, incumbent_order.end());
+        for (int pos : incumbent_order) {
+            TaskProxy task_proxy(*abstractions[pos]->get_task());
+            assert(task_proxy.get_goals().size() == 1);
+            for (FactProxy goal : task_proxy.get_goals()) {
+                cout << goal.get_name() << endl;
+            }
+        }
     }
     int incumbent_total_h_value = 0;
     if (!states.empty()) {

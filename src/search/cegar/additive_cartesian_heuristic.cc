@@ -196,7 +196,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "shuffle order before optimizing it",
         "true");
     parser.add_option<bool>(
-        "reverse_order",
+        "reverse",
         "reverse order before optimizing it (to obtain hadd-up order)",
         "false");
     parser.add_option<bool>(
@@ -260,7 +260,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         const int num_samples = opts.get<int>("samples");
         const double max_optimization_time = opts.get<double>("max_optimization_time");
         const bool shuffle = opts.get<bool>("shuffle");
-        const bool reverse_order = opts.get<bool>("reverse_order");
+        const bool reverse_order = opts.get<bool>("reverse");
         const bool diversify = opts.get<bool>("diversify");
         const bool keep_failed_orders = opts.get<bool>("keep_failed_orders");
         const bool abort_after_first_failed_order = opts.get<bool>(
@@ -372,12 +372,14 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     samples,
                     max_optimization_time,
                     shuffle,
+                    reverse_order,
                     h_values_by_orders);
             } else {
                 result = scp_optimizer.find_cost_partitioning(
                     samples,
                     max_optimization_time,
-                    shuffle);
+                    shuffle,
+                    reverse_order);
             }
             optimization_timer.stop();
             vector<vector<int>> h_values_by_abstraction = move(result.first);
