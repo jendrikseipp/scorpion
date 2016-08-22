@@ -165,10 +165,6 @@ SharedTasks LandmarkDecomposition::get_subtasks(
         }
         subtasks.push_back(subtask);
     }
-
-    // TODO: Remove.
-    hacked_num_landmarks = subtasks.size();
-
     return subtasks;
 }
 

@@ -21,6 +21,9 @@
 using namespace std;
 
 namespace cegar {
+// TODO: Remove.
+int hacked_num_landmark_abstractions = -1;
+
 void reduce_costs(
     vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
@@ -88,6 +91,9 @@ void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
     for (shared_ptr<SubtaskGenerator> subtask_generator : subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task);
         build_abstractions(subtasks, timer, should_abort);
+        if (hacked_num_landmark_abstractions == -1) {
+            hacked_num_landmark_abstractions = abstractions.size();
+        }
         if (should_abort())
             break;
     }

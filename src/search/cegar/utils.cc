@@ -15,9 +15,6 @@
 using namespace std;
 
 namespace cegar {
-// TODO: Remove.
-int hacked_num_landmarks = -1;
-
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {
     Options opts;

@@ -98,6 +98,18 @@ bool SCPOptimizer::search_improving_successor(
     return false;
 }
 
+// TODO: Remove.
+static void dump_order(
+    const vector<unique_ptr<Abstraction>> &abstractions, const vector<int> &order) {
+    for (int pos : order) {
+        TaskProxy task_proxy(*abstractions[pos]->get_task());
+        assert(task_proxy.get_goals().size() == 1);
+        for (FactProxy goal : task_proxy.get_goals()) {
+            cout << goal.get_name() << endl;
+        }
+    }
+}
+
 pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
     const vector<State> &states,
     double max_time,
@@ -111,21 +123,12 @@ pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
         g_rng()->shuffle(incumbent_order);
     }
     if (reverse_order) {
-        if (hacked_num_landmarks == -1) {
-            ABORT("Number of landmarks is not set");
-        }
-        if (hacked_num_landmarks > static_cast<int>(abstractions.size())) {
-            ABORT("Number of landmarks exceeds number of abstractions");
-        }
-        reverse(incumbent_order.begin(), incumbent_order.begin() + hacked_num_landmarks);
-        reverse(incumbent_order.begin() + hacked_num_landmarks, incumbent_order.end());
-        for (int pos : incumbent_order) {
-            TaskProxy task_proxy(*abstractions[pos]->get_task());
-            assert(task_proxy.get_goals().size() == 1);
-            for (FactProxy goal : task_proxy.get_goals()) {
-                cout << goal.get_name() << endl;
-            }
-        }
+        dump_order(abstractions, incumbent_order);
+        cout << "Landmark abstractions: " << hacked_num_landmark_abstractions
+             << "/" << abstractions.size() << endl;
+        reverse(incumbent_order.begin(), incumbent_order.begin() + hacked_num_landmark_abstractions);
+        reverse(incumbent_order.begin() + hacked_num_landmark_abstractions, incumbent_order.end());
+        dump_order(abstractions, incumbent_order);
     }
     int incumbent_total_h_value = 0;
     if (!states.empty()) {
