@@ -37,6 +37,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
+        opts.get<bool>("exclude_abstractions_with_zero_init_h"),
         static_cast<PickSplit>(opts.get<int>("pick")));
     cost_saturation.initialize(get_task_from_options(opts));
     return cost_saturation.extract_heuristic_functions();
@@ -211,6 +212,10 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "abort_after_first_failed_order",
         "stop optimizing orders after the first order failed",
         "false");
+    parser.add_option<bool>(
+        "exclude_abstractions_with_zero_init_h",
+        "throw away abstractions with h(s_0) = 0",
+        "true");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -219,9 +224,11 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
 
     shared_ptr<AbstractTask> task(get_task_from_options(opts));
     TaskProxy task_proxy(*task);
-    CostPartitioningType cost_partitioning_type =
+    const CostPartitioningType cost_partitioning_type =
         static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"));
-    int extra_memory_padding_in_mb = opts.get<int>("extra_memory_padding");
+    const int extra_memory_padding_in_mb = opts.get<int>("extra_memory_padding");
+    const bool exclude_abstractions_with_zero_init_h = opts.get<bool>(
+        "exclude_abstractions_with_zero_init_h");
 
     Options heuristic_opts;
     heuristic_opts.set<shared_ptr<AbstractTask>>(
@@ -238,6 +245,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
+        exclude_abstractions_with_zero_init_h,
         static_cast<PickSplit>(opts.get<int>("pick")));
     if (extra_memory_padding_in_mb > 0)
         utils::reserve_extra_memory_padding(extra_memory_padding_in_mb);

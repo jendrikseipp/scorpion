@@ -37,6 +37,8 @@ class CostSaturation {
     const int max_non_looping_transitions;
     const double max_time;
     const bool use_general_costs;
+    // TODO: Remove.
+    const bool exclude_abstractions_with_zero_init_h;
     const PickSplit pick_split;
 
     /*
@@ -71,6 +73,7 @@ public:
         int max_non_looping_transitions,
         double max_time,
         bool use_general_costs,
+        bool exclude_abstractions_with_zero_init_h,
         PickSplit pick_split);
 
     void initialize(const std::shared_ptr<AbstractTask> &task);

@@ -49,6 +49,7 @@ CostSaturation::CostSaturation(
     int max_non_looping_transitions,
     double max_time,
     bool use_general_costs,
+    bool exclude_abstractions_with_zero_init_h,
     PickSplit pick_split)
     : cost_partitioning_type(cost_partitioning_type),
       subtask_generators(subtask_generators),
@@ -56,6 +57,7 @@ CostSaturation::CostSaturation(
       max_non_looping_transitions(max_non_looping_transitions),
       max_time(max_time),
       use_general_costs(use_general_costs),
+      exclude_abstractions_with_zero_init_h(exclude_abstractions_with_zero_init_h),
       pick_split(pick_split),
       num_abstractions(0),
       num_states(0),
@@ -162,7 +164,7 @@ void CostSaturation::build_abstractions(
 
         if (cost_partitioning_type == CostPartitioningType::SATURATED) {
             int init_h = abstraction->get_h_value_of_initial_state();
-            if (init_h > 0) {
+            if (!exclude_abstractions_with_zero_init_h || init_h > 0) {
                 heuristic_functions.emplace_back(
                     abstraction->get_refinement_hierarchy(),
                     abstraction->get_h_values());
@@ -171,7 +173,7 @@ void CostSaturation::build_abstractions(
             cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
             cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
             int init_h = abstraction->get_h_value_of_initial_state();
-            if (init_h > 0) {
+            if (!exclude_abstractions_with_zero_init_h || init_h > 0) {
                 abstractions.push_back(move(abstraction));
             }
         } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {

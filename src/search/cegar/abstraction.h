@@ -126,6 +126,7 @@ public:
 
     Abstraction(const Abstraction &) = delete;
 
+    // TODO: Remove.
     std::shared_ptr<AbstractTask> get_task() const {
         return task;
     }
@@ -150,6 +151,7 @@ public:
     */
     std::vector<int> get_saturated_costs();
 
+    // TODO: Remove.
     int get_h_value_of_initial_state() const;
 
     std::vector<bool> extract_operator_induces_self_loop();
