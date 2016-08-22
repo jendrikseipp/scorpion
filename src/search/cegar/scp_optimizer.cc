@@ -107,7 +107,6 @@ pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
     utils::CountdownTimer timer(max_time);
     evaluations = 0;
     vector<int> incumbent_order = get_default_order(abstractions.size());
-    assert(shuffle ^ reverse_order);
     if (shuffle) {
         g_rng()->shuffle(incumbent_order);
     }
