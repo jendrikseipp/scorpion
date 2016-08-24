@@ -88,6 +88,15 @@ static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
     return h_values_by_orders;
 }
 
+/*static bool check_independence(std::vector<bool> &op1, std::vector<bool> &op2) {
+    for (unsigned int op_id = 0; op_id < op1.size(); ++op_id) {
+        if (op1[op_id] && op2[op_id]) {
+            return false;
+        }
+    }
+    return true;
+}*/
+
 static vector<vector<vector<int>>> compute_scps_moving_each_abstraction_first_once(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &operator_costs) {
@@ -331,6 +340,26 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
 
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
+
+        /*vector<vector<bool>> dependent_ops;
+        for (const unique_ptr<Abstraction> &a : abstractions) {
+            dependent_ops.push_back(a->compute_dependent_operators());
+        }
+
+        int indep = 0;
+        int num_pairs = 0;
+
+        for (size_t i = 0; i < abstractions.size(); ++i) {
+            for (size_t j = i+1; j < abstractions.size(); ++j) {
+                if (check_independence(dependent_ops[i], dependent_ops[j])) {
+                    std::cout << "Abstractions " << i << " and " << j << " are independent!" << endl;
+                    ++indep;
+                }
+                ++num_pairs;
+            }
+        }
+
+        cout << indep << " out of " << num_pairs << " are independent!" << endl;*/
 
         vector<shared_ptr<RefinementHierarchy>> refinement_hierarchies;
         refinement_hierarchies.reserve(abstractions.size());

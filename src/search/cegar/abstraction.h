@@ -157,6 +157,8 @@ public:
     std::vector<bool> extract_operator_induces_self_loop();
 
     void set_operator_costs(const std::vector<int> &new_costs);
+
+    // std::vector<bool> compute_dependent_operators();
 };
 }
 

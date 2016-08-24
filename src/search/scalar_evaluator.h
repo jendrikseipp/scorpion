@@ -56,6 +56,8 @@ public:
     */
     virtual EvaluationResult compute_result(
         EvaluationContext &eval_context) = 0;
+
+    virtual void print_statistics() const {}
 };
 
 #endif

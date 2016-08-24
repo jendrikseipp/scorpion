@@ -94,6 +94,9 @@ void EagerSearch::print_statistics() const {
     statistics.print_detailed_statistics();
     search_space.print_statistics();
     pruning_method->print_statistics();
+    for (Heuristic *heur : heuristics) {
+        heur->print_statistics();
+    }
 }
 
 SearchStatus EagerSearch::step() {
