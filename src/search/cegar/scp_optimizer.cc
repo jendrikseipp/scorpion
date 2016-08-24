@@ -141,10 +141,10 @@ pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
         do {
             g_log << "Incumbent total h value: " << incumbent_total_h_value << endl;
         } while (
+            !timer.is_expired() &&
             search_improving_successor(
                 timer, local_state_ids_by_state, incumbent_order,
-                incumbent_total_h_value, portfolio_h_values) &&
-            !timer.is_expired());
+                incumbent_total_h_value, portfolio_h_values));
         if (timer.is_expired()) {
             g_log << "Optimization time limit reached." << endl;
         }
