@@ -99,18 +99,24 @@ static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
 
 static vector<vector<vector<int>>> compute_scps_moving_each_abstraction_first_once(
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &operator_costs) {
+    const vector<int> &operator_costs,
+    bool shuffle) {
     vector<int> indices = get_default_order(abstractions.size());
-
     vector<vector<vector<int>>> h_values_by_orders;
     for (size_t i = 0; i < indices.size(); ++i) {
-        indices.erase(indices.begin() + i);
+        if (shuffle) {
+            g_rng()->shuffle(indices);
+        } else {
+            sort(indices.begin(), indices.end());
+        }
+        auto it = find(indices.begin(), indices.end(), i);
+        assert(it != indices.end());
+        indices.erase(it);
         indices.insert(indices.begin(), i);
+        cout << indices << endl;
         h_values_by_orders.push_back(
             compute_saturated_cost_partitioning(
                 abstractions, indices, operator_costs));
-        indices.erase(indices.begin());
-        indices.insert(indices.begin() + i, i);
     }
     cout << "Orders: "<< h_values_by_orders.size() << endl;
     return h_values_by_orders;
@@ -382,7 +388,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         if (each_abstraction_first_once) {
             vector<vector<vector<int>>> h_values_by_orders =
                 compute_scps_moving_each_abstraction_first_once(
-                    abstractions, operator_costs);
+                    abstractions, operator_costs, shuffle);
             return new MaxCartesianHeuristic(
                 heuristic_opts,
                 move(refinement_hierarchies),
