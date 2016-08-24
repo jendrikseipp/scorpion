@@ -401,6 +401,17 @@ vector<int> Abstraction::get_saturated_costs() {
     return saturated_costs;
 }
 
+/*std::vector<bool> Abstraction::compute_dependent_operators() {
+    std::vector<bool> result(task_proxy.get_operators().size(), false);
+
+    for (const AbstractState *s : states) {
+        for (const Transition &t : s->get_outgoing_transitions()) {
+            result[t.op_id] = true;
+        }
+    }
+    return result;
+}*/
+
 void Abstraction::print_statistics() {
     int total_incoming_transitions = 0;
     int total_outgoing_transitions = 0;
