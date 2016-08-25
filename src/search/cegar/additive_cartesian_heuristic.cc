@@ -118,6 +118,10 @@ static vector<vector<vector<int>>> compute_scps_moving_each_abstraction_first_on
             compute_saturated_cost_partitioning(
                 abstractions, indices, operator_costs));
     }
+    // Use zero-heuristic when all abstractions have been filtered.
+    if (h_values_by_orders.empty()) {
+        h_values_by_orders.push_back(vector<vector<int>>());
+    }
     cout << "Orders: "<< h_values_by_orders.size() << endl;
     return h_values_by_orders;
 }

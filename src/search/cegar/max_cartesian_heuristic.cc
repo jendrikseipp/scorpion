@@ -51,7 +51,9 @@ int MaxCartesianHeuristic::compute_max_h2(
         ++current_id;
     }
 
+    assert(utils::in_bounds(best_id, num_best_order));
     ++num_best_order[best_id];
+
     return max_h;
 }
 
