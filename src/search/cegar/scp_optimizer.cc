@@ -52,6 +52,8 @@ SCPOptimizer::SCPOptimizer(
       operator_costs(operator_costs) {
     order_evaluation_timer = utils::make_unique_ptr<utils::Timer>();
     order_evaluation_timer->stop();
+    scp_computation_timer = utils::make_unique_ptr<utils::Timer>();
+    scp_computation_timer->stop();
 }
 
 int SCPOptimizer::evaluate(
@@ -59,8 +61,12 @@ int SCPOptimizer::evaluate(
     const vector<vector<int>> &local_state_ids_by_state,
     const vector<int> &portfolio_h_values) const {
     assert(!local_state_ids_by_state.empty());
+
+    scp_computation_timer->resume();
     vector<vector<int>> h_values_by_abstraction =
         compute_saturated_cost_partitioning(abstractions, order, operator_costs);
+    scp_computation_timer->stop();
+
     order_evaluation_timer->resume();
     int total_h = 0;
     for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {

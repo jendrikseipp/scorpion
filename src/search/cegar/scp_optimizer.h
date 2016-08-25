@@ -36,6 +36,7 @@ class SCPOptimizer {
         const std::vector<int> &portfolio_h_values) const;
 
 public:
+    std::unique_ptr<utils::Timer> scp_computation_timer;
     std::unique_ptr<utils::Timer> order_evaluation_timer;
 
     SCPOptimizer(
