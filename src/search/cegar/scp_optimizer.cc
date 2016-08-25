@@ -141,6 +141,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
     }
     int incumbent_total_h_value = 0;
     if (!states.empty()) {
+        // TODO: Compute outside of method.
         vector<vector<int>> local_state_ids_by_state =
             get_local_state_ids_by_state(refinement_hierarchies, states);
         vector<int> portfolio_h_values = compute_h_values(
@@ -148,6 +149,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         incumbent_total_h_value = evaluate(
             incumbent_order, local_state_ids_by_state, portfolio_h_values);
         do {
+            // TODO: Reduce log output.
             g_log << "Incumbent total h value: " << incumbent_total_h_value << endl;
         } while (
             !timer.is_expired() &&
@@ -159,6 +161,8 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         }
     }
     g_log << "Evaluated orders: " << evaluations << endl;
+    // TODO: Don't compute SCP if we won't use it.
+    // TODO: Don't recompute SCP.
     return {
         compute_saturated_cost_partitioning(
             abstractions, incumbent_order, operator_costs),

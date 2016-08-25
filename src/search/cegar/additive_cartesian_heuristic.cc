@@ -492,14 +492,16 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 break;
             }
         }
-        cout << "Optimization time: " << optimization_timer << endl;
-        cout << "Time for finding orders: " << finding_orders_timer << endl;
+        cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
+        cout << "Orders: " << h_values_by_orders.size() << endl;
+
         cout << "Time for computing SCPs: "
              << *scp_optimizer.scp_computation_timer << endl;
         cout << "Time for evaluating orders: "
              << *scp_optimizer.order_evaluation_timer << endl;
-        cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
-        cout << "Orders: " << h_values_by_orders.size() << endl;
+        cout << "Optimization time: " << optimization_timer << endl;
+        cout << "Time for finding orders: " << finding_orders_timer << endl;
+
         return new MaxCartesianHeuristic(
             heuristic_opts,
             move(refinement_hierarchies),
