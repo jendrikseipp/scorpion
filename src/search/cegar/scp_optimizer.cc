@@ -62,9 +62,7 @@ int SCPOptimizer::evaluate(
     for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
         const vector<int> &local_state_ids = local_state_ids_by_state[sample_id];
         int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
-        if (sum_h == INF) {
-            ABORT("Dead-end sample should have been filtered.");
-        }
+        assert(sum_h != INF);
         assert(utils::in_bounds(sample_id, portfolio_h_values));
         int portfolio_sum_h = portfolio_h_values[sample_id];
         total_h += max(0, sum_h - portfolio_sum_h);

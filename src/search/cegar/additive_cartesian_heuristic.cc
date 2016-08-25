@@ -442,35 +442,28 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         SuccessorGenerator successor_generator(task);
         const double average_operator_costs = get_average_operator_cost(task_proxy);
         utils::CountdownTimer finding_orders_timer(max_time_finding_orders);
-        utils::Timer total_sampling_timer;
-        total_sampling_timer.stop();
+
+        utils::CountdownTimer sampling_timer(max_sampling_time);
+        vector<State> samples;
+        while (static_cast<int>(samples.size()) < num_samples &&
+               !sampling_timer.is_expired() &&
+               !finding_orders_timer.is_expired()) {
+            State sample = sample_state_with_random_walk(
+                task_proxy,
+                successor_generator,
+                init_h,
+                average_operator_costs);
+            if (!dead_end_function(sample)) {
+                samples.push_back(move(sample));
+            }
+        }
+        cout << "Samples: " << samples.size() << endl;
+        cout << "Sampling time: " << sampling_timer << endl;
+
         utils::Timer optimization_timer;
-        optimization_timer.stop();
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
-            total_sampling_timer.resume();
-            utils::CountdownTimer sampling_timer(max_sampling_time);
-            vector<State> samples;
-            while (static_cast<int>(samples.size()) < num_samples &&
-                   !sampling_timer.is_expired() &&
-                   !finding_orders_timer.is_expired()) {
-                State sample = sample_state_with_random_walk(
-                    task_proxy,
-                    successor_generator,
-                    init_h,
-                    average_operator_costs);
-                if (!dead_end_function(sample)) {
-                    samples.push_back(move(sample));
-                }
-            }
-            total_sampling_timer.stop();
-
-            if (finding_orders_timer.is_expired()) {
-                break;
-            }
-
-            optimization_timer.resume();
             pair<vector<vector<int>>, pair<int, int>> result;
             double optimization_time = min(
                 max_optimization_time, finding_orders_timer.get_remaining_time());
@@ -488,7 +481,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     shuffle,
                     reverse_order);
             }
-            optimization_timer.stop();
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second.first;
             int num_evaluated_orders = result.second.second;
@@ -500,7 +492,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 break;
             }
         }
-        cout << "Sampling time: " << total_sampling_timer << endl;
         cout << "Optimization time: " << optimization_timer << endl;
         cout << "Time for finding orders: " << finding_orders_timer << endl;
         cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
