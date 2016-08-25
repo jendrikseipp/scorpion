@@ -440,6 +440,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         sampling_timer.stop();
         utils::Timer optimization_timer;
         optimization_timer.stop();
+        int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
             sampling_timer.resume();
@@ -462,7 +463,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             }
 
             optimization_timer.resume();
-            pair<vector<vector<int>>, int> result;
+            pair<vector<vector<int>>, pair<int, int>> result;
             double optimization_time = min(
                 max_optimization_time, finding_orders_timer.get_remaining_time());
             if (diversify) {
@@ -481,7 +482,9 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             }
             optimization_timer.stop();
             vector<vector<int>> h_values_by_abstraction = move(result.first);
-            int total_h_value = result.second;
+            int total_h_value = result.second.first;
+            int num_evaluated_orders = result.second.second;
+            total_num_evaluated_orders += num_evaluated_orders;
             if (keep_failed_orders || total_h_value > 0 ||
                 h_values_by_orders.empty()) {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
@@ -492,6 +495,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         cout << "Sampling time: " << sampling_timer << endl;
         cout << "Optimization time: " << optimization_timer << endl;
         cout << "Time for finding orders: " << finding_orders_timer << endl;
+        cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
         return new MaxCartesianHeuristic(
             heuristic_opts,

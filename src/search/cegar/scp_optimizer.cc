@@ -110,7 +110,7 @@ static void dump_order(
     }
 }
 
-pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
+pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
     const vector<State> &states,
     double max_time,
     bool shuffle,
@@ -153,7 +153,7 @@ pair<vector<vector<int>>, int> SCPOptimizer::find_cost_partitioning(
     return {
         compute_saturated_cost_partitioning(
             abstractions, incumbent_order, operator_costs),
-        incumbent_total_h_value};
+        {incumbent_total_h_value, evaluations}};
 }
 
 
