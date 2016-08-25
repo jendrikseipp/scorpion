@@ -3,6 +3,8 @@
 #include "scp_optimizer.h"
 #include "utils.h"
 
+#include "../utils/logging.h"
+
 using namespace std;
 
 namespace cegar {
@@ -58,16 +60,14 @@ int MaxCartesianHeuristic::compute_max_h2(
 }
 
 void MaxCartesianHeuristic::print_statistics() const {
-    int superfluous = 0;
-    std::cout << "Number of times an order was the best order:" << std::endl;
-    for (int n : num_best_order) {
-        std::cout << n << " ";
-        if (n == 0) {
-            ++superfluous;
-        }
-    }
-    std::cout << std::endl;
-    std::cout << "Superfluous orders: " << superfluous << std::endl;
-    std::cout << "Percentage of superfluous orders: " << (double)((double)superfluous/(double)num_best_order.size()*100.0) << std::endl;
+    int num_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
+    int num_orders = num_best_order.size();
+    assert(num_orders != 0);
+    cout << "Orders: " << num_orders << endl;
+    cout << "Superfluous orders: " << num_superfluous << endl;
+    cout << "Percentage of superfluous orders: "
+         << num_superfluous * 100.0 / num_orders << endl;
+    cout << "Number of times each order was the best order: "
+         << num_best_order << endl;
 }
 }
