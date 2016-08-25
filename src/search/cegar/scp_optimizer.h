@@ -9,6 +9,7 @@ class State;
 
 namespace utils {
     class CountdownTimer;
+    class Timer;
 }
 
 namespace cegar {
@@ -35,6 +36,8 @@ class SCPOptimizer {
         const std::vector<int> &portfolio_h_values) const;
 
 public:
+    std::unique_ptr<utils::Timer> order_evaluation_timer;
+
     SCPOptimizer(
         std::vector<std::unique_ptr<Abstraction>> &&abstractions,
         const std::vector<std::shared_ptr<RefinementHierarchy>> &refinement_hierarchies,

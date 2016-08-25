@@ -7,6 +7,7 @@
 #include "../globals.h"
 
 #include "../utils/logging.h"
+#include "../utils/memory.h"
 #include "../utils/rng.h"
 
 #include <algorithm>
@@ -49,6 +50,8 @@ SCPOptimizer::SCPOptimizer(
     : abstractions(move(abstractions)),
       refinement_hierarchies(refinement_hierarchies),
       operator_costs(operator_costs) {
+    order_evaluation_timer = utils::make_unique_ptr<utils::Timer>();
+    order_evaluation_timer->stop();
 }
 
 int SCPOptimizer::evaluate(
@@ -58,6 +61,7 @@ int SCPOptimizer::evaluate(
     assert(!local_state_ids_by_state.empty());
     vector<vector<int>> h_values_by_abstraction =
         compute_saturated_cost_partitioning(abstractions, order, operator_costs);
+    order_evaluation_timer->resume();
     int total_h = 0;
     for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
         const vector<int> &local_state_ids = local_state_ids_by_state[sample_id];
@@ -68,6 +72,7 @@ int SCPOptimizer::evaluate(
         total_h += max(0, sum_h - portfolio_sum_h);
     }
     ++evaluations;
+    order_evaluation_timer->stop();
     return total_h;
 }
 
