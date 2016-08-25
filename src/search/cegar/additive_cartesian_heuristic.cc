@@ -230,6 +230,11 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "maximum time in seconds for optimizing each order",
         "infinity",
         Bounds("0.0", "infinity"));
+    parser.add_option<double>(
+        "max_time_finding_orders",
+        "maximum total time in seconds for finding all orders",
+        "infinity",
+        Bounds("0.0", "infinity"));
     parser.add_option<bool>(
         "shuffle",
         "shuffle order before optimizing it",
@@ -309,6 +314,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         const int num_orders = opts.get<int>("orders");
         const int num_samples = opts.get<int>("samples");
         const double max_optimization_time = opts.get<double>("max_optimization_time");
+        const double max_time_finding_orders = opts.get<double>("max_time_finding_orders");
         const bool shuffle = opts.get<bool>("shuffle");
         const bool reverse_order = opts.get<bool>("reverse");
         const bool diversify = opts.get<bool>("diversify");
@@ -428,45 +434,55 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         SCPOptimizer scp_optimizer(
             move(abstractions), refinement_hierarchies, operator_costs);
         SuccessorGenerator successor_generator(task);
+        const double average_operator_costs = get_average_operator_cost(task_proxy);
+        utils::CountdownTimer finding_orders_timer(max_time_finding_orders);
         utils::Timer sampling_timer;
         sampling_timer.stop();
         utils::Timer optimization_timer;
         optimization_timer.stop();
         vector<vector<vector<int>>> h_values_by_orders;
-        for (int i = 0; i < num_orders; ++i) {
+        for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
             sampling_timer.resume();
             vector<State> samples;
-            while (static_cast<int>(samples.size()) < num_samples) {
+            while (static_cast<int>(samples.size()) < num_samples &&
+                   !finding_orders_timer.is_expired()) {
                 State sample = sample_state_with_random_walk(
                     task_proxy,
                     successor_generator,
                     init_h,
-                    get_average_operator_cost(task_proxy));
+                    average_operator_costs);
                 if (!dead_end_function(sample)) {
                     samples.push_back(move(sample));
                 }
             }
             sampling_timer.stop();
+
+            if (finding_orders_timer.is_expired()) {
+                break;
+            }
+
             optimization_timer.resume();
             pair<vector<vector<int>>, int> result;
+            double optimization_time = min(
+                max_optimization_time, finding_orders_timer.get_remaining_time());
             if (diversify) {
                 result = scp_optimizer.find_cost_partitioning(
                     samples,
-                    max_optimization_time,
+                    optimization_time,
                     shuffle,
                     reverse_order,
                     h_values_by_orders);
             } else {
                 result = scp_optimizer.find_cost_partitioning(
                     samples,
-                    max_optimization_time,
+                    optimization_time,
                     shuffle,
                     reverse_order);
             }
             optimization_timer.stop();
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second;
-            if (!diversify || keep_failed_orders || total_h_value > 0 ||
+            if (keep_failed_orders || total_h_value > 0 ||
                 h_values_by_orders.empty()) {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
             } else if (abort_after_first_failed_order) {
@@ -475,6 +491,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         }
         cout << "Sampling time: " << sampling_timer << endl;
         cout << "Optimization time: " << optimization_timer << endl;
+        cout << "Time for finding orders: " << finding_orders_timer << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
         return new MaxCartesianHeuristic(
             heuristic_opts,
