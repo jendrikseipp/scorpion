@@ -137,18 +137,19 @@ static vector<vector<int>> get_local_state_ids_by_state(
     return local_state_ids_by_state;
 }
 
-static vector<int> compute_h_values(
-    const vector<vector<vector<int>>> &h_values_by_orders,
+static void update_portfolio_h_values(
+    vector<int> &portfolio_h_values,
+    const vector<vector<int>> &h_values_by_abstraction,
     const vector<vector<int>> &local_state_ids_by_state) {
-    vector<int> portfolio_h_values;
-    portfolio_h_values.reserve(local_state_ids_by_state.size());
+
+    assert(portfolio_h_values.size() == local_state_ids_by_state.size());
     for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
         const vector<int> &local_state_ids = local_state_ids_by_state[sample_id];
-        int portfolio_sum_h = compute_max_h(local_state_ids, h_values_by_orders);
-        assert(portfolio_sum_h != INF);
-        portfolio_h_values.push_back(portfolio_sum_h);
+        int new_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+        assert(new_h != INF);
+        int old_h = portfolio_h_values[sample_id];
+        portfolio_h_values[sample_id] = max(old_h, new_h);
     }
-    return portfolio_h_values;
 }
 
 static ScalarEvaluator *_parse(OptionParser &parser) {
@@ -510,10 +511,11 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             total_num_evaluated_orders += num_evaluated_orders;
             if (keep_failed_orders || total_h_value > 0 ||
                 h_values_by_orders.empty()) {
+                update_portfolio_h_values(
+                    portfolio_h_values,
+                    h_values_by_abstraction,
+                    local_state_ids_by_state);
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
-                // TODO: Compute incrementally.
-                portfolio_h_values = compute_h_values(
-                    h_values_by_orders, local_state_ids_by_state);
             } else if (abort_after_first_failed_order) {
                 break;
             }
