@@ -17,17 +17,6 @@
 using namespace std;
 
 namespace cegar {
-static vector<vector<int>> get_local_state_ids_by_state(
-    const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
-    const vector<State> &states) {
-    vector<vector<int>> local_state_ids_by_state;
-    for (const State &state : states) {
-        local_state_ids_by_state.push_back(
-            get_local_state_ids(refinement_hierarchies, state));
-    }
-    return local_state_ids_by_state;
-}
-
 static vector<int> compute_h_values(
     const vector<vector<vector<int>>> &h_values_by_orders,
     const vector<vector<int>> &local_state_ids_by_state) {
@@ -123,7 +112,7 @@ static void dump_order(
 }
 
 pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
-    const vector<State> &states,
+    const vector<vector<int>> &local_state_ids_by_state,
     double max_time,
     bool shuffle,
     bool reverse_order,
@@ -143,10 +132,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         dump_order(abstractions, incumbent_order);
     }
     int incumbent_total_h_value = 0;
-    if (!states.empty()) {
-        // TODO: Compute outside of method.
-        vector<vector<int>> local_state_ids_by_state =
-            get_local_state_ids_by_state(refinement_hierarchies, states);
+    if (!local_state_ids_by_state.empty()) {
         vector<int> portfolio_h_values = compute_h_values(
             h_values_by_orders, local_state_ids_by_state);
 

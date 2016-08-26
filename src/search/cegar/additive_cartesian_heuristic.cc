@@ -126,6 +126,17 @@ static vector<vector<vector<int>>> compute_scps_moving_each_abstraction_first_on
     return h_values_by_orders;
 }
 
+static vector<vector<int>> get_local_state_ids_by_state(
+    const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
+    const vector<State> &states) {
+    vector<vector<int>> local_state_ids_by_state;
+    for (const State &state : states) {
+        local_state_ids_by_state.push_back(
+            get_local_state_ids(refinement_hierarchies, state));
+    }
+    return local_state_ids_by_state;
+}
+
 static ScalarEvaluator *_parse(OptionParser &parser) {
     parser.document_synopsis(
         "Additive CEGAR heuristic",
@@ -460,6 +471,9 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         cout << "Samples: " << samples.size() << endl;
         cout << "Sampling time: " << sampling_timer << endl;
 
+        vector<vector<int>> local_state_ids_by_state =
+            get_local_state_ids_by_state(refinement_hierarchies, samples);
+
         utils::Timer optimization_timer;
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
@@ -471,7 +485,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             const vector<vector<vector<int>>> &portfolio =
                 diversify ? h_values_by_orders : empty_h_values_by_orders;
             result = scp_optimizer.find_cost_partitioning(
-                samples,
+                local_state_ids_by_state,
                 optimization_time,
                 shuffle,
                 reverse_order,

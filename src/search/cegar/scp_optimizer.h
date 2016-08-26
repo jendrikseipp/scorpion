@@ -46,7 +46,7 @@ public:
         const std::vector<int> &operator_costs);
 
     std::pair<std::vector<std::vector<int>>, std::pair<int, int>> find_cost_partitioning(
-        const std::vector<State> &states,
+        const std::vector<std::vector<int>> &local_state_ids_by_state,
         double max_time,
         bool shuffle,
         bool reverse,
