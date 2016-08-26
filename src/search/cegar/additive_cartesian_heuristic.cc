@@ -501,6 +501,8 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 break;
             }
         }
+        optimization_timer.stop();
+
         cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
 
