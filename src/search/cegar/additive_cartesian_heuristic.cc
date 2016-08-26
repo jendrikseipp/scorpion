@@ -467,13 +467,11 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             move(abstractions), refinement_hierarchies, operator_costs);
         SuccessorGenerator successor_generator(task);
         const double average_operator_costs = get_average_operator_cost(task_proxy);
-        utils::CountdownTimer finding_orders_timer(max_time_finding_orders);
 
         utils::CountdownTimer sampling_timer(max_sampling_time);
         vector<State> samples;
         while (static_cast<int>(samples.size()) < num_samples &&
-               !sampling_timer.is_expired() &&
-               !finding_orders_timer.is_expired()) {
+               !sampling_timer.is_expired()) {
             State sample = sample_state_with_random_walk(
                 task_proxy,
                 successor_generator,
@@ -491,7 +489,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
 
         utils::release_vector_memory(samples);
 
-        utils::Timer optimization_timer;
+        utils::CountdownTimer finding_orders_timer(max_time_finding_orders);
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
         vector<int> portfolio_h_values(local_state_ids_by_state.size(), 0);
@@ -520,7 +518,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                 break;
             }
         }
-        optimization_timer.stop();
 
         cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
@@ -529,7 +526,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
              << *scp_optimizer.scp_computation_timer << endl;
         cout << "Time for evaluating orders: "
              << *scp_optimizer.order_evaluation_timer << endl;
-        cout << "Optimization time: " << optimization_timer << endl;
         cout << "Time for finding orders: " << finding_orders_timer << endl;
 
         return new MaxCartesianHeuristic(
