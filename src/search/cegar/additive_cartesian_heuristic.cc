@@ -463,24 +463,19 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         utils::Timer optimization_timer;
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
+        vector<vector<vector<int>>> empty_h_values_by_orders;
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
             pair<vector<vector<int>>, pair<int, int>> result;
             double optimization_time = min(
                 max_optimization_time, finding_orders_timer.get_remaining_time());
-            if (diversify) {
-                result = scp_optimizer.find_cost_partitioning(
-                    samples,
-                    optimization_time,
-                    shuffle,
-                    reverse_order,
-                    h_values_by_orders);
-            } else {
-                result = scp_optimizer.find_cost_partitioning(
-                    samples,
-                    optimization_time,
-                    shuffle,
-                    reverse_order);
-            }
+            const vector<vector<vector<int>>> &portfolio =
+                diversify ? h_values_by_orders : empty_h_values_by_orders;
+            result = scp_optimizer.find_cost_partitioning(
+                samples,
+                optimization_time,
+                shuffle,
+                reverse_order,
+                portfolio);
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second.first;
             int num_evaluated_orders = result.second.second;
