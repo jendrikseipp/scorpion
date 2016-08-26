@@ -489,12 +489,12 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         vector<vector<int>> local_state_ids_by_state =
             get_local_state_ids_by_state(refinement_hierarchies, samples);
 
-        // TODO: Delete samples.
+        utils::release_vector_memory(samples);
 
         utils::Timer optimization_timer;
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
-        vector<int> portfolio_h_values(samples.size(), 0);
+        vector<int> portfolio_h_values(local_state_ids_by_state.size(), 0);
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
             pair<vector<vector<int>>, pair<int, int>> result;
             double optimization_time = min(
