@@ -117,6 +117,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
     bool shuffle,
     bool reverse_order,
     const vector<vector<vector<int>>> &h_values_by_orders) const {
+    const bool using_hill_climbing = max_time != 0;
     utils::CountdownTimer timer(max_time);
     evaluations = 0;
     vector<int> incumbent_order = get_default_order(abstractions.size());
@@ -145,18 +146,22 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         incumbent_total_h_value = evaluate(
             incumbent_scp, local_state_ids_by_state, portfolio_h_values);
         do {
-            // TODO: Reduce log output.
-            g_log << "Incumbent total h value: " << incumbent_total_h_value << endl;
+            if (incumbent_total_h_value > 0) {
+                g_log << "Found order with h = "
+                      << incumbent_total_h_value << endl;
+            }
         } while (
             !timer.is_expired() &&
             search_improving_successor(
                 timer, local_state_ids_by_state, incumbent_order,
                 incumbent_total_h_value, portfolio_h_values));
-        if (timer.is_expired()) {
+        if (using_hill_climbing && timer.is_expired()) {
             g_log << "Optimization time limit reached." << endl;
         }
     }
-    g_log << "Evaluated orders: " << evaluations << endl;
+    if (using_hill_climbing) {
+        g_log << "Evaluated orders: " << evaluations << endl;
+    }
     return {
         move(incumbent_scp),
         {incumbent_total_h_value, evaluations}};
