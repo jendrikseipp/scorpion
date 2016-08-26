@@ -57,15 +57,10 @@ SCPOptimizer::SCPOptimizer(
 }
 
 int SCPOptimizer::evaluate(
-    const vector<int> &order,
+    const vector<vector<int>> &h_values_by_abstraction,
     const vector<vector<int>> &local_state_ids_by_state,
     const vector<int> &portfolio_h_values) const {
     assert(!local_state_ids_by_state.empty());
-
-    scp_computation_timer->resume();
-    vector<vector<int>> h_values_by_abstraction =
-        compute_saturated_cost_partitioning(abstractions, order, operator_costs);
-    scp_computation_timer->stop();
 
     order_evaluation_timer->resume();
     int total_h = 0;
@@ -92,10 +87,18 @@ bool SCPOptimizer::search_improving_successor(
     for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
+
+            scp_computation_timer->resume();
+            vector<vector<int>> h_values_by_abstraction =
+                compute_saturated_cost_partitioning(
+                    abstractions, incumbent_order, operator_costs);
+            scp_computation_timer->stop();
+
             int total_h = evaluate(
-                incumbent_order, local_state_ids_by_state, portfolio_h_values);
+                h_values_by_abstraction, local_state_ids_by_state, portfolio_h_values);
             if (total_h > incumbent_total_h_value) {
                 // Set new incumbent.
+                incumbent_scp = move(h_values_by_abstraction);
                 incumbent_total_h_value = total_h;
                 return true;
             } else {
@@ -146,8 +149,14 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
             get_local_state_ids_by_state(refinement_hierarchies, states);
         vector<int> portfolio_h_values = compute_h_values(
             h_values_by_orders, local_state_ids_by_state);
+
+        scp_computation_timer->resume();
+        incumbent_scp = compute_saturated_cost_partitioning(
+            abstractions, incumbent_order, operator_costs);
+        scp_computation_timer->stop();
+
         incumbent_total_h_value = evaluate(
-            incumbent_order, local_state_ids_by_state, portfolio_h_values);
+            incumbent_scp, local_state_ids_by_state, portfolio_h_values);
         do {
             // TODO: Reduce log output.
             g_log << "Incumbent total h value: " << incumbent_total_h_value << endl;
@@ -161,11 +170,8 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         }
     }
     g_log << "Evaluated orders: " << evaluations << endl;
-    // TODO: Don't compute SCP if we won't use it.
-    // TODO: Don't recompute SCP.
     return {
-        compute_saturated_cost_partitioning(
-            abstractions, incumbent_order, operator_costs),
+        incumbent_scp,
         {incumbent_total_h_value, evaluations}};
 }
 

@@ -21,10 +21,11 @@ class SCPOptimizer {
     const std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
     const std::vector<int> operator_costs;
 
+    mutable std::vector<std::vector<int>> incumbent_scp;
     mutable int evaluations;
 
     int evaluate(
-        const std::vector<int> &order,
+        const std::vector<std::vector<int>> &h_values_by_abstraction,
         const std::vector<std::vector<int>> &local_state_ids_by_state,
         const std::vector<int> &portfolio_h_values) const;
 
