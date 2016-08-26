@@ -157,7 +157,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
     }
     g_log << "Evaluated orders: " << evaluations << endl;
     return {
-        incumbent_scp,
+        move(incumbent_scp),
         {incumbent_total_h_value, evaluations}};
 }
 
