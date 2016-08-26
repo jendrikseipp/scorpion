@@ -131,15 +131,16 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         reverse(incumbent_order.begin() + hacked_num_landmark_abstractions, incumbent_order.end());
         dump_order(abstractions, incumbent_order);
     }
+
+    scp_computation_timer->resume();
+    incumbent_scp = compute_saturated_cost_partitioning(
+        abstractions, incumbent_order, operator_costs);
+    scp_computation_timer->stop();
+
     int incumbent_total_h_value = 0;
     if (!local_state_ids_by_state.empty()) {
         vector<int> portfolio_h_values = compute_h_values(
             h_values_by_orders, local_state_ids_by_state);
-
-        scp_computation_timer->resume();
-        incumbent_scp = compute_saturated_cost_partitioning(
-            abstractions, incumbent_order, operator_costs);
-        scp_computation_timer->stop();
 
         incumbent_total_h_value = evaluate(
             incumbent_scp, local_state_ids_by_state, portfolio_h_values);
