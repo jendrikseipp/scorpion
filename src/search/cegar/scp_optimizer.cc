@@ -17,21 +17,6 @@
 using namespace std;
 
 namespace cegar {
-static vector<int> compute_h_values(
-    const vector<vector<vector<int>>> &h_values_by_orders,
-    const vector<vector<int>> &local_state_ids_by_state) {
-    vector<int> portfolio_h_values;
-    portfolio_h_values.reserve(local_state_ids_by_state.size());
-    for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
-        const vector<int> &local_state_ids = local_state_ids_by_state[sample_id];
-        int portfolio_sum_h = compute_max_h(local_state_ids, h_values_by_orders);
-        assert(portfolio_sum_h != INF);
-        portfolio_h_values.push_back(portfolio_sum_h);
-    }
-    return portfolio_h_values;
-}
-
-
 SCPOptimizer::SCPOptimizer(
     vector<unique_ptr<Abstraction>> &&abstractions,
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
@@ -116,7 +101,8 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
     double max_time,
     bool shuffle,
     bool reverse_order,
-    const vector<vector<vector<int>>> &h_values_by_orders) const {
+    const vector<int> &portfolio_h_values) const {
+    assert(local_state_ids_by_state.size() == portfolio_h_values.size());
     const bool using_hill_climbing = max_time != 0;
     utils::CountdownTimer timer(max_time);
     evaluations = 0;
@@ -140,9 +126,6 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
 
     int incumbent_total_h_value = 0;
     if (!local_state_ids_by_state.empty()) {
-        vector<int> portfolio_h_values = compute_h_values(
-            h_values_by_orders, local_state_ids_by_state);
-
         incumbent_total_h_value = evaluate(
             incumbent_scp, local_state_ids_by_state, portfolio_h_values);
         do {

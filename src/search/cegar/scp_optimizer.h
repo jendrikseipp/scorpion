@@ -50,7 +50,7 @@ public:
         double max_time,
         bool shuffle,
         bool reverse,
-        const std::vector<std::vector<std::vector<int>>> &h_values_by_orders = {}) const;
+        const std::vector<int> &portfolio_h_values) const;
 };
 
 extern std::vector<int> get_default_order(int n);

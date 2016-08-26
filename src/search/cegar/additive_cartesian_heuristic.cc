@@ -137,6 +137,20 @@ static vector<vector<int>> get_local_state_ids_by_state(
     return local_state_ids_by_state;
 }
 
+static vector<int> compute_h_values(
+    const vector<vector<vector<int>>> &h_values_by_orders,
+    const vector<vector<int>> &local_state_ids_by_state) {
+    vector<int> portfolio_h_values;
+    portfolio_h_values.reserve(local_state_ids_by_state.size());
+    for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
+        const vector<int> &local_state_ids = local_state_ids_by_state[sample_id];
+        int portfolio_sum_h = compute_max_h(local_state_ids, h_values_by_orders);
+        assert(portfolio_sum_h != INF);
+        portfolio_h_values.push_back(portfolio_sum_h);
+    }
+    return portfolio_h_values;
+}
+
 static ScalarEvaluator *_parse(OptionParser &parser) {
     parser.document_synopsis(
         "Additive CEGAR heuristic",
@@ -474,22 +488,22 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         vector<vector<int>> local_state_ids_by_state =
             get_local_state_ids_by_state(refinement_hierarchies, samples);
 
+        // TODO: Delete samples.
+
         utils::Timer optimization_timer;
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
-        vector<vector<vector<int>>> empty_h_values_by_orders;
+        vector<int> portfolio_h_values(samples.size(), 0);
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
             pair<vector<vector<int>>, pair<int, int>> result;
             double optimization_time = min(
                 max_optimization_time, finding_orders_timer.get_remaining_time());
-            const vector<vector<vector<int>>> &portfolio =
-                diversify ? h_values_by_orders : empty_h_values_by_orders;
             result = scp_optimizer.find_cost_partitioning(
                 local_state_ids_by_state,
                 optimization_time,
                 shuffle,
                 reverse_order,
-                portfolio);
+                portfolio_h_values);
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second.first;
             int num_evaluated_orders = result.second.second;
@@ -497,6 +511,9 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             if (keep_failed_orders || total_h_value > 0 ||
                 h_values_by_orders.empty()) {
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
+                // TODO: Compute incrementally.
+                portfolio_h_values = compute_h_values(
+                    h_values_by_orders, local_state_ids_by_state);
             } else if (abort_after_first_failed_order) {
                 break;
             }
