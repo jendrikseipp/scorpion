@@ -526,12 +526,14 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             total_num_evaluated_orders += num_evaluated_orders;
             if (keep_failed_orders || total_h_value > 0 ||
                 h_values_by_orders.empty()) {
-                update_portfolio_h_values_timer.resume();
-                update_portfolio_h_values(
-                    portfolio_h_values,
-                    portfolio_h_values_improvement,
-                    sample_ids);
-                update_portfolio_h_values_timer.stop();
+                if (diversify) {
+                    update_portfolio_h_values_timer.resume();
+                    update_portfolio_h_values(
+                        portfolio_h_values,
+                        portfolio_h_values_improvement,
+                        sample_ids);
+                    update_portfolio_h_values_timer.stop();
+                }
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
             } else if (abort_after_first_failed_order) {
                 break;
