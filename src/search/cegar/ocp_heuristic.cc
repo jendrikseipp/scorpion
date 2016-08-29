@@ -6,6 +6,7 @@
 #include "../plugin.h"
 
 #include "../utils/collections.h"
+#include "../utils/logging.h"
 #include "../utils/timer.h"
 
 #include <cassert>
@@ -32,7 +33,8 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts, const vector<shared_ptr<TransitionSystem>> &&abstractions)
     : Heuristic(opts),
       abstractions(move(abstractions)),
-      allow_negative_costs(opts.get<bool>("use_general_costs")) {
+      allow_negative_costs(opts.get<bool>("use_general_costs")),
+      debug(false) {
     if (TaskProxy(*task).get_operators().size() != g_operators.size()) {
         ABORT("OptimalCostPartitioningHeuristic doesn't work for task "
               "transformations that add or remove operators");
@@ -65,7 +67,7 @@ OptimalCostPartitioningHeuristic::~OptimalCostPartitioningHeuristic() {
 void OptimalCostPartitioningHeuristic::release_memory() {
     // TransitionSystem::release_memory() is called in generateLP().
     utils::release_vector_memory(heuristic_variables);
-    utils::release_vector_memory(action_cost_variables);
+    //utils::release_vector_memory(action_cost_variables);
 }
 
 int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -92,6 +94,19 @@ int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
     if (lp_solver->isProvenDualInfeasible()) {
         return DEAD_END;
     }
+
+    if (debug) {
+        const double *sol = lp_solver->getColSolution();
+        vector<double> solution(sol, sol + lp_solver->getNumCols());
+        for (size_t abstraction_id = 0; abstraction_id < action_cost_variables.size(); ++abstraction_id) {
+            vector<int> costs;
+            for (int index : action_cost_variables[abstraction_id]) {
+                costs.push_back(solution[index]);
+            }
+            cout << "c_" << abstraction_id << ": " << costs << endl;
+        }
+    }
+
     double h_val = lp_solver->getObjValue();
     double epsilon = 0.01;
     return ceil(h_val - epsilon);

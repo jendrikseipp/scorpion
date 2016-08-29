@@ -55,6 +55,8 @@ public:
     // This makes it easier to reset the bounds in each step.
     std::vector<int> current_abstract_state_vars;
 
+    bool debug;
+
     void generateLP();
     void introduce_abstraction_variables(const TransitionSystem &abstraction,
                                          int abstraction_id,
