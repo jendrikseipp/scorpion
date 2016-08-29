@@ -493,26 +493,45 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
         vector<int> portfolio_h_values(local_state_ids_by_state.size(), 0);
+
+        int num_evaluated_samples = 1000;
+        vector<int> sample_ids(num_evaluated_samples, -1);
+
+        utils::Timer selecting_samples_timer;
+        selecting_samples_timer.stop();
+
+        utils::Timer update_portfolio_h_values_timer;
+        update_portfolio_h_values_timer.stop();
+
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
-            pair<vector<vector<int>>, pair<int, int>> result;
+            selecting_samples_timer.resume();
+            for (int &sample_id : sample_ids) {
+                sample_id = (*g_rng())(local_state_ids_by_state.size());
+            }
+            selecting_samples_timer.stop();
+
             double optimization_time = min(
                 max_optimization_time, finding_orders_timer.get_remaining_time());
-            result = scp_optimizer.find_cost_partitioning(
-                local_state_ids_by_state,
-                optimization_time,
-                shuffle,
-                reverse_order,
-                portfolio_h_values);
+            pair<vector<vector<int>>, pair<int, int>> result =
+                scp_optimizer.find_cost_partitioning(
+                    local_state_ids_by_state,
+                    sample_ids,
+                    optimization_time,
+                    shuffle,
+                    reverse_order,
+                    portfolio_h_values);
             vector<vector<int>> h_values_by_abstraction = move(result.first);
             int total_h_value = result.second.first;
             int num_evaluated_orders = result.second.second;
             total_num_evaluated_orders += num_evaluated_orders;
             if (keep_failed_orders || total_h_value > 0 ||
                 h_values_by_orders.empty()) {
+                update_portfolio_h_values_timer.resume();
                 update_portfolio_h_values(
                     portfolio_h_values,
                     h_values_by_abstraction,
                     local_state_ids_by_state);
+                update_portfolio_h_values_timer.stop();
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
             } else if (abort_after_first_failed_order) {
                 break;
@@ -522,10 +541,14 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
 
+        cout << "Time for selecting samples: "
+             << selecting_samples_timer << endl;
         cout << "Time for computing SCPs: "
              << *scp_optimizer.scp_computation_timer << endl;
         cout << "Time for evaluating orders: "
              << *scp_optimizer.order_evaluation_timer << endl;
+        cout << "Time for updating portfolio h values: "
+             << update_portfolio_h_values_timer << endl;
         cout << "Time for finding orders: " << finding_orders_timer << endl;
 
         return new MaxCartesianHeuristic(
