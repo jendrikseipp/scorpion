@@ -14,13 +14,14 @@ MaxCartesianHeuristic::MaxCartesianHeuristic(
     vector<vector<vector<int>>> &&h_values_by_order)
     : Heuristic(opts),
       refinement_hierarchies(move(refinement_hierarchies)),
-      h_values_by_order(move(h_values_by_order)) {
+      h_values_by_order(move(h_values_by_order)),
+      num_best_order(this->h_values_by_order.size(), 0) {
 }
 
 int MaxCartesianHeuristic::compute_heuristic(const State &state) {
     vector<int> local_state_ids = get_local_state_ids(
         refinement_hierarchies, state);
-    int max_h = compute_max_h2(local_state_ids, h_values_by_order);
+    int max_h = compute_max_h_with_statistics(local_state_ids);
     if (max_h == INF) {
         return DEAD_END;
     }
@@ -32,12 +33,8 @@ int MaxCartesianHeuristic::compute_heuristic(const GlobalState &global_state) {
     return compute_heuristic(state);
 }
 
-int MaxCartesianHeuristic::compute_max_h2(
-    const vector<int> &local_state_ids,
-    const vector<vector<vector<int>>> &h_values_by_order) {
-    if (num_best_order.empty()) {
-        num_best_order.resize(h_values_by_order.size(), 0);
-    }
+int MaxCartesianHeuristic::compute_max_h_with_statistics(
+    const vector<int> &local_state_ids) {
     int max_h = -1;
     int best_id = -1;
     int current_id = 0;

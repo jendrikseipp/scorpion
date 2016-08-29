@@ -20,8 +20,7 @@ class MaxCartesianHeuristic : public Heuristic {
 protected:
     virtual int compute_heuristic(const GlobalState &global_state);
     int compute_heuristic(const State &state);
-    int compute_max_h2(const std::vector<int> &local_state_ids,
-                       const std::vector<std::vector<std::vector<int>>> &h_values_by_order);
+    int compute_max_h_with_statistics(const std::vector<int> &local_state_ids);
 
 public:
     MaxCartesianHeuristic(
