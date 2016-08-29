@@ -341,7 +341,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
                cost_partitioning_type ==CostPartitioningType::SATURATED_MAX) {
         const int num_orders = opts.get<int>("orders");
-        const int num_samples = opts.get<int>("samples");
+        const int max_num_samples = opts.get<int>("samples");
         const double max_sampling_time = opts.get<double>("max_sampling_time");
         const double max_optimization_time = opts.get<double>("max_optimization_time");
         const double max_time_finding_orders = opts.get<double>("max_time_finding_orders");
@@ -370,7 +370,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             cerr << "When diversifying set shuffle=true" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
-        if (diversify && num_samples == 0) {
+        if (diversify && max_num_samples == 0) {
             cerr << "When diversifying set samples >= 1" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
@@ -379,7 +379,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                  << "when keep_failed_orders is false" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
-        if (num_samples == 0 && max_optimization_time != numeric_limits<double>::infinity()) {
+        if (max_num_samples == 0 && max_optimization_time != numeric_limits<double>::infinity()) {
             cerr << "Option max_optimization_time has no effect when samples == 0" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
@@ -468,7 +468,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
 
         utils::CountdownTimer sampling_timer(max_sampling_time);
         vector<State> samples;
-        while (static_cast<int>(samples.size()) < num_samples &&
+        while (static_cast<int>(samples.size()) < max_num_samples &&
                !sampling_timer.is_expired()) {
             State sample = sample_state_with_random_walk(
                 task_proxy,
@@ -484,17 +484,18 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
 
         vector<vector<int>> local_state_ids_by_state =
             get_local_state_ids_by_state(refinement_hierarchies, samples);
+        int num_samples = local_state_ids_by_state.size();
 
         utils::release_vector_memory(samples);
 
         utils::CountdownTimer finding_orders_timer(max_time_finding_orders);
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
-        vector<int> portfolio_h_values(local_state_ids_by_state.size(), 0);
+        vector<int> portfolio_h_values(num_samples, 0);
 
-        int num_evaluated_samples = 1000;
+        int num_evaluated_samples = min(1000, num_samples);
         vector<int> sample_ids(num_evaluated_samples, -1);
-        vector<int> portfolio_h_values_improvement(local_state_ids_by_state.size(), -1);
+        vector<int> portfolio_h_values_improvement(num_samples, -1);
 
         utils::Timer selecting_samples_timer;
         selecting_samples_timer.stop();
