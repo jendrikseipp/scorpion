@@ -28,7 +28,8 @@ class SCPOptimizer {
         const std::vector<std::vector<int>> &h_values_by_abstraction,
         const std::vector<std::vector<int>> &local_state_ids_by_state,
         const std::vector<int> &global_state_ids,
-        const std::vector<int> &portfolio_h_values) const;
+        const std::vector<int> &portfolio_h_values,
+        std::vector<int> &portfolio_h_values_improvement) const;
 
     bool search_improving_successor(
         const utils::CountdownTimer &timer,
@@ -36,7 +37,8 @@ class SCPOptimizer {
         const std::vector<int> &global_state_ids,
         std::vector<int> &incumbent_order,
         int &incumbent_total_h_value,
-        const std::vector<int> &portfolio_h_values) const;
+        const std::vector<int> &portfolio_h_values,
+        std::vector<int> &portfolio_h_values_improvement) const;
 
 public:
     std::unique_ptr<utils::Timer> scp_computation_timer;
@@ -53,7 +55,8 @@ public:
         double max_time,
         bool shuffle,
         bool reverse,
-        const std::vector<int> &portfolio_h_values) const;
+        const std::vector<int> &portfolio_h_values,
+        std::vector<int> &portfolio_h_values_improvement) const;
 };
 
 extern std::vector<int> get_default_order(int n);
