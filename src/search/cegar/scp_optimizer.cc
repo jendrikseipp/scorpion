@@ -158,9 +158,6 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
             g_log << "Optimization time limit reached." << endl;
         }
     }
-    if (using_hill_climbing) {
-        g_log << "Evaluated orders: " << evaluations << endl;
-    }
     return {
         move(incumbent_scp),
         {incumbent_total_h_value, evaluations}};
