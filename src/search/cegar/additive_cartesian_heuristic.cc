@@ -139,7 +139,7 @@ static vector<vector<int>> get_local_state_ids_by_state(
 
 static void update_portfolio_h_values(
     vector<int> &portfolio_h_values,
-    const vector<int> &portfolio_h_values_improvement,
+    vector<int> &portfolio_h_values_improvement,
     const vector<int> &global_state_ids) {
 
     for (int sample_id : global_state_ids) {
@@ -147,6 +147,7 @@ static void update_portfolio_h_values(
         assert(utils::in_bounds(sample_id, portfolio_h_values_improvement));
         assert(portfolio_h_values_improvement[sample_id] != -1);
         portfolio_h_values[sample_id] += portfolio_h_values_improvement[sample_id];
+        portfolio_h_values_improvement[sample_id] = -1;
     }
 }
 
@@ -496,6 +497,8 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         int num_evaluated_samples = min(1000, num_samples);
         vector<int> sample_ids(num_evaluated_samples, -1);
         vector<int> portfolio_h_values_improvement(num_samples, -1);
+        vector<int> all_sample_ids(num_samples);
+        iota(all_sample_ids.begin(), all_sample_ids.end(), 0);
 
         utils::Timer selecting_samples_timer;
         selecting_samples_timer.stop();
@@ -505,9 +508,9 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
 
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
             selecting_samples_timer.resume();
-            for (int &sample_id : sample_ids) {
-                sample_id = (*g_rng())(local_state_ids_by_state.size());
-            }
+            g_rng()->shuffle(all_sample_ids);
+            sample_ids.assign(all_sample_ids.begin(), all_sample_ids.begin() + num_evaluated_samples);
+            assert(static_cast<int>(sample_ids.size()) == num_evaluated_samples);
             selecting_samples_timer.stop();
 
             double optimization_time = min(
