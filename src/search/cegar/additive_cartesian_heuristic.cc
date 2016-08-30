@@ -525,13 +525,24 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         utils::Timer selecting_samples_timer;
         selecting_samples_timer.stop();
 
+        utils::Timer shuffle_samples_timer;
+        shuffle_samples_timer.stop();
+
+        utils::Timer assign_samples_timer;
+        assign_samples_timer.stop();
+
         utils::Timer update_portfolio_h_values_timer;
         update_portfolio_h_values_timer.stop();
 
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
             selecting_samples_timer.resume();
+            shuffle_samples_timer.resume();
+            // Shuffling is slow, random_shuffle() doesn't make this faster though.
             g_rng()->shuffle(all_sample_ids);
+            shuffle_samples_timer.stop();
+            assign_samples_timer.resume();
             sample_ids.assign(all_sample_ids.begin(), all_sample_ids.begin() + num_evaluated_samples);
+            assign_samples_timer.stop();
             assert(static_cast<int>(sample_ids.size()) == num_evaluated_samples);
             selecting_samples_timer.stop();
 
@@ -571,6 +582,8 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
 
+        cout << "Time for shuffling samples: " << shuffle_samples_timer << endl;
+        cout << "Time for assigning samples: " << assign_samples_timer << endl;
         cout << "Time for selecting samples: "
              << selecting_samples_timer << endl;
         cout << "Time for computing SCPs: "
