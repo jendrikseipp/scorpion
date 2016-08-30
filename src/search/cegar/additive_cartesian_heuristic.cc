@@ -140,34 +140,15 @@ static vector<vector<int>> get_local_state_ids_by_state(
 static void update_portfolio_h_values(
     vector<int> &portfolio_h_values,
     vector<int> &portfolio_h_values_improvement,
-    const vector<vector<int>> &h_values_by_abstraction,
     const vector<vector<int>> &local_state_ids_by_state) {
     assert(portfolio_h_values.size() == local_state_ids_by_state.size());
 
-    /*
-      TODO: Remove?
-
-    for (int sample_id : global_state_ids) {
+    for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
         assert(utils::in_bounds(sample_id, portfolio_h_values));
         assert(utils::in_bounds(sample_id, portfolio_h_values_improvement));
         assert(portfolio_h_values_improvement[sample_id] != -1);
         portfolio_h_values[sample_id] += portfolio_h_values_improvement[sample_id];
         portfolio_h_values_improvement[sample_id] = -1;
-    }
-    */
-    utils::unused_variable(portfolio_h_values);
-    utils::unused_variable(portfolio_h_values_improvement);
-
-    /*
-      Update portfolio h values for all samples. If we only update the
-      values of the last subset, the same orders might be added multiple
-      times.
-    */
-    for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
-        int new_h = compute_sum_h(local_state_ids_by_state[sample_id], h_values_by_abstraction);
-        assert(new_h != INF);
-        int old_h = portfolio_h_values[sample_id];
-        portfolio_h_values[sample_id] = max(old_h, new_h);
     }
 }
 
@@ -540,7 +521,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     update_portfolio_h_values(
                         portfolio_h_values,
                         portfolio_h_values_improvement,
-                        h_values_by_abstraction,
                         local_state_ids_by_state);
                     update_portfolio_h_values_timer.stop();
                 }
