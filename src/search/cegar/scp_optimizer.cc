@@ -160,10 +160,8 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         do {
             if (incumbent_total_h_value > 0) {
                 g_log << "Found order with h = "
-                      << incumbent_total_h_value << endl;
-                if (debug) {
-                    cout << "Add order: " << incumbent_order << endl;
-                }
+                      << incumbent_total_h_value << ": "
+                      << incumbent_order << endl;
             }
         } while (
             !timer.is_expired() &&
