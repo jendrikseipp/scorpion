@@ -28,14 +28,12 @@ class SCPOptimizer {
     int evaluate(
         const std::vector<std::vector<int>> &h_values_by_abstraction,
         const std::vector<std::vector<int>> &local_state_ids_by_state,
-        const std::vector<int> &global_state_ids,
         const std::vector<int> &portfolio_h_values,
         std::vector<int> &portfolio_h_values_improvement) const;
 
     bool search_improving_successor(
         const utils::CountdownTimer &timer,
         const std::vector<std::vector<int>> &local_state_ids_by_state,
-        const std::vector<int> &global_state_ids,
         std::vector<int> &incumbent_order,
         int &incumbent_total_h_value,
         const std::vector<int> &portfolio_h_values,
@@ -52,7 +50,6 @@ public:
 
     std::pair<std::vector<std::vector<int>>, std::pair<int, int>> find_cost_partitioning(
         const std::vector<std::vector<int>> &local_state_ids_by_state,
-        const std::vector<int> &global_state_ids,
         double max_time,
         bool shuffle,
         bool reverse,

@@ -140,7 +140,6 @@ static vector<vector<int>> get_local_state_ids_by_state(
 static void update_portfolio_h_values(
     vector<int> &portfolio_h_values,
     vector<int> &portfolio_h_values_improvement,
-    const vector<int> &global_state_ids,
     const vector<vector<int>> &h_values_by_abstraction,
     const vector<vector<int>> &local_state_ids_by_state) {
     assert(portfolio_h_values.size() == local_state_ids_by_state.size());
@@ -158,7 +157,6 @@ static void update_portfolio_h_values(
     */
     utils::unused_variable(portfolio_h_values);
     utils::unused_variable(portfolio_h_values_improvement);
-    utils::unused_variable(global_state_ids);
 
     /*
       Update portfolio h values for all samples. If we only update the
@@ -515,43 +513,17 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         int total_num_evaluated_orders = 0;
         vector<vector<vector<int>>> h_values_by_orders;
         vector<int> portfolio_h_values(num_samples, 0);
-
-        int num_evaluated_samples = min(1000, num_samples);
-        vector<int> sample_ids(num_evaluated_samples, -1);
         vector<int> portfolio_h_values_improvement(num_samples, -1);
-        vector<int> all_sample_ids(num_samples);
-        iota(all_sample_ids.begin(), all_sample_ids.end(), 0);
-
-        utils::Timer selecting_samples_timer;
-        selecting_samples_timer.stop();
-
-        utils::Timer shuffle_samples_timer;
-        shuffle_samples_timer.stop();
-
-        utils::Timer assign_samples_timer;
-        assign_samples_timer.stop();
 
         utils::Timer update_portfolio_h_values_timer;
         update_portfolio_h_values_timer.stop();
 
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
-            selecting_samples_timer.resume();
-            shuffle_samples_timer.resume();
-            // Shuffling is slow, random_shuffle() doesn't make this faster though.
-            g_rng()->shuffle(all_sample_ids);
-            shuffle_samples_timer.stop();
-            assign_samples_timer.resume();
-            sample_ids.assign(all_sample_ids.begin(), all_sample_ids.begin() + num_evaluated_samples);
-            assign_samples_timer.stop();
-            assert(static_cast<int>(sample_ids.size()) == num_evaluated_samples);
-            selecting_samples_timer.stop();
-
             double optimization_time = min(
                 max_optimization_time, finding_orders_timer.get_remaining_time());
             pair<vector<vector<int>>, pair<int, int>> result =
                 scp_optimizer.find_cost_partitioning(
                     local_state_ids_by_state,
-                    sample_ids,
                     optimization_time,
                     shuffle,
                     reverse_order,
@@ -568,7 +540,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     update_portfolio_h_values(
                         portfolio_h_values,
                         portfolio_h_values_improvement,
-                        sample_ids,
                         h_values_by_abstraction,
                         local_state_ids_by_state);
                     update_portfolio_h_values_timer.stop();
@@ -582,10 +553,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         cout << "Total evaluated orders: " << total_num_evaluated_orders << endl;
         cout << "Orders: " << h_values_by_orders.size() << endl;
 
-        cout << "Time for shuffling samples: " << shuffle_samples_timer << endl;
-        cout << "Time for assigning samples: " << assign_samples_timer << endl;
-        cout << "Time for selecting samples: "
-             << selecting_samples_timer << endl;
         cout << "Time for computing SCPs: "
              << *scp_optimizer.scp_computation_timer << endl;
         cout << "Time for evaluating orders: "

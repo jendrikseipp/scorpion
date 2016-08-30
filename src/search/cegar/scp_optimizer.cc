@@ -33,7 +33,6 @@ SCPOptimizer::SCPOptimizer(
 int SCPOptimizer::evaluate(
     const vector<vector<int>> &h_values_by_abstraction,
     const vector<vector<int>> &local_state_ids_by_state,
-    const vector<int> &global_state_ids,
     const vector<int> &portfolio_h_values,
     vector<int> &portfolio_h_values_improvement) const {
     assert(!local_state_ids_by_state.empty());
@@ -41,11 +40,10 @@ int SCPOptimizer::evaluate(
     order_evaluation_timer->resume();
     int total_h = 0;
     if (debug) {
-        cout << "ids: " << global_state_ids << endl;
         cout << "portfolio_h_values: " << portfolio_h_values << endl;
         cout << "portfolio_h_impr.:  " << portfolio_h_values_improvement << endl;
     }
-    for (int sample_id : global_state_ids) {
+    for (size_t sample_id = 0; sample_id < local_state_ids_by_state.size(); ++sample_id) {
         assert(utils::in_bounds(sample_id, local_state_ids_by_state));
         const vector<int> &local_state_ids = local_state_ids_by_state[sample_id];
         int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
@@ -71,7 +69,6 @@ int SCPOptimizer::evaluate(
 bool SCPOptimizer::search_improving_successor(
     const utils::CountdownTimer &timer,
     const vector<vector<int>> &local_state_ids_by_state,
-    const vector<int> &global_state_ids,
     vector<int> &incumbent_order,
     int &incumbent_total_h_value,
     const vector<int> &portfolio_h_values,
@@ -90,7 +87,6 @@ bool SCPOptimizer::search_improving_successor(
             int total_h = evaluate(
                 h_values_by_abstraction,
                 local_state_ids_by_state,
-                global_state_ids,
                 portfolio_h_values,
                 portfolio_h_values_improvement);
             if (total_h > incumbent_total_h_value) {
@@ -121,7 +117,6 @@ static void dump_order(
 
 pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
     const vector<vector<int>> &local_state_ids_by_state,
-    const vector<int> &global_state_ids,
     double max_time,
     bool shuffle,
     bool reverse_order,
@@ -155,7 +150,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
             cout << "Evaluate order: " << incumbent_order << endl;
         }
         incumbent_total_h_value = evaluate(
-            incumbent_scp, local_state_ids_by_state, global_state_ids,
+            incumbent_scp, local_state_ids_by_state,
             portfolio_h_values, portfolio_h_values_improvement);
         do {
             if (incumbent_total_h_value > 0) {
@@ -166,7 +161,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         } while (
             !timer.is_expired() &&
             search_improving_successor(
-                timer, local_state_ids_by_state, global_state_ids,
+                timer, local_state_ids_by_state,
                 incumbent_order, incumbent_total_h_value,
                 portfolio_h_values, portfolio_h_values_improvement));
         if (using_hill_climbing && timer.is_expired()) {
