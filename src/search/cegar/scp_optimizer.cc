@@ -40,6 +40,11 @@ int SCPOptimizer::evaluate(
 
     order_evaluation_timer->resume();
     int total_h = 0;
+    if (debug) {
+        cout << "ids: " << global_state_ids << endl;
+        cout << "portfolio_h_values: " << portfolio_h_values << endl;
+        cout << "portfolio_h_impr.:  " << portfolio_h_values_improvement << endl;
+    }
     for (int sample_id : global_state_ids) {
         assert(utils::in_bounds(sample_id, local_state_ids_by_state));
         const vector<int> &local_state_ids = local_state_ids_by_state[sample_id];
@@ -50,6 +55,12 @@ int SCPOptimizer::evaluate(
         assert(utils::in_bounds(sample_id, portfolio_h_values_improvement));
         int delta_to_portfolio = max(0, sum_h - portfolio_sum_h);
         portfolio_h_values_improvement[sample_id] = delta_to_portfolio;
+        if (debug) {
+            cout << "id: " << sample_id << endl;
+            cout << "sum_h: " << sum_h << endl;
+            cout << "portfolio_sum_h: " << portfolio_sum_h << endl;
+            cout << "delta: " << delta_to_portfolio << endl;
+        }
         total_h += delta_to_portfolio;
     }
     ++evaluations;
@@ -140,6 +151,9 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
 
     int incumbent_total_h_value = 0;
     if (!local_state_ids_by_state.empty()) {
+        if (debug) {
+            cout << "Evaluate order: " << incumbent_order << endl;
+        }
         incumbent_total_h_value = evaluate(
             incumbent_scp, local_state_ids_by_state, global_state_ids,
             portfolio_h_values, portfolio_h_values_improvement);
@@ -147,6 +161,9 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
             if (incumbent_total_h_value > 0) {
                 g_log << "Found order with h = "
                       << incumbent_total_h_value << endl;
+                if (debug) {
+                    cout << "Add order: " << incumbent_order << endl;
+                }
             }
         } while (
             !timer.is_expired() &&

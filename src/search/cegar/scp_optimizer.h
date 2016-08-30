@@ -20,6 +20,7 @@ class SCPOptimizer {
     const std::vector<std::unique_ptr<Abstraction>> abstractions;
     const std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
     const std::vector<int> operator_costs;
+    static const bool debug = false;
 
     mutable std::vector<std::vector<int>> incumbent_scp;
     mutable int evaluations;
