@@ -283,10 +283,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "keep orders that failed to improve upon portfolio",
         "true");
     parser.add_option<bool>(
-        "abort_after_first_failed_order",
-        "stop optimizing orders after the first order failed",
-        "false");
-    parser.add_option<bool>(
         "exclude_abstractions_with_zero_init_h",
         "throw away abstractions with h(s_0) = 0",
         "true");
@@ -351,8 +347,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         const bool reverse_order = opts.get<bool>("reverse");
         const bool diversify = opts.get<bool>("diversify");
         const bool keep_failed_orders = opts.get<bool>("keep_failed_orders");
-        const bool abort_after_first_failed_order = opts.get<bool>(
-            "abort_after_first_failed_order");
         const bool each_abstraction_first_once = opts.get<bool>(
             "each_abstraction_first_once");
 
@@ -374,11 +368,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         }
         if (diversify && max_num_samples == 0) {
             cerr << "When diversifying set samples >= 1" << endl;
-            utils::exit_with(utils::ExitCode::INPUT_ERROR);
-        }
-        if (keep_failed_orders && abort_after_first_failed_order) {
-            cerr << "abort_after_first_failed_order can only be true "
-                 << "when keep_failed_orders is false" << endl;
             utils::exit_with(utils::ExitCode::INPUT_ERROR);
         }
         if (max_num_samples == 0 && max_optimization_time != numeric_limits<double>::infinity()) {
@@ -525,8 +514,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
                     update_portfolio_h_values_timer.stop();
                 }
                 h_values_by_orders.push_back(move(h_values_by_abstraction));
-            } else if (abort_after_first_failed_order) {
-                break;
             }
         }
 
