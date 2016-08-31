@@ -74,6 +74,14 @@ int AdditiveCartesianHeuristic::compute_heuristic(const State &state) {
     return sum_h;
 }
 
+static long factorial(int n) {
+    assert(n >= 0);
+    if (n == 0) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
 static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &operator_costs) {
@@ -85,6 +93,7 @@ static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
             compute_saturated_cost_partitioning(
                 abstractions, indices, operator_costs));
     } while (next_permutation(indices.begin(), indices.end()));
+    assert(static_cast<long>(h_values_by_orders.size()) == factorial(abstractions.size()));
     return h_values_by_orders;
 }
 
@@ -410,6 +419,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
             vector<vector<vector<int>>> h_values_by_orders =
                 compute_all_saturated_cost_partitionings(
                     abstractions, operator_costs);
+            cout << "Orders: " << h_values_by_orders.size() << endl;
             return new MaxCartesianHeuristic(
                 heuristic_opts,
                 move(refinement_hierarchies),
