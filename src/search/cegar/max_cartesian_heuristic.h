@@ -27,7 +27,8 @@ public:
         const options::Options &opts,
         std::vector<std::shared_ptr<RefinementHierarchy>> &&refinement_hierarchies,
         std::vector<std::vector<std::vector<int>>> &&h_values_by_order);
-    void print_statistics() const override;
+
+    virtual void print_statistics() const override;
 };
 }
 
