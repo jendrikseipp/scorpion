@@ -27,55 +27,6 @@
 using namespace std;
 
 namespace cegar {
-static vector<CartesianHeuristicFunction> generate_heuristic_functions(
-    const options::Options &opts) {
-    g_log << "Initializing additive Cartesian heuristic..." << endl;
-    vector<shared_ptr<SubtaskGenerator>> subtask_generators =
-        opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks");
-    CostSaturation cost_saturation(
-        static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning")),
-        subtask_generators,
-        opts.get<int>("max_states"),
-        opts.get<int>("max_transitions"),
-        opts.get<double>("max_time"),
-        opts.get<bool>("use_general_costs"),
-        opts.get<bool>("exclude_abstractions_with_zero_init_h"),
-        static_cast<PickSplit>(opts.get<int>("pick")));
-    cost_saturation.initialize(get_task_from_options(opts));
-    return cost_saturation.extract_heuristic_functions();
-}
-
-AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
-    const options::Options &opts)
-    : Heuristic(opts),
-      heuristic_functions(generate_heuristic_functions(opts)) {
-}
-
-AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
-    const options::Options &opts,
-    std::vector<CartesianHeuristicFunction> &&heuristic_functions)
-    : Heuristic(opts),
-      heuristic_functions(move(heuristic_functions)) {
-}
-
-int AdditiveCartesianHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int AdditiveCartesianHeuristic::compute_heuristic(const State &state) {
-    int sum_h = 0;
-    for (const CartesianHeuristicFunction &function : heuristic_functions) {
-        int value = function.get_value(state);
-        assert(value >= 0);
-        if (value == INF)
-            return DEAD_END;
-        sum_h += value;
-    }
-    assert(sum_h >= 0);
-    return sum_h;
-}
-
 static long factorial(int n) {
     assert(n >= 0);
     if (n == 0) {

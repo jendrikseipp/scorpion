@@ -7,6 +7,7 @@
 #include "transition_system.h"
 #include "utils.h"
 
+#include "../globals.h"
 #include "../task_tools.h"
 
 #include "../tasks/modified_operator_costs_task.h"
