@@ -19,19 +19,6 @@
 using namespace std;
 
 namespace cegar {
-static long long compute_num_states_in_task(const TaskProxy &task_proxy) {
-    long long num_states = 1;
-    for (VariableProxy var : task_proxy.get_variables()) {
-        if (utils::is_product_within_limit(num_states, var.get_domain_size(),
-                                           numeric_limits<long long>::max())) {
-            num_states *= var.get_domain_size();
-        } else {
-            return -1;
-        }
-    }
-    return num_states;
-}
-
 struct Flaw {
     // Last concrete and abstract state reached while tracing solution.
     const State concrete_state;
@@ -106,8 +93,6 @@ Abstraction::Abstraction(
       debug(debug) {
     assert(max_states >= 1);
     g_log << "Start building abstraction." << endl;
-    cout << "Number of concrete states: "
-         << compute_num_states_in_task(task_proxy) << endl;
     cout << "Maximum number of states: " << max_states << endl;
     cout << "Maximum number of transitions: "
          << max_non_looping_transitions << endl;
