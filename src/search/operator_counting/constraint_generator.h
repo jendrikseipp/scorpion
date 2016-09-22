@@ -10,7 +10,6 @@ class State;
 namespace lp {
 class LPConstraint;
 class LPSolver;
-class LPVariable;
 }
 
 namespace operator_counting {
@@ -30,11 +29,6 @@ namespace operator_counting {
 */
 class ConstraintGenerator {
 public:
-    virtual void initialize_variables(
-        const std::shared_ptr<AbstractTask> task,
-        std::vector<lp::LPVariable> &variables,
-        double infinity);
-
     /*
       Called upon initialization for the given task. Use this to add permanent
       constraints and perform other initialization. The parameter "infinity"

@@ -5,12 +5,6 @@
 using namespace std;
 
 namespace operator_counting {
-void ConstraintGenerator::initialize_variables(
-    const shared_ptr<AbstractTask>,
-    vector<lp::LPVariable> &,
-    double) {
-}
-
 void ConstraintGenerator::initialize_constraints(
     const shared_ptr<AbstractTask>, vector<lp::LPConstraint> &, double) {
 }
