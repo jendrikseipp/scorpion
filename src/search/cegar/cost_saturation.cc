@@ -2,7 +2,6 @@
 
 #include "abstraction.h"
 #include "additive_cartesian_heuristic.h"
-#include "cartesian_heuristic_function.h"
 #include "subtask_generators.h"
 #include "transition_system.h"
 #include "utils.h"
@@ -105,10 +104,6 @@ vector<unique_ptr<Abstraction>> CostSaturation::extract_abstractions() {
     return move(abstractions);
 }
 
-vector<CartesianHeuristicFunction> CostSaturation::extract_heuristic_functions() {
-    return move(heuristic_functions);
-}
-
 vector<shared_ptr<TransitionSystem>> CostSaturation::extract_transition_systems() {
     return move(transition_systems);
 }
@@ -126,13 +121,8 @@ shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
         parent, move(costs));
 }
 
-bool CostSaturation::state_is_dead_end(const State &state) const {
-    // TODO: Since we don't store heuristic_functions for SATURATED_POSTHOC,
-    //       we don't recognize dead ends for SATURATED_POSTHOC.
-    for (const CartesianHeuristicFunction &function : heuristic_functions) {
-        if (function.get_value(state) == INF)
-            return true;
-    }
+bool CostSaturation::state_is_dead_end(const State &) const {
+    // TODO: Implement this again.
     return false;
 }
 
@@ -188,8 +178,6 @@ void CostSaturation::print_statistics() const {
     cout << "Cartesian abstractions built: " << num_abstractions << endl;
     cout << "Abstractions stored: " << abstractions.size() << endl;
     cout << "Transition systems stored: " << transition_systems.size() << endl;
-    cout << "Cartesian heuristic functions stored: "
-         << heuristic_functions.size() << endl;
     cout << "Cartesian states: " << num_states << endl;
     cout << "Total number of non-looping transitions: "
          << num_non_looping_transitions << endl;

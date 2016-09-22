@@ -15,7 +15,6 @@ namespace cegar {
 extern int hacked_num_landmark_abstractions;
 
 class Abstraction;
-class CartesianHeuristicFunction;
 class SubtaskGenerator;
 class TransitionSystem;
 
@@ -26,13 +25,6 @@ enum class CostPartitioningType {
     OPTIMAL
 };
 
-/*
-  Get subtasks from SubtaskGenerators, reduce their costs by wrapping
-  them in ModifiedOperatorCostsTasks, compute Abstractions, move
-  RefinementHierarchies from Abstractions to
-  CartesianHeuristicFunctions, allow extracting
-  CartesianHeuristicFunctions into AdditiveCartesianHeuristic.
-*/
 class CostSaturation {
     const CostPartitioningType cost_partitioning_type;
     const std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators;
@@ -52,7 +44,6 @@ class CostSaturation {
     */
     std::vector<int> remaining_costs;
     std::vector<std::unique_ptr<Abstraction>> abstractions;
-    std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<std::shared_ptr<TransitionSystem>> transition_systems;
     int num_abstractions;
     int num_states;
@@ -82,7 +73,6 @@ public:
     void initialize(const std::shared_ptr<AbstractTask> &task);
 
     std::vector<std::unique_ptr<Abstraction>> extract_abstractions();
-    std::vector<CartesianHeuristicFunction> extract_heuristic_functions();
     std::vector<std::shared_ptr<TransitionSystem>> extract_transition_systems();
 };
 

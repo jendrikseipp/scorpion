@@ -385,7 +385,6 @@ fast_downward_plugin(
         cegar/abstract_search.cc
         cegar/abstract_state.cc
         cegar/additive_cartesian_heuristic.cc
-        cegar/cartesian_heuristic_function.cc
         cegar/cost_saturation.cc
         cegar/domains.cc
         cegar/max_cartesian_heuristic.cc

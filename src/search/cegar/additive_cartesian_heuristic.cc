@@ -1,7 +1,6 @@
 #include "additive_cartesian_heuristic.h"
 
 #include "abstraction.h"
-#include "cartesian_heuristic_function.h"
 #include "cost_saturation.h"
 #include "max_cartesian_heuristic.h"
 #include "ocp_heuristic.h"
