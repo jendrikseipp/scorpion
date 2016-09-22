@@ -47,7 +47,7 @@ void reduce_costs(
 
 CostSaturation::CostSaturation(
     CostPartitioningType cost_partitioning_type,
-    vector<shared_ptr<SubtaskGenerator>> subtask_generators,
+    vector<shared_ptr<SubtaskGenerator>> &subtask_generators,
     int max_states,
     int max_non_looping_transitions,
     double max_time,
@@ -113,13 +113,7 @@ vector<shared_ptr<TransitionSystem>> CostSaturation::extract_transition_systems(
 }
 
 void CostSaturation::reset(const TaskProxy &task_proxy) {
-    assert(heuristic_functions.empty());
-
-    remaining_costs.clear();
-    remaining_costs.reserve(task_proxy.get_operators().size());
-    for (OperatorProxy op : task_proxy.get_operators())
-        remaining_costs.push_back(op.get_cost());
-
+    remaining_costs = get_operator_costs(task_proxy);
     num_abstractions = 0;
     num_states = 0;
 }

@@ -72,6 +72,8 @@ vector<State> sample_states_with_random_walks(
     const utils::CountdownTimer *timer) {
     vector<State> samples;
 
+    const State initial_state = task_proxy.get_initial_state();
+
     int n;
     if (init_h == 0) {
         n = 10;
@@ -103,8 +105,8 @@ vector<State> sample_states_with_random_walks(
                 ++length;
         }
 
-        // Sample one state with a random walk of length 'length'.
-        State current_state = task_proxy.get_initial_state();
+        // Sample one state with a random walk of length length.
+        State current_state(initial_state);
         vector<OperatorProxy> applicable_ops;
         for (int j = 0; j < length; ++j) {
             applicable_ops.clear();
@@ -120,7 +122,7 @@ vector<State> sample_states_with_random_walks(
                 /* If current state is a dead end, then restart the random walk
                    with the initial state. */
                 if (is_dead_end(current_state))
-                    current_state = task_proxy.get_initial_state();
+                    current_state = State(initial_state);
             }
         }
         // The last state of the random walk is used as a sample.

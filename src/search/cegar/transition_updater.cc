@@ -4,23 +4,86 @@
 #include "utils.h"
 
 #include "../task_proxy.h"
+#include "../task_tools.h"
+
+#include <algorithm>
+#include <map>
 
 using namespace std;
 
 namespace cegar {
-TransitionUpdater::TransitionUpdater(const shared_ptr<AbstractTask> &task)
-    : task(task),
+static vector<vector<FactPair>> get_preconditions_by_operator(
+    const OperatorsProxy &ops) {
+    vector<vector<FactPair>> preconditions_by_operator;
+    preconditions_by_operator.reserve(ops.size());
+    for (OperatorProxy op : ops) {
+        vector<FactPair> preconditions = get_fact_pairs(op.get_preconditions());
+        sort(preconditions.begin(), preconditions.end());
+        preconditions_by_operator.push_back(move(preconditions));
+    }
+    return preconditions_by_operator;
+}
+
+static vector<FactPair> get_postconditions(
+    const OperatorProxy &op) {
+    // Use map to obtain sorted postconditions.
+    map<int, int> var_to_post;
+    for (FactProxy fact : op.get_preconditions()) {
+        var_to_post[fact.get_variable().get_id()] = fact.get_value();
+    }
+    for (EffectProxy effect : op.get_effects()) {
+        FactPair fact = effect.get_fact().get_pair();
+        var_to_post[fact.var] = fact.value;
+    }
+    vector<FactPair> postconditions;
+    postconditions.reserve(var_to_post.size());
+    for (const pair<int, int> &fact : var_to_post) {
+        postconditions.emplace_back(fact.first, fact.second);
+    }
+    return postconditions;
+}
+
+static vector<vector<FactPair>> get_postconditions_by_operator(
+    const OperatorsProxy &ops) {
+    vector<vector<FactPair>> postconditions_by_operator;
+    postconditions_by_operator.reserve(ops.size());
+    for (OperatorProxy op : ops) {
+        postconditions_by_operator.push_back(get_postconditions(op));
+    }
+    return postconditions_by_operator;
+}
+
+static int lookup_value(const vector<FactPair> &facts, int var) {
+    assert(is_sorted(facts.begin(), facts.end()));
+    for (const FactPair &fact : facts) {
+        if (fact.var == var) {
+            return fact.value;
+        } else if (fact.var > var) {
+            return UNDEFINED_VALUE;
+        }
+    }
+    return UNDEFINED_VALUE;
+}
+
+
+TransitionUpdater::TransitionUpdater(const OperatorsProxy &ops)
+    : preconditions_by_operator(get_preconditions_by_operator(ops)),
+      postconditions_by_operator(get_postconditions_by_operator(ops)),
       num_non_loops(0),
       num_loops(0) {
 }
 
-OperatorsProxy TransitionUpdater::get_operators() const {
-    return TaskProxy(*task).get_operators();
+int TransitionUpdater::get_precondition_value(int op_id, int var) const {
+    return lookup_value(preconditions_by_operator[op_id], var);
+}
+
+int TransitionUpdater::get_postcondition_value(int op_id, int var) const {
+    return lookup_value(postconditions_by_operator[op_id], var);
 }
 
 void TransitionUpdater::add_loops_to_trivial_abstract_state(AbstractState *state) {
-    for (OperatorProxy op : get_operators()) {
-        add_loop(state, op.get_id());
+    for (size_t i = 0; i < preconditions_by_operator.size(); ++i) {
+        add_loop(state, i);
     }
 }
 
@@ -49,17 +112,15 @@ void TransitionUpdater::remove_outgoing_transition(
     --num_non_loops;
 }
 
-void TransitionUpdater::split_incoming_transitions(
+void TransitionUpdater::rewire_incoming_transitions(
     AbstractState *v, AbstractState *v1, AbstractState *v2, int var) {
     /* State v has been split into v1 and v2. Now for all transitions
        u->v we need to add transitions u->v1, u->v2, or both. */
-    OperatorsProxy operators = get_operators();
     for (const Transition &transition : v->get_incoming_transitions()) {
         int op_id = transition.op_id;
-        OperatorProxy op = operators[op_id];
         AbstractState *u = transition.target;
         assert(u != v);
-        int post = get_post(op, var);
+        int post = get_postcondition_value(op_id, var);
         if (post == UNDEFINED_VALUE) {
             // op has no precondition and no effect on var.
             bool u_and_v1_intersect = u->domains_intersect(v1, var);
@@ -83,18 +144,16 @@ void TransitionUpdater::split_incoming_transitions(
     }
 }
 
-void TransitionUpdater::split_outgoing_transitions(
+void TransitionUpdater::rewire_outgoing_transitions(
     AbstractState *v, AbstractState *v1, AbstractState *v2, int var) {
     /* State v has been split into v1 and v2. Now for all transitions
        v->w we need to add transitions v1->w, v2->w, or both. */
-    OperatorsProxy operators = get_operators();
     for (const Transition &transition : v->get_outgoing_transitions()) {
         int op_id = transition.op_id;
-        OperatorProxy op = operators[op_id];
         AbstractState *w = transition.target;
         assert(w != v);
-        int pre = get_pre(op, var);
-        int post = get_post(op, var);
+        int pre = get_precondition_value(op_id, var);
+        int post = get_postcondition_value(op_id, var);
         if (post == UNDEFINED_VALUE) {
             assert(pre == UNDEFINED_VALUE);
             // op has no precondition and no effect on var.
@@ -123,16 +182,14 @@ void TransitionUpdater::split_outgoing_transitions(
     }
 }
 
-void TransitionUpdater::split_loops(
+void TransitionUpdater::rewire_loops(
     AbstractState *v, AbstractState *v1, AbstractState *v2, int var) {
     /* State v has been split into v1 and v2. Now for all self-loops
        v->v we need to add one or two of the transitions v1->v1, v1->v2,
        v2->v1 and v2->v2. */
-    OperatorsProxy operators = get_operators();
     for (int op_id : v->get_loops()) {
-        OperatorProxy op = operators[op_id];
-        int pre = get_pre(op, var);
-        int post = get_post(op, var);
+        int pre = get_precondition_value(op_id, var);
+        int post = get_postcondition_value(op_id, var);
         if (pre == UNDEFINED_VALUE) {
             // op has no precondition on var --> it must start in v1 and v2.
             if (post == UNDEFINED_VALUE) {
@@ -179,9 +236,9 @@ void TransitionUpdater::split_loops(
 
 void TransitionUpdater::rewire(
     AbstractState *v, AbstractState *v1, AbstractState *v2, int var) {
-    split_incoming_transitions(v, v1, v2, var);
-    split_outgoing_transitions(v, v1, v2, var);
-    split_loops(v, v1, v2, var);
+    rewire_incoming_transitions(v, v1, v2, var);
+    rewire_outgoing_transitions(v, v1, v2, var);
+    rewire_loops(v, v1, v2, var);
 }
 
 int TransitionUpdater::get_num_non_loops() const {

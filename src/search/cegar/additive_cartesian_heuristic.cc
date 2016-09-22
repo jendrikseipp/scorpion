@@ -30,9 +30,11 @@ namespace cegar {
 static vector<CartesianHeuristicFunction> generate_heuristic_functions(
     const options::Options &opts) {
     g_log << "Initializing additive Cartesian heuristic..." << endl;
+    vector<shared_ptr<SubtaskGenerator>> subtask_generators =
+        opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks");
     CostSaturation cost_saturation(
         static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning")),
-        opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),
+        subtask_generators,
         opts.get<int>("max_states"),
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
@@ -161,7 +163,7 @@ static void update_portfolio_h_values(
     }
 }
 
-static ScalarEvaluator *_parse(OptionParser &parser) {
+static Heuristic *_parse(OptionParser &parser) {
     parser.document_synopsis(
         "Additive CEGAR heuristic",
         "See the paper introducing Counterexample-guided Abstraction "
@@ -205,7 +207,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
         "max_transitions",
         "maximum sum of real transitions (excluding self-loops) over "
         " all abstractions",
-        "2000000",
+        "1000000",
         Bounds("0", "infinity"));
     parser.add_option<double>(
         "max_time",
@@ -321,9 +323,11 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     heuristic_opts.set<bool>(
         "cache_estimates", opts.get<bool>("cache_estimates"));
 
+    vector<shared_ptr<SubtaskGenerator>> subtask_generators =
+        opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks");
     CostSaturation cost_saturation(
         cost_partitioning_type,
-        opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),
+        subtask_generators,
         opts.get<int>("max_states"),
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
@@ -547,5 +551,5 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     }
 }
 
-static Plugin<ScalarEvaluator> _plugin("cegar", _parse);
+static Plugin<Heuristic> _plugin("cegar", _parse);
 }

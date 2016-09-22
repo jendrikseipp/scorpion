@@ -4,11 +4,14 @@
 #include "domains.h"
 #include "transition.h"
 
-#include "../task_proxy.h"
-
 #include <string>
 #include <utility>
 #include <vector>
+
+class ConditionsProxy;
+class OperatorProxy;
+class State;
+class TaskProxy;
 
 namespace cegar {
 class AbstractState;
@@ -75,9 +78,6 @@ public:
   Store and update abstract Domains and transitions.
 */
 class AbstractState {
-    // Since the abstraction owns the state we don't need AbstractTask.
-    const TaskProxy &task_proxy;
-
     // Abstract domains for all variables.
     Domains domains;
 
@@ -94,8 +94,7 @@ class AbstractState {
     AbstractSearchInfo search_info;
 
     // Construct instances with factory methods.
-    AbstractState(
-        const TaskProxy &task_proxy, const Domains &domains, Node *node);
+    AbstractState(const Domains &domains, Node *node);
 
     void remove_non_looping_transition(
         Transitions &transitions, int op_id, AbstractState *other);
@@ -119,7 +118,6 @@ public:
     // Return the size of var's abstract domain for this state.
     int count(int var) const;
 
-    bool contains(FactProxy fact) const;
     bool contains(int var, int value) const;
 
     // Return the abstract state in which applying "op" leads to this state.

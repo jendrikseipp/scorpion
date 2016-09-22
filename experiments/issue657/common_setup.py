@@ -112,7 +112,7 @@ class IssueConfig(object):
 class IssueExperiment(FastDownwardExperiment):
     """Subclass of FastDownwardExperiment with some convenience features."""
 
-    DEFAULT_TEST_SUITE = ["gripper:prob01.pddl"]
+    DEFAULT_TEST_SUITE = ["depot:p01.pddl", "gripper:prob01.pddl"]
 
     DEFAULT_TABLE_ATTRIBUTES = [
         "cost",
@@ -188,6 +188,8 @@ class IssueExperiment(FastDownwardExperiment):
 
         """
 
+        revisions = revisions or []
+        configs = configs or []
         path = path or get_data_dir()
 
         FastDownwardExperiment.__init__(self, path=path, **kwargs)

@@ -22,6 +22,12 @@ public:
         const std::shared_ptr<RefinementHierarchy> &hierarchy,
         std::vector<int> &&h_values);
 
+    // Visual Studio 2013 needs an explicit implementation.
+    CartesianHeuristicFunction(CartesianHeuristicFunction &&other)
+        : refinement_hierarchy(std::move(other.refinement_hierarchy)),
+          h_values(std::move(other.h_values)) {
+    }
+
     int get_value(const State &parent_state) const;
 };
 }

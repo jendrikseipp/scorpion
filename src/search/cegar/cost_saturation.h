@@ -71,7 +71,7 @@ class CostSaturation {
 public:
     CostSaturation(
         CostPartitioningType cost_partitioning_type,
-        std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators,
+        std::vector<std::shared_ptr<SubtaskGenerator>> &subtask_generators,
         int max_states,
         int max_non_looping_transitions,
         double max_time,

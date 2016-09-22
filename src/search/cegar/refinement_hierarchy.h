@@ -14,7 +14,8 @@ class Node;
 
 /*
   This class stores the refinement hierarchy of a Cartesian
-  abstraction.
+  abstraction. The hierarchy forms a DAG with inner nodes for each
+  split and leaf nodes for the abstract states.
 
   It is used for efficient lookup of abstract states during search.
 
@@ -29,6 +30,11 @@ class RefinementHierarchy {
 
 public:
     explicit RefinementHierarchy(const std::shared_ptr<AbstractTask> &task);
+
+    // Visual Studio 2013 needs an explicit implementation.
+    RefinementHierarchy(RefinementHierarchy &&other)
+        : root(std::move(other.root)) {
+    }
 
     Node *get_node(const State &state) const;
 

@@ -9,7 +9,6 @@
 #include <cassert>
 #include <cstddef>
 #include <string>
-#include <utility>
 #include <vector>
 
 
@@ -134,10 +133,10 @@ inline ProxyIterator<ProxyCollection> end(ProxyCollection &collection) {
 
 class FactProxy {
     const AbstractTask *task;
-    Fact fact;
+    FactPair fact;
 public:
     FactProxy(const AbstractTask &task, int var_id, int value);
-    FactProxy(const AbstractTask &task, const Fact &fact);
+    FactProxy(const AbstractTask &task, const FactPair &fact);
     ~FactProxy() = default;
 
     VariableProxy get_variable() const;
@@ -146,7 +145,11 @@ public:
         return fact.value;
     }
 
-    const std::string &get_name() const {
+    FactPair get_pair() const {
+        return fact;
+    }
+
+    std::string get_name() const {
         return task->get_fact_name(fact);
     }
 
@@ -262,7 +265,7 @@ public:
         return id;
     }
 
-    const std::string &get_name() const {
+    std::string get_name() const {
         return task->get_variable_name(id);
     }
 
@@ -273,6 +276,27 @@ public:
     FactProxy get_fact(int index) const {
         assert(index < get_domain_size());
         return FactProxy(*task, id, index);
+    }
+
+    bool is_derived() const {
+        int axiom_layer = task->get_variable_axiom_layer(id);
+        return axiom_layer != -1;
+    }
+
+    int get_axiom_layer() const {
+        int axiom_layer = task->get_variable_axiom_layer(id);
+        /*
+          This should only be called for derived variables.
+          Non-derived variables have axiom_layer == -1.
+          Use var.is_derived() to check.
+        */
+        assert(axiom_layer >= 0);
+        return axiom_layer;
+    }
+
+    int get_default_axiom_value() const {
+        assert(is_derived());
+        return task->get_variable_default_axiom_value(id);
     }
 };
 
@@ -418,7 +442,7 @@ public:
         return is_an_axiom;
     }
 
-    const std::string &get_name() const {
+    std::string get_name() const {
         return task->get_operator_name(index, is_an_axiom);
     }
 
@@ -632,14 +656,14 @@ public:
 };
 
 
-inline FactProxy::FactProxy(const AbstractTask &task, const Fact &fact)
+inline FactProxy::FactProxy(const AbstractTask &task, const FactPair &fact)
     : task(&task), fact(fact) {
     assert(fact.var >= 0 && fact.var < task.get_num_variables());
     assert(fact.value >= 0 && fact.value < get_variable().get_domain_size());
 }
 
 inline FactProxy::FactProxy(const AbstractTask &task, int var_id, int value)
-    : FactProxy(task, Fact(var_id, value)) {
+    : FactProxy(task, FactPair(var_id, value)) {
 }
 
 
