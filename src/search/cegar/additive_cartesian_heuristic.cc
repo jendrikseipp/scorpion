@@ -339,17 +339,15 @@ static Heuristic *_parse(OptionParser &parser) {
     if (utils::extra_memory_padding_is_reserved())
         utils::release_extra_memory_padding();
 
-    if (cost_partitioning_type == CostPartitioningType::SATURATED) {
-        return new AdditiveCartesianHeuristic(
-            heuristic_opts, cost_saturation.extract_heuristic_functions());
-    } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
+    if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
         heuristic_opts.set<bool>(
             "use_general_costs", opts.get<bool>("use_general_costs"));
         heuristic_opts.set<int>("lpsolver", opts.get_enum("lpsolver"));
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
-    } else if (cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
-               cost_partitioning_type ==CostPartitioningType::SATURATED_MAX) {
+    } else if (cost_partitioning_type == CostPartitioningType::SATURATED ||
+               cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
+               cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
         const int num_orders = opts.get<int>("orders");
         const int max_num_samples = opts.get<int>("samples");
         const double max_sampling_time = opts.get<double>("max_sampling_time");
@@ -414,6 +412,19 @@ static Heuristic *_parse(OptionParser &parser) {
         refinement_hierarchies.reserve(abstractions.size());
         for (unique_ptr<Abstraction> &abstraction : abstractions) {
             refinement_hierarchies.push_back(abstraction->get_refinement_hierarchy());
+        }
+
+        if (cost_partitioning_type == CostPartitioningType::SATURATED) {
+            vector<vector<int>> h_values_by_abstraction;
+            for (unique_ptr<Abstraction> &abstraction : abstractions) {
+                h_values_by_abstraction.push_back(abstraction->get_h_values());
+            }
+            vector<vector<vector<int>>> h_values_by_order;
+            h_values_by_order.push_back(move(h_values_by_abstraction));
+            return new MaxCartesianHeuristic(
+                heuristic_opts,
+                move(refinement_hierarchies),
+                move(h_values_by_order));
         }
 
         vector<int> operator_costs = get_operator_costs(task_proxy);

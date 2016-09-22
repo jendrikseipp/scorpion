@@ -162,14 +162,7 @@ void CostSaturation::build_abstractions(
             reduce_costs(remaining_costs, abstraction->get_saturated_costs());
         }
 
-        if (cost_partitioning_type == CostPartitioningType::SATURATED) {
-            int init_h = abstraction->get_h_value_of_initial_state();
-            if (!exclude_abstractions_with_zero_init_h || init_h > 0) {
-                heuristic_functions.emplace_back(
-                    abstraction->get_refinement_hierarchy(),
-                    abstraction->get_h_values());
-            }
-        } else if (
+        if (cost_partitioning_type == CostPartitioningType::SATURATED ||
             cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
             cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
             int init_h = abstraction->get_h_value_of_initial_state();
