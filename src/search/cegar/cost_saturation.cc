@@ -162,7 +162,7 @@ void CostSaturation::build_abstractions(
             }
         } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
             transition_systems.push_back(
-                make_shared<TransitionSystem>(subtask, move(*abstraction)));
+                make_shared<TransitionSystem>(move(*abstraction)));
         } else {
             ABORT("Invalid cost partitioning type");
         }

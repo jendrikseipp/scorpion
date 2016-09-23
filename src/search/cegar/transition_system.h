@@ -22,7 +22,6 @@ struct ExplicitTransition {
 };
 
 class TransitionSystem {
-    std::shared_ptr<AbstractTask> task;
     int num_states;
     const std::shared_ptr<RefinementHierarchy> refinement_hierarchy;
     std::vector<int> h_values;
@@ -31,8 +30,7 @@ class TransitionSystem {
     std::vector<int> goal_indices;
 
 public:
-    TransitionSystem(
-        const std::shared_ptr<AbstractTask> &task, Abstraction &&abstraction);
+    explicit TransitionSystem(Abstraction &&abstraction);
     TransitionSystem(const TransitionSystem &other) = delete;
 
     int get_num_abstract_states() const;

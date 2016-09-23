@@ -15,10 +15,8 @@
 using namespace std;
 
 namespace cegar {
-TransitionSystem::TransitionSystem(
-    const shared_ptr<AbstractTask> &task, Abstraction &&abstraction)
-      : task(task),
-        num_states(abstraction.get_num_states()),
+TransitionSystem::TransitionSystem(Abstraction &&abstraction)
+      : num_states(abstraction.get_num_states()),
         refinement_hierarchy(abstraction.get_refinement_hierarchy()),
         h_values(abstraction.get_h_values()) {
     // Store non-looping transitions.
@@ -45,9 +43,7 @@ int TransitionSystem::get_num_abstract_states() const {
 }
 
 int TransitionSystem::get_abstract_state_index(const State &concrete_state) const {
-    State abstract_state = TaskProxy(*task).convert_ancestor_state(concrete_state);
-    const Node *node = refinement_hierarchy->get_node(abstract_state);
-    return node->get_state_id();
+    return refinement_hierarchy->get_local_state_id(concrete_state);
 }
 
 bool TransitionSystem::is_dead_end(const State &concrete_state) const {
