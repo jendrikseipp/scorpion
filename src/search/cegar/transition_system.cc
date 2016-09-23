@@ -18,6 +18,8 @@ namespace cegar {
 TransitionSystem::TransitionSystem(Abstraction &&abstraction)
     : num_states(abstraction.get_num_states()),
       refinement_hierarchy(abstraction.get_refinement_hierarchy()),
+      get_abstract_state_id([this](const State &concrete_state) {
+        return refinement_hierarchy->get_local_state_id(concrete_state); }),
       h_values(abstraction.get_h_values()) {
     // Store non-looping transitions.
     for (const AbstractState *state : abstraction.states) {
@@ -43,7 +45,7 @@ int TransitionSystem::get_num_abstract_states() const {
 }
 
 int TransitionSystem::get_abstract_state_index(const State &concrete_state) const {
-    return refinement_hierarchy->get_local_state_id(concrete_state);
+    return get_abstract_state_id(concrete_state);
 }
 
 bool TransitionSystem::is_dead_end(const State &concrete_state) const {

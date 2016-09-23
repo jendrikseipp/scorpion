@@ -24,6 +24,7 @@ struct ExplicitTransition {
 class TransitionSystem {
     int num_states;
     const std::shared_ptr<RefinementHierarchy> refinement_hierarchy;
+    std::function<int(const State &)> get_abstract_state_id;
     std::vector<int> h_values;
     std::vector<bool> operator_induces_self_loop;
     std::vector<ExplicitTransition> transitions;
