@@ -28,15 +28,10 @@ class RefinementHierarchy {
     std::shared_ptr<AbstractTask> task;
     std::unique_ptr<Node> root;
 
+    Node *get_node(const State &state) const;
+
 public:
     explicit RefinementHierarchy(const std::shared_ptr<AbstractTask> &task);
-
-    // Visual Studio 2013 needs an explicit implementation.
-    RefinementHierarchy(RefinementHierarchy &&other)
-        : root(std::move(other.root)) {
-    }
-
-    Node *get_node(const State &state) const;
 
     Node *get_root() const {
         return root.get();
