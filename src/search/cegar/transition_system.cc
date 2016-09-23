@@ -16,9 +16,9 @@ using namespace std;
 
 namespace cegar {
 TransitionSystem::TransitionSystem(Abstraction &&abstraction)
-      : num_states(abstraction.get_num_states()),
-        refinement_hierarchy(abstraction.get_refinement_hierarchy()),
-        h_values(abstraction.get_h_values()) {
+    : num_states(abstraction.get_num_states()),
+      refinement_hierarchy(abstraction.get_refinement_hierarchy()),
+      h_values(abstraction.get_h_values()) {
     // Store non-looping transitions.
     for (const AbstractState *state : abstraction.states) {
         int start = state->get_node()->get_state_id();
@@ -48,7 +48,7 @@ int TransitionSystem::get_abstract_state_index(const State &concrete_state) cons
 
 bool TransitionSystem::is_dead_end(const State &concrete_state) const {
     return h_values[get_abstract_state_index(concrete_state)] ==
-        std::numeric_limits<int>::max();
+           numeric_limits<int>::max();
 }
 
 bool TransitionSystem::induces_self_loop(int op_id) const {
@@ -56,12 +56,12 @@ bool TransitionSystem::induces_self_loop(int op_id) const {
     return operator_induces_self_loop[op_id];
 }
 
-const std::vector<int> &TransitionSystem::get_goal_indices() const {
+const vector<int> &TransitionSystem::get_goal_indices() const {
     assert(!goal_indices.empty());
     return goal_indices;
 }
 
-const std::vector<ExplicitTransition> &TransitionSystem::get_transitions() const {
+const vector<ExplicitTransition> &TransitionSystem::get_transitions() const {
     assert(!transitions.empty());
     return transitions;
 }

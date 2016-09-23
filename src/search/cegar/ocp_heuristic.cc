@@ -84,7 +84,7 @@ int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
         if (allow_negative_costs)
             lp_solver->setColLower(old_state_var, -lp_solver->getInfinity());
         int new_state_var = distance_variables[id][abstraction->get_abstract_state_index(
-            concrete_state)];
+                                                       concrete_state)];
         lp_solver->setColUpper(new_state_var, 0);
         if (allow_negative_costs)
             lp_solver->setColLower(new_state_var, 0);
@@ -153,7 +153,7 @@ void OptimalCostPartitioningHeuristic::generateLP() {
     variable_count = 0;
 
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
-        cout << "Add abstraction " << id+1 << " of " << abstractions.size()
+        cout << "Add abstraction " << id + 1 << " of " << abstractions.size()
              << " to LP" << endl;
         shared_ptr<TransitionSystem> &abstraction = abstractions[id];
         introduce_abstraction_variables(*abstraction, id, variable_lower_bounds);
@@ -245,8 +245,8 @@ void OptimalCostPartitioningHeuristic::introduce_abstraction_variables(
 }
 
 void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
-        const TransitionSystem &abstraction, int id,
-        vector<MatrixEntry> &matrix_entries, vector<double> &constraint_upper_bounds) {
+    const TransitionSystem &abstraction, int id,
+    vector<MatrixEntry> &matrix_entries, vector<double> &constraint_upper_bounds) {
     //    * For <s', a, s''> in abstract transitions of PDB p
     //        distance[p][s''] <= distance[p][s'] + action_cost[p][a]
     //        0 <= distance[p][s'] + action_cost[p][a] - distance[p][s''] <= \infty
@@ -275,7 +275,7 @@ void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
 }
 
 void OptimalCostPartitioningHeuristic::add_action_cost_constraints(vector<MatrixEntry> &matrix_entries,
-                                                                  vector<double> &constraint_upper_bounds) {
+                                                                   vector<double> &constraint_upper_bounds) {
     //  * For a in actions
     //        0 <= sum_{p in PDBs} action_cost[p][a] <= a.cost
     for (size_t op_id = 0; op_id < g_operators.size(); ++op_id) {

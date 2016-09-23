@@ -42,11 +42,11 @@ public:
     // Column indices for distance variables indexed by PDB id and abstract state id.
     // The variable with id distance_variables[p][s] encodes the distance of abstract
     // state s in pdb p from the current abstract state using the cost partitioning.
-    std::vector<std::vector<int> > distance_variables;
+    std::vector<std::vector<int>> distance_variables;
     // Column indices for action cost variables indexed by PDB id and operator id.
     // The variable with id action_cost_variables[p][a] encodes cost action a should
     // have in pdb p.
-    std::vector<std::vector<int> > action_cost_variables;
+    std::vector<std::vector<int>> action_cost_variables;
 
     int variable_count;
     int constraint_count;
@@ -72,8 +72,8 @@ protected:
     virtual int compute_heuristic(const GlobalState &global_state);
 public:
     OptimalCostPartitioningHeuristic(
-            const options::Options &opts,
-            const std::vector<std::shared_ptr<TransitionSystem>> &&abstractions);
+        const options::Options &opts,
+        const std::vector<std::shared_ptr<TransitionSystem>> &&abstractions);
     ~OptimalCostPartitioningHeuristic();
 };
 }

@@ -169,8 +169,11 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         }
     }
     return {
-        move(incumbent_scp),
-        {incumbent_total_h_value, evaluations}};
+               move(incumbent_scp),
+               {
+                   incumbent_total_h_value, evaluations
+               }
+    };
 }
 
 
@@ -208,8 +211,8 @@ vector<int> get_local_state_ids(
 }
 
 int compute_sum_h(
-        const vector<int> &local_state_ids,
-        const vector<vector<int> > &h_values_by_abstraction) {
+    const vector<int> &local_state_ids,
+    const vector<vector<int>> &h_values_by_abstraction) {
     int sum_h = 0;
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     for (size_t i = 0; i < local_state_ids.size(); ++i) {

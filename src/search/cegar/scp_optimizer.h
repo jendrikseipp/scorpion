@@ -8,8 +8,8 @@ class AbstractTask;
 class State;
 
 namespace utils {
-    class CountdownTimer;
-    class Timer;
+class CountdownTimer;
+class Timer;
 }
 
 namespace cegar {

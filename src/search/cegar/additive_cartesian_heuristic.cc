@@ -94,12 +94,12 @@ static vector<vector<int>> sample_states_and_return_local_ids(
     TaskProxy task_proxy(*task);
 
     function<bool(const State &state)> dead_end_function =
-            [&](const State &state) {
-        vector<int> local_state_ids = get_local_state_ids(
-            refinement_hierarchies, state);
-        return compute_sum_h(
-            local_state_ids, h_values_by_abstraction_for_default_order) == INF;
-    };
+        [&](const State &state) {
+            vector<int> local_state_ids = get_local_state_ids(
+                refinement_hierarchies, state);
+            return compute_sum_h(
+                local_state_ids, h_values_by_abstraction_for_default_order) == INF;
+        };
 
     SuccessorGenerator successor_generator(task);
     const double average_operator_costs = get_average_operator_cost(task_proxy);

@@ -157,7 +157,7 @@ void AbstractState::remove_loops() {
 }
 
 AbstractState *AbstractState::get_trivial_abstract_state(
-        const TaskProxy &task_proxy, Node *root_node) {
+    const TaskProxy &task_proxy, Node *root_node) {
     AbstractState *abstract_state = new AbstractState(
         Domains(get_domain_sizes(task_proxy)), root_node);
     return abstract_state;

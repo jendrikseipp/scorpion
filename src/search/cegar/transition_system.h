@@ -17,7 +17,7 @@ struct ExplicitTransition {
     int end;
 
     ExplicitTransition(int start, int op, int end)
-      : start(start), op(op), end(end) {
+        : start(start), op(op), end(end) {
     }
 };
 

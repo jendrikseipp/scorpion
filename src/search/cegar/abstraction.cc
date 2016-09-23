@@ -120,7 +120,7 @@ vector<int> Abstraction::get_h_values() const {
         int state_id = state->get_node()->get_state_id();
         h_values[state_id] = state->get_h_value();
     }
-    assert(all_of(h_values.begin(), h_values.end(), [](int h) {return h != -1;}));
+    assert(all_of(h_values.begin(), h_values.end(), [](int h) {return h != -1; }));
     return h_values;
 }
 
@@ -328,7 +328,7 @@ void Abstraction::compress_self_loops() {
     }
 }
 
-std::vector<bool> Abstraction::extract_operator_induces_self_loop() {
+vector<bool> Abstraction::extract_operator_induces_self_loop() {
     return move(operator_induces_self_loop);
 }
 
@@ -387,8 +387,8 @@ vector<int> Abstraction::get_saturated_costs() {
     return saturated_costs;
 }
 
-/*std::vector<bool> Abstraction::compute_dependent_operators() {
-    std::vector<bool> result(task_proxy.get_operators().size(), false);
+/*vector<bool> Abstraction::compute_dependent_operators() {
+    vector<bool> result(task_proxy.get_operators().size(), false);
 
     for (const AbstractState *s : states) {
         for (const Transition &t : s->get_outgoing_transitions()) {

@@ -15,7 +15,6 @@ State sample_state_with_random_walk(
     const SuccessorGenerator &successor_generator,
     int init_h,
     double average_operator_cost) {
-
     int n;
     if (init_h == 0) {
         n = 10;
