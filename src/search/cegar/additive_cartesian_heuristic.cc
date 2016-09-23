@@ -84,6 +84,45 @@ static void update_portfolio_h_values(
     }
 }
 
+static vector<vector<int>> sample_states_and_return_local_ids(
+    const shared_ptr<AbstractTask> &task,
+    const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
+    const vector<vector<int>> &h_values_by_abstraction_for_default_order,
+    int init_h,
+    int max_num_samples,
+    double max_sampling_time) {
+    TaskProxy task_proxy(*task);
+
+    function<bool(const State &state)> dead_end_function =
+            [&](const State &state) {
+        vector<int> local_state_ids = get_local_state_ids(
+            refinement_hierarchies, state);
+        return compute_sum_h(
+            local_state_ids, h_values_by_abstraction_for_default_order) == INF;
+    };
+
+    SuccessorGenerator successor_generator(task);
+    const double average_operator_costs = get_average_operator_cost(task_proxy);
+
+    utils::CountdownTimer sampling_timer(max_sampling_time);
+    vector<State> samples;
+    while (static_cast<int>(samples.size()) < max_num_samples &&
+           !sampling_timer.is_expired()) {
+        State sample = sample_state_with_random_walk(
+            task_proxy,
+            successor_generator,
+            init_h,
+            average_operator_costs);
+        if (!dead_end_function(sample)) {
+            samples.push_back(move(sample));
+        }
+    }
+    cout << "Samples: " << samples.size() << endl;
+    cout << "Sampling time: " << sampling_timer << endl;
+
+    return get_local_state_ids_by_state(refinement_hierarchies, samples);
+}
+
 static Heuristic *_parse(OptionParser &parser) {
     parser.document_synopsis(
         "Additive CEGAR heuristic",
@@ -373,40 +412,18 @@ static Heuristic *_parse(OptionParser &parser) {
                 {move(h_values_by_abstraction_for_default_order)});
         }
 
-        function<bool(const State &state)> dead_end_function =
-                [&](const State &state) {
-            vector<int> local_state_ids = get_local_state_ids(
-                refinement_hierarchies, state);
-            return compute_sum_h(
-                local_state_ids, h_values_by_abstraction_for_default_order) == INF;
-        };
-
         SCPOptimizer scp_optimizer(
             move(abstractions), refinement_hierarchies, operator_costs);
-        SuccessorGenerator successor_generator(task);
-        const double average_operator_costs = get_average_operator_cost(task_proxy);
-
-        utils::CountdownTimer sampling_timer(max_sampling_time);
-        vector<State> samples;
-        while (static_cast<int>(samples.size()) < max_num_samples &&
-               !sampling_timer.is_expired()) {
-            State sample = sample_state_with_random_walk(
-                task_proxy,
-                successor_generator,
-                init_h,
-                average_operator_costs);
-            if (!dead_end_function(sample)) {
-                samples.push_back(move(sample));
-            }
-        }
-        cout << "Samples: " << samples.size() << endl;
-        cout << "Sampling time: " << sampling_timer << endl;
 
         vector<vector<int>> local_state_ids_by_state =
-            get_local_state_ids_by_state(refinement_hierarchies, samples);
+            sample_states_and_return_local_ids(
+                task,
+                refinement_hierarchies,
+                h_values_by_abstraction_for_default_order,
+                init_h,
+                max_num_samples,
+                max_sampling_time);
         int num_samples = local_state_ids_by_state.size();
-
-        utils::release_vector_memory(samples);
 
         utils::CountdownTimer finding_orders_timer(max_time_finding_orders);
         int total_num_evaluated_orders = 0;
