@@ -58,35 +58,6 @@ static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
     return true;
 }*/
 
-static vector<vector<vector<int>>> compute_scps_moving_each_abstraction_first_once(
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &operator_costs,
-    bool shuffle) {
-    vector<int> indices = get_default_order(abstractions.size());
-    vector<vector<vector<int>>> h_values_by_orders;
-    for (size_t i = 0; i < indices.size(); ++i) {
-        if (shuffle) {
-            g_rng()->shuffle(indices);
-        } else {
-            sort(indices.begin(), indices.end());
-        }
-        auto it = find(indices.begin(), indices.end(), i);
-        assert(it != indices.end());
-        indices.erase(it);
-        indices.insert(indices.begin(), i);
-        cout << indices << endl;
-        h_values_by_orders.push_back(
-            compute_saturated_cost_partitioning(
-                abstractions, indices, operator_costs));
-    }
-    // Use zero-heuristic when all abstractions have been filtered.
-    if (h_values_by_orders.empty()) {
-        h_values_by_orders.push_back(vector<vector<int>>());
-    }
-    cout << "Orders: "<< h_values_by_orders.size() << endl;
-    return h_values_by_orders;
-}
-
 static vector<vector<int>> get_local_state_ids_by_state(
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const vector<State> &states) {
@@ -246,10 +217,6 @@ static Heuristic *_parse(OptionParser &parser) {
         "exclude_abstractions_with_zero_init_h",
         "throw away abstractions with h(s_0) = 0",
         "true");
-    parser.add_option<bool>(
-        "each_abstraction_first_once",
-        "generate an order for each abstraction A, moving A to the front",
-        "false");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -307,8 +274,6 @@ static Heuristic *_parse(OptionParser &parser) {
         const bool reverse_order = opts.get<bool>("reverse");
         const bool diversify = opts.get<bool>("diversify");
         const bool keep_failed_orders = opts.get<bool>("keep_failed_orders");
-        const bool each_abstraction_first_once = opts.get<bool>(
-            "each_abstraction_first_once");
 
         if (num_orders > 1 && !shuffle) {
             cerr << "When using more than one order set shuffle=true" << endl;
@@ -384,16 +349,6 @@ static Heuristic *_parse(OptionParser &parser) {
                 compute_all_saturated_cost_partitionings(
                     abstractions, operator_costs);
             cout << "Orders: " << h_values_by_orders.size() << endl;
-            return new MaxCartesianHeuristic(
-                heuristic_opts,
-                move(refinement_hierarchies),
-                move(h_values_by_orders));
-        }
-
-        if (each_abstraction_first_once) {
-            vector<vector<vector<int>>> h_values_by_orders =
-                compute_scps_moving_each_abstraction_first_once(
-                    abstractions, operator_costs, shuffle);
             return new MaxCartesianHeuristic(
                 heuristic_opts,
                 move(refinement_hierarchies),
