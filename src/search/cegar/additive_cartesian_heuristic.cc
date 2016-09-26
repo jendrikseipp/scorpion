@@ -102,12 +102,13 @@ static vector<vector<int>> sample_states_and_return_local_ids(
     SuccessorGenerator successor_generator(task);
     const double average_operator_costs = get_average_operator_cost(task_proxy);
 
+    State initial_state = task_proxy.get_initial_state();
     utils::CountdownTimer sampling_timer(max_sampling_time);
     vector<State> samples;
     while (static_cast<int>(samples.size()) < max_num_samples &&
            !sampling_timer.is_expired()) {
         State sample = sample_state_with_random_walk(
-            task_proxy,
+            initial_state,
             successor_generator,
             init_h,
             average_operator_costs);

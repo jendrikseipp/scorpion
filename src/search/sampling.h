@@ -17,10 +17,13 @@ class CountdownTimer;
 struct SamplingTimeout : public std::exception {};
 
 State sample_state_with_random_walk(
-    const TaskProxy &task_proxy,
+    const State &state,
     const SuccessorGenerator &successor_generator,
     int init_h,
-    double average_operator_cost);
+    double average_operator_cost,
+    std::function<bool(State)> is_dead_end = [] (const State &) {
+                                                 return false;
+                                             });
 
 /*
   Perform 'num_samples' random walks with biomially distributed walk
