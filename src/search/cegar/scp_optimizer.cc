@@ -103,18 +103,6 @@ bool SCPOptimizer::search_improving_successor(
     return false;
 }
 
-// TODO: Remove.
-static void dump_order(
-    const vector<unique_ptr<Abstraction>> &abstractions, const vector<int> &order) {
-    for (int pos : order) {
-        TaskProxy task_proxy(*abstractions[pos]->get_task());
-        assert(task_proxy.get_goals().size() == 1);
-        for (FactProxy goal : task_proxy.get_goals()) {
-            cout << goal.get_name() << endl;
-        }
-    }
-}
-
 pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
     const vector<vector<int>> &local_state_ids_by_state,
     double max_time,
@@ -131,12 +119,10 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         g_rng()->shuffle(incumbent_order);
     }
     if (reverse_order) {
-        dump_order(abstractions, incumbent_order);
         cout << "Landmark abstractions: " << hacked_num_landmark_abstractions
              << "/" << abstractions.size() << endl;
         reverse(incumbent_order.begin(), incumbent_order.begin() + hacked_num_landmark_abstractions);
         reverse(incumbent_order.begin() + hacked_num_landmark_abstractions, incumbent_order.end());
-        dump_order(abstractions, incumbent_order);
     }
 
     scp_computation_timer->resume();
