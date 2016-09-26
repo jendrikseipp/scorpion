@@ -13,8 +13,6 @@
 #include "../successor_generator.h"
 #include "../task_tools.h"
 
-#include "../evaluators/max_evaluator.h"
-
 #include "../lp/lp_solver.h"
 
 #include "../utils/logging.h"
@@ -249,10 +247,6 @@ static Heuristic *_parse(OptionParser &parser) {
         "search for orders that complement the portfolio",
         "false");
     parser.add_option<bool>(
-        "keep_failed_orders",
-        "keep orders that failed to improve upon portfolio",
-        "true");
-    parser.add_option<bool>(
         "exclude_abstractions_with_zero_init_h",
         "throw away abstractions with h(s_0) = 0",
         "true");
@@ -312,7 +306,6 @@ static Heuristic *_parse(OptionParser &parser) {
         const bool shuffle = opts.get<bool>("shuffle");
         const bool reverse_order = opts.get<bool>("reverse");
         const bool diversify = opts.get<bool>("diversify");
-        const bool keep_failed_orders = opts.get<bool>("keep_failed_orders");
 
         if (num_orders > 1 && !shuffle) {
             cerr << "When using more than one order set shuffle=true" << endl;
@@ -449,8 +442,7 @@ static Heuristic *_parse(OptionParser &parser) {
             int total_h_value = result.second.first;
             int num_evaluated_orders = result.second.second;
             total_num_evaluated_orders += num_evaluated_orders;
-            if (keep_failed_orders || total_h_value > 0 ||
-                h_values_by_orders.empty()) {
+            if (!diversify || total_h_value > 0 || h_values_by_orders.empty()) {
                 if (diversify) {
                     update_portfolio_h_values_timer.resume();
                     update_portfolio_h_values(
