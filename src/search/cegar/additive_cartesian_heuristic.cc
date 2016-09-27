@@ -47,14 +47,15 @@ static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
     return h_values_by_orders;
 }
 
-/*static bool check_independence(std::vector<bool> &op1, std::vector<bool> &op2) {
-    for (unsigned int op_id = 0; op_id < op1.size(); ++op_id) {
-        if (op1[op_id] && op2[op_id]) {
+static bool disjunct(std::vector<bool> &v1, std::vector<bool> &v2) {
+    assert(v1.size() == v2.size());
+    for (size_t i = 0; i < v1.size(); ++i) {
+        if (v1[i] && v2[i]) {
             return false;
         }
     }
     return true;
-}*/
+}
 
 static vector<vector<int>> get_local_state_ids_by_state(
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
@@ -336,25 +337,28 @@ static Heuristic *_parse(OptionParser &parser) {
         vector<unique_ptr<Abstraction>> abstractions =
             cost_saturation.extract_abstractions();
 
-        /*vector<vector<bool>> dependent_ops;
-        for (const unique_ptr<Abstraction> &a : abstractions) {
-            dependent_ops.push_back(a->compute_dependent_operators());
+        utils::Timer independence_timer;
+        vector<vector<bool>> dependent_ops;
+        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+            dependent_ops.push_back(abstraction->compute_active_operators());
         }
 
-        int indep = 0;
         int num_pairs = 0;
+        int num_independent_pairs = 0;
 
-        for (size_t i = 0; i < abstractions.size(); ++i) {
-            for (size_t j = i+1; j < abstractions.size(); ++j) {
-                if (check_independence(dependent_ops[i], dependent_ops[j])) {
-                    std::cout << "Abstractions " << i << " and " << j << " are independent!" << endl;
-                    ++indep;
+        for (size_t i = 0; i < dependent_ops.size(); ++i) {
+            for (size_t j = i + 1; j < dependent_ops.size(); ++j) {
+                if (disjunct(dependent_ops[i], dependent_ops[j])) {
+                    ++num_independent_pairs;
                 }
                 ++num_pairs;
             }
         }
 
-        cout << indep << " out of " << num_pairs << " are independent!" << endl;*/
+        cout << num_independent_pairs << "/" << num_pairs << " = "
+             << (num_pairs ? num_independent_pairs * 100. / num_pairs : 0)
+             << " abstraction pairs are independent" << endl;
+        cout << "Time for computing independence: " << independence_timer << endl;
 
         vector<shared_ptr<RefinementHierarchy>> refinement_hierarchies;
         refinement_hierarchies.reserve(abstractions.size());

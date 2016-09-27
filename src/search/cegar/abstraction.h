@@ -152,7 +152,7 @@ public:
 
     void set_operator_costs(const std::vector<int> &new_costs);
 
-    // std::vector<bool> compute_dependent_operators();
+    std::vector<bool> compute_active_operators();
 };
 }
 
