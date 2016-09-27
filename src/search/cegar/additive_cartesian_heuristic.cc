@@ -356,8 +356,8 @@ static Heuristic *_parse(OptionParser &parser) {
         }
 
         cout << num_independent_pairs << "/" << num_pairs << " = "
-             << (num_pairs ? num_independent_pairs * 100. / num_pairs : 0)
-             << " abstraction pairs are independent" << endl;
+             << (num_pairs ? num_independent_pairs * 100. / num_pairs : 100.)
+             << "% of abstraction pairs are independent" << endl;
         cout << "Time for computing independence: " << independence_timer << endl;
 
         vector<shared_ptr<RefinementHierarchy>> refinement_hierarchies;
