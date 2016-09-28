@@ -102,6 +102,7 @@ void write_landmark_graph_dot_file(
     dotfile << "digraph landmarkgraph {" << endl;
     for (const auto *node_p : nodes) {
         const FactPair node_fact = get_fact(*node_p);
+        dotfile << get_quoted_node_name(node_fact) << ";" << endl;
         for (const auto &parent_pair : node_p->parents) {
             const LandmarkNode *parent_p = parent_pair.first;
             const FactPair parent_fact = get_fact(*parent_p);
