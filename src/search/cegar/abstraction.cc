@@ -319,7 +319,7 @@ void Abstraction::set_state_ids() {
 }
 
 void Abstraction::compress_self_loops() {
-    operator_induces_self_loop.resize(task_proxy.get_operators().size());
+    operator_induces_self_loop.resize(task_proxy.get_operators().size(), false);
     for (AbstractState *state : states) {
         for (int op_id : state->get_loops()) {
             operator_induces_self_loop[op_id] = true;
