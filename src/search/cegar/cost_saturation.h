@@ -52,7 +52,7 @@ class CostSaturation {
     void reset(const TaskProxy &task_proxy);
     std::shared_ptr<AbstractTask> get_remaining_costs_task(
         std::shared_ptr<AbstractTask> &parent) const;
-    bool state_is_dead_end(const State &state) const;
+    bool initial_state_is_dead_end() const;
     void build_abstractions(
         const std::vector<std::shared_ptr<AbstractTask>> &subtasks,
         const utils::CountdownTimer &timer,

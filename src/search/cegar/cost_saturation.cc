@@ -77,15 +77,13 @@ void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
 
     reset(task_proxy);
 
-    State initial_state = TaskProxy(*task).get_initial_state();
-
     function<bool()> should_abort =
         [&] () {
             return num_states >= max_states ||
                    num_non_looping_transitions >= max_non_looping_transitions ||
                    timer.is_expired() ||
                    utils::is_out_of_memory() ||
-                   state_is_dead_end(initial_state);
+                   initial_state_is_dead_end();
         };
 
     for (shared_ptr<SubtaskGenerator> subtask_generator : subtask_generators) {
@@ -121,9 +119,10 @@ shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
         parent, move(costs));
 }
 
-bool CostSaturation::state_is_dead_end(const State &) const {
-    // TODO: Implement this again.
-    return false;
+bool CostSaturation::initial_state_is_dead_end() const {
+    return any_of(abstractions.begin(), abstractions.end(),
+        [](const unique_ptr<Abstraction> &abstraction) {
+            return abstraction->get_h_value_of_initial_state() == INF; });
 }
 
 void CostSaturation::build_abstractions(
