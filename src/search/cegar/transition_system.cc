@@ -31,7 +31,7 @@ TransitionSystem::TransitionSystem(Abstraction &&abstraction)
     }
 
     // Store self-loop info.
-    operator_induces_self_loop = abstraction.extract_operator_induces_self_loop();
+    operator_induces_self_loop = abstraction.get_operator_induces_self_loop();
     assert(!operator_induces_self_loop.empty());
 
     // Store goals.

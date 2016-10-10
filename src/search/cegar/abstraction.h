@@ -148,7 +148,7 @@ public:
 
     int get_h_value_of_initial_state() const;
 
-    std::vector<bool> extract_operator_induces_self_loop();
+    const std::vector<bool> &get_operator_induces_self_loop();
 
     void set_operator_costs(const std::vector<int> &new_costs);
 

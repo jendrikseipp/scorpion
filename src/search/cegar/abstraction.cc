@@ -328,8 +328,8 @@ void Abstraction::compress_self_loops() {
     }
 }
 
-vector<bool> Abstraction::extract_operator_induces_self_loop() {
-    return move(operator_induces_self_loop);
+const vector<bool> &Abstraction::get_operator_induces_self_loop() {
+    return operator_induces_self_loop;
 }
 
 void Abstraction::set_operator_costs(const vector<int> &new_costs) {
