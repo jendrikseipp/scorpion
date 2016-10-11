@@ -156,6 +156,10 @@ void AbstractState::remove_loops() {
     utils::release_vector_memory(loops);
 }
 
+void AbstractState::release_domains_memory() {
+    domains.release_memory();
+}
+
 AbstractState *AbstractState::get_trivial_abstract_state(
     const TaskProxy &task_proxy, Node *root_node) {
     AbstractState *abstract_state = new AbstractState(

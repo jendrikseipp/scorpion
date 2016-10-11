@@ -325,6 +325,7 @@ void Abstraction::compress_self_loops() {
             operator_induces_self_loop[op_id] = true;
         }
         state->remove_loops();
+        state->release_domains_memory();
     }
 }
 
