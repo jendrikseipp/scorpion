@@ -74,6 +74,7 @@ AbstractState *AbstractSearch::astar_search(
         if (new_f < old_f)
             continue;
         if (goals && goals->count(state) == 1) {
+            open_queue.clear();
             return state;
         }
         const Transitions &transitions = forward ?
