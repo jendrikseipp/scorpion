@@ -100,6 +100,7 @@ AbstractState *AbstractSearch::astar_search(
                     f += h;
                 }
                 assert(f >= 0);
+                assert(f != INF);
                 open_queue.push(f, successor);
                 successor->get_search_info().set_incoming_transition(
                     Transition(op_id, state));
