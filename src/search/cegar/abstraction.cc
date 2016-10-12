@@ -391,8 +391,20 @@ vector<int> Abstraction::get_saturated_costs() {
 vector<bool> Abstraction::compute_active_operators() {
     vector<bool> result(task_proxy.get_operators().size(), false);
 
-    for (const AbstractState *state : states) {
+    for (AbstractState *state : states) {
+        const int g = state->get_search_info().get_g_value();
+        const int h = state->get_h_value();
+
+        if (g == INF || h == INF)
+            continue;
+
         for (const Transition &transition : state->get_outgoing_transitions()) {
+            const AbstractState *successor = transition.target;
+            const int succ_h = successor->get_h_value();
+
+            if (succ_h == INF)
+                continue;
+
             result[transition.op_id] = true;
         }
     }
