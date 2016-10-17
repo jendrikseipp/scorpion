@@ -12,15 +12,15 @@ const int INF = std::numeric_limits<int>::max();
 
 struct Transition {
     int op;
-    int target;
+    int state;
 
-    Transition(int op, int target)
+    Transition(int op, int state)
         : op(op),
-          target(target) {
+          state(state) {
     }
 
     bool operator==(const Transition &other) {
-        return op == other.op && target == other.target;
+        return op == other.op && state == other.state;
     }
 };
 
@@ -41,8 +41,9 @@ public:
 
     Abstraction(const Abstraction &) = delete;
 
-    std::pair<std::vector<int>, std::vector<int>> compute_h_values_and_saturated_costs(
-        const std::vector<int> &costs);
+    std::pair<std::vector<int>, std::vector<int>>
+        compute_goal_distances_and_saturated_costs(
+            const std::vector<int> &costs);
 };
 }
 

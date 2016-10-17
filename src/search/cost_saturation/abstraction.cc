@@ -21,7 +21,7 @@ static void dijkstra_search(
             continue;
         }
         for (const Transition &transition : graph[state]) {
-            int successor = transition.target;
+            int successor = transition.state;
             int op = transition.op;
             assert(utils::in_bounds(op, costs));
             int cost = costs[op];
@@ -72,7 +72,7 @@ vector<int> Abstraction::compute_saturated_costs(
 
         for (const Transition &transition : backward_graph[state]) {
             int op_id = transition.op;
-            int successor = transition.target;
+            int successor = transition.state;
             assert(utils::in_bounds(successor, h_values));
             int succ_h = h_values[successor];
             assert(succ_h != INF);
@@ -85,7 +85,7 @@ vector<int> Abstraction::compute_saturated_costs(
     return saturated_costs;
 }
 
-pair<vector<int>, vector<int>> Abstraction::compute_h_values_and_saturated_costs(
+pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated_costs(
     const vector<int> &costs) {
     vector<int> h_values = compute_h_values(costs);
     vector<int> saturated_costs = compute_saturated_costs(h_values);
