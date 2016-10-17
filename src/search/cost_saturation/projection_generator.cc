@@ -17,11 +17,22 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")) {
 }
 
+unique_ptr<Abstraction> compute_abstraction(
+    const TaskProxy &task_proxy, const pdbs::Pattern &pattern) {
+    (void) pattern;
+    return utils::make_unique_ptr<Abstraction>(task_proxy.get_operators().size());
+}
+
 vector<unique_ptr<Abstraction>> ProjectionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
+    TaskProxy task_proxy(*task);
+    vector<unique_ptr<Abstraction>> abstractions;
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_generator->generate(task).get_patterns();
-    return {};
+    for (const pdbs::Pattern &pattern : *patterns) {
+        abstractions.push_back(compute_abstraction(task_proxy, pattern));
+    }
+    return abstractions;
 }
 
 static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
