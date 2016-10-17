@@ -84,13 +84,12 @@ static void update_portfolio_h_values(
 }
 
 static vector<vector<int>> sample_states_and_return_local_ids(
-    const shared_ptr<AbstractTask> &task,
+    const TaskProxy task_proxy,
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const vector<vector<int>> &h_values_by_abstraction_for_default_order,
     int init_h,
     int max_num_samples,
     double max_sampling_time) {
-    TaskProxy task_proxy(*task);
 
     function<bool(const State &state)> dead_end_function =
         [&](const State &state) {
@@ -100,7 +99,7 @@ static vector<vector<int>> sample_states_and_return_local_ids(
                 local_state_ids, h_values_by_abstraction_for_default_order) == INF;
         };
 
-    SuccessorGenerator successor_generator(task);
+    SuccessorGenerator successor_generator(task_proxy);
     const double average_operator_costs = get_average_operator_cost(task_proxy);
 
     State initial_state = task_proxy.get_initial_state();
@@ -415,7 +414,7 @@ static Heuristic *_parse(OptionParser &parser) {
 
         vector<vector<int>> local_state_ids_by_state =
             sample_states_and_return_local_ids(
-                task,
+                task_proxy,
                 refinement_hierarchies,
                 h_values_by_abstraction_for_default_order,
                 init_h,
