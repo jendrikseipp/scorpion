@@ -1,6 +1,8 @@
 #ifndef COST_SATURATION_ABSTRACTION_H
 #define COST_SATURATION_ABSTRACTION_H
 
+#include "../priority_queue.h"
+
 #include <limits>
 #include <vector>
 
@@ -23,10 +25,13 @@ struct Transition {
 };
 
 class Abstraction {
-    const std::vector<std::vector<Transition>> state_changing_transitions;
+    const std::vector<std::vector<Transition>> backward_graph;
     const std::vector<int> looping_operators;
+    const std::vector<int> goal_states;
     const int num_operators;
     const bool use_general_costs;
+
+    mutable AdaptiveQueue<int> queue;
 
     std::vector<int> compute_h_values(const std::vector<int> &costs) const;
     std::vector<int> compute_saturated_costs(const std::vector<int> &h_values) const;
