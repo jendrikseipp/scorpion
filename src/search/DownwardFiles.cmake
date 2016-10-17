@@ -411,6 +411,15 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME COST_SATURATION
+    HELP "Saturated cost partitioning"
+    SOURCES
+        cost_saturation/abstraction.cc
+        cost_saturation/abstraction_generator.cc
+        cost_saturation/projection_generator.cc
+)
+
+fast_downward_plugin(
     NAME MAS_HEURISTIC
     HELP "The Merge-and-Shrink heuristic"
     SOURCES
