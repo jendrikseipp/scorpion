@@ -7,13 +7,13 @@
 
 #include "../merge_and_shrink/factored_transition_system.h"
 #include "../merge_and_shrink/fts_factory.h"
+#include "../merge_and_shrink/label_equivalence_relation.h"
 #include "../merge_and_shrink/transition_system.h"
 #include "../merge_and_shrink/types.h"
 #include "../pdbs/pattern_generator.h"
 
 #include <memory>
 
-using namespace merge_and_shrink;
 using namespace std;
 
 namespace cost_saturation {
@@ -42,9 +42,19 @@ unique_ptr<Abstraction> compute_abstraction(
     }
     assert(unmerged_indices.size() == 1);
     int final_index = unmerged_indices[0];
-    const merge_and_shrink::TransitionSystem &ts = fts.get_ts(final_index);
-    (void) ts;
-    vector<vector<Transition>> backward_graph;
+    const merge_and_shrink::TransitionSystem &transition_system = fts.get_ts(final_index);
+
+    int num_states = transition_system.get_size();
+    vector<vector<Transition>> backward_graph(num_states);
+    for (const merge_and_shrink::GroupAndTransitions &gat : transition_system) {
+        const merge_and_shrink::LabelGroup &label_group = gat.label_group;
+        assert(label_group.get_labels().size() == 1);
+        int op_id = label_group.get_labels().front();
+        for (const merge_and_shrink::Transition &transition : gat.transitions) {
+            backward_graph[transition.target].emplace_back(transition.src, op_id);
+        }
+    }
+
     vector<int> looping_operators;
     vector<int> goal_states;
     return utils::make_unique_ptr<Abstraction>(
