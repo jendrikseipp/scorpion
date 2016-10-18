@@ -7,6 +7,7 @@
 
 #include "../merge_and_shrink/factored_transition_system.h"
 #include "../merge_and_shrink/fts_factory.h"
+#include "../merge_and_shrink/transition_system.h"
 #include "../merge_and_shrink/types.h"
 #include "../pdbs/pattern_generator.h"
 
@@ -23,10 +24,26 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
 
 unique_ptr<Abstraction> compute_abstraction(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern) {
+    merge_and_shrink::Verbosity verbosity = merge_and_shrink::Verbosity::NORMAL;
     merge_and_shrink::FactoredTransitionSystem fts =
         merge_and_shrink::create_factored_transition_system(
-            task_proxy, merge_and_shrink::Verbosity::NORMAL);
-    (void) pattern;
+            task_proxy, verbosity);
+    vector<int> unmerged_indices = pattern;
+    assert(!unmerged_indices.empty());
+    assert(utils::is_sorted_unique(unmerged_indices));
+    reverse(unmerged_indices.begin(), unmerged_indices.end());
+    while (unmerged_indices.size() > 1) {
+        int index1 = unmerged_indices.back();
+        unmerged_indices.pop_back();
+        int index2 = unmerged_indices.back();
+        unmerged_indices.pop_back();
+        int new_index = fts.merge(index1, index2, verbosity);
+        unmerged_indices.push_back(new_index);
+    }
+    assert(unmerged_indices.size() == 1);
+    int final_index = unmerged_indices[0];
+    const merge_and_shrink::TransitionSystem &ts = fts.get_ts(final_index);
+    (void) ts;
     vector<vector<Transition>> backward_graph;
     vector<int> looping_operators;
     vector<int> goal_states;
