@@ -48,6 +48,8 @@ public:
     std::pair<std::vector<int>, std::vector<int>>
         compute_goal_distances_and_saturated_costs(
             const std::vector<int> &costs);
+
+    void dump() const;
 };
 }
 

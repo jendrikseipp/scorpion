@@ -1,6 +1,7 @@
 #include "abstraction.h"
 
 #include "../utils/collections.h"
+#include "../utils/logging.h"
 
 using namespace std;
 
@@ -72,7 +73,8 @@ vector<int> Abstraction::compute_saturated_costs(
         }
     }
 
-    for (size_t state = 0; state < backward_graph.size(); ++state) {
+    int num_states = backward_graph.size();
+    for (int state = 0; state < num_states; ++state) {
         assert(utils::in_bounds(state, h_values));
         int h = h_values[state];
         assert(h != INF);
@@ -80,6 +82,7 @@ vector<int> Abstraction::compute_saturated_costs(
         for (const Transition &transition : backward_graph[state]) {
             int op_id = transition.op;
             int successor = transition.state;
+            assert(successor != state);
             assert(utils::in_bounds(successor, h_values));
             int succ_h = h_values[successor];
             assert(succ_h != INF);
@@ -97,6 +100,19 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
     vector<int> h_values = compute_h_values(costs);
     vector<int> saturated_costs = compute_saturated_costs(h_values);
     return make_pair(move(h_values), move(saturated_costs));
+}
+
+void Abstraction::dump() const {
+    cout << "State-changing transitions:" << endl;
+    for (size_t state = 0; state < backward_graph.size(); ++state) {
+        cout << "  " << state << " <- ";
+        for (const Transition &transition : backward_graph[state]) {
+            cout << "(" << transition.op << ", " << transition.state << ") ";
+        }
+        cout << endl;
+    }
+    cout << "Looping operators: " << looping_operators << endl;
+    cout << "Goal states: " << goal_states << endl;
 }
 }
 
