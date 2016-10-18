@@ -71,7 +71,8 @@ class FTSFactory {
     void build_transitions_for_operator(OperatorProxy op);
     void build_transitions_for_irrelevant_ops(VariableProxy variable);
     void build_transitions();
-    vector<unique_ptr<TransitionSystem>> create_transition_systems();
+    vector<unique_ptr<TransitionSystem>> create_transition_systems(
+        bool compute_label_equivalence_relation);
     vector<unique_ptr<HeuristicRepresentation>> create_heuristic_representations();
     vector<unique_ptr<Distances>> create_distances(
         const vector<unique_ptr<TransitionSystem>> &transition_systems);
@@ -83,7 +84,8 @@ public:
       Note: create() may only be called once. We don't worry about
       misuse because the class is only used internally in this file.
     */
-    FactoredTransitionSystem create(Verbosity verbosity);
+    FactoredTransitionSystem create(
+        bool compute_label_equivalence_relation, Verbosity verbosity);
 };
 
 
@@ -331,7 +333,8 @@ void FTSFactory::build_transitions() {
     }
 }
 
-vector<unique_ptr<TransitionSystem>> FTSFactory::create_transition_systems() {
+vector<unique_ptr<TransitionSystem>> FTSFactory::create_transition_systems(
+    bool compute_label_equivalence_relation) {
     // Create the actual TransitionSystem objects.
     int num_variables = task_proxy.get_variables().size();
 
@@ -350,7 +353,7 @@ vector<unique_ptr<TransitionSystem>> FTSFactory::create_transition_systems() {
                              ts_data.num_states,
                              move(ts_data.goal_states),
                              ts_data.init_state,
-                             true
+                             compute_label_equivalence_relation
                              ));
     }
     return result;
@@ -390,7 +393,8 @@ vector<unique_ptr<Distances>> FTSFactory::create_distances(
     return result;
 }
 
-FactoredTransitionSystem FTSFactory::create(Verbosity verbosity) {
+FactoredTransitionSystem FTSFactory::create(
+    bool compute_label_equivalence_relation, Verbosity verbosity) {
     if (verbosity >= Verbosity::NORMAL) {
         cout << "Building atomic transition systems... " << endl;
     }
@@ -400,7 +404,7 @@ FactoredTransitionSystem FTSFactory::create(Verbosity verbosity) {
     initialize_transition_system_data(*labels);
     build_transitions();
     vector<unique_ptr<TransitionSystem>> transition_systems =
-        create_transition_systems();
+        create_transition_systems(compute_label_equivalence_relation);
     vector<unique_ptr<HeuristicRepresentation>> heuristic_representations =
         create_heuristic_representations();
     vector<unique_ptr<Distances>> distances =
@@ -416,7 +420,9 @@ FactoredTransitionSystem FTSFactory::create(Verbosity verbosity) {
 
 FactoredTransitionSystem create_factored_transition_system(
     const TaskProxy &task_proxy,
+    bool compute_label_equivalence_relation,
     Verbosity verbosity) {
-    return FTSFactory(task_proxy).create(verbosity);
+    return FTSFactory(task_proxy).create(
+        compute_label_equivalence_relation, verbosity);
 }
 }

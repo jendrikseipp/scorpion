@@ -25,9 +25,10 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
 unique_ptr<Abstraction> compute_abstraction(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern) {
     merge_and_shrink::Verbosity verbosity = merge_and_shrink::Verbosity::NORMAL;
+    const bool compute_label_equivalence_relation = false;
     merge_and_shrink::FactoredTransitionSystem fts =
         merge_and_shrink::create_factored_transition_system(
-            task_proxy, verbosity);
+            task_proxy, compute_label_equivalence_relation, verbosity);
     vector<int> unmerged_indices = pattern;
     assert(!unmerged_indices.empty());
     assert(utils::is_sorted_unique(unmerged_indices));
