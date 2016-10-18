@@ -5,10 +5,14 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../merge_and_shrink/factored_transition_system.h"
+#include "../merge_and_shrink/fts_factory.h"
+#include "../merge_and_shrink/types.h"
 #include "../pdbs/pattern_generator.h"
 
 #include <memory>
 
+using namespace merge_and_shrink;
 using namespace std;
 
 namespace cost_saturation {
@@ -19,6 +23,9 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
 
 unique_ptr<Abstraction> compute_abstraction(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern) {
+    merge_and_shrink::FactoredTransitionSystem fts =
+        merge_and_shrink::create_factored_transition_system(
+            task_proxy, merge_and_shrink::Verbosity::NORMAL);
     (void) pattern;
     vector<vector<Transition>> backward_graph;
     vector<int> looping_operators;
