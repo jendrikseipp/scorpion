@@ -62,6 +62,11 @@ unique_ptr<Abstraction> compute_abstraction(
     }
 
     vector<int> goal_states;
+    for (int state = 0; state < num_states; ++state) {
+        if (transition_system.is_goal_state(state)) {
+            goal_states.push_back(state);
+        }
+    }
     return utils::make_unique_ptr<Abstraction>(
         move(backward_graph),
         looping_operators.pop_as_vector(),
