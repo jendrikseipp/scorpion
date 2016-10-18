@@ -34,8 +34,15 @@ static void dijkstra_search(
     }
 }
 
-Abstraction::Abstraction(int num_operators)
-    : num_operators(num_operators),
+Abstraction::Abstraction(
+    vector<vector<Transition>> &&backward_graph,
+    vector<int> &&looping_operators,
+    vector<int> &&goal_states,
+    int num_operators)
+    : backward_graph(move(backward_graph)),
+      looping_operators(move(looping_operators)),
+      goal_states(move(goal_states)),
+      num_operators(num_operators),
       use_general_costs(true) {
 }
 

@@ -37,7 +37,11 @@ class Abstraction {
     std::vector<int> compute_saturated_costs(const std::vector<int> &h_values) const;
 
 public:
-    Abstraction(int num_operators);
+    Abstraction(
+        std::vector<std::vector<Transition>> &&backward_graph,
+        std::vector<int> &&looping_operators,
+        std::vector<int> &&goal_states,
+        int num_operators);
 
     Abstraction(const Abstraction &) = delete;
 

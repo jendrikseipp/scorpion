@@ -20,7 +20,14 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
 unique_ptr<Abstraction> compute_abstraction(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern) {
     (void) pattern;
-    return utils::make_unique_ptr<Abstraction>(task_proxy.get_operators().size());
+    vector<vector<Transition>> backward_graph;
+    vector<int> looping_operators;
+    vector<int> goal_states;
+    return utils::make_unique_ptr<Abstraction>(
+        move(backward_graph),
+        move(looping_operators),
+        move(goal_states),
+        task_proxy.get_operators().size());
 }
 
 vector<unique_ptr<Abstraction>> ProjectionGenerator::generate_abstractions(
