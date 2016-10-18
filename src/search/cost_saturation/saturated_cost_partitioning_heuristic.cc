@@ -9,6 +9,60 @@
 using namespace std;
 
 namespace cost_saturation {
+static vector<int> get_operator_costs(const TaskProxy &task) {
+    vector<int> costs;
+    costs.reserve(task.get_operators().size());
+    for (OperatorProxy op : task.get_operators())
+        costs.push_back(op.get_cost());
+    return costs;
+}
+
+static vector<int> get_default_order(int n) {
+    vector<int> indices(n);
+    iota(indices.begin(), indices.end(), 0);
+    return indices;
+}
+
+static void reduce_costs(
+    vector<int> &remaining_costs, const vector<int> &saturated_costs) {
+    assert(remaining_costs.size() == saturated_costs.size());
+    for (size_t i = 0; i < remaining_costs.size(); ++i) {
+        int &remaining = remaining_costs[i];
+        const int &saturated = saturated_costs[i];
+        assert(saturated <= remaining);
+        /* Since we ignore transitions from states s with h(s)=INF, all
+           saturated costs (h(s)-h(s')) are finite or -INF. */
+        assert(saturated != INF);
+        if (remaining == INF) {
+            // INF - x = INF for finite values x.
+        } else if (saturated == -INF) {
+            remaining = INF;
+        } else {
+            remaining -= saturated;
+        }
+        assert(remaining >= 0);
+    }
+}
+
+static vector<vector<int>> compute_saturated_cost_partitioning(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &order,
+    const vector<int> &operator_costs) {
+    assert(abstractions.size() == order.size());
+    vector<int> remaining_costs = operator_costs;
+    vector<vector<int>> h_values_by_abstraction(abstractions.size());
+    for (int pos : order) {
+        Abstraction &abstraction = *abstractions[pos];
+        auto pair = abstraction.compute_goal_distances_and_saturated_costs(
+            remaining_costs);
+        vector<int> &h_values = pair.first;
+        vector<int> &saturated_costs = pair.second;
+        h_values_by_abstraction[pos] = move(h_values);
+        reduce_costs(remaining_costs, saturated_costs);
+    }
+    return h_values_by_abstraction;
+}
+
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts),
       abstraction_generators(
@@ -19,6 +73,10 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
             generator->generate_abstractions(task);
         move(current_abstractions.begin(), current_abstractions.end(), back_inserter(abstractions));
     }
+    vector<int> order = get_default_order(abstractions.size());
+    vector<vector<int>> h_values_by_abstraction = compute_saturated_cost_partitioning(
+        abstractions, order, get_operator_costs(task_proxy));
+    h_values_by_order.push_back(move(h_values_by_abstraction));
 }
 
 int SaturatedCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {

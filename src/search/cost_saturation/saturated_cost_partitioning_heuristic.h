@@ -15,7 +15,7 @@ class AbstractionGenerator;
 
 class SaturatedCostPartitioningHeuristic : public Heuristic {
     const std::vector<std::shared_ptr<AbstractionGenerator>> abstraction_generators;
-    std::vector<std::vector<int>> h_values_by_abstraction;
+    std::vector<std::vector<std::vector<int>>> h_values_by_order;
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
