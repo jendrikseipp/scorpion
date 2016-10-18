@@ -23,13 +23,26 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")) {
 }
 
+static void dump(const VariableProxy &var) {
+    cout << var.get_name() << endl;
+    for (int value = 0; value < var.get_domain_size(); ++value) {
+        cout << var.get_fact(value).get_name() << endl;
+    }
+}
+
 unique_ptr<Abstraction> compute_abstraction(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern) {
-    merge_and_shrink::Verbosity verbosity = merge_and_shrink::Verbosity::NORMAL;
+    const merge_and_shrink::Verbosity verbosity = merge_and_shrink::Verbosity::NORMAL;
     const bool compute_label_equivalence_relation = false;
     merge_and_shrink::FactoredTransitionSystem fts =
         merge_and_shrink::create_factored_transition_system(
             task_proxy, compute_label_equivalence_relation, verbosity);
+    if (verbosity >= merge_and_shrink::Verbosity::VERBOSE) {
+        for (int var_id : pattern) {
+            dump(task_proxy.get_variables()[var_id]);
+            fts.get_ts(var_id).dump_dot_graph();
+        }
+    }
     vector<int> unmerged_indices = pattern;
     assert(!unmerged_indices.empty());
     assert(utils::is_sorted_unique(unmerged_indices));
@@ -44,19 +57,25 @@ unique_ptr<Abstraction> compute_abstraction(
     }
     assert(unmerged_indices.size() == 1);
     int final_index = unmerged_indices[0];
-    const merge_and_shrink::TransitionSystem &transition_system = fts.get_ts(final_index);
+    const merge_and_shrink::TransitionSystem &transition_system =
+        fts.get_ts(final_index);
+    if (verbosity >= merge_and_shrink::Verbosity::VERBOSE) {
+        transition_system.dump_labels_and_transitions();
+        transition_system.dump_dot_graph();
+    }
 
     int num_states = transition_system.get_size();
     vector<vector<Transition>> backward_graph(num_states);
     algorithms::OrderedSet<int> looping_operators;
     for (const merge_and_shrink::GroupAndTransitions &gat : transition_system) {
         const merge_and_shrink::LabelGroup &label_group = gat.label_group;
-        assert(label_group.get_labels().size() == 1);
-        int op_id = label_group.get_labels().front();
-        for (const merge_and_shrink::Transition &transition : gat.transitions) {
-            backward_graph[transition.target].emplace_back(transition.src, op_id);
-            if (transition.src == transition.target) {
-                looping_operators.insert(op_id);
+        for (int op_id : label_group) {
+            for (const merge_and_shrink::Transition &transition : gat.transitions) {
+                if (transition.src == transition.target) {
+                    looping_operators.insert(op_id);
+                } else {
+                    backward_graph[transition.target].emplace_back(op_id, transition.src);
+                }
             }
         }
     }
