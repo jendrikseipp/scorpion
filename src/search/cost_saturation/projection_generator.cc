@@ -11,6 +11,7 @@
 #include "../merge_and_shrink/transition_system.h"
 #include "../merge_and_shrink/types.h"
 #include "../pdbs/pattern_generator.h"
+#include "../algorithms/ordered_set.h"
 
 #include <memory>
 
@@ -47,20 +48,23 @@ unique_ptr<Abstraction> compute_abstraction(
 
     int num_states = transition_system.get_size();
     vector<vector<Transition>> backward_graph(num_states);
+    algorithms::OrderedSet<int> looping_operators;
     for (const merge_and_shrink::GroupAndTransitions &gat : transition_system) {
         const merge_and_shrink::LabelGroup &label_group = gat.label_group;
         assert(label_group.get_labels().size() == 1);
         int op_id = label_group.get_labels().front();
         for (const merge_and_shrink::Transition &transition : gat.transitions) {
             backward_graph[transition.target].emplace_back(transition.src, op_id);
+            if (transition.src == transition.target) {
+                looping_operators.insert(op_id);
+            }
         }
     }
 
-    vector<int> looping_operators;
     vector<int> goal_states;
     return utils::make_unique_ptr<Abstraction>(
         move(backward_graph),
-        move(looping_operators),
+        looping_operators.pop_as_vector(),
         move(goal_states),
         task_proxy.get_operators().size());
 }
