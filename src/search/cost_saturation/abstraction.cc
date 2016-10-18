@@ -88,7 +88,6 @@ vector<int> Abstraction::compute_saturated_costs(
             assert(succ_h != INF);
 
             const int needed = h - succ_h;
-            assert(needed >= 0);
             saturated_costs[op_id] = max(saturated_costs[op_id], needed);
         }
     }
