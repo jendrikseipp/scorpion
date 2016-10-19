@@ -174,6 +174,16 @@ int SaturatedCostPartitioningHeuristic::compute_max_h_with_statistics(
     return max_h;
 }
 
+void SaturatedCostPartitioningHeuristic::print_statistics() const {
+    int num_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
+    int num_orders = num_best_order.size();
+    assert(num_orders != 0);
+    cout << "Number of times each order was the best order: "
+         << num_best_order << endl;
+    cout << "Superfluous orders: " << num_superfluous << "/" << num_orders
+         << " = " << num_superfluous * 100.0 / num_orders << endl;
+}
+
 static Heuristic *_parse(OptionParser &parser) {
     parser.document_synopsis(
         "Saturated cost partitioning heuristic",

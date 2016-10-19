@@ -33,6 +33,8 @@ protected:
 
 public:
     explicit SaturatedCostPartitioningHeuristic(const options::Options &opts);
+
+    virtual void print_statistics() const override;
 };
 }
 
