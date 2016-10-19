@@ -56,7 +56,6 @@ static AbstractionAndStateMap compute_abstraction(
     const merge_and_shrink::TransitionSystem &transition_system =
         fts.get_ts(final_index);
     if (debug) {
-        transition_system.dump_labels_and_transitions();
         transition_system.dump_dot_graph();
     }
 
