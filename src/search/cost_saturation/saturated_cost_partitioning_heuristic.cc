@@ -46,11 +46,19 @@ static void reduce_costs(
     }
 }
 
+static void print_indexed_vector(const vector<int> &vec) {
+    for (size_t i = 0; i < vec.size(); ++i) {
+        cout << i << ":" << vec[i] << ", ";
+    }
+    cout << endl;
+}
+
 static vector<vector<int>> compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
     const vector<int> &operator_costs) {
     assert(abstractions.size() == order.size());
+    const bool debug = false;
     vector<int> remaining_costs = operator_costs;
     vector<vector<int>> h_values_by_abstraction(abstractions.size());
     for (int pos : order) {
@@ -59,8 +67,16 @@ static vector<vector<int>> compute_saturated_cost_partitioning(
             remaining_costs);
         vector<int> &h_values = pair.first;
         vector<int> &saturated_costs = pair.second;
-        h_values_by_abstraction[pos] = move(h_values);
-        reduce_costs(remaining_costs, saturated_costs);
+        if (debug) {
+            cout << "h-values: ";
+            print_indexed_vector(h_values);
+            cout << "saturated costs: ";
+            print_indexed_vector(saturated_costs);
+            h_values_by_abstraction[pos] = move(h_values);
+            reduce_costs(remaining_costs, saturated_costs);
+            cout << "remaining costs: ";
+            print_indexed_vector(remaining_costs);
+        }
     }
     return h_values_by_abstraction;
 }
