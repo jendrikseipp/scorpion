@@ -13,7 +13,8 @@ class PatternCollectionGenerator;
 
 namespace cost_saturation {
 class ProjectionGenerator : public AbstractionGenerator {
-    std::shared_ptr<pdbs::PatternCollectionGenerator> pattern_generator;
+    const std::shared_ptr<pdbs::PatternCollectionGenerator> pattern_generator;
+    const bool debug;
 
 public:
     explicit ProjectionGenerator(const options::Options &opts);

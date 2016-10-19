@@ -12,6 +12,7 @@
 #include "../merge_and_shrink/types.h"
 #include "../pdbs/pattern_generator.h"
 #include "../algorithms/ordered_set.h"
+#include "../utils/logging.h"
 
 #include <memory>
 
@@ -20,7 +21,8 @@ using namespace std;
 namespace cost_saturation {
 ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
     : pattern_generator(
-          opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")) {
+          opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
+      debug(opts.get<bool>("debug")) {
 }
 
 static void dump(const VariableProxy &var) {
@@ -31,8 +33,10 @@ static void dump(const VariableProxy &var) {
 }
 
 unique_ptr<Abstraction> compute_abstraction(
-    const TaskProxy &task_proxy, const pdbs::Pattern &pattern) {
-    const merge_and_shrink::Verbosity verbosity = merge_and_shrink::Verbosity::NORMAL;
+    const TaskProxy &task_proxy, const pdbs::Pattern &pattern, bool debug) {
+    const merge_and_shrink::Verbosity verbosity = debug ?
+        merge_and_shrink::Verbosity::VERBOSE :
+        merge_and_shrink::Verbosity::NORMAL;
     const bool compute_label_equivalence_relation = false;
     merge_and_shrink::FactoredTransitionSystem fts =
         merge_and_shrink::create_factored_transition_system(
@@ -95,13 +99,19 @@ unique_ptr<Abstraction> compute_abstraction(
 
 vector<unique_ptr<Abstraction>> ProjectionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
+    utils::Timer timer;
+    utils::Log log;
+    log << "Building projections" << endl;
     TaskProxy task_proxy(*task);
     vector<unique_ptr<Abstraction>> abstractions;
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_generator->generate(task).get_patterns();
+    cout << "Patterns: " << patterns->size() << endl;
     for (const pdbs::Pattern &pattern : *patterns) {
-        abstractions.push_back(compute_abstraction(task_proxy, pattern));
+        abstractions.push_back(compute_abstraction(task_proxy, pattern, debug));
     }
+    log << "Done building projections" << endl;
+    cout << "Time for building projections: " << timer << endl;
     return abstractions;
 }
 
@@ -114,6 +124,10 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "patterns",
         "pattern generation method",
         "systematic(1)");
+    parser.add_option<bool>(
+        "debug",
+        "print debugging info",
+        "false");
 
     Options opts = parser.parse();
     if (parser.dry_run())
