@@ -73,7 +73,7 @@ class FTSFactory {
     void build_transitions();
     vector<unique_ptr<TransitionSystem>> create_transition_systems(
         bool compute_label_equivalence_relation);
-    vector<unique_ptr<HeuristicRepresentation>> create_heuristic_representations();
+    vector<shared_ptr<HeuristicRepresentation>> create_heuristic_representations();
     vector<unique_ptr<Distances>> create_distances(
         const vector<unique_ptr<TransitionSystem>> &transition_systems);
 public:
@@ -359,19 +359,19 @@ vector<unique_ptr<TransitionSystem>> FTSFactory::create_transition_systems(
     return result;
 }
 
-vector<unique_ptr<HeuristicRepresentation>> FTSFactory::create_heuristic_representations() {
+vector<shared_ptr<HeuristicRepresentation>> FTSFactory::create_heuristic_representations() {
     // Create the actual HeuristicRepresentation objects.
     int num_variables = task_proxy.get_variables().size();
 
     // We reserve space for the transition systems added later by merging.
-    vector<unique_ptr<HeuristicRepresentation>> result;
+    vector<shared_ptr<HeuristicRepresentation>> result;
     assert(num_variables >= 1);
     result.reserve(num_variables * 2 - 1);
 
     for (int var_no = 0; var_no < num_variables; ++var_no) {
         int range = task_proxy.get_variables()[var_no].get_domain_size();
         result.push_back(
-            utils::make_unique_ptr<HeuristicRepresentationLeaf>(var_no, range));
+            make_shared<HeuristicRepresentationLeaf>(var_no, range));
     }
     return result;
 }
@@ -405,7 +405,7 @@ FactoredTransitionSystem FTSFactory::create(
     build_transitions();
     vector<unique_ptr<TransitionSystem>> transition_systems =
         create_transition_systems(compute_label_equivalence_relation);
-    vector<unique_ptr<HeuristicRepresentation>> heuristic_representations =
+    vector<shared_ptr<HeuristicRepresentation>> heuristic_representations =
         create_heuristic_representations();
     vector<unique_ptr<Distances>> distances =
         create_distances(transition_systems);

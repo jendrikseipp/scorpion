@@ -40,13 +40,13 @@ public:
 
 
 class HeuristicRepresentationMerge : public HeuristicRepresentation {
-    std::unique_ptr<HeuristicRepresentation> left_child;
-    std::unique_ptr<HeuristicRepresentation> right_child;
+    std::shared_ptr<HeuristicRepresentation> left_child;
+    std::shared_ptr<HeuristicRepresentation> right_child;
     std::vector<std::vector<int>> lookup_table;
 public:
     HeuristicRepresentationMerge(
-        std::unique_ptr<HeuristicRepresentation> left_child,
-        std::unique_ptr<HeuristicRepresentation> right_child);
+        std::shared_ptr<HeuristicRepresentation> left_child,
+        std::shared_ptr<HeuristicRepresentation> right_child);
     virtual ~HeuristicRepresentationMerge() = default;
 
     virtual void apply_abstraction_to_lookup_table(

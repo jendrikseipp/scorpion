@@ -35,7 +35,7 @@ void FTSConstIterator::operator++() {
 FactoredTransitionSystem::FactoredTransitionSystem(
     unique_ptr<Labels> labels,
     vector<unique_ptr<TransitionSystem>> &&transition_systems,
-    vector<unique_ptr<HeuristicRepresentation>> &&heuristic_representations,
+    vector<shared_ptr<HeuristicRepresentation>> &&heuristic_representations,
     vector<unique_ptr<Distances>> &&distances,
     Verbosity verbosity)
     : labels(move(labels)),
@@ -186,7 +186,7 @@ int FactoredTransitionSystem::merge(
     transition_systems[index1] = nullptr;
     transition_systems[index2] = nullptr;
     heuristic_representations.push_back(
-        utils::make_unique_ptr<HeuristicRepresentationMerge>(
+        make_shared<HeuristicRepresentationMerge>(
             move(heuristic_representations[index1]),
             move(heuristic_representations[index2])));
     heuristic_representations[index1] = nullptr;
