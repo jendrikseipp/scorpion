@@ -88,7 +88,9 @@ static AbstractionAndStateMap compute_abstraction(
     StateMap state_map =
         [heuristic_representation](const State &state) {
             assert(heuristic_representation);
-            return heuristic_representation->get_abstract_state(state);
+            int state_id = heuristic_representation->get_abstract_state(state);
+            assert(state_id >= 0 || state_id == merge_and_shrink::PRUNED_STATE);
+            return state_id;
         };
 
     return make_pair(utils::make_unique_ptr<Abstraction>(
