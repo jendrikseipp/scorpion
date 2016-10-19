@@ -79,7 +79,9 @@ vector<int> Abstraction::compute_saturated_costs(
     for (int target = 0; target < num_states; ++target) {
         assert(utils::in_bounds(target, h_values));
         int target_h = h_values[target];
-        assert(target_h != INF);
+        if (target_h == INF) {
+            continue;
+        }
 
         for (const Transition &transition : backward_graph[target]) {
             int op_id = transition.op;
@@ -87,7 +89,9 @@ vector<int> Abstraction::compute_saturated_costs(
             assert(src != target);
             assert(utils::in_bounds(src, h_values));
             int src_h = h_values[src];
-            assert(src_h != INF);
+            if (src_h == INF) {
+                continue;
+            }
 
             const int needed = src_h - target_h;
             saturated_costs[op_id] = max(saturated_costs[op_id], needed);
