@@ -211,6 +211,39 @@ int FactoredTransitionSystem::merge(
     return new_index;
 }
 
+void FactoredTransitionSystem::reserve_extra_position() {
+    transition_systems.push_back(nullptr);
+    heuristic_representations.push_back(nullptr);
+    distances.push_back(nullptr);
+}
+
+int FactoredTransitionSystem::preserving_merge(
+    int index1, int index2, Verbosity verbosity) {
+    assert(is_index_valid(index1));
+    assert(is_index_valid(index2));
+
+    int dest = get_size() - 1;
+
+    transition_systems[dest] = TransitionSystem::merge(
+        *labels,
+        *transition_systems[index1],
+        *transition_systems[index2],
+        verbosity);
+    heuristic_representations[dest] =
+        make_shared<HeuristicRepresentationMerge>(
+            heuristic_representations[index1],
+            heuristic_representations[index2]);
+    const TransitionSystem &new_ts = *transition_systems[dest];
+    distances[dest] = utils::make_unique_ptr<Distances>(new_ts);
+    compute_distances_and_prune(dest, verbosity);
+    assert(is_component_valid(dest));
+    if (!new_ts.is_solvable()) {
+        solvable = false;
+        finalize(dest);
+    }
+    return dest;
+}
+
 void FactoredTransitionSystem::finalize(int index) {
     if (index == -1) {
         /*

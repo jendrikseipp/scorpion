@@ -101,6 +101,7 @@ public:
         const StateEquivalenceRelation &state_equivalence_relation,
         Verbosity verbosity);
     int merge(int index1, int index2, Verbosity verbosity);
+    int preserving_merge(int index1, int index2, Verbosity verbosity);
     void finalize(int index = -1);
 
     bool is_solvable() const {
@@ -132,6 +133,8 @@ public:
     bool is_active(int index) const {
         return is_index_valid(index);
     }
+
+    void reserve_extra_position();
 };
 }
 

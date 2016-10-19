@@ -26,18 +26,19 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
       debug(opts.get<bool>("debug")) {
 }
 
-AbstractionAndStateMap compute_abstraction(
-    const TaskProxy &task_proxy, const pdbs::Pattern &pattern, bool debug) {
+static AbstractionAndStateMap compute_abstraction(
+    const TaskProxy &task_proxy,
+    merge_and_shrink::FactoredTransitionSystem &fts,
+    const pdbs::Pattern &pattern,
+    bool debug) {
     if (debug) {
         cout << "Pattern: " << pattern << endl;
     }
+
     const merge_and_shrink::Verbosity verbosity = debug ?
         merge_and_shrink::Verbosity::VERBOSE :
         merge_and_shrink::Verbosity::NORMAL;
-    const bool compute_label_equivalence_relation = false;
-    merge_and_shrink::FactoredTransitionSystem fts =
-        merge_and_shrink::create_factored_transition_system(
-            task_proxy, compute_label_equivalence_relation, verbosity);
+
     vector<int> unmerged_indices = pattern;
     assert(!unmerged_indices.empty());
     assert(utils::is_sorted_unique(unmerged_indices));
@@ -47,7 +48,7 @@ AbstractionAndStateMap compute_abstraction(
         unmerged_indices.pop_back();
         int index2 = unmerged_indices.back();
         unmerged_indices.pop_back();
-        int new_index = fts.merge(index1, index2, verbosity);
+        int new_index = fts.preserving_merge(index1, index2, verbosity);
         unmerged_indices.push_back(new_index);
     }
     assert(unmerged_indices.size() == 1);
@@ -107,9 +108,19 @@ vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_generator->generate(task).get_patterns();
     cout << "Patterns: " << patterns->size() << endl;
+
+    const merge_and_shrink::Verbosity verbosity = debug ?
+        merge_and_shrink::Verbosity::VERBOSE :
+        merge_and_shrink::Verbosity::NORMAL;
+    const bool compute_label_equivalence_relation = false;
+    merge_and_shrink::FactoredTransitionSystem fts =
+        merge_and_shrink::create_factored_transition_system(
+            task_proxy, compute_label_equivalence_relation, verbosity);
+    fts.reserve_extra_position();
+
     for (const pdbs::Pattern &pattern : *patterns) {
         abstractions_and_state_maps.push_back(
-            compute_abstraction(task_proxy, pattern, debug));
+            compute_abstraction(task_proxy, fts, pattern, debug));
     }
     log << "Done building projections" << endl;
     cout << "Time for building projections: " << timer << endl;
