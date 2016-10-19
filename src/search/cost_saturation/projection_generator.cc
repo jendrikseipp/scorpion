@@ -25,13 +25,6 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
       debug(opts.get<bool>("debug")) {
 }
 
-static void dump(const VariableProxy &var) {
-    cout << var.get_name() << endl;
-    for (int value = 0; value < var.get_domain_size(); ++value) {
-        cout << var.get_fact(value).get_name() << endl;
-    }
-}
-
 unique_ptr<Abstraction> compute_abstraction(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern, bool debug) {
     const merge_and_shrink::Verbosity verbosity = debug ?
@@ -41,12 +34,6 @@ unique_ptr<Abstraction> compute_abstraction(
     merge_and_shrink::FactoredTransitionSystem fts =
         merge_and_shrink::create_factored_transition_system(
             task_proxy, compute_label_equivalence_relation, verbosity);
-    if (verbosity >= merge_and_shrink::Verbosity::VERBOSE) {
-        for (int var_id : pattern) {
-            dump(task_proxy.get_variables()[var_id]);
-            fts.get_ts(var_id).dump_dot_graph();
-        }
-    }
     vector<int> unmerged_indices = pattern;
     assert(!unmerged_indices.empty());
     assert(utils::is_sorted_unique(unmerged_indices));
@@ -63,7 +50,7 @@ unique_ptr<Abstraction> compute_abstraction(
     int final_index = unmerged_indices[0];
     const merge_and_shrink::TransitionSystem &transition_system =
         fts.get_ts(final_index);
-    if (verbosity >= merge_and_shrink::Verbosity::VERBOSE) {
+    if (debug) {
         transition_system.dump_labels_and_transitions();
         transition_system.dump_dot_graph();
     }
