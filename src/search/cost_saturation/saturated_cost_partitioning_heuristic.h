@@ -1,6 +1,8 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_HEURISTIC_H
 
+#include "abstraction_generator.h"
+
 #include "../heuristic.h"
 
 #include <memory>
@@ -17,7 +19,7 @@ class SaturatedCostPartitioningHeuristic : public Heuristic {
     // TODO: Remove member.
     const std::vector<std::shared_ptr<AbstractionGenerator>> abstraction_generators;
     std::vector<std::vector<std::vector<int>>> h_values_by_order;
-    std::vector<std::function<int (const State &)>> local_state_id_lookup_functions;
+    std::vector<StateMap> state_maps;
 
     // For statistics.
     mutable std::vector<int> num_best_order;

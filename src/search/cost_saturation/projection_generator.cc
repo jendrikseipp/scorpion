@@ -26,8 +26,11 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
       debug(opts.get<bool>("debug")) {
 }
 
-pair<unique_ptr<Abstraction>, function<int (const State &)>> compute_abstraction(
+AbstractionAndStateMap compute_abstraction(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern, bool debug) {
+    if (debug) {
+        cout << "Pattern: " << pattern << endl;
+    }
     const merge_and_shrink::Verbosity verbosity = debug ?
         merge_and_shrink::Verbosity::VERBOSE :
         merge_and_shrink::Verbosity::NORMAL;
@@ -81,8 +84,9 @@ pair<unique_ptr<Abstraction>, function<int (const State &)>> compute_abstraction
 
     shared_ptr<merge_and_shrink::HeuristicRepresentation> heuristic_representation =
         fts.get_heuristic_representation(final_index);
-    function<int (const State &)> lookup_function =
-        [&heuristic_representation](const State &state) {
+    StateMap state_map =
+        [heuristic_representation](const State &state) {
+            assert(heuristic_representation);
             return heuristic_representation->get_abstract_state(state);
         };
 
@@ -90,25 +94,26 @@ pair<unique_ptr<Abstraction>, function<int (const State &)>> compute_abstraction
         move(backward_graph),
         looping_operators.pop_as_vector(),
         move(goal_states),
-        task_proxy.get_operators().size()), lookup_function);
+        task_proxy.get_operators().size()), state_map);
 }
 
-vector<unique_ptr<Abstraction>> ProjectionGenerator::generate_abstractions(
+vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
     utils::Timer timer;
     utils::Log log;
     log << "Building projections" << endl;
     TaskProxy task_proxy(*task);
-    vector<unique_ptr<Abstraction>> abstractions;
+    vector<AbstractionAndStateMap> abstractions_and_state_maps;
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_generator->generate(task).get_patterns();
     cout << "Patterns: " << patterns->size() << endl;
     for (const pdbs::Pattern &pattern : *patterns) {
-        abstractions.push_back(compute_abstraction(task_proxy, pattern, debug).first);
+        abstractions_and_state_maps.push_back(
+            compute_abstraction(task_proxy, pattern, debug));
     }
     log << "Done building projections" << endl;
     cout << "Time for building projections: " << timer << endl;
-    return abstractions;
+    return abstractions_and_state_maps;
 }
 
 static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {

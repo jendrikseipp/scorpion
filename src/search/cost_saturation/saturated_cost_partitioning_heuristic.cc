@@ -6,6 +6,8 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../utils/logging.h"
+
 using namespace std;
 
 namespace cost_saturation {
@@ -88,14 +90,19 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
           opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
     vector<unique_ptr<Abstraction>> abstractions;
     for (const shared_ptr<AbstractionGenerator> &generator : abstraction_generators) {
-        vector<unique_ptr<Abstraction>> current_abstractions =
-            generator->generate_abstractions(task);
-        move(current_abstractions.begin(), current_abstractions.end(), back_inserter(abstractions));
+        for (AbstractionAndStateMap &pair : generator->generate_abstractions(task)) {
+            abstractions.push_back(move(pair.first));
+            state_maps.push_back(move(pair.second));
+        }
     }
     vector<int> order = get_default_order(abstractions.size());
     vector<vector<int>> h_values_by_abstraction = compute_saturated_cost_partitioning(
         abstractions, order, get_operator_costs(task_proxy));
     h_values_by_order.push_back(move(h_values_by_abstraction));
+    num_best_order.resize(h_values_by_order.size(), 0);
+
+    cout << "Abstractions: " << abstractions.size() << endl;
+    cout << "Orders: " << h_values_by_order.size() << endl;
 }
 
 int SaturatedCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -115,9 +122,9 @@ int SaturatedCostPartitioningHeuristic::compute_heuristic(const State &state) {
 vector<int> SaturatedCostPartitioningHeuristic::get_local_state_ids(
     const State &state) const {
     vector<int> local_state_ids;
-    local_state_ids.reserve(local_state_id_lookup_functions.size());
-    for (auto lookup_function : local_state_id_lookup_functions) {
-        local_state_ids.push_back(lookup_function(state));
+    local_state_ids.reserve(state_maps.size());
+    for (auto state_map : state_maps) {
+        local_state_ids.push_back(state_map(state));
     }
     return local_state_ids;
 }

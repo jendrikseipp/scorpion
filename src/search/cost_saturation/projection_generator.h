@@ -19,7 +19,7 @@ class ProjectionGenerator : public AbstractionGenerator {
 public:
     explicit ProjectionGenerator(const options::Options &opts);
 
-    std::vector<std::unique_ptr<Abstraction>> generate_abstractions(
+    std::vector<AbstractionAndStateMap> generate_abstractions(
         const std::shared_ptr<AbstractTask> &task);
 };
 }
