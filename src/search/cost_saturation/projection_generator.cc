@@ -113,7 +113,7 @@ vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
     const merge_and_shrink::Verbosity verbosity = debug ?
         merge_and_shrink::Verbosity::VERBOSE :
         merge_and_shrink::Verbosity::NORMAL;
-    const bool compute_label_equivalence_relation = false;
+    const bool compute_label_equivalence_relation = true;
     merge_and_shrink::FactoredTransitionSystem fts =
         merge_and_shrink::create_factored_transition_system(
             task_proxy, compute_label_equivalence_relation, verbosity);
@@ -130,7 +130,7 @@ vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
 
 static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "ProjectionGenerator abstraction generator",
+        "Projection generator",
         "");
 
     parser.add_option<shared_ptr<pdbs::PatternCollectionGenerator>>(
