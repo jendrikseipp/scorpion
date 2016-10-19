@@ -26,10 +26,12 @@ static void dijkstra_search(
             int op = transition.op;
             assert(utils::in_bounds(op, costs));
             int cost = costs[op];
-            int successor_cost = state_distance + cost;
-            if (distances[successor] > successor_cost) {
-                distances[successor] = successor_cost;
-                queue.push(successor_cost, successor);
+            assert(cost >= 0);
+            int successor_distance = (cost == INF) ? INF : state_distance + cost;
+            assert(successor_distance >= 0);
+            if (distances[successor] > successor_distance) {
+                distances[successor] = successor_distance;
+                queue.push(successor_distance, successor);
             }
         }
     }
