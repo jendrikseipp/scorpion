@@ -89,6 +89,9 @@ public:
         return *distances[index];
     }
 
+    std::shared_ptr<HeuristicRepresentation> get_heuristic_representation(
+        int index) const;
+
     // Methods for MergeAndShrinkHeuristic
     void apply_label_reduction(
         const std::vector<std::pair<int, std::vector<int>>> &label_mapping,

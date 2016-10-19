@@ -5,6 +5,7 @@
 #include "heuristic_representation.h"
 #include "transition_system.h"
 
+#include "../utils/collections.h"
 #include "../utils/memory.h"
 
 #include <cassert>
@@ -69,6 +70,13 @@ FactoredTransitionSystem::FactoredTransitionSystem(FactoredTransitionSystem &&ot
 }
 
 FactoredTransitionSystem::~FactoredTransitionSystem() {
+}
+
+std::shared_ptr<HeuristicRepresentation>
+FactoredTransitionSystem::get_heuristic_representation(int index) const {
+    assert(utils::in_bounds(index, heuristic_representations));
+    assert(heuristic_representations[index]);
+    return heuristic_representations[index];
 }
 
 void FactoredTransitionSystem::discard_states(
