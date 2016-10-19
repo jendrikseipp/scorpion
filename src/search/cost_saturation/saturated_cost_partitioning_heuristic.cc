@@ -114,9 +114,11 @@ int SaturatedCostPartitioningHeuristic::compute_heuristic(const State &state) {
 
 vector<int> SaturatedCostPartitioningHeuristic::get_local_state_ids(
     const State &state) const {
-    ABORT("Not implemented");
-    (void) state;
     vector<int> local_state_ids;
+    local_state_ids.reserve(local_state_id_lookup_functions.size());
+    for (auto lookup_function : local_state_id_lookup_functions) {
+        local_state_ids.push_back(lookup_function(state));
+    }
     return local_state_ids;
 }
 
