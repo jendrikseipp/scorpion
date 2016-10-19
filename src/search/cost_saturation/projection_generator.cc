@@ -7,6 +7,7 @@
 
 #include "../merge_and_shrink/factored_transition_system.h"
 #include "../merge_and_shrink/fts_factory.h"
+#include "../merge_and_shrink/heuristic_representation.h"
 #include "../merge_and_shrink/label_equivalence_relation.h"
 #include "../merge_and_shrink/transition_system.h"
 #include "../merge_and_shrink/types.h"
@@ -25,7 +26,7 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
       debug(opts.get<bool>("debug")) {
 }
 
-unique_ptr<Abstraction> compute_abstraction(
+pair<unique_ptr<Abstraction>, function<int (const State &)>> compute_abstraction(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern, bool debug) {
     const merge_and_shrink::Verbosity verbosity = debug ?
         merge_and_shrink::Verbosity::VERBOSE :
@@ -77,11 +78,19 @@ unique_ptr<Abstraction> compute_abstraction(
             goal_states.push_back(state);
         }
     }
-    return utils::make_unique_ptr<Abstraction>(
+
+    shared_ptr<merge_and_shrink::HeuristicRepresentation> heuristic_representation =
+        fts.get_heuristic_representation(final_index);
+    function<int (const State &)> lookup_function =
+        [&heuristic_representation](const State &state) {
+            return heuristic_representation->get_abstract_state(state);
+        };
+
+    return make_pair(utils::make_unique_ptr<Abstraction>(
         move(backward_graph),
         looping_operators.pop_as_vector(),
         move(goal_states),
-        task_proxy.get_operators().size());
+        task_proxy.get_operators().size()), lookup_function);
 }
 
 vector<unique_ptr<Abstraction>> ProjectionGenerator::generate_abstractions(
@@ -95,7 +104,7 @@ vector<unique_ptr<Abstraction>> ProjectionGenerator::generate_abstractions(
         pattern_generator->generate(task).get_patterns();
     cout << "Patterns: " << patterns->size() << endl;
     for (const pdbs::Pattern &pattern : *patterns) {
-        abstractions.push_back(compute_abstraction(task_proxy, pattern, debug));
+        abstractions.push_back(compute_abstraction(task_proxy, pattern, debug).first);
     }
     log << "Done building projections" << endl;
     cout << "Time for building projections: " << timer << endl;
