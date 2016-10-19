@@ -72,8 +72,10 @@ static vector<vector<int>> compute_saturated_cost_partitioning(
             print_indexed_vector(h_values);
             cout << "saturated costs: ";
             print_indexed_vector(saturated_costs);
-            h_values_by_abstraction[pos] = move(h_values);
-            reduce_costs(remaining_costs, saturated_costs);
+        }
+        h_values_by_abstraction[pos] = move(h_values);
+        reduce_costs(remaining_costs, saturated_costs);
+        if (debug) {
             cout << "remaining costs: ";
             print_indexed_vector(remaining_costs);
         }
