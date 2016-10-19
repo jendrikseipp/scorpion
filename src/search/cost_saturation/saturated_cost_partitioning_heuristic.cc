@@ -63,6 +63,25 @@ static vector<vector<int>> compute_saturated_cost_partitioning(
     return h_values_by_abstraction;
 }
 
+static int compute_sum_h(
+    const vector<int> &local_state_ids,
+    const vector<vector<int>> &h_values_by_abstraction) {
+    int sum_h = 0;
+    assert(local_state_ids.size() == h_values_by_abstraction.size());
+    for (size_t i = 0; i < local_state_ids.size(); ++i) {
+        int state_id = local_state_ids[i];
+        const vector<int> &h_values = h_values_by_abstraction[i];
+        assert(utils::in_bounds(state_id, h_values));
+        int value = h_values[state_id];
+        assert(value >= 0);
+        if (value == INF)
+            return INF;
+        sum_h += value;
+    }
+    assert(sum_h >= 0);
+    return sum_h;
+}
+
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts),
       abstraction_generators(
@@ -85,8 +104,43 @@ int SaturatedCostPartitioningHeuristic::compute_heuristic(const GlobalState &glo
 }
 
 int SaturatedCostPartitioningHeuristic::compute_heuristic(const State &state) {
+    vector<int> local_state_ids = get_local_state_ids(state);
+    int max_h = compute_max_h_with_statistics(local_state_ids);
+    if (max_h == INF) {
+        return DEAD_END;
+    }
+    return max_h;
+}
+
+vector<int> SaturatedCostPartitioningHeuristic::get_local_state_ids(
+    const State &state) const {
+    ABORT("Not implemented");
     (void) state;
-    return 0;
+    vector<int> local_state_ids;
+    return local_state_ids;
+}
+
+int SaturatedCostPartitioningHeuristic::compute_max_h_with_statistics(
+    const vector<int> &local_state_ids) const {
+    int max_h = -1;
+    int best_id = -1;
+    int current_id = 0;
+    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
+        int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+        if (sum_h == INF) {
+            return INF;
+        }
+        if (sum_h > max_h) {
+            max_h = sum_h;
+            best_id = current_id;
+        }
+        ++current_id;
+    }
+
+    assert(utils::in_bounds(best_id, num_best_order));
+    ++num_best_order[best_id];
+
+    return max_h;
 }
 
 static Heuristic *_parse(OptionParser &parser) {

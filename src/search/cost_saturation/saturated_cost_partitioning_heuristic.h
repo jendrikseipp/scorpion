@@ -17,6 +17,12 @@ class SaturatedCostPartitioningHeuristic : public Heuristic {
     const std::vector<std::shared_ptr<AbstractionGenerator>> abstraction_generators;
     std::vector<std::vector<std::vector<int>>> h_values_by_order;
 
+    // For statistics.
+    mutable std::vector<int> num_best_order;
+
+    std::vector<int> get_local_state_ids(const State &state) const;
+    int compute_max_h_with_statistics(const std::vector<int> &local_state_ids) const;
+
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
     int compute_heuristic(const State &state);
