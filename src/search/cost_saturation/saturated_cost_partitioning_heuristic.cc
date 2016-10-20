@@ -116,12 +116,19 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
             state_maps.push_back(move(pair.second));
         }
     }
+
+    utils::Timer scp_timer;
+    const int max_orders = opts.get<int>("max_orders");
+    const vector<int> costs = get_operator_costs(task_proxy);
     vector<int> order = get_default_order(abstractions.size());
-    vector<vector<int>> h_values_by_abstraction = compute_saturated_cost_partitioning(
-        abstractions, order, get_operator_costs(task_proxy));
-    h_values_by_order.push_back(move(h_values_by_abstraction));
+    for (int i = 0; i < max_orders; ++i) {
+        g_rng()->shuffle(order);
+        h_values_by_order.push_back(
+            compute_saturated_cost_partitioning(abstractions, order, costs));
+    }
     num_best_order.resize(h_values_by_order.size(), 0);
 
+    cout << "Time for computing cost partitionings: " << scp_timer << endl;
     cout << "Abstractions: " << abstractions.size() << endl;
     cout << "Orders: " << h_values_by_order.size() << endl;
 }
@@ -207,6 +214,11 @@ static Heuristic *_parse(OptionParser &parser) {
     parser.add_list_option<shared_ptr<AbstractionGenerator>>(
         "abstraction_generators",
         "methods that generate abstractions");
+    parser.add_option<int>(
+        "max_orders",
+        "number of abstraction orders to maximize over",
+        "1",
+        Bounds("1", "infinity"));
     Heuristic::add_options_to_parser(parser);
 
     Options opts = parser.parse();
