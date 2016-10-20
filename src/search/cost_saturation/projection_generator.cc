@@ -103,9 +103,9 @@ vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
     utils::Timer timer;
     utils::Log log;
-    log << "Building projections" << endl;
     TaskProxy task_proxy(*task);
-    vector<AbstractionAndStateMap> abstractions_and_state_maps;
+
+    log << "Compute patterns" << endl;
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_generator->generate(task).get_patterns();
     cout << "Patterns: " << patterns->size() << endl;
@@ -119,6 +119,8 @@ vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
             task_proxy, compute_label_equivalence_relation, verbosity);
     fts.reserve_extra_position();
 
+    log << "Build abstractions" << endl;
+    vector<AbstractionAndStateMap> abstractions_and_state_maps;
     for (const pdbs::Pattern &pattern : *patterns) {
         abstractions_and_state_maps.push_back(
             compute_abstraction(task_proxy, fts, pattern, debug));
