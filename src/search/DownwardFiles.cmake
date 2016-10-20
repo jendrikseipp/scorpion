@@ -416,6 +416,7 @@ fast_downward_plugin(
     SOURCES
         cost_saturation/abstraction.cc
         cost_saturation/abstraction_generator.cc
+        cost_saturation/cartesian_abstraction_generator.cc
         cost_saturation/projection_generator.cc
         cost_saturation/saturated_cost_partitioning_heuristic.cc
 )
