@@ -28,9 +28,18 @@ static AbstractionAndStateMap convert_abstraction(
     vector<vector<Transition>> backward_graph(num_states);
 
     // Store non-looping transitions.
-    for (const cegar::AbstractState *state : cartesian_abstraction.get_states()) {
+    for (cegar::AbstractState *state : cartesian_abstraction.get_states()) {
+        // Ignore transitions from dead-end or unreachable states.
+        if (state->get_h_value() == INF ||
+            state->get_search_info().get_g_value() == INF) {
+            continue;
+        }
         int src = state->get_node()->get_state_id();
         for (const cegar::Transition &transition : state->get_outgoing_transitions()) {
+            // Ignore transitions from dead-end states (we know target is reachable).
+            if (transition.target->get_h_value() == INF) {
+                continue;
+            }
             int target = transition.target->get_node()->get_state_id();
             backward_graph[target].emplace_back(transition.op_id, src);
         }
