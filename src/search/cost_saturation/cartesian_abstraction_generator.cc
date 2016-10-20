@@ -21,7 +21,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
         opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")) {
 }
 
-static AbstractionAndStateMap compute_abstraction(
+static AbstractionAndStateMap convert_abstraction(
     const TaskProxy &task_proxy,
     const cegar::Abstraction &cartesian_abstraction) {
     int num_states = cartesian_abstraction.get_num_states();
@@ -100,7 +100,8 @@ vector<AbstractionAndStateMap> CartesianAbstractionGenerator::generate_abstracti
     vector<AbstractionAndStateMap> abstractions_and_state_maps;
     for (auto &cartesian_abstraction : cartesian_abstractions) {
         abstractions_and_state_maps.push_back(
-            compute_abstraction(task_proxy, *cartesian_abstraction));
+            convert_abstraction(task_proxy, *cartesian_abstraction));
+        cartesian_abstraction = nullptr;
     }
     log << "Done converting abstractions" << endl;
     cout << "Time for building Cartesian abstractions: " << timer << endl;
