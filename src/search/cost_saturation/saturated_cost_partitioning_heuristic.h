@@ -16,8 +16,6 @@ namespace cost_saturation {
 class AbstractionGenerator;
 
 class SaturatedCostPartitioningHeuristic : public Heuristic {
-    // TODO: Remove member.
-    const std::vector<std::shared_ptr<AbstractionGenerator>> abstraction_generators;
     std::vector<std::vector<std::vector<int>>> h_values_by_order;
     std::vector<StateMap> state_maps;
 

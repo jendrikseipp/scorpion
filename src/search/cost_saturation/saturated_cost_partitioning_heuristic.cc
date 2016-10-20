@@ -107,11 +107,10 @@ static int compute_sum_h(
 }
 
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
-    : Heuristic(opts),
-      abstraction_generators(
-          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
+    : Heuristic(opts) {
     vector<unique_ptr<Abstraction>> abstractions;
-    for (const shared_ptr<AbstractionGenerator> &generator : abstraction_generators) {
+    for (const shared_ptr<AbstractionGenerator> &generator :
+         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
         for (AbstractionAndStateMap &pair : generator->generate_abstractions(task)) {
             abstractions.push_back(move(pair.first));
             state_maps.push_back(move(pair.second));
