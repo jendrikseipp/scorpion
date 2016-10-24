@@ -6,6 +6,7 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../task_proxy.h"
 
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
