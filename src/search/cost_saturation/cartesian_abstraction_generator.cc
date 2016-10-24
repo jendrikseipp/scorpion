@@ -1,6 +1,7 @@
 #include "cartesian_abstraction_generator.h"
 
 #include "abstraction.h"
+#include "types.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"

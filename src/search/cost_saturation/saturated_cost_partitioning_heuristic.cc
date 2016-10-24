@@ -3,6 +3,8 @@
 #include "abstraction.h"
 #include "abstraction_generator.h"
 #include "scp_generators.h"
+#include "types.h"
+#include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -19,29 +21,6 @@ static vector<int> get_operator_costs(const TaskProxy &task) {
     for (OperatorProxy op : task.get_operators())
         costs.push_back(op.get_cost());
     return costs;
-}
-
-static int compute_sum_h(
-    const vector<int> &local_state_ids,
-    const vector<vector<int>> &h_values_by_abstraction) {
-    int sum_h = 0;
-    assert(local_state_ids.size() == h_values_by_abstraction.size());
-    for (size_t i = 0; i < local_state_ids.size(); ++i) {
-        int state_id = local_state_ids[i];
-        if (state_id == -1) {
-            // Abstract state has been pruned.
-            return INF;
-        }
-        const vector<int> &h_values = h_values_by_abstraction[i];
-        assert(utils::in_bounds(state_id, h_values));
-        int value = h_values[state_id];
-        assert(value >= 0);
-        if (value == INF)
-            return INF;
-        sum_h += value;
-    }
-    assert(sum_h >= 0);
-    return sum_h;
 }
 
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
@@ -106,8 +85,11 @@ int SaturatedCostPartitioningHeuristic::compute_max_h_with_statistics(
         ++current_id;
     }
 
-    assert(utils::in_bounds(best_id, num_best_order));
-    ++num_best_order[best_id];
+    assert(best_id != -1 || h_values_by_order.empty());
+    if (best_id != -1) {
+        assert(utils::in_bounds(best_id, num_best_order));
+        ++num_best_order[best_id];
+    }
 
     return max_h;
 }
@@ -115,11 +97,12 @@ int SaturatedCostPartitioningHeuristic::compute_max_h_with_statistics(
 void SaturatedCostPartitioningHeuristic::print_statistics() const {
     int num_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
     int num_orders = num_best_order.size();
-    assert(num_orders != 0);
+    double percentage_superfluous =
+        (num_orders == 0) ? 0 : num_superfluous * 100.0 / num_orders;
     cout << "Number of times each order was the best order: "
          << num_best_order << endl;
     cout << "Superfluous orders: " << num_superfluous << "/" << num_orders
-         << " = " << num_superfluous * 100.0 / num_orders << endl;
+         << " = " << percentage_superfluous << endl;
 }
 
 static Heuristic *_parse(OptionParser &parser) {

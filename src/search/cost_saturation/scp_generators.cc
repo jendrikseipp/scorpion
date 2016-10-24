@@ -1,12 +1,15 @@
 #include "scp_generators.h"
 
 #include "abstraction.h"
+#include "types.h"
+#include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
 
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
+#include "../utils/countdown_timer.h"
 
 #include <algorithm>
 #include <cassert>
@@ -97,6 +100,40 @@ CostPartitionings RandomSCPGenerator::get_cost_partitionings(
     return cost_partitionings;
 }
 
+
+DiverseSCPGenerator::DiverseSCPGenerator(const Options &opts)
+    : max_time(opts.get<double>("max_time")),
+      rng(utils::parse_rng_from_options(opts)) {
+}
+
+CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &costs) const {
+    vector<vector<int>> local_state_ids_by_sample;
+    int num_samples = local_state_ids_by_sample.size();
+    vector<int> portfolio_h_values(0, num_samples);
+
+    CostPartitionings cost_partitionings;
+
+    vector<int> order = get_default_order(abstractions.size());
+    utils::CountdownTimer timer(max_time);
+    while (!timer.is_expired()) {
+        rng->shuffle(order);
+        CostPartitioning scp = compute_saturated_cost_partitioning(
+            abstractions, order, costs);
+        for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
+            int scp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], scp);
+            int &portfolio_h_value = portfolio_h_values[sample_id];
+            if (scp_h_value > portfolio_h_value) {
+                cost_partitionings.push_back(move(scp));
+                portfolio_h_value = scp_h_value;
+            }
+        }
+    }
+    return cost_partitionings;
+}
+
+
 static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
     parser.add_option<int>(
         "orders",
@@ -111,8 +148,25 @@ static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
         return make_shared<RandomSCPGenerator>(opts);
 }
 
+static shared_ptr<SCPGenerator> _parse_diverse(OptionParser &parser) {
+    parser.add_option<double>(
+        "max_time",
+        "maximum time for finding cost partitionings",
+        "10",
+        Bounds("0", "infinity"));
+    utils::add_rng_options(parser);
+    Options opts = parser.parse();
+    if (parser.dry_run())
+        return nullptr;
+    else
+        return make_shared<DiverseSCPGenerator>(opts);
+}
+
 static PluginShared<SCPGenerator> _plugin_random(
     "random", _parse_random);
+
+static PluginShared<SCPGenerator> _plugin_diverse(
+    "diverse", _parse_diverse);
 
 static PluginTypePlugin<SCPGenerator> _type_plugin(
     "SCPGenerator",

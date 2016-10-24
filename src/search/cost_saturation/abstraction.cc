@@ -1,5 +1,7 @@
 #include "abstraction.h"
 
+#include "types.h"
+
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 

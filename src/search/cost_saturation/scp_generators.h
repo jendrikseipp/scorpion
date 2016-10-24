@@ -18,6 +18,7 @@ class Abstraction;
 using CostPartitioning = std::vector<std::vector<int>>;
 using CostPartitionings = std::vector<CostPartitioning>;
 
+
 class SCPGenerator {
 public:
     virtual CostPartitionings get_cost_partitionings(
@@ -28,11 +29,25 @@ public:
 
 
 class RandomSCPGenerator : public SCPGenerator {
-    int num_orders;
-    std::shared_ptr<utils::RandomNumberGenerator> rng;
+    const int num_orders;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
 public:
     explicit RandomSCPGenerator(const options::Options &opts);
+
+    virtual CostPartitionings get_cost_partitionings(
+        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+        const std::vector<int> &costs) const override;
+};
+
+
+class DiverseSCPGenerator : public SCPGenerator {
+    const double max_time;
+    const int num_samples = 1000;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
+
+public:
+    explicit DiverseSCPGenerator(const options::Options &opts);
 
     virtual CostPartitionings get_cost_partitionings(
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
