@@ -2,6 +2,7 @@
 
 #include "abstraction.h"
 #include "abstraction_generator.h"
+#include "scp_generators.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -11,76 +12,13 @@
 using namespace std;
 
 namespace cost_saturation {
+// TODO: Use version from task_tools.
 static vector<int> get_operator_costs(const TaskProxy &task) {
     vector<int> costs;
     costs.reserve(task.get_operators().size());
     for (OperatorProxy op : task.get_operators())
         costs.push_back(op.get_cost());
     return costs;
-}
-
-static vector<int> get_default_order(int n) {
-    vector<int> indices(n);
-    iota(indices.begin(), indices.end(), 0);
-    return indices;
-}
-
-static void reduce_costs(
-    vector<int> &remaining_costs, const vector<int> &saturated_costs) {
-    assert(remaining_costs.size() == saturated_costs.size());
-    for (size_t i = 0; i < remaining_costs.size(); ++i) {
-        int &remaining = remaining_costs[i];
-        const int &saturated = saturated_costs[i];
-        assert(saturated <= remaining);
-        /* Since we ignore transitions from states s with h(s)=INF, all
-           saturated costs (h(s)-h(s')) are finite or -INF. */
-        assert(saturated != INF);
-        if (remaining == INF) {
-            // INF - x = INF for finite values x.
-        } else if (saturated == -INF) {
-            remaining = INF;
-        } else {
-            remaining -= saturated;
-        }
-        assert(remaining >= 0);
-    }
-}
-
-static void print_indexed_vector(const vector<int> &vec) {
-    for (size_t i = 0; i < vec.size(); ++i) {
-        cout << i << ":" << vec[i] << ", ";
-    }
-    cout << endl;
-}
-
-static vector<vector<int>> compute_saturated_cost_partitioning(
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &order,
-    const vector<int> &operator_costs) {
-    assert(abstractions.size() == order.size());
-    const bool debug = false;
-    vector<int> remaining_costs = operator_costs;
-    vector<vector<int>> h_values_by_abstraction(abstractions.size());
-    for (int pos : order) {
-        Abstraction &abstraction = *abstractions[pos];
-        auto pair = abstraction.compute_goal_distances_and_saturated_costs(
-            remaining_costs);
-        vector<int> &h_values = pair.first;
-        vector<int> &saturated_costs = pair.second;
-        if (debug) {
-            cout << "h-values: ";
-            print_indexed_vector(h_values);
-            cout << "saturated costs: ";
-            print_indexed_vector(saturated_costs);
-        }
-        h_values_by_abstraction[pos] = move(h_values);
-        reduce_costs(remaining_costs, saturated_costs);
-        if (debug) {
-            cout << "remaining costs: ";
-            print_indexed_vector(remaining_costs);
-        }
-    }
-    return h_values_by_abstraction;
 }
 
 static int compute_sum_h(
@@ -118,14 +56,8 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
     }
 
     utils::Timer scp_timer;
-    const int max_orders = opts.get<int>("max_orders");
     const vector<int> costs = get_operator_costs(task_proxy);
-    vector<int> order = get_default_order(abstractions.size());
-    for (int i = 0; i < max_orders; ++i) {
-        g_rng()->shuffle(order);
-        h_values_by_order.push_back(
-            compute_saturated_cost_partitioning(abstractions, order, costs));
-    }
+    h_values_by_order = opts.get<shared_ptr<SCPGenerator>>("orders")->get_cost_partitionings(abstractions, costs);
     num_best_order.resize(h_values_by_order.size(), 0);
 
     cout << "Time for computing cost partitionings: " << scp_timer << endl;
@@ -214,11 +146,10 @@ static Heuristic *_parse(OptionParser &parser) {
     parser.add_list_option<shared_ptr<AbstractionGenerator>>(
         "abstraction_generators",
         "methods that generate abstractions");
-    parser.add_option<int>(
-        "max_orders",
-        "number of abstraction orders to maximize over",
-        "1",
-        Bounds("1", "infinity"));
+    parser.add_option<shared_ptr<SCPGenerator>>(
+        "orders",
+        "saturated cost partitioning generator",
+        "random(1)");
     Heuristic::add_options_to_parser(parser);
 
     Options opts = parser.parse();

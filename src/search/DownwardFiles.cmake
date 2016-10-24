@@ -419,6 +419,7 @@ fast_downward_plugin(
         cost_saturation/cartesian_abstraction_generator.cc
         cost_saturation/projection_generator.cc
         cost_saturation/saturated_cost_partitioning_heuristic.cc
+        cost_saturation/scp_generators.cc
 )
 
 fast_downward_plugin(
