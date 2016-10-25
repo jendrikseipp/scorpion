@@ -138,11 +138,13 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
     utils::release_vector_memory(samples);
     assert(static_cast<int>(local_state_ids_by_sample.size()) == num_samples);
 
+    int evaluated_orders = 0;
     CostPartitionings cost_partitionings;
     while (!timer.is_expired()) {
         rng->shuffle(order);
         CostPartitioning scp = compute_saturated_cost_partitioning(
             abstractions, order, costs);
+        ++evaluated_orders;
         bool scp_improves_portfolio = false;
         for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
             int scp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], scp);
@@ -157,6 +159,7 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
             cost_partitionings.push_back(move(scp));
         }
     }
+    cout << "Total evaluated orders: " << evaluated_orders << endl;
     return cost_partitionings;
 }
 
