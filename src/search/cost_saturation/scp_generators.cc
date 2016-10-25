@@ -105,7 +105,8 @@ CostPartitionings RandomSCPGenerator::get_cost_partitionings(
 
 
 DiverseSCPGenerator::DiverseSCPGenerator(const Options &opts)
-    : max_time(opts.get<double>("max_time")),
+    : max_orders(opts.get<int>("max_orders")),
+      max_time(opts.get<double>("max_time")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
@@ -139,7 +140,8 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
     int evaluated_orders = 0;
     CostPartitionings cost_partitionings;
     utils::CountdownTimer diversification_timer(max_time);
-    while (!diversification_timer.is_expired()) {
+    while (static_cast<int>(cost_partitionings.size()) < max_orders &&
+           !diversification_timer.is_expired()) {
         rng->shuffle(order);
         CostPartitioning scp = compute_saturated_cost_partitioning(
             abstractions, order, costs);
@@ -178,6 +180,11 @@ static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
 }
 
 static shared_ptr<SCPGenerator> _parse_diverse(OptionParser &parser) {
+    parser.add_option<int>(
+        "max_orders",
+        "maximum number of cost partitionings",
+        "infinity",
+        Bounds("1", "infinity"));
     parser.add_option<double>(
         "max_time",
         "maximum time for finding cost partitionings",

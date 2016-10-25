@@ -47,6 +47,7 @@ public:
 
 
 class DiverseSCPGenerator : public SCPGenerator {
+    const int max_orders;
     const double max_time;
     const int num_samples = 1000;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
