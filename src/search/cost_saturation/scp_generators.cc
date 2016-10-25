@@ -114,8 +114,6 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<StateMap> &state_maps,
     const vector<int> &costs) const {
-    utils::CountdownTimer timer(max_time);
-
     vector<int> portfolio_h_values(num_samples, -1);
     vector<int> order = get_default_order(abstractions.size());
     CostPartitioning scp_for_default_order =
@@ -140,7 +138,8 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
 
     int evaluated_orders = 0;
     CostPartitionings cost_partitionings;
-    while (!timer.is_expired()) {
+    utils::CountdownTimer diversification_timer(max_time);
+    while (!diversification_timer.is_expired()) {
         rng->shuffle(order);
         CostPartitioning scp = compute_saturated_cost_partitioning(
             abstractions, order, costs);
