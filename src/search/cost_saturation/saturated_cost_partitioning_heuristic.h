@@ -22,7 +22,6 @@ class SaturatedCostPartitioningHeuristic : public Heuristic {
     // For statistics.
     mutable std::vector<int> num_best_order;
 
-    std::vector<int> get_local_state_ids(const State &state) const;
     int compute_max_h_with_statistics(const std::vector<int> &local_state_ids) const;
 
 protected:

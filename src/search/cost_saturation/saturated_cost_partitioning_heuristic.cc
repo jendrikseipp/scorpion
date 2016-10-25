@@ -36,7 +36,8 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
 
     utils::Timer scp_timer;
     const vector<int> costs = get_operator_costs(task_proxy);
-    h_values_by_order = opts.get<shared_ptr<SCPGenerator>>("orders")->get_cost_partitionings(abstractions, costs);
+    h_values_by_order = opts.get<shared_ptr<SCPGenerator>>(
+        "orders")->get_cost_partitionings(task_proxy, abstractions, state_maps, costs);
     num_best_order.resize(h_values_by_order.size(), 0);
 
     cout << "Time for computing cost partitionings: " << scp_timer << endl;
@@ -50,22 +51,12 @@ int SaturatedCostPartitioningHeuristic::compute_heuristic(const GlobalState &glo
 }
 
 int SaturatedCostPartitioningHeuristic::compute_heuristic(const State &state) {
-    vector<int> local_state_ids = get_local_state_ids(state);
+    vector<int> local_state_ids = get_local_state_ids(state_maps, state);
     int max_h = compute_max_h_with_statistics(local_state_ids);
     if (max_h == INF) {
         return DEAD_END;
     }
     return max_h;
-}
-
-vector<int> SaturatedCostPartitioningHeuristic::get_local_state_ids(
-    const State &state) const {
-    vector<int> local_state_ids;
-    local_state_ids.reserve(state_maps.size());
-    for (auto state_map : state_maps) {
-        local_state_ids.push_back(state_map(state));
-    }
-    return local_state_ids;
 }
 
 int SaturatedCostPartitioningHeuristic::compute_max_h_with_statistics(
