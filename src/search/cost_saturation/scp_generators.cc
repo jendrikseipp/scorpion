@@ -150,8 +150,6 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
             int &portfolio_h_value = portfolio_h_values[sample_id];
             if (scp_h_value > portfolio_h_value) {
                 scp_improves_portfolio = true;
-            }
-            if (scp_improves_portfolio) {
                 portfolio_h_value = scp_h_value;
             }
         }
