@@ -40,7 +40,7 @@ vector<int> get_local_state_ids(
     const vector<StateMap> &state_maps, const State &state) {
     vector<int> local_state_ids;
     local_state_ids.reserve(state_maps.size());
-    for (auto state_map : state_maps) {
+    for (auto &state_map : state_maps) {
         local_state_ids.push_back(state_map(state));
     }
     return local_state_ids;
