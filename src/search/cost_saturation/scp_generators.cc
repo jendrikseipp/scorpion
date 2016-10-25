@@ -116,7 +116,7 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
     const vector<int> &costs) const {
     utils::CountdownTimer timer(max_time);
 
-    vector<int> portfolio_h_values(num_samples, 0);
+    vector<int> portfolio_h_values(num_samples, -1);
     vector<int> order = get_default_order(abstractions.size());
     CostPartitioning scp_for_default_order =
         compute_saturated_cost_partitioning(abstractions, order, costs);
