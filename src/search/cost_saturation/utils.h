@@ -17,8 +17,8 @@ std::vector<int> get_local_state_ids(
     const std::vector<StateMap> &state_maps, const State &state);
 
 extern std::vector<State> sample_states(
-    const TaskProxy task_proxy,
-    std::function<int (const State &state)> heuristic,
+    const TaskProxy &task_proxy,
+    const std::function<int (const State &)> &heuristic,
     int num_samples);
 }
 

@@ -47,8 +47,8 @@ vector<int> get_local_state_ids(
 }
 
 vector<State> sample_states(
-    const TaskProxy task_proxy,
-    function<int (const State &state)> heuristic,
+    const TaskProxy &task_proxy,
+    const function<int (const State &state)> &heuristic,
     int num_samples) {
     utils::Timer sampling_timer;
 

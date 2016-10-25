@@ -120,7 +120,7 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
         compute_saturated_cost_partitioning(abstractions, order, costs);
 
     function<int (const State &state)> default_order_heuristic =
-            [&](const State &state) {
+            [&state_maps,&scp_for_default_order](const State &state) {
         vector<int> local_state_ids = get_local_state_ids(state_maps, state);
         return compute_sum_h(local_state_ids, scp_for_default_order);
     };
