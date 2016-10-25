@@ -15,6 +15,9 @@ const int INF = std::numeric_limits<int>::max();
 
 using StateMap = std::function<int (const State &)>;
 using AbstractionAndStateMap = std::pair<std::unique_ptr<Abstraction>, StateMap>;
+
+using CostPartitioning = std::vector<std::vector<int>>;
+using CostPartitionings = std::vector<CostPartitioning>;
 }
 
 #endif

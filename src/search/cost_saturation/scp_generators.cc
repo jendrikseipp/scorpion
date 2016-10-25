@@ -89,7 +89,9 @@ RandomSCPGenerator::RandomSCPGenerator(const Options &opts)
 }
 
 CostPartitionings RandomSCPGenerator::get_cost_partitionings(
+    const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<StateMap> &,
     const vector<int> &costs) const {
     CostPartitionings cost_partitionings;
     vector<int> order = get_default_order(abstractions.size());
@@ -108,27 +110,53 @@ DiverseSCPGenerator::DiverseSCPGenerator(const Options &opts)
 }
 
 CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
+    const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<StateMap> &state_maps,
     const vector<int> &costs) const {
+    utils::CountdownTimer timer(max_time);
+
+    vector<int> portfolio_h_values(num_samples, 0);
+    vector<int> order = get_default_order(abstractions.size());
+    CostPartitioning scp_for_default_order =
+        compute_saturated_cost_partitioning(abstractions, order, costs);
+
+    function<int (const State &state)> default_order_heuristic =
+            [&](const State &state) {
+        vector<int> local_state_ids = get_local_state_ids(state_maps, state);
+        return compute_sum_h(local_state_ids, scp_for_default_order);
+    };
+
+    vector<State> samples = sample_states(
+        task_proxy, default_order_heuristic, num_samples);
+
     vector<vector<int>> local_state_ids_by_sample;
-    int num_samples = local_state_ids_by_sample.size();
-    vector<int> portfolio_h_values(0, num_samples);
+    for (const State &sample : samples) {
+        local_state_ids_by_sample.push_back(
+            get_local_state_ids(state_maps, sample));
+    }
+    utils::release_vector_memory(samples);
+    assert(static_cast<int>(local_state_ids_by_sample.size()) == num_samples);
 
     CostPartitionings cost_partitionings;
-
-    vector<int> order = get_default_order(abstractions.size());
-    utils::CountdownTimer timer(max_time);
     while (!timer.is_expired()) {
         rng->shuffle(order);
         CostPartitioning scp = compute_saturated_cost_partitioning(
             abstractions, order, costs);
+        bool scp_improves_portfolio = false;
         for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
             int scp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], scp);
+            assert(utils::in_bounds(sample_id, portfolio_h_values));
             int &portfolio_h_value = portfolio_h_values[sample_id];
             if (scp_h_value > portfolio_h_value) {
-                cost_partitionings.push_back(move(scp));
+                scp_improves_portfolio = true;
+            }
+            if (scp_improves_portfolio) {
                 portfolio_h_value = scp_h_value;
             }
+        }
+        if (scp_improves_portfolio) {
+            cost_partitionings.push_back(move(scp));
         }
     }
     return cost_partitionings;
