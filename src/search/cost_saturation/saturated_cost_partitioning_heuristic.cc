@@ -61,20 +61,21 @@ int SaturatedCostPartitioningHeuristic::compute_heuristic(const State &state) {
 
 int SaturatedCostPartitioningHeuristic::compute_max_h_with_statistics(
     const vector<int> &local_state_ids) const {
-    int max_h = -1;
+    int max_h = 0;
     int best_id = -1;
     int current_id = 0;
     for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
         int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
-        if (sum_h == INF) {
-            return INF;
-        }
         if (sum_h > max_h) {
             max_h = sum_h;
             best_id = current_id;
         }
+        if (sum_h == INF) {
+            break;
+        }
         ++current_id;
     }
+    assert(max_h >= 0);
 
     assert(best_id != -1 || h_values_by_order.empty());
     if (best_id != -1) {
