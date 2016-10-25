@@ -77,7 +77,6 @@ int SaturatedCostPartitioningHeuristic::compute_max_h_with_statistics(
     }
     assert(max_h >= 0);
 
-    assert(best_id != -1 || h_values_by_order.empty());
     if (best_id != -1) {
         assert(utils::in_bounds(best_id, num_best_order));
         ++num_best_order[best_id];
