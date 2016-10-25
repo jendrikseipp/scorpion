@@ -104,6 +104,23 @@ CostPartitionings RandomSCPGenerator::get_cost_partitionings(
 }
 
 
+GreedySCPGenerator::GreedySCPGenerator(const Options &opts)
+    : max_orders(opts.get<int>("max_orders")) {
+}
+
+CostPartitionings GreedySCPGenerator::get_cost_partitionings(
+    const TaskProxy &,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<StateMap> &,
+    const vector<int> &costs) const {
+    CostPartitionings cost_partitionings;
+    vector<int> order = get_default_order(abstractions.size());
+    cost_partitionings.push_back(
+        compute_saturated_cost_partitioning(abstractions, order, costs));
+    return cost_partitionings;
+}
+
+
 DiverseSCPGenerator::DiverseSCPGenerator(const Options &opts)
     : max_orders(opts.get<int>("max_orders")),
       max_time(opts.get<double>("max_time")),
@@ -179,6 +196,19 @@ static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
         return make_shared<RandomSCPGenerator>(opts);
 }
 
+static shared_ptr<SCPGenerator> _parse_greedy(OptionParser &parser) {
+    parser.add_option<int>(
+        "max_orders",
+        "maximum number of cost partitionings",
+        "1",
+        Bounds("1", "infinity"));
+    Options opts = parser.parse();
+    if (parser.dry_run())
+        return nullptr;
+    else
+        return make_shared<GreedySCPGenerator>(opts);
+}
+
 static shared_ptr<SCPGenerator> _parse_diverse(OptionParser &parser) {
     parser.add_option<int>(
         "max_orders",
@@ -200,6 +230,9 @@ static shared_ptr<SCPGenerator> _parse_diverse(OptionParser &parser) {
 
 static PluginShared<SCPGenerator> _plugin_random(
     "random", _parse_random);
+
+static PluginShared<SCPGenerator> _plugin_greedy(
+    "greedy", _parse_greedy);
 
 static PluginShared<SCPGenerator> _plugin_diverse(
     "diverse", _parse_diverse);

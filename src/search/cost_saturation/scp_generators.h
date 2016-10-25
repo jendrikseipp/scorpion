@@ -46,6 +46,20 @@ public:
 };
 
 
+class GreedySCPGenerator : public SCPGenerator {
+    const int max_orders;
+
+public:
+    explicit GreedySCPGenerator(const options::Options &opts);
+
+    virtual CostPartitionings get_cost_partitionings(
+        const TaskProxy &task_proxy,
+        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+        const std::vector<StateMap> &state_maps,
+        const std::vector<int> &costs) const override;
+};
+
+
 class DiverseSCPGenerator : public SCPGenerator {
     const int max_orders;
     const double max_time;
