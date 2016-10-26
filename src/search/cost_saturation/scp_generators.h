@@ -72,24 +72,6 @@ public:
         const std::vector<StateMap> &state_maps,
         const std::vector<int> &costs) const override;
 };
-
-
-class DiverseSCPGenerator : public SCPGenerator {
-    const int max_orders;
-    const double max_time;
-    const int num_samples = 1000;
-    const std::shared_ptr<utils::RandomNumberGenerator> rng;
-
-public:
-    explicit DiverseSCPGenerator(const options::Options &opts);
-
-    virtual CostPartitionings get_cost_partitionings(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
-        const std::vector<int> &costs) const override;
-};
-
 }
 
 #endif

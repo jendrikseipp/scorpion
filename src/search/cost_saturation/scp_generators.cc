@@ -259,67 +259,6 @@ CostPartitionings GreedySCPGenerator::get_cost_partitionings(
 }
 
 
-DiverseSCPGenerator::DiverseSCPGenerator(const Options &opts)
-    : max_orders(opts.get<int>("max_orders")),
-      max_time(opts.get<double>("max_time")),
-      rng(utils::parse_rng_from_options(opts)) {
-}
-
-CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
-    const TaskProxy &task_proxy,
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &state_maps,
-    const vector<int> &costs) const {
-    vector<int> portfolio_h_values(num_samples, -1);
-    vector<int> order = get_default_order(abstractions.size());
-    CostPartitioning scp_for_default_order =
-        compute_saturated_cost_partitioning(abstractions, order, costs);
-
-    function<int (const State &state)> default_order_heuristic =
-            [&state_maps,&scp_for_default_order](const State &state) {
-        vector<int> local_state_ids = get_local_state_ids(state_maps, state);
-        return compute_sum_h(local_state_ids, scp_for_default_order);
-    };
-
-    vector<State> samples = sample_states(
-        task_proxy, default_order_heuristic, num_samples);
-
-    vector<vector<int>> local_state_ids_by_sample;
-    for (const State &sample : samples) {
-        local_state_ids_by_sample.push_back(
-            get_local_state_ids(state_maps, sample));
-    }
-    utils::release_vector_memory(samples);
-    assert(static_cast<int>(local_state_ids_by_sample.size()) == num_samples);
-
-    int evaluated_orders = 0;
-    CostPartitionings cost_partitionings;
-    utils::CountdownTimer diversification_timer(max_time);
-    while (static_cast<int>(cost_partitionings.size()) < max_orders &&
-           !diversification_timer.is_expired()) {
-        rng->shuffle(order);
-        CostPartitioning scp = compute_saturated_cost_partitioning(
-            abstractions, order, costs);
-        ++evaluated_orders;
-        bool scp_improves_portfolio = false;
-        for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
-            int scp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], scp);
-            assert(utils::in_bounds(sample_id, portfolio_h_values));
-            int &portfolio_h_value = portfolio_h_values[sample_id];
-            if (scp_h_value > portfolio_h_value) {
-                scp_improves_portfolio = true;
-                portfolio_h_value = scp_h_value;
-            }
-        }
-        if (scp_improves_portfolio) {
-            cost_partitionings.push_back(move(scp));
-        }
-    }
-    cout << "Total evaluated orders: " << evaluated_orders << endl;
-    return cost_partitionings;
-}
-
-
 static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
     Options opts = parser.parse();
     if (parser.dry_run())
@@ -364,25 +303,6 @@ static shared_ptr<SCPGenerator> _parse_greedy(OptionParser &parser) {
         return make_shared<GreedySCPGenerator>(opts);
 }
 
-static shared_ptr<SCPGenerator> _parse_diverse(OptionParser &parser) {
-    parser.add_option<int>(
-        "max_orders",
-        "maximum number of cost partitionings",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time for finding cost partitionings",
-        "10",
-        Bounds("0", "infinity"));
-    utils::add_rng_options(parser);
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<DiverseSCPGenerator>(opts);
-}
-
 
 static PluginShared<SCPGenerator> _plugin_default(
     "default", _parse_default);
@@ -392,9 +312,6 @@ static PluginShared<SCPGenerator> _plugin_random(
 
 static PluginShared<SCPGenerator> _plugin_greedy(
     "greedy", _parse_greedy);
-
-static PluginShared<SCPGenerator> _plugin_diverse(
-    "diverse", _parse_diverse);
 
 static PluginTypePlugin<SCPGenerator> _type_plugin(
     "SCPGenerator",
