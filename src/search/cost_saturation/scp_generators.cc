@@ -84,6 +84,63 @@ static vector<vector<int>> compute_saturated_cost_partitioning(
 }
 
 
+class Diversifier {
+    const int num_samples = 1000;
+    vector<int> portfolio_h_values;
+    vector<vector<int>> local_state_ids_by_sample;
+
+public:
+    Diversifier(
+        const TaskProxy &task_proxy,
+        const vector<unique_ptr<Abstraction>> &abstractions,
+        const vector<StateMap> &state_maps,
+        const vector<int> &costs);
+
+    bool is_diverse(const CostPartitioning &scp);
+};
+
+Diversifier::Diversifier(
+    const TaskProxy &task_proxy,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<StateMap> &state_maps,
+    const vector<int> &costs)
+    : portfolio_h_values(num_samples, -1) {
+    vector<int> default_order = get_default_order(abstractions.size());
+    CostPartitioning scp_for_default_order =
+        compute_saturated_cost_partitioning(abstractions, default_order, costs);
+
+    function<int (const State &state)> default_order_heuristic =
+            [&state_maps,&scp_for_default_order](const State &state) {
+        vector<int> local_state_ids = get_local_state_ids(state_maps, state);
+        return compute_sum_h(local_state_ids, scp_for_default_order);
+    };
+
+    vector<State> samples = sample_states(
+        task_proxy, default_order_heuristic, num_samples);
+
+    for (const State &sample : samples) {
+        local_state_ids_by_sample.push_back(
+            get_local_state_ids(state_maps, sample));
+    }
+    utils::release_vector_memory(samples);
+    assert(static_cast<int>(local_state_ids_by_sample.size()) == num_samples);
+}
+
+bool Diversifier::is_diverse(const CostPartitioning &scp) {
+    bool scp_improves_portfolio = false;
+    for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
+        int scp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], scp);
+        assert(utils::in_bounds(sample_id, portfolio_h_values));
+        int &portfolio_h_value = portfolio_h_values[sample_id];
+        if (scp_h_value > portfolio_h_value) {
+            scp_improves_portfolio = true;
+            portfolio_h_value = scp_h_value;
+        }
+    }
+    return scp_improves_portfolio;
+}
+
+
 DefaultSCPGenerator::DefaultSCPGenerator(const Options &) {
 }
 
