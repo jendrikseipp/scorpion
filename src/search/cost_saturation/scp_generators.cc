@@ -8,6 +8,7 @@
 #include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../utils/logging.h"
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
 #include "../utils/countdown_timer.h"
@@ -55,10 +56,10 @@ static void print_indexed_vector(const vector<int> &vec) {
 static vector<vector<int>> compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
-    const vector<int> &operator_costs) {
+    const vector<int> &costs) {
     assert(abstractions.size() == order.size());
     const bool debug = false;
-    vector<int> remaining_costs = operator_costs;
+    vector<int> remaining_costs = costs;
     vector<vector<int>> h_values_by_abstraction(abstractions.size());
     for (int pos : order) {
         Abstraction &abstraction = *abstractions[pos];
@@ -108,13 +109,65 @@ GreedySCPGenerator::GreedySCPGenerator(const Options &opts)
     : max_orders(opts.get<int>("max_orders")) {
 }
 
+static int compute_sum(const vector<int> &vec) {
+    int sum = 0;
+    for (int val : vec) {
+        assert(val != INF);
+        if (val == -INF) {
+            return -INF;
+        } else {
+            sum += val;
+        }
+    }
+    return sum;
+}
+
 CostPartitionings GreedySCPGenerator::get_cost_partitionings(
-    const TaskProxy &,
+    const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
+    const vector<StateMap> &state_maps,
     const vector<int> &costs) const {
+    State initial_state = task_proxy.get_initial_state();
     CostPartitionings cost_partitionings;
-    vector<int> order = get_default_order(abstractions.size());
+    assert(abstractions.size() == state_maps.size());
+    int num_abstractions = abstractions.size();
+
+    set<int> unused_abstractions;
+    for (int i = 0; i < num_abstractions; ++i) {
+        unused_abstractions.insert(i);
+    }
+    vector<int> order;
+
+    while (!unused_abstractions.empty()) {
+        double max_h_per_costs = -numeric_limits<double>::infinity();
+        int min_costs = numeric_limits<int>::max();
+        int best_pos = -1;
+        for (int i : unused_abstractions) {
+            const Abstraction &abstraction = *abstractions[i];
+            const StateMap &state_map = state_maps[i];
+            auto pair = abstraction.compute_goal_distances_and_saturated_costs(costs);
+            vector<int> &h_values = pair.first;
+            vector<int> &saturated_costs = pair.second;
+            int initial_state_id = state_map(initial_state);
+            double init_h = h_values[initial_state_id];
+            int used_costs = compute_sum(saturated_costs);
+            double h_per_costs = static_cast<double>(init_h) / max(1, used_costs);
+            if (h_per_costs > max_h_per_costs ||
+                (h_per_costs == max_h_per_costs && used_costs < min_costs)) {
+                best_pos = i;
+                max_h_per_costs = h_per_costs;
+                min_costs = used_costs;
+            }
+            cout << i << ": " << " " << init_h << " / " << used_costs
+                 << " = " << h_per_costs << endl;
+        }
+        assert(best_pos != -1);
+        order.push_back(best_pos);
+        unused_abstractions.erase(best_pos);
+        cout << "Use: " << best_pos << endl;
+    }
+    assert(order.size() == abstractions.size());
+    cout << "Order: " << order << endl;
     cost_partitionings.push_back(
         compute_saturated_cost_partitioning(abstractions, order, costs));
     return cost_partitionings;
