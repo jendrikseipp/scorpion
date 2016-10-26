@@ -21,13 +21,20 @@ class Abstraction;
 
 
 class SCPGenerator {
+protected:
+    const int max_orders;
+    const double max_time;
+    const bool diversify;
+
 public:
+    SCPGenerator(const options::Options &opts);
+    virtual ~SCPGenerator() = default;
+
     virtual CostPartitionings get_cost_partitionings(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<StateMap> &state_maps,
         const std::vector<int> &costs) const = 0;
-    virtual ~SCPGenerator() = default;
 };
 
 
@@ -44,9 +51,6 @@ public:
 
 
 class RandomSCPGenerator : public SCPGenerator {
-    const int max_orders;
-    const double max_time;
-    const bool diversify;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
 public:
@@ -61,8 +65,6 @@ public:
 
 
 class GreedySCPGenerator : public SCPGenerator {
-    const int max_orders;
-
 public:
     explicit GreedySCPGenerator(const options::Options &opts);
 

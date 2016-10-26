@@ -141,7 +141,15 @@ bool Diversifier::is_diverse(const CostPartitioning &scp) {
 }
 
 
-DefaultSCPGenerator::DefaultSCPGenerator(const Options &) {
+SCPGenerator::SCPGenerator(const Options &opts)
+    : max_orders(opts.get<int>("max_orders")),
+      max_time(opts.get<double>("max_time")),
+      diversify(opts.get<bool>("diversify")) {
+}
+
+
+DefaultSCPGenerator::DefaultSCPGenerator(const Options &opts)
+    : SCPGenerator(opts) {
 }
 
 CostPartitionings DefaultSCPGenerator::get_cost_partitionings(
@@ -155,9 +163,7 @@ CostPartitionings DefaultSCPGenerator::get_cost_partitionings(
 
 
 RandomSCPGenerator::RandomSCPGenerator(const Options &opts)
-    : max_orders(opts.get<int>("max_orders")),
-      max_time(opts.get<double>("max_time")),
-      diversify(opts.get<bool>("diversify")),
+    : SCPGenerator(opts),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
@@ -191,7 +197,7 @@ CostPartitionings RandomSCPGenerator::get_cost_partitionings(
 
 
 GreedySCPGenerator::GreedySCPGenerator(const Options &opts)
-    : max_orders(opts.get<int>("max_orders")) {
+    : SCPGenerator(opts) {
 }
 
 static int compute_sum(const vector<int> &vec) {
@@ -259,15 +265,7 @@ CostPartitionings GreedySCPGenerator::get_cost_partitionings(
 }
 
 
-static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<DefaultSCPGenerator>(opts);
-}
-
-static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
+static void add_common_scp_generator_options_to_parser(OptionParser &parser) {
     parser.add_option<int>(
         "max_orders",
         "maximum number of abstraction orders",
@@ -282,6 +280,19 @@ static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
         "diversify",
         "only keep diverse orders",
         "true");
+}
+
+static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
+    add_common_scp_generator_options_to_parser(parser);
+    Options opts = parser.parse();
+    if (parser.dry_run())
+        return nullptr;
+    else
+        return make_shared<DefaultSCPGenerator>(opts);
+}
+
+static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
+    add_common_scp_generator_options_to_parser(parser);
     utils::add_rng_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
@@ -291,11 +302,7 @@ static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
 }
 
 static shared_ptr<SCPGenerator> _parse_greedy(OptionParser &parser) {
-    parser.add_option<int>(
-        "max_orders",
-        "maximum number of cost partitionings",
-        "1",
-        Bounds("1", "infinity"));
+    add_common_scp_generator_options_to_parser(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
