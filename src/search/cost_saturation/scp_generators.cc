@@ -147,18 +147,55 @@ SCPGenerator::SCPGenerator(const Options &opts)
       diversify(opts.get<bool>("diversify")) {
 }
 
+void SCPGenerator::initialize(
+    const TaskProxy &,
+    const vector<unique_ptr<Abstraction>> &,
+    const vector<StateMap> &,
+    const vector<int> &) {
+    // Do nothing by default.
+}
+
+CostPartitionings SCPGenerator::get_cost_partitionings(
+    const TaskProxy &task_proxy,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<StateMap> &state_maps,
+    const vector<int> &costs) {
+    initialize(task_proxy, abstractions, state_maps, costs);
+
+    unique_ptr<Diversifier> diversifier;
+    if (diversify) {
+        diversifier = utils::make_unique_ptr<Diversifier>(
+            task_proxy, abstractions, state_maps, costs);
+    }
+    CostPartitionings cost_partitionings;
+    utils::CountdownTimer timer(max_time);
+    int evaluated_orders = 0;
+    while (static_cast<int>(cost_partitionings.size()) < max_orders &&
+           !timer.is_expired()) {
+
+        CostPartitioning scp = get_next_cost_partitioning(
+            task_proxy, abstractions, state_maps, costs);
+        ++evaluated_orders;
+        if (!diversify || diversifier->is_diverse(scp)) {
+            cost_partitionings.push_back(move(scp));
+        }
+    }
+    cout << "Total evaluated orders: " << evaluated_orders << endl;
+    return cost_partitionings;
+}
+
 
 DefaultSCPGenerator::DefaultSCPGenerator(const Options &opts)
     : SCPGenerator(opts) {
 }
 
-CostPartitionings DefaultSCPGenerator::get_cost_partitionings(
-    const TaskProxy &,
-    const vector<unique_ptr<Abstraction>> &abstractions,
+CostPartitioning DefaultSCPGenerator::get_next_cost_partitioning(
+        const TaskProxy &,
+        const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<StateMap> &,
-    const vector<int> &costs) const {
+    const vector<int> &costs) {
     vector<int> order = get_default_order(abstractions.size());
-    return {compute_saturated_cost_partitioning(abstractions, order, costs)};
+    return compute_saturated_cost_partitioning(abstractions, order, costs);
 }
 
 
@@ -167,32 +204,21 @@ RandomSCPGenerator::RandomSCPGenerator(const Options &opts)
       rng(utils::parse_rng_from_options(opts)) {
 }
 
-CostPartitionings RandomSCPGenerator::get_cost_partitionings(
-    const TaskProxy &task_proxy,
+void RandomSCPGenerator::initialize(
+    const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &state_maps,
-    const vector<int> &costs) const {
-    unique_ptr<Diversifier> diversifier;
-    if (diversify) {
-        diversifier = utils::make_unique_ptr<Diversifier>(
-            task_proxy, abstractions, state_maps, costs);
-    }
-    CostPartitionings cost_partitionings;
-    vector<int> order = get_default_order(abstractions.size());
-    utils::CountdownTimer timer(max_time);
-    int evaluated_orders = 0;
-    while (static_cast<int>(cost_partitionings.size()) < max_orders &&
-           !timer.is_expired()) {
-        rng->shuffle(order);
-        ++evaluated_orders;
-        CostPartitioning scp = compute_saturated_cost_partitioning(
-            abstractions, order, costs);
-        if (!diversify || diversifier->is_diverse(scp)) {
-            cost_partitionings.push_back(move(scp));
-        }
-    }
-    cout << "Total evaluated orders: " << evaluated_orders << endl;
-    return cost_partitionings;
+    const vector<StateMap> &,
+    const vector<int> &) {
+    order = get_default_order(abstractions.size());
+}
+
+CostPartitioning RandomSCPGenerator::get_next_cost_partitioning(
+    const TaskProxy &,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<StateMap> &,
+    const vector<int> &costs) {
+    rng->shuffle(order);
+    return compute_saturated_cost_partitioning(abstractions, order, costs);
 }
 
 
@@ -213,13 +239,20 @@ static int compute_sum(const vector<int> &vec) {
     return sum;
 }
 
-CostPartitionings GreedySCPGenerator::get_cost_partitionings(
+void GreedySCPGenerator::initialize(
+    const TaskProxy &,
+    const vector<unique_ptr<Abstraction>> &,
+    const vector<StateMap> &,
+    const vector<int> &) {
+    // TODO: Initialize.
+}
+
+CostPartitioning GreedySCPGenerator::get_next_cost_partitioning(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<StateMap> &state_maps,
-    const vector<int> &costs) const {
+    const vector<int> &costs) {
     State initial_state = task_proxy.get_initial_state();
-    CostPartitionings cost_partitionings;
     assert(abstractions.size() == state_maps.size());
     int num_abstractions = abstractions.size();
 
@@ -259,9 +292,7 @@ CostPartitionings GreedySCPGenerator::get_cost_partitionings(
     }
     assert(order.size() == abstractions.size());
     cout << "Order: " << order << endl;
-    cost_partitionings.push_back(
-        compute_saturated_cost_partitioning(abstractions, order, costs));
-    return cost_partitionings;
+    return compute_saturated_cost_partitioning(abstractions, order, costs);
 }
 
 
@@ -285,6 +316,7 @@ static void add_common_scp_generator_options_to_parser(OptionParser &parser) {
 static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
     add_common_scp_generator_options_to_parser(parser);
     Options opts = parser.parse();
+    opts.set<int>("max_orders", 1);
     if (parser.dry_run())
         return nullptr;
     else
