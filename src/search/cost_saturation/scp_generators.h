@@ -31,6 +31,18 @@ public:
 };
 
 
+class DefaultSCPGenerator : public SCPGenerator {
+public:
+    explicit DefaultSCPGenerator(const options::Options &opts);
+
+    virtual CostPartitionings get_cost_partitionings(
+        const TaskProxy &task_proxy,
+        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+        const std::vector<StateMap> &state_maps,
+        const std::vector<int> &costs) const override;
+};
+
+
 class RandomSCPGenerator : public SCPGenerator {
     const int num_orders;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;

@@ -84,6 +84,19 @@ static vector<vector<int>> compute_saturated_cost_partitioning(
 }
 
 
+DefaultSCPGenerator::DefaultSCPGenerator(const Options &) {
+}
+
+CostPartitionings DefaultSCPGenerator::get_cost_partitionings(
+    const TaskProxy &,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<StateMap> &,
+    const vector<int> &costs) const {
+    vector<int> order = get_default_order(abstractions.size());
+    return {compute_saturated_cost_partitioning(abstractions, order, costs)};
+}
+
+
 RandomSCPGenerator::RandomSCPGenerator(const Options &opts)
     : num_orders(opts.get<int>("orders")),
       rng(utils::parse_rng_from_options(opts)) {
@@ -235,6 +248,14 @@ CostPartitionings DiverseSCPGenerator::get_cost_partitionings(
 }
 
 
+static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
+    Options opts = parser.parse();
+    if (parser.dry_run())
+        return nullptr;
+    else
+        return make_shared<DefaultSCPGenerator>(opts);
+}
+
 static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
     parser.add_option<int>(
         "orders",
@@ -280,6 +301,10 @@ static shared_ptr<SCPGenerator> _parse_diverse(OptionParser &parser) {
     else
         return make_shared<DiverseSCPGenerator>(opts);
 }
+
+
+static PluginShared<SCPGenerator> _plugin_default(
+    "default", _parse_default);
 
 static PluginShared<SCPGenerator> _plugin_random(
     "random", _parse_random);
