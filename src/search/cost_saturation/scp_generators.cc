@@ -155,22 +155,37 @@ CostPartitionings DefaultSCPGenerator::get_cost_partitionings(
 
 
 RandomSCPGenerator::RandomSCPGenerator(const Options &opts)
-    : num_orders(opts.get<int>("orders")),
+    : max_orders(opts.get<int>("max_orders")),
+      max_time(opts.get<double>("max_time")),
+      diversify(opts.get<bool>("diversify")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
 CostPartitionings RandomSCPGenerator::get_cost_partitionings(
-    const TaskProxy &,
+    const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
+    const vector<StateMap> &state_maps,
     const vector<int> &costs) const {
+    unique_ptr<Diversifier> diversifier;
+    if (diversify) {
+        diversifier = utils::make_unique_ptr<Diversifier>(
+            task_proxy, abstractions, state_maps, costs);
+    }
     CostPartitionings cost_partitionings;
     vector<int> order = get_default_order(abstractions.size());
-    for (int i = 0; i < num_orders; ++i) {
+    utils::CountdownTimer timer(max_time);
+    int evaluated_orders = 0;
+    while (static_cast<int>(cost_partitionings.size()) < max_orders &&
+           !timer.is_expired()) {
         rng->shuffle(order);
-        cost_partitionings.push_back(
-            compute_saturated_cost_partitioning(abstractions, order, costs));
+        ++evaluated_orders;
+        CostPartitioning scp = compute_saturated_cost_partitioning(
+            abstractions, order, costs);
+        if (!diversify || diversifier->is_diverse(scp)) {
+            cost_partitionings.push_back(move(scp));
+        }
     }
+    cout << "Total evaluated orders: " << evaluated_orders << endl;
     return cost_partitionings;
 }
 
@@ -315,10 +330,19 @@ static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
 
 static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
     parser.add_option<int>(
-        "orders",
-        "number of abstraction orders",
-        "1",
+        "max_orders",
+        "maximum number of abstraction orders",
+        "infinity",
         Bounds("1", "infinity"));
+    parser.add_option<double>(
+        "max_time",
+        "maximum time for finding cost partitionings",
+        "10",
+        Bounds("0", "infinity"));
+    parser.add_option<bool>(
+        "diversify",
+        "only keep diverse orders",
+        "true");
     utils::add_rng_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())

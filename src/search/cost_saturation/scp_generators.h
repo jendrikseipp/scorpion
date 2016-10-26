@@ -44,7 +44,9 @@ public:
 
 
 class RandomSCPGenerator : public SCPGenerator {
-    const int num_orders;
+    const int max_orders;
+    const double max_time;
+    const bool diversify;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
 public:
