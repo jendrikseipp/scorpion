@@ -8,21 +8,13 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../task_tools.h"
 
 #include "../utils/logging.h"
 
 using namespace std;
 
 namespace cost_saturation {
-// TODO: Use version from task_tools.
-static vector<int> get_operator_costs(const TaskProxy &task) {
-    vector<int> costs;
-    costs.reserve(task.get_operators().size());
-    for (OperatorProxy op : task.get_operators())
-        costs.push_back(op.get_cost());
-    return costs;
-}
-
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts) {
     vector<unique_ptr<Abstraction>> abstractions;
