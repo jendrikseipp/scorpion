@@ -49,7 +49,6 @@ FactoredTransitionSystem::FactoredTransitionSystem(
         compute_distances_and_prune(i, verbosity);
         if (!this->transition_systems[i]->is_solvable()) {
             solvable = false;
-            finalize(i);
             break;
         }
     }
@@ -239,7 +238,6 @@ int FactoredTransitionSystem::preserving_merge(
     assert(is_component_valid(dest));
     if (!new_ts.is_solvable()) {
         solvable = false;
-        finalize(dest);
     }
     return dest;
 }
