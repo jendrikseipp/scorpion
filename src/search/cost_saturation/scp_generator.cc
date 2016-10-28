@@ -18,12 +18,6 @@
 using namespace std;
 
 namespace cost_saturation {
-static vector<int> get_default_order(int n) {
-    vector<int> indices(n);
-    iota(indices.begin(), indices.end(), 0);
-    return indices;
-}
-
 static void reduce_costs(
     vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
@@ -52,6 +46,12 @@ static void print_indexed_vector(const vector<int> &vec) {
     cout << endl;
 }
 
+
+vector<int> get_default_order(int num_abstractions) {
+    vector<int> indices(num_abstractions);
+    iota(indices.begin(), indices.end(), 0);
+    return indices;
+}
 
 vector<vector<int>> compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -243,6 +243,7 @@ static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
     add_common_scp_generator_options_to_parser(parser);
     Options opts = parser.parse();
     opts.set<int>("max_orders", 1);
+    opts.set<bool>("diversify", false);
     if (parser.dry_run())
         return nullptr;
     else

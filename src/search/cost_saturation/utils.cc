@@ -56,6 +56,7 @@ vector<State> sample_states(
     const double average_operator_costs = get_average_operator_cost(task_proxy);
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
+    assert(init_h != INF);
 
     vector<State> samples;
     while (static_cast<int>(samples.size()) < num_samples) {
