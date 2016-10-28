@@ -73,4 +73,5 @@ vector<State> sample_states(
 
     return samples;
 }
+
 }

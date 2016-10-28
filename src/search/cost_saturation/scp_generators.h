@@ -10,6 +10,7 @@ class TaskProxy;
 
 namespace options {
 class Options;
+class OptionParser;
 }
 
 namespace utils {
@@ -84,23 +85,13 @@ public:
 };
 
 
-class GreedySCPGenerator : public SCPGenerator {
-protected:
-    virtual void initialize(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
-        const std::vector<int> &costs);
+extern std::vector<std::vector<int>> compute_saturated_cost_partitioning(
+    const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+    const std::vector<int> &order,
+    const std::vector<int> &costs);
 
-public:
-    explicit GreedySCPGenerator(const options::Options &opts);
-
-    virtual CostPartitioning get_next_cost_partitioning(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
-        const std::vector<int> &costs) override;
-};
+extern void add_common_scp_generator_options_to_parser(
+    options::OptionParser &parser);
 }
 
 #endif

@@ -3,7 +3,6 @@
 
 #include "types.h"
 
-#include <limits>
 #include <vector>
 
 class TaskProxy;
