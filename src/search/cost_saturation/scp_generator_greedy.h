@@ -1,7 +1,7 @@
 #ifndef CEGAR_SCP_GENERATOR_GREEDY_H
 #define CEGAR_SCP_GENERATOR_GREEDY_H
 
-#include "scp_generators.h"
+#include "scp_generator.h"
 
 namespace cost_saturation {
 class SCPGeneratorGreedy : public SCPGenerator {

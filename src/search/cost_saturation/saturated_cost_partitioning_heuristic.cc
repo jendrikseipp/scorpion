@@ -2,7 +2,7 @@
 
 #include "abstraction.h"
 #include "abstraction_generator.h"
-#include "scp_generators.h"
+#include "scp_generator.h"
 #include "types.h"
 #include "utils.h"
 

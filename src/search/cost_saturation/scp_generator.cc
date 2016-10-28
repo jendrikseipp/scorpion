@@ -1,4 +1,4 @@
-#include "scp_generators.h"
+#include "scp_generator.h"
 
 #include "abstraction.h"
 #include "utils.h"
