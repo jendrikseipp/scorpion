@@ -125,20 +125,16 @@ SharedTasks GoalDecomposition::get_subtasks(
 
 LandmarkDecomposition::LandmarkDecomposition(const Options &opts)
     : fact_order(FactOrder(opts.get_enum("order"))),
-      landmark_graph(get_landmark_graph()),
       combine_facts(opts.get<bool>("combine_facts")) {
-    if (opts.contains("graph_file")) {
-        string graph_filename = opts.get<string>("graph_file");
-        write_landmark_graph_dot_file(*landmark_graph, graph_filename);
-    }
-
 }
 
 shared_ptr<AbstractTask> LandmarkDecomposition::build_domain_abstracted_task(
-    shared_ptr<AbstractTask> &parent, const FactPair &fact) const {
+    const shared_ptr<AbstractTask> &parent,
+    const landmarks::LandmarkGraph &landmark_graph,
+    const FactPair &fact) const {
     assert(combine_facts);
     extra_tasks::VarToGroups value_groups;
-    for (auto &pair : get_prev_landmarks(*landmark_graph, fact)) {
+    for (auto &pair : get_prev_landmarks(landmark_graph, fact)) {
         int var = pair.first;
         vector<int> &group = pair.second;
         if (group.size() >= 2)
@@ -150,14 +146,16 @@ shared_ptr<AbstractTask> LandmarkDecomposition::build_domain_abstracted_task(
 SharedTasks LandmarkDecomposition::get_subtasks(
     const shared_ptr<AbstractTask> &task) const {
     SharedTasks subtasks;
-    // TODO: Use landmark graph for task once the LM code supports tasks API.
+    shared_ptr<landmarks::LandmarkGraph> landmark_graph =
+        get_landmark_graph(task);
     Facts landmark_facts = get_fact_landmarks(*landmark_graph);
     filter_and_order_facts(task, fact_order, landmark_facts);
     for (const FactPair &landmark : landmark_facts) {
         shared_ptr<AbstractTask> subtask =
             make_shared<extra_tasks::ModifiedGoalsTask>(task, Facts {landmark});
         if (combine_facts) {
-            subtask = build_domain_abstracted_task(subtask, landmark);
+            subtask = build_domain_abstracted_task(
+                subtask, *landmark_graph, landmark);
         }
         subtasks.push_back(subtask);
     }
@@ -205,10 +203,6 @@ static shared_ptr<SubtaskGenerator> _parse_landmarks(OptionParser &parser) {
         "combine_facts",
         "combine landmark facts with domain abstraction",
         "true");
-    parser.add_option<string>(
-        "graph_file",
-        "file name for landmark graph dot file",
-        OptionParser::NONE);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
