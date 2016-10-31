@@ -397,7 +397,7 @@ fast_downward_plugin(
         cegar/cost_saturation.cc
         cegar/domains.cc
         cegar/max_cartesian_heuristic.cc
-        cegar/ocp_heuristic.cc
+        #cegar/ocp_heuristic.cc
         cegar/refinement_hierarchy.cc
         cegar/scp_optimizer.cc
         cegar/split_selector.cc
@@ -421,6 +421,7 @@ fast_downward_plugin(
         cost_saturation/saturated_cost_partitioning_heuristic.cc
         cost_saturation/scp_generator.cc
         cost_saturation/scp_generator_greedy.cc
+        cost_saturation/scp_generator_tree_search.cc
         cost_saturation/types.h
         cost_saturation/utils.cc
 )

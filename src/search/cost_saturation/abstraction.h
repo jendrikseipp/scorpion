@@ -46,6 +46,8 @@ public:
         compute_goal_distances_and_saturated_costs(
             const std::vector<int> &costs) const;
 
+    std::vector<bool> compute_active_operators();
+
     void dump() const;
 };
 }

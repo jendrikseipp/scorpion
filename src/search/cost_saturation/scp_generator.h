@@ -39,6 +39,10 @@ protected:
         const std::vector<StateMap> &state_maps,
         const std::vector<int> &costs) = 0;
 
+    virtual bool has_next_cost_partitioning() const {
+        return true;
+    }
+
 public:
     SCPGenerator(const options::Options &opts);
     virtual ~SCPGenerator() = default;

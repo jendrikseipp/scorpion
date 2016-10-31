@@ -171,12 +171,13 @@ CostPartitionings SCPGenerator::get_cost_partitionings(
     utils::CountdownTimer timer(max_time);
     int evaluated_orders = 0;
     while (static_cast<int>(cost_partitionings.size()) < max_orders &&
-           !timer.is_expired()) {
+           !timer.is_expired() && has_next_cost_partitioning()) {
 
         CostPartitioning scp = get_next_cost_partitioning(
             task_proxy, abstractions, state_maps, costs);
         ++evaluated_orders;
         if (!diversify || diversifier->is_diverse(scp)) {
+            cout << "Adding CP!" << endl;
             cost_partitionings.push_back(move(scp));
         }
     }

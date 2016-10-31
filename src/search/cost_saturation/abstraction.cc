@@ -109,6 +109,14 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
     return make_pair(move(h_values), move(saturated_costs));
 }
 
+vector<bool> Abstraction::compute_active_operators() {
+    vector<bool> result(num_operators, true);
+    for (int op_id : looping_operators) {
+        result[op_id] = false;
+    }
+    return result;
+}
+
 void Abstraction::dump() const {
     cout << "State-changing transitions:" << endl;
     for (size_t state = 0; state < backward_graph.size(); ++state) {
