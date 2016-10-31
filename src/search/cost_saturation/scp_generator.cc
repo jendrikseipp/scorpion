@@ -177,7 +177,6 @@ CostPartitionings SCPGenerator::get_cost_partitionings(
             task_proxy, abstractions, state_maps, costs);
         ++evaluated_orders;
         if (!diversify || diversifier->is_diverse(scp)) {
-            cout << "Adding CP!" << endl;
             cost_partitionings.push_back(move(scp));
         }
     }
