@@ -240,9 +240,9 @@ void add_common_scp_generator_options_to_parser(OptionParser &parser) {
 }
 
 static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
-    add_common_scp_generator_options_to_parser(parser);
     Options opts = parser.parse();
     opts.set<int>("max_orders", 1);
+    opts.set<double>("max_time", numeric_limits<double>::infinity());
     opts.set<bool>("diversify", false);
     if (parser.dry_run())
         return nullptr;
