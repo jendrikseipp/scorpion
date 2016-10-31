@@ -5,6 +5,8 @@
 
 namespace cost_saturation {
 class SCPGeneratorGreedy : public SCPGenerator {
+    const bool increasing_ratios;
+
 protected:
     virtual void initialize(
         const TaskProxy &task_proxy,

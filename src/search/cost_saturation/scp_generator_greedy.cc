@@ -16,7 +16,16 @@ using namespace std;
 
 namespace cost_saturation {
 SCPGeneratorGreedy::SCPGeneratorGreedy(const Options &opts)
-    : SCPGenerator(opts) {
+    : SCPGenerator(opts),
+      increasing_ratios(opts.get<bool>("increasing_ratios")) {
+    if (max_orders != 1) {
+        cerr << "SCPGeneratorGreedy needs max_orders = 1" << endl;
+        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+    }
+    if (diversify) {
+        cerr << "SCPGeneratorGreedy needs diversify = false" << endl;
+        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+    }
 }
 
 static int compute_sum(const vector<int> &vec) {
@@ -84,12 +93,19 @@ CostPartitioning SCPGeneratorGreedy::get_next_cost_partitioning(
         cout << "Use: " << best_pos << endl;
     }
     assert(order.size() == abstractions.size());
+    if (increasing_ratios) {
+        reverse(order.begin(), order.end());
+    }
     cout << "Order: " << order << endl;
     return compute_saturated_cost_partitioning(abstractions, order, costs);
 }
 
 
 static shared_ptr<SCPGenerator> _parse_greedy(OptionParser &parser) {
+    parser.add_option<bool>(
+        "increasing_ratios",
+        "sort by increasing h/costs ratios",
+        "false");
     add_common_scp_generator_options_to_parser(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
