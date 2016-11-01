@@ -86,7 +86,7 @@ vector<vector<int>> compute_saturated_cost_partitioning(
 
 
 class Diversifier {
-    const int num_samples = 1000;
+    const int max_samples = 1000;
     vector<int> portfolio_h_values;
     vector<vector<int>> local_state_ids_by_sample;
 
@@ -105,7 +105,7 @@ Diversifier::Diversifier(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<StateMap> &state_maps,
     const vector<int> &costs)
-    : portfolio_h_values(num_samples, -1) {
+    : portfolio_h_values(max_samples, -1) {
     vector<int> default_order = get_default_order(abstractions.size());
     CostPartitioning scp_for_default_order =
         compute_saturated_cost_partitioning(abstractions, default_order, costs);
@@ -117,14 +117,13 @@ Diversifier::Diversifier(
     };
 
     vector<State> samples = sample_states(
-        task_proxy, default_order_heuristic, num_samples);
+        task_proxy, default_order_heuristic, max_samples);
 
     for (const State &sample : samples) {
         local_state_ids_by_sample.push_back(
             get_local_state_ids(state_maps, sample));
     }
     utils::release_vector_memory(samples);
-    assert(static_cast<int>(local_state_ids_by_sample.size()) == num_samples);
 
     // Log percentage of abstract states covered by samples.
     int num_abstract_states = 0;
@@ -148,7 +147,7 @@ Diversifier::Diversifier(
 
 bool Diversifier::is_diverse(const CostPartitioning &scp) {
     bool scp_improves_portfolio = false;
-    for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
+    for (size_t sample_id = 0; sample_id < local_state_ids_by_sample.size(); ++sample_id) {
         int scp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], scp);
         assert(utils::in_bounds(sample_id, portfolio_h_values));
         int &portfolio_h_value = portfolio_h_values[sample_id];
@@ -157,6 +156,16 @@ bool Diversifier::is_diverse(const CostPartitioning &scp) {
             portfolio_h_value = scp_h_value;
         }
     }
+
+    // Statistics.
+    if (scp_improves_portfolio) {
+        int sum_portfolio_h = 0;
+        for (int h : portfolio_h_values) {
+            sum_portfolio_h += h;
+        }
+        cout << "Portfolio sum h value: " << sum_portfolio_h << endl;
+    }
+
     return scp_improves_portfolio;
 }
 
