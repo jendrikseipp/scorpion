@@ -15,10 +15,6 @@ struct Transition {
         : op(op),
           state(state) {
     }
-
-    bool operator==(const Transition &other) {
-        return op == other.op && state == other.state;
-    }
 };
 
 class Abstraction {
@@ -30,7 +26,6 @@ class Abstraction {
 
     mutable AdaptiveQueue<int> queue;
 
-    std::vector<int> compute_h_values(const std::vector<int> &costs) const;
     std::vector<int> compute_saturated_costs(const std::vector<int> &h_values) const;
 
 public:
@@ -41,6 +36,8 @@ public:
         int num_operators);
 
     Abstraction(const Abstraction &) = delete;
+
+    std::vector<int> compute_h_values(const std::vector<int> &costs) const;
 
     std::pair<std::vector<int>, std::vector<int>>
         compute_goal_distances_and_saturated_costs(
