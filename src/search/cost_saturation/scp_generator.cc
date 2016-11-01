@@ -19,35 +19,6 @@
 using namespace std;
 
 namespace cost_saturation {
-static void reduce_costs(
-    vector<int> &remaining_costs, const vector<int> &saturated_costs) {
-    assert(remaining_costs.size() == saturated_costs.size());
-    for (size_t i = 0; i < remaining_costs.size(); ++i) {
-        int &remaining = remaining_costs[i];
-        const int &saturated = saturated_costs[i];
-        assert(saturated <= remaining);
-        /* Since we ignore transitions from states s with h(s)=INF, all
-           saturated costs (h(s)-h(s')) are finite or -INF. */
-        assert(saturated != INF);
-        if (remaining == INF) {
-            // INF - x = INF for finite values x.
-        } else if (saturated == -INF) {
-            remaining = INF;
-        } else {
-            remaining -= saturated;
-        }
-        assert(remaining >= 0);
-    }
-}
-
-static void print_indexed_vector(const vector<int> &vec) {
-    for (size_t i = 0; i < vec.size(); ++i) {
-        cout << i << ":" << vec[i] << ", ";
-    }
-    cout << endl;
-}
-
-
 vector<int> get_default_order(int num_abstractions) {
     vector<int> indices(num_abstractions);
     iota(indices.begin(), indices.end(), 0);

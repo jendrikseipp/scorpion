@@ -31,8 +31,8 @@ int compute_sum_h(
         if (value == INF)
             return INF;
         sum_h += value;
+        assert(sum_h >= 0);
     }
-    assert(sum_h >= 0);
     return sum_h;
 }
 
@@ -78,4 +78,30 @@ vector<State> sample_states(
     return samples;
 }
 
+void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_costs) {
+    assert(remaining_costs.size() == saturated_costs.size());
+    for (size_t i = 0; i < remaining_costs.size(); ++i) {
+        int &remaining = remaining_costs[i];
+        const int &saturated = saturated_costs[i];
+        assert(saturated <= remaining);
+        /* Since we ignore transitions from states s with h(s)=INF, all
+           saturated costs (h(s)-h(s')) are finite or -INF. */
+        assert(saturated != INF);
+        if (remaining == INF) {
+            // INF - x = INF for finite values x.
+        } else if (saturated == -INF) {
+            remaining = INF;
+        } else {
+            remaining -= saturated;
+        }
+        assert(remaining >= 0);
+    }
+}
+
+void print_indexed_vector(const vector<int> &vec) {
+    for (size_t i = 0; i < vec.size(); ++i) {
+        cout << i << ":" << vec[i] << ", ";
+    }
+    cout << endl;
+}
 }

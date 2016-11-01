@@ -11,10 +11,71 @@
 #include "../task_tools.h"
 
 #include "../utils/logging.h"
+#include "../utils/math.h"
 
 using namespace std;
 
 namespace cost_saturation {
+static const int COST_FACTOR = 1000;
+
+static vector<vector<int>> compute_uniform_cost_partitioning(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &order,
+    const vector<int> &costs) {
+    assert(abstractions.size() == order.size());
+    const bool use_cost_saturation = false;
+    const bool debug = false;
+
+    vector<int> op_usages(costs.size(), 0);
+    for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+        if (debug) {
+            abstraction->dump();
+        }
+        for (int op_id : abstraction->get_active_operators()) {
+            ++op_usages[op_id];
+        }
+    }
+    cout << "Active operator counts: " << op_usages << endl;
+
+    vector<int> remaining_costs;
+    remaining_costs.reserve(costs.size());
+    for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
+        if (!utils::is_product_within_limit(COST_FACTOR, costs[op_id], INF)) {
+            cerr << "Overflowing cost for operator " << op_id
+                 << " with cost " << costs[op_id] << endl;
+            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+        }
+        int cost = op_usages[op_id] ?
+            COST_FACTOR * costs[op_id] / op_usages[op_id] : -1;
+        remaining_costs.push_back(cost);
+    }
+    cout << "Uniformly distributed costs: " << remaining_costs << endl;
+
+    vector<vector<int>> h_values_by_abstraction(abstractions.size());
+    for (int pos : order) {
+        Abstraction &abstraction = *abstractions[pos];
+        auto pair = abstraction.compute_goal_distances_and_saturated_costs(
+            remaining_costs);
+        vector<int> &h_values = pair.first;
+        vector<int> &saturated_costs = pair.second;
+        if (debug) {
+            cout << "h-values: ";
+            print_indexed_vector(h_values);
+            cout << "saturated costs: ";
+            print_indexed_vector(saturated_costs);
+        }
+        h_values_by_abstraction[pos] = move(h_values);
+        if (use_cost_saturation) {
+            reduce_costs(remaining_costs, saturated_costs);
+        }
+        if (debug) {
+            cout << "remaining costs: ";
+            print_indexed_vector(remaining_costs);
+        }
+    }
+    return h_values_by_abstraction;
+}
+
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts) {
     vector<unique_ptr<Abstraction>> abstractions;
@@ -25,21 +86,18 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
             state_maps.push_back(move(pair.second));
         }
     }
+    cout << "Abstractions: " << abstractions.size() << endl;
 
-    utils::Timer scp_timer;
+    utils::Timer timer;
     const vector<int> costs = get_operator_costs(task_proxy);
 
-    // Use default order for testing whether the initial state is solvable.
-    h_values_by_order = {compute_saturated_cost_partitioning(
-        abstractions, get_default_order(abstractions.size()), costs)};
-    if (compute_heuristic(task_proxy.get_initial_state()) != DEAD_END) {
-        h_values_by_order = opts.get<shared_ptr<SCPGenerator>>(
-            "orders")->get_cost_partitionings(task_proxy, abstractions, state_maps, costs);
-    }
+    vector<int> random_order = get_default_order(abstractions.size());
+    g_rng()->shuffle(random_order);
+    h_values_by_order = {
+        compute_uniform_cost_partitioning(abstractions, random_order, costs)};
     num_best_order.resize(h_values_by_order.size(), 0);
 
-    cout << "Time for computing cost partitionings: " << scp_timer << endl;
-    cout << "Abstractions: " << abstractions.size() << endl;
+    cout << "Time for computing cost partitionings: " << timer << endl;
     cout << "Orders: " << h_values_by_order.size() << endl;
 }
 
@@ -54,7 +112,7 @@ int UniformCostPartitioningHeuristic::compute_heuristic(const State &state) {
     if (max_h == INF) {
         return DEAD_END;
     }
-    return max_h;
+    return max_h / COST_FACTOR;
 }
 
 int UniformCostPartitioningHeuristic::compute_max_h_with_statistics(
@@ -137,5 +195,5 @@ static Heuristic *_parse(OptionParser &parser) {
     return new UniformCostPartitioningHeuristic(opts);
 }
 
-static Plugin<Heuristic> _plugin("saturated_cost_partitioning", _parse);
+static Plugin<Heuristic> _plugin("uniform_cost_partitioning", _parse);
 }

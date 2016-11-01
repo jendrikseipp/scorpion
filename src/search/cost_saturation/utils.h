@@ -19,6 +19,12 @@ extern std::vector<State> sample_states(
     const TaskProxy &task_proxy,
     const std::function<int (const State &)> &heuristic,
     int num_samples);
+
+extern void reduce_costs(
+    std::vector<int> &remaining_costs,
+    const std::vector<int> &saturated_costs);
+
+extern void print_indexed_vector(const std::vector<int> &vec);
 }
 
 #endif
