@@ -141,7 +141,9 @@ Diversifier::Diversifier(
     }
     cout << "Covered abstract states: "
          << num_covered_states << "/" << num_abstract_states << " = "
-         << static_cast<double>(num_covered_states) / num_abstract_states << endl;
+         << (num_abstract_states ?
+             static_cast<double>(num_covered_states) / num_abstract_states : 1)
+         << endl;
 }
 
 bool Diversifier::is_diverse(const CostPartitioning &scp) {
