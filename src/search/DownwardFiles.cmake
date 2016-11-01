@@ -423,6 +423,7 @@ fast_downward_plugin(
         cost_saturation/scp_generator_greedy.cc
         cost_saturation/scp_generator_tree_search.cc
         cost_saturation/types.h
+        cost_saturation/uniform_cost_partitioning_heuristic.cc
         cost_saturation/utils.cc
 )
 
