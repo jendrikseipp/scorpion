@@ -8,7 +8,6 @@
 using namespace std;
 
 namespace cost_saturation {
-
 static void dijkstra_search(
     const vector<vector<Transition>> &graph,
     AdaptiveQueue<int> &queue,
@@ -37,6 +36,11 @@ static void dijkstra_search(
             }
         }
     }
+}
+
+ostream &operator<<(ostream &os, const Transition &transition) {
+    os << "(" << transition.op << ", " << transition.state << ")";
+    return os;
 }
 
 Abstraction::Abstraction(
@@ -124,11 +128,10 @@ int Abstraction::get_num_states() const {
 void Abstraction::dump() const {
     cout << "State-changing transitions:" << endl;
     for (size_t state = 0; state < backward_graph.size(); ++state) {
-        cout << "  " << state << " <- ";
-        for (const Transition &transition : backward_graph[state]) {
-            cout << "(" << transition.op << ", " << transition.state << ") ";
+        if (backward_graph[state].empty()) {
+            continue;
         }
-        cout << endl;
+        cout << "  " << state << " <- " << backward_graph[state] << endl;
     }
     cout << "Looping operators: " << looping_operators << endl;
     cout << "Goal states: " << goal_states << endl;

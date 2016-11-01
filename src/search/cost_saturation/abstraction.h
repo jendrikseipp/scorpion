@@ -17,6 +17,8 @@ struct Transition {
     }
 };
 
+std::ostream &operator<<(std::ostream &os, const Transition &transition);
+
 class Abstraction {
     const std::vector<std::vector<Transition>> backward_graph;
     const std::vector<int> looping_operators;
