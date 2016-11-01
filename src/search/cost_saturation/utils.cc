@@ -6,7 +6,7 @@
 #include "../task_tools.h"
 
 #include "../utils/collections.h"
-#include "../utils/timer.h"
+#include "../utils/countdown_timer.h"
 
 #include <cassert>
 
@@ -50,16 +50,19 @@ vector<State> sample_states(
     const TaskProxy &task_proxy,
     const function<int (const State &state)> &heuristic,
     int num_samples) {
-    utils::Timer sampling_timer;
+    cout << "Start sampling" << endl;
+    utils::CountdownTimer sampling_timer(60);
 
     SuccessorGenerator successor_generator(task_proxy);
     const double average_operator_costs = get_average_operator_cost(task_proxy);
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
     assert(init_h != INF);
+    cout << "Initial h value for default order: " << init_h << endl;
 
     vector<State> samples;
-    while (static_cast<int>(samples.size()) < num_samples) {
+    while (static_cast<int>(samples.size()) < num_samples &&
+           !sampling_timer.is_expired()) {
         State sample = sample_state_with_random_walk(
             initial_state,
             successor_generator,
