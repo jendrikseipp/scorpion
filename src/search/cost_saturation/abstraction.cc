@@ -2,6 +2,7 @@
 
 #include "types.h"
 
+#include "../algorithms/ordered_set.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 
@@ -43,12 +44,27 @@ ostream &operator<<(ostream &os, const Transition &transition) {
     return os;
 }
 
+static vector<int> get_active_operators_from_graph(
+    const vector<vector<Transition>> &backward_graph) {
+    algorithms::OrderedSet<int> active_operators;
+    int num_states = backward_graph.size();
+    for (int target = 0; target < num_states; ++target) {
+        for (const Transition &transition : backward_graph[target]) {
+            int op_id = transition.op;
+            assert(transition.state != target);
+            active_operators.insert(op_id);
+        }
+    }
+    return active_operators.pop_as_vector();
+}
+
 Abstraction::Abstraction(
     vector<vector<Transition>> &&backward_graph,
     vector<int> &&looping_operators,
     vector<int> &&goal_states,
     int num_operators)
     : backward_graph(move(backward_graph)),
+      active_operators(get_active_operators_from_graph(this->backward_graph)),
       looping_operators(move(looping_operators)),
       goal_states(move(goal_states)),
       num_operators(num_operators),
@@ -113,10 +129,14 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
     return make_pair(move(h_values), move(saturated_costs));
 }
 
-vector<bool> Abstraction::compute_active_operators() {
-    vector<bool> result(num_operators, true);
-    for (int op_id : looping_operators) {
-        result[op_id] = false;
+const std::vector<int> &Abstraction::get_active_operators() const {
+    return active_operators;
+}
+
+vector<bool> Abstraction::get_active_operators_bitset() const {
+    vector<bool> result(num_operators, false);
+    for (int op_id : active_operators) {
+        result[op_id] = true;
     }
     return result;
 }
@@ -133,6 +153,7 @@ void Abstraction::dump() const {
         }
         cout << "  " << state << " <- " << backward_graph[state] << endl;
     }
+    cout << "Active operators: " << active_operators << endl;
     cout << "Looping operators: " << looping_operators << endl;
     cout << "Goal states: " << goal_states << endl;
 }

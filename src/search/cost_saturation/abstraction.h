@@ -21,6 +21,7 @@ std::ostream &operator<<(std::ostream &os, const Transition &transition);
 
 class Abstraction {
     const std::vector<std::vector<Transition>> backward_graph;
+    const std::vector<int> active_operators;
     const std::vector<int> looping_operators;
     const std::vector<int> goal_states;
     const int num_operators;
@@ -45,7 +46,8 @@ public:
         compute_goal_distances_and_saturated_costs(
             const std::vector<int> &costs) const;
 
-    std::vector<bool> compute_active_operators();
+    const std::vector<int> &get_active_operators() const;
+    std::vector<bool> get_active_operators_bitset() const;
 
     int get_num_states() const;
 

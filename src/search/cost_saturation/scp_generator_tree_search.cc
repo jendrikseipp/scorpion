@@ -27,7 +27,7 @@ void SCPGeneratorTreeSearch::initialize(
                        
     vector<vector<bool>> dependent_ops;
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-        dependent_ops.push_back(abstraction->compute_active_operators());
+        dependent_ops.push_back(abstraction->get_active_operators_bitset());
     }
     
     // Remove all zero cost operators from set of dependent operators.
