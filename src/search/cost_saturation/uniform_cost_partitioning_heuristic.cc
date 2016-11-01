@@ -18,6 +18,38 @@ using namespace std;
 namespace cost_saturation {
 static const int COST_FACTOR = 1000;
 
+static vector<int> compute_divided_costs(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &order,
+    const vector<int> &remaining_costs,
+    int pos) {
+    assert(abstractions.size() == order.size());
+    assert(utils::in_bounds(pos, order));
+    const bool debug = false;
+
+    vector<int> op_usages(remaining_costs.size(), 0);
+    for (size_t i = pos; i < order.size(); ++i) {
+        const Abstraction &abstraction = *abstractions[order[i]];
+        if (debug) {
+            abstraction.dump();
+        }
+        for (int op_id : abstraction.get_active_operators()) {
+            ++op_usages[op_id];
+        }
+    }
+    cout << "Active operator counts: " << op_usages << endl;
+
+    vector<int> divided_costs;
+    divided_costs.reserve(remaining_costs.size());
+    for (size_t op_id = 0; op_id < remaining_costs.size(); ++op_id) {
+        int usages = op_usages[op_id];
+        int divided_cost = usages ? remaining_costs[op_id] / usages : -1;
+        divided_costs.push_back(divided_cost);
+    }
+    cout << "Uniformly distributed costs: " << divided_costs << endl;
+    return divided_costs;
+}
+
 static vector<vector<int>> compute_uniform_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
@@ -26,36 +58,13 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
     const bool use_cost_saturation = false;
     const bool debug = false;
 
-    vector<int> op_usages(costs.size(), 0);
-    for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-        if (debug) {
-            abstraction->dump();
-        }
-        for (int op_id : abstraction->get_active_operators()) {
-            ++op_usages[op_id];
-        }
-    }
-    cout << "Active operator counts: " << op_usages << endl;
-
-    vector<int> remaining_costs;
-    remaining_costs.reserve(costs.size());
-    for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
-        if (!utils::is_product_within_limit(COST_FACTOR, costs[op_id], INF)) {
-            cerr << "Overflowing cost for operator " << op_id
-                 << " with cost " << costs[op_id] << endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-        }
-        int cost = op_usages[op_id] ?
-            COST_FACTOR * costs[op_id] / op_usages[op_id] : -1;
-        remaining_costs.push_back(cost);
-    }
-    cout << "Uniformly distributed costs: " << remaining_costs << endl;
+    vector<int> divided_costs = compute_divided_costs(abstractions, order, costs, 0);
 
     vector<vector<int>> h_values_by_abstraction(abstractions.size());
     for (int pos : order) {
         Abstraction &abstraction = *abstractions[pos];
         auto pair = abstraction.compute_goal_distances_and_saturated_costs(
-            remaining_costs);
+            divided_costs);
         vector<int> &h_values = pair.first;
         vector<int> &saturated_costs = pair.second;
         if (debug) {
@@ -66,11 +75,11 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
         }
         h_values_by_abstraction[pos] = move(h_values);
         if (use_cost_saturation) {
-            reduce_costs(remaining_costs, saturated_costs);
+            reduce_costs(divided_costs, saturated_costs);
         }
         if (debug) {
             cout << "remaining costs: ";
-            print_indexed_vector(remaining_costs);
+            print_indexed_vector(divided_costs);
         }
     }
     return h_values_by_abstraction;
@@ -89,7 +98,14 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
     cout << "Abstractions: " << abstractions.size() << endl;
 
     utils::Timer timer;
-    const vector<int> costs = get_operator_costs(task_proxy);
+    vector<int> costs = get_operator_costs(task_proxy);
+    for (int &cost : costs) {
+        if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
+            cerr << "Overflowing cost : " << cost << endl;
+            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+        }
+        cost *= COST_FACTOR;
+    }
 
     vector<int> random_order = get_default_order(abstractions.size());
     g_rng()->shuffle(random_order);
