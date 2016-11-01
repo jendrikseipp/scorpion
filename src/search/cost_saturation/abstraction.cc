@@ -117,6 +117,10 @@ vector<bool> Abstraction::compute_active_operators() {
     return result;
 }
 
+int Abstraction::get_num_states() const {
+    return backward_graph.size();
+}
+
 void Abstraction::dump() const {
     cout << "State-changing transitions:" << endl;
     for (size_t state = 0; state < backward_graph.size(); ++state) {

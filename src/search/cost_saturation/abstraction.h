@@ -48,6 +48,8 @@ public:
 
     std::vector<bool> compute_active_operators();
 
+    int get_num_states() const;
+
     void dump() const;
 };
 }
