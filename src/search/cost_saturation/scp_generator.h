@@ -13,10 +13,6 @@ class Options;
 class OptionParser;
 }
 
-namespace utils {
-class RandomNumberGenerator;
-}
-
 namespace cost_saturation {
 class Abstraction;
 
@@ -58,28 +54,6 @@ public:
 class DefaultSCPGenerator : public SCPGenerator {
 public:
     explicit DefaultSCPGenerator(const options::Options &opts);
-
-    virtual CostPartitioning get_next_cost_partitioning(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
-        const std::vector<int> &costs) override;
-};
-
-
-class RandomSCPGenerator : public SCPGenerator {
-    const std::shared_ptr<utils::RandomNumberGenerator> rng;
-    std::vector<int> order;
-
-protected:
-    virtual void initialize(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
-        const std::vector<int> &costs);
-
-public:
-    explicit RandomSCPGenerator(const options::Options &opts);
 
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,

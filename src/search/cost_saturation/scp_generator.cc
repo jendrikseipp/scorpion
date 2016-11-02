@@ -8,8 +8,6 @@
 #include "../task_proxy.h"
 
 #include "../utils/logging.h"
-#include "../utils/rng.h"
-#include "../utils/rng_options.h"
 #include "../utils/countdown_timer.h"
 
 #include <algorithm>
@@ -199,29 +197,6 @@ CostPartitioning DefaultSCPGenerator::get_next_cost_partitioning(
 }
 
 
-RandomSCPGenerator::RandomSCPGenerator(const Options &opts)
-    : SCPGenerator(opts),
-      rng(utils::parse_rng_from_options(opts)) {
-}
-
-void RandomSCPGenerator::initialize(
-    const TaskProxy &,
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
-    const vector<int> &) {
-    order = get_default_order(abstractions.size());
-}
-
-CostPartitioning RandomSCPGenerator::get_next_cost_partitioning(
-    const TaskProxy &,
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
-    const vector<int> &costs) {
-    rng->shuffle(order);
-    return compute_saturated_cost_partitioning(abstractions, order, costs);
-}
-
-
 void add_common_scp_generator_options_to_parser(OptionParser &parser) {
     parser.add_option<int>(
         "max_orders",
@@ -250,22 +225,9 @@ static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
         return make_shared<DefaultSCPGenerator>(opts);
 }
 
-static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
-    add_common_scp_generator_options_to_parser(parser);
-    utils::add_rng_options(parser);
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<RandomSCPGenerator>(opts);
-}
-
 
 static PluginShared<SCPGenerator> _plugin_default(
     "default", _parse_default);
-
-static PluginShared<SCPGenerator> _plugin_random(
-    "random", _parse_random);
 
 
 static PluginTypePlugin<SCPGenerator> _type_plugin(
