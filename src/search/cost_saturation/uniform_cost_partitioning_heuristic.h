@@ -16,6 +16,8 @@ namespace cost_saturation {
 class UniformCostPartitioningHeuristic : public Heuristic {
     std::vector<std::vector<std::vector<int>>> h_values_by_order;
     std::vector<StateMap> state_maps;
+    const bool dynamic;
+    const bool debug;
 
     int compute_max_h(const std::vector<int> &local_state_ids) const;
 
