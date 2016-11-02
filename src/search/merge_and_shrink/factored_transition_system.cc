@@ -71,7 +71,7 @@ FactoredTransitionSystem::FactoredTransitionSystem(FactoredTransitionSystem &&ot
 FactoredTransitionSystem::~FactoredTransitionSystem() {
 }
 
-std::shared_ptr<HeuristicRepresentation>
+shared_ptr<HeuristicRepresentation>
 FactoredTransitionSystem::get_heuristic_representation(int index) const {
     assert(utils::in_bounds(index, heuristic_representations));
     assert(heuristic_representations[index]);

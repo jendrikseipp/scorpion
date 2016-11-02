@@ -71,8 +71,7 @@ Abstraction::Abstraction(
       use_general_costs(true) {
 }
 
-std::vector<int> Abstraction::compute_h_values(
-    const std::vector<int> &costs) const {
+vector<int> Abstraction::compute_h_values(const vector<int> &costs) const {
     vector<int> goal_distances(backward_graph.size(), INF);
     queue.clear();
     for (int goal_state : goal_states) {
@@ -129,7 +128,7 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
     return make_pair(move(h_values), move(saturated_costs));
 }
 
-const std::vector<int> &Abstraction::get_active_operators() const {
+const vector<int> &Abstraction::get_active_operators() const {
     return active_operators;
 }
 
