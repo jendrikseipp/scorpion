@@ -183,20 +183,6 @@ CostPartitionings SCPGenerator::get_cost_partitionings(
 }
 
 
-DefaultSCPGenerator::DefaultSCPGenerator(const Options &opts)
-    : SCPGenerator(opts) {
-}
-
-CostPartitioning DefaultSCPGenerator::get_next_cost_partitioning(
-        const TaskProxy &,
-        const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
-    const vector<int> &costs) {
-    vector<int> order = get_default_order(abstractions.size());
-    return compute_saturated_cost_partitioning(abstractions, order, costs);
-}
-
-
 void add_common_scp_generator_options_to_parser(OptionParser &parser) {
     parser.add_option<int>(
         "max_orders",
@@ -213,21 +199,6 @@ void add_common_scp_generator_options_to_parser(OptionParser &parser) {
         "only keep diverse orders",
         "true");
 }
-
-static shared_ptr<SCPGenerator> _parse_default(OptionParser &parser) {
-    Options opts = parser.parse();
-    opts.set<int>("max_orders", 1);
-    opts.set<double>("max_time", numeric_limits<double>::infinity());
-    opts.set<bool>("diversify", false);
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<DefaultSCPGenerator>(opts);
-}
-
-
-static PluginShared<SCPGenerator> _plugin_default(
-    "default", _parse_default);
 
 
 static PluginTypePlugin<SCPGenerator> _type_plugin(

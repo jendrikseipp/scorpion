@@ -51,18 +51,6 @@ public:
 };
 
 
-class DefaultSCPGenerator : public SCPGenerator {
-public:
-    explicit DefaultSCPGenerator(const options::Options &opts);
-
-    virtual CostPartitioning get_next_cost_partitioning(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
-        const std::vector<int> &costs) override;
-};
-
-
 extern std::vector<std::vector<int>> compute_saturated_cost_partitioning(
     const std::vector<std::unique_ptr<Abstraction>> &abstractions,
     const std::vector<int> &order,
