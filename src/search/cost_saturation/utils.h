@@ -8,6 +8,8 @@
 class TaskProxy;
 
 namespace cost_saturation {
+extern std::vector<int> get_default_order(int num_abstractions);
+
 extern int compute_sum_h(
     const std::vector<int> &local_state_ids,
     const std::vector<std::vector<int>> &h_values_by_abstraction);

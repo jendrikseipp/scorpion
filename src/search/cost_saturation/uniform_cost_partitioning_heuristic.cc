@@ -2,8 +2,6 @@
 
 #include "abstraction.h"
 #include "abstraction_generator.h"
-#include "scp_generator.h"
-#include "types.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -127,7 +125,8 @@ int UniformCostPartitioningHeuristic::compute_heuristic(const State &state) {
     if (max_h == INF) {
         return DEAD_END;
     }
-    return max_h / COST_FACTOR;
+    double epsilon = 0.01;
+    return ceil((max_h / static_cast<double>(COST_FACTOR)) - epsilon);
 }
 
 int UniformCostPartitioningHeuristic::compute_max_h(
@@ -168,10 +167,6 @@ static Heuristic *_parse(OptionParser &parser) {
     parser.add_list_option<shared_ptr<AbstractionGenerator>>(
         "abstraction_generators",
         "methods that generate abstractions");
-    parser.add_option<shared_ptr<SCPGenerator>>(
-        "orders",
-        "saturated cost partitioning generator",
-        "random(1)");
     Heuristic::add_options_to_parser(parser);
 
     Options opts = parser.parse();

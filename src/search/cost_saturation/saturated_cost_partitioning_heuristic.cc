@@ -3,7 +3,6 @@
 #include "abstraction.h"
 #include "abstraction_generator.h"
 #include "scp_generator.h"
-#include "types.h"
 #include "utils.h"
 
 #include "../option_parser.h"

@@ -10,19 +10,12 @@
 #include "../utils/logging.h"
 #include "../utils/countdown_timer.h"
 
-#include <algorithm>
 #include <cassert>
 #include <unordered_set>
 
 using namespace std;
 
 namespace cost_saturation {
-vector<int> get_default_order(int num_abstractions) {
-    vector<int> indices(num_abstractions);
-    iota(indices.begin(), indices.end(), 0);
-    return indices;
-}
-
 vector<vector<int>> compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,

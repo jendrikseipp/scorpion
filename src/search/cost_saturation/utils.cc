@@ -8,11 +8,18 @@
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 
+#include <algorithm>
 #include <cassert>
 
 using namespace std;
 
 namespace cost_saturation {
+vector<int> get_default_order(int num_abstractions) {
+    vector<int> indices(num_abstractions);
+    iota(indices.begin(), indices.end(), 0);
+    return indices;
+}
+
 int compute_sum_h(
     const vector<int> &local_state_ids,
     const vector<vector<int>> &h_values_by_abstraction) {
