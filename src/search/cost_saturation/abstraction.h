@@ -29,6 +29,7 @@ class Abstraction {
 
     mutable AdaptiveQueue<int> queue;
 
+    std::vector<int> compute_h_values(const std::vector<int> &costs) const;
     std::vector<int> compute_saturated_costs(const std::vector<int> &h_values) const;
 
 public:
@@ -40,14 +41,11 @@ public:
 
     Abstraction(const Abstraction &) = delete;
 
-    std::vector<int> compute_h_values(const std::vector<int> &costs) const;
-
     std::pair<std::vector<int>, std::vector<int>>
         compute_goal_distances_and_saturated_costs(
             const std::vector<int> &costs) const;
 
     const std::vector<int> &get_active_operators() const;
-    std::vector<bool> get_active_operators_bitset() const;
 
     int get_num_states() const;
 

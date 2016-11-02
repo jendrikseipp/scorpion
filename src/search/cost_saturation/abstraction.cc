@@ -133,14 +133,6 @@ const std::vector<int> &Abstraction::get_active_operators() const {
     return active_operators;
 }
 
-vector<bool> Abstraction::get_active_operators_bitset() const {
-    vector<bool> result(num_operators, false);
-    for (int op_id : active_operators) {
-        result[op_id] = true;
-    }
-    return result;
-}
-
 int Abstraction::get_num_states() const {
     return backward_graph.size();
 }
@@ -148,10 +140,9 @@ int Abstraction::get_num_states() const {
 void Abstraction::dump() const {
     cout << "State-changing transitions:" << endl;
     for (size_t state = 0; state < backward_graph.size(); ++state) {
-        if (backward_graph[state].empty()) {
-            continue;
+        if (!backward_graph[state].empty()) {
+            cout << "  " << state << " <- " << backward_graph[state] << endl;
         }
-        cout << "  " << state << " <- " << backward_graph[state] << endl;
     }
     cout << "Active operators: " << active_operators << endl;
     cout << "Looping operators: " << looping_operators << endl;

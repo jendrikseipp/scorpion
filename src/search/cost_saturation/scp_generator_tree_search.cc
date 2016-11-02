@@ -19,15 +19,20 @@ SCPGeneratorTreeSearch::SCPGeneratorTreeSearch(const Options &opts)
     : SCPGenerator(opts) {}
 
 void SCPGeneratorTreeSearch::initialize(
-    const TaskProxy &/*task_proxy*/,
+    const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<StateMap> &/*state_maps*/,
     const vector<int> &costs) {
     num_abstractions = abstractions.size();
                        
+    int num_operators = task_proxy.get_operators().size();
     vector<vector<bool>> dependent_ops;
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-        dependent_ops.push_back(abstraction->get_active_operators_bitset());
+        vector<bool> active_ops_bitset(num_operators, false);
+        for (int op_id : abstraction->get_active_operators()) {
+            active_ops_bitset[op_id] = true;
+        }
+        dependent_ops.push_back(move(active_ops_bitset));
     }
     
     // Remove all zero cost operators from set of dependent operators.
