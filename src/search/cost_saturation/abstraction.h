@@ -20,9 +20,15 @@ struct Transition {
 std::ostream &operator<<(std::ostream &os, const Transition &transition);
 
 class Abstraction {
+    // State-changing transitions.
     const std::vector<std::vector<Transition>> backward_graph;
+
+    // Operators inducing state-changing transitions.
     const std::vector<int> active_operators;
+
+    // Operators inducing self-loops. May overlap with active operators.
     const std::vector<int> looping_operators;
+
     const std::vector<int> goal_states;
     const int num_operators;
     const bool use_general_costs;
