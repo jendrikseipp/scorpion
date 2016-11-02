@@ -19,15 +19,13 @@ static const int COST_FACTOR = 1000;
 static vector<int> compute_divided_costs(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
-    const vector<int> &remaining_costs,
-    int pos) {
+    const vector<int> &remaining_costs) {
     assert(abstractions.size() == order.size());
-    assert(utils::in_bounds(pos, order));
     const bool debug = false;
 
     vector<int> op_usages(remaining_costs.size(), 0);
-    for (size_t i = pos; i < order.size(); ++i) {
-        const Abstraction &abstraction = *abstractions[order[i]];
+    for (int pos : order) {
+        const Abstraction &abstraction = *abstractions[pos];
         if (debug) {
             abstraction.dump();
         }
@@ -56,7 +54,7 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
     const bool use_cost_saturation = false;
     const bool debug = false;
 
-    vector<int> divided_costs = compute_divided_costs(abstractions, order, costs, 0);
+    vector<int> divided_costs = compute_divided_costs(abstractions, order, costs);
 
     vector<vector<int>> h_values_by_abstraction(abstractions.size());
     for (int pos : order) {
