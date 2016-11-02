@@ -19,11 +19,11 @@ SCPGeneratorGreedy::SCPGeneratorGreedy(const Options &opts)
     : SCPGenerator(opts),
       increasing_ratios(opts.get<bool>("increasing_ratios")) {
     if (max_orders != 1) {
-        cerr << "SCPGeneratorGreedy needs max_orders = 1" << endl;
+        cerr << "SCPGeneratorGreedy currently needs max_orders = 1" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
     if (diversify) {
-        cerr << "SCPGeneratorGreedy needs diversify = false" << endl;
+        cerr << "SCPGeneratorGreedy currently needs diversify = false" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
 }

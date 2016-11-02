@@ -13,6 +13,7 @@ class Abstraction;
 // Positive infinity. The name "INFINITY" is taken by an ISO C99 macro.
 const int INF = std::numeric_limits<int>::max();
 
+// Map concrete States to abstract state IDs.
 using StateMap = std::function<int (const State &)>;
 using AbstractionAndStateMap = std::pair<std::unique_ptr<Abstraction>, StateMap>;
 
