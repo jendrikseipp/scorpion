@@ -10,7 +10,7 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class Abstraction;
 
-class RandomSCPGenerator : public SCPGenerator {
+class SCPGeneratorRandom : public SCPGenerator {
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     std::vector<int> order;
 
@@ -22,7 +22,7 @@ protected:
         const std::vector<int> &costs);
 
 public:
-    explicit RandomSCPGenerator(const options::Options &opts);
+    explicit SCPGeneratorRandom(const options::Options &opts);
 
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,

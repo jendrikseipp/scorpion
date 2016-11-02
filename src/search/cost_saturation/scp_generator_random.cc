@@ -15,12 +15,12 @@
 using namespace std;
 
 namespace cost_saturation {
-RandomSCPGenerator::RandomSCPGenerator(const Options &opts)
+SCPGeneratorRandom::SCPGeneratorRandom(const Options &opts)
     : SCPGenerator(opts),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
-void RandomSCPGenerator::initialize(
+void SCPGeneratorRandom::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<StateMap> &,
@@ -28,7 +28,7 @@ void RandomSCPGenerator::initialize(
     order = get_default_order(abstractions.size());
 }
 
-CostPartitioning RandomSCPGenerator::get_next_cost_partitioning(
+CostPartitioning SCPGeneratorRandom::get_next_cost_partitioning(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<StateMap> &,
@@ -44,7 +44,7 @@ static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
     else
-        return make_shared<RandomSCPGenerator>(opts);
+        return make_shared<SCPGeneratorRandom>(opts);
 }
 
 static PluginShared<SCPGenerator> _plugin_random(
