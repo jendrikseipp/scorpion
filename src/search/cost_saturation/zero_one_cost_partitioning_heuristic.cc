@@ -59,9 +59,7 @@ ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options
 
     vector<int> random_order = get_default_order(abstractions.size());
     g_rng()->shuffle(random_order);
-    if (debug) {
-        cout << "Order: " << random_order << endl;
-    }
+    cout << "Order: " << random_order << endl;
     h_values_by_order = {
         compute_zero_one_cost_partitioning(
             abstractions, random_order, costs, debug)};

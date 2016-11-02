@@ -5,6 +5,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../utils/logging.h"
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
 
@@ -33,7 +34,14 @@ CostPartitioning SCPGeneratorRandom::get_next_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<StateMap> &,
     const vector<int> &costs) {
+    // TODO: Remove hack.
+    if (max_orders == 1) {
+        rng->seed(2011);
+    }
     rng->shuffle(order);
+    if (max_orders == 1) {
+        cout << "Order: " << order << endl;
+    }
     return compute_saturated_cost_partitioning(abstractions, order, costs);
 }
 

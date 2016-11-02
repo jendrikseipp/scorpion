@@ -127,6 +127,7 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
 
     vector<int> random_order = get_default_order(abstractions.size());
     g_rng()->shuffle(random_order);
+    cout << "Order: " << random_order << endl;
     h_values_by_order = {
         compute_uniform_cost_partitioning(
             abstractions, random_order, costs, opts.get<bool>("dynamic"), debug)};
