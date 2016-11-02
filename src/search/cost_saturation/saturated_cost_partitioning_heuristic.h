@@ -1,7 +1,7 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_HEURISTIC_H
 
-#include "abstraction_generator.h"
+#include "types.h"
 
 #include "../heuristic.h"
 
@@ -13,8 +13,6 @@ class Options;
 }
 
 namespace cost_saturation {
-class AbstractionGenerator;
-
 class SaturatedCostPartitioningHeuristic : public Heuristic {
     std::vector<std::vector<std::vector<int>>> h_values_by_order;
     std::vector<StateMap> state_maps;

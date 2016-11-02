@@ -111,7 +111,6 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
     g_rng()->shuffle(random_order);
     h_values_by_order = {
         compute_uniform_cost_partitioning(abstractions, random_order, costs)};
-    num_best_order.resize(h_values_by_order.size(), 0);
 
     cout << "Time for computing cost partitionings: " << timer << endl;
     cout << "Orders: " << h_values_by_order.size() << endl;
@@ -124,48 +123,25 @@ int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
 
 int UniformCostPartitioningHeuristic::compute_heuristic(const State &state) {
     vector<int> local_state_ids = get_local_state_ids(state_maps, state);
-    int max_h = compute_max_h_with_statistics(local_state_ids);
+    int max_h = compute_max_h(local_state_ids);
     if (max_h == INF) {
         return DEAD_END;
     }
     return max_h / COST_FACTOR;
 }
 
-int UniformCostPartitioningHeuristic::compute_max_h_with_statistics(
+int UniformCostPartitioningHeuristic::compute_max_h(
     const vector<int> &local_state_ids) const {
     int max_h = 0;
-    int best_id = -1;
-    int current_id = 0;
     for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
         int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
-        if (sum_h > max_h) {
-            max_h = sum_h;
-            best_id = current_id;
-        }
         if (sum_h == INF) {
-            break;
+            return INF;
         }
-        ++current_id;
+        max_h = max(max_h, sum_h);
     }
     assert(max_h >= 0);
-
-    if (best_id != -1 && !num_best_order.empty()) {
-        assert(utils::in_bounds(best_id, num_best_order));
-        ++num_best_order[best_id];
-    }
-
     return max_h;
-}
-
-void UniformCostPartitioningHeuristic::print_statistics() const {
-    int num_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
-    int num_orders = num_best_order.size();
-    double percentage_superfluous =
-        (num_orders == 0) ? 0 : num_superfluous * 100.0 / num_orders;
-    cout << "Number of times each order was the best order: "
-         << num_best_order << endl;
-    cout << "Superfluous orders: " << num_superfluous << "/" << num_orders
-         << " = " << percentage_superfluous << endl;
 }
 
 static Heuristic *_parse(OptionParser &parser) {
