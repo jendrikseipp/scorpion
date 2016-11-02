@@ -99,9 +99,7 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
 }
 
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options &opts)
-    : Heuristic(opts),
-      dynamic(opts.get<bool>("dynamic")),
-      debug(opts.get<bool>("debug")) {
+    : CostPartitioningHeuristic(opts) {
     vector<unique_ptr<Abstraction>> abstractions;
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
@@ -131,40 +129,21 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
     g_rng()->shuffle(random_order);
     h_values_by_order = {
         compute_uniform_cost_partitioning(
-            abstractions, random_order, costs, dynamic, debug)};
+            abstractions, random_order, costs, opts.get<bool>("dynamic"), debug)};
 
     cout << "Time for computing cost partitionings: " << timer << endl;
     cout << "Orders: " << h_values_by_order.size() << endl;
 }
 
 int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int UniformCostPartitioningHeuristic::compute_heuristic(const State &state) {
-    vector<int> local_state_ids = get_local_state_ids(state_maps, state);
-    int max_h = compute_max_h(local_state_ids);
-    if (max_h == INF) {
+    int result = CostPartitioningHeuristic::compute_heuristic(global_state);
+    if (result == DEAD_END) {
         return DEAD_END;
     }
     double epsilon = 0.01;
-    return ceil((max_h / static_cast<double>(COST_FACTOR)) - epsilon);
+    return ceil((result / static_cast<double>(COST_FACTOR)) - epsilon);
 }
 
-int UniformCostPartitioningHeuristic::compute_max_h(
-    const vector<int> &local_state_ids) const {
-    int max_h = 0;
-    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
-        int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
-        if (sum_h == INF) {
-            return INF;
-        }
-        max_h = max(max_h, sum_h);
-    }
-    assert(max_h >= 0);
-    return max_h;
-}
 
 static Heuristic *_parse(OptionParser &parser) {
     parser.document_synopsis(
