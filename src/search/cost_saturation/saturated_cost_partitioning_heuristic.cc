@@ -29,13 +29,9 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
     utils::Timer scp_timer;
     const vector<int> costs = get_operator_costs(task_proxy);
 
-    // Use default order for testing whether the initial state is solvable.
-    h_values_by_order = {compute_saturated_cost_partitioning(
-        abstractions, get_default_order(abstractions.size()), costs)};
-    if (compute_heuristic(task_proxy.get_initial_state()) != DEAD_END) {
-        h_values_by_order = opts.get<shared_ptr<SCPGenerator>>(
-            "orders")->get_cost_partitionings(task_proxy, abstractions, state_maps, costs);
-    }
+    h_values_by_order =
+        opts.get<shared_ptr<SCPGenerator>>("orders")->get_cost_partitionings(
+            task_proxy, abstractions, state_maps, costs);
     num_best_order.resize(h_values_by_order.size(), 0);
 
     cout << "Time for computing cost partitionings: " << scp_timer << endl;

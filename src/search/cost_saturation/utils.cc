@@ -57,11 +57,11 @@ vector<State> sample_states(
     const double average_operator_costs = get_average_operator_cost(task_proxy);
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
-    assert(init_h != INF);
     cout << "Initial h value for default order: " << init_h << endl;
 
     vector<State> samples;
-    while (static_cast<int>(samples.size()) < num_samples &&
+    while (init_h != INF &&
+           static_cast<int>(samples.size()) < num_samples &&
            !sampling_timer.is_expired()) {
         State sample = sample_state_with_random_walk(
             initial_state,
