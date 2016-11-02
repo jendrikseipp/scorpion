@@ -38,8 +38,7 @@ static vector<vector<int>> compute_zero_one_cost_partitioning(
 }
 
 ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options &opts)
-    : Heuristic(opts),
-      debug(opts.get<bool>("debug")) {
+    : CostPartitioningHeuristic(opts) {
     vector<unique_ptr<Abstraction>> abstractions;
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
@@ -71,33 +70,6 @@ ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options
     cout << "Orders: " << h_values_by_order.size() << endl;
 }
 
-int ZeroOneCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int ZeroOneCostPartitioningHeuristic::compute_heuristic(const State &state) {
-    vector<int> local_state_ids = get_local_state_ids(state_maps, state);
-    int max_h = compute_max_h(local_state_ids);
-    if (max_h == INF) {
-        return DEAD_END;
-    }
-    return max_h;
-}
-
-int ZeroOneCostPartitioningHeuristic::compute_max_h(
-    const vector<int> &local_state_ids) const {
-    int max_h = 0;
-    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
-        int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
-        if (sum_h == INF) {
-            return INF;
-        }
-        max_h = max(max_h, sum_h);
-    }
-    assert(max_h >= 0);
-    return max_h;
-}
 
 static Heuristic *_parse(OptionParser &parser) {
     parser.document_synopsis(
