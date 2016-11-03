@@ -54,7 +54,7 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
         for (int num_abstractions : abstractions_per_generator) {
             vector<int> suborder(num_abstractions);
             iota(suborder.begin(), suborder.end(), random_order.size());
-            g_rng()->shuffle(suborder);
+            rng->shuffle(suborder);
             random_order.insert(random_order.end(), suborder.begin(), suborder.end());
         }
         cout << "Order: " << random_order << endl;

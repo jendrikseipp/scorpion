@@ -20,6 +20,7 @@ class CostPartitioningHeuristic : public Heuristic {
 protected:
     std::vector<std::vector<std::vector<int>>> h_values_by_order;
     std::vector<StateMap> state_maps;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
 
     // For statistics.
