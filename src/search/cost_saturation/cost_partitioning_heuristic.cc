@@ -10,6 +10,8 @@
 using namespace std;
 
 namespace cost_saturation {
+class AbstractionGenerator;
+
 CostPartitioningHeuristic::CostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts),
       debug(opts.get<bool>("debug")) {
@@ -64,5 +66,17 @@ void CostPartitioningHeuristic::print_statistics() const {
          << num_best_order << endl;
     cout << "Superfluous orders: " << num_superfluous << "/" << num_orders
          << " = " << percentage_superfluous << endl;
+}
+
+void add_common_cost_partitioning_options_to_parser(
+    options::OptionParser &parser) {
+    parser.add_list_option<shared_ptr<AbstractionGenerator>>(
+        "abstraction_generators",
+        "methods that generate abstractions");
+    parser.add_option<bool>(
+        "debug",
+        "print debugging information",
+        "false");
+    Heuristic::add_options_to_parser(parser);
 }
 }

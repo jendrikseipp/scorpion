@@ -60,18 +60,11 @@ static Heuristic *_parse(OptionParser &parser) {
     parser.document_property("safe", "yes");
     parser.document_property("preferred operators", "no");
 
-    parser.add_list_option<shared_ptr<AbstractionGenerator>>(
-        "abstraction_generators",
-        "methods that generate abstractions");
+    add_common_cost_partitioning_options_to_parser(parser);
     parser.add_option<shared_ptr<SCPGenerator>>(
         "orders",
         "saturated cost partitioning generator",
         "random(1)");
-    parser.add_option<bool>(
-        "debug",
-        "print debugging information",
-        "false");
-    Heuristic::add_options_to_parser(parser);
 
     Options opts = parser.parse();
     if (parser.help_mode())

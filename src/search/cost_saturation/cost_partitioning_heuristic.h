@@ -32,6 +32,9 @@ public:
 
     virtual void print_statistics() const override;
 };
+
+extern void add_common_cost_partitioning_options_to_parser(
+    options::OptionParser &parser);
 }
 
 #endif
