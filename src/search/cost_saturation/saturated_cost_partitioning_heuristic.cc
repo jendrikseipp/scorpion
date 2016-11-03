@@ -42,11 +42,13 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
                 task_proxy, abstractions, state_maps, costs);
     } else {
         // Shuffle abstractions from different generators separately.
+        int original_seed = rng->get_last_seed();
         vector<int> random_order;
         for (int num_abstractions : abstractions_per_generator) {
             vector<int> suborder(num_abstractions);
             iota(suborder.begin(), suborder.end(), random_order.size());
             rng->shuffle(suborder);
+            rng->seed(original_seed);
             random_order.insert(random_order.end(), suborder.begin(), suborder.end());
         }
         cout << "Order: " << random_order << endl;
