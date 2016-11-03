@@ -41,8 +41,13 @@ static vector<int> compute_divided_costs(
     divided_costs.reserve(remaining_costs.size());
     for (size_t op_id = 0; op_id < remaining_costs.size(); ++op_id) {
         int usages = op_usages[op_id];
-        int divided_cost = usages ? remaining_costs[op_id] / usages : -1;
-        divided_costs.push_back(divided_cost);
+        if (remaining_costs[op_id] == INF) {
+            divided_costs.push_back(INF);
+        } else if (usages == 0) {
+            divided_costs.push_back(-1);
+        } else {
+            divided_costs.push_back(remaining_costs[op_id] / usages);
+        }
     }
     if (debug) {
         cout << "Uniformly distributed costs: ";
