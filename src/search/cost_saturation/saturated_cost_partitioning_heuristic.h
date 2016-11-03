@@ -1,35 +1,12 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_HEURISTIC_H
 
-#include "types.h"
-
-#include "../heuristic.h"
-
-#include <memory>
-#include <vector>
-
-namespace options {
-class Options;
-}
+#include "cost_partitioning_heuristic.h"
 
 namespace cost_saturation {
-class SaturatedCostPartitioningHeuristic : public Heuristic {
-    std::vector<std::vector<std::vector<int>>> h_values_by_order;
-    std::vector<StateMap> state_maps;
-
-    // For statistics.
-    mutable std::vector<int> num_best_order;
-
-    int compute_max_h_with_statistics(const std::vector<int> &local_state_ids) const;
-
-protected:
-    virtual int compute_heuristic(const GlobalState &global_state) override;
-    int compute_heuristic(const State &state);
-
+class SaturatedCostPartitioningHeuristic : public CostPartitioningHeuristic {
 public:
     explicit SaturatedCostPartitioningHeuristic(const options::Options &opts);
-
-    virtual void print_statistics() const override;
 };
 }
 
