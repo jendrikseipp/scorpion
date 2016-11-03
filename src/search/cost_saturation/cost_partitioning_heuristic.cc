@@ -68,8 +68,24 @@ void CostPartitioningHeuristic::print_statistics() const {
          << " = " << percentage_superfluous << endl;
 }
 
-void add_common_cost_partitioning_options_to_parser(
+void prepare_parser_for_cost_partitioning_heuristic(
     options::OptionParser &parser) {
+    parser.document_language_support("action costs", "supported");
+    parser.document_language_support(
+        "conditional effects",
+        "not supported (the heuristic supports them in theory, but none of "
+        "the currently implemented abstraction generators do)");
+    parser.document_language_support(
+        "axioms",
+        "not supported (the heuristic supports them in theory, but none of "
+        "the currently implemented abstraction generators do)");
+    parser.document_property("admissible", "yes");
+    parser.document_property(
+        "consistent",
+        "yes, if all abstraction generators represent consistent heuristics");
+    parser.document_property("safe", "yes");
+    parser.document_property("preferred operators", "no");
+
     parser.add_list_option<shared_ptr<AbstractionGenerator>>(
         "abstraction_generators",
         "methods that generate abstractions");

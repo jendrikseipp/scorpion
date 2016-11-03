@@ -44,23 +44,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "Saturated cost partitioning heuristic",
         "");
 
-    parser.document_language_support("action costs", "supported");
-    parser.document_language_support(
-        "conditional effects",
-        "not supported (the heuristic supports them in theory, but none of "
-        "the currently implemented abstraction generators do)");
-    parser.document_language_support(
-        "axioms",
-        "not supported (the heuristic supports them in theory, but none of "
-        "the currently implemented abstraction generators do)");
-    parser.document_property("admissible", "yes");
-    parser.document_property(
-        "consistent",
-        "yes, if all abstraction generators represent consistent heuristics");
-    parser.document_property("safe", "yes");
-    parser.document_property("preferred operators", "no");
-
-    add_common_cost_partitioning_options_to_parser(parser);
+    prepare_parser_for_cost_partitioning_heuristic(parser);
     parser.add_option<shared_ptr<SCPGenerator>>(
         "orders",
         "saturated cost partitioning generator",
