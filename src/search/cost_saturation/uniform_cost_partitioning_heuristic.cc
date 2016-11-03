@@ -14,6 +14,7 @@
 using namespace std;
 
 namespace cost_saturation {
+// Multiply all costs by this factor to avoid using real-values costs.
 static const int COST_FACTOR = 1000;
 
 static vector<int> compute_divided_costs(
@@ -44,6 +45,8 @@ static vector<int> compute_divided_costs(
         if (remaining_costs[op_id] == INF) {
             divided_costs.push_back(INF);
         } else if (usages == 0) {
+            /* Operator is inactive in subsequent abstractions so we
+               can use an arbitrary value here. */
             divided_costs.push_back(-1);
         } else {
             divided_costs.push_back(remaining_costs[op_id] / usages);
