@@ -41,20 +41,33 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
             opts.get<shared_ptr<SCPGenerator>>("orders")->get_cost_partitionings(
                 task_proxy, abstractions, state_maps, costs);
     } else {
-        // Shuffle abstractions from different generators separately.
         int original_seed = rng->get_last_seed();
-        vector<int> random_order;
+
+        // Shuffle abstractions from different generators separately.
+        vector<vector<int>> suborders;
+        int cumulative_num_abstractions = 0;
         for (int num_abstractions : abstractions_per_generator) {
             vector<int> suborder(num_abstractions);
-            iota(suborder.begin(), suborder.end(), random_order.size());
-            rng->shuffle(suborder);
+            iota(suborder.begin(), suborder.end(), cumulative_num_abstractions);
             rng->seed(original_seed);
-            random_order.insert(random_order.end(), suborder.begin(), suborder.end());
+            rng->shuffle(suborder);
+            suborders.push_back(move(suborder));
+            cumulative_num_abstractions += num_abstractions;
         }
-        cout << "Order: " << random_order << endl;
-        h_values_by_order = {
-            compute_saturated_cost_partitioning(
-                abstractions, random_order, costs)};
+        cout << "Suborders: " << suborders << endl;
+
+        // Loop over all permutations of suborders and concatenate suborders.
+        sort(suborders.begin(), suborders.end());
+        do {
+            vector<int> random_order;
+            for (const vector<int> &suborder : suborders) {
+                random_order.insert(random_order.end(), suborder.begin(), suborder.end());
+            }
+            cout << "Order: " << random_order << endl;
+            h_values_by_order.push_back(
+                compute_saturated_cost_partitioning(
+                    abstractions, random_order, costs));
+        } while (next_permutation(suborders.begin(), suborders.end()));
     }
     num_best_order.resize(h_values_by_order.size(), 0);
 
