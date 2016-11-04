@@ -1,6 +1,6 @@
 #include "projection_generator.h"
 
-#include "abstraction.h"
+#include "explicit_abstraction.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -101,7 +101,7 @@ static AbstractionAndStateMap compute_abstraction(
             return state_id;
         };
 
-    return make_pair(utils::make_unique_ptr<Abstraction>(
+    return make_pair(utils::make_unique_ptr<ExplicitAbstraction>(
         move(backward_graph),
         looping_operators.pop_as_vector(),
         move(goal_states),

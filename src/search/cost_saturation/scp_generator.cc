@@ -7,6 +7,7 @@
 #include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/countdown_timer.h"
 

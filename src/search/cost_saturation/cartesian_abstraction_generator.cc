@@ -1,6 +1,6 @@
 #include "cartesian_abstraction_generator.h"
 
-#include "abstraction.h"
+#include "explicit_abstraction.h"
 #include "types.h"
 
 #include "../option_parser.h"
@@ -70,7 +70,7 @@ static AbstractionAndStateMap convert_abstraction(
             return refinement_hierarchy->get_local_state_id(state);
         };
 
-    return make_pair(utils::make_unique_ptr<Abstraction>(
+    return make_pair(utils::make_unique_ptr<ExplicitAbstraction>(
         move(backward_graph),
         move(looping_operators),
         move(goal_states),
