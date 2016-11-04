@@ -31,8 +31,10 @@ static AbstractionAndStateMap compute_abstraction(
     merge_and_shrink::FactoredTransitionSystem &fts,
     const pdbs::Pattern &pattern,
     bool debug) {
+    utils::Log log;
+
     if (debug) {
-        cout << "Pattern: " << pattern << endl;
+        log << "Pattern: " << pattern << endl;
     }
 
     const merge_and_shrink::Verbosity verbosity = debug ?
@@ -56,10 +58,17 @@ static AbstractionAndStateMap compute_abstraction(
     const merge_and_shrink::TransitionSystem &transition_system =
         fts.get_ts(final_index);
     if (debug) {
-        transition_system.dump_dot_graph();
+        //transition_system.dump_dot_graph();
     }
 
     int num_states = transition_system.get_size();
+
+    if (debug) {
+        log << "States in projection: " << num_states << endl;
+        log << "Transitions in projection: "
+            << transition_system.get_num_transitions() << endl;
+    }
+
     vector<vector<Transition>> backward_graph(num_states);
     algorithms::OrderedSet<int> looping_operators;
     for (const merge_and_shrink::GroupAndTransitions &gat : transition_system) {
@@ -110,6 +119,7 @@ vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
         pattern_generator->generate(task).get_patterns();
     cout << "Patterns: " << patterns->size() << endl;
 
+    log << "Prepare FTS" << endl;
     const merge_and_shrink::Verbosity verbosity = debug ?
         merge_and_shrink::Verbosity::VERBOSE :
         merge_and_shrink::Verbosity::NORMAL;

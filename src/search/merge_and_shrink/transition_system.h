@@ -208,6 +208,14 @@ public:
         return num_states;
     }
 
+    int get_num_transitions() const {
+        int num_transitions = 0;
+        for (const std::vector<Transition> &transitions : transitions_by_group_id) {
+            num_transitions += transitions.size();
+        }
+        return num_transitions;
+    }
+
     int get_init_state() const {
         return init_state;
     }
