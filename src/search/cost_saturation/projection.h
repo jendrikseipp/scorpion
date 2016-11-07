@@ -17,7 +17,7 @@ class Projection : public Abstraction {
 
     pdbs::Pattern pattern;
 
-    std::vector<pdbs::AbstractOperator> operators;
+    std::vector<pdbs::AbstractOperator> abstract_operators;
     std::unique_ptr<pdbs::MatchTree> match_tree;
 
     // size of the PDB
@@ -27,12 +27,12 @@ class Projection : public Abstraction {
     std::vector<std::size_t> hash_multipliers;
 
     // Operators inducing state-changing transitions.
-    const std::vector<int> active_operators;
+    std::vector<int> active_operators;
 
     // Operators inducing self-loops. May overlap with active operators.
-    const std::vector<int> looping_operators;
+    std::vector<int> looping_operators;
 
-    const std::vector<int> goal_states;
+    std::vector<int> goal_states;
     const int num_operators;
 
     // Returns true iff op has an effect on a variable in the pattern.
@@ -55,7 +55,7 @@ class Projection : public Abstraction {
         std::vector<FactPair> &eff_pairs,
         const std::vector<FactPair> &effects_without_pre,
         const VariablesProxy &variables,
-        std::vector<pdbs::AbstractOperator> &operators) const;
+        std::vector<pdbs::AbstractOperator> &abstract_operators) const;
 
     /*
       Computes all abstract operators for a given concrete operator (by
@@ -67,7 +67,7 @@ class Projection : public Abstraction {
         const OperatorProxy &op, int cost,
         const std::vector<int> &variable_to_index,
         const VariablesProxy &variables,
-        std::vector<pdbs::AbstractOperator> &operators) const;
+        std::vector<pdbs::AbstractOperator> &abstract_operators) const;
 
     std::vector<int> compute_distances(
         const TaskProxy &task_proxy,
@@ -107,6 +107,8 @@ public:
     virtual const std::vector<int> &get_active_operators() const override;
 
     virtual int get_num_states() const override;
+
+    virtual void release_transition_system_memory() override;
 
     virtual void dump() const override;
 };

@@ -48,13 +48,13 @@ Projection::Projection(
     // Compute abstract operators.
     for (OperatorProxy op : task_proxy.get_operators()) {
         build_abstract_operators(
-            op, -1, variable_to_index, variables, operators);
+            op, -1, variable_to_index, variables, abstract_operators);
     }
 
     // Create match tree.
     match_tree = utils::make_unique_ptr<pdbs::MatchTree>(
         task_proxy, pattern, hash_multipliers);
-    for (const pdbs::AbstractOperator &op : operators) {
+    for (const pdbs::AbstractOperator &op : abstract_operators) {
         match_tree->insert(op);
     }
 }
@@ -319,6 +319,13 @@ const vector<int> &Projection::get_active_operators() const {
 
 int Projection::get_num_states() const {
     return num_states;
+}
+
+void Projection::release_transition_system_memory() {
+    utils::release_vector_memory(abstract_operators);
+    utils::release_vector_memory(active_operators);
+    utils::release_vector_memory(looping_operators);
+    match_tree = nullptr;
 }
 
 void Projection::dump() const {

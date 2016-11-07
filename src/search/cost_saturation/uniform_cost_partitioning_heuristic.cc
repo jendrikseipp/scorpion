@@ -138,6 +138,10 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
         compute_uniform_cost_partitioning(
             abstractions, random_order, costs, opts.get<bool>("dynamic"), debug)};
 
+    for (auto &abstraction : abstractions) {
+        abstraction->release_transition_system_memory();
+    }
+
     cout << "Time for computing cost partitionings: " << timer << endl;
     cout << "Orders: " << h_values_by_order.size() << endl;
 }

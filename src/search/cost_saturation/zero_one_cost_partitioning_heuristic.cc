@@ -62,6 +62,10 @@ ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options
         compute_zero_one_cost_partitioning(
             abstractions, random_order, costs, debug)};
 
+    for (auto &abstraction : abstractions) {
+        abstraction->release_transition_system_memory();
+    }
+
     cout << "Time for computing cost partitionings: " << timer << endl;
     cout << "Orders: " << h_values_by_order.size() << endl;
 }

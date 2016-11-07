@@ -32,6 +32,8 @@ public:
 
     virtual int get_num_states() const = 0;
 
+    virtual void release_transition_system_memory() = 0;
+
     virtual void dump() const = 0;
 };
 }

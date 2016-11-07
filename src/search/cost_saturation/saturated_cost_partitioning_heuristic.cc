@@ -69,6 +69,10 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
     }
     num_best_order.resize(h_values_by_order.size(), 0);
 
+    for (auto &abstraction : abstractions) {
+        abstraction->release_transition_system_memory();
+    }
+
     cout << "Time for computing cost partitionings: " << scp_timer << endl;
     cout << "Orders: " << h_values_by_order.size() << endl;
 }
