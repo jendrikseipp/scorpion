@@ -420,6 +420,7 @@ fast_downward_plugin(
         cost_saturation/cost_partitioning_heuristic.cc
         cost_saturation/explicit_abstraction.cc
         cost_saturation/merge_and_shrink_abstraction_generator.cc
+        cost_saturation/projection.cc
         cost_saturation/projection_generator.cc
         cost_saturation/saturated_cost_partitioning_heuristic.cc
         cost_saturation/scp_generator.cc
