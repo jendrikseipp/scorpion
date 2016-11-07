@@ -26,7 +26,7 @@ MergeAndShrinkAbstractionGenerator::MergeAndShrinkAbstractionGenerator(const opt
       debug(opts.get<bool>("debug")) {
 }
 
-static AbstractionAndStateMap compute_abstraction(
+static unique_ptr<Abstraction> compute_abstraction(
     const TaskProxy &task_proxy,
     merge_and_shrink::FactoredTransitionSystem &fts,
     const pdbs::Pattern &pattern,
@@ -93,7 +93,7 @@ static AbstractionAndStateMap compute_abstraction(
 
     shared_ptr<merge_and_shrink::HeuristicRepresentation> heuristic_representation =
         fts.get_heuristic_representation(final_index);
-    StateMap state_map =
+    AbstractionFunction state_map =
         [heuristic_representation](const State &state) {
             assert(heuristic_representation);
             int state_id = heuristic_representation->get_abstract_state(state);
@@ -101,14 +101,15 @@ static AbstractionAndStateMap compute_abstraction(
             return state_id;
         };
 
-    return make_pair(utils::make_unique_ptr<ExplicitAbstraction>(
+    return utils::make_unique_ptr<ExplicitAbstraction>(
+        state_map,
         move(backward_graph),
         looping_operators.pop_as_vector(),
         move(goal_states),
-        task_proxy.get_operators().size()), state_map);
+        task_proxy.get_operators().size());
 }
 
-vector<AbstractionAndStateMap> MergeAndShrinkAbstractionGenerator::generate_abstractions(
+Abstractions MergeAndShrinkAbstractionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
     utils::Timer timer;
     utils::Log log;
@@ -130,14 +131,14 @@ vector<AbstractionAndStateMap> MergeAndShrinkAbstractionGenerator::generate_abst
     fts.reserve_extra_position();
 
     log << "Build abstractions" << endl;
-    vector<AbstractionAndStateMap> abstractions_and_state_maps;
+    Abstractions abstractions;
     for (const pdbs::Pattern &pattern : *patterns) {
-        abstractions_and_state_maps.push_back(
+        abstractions.push_back(
             compute_abstraction(task_proxy, fts, pattern, debug));
     }
     log << "Done building projections" << endl;
     cout << "Time for building projections: " << timer << endl;
-    return abstractions_and_state_maps;
+    return abstractions;
 }
 
 static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {

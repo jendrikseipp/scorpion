@@ -59,11 +59,13 @@ static vector<int> get_active_operators_from_graph(
 }
 
 ExplicitAbstraction::ExplicitAbstraction(
+    AbstractionFunction function,
     vector<vector<Transition>> &&backward_graph,
     vector<int> &&looping_operators,
     vector<int> &&goal_states,
     int num_operators)
     : Abstraction(),
+      abstraction_function(function),
       backward_graph(move(backward_graph)),
       active_operators(get_active_operators_from_graph(this->backward_graph)),
       looping_operators(move(looping_operators)),
@@ -127,6 +129,17 @@ const vector<int> &ExplicitAbstraction::get_active_operators() const {
 
 int ExplicitAbstraction::get_num_states() const {
     return backward_graph.size();
+}
+
+int ExplicitAbstraction::get_abstract_state_id(const State &concrete_state) const {
+    return abstraction_function(concrete_state);
+}
+
+void ExplicitAbstraction::release_transition_system_memory() {
+    utils::release_vector_memory(backward_graph);
+    utils::release_vector_memory(active_operators);
+    utils::release_vector_memory(looping_operators);
+    utils::release_vector_memory(goal_states);
 }
 
 void ExplicitAbstraction::dump() const {
