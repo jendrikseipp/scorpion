@@ -18,7 +18,6 @@ using namespace std;
 namespace cost_saturation {
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
-    vector<unique_ptr<Abstraction>> abstractions;
     vector<int> abstractions_per_generator;
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {

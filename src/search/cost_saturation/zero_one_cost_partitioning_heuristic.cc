@@ -39,7 +39,6 @@ static vector<vector<int>> compute_zero_one_cost_partitioning(
 
 ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
-    vector<unique_ptr<Abstraction>> abstractions;
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
         for (unique_ptr<Abstraction> &abstraction : generator->generate_abstractions(task)) {

@@ -10,6 +10,8 @@
 
 namespace pdbs {
 class AbstractOperator {
+    const int concrete_operator_id;
+
     /*
       This class represents an abstract operator how it is needed for
       the regression search performed during the PDB-construction. As
@@ -19,7 +21,7 @@ class AbstractOperator {
       abstract state.
     */
 
-    int cost;
+    const int cost;
 
     /*
       Preconditions for the regression search, corresponds to normal
@@ -43,8 +45,11 @@ public:
                      const std::vector<FactPair> &preconditions,
                      const std::vector<FactPair> &effects,
                      int cost,
-                     const std::vector<std::size_t> &hash_multipliers);
+                     const std::vector<std::size_t> &hash_multipliers,
+                     int concrete_operator_id = -1);
     ~AbstractOperator();
+
+    int get_concrete_operator_id() const;
 
     /*
       Returns variable value pairs which represent the preconditions of

@@ -38,7 +38,25 @@ Projection::Projection(
             utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
     }
-    create_match_tree(task_proxy);
+
+    VariablesProxy variables = task_proxy.get_variables();
+    vector<int> variable_to_index(variables.size(), -1);
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        variable_to_index[pattern[i]] = i;
+    }
+
+    // Compute abstract operators.
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        build_abstract_operators(
+            op, -1, variable_to_index, variables, operators);
+    }
+
+    // Create match tree.
+    match_tree = utils::make_unique_ptr<pdbs::MatchTree>(
+        task_proxy, pattern, hash_multipliers);
+    for (const pdbs::AbstractOperator &op : operators) {
+        match_tree->insert(op);
+    }
 }
 
 Projection::~Projection() {
@@ -69,7 +87,8 @@ vector<int> Projection::compute_looping_operators() const {
 }
 
 void Projection::multiply_out(
-    int pos, int cost, vector<FactPair> &prev_pairs,
+    int pos, int cost, int op_id,
+    vector<FactPair> &prev_pairs,
     vector<FactPair> &pre_pairs,
     vector<FactPair> &eff_pairs,
     const vector<FactPair> &effects_without_pre,
@@ -78,9 +97,8 @@ void Projection::multiply_out(
     if (pos == static_cast<int>(effects_without_pre.size())) {
         // All effects without precondition have been checked: insert op.
         if (!eff_pairs.empty()) {
-            operators.push_back(
-                pdbs::AbstractOperator(
-                    prev_pairs, pre_pairs, eff_pairs, cost, hash_multipliers));
+            operators.emplace_back(
+                prev_pairs, pre_pairs, eff_pairs, cost, hash_multipliers, op_id);
         }
     } else {
         // For each possible value for the current variable, build an
@@ -95,7 +113,7 @@ void Projection::multiply_out(
             } else {
                 prev_pairs.emplace_back(var_id, i);
             }
-            multiply_out(pos + 1, cost, prev_pairs, pre_pairs, eff_pairs,
+            multiply_out(pos + 1, cost, op_id, prev_pairs, pre_pairs, eff_pairs,
                          effects_without_pre, variables, operators);
             if (i != eff) {
                 pre_pairs.pop_back();
@@ -153,36 +171,8 @@ void Projection::build_abstract_operators(
             }
         }
     }
-    multiply_out(0, cost, prev_pairs, pre_pairs, eff_pairs, effects_without_pre,
-                 variables, operators);
-}
-
-unique_ptr<pdbs::MatchTree> Projection::create_match_tree(
-    const TaskProxy &task_proxy) const {
-    unique_ptr<pdbs::MatchTree> match_tree =
-            utils::make_unique_ptr<pdbs::MatchTree>(
-                task_proxy, pattern, hash_multipliers);
-
-    VariablesProxy variables = task_proxy.get_variables();
-    vector<int> variable_to_index(variables.size(), -1);
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        variable_to_index[pattern[i]] = i;
-    }
-
-    // compute all abstract operators
-    vector<pdbs::AbstractOperator> operators;
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        // HACK: Use cost member to store original op id.
-        build_abstract_operators(
-            op, op.get_id(), variable_to_index, variables, operators);
-    }
-
-    // Fill the match tree.
-    for (const pdbs::AbstractOperator &op : operators) {
-        match_tree->insert(op);
-    }
-
-    return match_tree;
+    multiply_out(0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
+                 effects_without_pre, variables, operators);
 }
 
 vector<int> Projection::compute_distances(
@@ -225,6 +215,7 @@ vector<int> Projection::compute_distances(
         pair<int, size_t> node = pq.pop();
         int distance = node.first;
         size_t state_index = node.second;
+        assert(utils::in_bounds(state_index, distances));
         if (distance > distances[state_index]) {
             continue;
         }
@@ -234,9 +225,10 @@ vector<int> Projection::compute_distances(
         match_tree->get_applicable_operators(state_index, applicable_operators);
         for (const pdbs::AbstractOperator *op : applicable_operators) {
             size_t predecessor = state_index + op->get_hash_effect();
-            // HACK: op_id is stored in cost member.
-            int op_id = op->get_cost();
+            int op_id = op->get_concrete_operator_id();
+            assert(utils::in_bounds(op_id, costs));
             int alternative_cost = distances[state_index] + costs[op_id];
+            assert(utils::in_bounds(predecessor, distances));
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
                 pq.push(alternative_cost, predecessor);
@@ -310,9 +302,7 @@ vector<int> Projection::compute_saturated_costs(
             if (src_h == INF) {
                 continue;
             }
-            // HACK.
-            int op_id = op->get_cost();
-            int &needed_costs = saturated_costs[op_id];
+            int &needed_costs = saturated_costs[op->get_concrete_operator_id()];
             needed_costs = max(needed_costs, src_h - target_h);
         }
     }

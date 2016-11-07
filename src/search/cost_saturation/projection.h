@@ -17,6 +17,7 @@ class Projection : public Abstraction {
 
     pdbs::Pattern pattern;
 
+    std::vector<pdbs::AbstractOperator> operators;
     std::unique_ptr<pdbs::MatchTree> match_tree;
 
     // size of the PDB
@@ -24,9 +25,6 @@ class Projection : public Abstraction {
 
     // multipliers for each variable for perfect hash function
     std::vector<std::size_t> hash_multipliers;
-
-    // Returns true iff op has an effect on a variable in the pattern.
-    bool is_operator_relevant(const OperatorProxy &op) const;
 
     // Operators inducing state-changing transitions.
     const std::vector<int> active_operators;
@@ -37,8 +35,8 @@ class Projection : public Abstraction {
     const std::vector<int> goal_states;
     const int num_operators;
 
-    std::unique_ptr<pdbs::MatchTree> create_match_tree(
-        const TaskProxy &task_proxy) const;
+    // Returns true iff op has an effect on a variable in the pattern.
+    bool is_operator_relevant(const OperatorProxy &op) const;
 
     std::vector<int> compute_active_operators() const;
     std::vector<int> compute_looping_operators() const;
@@ -51,7 +49,7 @@ class Projection : public Abstraction {
       abstract operator with a concrete value (!= -1) is computed.
     */
     void multiply_out(
-        int pos, int cost,
+        int pos, int cost, int op_id,
         std::vector<FactPair> &prev_pairs,
         std::vector<FactPair> &pre_pairs,
         std::vector<FactPair> &eff_pairs,

@@ -108,7 +108,6 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
 
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
-    vector<unique_ptr<Abstraction>> abstractions;
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
         for (auto &abstraction : generator->generate_abstractions(task)) {
