@@ -15,7 +15,7 @@ extern int compute_sum_h(
     const std::vector<std::vector<int>> &h_values_by_abstraction);
 
 std::vector<int> get_local_state_ids(
-    const std::vector<StateMap> &state_maps, const State &state);
+    const Abstractions &abstractions, const State &state);
 
 extern std::vector<State> sample_states(
     const TaskProxy &task_proxy,

@@ -13,7 +13,7 @@ class Abstraction;
 
 class AbstractionGenerator {
 public:
-    virtual std::vector<AbstractionAndStateMap> generate_abstractions(
+    virtual Abstractions generate_abstractions(
         const std::shared_ptr<AbstractTask> &task) = 0;
 };
 }

@@ -99,7 +99,9 @@ protected:
 
 public:
     Projection(const TaskProxy &task_proxy, const pdbs::Pattern &pattern);
-    ~Projection();
+    virtual ~Projection() override;
+
+    virtual int get_abstract_state_id(const State &concrete_state) const override;
 
     virtual std::vector<int> compute_h_values(
         const std::vector<int> &costs) const override;

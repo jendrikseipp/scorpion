@@ -3,6 +3,8 @@
 
 #include <vector>
 
+class State;
+
 namespace cost_saturation {
 class Abstraction {
 protected:
@@ -13,9 +15,11 @@ protected:
 
 public:
     Abstraction();
-    virtual ~Abstraction() = default;
+    virtual ~Abstraction();
 
     Abstraction(const Abstraction &) = delete;
+
+    virtual int get_abstract_state_id(const State &concrete_state) const = 0;
 
     virtual std::vector<int> compute_h_values(
         const std::vector<int> &costs) const = 0;

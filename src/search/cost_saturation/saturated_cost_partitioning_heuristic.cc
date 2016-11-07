@@ -23,9 +23,8 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
         int abstractions_before = abstractions.size();
-        for (AbstractionAndStateMap &pair : generator->generate_abstractions(task)) {
-            abstractions.push_back(move(pair.first));
-            state_maps.push_back(move(pair.second));
+        for (auto &abstraction : generator->generate_abstractions(task)) {
+            abstractions.push_back(move(abstraction));
         }
         abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
     }
@@ -39,7 +38,7 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
         // Use orders provided by SCP generators.
         h_values_by_order =
             opts.get<shared_ptr<SCPGenerator>>("orders")->get_cost_partitionings(
-                task_proxy, abstractions, state_maps, costs);
+                task_proxy, abstractions, costs);
     } else {
         int original_seed = rng->get_last_seed();
 

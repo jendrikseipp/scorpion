@@ -24,7 +24,6 @@ SCPGeneratorRandom::SCPGeneratorRandom(const Options &opts)
 void SCPGeneratorRandom::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
     const vector<int> &) {
     order = get_default_order(abstractions.size());
 }
@@ -32,7 +31,6 @@ void SCPGeneratorRandom::initialize(
 CostPartitioning SCPGeneratorRandom::get_next_cost_partitioning(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
     const vector<int> &costs) {
     rng->shuffle(order);
     if (max_orders == 1) {

@@ -1,5 +1,6 @@
 #include "cost_partitioning_heuristic.h"
 
+#include "abstraction.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -20,13 +21,16 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(const Options &opts)
       debug(opts.get<bool>("debug")) {
 }
 
+CostPartitioningHeuristic::~CostPartitioningHeuristic() {
+}
+
 int CostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
     return compute_heuristic(state);
 }
 
 int CostPartitioningHeuristic::compute_heuristic(const State &state) {
-    vector<int> local_state_ids = get_local_state_ids(state_maps, state);
+    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
     int max_h = compute_max_h_with_statistics(local_state_ids);
     if (max_h == INF) {
         return DEAD_END;

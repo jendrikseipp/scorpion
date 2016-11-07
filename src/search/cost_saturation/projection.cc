@@ -44,6 +44,10 @@ Projection::Projection(
 Projection::~Projection() {
 }
 
+int Projection::get_abstract_state_id(const State &concrete_state) const {
+    return hash_index(concrete_state);
+}
+
 vector<int> Projection::compute_active_operators() const {
     vector<int> active_operators;
     for (OperatorProxy op : task_proxy.get_operators()) {

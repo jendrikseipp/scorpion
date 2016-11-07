@@ -26,13 +26,11 @@ protected:
     virtual void initialize(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
         const std::vector<int> &costs);
 
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
         const std::vector<int> &costs) = 0;
 
     virtual bool has_next_cost_partitioning() const {
@@ -46,7 +44,6 @@ public:
     virtual CostPartitionings get_cost_partitionings(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
         const std::vector<int> &costs);
 };
 

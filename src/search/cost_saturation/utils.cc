@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include "abstraction.h"
+
 #include "../sampling.h"
 #include "../successor_generator.h"
 #include "../task_proxy.h"
@@ -44,11 +46,11 @@ int compute_sum_h(
 }
 
 vector<int> get_local_state_ids(
-    const vector<StateMap> &state_maps, const State &state) {
+    const Abstractions &abstractions, const State &state) {
     vector<int> local_state_ids;
-    local_state_ids.reserve(state_maps.size());
-    for (auto &state_map : state_maps) {
-        local_state_ids.push_back(state_map(state));
+    local_state_ids.reserve(abstractions.size());
+    for (auto &abstraction : abstractions) {
+        local_state_ids.push_back(abstraction->get_abstract_state_id(state));
     }
     return local_state_ids;
 }

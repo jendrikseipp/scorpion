@@ -111,9 +111,8 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
     vector<unique_ptr<Abstraction>> abstractions;
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
-        for (AbstractionAndStateMap &pair : generator->generate_abstractions(task)) {
-            abstractions.push_back(move(pair.first));
-            state_maps.push_back(move(pair.second));
+        for (auto &abstraction : generator->generate_abstractions(task)) {
+            abstractions.push_back(move(abstraction));
         }
     }
     cout << "Abstractions: " << abstractions.size() << endl;

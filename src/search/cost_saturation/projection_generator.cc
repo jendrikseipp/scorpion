@@ -20,7 +20,7 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
       debug(opts.get<bool>("debug")) {
 }
 
-vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
+Abstractions ProjectionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
     utils::Timer timer;
     utils::Log log;
@@ -32,15 +32,14 @@ vector<AbstractionAndStateMap> ProjectionGenerator::generate_abstractions(
     cout << "Patterns: " << patterns->size() << endl;
 
     log << "Build projections" << endl;
-    vector<AbstractionAndStateMap> abstractions_and_state_maps;
+    Abstractions abstractions;
     for (const pdbs::Pattern &pattern : *patterns) {
-        abstractions_and_state_maps.push_back(
-            make_pair(utils::make_unique_ptr<Projection>(task_proxy, pattern),
-                [](const State &){ABORT("Not implemented"); return -1; }));
+        abstractions.push_back(
+            utils::make_unique_ptr<Projection>(task_proxy, pattern));
     }
     log << "Done building projections" << endl;
     cout << "Time for building projections: " << timer << endl;
-    return abstractions_and_state_maps;
+    return abstractions;
 }
 
 static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {

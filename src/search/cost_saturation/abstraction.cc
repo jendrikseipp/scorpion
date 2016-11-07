@@ -7,6 +7,9 @@ Abstraction::Abstraction()
     : use_general_costs(true) {
 }
 
+Abstraction::~Abstraction() {
+}
+
 pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated_costs(
     const vector<int> &costs) const {
     vector<int> h_values = compute_h_values(costs);
