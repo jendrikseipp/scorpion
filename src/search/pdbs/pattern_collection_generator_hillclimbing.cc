@@ -83,6 +83,8 @@ size_t PatternCollectionGeneratorHillclimbing::generate_pdbs_for_candidates(
     */
     size_t max_pdb_size = 0;
     for (const Pattern &new_candidate : new_candidates) {
+        if (hill_climbing_timer->is_expired())
+            throw HillClimbingTimeout();
         if (generated_patterns.count(new_candidate) == 0) {
             candidate_pdbs.push_back(
                 make_shared<PatternDatabase>(task_proxy, new_candidate));
