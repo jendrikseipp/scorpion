@@ -40,6 +40,7 @@ class Projection : public Abstraction {
 
     std::vector<int> compute_active_operators() const;
     std::vector<int> compute_looping_operators() const;
+    std::vector<int> compute_goal_states() const;
 
     /*
       Recursive method; called by build_abstract_operators. In the case
@@ -69,9 +70,7 @@ class Projection : public Abstraction {
         const VariablesProxy &variables,
         std::vector<pdbs::AbstractOperator> &abstract_operators) const;
 
-    std::vector<int> compute_distances(
-        const TaskProxy &task_proxy,
-        const std::vector<int> &costs) const;
+    std::vector<int> compute_distances(const std::vector<int> &costs) const;
 
     /*
       For a given abstract state (given as index), the according values

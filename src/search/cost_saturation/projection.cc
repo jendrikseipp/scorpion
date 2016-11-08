@@ -57,6 +57,9 @@ Projection::Projection(
     for (const pdbs::AbstractOperator &op : abstract_operators) {
         match_tree->insert(op);
     }
+
+    // Needs hash_multipliers.
+    goal_states = compute_goal_states();
 }
 
 Projection::~Projection() {
@@ -84,6 +87,34 @@ vector<int> Projection::compute_looping_operators() const {
         }
     }
     return looping_operators;
+}
+
+vector<int> Projection::compute_goal_states() const {
+    vector<int> goal_states;
+
+    VariablesProxy variables = task_proxy.get_variables();
+    vector<int> variable_to_index(variables.size(), -1);
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        variable_to_index[pattern[i]] = i;
+    }
+
+    // compute abstract goal var-val pairs
+    vector<FactPair> abstract_goals;
+    for (FactProxy goal : task_proxy.get_goals()) {
+        int var_id = goal.get_variable().get_id();
+        int val = goal.get_value();
+        if (variable_to_index[var_id] != -1) {
+            abstract_goals.emplace_back(variable_to_index[var_id], val);
+        }
+    }
+
+    for (size_t state_index = 0; state_index < num_states; ++state_index) {
+        if (is_goal_state(state_index, abstract_goals, variables)) {
+            goal_states.push_back(state_index);
+        }
+    }
+
+    return goal_states;
 }
 
 void Projection::multiply_out(
@@ -175,39 +206,16 @@ void Projection::build_abstract_operators(
                  effects_without_pre, variables, operators);
 }
 
-vector<int> Projection::compute_distances(
-    const TaskProxy &task_proxy, const vector<int> &costs) const {
-    vector<int> distances;
+vector<int> Projection::compute_distances(const vector<int> &costs) const {
+    vector<int> distances(num_states, INF);
 
-    VariablesProxy variables = task_proxy.get_variables();
-    vector<int> variable_to_index(variables.size(), -1);
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        variable_to_index[pattern[i]] = i;
-    }
-
-    // compute abstract goal var-val pairs
-    vector<FactPair> abstract_goals;
-    for (FactProxy goal : task_proxy.get_goals()) {
-        int var_id = goal.get_variable().get_id();
-        int val = goal.get_value();
-        if (variable_to_index[var_id] != -1) {
-            abstract_goals.emplace_back(variable_to_index[var_id], val);
-        }
-    }
-
-    distances.reserve(num_states);
     // Note: Reusing the queue doesn't save much time.
     AdaptiveQueue<size_t> pq;
 
-    // initialize queue
-    for (size_t state_index = 0; state_index < num_states; ++state_index) {
-        // TODO: Store goal states?
-        if (is_goal_state(state_index, abstract_goals, variables)) {
-            pq.push(0, state_index);
-            distances.push_back(0);
-        } else {
-            distances.push_back(INF);
-        }
+    // Initialize queue.
+    for (int goal : goal_states) {
+        pq.push(0, goal);
+        distances[goal] = 0;
     }
 
     // Dijkstra loop
@@ -316,7 +324,7 @@ vector<int> Projection::compute_saturated_costs(
 }
 
 vector<int> Projection::compute_h_values(const vector<int> &costs) const {
-    return compute_distances(task_proxy, costs);
+    return compute_distances(costs);
 }
 
 const vector<int> &Projection::get_active_operators() const {
