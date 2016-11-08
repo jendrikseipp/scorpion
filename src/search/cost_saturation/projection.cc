@@ -196,7 +196,7 @@ vector<int> Projection::compute_distances(
     }
 
     distances.reserve(num_states);
-    // TODO: Reuse queue?
+    // Note: Reusing the queue doesn't save much time.
     AdaptiveQueue<size_t> pq;
 
     // initialize queue
@@ -211,6 +211,8 @@ vector<int> Projection::compute_distances(
     }
 
     // Dijkstra loop
+    // Reuse vector to save allocations.
+    vector<const pdbs::AbstractOperator *> applicable_operators;
     while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
         int distance = node.first;
@@ -221,7 +223,7 @@ vector<int> Projection::compute_distances(
         }
 
         // regress abstract_state
-        vector<const pdbs::AbstractOperator *> applicable_operators;
+        applicable_operators.clear();
         match_tree->get_applicable_operators(state_index, applicable_operators);
         for (const pdbs::AbstractOperator *op : applicable_operators) {
             size_t predecessor = state_index + op->get_hash_effect();
