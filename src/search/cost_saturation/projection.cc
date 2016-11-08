@@ -288,13 +288,16 @@ vector<int> Projection::compute_saturated_costs(
         }
     }
 
+    // Reuse vector to save allocations.
+    vector<const pdbs::AbstractOperator *> applicable_operators;
     for (int target = 0; target < get_num_states(); ++target) {
         utils::in_bounds(target, h_values);
         int target_h = h_values[target];
         if (target_h == INF) {
             continue;
         }
-        vector<const pdbs::AbstractOperator *> applicable_operators;
+
+        applicable_operators.clear();
         match_tree->get_applicable_operators(target, applicable_operators);
         for (const pdbs::AbstractOperator *op : applicable_operators) {
             size_t src = target + op->get_hash_effect();
