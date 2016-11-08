@@ -23,6 +23,8 @@ protected:
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
 
+    std::vector<int> abstractions_per_generator;
+
     // For statistics.
     mutable std::vector<int> num_best_order;
 

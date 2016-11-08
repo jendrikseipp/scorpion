@@ -1,7 +1,6 @@
 #include "uniform_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "abstraction_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -108,19 +107,6 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
 
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
-    for (const shared_ptr<AbstractionGenerator> &generator :
-         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
-        for (auto &abstraction : generator->generate_abstractions(task)) {
-            abstractions.push_back(move(abstraction));
-        }
-    }
-    cout << "Abstractions: " << abstractions.size() << endl;
-    if (debug) {
-        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-            abstraction->dump();
-        }
-    }
-
     utils::Timer timer;
     vector<int> costs = get_operator_costs(task_proxy);
     for (int &cost : costs) {
@@ -170,9 +156,6 @@ static Heuristic *_parse(OptionParser &parser) {
     Options opts = parser.parse();
     if (parser.help_mode())
         return nullptr;
-
-    opts.verify_list_non_empty<shared_ptr<AbstractionGenerator>>(
-        "abstraction_generators");
 
     if (parser.dry_run())
         return nullptr;

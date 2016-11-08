@@ -1,6 +1,7 @@
 #include "cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
+#include "abstraction_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -19,6 +20,22 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")) {
+    for (const shared_ptr<AbstractionGenerator> &generator :
+         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
+        int abstractions_before = abstractions.size();
+        for (auto &abstraction : generator->generate_abstractions(task)) {
+            abstractions.push_back(move(abstraction));
+        }
+        abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
+    }
+    cout << "Abstractions: " << abstractions.size() << endl;
+    cout << "Abstractions per generator: " << abstractions_per_generator << endl;
+
+    if (debug) {
+        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+            abstraction->dump();
+        }
+    }
 }
 
 CostPartitioningHeuristic::~CostPartitioningHeuristic() {

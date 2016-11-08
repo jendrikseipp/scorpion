@@ -1,7 +1,6 @@
 #include "saturated_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "abstraction_generator.h"
 #include "scp_generator.h"
 #include "utils.h"
 
@@ -18,18 +17,6 @@ using namespace std;
 namespace cost_saturation {
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
-    vector<int> abstractions_per_generator;
-    for (const shared_ptr<AbstractionGenerator> &generator :
-         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
-        int abstractions_before = abstractions.size();
-        for (auto &abstraction : generator->generate_abstractions(task)) {
-            abstractions.push_back(move(abstraction));
-        }
-        abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
-    }
-    cout << "Abstractions: " << abstractions.size() << endl;
-    cout << "Abstractions per generator: " << abstractions_per_generator << endl;
-
     utils::Timer scp_timer;
     const vector<int> costs = get_operator_costs(task_proxy);
 
@@ -93,9 +80,6 @@ static Heuristic *_parse(OptionParser &parser) {
     Options opts = parser.parse();
     if (parser.help_mode())
         return nullptr;
-
-    opts.verify_list_non_empty<shared_ptr<AbstractionGenerator>>(
-        "abstraction_generators");
 
     if (parser.dry_run())
         return nullptr;
