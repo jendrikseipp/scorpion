@@ -64,7 +64,7 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
             cout << "Order: " << random_order << endl;
             h_values_by_order.push_back(
                 compute_saturated_cost_partitioning(
-                    abstractions, random_order, costs));
+                    abstractions, random_order, costs, debug));
         } while (next_permutation(suborders.begin(), suborders.end()));
     }
     num_best_order.resize(h_values_by_order.size(), 0);

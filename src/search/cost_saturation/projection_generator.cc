@@ -34,6 +34,9 @@ Abstractions ProjectionGenerator::generate_abstractions(
     log << "Build projections" << endl;
     Abstractions abstractions;
     for (const pdbs::Pattern &pattern : *patterns) {
+        if (debug) {
+            log << "Pattern: " << pattern << endl;
+        }
         abstractions.push_back(
             utils::make_unique_ptr<Projection>(task_proxy, pattern));
     }

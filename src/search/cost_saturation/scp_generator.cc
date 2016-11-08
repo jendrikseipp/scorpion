@@ -20,9 +20,9 @@ namespace cost_saturation {
 vector<vector<int>> compute_saturated_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
-    const vector<int> &costs) {
+    const vector<int> &costs,
+    bool debug) {
     assert(abstractions.size() == order.size());
-    const bool debug = false;
     vector<int> remaining_costs = costs;
     vector<vector<int>> h_values_by_abstraction(abstractions.size());
     for (int pos : order) {

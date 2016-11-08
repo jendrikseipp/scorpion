@@ -51,7 +51,8 @@ public:
 extern std::vector<std::vector<int>> compute_saturated_cost_partitioning(
     const std::vector<std::unique_ptr<Abstraction>> &abstractions,
     const std::vector<int> &order,
-    const std::vector<int> &costs);
+    const std::vector<int> &costs,
+    bool debug = false);
 
 extern void add_common_scp_generator_options_to_parser(
     options::OptionParser &parser);
