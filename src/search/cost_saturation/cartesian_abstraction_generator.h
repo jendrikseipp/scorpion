@@ -18,7 +18,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
 public:
     explicit CartesianAbstractionGenerator(const options::Options &opts);
 
-    std::vector<AbstractionAndStateMap> generate_abstractions(
+    Abstractions generate_abstractions(
         const std::shared_ptr<AbstractTask> &task);
 };
 }
