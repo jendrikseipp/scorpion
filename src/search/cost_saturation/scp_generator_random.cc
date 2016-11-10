@@ -17,7 +17,7 @@ using namespace std;
 
 namespace cost_saturation {
 SCPGeneratorRandom::SCPGeneratorRandom(const Options &opts)
-    : SCPGenerator(opts),
+    : CostPartitioningGenerator(opts),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
@@ -40,7 +40,7 @@ CostPartitioning SCPGeneratorRandom::get_next_cost_partitioning(
     return cp_function(abstractions, order, costs);
 }
 
-static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
+static shared_ptr<CostPartitioningGenerator> _parse_random(OptionParser &parser) {
     add_common_scp_generator_options_to_parser(parser);
     utils::add_rng_options(parser);
     Options opts = parser.parse();
@@ -50,6 +50,6 @@ static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
         return make_shared<SCPGeneratorRandom>(opts);
 }
 
-static PluginShared<SCPGenerator> _plugin_random(
+static PluginShared<CostPartitioningGenerator> _plugin_random(
     "random", _parse_random);
 }

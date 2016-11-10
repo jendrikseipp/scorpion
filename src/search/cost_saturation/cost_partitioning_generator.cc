@@ -1,4 +1,4 @@
-#include "scp_generator.h"
+#include "cost_partitioning_generator.h"
 
 #include "abstraction.h"
 #include "diversifier.h"
@@ -48,20 +48,20 @@ CostPartitioning compute_saturated_cost_partitioning(
 }
 
 
-SCPGenerator::SCPGenerator(const Options &opts)
+CostPartitioningGenerator::CostPartitioningGenerator(const Options &opts)
     : max_orders(opts.get<int>("max_orders")),
       max_time(opts.get<double>("max_time")),
       diversify(opts.get<bool>("diversify")) {
 }
 
-void SCPGenerator::initialize(
+void CostPartitioningGenerator::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &,
     const vector<int> &) {
     // Do nothing by default.
 }
 
-CostPartitionings SCPGenerator::get_cost_partitionings(
+CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
     const vector<int> &costs,
@@ -109,7 +109,7 @@ void add_common_scp_generator_options_to_parser(OptionParser &parser) {
 }
 
 
-static PluginTypePlugin<SCPGenerator> _type_plugin(
-    "SCPGenerator",
-    "Saturated cost partitioning generator.");
+static PluginTypePlugin<CostPartitioningGenerator> _type_plugin(
+    "CostPartitioningGenerator",
+    "Cost partitioning generator.");
 }

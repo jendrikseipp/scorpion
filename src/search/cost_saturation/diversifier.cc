@@ -1,7 +1,7 @@
 #include "diversifier.h"
 
 #include "abstraction.h"
-#include "scp_generator.h"
+#include "cost_partitioning_generator.h"
 #include "utils.h"
 
 #include "../task_proxy.h"

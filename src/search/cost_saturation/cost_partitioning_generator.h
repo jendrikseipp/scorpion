@@ -1,5 +1,5 @@
-#ifndef COST_SATURATION_SCP_GENERATOR_H
-#define COST_SATURATION_SCP_GENERATOR_H
+#ifndef COST_SATURATION_COST_PARTITIONING_GENERATOR_H
+#define COST_SATURATION_COST_PARTITIONING_GENERATOR_H
 
 #include "types.h"
 
@@ -19,7 +19,7 @@ class Abstraction;
 using CPFunction = std::function<CostPartitioning (
     const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
 
-class SCPGenerator {
+class CostPartitioningGenerator {
 protected:
     const int max_orders;
     const double max_time;
@@ -41,8 +41,8 @@ protected:
     }
 
 public:
-    SCPGenerator(const options::Options &opts);
-    virtual ~SCPGenerator() = default;
+    CostPartitioningGenerator(const options::Options &opts);
+    virtual ~CostPartitioningGenerator() = default;
 
     virtual CostPartitionings get_cost_partitionings(
         const TaskProxy &task_proxy,

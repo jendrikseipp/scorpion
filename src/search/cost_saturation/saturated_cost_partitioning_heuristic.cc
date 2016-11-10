@@ -1,7 +1,7 @@
 #include "saturated_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "scp_generator.h"
+#include "cost_partitioning_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -21,9 +21,9 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
     const vector<int> costs = get_operator_costs(task_proxy);
 
     if (opts.contains("orders")) {
-        // Use orders provided by SCP generators.
+        // Use orders provided by cost partitioning generator.
         h_values_by_order =
-            opts.get<shared_ptr<SCPGenerator>>("orders")->get_cost_partitionings(
+            opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
                 task_proxy, abstractions, costs,
                 [](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
                     return compute_saturated_cost_partitioning(abstractions, order, costs);
@@ -74,7 +74,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
-    parser.add_option<shared_ptr<SCPGenerator>>(
+    parser.add_option<shared_ptr<CostPartitioningGenerator>>(
         "orders",
         "saturated cost partitioning generator"
         " (omit to shuffle abstractions from different generators separately)",

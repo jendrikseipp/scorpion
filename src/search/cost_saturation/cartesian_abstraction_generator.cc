@@ -109,7 +109,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
 
     cout << "Cartesian abstractions: " << cartesian_abstractions.size() << endl;
 
-    log << "Convert to SCP abstractions" << endl;
+    log << "Convert to backward-graph abstractions" << endl;
     for (auto &cartesian_abstraction : cartesian_abstractions) {
         abstractions.push_back(
             convert_abstraction(task_proxy, *cartesian_abstraction));

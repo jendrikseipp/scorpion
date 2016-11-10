@@ -1,7 +1,7 @@
 #ifndef COST_SATURATION_SCP_GENERATOR_RANDOM_H
 #define COST_SATURATION_SCP_GENERATOR_RANDOM_H
 
-#include "scp_generator.h"
+#include "cost_partitioning_generator.h"
 
 namespace utils {
 class RandomNumberGenerator;
@@ -10,7 +10,7 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class Abstraction;
 
-class SCPGeneratorRandom : public SCPGenerator {
+class SCPGeneratorRandom : public CostPartitioningGenerator {
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     std::vector<int> order;
 

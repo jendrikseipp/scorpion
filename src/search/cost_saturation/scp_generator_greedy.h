@@ -1,7 +1,7 @@
 #ifndef COST_SATURATION_SCP_GENERATOR_GREEDY_H
 #define COST_SATURATION_SCP_GENERATOR_GREEDY_H
 
-#include "scp_generator.h"
+#include "cost_partitioning_generator.h"
 
 namespace cost_saturation {
 class SCPGeneratorGreedy : public SCPGenerator {
