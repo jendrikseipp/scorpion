@@ -15,6 +15,7 @@ using namespace std;
 
 namespace cost_saturation {
 class AbstractionGenerator;
+class CostPartitioningGenerator;
 
 CostPartitioningHeuristic::CostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts),
@@ -113,6 +114,9 @@ void prepare_parser_for_cost_partitioning_heuristic(
     parser.add_list_option<shared_ptr<AbstractionGenerator>>(
         "abstraction_generators",
         "methods that generate abstractions");
+    parser.add_option<shared_ptr<CostPartitioningGenerator>>(
+        "orders",
+        "cost partitioning generator");
     parser.add_option<bool>(
         "debug",
         "print debugging information",

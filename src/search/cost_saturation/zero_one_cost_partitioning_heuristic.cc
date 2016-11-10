@@ -1,6 +1,7 @@
 #include "zero_one_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
+#include "cost_partitioning_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -15,9 +16,9 @@ namespace cost_saturation {
 static vector<vector<int>> compute_zero_one_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
-    const vector<int> &costs,
-    bool debug) {
+    const vector<int> &costs) {
     assert(abstractions.size() == order.size());
+    bool debug = false;
 
     vector<int> remaining_costs = costs;
 
@@ -38,22 +39,16 @@ static vector<vector<int>> compute_zero_one_cost_partitioning(
 
 ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
-    utils::Timer timer;
     vector<int> costs = get_operator_costs(task_proxy);
 
-    vector<int> random_order = get_default_order(abstractions.size());
-    rng->shuffle(random_order);
-    cout << "Order: " << random_order << endl;
-    h_values_by_order = {
-        compute_zero_one_cost_partitioning(
-            abstractions, random_order, costs, debug)};
+    h_values_by_order =
+        opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
+            task_proxy, abstractions, costs,
+            compute_zero_one_cost_partitioning);
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
     }
-
-    cout << "Time for computing cost partitionings: " << timer << endl;
-    cout << "Orders: " << h_values_by_order.size() << endl;
 }
 
 

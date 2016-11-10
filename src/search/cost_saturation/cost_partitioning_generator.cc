@@ -87,6 +87,8 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
         }
     }
     cout << "Total evaluated orders: " << evaluated_orders << endl;
+    cout << "Orders: " << cost_partitionings.size() << endl;
+    cout << "Time for computing cost partitionings: " << timer << endl;
     return cost_partitionings;
 }
 

@@ -74,11 +74,6 @@ static Heuristic *_parse(OptionParser &parser) {
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
-    parser.add_option<shared_ptr<CostPartitioningGenerator>>(
-        "orders",
-        "saturated cost partitioning generator"
-        " (omit to shuffle abstractions from different generators separately)",
-        OptionParser::NONE);
 
     Options opts = parser.parse();
     if (parser.help_mode())
