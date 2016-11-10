@@ -418,6 +418,7 @@ fast_downward_plugin(
         cost_saturation/abstraction_generator.cc
         cost_saturation/cartesian_abstraction_generator.cc
         cost_saturation/cost_partitioning_generator.cc
+        cost_saturation/cost_partitioning_generator_random.cc
         cost_saturation/cost_partitioning_heuristic.cc
         cost_saturation/diversifier.cc
         cost_saturation/explicit_abstraction.cc
@@ -426,7 +427,6 @@ fast_downward_plugin(
         cost_saturation/projection_generator.cc
         cost_saturation/saturated_cost_partitioning_heuristic.cc
         #cost_saturation/scp_generator_greedy.cc
-        cost_saturation/scp_generator_random.cc
         #cost_saturation/scp_generator_tree_search.cc
         cost_saturation/types.h
         cost_saturation/uniform_cost_partitioning_heuristic.cc

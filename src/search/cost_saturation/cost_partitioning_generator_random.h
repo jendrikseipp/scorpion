@@ -1,5 +1,5 @@
-#ifndef COST_SATURATION_SCP_GENERATOR_RANDOM_H
-#define COST_SATURATION_SCP_GENERATOR_RANDOM_H
+#ifndef COST_SATURATION_COST_PARTITIONING_GENERATOR_RANDOM_H
+#define COST_SATURATION_COST_PARTITIONING_GENERATOR_RANDOM_H
 
 #include "cost_partitioning_generator.h"
 
@@ -10,7 +10,7 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class Abstraction;
 
-class SCPGeneratorRandom : public CostPartitioningGenerator {
+class CostPartitioningGeneratorRandom : public CostPartitioningGenerator {
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     std::vector<int> order;
 
@@ -21,7 +21,7 @@ protected:
         const std::vector<int> &costs);
 
 public:
-    explicit SCPGeneratorRandom(const options::Options &opts);
+    explicit CostPartitioningGeneratorRandom(const options::Options &opts);
 
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,
