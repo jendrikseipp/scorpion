@@ -17,7 +17,6 @@ using namespace std;
 namespace cost_saturation {
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
-    utils::Timer scp_timer;
     const vector<int> costs = get_operator_costs(task_proxy);
 
     if (opts.contains("orders")) {
@@ -62,9 +61,6 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
     }
-
-    cout << "Time for computing cost partitionings: " << scp_timer << endl;
-    cout << "Orders: " << h_values_by_order.size() << endl;
 }
 
 
