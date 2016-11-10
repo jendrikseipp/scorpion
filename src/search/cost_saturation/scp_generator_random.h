@@ -26,7 +26,8 @@ public:
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs) override;
+        const std::vector<int> &costs,
+        CPFunction cp_function) override;
 };
 }
 

@@ -31,12 +31,13 @@ void SCPGeneratorRandom::initialize(
 CostPartitioning SCPGeneratorRandom::get_next_cost_partitioning(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &costs) {
+    const vector<int> &costs,
+    CPFunction cp_function) {
     rng->shuffle(order);
     if (max_orders == 1) {
         cout << "Order: " << order << endl;
     }
-    return compute_saturated_cost_partitioning(abstractions, order, costs);
+    return cp_function(abstractions, order, costs);
 }
 
 static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {

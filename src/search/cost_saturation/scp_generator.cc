@@ -17,8 +17,8 @@
 using namespace std;
 
 namespace cost_saturation {
-vector<vector<int>> compute_saturated_cost_partitioning(
-    const vector<unique_ptr<Abstraction>> &abstractions,
+CostPartitioning compute_saturated_cost_partitioning(
+    const Abstractions &abstractions,
     const vector<int> &order,
     const vector<int> &costs,
     bool debug) {
@@ -63,8 +63,9 @@ void SCPGenerator::initialize(
 
 CostPartitionings SCPGenerator::get_cost_partitionings(
     const TaskProxy &task_proxy,
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &costs) {
+    const Abstractions &abstractions,
+    const vector<int> &costs,
+    CPFunction cp_function) {
     initialize(task_proxy, abstractions, costs);
 
     unique_ptr<Diversifier> diversifier;
@@ -79,7 +80,7 @@ CostPartitionings SCPGenerator::get_cost_partitionings(
            !timer.is_expired() && has_next_cost_partitioning()) {
 
         CostPartitioning scp = get_next_cost_partitioning(
-            task_proxy, abstractions, costs);
+            task_proxy, abstractions, costs, cp_function);
         ++evaluated_orders;
         if (!diversify || diversifier->is_diverse(scp)) {
             cost_partitionings.push_back(move(scp));

@@ -16,6 +16,8 @@ class OptionParser;
 namespace cost_saturation {
 class Abstraction;
 
+using CPFunction = std::function<CostPartitioning (
+    const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
 
 class SCPGenerator {
 protected:
@@ -31,7 +33,8 @@ protected:
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs) = 0;
+        const std::vector<int> &costs,
+        CPFunction cp_function) = 0;
 
     virtual bool has_next_cost_partitioning() const {
         return true;
@@ -44,12 +47,13 @@ public:
     virtual CostPartitionings get_cost_partitionings(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs);
+        const std::vector<int> &costs,
+        CPFunction cp_function);
 };
 
 
-extern std::vector<std::vector<int>> compute_saturated_cost_partitioning(
-    const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+extern CostPartitioning compute_saturated_cost_partitioning(
+    const Abstractions &abstractions,
     const std::vector<int> &order,
     const std::vector<int> &costs,
     bool debug = false);

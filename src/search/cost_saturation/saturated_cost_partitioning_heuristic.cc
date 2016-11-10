@@ -24,7 +24,10 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
         // Use orders provided by SCP generators.
         h_values_by_order =
             opts.get<shared_ptr<SCPGenerator>>("orders")->get_cost_partitionings(
-                task_proxy, abstractions, costs);
+                task_proxy, abstractions, costs,
+                [](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
+                    return compute_saturated_cost_partitioning(abstractions, order, costs);
+            });
     } else {
         int original_seed = rng->get_last_seed();
 
