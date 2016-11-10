@@ -1,6 +1,7 @@
 #include "uniform_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
+#include "cost_partitioning_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -107,7 +108,9 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
 
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
-    utils::Timer timer;
+    const bool dynamic = opts.get<bool>("dynamic");
+    const bool verbose = debug;
+
     vector<int> costs = get_operator_costs(task_proxy);
     for (int &cost : costs) {
         if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
@@ -117,19 +120,16 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
         cost *= COST_FACTOR;
     }
 
-    vector<int> random_order = get_default_order(abstractions.size());
-    rng->shuffle(random_order);
-    cout << "Order: " << random_order << endl;
-    h_values_by_order = {
-        compute_uniform_cost_partitioning(
-            abstractions, random_order, costs, opts.get<bool>("dynamic"), debug)};
+    h_values_by_order =
+        opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
+            task_proxy, abstractions, costs,
+            [dynamic,verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
+                return compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose);
+        });
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
     }
-
-    cout << "Time for computing cost partitionings: " << timer << endl;
-    cout << "Orders: " << h_values_by_order.size() << endl;
 }
 
 int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
