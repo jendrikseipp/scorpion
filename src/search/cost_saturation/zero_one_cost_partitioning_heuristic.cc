@@ -45,6 +45,7 @@ ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options
         opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
             task_proxy, abstractions, costs,
             compute_zero_one_cost_partitioning);
+    num_best_order.resize(h_values_by_order.size(), 0);
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();

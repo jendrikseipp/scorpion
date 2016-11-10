@@ -126,6 +126,7 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
             [dynamic,verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
                 return compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose);
         });
+    num_best_order.resize(h_values_by_order.size(), 0);
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
