@@ -81,6 +81,12 @@ vector<State> sample_states(
             samples.push_back(move(sample));
         }
     }
+
+    // Use initial state if we only found dead-ends.
+    if (samples.empty()) {
+        samples.push_back(move(initial_state));
+    }
+
     cout << "Samples: " << samples.size() << endl;
     cout << "Sampling time: " << sampling_timer << endl;
 
