@@ -8,6 +8,7 @@
 #include "../plugin.h"
 #include "../task_tools.h"
 
+#include "../tasks/modified_operator_costs_task.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
 
@@ -112,14 +113,6 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
     const bool verbose = debug;
 
     vector<int> costs = get_operator_costs(task_proxy);
-    for (int &cost : costs) {
-        if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
-            cerr << "Overflowing cost : " << cost << endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-        }
-        cost *= COST_FACTOR;
-    }
-
     h_values_by_order =
         opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
             task_proxy, abstractions, costs,
@@ -160,6 +153,23 @@ static Heuristic *_parse(OptionParser &parser) {
 
     if (parser.dry_run())
         return nullptr;
+
+    shared_ptr<AbstractTask> task = get_task_from_options(opts);
+    TaskProxy task_proxy(*task);
+
+    vector<int> costs = get_operator_costs(task_proxy);
+    for (int &cost : costs) {
+        if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
+            cerr << "Overflowing cost : " << cost << endl;
+            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+        }
+        cost *= COST_FACTOR;
+    }
+
+    vector<int> copied_costs = costs;
+    shared_ptr<extra_tasks::ModifiedOperatorCostsTask> modified_costs_task =
+        make_shared<extra_tasks::ModifiedOperatorCostsTask>(task, move(copied_costs));
+    opts.set<shared_ptr<AbstractTask>>("transform", modified_costs_task);
 
     return new UniformCostPartitioningHeuristic(opts);
 }
