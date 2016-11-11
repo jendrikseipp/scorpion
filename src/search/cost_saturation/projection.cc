@@ -2,8 +2,6 @@
 
 #include "types.h"
 
-#include "../priority_queue.h"
-
 #include "../algorithms/ordered_set.h"
 #include "../pdbs/match_tree.h"
 #include "../utils/collections.h"
@@ -203,10 +201,8 @@ void Projection::build_abstract_operators(
 vector<int> Projection::compute_distances(const vector<int> &costs) const {
     vector<int> distances(num_states, INF);
 
-    // Note: Reusing the queue doesn't save much time.
-    AdaptiveQueue<size_t> pq;
-
     // Initialize queue.
+    pq.clear();
     for (int goal : goal_states) {
         pq.push(0, goal);
         distances[goal] = 0;

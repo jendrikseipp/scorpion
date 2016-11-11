@@ -3,6 +3,8 @@
 
 #include "abstraction.h"
 
+#include "../priority_queue.h"
+
 #include "../pdbs/pattern_database.h"
 
 #include <vector>
@@ -32,6 +34,9 @@ class Projection : public Abstraction {
 
     std::vector<int> goal_states;
     const int num_operators;
+
+    // Reuse the queue to avoid switching to heap queue too often.
+    mutable AdaptiveQueue<size_t> pq;
 
     // Returns true iff op has an effect on a variable in the pattern.
     bool is_operator_relevant(const OperatorProxy &op) const;
