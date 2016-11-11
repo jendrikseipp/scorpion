@@ -58,6 +58,10 @@ Projection::Projection(
         match_tree->insert(op);
     }
 
+    for (pdbs::AbstractOperator &op : abstract_operators) {
+        op.release_memory();
+    }
+
     // Needs hash_multipliers.
     goal_states = compute_goal_states();
 }
@@ -343,6 +347,11 @@ void Projection::release_transition_system_memory() {
 }
 
 void Projection::dump() const {
+    cout << "Abstract operators: " << abstract_operators.size()
+         << " active operators: " << active_operators.size()
+         << " looping operators: " << looping_operators.size()
+         << " goal states: " << goal_states.size() << "/" << num_states
+         << endl;
 }
 }
 

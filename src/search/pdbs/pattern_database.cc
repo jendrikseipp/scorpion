@@ -64,6 +64,10 @@ int AbstractOperator::get_concrete_operator_id() const {
     return concrete_operator_id;
 }
 
+void AbstractOperator::release_memory() {
+    utils::release_vector_memory(regression_preconditions);
+}
+
 void AbstractOperator::dump(const Pattern &pattern,
                             const VariablesProxy &variables) const {
     cout << "AbstractOperator:" << endl;
