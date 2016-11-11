@@ -20,9 +20,9 @@ Projection::Projection(
       task_proxy(task_proxy),
       pattern(pattern),
       active_operators(compute_active_operators()),
-      looping_operators(compute_looping_operators()),
       num_operators(task_proxy.get_operators().size()) {
     assert(utils::is_sorted_unique(pattern));
+    assert(utils::is_sorted_unique(active_operators));
 
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
@@ -81,16 +81,6 @@ vector<int> Projection::compute_active_operators() const {
         }
     }
     return active_operators;
-}
-
-vector<int> Projection::compute_looping_operators() const {
-    vector<int> looping_operators;
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        if (!is_operator_relevant(op)) {
-            looping_operators.push_back(op.get_id());
-        }
-    }
-    return looping_operators;
 }
 
 vector<int> Projection::compute_goal_states() const {
@@ -297,8 +287,16 @@ vector<int> Projection::compute_saturated_costs(
     /* To prevent negative cost cycles we ensure that all operators
        inducing self-loops have non-negative costs. */
     if (use_general_costs) {
-        for (int op_id : looping_operators) {
-            saturated_costs[op_id] = 0;
+        auto next_active_op_it = active_operators.begin();
+        for (int op_id = 0; op_id < num_operators; ++op_id) {
+            if (next_active_op_it != active_operators.end() &&
+                op_id == *next_active_op_it) {
+                assert(is_operator_relevant(task_proxy.get_operators()[op_id]));
+                ++next_active_op_it;
+            } else {
+                assert(!is_operator_relevant(task_proxy.get_operators()[op_id]));
+                saturated_costs[op_id] = 0;
+            }
         }
     }
 
@@ -342,14 +340,12 @@ int Projection::get_num_states() const {
 void Projection::release_transition_system_memory() {
     utils::release_vector_memory(abstract_operators);
     utils::release_vector_memory(active_operators);
-    utils::release_vector_memory(looping_operators);
     match_tree = nullptr;
 }
 
 void Projection::dump() const {
     cout << "Abstract operators: " << abstract_operators.size()
          << " active operators: " << active_operators.size()
-         << " looping operators: " << looping_operators.size()
          << " goal states: " << goal_states.size() << "/" << num_states
          << endl;
 }
