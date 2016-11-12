@@ -17,6 +17,7 @@ using namespace std;
 namespace cost_saturation {
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
+    const bool verbose = debug;
     const vector<int> costs = get_operator_costs(task_proxy);
 
     if (opts.contains("orders")) {
@@ -24,8 +25,8 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
         h_values_by_order =
             opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
                 task_proxy, abstractions, costs,
-                [](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
-                    return compute_saturated_cost_partitioning(abstractions, order, costs);
+                [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
+                    return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
             });
     } else {
         int original_seed = rng->get_last_seed();
