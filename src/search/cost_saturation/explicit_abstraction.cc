@@ -71,6 +71,9 @@ ExplicitAbstraction::ExplicitAbstraction(
       looping_operators(move(looping_operators)),
       goal_states(move(goal_states)),
       num_operators(num_operators) {
+    sort(active_operators.begin(), active_operators.end());
+    sort(looping_operators.begin(), looping_operators.end());
+    sort(goal_states.begin(), goal_states.end());
 }
 
 vector<int> ExplicitAbstraction::compute_h_values(const vector<int> &costs) const {
