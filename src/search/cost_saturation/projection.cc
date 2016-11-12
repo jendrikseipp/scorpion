@@ -315,21 +315,8 @@ vector<int> Projection::compute_saturated_costs(
     /* To prevent negative cost cycles we ensure that all operators
        inducing self-loops have non-negative costs. */
     if (use_general_costs) {
-        auto next_active_op_it = active_operators.begin();
-        for (int op_id = 0; op_id < num_operators; ++op_id) {
-            if (next_active_op_it != active_operators.end() &&
-                op_id == *next_active_op_it) {
-                assert(is_operator_relevant(task_proxy.get_operators()[op_id]));
-                // Operator is relevant, so it might induce a self-loop.
-                if (operator_induces_loop(task_proxy.get_operators()[op_id])) {
-                    saturated_costs[op_id] = 0;
-                }
-                ++next_active_op_it;
-            } else {
-                assert(!is_operator_relevant(task_proxy.get_operators()[op_id]));
-                // Operator is not relevant, so it must induce a self-loop.
-                saturated_costs[op_id] = 0;
-            }
+        for (int op_id : looping_operators) {
+            saturated_costs[op_id] = 0;
         }
     }
 
