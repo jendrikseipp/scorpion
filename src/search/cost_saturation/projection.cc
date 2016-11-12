@@ -9,6 +9,8 @@
 #include "../utils/math.h"
 #include "../utils/memory.h"
 
+#include <unordered_map>
+
 using namespace std;
 
 namespace cost_saturation {
@@ -274,6 +276,24 @@ bool Projection::is_operator_relevant(const OperatorProxy &op) const {
     return false;
 }
 
+bool Projection::operator_induces_loop(const OperatorProxy &op) const {
+    unordered_map<int, int> var_to_precondition;
+    for (FactProxy precondition : op.get_preconditions()) {
+        const FactPair fact = precondition.get_pair();
+        var_to_precondition[fact.var] = fact.value;
+    }
+    for (EffectProxy effect : op.get_effects()) {
+        const FactPair fact = effect.get_fact().get_pair();
+        auto it = var_to_precondition.find(fact.var);
+        if (it != var_to_precondition.end() &&
+            it->second != fact.value &&
+            binary_search(pattern.begin(), pattern.end(), fact.var)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 vector<int> Projection::compute_saturated_costs(
     const vector<int> &h_values) const {
     const int min_cost = use_general_costs ? -INF : 0;
@@ -288,9 +308,14 @@ vector<int> Projection::compute_saturated_costs(
             if (next_active_op_it != active_operators.end() &&
                 op_id == *next_active_op_it) {
                 assert(is_operator_relevant(task_proxy.get_operators()[op_id]));
+                // Operator is relevant, so it might induce a self-loop.
+                if (operator_induces_loop(task_proxy.get_operators()[op_id])) {
+                    saturated_costs[op_id] = 0;
+                }
                 ++next_active_op_it;
             } else {
                 assert(!is_operator_relevant(task_proxy.get_operators()[op_id]));
+                // Operator is not relevant, so it must induce a self-loop.
                 saturated_costs[op_id] = 0;
             }
         }
@@ -308,7 +333,8 @@ vector<int> Projection::compute_saturated_costs(
         applicable_operators.clear();
         match_tree->get_applicable_operators(target, applicable_operators);
         for (const pdbs::AbstractOperator *op : applicable_operators) {
-            size_t src = target + op->get_hash_effect();
+            int src = target + op->get_hash_effect();
+            assert(src != target);
             utils::in_bounds(src, h_values);
             int src_h = h_values[src];
             if (src_h == INF) {
