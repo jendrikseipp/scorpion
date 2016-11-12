@@ -28,9 +28,11 @@ class Projection : public Abstraction {
     // multipliers for each variable for perfect hash function
     std::vector<std::size_t> hash_multipliers;
 
-    /* Operators inducing state-changing transitions. All other
-       operators induce only self-loops. */
+    // Operators inducing state-changing transitions.
     std::vector<int> active_operators;
+
+    // Operators inducing self-loops. May overlap with active_operators.
+    std::vector<int> looping_operators;
 
     std::vector<int> goal_states;
     const int num_operators;

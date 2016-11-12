@@ -20,9 +20,11 @@ Projection::Projection(
       task_proxy(task_proxy),
       pattern(pattern),
       active_operators(compute_active_operators()),
+      looping_operators(compute_looping_operators()),
       num_operators(task_proxy.get_operators().size()) {
     assert(utils::is_sorted_unique(pattern));
     assert(utils::is_sorted_unique(active_operators));
+    assert(utils::is_sorted_unique(looping_operators));
 
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
@@ -81,6 +83,16 @@ vector<int> Projection::compute_active_operators() const {
         }
     }
     return active_operators;
+}
+
+vector<int> Projection::compute_looping_operators() const {
+    vector<int> looping_operators;
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        if (operator_induces_loop(op)) {
+            looping_operators.push_back(op.get_id());
+        }
+    }
+    return looping_operators;
 }
 
 vector<int> Projection::compute_goal_states() const {
@@ -362,13 +374,15 @@ int Projection::get_num_states() const {
 void Projection::release_transition_system_memory() {
     utils::release_vector_memory(abstract_operators);
     utils::release_vector_memory(active_operators);
+    utils::release_vector_memory(looping_operators);
     match_tree = nullptr;
 }
 
 void Projection::dump() const {
     cout << "Abstract operators: " << abstract_operators.size()
-         << " active operators: " << active_operators.size()
-         << " goal states: " << goal_states.size() << "/" << num_states
+         << ", active operators: " << active_operators.size()
+         << ", looping operators: " << looping_operators.size()
+         << ", goal states: " << goal_states.size() << "/" << num_states
          << endl;
 }
 }
