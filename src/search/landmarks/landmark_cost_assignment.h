@@ -31,6 +31,14 @@ public:
 class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     bool use_action_landmarks;
     bool reuse_costs;
+
+    std::vector<double> compute_shared_costs(
+        const std::vector<const LandmarkNode *> &landmarks,
+        const std::vector<int> &order,
+        const std::vector<double> &remaining_costs,
+        int pos,
+        bool debug);
+
 public:
     LandmarkUniformSharedCostAssignment(const std::vector<int> &operator_costs,
                                         const LandmarkGraph &graph,
