@@ -130,4 +130,13 @@ void print_indexed_vector(const vector<int> &vec) {
     }
     cout << endl;
 }
+
+vector<bool> convert_to_bitvector(const vector<int> &vec, int size) {
+    vector<bool> bitvector(size, false);
+    for (int value : vec) {
+        bitvector[value] = true;
+    }
+    return bitvector;
+}
+
 }

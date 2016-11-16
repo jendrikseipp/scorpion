@@ -27,6 +27,9 @@ extern void reduce_costs(
     const std::vector<int> &saturated_costs);
 
 extern void print_indexed_vector(const std::vector<int> &vec);
+
+extern std::vector<bool> convert_to_bitvector(
+    const std::vector<int> &vec, int size);
 }
 
 #endif
