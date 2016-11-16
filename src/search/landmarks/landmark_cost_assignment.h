@@ -30,10 +30,12 @@ public:
 
 class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     bool use_action_landmarks;
+    bool reuse_costs;
 public:
     LandmarkUniformSharedCostAssignment(const std::vector<int> &operator_costs,
                                         const LandmarkGraph &graph,
-                                        bool use_action_landmarks);
+                                        bool use_action_landmarks,
+                                        bool reuse_costs);
 
     virtual double cost_sharing_h_value() override;
 };

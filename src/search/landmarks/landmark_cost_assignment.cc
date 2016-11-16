@@ -34,8 +34,13 @@ const set<int> &LandmarkCostAssignment::get_achievers(
 
 // Uniform cost partioning
 LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
-    const vector<int> &operator_costs, const LandmarkGraph &graph, bool use_action_landmarks)
-    : LandmarkCostAssignment(operator_costs, graph), use_action_landmarks(use_action_landmarks) {
+    const vector<int> &operator_costs,
+    const LandmarkGraph &graph,
+    bool use_action_landmarks,
+    bool reuse_costs)
+    : LandmarkCostAssignment(operator_costs, graph),
+      use_action_landmarks(use_action_landmarks),
+      reuse_costs(reuse_costs) {
 }
 
 
