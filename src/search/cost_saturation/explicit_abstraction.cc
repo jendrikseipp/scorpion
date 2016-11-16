@@ -86,6 +86,20 @@ vector<int> ExplicitAbstraction::compute_h_values(const vector<int> &costs) cons
     return goal_distances;
 }
 
+vector<ExplicitTransition> ExplicitAbstraction::get_transitions() const {
+    vector<ExplicitTransition> transitions;
+    int num_states = backward_graph.size();
+    for (int target = 0; target < num_states; ++target) {
+        for (const Transition &transition : backward_graph[target]) {
+            int op_id = transition.op;
+            int src = transition.state;
+            assert(src != target);
+            transitions.emplace_back(src, op_id, target);
+        }
+    }
+    return transitions;
+}
+
 vector<int> ExplicitAbstraction::compute_saturated_costs(
     const vector<int> &h_values) const {
     const int min_cost = use_general_costs ? -INF : 0;

@@ -49,6 +49,8 @@ public:
     virtual std::vector<int> compute_h_values(
         const std::vector<int> &costs) const override;
 
+    virtual std::vector<ExplicitTransition> get_transitions() const override;
+
     virtual int get_num_states() const override;
 
     virtual int get_abstract_state_id(const State &concrete_state) const override;

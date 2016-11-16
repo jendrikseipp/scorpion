@@ -350,6 +350,10 @@ vector<int> Projection::compute_h_values(const vector<int> &costs) const {
     return compute_distances(costs);
 }
 
+vector<ExplicitTransition> Projection::get_transitions() const {
+    ABORT("Not implemented.");
+}
+
 int Projection::get_num_states() const {
     return num_states;
 }
