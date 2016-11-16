@@ -134,10 +134,8 @@ int ExplicitAbstraction::get_abstract_state_id(const State &concrete_state) cons
 }
 
 void ExplicitAbstraction::release_transition_system_memory() {
+    Abstraction::release_transition_system_memory();
     utils::release_vector_memory(backward_graph);
-    utils::release_vector_memory(active_operators);
-    utils::release_vector_memory(looping_operators);
-    utils::release_vector_memory(goal_states);
 }
 
 void ExplicitAbstraction::dump() const {

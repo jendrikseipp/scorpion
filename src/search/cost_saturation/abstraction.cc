@@ -1,5 +1,7 @@
 #include "abstraction.h"
 
+#include "../utils/collections.h"
+
 using namespace std;
 
 namespace cost_saturation {
@@ -20,6 +22,12 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
 
 const std::vector<int> &Abstraction::get_goal_states() const {
     return goal_states;
+}
+
+void Abstraction::release_transition_system_memory() {
+    utils::release_vector_memory(active_operators);
+    utils::release_vector_memory(looping_operators);
+    utils::release_vector_memory(goal_states);
 }
 }
 
