@@ -28,15 +28,6 @@ class Projection : public Abstraction {
     // multipliers for each variable for perfect hash function
     std::vector<std::size_t> hash_multipliers;
 
-    // Operators inducing state-changing transitions.
-    std::vector<int> active_operators;
-
-    // Operators inducing self-loops. May overlap with active_operators.
-    std::vector<int> looping_operators;
-
-    std::vector<int> goal_states;
-    const int num_operators;
-
     // Reuse the queue to avoid switching to heap queue too often.
     mutable AdaptiveQueue<size_t> pq;
 
@@ -111,8 +102,6 @@ public:
 
     virtual std::vector<int> compute_h_values(
         const std::vector<int> &costs) const override;
-
-    virtual const std::vector<int> &get_active_operators() const override;
 
     virtual int get_num_states() const override;
 

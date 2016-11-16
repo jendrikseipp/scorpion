@@ -32,15 +32,6 @@ class ExplicitAbstraction : public Abstraction {
     // State-changing transitions.
     std::vector<std::vector<Transition>> backward_graph;
 
-    // Operators inducing state-changing transitions.
-    std::vector<int> active_operators;
-
-    // Operators inducing self-loops. May overlap with active operators.
-    std::vector<int> looping_operators;
-
-    std::vector<int> goal_states;
-    const int num_operators;
-
     mutable AdaptiveQueue<int> queue;
 
 protected:
@@ -57,8 +48,6 @@ public:
 
     virtual std::vector<int> compute_h_values(
         const std::vector<int> &costs) const override;
-
-    virtual const std::vector<int> &get_active_operators() const override;
 
     virtual int get_num_states() const override;
 

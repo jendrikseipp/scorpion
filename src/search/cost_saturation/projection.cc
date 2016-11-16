@@ -16,13 +16,13 @@ using namespace std;
 namespace cost_saturation {
 Projection::Projection(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern)
-    : Abstraction(),
+    : Abstraction(task_proxy.get_operators().size()),
       task_proxy(task_proxy),
-      pattern(pattern),
-      active_operators(compute_active_operators()),
-      looping_operators(compute_looping_operators()),
-      num_operators(task_proxy.get_operators().size()) {
+      pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
+
+    active_operators = compute_active_operators();
+    looping_operators = compute_looping_operators();
     assert(utils::is_sorted_unique(active_operators));
     assert(utils::is_sorted_unique(looping_operators));
 
@@ -348,10 +348,6 @@ vector<int> Projection::compute_saturated_costs(
 
 vector<int> Projection::compute_h_values(const vector<int> &costs) const {
     return compute_distances(costs);
-}
-
-const vector<int> &Projection::get_active_operators() const {
-    return active_operators;
 }
 
 int Projection::get_num_states() const {

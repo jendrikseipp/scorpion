@@ -8,13 +8,23 @@ class State;
 namespace cost_saturation {
 class Abstraction {
 protected:
+    std::vector<int> goal_states;
+
+    // Operators inducing state-changing transitions.
+    std::vector<int> active_operators;
+
+    // Operators inducing self-loops. May overlap with active operators.
+    std::vector<int> looping_operators;
+
+    const int num_operators;
+
     const bool use_general_costs;
 
     virtual std::vector<int> compute_saturated_costs(
         const std::vector<int> &h_values) const = 0;
 
 public:
-    Abstraction();
+    explicit Abstraction(int num_operators);
     virtual ~Abstraction();
 
     Abstraction(const Abstraction &) = delete;
@@ -28,9 +38,17 @@ public:
         compute_goal_distances_and_saturated_costs(
             const std::vector<int> &costs) const;
 
-    virtual const std::vector<int> &get_active_operators() const = 0;
+    const std::vector<int> &get_active_operators() const {
+        return active_operators;
+    }
+
+    const std::vector<int> &get_looping_operators() const {
+        return looping_operators;
+    }
 
     virtual int get_num_states() const = 0;
+
+    const std::vector<int> &get_goal_states() const;
 
     virtual void release_transition_system_memory() = 0;
 
