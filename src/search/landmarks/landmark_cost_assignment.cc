@@ -133,8 +133,9 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
                 int num_achieved = achieved_lms_by_op[op_id];
                 assert(num_achieved >= 1);
                 assert(utils::in_bounds(op_id, remaining_costs));
-                double shared_cost = remaining_costs[op_id] / num_achieved;
-                min_cost = min(min_cost, shared_cost);
+                double cost = greedy ? remaining_costs[op_id] :
+                    remaining_costs[op_id] / num_achieved;
+                min_cost = min(min_cost, cost);
             }
             h += min_cost;
             /* Decrease remaining costs by costs for landmark for all
