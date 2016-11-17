@@ -33,6 +33,16 @@ const set<int> &LandmarkCostAssignment::get_achievers(
 }
 
 
+static vector<double> convert_to_double(const vector<int> &int_vec) {
+    vector<double> double_vec;
+    double_vec.reserve(int_vec.size());
+    for (int value : int_vec) {
+        double_vec.push_back(value);
+    }
+    return double_vec;
+}
+
+
 // Uniform cost partioning
 LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
     const vector<int> &operator_costs,
@@ -41,9 +51,9 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
     bool reuse_costs)
     : LandmarkCostAssignment(operator_costs, graph),
       use_action_landmarks(use_action_landmarks),
-      reuse_costs(reuse_costs) {
+      reuse_costs(reuse_costs),
+      original_costs(convert_to_double(operator_costs)) {
 }
-
 
 double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     vector<int> achieved_lms_by_op(operator_costs.size(), 0);
@@ -110,11 +120,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     /* Third pass:
        count shared costs for the remaining landmarks. */
     if (reuse_costs) {
-        vector<double> remaining_costs;
-        remaining_costs.reserve(operator_costs.size());
-        for (int cost : operator_costs) {
-            remaining_costs.push_back(cost);
-        }
+        remaining_costs = original_costs;
 
         for (const LandmarkNode *node : relevant_lms) {
             int lmn_status = node->get_status();
