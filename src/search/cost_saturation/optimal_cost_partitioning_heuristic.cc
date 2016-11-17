@@ -68,7 +68,11 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
         int initial_state_index = abstractions[id]->get_abstract_state_id(
             task_proxy.get_initial_state());
-        current_abstract_state_vars[id] = distance_variables[id][initial_state_index];
+        if (initial_state_index == -1) {
+            current_abstract_state_vars[id] = -1;
+        } else {
+            current_abstract_state_vars[id] = distance_variables[id][initial_state_index];
+        }
     }
     release_memory();
 }
@@ -89,7 +93,7 @@ int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
         const Abstraction &abstraction = *abstractions[id];
         int new_state_id = abstraction.get_abstract_state_id(concrete_state);
-        if (h_values[id][new_state_id] == INF) {
+        if (new_state_id == -1 || h_values[id][new_state_id] == INF) {
             return DEAD_END;
         }
         int old_state_var = current_abstract_state_vars[id];
