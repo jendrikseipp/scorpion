@@ -50,12 +50,14 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
     bool use_action_landmarks,
     bool reuse_costs,
     bool greedy,
-    int num_orders)
+    int num_orders,
+    const shared_ptr<utils::RandomNumberGenerator> &rng)
     : LandmarkCostAssignment(operator_costs, graph),
       use_action_landmarks(use_action_landmarks),
       reuse_costs(reuse_costs),
       greedy(greedy),
       num_orders(num_orders),
+      rng(rng),
       original_costs(convert_to_double(operator_costs)) {
 }
 

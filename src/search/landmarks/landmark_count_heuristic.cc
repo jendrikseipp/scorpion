@@ -14,6 +14,7 @@
 #include "../task_tools.h"
 
 #include "../utils/memory.h"
+#include "../utils/rng_options.h"
 #include "../utils/system.h"
 
 #include <cmath>
@@ -72,7 +73,8 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
                 opts.get<bool>("alm"),
                 opts.get<bool>("reuse_costs"),
                 opts.get<bool>("greedy"),
-                opts.get<int>("num_orders"));
+                opts.get<int>("num_orders"),
+                utils::parse_rng_from_options(opts));
         }
     } else {
         lm_cost_assignment = nullptr;
@@ -347,6 +349,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "number of cost partitioning orders",
         "1",
         Bounds("1", "infinity"));
+    utils::add_rng_options(parser);
     lp::add_lp_solver_option_to_parser(parser);
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();

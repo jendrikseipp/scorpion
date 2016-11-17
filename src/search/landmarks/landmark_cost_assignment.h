@@ -8,6 +8,10 @@
 
 class OperatorsProxy;
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace landmarks {
 class LandmarkGraph;
 class LandmarkNode;
@@ -34,6 +38,8 @@ class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     const bool greedy;
     const int num_orders;
 
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
+
     // Store vectors as members to avoid allocations.
     const std::vector<double> original_costs;
     std::vector<double> remaining_costs;
@@ -44,7 +50,8 @@ public:
                                         bool use_action_landmarks,
                                         bool reuse_costs,
                                         bool greedy,
-                                        int num_orders);
+                                        int num_orders,
+                                        const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
     virtual double cost_sharing_h_value() override;
 };
