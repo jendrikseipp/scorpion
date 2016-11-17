@@ -129,7 +129,6 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     if (reuse_costs || greedy) {
         // UOCP + ZOCP + SCP
         double max_order_h = 0;
-        vector<int> remaining_lms_per_op;
         for (int order = 0; order < num_orders; ++order) {
             remaining_costs = original_costs;
             remaining_lms_per_op = achieved_lms_by_op;
