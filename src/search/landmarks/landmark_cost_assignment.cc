@@ -110,48 +110,34 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     /* Third pass:
        count shared costs for the remaining landmarks. */
     if (reuse_costs) {
-        const bool debug = false;
-        vector<int> order(relevant_lms.size());
-        iota(order.begin(), order.end(), 0);
         vector<double> remaining_costs;
         remaining_costs.reserve(operator_costs.size());
         for (int cost : operator_costs) {
             remaining_costs.push_back(cost);
         }
 
-        if (debug) {
-            cout << "Order: " << order << endl;
-            cout << "remaining costs: " << remaining_costs << endl;
-        }
-
-        for (size_t pos = 0; pos < order.size(); ++pos) {
-            const LandmarkNode *node = relevant_lms[order[pos]];
-            const vector<double> shared_costs = compute_shared_costs(
-                relevant_lms, order, remaining_costs, pos, debug);
+        for (const LandmarkNode *node : relevant_lms) {
             int lmn_status = node->get_status();
             const set<int> &achievers = get_achievers(lmn_status, *node);
             double min_cost = numeric_limits<double>::max();
             for (int op_id : achievers) {
-                assert(utils::in_bounds(op_id, shared_costs));
-                double shared_cost = shared_costs[op_id];
+                assert(utils::in_bounds(op_id, achieved_lms_by_op));
+                int num_achieved = achieved_lms_by_op[op_id];
+                assert(num_achieved >= 1);
+                assert(utils::in_bounds(op_id, remaining_costs));
+                double shared_cost = remaining_costs[op_id] / num_achieved;
                 min_cost = min(min_cost, shared_cost);
             }
-            if (debug) {
-                cout << "shared costs: " << shared_costs << endl;
-                cout << "min cost: " << min_cost << endl;
-            }
-            assert(min_cost >= 0);
             h += min_cost;
-            // Decrease remaining costs by costs for landmark (min_cost) for all achievers.
+            /* Decrease remaining costs by costs for landmark for all
+               achievers and remove it from list of achieved landmarks. */
             for (int op_id : achievers) {
                 assert(utils::in_bounds(op_id, remaining_costs));
                 double &remaining_cost = remaining_costs[op_id];
+                assert(remaining_cost >= 0);
                 remaining_cost -= min_cost;
                 assert(remaining_cost >= 0);
-            }
-
-            if (debug) {
-                cout << "remaining costs: " << remaining_costs << endl;
+                --achieved_lms_by_op[op_id];
             }
         }
     } else {
@@ -172,45 +158,6 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     }
 
     return h;
-}
-
-vector<double> LandmarkUniformSharedCostAssignment::compute_shared_costs(
-    const vector<const LandmarkNode *> &landmarks,
-    const vector<int> &order,
-    const vector<double> &remaining_costs,
-    int pos,
-    bool debug) {
-    assert(landmarks.size() == order.size());
-    assert(utils::in_bounds(pos, order));
-
-    vector<double> shared_costs;
-    shared_costs.reserve(remaining_costs.size());
-
-    vector<int> op_usages(remaining_costs.size(), 0);
-    for (size_t i = pos; i < order.size(); ++i) {
-        const LandmarkNode &node = *landmarks[order[i]];
-        int lmn_status = node.get_status();
-        assert(lmn_status != lm_reached);
-        const set<int> &achievers = get_achievers(lmn_status, node);
-        for (int op_id : achievers) {
-            ++op_usages[op_id];
-        }
-    }
-    if (debug) {
-        cout << "Landmarks achieved per operator: " << op_usages << endl;
-    }
-
-    for (size_t op_id = 0; op_id < remaining_costs.size(); ++op_id) {
-        int usages = op_usages[op_id];
-        if (usages == 0) {
-            /* Operator does not achieve any subsequent landmarks so we
-               can use an arbitrary value here. */
-            shared_costs.push_back(-1);
-        } else {
-            shared_costs.push_back(remaining_costs[op_id] / usages);
-        }
-    }
-    return shared_costs;
 }
 
 LandmarkEfficientOptimalSharedCostAssignment::LandmarkEfficientOptimalSharedCostAssignment(
