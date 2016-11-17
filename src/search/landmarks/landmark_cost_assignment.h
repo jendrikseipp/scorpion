@@ -29,8 +29,9 @@ public:
 };
 
 class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
-    bool use_action_landmarks;
-    bool reuse_costs;
+    const bool use_action_landmarks;
+    const bool reuse_costs;
+    const bool greedy;
 
     // Store vectors as members to avoid allocations.
     const std::vector<double> original_costs;
@@ -40,7 +41,8 @@ public:
     LandmarkUniformSharedCostAssignment(const std::vector<int> &operator_costs,
                                         const LandmarkGraph &graph,
                                         bool use_action_landmarks,
-                                        bool reuse_costs);
+                                        bool reuse_costs,
+                                        bool greedy);
 
     virtual double cost_sharing_h_value() override;
 };

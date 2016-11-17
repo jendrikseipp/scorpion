@@ -67,7 +67,11 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
                 get_operator_costs(task_proxy), *lgraph, static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
         } else {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkUniformSharedCostAssignment>(
-                get_operator_costs(task_proxy), *lgraph, opts.get<bool>("alm"), opts.get<bool>("reuse_costs"));
+                get_operator_costs(task_proxy),
+                *lgraph,
+                opts.get<bool>("alm"),
+                opts.get<bool>("reuse_costs"),
+                opts.get<bool>("greedy"));
         }
     } else {
         lm_cost_assignment = nullptr;
@@ -336,6 +340,7 @@ static Heuristic *_parse(OptionParser &parser) {
                             "with_the_lmcount_heuristic)", "false");
     parser.add_option<bool>("alm", "use action landmarks", "true");
     parser.add_option<bool>("reuse_costs", "reuse unused costs", "false");
+    parser.add_option<bool>("greedy", "assign costs greedily", "false");
     lp::add_lp_solver_option_to_parser(parser);
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();

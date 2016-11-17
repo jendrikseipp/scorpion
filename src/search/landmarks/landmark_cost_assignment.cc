@@ -48,10 +48,12 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
     const vector<int> &operator_costs,
     const LandmarkGraph &graph,
     bool use_action_landmarks,
-    bool reuse_costs)
+    bool reuse_costs,
+    bool greedy)
     : LandmarkCostAssignment(operator_costs, graph),
       use_action_landmarks(use_action_landmarks),
       reuse_costs(reuse_costs),
+      greedy(greedy),
       original_costs(convert_to_double(operator_costs)) {
 }
 
