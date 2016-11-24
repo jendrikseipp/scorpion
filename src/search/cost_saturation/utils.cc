@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include "abstraction.h"
+
 #include "../sampling.h"
 #include "../successor_generator.h"
 #include "../task_proxy.h"
@@ -44,11 +46,11 @@ int compute_sum_h(
 }
 
 vector<int> get_local_state_ids(
-    const vector<StateMap> &state_maps, const State &state) {
+    const Abstractions &abstractions, const State &state) {
     vector<int> local_state_ids;
-    local_state_ids.reserve(state_maps.size());
-    for (auto &state_map : state_maps) {
-        local_state_ids.push_back(state_map(state));
+    local_state_ids.reserve(abstractions.size());
+    for (auto &abstraction : abstractions) {
+        local_state_ids.push_back(abstraction->get_abstract_state_id(state));
     }
     return local_state_ids;
 }
@@ -79,6 +81,12 @@ vector<State> sample_states(
             samples.push_back(move(sample));
         }
     }
+
+    // Use initial state if we only found dead-ends.
+    if (samples.empty()) {
+        samples.push_back(move(initial_state));
+    }
+
     cout << "Samples: " << samples.size() << endl;
     cout << "Sampling time: " << sampling_timer << endl;
 
@@ -107,8 +115,28 @@ void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_cos
 
 void print_indexed_vector(const vector<int> &vec) {
     for (size_t i = 0; i < vec.size(); ++i) {
-        cout << i << ":" << vec[i] << ", ";
+        cout << i << ":";
+        int value = vec[i];
+        if (value == INF) {
+            cout << "inf";
+        } else if (value == -INF) {
+            cout << "-inf";
+        } else {
+            cout << value;
+        }
+        if (i < vec.size() - 1) {
+            cout << ", ";
+        }
     }
     cout << endl;
 }
+
+vector<bool> convert_to_bitvector(const vector<int> &vec, int size) {
+    vector<bool> bitvector(size, false);
+    for (int value : vec) {
+        bitvector[value] = true;
+    }
+    return bitvector;
+}
+
 }

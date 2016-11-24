@@ -39,6 +39,9 @@ public:
               const Pattern &pattern,
               const std::vector<size_t> &hash_multipliers);
     ~MatchTree();
+
+    MatchTree(const MatchTree &) = delete;
+
     /* Insert an abstract operator into the match tree, creating or
        enlarging it. */
     void insert(const AbstractOperator &op);

@@ -1,6 +1,6 @@
 #include "cartesian_abstraction_generator.h"
 
-#include "abstraction.h"
+#include "explicit_abstraction.h"
 #include "types.h"
 
 #include "../option_parser.h"
@@ -22,7 +22,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
         opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")) {
 }
 
-static AbstractionAndStateMap convert_abstraction(
+static unique_ptr<Abstraction> convert_abstraction(
     const TaskProxy &task_proxy,
     const cegar::Abstraction &cartesian_abstraction) {
     int num_states = cartesian_abstraction.get_num_states();
@@ -64,21 +64,24 @@ static AbstractionAndStateMap convert_abstraction(
 
     shared_ptr<cegar::RefinementHierarchy> refinement_hierarchy =
         cartesian_abstraction.get_refinement_hierarchy();
-    StateMap state_map =
+    AbstractionFunction state_map =
         [refinement_hierarchy](const State &state) {
             assert(refinement_hierarchy);
             return refinement_hierarchy->get_local_state_id(state);
         };
 
-    return make_pair(utils::make_unique_ptr<Abstraction>(
+    return utils::make_unique_ptr<ExplicitAbstraction>(
+        state_map,
         move(backward_graph),
         move(looping_operators),
         move(goal_states),
-        task_proxy.get_operators().size()), state_map);
+        task_proxy.get_operators().size());
 }
 
-vector<AbstractionAndStateMap> CartesianAbstractionGenerator::generate_abstractions(
+Abstractions CartesianAbstractionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
+    Abstractions abstractions;
+
     utils::Timer timer;
     utils::Log log;
     TaskProxy task_proxy(*task);
@@ -106,16 +109,15 @@ vector<AbstractionAndStateMap> CartesianAbstractionGenerator::generate_abstracti
 
     cout << "Cartesian abstractions: " << cartesian_abstractions.size() << endl;
 
-    log << "Convert to SCP abstractions" << endl;
-    vector<AbstractionAndStateMap> abstractions_and_state_maps;
+    log << "Convert to backward-graph abstractions" << endl;
     for (auto &cartesian_abstraction : cartesian_abstractions) {
-        abstractions_and_state_maps.push_back(
+        abstractions.push_back(
             convert_abstraction(task_proxy, *cartesian_abstraction));
         cartesian_abstraction = nullptr;
     }
     log << "Done converting abstractions" << endl;
     cout << "Time for building Cartesian abstractions: " << timer << endl;
-    return abstractions_and_state_maps;
+    return abstractions;
 }
 
 static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {

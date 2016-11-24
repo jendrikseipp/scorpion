@@ -1,5 +1,7 @@
 #include "cost_partitioning_heuristic.h"
 
+#include "abstraction.h"
+#include "abstraction_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -13,11 +15,31 @@ using namespace std;
 
 namespace cost_saturation {
 class AbstractionGenerator;
+class CostPartitioningGenerator;
 
 CostPartitioningHeuristic::CostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")) {
+    for (const shared_ptr<AbstractionGenerator> &generator :
+         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
+        int abstractions_before = abstractions.size();
+        for (auto &abstraction : generator->generate_abstractions(task)) {
+            abstractions.push_back(move(abstraction));
+        }
+        abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
+    }
+    cout << "Abstractions: " << abstractions.size() << endl;
+    cout << "Abstractions per generator: " << abstractions_per_generator << endl;
+
+    if (debug) {
+        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+            abstraction->dump();
+        }
+    }
+}
+
+CostPartitioningHeuristic::~CostPartitioningHeuristic() {
 }
 
 int CostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -26,7 +48,7 @@ int CostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state
 }
 
 int CostPartitioningHeuristic::compute_heuristic(const State &state) {
-    vector<int> local_state_ids = get_local_state_ids(state_maps, state);
+    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
     int max_h = compute_max_h_with_statistics(local_state_ids);
     if (max_h == INF) {
         return DEAD_END;
@@ -92,6 +114,10 @@ void prepare_parser_for_cost_partitioning_heuristic(
     parser.add_list_option<shared_ptr<AbstractionGenerator>>(
         "abstraction_generators",
         "methods that generate abstractions");
+    parser.add_option<shared_ptr<CostPartitioningGenerator>>(
+        "orders",
+        "cost partitioning generator",
+        OptionParser::NONE);
     parser.add_option<bool>(
         "debug",
         "print debugging information",

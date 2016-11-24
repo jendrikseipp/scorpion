@@ -18,10 +18,12 @@ class CostPartitioningHeuristic : public Heuristic {
     int compute_heuristic(const State &state);
 
 protected:
-    std::vector<std::vector<std::vector<int>>> h_values_by_order;
-    std::vector<StateMap> state_maps;
+    CostPartitionings h_values_by_order;
+    Abstractions abstractions;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
+
+    std::vector<int> abstractions_per_generator;
 
     // For statistics.
     mutable std::vector<int> num_best_order;
@@ -30,6 +32,7 @@ protected:
 
 public:
     explicit CostPartitioningHeuristic(const options::Options &opts);
+    virtual ~CostPartitioningHeuristic() override;
 
     virtual void print_statistics() const override;
 };

@@ -1,7 +1,7 @@
 #ifndef COST_SATURATION_SCP_GENERATOR_TREE_SEARCH_H
 #define COST_SATURATION_SCP_GENERATOR_TREE_SEARCH_H
 
-#include "scp_generator.h"
+#include "cost_partitioning_generator.h"
 
 #include <set>
 

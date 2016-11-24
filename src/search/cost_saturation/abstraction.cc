@@ -1,124 +1,16 @@
 #include "abstraction.h"
 
-#include "types.h"
-
-#include "../algorithms/ordered_set.h"
 #include "../utils/collections.h"
-#include "../utils/logging.h"
 
 using namespace std;
 
 namespace cost_saturation {
-static void dijkstra_search(
-    const vector<vector<Transition>> &graph,
-    AdaptiveQueue<int> &queue,
-    vector<int> &distances,
-    const vector<int> &costs) {
-    while (!queue.empty()) {
-        pair<int, int> top_pair = queue.pop();
-        int distance = top_pair.first;
-        int state = top_pair.second;
-        int state_distance = distances[state];
-        assert(state_distance <= distance);
-        if (state_distance < distance) {
-            continue;
-        }
-        for (const Transition &transition : graph[state]) {
-            int successor = transition.state;
-            int op = transition.op;
-            assert(utils::in_bounds(op, costs));
-            int cost = costs[op];
-            assert(cost >= 0);
-            int successor_distance = (cost == INF) ? INF : state_distance + cost;
-            assert(successor_distance >= 0);
-            if (distances[successor] > successor_distance) {
-                distances[successor] = successor_distance;
-                queue.push(successor_distance, successor);
-            }
-        }
-    }
-}
-
-ostream &operator<<(ostream &os, const Transition &transition) {
-    os << "(" << transition.op << ", " << transition.state << ")";
-    return os;
-}
-
-static vector<int> get_active_operators_from_graph(
-    const vector<vector<Transition>> &backward_graph) {
-    algorithms::OrderedSet<int> active_operators;
-    int num_states = backward_graph.size();
-    for (int target = 0; target < num_states; ++target) {
-        for (const Transition &transition : backward_graph[target]) {
-            int op_id = transition.op;
-            assert(transition.state != target);
-            active_operators.insert(op_id);
-        }
-    }
-    return active_operators.pop_as_vector();
-}
-
-Abstraction::Abstraction(
-    vector<vector<Transition>> &&backward_graph,
-    vector<int> &&looping_operators,
-    vector<int> &&goal_states,
-    int num_operators)
-    : backward_graph(move(backward_graph)),
-      active_operators(get_active_operators_from_graph(this->backward_graph)),
-      looping_operators(move(looping_operators)),
-      goal_states(move(goal_states)),
-      num_operators(num_operators),
+Abstraction::Abstraction(int num_operators)
+    : num_operators(num_operators),
       use_general_costs(true) {
 }
 
-vector<int> Abstraction::compute_h_values(const vector<int> &costs) const {
-    vector<int> goal_distances(backward_graph.size(), INF);
-    queue.clear();
-    for (int goal_state : goal_states) {
-        goal_distances[goal_state] = 0;
-        queue.push(0, goal_state);
-    }
-    dijkstra_search(backward_graph, queue, goal_distances, costs);
-    return goal_distances;
-}
-
-vector<int> Abstraction::compute_saturated_costs(
-    const vector<int> &h_values) const {
-    const int min_cost = use_general_costs ? -INF : 0;
-
-    vector<int> saturated_costs(num_operators, min_cost);
-
-    /* To prevent negative cost cycles we ensure that all operators
-       inducing self-loops have non-negative costs. */
-    if (use_general_costs) {
-        for (int op_id : looping_operators) {
-            saturated_costs[op_id] = 0;
-        }
-    }
-
-    int num_states = backward_graph.size();
-    for (int target = 0; target < num_states; ++target) {
-        assert(utils::in_bounds(target, h_values));
-        int target_h = h_values[target];
-        if (target_h == INF) {
-            continue;
-        }
-
-        for (const Transition &transition : backward_graph[target]) {
-            int op_id = transition.op;
-            int src = transition.state;
-            assert(src != target);
-            assert(utils::in_bounds(src, h_values));
-            int src_h = h_values[src];
-            if (src_h == INF) {
-                continue;
-            }
-
-            const int needed = src_h - target_h;
-            saturated_costs[op_id] = max(saturated_costs[op_id], needed);
-        }
-    }
-    return saturated_costs;
+Abstraction::~Abstraction() {
 }
 
 pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated_costs(
@@ -128,24 +20,14 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
     return make_pair(move(h_values), move(saturated_costs));
 }
 
-const vector<int> &Abstraction::get_active_operators() const {
-    return active_operators;
+const std::vector<int> &Abstraction::get_goal_states() const {
+    return goal_states;
 }
 
-int Abstraction::get_num_states() const {
-    return backward_graph.size();
-}
-
-void Abstraction::dump() const {
-    cout << "State-changing transitions:" << endl;
-    for (size_t state = 0; state < backward_graph.size(); ++state) {
-        if (!backward_graph[state].empty()) {
-            cout << "  " << state << " <- " << backward_graph[state] << endl;
-        }
-    }
-    cout << "Active operators: " << active_operators << endl;
-    cout << "Looping operators: " << looping_operators << endl;
-    cout << "Goal states: " << goal_states << endl;
+void Abstraction::release_transition_system_memory() {
+    utils::release_vector_memory(active_operators);
+    utils::release_vector_memory(looping_operators);
+    utils::release_vector_memory(goal_states);
 }
 }
 

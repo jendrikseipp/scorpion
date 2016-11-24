@@ -1,4 +1,4 @@
-#include "scp_generator_random.h"
+#include "cost_partitioning_generator_random.h"
 
 #include "utils.h"
 
@@ -16,41 +16,41 @@
 using namespace std;
 
 namespace cost_saturation {
-SCPGeneratorRandom::SCPGeneratorRandom(const Options &opts)
-    : SCPGenerator(opts),
+CostPartitioningGeneratorRandom::CostPartitioningGeneratorRandom(
+    const Options &opts)
+    : CostPartitioningGenerator(opts),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
-void SCPGeneratorRandom::initialize(
+void CostPartitioningGeneratorRandom::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
     const vector<int> &) {
     order = get_default_order(abstractions.size());
 }
 
-CostPartitioning SCPGeneratorRandom::get_next_cost_partitioning(
+CostPartitioning CostPartitioningGeneratorRandom::get_next_cost_partitioning(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &,
-    const vector<int> &costs) {
+    const vector<int> &costs,
+    CPFunction cp_function) {
     rng->shuffle(order);
     if (max_orders == 1) {
         cout << "Order: " << order << endl;
     }
-    return compute_saturated_cost_partitioning(abstractions, order, costs);
+    return cp_function(abstractions, order, costs);
 }
 
-static shared_ptr<SCPGenerator> _parse_random(OptionParser &parser) {
+static shared_ptr<CostPartitioningGenerator> _parse_random(OptionParser &parser) {
     add_common_scp_generator_options_to_parser(parser);
     utils::add_rng_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
     else
-        return make_shared<SCPGeneratorRandom>(opts);
+        return make_shared<CostPartitioningGeneratorRandom>(opts);
 }
 
-static PluginShared<SCPGenerator> _plugin_random(
+static PluginShared<CostPartitioningGenerator> _plugin_random(
     "random", _parse_random);
 }

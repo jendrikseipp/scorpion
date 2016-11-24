@@ -1,7 +1,7 @@
-#ifndef COST_SATURATION_SCP_GENERATOR_RANDOM_H
-#define COST_SATURATION_SCP_GENERATOR_RANDOM_H
+#ifndef COST_SATURATION_COST_PARTITIONING_GENERATOR_RANDOM_H
+#define COST_SATURATION_COST_PARTITIONING_GENERATOR_RANDOM_H
 
-#include "scp_generator.h"
+#include "cost_partitioning_generator.h"
 
 namespace utils {
 class RandomNumberGenerator;
@@ -10,7 +10,7 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class Abstraction;
 
-class SCPGeneratorRandom : public SCPGenerator {
+class CostPartitioningGeneratorRandom : public CostPartitioningGenerator {
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     std::vector<int> order;
 
@@ -18,17 +18,16 @@ protected:
     virtual void initialize(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
         const std::vector<int> &costs);
 
 public:
-    explicit SCPGeneratorRandom(const options::Options &opts);
+    explicit CostPartitioningGeneratorRandom(const options::Options &opts);
 
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<StateMap> &state_maps,
-        const std::vector<int> &costs) override;
+        const std::vector<int> &costs,
+        CPFunction cp_function) override;
 };
 }
 
