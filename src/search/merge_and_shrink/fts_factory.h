@@ -19,8 +19,8 @@ enum class Verbosity;
 
 extern FactoredTransitionSystem create_factored_transition_system(
     const TaskProxy &task_proxy,
-    bool compute_label_equivalence_relation,
-    Verbosity verbosity);
+    Verbosity verbosity,
+    bool finalize_if_unsolvable = true);
 }
 
 #endif

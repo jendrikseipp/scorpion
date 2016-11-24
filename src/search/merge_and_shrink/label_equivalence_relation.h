@@ -52,10 +52,6 @@ public:
     int get_cost() const {
         return cost;
     }
-
-    const std::list<int> &get_labels() const {
-        return labels;
-    }
 };
 
 class LabelEquivalenceRelation {
