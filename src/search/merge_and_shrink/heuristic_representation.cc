@@ -57,8 +57,8 @@ void HeuristicRepresentationLeaf::dump() const {
 
 
 HeuristicRepresentationMerge::HeuristicRepresentationMerge(
-    unique_ptr<HeuristicRepresentation> left_child_,
-    unique_ptr<HeuristicRepresentation> right_child_)
+    shared_ptr<HeuristicRepresentation> left_child_,
+    shared_ptr<HeuristicRepresentation> right_child_)
     : HeuristicRepresentation(left_child_->get_domain_size() *
                               right_child_->get_domain_size()),
       left_child(move(left_child_)),

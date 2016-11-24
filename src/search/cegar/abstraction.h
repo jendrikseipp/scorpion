@@ -126,14 +126,22 @@ public:
 
     Abstraction(const Abstraction &) = delete;
 
-    std::shared_ptr<RefinementHierarchy> get_refinement_hierarchy() {
+    std::shared_ptr<RefinementHierarchy> get_refinement_hierarchy() const {
         return refinement_hierarchy;
     }
 
     std::vector<int> get_h_values() const;
 
+    const AbstractStates &get_states() const {
+        return states;
+    }
+
     int get_num_states() const {
         return states.size();
+    }
+
+    const AbstractStates &get_goals() const {
+        return goals;
     }
 
     int get_num_non_looping_transitions() const {
@@ -148,7 +156,7 @@ public:
 
     int get_h_value_of_initial_state() const;
 
-    const std::vector<bool> &get_operator_induces_self_loop();
+    const std::vector<bool> &get_operator_induces_self_loop() const;
 
     void set_operator_costs(const std::vector<int> &new_costs);
 

@@ -5,6 +5,7 @@
 #include "heuristic_representation.h"
 #include "transition_system.h"
 
+#include "../utils/collections.h"
 #include "../utils/memory.h"
 
 #include <cassert>
@@ -35,7 +36,7 @@ void FTSConstIterator::operator++() {
 FactoredTransitionSystem::FactoredTransitionSystem(
     unique_ptr<Labels> labels,
     vector<unique_ptr<TransitionSystem>> &&transition_systems,
-    vector<unique_ptr<HeuristicRepresentation>> &&heuristic_representations,
+    vector<shared_ptr<HeuristicRepresentation>> &&heuristic_representations,
     vector<unique_ptr<Distances>> &&distances,
     Verbosity verbosity)
     : labels(move(labels)),
@@ -48,7 +49,6 @@ FactoredTransitionSystem::FactoredTransitionSystem(
         compute_distances_and_prune(i, verbosity);
         if (!this->transition_systems[i]->is_solvable()) {
             solvable = false;
-            finalize(i);
             break;
         }
     }
@@ -69,6 +69,13 @@ FactoredTransitionSystem::FactoredTransitionSystem(FactoredTransitionSystem &&ot
 }
 
 FactoredTransitionSystem::~FactoredTransitionSystem() {
+}
+
+shared_ptr<HeuristicRepresentation>
+FactoredTransitionSystem::get_heuristic_representation(int index) const {
+    assert(utils::in_bounds(index, heuristic_representations));
+    assert(heuristic_representations[index]);
+    return heuristic_representations[index];
 }
 
 void FactoredTransitionSystem::discard_states(
@@ -186,7 +193,7 @@ int FactoredTransitionSystem::merge(
     transition_systems[index1] = nullptr;
     transition_systems[index2] = nullptr;
     heuristic_representations.push_back(
-        utils::make_unique_ptr<HeuristicRepresentationMerge>(
+        make_shared<HeuristicRepresentationMerge>(
             move(heuristic_representations[index1]),
             move(heuristic_representations[index2])));
     heuristic_representations[index1] = nullptr;
@@ -201,6 +208,38 @@ int FactoredTransitionSystem::merge(
         finalize(new_index);
     }
     return new_index;
+}
+
+void FactoredTransitionSystem::reserve_extra_position() {
+    transition_systems.push_back(nullptr);
+    heuristic_representations.push_back(nullptr);
+    distances.push_back(nullptr);
+}
+
+int FactoredTransitionSystem::preserving_merge(
+    int index1, int index2, Verbosity verbosity) {
+    assert(is_index_valid(index1));
+    assert(is_index_valid(index2));
+
+    int dest = get_size() - 1;
+
+    transition_systems[dest] = TransitionSystem::merge(
+        *labels,
+        *transition_systems[index1],
+        *transition_systems[index2],
+        verbosity);
+    heuristic_representations[dest] =
+        make_shared<HeuristicRepresentationMerge>(
+            heuristic_representations[index1],
+            heuristic_representations[index2]);
+    const TransitionSystem &new_ts = *transition_systems[dest];
+    distances[dest] = utils::make_unique_ptr<Distances>(new_ts);
+    compute_distances_and_prune(dest, verbosity);
+    assert(is_component_valid(dest));
+    if (!new_ts.is_solvable()) {
+        solvable = false;
+    }
+    return dest;
 }
 
 void FactoredTransitionSystem::finalize(int index) {

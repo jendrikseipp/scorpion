@@ -47,7 +47,7 @@ class FactoredTransitionSystem {
     std::unique_ptr<Labels> labels;
     // Entries with nullptr have been merged.
     std::vector<std::unique_ptr<TransitionSystem>> transition_systems;
-    std::vector<std::unique_ptr<HeuristicRepresentation>> heuristic_representations;
+    std::vector<std::shared_ptr<HeuristicRepresentation>> heuristic_representations;
     std::vector<std::unique_ptr<Distances>> distances;
     int final_index;
     bool solvable;
@@ -70,7 +70,7 @@ public:
     FactoredTransitionSystem(
         std::unique_ptr<Labels> labels,
         std::vector<std::unique_ptr<TransitionSystem>> &&transition_systems,
-        std::vector<std::unique_ptr<HeuristicRepresentation>> &&heuristic_representations,
+        std::vector<std::shared_ptr<HeuristicRepresentation>> &&heuristic_representations,
         std::vector<std::unique_ptr<Distances>> &&distances,
         Verbosity verbosity);
     FactoredTransitionSystem(FactoredTransitionSystem &&other);
@@ -89,6 +89,9 @@ public:
         return *distances[index];
     }
 
+    std::shared_ptr<HeuristicRepresentation> get_heuristic_representation(
+        int index) const;
+
     // Methods for MergeAndShrinkHeuristic
     void apply_label_reduction(
         const std::vector<std::pair<int, std::vector<int>>> &label_mapping,
@@ -98,6 +101,7 @@ public:
         const StateEquivalenceRelation &state_equivalence_relation,
         Verbosity verbosity);
     int merge(int index1, int index2, Verbosity verbosity);
+    int preserving_merge(int index1, int index2, Verbosity verbosity);
     void finalize(int index = -1);
 
     bool is_solvable() const {
@@ -129,6 +133,8 @@ public:
     bool is_active(int index) const {
         return is_index_valid(index);
     }
+
+    void reserve_extra_position();
 };
 }
 

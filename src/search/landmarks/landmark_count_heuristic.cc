@@ -14,6 +14,7 @@
 #include "../task_tools.h"
 
 #include "../utils/memory.h"
+#include "../utils/rng_options.h"
 #include "../utils/system.h"
 
 #include <cmath>
@@ -67,7 +68,13 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
                 get_operator_costs(task_proxy), *lgraph, static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
         } else {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkUniformSharedCostAssignment>(
-                get_operator_costs(task_proxy), *lgraph, opts.get<bool>("alm"));
+                get_operator_costs(task_proxy),
+                *lgraph,
+                opts.get<bool>("alm"),
+                opts.get<bool>("reuse_costs"),
+                opts.get<bool>("greedy"),
+                opts.get<int>("num_orders"),
+                utils::parse_rng_from_options(opts));
         }
     } else {
         lm_cost_assignment = nullptr;
@@ -335,6 +342,14 @@ static Heuristic *_parse(OptionParser &parser) {
                             "(see OptionCaveats#Using_preferred_operators_"
                             "with_the_lmcount_heuristic)", "false");
     parser.add_option<bool>("alm", "use action landmarks", "true");
+    parser.add_option<bool>("reuse_costs", "reuse unused costs", "false");
+    parser.add_option<bool>("greedy", "assign costs greedily", "false");
+    parser.add_option<int>(
+        "num_orders",
+        "number of cost partitioning orders",
+        "1",
+        Bounds("1", "infinity"));
+    utils::add_rng_options(parser);
     lp::add_lp_solver_option_to_parser(parser);
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();

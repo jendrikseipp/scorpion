@@ -329,7 +329,7 @@ void Abstraction::compress_self_loops() {
     }
 }
 
-const vector<bool> &Abstraction::get_operator_induces_self_loop() {
+const vector<bool> &Abstraction::get_operator_induces_self_loop() const {
     return operator_induces_self_loop;
 }
 

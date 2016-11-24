@@ -47,7 +47,7 @@ static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
     return h_values_by_orders;
 }
 
-static bool disjunct(std::vector<bool> &v1, std::vector<bool> &v2) {
+static bool disjunct(vector<bool> &v1, vector<bool> &v2) {
     assert(v1.size() == v2.size());
     for (size_t i = 0; i < v1.size(); ++i) {
         if (v1[i] && v2[i]) {
@@ -296,9 +296,10 @@ static Heuristic *_parse(OptionParser &parser) {
         heuristic_opts.set<int>("lpsolver", opts.get_enum("lpsolver"));
         return new OptimalCostPartitioningHeuristic(
             heuristic_opts, cost_saturation.extract_transition_systems());
-    } else if (cost_partitioning_type == CostPartitioningType::SATURATED ||
-               cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
-               cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
+    } else if (
+        cost_partitioning_type == CostPartitioningType::SATURATED ||
+        cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
+        cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
         const int num_orders = opts.get<int>("orders");
         const int max_num_samples = opts.get<int>("samples");
         const double max_sampling_time = opts.get<double>("max_sampling_time");

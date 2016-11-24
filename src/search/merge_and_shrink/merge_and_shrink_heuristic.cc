@@ -238,7 +238,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
     //       allocates memory.
 
     fts = utils::make_unique_ptr<FactoredTransitionSystem>(
-        create_factored_transition_system(task_proxy, verbosity));
+        create_factored_transition_system(task_proxy, true, verbosity));
     print_time(timer, "after computation of atomic transition systems");
     cout << endl;
 
