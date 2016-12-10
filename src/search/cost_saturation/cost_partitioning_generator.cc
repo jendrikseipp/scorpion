@@ -28,7 +28,7 @@ CostPartitioning compute_saturated_cost_partitioning(
     for (int pos : order) {
         Abstraction &abstraction = *abstractions[pos];
         auto pair = abstraction.compute_goal_distances_and_saturated_costs(
-                    remaining_costs);
+            remaining_costs);
         vector<int> &h_values = pair.first;
         vector<int> &saturated_costs = pair.second;
         if (debug) {
@@ -78,7 +78,6 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
     int evaluated_orders = 0;
     while (static_cast<int>(cost_partitionings.size()) < max_orders &&
            !timer.is_expired() && has_next_cost_partitioning()) {
-
         CostPartitioning scp = get_next_cost_partitioning(
             task_proxy, abstractions, costs, cp_function);
         ++evaluated_orders;

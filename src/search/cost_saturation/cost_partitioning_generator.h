@@ -16,8 +16,8 @@ class OptionParser;
 namespace cost_saturation {
 class Abstraction;
 
-using CPFunction = std::function<CostPartitioning (
-    const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
+using CPFunction = std::function<CostPartitioning(
+                                     const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
 
 class CostPartitioningGenerator {
 protected:

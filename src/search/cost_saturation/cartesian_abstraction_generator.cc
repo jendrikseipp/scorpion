@@ -19,7 +19,7 @@ namespace cost_saturation {
 CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     const options::Options &opts)
     : subtask_generators(
-        opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")) {
+          opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")) {
 }
 
 static unique_ptr<Abstraction> convert_abstraction(

@@ -20,7 +20,7 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
     return make_pair(move(h_values), move(saturated_costs));
 }
 
-const std::vector<int> &Abstraction::get_goal_states() const {
+const vector<int> &Abstraction::get_goal_states() const {
     return goal_states;
 }
 
@@ -30,4 +30,3 @@ void Abstraction::release_transition_system_memory() {
     utils::release_vector_memory(goal_states);
 }
 }
-

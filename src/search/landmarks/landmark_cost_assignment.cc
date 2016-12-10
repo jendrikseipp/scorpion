@@ -145,7 +145,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
                     assert(num_achieved >= 1);
                     assert(utils::in_bounds(op_id, remaining_costs));
                     double cost = greedy ? remaining_costs[op_id] :
-                        remaining_costs[op_id] / num_achieved;
+                                  remaining_costs[op_id] / num_achieved;
                     min_cost = min(min_cost, cost);
                 }
                 order_h += min_cost;

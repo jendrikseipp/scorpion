@@ -27,10 +27,10 @@ Diversifier::Diversifier(
         compute_saturated_cost_partitioning(abstractions, default_order, costs);
 
     function<int (const State &state)> default_order_heuristic =
-            [&abstractions,&scp_for_default_order](const State &state) {
-        vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-        return compute_sum_h(local_state_ids, scp_for_default_order);
-    };
+        [&abstractions, &scp_for_default_order](const State &state) {
+            vector<int> local_state_ids = get_local_state_ids(abstractions, state);
+            return compute_sum_h(local_state_ids, scp_for_default_order);
+        };
 
     vector<State> samples = sample_states(
         task_proxy, default_order_heuristic, max_samples);
@@ -57,7 +57,7 @@ Diversifier::Diversifier(
     cout << "Covered abstract states: "
          << num_covered_states << "/" << num_abstract_states << " = "
          << (num_abstract_states ?
-             static_cast<double>(num_covered_states) / num_abstract_states : 1)
+        static_cast<double>(num_covered_states) / num_abstract_states : 1)
          << endl;
 }
 

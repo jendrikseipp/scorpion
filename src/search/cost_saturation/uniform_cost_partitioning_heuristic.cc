@@ -116,8 +116,8 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
     h_values_by_order =
         opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
             task_proxy, abstractions, costs,
-            [dynamic,verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
-                return compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose);
+            [dynamic, verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
+            return compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose);
         });
     num_best_order.resize(h_values_by_order.size(), 0);
 

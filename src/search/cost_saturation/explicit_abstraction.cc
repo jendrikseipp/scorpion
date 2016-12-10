@@ -164,4 +164,3 @@ void ExplicitAbstraction::dump() const {
     cout << "Goal states: " << goal_states << endl;
 }
 }
-

@@ -21,10 +21,10 @@ SCPGeneratorTreeSearch::SCPGeneratorTreeSearch(const Options &opts)
 void SCPGeneratorTreeSearch::initialize(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &/*state_maps*/,
+    const vector<StateMap> & /*state_maps*/,
     const vector<int> &costs) {
     num_abstractions = abstractions.size();
-                       
+
     int num_operators = task_proxy.get_operators().size();
     vector<vector<bool>> dependent_ops;
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
@@ -34,7 +34,7 @@ void SCPGeneratorTreeSearch::initialize(
         }
         dependent_ops.push_back(move(active_ops_bitset));
     }
-    
+
     // Remove all zero cost operators from set of dependent operators.
     // TODO: This will be more important during the order creation
     // process as computing SCPs will leave us with more zero cost
@@ -47,7 +47,7 @@ void SCPGeneratorTreeSearch::initialize(
         }
     }
 
-    assert (dependent_ops.size() == num_abstractions);
+    assert(dependent_ops.size() == num_abstractions);
 
     for (size_t i = 0; i < num_abstractions; ++i) {
         vertices.insert(i);
@@ -55,7 +55,7 @@ void SCPGeneratorTreeSearch::initialize(
 
     int num_pairs = 0;
     int num_independent_pairs = 0;
-    
+
     edges.resize(num_abstractions, vector<int>());
     for (size_t i = 0; i < dependent_ops.size(); ++i) {
         for (size_t j = i + 1; j < dependent_ops.size(); ++j) {
@@ -68,7 +68,7 @@ void SCPGeneratorTreeSearch::initialize(
             ++num_pairs;
         }
     }
-    
+
     root_node = utils::make_unique_ptr<SearchNode>();
 
     cout << num_independent_pairs << "/" << num_pairs << " = "
@@ -81,11 +81,10 @@ bool SCPGeneratorTreeSearch::has_next_cost_partitioning() const {
 }
 
 CostPartitioning SCPGeneratorTreeSearch::get_next_cost_partitioning(
-    const TaskProxy &/*task_proxy*/,
+    const TaskProxy & /*task_proxy*/,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &/*state_maps*/,
+    const vector<StateMap> & /*state_maps*/,
     const vector<int> &costs) {
-
     current_order.clear();
     current_vertices = vertices;
     current_edges = edges;
@@ -95,7 +94,7 @@ CostPartitioning SCPGeneratorTreeSearch::get_next_cost_partitioning(
 
 void SCPGeneratorTreeSearch::visit_node(SearchNode &node) {
     // cout << "visit node with order: " << node.order << endl;
-    
+
     if (current_order.size() == num_abstractions) {
         node.solved = true;
         return;
@@ -105,7 +104,7 @@ void SCPGeneratorTreeSearch::visit_node(SearchNode &node) {
         // Initialize children as null pointers
         for (size_t i = 0; i < current_vertices.size(); ++i) {
             node.children.push_back(nullptr);
-        }        
+        }
     }
 
     vector<pair<int, int>> candidates;
@@ -129,7 +128,7 @@ void SCPGeneratorTreeSearch::visit_node(SearchNode &node) {
                 min_visits = child->num_visits;
                 candidates.clear();
                 candidates.push_back(make_pair(index, vertex));
-            } else if(child->num_visits == min_visits) {
+            } else if (child->num_visits == min_visits) {
                 candidates.push_back(make_pair(index, vertex));
             }
         }
@@ -137,7 +136,7 @@ void SCPGeneratorTreeSearch::visit_node(SearchNode &node) {
     }
     assert(!candidates.empty());
 
-    pair<int,int> succ = candidates[rand() % candidates.size()];
+    pair<int, int> succ = candidates[rand() % candidates.size()];
     assert(succ.first < (int)node.children.size());
     if (!node.children[succ.first]) {
         node.children[succ.first] = utils::make_unique_ptr<SearchNode>();

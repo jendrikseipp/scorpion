@@ -26,7 +26,7 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
             opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
                 task_proxy, abstractions, costs,
                 [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
-                    return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
+                return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
             });
     } else {
         int original_seed = rng->get_last_seed();

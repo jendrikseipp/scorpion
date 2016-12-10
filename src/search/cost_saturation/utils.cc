@@ -138,5 +138,4 @@ vector<bool> convert_to_bitvector(const vector<int> &vec, int size) {
     }
     return bitvector;
 }
-
 }

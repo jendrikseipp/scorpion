@@ -90,7 +90,6 @@ static vector<vector<int>> sample_states_and_return_local_ids(
     int init_h,
     int max_num_samples,
     double max_sampling_time) {
-
     function<bool(const State &state)> dead_end_function =
         [&](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(

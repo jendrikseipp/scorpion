@@ -48,8 +48,8 @@ public:
         const std::vector<int> &costs) const = 0;
 
     std::pair<std::vector<int>, std::vector<int>>
-        compute_goal_distances_and_saturated_costs(
-            const std::vector<int> &costs) const;
+    compute_goal_distances_and_saturated_costs(
+        const std::vector<int> &costs) const;
 
     const std::vector<int> &get_active_operators() const {
         return active_operators;

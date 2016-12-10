@@ -121,8 +121,9 @@ shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
 
 bool CostSaturation::initial_state_is_dead_end() const {
     return any_of(abstractions.begin(), abstractions.end(),
-        [](const unique_ptr<Abstraction> &abstraction) {
-            return abstraction->get_h_value_of_initial_state() == INF; });
+                  [](const unique_ptr<Abstraction> &abstraction) {
+            return abstraction->get_h_value_of_initial_state() == INF;
+        });
 }
 
 void CostSaturation::build_abstractions(
