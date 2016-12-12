@@ -154,7 +154,7 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    shared_ptr<AbstractTask> task = get_task_from_options(opts);
+    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
 
     vector<int> costs = get_operator_costs(task_proxy);

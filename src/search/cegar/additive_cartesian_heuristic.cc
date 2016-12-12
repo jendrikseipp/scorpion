@@ -256,7 +256,7 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    shared_ptr<AbstractTask> task(get_task_from_options(opts));
+    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     const CostPartitioningType cost_partitioning_type =
         static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"));
@@ -267,8 +267,6 @@ static Heuristic *_parse(OptionParser &parser) {
     Options heuristic_opts;
     heuristic_opts.set<shared_ptr<AbstractTask>>(
         "transform", task);
-    heuristic_opts.set<int>(
-        "cost_type", NORMAL);
     heuristic_opts.set<bool>(
         "cache_estimates", opts.get<bool>("cache_estimates"));
 
