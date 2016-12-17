@@ -15,7 +15,7 @@
 using namespace std;
 
 namespace cost_saturation {
-SCPGeneratorGreedy::SCPGeneratorGreedy(const Options &opts)
+CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(opts),
       increasing_ratios(opts.get<bool>("increasing_ratios")) {
     if (max_orders != 1) {
@@ -41,13 +41,13 @@ static int compute_sum(const vector<int> &vec) {
     return sum;
 }
 
-void SCPGeneratorGreedy::initialize(
+void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &,
     const vector<int> &) {
 }
 
-CostPartitioning SCPGeneratorGreedy::get_next_cost_partitioning(
+CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
@@ -107,7 +107,7 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     if (parser.dry_run())
         return nullptr;
     else
-        return make_shared<SCPGeneratorGreedy>(opts);
+        return make_shared<CostPartitioningGeneratorGreedy>(opts);
 }
 
 static PluginShared<CostPartitioningGenerator> _plugin_greedy(

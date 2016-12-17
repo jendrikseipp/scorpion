@@ -4,7 +4,7 @@
 #include "cost_partitioning_generator.h"
 
 namespace cost_saturation {
-class SCPGeneratorGreedy : public CostPartitioningGenerator {
+class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
 
 protected:
@@ -14,7 +14,7 @@ protected:
         const std::vector<int> &costs);
 
 public:
-    explicit SCPGeneratorGreedy(const options::Options &opts);
+    explicit CostPartitioningGeneratorGreedy(const options::Options &opts);
 
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,
