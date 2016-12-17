@@ -1,10 +1,10 @@
-#ifndef COST_SATURATION_SCP_GENERATOR_GREEDY_H
-#define COST_SATURATION_SCP_GENERATOR_GREEDY_H
+#ifndef COST_SATURATION_COST_PARTITIONING_GENERATOR_GREEDY_H
+#define COST_SATURATION_COST_PARTITIONING_GENERATOR_GREEDY_H
 
 #include "cost_partitioning_generator.h"
 
 namespace cost_saturation {
-class SCPGeneratorGreedy : public SCPGenerator {
+class SCPGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
 
 protected:
@@ -19,7 +19,8 @@ public:
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs) override;
+        const std::vector<int> &costs,
+        CPFunction cp_function) override;
 };
 }
 

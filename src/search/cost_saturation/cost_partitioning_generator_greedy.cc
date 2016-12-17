@@ -1,4 +1,4 @@
-#include "scp_generator_greedy.h"
+#include "cost_partitioning_generator_greedy.h"
 
 #include "abstraction.h"
 #include "utils.h"
@@ -16,14 +16,14 @@ using namespace std;
 
 namespace cost_saturation {
 SCPGeneratorGreedy::SCPGeneratorGreedy(const Options &opts)
-    : SCPGenerator(opts),
+    : CostPartitioningGenerator(opts),
       increasing_ratios(opts.get<bool>("increasing_ratios")) {
     if (max_orders != 1) {
-        cerr << "SCPGeneratorGreedy currently needs max_orders = 1" << endl;
+        cerr << "greedy generator currently needs max_orders = 1" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
     if (diversify) {
-        cerr << "SCPGeneratorGreedy currently needs diversify = false" << endl;
+        cerr << "greedy generator currently needs diversify = false" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
 }
@@ -44,18 +44,15 @@ static int compute_sum(const vector<int> &vec) {
 void SCPGeneratorGreedy::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &,
-    const vector<StateMap> &,
     const vector<int> &) {
-    // TODO: Initialize.
 }
 
 CostPartitioning SCPGeneratorGreedy::get_next_cost_partitioning(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<StateMap> &state_maps,
-    const vector<int> &costs) {
+    const vector<int> &costs,
+    CPFunction cp_function) {
     State initial_state = task_proxy.get_initial_state();
-    assert(abstractions.size() == state_maps.size());
     int num_abstractions = abstractions.size();
 
     set<int> unused_abstractions;
@@ -70,11 +67,10 @@ CostPartitioning SCPGeneratorGreedy::get_next_cost_partitioning(
         int best_pos = -1;
         for (int i : unused_abstractions) {
             const Abstraction &abstraction = *abstractions[i];
-            const StateMap &state_map = state_maps[i];
             auto pair = abstraction.compute_goal_distances_and_saturated_costs(costs);
             vector<int> &h_values = pair.first;
             vector<int> &saturated_costs = pair.second;
-            int initial_state_id = state_map(initial_state);
+            int initial_state_id = abstraction.get_abstract_state_id(initial_state);
             double init_h = h_values[initial_state_id];
             int used_costs = compute_sum(saturated_costs);
             double h_per_costs = static_cast<double>(init_h) / max(1, used_costs);
@@ -97,11 +93,11 @@ CostPartitioning SCPGeneratorGreedy::get_next_cost_partitioning(
         reverse(order.begin(), order.end());
     }
     cout << "Order: " << order << endl;
-    return compute_saturated_cost_partitioning(abstractions, order, costs);
+    return cp_function(abstractions, order, costs);
 }
 
 
-static shared_ptr<SCPGenerator> _parse_greedy(OptionParser &parser) {
+static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser) {
     parser.add_option<bool>(
         "increasing_ratios",
         "sort by increasing h/costs ratios",
@@ -114,6 +110,6 @@ static shared_ptr<SCPGenerator> _parse_greedy(OptionParser &parser) {
         return make_shared<SCPGeneratorGreedy>(opts);
 }
 
-static PluginShared<SCPGenerator> _plugin_greedy(
+static PluginShared<CostPartitioningGenerator> _plugin_greedy(
     "greedy", _parse_greedy);
 }
