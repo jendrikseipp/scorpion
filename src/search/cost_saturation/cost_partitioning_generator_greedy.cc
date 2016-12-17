@@ -41,10 +41,31 @@ static int compute_sum(const vector<int> &vec) {
     return sum;
 }
 
+static int compute_finite_sum(const vector<int> &vec) {
+    int sum = 0;
+    for (int val : vec) {
+        assert(val != INF);
+        if (val != -INF) {
+            sum += val;
+        }
+    }
+    return sum;
+}
+
 void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &,
-    const vector<unique_ptr<Abstraction>> &,
-    const vector<int> &) {
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &costs) {
+    vector<vector<int>> h_values_by_abstraction;
+    vector<double> used_costs_by_abstraction;
+    for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+        auto pair = abstraction->compute_goal_distances_and_saturated_costs(costs);
+        vector<int> &h_values = pair.first;
+        vector<int> &saturated_costs = pair.second;
+        h_values_by_abstraction.push_back(move(h_values));
+        used_costs_by_abstraction.push_back(compute_finite_sum(saturated_costs));
+    }
+    cout << "Used costs by abstraction: " << used_costs_by_abstraction << endl;
 }
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
