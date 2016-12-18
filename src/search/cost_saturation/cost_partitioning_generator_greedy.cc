@@ -52,21 +52,41 @@ static int compute_finite_sum(const vector<int> &vec) {
     return sum;
 }
 
+static double compute_h_per_cost_ratio(int h, int cost) {
+    assert(h >= 0);
+    assert(abs(cost != INF));
+    // Make sure we divide two positive numbers.
+    int min_cost = -5;
+    int shift = min_cost < 0 ? abs(min_cost) : 0;
+    return static_cast<double>(h + shift) / (cost + shift);
+}
+
 void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
     vector<vector<int>> h_values_by_abstraction;
     vector<double> used_costs_by_abstraction;
+    int min_used_costs = numeric_limits<int>::max();
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
         auto pair = abstraction->compute_goal_distances_and_saturated_costs(costs);
         vector<int> &h_values = pair.first;
         vector<int> &saturated_costs = pair.second;
         h_values_by_abstraction.push_back(move(h_values));
-        used_costs_by_abstraction.push_back(compute_finite_sum(saturated_costs));
+        int used_costs = compute_finite_sum(saturated_costs);
+        used_costs_by_abstraction.push_back(used_costs);
+        min_used_costs = min(min_used_costs, used_costs);
     }
     cout << "Used costs by abstraction: " << used_costs_by_abstraction << endl;
+    cout << "Example cost ratios: " << endl;
+    cout << compute_h_per_cost_ratio(1, -1) << endl;
+    cout << compute_h_per_cost_ratio(1, 0) << endl;
+    cout << compute_h_per_cost_ratio(1, 1) << endl;
+    cout << compute_h_per_cost_ratio(1, 2) << endl;
+    cout << compute_h_per_cost_ratio(1, 3) << endl;
+    cout << compute_h_per_cost_ratio(1, 4) << endl;
 }
+
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     const TaskProxy &task_proxy,
