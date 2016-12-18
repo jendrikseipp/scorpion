@@ -68,8 +68,6 @@ static vector<int> compute_greedy_order_for_sample(
         ratios.push_back(compute_h_per_cost_ratio(h, cost, min_used_costs));
     }
 
-    cout << "Ratios: " << ratios << endl;
-
     sort(order.begin(), order.end(), [&](int abstraction1_id, int abstraction2_id) {
         return ratios[abstraction1_id] > ratios[abstraction2_id];
     });
@@ -81,6 +79,7 @@ void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
+    utils::Timer timer;
     vector<vector<int>> h_values_by_abstraction;
     vector<double> used_costs_by_abstraction;
     int min_used_costs = numeric_limits<int>::max();
@@ -94,6 +93,7 @@ void CostPartitioningGeneratorGreedy::initialize(
         min_used_costs = min(min_used_costs, used_costs);
     }
     cout << "Used costs by abstraction: " << used_costs_by_abstraction << endl;
+    cout << "Minimum used costs: " << min_used_costs << endl;
     if (!diversifier) {
         ABORT("Greedy generator needs diversify=true");
     }
@@ -108,6 +108,8 @@ void CostPartitioningGeneratorGreedy::initialize(
     }
 
     random_order = get_default_order(abstractions.size());
+
+    cout << "Time for computing greedy orders: " << timer << endl;
 }
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
