@@ -15,6 +15,7 @@ class OptionParser;
 
 namespace cost_saturation {
 class Abstraction;
+class Diversifier;
 
 using CPFunction = std::function<CostPartitioning(
                                      const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
@@ -24,6 +25,8 @@ protected:
     const int max_orders;
     const double max_time;
     const bool diversify;
+
+    std::unique_ptr<Diversifier> diversifier;
 
     virtual void initialize(
         const TaskProxy &task_proxy,
@@ -42,7 +45,7 @@ protected:
 
 public:
     CostPartitioningGenerator(const options::Options &opts);
-    virtual ~CostPartitioningGenerator() = default;
+    virtual ~CostPartitioningGenerator();
 
     virtual CostPartitionings get_cost_partitionings(
         const TaskProxy &task_proxy,

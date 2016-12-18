@@ -54,6 +54,9 @@ CostPartitioningGenerator::CostPartitioningGenerator(const Options &opts)
       diversify(opts.get<bool>("diversify")) {
 }
 
+CostPartitioningGenerator::~CostPartitioningGenerator() {
+}
+
 void CostPartitioningGenerator::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &,
@@ -68,7 +71,6 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
     CPFunction cp_function) {
     initialize(task_proxy, abstractions, costs);
 
-    unique_ptr<Diversifier> diversifier;
     if (diversify) {
         diversifier = utils::make_unique_ptr<Diversifier>(
             task_proxy, abstractions, costs);
