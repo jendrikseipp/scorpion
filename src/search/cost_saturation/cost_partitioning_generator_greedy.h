@@ -3,9 +3,17 @@
 
 #include "cost_partitioning_generator.h"
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace cost_saturation {
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
+
+    std::vector<int> random_order;
+    std::vector<std::vector<int>> greedy_orders;
 
 protected:
     virtual void initialize(

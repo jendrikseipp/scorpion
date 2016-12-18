@@ -10,6 +10,8 @@
 
 #include "../utils/collections.h"
 #include "../utils/logging.h"
+#include "../utils/rng.h"
+#include "../utils/rng_options.h"
 
 #include <algorithm>
 #include <cassert>
@@ -19,24 +21,8 @@ using namespace std;
 namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(opts),
-      increasing_ratios(opts.get<bool>("increasing_ratios")) {
-    if (max_orders != 1) {
-        cerr << "greedy generator currently needs max_orders = 1" << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
-    }
-}
-
-static int compute_sum(const vector<int> &vec) {
-    int sum = 0;
-    for (int val : vec) {
-        assert(val != INF);
-        if (val == -INF) {
-            return -INF;
-        } else {
-            sum += val;
-        }
-    }
-    return sum;
+      increasing_ratios(opts.get<bool>("increasing_ratios")),
+      rng(utils::parse_rng_from_options(opts)) {
 }
 
 static int compute_finite_sum(const vector<int> &vec) {
@@ -50,13 +36,13 @@ static int compute_finite_sum(const vector<int> &vec) {
     return sum;
 }
 
-static double compute_h_per_cost_ratio(int h, int cost) {
+static double compute_h_per_cost_ratio(int h, int used_costs) {
     assert(h >= 0);
-    assert(abs(cost != INF));
+    assert(abs(used_costs != INF));
     // Make sure we divide two positive numbers.
     int min_cost = 0;
     int shift = min_cost < 0 ? abs(min_cost) : 0;
-    return static_cast<double>(h + shift) / (cost + shift);
+    return static_cast<double>(h + shift) / (used_costs + shift);
 }
 
 static vector<int> compute_greedy_order_for_sample(
@@ -114,65 +100,31 @@ void CostPartitioningGeneratorGreedy::initialize(
     const vector<vector<int>> &local_state_ids_by_sample =
         diversifier->get_local_state_ids_by_sample();
     int num_samples = local_state_ids_by_sample.size();
-    vector<vector<int>> orders;
     for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
         const vector<int> &local_state_ids = local_state_ids_by_sample[sample_id];
-        orders.push_back(compute_greedy_order_for_sample(
+        greedy_orders.push_back(compute_greedy_order_for_sample(
             abstractions, local_state_ids, h_values_by_abstraction, used_costs_by_abstraction));
     }
-    cout << "Greedy orders: " << endl;
-    for (auto &order : orders) {
-        cout << order << endl;
-    }
+
+    random_order = get_default_order(abstractions.size());
 }
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
-    const TaskProxy &task_proxy,
+    const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
     CPFunction cp_function) {
-    State initial_state = task_proxy.get_initial_state();
-    int num_abstractions = abstractions.size();
-
-    set<int> unused_abstractions;
-    for (int i = 0; i < num_abstractions; ++i) {
-        unused_abstractions.insert(i);
-    }
-    vector<int> order;
-
-    while (!unused_abstractions.empty()) {
-        double max_h_per_costs = -numeric_limits<double>::infinity();
-        int min_costs = numeric_limits<int>::max();
-        int best_pos = -1;
-        for (int i : unused_abstractions) {
-            const Abstraction &abstraction = *abstractions[i];
-            auto pair = abstraction.compute_goal_distances_and_saturated_costs(costs);
-            vector<int> &h_values = pair.first;
-            vector<int> &saturated_costs = pair.second;
-            int initial_state_id = abstraction.get_abstract_state_id(initial_state);
-            double init_h = h_values[initial_state_id];
-            int used_costs = compute_sum(saturated_costs);
-            double h_per_costs = static_cast<double>(init_h) / max(1, used_costs);
-            if (h_per_costs > max_h_per_costs ||
-                (h_per_costs == max_h_per_costs && used_costs < min_costs)) {
-                best_pos = i;
-                max_h_per_costs = h_per_costs;
-                min_costs = used_costs;
-            }
-            cout << i << ": " << " " << init_h << " / " << used_costs
-                 << " = " << h_per_costs << endl;
+    if (greedy_orders.empty()) {
+        rng->shuffle(random_order);
+        return cp_function(abstractions, random_order, costs);
+    } else {
+        vector<int> order = move(greedy_orders.back());
+        greedy_orders.pop_back();
+        if (increasing_ratios) {
+            reverse(order.begin(), order.end());
         }
-        assert(best_pos != -1);
-        order.push_back(best_pos);
-        unused_abstractions.erase(best_pos);
-        cout << "Use: " << best_pos << endl;
+        return cp_function(abstractions, order, costs);
     }
-    assert(order.size() == abstractions.size());
-    if (increasing_ratios) {
-        reverse(order.begin(), order.end());
-    }
-    cout << "Order: " << order << endl;
-    return cp_function(abstractions, order, costs);
 }
 
 
@@ -182,6 +134,7 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "sort by increasing h/costs ratios",
         "false");
     add_common_scp_generator_options_to_parser(parser);
+    utils::add_rng_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
