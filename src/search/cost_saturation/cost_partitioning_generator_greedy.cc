@@ -36,20 +36,20 @@ static int compute_finite_sum(const vector<int> &vec) {
     return sum;
 }
 
-static double compute_h_per_cost_ratio(int h, int used_costs) {
+static double compute_h_per_cost_ratio(int h, int used_costs, int min_used_costs) {
     assert(h >= 0);
     assert(abs(used_costs != INF));
     // Make sure we divide two positive numbers.
-    int min_cost = 0;
-    int shift = min_cost < 0 ? abs(min_cost) : 0;
-    return static_cast<double>(h + shift) / (used_costs + shift);
+    double shift = min_used_costs <= 0 ? abs(min_used_costs) + 1 : 0;
+    return (h + shift) / (used_costs + shift);
 }
 
 static vector<int> compute_greedy_order_for_sample(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &local_state_ids,
     const vector<vector<int>> h_values_by_abstraction,
-    const vector<double> used_costs_by_abstraction) {
+    const vector<double> used_costs_by_abstraction,
+    int min_used_costs) {
     assert(abstractions.size() == local_state_ids.size());
     assert(abstractions.size() == h_values_by_abstraction.size());
     assert(abstractions.size() == used_costs_by_abstraction.size());
@@ -65,7 +65,7 @@ static vector<int> compute_greedy_order_for_sample(
         int h = h_values_by_abstraction[abstraction_id][local_state_id];
         assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
         int cost = used_costs_by_abstraction[abstraction_id];
-        ratios.push_back(compute_h_per_cost_ratio(h, cost));
+        ratios.push_back(compute_h_per_cost_ratio(h, cost, min_used_costs));
     }
 
     cout << "Ratios: " << ratios << endl;
@@ -103,7 +103,8 @@ void CostPartitioningGeneratorGreedy::initialize(
     for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
         const vector<int> &local_state_ids = local_state_ids_by_sample[sample_id];
         greedy_orders.push_back(compute_greedy_order_for_sample(
-            abstractions, local_state_ids, h_values_by_abstraction, used_costs_by_abstraction));
+            abstractions, local_state_ids, h_values_by_abstraction,
+            used_costs_by_abstraction, min_used_costs));
     }
 
     random_order = get_default_order(abstractions.size());
