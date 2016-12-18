@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <unordered_set>
 
 using namespace std;
 
@@ -108,6 +109,11 @@ void CostPartitioningGeneratorGreedy::initialize(
     }
 
     random_order = get_default_order(abstractions.size());
+
+    unordered_set<vector<int>> unique_orders(greedy_orders.begin(), greedy_orders.end());
+    greedy_orders.clear();
+    greedy_orders.insert(greedy_orders.begin(), unique_orders.begin(), unique_orders.end());
+    cout << "Unique greedy orders: " << greedy_orders.size() << endl;
 
     cout << "Time for computing greedy orders: " << timer << endl;
 }
