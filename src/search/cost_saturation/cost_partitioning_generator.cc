@@ -69,12 +69,13 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
     const Abstractions &abstractions,
     const vector<int> &costs,
     CPFunction cp_function) {
-    initialize(task_proxy, abstractions, costs);
-
     if (diversify) {
         diversifier = utils::make_unique_ptr<Diversifier>(
             task_proxy, abstractions, costs);
     }
+
+    initialize(task_proxy, abstractions, costs);
+
     CostPartitionings cost_partitionings;
     utils::CountdownTimer timer(max_time);
     int evaluated_orders = 0;

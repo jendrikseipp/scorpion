@@ -1,12 +1,14 @@
 #include "cost_partitioning_generator_greedy.h"
 
 #include "abstraction.h"
+#include "diversifier.h"
 #include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../utils/collections.h"
 #include "../utils/logging.h"
 
 #include <algorithm>
@@ -20,10 +22,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       increasing_ratios(opts.get<bool>("increasing_ratios")) {
     if (max_orders != 1) {
         cerr << "greedy generator currently needs max_orders = 1" << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
-    }
-    if (diversify) {
-        cerr << "greedy generator currently needs diversify = false" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
 }
@@ -56,9 +54,41 @@ static double compute_h_per_cost_ratio(int h, int cost) {
     assert(h >= 0);
     assert(abs(cost != INF));
     // Make sure we divide two positive numbers.
-    int min_cost = -5;
+    int min_cost = 0;
     int shift = min_cost < 0 ? abs(min_cost) : 0;
     return static_cast<double>(h + shift) / (cost + shift);
+}
+
+static vector<int> compute_greedy_order_for_sample(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &local_state_ids,
+    const vector<vector<int>> h_values_by_abstraction,
+    const vector<double> used_costs_by_abstraction) {
+    assert(abstractions.size() == local_state_ids.size());
+    assert(abstractions.size() == h_values_by_abstraction.size());
+    assert(abstractions.size() == used_costs_by_abstraction.size());
+
+    vector<int> order = get_default_order(abstractions.size());
+
+    vector<double> ratios;
+    for (size_t abstraction_id = 0; abstraction_id < abstractions.size(); ++abstraction_id) {
+        assert(utils::in_bounds(abstraction_id, local_state_ids));
+        int local_state_id = local_state_ids[abstraction_id];
+        assert(utils::in_bounds(abstraction_id, h_values_by_abstraction));
+        assert(utils::in_bounds(local_state_id, h_values_by_abstraction[abstraction_id]));
+        int h = h_values_by_abstraction[abstraction_id][local_state_id];
+        assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
+        int cost = used_costs_by_abstraction[abstraction_id];
+        ratios.push_back(compute_h_per_cost_ratio(h, cost));
+    }
+
+    cout << "Ratios: " << ratios << endl;
+
+    sort(order.begin(), order.end(), [&](int abstraction1_id, int abstraction2_id) {
+        return ratios[abstraction1_id] > ratios[abstraction2_id];
+    });
+
+    return order;
 }
 
 void CostPartitioningGeneratorGreedy::initialize(
@@ -78,15 +108,23 @@ void CostPartitioningGeneratorGreedy::initialize(
         min_used_costs = min(min_used_costs, used_costs);
     }
     cout << "Used costs by abstraction: " << used_costs_by_abstraction << endl;
-    cout << "Example cost ratios: " << endl;
-    cout << compute_h_per_cost_ratio(1, -1) << endl;
-    cout << compute_h_per_cost_ratio(1, 0) << endl;
-    cout << compute_h_per_cost_ratio(1, 1) << endl;
-    cout << compute_h_per_cost_ratio(1, 2) << endl;
-    cout << compute_h_per_cost_ratio(1, 3) << endl;
-    cout << compute_h_per_cost_ratio(1, 4) << endl;
+    if (!diversifier) {
+        ABORT("Greedy generator needs diversify=true");
+    }
+    const vector<vector<int>> &local_state_ids_by_sample =
+        diversifier->get_local_state_ids_by_sample();
+    int num_samples = local_state_ids_by_sample.size();
+    vector<vector<int>> orders;
+    for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
+        const vector<int> &local_state_ids = local_state_ids_by_sample[sample_id];
+        orders.push_back(compute_greedy_order_for_sample(
+            abstractions, local_state_ids, h_values_by_abstraction, used_costs_by_abstraction));
+    }
+    cout << "Greedy orders: " << endl;
+    for (auto &order : orders) {
+        cout << order << endl;
+    }
 }
-
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     const TaskProxy &task_proxy,
