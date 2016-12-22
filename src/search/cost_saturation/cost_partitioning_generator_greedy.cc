@@ -77,7 +77,7 @@ static vector<int> compute_greedy_order_for_sample(
 }
 
 void CostPartitioningGeneratorGreedy::initialize(
-    const TaskProxy &,
+    const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
     utils::Timer timer;
@@ -95,9 +95,9 @@ void CostPartitioningGeneratorGreedy::initialize(
     }
     cout << "Used costs by abstraction: " << used_costs_by_abstraction << endl;
     cout << "Minimum used costs: " << min_used_costs << endl;
-    if (!diversifier) {
-        ABORT("Greedy generator needs diversify=true");
-    }
+    // Use separate diversifier to avoid overfitting for samples.
+    diversifier = utils::make_unique_ptr<Diversifier>(
+        task_proxy, abstractions, costs);
     const vector<vector<int>> &local_state_ids_by_sample =
         diversifier->get_local_state_ids_by_sample();
     int num_samples = local_state_ids_by_sample.size();
