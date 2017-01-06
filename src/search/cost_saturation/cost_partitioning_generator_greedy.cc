@@ -96,7 +96,7 @@ void CostPartitioningGeneratorGreedy::initialize(
     cout << "Used costs by abstraction: " << used_costs_by_abstraction << endl;
     cout << "Minimum used costs: " << min_used_costs << endl;
     // Use separate diversifier to avoid overfitting for samples.
-    diversifier = utils::make_unique_ptr<Diversifier>(
+    unique_ptr<Diversifier> diversifier = utils::make_unique_ptr<Diversifier>(
         task_proxy, abstractions, costs);
     const vector<vector<int>> &local_state_ids_by_sample =
         diversifier->get_local_state_ids_by_sample();
