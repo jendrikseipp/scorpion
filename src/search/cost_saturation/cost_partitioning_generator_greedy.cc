@@ -6,7 +6,10 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../sampling.h"
+#include "../successor_generator.h"
 #include "../task_proxy.h"
+#include "../task_tools.h"
 
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -23,7 +26,8 @@ namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(opts),
       increasing_ratios(opts.get<bool>("increasing_ratios")),
-      rng(utils::parse_rng_from_options(opts)) {
+      rng(utils::parse_rng_from_options(opts)),
+      min_used_costs(numeric_limits<int>::max()) {
 }
 
 static int compute_finite_sum(const vector<int> &vec) {
@@ -80,10 +84,25 @@ void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
-    utils::Timer timer;
-    vector<vector<int>> h_values_by_abstraction;
-    vector<double> used_costs_by_abstraction;
-    int min_used_costs = numeric_limits<int>::max();
+    random_order = get_default_order(abstractions.size());
+
+    successor_generator = utils::make_unique_ptr<SuccessorGenerator>(task_proxy);
+    average_operator_costs = get_average_operator_cost(task_proxy);
+    initial_state = utils::make_unique_ptr<State>(task_proxy.get_initial_state());
+
+    vector<int> default_order = get_default_order(abstractions.size());
+    CostPartitioning scp_for_default_order =
+        compute_saturated_cost_partitioning(abstractions, default_order, costs);
+
+    std::function<int (const State &state)> default_order_heuristic =
+        [&abstractions, &scp_for_default_order](const State &state) {
+            vector<int> local_state_ids = get_local_state_ids(abstractions, state);
+            return compute_sum_h(local_state_ids, scp_for_default_order);
+        };
+
+    init_h = default_order_heuristic(*initial_state);
+    cout << "Initial h value for default order: " << init_h << endl;
+
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
         auto pair = abstraction->compute_goal_distances_and_saturated_costs(costs);
         vector<int> &h_values = pair.first;
@@ -95,27 +114,6 @@ void CostPartitioningGeneratorGreedy::initialize(
     }
     cout << "Used costs by abstraction: " << used_costs_by_abstraction << endl;
     cout << "Minimum used costs: " << min_used_costs << endl;
-    // Use separate diversifier to avoid overfitting for samples.
-    unique_ptr<Diversifier> diversifier = utils::make_unique_ptr<Diversifier>(
-        task_proxy, abstractions, costs);
-    const vector<vector<int>> &local_state_ids_by_sample =
-        diversifier->get_local_state_ids_by_sample();
-    int num_samples = local_state_ids_by_sample.size();
-    for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
-        const vector<int> &local_state_ids = local_state_ids_by_sample[sample_id];
-        greedy_orders.push_back(compute_greedy_order_for_sample(
-            abstractions, local_state_ids, h_values_by_abstraction,
-            used_costs_by_abstraction, min_used_costs));
-    }
-
-    random_order = get_default_order(abstractions.size());
-
-    unordered_set<vector<int>> unique_orders(greedy_orders.begin(), greedy_orders.end());
-    greedy_orders.clear();
-    greedy_orders.insert(greedy_orders.begin(), unique_orders.begin(), unique_orders.end());
-    cout << "Unique greedy orders: " << greedy_orders.size() << endl;
-
-    cout << "Time for computing greedy orders: " << timer << endl;
 }
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
@@ -123,17 +121,30 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
     CPFunction cp_function) {
-    if (greedy_orders.empty()) {
+    State sample = sample_state_with_random_walk(
+        *initial_state,
+        *successor_generator,
+        init_h,
+        average_operator_costs);
+
+    vector<int> local_state_ids = get_local_state_ids(abstractions, sample);
+
+    // We can call compute_sum_h with unpartitioned h values since we only need
+    // a safe, but not necessarily admissible estimate.
+    if (compute_sum_h(local_state_ids, h_values_by_abstraction) == INF) {
         rng->shuffle(random_order);
         return cp_function(abstractions, random_order, costs);
-    } else {
-        vector<int> order = move(greedy_orders.back());
-        greedy_orders.pop_back();
-        if (increasing_ratios) {
-            reverse(order.begin(), order.end());
-        }
-        return cp_function(abstractions, order, costs);
     }
+
+    vector<int> order = compute_greedy_order_for_sample(
+        abstractions, local_state_ids, h_values_by_abstraction,
+        used_costs_by_abstraction, min_used_costs);
+
+    if (increasing_ratios) {
+        reverse(order.begin(), order.end());
+    }
+
+    return cp_function(abstractions, order, costs);
 }
 
 

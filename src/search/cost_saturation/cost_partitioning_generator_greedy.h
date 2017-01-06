@@ -3,6 +3,9 @@
 
 #include "cost_partitioning_generator.h"
 
+class State;
+class SuccessorGenerator;
+
 namespace utils {
 class RandomNumberGenerator;
 }
@@ -12,8 +15,19 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
+    std::unique_ptr<SuccessorGenerator> successor_generator;
+    double average_operator_costs;
+    std::unique_ptr<State> initial_state;
+    int init_h;
+
+    // Unpartitioned h values.
+    std::vector<std::vector<int>> h_values_by_abstraction;
+    std::vector<double> used_costs_by_abstraction;
+    int min_used_costs;
+
     std::vector<int> random_order;
     std::vector<std::vector<int>> greedy_orders;
+    std::vector<std::vector<int>> local_state_ids_by_sample;
 
 protected:
     virtual void initialize(
