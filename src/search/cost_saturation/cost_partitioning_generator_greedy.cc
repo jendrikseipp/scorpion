@@ -121,6 +121,11 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
     CPFunction cp_function) {
+    // Return random order about every other time.
+    if ((*rng)(2) == 0) {
+        rng->shuffle(random_order);
+        return cp_function(abstractions, random_order, costs);
+    }
     State sample = sample_state_with_random_walk(
         *initial_state,
         *successor_generator,
