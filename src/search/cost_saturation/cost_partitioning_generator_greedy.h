@@ -26,8 +26,6 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     int min_used_costs;
 
     std::vector<int> random_order;
-    std::vector<std::vector<int>> greedy_orders;
-    std::vector<std::vector<int>> local_state_ids_by_sample;
 
 protected:
     virtual void initialize(
