@@ -58,7 +58,8 @@ vector<int> get_local_state_ids(
 vector<State> sample_states(
     const TaskProxy &task_proxy,
     const function<int (const State &state)> &heuristic,
-    int num_samples) {
+    int num_samples,
+    utils::RandomNumberGenerator &rng) {
     cout << "Start sampling" << endl;
     utils::CountdownTimer sampling_timer(60);
 
@@ -76,7 +77,8 @@ vector<State> sample_states(
             initial_state,
             successor_generator,
             init_h,
-            average_operator_costs);
+            average_operator_costs,
+            rng);
         if (heuristic(sample) != INF) {
             samples.push_back(move(sample));
         }

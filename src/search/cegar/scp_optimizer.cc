@@ -20,10 +20,12 @@ namespace cegar {
 SCPOptimizer::SCPOptimizer(
     vector<unique_ptr<Abstraction>> &&abstractions,
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
-    const vector<int> &operator_costs)
+    const vector<int> &operator_costs,
+    const std::shared_ptr<utils::RandomNumberGenerator> &rng)
     : abstractions(move(abstractions)),
       refinement_hierarchies(refinement_hierarchies),
-      operator_costs(operator_costs) {
+      operator_costs(operator_costs),
+      rng(rng) {
     order_evaluation_timer = utils::make_unique_ptr<utils::Timer>();
     order_evaluation_timer->stop();
     scp_computation_timer = utils::make_unique_ptr<utils::Timer>();
@@ -116,7 +118,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
     evaluations = 0;
     vector<int> incumbent_order = get_default_order(abstractions.size());
     if (shuffle) {
-        g_rng()->shuffle(incumbent_order);
+        rng->shuffle(incumbent_order);
     }
     if (reverse_order) {
         cout << "Landmark abstractions: " << hacked_num_landmark_abstractions

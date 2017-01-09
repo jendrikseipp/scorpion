@@ -11,6 +11,7 @@
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
+#include "../utils/rng_options.h"
 
 #include <cassert>
 
@@ -51,7 +52,8 @@ CostPartitioning compute_saturated_cost_partitioning(
 CostPartitioningGenerator::CostPartitioningGenerator(const Options &opts)
     : max_orders(opts.get<int>("max_orders")),
       max_time(opts.get<double>("max_time")),
-      diversify(opts.get<bool>("diversify")) {
+      diversify(opts.get<bool>("diversify")),
+      rng(utils::parse_rng_from_options(opts)) {
 }
 
 void CostPartitioningGenerator::initialize(
@@ -71,7 +73,7 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
         diversifier = utils::make_unique_ptr<Diversifier>(
-            task_proxy, abstractions, costs);
+            task_proxy, abstractions, costs, *rng);
     }
     CostPartitionings cost_partitionings;
     utils::CountdownTimer timer(max_time);
@@ -107,6 +109,7 @@ void add_common_scp_generator_options_to_parser(OptionParser &parser) {
         "diversify",
         "only keep diverse orders",
         "true");
+    utils::add_rng_options(parser);
 }
 
 

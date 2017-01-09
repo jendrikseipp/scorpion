@@ -11,9 +11,14 @@ namespace cegar {
 class SubtaskGenerator;
 }
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace cost_saturation {
 class CartesianAbstractionGenerator : public AbstractionGenerator {
     const std::vector<std::shared_ptr<cegar::SubtaskGenerator>> subtask_generators;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
 public:
     explicit CartesianAbstractionGenerator(const options::Options &opts);

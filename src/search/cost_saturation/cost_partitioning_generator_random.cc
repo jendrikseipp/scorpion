@@ -7,7 +7,6 @@
 
 #include "../utils/logging.h"
 #include "../utils/rng.h"
-#include "../utils/rng_options.h"
 
 #include <algorithm>
 #include <cassert>
@@ -18,8 +17,7 @@ using namespace std;
 namespace cost_saturation {
 CostPartitioningGeneratorRandom::CostPartitioningGeneratorRandom(
     const Options &opts)
-    : CostPartitioningGenerator(opts),
-      rng(utils::parse_rng_from_options(opts)) {
+    : CostPartitioningGenerator(opts) {
 }
 
 void CostPartitioningGeneratorRandom::initialize(
@@ -43,7 +41,6 @@ CostPartitioning CostPartitioningGeneratorRandom::get_next_cost_partitioning(
 
 static shared_ptr<CostPartitioningGenerator> _parse_random(OptionParser &parser) {
     add_common_scp_generator_options_to_parser(parser);
-    utils::add_rng_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;

@@ -53,7 +53,8 @@ CostSaturation::CostSaturation(
     double max_time,
     bool use_general_costs,
     bool exclude_abstractions_with_zero_init_h,
-    PickSplit pick_split)
+    PickSplit pick_split,
+    utils::RandomNumberGenerator &rng)
     : cost_partitioning_type(cost_partitioning_type),
       subtask_generators(subtask_generators),
       max_states(max_states),
@@ -62,6 +63,7 @@ CostSaturation::CostSaturation(
       use_general_costs(use_general_costs),
       exclude_abstractions_with_zero_init_h(exclude_abstractions_with_zero_init_h),
       pick_split(pick_split),
+      rng(rng),
       num_abstractions(0),
       num_states(0),
       num_non_looping_transitions(0) {
@@ -142,7 +144,8 @@ void CostSaturation::build_abstractions(
                 rem_subtasks),
             timer.get_remaining_time() / rem_subtasks,
             use_general_costs,
-            pick_split);
+            pick_split,
+            rng);
 
         ++num_abstractions;
         num_states += abstraction->get_num_states();

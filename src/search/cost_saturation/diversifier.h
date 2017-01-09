@@ -5,6 +5,10 @@
 
 class TaskProxy;
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace cost_saturation {
 class Diversifier {
     const int max_samples = 1000;
@@ -15,7 +19,8 @@ public:
     Diversifier(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs);
+        const std::vector<int> &costs,
+        utils::RandomNumberGenerator &rng);
 
     bool is_diverse(const CostPartitioning &scp);
 };

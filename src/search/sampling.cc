@@ -1,6 +1,5 @@
 #include "sampling.h"
 
-#include "globals.h"
 #include "successor_generator.h"
 #include "task_proxy.h"
 #include "task_tools.h"
@@ -15,6 +14,7 @@ State sample_state_with_random_walk(
     const SuccessorGenerator &successor_generator,
     int init_h,
     double average_operator_cost,
+    utils::RandomNumberGenerator &rng,
     function<bool(State)> is_dead_end) {
     int n;
     if (init_h == 0) {
@@ -37,7 +37,7 @@ State sample_state_with_random_walk(
     // Calculate length of random walk according to a binomial distribution.
     int length = 0;
     for (int j = 0; j < n; ++j) {
-        double random = (*g_rng())(); // [0..1)
+        double random = rng(); // [0..1)
         if (random < p)
             ++length;
     }
@@ -53,7 +53,7 @@ State sample_state_with_random_walk(
         if (applicable_ops.empty()) {
             break;
         } else {
-            const OperatorProxy &random_op = *g_rng()->choose(applicable_ops);
+            const OperatorProxy &random_op = *rng.choose(applicable_ops);
             assert(is_applicable(random_op, current_state));
             current_state = current_state.get_successor(random_op);
             /* If current state is a dead end, then restart the random walk
@@ -72,6 +72,7 @@ vector<State> sample_states_with_random_walks(
     int num_samples,
     int init_h,
     double average_operator_cost,
+    utils::RandomNumberGenerator &rng,
     function<bool(State)> is_dead_end,
     const utils::CountdownTimer *timer) {
     const State initial_state = task_proxy.get_initial_state();
@@ -85,6 +86,7 @@ vector<State> sample_states_with_random_walks(
                               successor_generator,
                               init_h,
                               average_operator_cost,
+                              rng,
                               is_dead_end));
     }
     return samples;

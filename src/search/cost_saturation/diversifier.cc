@@ -19,7 +19,8 @@ namespace cost_saturation {
 Diversifier::Diversifier(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &costs)
+    const vector<int> &costs,
+    utils::RandomNumberGenerator &rng)
     : portfolio_h_values(max_samples, -1) {
     // Always use h(s_0) from SCP to obtain the same samples for all CPs.
     vector<int> default_order = get_default_order(abstractions.size());
@@ -33,7 +34,7 @@ Diversifier::Diversifier(
         };
 
     vector<State> samples = sample_states(
-        task_proxy, default_order_heuristic, max_samples);
+        task_proxy, default_order_heuristic, max_samples, rng);
 
     for (const State &sample : samples) {
         local_state_ids_by_sample.push_back(
