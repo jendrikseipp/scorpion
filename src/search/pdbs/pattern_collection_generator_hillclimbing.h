@@ -18,6 +18,7 @@ class Options;
 
 namespace utils {
 class CountdownTimer;
+class RandomNumberGenerator;
 }
 
 namespace pdbs {
@@ -35,6 +36,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     // minimal improvement required for hill climbing to continue search
     const int min_improvement;
     const double max_time;
+    std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::unique_ptr<IncrementalCanonicalPDBs> current_pdbs;
 
@@ -59,7 +61,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     std::size_t generate_pdbs_for_candidates(
         const TaskProxy &task_proxy,
         std::set<Pattern> &generated_patterns,
-        PatternCollection &new_candidates,
+        const PatternCollection &new_candidates,
         PDBCollection &candidate_pdbs) const;
 
     /*

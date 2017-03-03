@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <functional>
+#include <memory>
 #include <vector>
 
 class State;
@@ -11,6 +12,7 @@ class TaskProxy;
 
 namespace utils {
 class CountdownTimer;
+class RandomNumberGenerator;
 }
 
 
@@ -21,6 +23,7 @@ State sample_state_with_random_walk(
     const SuccessorGenerator &successor_generator,
     int init_h,
     double average_operator_cost,
+    utils::RandomNumberGenerator &rng,
     std::function<bool(State)> is_dead_end = [] (const State &) {
                                                  return false;
                                              });
@@ -40,6 +43,7 @@ std::vector<State> sample_states_with_random_walks(
     int num_samples,
     int init_h,
     double average_operator_cost,
+    utils::RandomNumberGenerator &rng,
     std::function<bool(State)> is_dead_end = [] (const State &) {
                                                  return false;
                                              },

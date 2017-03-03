@@ -3,15 +3,10 @@
 
 #include "cost_partitioning_generator.h"
 
-namespace utils {
-class RandomNumberGenerator;
-}
-
 namespace cost_saturation {
 class Abstraction;
 
 class CostPartitioningGeneratorRandom : public CostPartitioningGenerator {
-    const std::shared_ptr<utils::RandomNumberGenerator> rng;
     std::vector<int> order;
 
 protected:

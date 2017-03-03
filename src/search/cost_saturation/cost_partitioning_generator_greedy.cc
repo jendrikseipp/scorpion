@@ -130,7 +130,8 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         *initial_state,
         *successor_generator,
         init_h,
-        average_operator_costs);
+        average_operator_costs,
+        *rng);
 
     vector<int> local_state_ids = get_local_state_ids(abstractions, sample);
 

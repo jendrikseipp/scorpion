@@ -7,6 +7,10 @@
 
 class TaskProxy;
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace cost_saturation {
 extern std::vector<int> get_default_order(int num_abstractions);
 
@@ -20,7 +24,8 @@ std::vector<int> get_local_state_ids(
 extern std::vector<State> sample_states(
     const TaskProxy &task_proxy,
     const std::function<int (const State &)> &heuristic,
-    int num_samples);
+    int num_samples,
+    utils::RandomNumberGenerator &rng);
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs,

@@ -8,6 +8,7 @@
 
 namespace utils {
 class CountdownTimer;
+class RandomNumberGenerator;
 }
 
 namespace cegar {
@@ -35,6 +36,7 @@ class CostSaturation {
     // TODO: Remove.
     const bool exclude_abstractions_with_zero_init_h;
     const PickSplit pick_split;
+    utils::RandomNumberGenerator &rng;
 
     /*
       TODO: Change interface to
@@ -68,7 +70,8 @@ public:
         double max_time,
         bool use_general_costs,
         bool exclude_abstractions_with_zero_init_h,
-        PickSplit pick_split);
+        PickSplit pick_split,
+        utils::RandomNumberGenerator &rng);
 
     void initialize(const std::shared_ptr<AbstractTask> &task);
 

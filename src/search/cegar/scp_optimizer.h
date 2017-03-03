@@ -9,6 +9,7 @@ class State;
 
 namespace utils {
 class CountdownTimer;
+class RandomNumberGenerator;
 class Timer;
 }
 
@@ -21,6 +22,7 @@ class SCPOptimizer {
     const std::vector<std::shared_ptr<RefinementHierarchy>> refinement_hierarchies;
     const std::vector<int> operator_costs;
     static const bool debug = false;
+    std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     mutable std::vector<std::vector<int>> incumbent_scp;
     mutable int evaluations;
@@ -46,7 +48,8 @@ public:
     SCPOptimizer(
         std::vector<std::unique_ptr<Abstraction>> &&abstractions,
         const std::vector<std::shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
-        const std::vector<int> &operator_costs);
+        const std::vector<int> &operator_costs,
+        const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
     std::pair<std::vector<std::vector<int>>, std::pair<int, int>> find_cost_partitioning(
         const std::vector<std::vector<int>> &local_state_ids_by_state,

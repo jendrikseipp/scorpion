@@ -13,6 +13,10 @@ class Options;
 class OptionParser;
 }
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace cost_saturation {
 class Abstraction;
 
@@ -24,6 +28,7 @@ protected:
     const int max_orders;
     const double max_time;
     const bool diversify;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     virtual void initialize(
         const TaskProxy &task_proxy,

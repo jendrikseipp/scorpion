@@ -18,6 +18,7 @@
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/rng.h"
+#include "../utils/rng_options.h"
 
 #include <cassert>
 
@@ -89,7 +90,8 @@ static vector<vector<int>> sample_states_and_return_local_ids(
     const vector<vector<int>> &h_values_by_abstraction_for_default_order,
     int init_h,
     int max_num_samples,
-    double max_sampling_time) {
+    double max_sampling_time,
+    utils::RandomNumberGenerator &rng) {
     function<bool(const State &state)> dead_end_function =
         [&](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(
@@ -110,7 +112,8 @@ static vector<vector<int>> sample_states_and_return_local_ids(
             initial_state,
             successor_generator,
             init_h,
-            average_operator_costs);
+            average_operator_costs,
+            rng);
         if (!dead_end_function(sample)) {
             samples.push_back(move(sample));
         }
@@ -251,6 +254,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "throw away abstractions with h(s_0) = 0",
         "true");
     Heuristic::add_options_to_parser(parser);
+    utils::add_rng_options(parser);
     Options opts = parser.parse();
 
     if (parser.dry_run())
@@ -263,6 +267,7 @@ static Heuristic *_parse(OptionParser &parser) {
     const int extra_memory_padding_in_mb = opts.get<int>("extra_memory_padding");
     const bool exclude_abstractions_with_zero_init_h = opts.get<bool>(
         "exclude_abstractions_with_zero_init_h");
+    shared_ptr<utils::RandomNumberGenerator> rng = utils::parse_rng_from_options(opts);
 
     Options heuristic_opts;
     heuristic_opts.set<shared_ptr<AbstractTask>>(
@@ -280,7 +285,8 @@ static Heuristic *_parse(OptionParser &parser) {
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
         exclude_abstractions_with_zero_init_h,
-        static_cast<PickSplit>(opts.get<int>("pick")));
+        static_cast<PickSplit>(opts.get<int>("pick")),
+        *rng);
     if (extra_memory_padding_in_mb > 0)
         utils::reserve_extra_memory_padding(extra_memory_padding_in_mb);
     cost_saturation.initialize(task);
@@ -408,7 +414,7 @@ static Heuristic *_parse(OptionParser &parser) {
         }
 
         SCPOptimizer scp_optimizer(
-            move(abstractions), refinement_hierarchies, operator_costs);
+            move(abstractions), refinement_hierarchies, operator_costs, rng);
 
         vector<vector<int>> local_state_ids_by_state =
             sample_states_and_return_local_ids(
@@ -417,7 +423,8 @@ static Heuristic *_parse(OptionParser &parser) {
                 h_values_by_abstraction_for_default_order,
                 init_h,
                 max_num_samples,
-                max_sampling_time);
+                max_sampling_time,
+                *rng);
         int num_samples = local_state_ids_by_state.size();
 
         utils::CountdownTimer finding_orders_timer(max_time_finding_orders);

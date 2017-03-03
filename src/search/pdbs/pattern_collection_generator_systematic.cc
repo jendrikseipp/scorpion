@@ -95,8 +95,8 @@ void PatternCollectionGeneratorSystematic::compute_connection_points(
 
     // Handle rule 1.
     for (int var : pattern) {
-        const vector<int> &successors = cg.get_successors(var);
-        candidates.insert(successors.begin(), successors.end());
+        const vector<int> &succ = cg.get_successors(var);
+        candidates.insert(succ.begin(), succ.end());
     }
 
     // Handle rules 2 and 3.

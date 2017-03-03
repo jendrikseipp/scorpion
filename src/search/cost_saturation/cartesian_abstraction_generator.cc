@@ -10,6 +10,7 @@
 #include "../cegar/abstract_state.h"
 #include "../cegar/cost_saturation.h"
 #include "../utils/logging.h"
+#include "../utils/rng_options.h"
 
 #include <memory>
 
@@ -19,7 +20,8 @@ namespace cost_saturation {
 CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     const options::Options &opts)
     : subtask_generators(
-          opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")) {
+          opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
+      rng(utils::parse_rng_from_options(opts)) {
 }
 
 static unique_ptr<Abstraction> convert_abstraction(
@@ -101,7 +103,8 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         max_time,
         use_general_costs,
         exclude_abstractions_with_zero_init_h,
-        cegar::PickSplit::MAX_REFINED);
+        cegar::PickSplit::MAX_REFINED,
+        *rng);
     cost_saturation.initialize(task);
 
     vector<unique_ptr<cegar::Abstraction>> cartesian_abstractions =
@@ -133,6 +136,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "debug",
         "print debugging info",
         "false");
+    utils::add_rng_options(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())
