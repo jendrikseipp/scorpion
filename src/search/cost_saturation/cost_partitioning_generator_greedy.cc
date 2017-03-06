@@ -121,7 +121,6 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             h_values.push_back(h);
             int used_costs = sum_positive_values(saturated_costs);
             double ratio = compute_h_per_cost_ratio(h, used_costs);
-            cout << h << "/" << used_costs << " = " << ratio << endl;
             if (ratio > highest_ratio) {
                 best_abstraction = abstraction_id;
                 saturated_costs_for_best_abstraction = move(saturated_costs);
@@ -129,11 +128,9 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             }
         }
         assert(best_abstraction != -1);
-        cout << "choose " << best_abstraction << ": " << highest_ratio << endl;
         order.push_back(best_abstraction);
         remaining_abstractions.erase(best_abstraction);
         reduce_costs(remaining_costs, saturated_costs_for_best_abstraction);
-        cout << remaining_costs << endl;
     }
 
     return order;
