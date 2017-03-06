@@ -13,6 +13,7 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
+    const bool dynamic;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     // Unpartitioned h values.

@@ -26,6 +26,7 @@ namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(opts),
       increasing_ratios(opts.get<bool>("increasing_ratios")),
+      dynamic(opts.get<bool>("dynamic")),
       rng(utils::parse_rng_from_options(opts)),
       min_used_costs(numeric_limits<int>::max()) {
 }
@@ -55,14 +56,12 @@ static vector<int> compute_greedy_order_for_sample(
     const vector<vector<int>> h_values_by_abstraction,
     const vector<double> used_costs_by_abstraction,
     int min_used_costs) {
+    utils::unused_variable(min_used_costs);
     assert(abstractions.size() == local_state_ids.size());
     assert(abstractions.size() == h_values_by_abstraction.size());
     assert(abstractions.size() == used_costs_by_abstraction.size());
 
-    vector<int> order = get_default_order(abstractions.size());
-
     vector<int> h_values;
-
     vector<double> ratios;
     for (size_t abstraction_id = 0; abstraction_id < abstractions.size(); ++abstraction_id) {
         assert(utils::in_bounds(abstraction_id, local_state_ids));
@@ -72,8 +71,8 @@ static vector<int> compute_greedy_order_for_sample(
         int h = h_values_by_abstraction[abstraction_id][local_state_id];
         h_values.push_back(h);
         assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
-        int cost = used_costs_by_abstraction[abstraction_id];
-        ratios.push_back(compute_h_per_cost_ratio(h, cost, min_used_costs));
+        int used_costs = used_costs_by_abstraction[abstraction_id];
+        ratios.push_back(compute_h_per_cost_ratio(h, used_costs, min(-1000, used_costs)));
     }
 
     cout << "h-values: ";
@@ -81,9 +80,61 @@ static vector<int> compute_greedy_order_for_sample(
     cout << "Ratios: ";
     print_indexed_vector(ratios);
 
+    vector<int> order = get_default_order(abstractions.size());
     sort(order.begin(), order.end(), [&](int abstraction1_id, int abstraction2_id) {
         return ratios[abstraction1_id] > ratios[abstraction2_id];
     });
+
+    return order;
+}
+
+vector<int> compute_greedy_dynamic_order_for_sample(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &local_state_ids,
+    vector<int> remaining_costs) {
+    // TODO (as for static version): Only consider operators that are active in
+    // other abstractions when computing used costs.
+    assert(abstractions.size() == local_state_ids.size());
+
+    vector<int> order;
+
+    set<int> remaining_abstractions;
+    int num_abstractions = abstractions.size();
+    for (int i = 0; i < num_abstractions; ++i) {
+        remaining_abstractions.insert(i);
+    }
+
+    while (!remaining_abstractions.empty()) {
+        double highest_ratio = -numeric_limits<double>::max();
+        int best_abstraction = -1;
+        vector<int> saturated_costs_for_best_abstraction;
+        for (int abstraction_id : remaining_abstractions) {
+            assert(utils::in_bounds(abstraction_id, local_state_ids));
+            int local_state_id = local_state_ids[abstraction_id];
+            Abstraction &abstraction = *abstractions[abstraction_id];
+            auto pair = abstraction.compute_goal_distances_and_saturated_costs(remaining_costs);
+            vector<int> &h_values = pair.first;
+            vector<int> &saturated_costs = pair.second;
+            assert(utils::in_bounds(local_state_id, h_values));
+            int h = h_values[local_state_id];
+            h_values.push_back(h);
+            int used_costs = compute_finite_sum(saturated_costs);
+            int min_used_costs = min(-1000, used_costs);
+            double ratio = compute_h_per_cost_ratio(h, used_costs, min_used_costs);
+            cout << h << "/" << used_costs << " = " << ratio << endl;
+            if (ratio > highest_ratio) {
+                best_abstraction = abstraction_id;
+                saturated_costs_for_best_abstraction = move(saturated_costs);
+                highest_ratio = ratio;
+            }
+        }
+        assert(best_abstraction != -1);
+        cout << "choose " << best_abstraction << ": " << highest_ratio << endl;
+        order.push_back(best_abstraction);
+        remaining_abstractions.erase(best_abstraction);
+        reduce_costs(remaining_costs, saturated_costs_for_best_abstraction);
+        cout << remaining_costs << endl;
+    }
 
     return order;
 }
@@ -124,9 +175,15 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         return cp_function(abstractions, random_order, costs);
     }
 
-    vector<int> order = compute_greedy_order_for_sample(
+    vector<int> order;
+    if (dynamic) {
+        order = compute_greedy_dynamic_order_for_sample(
+            abstractions, local_state_ids, costs);
+    } else {
+        order = compute_greedy_order_for_sample(
         abstractions, local_state_ids, h_values_by_abstraction,
         used_costs_by_abstraction, min_used_costs);
+    }
 
     if (increasing_ratios) {
         reverse(order.begin(), order.end());
@@ -142,6 +199,10 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "increasing_ratios",
         "sort by increasing h/costs ratios",
+        "false");
+    parser.add_option<bool>(
+        "dynamic",
+        "recompute ratios in each step",
         "false");
     add_common_scp_generator_options_to_parser(parser);
     utils::add_rng_options(parser);
