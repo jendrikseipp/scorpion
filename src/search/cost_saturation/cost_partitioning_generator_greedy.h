@@ -15,11 +15,6 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
-    std::unique_ptr<SuccessorGenerator> successor_generator;
-    double average_operator_costs;
-    std::unique_ptr<State> initial_state;
-    int init_h;
-
     // Unpartitioned h values.
     std::vector<std::vector<int>> h_values_by_abstraction;
     std::vector<double> used_costs_by_abstraction;

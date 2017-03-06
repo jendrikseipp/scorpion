@@ -115,24 +115,6 @@ void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_cos
     }
 }
 
-void print_indexed_vector(const vector<int> &vec) {
-    for (size_t i = 0; i < vec.size(); ++i) {
-        cout << i << ":";
-        int value = vec[i];
-        if (value == INF) {
-            cout << "inf";
-        } else if (value == -INF) {
-            cout << "-inf";
-        } else {
-            cout << value;
-        }
-        if (i < vec.size() - 1) {
-            cout << ", ";
-        }
-    }
-    cout << endl;
-}
-
 vector<bool> convert_to_bitvector(const vector<int> &vec, int size) {
     vector<bool> bitvector(size, false);
     for (int value : vec) {
