@@ -30,6 +30,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       dynamic(opts.get<bool>("dynamic")),
       optimize(opts.get<bool>("optimize")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
+      max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       min_used_costs(numeric_limits<int>::max()) {
 }
@@ -263,11 +264,12 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     utils::Log() << "Greedy order: " << order << endl;
 
     if (optimize) {
-        utils::CountdownTimer timer(numeric_limits<double>::max());
+        utils::CountdownTimer timer(max_optimization_time);
         do_hill_climbing(
             cp_function, timer, abstractions, costs, local_state_ids, order,
             steepest_ascent);
         cout << "Time for optimizing order: " << timer << endl;
+        cout << "Time for optimizing order has expired: " << timer.is_expired() << endl;
     }
 
     return cp_function(abstractions, order, costs);
@@ -291,6 +293,11 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "steepest_ascent",
         "do steepest-ascent hill climbing instead of selecting the first improving successor",
         "false");
+    parser.add_option<double>(
+        "max_optimization_time",
+        "maximum time for optimizing",
+        "infinity",
+        Bounds("0.0", "infinity"));
     add_common_scp_generator_options_to_parser(parser);
     utils::add_rng_options(parser);
     Options opts = parser.parse();
