@@ -150,6 +150,8 @@ static bool search_improving_successor(
     bool steepest_ascent) {
     utils::unused_variable(steepest_ascent);
     int num_abstractions = abstractions.size();
+    int best_i = -1;
+    int best_j = -1;
     for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
@@ -159,17 +161,25 @@ static bool search_improving_successor(
 
             int h = compute_sum_h(local_state_ids, h_values_by_abstraction);
             if (h > incumbent_h_value) {
-                // Set new incumbent.
                 incumbent_h_value = h;
-                return true;
-            } else {
-                // Restore incumbent order.
-                swap(incumbent_order[i], incumbent_order[j]);
+                if (!steepest_ascent) {
+                    return true;
+                }
+                best_i = i;
+                best_j = j;
             }
+            // Restore incumbent order.
+            swap(incumbent_order[i], incumbent_order[j]);
         }
+    }
+    if (best_i != -1) {
+        assert(best_j != -1);
+        swap(incumbent_order[best_i], incumbent_order[best_j]);
+        return true;
     }
     return false;
 }
+
 
 static void do_hill_climbing(
     CPFunction cp_function,
