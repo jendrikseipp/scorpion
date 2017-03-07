@@ -242,6 +242,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         return cp_function(abstractions, random_order, costs);
     }
 
+    utils::Timer greedy_timer;
     vector<int> order;
     if (dynamic) {
         order = compute_greedy_dynamic_order_for_sample(
@@ -256,6 +257,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         reverse(order.begin(), order.end());
     }
 
+    cout << "Time for computing greedy order: " << greedy_timer << endl;
     utils::Log() << "Greedy order: " << order << endl;
 
     if (optimize) {
@@ -263,6 +265,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         do_hill_climbing(
             cp_function, timer, abstractions, costs, local_state_ids, order,
             steepest_ascent);
+        cout << "Time for optimizing order: " << timer << endl;
     }
 
     return cp_function(abstractions, order, costs);
