@@ -163,6 +163,7 @@ static bool search_improving_successor(
             if (h > incumbent_h_value) {
                 incumbent_h_value = h;
                 if (!steepest_ascent) {
+                    cout << "Switch positions " << i << " and " << j << endl;
                     return true;
                 }
                 best_i = i;
@@ -174,6 +175,7 @@ static bool search_improving_successor(
     }
     if (best_i != -1) {
         assert(best_j != -1);
+        cout << "Switch positions " << best_i << " and " << best_j << endl;
         swap(incumbent_order[best_i], incumbent_order[best_j]);
         return true;
     }
