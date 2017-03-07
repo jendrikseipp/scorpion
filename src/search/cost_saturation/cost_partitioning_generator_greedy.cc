@@ -192,12 +192,13 @@ static void do_hill_climbing(
     vector<vector<int>> h_values_by_abstraction = cp_function(
         abstractions, incumbent_order, costs);
     int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
+    utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
     while (!timer.is_expired()) {
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
             incumbent_order, incumbent_h_value, steepest_ascent);
         if (success) {
-            cout << "Found improving order with h=" << incumbent_h_value
+            utils::Log() << "Found improving order with h=" << incumbent_h_value
                  << ": " << incumbent_order << endl;
         } else {
             break;
@@ -255,7 +256,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         reverse(order.begin(), order.end());
     }
 
-    cout << "Greedy order: " << order << endl;
+    utils::Log() << "Greedy order: " << order << endl;
 
     if (optimize) {
         utils::CountdownTimer timer(numeric_limits<double>::max());
