@@ -12,6 +12,7 @@
 #include "../task_tools.h"
 
 #include "../utils/collections.h"
+#include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
@@ -27,6 +28,8 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
     : CostPartitioningGenerator(opts),
       increasing_ratios(opts.get<bool>("increasing_ratios")),
       dynamic(opts.get<bool>("dynamic")),
+      optimize(opts.get<bool>("optimize")),
+      steepest_ascent(opts.get<bool>("steepest_ascent")),
       rng(utils::parse_rng_from_options(opts)),
       min_used_costs(numeric_limits<int>::max()) {
 }
@@ -136,6 +139,62 @@ vector<int> compute_greedy_dynamic_order_for_sample(
     return order;
 }
 
+static bool search_improving_successor(
+    CPFunction cp_function,
+    const utils::CountdownTimer &timer,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &costs,
+    const vector<int> &local_state_ids,
+    vector<int> &incumbent_order,
+    int &incumbent_h_value,
+    bool steepest_ascent) {
+    utils::unused_variable(steepest_ascent);
+    int num_abstractions = abstractions.size();
+    for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
+        for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
+            swap(incumbent_order[i], incumbent_order[j]);
+
+            vector<vector<int>> h_values_by_abstraction =
+                cp_function(abstractions, incumbent_order, costs);
+
+            int h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+            if (h > incumbent_h_value) {
+                // Set new incumbent.
+                incumbent_h_value = h;
+                return true;
+            } else {
+                // Restore incumbent order.
+                swap(incumbent_order[i], incumbent_order[j]);
+            }
+        }
+    }
+    return false;
+}
+
+static void do_hill_climbing(
+    CPFunction cp_function,
+    const utils::CountdownTimer &timer,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &costs,
+    const vector<int> &local_state_ids,
+    vector<int> &incumbent_order,
+    bool steepest_ascent) {
+    vector<vector<int>> h_values_by_abstraction = cp_function(
+        abstractions, incumbent_order, costs);
+    int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
+    while (!timer.is_expired()) {
+        bool success = search_improving_successor(
+            cp_function, timer, abstractions, costs, local_state_ids,
+            incumbent_order, incumbent_h_value, steepest_ascent);
+        if (success) {
+            cout << "Found improving order with h=" << incumbent_h_value
+                 << ": " << incumbent_order << endl;
+        } else {
+            break;
+        }
+    }
+}
+
 void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -188,6 +247,13 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
     cout << "Greedy order: " << order << endl;
 
+    if (optimize) {
+        utils::CountdownTimer timer(numeric_limits<double>::max());
+        do_hill_climbing(
+            cp_function, timer, abstractions, costs, local_state_ids, order,
+            steepest_ascent);
+    }
+
     return cp_function(abstractions, order, costs);
 }
 
@@ -200,6 +266,14 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "dynamic",
         "recompute ratios in each step",
+        "false");
+    parser.add_option<bool>(
+        "optimize",
+        "do a hill climbing search in the space of orders",
+        "false");
+    parser.add_option<bool>(
+        "steepest_ascent",
+        "do steepest-ascent hill climbing instead of selecting the first improving successor",
         "false");
     add_common_scp_generator_options_to_parser(parser);
     utils::add_rng_options(parser);

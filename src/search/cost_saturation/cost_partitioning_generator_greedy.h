@@ -14,6 +14,8 @@ namespace cost_saturation {
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
     const bool dynamic;
+    const bool optimize;
+    const bool steepest_ascent;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     // Unpartitioned h values.
