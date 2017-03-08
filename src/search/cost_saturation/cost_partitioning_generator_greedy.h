@@ -13,6 +13,7 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
+    const bool queue_zero_ratios;
     const bool dynamic;
     const bool optimize;
     const bool steepest_ascent;
