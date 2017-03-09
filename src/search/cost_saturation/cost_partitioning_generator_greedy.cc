@@ -121,7 +121,7 @@ static double compute_h_per_cost_ratio(int h, int used_costs, bool use_negative_
         return h / (used_costs + 1.0);
     } else {
         assert(used_costs >= 0 && used_costs != INF);
-        return used_costs == 0 ? 0 : h / static_cast<double>(used_costs);
+        return h / (used_costs + 1.0);
     }
 }
 
