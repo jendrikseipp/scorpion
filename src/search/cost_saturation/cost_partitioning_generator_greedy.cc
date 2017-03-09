@@ -37,11 +37,11 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       rng(utils::parse_rng_from_options(opts)) {
 }
 
-static int compute_used_costs(const vector<int> &saturated_costs) {
+static int compute_used_costs(const vector<int> &saturated_costs, bool use_negative_costs) {
     int sum = 0;
     for (int cost : saturated_costs) {
         assert(cost != INF);
-        if (cost > 0) {
+        if (cost != -INF && (use_negative_costs || cost > 0)) {
             sum += cost;
         }
     }
@@ -106,24 +106,33 @@ static int compute_stolen_costs(
                  << costs_wanted_by_others << ", result: " << stolen_cost << endl;
         }
     }
-    if (sum < 0) {
-        cout << "Stolen cost sum is negative: " << sum << endl;
-    }
-    return max(0, sum);
+    return sum;
 }
 
-static double compute_h_per_cost_ratio(int h, int used_costs) {
+static double compute_h_per_cost_ratio(int h, int used_costs, bool use_negative_costs) {
     assert(h >= 0);
-    assert(used_costs >= 0 && used_costs != INF);
-    assert(h <= used_costs);
-    return used_costs == 0 ? 0 : h / static_cast<double>(used_costs);
+    if (use_negative_costs) {
+        assert(used_costs != INF);
+        assert(used_costs != -INF);
+        if (used_costs <= 0) {
+            cout << "Used-costs sum is zero or less: " << used_costs << endl;
+            used_costs = 0;
+        }
+        return h / (used_costs + 1.0);
+    } else {
+        assert(h >= 0);
+        assert(used_costs >= 0 && used_costs != INF);
+        assert(h <= used_costs);
+        return used_costs == 0 ? 0 : h / static_cast<double>(used_costs);
+    }
 }
 
 static vector<int> compute_greedy_order_for_sample(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &local_state_ids,
     const vector<vector<int>> h_values_by_abstraction,
-    const vector<double> used_costs_by_abstraction) {
+    const vector<double> used_costs_by_abstraction,
+    bool use_negative_costs) {
     assert(abstractions.size() == local_state_ids.size());
     assert(abstractions.size() == h_values_by_abstraction.size());
     assert(abstractions.size() == used_costs_by_abstraction.size());
@@ -139,7 +148,7 @@ static vector<int> compute_greedy_order_for_sample(
         h_values.push_back(h);
         assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
         int used_costs = used_costs_by_abstraction[abstraction_id];
-        ratios.push_back(compute_h_per_cost_ratio(h, used_costs));
+        ratios.push_back(compute_h_per_cost_ratio(h, used_costs, use_negative_costs));
     }
 
     cout << "h-values: ";
@@ -159,7 +168,8 @@ vector<int> compute_greedy_dynamic_order_for_sample(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &local_state_ids,
     vector<int> remaining_costs,
-    bool queue_zero_ratios) {
+    bool queue_zero_ratios,
+    bool use_negative_costs) {
     // TODO: Use gained costs as tiebreaker.
     assert(abstractions.size() == local_state_ids.size());
 
@@ -186,8 +196,8 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             assert(utils::in_bounds(local_state_id, h_values));
             int h = h_values[local_state_id];
             h_values.push_back(h);
-            int used_costs = compute_used_costs(saturated_costs);
-            double ratio = compute_h_per_cost_ratio(h, used_costs);
+            int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
+            double ratio = compute_h_per_cost_ratio(h, used_costs, use_negative_costs);
             if (queue_zero_ratios && h == 0) {
                 abstractions_with_zero_h.push_back(abstraction_id);
                 remaining_abstractions.erase(abstraction_id);
@@ -290,7 +300,7 @@ void CostPartitioningGeneratorGreedy::initialize(
             vector<int> &h_values = pair.first;
             vector<int> &saturated_costs = pair.second;
             h_values_by_abstraction.push_back(move(h_values));
-            int used_costs = compute_used_costs(saturated_costs);
+            int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
             used_costs_by_abstraction.push_back(used_costs);
         }
     } else {
@@ -348,11 +358,11 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     vector<int> order;
     if (dynamic) {
         order = compute_greedy_dynamic_order_for_sample(
-            abstractions, local_state_ids, costs, queue_zero_ratios);
+            abstractions, local_state_ids, costs, queue_zero_ratios, use_negative_costs);
     } else {
         order = compute_greedy_order_for_sample(
         abstractions, local_state_ids, h_values_by_abstraction,
-        used_costs_by_abstraction);
+        used_costs_by_abstraction, use_negative_costs);
     }
 
     if (increasing_ratios) {
