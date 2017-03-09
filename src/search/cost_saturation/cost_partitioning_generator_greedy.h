@@ -14,6 +14,7 @@ namespace cost_saturation {
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
     const bool use_stolen_costs;
+    const bool use_negative_costs;
     const bool queue_zero_ratios;
     const bool dynamic;
     const bool optimize;

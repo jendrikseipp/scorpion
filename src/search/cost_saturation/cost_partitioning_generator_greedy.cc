@@ -28,6 +28,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
     : CostPartitioningGenerator(opts),
       increasing_ratios(opts.get<bool>("increasing_ratios")),
       use_stolen_costs(opts.get<bool>("use_stolen_costs")),
+      use_negative_costs(opts.get<bool>("use_negative_costs")),
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
       optimize(opts.get<bool>("optimize")),
@@ -47,6 +48,25 @@ static int compute_used_costs(const vector<int> &saturated_costs) {
     return sum;
 }
 
+static int bounded_addition(int a, int b) {
+    int inf = numeric_limits<int>::max();
+    if ((a == inf && b == -inf) || (a == -inf && b == inf)) {
+        ABORT("Can't sum positive and negative infinity.");
+    }
+    if (a == inf || b == inf) {
+        return inf;
+    } else if (a == -inf || b == -inf) {
+        return -inf;
+    }
+    int result = a + b;
+    if (a >= 0 && b >= 0 && result < 0) {
+        return inf;
+    } else if (a <= 0 && b <= 0 && result > 0) {
+        return -inf;
+    }
+    return result;
+ }
+
 /*
   Compute the amount of costs that an abstraction A wants to "steal" from other
   abstractions, i.e., stolen_A(o) = max(0, ĉ_A(o) - max(0, c(o) - \sum_{other
@@ -55,27 +75,35 @@ static int compute_used_costs(const vector<int> &saturated_costs) {
 static int compute_stolen_costs(
     const vector<int> &original_costs,
     const vector<int> &saturated_costs,
-    const vector<int> &total_saturated_costs) {
+    const vector<int> &total_saturated_costs,
+    bool use_negative_costs) {
     assert(original_costs.size() == saturated_costs.size());
     assert(saturated_costs.size() == total_saturated_costs.size());
     bool debug = false;
     int sum = 0;
     int num_operators = original_costs.size();
     for (int op_id = 0; op_id < num_operators; ++op_id) {
-        int saturated_cost = saturated_costs[op_id];
-        assert(saturated_cost != INF);
-        int saturated_costs_of_other_abstractions =
-            total_saturated_costs[op_id] - saturated_cost;
-        assert(saturated_costs_of_other_abstractions >= 0);
-        if (saturated_cost > 0) {
-            int stolen_cost = max(0, saturated_cost -
-                max(0, original_costs[op_id] - saturated_costs_of_other_abstractions));
-            sum += stolen_cost;
-            if (debug) {
-                cout << saturated_cost << " - (" << original_costs[op_id] << " - "
-                     << saturated_costs_of_other_abstractions << ") = "
-                     << stolen_cost << endl;
-            }
+        int wanted_costs = saturated_costs[op_id];
+        assert(wanted_costs != INF);
+        int costs_wanted_by_others = (total_saturated_costs[op_id] == -INF) ?
+            -INF : bounded_addition(total_saturated_costs[op_id], -wanted_costs);
+        int costs_nobody_else_wants = bounded_addition(
+            original_costs[op_id], -costs_wanted_by_others);
+        int stolen_cost = 0;
+        if (wanted_costs >= 0) {
+            stolen_cost = max(0, bounded_addition(
+                wanted_costs, -max(0, costs_nobody_else_wants)));
+        } else if (use_negative_costs) {
+            assert(wanted_costs < 0);
+            stolen_cost = max(wanted_costs, min(0, costs_nobody_else_wants));
+        }
+        assert(stolen_cost != INF);
+        assert(stolen_cost != -INF);
+        sum += stolen_cost;
+        if (debug) {
+            cout << "wanted: " << wanted_costs << ", original: "
+                 << original_costs[op_id] << ", others: "
+                 << costs_wanted_by_others << ", result: " << stolen_cost << endl;
         }
     }
     return sum;
@@ -276,12 +304,20 @@ void CostPartitioningGeneratorGreedy::initialize(
         for (const vector<int> &saturated_costs : saturated_costs_by_abstraction) {
             assert(static_cast<int>(saturated_costs.size()) == num_operators);
             for (int op_id = 0; op_id < num_operators; ++op_id) {
-                total_saturated_costs_by_operator[op_id] += max(0, saturated_costs[op_id]);
+                int saturated = saturated_costs[op_id];
+                if (use_negative_costs || saturated >= 0) {
+                    assert(saturated != INF);
+                    total_saturated_costs_by_operator[op_id] = bounded_addition(
+                        saturated, total_saturated_costs_by_operator[op_id]);
+                }
             }
         }
         for (size_t i = 0; i < abstractions.size(); ++i) {
             int stolen_costs = compute_stolen_costs(
-                costs, saturated_costs_by_abstraction[i], total_saturated_costs_by_operator);
+                costs,
+                saturated_costs_by_abstraction[i],
+                total_saturated_costs_by_operator,
+                use_negative_costs);
             used_costs_by_abstraction.push_back(stolen_costs);
         }
     }
@@ -345,6 +381,10 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "use_stolen_costs",
         "define used costs as costs taken by an abstraction that could have been"
         " used by other abstractions",
+        "false");
+    parser.add_option<bool>(
+        "use_negative_costs",
+        "account for negative costs when computing used/stolen costs",
         "false");
     parser.add_option<bool>(
         "queue_zero_ratios",
