@@ -106,7 +106,10 @@ static int compute_stolen_costs(
                  << costs_wanted_by_others << ", result: " << stolen_cost << endl;
         }
     }
-    return sum;
+    if (sum < 0) {
+        cout << "Stolen cost sum is negative: " << sum << endl;
+    }
+    return max(0, sum);
 }
 
 static double compute_h_per_cost_ratio(int h, int used_costs) {
