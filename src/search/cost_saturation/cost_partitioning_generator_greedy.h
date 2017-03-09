@@ -13,6 +13,7 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool increasing_ratios;
+    const bool use_stolen_costs;
     const bool queue_zero_ratios;
     const bool dynamic;
     const bool optimize;
@@ -23,7 +24,6 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     // Unpartitioned h values.
     std::vector<std::vector<int>> h_values_by_abstraction;
     std::vector<double> used_costs_by_abstraction;
-    int min_used_costs;
 
     std::vector<int> random_order;
 
