@@ -68,9 +68,13 @@ static int bounded_addition(int a, int b) {
  }
 
 /*
-  Compute the amount of costs that an abstraction A wants to "steal" from other
-  abstractions, i.e., stolen_A(o) = max(0, ĉ_A(o) - max(0, c(o) - \sum_{other
-  abstractions B} ĉ_B(o))).
+  Compute the amount of costs that an abstraction A wants to "steal" from or
+  "provide" to other abstractions ("negative stealing").
+
+  if ĉ_A(o) >= 0:
+      stolen_A(o) = max(0, ĉ_A(o) - max(0, c(o) - \sum_{abstractions B} ĉ_B(o)))
+  else:
+      stolen_A(o) = max(ĉ_A(o), min(0, c(o) - \sum_{abstractions B} ĉ_B(o)))
 */
 static int compute_stolen_costs(
     const vector<int> &original_costs,
@@ -168,7 +172,7 @@ vector<int> compute_greedy_dynamic_order_for_sample(
     vector<int> remaining_costs,
     bool queue_zero_ratios,
     bool use_negative_costs) {
-    // TODO: Use gained costs as tiebreaker.
+    // TODO: Implement "stolen costs" for greedy dynamic orders.
     assert(abstractions.size() == local_state_ids.size());
 
     vector<int> order;
