@@ -26,6 +26,7 @@ using namespace std;
 namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(opts),
+      use_random_initial_order(opts.get<bool>("use_random_initial_order")),
       increasing_ratios(opts.get<bool>("increasing_ratios")),
       use_stolen_costs(opts.get<bool>("use_stolen_costs")),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
@@ -346,7 +347,6 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     const vector<int> &costs,
     CPFunction cp_function) {
     State sample = task_proxy.get_initial_state();
-
     vector<int> local_state_ids = get_local_state_ids(abstractions, sample);
 
     // We can call compute_sum_h with unpartitioned h values since we only need
@@ -358,7 +358,10 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
     utils::Timer greedy_timer;
     vector<int> order;
-    if (dynamic) {
+    if (use_random_initial_order) {
+        rng->shuffle(random_order);
+        order = random_order;
+    } else if (dynamic) {
         order = compute_greedy_dynamic_order_for_sample(
             abstractions, local_state_ids, costs, queue_zero_ratios, use_negative_costs);
     } else {
@@ -388,6 +391,10 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
 
 static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser) {
+    parser.add_option<bool>(
+        "use_random_initial_order",
+        "use random instead of greedy order",
+        "false");
     parser.add_option<bool>(
         "increasing_ratios",
         "sort by increasing h/costs ratios",
