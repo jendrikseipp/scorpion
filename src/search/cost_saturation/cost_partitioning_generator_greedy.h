@@ -18,7 +18,6 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool use_negative_costs;
     const bool queue_zero_ratios;
     const bool dynamic;
-    const bool optimize;
     const bool steepest_ascent;
     const double max_optimization_time;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
