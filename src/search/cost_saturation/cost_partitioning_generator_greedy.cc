@@ -136,7 +136,8 @@ static vector<int> compute_greedy_order_for_sample(
     const vector<int> &local_state_ids,
     const vector<vector<int>> h_values_by_abstraction,
     const vector<double> used_costs_by_abstraction,
-    bool use_negative_costs) {
+    bool use_negative_costs,
+    bool verbose) {
     assert(abstractions.size() == local_state_ids.size());
     assert(abstractions.size() == h_values_by_abstraction.size());
     assert(abstractions.size() == used_costs_by_abstraction.size());
@@ -155,10 +156,12 @@ static vector<int> compute_greedy_order_for_sample(
         ratios.push_back(compute_h_per_cost_ratio(h, used_costs, use_negative_costs));
     }
 
-    cout << "h-values: ";
-    print_indexed_vector(h_values);
-    cout << "Ratios: ";
-    print_indexed_vector(ratios);
+    if (verbose) {
+        cout << "h-values: ";
+        print_indexed_vector(h_values);
+        cout << "Ratios: ";
+        print_indexed_vector(ratios);
+    }
 
     vector<int> order = get_default_order(abstractions.size());
     sort(order.begin(), order.end(), [&](int abstraction1_id, int abstraction2_id) {
@@ -231,7 +234,8 @@ static bool search_improving_successor(
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
     int &incumbent_h_value,
-    bool steepest_ascent) {
+    bool steepest_ascent,
+    bool verbose) {
     utils::unused_variable(steepest_ascent);
     int num_abstractions = abstractions.size();
     int best_i = -1;
@@ -247,7 +251,9 @@ static bool search_improving_successor(
             if (h > incumbent_h_value) {
                 incumbent_h_value = h;
                 if (!steepest_ascent) {
-                    cout << "Switch positions " << i << " and " << j << endl;
+                    if (verbose) {
+                        cout << "Switch positions " << i << " and " << j << endl;
+                    }
                     return true;
                 }
                 best_i = i;
@@ -259,7 +265,9 @@ static bool search_improving_successor(
     }
     if (best_i != -1) {
         assert(best_j != -1);
-        cout << "Switch positions " << best_i << " and " << best_j << endl;
+        if (verbose) {
+            cout << "Switch positions " << best_i << " and " << best_j << endl;
+        }
         swap(incumbent_order[best_i], incumbent_order[best_j]);
         return true;
     }
@@ -274,18 +282,24 @@ static void do_hill_climbing(
     const vector<int> &costs,
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
-    bool steepest_ascent) {
+    bool steepest_ascent,
+    bool verbose) {
     vector<vector<int>> h_values_by_abstraction = cp_function(
         abstractions, incumbent_order, costs);
     int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
-    utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
+    if (verbose) {
+        utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
+    }
     while (!timer.is_expired()) {
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
-            incumbent_order, incumbent_h_value, steepest_ascent);
+            incumbent_order, incumbent_h_value, steepest_ascent, verbose);
         if (success) {
-            utils::Log() << "Found improving order with h=" << incumbent_h_value
-                 << ": " << incumbent_order << endl;
+            if (verbose) {
+                utils::Log() << "Found improving order with h="
+                             << incumbent_h_value << ": " << incumbent_order
+                             << endl;
+            }
         } else {
             break;
         }
@@ -385,6 +399,9 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         return cp_function(abstractions, random_order, costs);
     }
 
+    // Only be verbose for first sample.
+    bool verbose = (num_returned_orders == 0);
+
     utils::Timer greedy_timer;
     vector<int> order;
     if (use_random_initial_order) {
@@ -396,23 +413,28 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     } else {
         order = compute_greedy_order_for_sample(
         abstractions, local_state_ids, h_values_by_abstraction,
-        used_costs_by_abstraction, use_negative_costs);
+        used_costs_by_abstraction, use_negative_costs, verbose);
     }
 
     if (increasing_ratios) {
         reverse(order.begin(), order.end());
     }
 
-    cout << "Time for computing greedy order: " << greedy_timer << endl;
-    utils::Log() << "Greedy order: " << order << endl;
+    if (verbose) {
+        cout << "Time for computing greedy order: " << greedy_timer << endl;
+        utils::Log() << "Greedy order: " << order << endl;
+    }
 
     if (optimize) {
         utils::CountdownTimer timer(max_optimization_time);
         do_hill_climbing(
             cp_function, timer, abstractions, costs, local_state_ids, order,
-            steepest_ascent);
-        cout << "Time for optimizing order: " << timer << endl;
-        cout << "Time for optimizing order has expired: " << timer.is_expired() << endl;
+            steepest_ascent, verbose);
+        if (verbose) {
+            cout << "Time for optimizing order: " << timer << endl;
+            cout << "Time for optimizing order has expired: " << timer.is_expired() << endl;
+            cout << "Optimized order: " << order << endl;
+        }
     }
 
     ++num_returned_orders;
