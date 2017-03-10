@@ -23,11 +23,19 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const double max_optimization_time;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
+    // Data for random walks.
+    std::unique_ptr<SuccessorGenerator> successor_generator;
+    double average_operator_costs;
+    std::unique_ptr<State> initial_state;
+    int init_h;
+
     // Unpartitioned h values.
     std::vector<std::vector<int>> h_values_by_abstraction;
     std::vector<double> used_costs_by_abstraction;
 
     std::vector<int> random_order;
+
+    int num_returned_orders;
 
 protected:
     virtual void initialize(
