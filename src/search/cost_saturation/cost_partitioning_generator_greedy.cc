@@ -116,18 +116,14 @@ static int compute_stolen_costs(
 
 static double compute_h_per_cost_ratio(int h, int used_costs, bool use_negative_costs) {
     assert(h >= 0);
-    if (use_negative_costs) {
-        assert(used_costs != INF);
-        assert(used_costs != -INF);
-        if (used_costs <= 0) {
-            cout << "Used-costs sum is zero or less: " << used_costs << endl;
-            used_costs = 0;
-        }
-        return h / (used_costs + 1.0);
-    } else {
-        assert(used_costs >= 0 && used_costs != INF);
-        return h / (used_costs + 1.0);
+    assert(used_costs != INF);
+    assert(used_costs != -INF);
+    if (use_negative_costs && used_costs <= 0) {
+        cout << "Used-costs sum is zero or less: " << used_costs << endl;
+        used_costs = 0;
     }
+    assert(used_costs >= 0);
+    return h / (used_costs + 1.0);
 }
 
 static vector<int> compute_greedy_order_for_sample(
