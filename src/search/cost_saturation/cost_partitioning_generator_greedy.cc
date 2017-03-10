@@ -192,7 +192,8 @@ vector<int> compute_greedy_dynamic_order_for_sample(
         double highest_ratio = -numeric_limits<double>::max();
         int best_abstraction = -1;
         vector<int> saturated_costs_for_best_abstraction;
-        for (int abstraction_id : remaining_abstractions) {
+        for (auto it = remaining_abstractions.begin(); it != remaining_abstractions.end();) {
+            int abstraction_id = *it;
             assert(utils::in_bounds(abstraction_id, local_state_ids));
             int local_state_id = local_state_ids[abstraction_id];
             Abstraction &abstraction = *abstractions[abstraction_id];
@@ -206,11 +207,14 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             double ratio = compute_h_per_cost_ratio(h, used_costs, use_negative_costs);
             if (queue_zero_ratios && h == 0) {
                 abstractions_with_zero_h.push_back(abstraction_id);
-                remaining_abstractions.erase(abstraction_id);
+                it = remaining_abstractions.erase(it);
             } else if (ratio > highest_ratio) {
                 best_abstraction = abstraction_id;
                 saturated_costs_for_best_abstraction = move(saturated_costs);
                 highest_ratio = ratio;
+                ++it;
+            } else {
+                ++it;
             }
         }
         if (best_abstraction != -1) {
