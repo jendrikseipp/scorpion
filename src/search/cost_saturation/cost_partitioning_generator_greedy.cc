@@ -172,7 +172,6 @@ vector<int> compute_greedy_dynamic_order_for_sample(
     vector<int> remaining_costs,
     bool queue_zero_ratios,
     bool use_negative_costs) {
-    // TODO: Implement "stolen costs" for greedy dynamic orders.
     assert(abstractions.size() == local_state_ids.size());
 
     vector<int> order;
@@ -198,7 +197,6 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             vector<int> &saturated_costs = pair.second;
             assert(utils::in_bounds(local_state_id, h_values));
             int h = h_values[local_state_id];
-            h_values.push_back(h);
             int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
             double ratio = compute_h_per_cost_ratio(h, used_costs, use_negative_costs);
             if (queue_zero_ratios && h == 0) {
@@ -240,6 +238,9 @@ static bool search_improving_successor(
     int best_i = -1;
     int best_j = -1;
     for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
+        if (verbose) {
+            utils::Log() << "Check position " << i << endl;
+        }
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
 
