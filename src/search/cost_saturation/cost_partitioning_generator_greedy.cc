@@ -224,6 +224,11 @@ vector<int> compute_greedy_dynamic_order_for_sample(
     return order;
 }
 
+static void log_better_order(const vector<int> &order, int h, int i, int j) {
+    utils::Log() << "Switch positions " << i << " and " << j << ": h=" << h << endl;
+    utils::Log() << "Found improving order with h=" << h << ": " << order << endl;
+}
+
 static bool search_improving_successor(
     CPFunction cp_function,
     const utils::CountdownTimer &timer,
@@ -259,8 +264,7 @@ static bool search_improving_successor(
                     swap(incumbent_order[i], incumbent_order[j]);
                 } else {
                     if (verbose) {
-                        utils::Log() << "Switch positions " << i << " and " << j
-                                     << ": h=" << h << endl;
+                        log_better_order(incumbent_order, h, i, j);
                     }
                     if (!continue_after_switch) {
                         return true;
@@ -276,10 +280,10 @@ static bool search_improving_successor(
     if (best_i != -1) {
         assert(best_j != -1);
         if (steepest_ascent) {
-            if (verbose) {
-                utils::Log() << "Switch positions " << best_i << " and " << best_j << endl;
-            }
             swap(incumbent_order[best_i], incumbent_order[best_j]);
+            if (verbose) {
+                log_better_order(incumbent_order, incumbent_h_value, best_i, best_j);
+            }
         }
         return true;
     }
@@ -308,13 +312,7 @@ static void do_hill_climbing(
             cp_function, timer, abstractions, costs, local_state_ids,
             incumbent_order, incumbent_h_value, steepest_ascent,
             continue_after_switch, verbose);
-        if (success) {
-            if (verbose) {
-                utils::Log() << "Found improving order with h="
-                             << incumbent_h_value << ": " << incumbent_order
-                             << endl;
-            }
-        } else {
+        if (!success) {
             break;
         }
     }
