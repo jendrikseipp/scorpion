@@ -33,6 +33,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
+      continue_after_switch(opts.get<bool>("continue_after_switch")),
       max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
@@ -232,6 +233,7 @@ static bool search_improving_successor(
     vector<int> &incumbent_order,
     int &incumbent_h_value,
     bool steepest_ascent,
+    bool continue_after_switch,
     bool verbose) {
     utils::unused_variable(steepest_ascent);
     int num_abstractions = abstractions.size();
@@ -250,25 +252,35 @@ static bool search_improving_successor(
             int h = compute_sum_h(local_state_ids, h_values_by_abstraction);
             if (h > incumbent_h_value) {
                 incumbent_h_value = h;
-                if (!steepest_ascent) {
-                    if (verbose) {
-                        cout << "Switch positions " << i << " and " << j << endl;
-                    }
-                    return true;
-                }
                 best_i = i;
                 best_j = j;
+                if (steepest_ascent) {
+                    // Restore incumbent order.
+                    swap(incumbent_order[i], incumbent_order[j]);
+                } else {
+                    if (verbose) {
+                        utils::Log() << "Switch positions " << i << " and " << j
+                                     << ": h=" << h << endl;
+                    }
+                    if (!continue_after_switch) {
+                        return true;
+                    }
+                }
+
+            } else {
+                // Restore incumbent order.
+                swap(incumbent_order[i], incumbent_order[j]);
             }
-            // Restore incumbent order.
-            swap(incumbent_order[i], incumbent_order[j]);
         }
     }
     if (best_i != -1) {
         assert(best_j != -1);
-        if (verbose) {
-            cout << "Switch positions " << best_i << " and " << best_j << endl;
+        if (steepest_ascent) {
+            if (verbose) {
+                utils::Log() << "Switch positions " << best_i << " and " << best_j << endl;
+            }
+            swap(incumbent_order[best_i], incumbent_order[best_j]);
         }
-        swap(incumbent_order[best_i], incumbent_order[best_j]);
         return true;
     }
     return false;
@@ -283,6 +295,7 @@ static void do_hill_climbing(
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
     bool steepest_ascent,
+    bool continue_after_switch,
     bool verbose) {
     vector<vector<int>> h_values_by_abstraction = cp_function(
         abstractions, incumbent_order, costs);
@@ -293,7 +306,8 @@ static void do_hill_climbing(
     while (!timer.is_expired()) {
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
-            incumbent_order, incumbent_h_value, steepest_ascent, verbose);
+            incumbent_order, incumbent_h_value, steepest_ascent,
+            continue_after_switch, verbose);
         if (success) {
             if (verbose) {
                 utils::Log() << "Found improving order with h="
@@ -429,7 +443,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         utils::CountdownTimer timer(max_optimization_time);
         do_hill_climbing(
             cp_function, timer, abstractions, costs, local_state_ids, order,
-            steepest_ascent, verbose);
+            steepest_ascent, continue_after_switch, verbose);
         if (verbose) {
             cout << "Time for optimizing order: " << timer << endl;
             cout << "Time for optimizing order has expired: " << timer.is_expired() << endl;
@@ -471,6 +485,10 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "steepest_ascent",
         "do steepest-ascent hill climbing instead of selecting the first improving successor",
+        "false");
+    parser.add_option<bool>(
+        "continue_after_switch",
+        "after switching heuristics i and j, check (i, j+1) or (i+1, i+2) instead of (0, 1)",
         "false");
     parser.add_option<double>(
         "max_optimization_time",
