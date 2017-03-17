@@ -226,7 +226,8 @@ vector<int> compute_greedy_dynamic_order_for_sample(
 }
 
 static void log_better_order(const vector<int> &order, int h, int i, int j) {
-    utils::Log() << "Switch positions " << i << " and " << j << ": h=" << h << endl;
+    utils::Log() << "Switch positions " << i << " and " << j << " (abstractions "
+                 << order[j] << ", " << order[i] << "): h=" << h << endl;
     utils::Log() << "Found improving order with h=" << h << ": " << order << endl;
 }
 
