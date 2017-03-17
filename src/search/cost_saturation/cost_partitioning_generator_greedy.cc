@@ -34,6 +34,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       dynamic(opts.get<bool>("dynamic")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
       continue_after_switch(opts.get<bool>("continue_after_switch")),
+      switch_preferred_pairs(opts.get<bool>("switch_preferred_pairs")),
       max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
@@ -383,6 +384,45 @@ void CostPartitioningGeneratorGreedy::initialize(
     }
     cout << "Used costs by abstraction: ";
     print_indexed_vector(used_costs_by_abstraction);
+
+    if (switch_preferred_pairs) {
+        int num_abstractions = abstractions.size();
+        pairwise_h_values.resize(num_abstractions);
+        for (int i = 0; i < num_abstractions; ++i) {
+            auto pair = abstractions[i]->compute_goal_distances_and_saturated_costs(costs);
+            vector<int> &saturated_costs = pair.second;
+            vector<int> remaining_costs = costs;
+            reduce_costs(remaining_costs, saturated_costs);
+            for (int j = 0; j < num_abstractions; ++j) {
+                if (i == j) {
+                    pairwise_h_values[i].push_back({});
+                } else {
+                    auto pair = abstractions[j]->compute_goal_distances_and_saturated_costs(remaining_costs);
+                    vector<int> &h_values = pair.first;
+                    pairwise_h_values[i].push_back(move(h_values));
+                }
+            }
+        }
+        utils::Log() << "Pairwise preferred orders: " << endl;
+        vector<int> local_state_ids = get_local_state_ids(abstractions, *initial_state);
+        for (int i = 0; i < num_abstractions; ++i) {
+            int h_i_forward = h_values_by_abstraction[i][local_state_ids[i]];
+            for (int j = i + 1; j < num_abstractions; ++j) {
+                int h_j_forward = pairwise_h_values[i][j][local_state_ids[j]];
+                int h_forward = h_i_forward + h_j_forward;
+
+                int h_j_backward = h_values_by_abstraction[j][local_state_ids[j]];
+                int h_i_backward = pairwise_h_values[j][i][local_state_ids[i]];
+                int h_backward = h_j_backward + h_i_backward;
+
+                if (h_forward > h_backward) {
+                    utils::Log() << i << " -> " << j << ": (" << h_forward << " vs. " << h_backward << ")" << endl;
+                } else if (h_forward < h_backward) {
+                    utils::Log() << j << " -> " << i << ": (" << h_backward << " vs. " << h_forward << ")" << endl;
+                }
+            }
+        }
+    }
 }
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
@@ -487,6 +527,10 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "continue_after_switch",
         "after switching heuristics i and j, check (i, j+1) or (i+1, i+2) instead of (0, 1)",
+        "false");
+    parser.add_option<bool>(
+        "switch_preferred_pairs",
+        "try switching pairs that are \"probably\" in the wrong order first",
         "false");
     parser.add_option<double>(
         "max_optimization_time",

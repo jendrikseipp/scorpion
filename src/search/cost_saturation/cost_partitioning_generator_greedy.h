@@ -20,6 +20,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool dynamic;
     const bool steepest_ascent;
     const bool continue_after_switch;
+    const bool switch_preferred_pairs;
     const double max_optimization_time;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
@@ -32,6 +33,9 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     // Unpartitioned h values.
     std::vector<std::vector<int>> h_values_by_abstraction;
     std::vector<double> used_costs_by_abstraction;
+
+    // Pairwise orderings.
+    std::vector<std::vector<std::vector<int>>> pairwise_h_values;
 
     std::vector<int> random_order;
 
