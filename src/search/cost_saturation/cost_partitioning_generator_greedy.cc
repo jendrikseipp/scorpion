@@ -135,19 +135,18 @@ static double compute_h_per_cost_ratio(int h, int used_costs, bool use_negative_
 }
 
 static vector<int> compute_greedy_order_for_sample(
-    const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &local_state_ids,
     const vector<vector<int>> h_values_by_abstraction,
     const vector<double> used_costs_by_abstraction,
     bool use_negative_costs,
     bool verbose) {
-    assert(abstractions.size() == local_state_ids.size());
-    assert(abstractions.size() == h_values_by_abstraction.size());
-    assert(abstractions.size() == used_costs_by_abstraction.size());
+    assert(local_state_ids.size() == h_values_by_abstraction.size());
+    assert(local_state_ids.size() == used_costs_by_abstraction.size());
 
+    int num_abstractions = local_state_ids.size();
     vector<int> h_values;
     vector<double> ratios;
-    for (size_t abstraction_id = 0; abstraction_id < abstractions.size(); ++abstraction_id) {
+    for (int abstraction_id = 0; abstraction_id < num_abstractions; ++abstraction_id) {
         assert(utils::in_bounds(abstraction_id, local_state_ids));
         int local_state_id = local_state_ids[abstraction_id];
         assert(utils::in_bounds(abstraction_id, h_values_by_abstraction));
@@ -166,7 +165,7 @@ static vector<int> compute_greedy_order_for_sample(
         print_indexed_vector(ratios);
     }
 
-    vector<int> order = get_default_order(abstractions.size());
+    vector<int> order = get_default_order(num_abstractions);
     sort(order.begin(), order.end(), [&](int abstraction1_id, int abstraction2_id) {
         return ratios[abstraction1_id] > ratios[abstraction2_id];
     });
@@ -516,8 +515,8 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
             abstractions, local_state_ids, costs, queue_zero_ratios, use_negative_costs);
     } else {
         order = compute_greedy_order_for_sample(
-        abstractions, local_state_ids, h_values_by_abstraction,
-        used_costs_by_abstraction, use_negative_costs, verbose);
+        local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
+        use_negative_costs, verbose);
     }
 
     if (increasing_ratios) {
