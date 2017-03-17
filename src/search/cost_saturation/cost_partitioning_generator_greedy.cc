@@ -28,7 +28,7 @@ namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(opts),
       use_random_initial_order(opts.get<bool>("use_random_initial_order")),
-      increasing_ratios(opts.get<bool>("increasing_ratios")),
+      reverse_initial_order(opts.get<bool>("reverse_initial_order")),
       use_stolen_costs(opts.get<bool>("use_stolen_costs")),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
@@ -519,7 +519,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         use_negative_costs, verbose);
     }
 
-    if (increasing_ratios) {
+    if (reverse_initial_order) {
         reverse(order.begin(), order.end());
     }
 
@@ -551,8 +551,8 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "use random instead of greedy order",
         "false");
     parser.add_option<bool>(
-        "increasing_ratios",
-        "sort by increasing h/costs ratios",
+        "reverse_initial_order",
+        "invert initial order",
         "false");
     parser.add_option<bool>(
         "use_stolen_costs",
