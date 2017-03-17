@@ -11,6 +11,7 @@
 #include "../task_proxy.h"
 #include "../task_tools.h"
 
+#include "../algorithms/sccs.h"
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
@@ -406,6 +407,7 @@ void CostPartitioningGeneratorGreedy::initialize(
         }
         utils::Log() << "Pairwise preferred orders: " << endl;
         vector<int> local_state_ids = get_local_state_ids(abstractions, *initial_state);
+        vector<vector<int>> preference_graph(num_abstractions);
         for (int i = 0; i < num_abstractions; ++i) {
             int h_i_forward = h_values_by_abstraction[i][local_state_ids[i]];
             for (int j = i + 1; j < num_abstractions; ++j) {
@@ -418,11 +420,16 @@ void CostPartitioningGeneratorGreedy::initialize(
 
                 if (h_forward > h_backward) {
                     utils::Log() << i << " -> " << j << ": (" << h_forward << " vs. " << h_backward << ")" << endl;
+                    preference_graph[i].push_back(j);
                 } else if (h_forward < h_backward) {
                     utils::Log() << j << " -> " << i << ": (" << h_backward << " vs. " << h_forward << ")" << endl;
+                    preference_graph[j].push_back(i);
                 }
             }
         }
+        sccs::SCCs preference_sccs(preference_graph);
+        vector<vector<int>> scc_ordering = preference_sccs.get_result();
+        utils::Log() << "Preference ordering: " << scc_ordering << endl;
     }
 }
 

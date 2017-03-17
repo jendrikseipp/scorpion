@@ -146,6 +146,13 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME SCCS
+    HELP "Compute strongly-connected components"
+    SOURCES
+        algorithms/sccs
+)
+
+fast_downward_plugin(
     NAME CONST_EVALUATOR
     HELP "The constant evaluator"
     SOURCES
@@ -428,7 +435,7 @@ fast_downward_plugin(
         cost_saturation/uniform_cost_partitioning_heuristic
         cost_saturation/utils
         cost_saturation/zero_one_cost_partitioning_heuristic
-    DEPENDS CEGAR LP_SOLVER PDBS
+    DEPENDS CEGAR LP_SOLVER PDBS SCCS
 )
 
 fast_downward_plugin(
