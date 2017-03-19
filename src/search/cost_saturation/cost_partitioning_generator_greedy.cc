@@ -6,10 +6,7 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../sampling.h"
-#include "../successor_generator.h"
 #include "../task_proxy.h"
-#include "../task_tools.h"
 
 #include "../algorithms/sccs.h"
 #include "../utils/collections.h"
@@ -40,7 +37,8 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
-    if (!(dynamic ^ use_random_initial_order ^ pairwise)) {
+    if ((dynamic && use_random_initial_order) || (dynamic && pairwise) ||
+        (use_random_initial_order && pairwise)) {
         cerr << "ambiguous initial order type" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
@@ -390,24 +388,8 @@ void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
-    successor_generator = utils::make_unique_ptr<SuccessorGenerator>(task_proxy);
-    average_operator_costs = get_average_operator_cost(task_proxy);
-    initial_state = utils::make_unique_ptr<State>(task_proxy.get_initial_state());
-
-    vector<int> default_order = get_default_order(abstractions.size());
-    CostPartitioning scp_for_default_order =
-        compute_saturated_cost_partitioning(abstractions, default_order, costs);
-
-    std::function<int (const State &state)> default_order_heuristic =
-        [&abstractions, &scp_for_default_order](const State &state) {
-            vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-            return compute_sum_h(local_state_ids, scp_for_default_order);
-        };
-
-    init_h = default_order_heuristic(*initial_state);
-    cout << "Initial h value for default order: " << init_h << endl;
-
-    random_order = default_order;
+    CostPartitioningGenerator::initialize(task_proxy, abstractions, costs);
+    random_order = get_default_order(abstractions.size());
 
     if (!use_stolen_costs) {
         for (const unique_ptr<Abstraction> &abstraction : abstractions) {
@@ -477,20 +459,10 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
+    const State &state,
     CPFunction cp_function) {
 
-    // Always start with the initial state before turning to samples.
-    State sample = *initial_state;
-    if (num_returned_orders != 0) {
-        sample = sample_state_with_random_walk(
-            *initial_state,
-            *successor_generator,
-            init_h,
-            average_operator_costs,
-            *rng);
-    }
-
-    vector<int> local_state_ids = get_local_state_ids(abstractions, sample);
+    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
 
     // We can call compute_sum_h with unpartitioned h values since we only need
     // a safe, but not necessarily admissible estimate.

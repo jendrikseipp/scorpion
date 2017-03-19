@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+class State;
+class SuccessorGenerator;
 class TaskProxy;
 
 namespace options {
@@ -30,6 +32,12 @@ protected:
     const bool diversify;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
+    // Members for random walks.
+    std::unique_ptr<SuccessorGenerator> successor_generator;
+    double average_operator_costs;
+    std::unique_ptr<State> initial_state;
+    int init_h;
+
     virtual void initialize(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
@@ -39,6 +47,7 @@ protected:
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
+        const State &state,
         CPFunction cp_function) = 0;
 
     virtual bool has_next_cost_partitioning() const {
@@ -47,7 +56,7 @@ protected:
 
 public:
     CostPartitioningGenerator(const options::Options &opts);
-    virtual ~CostPartitioningGenerator() = default;
+    virtual ~CostPartitioningGenerator();
 
     virtual CostPartitionings get_cost_partitionings(
         const TaskProxy &task_proxy,

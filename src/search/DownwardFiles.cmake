@@ -422,7 +422,7 @@ fast_downward_plugin(
         cost_saturation/cartesian_abstraction_generator
         cost_saturation/cost_partitioning_generator
         cost_saturation/cost_partitioning_generator_greedy
-        cost_saturation/cost_partitioning_generator_random
+        #cost_saturation/cost_partitioning_generator_random
         cost_saturation/cost_partitioning_heuristic
         cost_saturation/diversifier
         cost_saturation/explicit_abstraction

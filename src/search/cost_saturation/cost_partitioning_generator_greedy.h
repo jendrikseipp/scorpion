@@ -3,13 +3,6 @@
 
 #include "cost_partitioning_generator.h"
 
-class State;
-class SuccessorGenerator;
-
-namespace utils {
-class RandomNumberGenerator;
-}
-
 namespace cost_saturation {
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool use_random_initial_order;
@@ -24,12 +17,6 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool switch_preferred_pairs;
     const double max_optimization_time;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
-
-    // Data for random walks.
-    std::unique_ptr<SuccessorGenerator> successor_generator;
-    double average_operator_costs;
-    std::unique_ptr<State> initial_state;
-    int init_h;
 
     // Unpartitioned h values.
     std::vector<std::vector<int>> h_values_by_abstraction;
@@ -55,6 +42,7 @@ public:
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
+        const State &state,
         CPFunction cp_function) override;
 };
 }
