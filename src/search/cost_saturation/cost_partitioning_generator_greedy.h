@@ -18,7 +18,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool pairwise;
     const bool steepest_ascent;
     const bool continue_after_switch;
-    const bool switch_preferred_pairs;
+    const bool switch_preferred_pairs_first;
     const double max_optimization_time;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
@@ -33,6 +33,8 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
 
     int num_returned_orders;
 
+    bool is_switch_preferred(const std::vector<int> &local_state_ids, int i, int j) const;
+
     bool search_improving_successor(
         CPFunction cp_function,
         const utils::CountdownTimer &timer,
@@ -41,6 +43,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
         const std::vector<int> &local_state_ids,
         std::vector<int> &incumbent_order,
         int &incumbent_h_value,
+        bool only_switch_preferred_pairs,
         bool verbose) const;
 
     void do_hill_climbing(
