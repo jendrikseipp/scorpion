@@ -212,7 +212,8 @@ void Projection::build_abstract_operators(
                  effects_without_pre, variables, operators);
 }
 
-vector<int> Projection::compute_distances(const vector<int> &costs) const {
+vector<int> Projection::compute_distances(
+    const vector<int> &costs, vector<ExplicitTransition> *transitions) const {
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
@@ -240,6 +241,9 @@ vector<int> Projection::compute_distances(const vector<int> &costs) const {
         for (const pdbs::AbstractOperator *op : applicable_operators) {
             size_t predecessor = state_index + op->get_hash_effect();
             int op_id = op->get_concrete_operator_id();
+            if (transitions) {
+                transitions->emplace_back(predecessor, op_id, state_index);
+            }
             assert(utils::in_bounds(op_id, costs));
             int alternative_cost = (costs[op_id] == INF) ?
                                    INF : distances[state_index] + costs[op_id];
@@ -351,7 +355,11 @@ vector<int> Projection::compute_h_values(const vector<int> &costs) const {
 }
 
 vector<ExplicitTransition> Projection::get_transitions() const {
-    ABORT("Not implemented.");
+    vector<ExplicitTransition> transitions;
+    // We can use an arbitrary cost function for computing the transitions.
+    vector<int> unit_costs(num_operators, 1);
+    compute_distances(unit_costs, &transitions);
+    return transitions;
 }
 
 int Projection::get_num_states() const {
