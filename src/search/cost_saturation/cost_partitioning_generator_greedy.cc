@@ -252,14 +252,12 @@ static vector<int> compute_pairwise_order_for_sample(
 
             if (h_forward > h_backward) {
                 if (verbose) {
-                    utils::Log() << i << " -> " << j << ": (" << h_forward
-                                 << " vs. " << h_backward << ")" << endl;
+                    cout << i << " -> " << j << ";" << endl;
                 }
                 preference_graph[i].push_back(j);
             } else if (h_forward < h_backward) {
                 if (verbose) {
-                    utils::Log() << j << " -> " << i << ": (" << h_backward
-                                 << " vs. " << h_forward << ")" << endl;
+                    cout << j << " -> " << i << ";" << endl;
                 }
                 preference_graph[j].push_back(i);
             }
