@@ -293,7 +293,7 @@ static void log_better_order(const vector<int> &order, int h, int i, int j) {
     utils::Log() << "Found improving order with h=" << h << ": " << order << endl;
 }
 
-static bool search_improving_successor(
+bool CostPartitioningGeneratorGreedy::search_improving_successor(
     CPFunction cp_function,
     const utils::CountdownTimer &timer,
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -301,10 +301,7 @@ static bool search_improving_successor(
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
     int &incumbent_h_value,
-    bool steepest_ascent,
-    bool continue_after_switch,
-    bool verbose) {
-    utils::unused_variable(steepest_ascent);
+    bool verbose) const {
     int num_abstractions = abstractions.size();
     int best_i = -1;
     int best_j = -1;
@@ -355,16 +352,14 @@ static bool search_improving_successor(
 }
 
 
-static void do_hill_climbing(
+void CostPartitioningGeneratorGreedy::do_hill_climbing(
     CPFunction cp_function,
     const utils::CountdownTimer &timer,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
-    bool steepest_ascent,
-    bool continue_after_switch,
-    bool verbose) {
+    bool verbose) const {
     vector<vector<int>> h_values_by_abstraction = cp_function(
         abstractions, incumbent_order, costs);
     int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
@@ -374,8 +369,7 @@ static void do_hill_climbing(
     while (!timer.is_expired()) {
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
-            incumbent_order, incumbent_h_value, steepest_ascent,
-            continue_after_switch, verbose);
+            incumbent_order, incumbent_h_value, verbose);
         if (!success) {
             break;
         }
@@ -501,8 +495,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     if (max_optimization_time > 0) {
         utils::CountdownTimer timer(max_optimization_time);
         do_hill_climbing(
-            cp_function, timer, abstractions, costs, local_state_ids, order,
-            steepest_ascent, continue_after_switch, verbose);
+            cp_function, timer, abstractions, costs, local_state_ids, order, verbose);
         if (verbose) {
             cout << "Time for optimizing order: " << timer << endl;
             cout << "Time for optimizing order has expired: " << timer.is_expired() << endl;
