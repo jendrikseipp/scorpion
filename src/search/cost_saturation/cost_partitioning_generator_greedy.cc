@@ -35,6 +35,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       continue_after_switch(opts.get<bool>("continue_after_switch")),
       switch_preferred_pairs_first(opts.get<bool>("switch_preferred_pairs_first")),
       max_optimization_time(opts.get<double>("max_optimization_time")),
+      max_front_optimization_time(opts.get<double>("max_front_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
     if ((dynamic && use_random_initial_order) || (dynamic && pairwise) ||
@@ -401,6 +402,56 @@ void CostPartitioningGeneratorGreedy::do_hill_climbing(
     }
 }
 
+
+static void optimize_front(
+    CPFunction cp_function,
+    const utils::CountdownTimer &timer,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &costs,
+    const vector<int> &local_state_ids,
+    vector<int> &incumbent_order,
+    bool verbose) {
+    vector<vector<int>> h_values_by_abstraction = cp_function(
+        abstractions, incumbent_order, costs);
+    int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
+    if (verbose) {
+        utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
+    }
+    int num_abstractions = abstractions.size();
+    while (!timer.is_expired()) {
+        bool better_order_found = false;
+        for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
+            // TODO: Change this ineffcient code if it turns out to be time-critical.
+            vector<int> tmp_order = incumbent_order;
+            int moved_abstraction_id = incumbent_order[i];
+            tmp_order.erase(tmp_order.begin() + i);
+            tmp_order.insert(tmp_order.begin(), moved_abstraction_id);
+            assert(tmp_order.size() == incumbent_order.size());
+            assert(num_abstractions == distance(tmp_order.begin(), unique(tmp_order.begin(), tmp_order.end())));
+
+            vector<vector<int>> h_values_by_abstraction =
+                cp_function(abstractions, tmp_order, costs);
+
+            int h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+            if (h > incumbent_h_value) {
+                incumbent_order = tmp_order;
+                incumbent_h_value = h;
+                better_order_found = true;
+                if (verbose) {
+                    utils::Log() << "Moving position " << i
+                                 << " to the front yields h=" << h << ": "
+                                 << incumbent_h_value << endl;
+                }
+                break;
+            }
+        }
+        if (!better_order_found) {
+            break;
+        }
+    }
+}
+
+
 void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -519,6 +570,17 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         utils::Log() << "Greedy order: " << order << endl;
     }
 
+    if (max_front_optimization_time > 0) {
+        utils::CountdownTimer timer(max_front_optimization_time);
+        optimize_front(
+            cp_function, timer, abstractions, costs, local_state_ids, order, verbose);
+        if (verbose) {
+            cout << "Time for optimizing front: " << timer << endl;
+            cout << "Time for optimizing front has expired: " << timer.is_expired() << endl;
+            cout << "Front-optimized order: " << order << endl;
+        }
+    }
+
     if (max_optimization_time > 0) {
         utils::CountdownTimer timer(max_optimization_time);
         do_hill_climbing(
@@ -580,6 +642,11 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<double>(
         "max_optimization_time",
         "maximum time for optimizing",
+        "0.0",
+        Bounds("0.0", "infinity"));
+    parser.add_option<double>(
+        "max_front_optimization_time",
+        "maximum time for moving abstractions to the front",
         "0.0",
         Bounds("0.0", "infinity"));
     add_common_scp_generator_options_to_parser(parser);

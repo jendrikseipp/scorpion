@@ -20,6 +20,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool continue_after_switch;
     const bool switch_preferred_pairs_first;
     const double max_optimization_time;
+    const double max_front_optimization_time;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     // Unpartitioned h values.
