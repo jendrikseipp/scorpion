@@ -70,7 +70,9 @@ class Projection : public Abstraction {
         const VariablesProxy &variables,
         std::vector<pdbs::AbstractOperator> &abstract_operators) const;
 
-    std::vector<int> compute_distances(const std::vector<int> &costs) const;
+    std::vector<int> compute_distances(
+        const std::vector<int> &costs,
+        std::vector<ExplicitTransition> *transitions = nullptr) const;
 
     /*
       For a given abstract state (given as index), the according values
