@@ -14,8 +14,9 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool use_stolen_costs;
     const bool use_negative_costs;
     const bool queue_zero_ratios;
-    const bool dynamic;
+    bool dynamic;
     const bool pairwise;
+    const bool hybrid;
     const bool steepest_ascent;
     const bool continue_after_switch;
     const bool switch_preferred_pairs_first;

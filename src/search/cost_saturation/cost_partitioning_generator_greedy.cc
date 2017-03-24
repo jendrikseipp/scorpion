@@ -31,6 +31,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
       pairwise(opts.get<bool>("pairwise")),
+      hybrid(opts.get<bool>("hybrid")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
       continue_after_switch(opts.get<bool>("continue_after_switch")),
       switch_preferred_pairs_first(opts.get<bool>("switch_preferred_pairs_first")),
@@ -544,6 +545,12 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     // Only be verbose for first sample.
     bool verbose = (num_returned_orders == 0);
 
+    if (hybrid) {
+        assert(!pairwise);
+        assert(!use_random_initial_order);
+        dynamic = num_returned_orders % 2 == 1;
+    }
+
     utils::Timer greedy_timer;
     vector<int> order;
     if (use_random_initial_order) {
@@ -626,6 +633,10 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "pairwise",
         "find initial order by using pairwise ordering preferences",
+        "false");
+    parser.add_option<bool>(
+        "hybrid",
+        "compute both static and dynamic orders",
         "false");
     parser.add_option<bool>(
         "steepest_ascent",
