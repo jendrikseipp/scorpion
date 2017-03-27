@@ -32,6 +32,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       dynamic(opts.get<bool>("dynamic")),
       pairwise(opts.get<bool>("pairwise")),
       hybrid(opts.get<bool>("hybrid")),
+      max_greedy_time(opts.get<double>("max_greedy_time")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
       continue_after_switch(opts.get<bool>("continue_after_switch")),
       switch_preferred_pairs_first(opts.get<bool>("switch_preferred_pairs_first")),
@@ -42,6 +43,10 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
     if ((dynamic && use_random_initial_order) || (dynamic && pairwise) ||
         (use_random_initial_order && pairwise)) {
         cerr << "ambiguous initial order type" << endl;
+        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+    }
+    if (max_greedy_time != numeric_limits<double>::infinity() && !dynamic) {
+        cerr << "max_greedy_time needs dynamic=true" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
 }
@@ -577,6 +582,11 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         utils::Log() << "Greedy order: " << order << endl;
     }
 
+    if (greedy_timer() > max_greedy_time) {
+        cout << "Computing dynamic greedy order took too long. Switch to static greedy." << endl;
+        dynamic = false;
+    }
+
     if (max_front_optimization_time > 0) {
         utils::CountdownTimer timer(max_front_optimization_time);
         optimize_front(
@@ -638,6 +648,11 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "hybrid",
         "compute both static and dynamic orders",
         "false");
+    parser.add_option<double>(
+        "max_greedy_time",
+        "if computing a greedy dynamic order takes longer than this threshold, switch to dynamic=false",
+        "0.0",
+        Bounds("0.0", "infinity"));
     parser.add_option<bool>(
         "steepest_ascent",
         "do steepest-ascent hill climbing instead of selecting the first improving successor",

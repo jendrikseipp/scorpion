@@ -17,6 +17,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     bool dynamic;
     const bool pairwise;
     const bool hybrid;
+    const double max_greedy_time;
     const bool steepest_ascent;
     const bool continue_after_switch;
     const bool switch_preferred_pairs_first;
