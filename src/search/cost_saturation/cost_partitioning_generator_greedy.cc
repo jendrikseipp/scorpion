@@ -651,7 +651,7 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<double>(
         "max_greedy_time",
         "if computing a greedy dynamic order takes longer than this threshold, switch to dynamic=false",
-        "0.0",
+        "infinity",
         Bounds("0.0", "infinity"));
     parser.add_option<bool>(
         "steepest_ascent",
