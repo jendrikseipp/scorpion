@@ -96,6 +96,16 @@ def run_translate(args):
         time_limit=time_limit, memory_limit=memory_limit)
 
 
+def transform_task(args):
+    logging.info("Run task transformation (%s)." % args.transform_task)
+    try:
+        call_component(args.transform_task, [], stdin="output.sas")
+    except OSError as err:
+        if err.errno == errno.ENOENT:
+            sys.exit("Error: {} not found. Is it on the PATH?".format(
+                args.transform_task))
+
+
 def run_search(args):
     logging.info("Running search (%s)." % args.build)
     time_limit = limits.get_time_limit(
