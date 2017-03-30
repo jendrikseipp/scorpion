@@ -311,6 +311,9 @@ def parse_args():
         "--debug", action="store_true",
         help="alias for --build=debug32 --validate")
     driver_other.add_argument(
+        "--transform-task",
+        help='path to or name of external program that transforms output.sas (e.g. h2-mutexes)')
+    driver_other.add_argument(
         "--validate", action="store_true",
         help='validate plans (implied by --debug); needs "validate" (VAL) on PATH')
     driver_other.add_argument(
