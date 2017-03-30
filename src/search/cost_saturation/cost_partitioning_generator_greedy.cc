@@ -582,7 +582,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         utils::Log() << "Greedy order: " << order << endl;
     }
 
-    if (greedy_timer() > max_greedy_time) {
+    if (dynamic && greedy_timer() > max_greedy_time) {
         cout << "Computing dynamic greedy order took too long. Switch to static greedy." << endl;
         dynamic = false;
     }
