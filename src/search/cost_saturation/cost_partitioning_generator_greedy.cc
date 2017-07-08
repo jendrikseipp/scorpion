@@ -99,8 +99,8 @@ static vector<int> compute_static_greedy_order_for_sample(
 
     vector<int> order = get_default_order(num_abstractions);
     sort(order.begin(), order.end(), [&](int abstraction1_id, int abstraction2_id) {
-        return ratios[abstraction1_id] > ratios[abstraction2_id];
-    });
+            return ratios[abstraction1_id] > ratios[abstraction2_id];
+        });
 
     return order;
 }
@@ -204,7 +204,6 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
                     }
                     return true;
                 }
-
             } else {
                 // Restore incumbent order.
                 swap(incumbent_order[i], incumbent_order[j]);
@@ -274,7 +273,6 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     const vector<int> &costs,
     const State &state,
     CPFunction cp_function) {
-
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
 
     // We can call compute_sum_h with unpartitioned h values since we only need
@@ -302,8 +300,8 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
             abstractions, local_state_ids, costs, queue_zero_ratios, use_negative_costs);
     } else {
         order = compute_static_greedy_order_for_sample(
-        local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
-        use_negative_costs, verbose);
+            local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
+            use_negative_costs, verbose);
     }
 
     if (reverse_initial_order) {

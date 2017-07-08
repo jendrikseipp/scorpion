@@ -21,7 +21,7 @@ SCPOptimizer::SCPOptimizer(
     vector<unique_ptr<Abstraction>> &&abstractions,
     const vector<shared_ptr<RefinementHierarchy>> &refinement_hierarchies,
     const vector<int> &operator_costs,
-    const std::shared_ptr<utils::RandomNumberGenerator> &rng)
+    const shared_ptr<utils::RandomNumberGenerator> &rng)
     : abstractions(move(abstractions)),
       refinement_hierarchies(refinement_hierarchies),
       operator_costs(operator_costs),

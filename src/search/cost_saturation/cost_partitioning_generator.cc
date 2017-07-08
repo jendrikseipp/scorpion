@@ -74,7 +74,7 @@ void CostPartitioningGenerator::initialize(
     CostPartitioning scp_for_default_order =
         compute_saturated_cost_partitioning(abstractions, default_order, costs);
 
-    std::function<int (const State &state)> default_order_heuristic =
+    function<int (const State &state)> default_order_heuristic =
         [&abstractions, &scp_for_default_order](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(abstractions, state);
             return compute_sum_h(local_state_ids, scp_for_default_order);
