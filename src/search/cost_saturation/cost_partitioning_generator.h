@@ -30,7 +30,6 @@ protected:
     const int max_orders;
     const double max_time;
     const bool diversify;
-    const bool diversify_for_sample;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     // Members for random walks.

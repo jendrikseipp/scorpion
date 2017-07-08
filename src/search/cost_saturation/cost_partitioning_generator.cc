@@ -11,9 +11,6 @@
 #include "../task_proxy.h"
 #include "../task_tools.h"
 
-// TODO: Needed for compute_max_h(). Find better solution for this.
-#include "../cegar/scp_optimizer.h"
-
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
@@ -59,7 +56,6 @@ CostPartitioningGenerator::CostPartitioningGenerator(const Options &opts)
     : max_orders(opts.get<int>("max_orders")),
       max_time(opts.get<double>("max_time")),
       diversify(opts.get<bool>("diversify")),
-      diversify_for_sample(opts.get<bool>("diversify_for_sample")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
@@ -86,15 +82,6 @@ void CostPartitioningGenerator::initialize(
 
     init_h = default_order_heuristic(*initial_state);
     cout << "Initial h value for default order: " << init_h << endl;
-}
-
-static bool improves_portfolio_for_sample(
-    const vector<CostPartitioning> &portfolio,
-    const CostPartitioning &cost_partitioning,
-    const vector<int> &local_state_ids) {
-    int portfolio_h_value = cegar::compute_max_h(local_state_ids, portfolio);
-    int scp_h_value = compute_sum_h(local_state_ids, cost_partitioning);
-    return scp_h_value > portfolio_h_value;
 }
 
 CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
@@ -128,10 +115,7 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
         CostPartitioning scp = get_next_cost_partitioning(
             task_proxy, abstractions, costs, sample, cp_function);
         ++evaluated_orders;
-        if ((!diversify && !diversify_for_sample) ||
-            (diversify && diversifier->is_diverse(scp)) ||
-            (diversify_for_sample && improves_portfolio_for_sample(
-                cost_partitionings, scp, get_local_state_ids(abstractions, sample)))) {
+        if (!diversify || (diversifier->is_diverse(scp))) {
             cost_partitionings.push_back(move(scp));
         }
     }
@@ -156,10 +140,6 @@ void add_common_scp_generator_options_to_parser(OptionParser &parser) {
         "diversify",
         "keep orders that improve the portfolio's heuristic value for any of the samples",
         "true");
-    parser.add_option<bool>(
-        "diversify_for_sample",
-        "keep orders that improve the portfolio's heuristic value for the current sample",
-        "false");
     utils::add_rng_options(parser);
 }
 
