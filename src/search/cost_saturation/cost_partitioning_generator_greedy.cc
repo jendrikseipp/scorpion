@@ -1,7 +1,6 @@
 #include "cost_partitioning_generator_greedy.h"
 
 #include "abstraction.h"
-#include "diversifier.h"
 #include "utils.h"
 
 #include "../option_parser.h"
