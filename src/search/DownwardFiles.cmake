@@ -146,13 +146,6 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
-    NAME SCCS
-    HELP "Compute strongly-connected components"
-    SOURCES
-        algorithms/sccs
-)
-
-fast_downward_plugin(
     NAME CONST_EVALUATOR
     HELP "The constant evaluator"
     SOURCES

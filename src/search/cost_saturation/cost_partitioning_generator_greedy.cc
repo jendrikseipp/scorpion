@@ -8,7 +8,6 @@
 #include "../plugin.h"
 #include "../task_proxy.h"
 
-#include "../algorithms/sccs.h"
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
@@ -30,7 +29,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       use_negative_costs(opts.get<bool>("use_negative_costs")),
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
-      pairwise(opts.get<bool>("pairwise")),
       hybrid(opts.get<bool>("hybrid")),
       max_greedy_time(opts.get<double>("max_greedy_time")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
@@ -40,8 +38,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       max_front_optimization_time(opts.get<double>("max_front_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
-    if ((dynamic && use_random_initial_order) || (dynamic && pairwise) ||
-        (use_random_initial_order && pairwise)) {
+    if (dynamic && use_random_initial_order) {
         cerr << "ambiguous initial order type" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
@@ -232,65 +229,6 @@ vector<int> compute_greedy_dynamic_order_for_sample(
 
     order.insert(order.end(), abstractions_with_zero_h.begin(), abstractions_with_zero_h.end());
     assert(order.size() == abstractions.size());
-    return order;
-}
-
-static vector<int> compute_pairwise_order_for_sample(
-    const vector<int> &local_state_ids,
-    const vector<vector<int>> h_values_by_abstraction,
-    const vector<vector<vector<int>>> pairwise_h_values,
-    bool verbose) {
-    assert(local_state_ids.size() == h_values_by_abstraction.size());
-
-    if (verbose) {
-        utils::Log() << "Pairwise preferred orders: " << endl;
-    }
-    int num_abstractions = local_state_ids.size();
-    vector<vector<int>> preference_graph(num_abstractions);
-    for (int i = 0; i < num_abstractions; ++i) {
-        int h_i_forward = h_values_by_abstraction[i][local_state_ids[i]];
-        for (int j = i + 1; j < num_abstractions; ++j) {
-            int h_j_forward = pairwise_h_values[i][j][local_state_ids[j]];
-            int h_forward = h_i_forward + h_j_forward;
-
-            int h_j_backward = h_values_by_abstraction[j][local_state_ids[j]];
-            int h_i_backward = pairwise_h_values[j][i][local_state_ids[i]];
-            int h_backward = h_j_backward + h_i_backward;
-
-            if (h_forward > h_backward) {
-                if (verbose) {
-                    cout << i << " -> " << j << ";" << endl;
-                }
-                preference_graph[i].push_back(j);
-            } else if (h_forward < h_backward) {
-                if (verbose) {
-                    cout << j << " -> " << i << ";" << endl;
-                }
-                preference_graph[j].push_back(i);
-            }
-        }
-    }
-    sccs::SCCs preference_sccs(preference_graph);
-    vector<vector<int>> scc_ordering = preference_sccs.get_result();
-    if (verbose) {
-        utils::Log() << "Preference ordering: " << scc_ordering << endl;
-    }
-
-    vector<int> order;
-    order.reserve(num_abstractions);
-    bool cyclic = false;
-    for (const vector<int> &scc : scc_ordering) {
-        if (scc.size() > 1) {
-            cyclic = true;
-        }
-        for (int abstraction_id : scc) {
-            order.push_back(abstraction_id);
-        }
-    }
-    assert(order.size() == local_state_ids.size());
-    if (verbose) {
-        utils::Log() << "Pairwise ordering cyclic: " << cyclic << endl;
-    }
     return order;
 }
 
@@ -508,7 +446,7 @@ void CostPartitioningGeneratorGreedy::initialize(
     cout << "Used costs by abstraction: ";
     print_indexed_vector(used_costs_by_abstraction);
 
-    if (pairwise || switch_preferred_pairs_first) {
+    if (switch_preferred_pairs_first) {
         utils::Timer pairwise_h_values_timer;
         int num_abstractions = abstractions.size();
         pairwise_h_values.resize(num_abstractions);
@@ -551,7 +489,6 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     bool verbose = (num_returned_orders == 0);
 
     if (hybrid) {
-        assert(!pairwise);
         assert(!use_random_initial_order);
         dynamic = num_returned_orders % 2 == 1;
     }
@@ -561,9 +498,6 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     if (use_random_initial_order) {
         rng->shuffle(random_order);
         order = random_order;
-    } else if (pairwise) {
-        order = compute_pairwise_order_for_sample(
-        local_state_ids, h_values_by_abstraction, pairwise_h_values, verbose);
     } else if (dynamic) {
         order = compute_greedy_dynamic_order_for_sample(
             abstractions, local_state_ids, costs, queue_zero_ratios, use_negative_costs);
@@ -639,10 +573,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "dynamic",
         "recompute ratios in each step",
-        "false");
-    parser.add_option<bool>(
-        "pairwise",
-        "find initial order by using pairwise ordering preferences",
         "false");
     parser.add_option<bool>(
         "hybrid",
