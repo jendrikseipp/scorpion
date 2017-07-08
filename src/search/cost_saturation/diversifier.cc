@@ -85,8 +85,4 @@ bool Diversifier::is_diverse(const CostPartitioning &scp) {
 
     return scp_improves_portfolio;
 }
-
-const std::vector<std::vector<int> > &Diversifier::get_local_state_ids_by_sample() const {
-    return local_state_ids_by_sample;
-}
 }

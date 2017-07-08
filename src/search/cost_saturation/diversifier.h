@@ -23,8 +23,6 @@ public:
         utils::RandomNumberGenerator &rng);
 
     bool is_diverse(const CostPartitioning &scp);
-
-    const std::vector<std::vector<int>> &get_local_state_ids_by_sample() const;
 };
 }
 
