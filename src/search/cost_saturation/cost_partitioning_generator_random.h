@@ -22,6 +22,7 @@ public:
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
+        const State &state,
         CPFunction cp_function) override;
 };
 }
