@@ -25,7 +25,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
     : CostPartitioningGenerator(opts),
       use_random_initial_order(opts.get<bool>("use_random_initial_order")),
       reverse_initial_order(opts.get<bool>("reverse_initial_order")),
-      use_stolen_costs(opts.get<bool>("use_stolen_costs")),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
@@ -52,71 +51,6 @@ static int compute_used_costs(const vector<int> &saturated_costs, bool use_negat
         assert(cost != INF);
         if (cost != -INF && (use_negative_costs || cost > 0)) {
             sum += cost;
-        }
-    }
-    return sum;
-}
-
-static int bounded_addition(int a, int b) {
-    int inf = numeric_limits<int>::max();
-    if ((a == inf && b == -inf) || (a == -inf && b == inf)) {
-        ABORT("Can't sum positive and negative infinity.");
-    }
-    if (a == inf || b == inf) {
-        return inf;
-    } else if (a == -inf || b == -inf) {
-        return -inf;
-    }
-    int result = a + b;
-    if (a >= 0 && b >= 0 && result < 0) {
-        return inf;
-    } else if (a <= 0 && b <= 0 && result > 0) {
-        return -inf;
-    }
-    return result;
- }
-
-/*
-  Compute the amount of costs that an abstraction A wants to "steal" from or
-  "provide" to other abstractions ("negative stealing").
-
-  if ĉ_A(o) >= 0:
-      stolen_A(o) = max(0, ĉ_A(o) - max(0, c(o) - \sum_{abstractions B} ĉ_B(o)))
-  else:
-      stolen_A(o) = max(ĉ_A(o), min(0, c(o) - \sum_{abstractions B} ĉ_B(o)))
-*/
-static int compute_stolen_costs(
-    const vector<int> &original_costs,
-    const vector<int> &saturated_costs,
-    const vector<int> &total_saturated_costs,
-    bool use_negative_costs) {
-    assert(original_costs.size() == saturated_costs.size());
-    assert(saturated_costs.size() == total_saturated_costs.size());
-    bool debug = false;
-    int sum = 0;
-    int num_operators = original_costs.size();
-    for (int op_id = 0; op_id < num_operators; ++op_id) {
-        int wanted_costs = saturated_costs[op_id];
-        assert(wanted_costs != INF);
-        int costs_wanted_by_others = (total_saturated_costs[op_id] == -INF) ?
-            -INF : bounded_addition(total_saturated_costs[op_id], -wanted_costs);
-        int costs_nobody_else_wants = bounded_addition(
-            original_costs[op_id], -costs_wanted_by_others);
-        int stolen_cost = 0;
-        if (wanted_costs >= 0) {
-            stolen_cost = max(0, bounded_addition(
-                wanted_costs, -max(0, costs_nobody_else_wants)));
-        } else if (use_negative_costs) {
-            assert(wanted_costs < 0);
-            stolen_cost = max(wanted_costs, min(0, costs_nobody_else_wants));
-        }
-        assert(stolen_cost != INF);
-        assert(stolen_cost != -INF);
-        sum += stolen_cost;
-        if (debug) {
-            cout << "wanted: " << wanted_costs << ", original: "
-                 << original_costs[op_id] << ", others: "
-                 << costs_wanted_by_others << ", result: " << stolen_cost << endl;
         }
     }
     return sum;
@@ -326,45 +260,13 @@ void CostPartitioningGeneratorGreedy::initialize(
     CostPartitioningGenerator::initialize(task_proxy, abstractions, costs);
     random_order = get_default_order(abstractions.size());
 
-    if (!use_stolen_costs) {
-        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-            auto pair = abstraction->compute_goal_distances_and_saturated_costs(costs);
-            vector<int> &h_values = pair.first;
-            vector<int> &saturated_costs = pair.second;
-            h_values_by_abstraction.push_back(move(h_values));
-            int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
-            used_costs_by_abstraction.push_back(used_costs);
-        }
-    } else {
-        vector<vector<int>> saturated_costs_by_abstraction;
-        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-            auto pair = abstraction->compute_goal_distances_and_saturated_costs(costs);
-            vector<int> &h_values = pair.first;
-            vector<int> &saturated_costs = pair.second;
-            h_values_by_abstraction.push_back(move(h_values));
-            saturated_costs_by_abstraction.push_back(move(saturated_costs));
-        }
-        int num_operators = task_proxy.get_operators().size();
-        vector<int> total_saturated_costs_by_operator(num_operators, 0);
-        for (const vector<int> &saturated_costs : saturated_costs_by_abstraction) {
-            assert(static_cast<int>(saturated_costs.size()) == num_operators);
-            for (int op_id = 0; op_id < num_operators; ++op_id) {
-                int saturated = saturated_costs[op_id];
-                if (use_negative_costs || saturated >= 0) {
-                    assert(saturated != INF);
-                    total_saturated_costs_by_operator[op_id] = bounded_addition(
-                        saturated, total_saturated_costs_by_operator[op_id]);
-                }
-            }
-        }
-        for (size_t i = 0; i < abstractions.size(); ++i) {
-            int stolen_costs = compute_stolen_costs(
-                costs,
-                saturated_costs_by_abstraction[i],
-                total_saturated_costs_by_operator,
-                use_negative_costs);
-            used_costs_by_abstraction.push_back(stolen_costs);
-        }
+    for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+        auto pair = abstraction->compute_goal_distances_and_saturated_costs(costs);
+        vector<int> &h_values = pair.first;
+        vector<int> &saturated_costs = pair.second;
+        h_values_by_abstraction.push_back(move(h_values));
+        int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
+        used_costs_by_abstraction.push_back(used_costs);
     }
     cout << "Used costs by abstraction: ";
     print_indexed_vector(used_costs_by_abstraction);
@@ -446,11 +348,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "reverse_initial_order",
         "invert initial order",
-        "false");
-    parser.add_option<bool>(
-        "use_stolen_costs",
-        "define used costs as costs taken by an abstraction that could have been"
-        " used by other abstractions",
         "false");
     parser.add_option<bool>(
         "use_negative_costs",
