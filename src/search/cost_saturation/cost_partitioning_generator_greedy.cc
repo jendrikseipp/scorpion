@@ -350,7 +350,7 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "queue_zero_ratios",
         "put abstraction with ratio=0 to the end of the order",
-        "false");
+        "true");
     parser.add_option<bool>(
         "dynamic",
         "recompute ratios in each step",
