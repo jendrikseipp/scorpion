@@ -31,6 +31,7 @@ CostPartitioning CostPartitioningGeneratorRandom::get_next_cost_partitioning(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
+    const State &,
     CPFunction cp_function) {
     rng->shuffle(order);
     if (max_orders == 1) {
@@ -40,7 +41,7 @@ CostPartitioning CostPartitioningGeneratorRandom::get_next_cost_partitioning(
 }
 
 static shared_ptr<CostPartitioningGenerator> _parse_random(OptionParser &parser) {
-    add_common_scp_generator_options_to_parser(parser);
+    add_common_cp_generator_options_to_parser(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;

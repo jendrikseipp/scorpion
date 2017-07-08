@@ -22,7 +22,7 @@ public:
         const std::vector<int> &costs,
         utils::RandomNumberGenerator &rng);
 
-    bool is_diverse(const CostPartitioning &scp);
+    bool is_diverse(const CostPartitioning &cp);
 };
 }
 

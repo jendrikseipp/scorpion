@@ -62,20 +62,20 @@ Diversifier::Diversifier(
          << endl;
 }
 
-bool Diversifier::is_diverse(const CostPartitioning &scp) {
-    bool scp_improves_portfolio = false;
+bool Diversifier::is_diverse(const CostPartitioning &cp) {
+    bool cp_improves_portfolio = false;
     for (size_t sample_id = 0; sample_id < local_state_ids_by_sample.size(); ++sample_id) {
-        int scp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], scp);
+        int cp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], cp);
         assert(utils::in_bounds(sample_id, portfolio_h_values));
         int &portfolio_h_value = portfolio_h_values[sample_id];
-        if (scp_h_value > portfolio_h_value) {
-            scp_improves_portfolio = true;
-            portfolio_h_value = scp_h_value;
+        if (cp_h_value > portfolio_h_value) {
+            cp_improves_portfolio = true;
+            portfolio_h_value = cp_h_value;
         }
     }
 
     // Statistics.
-    if (scp_improves_portfolio) {
+    if (cp_improves_portfolio) {
         int sum_portfolio_h = 0;
         for (int h : portfolio_h_values) {
             sum_portfolio_h += h;
@@ -83,6 +83,6 @@ bool Diversifier::is_diverse(const CostPartitioning &scp) {
         cout << "Portfolio sum h value: " << sum_portfolio_h << endl;
     }
 
-    return scp_improves_portfolio;
+    return cp_improves_portfolio;
 }
 }

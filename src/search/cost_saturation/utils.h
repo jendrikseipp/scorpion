@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+#include <iostream>
 #include <vector>
 
 class TaskProxy;
@@ -31,7 +32,24 @@ extern void reduce_costs(
     std::vector<int> &remaining_costs,
     const std::vector<int> &saturated_costs);
 
-extern void print_indexed_vector(const std::vector<int> &vec);
+template<typename T>
+void print_indexed_vector(const std::vector<T> &vec) {
+    for (size_t i = 0; i < vec.size(); ++i) {
+        std::cout << i << ":";
+        T value = vec[i];
+        if (value == INF) {
+            std::cout << "inf";
+        } else if (value == -INF) {
+            std::cout << "-inf";
+        } else {
+            std::cout << value;
+        }
+        if (i < vec.size() - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << std::endl;
+}
 
 extern std::vector<bool> convert_to_bitvector(
     const std::vector<int> &vec, int size);
