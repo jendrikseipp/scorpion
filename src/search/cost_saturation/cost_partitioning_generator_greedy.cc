@@ -33,7 +33,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       max_greedy_time(opts.get<double>("max_greedy_time")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
       continue_after_switch(opts.get<bool>("continue_after_switch")),
-      switch_preferred_pairs_first(opts.get<bool>("switch_preferred_pairs_first")),
       max_optimization_time(opts.get<double>("max_optimization_time")),
       max_front_optimization_time(opts.get<double>("max_front_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
@@ -238,20 +237,6 @@ static void log_better_order(const vector<int> &order, int h, int i, int j) {
     utils::Log() << "Found improving order with h=" << h << ": " << order << endl;
 }
 
-bool CostPartitioningGeneratorGreedy::is_switch_preferred(
-    const vector<int> &local_state_ids, int i, int j) const {
-    assert(i != j);
-    int h_i_forward = h_values_by_abstraction[i][local_state_ids[i]];
-    int h_j_forward = pairwise_h_values[i][j][local_state_ids[j]];
-    int h_forward = h_i_forward + h_j_forward;
-
-    int h_j_backward = h_values_by_abstraction[j][local_state_ids[j]];
-    int h_i_backward = pairwise_h_values[j][i][local_state_ids[i]];
-    int h_backward = h_j_backward + h_i_backward;
-
-    return h_backward > h_forward;
-}
-
 bool CostPartitioningGeneratorGreedy::search_improving_successor(
     CPFunction cp_function,
     const utils::CountdownTimer &timer,
@@ -260,7 +245,6 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
     int &incumbent_h_value,
-    bool only_switch_preferred_pairs,
     bool verbose) const {
     int num_abstractions = abstractions.size();
     int best_i = -1;
@@ -270,11 +254,6 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
             utils::Log() << "Check position " << i << endl;
         }
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
-            if (only_switch_preferred_pairs && !is_switch_preferred(
-                    local_state_ids, incumbent_order[i], incumbent_order[j])) {
-                continue;
-            }
-
             swap(incumbent_order[i], incumbent_order[j]);
 
             vector<vector<int>> h_values_by_abstraction =
@@ -331,17 +310,12 @@ void CostPartitioningGeneratorGreedy::do_hill_climbing(
     if (verbose) {
         utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
     }
-    bool only_switch_preferred_pairs = switch_preferred_pairs_first;
     while (!timer.is_expired()) {
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
-            incumbent_order, incumbent_h_value, only_switch_preferred_pairs, verbose);
+            incumbent_order, incumbent_h_value, verbose);
         if (!success) {
-            if (only_switch_preferred_pairs) {
-                only_switch_preferred_pairs = false;
-            } else {
-                break;
-            }
+            break;
         }
     }
 }
@@ -445,28 +419,6 @@ void CostPartitioningGeneratorGreedy::initialize(
     }
     cout << "Used costs by abstraction: ";
     print_indexed_vector(used_costs_by_abstraction);
-
-    if (switch_preferred_pairs_first) {
-        utils::Timer pairwise_h_values_timer;
-        int num_abstractions = abstractions.size();
-        pairwise_h_values.resize(num_abstractions);
-        for (int i = 0; i < num_abstractions; ++i) {
-            auto pair = abstractions[i]->compute_goal_distances_and_saturated_costs(costs);
-            vector<int> &saturated_costs = pair.second;
-            vector<int> remaining_costs = costs;
-            reduce_costs(remaining_costs, saturated_costs);
-            for (int j = 0; j < num_abstractions; ++j) {
-                if (i == j) {
-                    pairwise_h_values[i].push_back({});
-                } else {
-                    auto pair = abstractions[j]->compute_goal_distances_and_saturated_costs(remaining_costs);
-                    vector<int> &h_values = pair.first;
-                    pairwise_h_values[i].push_back(move(h_values));
-                }
-            }
-        }
-        cout << "Time for computing pairwise h-values: " << pairwise_h_values_timer << endl;
-    }
 }
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
@@ -590,10 +542,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "continue_after_switch",
         "after switching heuristics i and j, check (i, j+1) or (i+1, i+2) instead of (0, 1)",
-        "false");
-    parser.add_option<bool>(
-        "switch_preferred_pairs_first",
-        "try switching pairs that are \"probably\" in the wrong order first",
         "false");
     parser.add_option<double>(
         "max_optimization_time",
