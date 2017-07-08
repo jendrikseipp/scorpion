@@ -72,7 +72,7 @@ extern CostPartitioning compute_saturated_cost_partitioning(
     const std::vector<int> &costs,
     bool debug = false);
 
-extern void add_common_scp_generator_options_to_parser(
+extern void add_common_cp_generator_options_to_parser(
     options::OptionParser &parser);
 }
 

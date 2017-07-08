@@ -112,11 +112,11 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
                 average_operator_costs,
                 *rng);
         }
-        CostPartitioning scp = get_next_cost_partitioning(
+        CostPartitioning cp = get_next_cost_partitioning(
             task_proxy, abstractions, costs, sample, cp_function);
         ++evaluated_orders;
-        if (!diversify || (diversifier->is_diverse(scp))) {
-            cost_partitionings.push_back(move(scp));
+        if (!diversify || (diversifier->is_diverse(cp))) {
+            cost_partitionings.push_back(move(cp));
         }
     }
     cout << "Orders: " << cost_partitionings.size() << endl;
@@ -125,7 +125,7 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
 }
 
 
-void add_common_scp_generator_options_to_parser(OptionParser &parser) {
+void add_common_cp_generator_options_to_parser(OptionParser &parser) {
     parser.add_option<int>(
         "max_orders",
         "maximum number of abstraction orders",

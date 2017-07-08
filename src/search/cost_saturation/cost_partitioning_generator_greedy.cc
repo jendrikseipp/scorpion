@@ -375,7 +375,7 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "maximum time for optimizing",
         "0.0",
         Bounds("0.0", "infinity"));
-    add_common_scp_generator_options_to_parser(parser);
+    add_common_cp_generator_options_to_parser(parser);
     utils::add_rng_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
