@@ -67,7 +67,7 @@ static double compute_h_per_cost_ratio(int h, int used_costs, bool use_negative_
     return h / (used_costs + 1.0);
 }
 
-static vector<int> compute_greedy_order_for_sample(
+static vector<int> compute_static_greedy_order_for_sample(
     const vector<int> &local_state_ids,
     const vector<vector<int>> h_values_by_abstraction,
     const vector<double> used_costs_by_abstraction,
@@ -302,7 +302,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         order = compute_greedy_dynamic_order_for_sample(
             abstractions, local_state_ids, costs, queue_zero_ratios, use_negative_costs);
     } else {
-        order = compute_greedy_order_for_sample(
+        order = compute_static_greedy_order_for_sample(
         local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
         use_negative_costs, verbose);
     }
@@ -348,7 +348,7 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "false");
     parser.add_option<bool>(
         "use_negative_costs",
-        "account for negative costs when computing used/stolen costs",
+        "account for negative costs when computing used costs",
         "false");
     parser.add_option<bool>(
         "queue_zero_ratios",
