@@ -31,7 +31,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       hybrid(opts.get<bool>("hybrid")),
       max_greedy_time(opts.get<double>("max_greedy_time")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
-      continue_after_switch(opts.get<bool>("continue_after_switch")),
       max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
@@ -204,9 +203,7 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
                     if (verbose) {
                         log_better_order(incumbent_order, h, i, j);
                     }
-                    if (!continue_after_switch) {
-                        return true;
-                    }
+                    return true;
                 }
 
             } else {
@@ -373,10 +370,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "steepest_ascent",
         "do steepest-ascent hill climbing instead of selecting the first improving successor",
-        "false");
-    parser.add_option<bool>(
-        "continue_after_switch",
-        "after switching heuristics i and j, check (i, j+1) or (i+1, i+2) instead of (0, 1)",
         "false");
     parser.add_option<double>(
         "max_optimization_time",
