@@ -116,8 +116,7 @@ void prepare_parser_for_cost_partitioning_heuristic(
         "methods that generate abstractions");
     parser.add_option<shared_ptr<CostPartitioningGenerator>>(
         "orders",
-        "cost partitioning generator",
-        OptionParser::NONE);
+        "cost partitioning generator");
     parser.add_option<bool>(
         "debug",
         "print debugging information",
