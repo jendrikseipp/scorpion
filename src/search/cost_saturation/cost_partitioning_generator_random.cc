@@ -21,9 +21,10 @@ CostPartitioningGeneratorRandom::CostPartitioningGeneratorRandom(
 }
 
 void CostPartitioningGeneratorRandom::initialize(
-    const TaskProxy &,
+    const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &) {
+    const vector<int> &costs) {
+    CostPartitioningGenerator::initialize(task_proxy, abstractions, costs);
     order = get_default_order(abstractions.size());
 }
 
