@@ -28,17 +28,12 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
       hybrid(opts.get<bool>("hybrid")),
-      max_greedy_time(opts.get<double>("max_greedy_time")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
       max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
     if (dynamic && use_random_initial_order) {
         cerr << "ambiguous initial order type" << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
-    }
-    if (max_greedy_time != numeric_limits<double>::infinity() && !dynamic) {
-        cerr << "max_greedy_time needs dynamic=true" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
 }
@@ -313,11 +308,6 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         utils::Log() << "Greedy order: " << order << endl;
     }
 
-    if (dynamic && greedy_timer() > max_greedy_time - 0.001) {
-        cout << "Computing dynamic greedy order took too long. Switch to static greedy." << endl;
-        dynamic = false;
-    }
-
     if (max_optimization_time > 0) {
         utils::CountdownTimer timer(max_optimization_time);
         do_hill_climbing(
@@ -359,11 +349,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "hybrid",
         "compute both static and dynamic orders",
         "false");
-    parser.add_option<double>(
-        "max_greedy_time",
-        "if computing a greedy dynamic order takes longer than this threshold, switch to dynamic=false",
-        "infinity",
-        Bounds("0.0", "infinity"));
     parser.add_option<bool>(
         "steepest_ascent",
         "do steepest-ascent hill climbing instead of selecting the first improving successor",
