@@ -27,7 +27,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       use_negative_costs(opts.get<bool>("use_negative_costs")),
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
-      hybrid(opts.get<bool>("hybrid")),
       steepest_ascent(opts.get<bool>("steepest_ascent")),
       max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
@@ -280,11 +279,6 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     // Only be verbose for first sample.
     bool verbose = (num_returned_orders == 0);
 
-    if (hybrid) {
-        assert(!use_random_initial_order);
-        dynamic = num_returned_orders % 2 == 1;
-    }
-
     utils::Timer greedy_timer;
     vector<int> order;
     if (use_random_initial_order) {
@@ -344,10 +338,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "dynamic",
         "recompute ratios in each step",
-        "false");
-    parser.add_option<bool>(
-        "hybrid",
-        "compute both static and dynamic orders",
         "false");
     parser.add_option<bool>(
         "steepest_ascent",
