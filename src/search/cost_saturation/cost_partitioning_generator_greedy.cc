@@ -48,7 +48,7 @@ static int compute_used_costs(const vector<int> &saturated_costs, bool use_negat
     return sum;
 }
 
-static double compute_h_per_cost_ratio(int h, int used_costs, bool use_negative_costs) {
+static double rate_heuristic(int h, int used_costs, bool use_negative_costs) {
     assert(h >= 0);
     assert(used_costs != INF);
     assert(used_costs != -INF);
@@ -81,7 +81,7 @@ static vector<int> compute_static_greedy_order_for_sample(
         h_values.push_back(h);
         assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
         int used_costs = used_costs_by_abstraction[abstraction_id];
-        ratios.push_back(compute_h_per_cost_ratio(h, used_costs, use_negative_costs));
+        ratios.push_back(rate_heuristic(h, used_costs, use_negative_costs));
     }
 
     if (verbose) {
@@ -131,7 +131,7 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             assert(utils::in_bounds(local_state_id, h_values));
             int h = h_values[local_state_id];
             int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
-            double ratio = compute_h_per_cost_ratio(h, used_costs, use_negative_costs);
+            double ratio = rate_heuristic(h, used_costs, use_negative_costs);
             if (queue_zero_ratios && h == 0) {
                 abstractions_with_zero_h.push_back(abstraction_id);
                 it = remaining_abstractions.erase(it);
