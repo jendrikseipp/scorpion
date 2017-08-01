@@ -56,6 +56,7 @@ CostPartitioningGenerator::CostPartitioningGenerator(const Options &opts)
     : max_orders(opts.get<int>("max_orders")),
       max_time(opts.get<double>("max_time")),
       diversify(opts.get<bool>("diversify")),
+      start_with_initial_state(opts.get<bool>("start_with_initial_state")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
@@ -102,9 +103,8 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
     int evaluated_orders = 0;
     while (static_cast<int>(cost_partitionings.size()) < max_orders &&
            !timer.is_expired() && has_next_cost_partitioning()) {
-        // Always start with the initial state before turning to samples.
         State sample = *initial_state;
-        if (!cost_partitionings.empty()) {
+        if (!start_with_initial_state || !cost_partitionings.empty()) {
             sample = sample_state_with_random_walk(
                 *initial_state,
                 *successor_generator,
@@ -140,6 +140,10 @@ void add_common_cp_generator_options_to_parser(OptionParser &parser) {
         "diversify",
         "keep orders that improve the portfolio's heuristic value for any of the samples",
         "true");
+    parser.add_option<bool>(
+        "start_with_initial_state",
+        "use initial state as first sample",
+        "false");
     utils::add_rng_options(parser);
 }
 
