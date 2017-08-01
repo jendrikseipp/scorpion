@@ -83,14 +83,13 @@ int CostPartitioningHeuristic::compute_max_h_with_statistics(
 }
 
 void CostPartitioningHeuristic::print_statistics() const {
-    int num_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
     int num_orders = num_best_order.size();
-    double percentage_superfluous =
-        (num_orders == 0) ? 0 : num_superfluous * 100.0 / num_orders;
+    int num_probably_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
+    int num_probably_useful = num_orders - num_probably_superfluous;
     cout << "Number of times each order was the best order: "
          << num_best_order << endl;
-    cout << "Superfluous orders: " << num_superfluous << "/" << num_orders
-         << " = " << percentage_superfluous << endl;
+    cout << "Probably useful orders: " << num_probably_useful << "/" << num_orders
+         << " = " << 100. * num_probably_useful / num_orders << "%" << endl;
 }
 
 void prepare_parser_for_cost_partitioning_heuristic(
