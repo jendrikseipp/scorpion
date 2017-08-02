@@ -143,7 +143,7 @@ void add_common_cp_generator_options_to_parser(OptionParser &parser) {
     parser.add_option<bool>(
         "start_with_initial_state",
         "use initial state as first sample",
-        "false");
+        "true");
     utils::add_rng_options(parser);
 }
 
