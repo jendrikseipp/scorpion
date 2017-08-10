@@ -2,6 +2,7 @@
 
 #include "abstraction.h"
 #include "cost_partitioning_generator.h"
+#include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -22,10 +23,15 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
             return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
         });
     num_best_order.resize(h_values_by_order.size(), 0);
+}
 
-    for (auto &abstraction : abstractions) {
-        abstraction->release_transition_system_memory();
+int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &state) {
+    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
+    int max_h = compute_max_h_with_statistics(local_state_ids);
+    if (max_h == INF) {
+        return DEAD_END;
     }
+    return max_h;
 }
 
 

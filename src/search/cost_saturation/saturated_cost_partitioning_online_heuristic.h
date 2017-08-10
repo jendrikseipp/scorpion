@@ -5,6 +5,8 @@
 
 namespace cost_saturation {
 class SaturatedCostPartitioningOnlineHeuristic : public CostPartitioningHeuristic {
+    int compute_heuristic(const State &state);
+
 public:
     explicit SaturatedCostPartitioningOnlineHeuristic(const options::Options &opts);
 };
