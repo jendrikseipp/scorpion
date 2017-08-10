@@ -1,7 +1,6 @@
 #include "saturated_cost_partitioning_online_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -12,12 +11,13 @@ using namespace std;
 
 namespace cost_saturation {
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(const Options &opts)
-    : CostPartitioningHeuristic(opts) {
+    : CostPartitioningHeuristic(opts),
+      cp_generator(opts.get<shared_ptr<CostPartitioningGenerator>>("orders")) {
     const bool verbose = debug;
 
     vector<int> costs = get_operator_costs(task_proxy);
     h_values_by_order =
-        opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
+        cp_generator->get_cost_partitionings(
             task_proxy, abstractions, costs,
             [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
             return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
