@@ -26,7 +26,7 @@ protected:
     mutable std::vector<int> num_best_order;
 
     int compute_max_h_with_statistics(const std::vector<int> &local_state_ids) const;
-    int compute_heuristic(const State &state);
+    virtual int compute_heuristic(const State &state);
     virtual int compute_heuristic(const GlobalState &global_state) override;
 
 public:

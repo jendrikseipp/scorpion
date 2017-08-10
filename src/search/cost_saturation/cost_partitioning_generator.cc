@@ -130,7 +130,7 @@ void add_common_cp_generator_options_to_parser(OptionParser &parser) {
         "max_orders",
         "maximum number of abstraction orders",
         "infinity",
-        Bounds("1", "infinity"));
+        Bounds("0", "infinity"));
     parser.add_option<double>(
         "max_time",
         "maximum time for finding cost partitionings",

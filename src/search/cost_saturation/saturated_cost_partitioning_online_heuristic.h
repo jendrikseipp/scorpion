@@ -5,11 +5,14 @@
 #include "cost_partitioning_heuristic.h"
 
 #include <memory>
+#include <vector>
 
 namespace cost_saturation {
 class SaturatedCostPartitioningOnlineHeuristic : public CostPartitioningHeuristic {
     std::shared_ptr<CostPartitioningGenerator> cp_generator;
-    int compute_heuristic(const State &state);
+    const std::vector<int> costs;
+
+    virtual int compute_heuristic(const State &state) override;
 
 public:
     explicit SaturatedCostPartitioningOnlineHeuristic(const options::Options &opts);

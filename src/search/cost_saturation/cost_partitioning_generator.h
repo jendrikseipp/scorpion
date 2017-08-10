@@ -44,13 +44,6 @@ protected:
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs);
 
-    virtual CostPartitioning get_next_cost_partitioning(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs,
-        const State &state,
-        CPFunction cp_function) = 0;
-
     virtual bool has_next_cost_partitioning() const {
         return true;
     }
@@ -58,6 +51,13 @@ protected:
 public:
     CostPartitioningGenerator(const options::Options &opts);
     virtual ~CostPartitioningGenerator();
+
+    virtual CostPartitioning get_next_cost_partitioning(
+        const TaskProxy &task_proxy,
+        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+        const std::vector<int> &costs,
+        const State &state,
+        CPFunction cp_function) = 0;
 
     virtual CostPartitionings get_cost_partitionings(
         const TaskProxy &task_proxy,
