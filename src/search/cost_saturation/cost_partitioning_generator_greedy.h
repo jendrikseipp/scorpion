@@ -8,10 +8,16 @@ class CountdownTimer;
 }
 
 namespace cost_saturation {
+enum class ScoringFunction {
+    MAX_HEURISTIC,
+    MIN_COSTS,
+    MAX_HEURISTIC_PER_COSTS
+};
+
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool use_random_initial_order;
     const bool reverse_initial_order;
-    const bool use_ratio;
+    const ScoringFunction scoring_function;
     const bool use_negative_costs;
     const bool queue_zero_ratios;
     const bool dynamic;
