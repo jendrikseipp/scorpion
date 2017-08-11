@@ -16,7 +16,6 @@ enum class ScoringFunction {
 };
 
 class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
-    const bool use_random_initial_order;
     const bool reverse_initial_order;
     const ScoringFunction scoring_function;
     const bool use_negative_costs;

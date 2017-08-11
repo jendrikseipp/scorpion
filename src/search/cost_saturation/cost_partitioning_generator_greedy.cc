@@ -22,7 +22,6 @@ using namespace std;
 namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(opts),
-      use_random_initial_order(opts.get<bool>("use_random_initial_order")),
       reverse_initial_order(opts.get<bool>("reverse_initial_order")),
       scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
@@ -32,10 +31,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
-    if (dynamic && use_random_initial_order) {
-        cerr << "ambiguous initial order type" << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
-    }
 }
 
 static int compute_used_costs(const vector<int> &saturated_costs, bool use_negative_costs) {
@@ -293,7 +288,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
     utils::Timer greedy_timer;
     vector<int> order;
-    if (use_random_initial_order || scoring_function == ScoringFunction::RANDOM) {
+    if (scoring_function == ScoringFunction::RANDOM) {
         rng->shuffle(random_order);
         order = random_order;
     } else if (dynamic) {
@@ -332,10 +327,6 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
 
 static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser) {
-    parser.add_option<bool>(
-        "use_random_initial_order",
-        "use random instead of greedy order",
-        "false");
     parser.add_option<bool>(
         "reverse_initial_order",
         "invert initial order",
