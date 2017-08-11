@@ -293,7 +293,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
     utils::Timer greedy_timer;
     vector<int> order;
-    if (use_random_initial_order) {
+    if (use_random_initial_order || scoring_function == ScoringFunction::RANDOM) {
         rng->shuffle(random_order);
         order = random_order;
     } else if (dynamic) {
@@ -341,6 +341,7 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "invert initial order",
         "false");
     vector<string> scoring_functions;
+    scoring_functions.push_back("RANDOM");
     scoring_functions.push_back("MAX_HEURISTIC");
     scoring_functions.push_back("MIN_COSTS");
     scoring_functions.push_back("MAX_HEURISTIC_PER_COSTS");

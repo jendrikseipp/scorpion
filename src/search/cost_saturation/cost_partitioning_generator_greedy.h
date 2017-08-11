@@ -9,6 +9,7 @@ class CountdownTimer;
 
 namespace cost_saturation {
 enum class ScoringFunction {
+    RANDOM,
     MAX_HEURISTIC,
     MIN_COSTS,
     MAX_HEURISTIC_PER_COSTS
