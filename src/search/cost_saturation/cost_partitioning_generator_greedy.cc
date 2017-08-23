@@ -326,11 +326,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 }
 
 
-static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser) {
-    parser.add_option<bool>(
-        "reverse_initial_order",
-        "invert initial order",
-        "false");
+void add_scoring_function_to_parser(OptionParser &parser) {
     vector<string> scoring_functions;
     scoring_functions.push_back("RANDOM");
     scoring_functions.push_back("MAX_HEURISTIC");
@@ -338,6 +334,14 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     scoring_functions.push_back("MAX_HEURISTIC_PER_COSTS");
     parser.add_enum_option(
         "scoring_function", scoring_functions, "scoring function", "MAX_HEURISTIC_PER_COSTS");
+}
+
+static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser) {
+    parser.add_option<bool>(
+        "reverse_initial_order",
+        "invert initial order",
+        "false");
+    add_scoring_function_to_parser(parser);
     parser.add_option<bool>(
         "use_negative_costs",
         "account for negative costs when computing used costs",

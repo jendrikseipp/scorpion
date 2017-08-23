@@ -68,6 +68,8 @@ public:
         const State &state,
         CPFunction cp_function) override;
 };
+
+void add_scoring_function_to_parser(options::OptionParser &parser);
 }
 
 #endif
