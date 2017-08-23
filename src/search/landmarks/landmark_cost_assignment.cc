@@ -3,6 +3,7 @@
 #include "landmark_graph.h"
 #include "util.h"
 
+#include "../cost_saturation/cost_partitioning_generator_greedy.h"
 #include "../utils/collections.h"
 #include "../utils/language.h"
 #include "../utils/logging.h"
@@ -51,11 +52,13 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
     bool use_action_landmarks,
     bool reuse_costs,
     bool greedy,
+    enum cost_saturation::ScoringFunction scoring_function,
     const shared_ptr<utils::RandomNumberGenerator> &rng)
     : LandmarkCostAssignment(operator_costs, graph),
       use_action_landmarks(use_action_landmarks),
       reuse_costs(reuse_costs),
       greedy(greedy),
+      scoring_function(scoring_function),
       rng(rng),
       original_costs(convert_to_double(operator_costs)) {
 }
@@ -128,7 +131,11 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
         // UOCP + ZOCP + SCP
         remaining_costs = original_costs;
         remaining_lms_per_op = achieved_lms_by_op;
-        rng->shuffle(relevant_lms);
+        if (scoring_function == cost_saturation::ScoringFunction::RANDOM) {
+            rng->shuffle(relevant_lms);
+        } else {
+            ABORT("invalid scoring function");
+        }
 
         for (const LandmarkNode *node : relevant_lms) {
             int lmn_status = node->get_status();
