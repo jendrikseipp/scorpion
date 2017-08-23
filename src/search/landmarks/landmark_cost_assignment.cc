@@ -51,13 +51,11 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
     bool use_action_landmarks,
     bool reuse_costs,
     bool greedy,
-    int num_orders,
     const shared_ptr<utils::RandomNumberGenerator> &rng)
     : LandmarkCostAssignment(operator_costs, graph),
       use_action_landmarks(use_action_landmarks),
       reuse_costs(reuse_costs),
       greedy(greedy),
-      num_orders(num_orders),
       rng(rng),
       original_costs(convert_to_double(operator_costs)) {
 }
@@ -128,43 +126,37 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
        count shared costs for the remaining landmarks. */
     if (reuse_costs || greedy) {
         // UOCP + ZOCP + SCP
-        double max_order_h = 0;
-        for (int order = 0; order < num_orders; ++order) {
-            remaining_costs = original_costs;
-            remaining_lms_per_op = achieved_lms_by_op;
-            rng->shuffle(relevant_lms);
+        remaining_costs = original_costs;
+        remaining_lms_per_op = achieved_lms_by_op;
+        rng->shuffle(relevant_lms);
 
-            double order_h = 0;
-            for (const LandmarkNode *node : relevant_lms) {
-                int lmn_status = node->get_status();
-                const set<int> &achievers = get_achievers(lmn_status, *node);
-                double min_cost = numeric_limits<double>::max();
-                for (int op_id : achievers) {
-                    assert(utils::in_bounds(op_id, remaining_lms_per_op));
-                    int num_achieved = remaining_lms_per_op[op_id];
-                    assert(num_achieved >= 1);
-                    assert(utils::in_bounds(op_id, remaining_costs));
-                    double cost = greedy ? remaining_costs[op_id] :
-                                  remaining_costs[op_id] / num_achieved;
-                    min_cost = min(min_cost, cost);
-                }
-                order_h += min_cost;
-                for (int op_id : achievers) {
-                    assert(utils::in_bounds(op_id, remaining_costs));
-                    double &remaining_cost = remaining_costs[op_id];
-                    assert(remaining_cost >= 0);
-                    if (reuse_costs) {
-                        remaining_cost -= min_cost;
-                    } else {
-                        remaining_costs[op_id] = 0;
-                    }
-                    assert(remaining_cost >= 0);
-                    --remaining_lms_per_op[op_id];
-                }
+        for (const LandmarkNode *node : relevant_lms) {
+            int lmn_status = node->get_status();
+            const set<int> &achievers = get_achievers(lmn_status, *node);
+            double min_cost = numeric_limits<double>::max();
+            for (int op_id : achievers) {
+                assert(utils::in_bounds(op_id, remaining_lms_per_op));
+                int num_achieved = remaining_lms_per_op[op_id];
+                assert(num_achieved >= 1);
+                assert(utils::in_bounds(op_id, remaining_costs));
+                double cost = greedy ? remaining_costs[op_id] :
+                              remaining_costs[op_id] / num_achieved;
+                min_cost = min(min_cost, cost);
             }
-            max_order_h = max(max_order_h, order_h);
+            h += min_cost;
+            for (int op_id : achievers) {
+                assert(utils::in_bounds(op_id, remaining_costs));
+                double &remaining_cost = remaining_costs[op_id];
+                assert(remaining_cost >= 0);
+                if (reuse_costs) {
+                    remaining_cost -= min_cost;
+                } else {
+                    remaining_costs[op_id] = 0;
+                }
+                assert(remaining_cost >= 0);
+                --remaining_lms_per_op[op_id];
+            }
         }
-        h += max_order_h;
     } else {
         // UCP
         for (const LandmarkNode *node : relevant_lms) {
