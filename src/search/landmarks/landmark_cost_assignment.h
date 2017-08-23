@@ -49,6 +49,10 @@ class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     std::vector<double> remaining_costs;
     std::vector<int> remaining_lms_per_op;
 
+void order_landmarks(
+    std::vector<const LandmarkNode *> landmarks,
+    cost_saturation::ScoringFunction scoring_function);
+
 public:
     LandmarkUniformSharedCostAssignment(const std::vector<int> &operator_costs,
                                         const LandmarkGraph &graph,
