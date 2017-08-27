@@ -29,21 +29,26 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
 }
 
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &state) {
-    if (num_evaluated_states % interval == 0) {
-        const bool verbose = debug;
-        h_values_by_order.push_back(
-            cp_generator->get_next_cost_partitioning(
-                task_proxy, abstractions, costs, state,
-                [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
-                return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
-            }));
-        num_best_order.push_back(0);
-    }
     ++num_evaluated_states;
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
     int max_h = compute_max_h_with_statistics(local_state_ids);
     if (max_h == INF) {
         return DEAD_END;
+    }
+    if (num_evaluated_states % interval == 0) {
+        const bool verbose = debug;
+        CostPartitioning cost_partitioning = cp_generator->get_next_cost_partitioning(
+            task_proxy, abstractions, costs, state,
+            [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
+            return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
+        });
+        int single_h = compute_sum_h(local_state_ids, cost_partitioning);
+        assert(single_h != INF);
+        if (single_h > max_h) {
+            h_values_by_order.push_back(cost_partitioning);
+            num_best_order.push_back(0);
+            return single_h;
+        }
     }
     return max_h;
 }
@@ -58,7 +63,7 @@ static Heuristic *_parse(OptionParser &parser) {
 
     parser.add_option<int>(
         "interval",
-        "compute and store SCP for every interval-th state",
+        "compute SCP for every interval-th state, store if diverse",
         "1000",
         Bounds("1", "infinity"));
 
