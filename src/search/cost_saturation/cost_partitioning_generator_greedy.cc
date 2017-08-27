@@ -22,9 +22,8 @@ using namespace std;
 namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(opts),
-      use_random_initial_order(opts.get<bool>("use_random_initial_order")),
       reverse_initial_order(opts.get<bool>("reverse_initial_order")),
-      use_ratio(opts.get<bool>("use_ratio")),
+      scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
@@ -32,10 +31,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       max_optimization_time(opts.get<double>("max_optimization_time")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
-    if (dynamic && use_random_initial_order) {
-        cerr << "ambiguous initial order type" << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
-    }
 }
 
 static int compute_used_costs(const vector<int> &saturated_costs, bool use_negative_costs) {
@@ -49,7 +44,8 @@ static int compute_used_costs(const vector<int> &saturated_costs, bool use_negat
     return sum;
 }
 
-static double rate_heuristic(int h, int used_costs, bool use_ratio, bool use_negative_costs) {
+static double rate_heuristic(
+    int h, int used_costs, ScoringFunction scoring_function, bool use_negative_costs) {
     assert(h >= 0);
     assert(used_costs != INF);
     assert(used_costs != -INF);
@@ -58,10 +54,14 @@ static double rate_heuristic(int h, int used_costs, bool use_ratio, bool use_neg
         used_costs = 0;
     }
     assert(used_costs >= 0);
-    if (use_ratio) {
+    if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
+        return h;
+    } else if (scoring_function == ScoringFunction::MIN_COSTS) {
+        return 1 / (used_costs + 1.0);
+    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
         return h / (used_costs + 1.0);
     } else {
-        return h;
+        ABORT("Invalid scoring_function");
     }
 }
 
@@ -69,7 +69,7 @@ static vector<int> compute_static_greedy_order_for_sample(
     const vector<int> &local_state_ids,
     const vector<vector<int>> h_values_by_abstraction,
     const vector<double> used_costs_by_abstraction,
-    bool use_ratio,
+    ScoringFunction scoring_function,
     bool use_negative_costs,
     bool verbose) {
     assert(local_state_ids.size() == h_values_by_abstraction.size());
@@ -87,7 +87,7 @@ static vector<int> compute_static_greedy_order_for_sample(
         h_values.push_back(h);
         assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
         int used_costs = used_costs_by_abstraction[abstraction_id];
-        ratios.push_back(rate_heuristic(h, used_costs, use_ratio, use_negative_costs));
+        ratios.push_back(rate_heuristic(h, used_costs, scoring_function, use_negative_costs));
     }
 
     if (verbose) {
@@ -110,7 +110,7 @@ vector<int> compute_greedy_dynamic_order_for_sample(
     const vector<int> &local_state_ids,
     vector<int> remaining_costs,
     bool queue_zero_ratios,
-    bool use_ratio,
+    ScoringFunction scoring_function,
     bool use_negative_costs) {
     assert(abstractions.size() == local_state_ids.size());
 
@@ -138,7 +138,7 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             assert(utils::in_bounds(local_state_id, h_values));
             int h = h_values[local_state_id];
             int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
-            double ratio = rate_heuristic(h, used_costs, use_ratio, use_negative_costs);
+            double ratio = rate_heuristic(h, used_costs, scoring_function, use_negative_costs);
             if (queue_zero_ratios && h == 0) {
                 abstractions_with_zero_h.push_back(abstraction_id);
                 it = remaining_abstractions.erase(it);
@@ -288,16 +288,17 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
     utils::Timer greedy_timer;
     vector<int> order;
-    if (use_random_initial_order) {
+    if (scoring_function == ScoringFunction::RANDOM) {
         rng->shuffle(random_order);
         order = random_order;
     } else if (dynamic) {
         order = compute_greedy_dynamic_order_for_sample(
-            abstractions, local_state_ids, costs, queue_zero_ratios, use_ratio, use_negative_costs);
+            abstractions, local_state_ids, costs,
+            queue_zero_ratios, scoring_function, use_negative_costs);
     } else {
         order = compute_static_greedy_order_for_sample(
             local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
-            use_ratio, use_negative_costs, verbose);
+            scoring_function, use_negative_costs, verbose);
     }
 
     if (reverse_initial_order) {
@@ -325,19 +326,22 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 }
 
 
+void add_scoring_function_to_parser(OptionParser &parser) {
+    vector<string> scoring_functions;
+    scoring_functions.push_back("RANDOM");
+    scoring_functions.push_back("MAX_HEURISTIC");
+    scoring_functions.push_back("MIN_COSTS");
+    scoring_functions.push_back("MAX_HEURISTIC_PER_COSTS");
+    parser.add_enum_option(
+        "scoring_function", scoring_functions, "scoring function", "MAX_HEURISTIC_PER_COSTS");
+}
+
 static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser) {
-    parser.add_option<bool>(
-        "use_random_initial_order",
-        "use random instead of greedy order",
-        "false");
     parser.add_option<bool>(
         "reverse_initial_order",
         "invert initial order",
         "false");
-    parser.add_option<bool>(
-        "use_ratio",
-        "use h(s)/costs instead of h(s) when rating heuristic h",
-        "true");
+    add_scoring_function_to_parser(parser);
     parser.add_option<bool>(
         "use_negative_costs",
         "account for negative costs when computing used costs",

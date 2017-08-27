@@ -8,6 +8,10 @@
 
 class OperatorsProxy;
 
+namespace cost_saturation {
+enum class ScoringFunction;
+}
+
 namespace utils {
 class RandomNumberGenerator;
 }
@@ -36,7 +40,7 @@ class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     const bool use_action_landmarks;
     const bool reuse_costs;
     const bool greedy;
-    const int num_orders;
+    const cost_saturation::ScoringFunction scoring_function;
 
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
@@ -45,13 +49,17 @@ class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     std::vector<double> remaining_costs;
     std::vector<int> remaining_lms_per_op;
 
+void order_landmarks(
+    std::vector<const LandmarkNode *> landmarks,
+    cost_saturation::ScoringFunction scoring_function);
+
 public:
     LandmarkUniformSharedCostAssignment(const std::vector<int> &operator_costs,
                                         const LandmarkGraph &graph,
                                         bool use_action_landmarks,
                                         bool reuse_costs,
                                         bool greedy,
-                                        int num_orders,
+                                        enum cost_saturation::ScoringFunction,
                                         const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
     virtual double cost_sharing_h_value() override;

@@ -8,11 +8,10 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../successor_generator.h"
-
-#include "../lp/lp_solver.h"
-
 #include "../task_tools.h"
 
+#include "../cost_saturation/cost_partitioning_generator_greedy.h"
+#include "../lp/lp_solver.h"
 #include "../utils/memory.h"
 #include "../utils/rng_options.h"
 #include "../utils/system.h"
@@ -72,7 +71,7 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
                 opts.get<bool>("alm"),
                 opts.get<bool>("reuse_costs"),
                 opts.get<bool>("greedy"),
-                opts.get<int>("num_orders"),
+                static_cast<cost_saturation::ScoringFunction>(opts.get_enum("scoring_function")),
                 utils::parse_rng_from_options(opts));
         }
     } else {
@@ -340,11 +339,7 @@ static Heuristic *_parse(OptionParser &parser) {
     parser.add_option<bool>("alm", "use action landmarks", "true");
     parser.add_option<bool>("reuse_costs", "reuse unused costs", "false");
     parser.add_option<bool>("greedy", "assign costs greedily", "false");
-    parser.add_option<int>(
-        "num_orders",
-        "number of cost partitioning orders",
-        "1",
-        Bounds("1", "infinity"));
+    cost_saturation::add_scoring_function_to_parser(parser);
     utils::add_rng_options(parser);
     lp::add_lp_solver_option_to_parser(parser);
     Heuristic::add_options_to_parser(parser);
