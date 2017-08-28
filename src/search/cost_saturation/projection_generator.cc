@@ -30,7 +30,6 @@ Abstractions ProjectionGenerator::generate_abstractions(
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_generator->generate(task).get_patterns();
     cout << "Number of patterns: " << patterns->size() << endl;
-    cout << "Patterns: " << *patterns << endl;
 
     log << "Build projections" << endl;
     Abstractions abstractions;
