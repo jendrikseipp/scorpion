@@ -27,7 +27,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
 
     // Unpartitioned h values.
     std::vector<std::vector<int>> h_values_by_abstraction;
-    std::vector<double> used_costs_by_abstraction;
+    std::vector<int> used_costs_by_abstraction;
 
     std::vector<int> random_order;
 
@@ -56,7 +56,7 @@ protected:
     virtual void initialize(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs);
+        const std::vector<int> &costs) override;
 
 public:
     explicit CostPartitioningGeneratorGreedy(const options::Options &opts);

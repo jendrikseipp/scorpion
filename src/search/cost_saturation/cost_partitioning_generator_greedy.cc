@@ -67,8 +67,8 @@ static double rate_heuristic(
 
 static vector<int> compute_static_greedy_order_for_sample(
     const vector<int> &local_state_ids,
-    const vector<vector<int>> h_values_by_abstraction,
-    const vector<double> used_costs_by_abstraction,
+    const vector<vector<int>> &h_values_by_abstraction,
+    const vector<int> &used_costs_by_abstraction,
     ScoringFunction scoring_function,
     bool use_negative_costs,
     bool verbose) {
