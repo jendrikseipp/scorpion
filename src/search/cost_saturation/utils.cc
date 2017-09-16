@@ -10,8 +10,8 @@
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 
-#include <algorithm>
 #include <cassert>
+#include <numeric>
 
 using namespace std;
 
