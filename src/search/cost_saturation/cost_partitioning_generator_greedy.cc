@@ -67,8 +67,8 @@ static double rate_heuristic(
 
 static vector<int> compute_static_greedy_order_for_sample(
     const vector<int> &local_state_ids,
-    const vector<vector<int>> h_values_by_abstraction,
-    const vector<double> used_costs_by_abstraction,
+    const vector<vector<int>> &h_values_by_abstraction,
+    const vector<int> &used_costs_by_abstraction,
     ScoringFunction scoring_function,
     bool use_negative_costs,
     bool verbose) {
@@ -182,9 +182,6 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
     int best_i = -1;
     int best_j = -1;
     for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
-        if (verbose) {
-            utils::Log() << "Check position " << i << endl;
-        }
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
 
