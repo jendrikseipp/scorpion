@@ -12,8 +12,10 @@ class SaturatedCostPartitioningOnlineHeuristic : public CostPartitioningHeuristi
     const std::shared_ptr<CostPartitioningGenerator> cp_generator;
     const int interval;
     const std::vector<int> costs;
+    std::vector<std::vector<bool>> seen_facts;
     int num_evaluated_states;
 
+    bool should_compute_scp(const State &state);
     virtual int compute_heuristic(const State &state) override;
 
 public:

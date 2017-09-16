@@ -18,6 +18,11 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       num_evaluated_states(0) {
     const bool verbose = debug;
 
+    seen_facts.resize(task_proxy.get_variables().size());
+    for (VariableProxy var : task_proxy.get_variables()) {
+        seen_facts[var.get_id()].resize(var.get_domain_size(), false);
+    }
+
     vector<int> costs = get_operator_costs(task_proxy);
     h_values_by_order =
         cp_generator->get_cost_partitionings(
@@ -28,6 +33,27 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     num_best_order.resize(h_values_by_order.size(), 0);
 }
 
+bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
+    if (interval > 0) {
+        return num_evaluated_states % interval == 0;
+    } else if (interval == -1 ) {
+        bool novel = false;
+        for (FactProxy fact_proxy : state) {
+            FactPair fact = fact_proxy.get_pair();
+            if (!seen_facts[fact.var][fact.value]) {
+                novel = true;
+                seen_facts[fact.var][fact.value] = true;
+            }
+        }
+        if (novel) {
+            cout << "novel state" << endl;
+        }
+        return novel;
+    } else {
+        ABORT("invalid value for interval");
+    }
+}
+
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &state) {
     ++num_evaluated_states;
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
@@ -35,7 +61,8 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &sta
     if (max_h == INF) {
         return DEAD_END;
     }
-    if (num_evaluated_states % interval == 0) {
+
+    if (should_compute_scp(state)) {
         const bool verbose = debug;
         CostPartitioning cost_partitioning = cp_generator->get_next_cost_partitioning(
             task_proxy, abstractions, costs, state,
@@ -65,7 +92,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "interval",
         "compute SCP for every interval-th state, store if diverse",
         "1000",
-        Bounds("1", "infinity"));
+        Bounds("-1", "infinity"));
 
     Options opts = parser.parse();
     if (parser.help_mode())
