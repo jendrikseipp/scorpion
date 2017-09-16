@@ -14,12 +14,15 @@ class SaturatedCostPartitioningOnlineHeuristic : public CostPartitioningHeuristi
     const std::vector<int> costs;
     std::vector<std::vector<bool>> seen_facts;
     int num_evaluated_states;
+    int num_scps_computed;
 
     bool should_compute_scp(const State &state);
     virtual int compute_heuristic(const State &state) override;
 
 public:
     explicit SaturatedCostPartitioningOnlineHeuristic(const options::Options &opts);
+
+    virtual void print_statistics() const override;
 };
 }
 

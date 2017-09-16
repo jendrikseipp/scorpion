@@ -15,7 +15,8 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       cp_generator(opts.get<shared_ptr<CostPartitioningGenerator>>("orders")),
       interval(opts.get<int>("interval")),
       costs(get_operator_costs(task_proxy)),
-      num_evaluated_states(0) {
+      num_evaluated_states(0),
+      num_scps_computed(0) {
     const bool verbose = debug;
 
     seen_facts.resize(task_proxy.get_variables().size());
@@ -45,9 +46,6 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &s
                 seen_facts[fact.var][fact.value] = true;
             }
         }
-        if (novel) {
-            cout << "novel state" << endl;
-        }
         return novel;
     } else {
         ABORT("invalid value for interval");
@@ -69,6 +67,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &sta
             [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
             return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
         });
+        ++num_scps_computed;
         int single_h = compute_sum_h(local_state_ids, cost_partitioning);
         assert(single_h != INF);
         if (single_h > max_h) {
@@ -78,6 +77,11 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &sta
         }
     }
     return max_h;
+}
+
+void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
+    CostPartitioningHeuristic::print_statistics();
+    cout << "Computed SCPs: " << num_scps_computed << endl;
 }
 
 
