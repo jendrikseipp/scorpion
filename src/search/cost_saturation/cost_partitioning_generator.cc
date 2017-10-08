@@ -27,10 +27,10 @@ CostPartitioning compute_saturated_cost_partitioning(
     const vector<int> &costs,
     bool debug) {
     assert(abstractions.size() == order.size());
-    vector<int> remaining_costs = costs;
     vector<vector<int>> h_values_by_abstraction(abstractions.size());
+    vector<int> remaining_costs = costs;
     for (int pos : order) {
-        Abstraction &abstraction = *abstractions[pos];
+        const Abstraction &abstraction = *abstractions[pos];
         auto pair = abstraction.compute_goal_distances_and_saturated_costs(
             remaining_costs);
         vector<int> &h_values = pair.first;

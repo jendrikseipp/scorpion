@@ -235,7 +235,7 @@ vector<int> Projection::compute_distances(
             continue;
         }
 
-        // regress abstract_state
+        // Regress abstract state.
         applicable_operators.clear();
         match_tree->get_applicable_operators(state_index, applicable_operators);
         for (const pdbs::AbstractOperator *op : applicable_operators) {
