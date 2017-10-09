@@ -50,6 +50,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
         const std::vector<int> &costs,
         const std::vector<int> &local_state_ids,
         std::vector<int> &incumbent_order,
+        int incumbent_h_value,
         bool verbose) const;
 
 protected:

@@ -221,10 +221,8 @@ void CostPartitioningGeneratorGreedy::do_hill_climbing(
     const vector<int> &costs,
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
+    int incumbent_h_value,
     bool verbose) const {
-    vector<vector<int>> h_values_by_abstraction = cp_function(
-        abstractions, incumbent_order, costs);
-    int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
     if (verbose) {
         utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
     }
@@ -298,8 +296,11 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
     if (max_optimization_time > 0) {
         utils::CountdownTimer timer(max_optimization_time);
+        vector<vector<int>> h_values_by_abstraction = cp_function(
+            abstractions, order, costs);
+        int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
         do_hill_climbing(
-            cp_function, timer, abstractions, costs, local_state_ids, order, verbose);
+            cp_function, timer, abstractions, costs, local_state_ids, order, incumbent_h_value, verbose);
         if (verbose) {
             utils::Log() << "Time for optimizing order: " << timer << endl;
             utils::Log() << "Time for optimizing order has expired: " << timer.is_expired() << endl;
