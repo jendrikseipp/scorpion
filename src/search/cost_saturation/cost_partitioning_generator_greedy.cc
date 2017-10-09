@@ -161,7 +161,7 @@ static void log_better_order(const vector<int> &order, int h, int i, int j) {
     utils::Log() << "Found improving order with h=" << h << ": " << order << endl;
 }
 
-bool CostPartitioningGeneratorGreedy::search_improving_successor(
+static bool search_improving_successor(
     CPFunction cp_function,
     const utils::CountdownTimer &timer,
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -169,7 +169,8 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
     int &incumbent_h_value,
-    bool verbose) const {
+    bool steepest_ascent,
+    bool verbose) {
     int num_abstractions = abstractions.size();
     int best_i = -1;
     int best_j = -1;
@@ -214,7 +215,7 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
 }
 
 
-void CostPartitioningGeneratorGreedy::do_hill_climbing(
+static void do_hill_climbing(
     CPFunction cp_function,
     const utils::CountdownTimer &timer,
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -222,14 +223,15 @@ void CostPartitioningGeneratorGreedy::do_hill_climbing(
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
     int incumbent_h_value,
-    bool verbose) const {
+    bool steepest_ascent,
+    bool verbose) {
     if (verbose) {
         utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
     }
     while (!timer.is_expired()) {
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
-            incumbent_order, incumbent_h_value, verbose);
+            incumbent_order, incumbent_h_value, steepest_ascent, verbose);
         if (!success) {
             break;
         }
@@ -300,7 +302,8 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
             abstractions, order, costs);
         int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
         do_hill_climbing(
-            cp_function, timer, abstractions, costs, local_state_ids, order, incumbent_h_value, verbose);
+            cp_function, timer, abstractions, costs, local_state_ids, order,
+            incumbent_h_value, steepest_ascent, verbose);
         if (verbose) {
             utils::Log() << "Time for optimizing order: " << timer << endl;
             utils::Log() << "Time for optimizing order has expired: " << timer.is_expired() << endl;
