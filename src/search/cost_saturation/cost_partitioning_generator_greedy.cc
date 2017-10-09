@@ -168,6 +168,7 @@ static bool search_improving_successor(
     const vector<int> &costs,
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
+    CostPartitioning &incumbent_cp,
     int &incumbent_h_value,
     bool steepest_ascent,
     bool verbose) {
@@ -178,11 +179,12 @@ static bool search_improving_successor(
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
 
-            vector<vector<int>> h_values_by_abstraction =
+            CostPartitioning neighbor_cp =
                 cp_function(abstractions, incumbent_order, costs);
 
-            int h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+            int h = compute_sum_h(local_state_ids, neighbor_cp);
             if (h > incumbent_h_value) {
+                incumbent_cp = move(neighbor_cp);
                 incumbent_h_value = h;
                 best_i = i;
                 best_j = j;
@@ -222,6 +224,7 @@ static void do_hill_climbing(
     const vector<int> &costs,
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
+    CostPartitioning &incumbent_cp,
     int incumbent_h_value,
     bool steepest_ascent,
     bool verbose) {
@@ -231,7 +234,7 @@ static void do_hill_climbing(
     while (!timer.is_expired()) {
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
-            incumbent_order, incumbent_h_value, steepest_ascent, verbose);
+            incumbent_order, incumbent_cp, incumbent_h_value, steepest_ascent, verbose);
         if (!success) {
             break;
         }
@@ -296,22 +299,22 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         utils::Log() << "Time for computing greedy order: " << greedy_timer << endl;
     }
 
+    ++num_returned_orders;
     if (max_optimization_time > 0) {
         utils::CountdownTimer timer(max_optimization_time);
-        vector<vector<int>> h_values_by_abstraction = cp_function(
-            abstractions, order, costs);
-        int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
+        CostPartitioning incumbent_cp = cp_function(abstractions, order, costs);
+        int incumbent_h_value = compute_sum_h(local_state_ids, incumbent_cp);
         do_hill_climbing(
             cp_function, timer, abstractions, costs, local_state_ids, order,
-            incumbent_h_value, steepest_ascent, verbose);
+            incumbent_cp, incumbent_h_value, steepest_ascent, verbose);
         if (verbose) {
             utils::Log() << "Time for optimizing order: " << timer << endl;
             utils::Log() << "Time for optimizing order has expired: " << timer.is_expired() << endl;
         }
+        return incumbent_cp;
+    } else {
+        return cp_function(abstractions, order, costs);
     }
-
-    ++num_returned_orders;
-    return cp_function(abstractions, order, costs);
 }
 
 
