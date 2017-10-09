@@ -70,8 +70,7 @@ static vector<int> compute_static_greedy_order_for_sample(
     const vector<vector<int>> &h_values_by_abstraction,
     const vector<int> &used_costs_by_abstraction,
     ScoringFunction scoring_function,
-    bool use_negative_costs,
-    bool verbose) {
+    bool use_negative_costs) {
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
 
@@ -88,13 +87,6 @@ static vector<int> compute_static_greedy_order_for_sample(
         assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
         int used_costs = used_costs_by_abstraction[abstraction_id];
         ratios.push_back(rate_heuristic(h, used_costs, scoring_function, use_negative_costs));
-    }
-
-    if (verbose) {
-        cout << "h-values: ";
-        print_indexed_vector(h_values);
-        cout << "Ratios: ";
-        print_indexed_vector(ratios);
     }
 
     vector<int> order = get_default_order(num_abstractions);
@@ -261,8 +253,6 @@ void CostPartitioningGeneratorGreedy::initialize(
         int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
         used_costs_by_abstraction.push_back(used_costs);
     }
-    cout << "Used costs by abstraction: ";
-    print_indexed_vector(used_costs_by_abstraction);
 }
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
@@ -295,7 +285,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     } else {
         order = compute_static_greedy_order_for_sample(
             local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
-            scoring_function, use_negative_costs, verbose);
+            scoring_function, use_negative_costs);
     }
 
     if (reverse_initial_order) {
@@ -303,8 +293,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     }
 
     if (verbose) {
-        cout << "Time for computing greedy order: " << greedy_timer << endl;
-        utils::Log() << "Greedy order: " << order << endl;
+        utils::Log() << "Time for computing greedy order: " << greedy_timer << endl;
     }
 
     if (max_optimization_time > 0) {
@@ -312,9 +301,8 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
         do_hill_climbing(
             cp_function, timer, abstractions, costs, local_state_ids, order, verbose);
         if (verbose) {
-            cout << "Time for optimizing order: " << timer << endl;
-            cout << "Time for optimizing order has expired: " << timer.is_expired() << endl;
-            cout << "Optimized order: " << order << endl;
+            utils::Log() << "Time for optimizing order: " << timer << endl;
+            utils::Log() << "Time for optimizing order has expired: " << timer.is_expired() << endl;
         }
     }
 
