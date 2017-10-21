@@ -70,8 +70,7 @@ static vector<int> compute_static_greedy_order_for_sample(
     const vector<vector<int>> &h_values_by_abstraction,
     const vector<int> &used_costs_by_abstraction,
     ScoringFunction scoring_function,
-    bool use_negative_costs,
-    bool verbose) {
+    bool use_negative_costs) {
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
 
@@ -88,13 +87,6 @@ static vector<int> compute_static_greedy_order_for_sample(
         assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
         int used_costs = used_costs_by_abstraction[abstraction_id];
         ratios.push_back(rate_heuristic(h, used_costs, scoring_function, use_negative_costs));
-    }
-
-    if (verbose) {
-        cout << "h-values: ";
-        print_indexed_vector(h_values);
-        cout << "Ratios: ";
-        print_indexed_vector(ratios);
     }
 
     vector<int> order = get_default_order(num_abstractions);
@@ -169,15 +161,17 @@ static void log_better_order(const vector<int> &order, int h, int i, int j) {
     utils::Log() << "Found improving order with h=" << h << ": " << order << endl;
 }
 
-bool CostPartitioningGeneratorGreedy::search_improving_successor(
+static bool search_improving_successor(
     CPFunction cp_function,
     const utils::CountdownTimer &timer,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
+    CostPartitioning &incumbent_cp,
     int &incumbent_h_value,
-    bool verbose) const {
+    bool steepest_ascent,
+    bool verbose) {
     int num_abstractions = abstractions.size();
     int best_i = -1;
     int best_j = -1;
@@ -185,11 +179,12 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
 
-            vector<vector<int>> h_values_by_abstraction =
+            CostPartitioning neighbor_cp =
                 cp_function(abstractions, incumbent_order, costs);
 
-            int h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+            int h = compute_sum_h(local_state_ids, neighbor_cp);
             if (h > incumbent_h_value) {
+                incumbent_cp = move(neighbor_cp);
                 incumbent_h_value = h;
                 best_i = i;
                 best_j = j;
@@ -222,24 +217,24 @@ bool CostPartitioningGeneratorGreedy::search_improving_successor(
 }
 
 
-void CostPartitioningGeneratorGreedy::do_hill_climbing(
+static void do_hill_climbing(
     CPFunction cp_function,
     const utils::CountdownTimer &timer,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
     const vector<int> &local_state_ids,
     vector<int> &incumbent_order,
-    bool verbose) const {
-    vector<vector<int>> h_values_by_abstraction = cp_function(
-        abstractions, incumbent_order, costs);
-    int incumbent_h_value = compute_sum_h(local_state_ids, h_values_by_abstraction);
+    CostPartitioning &incumbent_cp,
+    int incumbent_h_value,
+    bool steepest_ascent,
+    bool verbose) {
     if (verbose) {
         utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
     }
     while (!timer.is_expired()) {
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
-            incumbent_order, incumbent_h_value, verbose);
+            incumbent_order, incumbent_cp, incumbent_h_value, steepest_ascent, verbose);
         if (!success) {
             break;
         }
@@ -261,8 +256,6 @@ void CostPartitioningGeneratorGreedy::initialize(
         int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
         used_costs_by_abstraction.push_back(used_costs);
     }
-    cout << "Used costs by abstraction: ";
-    print_indexed_vector(used_costs_by_abstraction);
 }
 
 CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
@@ -295,7 +288,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     } else {
         order = compute_static_greedy_order_for_sample(
             local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
-            scoring_function, use_negative_costs, verbose);
+            scoring_function, use_negative_costs);
     }
 
     if (reverse_initial_order) {
@@ -303,23 +296,25 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
     }
 
     if (verbose) {
-        cout << "Time for computing greedy order: " << greedy_timer << endl;
-        utils::Log() << "Greedy order: " << order << endl;
-    }
-
-    if (max_optimization_time > 0) {
-        utils::CountdownTimer timer(max_optimization_time);
-        do_hill_climbing(
-            cp_function, timer, abstractions, costs, local_state_ids, order, verbose);
-        if (verbose) {
-            cout << "Time for optimizing order: " << timer << endl;
-            cout << "Time for optimizing order has expired: " << timer.is_expired() << endl;
-            cout << "Optimized order: " << order << endl;
-        }
+        utils::Log() << "Time for computing greedy order: " << greedy_timer << endl;
     }
 
     ++num_returned_orders;
-    return cp_function(abstractions, order, costs);
+    if (max_optimization_time > 0) {
+        utils::CountdownTimer timer(max_optimization_time);
+        CostPartitioning incumbent_cp = cp_function(abstractions, order, costs);
+        int incumbent_h_value = compute_sum_h(local_state_ids, incumbent_cp);
+        do_hill_climbing(
+            cp_function, timer, abstractions, costs, local_state_ids, order,
+            incumbent_cp, incumbent_h_value, steepest_ascent, verbose);
+        if (verbose) {
+            utils::Log() << "Time for optimizing order: " << timer << endl;
+            utils::Log() << "Time for optimizing order has expired: " << timer.is_expired() << endl;
+        }
+        return incumbent_cp;
+    } else {
+        return cp_function(abstractions, order, costs);
+    }
 }
 
 

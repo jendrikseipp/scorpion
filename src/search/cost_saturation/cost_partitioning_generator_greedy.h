@@ -33,25 +33,6 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
 
     int num_returned_orders;
 
-    bool search_improving_successor(
-        CPFunction cp_function,
-        const utils::CountdownTimer &timer,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs,
-        const std::vector<int> &local_state_ids,
-        std::vector<int> &incumbent_order,
-        int &incumbent_h_value,
-        bool verbose) const;
-
-    void do_hill_climbing(
-        CPFunction cp_function,
-        const utils::CountdownTimer &timer,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs,
-        const std::vector<int> &local_state_ids,
-        std::vector<int> &incumbent_order,
-        bool verbose) const;
-
 protected:
     virtual void initialize(
         const TaskProxy &task_proxy,
