@@ -14,6 +14,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     : CostPartitioningHeuristic(opts),
       cp_generator(opts.get<shared_ptr<CostPartitioningGenerator>>("orders")),
       interval(opts.get<int>("interval")),
+      store_cost_partitionings(opts.get<bool>("store_cost_partitionings")),
       costs(get_operator_costs(task_proxy)),
       num_evaluated_states(0),
       num_scps_computed(0) {
@@ -70,11 +71,11 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &sta
         ++num_scps_computed;
         int single_h = compute_sum_h(local_state_ids, cost_partitioning);
         assert(single_h != INF);
-        if (single_h > max_h) {
+        if (store_cost_partitionings && single_h > max_h) {
             h_values_by_order.push_back(cost_partitioning);
             num_best_order.push_back(0);
-            return single_h;
         }
+        return max(max_h, single_h);
     }
     return max_h;
 }
@@ -94,9 +95,13 @@ static Heuristic *_parse(OptionParser &parser) {
 
     parser.add_option<int>(
         "interval",
-        "compute SCP for every interval-th state, store if diverse",
-        "1000",
+        "compute SCP for every interval-th state",
+        OptionParser::NONE,
         Bounds("-1", "infinity"));
+    parser.add_option<bool>(
+        "store_cost_partitionings",
+        "store saturated cost partitionings if diverse",
+        OptionParser::NONE);
 
     Options opts = parser.parse();
     if (parser.help_mode())
