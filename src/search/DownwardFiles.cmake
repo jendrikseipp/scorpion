@@ -497,6 +497,7 @@ fast_downward_plugin(
         operator_counting/constraint_generator
         operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
+        operator_counting/pho_abstraction_constraints
         operator_counting/pho_constraints
         operator_counting/state_equation_constraints
     DEPENDS LP_SOLVER LANDMARK_CUT_HEURISTIC PDBS
