@@ -65,6 +65,23 @@ public:
     virtual double cost_sharing_h_value() override;
 };
 
+class LandmarkPhO : public LandmarkCostAssignment {
+    // See comment for LandmarkEfficientOptimalSharedCostAssignment.
+    lp::LPSolver lp_solver;
+    std::vector<lp::LPVariable> lp_variables;
+    std::vector<lp::LPConstraint> lp_constraints;
+    std::vector<lp::LPConstraint> non_empty_lp_constraints;
+
+    int compute_minimum_landmark_cost(const LandmarkNode &lm) const;
+public:
+    LandmarkPhO(
+        const std::vector<int> &operator_costs,
+        const LandmarkGraph &graph,
+        lp::LPSolverType solver_type);
+
+    virtual double cost_sharing_h_value() override;
+};
+
 class LandmarkEfficientOptimalSharedCostAssignment : public LandmarkCostAssignment {
     lp::LPSolver lp_solver;
     /*

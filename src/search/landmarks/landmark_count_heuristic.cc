@@ -24,6 +24,12 @@ using namespace std;
 using utils::ExitCode;
 
 namespace landmarks {
+enum class CostPartitioningAlgorithm {
+    OPTIMAL,
+    SUBOPTIMAL,
+    PHO
+};
+
 static Options get_exploration_options(
     const shared_ptr<AbstractTask> &task, bool cache_estimates) {
     Options exploration_opts;
@@ -61,10 +67,11 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
             cerr << "conditional effects not supported by the landmark generation method" << endl;
             utils::exit_with(ExitCode::UNSUPPORTED);
         }
-        if (opts.get<bool>("optimal")) {
+        CostPartitioningAlgorithm cp_type = static_cast<CostPartitioningAlgorithm>(opts.get_enum("cost_partitioning"));
+        if (cp_type == CostPartitioningAlgorithm::OPTIMAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkEfficientOptimalSharedCostAssignment>(
                 get_operator_costs(task_proxy), *lgraph, static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
-        } else {
+        } else if (cp_type == CostPartitioningAlgorithm::SUBOPTIMAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkUniformSharedCostAssignment>(
                 get_operator_costs(task_proxy),
                 *lgraph,
@@ -73,6 +80,11 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
                 opts.get<bool>("greedy"),
                 static_cast<cost_saturation::ScoringFunction>(opts.get_enum("scoring_function")),
                 utils::parse_rng_from_options(opts));
+        } else if (cp_type == CostPartitioningAlgorithm::PHO) {
+            lm_cost_assignment = utils::make_unique_ptr<LandmarkPhO>(
+                get_operator_costs(task_proxy), *lgraph, static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
+        } else {
+            ABORT("unknown cost partitioning type");
         }
     } else {
         lm_cost_assignment = nullptr;
@@ -329,10 +341,16 @@ static Heuristic *_parse(OptionParser &parser) {
         "The set of landmarks can be specified here, "
         "or predefined (see LandmarkFactory).");
     parser.add_option<bool>("admissible", "get admissible estimate", "false");
-    parser.add_option<bool>(
-        "optimal",
-        "use optimal (LP-based) cost sharing "
-        "(only makes sense with ``admissible=true``)", "false");
+    vector<string> cp_types;
+    vector<string> cp_types_doc;
+    cp_types.push_back("OPTIMAL");
+    cp_types_doc.push_back("optimal cost partitioning (only makes sense with ``admissible=true``)");
+    cp_types.push_back("SUBOPTIMAL");
+    cp_types_doc.push_back("UCP, OUCP, GZOCP or SCP (select with options greedy and reuse_costs)");
+    cp_types.push_back("PHO");
+    cp_types_doc.push_back("post-hoc optimization");
+    parser.add_enum_option(
+        "cost_partitioning", cp_types, "cost partitioning method", "SUBOPTIMAL");
     parser.add_option<bool>("pref", "identify preferred operators "
                             "(see OptionCaveats#Using_preferred_operators_"
                             "with_the_lmcount_heuristic)", "false");
