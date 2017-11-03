@@ -13,7 +13,7 @@ protected:
     virtual void initialize(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs);
+        const std::vector<int> &costs) override;
 
 public:
     explicit CostPartitioningGeneratorRandom(const options::Options &opts);
