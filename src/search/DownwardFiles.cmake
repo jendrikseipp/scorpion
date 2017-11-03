@@ -412,6 +412,7 @@ fast_downward_plugin(
     SOURCES
         cost_saturation/abstraction
         cost_saturation/abstraction_generator
+        cost_saturation/canonical_heuristic
         cost_saturation/cartesian_abstraction_generator
         cost_saturation/cost_partitioning_generator
         cost_saturation/cost_partitioning_generator_greedy
