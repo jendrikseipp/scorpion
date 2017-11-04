@@ -17,6 +17,7 @@ namespace cost_saturation {
 ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
     : pattern_generator(
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
+      min_pattern_size(opts.get<int>("min_pattern_size")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -34,6 +35,9 @@ Abstractions ProjectionGenerator::generate_abstractions(
     log << "Build projections" << endl;
     Abstractions abstractions;
     for (const pdbs::Pattern &pattern : *patterns) {
+        if (static_cast<int>(pattern.size()) < min_pattern_size) {
+            continue;
+        }
         if (debug) {
             log << "Pattern " << abstractions.size() + 1 << ": "
                 << pattern << endl;
@@ -44,6 +48,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
             abstractions.back()->dump();
         }
     }
+    cout << "Number of projections: " << abstractions.size() << endl;
     log << "Done building projections" << endl;
     cout << "Time for building projections: " << timer << endl;
     return abstractions;
@@ -57,7 +62,12 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_option<shared_ptr<pdbs::PatternCollectionGenerator>>(
         "patterns",
         "pattern generation method",
-        "systematic(1)");
+        OptionParser::NONE);
+    parser.add_option<int>(
+        "min_pattern_size",
+        "minimum number of variables in a pattern",
+        "1",
+        Bounds("1", "infinity"));
     parser.add_option<bool>(
         "debug",
         "print debugging info",
