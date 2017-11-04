@@ -233,6 +233,11 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     int num_iterations = 0;
     size_t max_pdb_size = 0;
     State initial_state = task_proxy.get_initial_state();
+
+    vector<State> samples;
+    sample_states(
+        task_proxy, successor_generator, samples, average_operator_cost);
+
     try {
         while (true) {
             ++num_iterations;
@@ -250,10 +255,6 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             size_t new_max_pdb_size = generate_pdbs_for_candidates(
                 task_proxy, generated_patterns, new_candidates, candidate_pdbs);
             max_pdb_size = max(max_pdb_size, new_max_pdb_size);
-
-            vector<State> samples;
-            sample_states(
-                task_proxy, successor_generator, samples, average_operator_cost);
 
             pair<int, int> improvement_and_index =
                 find_best_improving_pdb(samples, candidate_pdbs);
