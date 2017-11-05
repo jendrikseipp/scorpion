@@ -237,11 +237,11 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     size_t max_pdb_size = 0;
     State initial_state = task_proxy.get_initial_state();
 
-    vector<State> samples;
-    sample_states(
-        task_proxy, successor_generator, samples, average_operator_cost);
-
     try {
+        vector<State> samples;
+        sample_states(
+            task_proxy, successor_generator, samples, average_operator_cost);
+
         while (true) {
             ++num_iterations;
             cout << "current collection size is "
