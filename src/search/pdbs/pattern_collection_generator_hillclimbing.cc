@@ -121,7 +121,9 @@ void PatternCollectionGeneratorHillclimbing::sample_states(
 }
 
 pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
-    vector<State> &samples, PDBCollection &candidate_pdbs) {
+    const vector<State> &samples,
+    const vector<int> &current_samples_h_values,
+    PDBCollection &candidate_pdbs) {
     /*
       TODO: The original implementation by Haslum et al. uses A* to compute
       h values for the sample states only instead of generating all PDBs.
@@ -176,7 +178,9 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
                 }
             }
             const State &sample = samples[sample_id];
-            if (is_heuristic_improved(*pdb, sample, max_additive_subsets)) {
+            assert(utils::in_bounds(sample_id, current_samples_h_values));
+            int collection_h = current_samples_h_values[sample_id];
+            if (is_heuristic_improved(*pdb, sample, collection_h, max_additive_subsets)) {
                 ++count;
             }
 
@@ -196,13 +200,12 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
 }
 
 bool PatternCollectionGeneratorHillclimbing::is_heuristic_improved(
-    const PatternDatabase &pdb, const State &sample,
+    const PatternDatabase &pdb,
+    const State &sample,
+    int h_collection,
     const MaxAdditivePDBSubsets &max_additive_subsets) {
     // h_pattern: h-value of the new pattern
     int h_pattern = pdb.get_value(sample);
-
-    // h_collection: h-value of the current collection heuristic
-    int h_collection = current_pdbs->get_value(sample);
 
     const int infinity = numeric_limits<int>::max();
     if (h_pattern == infinity && h_collection == infinity) {
@@ -252,6 +255,7 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     State initial_state = task_proxy.get_initial_state();
 
     vector<State> samples;
+    vector<int> current_samples_h_values;
 
     try {
         while (true) {
@@ -277,8 +281,13 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
                     task_proxy, successor_generator, samples, average_operator_cost);
             }
 
+            current_samples_h_values.clear();
+            for (const State &sample : samples) {
+                current_samples_h_values.push_back(current_pdbs->get_value(sample));
+            }
+
             pair<int, int> improvement_and_index =
-                find_best_improving_pdb(samples, candidate_pdbs);
+                find_best_improving_pdb(samples, current_samples_h_values, candidate_pdbs);
             int improvement = improvement_and_index.first;
             int best_pdb_index = improvement_and_index.second;
 
