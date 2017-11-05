@@ -36,6 +36,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       collection_max_size(opts.get<int>("collection_max_size")),
       num_samples(opts.get<int>("num_samples")),
       update_samples(opts.get<bool>("update_samples")),
+      detect_worse_patterns_early(opts.get<bool>("detect_worse_patterns_early")),
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       rng(utils::parse_rng_from_options(opts)),
@@ -165,9 +166,20 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
         int count = 0;
         MaxAdditivePDBSubsets max_additive_subsets =
             current_pdbs->get_max_additive_subsets(pdb->get_pattern());
-        for (State &sample : samples) {
-            if (is_heuristic_improved(*pdb, sample, max_additive_subsets))
+        int num_samples = samples.size();
+        for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
+            if (detect_worse_patterns_early) {
+                int num_remaining_samples = num_samples - sample_id;
+                if (count + num_remaining_samples <= improvement) {
+                    // This candidate won't be better than the incumbent.
+                    break;
+                }
+            }
+            const State &sample = samples[sample_id];
+            if (is_heuristic_improved(*pdb, sample, max_additive_subsets)) {
                 ++count;
+            }
+
         }
         if (count > improvement) {
             improvement = count;
@@ -175,7 +187,8 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
         }
         if (count > 0) {
             cout << "pattern: " << candidate_pdbs[i]->get_pattern()
-                 << " - improvement: " << count << endl;
+                 << " - improvement" << (detect_worse_patterns_early ? " >= " : " = ")
+                 << count << endl;
         }
     }
 
@@ -387,6 +400,10 @@ void add_hillclimbing_options(OptionParser &parser) {
         "as the next pattern collection ",
         "10",
         Bounds("1", "infinity"));
+    parser.add_option<bool>(
+        "detect_worse_patterns_early",
+        "abort testing a pattern on samples if it cannot beat the incumbent",
+        "false");
     parser.add_option<double>(
         "max_time",
         "maximum time in seconds for improving the initial pattern "
