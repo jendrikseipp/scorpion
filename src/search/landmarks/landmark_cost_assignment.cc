@@ -4,6 +4,7 @@
 #include "util.h"
 
 #include "../cost_saturation/cost_partitioning_generator_greedy.h"
+#include "../pdbs/max_cliques.h"
 #include "../utils/collections.h"
 #include "../utils/language.h"
 #include "../utils/logging.h"
@@ -234,6 +235,99 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     }
 
     return h;
+}
+
+
+LandmarkCanonicalHeuristic::LandmarkCanonicalHeuristic(
+    const vector<int> &operator_costs,
+    const LandmarkGraph &graph)
+    : LandmarkCostAssignment(operator_costs, graph) {
+}
+
+static bool empty_intersection(const set<int> &x, const set<int> &y) {
+    set<int>::const_iterator i = x.begin();
+    set<int>::const_iterator j = y.begin();
+    while (i != x.end() && j != y.end()) {
+        if (*i == *j)
+            return false;
+        else if (*i < *j)
+            ++i;
+        else
+            ++j;
+    }
+    return true;
+}
+
+vector<vector<int>> LandmarkCanonicalHeuristic::compute_max_additive_subsets(
+    const vector<const LandmarkNode *> &relevant_landmarks) {
+    int num_landmarks = relevant_landmarks.size();
+
+    // Initialize compatibility graph.
+    vector<vector<int>> cgraph;
+    cgraph.resize(num_landmarks);
+
+    for (int i = 0; i < num_landmarks; ++i) {
+        const LandmarkNode *lm1 = relevant_landmarks[i];
+        const set<int> &achievers1 = get_achievers(lm1->get_status(), *lm1);
+        for (int j = i + 1; j < num_landmarks; ++j) {
+            const LandmarkNode *lm2 = relevant_landmarks[j];
+            const set<int> &achievers2 = get_achievers(lm2->get_status(), *lm2);
+            if (empty_intersection(achievers1, achievers2)) {
+                /* If the two landmarks are additive, there is an edge in the
+                   compatibility graph. */
+                cgraph[i].push_back(j);
+                cgraph[j].push_back(i);
+            }
+        }
+    }
+
+    vector<vector<int>> max_cliques;
+    pdbs::compute_max_cliques(cgraph, max_cliques);
+    return max_cliques;
+}
+
+int LandmarkCanonicalHeuristic::compute_minimum_landmark_cost(const LandmarkNode &lm) const {
+    int lm_status = lm.get_status();
+    const set<int> &achievers = get_achievers(lm_status, lm);
+    assert(!achievers.empty());
+    int min_cost = numeric_limits<int>::max();
+    for (int op_id : achievers) {
+        assert(utils::in_bounds(op_id, operator_costs));
+        min_cost = min(min_cost, operator_costs[op_id]);
+    }
+    return min_cost;
+}
+
+double LandmarkCanonicalHeuristic::cost_sharing_h_value() {
+    // Ignore reached landmarks.
+    vector<const LandmarkNode *> relevant_landmarks;
+    for (const LandmarkNode *node : lm_graph.get_nodes()) {
+        if (node->get_status() != lm_reached) {
+            relevant_landmarks.push_back(node);
+        }
+    }
+
+    vector<vector<int>> max_additive_subsets = compute_max_additive_subsets(relevant_landmarks);
+
+    vector<int> minimum_landmark_costs;
+    minimum_landmark_costs.reserve(relevant_landmarks.size());
+    for (const LandmarkNode *node : relevant_landmarks) {
+        minimum_landmark_costs.push_back(compute_minimum_landmark_cost(*node));
+    }
+
+    int max_h = 0;
+    for (const vector<int> &additive_subset : max_additive_subsets) {
+        int sum_h = 0;
+        for (int landmark_id : additive_subset) {
+            assert(utils::in_bounds(landmark_id, minimum_landmark_costs));
+            int h = minimum_landmark_costs[landmark_id];
+            sum_h += h;
+        }
+        max_h = max(max_h, sum_h);
+    }
+    assert(max_h >= 0);
+
+    return max_h;
 }
 
 

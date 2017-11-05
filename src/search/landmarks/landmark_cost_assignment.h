@@ -65,6 +65,18 @@ public:
     virtual double cost_sharing_h_value() override;
 };
 
+class LandmarkCanonicalHeuristic : public LandmarkCostAssignment {
+    std::vector<std::vector<int>> compute_max_additive_subsets(
+        const std::vector<const LandmarkNode *> &relevant_landmarks);
+    int compute_minimum_landmark_cost(const LandmarkNode &lm) const;
+public:
+    LandmarkCanonicalHeuristic(
+        const std::vector<int> &operator_costs,
+        const LandmarkGraph &graph);
+
+    virtual double cost_sharing_h_value() override;
+};
+
 class LandmarkPhO : public LandmarkCostAssignment {
     // See comment for LandmarkEfficientOptimalSharedCostAssignment.
     lp::LPSolver lp_solver;

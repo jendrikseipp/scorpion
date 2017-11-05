@@ -27,6 +27,7 @@ namespace landmarks {
 enum class CostPartitioningAlgorithm {
     OPTIMAL,
     SUBOPTIMAL,
+    CANONICAL,
     PHO
 };
 
@@ -80,6 +81,9 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
                 opts.get<bool>("greedy"),
                 static_cast<cost_saturation::ScoringFunction>(opts.get_enum("scoring_function")),
                 utils::parse_rng_from_options(opts));
+        } else if (cp_type == CostPartitioningAlgorithm::CANONICAL) {
+            lm_cost_assignment = utils::make_unique_ptr<LandmarkCanonicalHeuristic>(
+                get_operator_costs(task_proxy), *lgraph);
         } else if (cp_type == CostPartitioningAlgorithm::PHO) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkPhO>(
                 get_operator_costs(task_proxy), *lgraph, static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
@@ -347,6 +351,8 @@ static Heuristic *_parse(OptionParser &parser) {
     cp_types_doc.push_back("optimal cost partitioning (only makes sense with ``admissible=true``)");
     cp_types.push_back("SUBOPTIMAL");
     cp_types_doc.push_back("UCP, OUCP, GZOCP or SCP (select with options greedy and reuse_costs)");
+    cp_types.push_back("CANONICAL");
+    cp_types_doc.push_back("Canonical heuristic for landmarks");
     cp_types.push_back("PHO");
     cp_types_doc.push_back("post-hoc optimization");
     parser.add_enum_option(
