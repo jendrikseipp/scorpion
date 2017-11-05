@@ -35,6 +35,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
     : pdb_max_size(opts.get<int>("pdb_max_size")),
       collection_max_size(opts.get<int>("collection_max_size")),
       num_samples(opts.get<int>("num_samples")),
+      update_samples(opts.get<bool>("update_samples")),
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       rng(utils::parse_rng_from_options(opts)),
@@ -237,11 +238,9 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     size_t max_pdb_size = 0;
     State initial_state = task_proxy.get_initial_state();
 
-    try {
-        vector<State> samples;
-        sample_states(
-            task_proxy, successor_generator, samples, average_operator_cost);
+    vector<State> samples;
 
+    try {
         while (true) {
             ++num_iterations;
             cout << "current collection size is "
@@ -258,6 +257,12 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             size_t new_max_pdb_size = generate_pdbs_for_candidates(
                 task_proxy, generated_patterns, new_candidates, candidate_pdbs);
             max_pdb_size = max(max_pdb_size, new_max_pdb_size);
+
+            if (update_samples || samples.empty()) {
+                samples.clear();
+                sample_states(
+                    task_proxy, successor_generator, samples, average_operator_cost);
+            }
 
             pair<int, int> improvement_and_index =
                 find_best_improving_pdb(samples, candidate_pdbs);
@@ -371,6 +376,10 @@ void add_hillclimbing_options(OptionParser &parser) {
         "candidate pattern collection",
         "1000",
         Bounds("1", "infinity"));
+    parser.add_option<bool>(
+        "update_samples",
+        "use new samples in each hill climbing iteration",
+        "true");
     parser.add_option<int>(
         "min_improvement",
         "minimum number of samples on which a candidate pattern "

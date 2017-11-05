@@ -33,6 +33,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     // maximum added size of all pdbs
     const int collection_max_size;
     const int num_samples;
+    const bool update_samples;
     // minimal improvement required for hill climbing to continue search
     const int min_improvement;
     const double max_time;
