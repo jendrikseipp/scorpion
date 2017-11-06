@@ -35,6 +35,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     const int num_samples;
     const bool update_samples;
     const bool detect_worse_patterns_early;
+    const bool forget_patterns_early;
     // minimal improvement required for hill climbing to continue search
     const int min_improvement;
     const double max_time;

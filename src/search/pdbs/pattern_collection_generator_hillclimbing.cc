@@ -37,6 +37,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       num_samples(opts.get<int>("num_samples")),
       update_samples(opts.get<bool>("update_samples")),
       detect_worse_patterns_early(opts.get<bool>("detect_worse_patterns_early")),
+      forget_patterns_early(opts.get<bool>("forget_patterns_early")),
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       rng(utils::parse_rng_from_options(opts)),
@@ -194,7 +195,12 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
                  << " - improvement" << (detect_worse_patterns_early ? " >= " : " = ")
                  << count << endl;
         }
+        if (forget_patterns_early && count < min_improvement) {
+            cout << "Delete pattern " << candidate_pdbs[i]->get_pattern() << endl;
+            candidate_pdbs[i] = nullptr;
+        }
     }
+    cout << "Candidate vector: " << candidate_pdbs.size() << endl;
 
     return make_pair(improvement, best_pdb_index);
 }
@@ -412,6 +418,10 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<bool>(
         "detect_worse_patterns_early",
         "abort testing a pattern on samples if it cannot beat the incumbent",
+        "false");
+    parser.add_option<bool>(
+        "forget_patterns_early",
+        "forget a candidate once it improves less than min_improvement samples",
         "false");
     parser.add_option<double>(
         "max_time",
