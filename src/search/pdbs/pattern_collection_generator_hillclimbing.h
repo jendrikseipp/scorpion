@@ -33,6 +33,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     // maximum added size of all pdbs
     const int collection_max_size;
     const int num_samples;
+    const bool use_all_connected_variables;
     const bool update_samples;
     const bool detect_worse_patterns_early;
     const bool forget_patterns_early;
@@ -54,6 +55,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     */
     void generate_candidate_patterns(
         const TaskProxy &task_proxy,
+        const std::vector<std::vector<int>> &connected_variables,
         const PatternDatabase &pdb,
         PatternCollection &candidate_patterns);
 
@@ -121,6 +123,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     */
     void hill_climbing(
         const TaskProxy &task_proxy,
+        const std::vector<std::vector<int>> &connected_variables,
         const SuccessorGenerator &successor_generator,
         double average_operator_costs,
         PatternCollection &initial_candidate_patterns);
