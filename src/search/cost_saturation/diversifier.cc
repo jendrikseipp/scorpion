@@ -80,7 +80,7 @@ bool Diversifier::is_diverse(const CostPartitioning &cp) {
         for (int h : portfolio_h_values) {
             sum_portfolio_h += h;
         }
-        cout << "Portfolio sum h value: " << sum_portfolio_h << endl;
+        utils::Log() << "Portfolio sum h value: " << sum_portfolio_h << endl;
     }
 
     return cp_improves_portfolio;

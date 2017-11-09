@@ -5,6 +5,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../pdbs/dominance_pruning.h"
 #include "../pdbs/pattern_generator.h"
 #include "../utils/logging.h"
 
@@ -18,6 +19,7 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
     : pattern_generator(
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
       min_pattern_size(opts.get<int>("min_pattern_size")),
+      dominance_pruning(opts.get<bool>("dominance_pruning")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -28,9 +30,30 @@ Abstractions ProjectionGenerator::generate_abstractions(
     TaskProxy task_proxy(*task);
 
     log << "Compute patterns" << endl;
+    PatternCollectionInformation pattern_collection_info =
+        pattern_generator->generate(task);
     shared_ptr<pdbs::PatternCollection> patterns =
-        pattern_generator->generate(task).get_patterns();
+        pattern_collection_info.get_patterns();
+
     cout << "Number of patterns: " << patterns->size() << endl;
+
+    if (dominance_pruning) {
+        utils::Timer pdb_timer;
+        shared_ptr<PDBCollection> pdbs = pattern_collection_info.get_pdbs();
+        shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets =
+            pattern_collection_info.get_max_additive_subsets();
+        cout << "PDB construction time: " << pdb_timer << endl;
+        utils::Timer pruning_timer;
+        max_additive_subsets = prune_dominated_subsets(*pdbs, *max_additive_subsets);
+        cout << "Dominance pruning time: " << pruning_timer << endl;
+        patterns->clear();
+        for (const auto &subset : *max_additive_subsets) {
+            for (const shared_ptr<PatternDatabase> &pdb : subset) {
+                patterns->push_back(pdb->get_pattern());
+            }
+        }
+        cout << "Number of non-dominated patterns: " << patterns->size() << endl;
+    }
 
     log << "Build projections" << endl;
     Abstractions abstractions;
@@ -68,6 +91,10 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "minimum number of variables in a pattern",
         "1",
         Bounds("1", "infinity"));
+    parser.add_option<bool>(
+        "dominance_pruning",
+        "prune dominated patterns",
+        "false");
     parser.add_option<bool>(
         "debug",
         "print debugging info",
