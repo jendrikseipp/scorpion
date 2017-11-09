@@ -237,7 +237,6 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
             if (is_heuristic_improved(*pdb, sample, collection_h, max_additive_subsets)) {
                 ++count;
             }
-
         }
         if (count > improvement) {
             improvement = count;

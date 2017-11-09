@@ -93,14 +93,17 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
         rng->shuffle(indices);
     } else if (scoring_function == cost_saturation::ScoringFunction::MAX_HEURISTIC) {
         sort(indices.begin(), indices.end(), [&h_values](int i, int j) {
-            return h_values[i] > h_values[j];});
+                return h_values[i] > h_values[j];
+            });
     } else if (scoring_function == cost_saturation::ScoringFunction::MIN_COSTS) {
         sort(indices.begin(), indices.end(), [&saturated_costs](int i, int j) {
-            return (1 / (saturated_costs[i] + 1.0)) > (1 / (saturated_costs[j] + 1.0));});
+                return (1 / (saturated_costs[i] + 1.0)) > (1 / (saturated_costs[j] + 1.0));
+            });
     } else if (scoring_function == cost_saturation::ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
         sort(indices.begin(), indices.end(), [&h_values, &saturated_costs](int i, int j) {
-            return h_values[i] / (saturated_costs[i] + 1.0) >
-                   h_values[j] / (saturated_costs[j] + 1.0);});
+                return h_values[i] / (saturated_costs[i] + 1.0) >
+                h_values[j] / (saturated_costs[j] + 1.0);
+            });
     } else {
         ABORT("invalid scoring function");
     }

@@ -17,8 +17,8 @@ using namespace std;
 namespace operator_counting {
 PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
     : abstraction_generators(
-        opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
-            "abstraction_generators")) {
+          opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
+              "abstraction_generators")) {
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
