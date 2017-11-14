@@ -5,6 +5,7 @@
 #include "task_tools.h"
 
 #include "utils/countdown_timer.h"
+#include "utils/memory.h"
 #include "utils/rng.h"
 
 using namespace std;
@@ -90,4 +91,33 @@ vector<State> sample_states_with_random_walks(
                               is_dead_end));
     }
     return samples;
+}
+
+
+RandomWalkSampler::RandomWalkSampler(
+    const TaskProxy &task_proxy,
+    int init_h,
+    utils::RandomNumberGenerator &rng,
+    DeadEndDetector is_dead_end)
+    : successor_generator(utils::make_unique_ptr<SuccessorGenerator>(task_proxy)),
+      initial_state(utils::make_unique_ptr<State>(task_proxy.get_initial_state())),
+      init_h(init_h),
+      average_operator_costs(get_average_operator_cost(task_proxy)),
+      rng(rng),
+      is_dead_end(is_dead_end),
+      returned_initial_state(false) {
+    assert(init_h != numeric_limits<int>::max());
+}
+
+State RandomWalkSampler::sample_state() {
+    if (returned_initial_state) {
+        return sample_state_with_random_walk(
+            *initial_state,
+            *successor_generator,
+            init_h,
+            average_operator_costs,
+            rng);
+    } else {
+        return *initial_state;
+    }
 }
