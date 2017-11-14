@@ -26,7 +26,7 @@ extern std::vector<State> sample_states(
     const TaskProxy &task_proxy,
     const std::function<int (const State &)> &heuristic,
     int num_samples,
-    utils::RandomNumberGenerator &rng);
+    const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs,

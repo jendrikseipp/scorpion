@@ -56,33 +56,32 @@ CostPartitioningGenerator::CostPartitioningGenerator(const Options &opts)
     : max_orders(opts.get<int>("max_orders")),
       max_time(opts.get<double>("max_time")),
       diversify(opts.get<bool>("diversify")),
-      start_with_initial_state(opts.get<bool>("start_with_initial_state")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
 CostPartitioningGenerator::~CostPartitioningGenerator() {
 }
 
+static bool is_dead_end(
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const CostPartitioning &scp,
+    const State &state) {
+    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
+    return compute_sum_h(local_state_ids, scp);
+}
+
 void CostPartitioningGenerator::initialize(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
-    successor_generator = utils::make_unique_ptr<SuccessorGenerator>(task_proxy);
-    average_operator_costs = get_average_operator_cost(task_proxy);
-    initial_state = utils::make_unique_ptr<State>(task_proxy.get_initial_state());
-
+    State initial_state = task_proxy.get_initial_state();
     vector<int> default_order = get_default_order(abstractions.size());
-    CostPartitioning scp_for_default_order =
+    scp_for_sampling =
         compute_saturated_cost_partitioning(abstractions, default_order, costs);
-
-    function<int (const State &state)> default_order_heuristic =
-        [&abstractions, &scp_for_default_order](const State &state) {
-            vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-            return compute_sum_h(local_state_ids, scp_for_default_order);
-        };
-
-    init_h = default_order_heuristic(*initial_state);
+    vector<int> local_state_ids = get_local_state_ids(abstractions, initial_state);
+    init_h = compute_sum_h(local_state_ids, scp_for_sampling);
     cout << "Initial h value for default order: " << init_h << endl;
+    sampler = utils::make_unique_ptr<RandomWalkSampler>(task_proxy, init_h, rng);
 }
 
 CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
@@ -93,24 +92,30 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
         diversifier = utils::make_unique_ptr<Diversifier>(
-            task_proxy, abstractions, costs, *rng);
+            task_proxy, abstractions, costs, rng);
     }
 
     initialize(task_proxy, abstractions, costs);
+
+    if (init_h == INF) {
+        return {scp_for_sampling};
+    }
 
     CostPartitionings cost_partitionings;
     utils::CountdownTimer timer(max_time);
     int evaluated_orders = 0;
     while (static_cast<int>(cost_partitionings.size()) < max_orders &&
            !timer.is_expired() && has_next_cost_partitioning()) {
-        State sample = *initial_state;
-        if (!start_with_initial_state || !cost_partitionings.empty()) {
-            sample = sample_state_with_random_walk(
-                *initial_state,
-                *successor_generator,
-                init_h,
-                average_operator_costs,
-                *rng);
+        State sample = sampler->sample_state();
+        // Skip dead-end samples if we have already found an order, since all
+        // orders recognize the same dead ends.
+        while (cost_partitionings.empty() &&
+               is_dead_end(abstractions, scp_for_sampling, sample) &&
+               !timer.is_expired()) {
+            sample = sampler->sample_state();
+        }
+        if (timer.is_expired() && !cost_partitionings.empty()) {
+            break;
         }
         CostPartitioning cp = get_next_cost_partitioning(
             task_proxy, abstractions, costs, sample, cp_function);
@@ -139,10 +144,6 @@ void add_common_cp_generator_options_to_parser(OptionParser &parser) {
     parser.add_option<bool>(
         "diversify",
         "keep orders that improve the portfolio's heuristic value for any of the samples",
-        "true");
-    parser.add_option<bool>(
-        "start_with_initial_state",
-        "use initial state as first sample",
         "true");
     utils::add_rng_options(parser);
 }

@@ -97,7 +97,7 @@ vector<State> sample_states_with_random_walks(
 RandomWalkSampler::RandomWalkSampler(
     const TaskProxy &task_proxy,
     int init_h,
-    utils::RandomNumberGenerator &rng,
+    const shared_ptr<utils::RandomNumberGenerator> &rng,
     DeadEndDetector is_dead_end)
     : successor_generator(utils::make_unique_ptr<SuccessorGenerator>(task_proxy)),
       initial_state(utils::make_unique_ptr<State>(task_proxy.get_initial_state())),
@@ -116,7 +116,7 @@ State RandomWalkSampler::sample_state() {
             *successor_generator,
             init_h,
             average_operator_costs,
-            rng);
+            *rng);
     } else {
         return *initial_state;
     }

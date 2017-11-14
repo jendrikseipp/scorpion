@@ -59,7 +59,7 @@ vector<State> sample_states(
     const TaskProxy &task_proxy,
     const function<int (const State &state)> &heuristic,
     int num_samples,
-    utils::RandomNumberGenerator &rng) {
+    const shared_ptr<utils::RandomNumberGenerator> &rng) {
     assert(num_samples >= 1);
     cout << "Start sampling" << endl;
     utils::CountdownTimer sampling_timer(60);

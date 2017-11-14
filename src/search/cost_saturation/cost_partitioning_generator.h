@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+class RandomWalkSampler;
 class State;
 class SuccessorGenerator;
 class TaskProxy;
@@ -30,13 +31,10 @@ protected:
     const int max_orders;
     const double max_time;
     const bool diversify;
-    const bool start_with_initial_state;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
-    // Members for random walks.
-    std::unique_ptr<SuccessorGenerator> successor_generator;
-    double average_operator_costs;
-    std::unique_ptr<State> initial_state;
+    std::unique_ptr<RandomWalkSampler> sampler;
+    CostPartitioning scp_for_sampling;
     int init_h;
 
     virtual void initialize(

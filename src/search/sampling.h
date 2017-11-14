@@ -52,7 +52,7 @@ class RandomWalkSampler {
     const std::unique_ptr<State> initial_state;
     const int init_h;
     const double average_operator_costs;
-    utils::RandomNumberGenerator &rng;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const DeadEndDetector is_dead_end;
     bool returned_initial_state;
 
@@ -60,7 +60,7 @@ public:
     RandomWalkSampler(
         const TaskProxy &task_proxy,
         int init_h,
-        utils::RandomNumberGenerator &rng,
+        const std::shared_ptr<utils::RandomNumberGenerator> &rng,
         DeadEndDetector is_dead_end = [] (const State &) {return false;});
 
     State sample_state();
