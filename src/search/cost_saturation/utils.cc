@@ -64,26 +64,18 @@ vector<State> sample_states(
     cout << "Start sampling" << endl;
     utils::CountdownTimer sampling_timer(60);
 
-    SuccessorGenerator successor_generator(task_proxy);
-    const double average_operator_costs = get_average_operator_cost(task_proxy);
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
     cout << "Initial h value for default order: " << init_h << endl;
+    if (init_h == INF) {
+        return {move(initial_state)};
+    }
+    RandomWalkSampler sampler(task_proxy, init_h, rng);
 
     vector<State> samples;
-
-    // Always include the initial state.
-    samples.push_back(initial_state);
-
-    while (init_h != INF &&
-           static_cast<int>(samples.size()) < num_samples &&
+    while (static_cast<int>(samples.size()) < num_samples &&
            !sampling_timer.is_expired()) {
-        State sample = sample_state_with_random_walk(
-            initial_state,
-            successor_generator,
-            init_h,
-            average_operator_costs,
-            rng);
+        State sample = sampler.sample_state();
         if (heuristic(sample) != INF) {
             samples.push_back(move(sample));
         }
