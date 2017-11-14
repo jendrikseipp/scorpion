@@ -60,6 +60,7 @@ vector<State> sample_states(
     const function<int (const State &state)> &heuristic,
     int num_samples,
     utils::RandomNumberGenerator &rng) {
+    assert(num_samples >= 1);
     cout << "Start sampling" << endl;
     utils::CountdownTimer sampling_timer(60);
 
@@ -70,6 +71,10 @@ vector<State> sample_states(
     cout << "Initial h value for default order: " << init_h << endl;
 
     vector<State> samples;
+
+    // Always include the initial state.
+    samples.push_back(initial_state);
+
     while (init_h != INF &&
            static_cast<int>(samples.size()) < num_samples &&
            !sampling_timer.is_expired()) {
@@ -82,11 +87,6 @@ vector<State> sample_states(
         if (heuristic(sample) != INF) {
             samples.push_back(move(sample));
         }
-    }
-
-    // Use initial state if we only found dead-ends.
-    if (samples.empty()) {
-        samples.push_back(move(initial_state));
     }
 
     cout << "Samples: " << samples.size() << endl;
