@@ -131,7 +131,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_list_option<shared_ptr<cegar::SubtaskGenerator>>(
         "subtasks",
         "subtask generators",
-        "[landmarks(),goals()]");
+        "[landmarks(order=random),goals(order=random)]");
     parser.add_option<bool>(
         "debug",
         "print debugging info",
