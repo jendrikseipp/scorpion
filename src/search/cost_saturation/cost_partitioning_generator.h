@@ -56,7 +56,7 @@ protected:
     }
 
 public:
-    CostPartitioningGenerator(const options::Options &opts);
+    explicit CostPartitioningGenerator(const options::Options &opts);
     virtual ~CostPartitioningGenerator();
 
     virtual CostPartitionings get_cost_partitionings(
