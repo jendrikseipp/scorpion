@@ -429,7 +429,7 @@ fast_downward_plugin(
         cost_saturation/types.h
         cost_saturation/uniform_cost_partitioning_heuristic
         cost_saturation/utils
-        #cost_saturation/zero_one_cost_partitioning_heuristic
+        cost_saturation/zero_one_cost_partitioning_heuristic
     DEPENDS CEGAR LP_SOLVER PDBS
 )
 
