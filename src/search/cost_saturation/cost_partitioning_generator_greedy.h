@@ -5,6 +5,7 @@
 
 namespace utils {
 class CountdownTimer;
+class RandomNumberGenerator;
 }
 
 namespace cost_saturation {

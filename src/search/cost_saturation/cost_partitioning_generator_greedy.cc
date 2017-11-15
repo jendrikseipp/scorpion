@@ -21,7 +21,7 @@ using namespace std;
 
 namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
-    : CostPartitioningGenerator(opts),
+    : CostPartitioningGenerator(),
       reverse_initial_order(opts.get<bool>("reverse_initial_order")),
       scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
@@ -242,10 +242,9 @@ static void do_hill_climbing(
 }
 
 void CostPartitioningGeneratorGreedy::initialize(
-    const TaskProxy &task_proxy,
+    const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
-    CostPartitioningGenerator::initialize(task_proxy, abstractions, costs);
     random_order = get_default_order(abstractions.size());
 
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
@@ -268,10 +267,7 @@ CostPartitioning CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
 
     // We can call compute_sum_h with unpartitioned h values since we only need
     // a safe, but not necessarily admissible estimate.
-    if (compute_sum_h(local_state_ids, h_values_by_abstraction) == INF) {
-        rng->shuffle(random_order);
-        return cp_function(abstractions, random_order, costs);
-    }
+    assert(compute_sum_h(local_state_ids, h_values_by_abstraction) != INF);
 
     // Only be verbose for first sample.
     bool verbose = (num_returned_orders == 0);
@@ -355,7 +351,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "maximum time for optimizing",
         "0.0",
         Bounds("0.0", "infinity"));
-    add_common_cp_generator_options_to_parser(parser);
     utils::add_rng_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())

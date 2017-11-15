@@ -32,6 +32,12 @@ extern void reduce_costs(
     std::vector<int> &remaining_costs,
     const std::vector<int> &saturated_costs);
 
+extern CostPartitioning compute_saturated_cost_partitioning(
+    const Abstractions &abstractions,
+    const std::vector<int> &order,
+    const std::vector<int> &costs,
+    bool debug = false);
+
 template<typename T>
 void print_indexed_vector(const std::vector<T> &vec) {
     for (size_t i = 0; i < vec.size(); ++i) {

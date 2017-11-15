@@ -6,18 +6,12 @@
 #include <memory>
 #include <vector>
 
-class RandomWalkSampler;
 class State;
-class SuccessorGenerator;
 class TaskProxy;
 
 namespace options {
 class Options;
 class OptionParser;
-}
-
-namespace utils {
-class RandomNumberGenerator;
 }
 
 namespace cost_saturation {
@@ -27,20 +21,14 @@ using CPFunction = std::function<CostPartitioning(
                                      const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
 
 class CostPartitioningGenerator {
-protected:
-    const int max_orders;
-    const double max_time;
-    const bool diversify;
-    const std::shared_ptr<utils::RandomNumberGenerator> rng;
-
-    std::unique_ptr<RandomWalkSampler> sampler;
-    CostPartitioning scp_for_sampling;
-    int init_h;
+public:
+    CostPartitioningGenerator() = default;
+    virtual ~CostPartitioningGenerator() = default;
 
     virtual void initialize(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs);
+        const std::vector<int> &costs) = 0;
 
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,
@@ -52,27 +40,7 @@ protected:
     virtual bool has_next_cost_partitioning() const {
         return true;
     }
-
-public:
-    explicit CostPartitioningGenerator(const options::Options &opts);
-    virtual ~CostPartitioningGenerator();
-
-    virtual CostPartitionings get_cost_partitionings(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs,
-        CPFunction cp_function);
 };
-
-
-extern CostPartitioning compute_saturated_cost_partitioning(
-    const Abstractions &abstractions,
-    const std::vector<int> &order,
-    const std::vector<int> &costs,
-    bool debug = false);
-
-extern void add_common_cp_generator_options_to_parser(
-    options::OptionParser &parser);
 }
 
 #endif

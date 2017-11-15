@@ -42,7 +42,6 @@ CostPartitioning CostPartitioningGeneratorRandom::get_next_cost_partitioning(
 }
 
 static shared_ptr<CostPartitioningGenerator> _parse_random(OptionParser &parser) {
-    add_common_cp_generator_options_to_parser(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
