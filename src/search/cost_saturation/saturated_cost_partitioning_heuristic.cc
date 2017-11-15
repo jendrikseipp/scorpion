@@ -13,6 +13,36 @@
 using namespace std;
 
 namespace cost_saturation {
+static CostPartitioning compute_saturated_cost_partitioning(
+    const Abstractions &abstractions,
+    const vector<int> &order,
+    const vector<int> &costs,
+    bool debug) {
+    assert(abstractions.size() == order.size());
+    vector<vector<int>> h_values_by_abstraction(abstractions.size());
+    vector<int> remaining_costs = costs;
+    for (int pos : order) {
+        const Abstraction &abstraction = *abstractions[pos];
+        auto pair = abstraction.compute_goal_distances_and_saturated_costs(
+            remaining_costs);
+        vector<int> &h_values = pair.first;
+        vector<int> &saturated_costs = pair.second;
+        if (debug) {
+            cout << "h-values: ";
+            print_indexed_vector(h_values);
+            cout << "saturated costs: ";
+            print_indexed_vector(saturated_costs);
+        }
+        h_values_by_abstraction[pos] = move(h_values);
+        reduce_costs(remaining_costs, saturated_costs);
+        if (debug) {
+            cout << "remaining costs: ";
+            print_indexed_vector(remaining_costs);
+        }
+    }
+    return h_values_by_abstraction;
+}
+
 SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
     const bool verbose = debug;
