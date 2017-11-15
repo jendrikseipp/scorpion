@@ -65,7 +65,7 @@ CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
         diversifier = utils::make_unique_ptr<Diversifier>(
-            task_proxy, abstractions, costs, rng);
+            task_proxy, abstractions, costs, cp_function, rng);
     }
 
     initialize(task_proxy, abstractions, costs, cp_function);
