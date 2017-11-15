@@ -1,7 +1,7 @@
 #include "uniform_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_generator.h"
+#include "cost_partitioning_collection_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -11,6 +11,7 @@
 #include "../tasks/modified_operator_costs_task.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
+#include "../utils/rng_options.h"
 
 using namespace std;
 
@@ -113,9 +114,15 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
     const bool verbose = debug;
 
     vector<int> costs = get_operator_costs(task_proxy);
+    CostPartitioningCollectionGenerator cps_generator(
+        opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
+        opts.get<int>("max_orders"),
+        opts.get<double>("max_time"),
+        opts.get<bool>("diversify"),
+        utils::parse_rng_from_options(opts));
     if (dynamic) {
         h_values_by_order =
-            opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
+            cps_generator.get_cost_partitionings(
                 task_proxy, abstractions, costs,
                 [dynamic, verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
                 return compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose);
@@ -149,6 +156,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
+    add_cost_partitioning_collection_options_to_parser(parser);
     parser.add_option<bool>(
         "dynamic",
         "recalculate costs after each considered abstraction",
