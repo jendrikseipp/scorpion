@@ -23,14 +23,17 @@ Diversifier::Diversifier(
     const shared_ptr<utils::RandomNumberGenerator> &rng)
     : portfolio_h_values(max_samples, -1) {
     // Always use h(s_0) from SCP to obtain the same samples for all CPs.
-    vector<int> default_order = get_default_order(abstractions.size());
-    CostPartitioning scp_for_default_order =
-        compute_saturated_cost_partitioning(abstractions, default_order, costs);
+    CostPartitioning scp_for_sampling =
+        compute_cost_partitioning_for_static_order(
+            task_proxy, abstractions, costs,
+            [](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
+                return compute_saturated_cost_partitioning(abstractions, order, costs, false);
+            }, task_proxy.get_initial_state());
 
     function<int (const State &state)> default_order_heuristic =
-        [&abstractions, &scp_for_default_order](const State &state) {
+        [&abstractions, &scp_for_sampling](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-            return compute_sum_h(local_state_ids, scp_for_default_order);
+            return compute_sum_h(local_state_ids, scp_for_sampling);
         };
 
     vector<State> samples = sample_states(
