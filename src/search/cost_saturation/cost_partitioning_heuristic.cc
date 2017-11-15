@@ -74,7 +74,8 @@ int CostPartitioningHeuristic::compute_max_h_with_statistics(
     }
     assert(max_h >= 0);
 
-    if (best_id != -1 && !num_best_order.empty()) {
+    num_best_order.resize(h_values_by_order.size(), 0);
+    if (best_id != -1) {
         assert(utils::in_bounds(best_id, num_best_order));
         ++num_best_order[best_id];
     }
