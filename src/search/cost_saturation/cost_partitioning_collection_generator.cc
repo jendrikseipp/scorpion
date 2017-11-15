@@ -3,6 +3,7 @@
 #include "abstraction.h"
 #include "diversifier.h"
 #include "cost_partitioning_generator.h"
+#include "cost_partitioning_generator_greedy.h"
 #include "utils.h"
 
 #include "../sampling.h"
@@ -10,6 +11,7 @@
 #include "../task_proxy.h"
 #include "../task_tools.h"
 
+#include "../options/options.h"
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
@@ -47,14 +49,24 @@ static bool is_dead_end(
 void CostPartitioningCollectionGenerator::initialize(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &costs) {
+    const vector<int> &costs,
+    CPFunction cp_function) {
     State initial_state = task_proxy.get_initial_state();
-    vector<int> default_order = get_default_order(abstractions.size());
-    scp_for_sampling =
-        compute_saturated_cost_partitioning(abstractions, default_order, costs);
+    options::Options greedy_opts;
+    greedy_opts.set("reverse_initial_order", false);
+    greedy_opts.set("scoring_function", static_cast<int>(ScoringFunction::MAX_HEURISTIC_PER_COSTS));
+    greedy_opts.set("use_negative_costs", false);
+    greedy_opts.set("queue_zero_ratios", true);
+    greedy_opts.set("dynamic", false);
+    greedy_opts.set("steepest_ascent", false);
+    greedy_opts.set("max_optimization_time", 0.0);
+    greedy_opts.set("random_seed", 0);
+    CostPartitioningGeneratorGreedy greedy_generator(greedy_opts);
+    greedy_generator.initialize(task_proxy, abstractions, costs);
+    scp_for_sampling = greedy_generator.get_next_cost_partitioning(
+        task_proxy, abstractions, costs, initial_state, cp_function);
     vector<int> local_state_ids = get_local_state_ids(abstractions, initial_state);
     init_h = compute_sum_h(local_state_ids, scp_for_sampling);
-    cout << "Initial h value for default order: " << init_h << endl;
     sampler = utils::make_unique_ptr<RandomWalkSampler>(task_proxy, init_h, rng);
 }
 
@@ -69,7 +81,7 @@ CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
             task_proxy, abstractions, costs, rng);
     }
 
-    initialize(task_proxy, abstractions, costs);
+    initialize(task_proxy, abstractions, costs, cp_function);
     cp_generator->initialize(task_proxy, abstractions, costs);
 
     if (init_h == INF) {

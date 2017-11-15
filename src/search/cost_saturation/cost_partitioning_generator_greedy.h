@@ -34,14 +34,13 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
 
     int num_returned_orders;
 
-protected:
+public:
+    explicit CostPartitioningGeneratorGreedy(const options::Options &opts);
+
     virtual void initialize(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs) override;
-
-public:
-    explicit CostPartitioningGeneratorGreedy(const options::Options &opts);
 
     virtual CostPartitioning get_next_cost_partitioning(
         const TaskProxy &task_proxy,

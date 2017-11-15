@@ -36,7 +36,8 @@ class CostPartitioningCollectionGenerator {
     void initialize(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs);
+        const std::vector<int> &costs,
+        CPFunction cp_function);
 
 public:
     CostPartitioningCollectionGenerator(
