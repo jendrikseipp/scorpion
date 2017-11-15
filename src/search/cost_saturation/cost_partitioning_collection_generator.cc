@@ -46,12 +46,12 @@ static bool is_dead_end(
     return compute_sum_h(local_state_ids, scp) == INF;
 }
 
-void CostPartitioningCollectionGenerator::initialize(
+static CostPartitioning compute_cost_partitioning_for_static_order(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
-    CPFunction cp_function) {
-    State initial_state = task_proxy.get_initial_state();
+    CPFunction cp_function,
+    const State &state) {
     options::Options greedy_opts;
     greedy_opts.set("reverse_initial_order", false);
     greedy_opts.set("scoring_function", static_cast<int>(ScoringFunction::MAX_HEURISTIC_PER_COSTS));
@@ -63,8 +63,18 @@ void CostPartitioningCollectionGenerator::initialize(
     greedy_opts.set("random_seed", 0);
     CostPartitioningGeneratorGreedy greedy_generator(greedy_opts);
     greedy_generator.initialize(task_proxy, abstractions, costs);
-    scp_for_sampling = greedy_generator.get_next_cost_partitioning(
-        task_proxy, abstractions, costs, initial_state, cp_function);
+    return greedy_generator.get_next_cost_partitioning(
+        task_proxy, abstractions, costs, state, cp_function);
+}
+
+void CostPartitioningCollectionGenerator::initialize(
+    const TaskProxy &task_proxy,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &costs,
+    CPFunction cp_function) {
+    State initial_state = task_proxy.get_initial_state();
+    scp_for_sampling = compute_cost_partitioning_for_static_order(
+        task_proxy, abstractions, costs, cp_function, initial_state);
     vector<int> local_state_ids = get_local_state_ids(abstractions, initial_state);
     init_h = compute_sum_h(local_state_ids, scp_for_sampling);
     sampler = utils::make_unique_ptr<RandomWalkSampler>(task_proxy, init_h, rng);
