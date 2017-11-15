@@ -118,6 +118,7 @@ State RandomWalkSampler::sample_state() {
             average_operator_costs,
             *rng);
     } else {
+        returned_initial_state = true;
         return *initial_state;
     }
 }
