@@ -5,8 +5,6 @@
 #include "cost_partitioning_generator.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
 #include "../sampling.h"
 #include "../successor_generator.h"
 #include "../task_proxy.h"
@@ -15,19 +13,24 @@
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
-#include "../utils/rng_options.h"
+#include "../utils/memory.h"
 
 #include <cassert>
 
 using namespace std;
 
 namespace cost_saturation {
-CostPartitioningCollectionGenerator::CostPartitioningCollectionGenerator(const Options &opts)
-    : cp_generator(opts.get<shared_ptr<CostPartitioningGenerator>>("cost_partitioning_generator")),
-      max_orders(opts.get<int>("max_orders")),
-      max_time(opts.get<double>("max_time")),
-      diversify(opts.get<bool>("diversify")),
-      rng(utils::parse_rng_from_options(opts)) {
+CostPartitioningCollectionGenerator::CostPartitioningCollectionGenerator(
+    const shared_ptr<CostPartitioningGenerator> &cp_generator,
+    int max_orders,
+    double max_time,
+    bool diversify,
+    const shared_ptr<utils::RandomNumberGenerator> &rng)
+    : cp_generator(cp_generator),
+      max_orders(max_orders),
+      max_time(max_time),
+      diversify(diversify),
+      rng(rng) {
 }
 
 CostPartitioningCollectionGenerator::~CostPartitioningCollectionGenerator() {
@@ -100,9 +103,4 @@ CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
     cout << "Time for computing cost partitionings: " << timer << endl;
     return cost_partitionings;
 }
-
-
-static PluginTypePlugin<CostPartitioningCollectionGenerator> _type_plugin(
-    "CostPartitioningCollectionGenerator",
-    "Cost partitioning collection generator.");
 }

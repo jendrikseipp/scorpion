@@ -8,6 +8,8 @@
 #include "../plugin.h"
 #include "../task_tools.h"
 
+#include "../utils/rng_options.h"
+
 using namespace std;
 
 namespace cost_saturation {
@@ -15,15 +17,13 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
     : CostPartitioningHeuristic(opts) {
     const bool verbose = debug;
 
+    CostPartitioningCollectionGenerator cps_generator(
+        opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
+        opts.get<int>("max_orders"),
+        opts.get<double>("max_time"),
+        opts.get<bool>("diversify"),
+        utils::parse_rng_from_options(opts));
     vector<int> costs = get_operator_costs(task_proxy);
-    Options cp_collection_opts;
-    cp_collection_opts.set(
-        "cost_partitioning_generator", opts.get<shared_ptr<CostPartitioningGenerator>>("orders"));
-    cp_collection_opts.set("max_orders", opts.get<int>("max_orders"));
-    cp_collection_opts.set("max_time", opts.get<double>("max_time"));
-    cp_collection_opts.set("diversify", opts.get<bool>("diversify"));
-    cp_collection_opts.set("random_seed", opts.get<int>("random_seed"));
-    CostPartitioningCollectionGenerator cps_generator(cp_collection_opts);
     h_values_by_order =
         cps_generator.get_cost_partitionings(
             task_proxy, abstractions, costs,

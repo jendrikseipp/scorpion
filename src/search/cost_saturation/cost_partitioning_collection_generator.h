@@ -11,11 +11,6 @@ class State;
 class SuccessorGenerator;
 class TaskProxy;
 
-namespace options {
-class Options;
-class OptionParser;
-}
-
 namespace utils {
 class RandomNumberGenerator;
 }
@@ -44,7 +39,12 @@ class CostPartitioningCollectionGenerator {
         const std::vector<int> &costs);
 
 public:
-    explicit CostPartitioningCollectionGenerator(const options::Options &opts);
+    CostPartitioningCollectionGenerator(
+        const std::shared_ptr<CostPartitioningGenerator> &cp_generator,
+        int max_orders,
+        double max_time,
+        bool diversify,
+        const std::shared_ptr<utils::RandomNumberGenerator> &rng);
     ~CostPartitioningCollectionGenerator();
 
     CostPartitionings get_cost_partitionings(
