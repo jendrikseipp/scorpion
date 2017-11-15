@@ -67,7 +67,7 @@ static bool is_dead_end(
     const CostPartitioning &scp,
     const State &state) {
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-    return compute_sum_h(local_state_ids, scp);
+    return compute_sum_h(local_state_ids, scp) == INF;
 }
 
 void CostPartitioningGenerator::initialize(
@@ -109,7 +109,7 @@ CostPartitionings CostPartitioningGenerator::get_cost_partitionings(
         State sample = sampler->sample_state();
         // Skip dead-end samples if we have already found an order, since all
         // orders recognize the same dead ends.
-        while (cost_partitionings.empty() &&
+        while (!cost_partitionings.empty() &&
                is_dead_end(abstractions, scp_for_sampling, sample) &&
                !timer.is_expired()) {
             sample = sampler->sample_state();
