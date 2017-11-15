@@ -1,12 +1,14 @@
 #include "utils.h"
 
 #include "abstraction.h"
+#include "cost_partitioning_generator_greedy.h"
 
 #include "../sampling.h"
 #include "../successor_generator.h"
 #include "../task_proxy.h"
 #include "../task_tools.h"
 
+#include "../options/options.h"
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 
@@ -83,6 +85,27 @@ CostPartitioning compute_saturated_cost_partitioning(
         }
     }
     return h_values_by_abstraction;
+}
+
+CostPartitioning compute_cost_partitioning_for_static_order(
+    const TaskProxy &task_proxy,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &costs,
+    CPFunction cp_function,
+    const State &state) {
+    options::Options greedy_opts;
+    greedy_opts.set("reverse_initial_order", false);
+    greedy_opts.set("scoring_function", static_cast<int>(ScoringFunction::MAX_HEURISTIC_PER_COSTS));
+    greedy_opts.set("use_negative_costs", false);
+    greedy_opts.set("queue_zero_ratios", true);
+    greedy_opts.set("dynamic", false);
+    greedy_opts.set("steepest_ascent", false);
+    greedy_opts.set("max_optimization_time", 0.0);
+    greedy_opts.set("random_seed", 0);
+    CostPartitioningGeneratorGreedy greedy_generator(greedy_opts);
+    greedy_generator.initialize(task_proxy, abstractions, costs);
+    return greedy_generator.get_next_cost_partitioning(
+        task_proxy, abstractions, costs, state, cp_function);
 }
 
 vector<State> sample_states(

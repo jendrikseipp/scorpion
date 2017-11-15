@@ -19,9 +19,6 @@ namespace cost_saturation {
 class Abstraction;
 class CostPartitioningGenerator;
 
-using CPFunction = std::function<CostPartitioning(
-                                     const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
-
 class CostPartitioningCollectionGenerator {
     const std::shared_ptr<CostPartitioningGenerator> cp_generator;
     const int max_orders;
