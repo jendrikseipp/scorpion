@@ -74,7 +74,8 @@ int CostPartitioningHeuristic::compute_max_h_with_statistics(
     }
     assert(max_h >= 0);
 
-    if (best_id != -1 && !num_best_order.empty()) {
+    num_best_order.resize(h_values_by_order.size(), 0);
+    if (best_id != -1) {
         assert(utils::in_bounds(best_id, num_best_order));
         ++num_best_order[best_id];
     }
@@ -90,6 +91,24 @@ void CostPartitioningHeuristic::print_statistics() const {
          << num_best_order << endl;
     cout << "Probably useful orders: " << num_probably_useful << "/" << num_orders
          << " = " << 100. * num_probably_useful / num_orders << "%" << endl;
+}
+
+void add_cost_partitioning_collection_options_to_parser(OptionParser &parser) {
+    parser.add_option<int>(
+        "max_orders",
+        "maximum number of abstraction orders",
+        "infinity",
+        Bounds("1", "infinity"));
+    parser.add_option<double>(
+        "max_time",
+        "maximum time for finding cost partitionings",
+        "10",
+        Bounds("0", "infinity"));
+    parser.add_option<bool>(
+        "diversify",
+        "keep orders that improve the portfolio's heuristic value for any of the samples",
+        "true");
+    utils::add_rng_options(parser);
 }
 
 void prepare_parser_for_cost_partitioning_heuristic(
