@@ -44,6 +44,16 @@ static bool is_dead_end(
     return compute_sum_h(local_state_ids, cp) == INF;
 }
 
+static void filter_useless_abstractions(CostPartitioning &cp) {
+    for (vector<int> &h_values : cp) {
+        bool all_zero = all_of(h_values.begin(), h_values.end(), [](int i){return i == 0;});
+        if (all_zero) {
+            h_values = vector<int>();
+        }
+    }
+}
+
+
 void CostPartitioningCollectionGenerator::initialize(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -61,7 +71,8 @@ CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
     const vector<int> &costs,
-    CPFunction cp_function) {
+    CPFunction cp_function,
+    bool filter_zero_h_values) {
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
         diversifier = utils::make_unique_ptr<Diversifier>(
@@ -95,6 +106,9 @@ CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
             task_proxy, abstractions, costs, sample, cp_function);
         ++evaluated_orders;
         if (!diversify || (diversifier->is_diverse(cp))) {
+            if (filter_zero_h_values) {
+                filter_useless_abstractions(cp);
+            }
             cost_partitionings.push_back(move(cp));
         }
     }

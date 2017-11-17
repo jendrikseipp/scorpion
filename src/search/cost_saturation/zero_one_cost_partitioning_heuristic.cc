@@ -51,7 +51,8 @@ ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options
     h_values_by_order =
         cps_generator.get_cost_partitionings(
             task_proxy, abstractions, costs,
-            compute_zero_one_cost_partitioning);
+            compute_zero_one_cost_partitioning,
+            opts.get<bool>("filter_zero_h_values"));
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();

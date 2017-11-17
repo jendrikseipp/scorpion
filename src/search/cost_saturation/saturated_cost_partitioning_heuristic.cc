@@ -59,7 +59,7 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
             task_proxy, abstractions, costs,
             [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
             return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
-        });
+        }, opts.get<bool>("filter_zero_h_values"));
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
