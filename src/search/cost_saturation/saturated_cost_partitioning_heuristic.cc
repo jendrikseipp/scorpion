@@ -54,7 +54,7 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
         opts.get<bool>("diversify"),
         utils::parse_rng_from_options(opts));
     vector<int> costs = get_operator_costs(task_proxy);
-    h_values_by_order =
+    cp_heuristics =
         cps_generator.get_cost_partitionings(
             task_proxy, abstractions, costs,
             [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {

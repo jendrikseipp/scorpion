@@ -1,8 +1,9 @@
 #include "cost_partitioning_collection_generator.h"
 
 #include "abstraction.h"
-#include "diversifier.h"
+#include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_generator.h"
+#include "diversifier.h"
 #include "utils.h"
 
 #include "../sampling.h"
@@ -44,15 +45,6 @@ static bool is_dead_end(
     return compute_sum_h(local_state_ids, cp) == INF;
 }
 
-static void filter_useless_abstractions(CostPartitioning &cp) {
-    for (vector<int> &h_values : cp) {
-        bool all_zero = all_of(h_values.begin(), h_values.end(), [](int i){return i == 0;});
-        if (all_zero) {
-            h_values = vector<int>();
-        }
-    }
-}
-
 
 void CostPartitioningCollectionGenerator::initialize(
     const TaskProxy &task_proxy,
@@ -67,7 +59,7 @@ void CostPartitioningCollectionGenerator::initialize(
     sampler = utils::make_unique_ptr<RandomWalkSampler>(task_proxy, init_h, rng);
 }
 
-CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
+vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_partitionings(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
     const vector<int> &costs,
@@ -83,37 +75,34 @@ CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
     cp_generator->initialize(task_proxy, abstractions, costs);
 
     if (init_h == INF) {
-        return {scp_for_sampling};
+        return {CostPartitionedHeuristic(move(scp_for_sampling), filter_zero_h_values)};
     }
 
-    CostPartitionings cost_partitionings;
+    vector<CostPartitionedHeuristic> cp_heuristics;
     utils::CountdownTimer timer(max_time);
     int evaluated_orders = 0;
-    while (static_cast<int>(cost_partitionings.size()) < max_orders &&
+    while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            !timer.is_expired() && cp_generator->has_next_cost_partitioning()) {
         State sample = sampler->sample_state();
         // Skip dead-end samples if we have already found an order, since all
         // orders recognize the same dead ends.
-        while (!cost_partitionings.empty() &&
+        while (!cp_heuristics.empty() &&
                is_dead_end(abstractions, scp_for_sampling, sample) &&
                !timer.is_expired()) {
             sample = sampler->sample_state();
         }
-        if (timer.is_expired() && !cost_partitionings.empty()) {
+        if (timer.is_expired() && !cp_heuristics.empty()) {
             break;
         }
         CostPartitioning cp = cp_generator->get_next_cost_partitioning(
             task_proxy, abstractions, costs, sample, cp_function);
         ++evaluated_orders;
         if (!diversify || (diversifier->is_diverse(cp))) {
-            if (filter_zero_h_values) {
-                filter_useless_abstractions(cp);
-            }
-            cost_partitionings.push_back(move(cp));
+            cp_heuristics.emplace_back(move(cp), filter_zero_h_values);
         }
     }
-    cout << "Orders: " << cost_partitionings.size() << endl;
+    cout << "Orders: " << cp_heuristics.size() << endl;
     cout << "Time for computing cost partitionings: " << timer << endl;
-    return cost_partitionings;
+    return cp_heuristics;
 }
 }

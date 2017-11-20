@@ -19,7 +19,7 @@ class CostPartitionedHeuristic {
     std::vector<CostPartitionedHeuristicValues> h_values_by_heuristic;
 
 public:
-    explicit CostPartitionedHeuristic(CostPartitioning &&cp);
+    CostPartitionedHeuristic(CostPartitioning &&cp, bool filter_blind_heuristics);
 
     int compute_heuristic(const std::vector<int> &local_state_ids) const;
 };
