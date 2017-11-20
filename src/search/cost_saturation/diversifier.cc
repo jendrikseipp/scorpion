@@ -39,6 +39,8 @@ Diversifier::Diversifier(
             get_local_state_ids(abstractions, sample));
     }
     utils::release_vector_memory(samples);
+
+    // Initialize portfolio h values with -1 to ensure that first CP is diverse.
     portfolio_h_values.resize(local_state_ids_by_sample.size(), -1);
 
     // Log percentage of abstract states covered by samples.
