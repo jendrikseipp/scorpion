@@ -21,8 +21,7 @@ Diversifier::Diversifier(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
     CPFunction cp_function,
-    const shared_ptr<utils::RandomNumberGenerator> &rng)
-    : portfolio_h_values(max_samples, -1) {
+    const shared_ptr<utils::RandomNumberGenerator> &rng) {
     CostPartitioning scp_for_sampling = compute_cost_partitioning_for_static_order(
         task_proxy, abstractions, costs, cp_function, task_proxy.get_initial_state());
 
@@ -40,6 +39,7 @@ Diversifier::Diversifier(
             get_local_state_ids(abstractions, sample));
     }
     utils::release_vector_memory(samples);
+    portfolio_h_values.resize(local_state_ids_by_sample.size(), -1);
 
     // Log percentage of abstract states covered by samples.
     int num_abstract_states = 0;
