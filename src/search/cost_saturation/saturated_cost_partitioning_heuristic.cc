@@ -61,6 +61,15 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
             return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
         }, opts.get<bool>("filter_zero_h_values"));
 
+    int num_heuristics = abstractions.size() * cp_heuristics.size();
+    int num_stored_heuristics = 0;
+    for (const auto &cp_heuristic: cp_heuristics) {
+        num_stored_heuristics += cp_heuristic.size();
+    }
+    cout << "Stored heuristics: " << num_stored_heuristics << "/"
+         << num_heuristics << " = "
+         << num_stored_heuristics / static_cast<double>(num_heuristics) << endl;
+
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
     }

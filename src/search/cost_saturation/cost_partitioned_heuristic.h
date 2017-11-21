@@ -22,6 +22,8 @@ public:
     CostPartitionedHeuristic(CostPartitioning &&cp, bool filter_blind_heuristics);
 
     int compute_heuristic(const std::vector<int> &local_state_ids) const;
+
+    int size() const;
 };
 }
 

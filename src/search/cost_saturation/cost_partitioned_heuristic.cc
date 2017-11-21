@@ -36,4 +36,8 @@ int CostPartitionedHeuristic::compute_heuristic(const vector<int> &local_state_i
     }
     return sum_h;
 }
+
+int CostPartitionedHeuristic::size() const {
+    return h_values_by_heuristic.size();
+}
 }
