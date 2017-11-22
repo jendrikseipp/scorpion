@@ -32,7 +32,13 @@ int CostPartitionedHeuristic::compute_heuristic(const vector<int> &local_state_i
         assert(utils::in_bounds(cp_h_values.heuristic_index, local_state_ids));
         int state_id = local_state_ids[cp_h_values.heuristic_index];
         assert(utils::in_bounds(state_id, cp_h_values.h_values));
-        sum_h += cp_h_values.h_values[state_id];
+        int h = cp_h_values.h_values[state_id];
+        assert(h >= 0);
+        if (h == INF) {
+            return INF;
+        }
+        sum_h += h;
+        assert(sum_h >= 0);
     }
     return sum_h;
 }
