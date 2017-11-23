@@ -96,15 +96,17 @@ vector<State> sample_states(
     if (init_h == INF) {
         return {move(initial_state)};
     }
-    RandomWalkSampler sampler(task_proxy, init_h, rng);
+    DeadEndDetector is_dead_end = [&heuristic] (const State &state) {
+        return heuristic(state) == INF;
+    };
+    RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     vector<State> samples;
     while (static_cast<int>(samples.size()) < num_samples &&
            !sampling_timer.is_expired()) {
         State sample = sampler.sample_state();
-        if (heuristic(sample) != INF) {
-            samples.push_back(move(sample));
-        }
+        assert(sample == initial_state || heuristic(sample) != INF);
+        samples.push_back(move(sample));
     }
 
     cout << "Samples: " << samples.size() << endl;

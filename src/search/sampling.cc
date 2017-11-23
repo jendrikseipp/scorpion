@@ -116,7 +116,8 @@ State RandomWalkSampler::sample_state() {
             *successor_generator,
             init_h,
             average_operator_costs,
-            *rng);
+            *rng,
+            is_dead_end);
     } else {
         returned_initial_state = true;
         return *initial_state;
