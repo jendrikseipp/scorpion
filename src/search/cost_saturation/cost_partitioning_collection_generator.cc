@@ -36,14 +36,6 @@ CostPartitioningCollectionGenerator::CostPartitioningCollectionGenerator(
 CostPartitioningCollectionGenerator::~CostPartitioningCollectionGenerator() {
 }
 
-static bool is_dead_end(
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const CostPartitioning &cp,
-    const State &state) {
-    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-    return compute_sum_h(local_state_ids, cp) == INF;
-}
-
 static void filter_useless_abstractions(CostPartitioning &cp) {
     for (vector<int> &h_values : cp) {
         bool all_zero = all_of(h_values.begin(), h_values.end(), [](int i){return i == 0;});
@@ -53,19 +45,6 @@ static void filter_useless_abstractions(CostPartitioning &cp) {
     }
 }
 
-
-void CostPartitioningCollectionGenerator::initialize(
-    const TaskProxy &task_proxy,
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &costs,
-    CPFunction cp_function) {
-    State initial_state = task_proxy.get_initial_state();
-    scp_for_sampling = compute_cost_partitioning_for_static_order(
-        task_proxy, abstractions, costs, cp_function, initial_state);
-    vector<int> local_state_ids = get_local_state_ids(abstractions, initial_state);
-    init_h = compute_sum_h(local_state_ids, scp_for_sampling);
-    sampler = utils::make_unique_ptr<RandomWalkSampler>(task_proxy, init_h, rng);
-}
 
 CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
     const TaskProxy &task_proxy,
@@ -79,26 +58,33 @@ CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
             task_proxy, abstractions, costs, cp_function, rng);
     }
 
-    initialize(task_proxy, abstractions, costs, cp_function);
-    cp_generator->initialize(task_proxy, abstractions, costs);
+    State initial_state = task_proxy.get_initial_state();
+    CostPartitioning scp_for_sampling = compute_cost_partitioning_for_static_order(
+        task_proxy, abstractions, costs, cp_function, initial_state);
+    function<int (const State &state)> sampling_heuristic =
+        [&abstractions, &scp_for_sampling](const State &state) {
+            vector<int> local_state_ids = get_local_state_ids(abstractions, state);
+            return compute_sum_h(local_state_ids, scp_for_sampling);
+        };
+    DeadEndDetector is_dead_end = [&sampling_heuristic](const State &state) {
+        return sampling_heuristic(state) == INF;
+    };
+    int init_h = sampling_heuristic(initial_state);
+    RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     if (init_h == INF) {
         return {scp_for_sampling};
     }
+
+    cp_generator->initialize(task_proxy, abstractions, costs);
 
     CostPartitionings cost_partitionings;
     utils::CountdownTimer timer(max_time);
     int evaluated_orders = 0;
     while (static_cast<int>(cost_partitionings.size()) < max_orders &&
            !timer.is_expired() && cp_generator->has_next_cost_partitioning()) {
-        State sample = sampler->sample_state();
-        // Skip dead-end samples if we have already found an order, since all
-        // orders recognize the same dead ends.
-        while (!cost_partitionings.empty() &&
-               is_dead_end(abstractions, scp_for_sampling, sample) &&
-               !timer.is_expired()) {
-            sample = sampler->sample_state();
-        }
+        State sample = sampler.sample_state();
+        assert(sample == initial_state || !is_dead_end(sample));
         if (timer.is_expired() && !cost_partitionings.empty()) {
             break;
         }
