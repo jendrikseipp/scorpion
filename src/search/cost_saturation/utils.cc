@@ -92,7 +92,7 @@ vector<State> sample_states(
 
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
-    cout << "Initial h value for default order: " << init_h << endl;
+    cout << "Initial h value for sampling: " << init_h << endl;
     if (init_h == INF) {
         return {move(initial_state)};
     }
