@@ -77,13 +77,16 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
         }
     }
 
+    utils::Log() << "Compute distances" << endl;
     for (const auto &abstraction : abstractions) {
         h_values_by_abstraction.push_back(abstraction->compute_h_values(operator_costs));
     }
 
+    utils::Log() << "Compute max additive subsets" << endl;
     max_additive_subsets = compute_max_additive_subsets(
         abstractions, operator_costs.size());
 
+    utils::Log() << "Delete transition systems" << endl;
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
     }

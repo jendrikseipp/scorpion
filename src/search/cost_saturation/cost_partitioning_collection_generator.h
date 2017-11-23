@@ -27,16 +27,6 @@ class CostPartitioningCollectionGenerator {
     const bool diversify;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
-    std::unique_ptr<RandomWalkSampler> sampler;
-    CostPartitioning scp_for_sampling;
-    int init_h;
-
-    void initialize(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs,
-        CPFunction cp_function);
-
 public:
     CostPartitioningCollectionGenerator(
         const std::shared_ptr<CostPartitioningGenerator> &cp_generator,
