@@ -1,8 +1,9 @@
 #include "cost_partitioning_collection_generator.h"
 
 #include "abstraction.h"
-#include "diversifier.h"
+#include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_generator.h"
+#include "diversifier.h"
 #include "utils.h"
 
 #include "../sampling.h"
@@ -36,17 +37,7 @@ CostPartitioningCollectionGenerator::CostPartitioningCollectionGenerator(
 CostPartitioningCollectionGenerator::~CostPartitioningCollectionGenerator() {
 }
 
-static void filter_useless_abstractions(CostPartitioning &cp) {
-    for (vector<int> &h_values : cp) {
-        bool all_zero = all_of(h_values.begin(), h_values.end(), [](int i){return i == 0;});
-        if (all_zero) {
-            h_values = vector<int>();
-        }
-    }
-}
-
-
-CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
+vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_partitionings(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
     const vector<int> &costs,
@@ -73,33 +64,35 @@ CostPartitionings CostPartitioningCollectionGenerator::get_cost_partitionings(
     RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     if (init_h == INF) {
-        return {scp_for_sampling};
+        return {CostPartitionedHeuristic(move(scp_for_sampling), filter_zero_h_values)};
     }
 
     cp_generator->initialize(task_proxy, abstractions, costs);
 
-    CostPartitionings cost_partitionings;
+    vector<CostPartitionedHeuristic> cp_heuristics;
     utils::CountdownTimer timer(max_time);
     int evaluated_orders = 0;
-    while (static_cast<int>(cost_partitionings.size()) < max_orders &&
+    int peak_memory_without_cps = utils::get_peak_memory_in_kb();
+    utils::Log() << "Start computing cost partitionings" << endl;
+    while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            !timer.is_expired() && cp_generator->has_next_cost_partitioning()) {
         State sample = sampler.sample_state();
         assert(sample == initial_state || !is_dead_end(sample));
-        if (timer.is_expired() && !cost_partitionings.empty()) {
+        if (timer.is_expired() && !cp_heuristics.empty()) {
             break;
         }
         CostPartitioning cp = cp_generator->get_next_cost_partitioning(
             task_proxy, abstractions, costs, sample, cp_function);
         ++evaluated_orders;
         if (!diversify || (diversifier->is_diverse(cp))) {
-            if (filter_zero_h_values) {
-                filter_useless_abstractions(cp);
-            }
-            cost_partitionings.push_back(move(cp));
+            cp_heuristics.emplace_back(move(cp), filter_zero_h_values);
         }
     }
-    cout << "Orders: " << cost_partitionings.size() << endl;
-    cout << "Time for computing cost partitionings: " << timer << endl;
-    return cost_partitionings;
+    int peak_memory_with_cps = utils::get_peak_memory_in_kb();
+    utils::Log() << "Orders: " << cp_heuristics.size() << endl;
+    utils::Log() << "Time for computing cost partitionings: " << timer << endl;
+    utils::Log() << "Memory for cost partitionings: "
+                 << peak_memory_with_cps - peak_memory_without_cps << " KB" << endl;
+    return cp_heuristics;
 }
 }

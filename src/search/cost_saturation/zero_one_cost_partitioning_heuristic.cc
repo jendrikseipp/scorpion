@@ -48,7 +48,7 @@ ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options
         opts.get<double>("max_time"),
         opts.get<bool>("diversify"),
         utils::parse_rng_from_options(opts));
-    h_values_by_order =
+    cp_heuristics =
         cps_generator.get_cost_partitionings(
             task_proxy, abstractions, costs,
             compute_zero_one_cost_partitioning,

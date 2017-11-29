@@ -54,12 +54,21 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Opt
         opts.get<bool>("diversify"),
         utils::parse_rng_from_options(opts));
     vector<int> costs = get_operator_costs(task_proxy);
-    h_values_by_order =
+    cp_heuristics =
         cps_generator.get_cost_partitionings(
             task_proxy, abstractions, costs,
             [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
             return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
         }, opts.get<bool>("filter_zero_h_values"));
+
+    int num_heuristics = abstractions.size() * cp_heuristics.size();
+    int num_stored_heuristics = 0;
+    for (const auto &cp_heuristic: cp_heuristics) {
+        num_stored_heuristics += cp_heuristic.size();
+    }
+    cout << "Stored heuristics: " << num_stored_heuristics << "/"
+         << num_heuristics << " = "
+         << num_stored_heuristics / static_cast<double>(num_heuristics) << endl;
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();

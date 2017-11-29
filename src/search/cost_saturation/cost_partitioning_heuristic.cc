@@ -61,8 +61,8 @@ int CostPartitioningHeuristic::compute_max_h_with_statistics(
     int max_h = 0;
     int best_id = -1;
     int current_id = 0;
-    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
-        int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+    for (const CostPartitionedHeuristic &cp_heuristic : cp_heuristics) {
+        int sum_h = cp_heuristic.compute_heuristic(local_state_ids);
         if (sum_h > max_h) {
             max_h = sum_h;
             best_id = current_id;
@@ -74,7 +74,7 @@ int CostPartitioningHeuristic::compute_max_h_with_statistics(
     }
     assert(max_h >= 0);
 
-    num_best_order.resize(h_values_by_order.size(), 0);
+    num_best_order.resize(cp_heuristics.size(), 0);
     if (best_id != -1) {
         assert(utils::in_bounds(best_id, num_best_order));
         ++num_best_order[best_id];
