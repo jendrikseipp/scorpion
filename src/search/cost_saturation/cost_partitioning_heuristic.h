@@ -1,6 +1,7 @@
 #ifndef COST_SATURATION_COST_PARTITIONING_HEURISTIC_H
 #define COST_SATURATION_COST_PARTITIONING_HEURISTIC_H
 
+#include "cost_partitioned_heuristic.h"
 #include "types.h"
 
 #include "../heuristic.h"
@@ -15,7 +16,7 @@ class Options;
 namespace cost_saturation {
 class CostPartitioningHeuristic : public Heuristic {
 protected:
-    CostPartitionings h_values_by_order;
+    std::vector<CostPartitionedHeuristic> cp_heuristics;
     Abstractions abstractions;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
@@ -35,6 +36,9 @@ public:
 
     virtual void print_statistics() const override;
 };
+
+extern void add_cost_partitioning_collection_options_to_parser(
+    options::OptionParser &parser);
 
 extern void prepare_parser_for_cost_partitioning_heuristic(
     options::OptionParser &parser);

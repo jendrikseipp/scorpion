@@ -20,27 +20,28 @@ Diversifier::Diversifier(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
-    utils::RandomNumberGenerator &rng)
-    : portfolio_h_values(max_samples, -1) {
-    // Always use h(s_0) from SCP to obtain the same samples for all CPs.
-    vector<int> default_order = get_default_order(abstractions.size());
-    CostPartitioning scp_for_default_order =
-        compute_saturated_cost_partitioning(abstractions, default_order, costs);
+    CPFunction cp_function,
+    const shared_ptr<utils::RandomNumberGenerator> &rng) {
+    CostPartitioning scp_for_sampling = compute_cost_partitioning_for_static_order(
+        task_proxy, abstractions, costs, cp_function, task_proxy.get_initial_state());
 
-    function<int (const State &state)> default_order_heuristic =
-        [&abstractions, &scp_for_default_order](const State &state) {
+    function<int (const State &state)> sampling_heuristic =
+        [&abstractions, &scp_for_sampling](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-            return compute_sum_h(local_state_ids, scp_for_default_order);
+            return compute_sum_h(local_state_ids, scp_for_sampling);
         };
 
     vector<State> samples = sample_states(
-        task_proxy, default_order_heuristic, max_samples, rng);
+        task_proxy, sampling_heuristic, max_samples, rng);
 
     for (const State &sample : samples) {
         local_state_ids_by_sample.push_back(
             get_local_state_ids(abstractions, sample));
     }
     utils::release_vector_memory(samples);
+
+    // Initialize portfolio h values with -1 to ensure that first CP is diverse.
+    portfolio_h_values.resize(local_state_ids_by_sample.size(), -1);
 
     // Log percentage of abstract states covered by samples.
     int num_abstract_states = 0;
@@ -80,7 +81,7 @@ bool Diversifier::is_diverse(const CostPartitioning &cp) {
         for (int h : portfolio_h_values) {
             sum_portfolio_h += h;
         }
-        cout << "Portfolio sum h value: " << sum_portfolio_h << endl;
+        utils::Log() << "Portfolio sum h value: " << sum_portfolio_h << endl;
     }
 
     return cp_improves_portfolio;

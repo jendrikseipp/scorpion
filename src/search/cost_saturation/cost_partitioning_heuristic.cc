@@ -61,8 +61,8 @@ int CostPartitioningHeuristic::compute_max_h_with_statistics(
     int max_h = 0;
     int best_id = -1;
     int current_id = 0;
-    for (const vector<vector<int>> &h_values_by_abstraction : h_values_by_order) {
-        int sum_h = compute_sum_h(local_state_ids, h_values_by_abstraction);
+    for (const CostPartitionedHeuristic &cp_heuristic : cp_heuristics) {
+        int sum_h = cp_heuristic.compute_heuristic(local_state_ids);
         if (sum_h > max_h) {
             max_h = sum_h;
             best_id = current_id;
@@ -74,7 +74,8 @@ int CostPartitioningHeuristic::compute_max_h_with_statistics(
     }
     assert(max_h >= 0);
 
-    if (best_id != -1 && !num_best_order.empty()) {
+    num_best_order.resize(cp_heuristics.size(), 0);
+    if (best_id != -1) {
         assert(utils::in_bounds(best_id, num_best_order));
         ++num_best_order[best_id];
     }
@@ -90,6 +91,28 @@ void CostPartitioningHeuristic::print_statistics() const {
          << num_best_order << endl;
     cout << "Probably useful orders: " << num_probably_useful << "/" << num_orders
          << " = " << 100. * num_probably_useful / num_orders << "%" << endl;
+}
+
+void add_cost_partitioning_collection_options_to_parser(OptionParser &parser) {
+    parser.add_option<int>(
+        "max_orders",
+        "maximum number of abstraction orders",
+        "infinity",
+        Bounds("0", "infinity"));
+    parser.add_option<double>(
+        "max_time",
+        "maximum time for finding cost partitionings",
+        "10",
+        Bounds("0", "infinity"));
+    parser.add_option<bool>(
+        "diversify",
+        "keep orders that improve the portfolio's heuristic value for any of the samples",
+        "true");
+    parser.add_option<bool>(
+        "filter_zero_h_values",
+        "don't store h-value vectors that only contain zeros",
+        "false");
+    utils::add_rng_options(parser);
 }
 
 void prepare_parser_for_cost_partitioning_heuristic(

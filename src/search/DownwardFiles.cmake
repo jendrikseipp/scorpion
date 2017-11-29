@@ -412,10 +412,12 @@ fast_downward_plugin(
     SOURCES
         cost_saturation/abstraction
         cost_saturation/abstraction_generator
+        cost_saturation/canonical_heuristic
         cost_saturation/cartesian_abstraction_generator
+        cost_saturation/cost_partitioned_heuristic
+        cost_saturation/cost_partitioning_collection_generator
         cost_saturation/cost_partitioning_generator
         cost_saturation/cost_partitioning_generator_greedy
-        cost_saturation/cost_partitioning_generator_random
         cost_saturation/cost_partitioning_heuristic
         cost_saturation/diversifier
         cost_saturation/explicit_abstraction
@@ -498,6 +500,7 @@ fast_downward_plugin(
         operator_counting/constraint_generator
         operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
+        operator_counting/pho_abstraction_constraints
         operator_counting/pho_constraints
         operator_counting/state_equation_constraints
     DEPENDS LP_SOLVER LANDMARK_CUT_HEURISTIC PDBS

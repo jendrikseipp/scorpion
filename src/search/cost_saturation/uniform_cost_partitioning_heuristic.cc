@@ -1,7 +1,7 @@
 #include "uniform_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_generator.h"
+#include "cost_partitioning_collection_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -11,6 +11,7 @@
 #include "../tasks/modified_operator_costs_task.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
+#include "../utils/rng_options.h"
 
 using namespace std;
 
@@ -110,23 +111,29 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
     const bool dynamic = opts.get<bool>("dynamic");
+    const bool filter_blind_heuristics = opts.get<bool>("filter_zero_h_values");
     const bool verbose = debug;
 
     vector<int> costs = get_operator_costs(task_proxy);
     if (dynamic) {
-        h_values_by_order =
-            opts.get<shared_ptr<CostPartitioningGenerator>>("orders")->get_cost_partitionings(
+        CostPartitioningCollectionGenerator cps_generator(
+            opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
+            opts.get<int>("max_orders"),
+            opts.get<double>("max_time"),
+            opts.get<bool>("diversify"),
+            utils::parse_rng_from_options(opts));
+        cp_heuristics =
+            cps_generator.get_cost_partitionings(
                 task_proxy, abstractions, costs,
                 [dynamic, verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
                 return compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose);
-            });
+            }, filter_blind_heuristics);
     } else {
-        assert(h_values_by_order.empty());
+        assert(cp_heuristics.empty());
         vector<int> order = get_default_order(abstractions.size());
-        h_values_by_order.push_back(
-            compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose));
+        cp_heuristics.emplace_back(
+            compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose), filter_blind_heuristics);
     }
-    num_best_order.resize(h_values_by_order.size(), 0);
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
@@ -149,6 +156,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
+    add_cost_partitioning_collection_options_to_parser(parser);
     parser.add_option<bool>(
         "dynamic",
         "recalculate costs after each considered abstraction",

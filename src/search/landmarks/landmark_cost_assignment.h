@@ -49,9 +49,9 @@ class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     std::vector<double> remaining_costs;
     std::vector<int> remaining_lms_per_op;
 
-void order_landmarks(
-    std::vector<const LandmarkNode *> landmarks,
-    cost_saturation::ScoringFunction scoring_function);
+    void order_landmarks(
+        std::vector<const LandmarkNode *> landmarks,
+        cost_saturation::ScoringFunction scoring_function);
 
 public:
     LandmarkUniformSharedCostAssignment(const std::vector<int> &operator_costs,
@@ -61,6 +61,35 @@ public:
                                         bool greedy,
                                         enum cost_saturation::ScoringFunction,
                                         const std::shared_ptr<utils::RandomNumberGenerator> &rng);
+
+    virtual double cost_sharing_h_value() override;
+};
+
+class LandmarkCanonicalHeuristic : public LandmarkCostAssignment {
+    std::vector<std::vector<int>> compute_max_additive_subsets(
+        const std::vector<const LandmarkNode *> &relevant_landmarks);
+    int compute_minimum_landmark_cost(const LandmarkNode &lm) const;
+public:
+    LandmarkCanonicalHeuristic(
+        const std::vector<int> &operator_costs,
+        const LandmarkGraph &graph);
+
+    virtual double cost_sharing_h_value() override;
+};
+
+class LandmarkPhO : public LandmarkCostAssignment {
+    // See comment for LandmarkEfficientOptimalSharedCostAssignment.
+    lp::LPSolver lp_solver;
+    std::vector<lp::LPVariable> lp_variables;
+    std::vector<lp::LPConstraint> lp_constraints;
+    std::vector<lp::LPConstraint> non_empty_lp_constraints;
+
+    int compute_minimum_landmark_cost(const LandmarkNode &lm) const;
+public:
+    LandmarkPhO(
+        const std::vector<int> &operator_costs,
+        const LandmarkGraph &graph,
+        lp::LPSolverType solver_type);
 
     virtual double cost_sharing_h_value() override;
 };

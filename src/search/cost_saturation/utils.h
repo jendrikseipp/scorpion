@@ -19,14 +19,21 @@ extern int compute_sum_h(
     const std::vector<int> &local_state_ids,
     const std::vector<std::vector<int>> &h_values_by_abstraction);
 
-std::vector<int> get_local_state_ids(
+extern std::vector<int> get_local_state_ids(
     const Abstractions &abstractions, const State &state);
+
+extern CostPartitioning compute_cost_partitioning_for_static_order(
+    const TaskProxy &task_proxy,
+    const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+    const std::vector<int> &costs,
+    CPFunction cp_function,
+    const State &state);
 
 extern std::vector<State> sample_states(
     const TaskProxy &task_proxy,
     const std::function<int (const State &)> &heuristic,
     int num_samples,
-    utils::RandomNumberGenerator &rng);
+    const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs,

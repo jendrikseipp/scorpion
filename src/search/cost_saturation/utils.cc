@@ -1,12 +1,14 @@
 #include "utils.h"
 
 #include "abstraction.h"
+#include "cost_partitioning_generator_greedy.h"
 
 #include "../sampling.h"
 #include "../successor_generator.h"
 #include "../task_proxy.h"
 #include "../task_tools.h"
 
+#include "../options/options.h"
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 
@@ -28,12 +30,12 @@ int compute_sum_h(
     int sum_h = 0;
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     for (size_t i = 0; i < local_state_ids.size(); ++i) {
+        const vector<int> &h_values = h_values_by_abstraction[i];
         int state_id = local_state_ids[i];
         if (state_id == -1) {
             // Abstract state has been pruned.
             return INF;
         }
-        const vector<int> &h_values = h_values_by_abstraction[i];
         assert(utils::in_bounds(state_id, h_values));
         int value = h_values[state_id];
         assert(value >= 0);
@@ -55,38 +57,55 @@ vector<int> get_local_state_ids(
     return local_state_ids;
 }
 
+CostPartitioning compute_cost_partitioning_for_static_order(
+    const TaskProxy &task_proxy,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<int> &costs,
+    CPFunction cp_function,
+    const State &state) {
+    options::Options greedy_opts;
+    greedy_opts.set("reverse_initial_order", false);
+    greedy_opts.set("scoring_function", static_cast<int>(ScoringFunction::MAX_HEURISTIC_PER_COSTS));
+    greedy_opts.set("use_negative_costs", false);
+    greedy_opts.set("queue_zero_ratios", true);
+    greedy_opts.set("dynamic", false);
+    greedy_opts.set("steepest_ascent", false);
+    greedy_opts.set("max_optimization_time", 0.0);
+    greedy_opts.set("random_seed", 0);
+    CostPartitioningGeneratorGreedy greedy_generator(greedy_opts);
+    greedy_generator.initialize(task_proxy, abstractions, costs);
+    return greedy_generator.get_next_cost_partitioning(
+        task_proxy, abstractions, costs, state, cp_function);
+}
+
 vector<State> sample_states(
     const TaskProxy &task_proxy,
     const function<int (const State &state)> &heuristic,
     int num_samples,
-    utils::RandomNumberGenerator &rng) {
+    const shared_ptr<utils::RandomNumberGenerator> &rng) {
+    assert(num_samples >= 1);
     cout << "Start sampling" << endl;
     utils::CountdownTimer sampling_timer(60);
 
-    SuccessorGenerator successor_generator(task_proxy);
-    const double average_operator_costs = get_average_operator_cost(task_proxy);
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
-    cout << "Initial h value for default order: " << init_h << endl;
+    cout << "Initial h value for sampling: " << init_h << endl;
+    if (init_h == INF) {
+        return {
+                   move(initial_state)
+        };
+    }
+    DeadEndDetector is_dead_end = [&heuristic] (const State &state) {
+                                      return heuristic(state) == INF;
+                                  };
+    RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     vector<State> samples;
-    while (init_h != INF &&
-           static_cast<int>(samples.size()) < num_samples &&
+    while (static_cast<int>(samples.size()) < num_samples &&
            !sampling_timer.is_expired()) {
-        State sample = sample_state_with_random_walk(
-            initial_state,
-            successor_generator,
-            init_h,
-            average_operator_costs,
-            rng);
-        if (heuristic(sample) != INF) {
-            samples.push_back(move(sample));
-        }
-    }
-
-    // Use initial state if we only found dead-ends.
-    if (samples.empty()) {
-        samples.push_back(move(initial_state));
+        State sample = sampler.sample_state();
+        assert(sample == initial_state || heuristic(sample) != INF);
+        samples.push_back(move(sample));
     }
 
     cout << "Samples: " << samples.size() << endl;

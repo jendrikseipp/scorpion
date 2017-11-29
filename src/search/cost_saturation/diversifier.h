@@ -20,7 +20,8 @@ public:
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
-        utils::RandomNumberGenerator &rng);
+        CPFunction cp_function,
+        const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
     bool is_diverse(const CostPartitioning &cp);
 };

@@ -33,6 +33,10 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     // maximum added size of all pdbs
     const int collection_max_size;
     const int num_samples;
+    const bool use_all_connected_variables;
+    const bool update_samples;
+    const bool detect_worse_patterns_early;
+    const bool forget_patterns_early;
     // minimal improvement required for hill climbing to continue search
     const int min_improvement;
     const double max_time;
@@ -51,6 +55,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     */
     void generate_candidate_patterns(
         const TaskProxy &task_proxy,
+        const std::vector<std::vector<int>> &connected_variables,
         const PatternDatabase &pdb,
         PatternCollection &candidate_patterns);
 
@@ -86,7 +91,8 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
       the index of the best pdb in candidate_pdbs.
     */
     std::pair<int, int> find_best_improving_pdb(
-        std::vector<State> &samples,
+        const std::vector<State> &samples,
+        const std::vector<int> &current_samples_h_values,
         PDBCollection &candidate_pdbs);
 
     /*
@@ -98,6 +104,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     bool is_heuristic_improved(
         const PatternDatabase &pdb,
         const State &sample,
+        int h_collection,
         const MaxAdditivePDBSubsets &max_additive_subsets);
 
     /*
@@ -116,6 +123,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     */
     void hill_climbing(
         const TaskProxy &task_proxy,
+        const std::vector<std::vector<int>> &connected_variables,
         const SuccessorGenerator &successor_generator,
         double average_operator_costs,
         PatternCollection &initial_candidate_patterns);

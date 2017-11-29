@@ -15,6 +15,7 @@ class CountdownTimer;
 class RandomNumberGenerator;
 }
 
+using DeadEndDetector = std::function<bool (State)>;
 
 struct SamplingTimeout : public std::exception {};
 
@@ -24,9 +25,7 @@ State sample_state_with_random_walk(
     int init_h,
     double average_operator_cost,
     utils::RandomNumberGenerator &rng,
-    std::function<bool(State)> is_dead_end = [] (const State &) {
-                                                 return false;
-                                             });
+    DeadEndDetector is_dead_end = [] (const State &) {return false; });
 
 /*
   Perform 'num_samples' random walks with biomially distributed walk
@@ -44,9 +43,27 @@ std::vector<State> sample_states_with_random_walks(
     int init_h,
     double average_operator_cost,
     utils::RandomNumberGenerator &rng,
-    std::function<bool(State)> is_dead_end = [] (const State &) {
-                                                 return false;
-                                             },
+    DeadEndDetector is_dead_end = [] (const State &) {return false; },
     const utils::CountdownTimer *timer = nullptr);
+
+
+class RandomWalkSampler {
+    const std::unique_ptr<SuccessorGenerator> successor_generator;
+    const std::unique_ptr<State> initial_state;
+    const int init_h;
+    const double average_operator_costs;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
+    const DeadEndDetector is_dead_end;
+    bool returned_initial_state;
+
+public:
+    RandomWalkSampler(
+        const TaskProxy &task_proxy,
+        int init_h,
+        const std::shared_ptr<utils::RandomNumberGenerator> &rng,
+        DeadEndDetector is_dead_end = [] (const State &) {return false; });
+
+    State sample_state();
+};
 
 #endif

@@ -217,7 +217,7 @@ vector<int> Projection::compute_distances(
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
-    pq.clear();
+    assert(pq.empty());
     for (int goal : goal_states) {
         pq.push(0, goal);
         distances[goal] = 0;
@@ -254,6 +254,7 @@ vector<int> Projection::compute_distances(
             }
         }
     }
+    pq.clear();
     return distances;
 }
 
