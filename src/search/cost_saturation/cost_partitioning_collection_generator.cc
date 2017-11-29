@@ -58,13 +58,15 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
             return compute_sum_h(local_state_ids, scp_for_sampling);
         };
     DeadEndDetector is_dead_end = [&sampling_heuristic](const State &state) {
-        return sampling_heuristic(state) == INF;
-    };
+                                      return sampling_heuristic(state) == INF;
+                                  };
     int init_h = sampling_heuristic(initial_state);
     RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     if (init_h == INF) {
-        return {CostPartitionedHeuristic(move(scp_for_sampling), filter_zero_h_values)};
+        return {
+                   CostPartitionedHeuristic(move(scp_for_sampling), filter_zero_h_values)
+        };
     }
 
     cp_generator->initialize(task_proxy, abstractions, costs);

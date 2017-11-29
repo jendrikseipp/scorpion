@@ -91,11 +91,13 @@ vector<State> sample_states(
     int init_h = heuristic(initial_state);
     cout << "Initial h value for sampling: " << init_h << endl;
     if (init_h == INF) {
-        return {move(initial_state)};
+        return {
+                   move(initial_state)
+        };
     }
     DeadEndDetector is_dead_end = [&heuristic] (const State &state) {
-        return heuristic(state) == INF;
-    };
+                                      return heuristic(state) == INF;
+                                  };
     RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     vector<State> samples;

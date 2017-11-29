@@ -20,7 +20,7 @@ CostPartitionedHeuristic::CostPartitionedHeuristic(
     for (int h_id = 0; h_id < num_heuristics; ++h_id) {
         vector<int> &h_values = cp[h_id];
         if (!filter_blind_heuristics ||
-            any_of(h_values.begin(), h_values.end(), [](int i){return i != 0;})) {
+            any_of(h_values.begin(), h_values.end(), [](int i) {return i != 0; })) {
             h_values_by_heuristic.emplace_back(h_id, move(h_values));
         }
     }

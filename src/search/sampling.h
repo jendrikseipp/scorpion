@@ -25,7 +25,7 @@ State sample_state_with_random_walk(
     int init_h,
     double average_operator_cost,
     utils::RandomNumberGenerator &rng,
-    DeadEndDetector is_dead_end = [] (const State &) {return false;});
+    DeadEndDetector is_dead_end = [] (const State &) {return false; });
 
 /*
   Perform 'num_samples' random walks with biomially distributed walk
@@ -43,7 +43,7 @@ std::vector<State> sample_states_with_random_walks(
     int init_h,
     double average_operator_cost,
     utils::RandomNumberGenerator &rng,
-    DeadEndDetector is_dead_end = [] (const State &) {return false;},
+    DeadEndDetector is_dead_end = [] (const State &) {return false; },
     const utils::CountdownTimer *timer = nullptr);
 
 
@@ -61,7 +61,7 @@ public:
         const TaskProxy &task_proxy,
         int init_h,
         const std::shared_ptr<utils::RandomNumberGenerator> &rng,
-        DeadEndDetector is_dead_end = [] (const State &) {return false;});
+        DeadEndDetector is_dead_end = [] (const State &) {return false; });
 
     State sample_state();
 };
