@@ -112,7 +112,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &sta
         assert(single_h != INF);
         if (store_cost_partitionings && single_h > max_h) {
             cp_heuristics.emplace_back(move(cost_partitioning), filter_blind_heuristics);
-            num_best_order.push_back(0);
         }
         return max(max_h, single_h);
     }
