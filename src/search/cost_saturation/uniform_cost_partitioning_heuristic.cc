@@ -61,11 +61,12 @@ static vector<int> compute_divided_costs(
     return divided_costs;
 }
 
-static vector<vector<int>> compute_uniform_cost_partitioning(
+static CostPartitionedHeuristic compute_uniform_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
     const vector<int> &costs,
     bool dynamic,
+    bool filter_blind_heuristics,
     bool debug) {
     assert(abstractions.size() == order.size());
 
@@ -78,7 +79,7 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
     vector<int> divided_costs = compute_divided_costs(
         abstractions, order, remaining_costs, 0, debug);
 
-    vector<vector<int>> h_values_by_abstraction(abstractions.size());
+    CostPartitionedHeuristic cp_heuristic;
     for (size_t pos = 0; pos < order.size(); ++pos) {
         int abstraction_id = order[pos];
         Abstraction &abstraction = *abstractions[abstraction_id];
@@ -96,7 +97,8 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
             cout << "saturated costs: ";
             print_indexed_vector(saturated_costs);
         }
-        h_values_by_abstraction[abstraction_id] = move(h_values);
+        cp_heuristic.add_cp_heuristic_values(
+            abstraction_id, move(h_values), filter_blind_heuristics);
         if (dynamic) {
             reduce_costs(remaining_costs, saturated_costs);
         }
@@ -105,13 +107,12 @@ static vector<vector<int>> compute_uniform_cost_partitioning(
             print_indexed_vector(remaining_costs);
         }
     }
-    return h_values_by_abstraction;
+    return cp_heuristic;
 }
 
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts) {
     const bool dynamic = opts.get<bool>("dynamic");
-    const bool filter_blind_heuristics = opts.get<bool>("filter_zero_h_values");
     const bool verbose = debug;
 
     vector<int> costs = get_operator_costs(task_proxy);
@@ -125,14 +126,21 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
         cp_heuristics =
             cps_generator.get_cost_partitionings(
                 task_proxy, abstractions, costs,
-                [dynamic, verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
-                return compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose);
-            }, filter_blind_heuristics);
+                [dynamic, verbose](
+                    const Abstractions &abstractions,
+                    const vector<int> &order,
+                    const vector<int> &costs,
+                    bool filter_blind_heuristics) {
+                return compute_uniform_cost_partitioning(
+                    abstractions, order, costs, dynamic, filter_blind_heuristics, verbose);
+            });
     } else {
         assert(cp_heuristics.empty());
         vector<int> order = get_default_order(abstractions.size());
-        cp_heuristics.emplace_back(
-            compute_uniform_cost_partitioning(abstractions, order, costs, dynamic, verbose), filter_blind_heuristics);
+        bool filter_blind_heuristics = true;
+        cp_heuristics.push_back(
+            compute_uniform_cost_partitioning(
+                abstractions, order, costs, dynamic, filter_blind_heuristics, verbose));
     }
 
     for (auto &abstraction : abstractions) {

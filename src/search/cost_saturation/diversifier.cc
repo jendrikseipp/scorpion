@@ -1,6 +1,7 @@
 #include "diversifier.h"
 
 #include "abstraction.h"
+#include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_generator.h"
 #include "utils.h"
 
@@ -22,13 +23,13 @@ Diversifier::Diversifier(
     const vector<int> &costs,
     CPFunction cp_function,
     const shared_ptr<utils::RandomNumberGenerator> &rng) {
-    CostPartitioning scp_for_sampling = compute_cost_partitioning_for_static_order(
+    CostPartitionedHeuristic scp_for_sampling = compute_cost_partitioning_for_static_order(
         task_proxy, abstractions, costs, cp_function, task_proxy.get_initial_state());
 
     function<int (const State &state)> sampling_heuristic =
         [&abstractions, &scp_for_sampling](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-            return compute_sum_h(local_state_ids, scp_for_sampling);
+            return scp_for_sampling.compute_heuristic(local_state_ids);
         };
 
     vector<State> samples = sample_states(
@@ -63,10 +64,10 @@ Diversifier::Diversifier(
          << endl;
 }
 
-bool Diversifier::is_diverse(const CostPartitioning &cp) {
+bool Diversifier::is_diverse(const CostPartitionedHeuristic &cp) {
     bool cp_improves_portfolio = false;
     for (size_t sample_id = 0; sample_id < local_state_ids_by_sample.size(); ++sample_id) {
-        int cp_h_value = compute_sum_h(local_state_ids_by_sample[sample_id], cp);
+        int cp_h_value = cp.compute_heuristic(local_state_ids_by_sample[sample_id]);
         assert(utils::in_bounds(sample_id, portfolio_h_values));
         int &portfolio_h_value = portfolio_h_values[sample_id];
         if (cp_h_value > portfolio_h_value) {

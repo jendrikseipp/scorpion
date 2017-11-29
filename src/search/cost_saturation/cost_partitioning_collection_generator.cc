@@ -41,8 +41,7 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
     const vector<int> &costs,
-    CPFunction cp_function,
-    bool filter_zero_h_values) {
+    CPFunction cp_function) {
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
         diversifier = utils::make_unique_ptr<Diversifier>(
@@ -50,12 +49,12 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
     }
 
     State initial_state = task_proxy.get_initial_state();
-    CostPartitioning scp_for_sampling = compute_cost_partitioning_for_static_order(
+    CostPartitionedHeuristic scp_for_sampling = compute_cost_partitioning_for_static_order(
         task_proxy, abstractions, costs, cp_function, initial_state);
     function<int (const State &state)> sampling_heuristic =
         [&abstractions, &scp_for_sampling](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-            return compute_sum_h(local_state_ids, scp_for_sampling);
+            return scp_for_sampling.compute_heuristic(local_state_ids);
         };
     DeadEndDetector is_dead_end = [&sampling_heuristic](const State &state) {
                                       return sampling_heuristic(state) == INF;
@@ -65,7 +64,7 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
 
     if (init_h == INF) {
         return {
-                   CostPartitionedHeuristic(move(scp_for_sampling), filter_zero_h_values)
+                scp_for_sampling
         };
     }
 
@@ -83,11 +82,11 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
         if (timer.is_expired() && !cp_heuristics.empty()) {
             break;
         }
-        CostPartitioning cp = cp_generator->get_next_cost_partitioning(
+        CostPartitionedHeuristic cp = cp_generator->get_next_cost_partitioning(
             task_proxy, abstractions, costs, sample, cp_function);
         ++evaluated_orders;
         if (!diversify || (diversifier->is_diverse(cp))) {
-            cp_heuristics.emplace_back(move(cp), filter_zero_h_values);
+            cp_heuristics.push_back(move(cp));
         }
     }
     int peak_memory_with_cps = utils::get_peak_memory_in_kb();

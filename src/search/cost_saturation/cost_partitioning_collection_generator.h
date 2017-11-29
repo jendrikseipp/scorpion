@@ -40,8 +40,7 @@ public:
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
-        CPFunction cp_function,
-        bool filter_zero_h_values);
+        CPFunction cp_function);
 };
 }
 
