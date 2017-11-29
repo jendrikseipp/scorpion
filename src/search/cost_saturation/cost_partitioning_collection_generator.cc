@@ -64,7 +64,7 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
 
     if (init_h == INF) {
         return {
-                scp_for_sampling
+                   scp_for_sampling
         };
     }
 

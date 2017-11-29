@@ -41,7 +41,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
     if (interval > 0) {
         return num_evaluated_states % interval == 0;
-    } else if (interval == -1 ) {
+    } else if (interval == -1) {
         bool novel = false;
         for (FactProxy fact_proxy : state) {
             FactPair fact = fact_proxy.get_pair();
@@ -74,7 +74,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &sta
         }
         if (single_h == INF) {
             return DEAD_END;
-        };
+        }
         return max(max_h, single_h);
     }
     return max_h;
