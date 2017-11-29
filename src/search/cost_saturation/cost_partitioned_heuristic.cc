@@ -8,7 +8,7 @@ using namespace std;
 
 namespace cost_saturation {
 CostPartitionedHeuristicValues::CostPartitionedHeuristicValues(
-    int heuristic_index, std::vector<int> &&h_values)
+    int heuristic_index, vector<int> &&h_values)
     : heuristic_index(heuristic_index),
       h_values(move(h_values)) {
 }
