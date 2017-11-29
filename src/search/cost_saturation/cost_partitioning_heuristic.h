@@ -15,9 +15,6 @@ class Options;
 
 namespace cost_saturation {
 class CostPartitioningHeuristic : public Heuristic {
-    int compute_max_h_with_statistics(const std::vector<int> &local_state_ids) const;
-    int compute_heuristic(const State &state);
-
 protected:
     std::vector<CostPartitionedHeuristic> cp_heuristics;
     Abstractions abstractions;
@@ -29,6 +26,8 @@ protected:
     // For statistics.
     mutable std::vector<int> num_best_order;
 
+    int compute_max_h_with_statistics(const std::vector<int> &local_state_ids) const;
+    virtual int compute_heuristic(const State &state);
     virtual int compute_heuristic(const GlobalState &global_state) override;
 
 public:
