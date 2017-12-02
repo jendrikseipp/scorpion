@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include "abstraction.h"
+#include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_generator_greedy.h"
 
 #include "../sampling.h"
@@ -57,7 +58,38 @@ vector<int> get_local_state_ids(
     return local_state_ids;
 }
 
-CostPartitioning compute_cost_partitioning_for_static_order(
+CostPartitionedHeuristic compute_saturated_cost_partitioning(
+    const Abstractions &abstractions,
+    const vector<int> &order,
+    const vector<int> &costs,
+    bool filter_blind_heuristics) {
+    const bool debug = false;
+    assert(abstractions.size() == order.size());
+    CostPartitionedHeuristic cp_heuristic;
+    vector<int> remaining_costs = costs;
+    for (int pos : order) {
+        const Abstraction &abstraction = *abstractions[pos];
+        auto pair = abstraction.compute_goal_distances_and_saturated_costs(
+            remaining_costs);
+        vector<int> &h_values = pair.first;
+        vector<int> &saturated_costs = pair.second;
+        if (debug) {
+            cout << "h-values: ";
+            print_indexed_vector(h_values);
+            cout << "saturated costs: ";
+            print_indexed_vector(saturated_costs);
+        }
+        cp_heuristic.add_cp_heuristic_values(pos, move(h_values), filter_blind_heuristics);
+        reduce_costs(remaining_costs, saturated_costs);
+        if (debug) {
+            cout << "remaining costs: ";
+            print_indexed_vector(remaining_costs);
+        }
+    }
+    return cp_heuristic;
+}
+
+CostPartitionedHeuristic compute_cost_partitioning_for_static_order(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
@@ -71,6 +103,7 @@ CostPartitioning compute_cost_partitioning_for_static_order(
     greedy_opts.set("dynamic", false);
     greedy_opts.set("steepest_ascent", false);
     greedy_opts.set("max_optimization_time", 0.0);
+    greedy_opts.set("filter_blind_heuristics", true);
     greedy_opts.set("random_seed", 0);
     CostPartitioningGeneratorGreedy greedy_generator(greedy_opts);
     greedy_generator.initialize(task_proxy, abstractions, costs);

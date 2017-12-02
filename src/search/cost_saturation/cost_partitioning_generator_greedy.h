@@ -24,6 +24,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     const bool dynamic;
     const bool steepest_ascent;
     const double max_optimization_time;
+    const bool filter_blind_heuristics;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     // Unpartitioned h values.
@@ -42,7 +43,7 @@ public:
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs) override;
 
-    virtual CostPartitioning get_next_cost_partitioning(
+    virtual CostPartitionedHeuristic get_next_cost_partitioning(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,

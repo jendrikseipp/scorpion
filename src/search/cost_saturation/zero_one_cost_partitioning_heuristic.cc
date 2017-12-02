@@ -14,28 +14,30 @@
 using namespace std;
 
 namespace cost_saturation {
-static vector<vector<int>> compute_zero_one_cost_partitioning(
+static CostPartitionedHeuristic compute_zero_one_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
-    const vector<int> &costs) {
+    const vector<int> &costs,
+    bool filter_blind_heuristics) {
     assert(abstractions.size() == order.size());
     bool debug = false;
 
     vector<int> remaining_costs = costs;
 
-    vector<vector<int>> h_values_by_abstraction(abstractions.size());
+    CostPartitionedHeuristic cp_heuristic;
     for (int pos : order) {
         Abstraction &abstraction = *abstractions[pos];
         if (debug) {
             cout << "remaining costs: ";
             print_indexed_vector(remaining_costs);
         }
-        h_values_by_abstraction[pos] = abstraction.compute_h_values(remaining_costs);
+        cp_heuristic.add_cp_heuristic_values(
+            pos, abstraction.compute_h_values(remaining_costs), filter_blind_heuristics);
         for (int op_id : abstraction.get_active_operators()) {
             remaining_costs[op_id] = 0;
         }
     }
-    return h_values_by_abstraction;
+    return cp_heuristic;
 }
 
 ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options &opts)
@@ -51,8 +53,7 @@ ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options
     cp_heuristics =
         cps_generator.get_cost_partitionings(
             task_proxy, abstractions, costs,
-            compute_zero_one_cost_partitioning,
-            opts.get<bool>("filter_zero_h_values"));
+            compute_zero_one_cost_partitioning);
 
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();

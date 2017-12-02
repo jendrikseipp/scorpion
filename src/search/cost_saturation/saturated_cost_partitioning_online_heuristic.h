@@ -12,7 +12,6 @@ class SaturatedCostPartitioningOnlineHeuristic : public CostPartitioningHeuristi
     const std::shared_ptr<CostPartitioningGenerator> cp_generator;
     const int interval;
     const bool store_cost_partitionings;
-    const bool filter_blind_heuristics;
     const std::vector<int> costs;
     std::vector<std::vector<bool>> seen_facts;
     int num_evaluated_states;

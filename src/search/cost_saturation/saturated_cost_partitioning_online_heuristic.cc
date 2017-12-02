@@ -13,47 +13,14 @@
 using namespace std;
 
 namespace cost_saturation {
-static CostPartitioning compute_saturated_cost_partitioning(
-    const Abstractions &abstractions,
-    const vector<int> &order,
-    const vector<int> &costs,
-    bool debug) {
-    assert(abstractions.size() == order.size());
-    vector<vector<int>> h_values_by_abstraction(abstractions.size());
-    vector<int> remaining_costs = costs;
-    for (int pos : order) {
-        const Abstraction &abstraction = *abstractions[pos];
-        auto pair = abstraction.compute_goal_distances_and_saturated_costs(
-            remaining_costs);
-        vector<int> &h_values = pair.first;
-        vector<int> &saturated_costs = pair.second;
-        if (debug) {
-            cout << "h-values: ";
-            print_indexed_vector(h_values);
-            cout << "saturated costs: ";
-            print_indexed_vector(saturated_costs);
-        }
-        h_values_by_abstraction[pos] = move(h_values);
-        reduce_costs(remaining_costs, saturated_costs);
-        if (debug) {
-            cout << "remaining costs: ";
-            print_indexed_vector(remaining_costs);
-        }
-    }
-    return h_values_by_abstraction;
-}
-
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(const Options &opts)
     : CostPartitioningHeuristic(opts),
       cp_generator(opts.get<shared_ptr<CostPartitioningGenerator>>("orders")),
       interval(opts.get<int>("interval")),
       store_cost_partitionings(opts.get<bool>("store_cost_partitionings")),
-      filter_blind_heuristics(opts.get<bool>("filter_zero_h_values")),
       costs(get_operator_costs(task_proxy)),
       num_evaluated_states(0),
       num_scps_computed(0) {
-    const bool verbose = debug;
-
     seen_facts.resize(task_proxy.get_variables().size());
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
@@ -68,16 +35,13 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     vector<int> costs = get_operator_costs(task_proxy);
     cp_heuristics =
         cps_generator.get_cost_partitionings(
-            task_proxy, abstractions, costs,
-            [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
-            return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
-        }, filter_blind_heuristics);
+            task_proxy, abstractions, costs, compute_saturated_cost_partitioning);
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
     if (interval > 0) {
         return num_evaluated_states % interval == 0;
-    } else if (interval == -1 ) {
+    } else if (interval == -1) {
         bool novel = false;
         for (FactProxy fact_proxy : state) {
             FactPair fact = fact_proxy.get_pair();
@@ -101,17 +65,15 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &sta
     }
 
     if (should_compute_scp(state)) {
-        const bool verbose = debug;
-        CostPartitioning cost_partitioning = cp_generator->get_next_cost_partitioning(
-            task_proxy, abstractions, costs, state,
-            [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
-            return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
-        });
+        CostPartitionedHeuristic cost_partitioning = cp_generator->get_next_cost_partitioning(
+            task_proxy, abstractions, costs, state, compute_saturated_cost_partitioning);
         ++num_scps_computed;
-        int single_h = compute_sum_h(local_state_ids, cost_partitioning);
-        assert(single_h != INF);
+        int single_h = cost_partitioning.compute_heuristic(local_state_ids);
         if (store_cost_partitionings && single_h > max_h) {
-            cp_heuristics.emplace_back(move(cost_partitioning), filter_blind_heuristics);
+            cp_heuristics.push_back(move(cost_partitioning));
+        }
+        if (single_h == INF) {
+            return DEAD_END;
         }
         return max(max_h, single_h);
     }

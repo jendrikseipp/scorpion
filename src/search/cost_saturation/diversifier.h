@@ -10,6 +10,8 @@ class RandomNumberGenerator;
 }
 
 namespace cost_saturation {
+class CostPartitionedHeuristic;
+
 class Diversifier {
     const int max_samples = 1000;
     std::vector<int> portfolio_h_values;
@@ -23,7 +25,7 @@ public:
         CPFunction cp_function,
         const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
-    bool is_diverse(const CostPartitioning &cp);
+    bool is_diverse(const CostPartitionedHeuristic &cp);
 };
 }
 

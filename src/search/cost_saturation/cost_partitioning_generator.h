@@ -16,9 +16,7 @@ class OptionParser;
 
 namespace cost_saturation {
 class Abstraction;
-
-using CPFunction = std::function<CostPartitioning(
-                                     const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
+class CostPartitionedHeuristic;
 
 class CostPartitioningGenerator {
 public:
@@ -30,7 +28,7 @@ public:
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs) = 0;
 
-    virtual CostPartitioning get_next_cost_partitioning(
+    virtual CostPartitionedHeuristic get_next_cost_partitioning(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,

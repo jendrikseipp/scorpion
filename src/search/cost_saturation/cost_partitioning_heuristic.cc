@@ -108,10 +108,6 @@ void add_cost_partitioning_collection_options_to_parser(OptionParser &parser) {
         "diversify",
         "keep orders that improve the portfolio's heuristic value for any of the samples",
         "true");
-    parser.add_option<bool>(
-        "filter_zero_h_values",
-        "don't store h-value vectors that only contain zeros",
-        "false");
     utils::add_rng_options(parser);
 }
 

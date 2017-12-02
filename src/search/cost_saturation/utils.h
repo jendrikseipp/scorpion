@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 
+class State;
 class TaskProxy;
 
 namespace utils {
@@ -13,6 +14,8 @@ class RandomNumberGenerator;
 }
 
 namespace cost_saturation {
+class CostPartitionedHeuristic;
+
 extern std::vector<int> get_default_order(int num_abstractions);
 
 extern int compute_sum_h(
@@ -22,7 +25,13 @@ extern int compute_sum_h(
 extern std::vector<int> get_local_state_ids(
     const Abstractions &abstractions, const State &state);
 
-extern CostPartitioning compute_cost_partitioning_for_static_order(
+extern CostPartitionedHeuristic compute_saturated_cost_partitioning(
+    const Abstractions &abstractions,
+    const std::vector<int> &order,
+    const std::vector<int> &costs,
+    bool filter_blind_heuristics);
+
+extern CostPartitionedHeuristic compute_cost_partitioning_for_static_order(
     const TaskProxy &task_proxy,
     const std::vector<std::unique_ptr<Abstraction>> &abstractions,
     const std::vector<int> &costs,
