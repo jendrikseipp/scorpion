@@ -19,7 +19,6 @@ class CostPartitioningGenerator;
 
 CostPartitioningHeuristic::CostPartitioningHeuristic(const Options &opts)
     : Heuristic(opts),
-      rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")) {
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
@@ -140,7 +139,6 @@ void prepare_parser_for_cost_partitioning_heuristic(
         "debug",
         "print debugging information",
         "false");
-    utils::add_rng_options(parser);
     Heuristic::add_options_to_parser(parser);
 }
 }

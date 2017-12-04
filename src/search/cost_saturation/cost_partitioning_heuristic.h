@@ -18,7 +18,6 @@ class CostPartitioningHeuristic : public Heuristic {
 protected:
     std::vector<CostPartitionedHeuristic> cp_heuristics;
     Abstractions abstractions;
-    const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
 
     std::vector<int> abstractions_per_generator;
