@@ -18,6 +18,7 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class CartesianAbstractionGenerator : public AbstractionGenerator {
     const std::vector<std::shared_ptr<cegar::SubtaskGenerator>> subtask_generators;
+    const int max_transitions;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
 public:

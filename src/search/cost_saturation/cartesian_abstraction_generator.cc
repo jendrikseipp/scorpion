@@ -21,6 +21,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     const options::Options &opts)
     : subtask_generators(
           opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
+      max_transitions(opts.get<int>("max_transitions")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
@@ -91,7 +92,6 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     log << "Generate CEGAR abstractions" << endl;
 
     const int max_states = INF;
-    const int max_transitions = 1000000;
     const double max_time = numeric_limits<double>::infinity();
     const bool use_general_costs = true;
     const bool exclude_abstractions_with_zero_init_h = true;
@@ -132,6 +132,12 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "subtasks",
         "subtask generators",
         "[landmarks(order=random, random_seed=0),goals(order=random, random_seed=0)]");
+    parser.add_option<int>(
+        "max_transitions",
+        "maximum sum of real transitions (excluding self-loops) over "
+        " all abstractions",
+        "1000000",
+        Bounds("0", "infinity"));
     parser.add_option<bool>(
         "debug",
         "print debugging info",
