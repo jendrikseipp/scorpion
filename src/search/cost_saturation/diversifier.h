@@ -13,7 +13,6 @@ namespace cost_saturation {
 class CostPartitionedHeuristic;
 
 class Diversifier {
-    const int max_samples = 1000;
     std::vector<int> portfolio_h_values;
     std::vector<std::vector<int>> local_state_ids_by_sample;
 
@@ -23,6 +22,7 @@ public:
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
         CPFunction cp_function,
+        int num_samples,
         const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
     bool is_diverse(const CostPartitionedHeuristic &cp);

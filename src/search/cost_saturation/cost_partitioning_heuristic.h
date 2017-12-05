@@ -14,6 +14,8 @@ class Options;
 }
 
 namespace cost_saturation {
+class CostPartitioningCollectionGenerator;
+
 class CostPartitioningHeuristic : public Heuristic {
 protected:
     std::vector<CostPartitionedHeuristic> cp_heuristics;
@@ -41,6 +43,9 @@ extern void add_cost_partitioning_collection_options_to_parser(
 
 extern void prepare_parser_for_cost_partitioning_heuristic(
     options::OptionParser &parser);
+
+extern CostPartitioningCollectionGenerator get_cp_collection_generator_from_options(
+    const options::Options &opts);
 }
 
 #endif

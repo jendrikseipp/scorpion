@@ -117,14 +117,8 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options
 
     vector<int> costs = get_operator_costs(task_proxy);
     if (dynamic) {
-        CostPartitioningCollectionGenerator cps_generator(
-            opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
-            opts.get<int>("max_orders"),
-            opts.get<double>("max_time"),
-            opts.get<bool>("diversify"),
-            utils::parse_rng_from_options(opts));
         cp_heuristics =
-            cps_generator.get_cost_partitionings(
+            get_cp_collection_generator_from_options(opts).get_cost_partitionings(
                 task_proxy, abstractions, costs,
                 [dynamic, verbose](
                     const Abstractions &abstractions,

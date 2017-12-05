@@ -2,6 +2,7 @@
 
 #include "abstraction.h"
 #include "abstraction_generator.h"
+#include "cost_partitioning_collection_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -107,6 +108,11 @@ void add_cost_partitioning_collection_options_to_parser(OptionParser &parser) {
         "diversify",
         "keep orders that improve the portfolio's heuristic value for any of the samples",
         "true");
+    parser.add_option<int>(
+        "samples",
+        "number of samples for diversification",
+        "1000",
+        Bounds("1", "infinity"));
     utils::add_rng_options(parser);
 }
 
@@ -140,5 +146,16 @@ void prepare_parser_for_cost_partitioning_heuristic(
         "print debugging information",
         "false");
     Heuristic::add_options_to_parser(parser);
+}
+
+CostPartitioningCollectionGenerator get_cp_collection_generator_from_options(
+    const options::Options &opts) {
+    return CostPartitioningCollectionGenerator(
+        opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
+        opts.get<int>("max_orders"),
+        opts.get<double>("max_time"),
+        opts.get<bool>("diversify"),
+        opts.get<int>("samples"),
+        utils::parse_rng_from_options(opts));
 }
 }

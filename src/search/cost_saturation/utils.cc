@@ -11,7 +11,7 @@
 
 #include "../options/options.h"
 #include "../utils/collections.h"
-#include "../utils/countdown_timer.h"
+#include "../utils/timer.h"
 
 #include <cassert>
 #include <numeric>
@@ -117,9 +117,8 @@ vector<State> sample_states(
     int num_samples,
     const shared_ptr<utils::RandomNumberGenerator> &rng) {
     assert(num_samples >= 1);
+    utils::Timer sampling_timer;
     cout << "Start sampling" << endl;
-    utils::CountdownTimer sampling_timer(60);
-
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
     cout << "Initial h value for sampling: " << init_h << endl;
@@ -134,8 +133,7 @@ vector<State> sample_states(
     RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     vector<State> samples;
-    while (static_cast<int>(samples.size()) < num_samples &&
-           !sampling_timer.is_expired()) {
+    while (static_cast<int>(samples.size()) < num_samples) {
         State sample = sampler.sample_state();
         assert(sample == initial_state || heuristic(sample) != INF);
         samples.push_back(move(sample));

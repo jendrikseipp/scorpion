@@ -25,6 +25,7 @@ class CostPartitioningCollectionGenerator {
     const int max_orders;
     const double max_time;
     const bool diversify;
+    const int num_samples;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
 public:
@@ -33,6 +34,7 @@ public:
         int max_orders,
         double max_time,
         bool diversify,
+        int num_samples,
         const std::shared_ptr<utils::RandomNumberGenerator> &rng);
     ~CostPartitioningCollectionGenerator();
 

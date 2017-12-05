@@ -22,6 +22,7 @@ Diversifier::Diversifier(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
     CPFunction cp_function,
+    int num_samples,
     const shared_ptr<utils::RandomNumberGenerator> &rng) {
     CostPartitionedHeuristic scp_for_sampling = compute_cost_partitioning_for_static_order(
         task_proxy, abstractions, costs, cp_function, task_proxy.get_initial_state());
@@ -33,7 +34,7 @@ Diversifier::Diversifier(
         };
 
     vector<State> samples = sample_states(
-        task_proxy, sampling_heuristic, max_samples, rng);
+        task_proxy, sampling_heuristic, num_samples, rng);
 
     for (const State &sample : samples) {
         local_state_ids_by_sample.push_back(

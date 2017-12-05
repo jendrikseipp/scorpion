@@ -26,11 +26,13 @@ CostPartitioningCollectionGenerator::CostPartitioningCollectionGenerator(
     int max_orders,
     double max_time,
     bool diversify,
+    int num_samples,
     const shared_ptr<utils::RandomNumberGenerator> &rng)
     : cp_generator(cp_generator),
       max_orders(max_orders),
       max_time(max_time),
       diversify(diversify),
+      num_samples(num_samples),
       rng(rng) {
 }
 
@@ -45,7 +47,7 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
         diversifier = utils::make_unique_ptr<Diversifier>(
-            task_proxy, abstractions, costs, cp_function, rng);
+            task_proxy, abstractions, costs, cp_function, num_samples, rng);
     }
 
     State initial_state = task_proxy.get_initial_state();
