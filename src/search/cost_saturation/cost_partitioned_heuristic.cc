@@ -65,4 +65,9 @@ int CostPartitionedHeuristic::compute_heuristic(
 int CostPartitionedHeuristic::size() const {
     return h_values_by_heuristic.size();
 }
+
+const vector<CostPartitionedHeuristicValues>
+&CostPartitionedHeuristic::get_h_values_by_heuristic() const {
+    return h_values_by_heuristic;
+}
 }

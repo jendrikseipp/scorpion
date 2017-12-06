@@ -31,6 +31,8 @@ public:
     int compute_heuristic(const Abstractions &abstractions, const State &state) const;
 
     int size() const;
+
+    const std::vector<CostPartitionedHeuristicValues> &get_h_values_by_heuristic() const;
 };
 }
 

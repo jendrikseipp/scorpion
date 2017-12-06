@@ -30,6 +30,17 @@ SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(
          << num_heuristics << " = "
          << num_stored_heuristics / static_cast<double>(num_heuristics) << endl;
 
+    unordered_set<int> useful_heuristics;
+    for (const auto &cp_heuristic: cp_heuristics) {
+        for (const auto &cp_h_values : cp_heuristic.get_h_values_by_heuristic()) {
+             useful_heuristics.insert(cp_h_values.heuristic_index);
+        }
+    }
+    cout << "Useful heuristics: " << useful_heuristics.size()  << "/"
+         << abstractions.size() << " = "
+         << static_cast<double>(useful_heuristics.size()) /
+            static_cast<double>(abstractions.size()) << endl;
+
     for (auto &abstraction : abstractions) {
         abstraction->release_transition_system_memory();
     }
