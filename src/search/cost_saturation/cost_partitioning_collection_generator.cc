@@ -55,8 +55,7 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
         task_proxy, abstractions, costs, cp_function, initial_state);
     function<int (const State &state)> sampling_heuristic =
         [&abstractions, &scp_for_sampling](const State &state) {
-            vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-            return scp_for_sampling.compute_heuristic(local_state_ids);
+            return scp_for_sampling.compute_heuristic(abstractions, state);
         };
     DeadEndDetector is_dead_end = [&sampling_heuristic](const State &state) {
                                       return sampling_heuristic(state) == INF;
