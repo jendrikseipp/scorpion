@@ -29,8 +29,7 @@ Diversifier::Diversifier(
 
     function<int (const State &state)> sampling_heuristic =
         [&abstractions, &scp_for_sampling](const State &state) {
-            vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-            return scp_for_sampling.compute_heuristic(local_state_ids);
+            return scp_for_sampling.compute_heuristic(abstractions, state);
         };
 
     vector<State> samples = sample_states(

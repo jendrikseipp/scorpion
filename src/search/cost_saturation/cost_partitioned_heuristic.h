@@ -5,6 +5,8 @@
 
 #include <vector>
 
+class State;
+
 namespace cost_saturation {
 struct CostPartitionedHeuristicValues {
     const int heuristic_index;
@@ -24,7 +26,9 @@ public:
     void add_cp_heuristic_values(
         int heuristic_id, std::vector<int> h_values, bool filter_blind_heuristics);
 
+    // Use the first overload for precomputed local state IDs.
     int compute_heuristic(const std::vector<int> &local_state_ids) const;
+    int compute_heuristic(const Abstractions &abstractions, const State &state) const;
 
     int size() const;
 };
