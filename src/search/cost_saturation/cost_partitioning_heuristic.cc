@@ -1,7 +1,7 @@
 #include "cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "abstraction_generator.h"
+#include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
 #include "utils.h"
 
@@ -18,23 +18,42 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningGenerator;
 
-CostPartitioningHeuristic::CostPartitioningHeuristic(const Options &opts)
+CostPartitioningHeuristic::CostPartitioningHeuristic(
+    const Options &opts,
+    Abstractions &&abstractions_,
+    vector<CostPartitionedHeuristic> &&cp_heuristics_)
     : Heuristic(opts),
+      abstractions(move(abstractions_)),
+      cp_heuristics(move(cp_heuristics_)),
       debug(opts.get<bool>("debug")) {
-    for (const shared_ptr<AbstractionGenerator> &generator :
-         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
-        int abstractions_before = abstractions.size();
-        for (auto &abstraction : generator->generate_abstractions(task)) {
-            abstractions.push_back(move(abstraction));
-        }
-        abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
+    for (auto &abstraction : abstractions) {
+        abstraction->release_transition_system_memory();
     }
-    cout << "Abstractions: " << abstractions.size() << endl;
-    cout << "Abstractions per generator: " << abstractions_per_generator << endl;
 
-    if (debug) {
-        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-            abstraction->dump();
+    int num_abstractions = abstractions.size();
+    int num_heuristics = num_abstractions * cp_heuristics.size();
+    int num_stored_heuristics = 0;
+    for (const auto &cp_heuristic: cp_heuristics) {
+        num_stored_heuristics += cp_heuristic.size();
+    }
+    cout << "Stored heuristics: " << num_stored_heuristics << "/"
+         << num_heuristics << " = "
+         << num_stored_heuristics / static_cast<double>(num_heuristics) << endl;
+
+    unordered_set<int> useful_heuristics;
+    for (const auto &cp_heuristic: cp_heuristics) {
+        for (const auto &cp_h_values : cp_heuristic.get_h_values_by_heuristic()) {
+             useful_heuristics.insert(cp_h_values.heuristic_index);
+        }
+    }
+    cout << "Useful heuristics: " << useful_heuristics.size()  << "/"
+         << abstractions.size() << " = "
+         << static_cast<double>(useful_heuristics.size()) /
+            static_cast<double>(num_abstractions) << endl;
+
+    for (int i = 0; i < num_abstractions; ++i) {
+        if (!useful_heuristics.count(i)) {
+            abstractions[i] = nullptr;
         }
     }
 }
@@ -49,37 +68,11 @@ int CostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state
 
 int CostPartitioningHeuristic::compute_heuristic(const State &state) {
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-    int max_h = compute_max_h_with_statistics(local_state_ids);
+    int max_h = compute_max_h_with_statistics(
+        cp_heuristics, local_state_ids, num_best_order);
     if (max_h == INF) {
         return DEAD_END;
     }
-    return max_h;
-}
-
-int CostPartitioningHeuristic::compute_max_h_with_statistics(
-    const vector<int> &local_state_ids) const {
-    int max_h = 0;
-    int best_id = -1;
-    int current_id = 0;
-    for (const CostPartitionedHeuristic &cp_heuristic : cp_heuristics) {
-        int sum_h = cp_heuristic.compute_heuristic(local_state_ids);
-        if (sum_h > max_h) {
-            max_h = sum_h;
-            best_id = current_id;
-        }
-        if (sum_h == INF) {
-            break;
-        }
-        ++current_id;
-    }
-    assert(max_h >= 0);
-
-    num_best_order.resize(cp_heuristics.size(), 0);
-    if (best_id != -1) {
-        assert(utils::in_bounds(best_id, num_best_order));
-        ++num_best_order[best_id];
-    }
-
     return max_h;
 }
 

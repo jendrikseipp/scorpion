@@ -1,7 +1,10 @@
 #include "saturated_cost_partitioning_online_heuristic.h"
 
 #include "abstraction.h"
+#include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
+#include "cost_partitioning_generator.h"
+#include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -13,9 +16,14 @@
 using namespace std;
 
 namespace cost_saturation {
-SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(const Options &opts)
-    : CostPartitioningHeuristic(opts),
+SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
+    const options::Options &opts,
+    Abstractions &&abstractions,
+    CPHeuristics &&cp_heuristics)
+    : Heuristic(opts),
       cp_generator(opts.get<shared_ptr<CostPartitioningGenerator>>("orders")),
+      abstractions(move(abstractions)),
+      cp_heuristics(move(cp_heuristics)),
       interval(opts.get<int>("interval")),
       store_cost_partitionings(opts.get<bool>("store_cost_partitionings")),
       costs(get_operator_costs(task_proxy)),
@@ -25,11 +33,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
     }
-
-    vector<int> costs = get_operator_costs(task_proxy);
-    cp_heuristics =
-        get_cp_collection_generator_from_options(opts).get_cost_partitionings(
-            task_proxy, abstractions, costs, compute_saturated_cost_partitioning);
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
@@ -50,10 +53,13 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &s
     }
 }
 
-int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &state) {
+int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
+    const GlobalState &global_state) {
+    State state = convert_global_state(global_state);
     ++num_evaluated_states;
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-    int max_h = compute_max_h_with_statistics(local_state_ids);
+    int max_h = compute_max_h_with_statistics(
+        cp_heuristics, local_state_ids, num_best_order);
     if (max_h == INF) {
         return DEAD_END;
     }
@@ -75,7 +81,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &sta
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
-    CostPartitioningHeuristic::print_statistics();
     cout << "Computed SCPs: " << num_scps_computed << endl;
 }
 
@@ -105,7 +110,17 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    return new SaturatedCostPartitioningOnlineHeuristic(opts);
+    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
+    TaskProxy task_proxy(*task);
+    vector<int> costs = get_operator_costs(task_proxy);
+    Abstractions abstractions = generate_abstractions(
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+
+    return new SaturatedCostPartitioningOnlineHeuristic(
+        opts,
+        move(abstractions),
+        get_cp_collection_generator_from_options(opts).get_cost_partitionings(
+            task_proxy, abstractions, costs, compute_saturated_cost_partitioning));
 }
 
 static Plugin<Heuristic> _plugin("saturated_cost_partitioning_online", _parse);

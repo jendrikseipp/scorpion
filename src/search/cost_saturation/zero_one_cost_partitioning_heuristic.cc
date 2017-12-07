@@ -1,15 +1,11 @@
 #include "zero_one_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_collection_generator.h"
+#include "cost_partitioned_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
-
-#include "../utils/logging.h"
-#include "../utils/rng_options.h"
 
 using namespace std;
 
@@ -40,35 +36,11 @@ static CostPartitionedHeuristic compute_zero_one_cost_partitioning(
     return cp_heuristic;
 }
 
-ZeroOneCostPartitioningHeuristic::ZeroOneCostPartitioningHeuristic(const Options &opts)
-    : CostPartitioningHeuristic(opts) {
-    vector<int> costs = get_operator_costs(task_proxy);
-    cp_heuristics =
-        get_cp_collection_generator_from_options(opts).get_cost_partitionings(
-            task_proxy, abstractions, costs, compute_zero_one_cost_partitioning);
-
-    for (auto &abstraction : abstractions) {
-        abstraction->release_transition_system_memory();
-    }
-}
-
-
 static Heuristic *_parse(OptionParser &parser) {
     parser.document_synopsis(
         "Zero-one cost partitioning heuristic",
         "");
-
-    prepare_parser_for_cost_partitioning_heuristic(parser);
-    add_cost_partitioning_collection_options_to_parser(parser);
-
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    return new ZeroOneCostPartitioningHeuristic(opts);
+    return get_max_cp_heuristic(parser, compute_zero_one_cost_partitioning);
 }
 
 static Plugin<Heuristic> _plugin("zero_one_cost_partitioning", _parse);
