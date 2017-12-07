@@ -16,6 +16,7 @@ using Abstractions = std::vector<std::unique_ptr<Abstraction>>;
 using CPFunction = std::function<CostPartitionedHeuristic(
                                      const Abstractions &, const std::vector<int> &, const std::vector<int> &, bool)>;
 using CPHeuristics = std::vector<CostPartitionedHeuristic>;
+using Order = std::vector<int>;
 }
 
 #endif

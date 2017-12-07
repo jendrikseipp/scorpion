@@ -422,6 +422,7 @@ fast_downward_plugin(
         cost_saturation/diversifier
         cost_saturation/explicit_abstraction
         cost_saturation/optimal_cost_partitioning_heuristic
+        cost_saturation/order_optimizer
         cost_saturation/projection
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
