@@ -30,7 +30,8 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
         abstraction->release_transition_system_memory();
     }
 
-    int num_heuristics = abstractions.size() * cp_heuristics.size();
+    int num_abstractions = abstractions.size();
+    int num_heuristics = num_abstractions * cp_heuristics.size();
     int num_stored_heuristics = 0;
     for (const auto &cp_heuristic: cp_heuristics) {
         num_stored_heuristics += cp_heuristic.size();
@@ -48,7 +49,13 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
     cout << "Useful heuristics: " << useful_heuristics.size()  << "/"
          << abstractions.size() << " = "
          << static_cast<double>(useful_heuristics.size()) /
-            static_cast<double>(abstractions.size()) << endl;
+            static_cast<double>(num_abstractions) << endl;
+
+    for (int i = 0; i < num_abstractions; ++i) {
+        if (!useful_heuristics.count(i)) {
+            abstractions[i] = nullptr;
+        }
+    }
 }
 
 CostPartitioningHeuristic::~CostPartitioningHeuristic() {

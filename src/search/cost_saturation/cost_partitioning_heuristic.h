@@ -17,7 +17,7 @@ class CostPartitionedHeuristic;
 class CostPartitioningCollectionGenerator;
 
 class CostPartitioningHeuristic : public Heuristic {
-    const Abstractions abstractions;
+    Abstractions abstractions;
     const std::vector<CostPartitionedHeuristic> cp_heuristics;
     const bool debug;
 

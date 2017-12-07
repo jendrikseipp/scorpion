@@ -128,7 +128,13 @@ vector<int> get_local_state_ids(
     vector<int> local_state_ids;
     local_state_ids.reserve(abstractions.size());
     for (auto &abstraction : abstractions) {
-        local_state_ids.push_back(abstraction->get_abstract_state_id(state));
+        if (abstraction) {
+            // Only add local state IDs for useful abstractions.
+            local_state_ids.push_back(abstraction->get_abstract_state_id(state));
+        } else {
+            // Add dummy value if abstraction will never be used.
+            local_state_ids.push_back(-1);
+        }
     }
     return local_state_ids;
 }
