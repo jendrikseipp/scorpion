@@ -1,6 +1,7 @@
 #include "optimal_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
+#include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../global_operator.h"
@@ -35,7 +36,9 @@ using namespace std;
 namespace cost_saturation {
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts)
-    : CostPartitioningHeuristic(opts),
+    : Heuristic(opts),
+      abstractions(generate_abstractions(
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"))),
       allow_negative_costs(true),
       debug(false) {
     int num_operators = task_proxy.get_operators().size();

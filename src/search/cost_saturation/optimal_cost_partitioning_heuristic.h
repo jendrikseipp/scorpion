@@ -1,7 +1,9 @@
 #ifndef COST_SATURATION_OPTIMAL_COST_PARTITIONING_HEURISTIC_H
 #define COST_SATURATION_OPTIMAL_COST_PARTITIONING_HEURISTIC_H
 
-#include "cost_partitioning_heuristic.h"
+#include "types.h"
+
+#include "../heuristic.h"
 
 #include "../lp/lp_internals.h"
 #include "../lp/lp_solver.h"
@@ -13,7 +15,9 @@
 #endif
 
 namespace cost_saturation {
-class OptimalCostPartitioningHeuristic : public CostPartitioningHeuristic {
+class Abstraction;
+
+class OptimalCostPartitioningHeuristic : public Heuristic {
     class MatrixEntry {
 public:
         int row;
@@ -24,6 +28,7 @@ public:
         }
     };
 
+    const Abstractions abstractions;
     bool allow_negative_costs;
 #ifdef USE_LP
     std::unique_ptr<OsiSolverInterface> lp_solver;
@@ -73,7 +78,7 @@ protected:
 
 public:
     explicit OptimalCostPartitioningHeuristic(const options::Options &opts);
-    ~OptimalCostPartitioningHeuristic();
+    virtual ~OptimalCostPartitioningHeuristic() override;
 };
 }
 

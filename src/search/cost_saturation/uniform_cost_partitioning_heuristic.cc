@@ -1,6 +1,7 @@
 #include "uniform_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
+#include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
 #include "utils.h"
 
@@ -110,36 +111,9 @@ static CostPartitionedHeuristic compute_uniform_cost_partitioning(
     return cp_heuristic;
 }
 
-UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(const Options &opts)
-    : CostPartitioningHeuristic(opts) {
-    const bool dynamic = opts.get<bool>("dynamic");
-    const bool verbose = debug;
-
-    vector<int> costs = get_operator_costs(task_proxy);
-    if (dynamic) {
-        cp_heuristics =
-            get_cp_collection_generator_from_options(opts).get_cost_partitionings(
-                task_proxy, abstractions, costs,
-                [dynamic, verbose](
-                    const Abstractions &abstractions,
-                    const vector<int> &order,
-                    const vector<int> &costs,
-                    bool filter_blind_heuristics) {
-                return compute_uniform_cost_partitioning(
-                    abstractions, order, costs, dynamic, filter_blind_heuristics, verbose);
-            });
-    } else {
-        assert(cp_heuristics.empty());
-        vector<int> order = get_default_order(abstractions.size());
-        bool filter_blind_heuristics = true;
-        cp_heuristics.push_back(
-            compute_uniform_cost_partitioning(
-                abstractions, order, costs, dynamic, filter_blind_heuristics, verbose));
-    }
-
-    for (auto &abstraction : abstractions) {
-        abstraction->release_transition_system_memory();
-    }
+UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
+    const Options &opts, Abstractions &&abstractions, CPHeuristics &&cp_heuristics)
+    : CostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics)) {
 }
 
 int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -149,6 +123,49 @@ int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
     }
     double epsilon = 0.01;
     return ceil((result / static_cast<double>(COST_FACTOR)) - epsilon);
+}
+
+
+static shared_ptr<AbstractTask> get_scaled_costs_task(
+    const shared_ptr<AbstractTask> &task) {
+    vector<int> costs = get_operator_costs(TaskProxy(*task));
+    for (int &cost : costs) {
+        if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
+            cerr << "Overflowing cost : " << cost << endl;
+            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+        }
+        cost *= COST_FACTOR;
+    }
+    return make_shared<extra_tasks::ModifiedOperatorCostsTask>(task, move(costs));
+}
+
+
+static CostPartitionedHeuristic get_ucp_heuristic(
+    const TaskProxy &task_proxy, const Abstractions &abstractions, bool debug) {
+    vector<int> costs = get_operator_costs(task_proxy);
+    vector<int> order = get_default_order(abstractions.size());
+    bool filter_blind_heuristics = true;
+    return compute_uniform_cost_partitioning(
+        abstractions, order, costs, false, filter_blind_heuristics, debug);
+}
+
+static CPHeuristics get_oucp_heuristics(
+    const TaskProxy &task_proxy,
+    const Abstractions &abstractions,
+    const CostPartitioningCollectionGenerator &cps_generator,
+    bool debug) {
+    vector<int> costs = get_operator_costs(task_proxy);
+    return
+        cps_generator.get_cost_partitionings(
+            task_proxy, abstractions, costs,
+            [debug](
+                const Abstractions &abstractions,
+                const vector<int> &order,
+                const vector<int> &costs,
+                bool filter_blind_heuristics) {
+            return compute_uniform_cost_partitioning(
+                abstractions, order, costs, true, filter_blind_heuristics, debug);
+        });
 }
 
 
@@ -171,24 +188,30 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
-    TaskProxy task_proxy(*task);
+    shared_ptr<AbstractTask> scaled_costs_task =
+        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"));
+    opts.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
 
-    vector<int> costs = get_operator_costs(task_proxy);
-    for (int &cost : costs) {
-        if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
-            cerr << "Overflowing cost : " << cost << endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-        }
-        cost *= COST_FACTOR;
+    Abstractions abstractions = generate_abstractions(
+        scaled_costs_task,
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+
+    TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
+    bool debug = opts.get<bool>("debug");
+
+    CPHeuristics cp_heuristics;
+    if (opts.get<bool>("dynamic")) {
+        cp_heuristics = get_oucp_heuristics(
+            scaled_costs_task_proxy,
+            abstractions,
+            get_cp_collection_generator_from_options(opts),
+            debug);
+    } else {
+        cp_heuristics.push_back(get_ucp_heuristic(
+            scaled_costs_task_proxy, abstractions, debug));
     }
 
-    vector<int> copied_costs = costs;
-    shared_ptr<extra_tasks::ModifiedOperatorCostsTask> modified_costs_task =
-        make_shared<extra_tasks::ModifiedOperatorCostsTask>(task, move(copied_costs));
-    opts.set<shared_ptr<AbstractTask>>("transform", modified_costs_task);
-
-    return new UniformCostPartitioningHeuristic(opts);
+    return new UniformCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics));
 }
 
 static Plugin<Heuristic> _plugin("uniform_cost_partitioning", _parse);

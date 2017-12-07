@@ -9,7 +9,10 @@ protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
 
 public:
-    explicit UniformCostPartitioningHeuristic(const options::Options &opts);
+    UniformCostPartitioningHeuristic(
+        const options::Options &opts,
+        Abstractions &&abstractions,
+        CPHeuristics &&cp_heuristics);
 };
 }
 
