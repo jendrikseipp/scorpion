@@ -65,8 +65,10 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     }
 
     if (should_compute_scp(state)) {
-        CostPartitionedHeuristic cost_partitioning = cp_generator->get_next_cost_partitioning(
-            task_proxy, abstractions, costs, state, compute_saturated_cost_partitioning);
+        Order order = cp_generator->get_next_order(
+            task_proxy, abstractions, costs, local_state_ids);
+        CostPartitionedHeuristic cost_partitioning =
+            compute_saturated_cost_partitioning(abstractions, order, costs, true);
         ++num_scps_computed;
         int single_h = cost_partitioning.compute_heuristic(local_state_ids);
         if (store_cost_partitionings && single_h > max_h) {

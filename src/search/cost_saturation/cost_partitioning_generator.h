@@ -6,7 +6,6 @@
 #include <memory>
 #include <vector>
 
-class State;
 class TaskProxy;
 
 namespace options {
@@ -28,12 +27,11 @@ public:
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs) = 0;
 
-    virtual CostPartitionedHeuristic get_next_cost_partitioning(
+    virtual Order get_next_order(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
-        const State &state,
-        CPFunction cp_function) = 0;
+        const std::vector<int> &local_state_ids) = 0;
 
     virtual bool has_next_cost_partitioning() const {
         return true;

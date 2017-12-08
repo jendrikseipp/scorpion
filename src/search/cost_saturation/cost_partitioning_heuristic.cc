@@ -106,6 +106,19 @@ void add_cost_partitioning_collection_options_to_parser(OptionParser &parser) {
         "number of samples for diversification",
         "1000",
         Bounds("1", "infinity"));
+    parser.add_option<double>(
+        "max_optimization_time",
+        "maximum time for optimizing",
+        "0.0",
+        Bounds("0.0", "infinity"));
+    parser.add_option<bool>(
+        "steepest_ascent",
+        "do steepest-ascent hill climbing instead of selecting the first improving successor",
+        "false");
+    parser.add_option<bool>(
+        "sparse",
+        "don't store h-value vectors that only contain zeros",
+        "true");
     utils::add_rng_options(parser);
 }
 
@@ -145,10 +158,13 @@ CostPartitioningCollectionGenerator get_cp_collection_generator_from_options(
     const options::Options &opts) {
     return CostPartitioningCollectionGenerator(
         opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
+        opts.get<bool>("sparse"),
         opts.get<int>("max_orders"),
         opts.get<double>("max_time"),
         opts.get<bool>("diversify"),
         opts.get<int>("samples"),
+        opts.get<double>("max_optimization_time"),
+        opts.get<bool>("steepest_ascent"),
         utils::parse_rng_from_options(opts));
 }
 }

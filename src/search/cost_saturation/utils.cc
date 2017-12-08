@@ -184,12 +184,13 @@ CostPartitionedHeuristic compute_cost_partitioning_for_static_order(
     greedy_opts.set("dynamic", false);
     greedy_opts.set("steepest_ascent", false);
     greedy_opts.set("max_optimization_time", 0.0);
-    greedy_opts.set("filter_blind_heuristics", true);
     greedy_opts.set("random_seed", 0);
     CostPartitioningGeneratorGreedy greedy_generator(greedy_opts);
     greedy_generator.initialize(task_proxy, abstractions, costs);
-    return greedy_generator.get_next_cost_partitioning(
-        task_proxy, abstractions, costs, state, cp_function);
+    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
+    Order order = greedy_generator.get_next_order(
+        task_proxy, abstractions, costs, local_state_ids);
+    return cp_function(abstractions, order, costs, true);
 }
 
 vector<State> sample_states(

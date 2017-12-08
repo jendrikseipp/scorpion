@@ -1,8 +1,6 @@
 #include "cost_partitioning_generator_greedy.h"
 
 #include "abstraction.h"
-#include "cost_partitioned_heuristic.h"
-#include "order_optimizer.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -29,9 +27,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       use_negative_costs(opts.get<bool>("use_negative_costs")),
       queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
-      steepest_ascent(opts.get<bool>("steepest_ascent")),
-      max_optimization_time(opts.get<double>("max_optimization_time")),
-      filter_blind_heuristics(opts.get<bool>("filter_blind_heuristics")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
 }
@@ -174,14 +169,11 @@ void CostPartitioningGeneratorGreedy::initialize(
     }
 }
 
-CostPartitionedHeuristic CostPartitioningGeneratorGreedy::get_next_cost_partitioning(
+Order CostPartitioningGeneratorGreedy::get_next_order(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
-    const State &state,
-    CPFunction cp_function) {
-    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-
+    const vector<int> &local_state_ids) {
     // We can call compute_sum_h with unpartitioned h values since we only need
     // a safe, but not necessarily admissible estimate.
     assert(compute_sum_h(local_state_ids, h_values_by_abstraction) != INF);
@@ -213,21 +205,7 @@ CostPartitionedHeuristic CostPartitioningGeneratorGreedy::get_next_cost_partitio
     }
 
     ++num_returned_orders;
-    if (max_optimization_time > 0) {
-        utils::CountdownTimer timer(max_optimization_time);
-        CostPartitionedHeuristic incumbent_cp = cp_function(abstractions, order, costs, filter_blind_heuristics);
-        int incumbent_h_value = incumbent_cp.compute_heuristic(local_state_ids);
-        do_hill_climbing(
-            cp_function, timer, abstractions, costs, local_state_ids, order,
-            incumbent_cp, incumbent_h_value, steepest_ascent, filter_blind_heuristics, verbose);
-        if (verbose) {
-            utils::Log() << "Time for optimizing order: " << timer << endl;
-            utils::Log() << "Time for optimizing order has expired: " << timer.is_expired() << endl;
-        }
-        return incumbent_cp;
-    } else {
-        return cp_function(abstractions, order, costs, filter_blind_heuristics);
-    }
+    return order;
 }
 
 
@@ -258,19 +236,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "dynamic",
         "recompute ratios in each step",
-        "false");
-    parser.add_option<bool>(
-        "steepest_ascent",
-        "do steepest-ascent hill climbing instead of selecting the first improving successor",
-        "false");
-    parser.add_option<double>(
-        "max_optimization_time",
-        "maximum time for optimizing",
-        "0.0",
-        Bounds("0.0", "infinity"));
-    parser.add_option<bool>(
-        "filter_blind_heuristics",
-        "don't store h-value vectors that only contain zeros",
         "false");
     utils::add_rng_options(parser);
     Options opts = parser.parse();
