@@ -22,7 +22,7 @@ using namespace std;
 namespace cost_saturation {
 CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
     : CostPartitioningGenerator(),
-      reverse_initial_order(opts.get<bool>("reverse_initial_order")),
+      reverse_order(opts.get<bool>("reverse_order")),
       scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
       dynamic(opts.get<bool>("dynamic")),
@@ -186,7 +186,7 @@ Order CostPartitioningGeneratorGreedy::get_next_order(
             scoring_function, use_negative_costs);
     }
 
-    if (reverse_initial_order) {
+    if (reverse_order) {
         reverse(order.begin(), order.end());
     }
 
@@ -211,7 +211,7 @@ void add_scoring_function_to_parser(OptionParser &parser) {
 
 static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser) {
     parser.add_option<bool>(
-        "reverse_initial_order",
+        "reverse_order",
         "invert initial order",
         "false");
     add_scoring_function_to_parser(parser);
