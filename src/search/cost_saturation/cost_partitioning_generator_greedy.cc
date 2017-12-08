@@ -72,7 +72,6 @@ static vector<int> compute_static_greedy_order_for_sample(
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
 
     int num_abstractions = local_state_ids.size();
-    vector<int> h_values;
     vector<double> ratios;
     for (int abstraction_id = 0; abstraction_id < num_abstractions; ++abstraction_id) {
         assert(utils::in_bounds(abstraction_id, local_state_ids));
@@ -80,7 +79,6 @@ static vector<int> compute_static_greedy_order_for_sample(
         assert(utils::in_bounds(abstraction_id, h_values_by_abstraction));
         assert(utils::in_bounds(local_state_id, h_values_by_abstraction[abstraction_id]));
         int h = h_values_by_abstraction[abstraction_id][local_state_id];
-        h_values.push_back(h);
         assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
         int used_costs = used_costs_by_abstraction[abstraction_id];
         ratios.push_back(rate_heuristic(h, used_costs, scoring_function, use_negative_costs));
