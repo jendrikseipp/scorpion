@@ -180,10 +180,7 @@ CostPartitionedHeuristic compute_cost_partitioning_for_static_order(
     greedy_opts.set("reverse_initial_order", false);
     greedy_opts.set("scoring_function", static_cast<int>(ScoringFunction::MAX_HEURISTIC_PER_COSTS));
     greedy_opts.set("use_negative_costs", false);
-    greedy_opts.set("queue_zero_ratios", true);
     greedy_opts.set("dynamic", false);
-    greedy_opts.set("steepest_ascent", false);
-    greedy_opts.set("max_optimization_time", 0.0);
     greedy_opts.set("random_seed", 0);
     CostPartitioningGeneratorGreedy greedy_generator(greedy_opts);
     greedy_generator.initialize(task_proxy, abstractions, costs);

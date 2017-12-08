@@ -25,7 +25,6 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       reverse_initial_order(opts.get<bool>("reverse_initial_order")),
       scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
-      queue_zero_ratios(opts.get<bool>("queue_zero_ratios")),
       dynamic(opts.get<bool>("dynamic")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
@@ -99,13 +98,10 @@ vector<int> compute_greedy_dynamic_order_for_sample(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &local_state_ids,
     vector<int> remaining_costs,
-    bool queue_zero_ratios,
     ScoringFunction scoring_function,
     bool use_negative_costs) {
     assert(abstractions.size() == local_state_ids.size());
-
     vector<int> order;
-    vector<int> abstractions_with_zero_h;
 
     set<int> remaining_abstractions;
     int num_abstractions = abstractions.size();
@@ -129,10 +125,7 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             int h = h_values[local_state_id];
             int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
             double ratio = rate_heuristic(h, used_costs, scoring_function, use_negative_costs);
-            if (queue_zero_ratios && h == 0) {
-                abstractions_with_zero_h.push_back(abstraction_id);
-                it = remaining_abstractions.erase(it);
-            } else if (ratio > highest_ratio) {
+            if (ratio > highest_ratio) {
                 best_abstraction = abstraction_id;
                 saturated_costs_for_best_abstraction = move(saturated_costs);
                 highest_ratio = ratio;
@@ -148,7 +141,6 @@ vector<int> compute_greedy_dynamic_order_for_sample(
         }
     }
 
-    order.insert(order.end(), abstractions_with_zero_h.begin(), abstractions_with_zero_h.end());
     assert(order.size() == abstractions.size());
     return order;
 }
@@ -188,8 +180,7 @@ Order CostPartitioningGeneratorGreedy::get_next_order(
         order = random_order;
     } else if (dynamic) {
         order = compute_greedy_dynamic_order_for_sample(
-            abstractions, local_state_ids, costs,
-            queue_zero_ratios, scoring_function, use_negative_costs);
+            abstractions, local_state_ids, costs, scoring_function, use_negative_costs);
     } else {
         order = compute_static_greedy_order_for_sample(
             local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
@@ -229,10 +220,6 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
         "use_negative_costs",
         "account for negative costs when computing used costs",
         "false");
-    parser.add_option<bool>(
-        "queue_zero_ratios",
-        "put abstraction with ratio=0 to the end of the order",
-        "true");
     parser.add_option<bool>(
         "dynamic",
         "recompute ratios in each step",
