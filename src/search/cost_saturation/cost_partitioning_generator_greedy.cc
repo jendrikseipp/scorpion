@@ -73,6 +73,7 @@ static vector<int> compute_static_greedy_order_for_sample(
 
     int num_abstractions = local_state_ids.size();
     vector<double> ratios;
+    ratios.reserve(num_abstractions);
     for (int abstraction_id = 0; abstraction_id < num_abstractions; ++abstraction_id) {
         assert(utils::in_bounds(abstraction_id, local_state_ids));
         int local_state_id = local_state_ids[abstraction_id];
