@@ -38,7 +38,7 @@ void OrderGeneratorLookahead::initialize(
 
 double OrderGeneratorLookahead::get_fair_share(int abs1, int abs2, int op_id) const {
     int num_abstractions = saturated_costs_by_abstraction.size();
-    double total_remaining_saturated_costs = 0;
+    int total_remaining_saturated_costs = 0;
     for (int abs3 = 0; abs3 < num_abstractions; ++abs3) {
         if (abs3 != abs1) {
             int abs3_saturated_costs = saturated_costs_by_abstraction[abs3][op_id];
@@ -53,7 +53,12 @@ double OrderGeneratorLookahead::get_fair_share(int abs1, int abs2, int op_id) co
     int remaining_saturated_costs = min(
         abs2_saturated_costs, original_costs[op_id] - abs1_saturated_costs);
 
-    return abs2_saturated_costs / total_remaining_saturated_costs * remaining_saturated_costs;
+    if (total_remaining_saturated_costs == 0) {
+        // No other abstractions wants the operator, so we can use all its costs here.
+        return 1;
+    }
+    return static_cast<double>(abs2_saturated_costs) /
+            total_remaining_saturated_costs * remaining_saturated_costs;
 }
 
 double OrderGeneratorLookahead::get_scaling_factor(int abs1, int abs2) const {
@@ -71,6 +76,9 @@ double OrderGeneratorLookahead::get_scaling_factor(int abs1, int abs2) const {
         }
     }
 
+    if (abs2_sum_saturated_costs == 0) {
+        return 1;
+    }
     return sum_fair_share / abs2_sum_saturated_costs;
 }
 
@@ -116,6 +124,7 @@ Order OrderGeneratorLookahead::get_next_order(
         });
 
     if (verbose) {
+        cout << "Scores: " << scores << endl;
         utils::Log() << "Time for computing greedy order: " << greedy_timer << endl;
     }
 
