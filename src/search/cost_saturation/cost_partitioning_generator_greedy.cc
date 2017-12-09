@@ -62,12 +62,8 @@ static double rate_heuristic(
     }
 }
 
-static vector<int> compute_static_greedy_order_for_sample(
-    const vector<int> &local_state_ids,
-    const vector<vector<int>> &h_values_by_abstraction,
-    const vector<int> &used_costs_by_abstraction,
-    ScoringFunction scoring_function,
-    bool use_negative_costs) {
+Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
+    const vector<int> &local_state_ids) const {
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
 
@@ -85,7 +81,7 @@ static vector<int> compute_static_greedy_order_for_sample(
         ratios.push_back(rate_heuristic(h, used_costs, scoring_function, use_negative_costs));
     }
 
-    vector<int> order = get_default_order(num_abstractions);
+    Order order = get_default_order(num_abstractions);
     sort(order.begin(), order.end(), [&](int abstraction1_id, int abstraction2_id) {
             return ratios[abstraction1_id] > ratios[abstraction2_id];
         });
@@ -157,6 +153,7 @@ void CostPartitioningGeneratorGreedy::initialize(
         h_values_by_abstraction.push_back(move(h_values));
         int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
         used_costs_by_abstraction.push_back(used_costs);
+        saturated_costs_by_abstraction.push_back(move(saturated_costs));
     }
 }
 
@@ -181,9 +178,7 @@ Order CostPartitioningGeneratorGreedy::get_next_order(
         order = compute_greedy_dynamic_order_for_sample(
             abstractions, local_state_ids, costs, scoring_function, use_negative_costs);
     } else {
-        order = compute_static_greedy_order_for_sample(
-            local_state_ids, h_values_by_abstraction, used_costs_by_abstraction,
-            scoring_function, use_negative_costs);
+        order = compute_static_greedy_order_for_sample(local_state_ids);
     }
 
     if (reverse_order) {

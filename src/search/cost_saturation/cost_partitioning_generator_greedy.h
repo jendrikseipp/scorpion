@@ -26,10 +26,14 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     // Unpartitioned h values.
     std::vector<std::vector<int>> h_values_by_abstraction;
     std::vector<int> used_costs_by_abstraction;
+    std::vector<std::vector<int>> saturated_costs_by_abstraction;
 
     std::vector<int> random_order;
 
     int num_returned_orders;
+
+    Order compute_static_greedy_order_for_sample(
+        const std::vector<int> &local_state_ids) const;
 
 public:
     explicit CostPartitioningGeneratorGreedy(const options::Options &opts);
@@ -43,7 +47,7 @@ public:
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
-        const std::vector<int> &local_state_ids) override;
+            const std::vector<int> &local_state_ids) override;
 };
 
 void add_scoring_function_to_parser(options::OptionParser &parser);
