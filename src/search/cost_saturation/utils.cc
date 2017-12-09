@@ -68,6 +68,7 @@ Abstractions generate_abstractions(
 vector<int> get_default_order(int num_abstractions) {
     vector<int> indices(num_abstractions);
     iota(indices.begin(), indices.end(), 0);
+    assert(utils::is_sorted_unique(indices));
     return indices;
 }
 

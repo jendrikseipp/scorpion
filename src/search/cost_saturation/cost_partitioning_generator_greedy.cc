@@ -104,10 +104,15 @@ Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
     const vector<int> &local_state_ids) const {
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
-    Order order = get_default_order(local_state_ids.size());
+    int num_abstractions = local_state_ids.size();
+    Order order = get_default_order(num_abstractions);
+    vector<double> scores;
+    scores.reserve(num_abstractions);
+    for (int abs = 0; abs < num_abstractions; ++abs) {
+        scores.push_back(rate_abstraction(local_state_ids, abs));
+    }
     sort(order.begin(), order.end(), [&](int abs1, int abs2) {
-            return rate_abstraction(local_state_ids, abs1) >
-                    rate_abstraction(local_state_ids, abs2);
+            return scores[abs1] > scores[abs2];
         });
     return order;
 }

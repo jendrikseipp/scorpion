@@ -94,7 +94,7 @@ double OrderGeneratorLookahead::estimate_h(
 
 Order OrderGeneratorLookahead::get_next_order(
     const TaskProxy &,
-    const vector<unique_ptr<Abstraction>> &abstractions,
+    const vector<unique_ptr<Abstraction>> &,
     const vector<int> &,
     const vector<int> &local_state_ids) {
     assert(compute_sum_h(local_state_ids, h_values_by_abstraction) != INF);
@@ -104,9 +104,15 @@ Order OrderGeneratorLookahead::get_next_order(
 
     utils::Timer greedy_timer;
 
-    Order order = get_default_order(abstractions.size());
+    int num_abstractions = local_state_ids.size();
+    Order order = get_default_order(num_abstractions);
+    vector<double> scores;
+    scores.reserve(num_abstractions);
+    for (int abs = 0; abs < num_abstractions; ++abs) {
+        scores.push_back(estimate_h(abs, local_state_ids));
+    }
     sort(order.begin(), order.end(), [&](int abs1, int abs2) {
-            return estimate_h(abs1, local_state_ids) > estimate_h(abs2, local_state_ids);
+            return scores[abs1] > scores[abs2];
         });
 
     if (verbose) {
