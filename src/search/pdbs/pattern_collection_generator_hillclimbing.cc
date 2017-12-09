@@ -476,7 +476,7 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<bool>(
         "use_all_connected_variables",
         "also consider variables connected by co-effect arcs",
-        "false");
+        "true");
     parser.add_option<bool>(
         "detect_worse_patterns_early",
         "abort testing a pattern on samples if it cannot beat the incumbent",
