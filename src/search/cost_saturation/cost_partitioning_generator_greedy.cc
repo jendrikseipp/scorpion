@@ -41,7 +41,7 @@ static int compute_used_costs(const vector<int> &saturated_costs, bool use_negat
     return sum;
 }
 
-static double rate_heuristic(
+static double compute_score(
     int h, int used_costs, ScoringFunction scoring_function, bool use_negative_costs) {
     assert(h >= 0);
     assert(used_costs != INF);
@@ -62,41 +62,62 @@ static double rate_heuristic(
     }
 }
 
+double CostPartitioningGeneratorGreedy::rate_abstraction(
+    const vector<int> &local_state_ids, int abs_id) const {
+    assert(utils::in_bounds(abs_id, local_state_ids));
+    int local_state_id = local_state_ids[abs_id];
+    assert(utils::in_bounds(abs_id, h_values_by_abstraction));
+    assert(utils::in_bounds(local_state_id, h_values_by_abstraction[abs_id]));
+    int h = h_values_by_abstraction[abs_id][local_state_id];
+    assert(h >= 0);
+
+    assert(utils::in_bounds(abs_id, used_costs_by_abstraction));
+    int used_costs = used_costs_by_abstraction[abs_id];
+    assert(used_costs != INF);
+    assert(used_costs != -INF);
+    if (use_negative_costs && used_costs <= 0) {
+        cout << "Used-costs sum is zero or less: " << used_costs << endl;
+        used_costs = 0;
+    }
+    assert(used_costs >= 0);
+
+    assert(utils::in_bounds(abs_id, stolen_costs_by_abstraction));
+    int stolen_costs = stolen_costs_by_abstraction[abs_id];
+    assert(stolen_costs >= 1 && stolen_costs != INF);
+
+    if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
+        return h;
+    } else if (scoring_function == ScoringFunction::MIN_COSTS) {
+        return 1.0 / (used_costs + 1.0);
+    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
+        return h / (used_costs + 1.0);
+    } else if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS) {
+        return 1.0 / stolen_costs;
+    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+        return h / static_cast<double>(stolen_costs);
+    } else {
+        ABORT("Invalid scoring_function");
+    }
+}
+
 Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
     const vector<int> &local_state_ids) const {
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
-
-    int num_abstractions = local_state_ids.size();
-    vector<double> ratios;
-    ratios.reserve(num_abstractions);
-    for (int abstraction_id = 0; abstraction_id < num_abstractions; ++abstraction_id) {
-        assert(utils::in_bounds(abstraction_id, local_state_ids));
-        int local_state_id = local_state_ids[abstraction_id];
-        assert(utils::in_bounds(abstraction_id, h_values_by_abstraction));
-        assert(utils::in_bounds(local_state_id, h_values_by_abstraction[abstraction_id]));
-        int h = h_values_by_abstraction[abstraction_id][local_state_id];
-        assert(utils::in_bounds(abstraction_id, used_costs_by_abstraction));
-        int used_costs = used_costs_by_abstraction[abstraction_id];
-        ratios.push_back(rate_heuristic(h, used_costs, scoring_function, use_negative_costs));
-    }
-
-    Order order = get_default_order(num_abstractions);
-    sort(order.begin(), order.end(), [&](int abstraction1_id, int abstraction2_id) {
-            return ratios[abstraction1_id] > ratios[abstraction2_id];
+    Order order = get_default_order(local_state_ids.size());
+    sort(order.begin(), order.end(), [&](int abs1, int abs2) {
+            return rate_abstraction(local_state_ids, abs1) >
+                    rate_abstraction(local_state_ids, abs2);
         });
-
     return order;
 }
 
-vector<int> compute_greedy_dynamic_order_for_sample(
+Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &local_state_ids,
-    vector<int> remaining_costs,
-    ScoringFunction scoring_function,
-    bool use_negative_costs) {
+    vector<int> remaining_costs) const {
     assert(abstractions.size() == local_state_ids.size());
-    vector<int> order;
+    Order order;
 
     set<int> remaining_abstractions;
     int num_abstractions = abstractions.size();
@@ -119,7 +140,7 @@ vector<int> compute_greedy_dynamic_order_for_sample(
             assert(utils::in_bounds(local_state_id, h_values));
             int h = h_values[local_state_id];
             int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
-            double ratio = rate_heuristic(h, used_costs, scoring_function, use_negative_costs);
+            double ratio = compute_score(h, used_costs, scoring_function, use_negative_costs);
             if (ratio > highest_ratio) {
                 best_abstraction = abstraction_id;
                 saturated_costs_for_best_abstraction = move(saturated_costs);
@@ -140,12 +161,74 @@ vector<int> compute_greedy_dynamic_order_for_sample(
     return order;
 }
 
+static int compute_stolen_costs(
+    const vector<int> &costs,
+    const vector<vector<int>> &saturated_costs_by_abstraction,
+    int abs1,
+    int op_id) {
+    int num_abstractions = saturated_costs_by_abstraction.size();
+    int wanted_by_abs1 = saturated_costs_by_abstraction[abs1][op_id];
+    int wanted_by_rest = 0;
+    for (int abs2 = 0; abs2 < num_abstractions; ++abs2) {
+        if (abs2 == abs1) {
+            continue;
+        }
+        int wanted_by_abs2 = saturated_costs_by_abstraction[abs2][op_id];
+        if (wanted_by_abs2 == -INF) {
+            wanted_by_rest = -INF;
+            break;
+        } else {
+            wanted_by_rest += wanted_by_abs2;
+        }
+    }
+    if (wanted_by_abs1 >= 0) {
+        int unclaimed;
+        if (wanted_by_abs1 == -INF || wanted_by_rest == -INF) {
+            unclaimed = INF;
+        } else {
+            unclaimed = costs[op_id] - wanted_by_abs1 - wanted_by_rest;
+        }
+        if (unclaimed >= 0) {
+            return 0;
+        } else {
+            return wanted_by_abs1;
+        }
+    } else {
+        int unclaimed_by_rest;
+        if (wanted_by_rest == -INF) {
+            unclaimed_by_rest = INF;
+        } else {
+            unclaimed_by_rest = costs[op_id] - wanted_by_rest;
+        }
+        if (unclaimed_by_rest >= 0) {
+            return 0;
+        } else {
+            return max(unclaimed_by_rest, wanted_by_abs1);
+        }
+    }
+}
+
+static int compute_sum_stolen_costs(
+    const vector<int> &costs,
+    const vector<vector<int>> &saturated_costs_by_abstraction,
+    int abs1) {
+    int num_operators = costs.size();
+    int sum_stolen_costs = 0;
+    for (int op_id = 0; op_id < num_operators; ++op_id) {
+        int stolen_costs = compute_stolen_costs(costs, saturated_costs_by_abstraction, abs1, op_id);
+        assert(stolen_costs != -INF);
+        sum_stolen_costs += stolen_costs;
+    }
+    return sum_stolen_costs;
+}
+
 void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
     random_order = get_default_order(abstractions.size());
 
+    vector<vector<int>> saturated_costs_by_abstraction;
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
         auto pair = abstraction->compute_goal_distances_and_saturated_costs(costs);
         vector<int> &h_values = pair.first;
@@ -154,6 +237,13 @@ void CostPartitioningGeneratorGreedy::initialize(
         int used_costs = compute_used_costs(saturated_costs, use_negative_costs);
         used_costs_by_abstraction.push_back(used_costs);
         saturated_costs_by_abstraction.push_back(move(saturated_costs));
+    }
+
+    int num_abstractions = abstractions.size();
+    for (int abs1 = 0; abs1 < num_abstractions; ++abs1) {
+        int sum_stolen_costs = compute_sum_stolen_costs(
+            costs, saturated_costs_by_abstraction, abs1);
+        stolen_costs_by_abstraction.push_back(max(1, sum_stolen_costs));
     }
 }
 
@@ -176,7 +266,7 @@ Order CostPartitioningGeneratorGreedy::get_next_order(
         order = random_order;
     } else if (dynamic) {
         order = compute_greedy_dynamic_order_for_sample(
-            abstractions, local_state_ids, costs, scoring_function, use_negative_costs);
+            abstractions, local_state_ids, costs);
     } else {
         order = compute_static_greedy_order_for_sample(local_state_ids);
     }
@@ -200,6 +290,8 @@ void add_scoring_function_to_parser(OptionParser &parser) {
     scoring_functions.push_back("MAX_HEURISTIC");
     scoring_functions.push_back("MIN_COSTS");
     scoring_functions.push_back("MAX_HEURISTIC_PER_COSTS");
+    scoring_functions.push_back("MIN_STOLEN_COSTS");
+    scoring_functions.push_back("MAX_HEURISTIC_PER_STOLEN_COSTS");
     parser.add_enum_option(
         "scoring_function", scoring_functions, "scoring function", "MAX_HEURISTIC_PER_COSTS");
 }
