@@ -37,7 +37,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
     double rate_abstraction(
         const std::vector<int> &local_state_ids, int abs_id) const;
     Order compute_static_greedy_order_for_sample(
-        const std::vector<int> &local_state_ids) const;
+        const std::vector<int> &local_state_ids, bool verbose) const;
     Order compute_greedy_dynamic_order_for_sample(
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &local_state_ids,
@@ -55,7 +55,8 @@ public:
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
-            const std::vector<int> &local_state_ids) override;
+        const std::vector<int> &local_state_ids,
+        bool verbose) override;
 };
 
 void add_scoring_function_to_parser(options::OptionParser &parser);

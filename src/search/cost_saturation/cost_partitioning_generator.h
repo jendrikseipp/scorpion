@@ -31,7 +31,8 @@ public:
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
         const std::vector<int> &costs,
-        const std::vector<int> &local_state_ids) = 0;
+        const std::vector<int> &local_state_ids,
+        bool verbose) = 0;
 
     virtual bool has_next_cost_partitioning() const {
         return true;

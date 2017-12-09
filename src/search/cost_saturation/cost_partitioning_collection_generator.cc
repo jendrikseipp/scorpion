@@ -91,15 +91,14 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
             break;
         }
         vector<int> local_state_ids = get_local_state_ids(abstractions, sample);
-
+        // Only be verbose for first sample.
+        bool verbose = (evaluated_orders == 0);
         Order order = cp_generator->get_next_order(
-            task_proxy, abstractions, costs, local_state_ids);
+            task_proxy, abstractions, costs, local_state_ids, verbose);
         CostPartitionedHeuristic cp_heuristic = cp_function(
             abstractions, order, costs, sparse);
 
         if (max_optimization_time > 0) {
-            // Only be verbose for first sample.
-            bool verbose = (evaluated_orders == 0);
             utils::CountdownTimer timer(max_optimization_time);
             int incumbent_h_value = cp_heuristic.compute_heuristic(local_state_ids);
             do_hill_climbing(

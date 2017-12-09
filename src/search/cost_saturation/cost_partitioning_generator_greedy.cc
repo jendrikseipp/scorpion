@@ -101,7 +101,7 @@ double CostPartitioningGeneratorGreedy::rate_abstraction(
 }
 
 Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
-    const vector<int> &local_state_ids) const {
+    const vector<int> &local_state_ids, bool verbose) const {
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
     int num_abstractions = local_state_ids.size();
@@ -110,6 +110,9 @@ Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
     scores.reserve(num_abstractions);
     for (int abs = 0; abs < num_abstractions; ++abs) {
         scores.push_back(rate_abstraction(local_state_ids, abs));
+    }
+    if (verbose) {
+        cout << "Scores: " << scores << endl;
     }
     sort(order.begin(), order.end(), [&](int abs1, int abs2) {
             return scores[abs1] > scores[abs2];
@@ -256,13 +259,11 @@ Order CostPartitioningGeneratorGreedy::get_next_order(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
-    const vector<int> &local_state_ids) {
+    const vector<int> &local_state_ids,
+    bool verbose) {
     // We can call compute_sum_h with unpartitioned h values since we only need
     // a safe, but not necessarily admissible estimate.
     assert(compute_sum_h(local_state_ids, h_values_by_abstraction) != INF);
-
-    // Only be verbose for first sample.
-    bool verbose = (num_returned_orders == 0);
 
     utils::Timer greedy_timer;
     vector<int> order;
@@ -273,7 +274,7 @@ Order CostPartitioningGeneratorGreedy::get_next_order(
         order = compute_greedy_dynamic_order_for_sample(
             abstractions, local_state_ids, costs);
     } else {
-        order = compute_static_greedy_order_for_sample(local_state_ids);
+        order = compute_static_greedy_order_for_sample(local_state_ids, verbose);
     }
 
     if (reverse_order) {

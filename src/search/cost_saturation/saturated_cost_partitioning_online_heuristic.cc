@@ -66,7 +66,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     if (should_compute_scp(state)) {
         Order order = cp_generator->get_next_order(
-            task_proxy, abstractions, costs, local_state_ids);
+            task_proxy, abstractions, costs, local_state_ids, num_evaluated_states == 0);
         CostPartitionedHeuristic cost_partitioning =
             compute_saturated_cost_partitioning(abstractions, order, costs, true);
         ++num_scps_computed;

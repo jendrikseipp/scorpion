@@ -187,7 +187,7 @@ CostPartitionedHeuristic compute_cost_partitioning_for_static_order(
     greedy_generator.initialize(task_proxy, abstractions, costs);
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
     Order order = greedy_generator.get_next_order(
-        task_proxy, abstractions, costs, local_state_ids);
+        task_proxy, abstractions, costs, local_state_ids, false);
     return cp_function(abstractions, order, costs, true);
 }
 

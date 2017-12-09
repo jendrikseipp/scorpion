@@ -104,11 +104,9 @@ Order OrderGeneratorLookahead::get_next_order(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &,
     const vector<int> &,
-    const vector<int> &local_state_ids) {
+    const vector<int> &local_state_ids,
+    bool verbose) {
     assert(compute_sum_h(local_state_ids, h_values_by_abstraction) != INF);
-
-    // Only be verbose for first sample.
-    bool verbose = (num_returned_orders == 0);
 
     utils::Timer greedy_timer;
 
