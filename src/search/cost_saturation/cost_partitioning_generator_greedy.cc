@@ -234,6 +234,8 @@ void CostPartitioningGeneratorGreedy::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
+    utils::Log() << "Initialize greedy order generator" << endl;
+    utils::Timer timer;
     random_order = get_default_order(abstractions.size());
 
     vector<vector<int>> saturated_costs_by_abstraction;
@@ -246,6 +248,7 @@ void CostPartitioningGeneratorGreedy::initialize(
         used_costs_by_abstraction.push_back(used_costs);
         saturated_costs_by_abstraction.push_back(move(saturated_costs));
     }
+    utils::Log() << "Time for computing h values and saturated costs: " << timer << endl;
 
     int num_abstractions = abstractions.size();
     for (int abs1 = 0; abs1 < num_abstractions; ++abs1) {
@@ -253,6 +256,7 @@ void CostPartitioningGeneratorGreedy::initialize(
             costs, saturated_costs_by_abstraction, abs1);
         stolen_costs_by_abstraction.push_back(max(1, sum_stolen_costs));
     }
+    utils::Log() << "Time for initializing greedy order generator: " << timer << endl;
 }
 
 Order CostPartitioningGeneratorGreedy::get_next_order(

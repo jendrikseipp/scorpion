@@ -36,7 +36,7 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
     for (const auto &cp_heuristic: cp_heuristics) {
         num_stored_heuristics += cp_heuristic.size();
     }
-    cout << "Stored heuristics: " << num_stored_heuristics << "/"
+    utils::Log() << "Stored heuristics: " << num_stored_heuristics << "/"
          << num_heuristics << " = "
          << num_stored_heuristics / static_cast<double>(num_heuristics) << endl;
 
@@ -46,7 +46,7 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
              useful_heuristics.insert(cp_h_values.heuristic_index);
         }
     }
-    cout << "Useful heuristics: " << useful_heuristics.size()  << "/"
+    utils::Log() << "Useful heuristics: " << useful_heuristics.size()  << "/"
          << abstractions.size() << " = "
          << static_cast<double>(useful_heuristics.size()) /
             static_cast<double>(num_abstractions) << endl;

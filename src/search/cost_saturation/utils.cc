@@ -60,8 +60,8 @@ Abstractions generate_abstractions(
         }
         abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
     }
-    cout << "Abstractions: " << abstractions.size() << endl;
-    cout << "Abstractions per generator: " << abstractions_per_generator << endl;
+    utils::Log() << "Abstractions: " << abstractions.size() << endl;
+    utils::Log() << "Abstractions per generator: " << abstractions_per_generator << endl;
     return abstractions;
 }
 
@@ -198,10 +198,10 @@ vector<State> sample_states(
     const shared_ptr<utils::RandomNumberGenerator> &rng) {
     assert(num_samples >= 1);
     utils::Timer sampling_timer;
-    cout << "Start sampling" << endl;
+    utils::Log() << "Start sampling" << endl;
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
-    cout << "Initial h value for sampling: " << init_h << endl;
+    utils::Log() << "Initial h value for sampling: " << init_h << endl;
     if (init_h == INF) {
         return {
                    move(initial_state)
@@ -219,8 +219,8 @@ vector<State> sample_states(
         samples.push_back(move(sample));
     }
 
-    cout << "Samples: " << samples.size() << endl;
-    cout << "Sampling time: " << sampling_timer << endl;
+    utils::Log() << "Samples: " << samples.size() << endl;
+    utils::Log() << "Sampling time: " << sampling_timer << endl;
 
     return samples;
 }

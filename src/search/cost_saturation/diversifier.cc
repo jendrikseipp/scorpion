@@ -57,7 +57,7 @@ Diversifier::Diversifier(
         num_abstract_states += abstraction.get_num_states();
         num_covered_states += covered_states.size();
     }
-    cout << "Covered abstract states: "
+    utils::Log() << "Covered abstract states: "
          << num_covered_states << "/" << num_abstract_states << " = "
          << (num_abstract_states ?
         static_cast<double>(num_covered_states) / num_abstract_states : 1)
