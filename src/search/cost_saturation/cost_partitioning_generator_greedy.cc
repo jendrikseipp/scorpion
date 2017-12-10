@@ -169,65 +169,60 @@ Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
     return order;
 }
 
-static int compute_stolen_costs(
-    const vector<int> &costs,
-    const vector<vector<int>> &saturated_costs_by_abstraction,
-    int abs1,
-    int op_id) {
-    int num_abstractions = saturated_costs_by_abstraction.size();
-    int wanted_by_abs1 = saturated_costs_by_abstraction[abs1][op_id];
-    int wanted_by_rest = 0;
-    for (int abs2 = 0; abs2 < num_abstractions; ++abs2) {
-        if (abs2 == abs1) {
-            continue;
-        }
-        int wanted_by_abs2 = saturated_costs_by_abstraction[abs2][op_id];
-        if (wanted_by_abs2 == -INF) {
-            wanted_by_rest = -INF;
-            break;
-        } else {
-            wanted_by_rest += wanted_by_abs2;
-        }
-    }
-    if (wanted_by_abs1 >= 0) {
-        int unclaimed;
-        if (wanted_by_abs1 == -INF || wanted_by_rest == -INF) {
-            unclaimed = INF;
-        } else {
-            unclaimed = costs[op_id] - wanted_by_abs1 - wanted_by_rest;
-        }
-        if (unclaimed >= 0) {
+static int compute_stolen_costs(int wanted_by_abs, int surplus_cost) {
+    if (wanted_by_abs >= 0) {
+        if (surplus_cost >= 0) {
             return 0;
         } else {
-            return wanted_by_abs1;
+            return wanted_by_abs;
         }
     } else {
-        int unclaimed_by_rest;
-        if (wanted_by_rest == -INF) {
-            unclaimed_by_rest = INF;
-        } else {
-            unclaimed_by_rest = costs[op_id] - wanted_by_rest;
-        }
-        if (unclaimed_by_rest >= 0) {
+        if (wanted_by_abs == -INF || surplus_cost == INF) {
             return 0;
         } else {
-            return max(unclaimed_by_rest, wanted_by_abs1);
+            // Both operands are finite.
+            int surplus_for_rest = surplus_cost + wanted_by_abs;
+            if (surplus_for_rest >= 0) {
+                return 0;
+            } else {
+                return max(surplus_for_rest, wanted_by_abs);
+            }
         }
     }
 }
 
 static int compute_sum_stolen_costs(
-    const vector<int> &costs,
     const vector<vector<int>> &saturated_costs_by_abstraction,
-    int abs1) {
-    int num_operators = costs.size();
+    const vector<int> &surplus_costs,
+    int abs) {
+    int num_operators = surplus_costs.size();
     int sum_stolen_costs = 0;
     for (int op_id = 0; op_id < num_operators; ++op_id) {
-        int stolen_costs = compute_stolen_costs(costs, saturated_costs_by_abstraction, abs1, op_id);
+        int stolen_costs = compute_stolen_costs(
+            saturated_costs_by_abstraction[abs][op_id],
+            surplus_costs[op_id]);
         assert(stolen_costs != -INF);
         sum_stolen_costs += stolen_costs;
     }
     return sum_stolen_costs;
+}
+
+static int compute_surplus_costs(
+    const vector<int> &costs,
+    const vector<vector<int>> &saturated_costs_by_abstraction,
+    int op_id) {
+    int num_abstractions = saturated_costs_by_abstraction.size();
+    int sum_wanted = 0;
+    for (int abs = 0; abs < num_abstractions; ++abs) {
+        int wanted = saturated_costs_by_abstraction[abs][op_id];
+        if (wanted == -INF) {
+            return INF;
+        } else {
+            sum_wanted += wanted;
+        }
+    }
+    assert(sum_wanted != -INF);
+    return costs[op_id] - sum_wanted;
 }
 
 void CostPartitioningGeneratorGreedy::initialize(
@@ -251,9 +246,20 @@ void CostPartitioningGeneratorGreedy::initialize(
     utils::Log() << "Time for computing h values and saturated costs: " << timer << endl;
 
     int num_abstractions = abstractions.size();
-    for (int abs1 = 0; abs1 < num_abstractions; ++abs1) {
+    int num_operators = costs.size();
+
+    vector<int> surplus_costs;
+    surplus_costs.reserve(num_operators);
+    for (int op_id = 0; op_id < num_operators; ++op_id) {
+        surplus_costs.push_back(
+            compute_surplus_costs(costs, saturated_costs_by_abstraction, op_id));
+    }
+    utils::Log() << "Done computing surplus costs" << endl;
+
+    utils::Log() << "Compute stolen costs" << endl;
+    for (int abs = 0; abs < num_abstractions; ++abs) {
         int sum_stolen_costs = compute_sum_stolen_costs(
-            costs, saturated_costs_by_abstraction, abs1);
+            saturated_costs_by_abstraction, surplus_costs, abs);
         stolen_costs_by_abstraction.push_back(max(1, sum_stolen_costs));
     }
     utils::Log() << "Time for initializing greedy order generator: " << timer << endl;
