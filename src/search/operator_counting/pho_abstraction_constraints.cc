@@ -2,11 +2,11 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
 
 #include "../cost_saturation/abstraction.h"
 #include "../cost_saturation/abstraction_generator.h"
 #include "../lp/lp_solver.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 
 #include <cassert>
@@ -33,7 +33,7 @@ void PhOAbstractionConstraints::initialize_constraints(
             make_move_iterator(new_abstractions.begin()),
             make_move_iterator(new_abstractions.end()));
     }
-    operator_costs = get_operator_costs(TaskProxy(*task));
+    operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     constraint_offset = constraints.size();
     for (auto &abstraction : abstractions) {
         constraints.emplace_back(0, infinity);

@@ -7,8 +7,8 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
 
+#include "../task_utils/task_properties.h"
 #include "../tasks/modified_operator_costs_task.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -128,7 +128,7 @@ int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
 
 static shared_ptr<AbstractTask> get_scaled_costs_task(
     const shared_ptr<AbstractTask> &task) {
-    vector<int> costs = get_operator_costs(TaskProxy(*task));
+    vector<int> costs = task_properties::get_operator_costs(TaskProxy(*task));
     for (int &cost : costs) {
         if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
             cerr << "Overflowing cost : " << cost << endl;
@@ -142,7 +142,7 @@ static shared_ptr<AbstractTask> get_scaled_costs_task(
 
 static CostPartitionedHeuristic get_ucp_heuristic(
     const TaskProxy &task_proxy, const Abstractions &abstractions, bool debug) {
-    vector<int> costs = get_operator_costs(task_proxy);
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
     vector<int> order = get_default_order(abstractions.size());
     bool filter_blind_heuristics = true;
     return compute_uniform_cost_partitioning(
@@ -154,7 +154,7 @@ static CPHeuristics get_oucp_heuristics(
     const Abstractions &abstractions,
     const CostPartitioningCollectionGenerator &cps_generator,
     bool debug) {
-    vector<int> costs = get_operator_costs(task_proxy);
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
     return
         cps_generator.get_cost_partitionings(
             task_proxy, abstractions, costs,

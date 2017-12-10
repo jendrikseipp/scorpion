@@ -9,12 +9,11 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../sampling.h"
-#include "../successor_generator.h"
-#include "../task_tools.h"
 
 #include "../lp/lp_solver.h"
-
+#include "../task_utils/sampling.h"
+#include "../task_utils/successor_generator.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/rng.h"
@@ -100,15 +99,16 @@ static vector<vector<int>> sample_states_and_return_local_ids(
                 local_state_ids, h_values_by_abstraction_for_default_order) == INF;
         };
 
-    SuccessorGenerator successor_generator(task_proxy);
-    const double average_operator_costs = get_average_operator_cost(task_proxy);
+    successor_generator::SuccessorGenerator successor_generator(task_proxy);
+    const double average_operator_costs = task_properties::get_average_operator_cost(task_proxy);
 
     State initial_state = task_proxy.get_initial_state();
     utils::CountdownTimer sampling_timer(max_sampling_time);
     vector<State> samples;
     while (static_cast<int>(samples.size()) < max_num_samples &&
            !sampling_timer.is_expired()) {
-        State sample = sample_state_with_random_walk(
+        State sample = sampling::sample_state_with_random_walk(
+            task_proxy,
             initial_state,
             successor_generator,
             init_h,
@@ -382,7 +382,7 @@ static Heuristic *_parse(OptionParser &parser) {
                 move(h_values_by_order));
         }
 
-        vector<int> operator_costs = get_operator_costs(task_proxy);
+        vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
 
         if (cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
             vector<vector<vector<int>>> h_values_by_orders =

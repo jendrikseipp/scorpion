@@ -11,7 +11,7 @@ using namespace std;
 namespace cost_saturation {
 static void dijkstra_search(
     const vector<vector<Transition>> &graph,
-    AdaptiveQueue<int> &queue,
+    priority_queues::AdaptiveQueue<int> &queue,
     vector<int> &distances,
     const vector<int> &costs) {
     while (!queue.empty()) {
@@ -46,7 +46,7 @@ ostream &operator<<(ostream &os, const Transition &transition) {
 
 static vector<int> get_active_operators_from_graph(
     const vector<vector<Transition>> &backward_graph) {
-    algorithms::OrderedSet<int> active_operators;
+    ordered_set::OrderedSet<int> active_operators;
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
         for (const Transition &transition : backward_graph[target]) {

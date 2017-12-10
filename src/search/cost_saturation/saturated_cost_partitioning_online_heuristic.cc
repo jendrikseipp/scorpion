@@ -9,8 +9,8 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
 
+#include "../task_utils/task_properties.h"
 #include "../utils/rng_options.h"
 
 using namespace std;
@@ -26,7 +26,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       cp_heuristics(move(cp_heuristics)),
       interval(opts.get<int>("interval")),
       store_cost_partitionings(opts.get<bool>("store_cost_partitionings")),
-      costs(get_operator_costs(task_proxy)),
+      costs(task_properties::get_operator_costs(task_proxy)),
       num_evaluated_states(0),
       num_scps_computed(0) {
     seen_facts.resize(task_proxy.get_variables().size());
@@ -114,7 +114,7 @@ static Heuristic *_parse(OptionParser &parser) {
 
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
-    vector<int> costs = get_operator_costs(task_proxy);
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
 

@@ -3,7 +3,7 @@
 
 #include "abstraction.h"
 
-#include "../priority_queue.h"
+#include "../algorithms/priority_queues.h"
 
 #include <functional>
 #include <limits>
@@ -32,7 +32,7 @@ class ExplicitAbstraction : public Abstraction {
     // State-changing transitions.
     std::vector<std::vector<Transition>> backward_graph;
 
-    mutable AdaptiveQueue<int> queue;
+    mutable priority_queues::AdaptiveQueue<int> queue;
 
 protected:
     virtual std::vector<int> compute_saturated_costs(

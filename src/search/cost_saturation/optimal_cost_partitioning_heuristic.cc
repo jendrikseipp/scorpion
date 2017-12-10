@@ -8,8 +8,8 @@
 #include "../global_state.h"
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
 
+#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/timer.h"
@@ -48,7 +48,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     }
     utils::Timer timer;
 
-    vector<int> costs = get_operator_costs(task_proxy);
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
         h_values.push_back(abstraction->compute_h_values(costs));
         looping_operators.push_back(
