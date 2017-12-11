@@ -191,16 +191,14 @@ static int compute_stolen_costs(int wanted_by_abs, int surplus_cost) {
     }
 }
 
-static int compute_sum_stolen_costs(
-    const vector<vector<int>> &saturated_costs_by_abstraction,
-    const vector<int> &surplus_costs,
-    int abs) {
+static int compute_stolen_costs_by_abstraction(
+    const vector<int> &saturated_costs,
+    const vector<int> &surplus_costs) {
     int num_operators = surplus_costs.size();
     int sum_stolen_costs = 0;
     for (int op_id = 0; op_id < num_operators; ++op_id) {
         int stolen_costs = compute_stolen_costs(
-            saturated_costs_by_abstraction[abs][op_id],
-            surplus_costs[op_id]);
+            saturated_costs[op_id], surplus_costs[op_id]);
         assert(stolen_costs != -INF);
         sum_stolen_costs += stolen_costs;
     }
@@ -258,8 +256,8 @@ void CostPartitioningGeneratorGreedy::initialize(
 
     utils::Log() << "Compute stolen costs" << endl;
     for (int abs = 0; abs < num_abstractions; ++abs) {
-        int sum_stolen_costs = compute_sum_stolen_costs(
-            saturated_costs_by_abstraction, surplus_costs, abs);
+        int sum_stolen_costs = compute_stolen_costs_by_abstraction(
+            saturated_costs_by_abstraction[abs], surplus_costs);
         stolen_costs_by_abstraction.push_back(max(1, sum_stolen_costs));
     }
     utils::Log() << "Time for initializing greedy order generator: " << timer << endl;
