@@ -3,8 +3,8 @@
 #include "landmark_graph.h"
 #include "util.h"
 
+#include "../algorithms/max_cliques.h"
 #include "../cost_saturation/cost_partitioning_generator_greedy.h"
-#include "../pdbs/max_cliques.h"
 #include "../utils/collections.h"
 #include "../utils/language.h"
 #include "../utils/logging.h"
@@ -285,7 +285,7 @@ vector<vector<int>> LandmarkCanonicalHeuristic::compute_max_additive_subsets(
     }
 
     vector<vector<int>> max_cliques;
-    pdbs::compute_max_cliques(cgraph, max_cliques);
+    max_cliques::compute_max_cliques(cgraph, max_cliques);
     return max_cliques;
 }
 

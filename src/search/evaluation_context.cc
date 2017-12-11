@@ -1,7 +1,7 @@
 #include "evaluation_context.h"
 
 #include "evaluation_result.h"
-#include "heuristic.h"
+#include "evaluator.h"
 #include "search_statistics.h"
 
 #include <cassert>
@@ -31,16 +31,14 @@ EvaluationContext::EvaluationContext(
     : EvaluationContext(HeuristicCache(state), INVALID, false, statistics, calculate_preferred) {
 }
 
-const EvaluationResult &EvaluationContext::get_result(ScalarEvaluator *heur) {
-    EvaluationResult &result = cache[heur];
+const EvaluationResult &EvaluationContext::get_result(Evaluator *evaluator) {
+    EvaluationResult &result = cache[evaluator];
     if (result.is_uninitialized()) {
-        result = heur->compute_result(*this);
-        if (statistics && dynamic_cast<const Heuristic *>(heur)) {
-            /* Only count evaluations of actual Heuristics, not arbitrary
-               scalar evaluators. */
-            if (result.get_count_evaluation()) {
-                statistics->inc_evaluations();
-            }
+        result = evaluator->compute_result(*this);
+        if (statistics &&
+            evaluator->is_used_for_counting_evaluations() &&
+            result.get_count_evaluation()) {
+            statistics->inc_evaluations();
         }
     }
     return result;
@@ -64,22 +62,22 @@ bool EvaluationContext::is_preferred() const {
     return preferred;
 }
 
-bool EvaluationContext::is_heuristic_infinite(ScalarEvaluator *heur) {
+bool EvaluationContext::is_heuristic_infinite(Evaluator *heur) {
     return get_result(heur).is_infinite();
 }
 
-int EvaluationContext::get_heuristic_value(ScalarEvaluator *heur) {
+int EvaluationContext::get_heuristic_value(Evaluator *heur) {
     int h = get_result(heur).get_h_value();
     assert(h != EvaluationResult::INFTY);
     return h;
 }
 
-int EvaluationContext::get_heuristic_value_or_infinity(ScalarEvaluator *heur) {
+int EvaluationContext::get_heuristic_value_or_infinity(Evaluator *heur) {
     return get_result(heur).get_h_value();
 }
 
-const vector<const GlobalOperator *> &
-EvaluationContext::get_preferred_operators(ScalarEvaluator *heur) {
+const vector<OperatorID> &
+EvaluationContext::get_preferred_operators(Evaluator *heur) {
     return get_result(heur).get_preferred_operators();
 }
 

@@ -7,11 +7,11 @@
 #include "../global_state.h"
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../successor_generator.h"
-#include "../task_tools.h"
 
 #include "../cost_saturation/cost_partitioning_generator_greedy.h"
 #include "../lp/lp_solver.h"
+#include "../task_utils/successor_generator.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/memory.h"
 #include "../utils/rng_options.h"
 #include "../utils/system.h"
@@ -49,8 +49,9 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
       admissible(opts.get<bool>("admissible")),
       dead_ends_reliable(
           admissible ||
-          (!has_axioms(task_proxy) &&
-           (!has_conditional_effects(task_proxy) || conditional_effects_supported))) {
+          (!task_properties::has_axioms(task_proxy) &&
+           (!task_properties::has_conditional_effects(task_proxy) || conditional_effects_supported))),
+      successor_generator(nullptr) {
     cout << "Initializing landmarks count heuristic..." << endl;
     LandmarkFactory *lm_graph_factory = opts.get<LandmarkFactory *>("lm_factory");
     lgraph = lm_graph_factory->compute_lm_graph(task, exploration);
@@ -61,20 +62,25 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
         if (reasonable_orders) {
             cerr << "Reasonable orderings should not be used for admissible heuristics" << endl;
             utils::exit_with(ExitCode::INPUT_ERROR);
-        } else if (has_axioms(task_proxy)) {
+        } else if (task_properties::has_axioms(task_proxy)) {
             cerr << "cost partitioning does not support axioms" << endl;
             utils::exit_with(ExitCode::UNSUPPORTED);
-        } else if (has_conditional_effects(task_proxy) && !conditional_effects_supported) {
+        } else if (task_properties::has_conditional_effects(task_proxy) &&
+                   !conditional_effects_supported) {
             cerr << "conditional effects not supported by the landmark generation method" << endl;
             utils::exit_with(ExitCode::UNSUPPORTED);
         }
-        CostPartitioningAlgorithm cp_type = static_cast<CostPartitioningAlgorithm>(opts.get_enum("cost_partitioning"));
+        vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
+        CostPartitioningAlgorithm cp_type = static_cast<CostPartitioningAlgorithm>(
+            opts.get_enum("cost_partitioning"));
         if (cp_type == CostPartitioningAlgorithm::OPTIMAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkEfficientOptimalSharedCostAssignment>(
-                get_operator_costs(task_proxy), *lgraph, static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
+                operator_costs,
+                *lgraph,
+                static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
         } else if (cp_type == CostPartitioningAlgorithm::SUBOPTIMAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkUniformSharedCostAssignment>(
-                get_operator_costs(task_proxy),
+                operator_costs,
                 *lgraph,
                 opts.get<bool>("alm"),
                 opts.get<bool>("reuse_costs"),
@@ -83,15 +89,23 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
                 utils::parse_rng_from_options(opts));
         } else if (cp_type == CostPartitioningAlgorithm::CANONICAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkCanonicalHeuristic>(
-                get_operator_costs(task_proxy), *lgraph);
+                operator_costs, *lgraph);
         } else if (cp_type == CostPartitioningAlgorithm::PHO) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkPhO>(
-                get_operator_costs(task_proxy), *lgraph, static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
+                operator_costs,
+                *lgraph,
+                static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
         } else {
             ABORT("unknown cost partitioning type");
         }
     } else {
         lm_cost_assignment = nullptr;
+    }
+
+    if (use_preferred_operators) {
+        /* Ideally, we should reuse the successor generator of the main task in cases
+           where it's compatible. See issue564. */
+        successor_generator = utils::make_unique_ptr<successor_generator::SuccessorGenerator>(task_proxy);
     }
 }
 
@@ -144,7 +158,7 @@ int LandmarkCountHeuristic::get_heuristic_value(const GlobalState &global_state)
 int LandmarkCountHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
 
-    if (is_goal_state(task_proxy, state))
+    if (task_properties::is_goal_state(task_proxy, state))
         return 0;
 
     int h = get_heuristic_value(global_state);
@@ -216,12 +230,14 @@ bool LandmarkCountHeuristic::generate_helpful_actions(const State &state,
      return false. If a simple landmark can be achieved, return only operators
      that achieve simple landmarks, else return operators that achieve
      disjunctive landmarks */
-    vector<OperatorProxy> all_operators;
-    g_successor_generator->generate_applicable_ops(state, all_operators);
-    vector<int> ha_simple;
-    vector<int> ha_disj;
+    assert(successor_generator);
+    vector<OperatorID> applicable_operators;
+    successor_generator->generate_applicable_ops(state, applicable_operators);
+    vector<OperatorID> ha_simple;
+    vector<OperatorID> ha_disj;
 
-    for (OperatorProxy op : all_operators) {
+    for (OperatorID op_id : applicable_operators) {
+        OperatorProxy op = task_proxy.get_operators()[op_id];
         EffectsProxy effects = op.get_effects();
         for (EffectProxy effect : effects) {
             if (!does_fire(effect, state))
@@ -230,9 +246,9 @@ bool LandmarkCountHeuristic::generate_helpful_actions(const State &state,
             LandmarkNode *lm_p = lgraph->get_landmark(fact_proxy.get_pair());
             if (lm_p != 0 && landmark_is_interesting(state, reached, *lm_p)) {
                 if (lm_p->disjunctive) {
-                    ha_disj.push_back(op.get_id());
+                    ha_disj.push_back(op_id);
                 } else {
-                    ha_simple.push_back(op.get_id());
+                    ha_simple.push_back(op_id);
                 }
             }
         }
@@ -242,11 +258,11 @@ bool LandmarkCountHeuristic::generate_helpful_actions(const State &state,
 
     OperatorsProxy operators = task_proxy.get_operators();
     if (ha_simple.empty()) {
-        for (int op_id : ha_disj) {
+        for (OperatorID op_id : ha_disj) {
             set_preferred(operators[op_id]);
         }
     } else {
-        for (int op_id : ha_simple) {
+        for (OperatorID op_id : ha_simple) {
             set_preferred(operators[op_id]);
         }
     }
@@ -274,9 +290,9 @@ void LandmarkCountHeuristic::notify_initial_state(const GlobalState &initial_sta
 }
 
 bool LandmarkCountHeuristic::notify_state_transition(
-    const GlobalState &parent_state, const GlobalOperator &op,
+    const GlobalState &parent_state, OperatorID op_id,
     const GlobalState &state) {
-    lm_status_manager->update_reached_lms(parent_state, op, state);
+    lm_status_manager->update_reached_lms(parent_state, op_id, state);
     /* TODO: The return value "true" signals that the LM set of this state
              has changed and the h value should be recomputed. It's not
              wrong to always return true, but it may be more efficient to

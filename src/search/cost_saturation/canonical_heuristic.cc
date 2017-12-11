@@ -7,10 +7,10 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
 
-#include "../pdbs/max_cliques.h"
-#include "../utils/dynamic_bitset.h"
+#include "../algorithms/max_cliques.h"
+#include "../algorithms/dynamic_bitset.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
 using namespace std;
@@ -24,10 +24,10 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
     int num_operators) {
     int num_abstractions = abstractions.size();
 
-    vector<utils::DynamicBitset<>> relevant_operators;
+    vector<dynamic_bitset::DynamicBitset<>> relevant_operators;
     relevant_operators.reserve(num_abstractions);
     for (const auto &abstraction : abstractions) {
-        utils::DynamicBitset<> active_ops(num_operators);
+        dynamic_bitset::DynamicBitset<> active_ops(num_operators);
         for (int op_id : abstraction->get_active_operators()) {
             active_ops.set(op_id);
         }
@@ -50,14 +50,14 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
     }
 
     MaxAdditiveSubsets max_cliques;
-    pdbs::compute_max_cliques(cgraph, max_cliques);
+    max_cliques::compute_max_cliques(cgraph, max_cliques);
     return max_cliques;
 }
 
 CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     : Heuristic(opts),
       debug(opts.get<bool>("debug")) {
-    const vector<int> operator_costs = get_operator_costs(task_proxy);
+    const vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
 
     vector<int> abstractions_per_generator;
     for (const shared_ptr<AbstractionGenerator> &generator :

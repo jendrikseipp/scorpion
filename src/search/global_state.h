@@ -1,17 +1,17 @@
 #ifndef GLOBAL_STATE_H
 #define GLOBAL_STATE_H
 
-#include "int_packer.h"
 #include "state_id.h"
+
+#include "algorithms/int_packer.h"
 
 #include <cstddef>
 #include <iostream>
 #include <vector>
 
-class GlobalOperator;
 class StateRegistry;
 
-using PackedStateBin = IntPacker::Bin;
+using PackedStateBin = int_packer::IntPacker::Bin;
 
 // For documentation on classes relevant to storing and working with registered
 // states see the file state_registry.h.

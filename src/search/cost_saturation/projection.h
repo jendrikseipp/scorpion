@@ -3,8 +3,7 @@
 
 #include "abstraction.h"
 
-#include "../priority_queue.h"
-
+#include "../algorithms/priority_queues.h"
 #include "../pdbs/pattern_database.h"
 
 #include <vector>
@@ -29,7 +28,7 @@ class Projection : public Abstraction {
     std::vector<std::size_t> hash_multipliers;
 
     // Reuse the queue to avoid switching to heap queue too often.
-    mutable AdaptiveQueue<size_t> pq;
+    mutable priority_queues::AdaptiveQueue<size_t> pq;
 
     // Returns true iff op has an effect on a variable in the pattern.
     bool is_operator_relevant(const OperatorProxy &op) const;

@@ -7,13 +7,13 @@
 #include "cost_partitioning_heuristic.h"
 #include "cost_partitioning_generator_greedy.h"
 
-#include "../sampling.h"
-#include "../successor_generator.h"
 #include "../task_proxy.h"
-#include "../task_tools.h"
 
 #include "../options/option_parser.h"
 #include "../options/options.h"
+#include "../task_utils/sampling.h"
+#include "../task_utils/successor_generator.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/timer.h"
@@ -38,7 +38,7 @@ Heuristic *get_max_cp_heuristic(
 
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
-    vector<int> costs = get_operator_costs(task_proxy);
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
     return new CostPartitioningHeuristic(
@@ -210,7 +210,7 @@ vector<State> sample_states(
     DeadEndDetector is_dead_end = [&heuristic] (const State &state) {
                                       return heuristic(state) == INF;
                                   };
-    RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
+    sampling::RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     vector<State> samples;
     while (static_cast<int>(samples.size()) < num_samples) {

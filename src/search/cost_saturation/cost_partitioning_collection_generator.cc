@@ -7,11 +7,11 @@
 #include "order_optimizer.h"
 #include "utils.h"
 
-#include "../sampling.h"
-#include "../successor_generator.h"
 #include "../task_proxy.h"
-#include "../task_tools.h"
 
+#include "../task_utils/sampling.h"
+#include "../task_utils/successor_generator.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
@@ -68,7 +68,7 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
                                       return sampling_heuristic(state) == INF;
                                   };
     int init_h = sampling_heuristic(initial_state);
-    RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
+    sampling::RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     if (init_h == INF) {
         return {
