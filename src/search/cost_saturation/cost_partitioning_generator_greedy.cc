@@ -145,33 +145,24 @@ double CostPartitioningGeneratorGreedy::rate_abstraction(
     int h = h_values_by_abstraction[abs_id][local_state_id];
     assert(h >= 0);
 
-    assert(utils::in_bounds(abs_id, used_costs_by_abstraction));
-    int used_costs = used_costs_by_abstraction[abs_id];
-    assert(used_costs != INF);
-    assert(used_costs != -INF);
-    if (use_negative_costs && used_costs <= 0) {
-        cout << "Used-costs sum is zero or less: " << used_costs << endl;
-        used_costs = 0;
-    }
-    assert(used_costs >= 0);
-
     assert(utils::in_bounds(abs_id, stolen_costs_by_abstraction));
     int stolen_costs = stolen_costs_by_abstraction[abs_id];
     assert(stolen_costs >= 1 && stolen_costs != INF);
 
-    if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
-        return h;
-    } else if (scoring_function == ScoringFunction::MIN_COSTS) {
-        return 1.0 / (used_costs + 1.0);
-    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
-        return h / (used_costs + 1.0);
-    } else if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS) {
-        return 1.0 / stolen_costs;
-    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
-        return h / static_cast<double>(stolen_costs);
-    } else {
-        ABORT("Invalid scoring_function");
+    if (scoring_function == ScoringFunction::MIN_COSTS ||
+        scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
+        assert(utils::in_bounds(abs_id, used_costs_by_abstraction));
+        int used_costs = used_costs_by_abstraction[abs_id];
+        assert(used_costs != INF);
+        assert(used_costs != -INF);
+        if (use_negative_costs && used_costs <= 0) {
+            cout << "Used-costs sum is zero or less: " << used_costs << endl;
+            used_costs = 0;
+        }
+        assert(used_costs >= 0);
+        stolen_costs = used_costs;
     }
+    return compute_score(h, stolen_costs, scoring_function, use_negative_costs);
 }
 
 Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
