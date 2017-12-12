@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <unordered_set>
 
 using namespace std;
@@ -112,25 +113,19 @@ static int compute_used_costs(const vector<int> &saturated_costs, bool use_negat
 }
 
 static double compute_score(
-    int h, int used_costs, ScoringFunction scoring_function, bool use_negative_costs) {
+    int h, int used_costs, ScoringFunction scoring_function) {
     assert(h >= 0);
+    assert(h != INF);
     assert(used_costs != INF);
     assert(used_costs != -INF);
-    if (use_negative_costs && used_costs <= 0) {
-        cout << "Used-costs sum is zero or less: " << used_costs << endl;
-        used_costs = 0;
-    }
-    assert(used_costs >= 0);
     if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
         return h;
-    } else if (scoring_function == ScoringFunction::MIN_COSTS) {
-        return 1 / (used_costs + 1.0);
-    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
-        return h / (used_costs + 1.0);
-    } else if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS) {
-        return 1.0 / used_costs;
-    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
-        return h / static_cast<double>(used_costs);
+    } else if (scoring_function == ScoringFunction::MIN_COSTS ||
+               scoring_function == ScoringFunction::MIN_STOLEN_COSTS) {
+        return -used_costs;
+    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS ||
+               scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+        return exp(h - used_costs);
     } else {
         ABORT("Invalid scoring_function");
     }
@@ -152,17 +147,9 @@ double CostPartitioningGeneratorGreedy::rate_abstraction(
     if (scoring_function == ScoringFunction::MIN_COSTS ||
         scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
         assert(utils::in_bounds(abs_id, used_costs_by_abstraction));
-        int used_costs = used_costs_by_abstraction[abs_id];
-        assert(used_costs != INF);
-        assert(used_costs != -INF);
-        if (use_negative_costs && used_costs <= 0) {
-            cout << "Used-costs sum is zero or less: " << used_costs << endl;
-            used_costs = 0;
-        }
-        assert(used_costs >= 0);
-        stolen_costs = used_costs;
+        stolen_costs = used_costs_by_abstraction[abs_id];
     }
-    return compute_score(h, stolen_costs, scoring_function, use_negative_costs);
+    return compute_score(h, stolen_costs, scoring_function);
 }
 
 Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
@@ -231,7 +218,7 @@ Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
                     current_saturated_costs[rem_id], surplus_costs);
             }
             double score = compute_score(
-                current_h_values[rem_id], used_costs, scoring_function, use_negative_costs);
+                current_h_values[rem_id], used_costs, scoring_function);
             if (score > highest_score) {
                 best_rem_id = rem_id;
                 highest_score = score;
