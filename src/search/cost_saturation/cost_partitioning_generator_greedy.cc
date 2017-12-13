@@ -64,7 +64,7 @@ static int compute_stolen_costs_by_abstraction(
         assert(stolen_costs != -INF);
         sum_stolen_costs += stolen_costs;
     }
-    return max(1, sum_stolen_costs);
+    return sum_stolen_costs;
 }
 
 static int compute_surplus_costs(
