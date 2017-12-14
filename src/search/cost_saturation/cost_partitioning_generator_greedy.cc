@@ -112,7 +112,7 @@ static int compute_used_costs(const vector<int> &saturated_costs, bool use_negat
     return sum;
 }
 
-static double compute_score(
+static long double compute_score(
     int h, int used_costs, ScoringFunction scoring_function) {
     assert(h >= 0);
     assert(h != INF);
@@ -125,13 +125,13 @@ static double compute_score(
         return -used_costs;
     } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS ||
                scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
-        return exp(h - used_costs);
+        return exp(static_cast<long double>(h - used_costs));
     } else {
         ABORT("Invalid scoring_function");
     }
 }
 
-double CostPartitioningGeneratorGreedy::rate_abstraction(
+long double CostPartitioningGeneratorGreedy::rate_abstraction(
     const vector<int> &local_state_ids, int abs_id) const {
     assert(utils::in_bounds(abs_id, local_state_ids));
     int local_state_id = local_state_ids[abs_id];
@@ -142,12 +142,18 @@ double CostPartitioningGeneratorGreedy::rate_abstraction(
 
     assert(utils::in_bounds(abs_id, stolen_costs_by_abstraction));
     int stolen_costs = stolen_costs_by_abstraction[abs_id];
-    assert(stolen_costs >= 1 && stolen_costs != INF);
 
     if (scoring_function == ScoringFunction::MIN_COSTS ||
         scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
         assert(utils::in_bounds(abs_id, used_costs_by_abstraction));
         stolen_costs = used_costs_by_abstraction[abs_id];
+    }
+    if (false) {
+        long double diff = static_cast<long double>(h - stolen_costs);
+        cout << "abs " << abs_id << ", h: " << h << ", costs: " << stolen_costs
+             << ", h/costs: " << static_cast<long double>(h) / stolen_costs
+             << ", exp(h-costs): " << exp(diff) << ", log: " << log(exp(diff))
+             << endl;
     }
     return compute_score(h, stolen_costs, scoring_function);
 }
@@ -158,17 +164,20 @@ Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
     int num_abstractions = local_state_ids.size();
     Order order = get_default_order(num_abstractions);
-    vector<double> scores;
+    vector<long double> scores;
     scores.reserve(num_abstractions);
     for (int abs = 0; abs < num_abstractions; ++abs) {
         scores.push_back(rate_abstraction(local_state_ids, abs));
     }
-    if (verbose) {
-        cout << "Scores: " << scores << endl;
-    }
     sort(order.begin(), order.end(), [&](int abs1, int abs2) {
             return scores[abs1] > scores[abs2];
         });
+    if (verbose) {
+        cout << "Scores: " << scores << endl;
+        unordered_set<long double> unique_scores(scores.begin(), scores.end());
+        cout << "Unique scores: " << unique_scores.size() << endl;
+        cout << "Order: " << order << endl;
+    }
     return order;
 }
 
@@ -205,7 +214,7 @@ Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
         vector<int> surplus_costs = compute_all_surplus_costs(
             remaining_costs, current_saturated_costs);
 
-        double highest_score = -numeric_limits<double>::max();
+        long double highest_score = -numeric_limits<long double>::max();
         int best_rem_id = -1;
         for (int rem_id = 0; rem_id < num_remaining; ++rem_id) {
             int used_costs;
@@ -217,7 +226,7 @@ Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
                 used_costs = compute_stolen_costs_by_abstraction(
                     current_saturated_costs[rem_id], surplus_costs);
             }
-            double score = compute_score(
+            long double score = compute_score(
                 current_h_values[rem_id], used_costs, scoring_function);
             if (score > highest_score) {
                 best_rem_id = rem_id;

@@ -34,7 +34,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
 
     int num_returned_orders;
 
-    double rate_abstraction(
+    long double rate_abstraction(
         const std::vector<int> &local_state_ids, int abs_id) const;
     Order compute_static_greedy_order_for_sample(
         const std::vector<int> &local_state_ids, bool verbose) const;
