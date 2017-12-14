@@ -26,6 +26,7 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
       reverse_order(opts.get<bool>("reverse_order")),
       scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
+      use_exp(opts.get<bool>("use_exp")),
       dynamic(opts.get<bool>("dynamic")),
       rng(utils::parse_rng_from_options(opts)),
       num_returned_orders(0) {
@@ -113,7 +114,7 @@ static int compute_used_costs(const vector<int> &saturated_costs, bool use_negat
 }
 
 static long double compute_score(
-    int h, int used_costs, ScoringFunction scoring_function) {
+    int h, int used_costs, ScoringFunction scoring_function, bool use_exp) {
     assert(h >= 0);
     assert(h != INF);
     assert(used_costs != INF);
@@ -125,7 +126,11 @@ static long double compute_score(
         return -used_costs;
     } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS ||
                scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
-        return exp(static_cast<long double>(h - used_costs));
+        if (use_exp) {
+            return exp(static_cast<long double>(h - used_costs));
+        } else {
+            return static_cast<long double>(h) / max(1, used_costs);
+        }
     } else {
         ABORT("Invalid scoring_function");
     }
@@ -155,7 +160,7 @@ long double CostPartitioningGeneratorGreedy::rate_abstraction(
              << ", exp(h-costs): " << exp(diff) << ", log: " << log(exp(diff))
              << endl;
     }
-    return compute_score(h, stolen_costs, scoring_function);
+    return compute_score(h, stolen_costs, scoring_function, use_exp);
 }
 
 Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
@@ -227,7 +232,7 @@ Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
                     current_saturated_costs[rem_id], surplus_costs);
             }
             long double score = compute_score(
-                current_h_values[rem_id], used_costs, scoring_function);
+                current_h_values[rem_id], used_costs, scoring_function, use_exp);
             if (score > highest_score) {
                 best_rem_id = rem_id;
                 highest_score = score;
@@ -333,6 +338,10 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     parser.add_option<bool>(
         "use_negative_costs",
         "account for negative costs when computing used costs",
+        "false");
+    parser.add_option<bool>(
+        "use_exp",
+        "use exp(h-costs) instead of h/max(1,costs) for computing scores",
         "false");
     parser.add_option<bool>(
         "dynamic",
