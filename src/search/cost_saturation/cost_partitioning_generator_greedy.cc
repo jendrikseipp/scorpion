@@ -33,23 +33,27 @@ CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &
 }
 
 static int compute_stolen_costs(int wanted_by_abs, int surplus_cost) {
+    assert(wanted_by_abs != INF);
+    assert(surplus_cost != -INF);
+    if (surplus_cost == INF) {
+        return 0;
+    }
+    // If wanted_by_abs is negative infinity, surplus_cost is positive infinity.
+    assert(wanted_by_abs != -INF);
+
+    // Both operands are finite.
+    int surplus_for_rest = surplus_cost + wanted_by_abs;
     if (wanted_by_abs >= 0) {
-        if (surplus_cost >= 0) {
-            return 0;
+        if (surplus_for_rest >= 0) {
+            return max(0, wanted_by_abs - surplus_for_rest);
         } else {
             return wanted_by_abs;
         }
     } else {
-        if (wanted_by_abs == -INF || surplus_cost == INF) {
+        if (surplus_for_rest >= 0) {
             return 0;
         } else {
-            // Both operands are finite.
-            int surplus_for_rest = surplus_cost + wanted_by_abs;
-            if (surplus_for_rest >= 0) {
-                return 0;
-            } else {
-                return max(surplus_for_rest, wanted_by_abs);
-            }
+            return max(wanted_by_abs, surplus_for_rest);
         }
     }
 }
