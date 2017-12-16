@@ -26,34 +26,54 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
       abstractions(move(abstractions_)),
       cp_heuristics(move(cp_heuristics_)),
       debug(opts.get<bool>("debug")) {
-    for (auto &abstraction : abstractions) {
-        abstraction->release_transition_system_memory();
-    }
-
     int num_abstractions = abstractions.size();
-    int num_heuristics = num_abstractions * cp_heuristics.size();
-    int num_stored_heuristics = 0;
-    for (const auto &cp_heuristic: cp_heuristics) {
-        num_stored_heuristics += cp_heuristic.size();
-    }
-    utils::Log() << "Stored heuristics: " << num_stored_heuristics << "/"
-         << num_heuristics << " = "
-         << num_stored_heuristics / static_cast<double>(num_heuristics) << endl;
 
-    unordered_set<int> useful_heuristics;
+    // Number of lookup tables.
+    int num_heuristics = num_abstractions * cp_heuristics.size();
+    int num_lookup_tables = 0;
     for (const auto &cp_heuristic: cp_heuristics) {
-        for (const auto &cp_h_values : cp_heuristic.get_h_values_by_heuristic()) {
-             useful_heuristics.insert(cp_h_values.heuristic_index);
+        num_lookup_tables += cp_heuristic.size();
+    }
+    utils::Log() << "Stored lookup tables: " << num_lookup_tables << "/"
+         << num_heuristics << " = "
+         << num_lookup_tables / static_cast<double>(num_heuristics) << endl;
+
+    // Total lookup table size.
+    int num_stored_values = 0;
+    for (const auto &cp_heuristic : cp_heuristics) {
+        for (const auto & cp_values : cp_heuristic.get_h_values_by_heuristic()) {
+            num_stored_values += cp_values.h_values.size();
         }
     }
-    utils::Log() << "Useful heuristics: " << useful_heuristics.size()  << "/"
+    int num_total_values = 0;
+    for (const auto &abstraction : abstractions) {
+        num_total_values += abstraction->get_num_states();
+    }
+    num_total_values *= cp_heuristics.size();
+    utils::Log() << "Stored values: " << num_stored_values << "/"
+         << num_total_values << " = "
+         << num_stored_values / static_cast<double>(num_total_values) << endl;
+
+    // Number of stored heuristics.
+    unordered_set<int> stored_heuristics;
+    for (const auto &cp_heuristic : cp_heuristics) {
+        for (const auto &cp_h_values : cp_heuristic.get_h_values_by_heuristic()) {
+             stored_heuristics.insert(cp_h_values.heuristic_index);
+        }
+    }
+    utils::Log() << "Stored heuristics: " << stored_heuristics.size()  << "/"
          << abstractions.size() << " = "
-         << static_cast<double>(useful_heuristics.size()) /
+         << static_cast<double>(stored_heuristics.size()) /
             static_cast<double>(num_abstractions) << endl;
 
     for (int i = 0; i < num_abstractions; ++i) {
-        if (!useful_heuristics.count(i)) {
+        if (!stored_heuristics.count(i)) {
             abstractions[i] = nullptr;
+        }
+    }
+    for (auto &abstraction : abstractions) {
+        if (abstraction) {
+            abstraction->release_transition_system_memory();
         }
     }
 }
