@@ -37,6 +37,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     // minimal improvement required for hill climbing to continue search
     const int min_improvement;
     const double max_time;
+    const int max_iterations;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::unique_ptr<IncrementalCanonicalPDBs> current_pdbs;

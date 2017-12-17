@@ -114,6 +114,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       num_samples(opts.get<int>("num_samples")),
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
+      max_iterations(opts.get<int>("max_iterations")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
       hill_climbing_timer(0) {
@@ -331,7 +332,7 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     vector<int> current_samples_h_values;
 
     try {
-        while (true) {
+        while (num_iterations < max_iterations) {
             ++num_iterations;
             cout << "current collection size is "
                  << current_pdbs->get_size() << endl;
@@ -459,6 +460,11 @@ void add_hillclimbing_options(OptionParser &parser) {
         "is performed at all.",
         "infinity",
         Bounds("0.0", "infinity"));
+    parser.add_option<int>(
+        "max_iterations",
+        "minimum number of hill climbing iterations",
+        "infinity",
+        Bounds("0", "infinity"));
     utils::add_rng_options(parser);
 }
 
