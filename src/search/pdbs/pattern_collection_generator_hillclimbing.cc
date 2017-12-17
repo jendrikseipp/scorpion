@@ -31,6 +31,7 @@ using namespace std;
 
 namespace pdbs {
 struct HillClimbingTimeout : public exception {};
+struct HillClimbingMaxPDBsGenerated : public exception {};
 
 static vector<int> get_goal_variables(const TaskProxy &task_proxy) {
     vector<int> goal_vars;
@@ -115,6 +116,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       max_iterations(opts.get<int>("max_iterations")),
+      max_generated_patterns(opts.get<int>("max_generated_patterns")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
       hill_climbing_timer(0) {
@@ -159,6 +161,8 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
                         make_shared<PatternDatabase>(task_proxy, new_pattern));
                     max_pdb_size = max(max_pdb_size,
                                        candidate_pdbs.back()->get_size());
+                    if (static_cast<int>(generated_patterns.size()) >= max_generated_patterns)
+                        throw HillClimbingMaxPDBsGenerated();
                 }
             } else {
                 ++num_rejected;
@@ -310,28 +314,30 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     PDBCollection candidate_pdbs;
     // The maximum size over all PDBs in candidate_pdbs.
     int max_pdb_size = 0;
-    for (const shared_ptr<PatternDatabase> &current_pdb :
-         *(current_pdbs->get_pattern_databases())) {
-        int new_max_pdb_size = generate_candidate_pdbs(
-            task_proxy, relevant_neighbours, *current_pdb, generated_patterns,
-            candidate_pdbs);
-        max_pdb_size = max(max_pdb_size, new_max_pdb_size);
-    }
-    /*
-      NOTE: The initial set of candidate patterns (in generated_patterns) is
-      guaranteed to be "normalized" in the sense that there are no duplicates
-      and patterns are sorted.
-    */
-    cout << "Done calculating initial candidate PDBs" << endl;
 
     int num_iterations = 0;
-    State initial_state = task_proxy.get_initial_state();
-    successor_generator::SuccessorGenerator successor_generator(task_proxy);
-
-    vector<State> samples;
-    vector<int> current_samples_h_values;
 
     try {
+        for (const shared_ptr<PatternDatabase> &current_pdb :
+             *(current_pdbs->get_pattern_databases())) {
+            int new_max_pdb_size = generate_candidate_pdbs(
+                task_proxy, relevant_neighbours, *current_pdb, generated_patterns,
+                candidate_pdbs);
+            max_pdb_size = max(max_pdb_size, new_max_pdb_size);
+        }
+        /*
+          NOTE: The initial set of candidate patterns (in generated_patterns) is
+          guaranteed to be "normalized" in the sense that there are no duplicates
+          and patterns are sorted.
+        */
+        cout << "Done calculating initial candidate PDBs" << endl;
+
+        State initial_state = task_proxy.get_initial_state();
+        successor_generator::SuccessorGenerator successor_generator(task_proxy);
+
+        vector<State> samples;
+        vector<int> current_samples_h_values;
+
         while (num_iterations < max_iterations) {
             ++num_iterations;
             cout << "current collection size is "
@@ -389,6 +395,8 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
         }
     } catch (HillClimbingTimeout &) {
         cout << "Time limit reached. Abort hill climbing." << endl;
+    } catch (HillClimbingMaxPDBsGenerated &) {
+        cout << "Maximum number of PDBs generated. Abort hill climbing." << endl;
     }
 
     cout << "iPDB: iterations = " << num_iterations << endl;
@@ -463,6 +471,11 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<int>(
         "max_iterations",
         "minimum number of hill climbing iterations",
+        "infinity",
+        Bounds("0", "infinity"));
+    parser.add_option<int>(
+        "max_generated_patterns",
+        "maximum number of generated patterns",
         "infinity",
         Bounds("0", "infinity"));
     utils::add_rng_options(parser);
