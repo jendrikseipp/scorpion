@@ -38,7 +38,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts)
     : Heuristic(opts),
       abstractions(generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"))),
+                       task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"))),
       allow_negative_costs(true),
       debug(false) {
     int num_operators = task_proxy.get_operators().size();

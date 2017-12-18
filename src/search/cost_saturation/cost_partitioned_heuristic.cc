@@ -48,7 +48,7 @@ int CostPartitionedHeuristic::compute_heuristic(
     const Abstractions &abstractions, const State &state) const {
     int sum_h = 0;
     for (const CostPartitionedHeuristicValues &cp_h_values : h_values_by_heuristic) {
-        const Abstraction & abstraction = *abstractions[cp_h_values.heuristic_index];
+        const Abstraction &abstraction = *abstractions[cp_h_values.heuristic_index];
         int state_id = abstraction.get_abstract_state_id(state);
         assert(utils::in_bounds(state_id, cp_h_values.h_values));
         int h = cp_h_values.h_values[state_id];

@@ -58,10 +58,10 @@ Diversifier::Diversifier(
         num_covered_states += covered_states.size();
     }
     utils::Log() << "Covered abstract states: "
-         << num_covered_states << "/" << num_abstract_states << " = "
-         << (num_abstract_states ?
+                 << num_covered_states << "/" << num_abstract_states << " = "
+                 << (num_abstract_states ?
         static_cast<double>(num_covered_states) / num_abstract_states : 1)
-         << endl;
+                 << endl;
 }
 
 bool Diversifier::is_diverse(const CostPartitionedHeuristic &cp) {

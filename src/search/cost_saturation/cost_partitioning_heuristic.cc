@@ -35,13 +35,13 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
         num_lookup_tables += cp_heuristic.size();
     }
     utils::Log() << "Stored lookup tables: " << num_lookup_tables << "/"
-         << num_heuristics << " = "
-         << num_lookup_tables / static_cast<double>(num_heuristics) << endl;
+                 << num_heuristics << " = "
+                 << num_lookup_tables / static_cast<double>(num_heuristics) << endl;
 
     // Total lookup table size.
     int num_stored_values = 0;
     for (const auto &cp_heuristic : cp_heuristics) {
-        for (const auto & cp_values : cp_heuristic.get_h_values_by_heuristic()) {
+        for (const auto &cp_values : cp_heuristic.get_h_values_by_heuristic()) {
             num_stored_values += cp_values.h_values.size();
         }
     }
@@ -51,20 +51,20 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
     }
     num_total_values *= cp_heuristics.size();
     utils::Log() << "Stored values: " << num_stored_values << "/"
-         << num_total_values << " = "
-         << num_stored_values / static_cast<double>(num_total_values) << endl;
+                 << num_total_values << " = "
+                 << num_stored_values / static_cast<double>(num_total_values) << endl;
 
     // Number of stored heuristics.
     unordered_set<int> stored_heuristics;
     for (const auto &cp_heuristic : cp_heuristics) {
         for (const auto &cp_h_values : cp_heuristic.get_h_values_by_heuristic()) {
-             stored_heuristics.insert(cp_h_values.heuristic_index);
+            stored_heuristics.insert(cp_h_values.heuristic_index);
         }
     }
-    utils::Log() << "Stored heuristics: " << stored_heuristics.size()  << "/"
-         << abstractions.size() << " = "
-         << static_cast<double>(stored_heuristics.size()) /
-            static_cast<double>(num_abstractions) << endl;
+    utils::Log() << "Stored heuristics: " << stored_heuristics.size() << "/"
+                 << abstractions.size() << " = "
+                 << static_cast<double>(stored_heuristics.size()) /
+        static_cast<double>(num_abstractions) << endl;
 
     for (int i = 0; i < num_abstractions; ++i) {
         if (!stored_heuristics.count(i)) {

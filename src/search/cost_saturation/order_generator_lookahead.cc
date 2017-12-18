@@ -58,7 +58,7 @@ double OrderGeneratorLookahead::get_fair_share(int abs1, int abs2, int op_id) co
         return 1;
     }
     return static_cast<double>(abs2_saturated_costs) /
-            total_remaining_saturated_costs * remaining_saturated_costs;
+           total_remaining_saturated_costs * remaining_saturated_costs;
 }
 
 double OrderGeneratorLookahead::get_scaling_factor(int abs1, int abs2) const {

@@ -155,14 +155,13 @@ static CPHeuristics get_oucp_heuristics(
     const CostPartitioningCollectionGenerator &cps_generator,
     bool debug) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    return
-        cps_generator.get_cost_partitionings(
-            task_proxy, abstractions, costs,
-            [debug](
-                const Abstractions &abstractions,
-                const vector<int> &order,
-                const vector<int> &costs,
-                bool filter_blind_heuristics) {
+    return cps_generator.get_cost_partitionings(
+        task_proxy, abstractions, costs,
+        [debug](
+            const Abstractions &abstractions,
+            const vector<int> &order,
+            const vector<int> &costs,
+            bool filter_blind_heuristics) {
             return compute_uniform_cost_partitioning(
                 abstractions, order, costs, true, filter_blind_heuristics, debug);
         });
@@ -208,7 +207,7 @@ static Heuristic *_parse(OptionParser &parser) {
             debug);
     } else {
         cp_heuristics.push_back(get_ucp_heuristic(
-            scaled_costs_task_proxy, abstractions, debug));
+                                    scaled_costs_task_proxy, abstractions, debug));
     }
 
     return new UniformCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics));
