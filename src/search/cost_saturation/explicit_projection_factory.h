@@ -39,7 +39,6 @@ class ExplicitProjectionFactory {
     bool is_applicable(UnrankedState &state_values, int op_id);
     void add_transitions(const UnrankedState &src_values, int src_rank, int op_id);
 
-    void compute_hash_multipliers_and_num_states();
     std::vector<int> compute_goal_states() const;
 
     void compute_transitions();

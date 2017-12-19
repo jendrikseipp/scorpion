@@ -66,8 +66,6 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
         get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)) {
     assert(utils::is_sorted_unique(pattern));
 
-    compute_hash_multipliers_and_num_states();
-
     VariablesProxy variables = task_proxy.get_variables();
     variable_to_pattern_index.resize(variables.size(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
@@ -79,28 +77,24 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
         domain_sizes.push_back(variables[var_id].get_domain_size());
     }
 
-    backward_graph.resize(num_states);
-    compute_transitions();
-
-    // Needs hash_multipliers.
-    goal_states = compute_goal_states();
-}
-
-void ExplicitProjectionFactory::compute_hash_multipliers_and_num_states() {
-    hash_multipliers.reserve(pattern.size());
     num_states = 1;
-    for (int pattern_var_id : pattern) {
+    hash_multipliers.reserve(pattern.size());
+    for (int domain_size : domain_sizes) {
         hash_multipliers.push_back(num_states);
-        VariableProxy var = task_proxy.get_variables()[pattern_var_id];
-        if (utils::is_product_within_limit(num_states, var.get_domain_size(),
-                                           numeric_limits<int>::max())) {
-            num_states *= var.get_domain_size();
+        if (utils::is_product_within_limit(
+            num_states, domain_size, numeric_limits<int>::max())) {
+            num_states *= domain_size;
         } else {
             cerr << "Given pattern is too large! (Overflow occured): " << endl;
             cerr << pattern << endl;
             utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
     }
+
+    backward_graph.resize(num_states);
+    compute_transitions();
+
+    goal_states = compute_goal_states();
 }
 
 vector<int> ExplicitProjectionFactory::compute_goal_states() const {
