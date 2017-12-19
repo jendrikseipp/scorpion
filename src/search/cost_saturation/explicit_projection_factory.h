@@ -1,6 +1,8 @@
 #ifndef COST_SATURATION_EXPLICIT_PROJECTION_FACTORY_H
 #define COST_SATURATION_EXPLICIT_PROJECTION_FACTORY_H
 
+#include "explicit_abstraction.h"
+
 #include "../task_proxy.h"
 
 #include "../algorithms/ordered_set.h"
@@ -9,17 +11,20 @@
 #include <vector>
 
 namespace cost_saturation {
-class Abstraction;
-class Transition;
-
 class ExplicitProjectionFactory {
+    using UnrankedState = std::vector<int>;
+
     const TaskProxy task_proxy;
     const pdbs::Pattern pattern;
+    const int pattern_size;
+    const int num_operators;
+    const std::vector<std::vector<FactPair>> relevant_preconditions;
+    std::vector<int> variable_to_pattern_index;
+    std::vector<int> domain_sizes;
 
     std::vector<std::vector<Transition>> backward_graph;
     ordered_set::OrderedSet<int> looping_operators;
     std::vector<int> goal_states;
-    int num_operators;
 
     // size of the PDB
     int num_states;
@@ -27,9 +32,17 @@ class ExplicitProjectionFactory {
     // multipliers for each variable for perfect hash function
     std::vector<int> hash_multipliers;
 
+    int rank(const UnrankedState &state) const;
+    int unrank(int rank, int pattern_index) const;
+    UnrankedState unrank(int rank) const;
+
+    bool is_applicable(UnrankedState &state_values, int op_id);
+    void add_transitions(const UnrankedState &src_values, int src_rank, int op_id);
+
+    void compute_hash_multipliers_and_num_states();
     std::vector<int> compute_goal_states() const;
 
-    void handle_operator(const OperatorProxy &op);
+    void compute_transitions();
 
     /*
       For a given abstract state (given as index), the according values
@@ -41,13 +54,6 @@ class ExplicitProjectionFactory {
         int state_index,
         const std::vector<FactPair> &abstract_goals,
         const VariablesProxy &variables) const;
-
-    /*
-      The given concrete state is used to calculate the index of the
-      according abstract state. This is only used for table lookup
-      (distances) during search.
-    */
-    int hash_index(const State &state) const;
 
 public:
     ExplicitProjectionFactory(const TaskProxy &task_proxy, const pdbs::Pattern &pattern);

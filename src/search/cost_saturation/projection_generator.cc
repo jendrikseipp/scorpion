@@ -1,5 +1,6 @@
 #include "projection_generator.h"
 
+#include "explicit_projection_factory.h"
 #include "projection.h"
 
 #include "../option_parser.h"
@@ -67,7 +68,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
                 << pattern << endl;
         }
         abstractions.push_back(
-            utils::make_unique_ptr<Projection>(task_proxy, pattern));
+            //utils::make_unique_ptr<Projection>(task_proxy, pattern));
+            ExplicitProjectionFactory(task_proxy, pattern).convert_to_abstraction());
         if (debug) {
             abstractions.back()->dump();
         }
