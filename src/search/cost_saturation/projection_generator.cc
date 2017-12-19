@@ -21,6 +21,7 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
       min_pattern_size(opts.get<int>("min_pattern_size")),
       dominance_pruning(opts.get<bool>("dominance_pruning")),
+      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -68,8 +69,9 @@ Abstractions ProjectionGenerator::generate_abstractions(
                 << pattern << endl;
         }
         abstractions.push_back(
-            //utils::make_unique_ptr<Projection>(task_proxy, pattern));
-            ExplicitProjectionFactory(task_proxy, pattern).convert_to_abstraction());
+            create_complete_transition_system ?
+            ExplicitProjectionFactory(task_proxy, pattern).convert_to_abstraction() :
+            utils::make_unique_ptr<Projection>(task_proxy, pattern));
         if (debug) {
             abstractions.back()->dump();
         }
@@ -97,6 +99,10 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "dominance_pruning",
         "prune dominated patterns",
+        "false");
+    parser.add_option<bool>(
+        "create_complete_transition_system",
+        "create complete transition system",
         "false");
     parser.add_option<bool>(
         "debug",

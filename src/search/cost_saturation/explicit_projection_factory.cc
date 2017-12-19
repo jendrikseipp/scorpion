@@ -50,7 +50,6 @@ static vector<vector<FactPair>> get_relevant_preconditions_by_operator(
                 }
             }
         }
-        assert(is_sorted(relevant_preconditions.begin(), relevant_preconditions.end()));
         preconditions_by_operator.push_back(move(relevant_preconditions));
     }
     return preconditions_by_operator;
@@ -64,8 +63,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
       pattern_size(pattern.size()),
       num_operators(task_proxy.get_operators().size()),
       relevant_preconditions(
-        get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)),
-      backward_graph(num_operators) {
+        get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)) {
     assert(utils::is_sorted_unique(pattern));
 
     compute_hash_multipliers_and_num_states();
@@ -81,6 +79,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
         domain_sizes.push_back(variables[var_id].get_domain_size());
     }
 
+    backward_graph.resize(num_states);
     compute_transitions();
 
     // Needs hash_multipliers.
