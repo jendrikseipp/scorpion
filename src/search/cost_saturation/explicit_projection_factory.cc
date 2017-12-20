@@ -208,17 +208,34 @@ bool ExplicitProjectionFactory::is_applicable(UnrankedState &state_values, int o
 void ExplicitProjectionFactory::add_transitions(
     const UnrankedState &src_values, int src_rank,
     int op_id, const vector<ProjectedEffect> &effects) {
+    const bool debug = false;
+    if (debug)
+        cout << "source state: " << src_values << endl;
     UnrankedState definite_dest_values = src_values;
     unordered_set<FactPair> possible_effects;
     for (const ProjectedEffect &effect : effects) {
-        if (definite_dest_values[effect.fact.var] != effect.fact.value &&
-            conditions_are_satisfied(effect.conditions, src_values)) {
+        if (conditions_are_satisfied(effect.conditions, src_values)) {
             if (effect.always_triggers) {
                 definite_dest_values[effect.fact.var] = effect.fact.value;
             } else {
                 possible_effects.insert(effect.fact);
             }
         }
+    }
+    if (debug) {
+        cout << "definite values: " << definite_dest_values << endl;
+        cout << "possible effects: " << possible_effects.size() << endl;
+    }
+    // Remove all possible effects that would only set definite effects again.
+    for (auto it = possible_effects.begin(); it != possible_effects.end();) {
+        if (definite_dest_values[it->var] == it->value) {
+            it = possible_effects.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    if (debug) {
+        cout << "filtered possible effects: " << possible_effects.size() << endl;
     }
     // Apply all subsets of possible effects and add transitions.
     int powerset_size = 1 << possible_effects.size();
@@ -231,11 +248,18 @@ void ExplicitProjectionFactory::add_transitions(
             }
             ++i;
         }
+        if (debug)
+            cout << "dest state: " << possible_dest_values << endl;
         int dest_rank = rank(possible_dest_values);
         if (dest_rank == src_rank) {
             looping_operators.insert(op_id);
         } else {
             backward_graph[dest_rank].emplace_back(op_id, src_rank);
+#ifndef NDEBUG
+        vector<Transition> copied_transitions = backward_graph[dest_rank];
+        sort(copied_transitions.begin(), copied_transitions.end());
+        assert(utils::is_sorted_unique(copied_transitions));
+#endif
         }
     }
 }
