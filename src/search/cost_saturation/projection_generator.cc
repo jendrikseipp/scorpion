@@ -8,6 +8,7 @@
 
 #include "../pdbs/dominance_pruning.h"
 #include "../pdbs/pattern_generator.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
 #include <memory>
@@ -30,6 +31,11 @@ Abstractions ProjectionGenerator::generate_abstractions(
     utils::Timer timer;
     utils::Log log;
     TaskProxy task_proxy(*task);
+
+    task_properties::verify_no_axioms(task_proxy);
+    if (!create_complete_transition_system) {
+        task_properties::verify_no_conditional_effects(task_proxy);
+    }
 
     log << "Compute patterns" << endl;
     PatternCollectionInformation pattern_collection_info =
