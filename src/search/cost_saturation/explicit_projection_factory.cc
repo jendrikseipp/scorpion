@@ -201,23 +201,33 @@ bool ExplicitProjectionFactory::is_applicable(UnrankedState &state_values, int o
 void ExplicitProjectionFactory::add_transitions(
     const UnrankedState &src_values, int src_rank,
     int op_id, const vector<ProjectedEffect> &effects) {
-    UnrankedState dest_values = src_values;
+    UnrankedState definite_dest_values = src_values;
     vector<FactPair> possible_effects;
     for (const ProjectedEffect &effect : effects) {
         if (conditions_are_satisfied(effect.relevant_conditions, src_values)) {
             if (effect.all_conditions_are_relevant) {
-                dest_values[effect.fact.var] = effect.fact.value;
+                definite_dest_values[effect.fact.var] = effect.fact.value;
             } else {
                 possible_effects.push_back(effect.fact);
             }
         }
     }
-    // TODO: Apply powerset of possible effects and add transitions.
-    int dest_rank = rank(dest_values);
-    if (dest_rank == src_rank) {
-        looping_operators.insert(op_id);
-    } else {
-        backward_graph[dest_rank].push_back(Transition(op_id, src_rank));
+    // Apply all subsets of possible effects and add transitions.
+    int powerset_size = 1 << possible_effects.size();
+    for (int mask = 0; mask < powerset_size; ++mask) {
+        UnrankedState possible_dest_values = definite_dest_values;
+        for (size_t i = 0; i < possible_effects.size(); ++i) {
+            if (mask & (1 << i)) {
+                const FactPair &fact = possible_effects[i];
+                possible_dest_values[fact.var] = fact.value;
+            }
+        }
+        int dest_rank = rank(possible_dest_values);
+        if (dest_rank == src_rank) {
+            looping_operators.insert(op_id);
+        } else {
+            backward_graph[dest_rank].push_back(Transition(op_id, src_rank));
+        }
     }
 }
 
