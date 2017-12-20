@@ -16,6 +16,44 @@
 using namespace std;
 
 namespace cost_saturation {
+static int get_pattern_index(const pdbs::Pattern &pattern, int var_id) {
+    for (size_t pattern_index = 0; pattern_index < pattern.size(); ++pattern_index) {
+        if (pattern[pattern_index] == var_id) {
+            return pattern_index;
+        }
+    }
+    return -1;
+}
+
+static vector<FactPair> get_relevant_conditions(
+    const ConditionsProxy &conditions, const pdbs::Pattern &pattern) {
+    vector<FactPair> relevant_conditions;
+    for (FactProxy fact : conditions) {
+        int var_id = fact.get_variable().get_id();
+        int pattern_index = get_pattern_index(pattern, var_id);
+        if (pattern_index != -1) {
+            relevant_conditions.emplace_back(pattern_index, fact.get_value());
+        }
+    }
+    return relevant_conditions;
+}
+
+
+struct ProjectedEffect {
+    const vector<FactPair> relevant_conditions;
+    const FactPair fact;
+    const bool all_conditions_are_relevant;
+
+    ProjectedEffect(
+        const FactPair &projected_fact,
+        const EffectConditionsProxy &conditions,
+        const pdbs::Pattern &pattern)
+        : relevant_conditions(get_relevant_conditions(conditions, pattern)),
+          fact(projected_fact),
+          all_conditions_are_relevant(conditions.size() == relevant_conditions.size()) {
+}
+};
+
 class StateMap {
     const pdbs::Pattern pattern;
     const std::vector<int> hash_multipliers;
@@ -41,18 +79,24 @@ static vector<vector<FactPair>> get_relevant_preconditions_by_operator(
     vector<vector<FactPair>> preconditions_by_operator;
     preconditions_by_operator.reserve(ops.size());
     for (OperatorProxy op : ops) {
-        vector<FactPair> relevant_preconditions;
-        for (FactProxy fact : op.get_preconditions()) {
-            int var_id = fact.get_variable().get_id();
-            for (size_t pattern_index = 0; pattern_index < pattern.size(); ++pattern_index) {
-                if (pattern[pattern_index] == var_id) {
-                    relevant_preconditions.emplace_back(pattern_index, fact.get_value());
-                }
-            }
-        }
-        preconditions_by_operator.push_back(move(relevant_preconditions));
+        preconditions_by_operator.push_back(
+            get_relevant_conditions(op.get_preconditions(), pattern));
     }
     return preconditions_by_operator;
+}
+
+static vector<ProjectedEffect> get_projected_effects(
+    const OperatorProxy &op, const pdbs::Pattern &pattern) {
+    vector<ProjectedEffect> projected_effects;
+    for (EffectProxy effect : op.get_effects()) {
+        FactPair effect_fact = effect.get_fact().get_pair();
+        int pattern_index = get_pattern_index(pattern, effect_fact.var);
+        if (pattern_index != -1) {
+            projected_effects.emplace_back(
+                FactPair(pattern_index, effect_fact.value), effect.get_conditions(), pattern);
+        }
+    }
+    return projected_effects;
 }
 
 
@@ -91,9 +135,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
         }
     }
 
-    backward_graph.resize(num_states);
     compute_transitions();
-
     goal_states = compute_goal_states();
 }
 
@@ -142,9 +184,9 @@ ExplicitProjectionFactory::UnrankedState ExplicitProjectionFactory::unrank(int r
     return values;
 }
 
-bool ExplicitProjectionFactory::is_applicable(UnrankedState &state_values, int op_id) {
-    const vector<FactPair> &preconditions = relevant_preconditions[op_id];
-    for (const FactPair &precondition : preconditions) {
+bool ExplicitProjectionFactory::conditions_are_satisfied(
+    const vector<FactPair> &conditions, const UnrankedState &state_values) const {
+    for (const FactPair &precondition : conditions) {
         if (state_values[precondition.var] != precondition.value) {
             return false;
         }
@@ -152,17 +194,25 @@ bool ExplicitProjectionFactory::is_applicable(UnrankedState &state_values, int o
     return true;
 }
 
+bool ExplicitProjectionFactory::is_applicable(UnrankedState &state_values, int op_id) const {
+    return conditions_are_satisfied(relevant_preconditions[op_id], state_values);
+}
+
 void ExplicitProjectionFactory::add_transitions(
-    const UnrankedState &src_values, int src_rank, int op_id) {
-    OperatorProxy op = task_proxy.get_operators()[op_id];
+    const UnrankedState &src_values, int src_rank,
+    int op_id, const vector<ProjectedEffect> &effects) {
     UnrankedState dest_values = src_values;
-    for (EffectProxy effect : op.get_effects()) {
-        FactPair effect_fact = effect.get_fact().get_pair();
-        int pattern_pos = variable_to_pattern_index[effect_fact.var];
-        if (pattern_pos != -1) {
-            dest_values[pattern_pos] = effect_fact.value;
+    vector<FactPair> possible_effects;
+    for (const ProjectedEffect &effect : effects) {
+        if (conditions_are_satisfied(effect.relevant_conditions, src_values)) {
+            if (effect.all_conditions_are_relevant) {
+                dest_values[effect.fact.var] = effect.fact.value;
+            } else {
+                possible_effects.push_back(effect.fact);
+            }
         }
     }
+    // TODO: Apply powerset of possible effects and add transitions.
     int dest_rank = rank(dest_values);
     if (dest_rank == src_rank) {
         looping_operators.insert(op_id);
@@ -172,11 +222,17 @@ void ExplicitProjectionFactory::add_transitions(
 }
 
 void ExplicitProjectionFactory::compute_transitions() {
+    vector<vector<ProjectedEffect>> effects;
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        effects.push_back(get_projected_effects(op, pattern));
+    }
+
+    backward_graph.resize(num_states);
     for (int src_rank = 0; src_rank < num_states; ++src_rank) {
         vector<int> src_values = unrank(src_rank);
         for (int op_id = 0; op_id < num_operators; ++op_id) {
             if (is_applicable(src_values, op_id)) {
-                add_transitions(src_values, src_rank, op_id);
+                add_transitions(src_values, src_rank, op_id, effects[op_id]);
             }
         }
     }

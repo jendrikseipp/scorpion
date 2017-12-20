@@ -11,6 +11,8 @@
 #include <vector>
 
 namespace cost_saturation {
+struct ProjectedEffect;
+
 class ExplicitProjectionFactory {
     using UnrankedState = std::vector<int>;
 
@@ -36,12 +38,15 @@ class ExplicitProjectionFactory {
     int unrank(int rank, int pattern_index) const;
     UnrankedState unrank(int rank) const;
 
-    bool is_applicable(UnrankedState &state_values, int op_id);
-    void add_transitions(const UnrankedState &src_values, int src_rank, int op_id);
+    bool conditions_are_satisfied(
+        const std::vector<FactPair> &conditions, const UnrankedState &state_values) const;
+    bool is_applicable(UnrankedState &state_values, int op_id) const;
+    void add_transitions(
+        const UnrankedState &src_values, int src_rank,
+        int op_id, const std::vector<ProjectedEffect> &effects);
+    void compute_transitions();
 
     std::vector<int> compute_goal_states() const;
-
-    void compute_transitions();
 
     /*
       For a given abstract state (given as index), the according values
