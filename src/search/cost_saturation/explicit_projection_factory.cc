@@ -204,7 +204,8 @@ void ExplicitProjectionFactory::add_transitions(
     UnrankedState definite_dest_values = src_values;
     vector<FactPair> possible_effects;
     for (const ProjectedEffect &effect : effects) {
-        if (conditions_are_satisfied(effect.relevant_conditions, src_values)) {
+        if (definite_dest_values[effect.fact.var] != effect.fact.value &&
+            conditions_are_satisfied(effect.relevant_conditions, src_values)) {
             if (effect.all_conditions_are_relevant) {
                 definite_dest_values[effect.fact.var] = effect.fact.value;
             } else {
@@ -226,7 +227,7 @@ void ExplicitProjectionFactory::add_transitions(
         if (dest_rank == src_rank) {
             looping_operators.insert(op_id);
         } else {
-            backward_graph[dest_rank].push_back(Transition(op_id, src_rank));
+            backward_graph[dest_rank].emplace_back(op_id, src_rank);
         }
     }
 }
