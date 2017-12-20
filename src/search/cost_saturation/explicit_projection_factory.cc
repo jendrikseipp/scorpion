@@ -85,20 +85,6 @@ static vector<vector<FactPair>> get_relevant_preconditions_by_operator(
     return preconditions_by_operator;
 }
 
-static vector<ProjectedEffect> get_projected_effects(
-    const OperatorProxy &op, const pdbs::Pattern &pattern) {
-    vector<ProjectedEffect> projected_effects;
-    for (EffectProxy effect : op.get_effects()) {
-        FactPair effect_fact = effect.get_fact().get_pair();
-        int pattern_index = get_pattern_index(pattern, effect_fact.var);
-        if (pattern_index != -1) {
-            projected_effects.emplace_back(
-                FactPair(pattern_index, effect_fact.value), effect.get_conditions(), pattern);
-        }
-    }
-    return projected_effects;
-}
-
 
 ExplicitProjectionFactory::ExplicitProjectionFactory(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern)
@@ -184,6 +170,20 @@ ExplicitProjectionFactory::UnrankedState ExplicitProjectionFactory::unrank(int r
     return values;
 }
 
+vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
+    const OperatorProxy &op) const {
+    vector<ProjectedEffect> projected_effects;
+    for (EffectProxy effect : op.get_effects()) {
+        FactPair effect_fact = effect.get_fact().get_pair();
+        int pattern_index = variable_to_pattern_index[effect_fact.var];
+        if (pattern_index != -1) {
+            projected_effects.emplace_back(
+                FactPair(pattern_index, effect_fact.value), effect.get_conditions(), pattern);
+        }
+    }
+    return projected_effects;
+}
+
 bool ExplicitProjectionFactory::conditions_are_satisfied(
     const vector<FactPair> &conditions, const UnrankedState &state_values) const {
     for (const FactPair &precondition : conditions) {
@@ -233,8 +233,9 @@ void ExplicitProjectionFactory::add_transitions(
 
 void ExplicitProjectionFactory::compute_transitions() {
     vector<vector<ProjectedEffect>> effects;
+    effects.reserve(num_operators);
     for (OperatorProxy op : task_proxy.get_operators()) {
-        effects.push_back(get_projected_effects(op, pattern));
+        effects.push_back(get_projected_effects(op));
     }
 
     backward_graph.resize(num_states);

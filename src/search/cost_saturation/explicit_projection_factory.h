@@ -38,6 +38,7 @@ class ExplicitProjectionFactory {
     int unrank(int rank, int pattern_index) const;
     UnrankedState unrank(int rank) const;
 
+    std::vector<ProjectedEffect> get_projected_effects(const OperatorProxy &op) const;
     bool conditions_are_satisfied(
         const std::vector<FactPair> &conditions, const UnrankedState &state_values) const;
     bool is_applicable(UnrankedState &state_values, int op_id) const;
