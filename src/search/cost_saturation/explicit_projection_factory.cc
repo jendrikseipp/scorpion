@@ -25,7 +25,7 @@ static int get_pattern_index(const pdbs::Pattern &pattern, int var_id) {
     return -1;
 }
 
-static vector<FactPair> get_relevant_conditions(
+static vector<FactPair> get_projected_conditions(
     const ConditionsProxy &conditions, const pdbs::Pattern &pattern) {
     vector<FactPair> relevant_conditions;
     for (FactProxy fact : conditions) {
@@ -40,17 +40,17 @@ static vector<FactPair> get_relevant_conditions(
 
 
 struct ProjectedEffect {
-    const vector<FactPair> relevant_conditions;
     const FactPair fact;
-    const bool all_conditions_are_relevant;
+    const vector<FactPair> conditions;
+    const bool always_triggers;
 
     ProjectedEffect(
         const FactPair &projected_fact,
-        const EffectConditionsProxy &conditions,
-        const pdbs::Pattern &pattern)
-        : relevant_conditions(get_relevant_conditions(conditions, pattern)),
-          fact(projected_fact),
-          all_conditions_are_relevant(conditions.size() == relevant_conditions.size()) {
+        vector<FactPair> &&conditions,
+        bool always_triggers)
+        : fact(projected_fact),
+          conditions(move(conditions)),
+          always_triggers(always_triggers) {
 }
 };
 
@@ -80,7 +80,7 @@ static vector<vector<FactPair>> get_relevant_preconditions_by_operator(
     preconditions_by_operator.reserve(ops.size());
     for (OperatorProxy op : ops) {
         preconditions_by_operator.push_back(
-            get_relevant_conditions(op.get_preconditions(), pattern));
+            get_projected_conditions(op.get_preconditions(), pattern));
     }
     return preconditions_by_operator;
 }
@@ -177,8 +177,15 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
         FactPair effect_fact = effect.get_fact().get_pair();
         int pattern_index = variable_to_pattern_index[effect_fact.var];
         if (pattern_index != -1) {
+            EffectConditionsProxy original_conditions = effect.get_conditions();
+            vector<FactPair> projected_conditions = get_projected_conditions(
+                original_conditions, pattern);
+            bool always_tiggers = (
+                projected_conditions.size() == original_conditions.size());
             projected_effects.emplace_back(
-                FactPair(pattern_index, effect_fact.value), effect.get_conditions(), pattern);
+                FactPair(pattern_index, effect_fact.value),
+                move(projected_conditions),
+                always_tiggers);
         }
     }
     return projected_effects;
@@ -202,14 +209,14 @@ void ExplicitProjectionFactory::add_transitions(
     const UnrankedState &src_values, int src_rank,
     int op_id, const vector<ProjectedEffect> &effects) {
     UnrankedState definite_dest_values = src_values;
-    vector<FactPair> possible_effects;
+    unordered_set<FactPair> possible_effects;
     for (const ProjectedEffect &effect : effects) {
         if (definite_dest_values[effect.fact.var] != effect.fact.value &&
-            conditions_are_satisfied(effect.relevant_conditions, src_values)) {
-            if (effect.all_conditions_are_relevant) {
+            conditions_are_satisfied(effect.conditions, src_values)) {
+            if (effect.always_triggers) {
                 definite_dest_values[effect.fact.var] = effect.fact.value;
             } else {
-                possible_effects.push_back(effect.fact);
+                possible_effects.insert(effect.fact);
             }
         }
     }
@@ -217,11 +224,12 @@ void ExplicitProjectionFactory::add_transitions(
     int powerset_size = 1 << possible_effects.size();
     for (int mask = 0; mask < powerset_size; ++mask) {
         UnrankedState possible_dest_values = definite_dest_values;
-        for (size_t i = 0; i < possible_effects.size(); ++i) {
+        int i = 0;
+        for (const FactPair &fact : possible_effects) {
             if (mask & (1 << i)) {
-                const FactPair &fact = possible_effects[i];
                 possible_dest_values[fact.var] = fact.value;
             }
+            ++i;
         }
         int dest_rank = rank(possible_dest_values);
         if (dest_rank == src_rank) {
