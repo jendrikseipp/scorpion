@@ -69,10 +69,7 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
 static double compute_score(
     int h, const vector<int> &saturated_costs, const vector<int> &surplus_costs,
     ScoringFunction scoring_function) {
-    if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
-        return h;
-    }
-
+    assert(scoring_function != ScoringFunction::MAX_HEURISTIC);
     int used_costs = 0;
     if (scoring_function == ScoringFunction::MIN_COSTS ||
         scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
@@ -116,20 +113,26 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
     assert(h_values.size() == landmarks.size());
     assert(saturated_costs_by_landmark.size() == landmarks.size());
 
-    vector<int> surplus_costs = cost_saturation::compute_all_surplus_costs(
-        operator_costs, saturated_costs_by_landmark);
-
     vector<int> order(landmarks.size());
     iota(order.begin(), order.end(), 0);
-    if (scoring_function == cost_saturation::ScoringFunction::RANDOM) {
+    // Avoid computing stolen/used costs when possible.
+    if (scoring_function == ScoringFunction::RANDOM) {
         rng->shuffle(order);
+    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
+        sort(order.begin(), order.end(), [&](int i, int j) {
+                return h_values[i] > h_values[j];
+            });
     } else {
-        // Sort landmarks according to the scoring function.
+        vector<int> surplus_costs = cost_saturation::compute_all_surplus_costs(
+            operator_costs, saturated_costs_by_landmark);
+
         vector<double> scores;
         scores.reserve(landmarks.size());
         for (size_t i = 0; i < landmarks.size(); ++i) {
             scores.push_back(
-                compute_score(h_values[i], saturated_costs_by_landmark[i], surplus_costs, scoring_function));
+                compute_score(
+                    h_values[i], saturated_costs_by_landmark[i],
+                    surplus_costs, scoring_function));
         }
         sort(order.begin(), order.end(), [&](int i, int j) {
                 return scores[i] > scores[j];
