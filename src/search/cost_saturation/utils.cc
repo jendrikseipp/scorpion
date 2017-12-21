@@ -144,7 +144,7 @@ CostPartitionedHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,
     const vector<int> &costs,
-    bool filter_blind_heuristics) {
+    bool sparse) {
     const bool debug = false;
     assert(abstractions.size() == order.size());
     CostPartitionedHeuristic cp_heuristic;
@@ -161,7 +161,7 @@ CostPartitionedHeuristic compute_saturated_cost_partitioning(
             cout << "saturated costs: ";
             print_indexed_vector(saturated_costs);
         }
-        cp_heuristic.add_cp_heuristic_values(pos, move(h_values), filter_blind_heuristics);
+        cp_heuristic.add_cp_heuristic_values(pos, move(h_values), sparse);
         reduce_costs(remaining_costs, saturated_costs);
         if (debug) {
             cout << "remaining costs: ";

@@ -14,7 +14,7 @@ static CostPartitionedHeuristic compute_zero_one_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
     const vector<int> &costs,
-    bool filter_blind_heuristics) {
+    bool sparse) {
     assert(abstractions.size() == order.size());
     bool debug = false;
 
@@ -28,7 +28,7 @@ static CostPartitionedHeuristic compute_zero_one_cost_partitioning(
             print_indexed_vector(remaining_costs);
         }
         cp_heuristic.add_cp_heuristic_values(
-            pos, abstraction.compute_h_values(remaining_costs), filter_blind_heuristics);
+            pos, abstraction.compute_h_values(remaining_costs), sparse);
         for (int op_id : abstraction.get_active_operators()) {
             remaining_costs[op_id] = 0;
         }

@@ -26,7 +26,7 @@ static bool search_improving_successor(
     CostPartitionedHeuristic &incumbent_cp,
     int &incumbent_h_value,
     bool steepest_ascent,
-    bool filter_blind_heuristics,
+    bool sparse,
     bool verbose) {
     int num_abstractions = abstractions.size();
     int best_i = -1;
@@ -36,7 +36,7 @@ static bool search_improving_successor(
             swap(incumbent_order[i], incumbent_order[j]);
 
             CostPartitionedHeuristic neighbor_cp =
-                cp_function(abstractions, incumbent_order, costs, filter_blind_heuristics);
+                cp_function(abstractions, incumbent_order, costs, sparse);
 
             int h = neighbor_cp.compute_heuristic(local_state_ids);
             if (h > incumbent_h_value) {
@@ -83,7 +83,7 @@ void do_hill_climbing(
     CostPartitionedHeuristic &incumbent_cp,
     int incumbent_h_value,
     bool steepest_ascent,
-    bool filter_blind_heuristics,
+    bool sparse,
     bool verbose) {
     if (verbose) {
         utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
@@ -92,7 +92,7 @@ void do_hill_climbing(
         bool success = search_improving_successor(
             cp_function, timer, abstractions, costs, local_state_ids,
             incumbent_order, incumbent_cp, incumbent_h_value, steepest_ascent,
-            filter_blind_heuristics, verbose);
+            sparse, verbose);
         if (!success) {
             break;
         }

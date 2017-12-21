@@ -67,7 +67,7 @@ static CostPartitionedHeuristic compute_uniform_cost_partitioning(
     const vector<int> &order,
     const vector<int> &costs,
     bool dynamic,
-    bool filter_blind_heuristics,
+    bool sparse,
     bool debug) {
     assert(abstractions.size() == order.size());
 
@@ -99,7 +99,7 @@ static CostPartitionedHeuristic compute_uniform_cost_partitioning(
             print_indexed_vector(saturated_costs);
         }
         cp_heuristic.add_cp_heuristic_values(
-            abstraction_id, move(h_values), filter_blind_heuristics);
+            abstraction_id, move(h_values), sparse);
         if (dynamic) {
             reduce_costs(remaining_costs, saturated_costs);
         }
@@ -144,9 +144,9 @@ static CostPartitionedHeuristic get_ucp_heuristic(
     const TaskProxy &task_proxy, const Abstractions &abstractions, bool debug) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     vector<int> order = get_default_order(abstractions.size());
-    bool filter_blind_heuristics = true;
+    bool sparse = true;
     return compute_uniform_cost_partitioning(
-        abstractions, order, costs, false, filter_blind_heuristics, debug);
+        abstractions, order, costs, false, sparse, debug);
 }
 
 static CPHeuristics get_oucp_heuristics(
@@ -161,9 +161,9 @@ static CPHeuristics get_oucp_heuristics(
             const Abstractions &abstractions,
             const vector<int> &order,
             const vector<int> &costs,
-            bool filter_blind_heuristics) {
+            bool sparse) {
             return compute_uniform_cost_partitioning(
-                abstractions, order, costs, true, filter_blind_heuristics, debug);
+                abstractions, order, costs, true, sparse, debug);
         });
 }
 

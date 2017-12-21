@@ -48,7 +48,7 @@ extern CostPartitionedHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const std::vector<int> &order,
     const std::vector<int> &costs,
-    bool filter_blind_heuristics);
+    bool sparse);
 
 extern CostPartitionedHeuristic compute_cost_partitioning_for_static_order(
     const TaskProxy &task_proxy,
