@@ -4,7 +4,8 @@
 #include "util.h"
 
 #include "../algorithms/max_cliques.h"
-#include "../cost_saturation/cost_partitioning_generator_greedy.h"
+#include "../cost_saturation/scoring_functions.h"
+#include "../cost_saturation/types.h"
 #include "../utils/collections.h"
 #include "../utils/language.h"
 #include "../utils/logging.h"
@@ -17,7 +18,6 @@
 #include <limits>
 
 using namespace std;
-using cost_saturation::INF;
 using cost_saturation::ScoringFunction;
 
 namespace landmarks {
@@ -66,110 +66,28 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
       original_costs(convert_to_double(operator_costs)) {
 }
 
-static int compute_stolen_costs(int wanted_by_abs, int surplus_cost) {
-    assert(wanted_by_abs != INF);
-    assert(surplus_cost != -INF);
-    if (surplus_cost == INF) {
-        return 0;
-    }
-    // If wanted_by_abs is negative infinity, surplus_cost is positive infinity.
-    assert(wanted_by_abs != -INF);
-
-    // Both operands are finite.
-    int surplus_for_rest = surplus_cost + wanted_by_abs;
-    if (wanted_by_abs >= 0) {
-        if (surplus_for_rest >= 0) {
-            return max(0, wanted_by_abs - surplus_for_rest);
-        } else {
-            return wanted_by_abs;
-        }
-    } else {
-        if (surplus_for_rest >= 0) {
-            return 0;
-        } else {
-            return max(wanted_by_abs, surplus_for_rest);
-        }
-    }
-}
-
-static int compute_stolen_costs_by_abstraction(
-    const vector<int> &saturated_costs,
-    const vector<int> &surplus_costs) {
-    int num_operators = surplus_costs.size();
-    int sum_stolen_costs = 0;
-    for (int op_id = 0; op_id < num_operators; ++op_id) {
-        int stolen_costs = compute_stolen_costs(
-            saturated_costs[op_id], surplus_costs[op_id]);
-        assert(stolen_costs != -INF);
-        sum_stolen_costs += stolen_costs;
-    }
-    return sum_stolen_costs;
-}
-
-static int compute_surplus_costs(
-    const vector<vector<int>> &saturated_costs_by_abstraction,
-    int op_id,
-    int remaining_costs) {
-    int num_abstractions = saturated_costs_by_abstraction.size();
-    int sum_wanted = 0;
-    for (int abs = 0; abs < num_abstractions; ++abs) {
-        int wanted = saturated_costs_by_abstraction[abs][op_id];
-        if (wanted == -INF) {
-            return INF;
-        } else {
-            sum_wanted += wanted;
-        }
-    }
-    assert(sum_wanted != -INF);
-    if (remaining_costs == INF) {
-        return INF;
-    }
-    return remaining_costs - sum_wanted;
-}
-
-static vector<int> compute_all_surplus_costs(
-    const vector<int> &costs,
-    const vector<vector<int>> &saturated_costs_by_abstraction) {
-    int num_operators = costs.size();
-    vector<int> surplus_costs;
-    surplus_costs.reserve(num_operators);
-    for (int op_id = 0; op_id < num_operators; ++op_id) {
-        surplus_costs.push_back(
-            compute_surplus_costs(saturated_costs_by_abstraction, op_id, costs[op_id]));
-    }
-    return surplus_costs;
-}
-
 static double compute_score(
     int h, const vector<int> &saturated_costs, const vector<int> &surplus_costs,
     ScoringFunction scoring_function) {
-    assert(h >= 0);
-    assert(h != INF);
-
     if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
         return h;
     }
 
     int used_costs = 0;
-    for (int cost : saturated_costs) {
-        assert(cost >= 0 && cost != INF);
-        used_costs += cost;
-    }
-
-    int stolen_costs = compute_stolen_costs_by_abstraction(saturated_costs, surplus_costs);
-    assert(stolen_costs != -INF && stolen_costs != INF);
-
-    if (scoring_function == ScoringFunction::MIN_COSTS) {
-        return -used_costs;
-    } else if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS) {
-        return -stolen_costs;
-    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
-        return static_cast<double>(h) / max(1, used_costs);
-    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
-        return static_cast<double>(h) / max(1, stolen_costs);
+    if (scoring_function == ScoringFunction::MIN_COSTS ||
+        scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
+        for (int cost : saturated_costs) {
+            assert(cost >= 0 && cost != cost_saturation::INF);
+            used_costs += cost;
+        }
+    } else if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
+               scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+        used_costs = cost_saturation::compute_costs_stolen_by_heuristic(
+            saturated_costs, surplus_costs);
     } else {
         ABORT("Invalid scoring_function");
     }
+    return cost_saturation::compute_score(h, used_costs, scoring_function, false);
 }
 
 void LandmarkUniformSharedCostAssignment::order_landmarks(
@@ -198,7 +116,7 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
     assert(h_values.size() == landmarks.size());
     assert(saturated_costs_by_landmark.size() == landmarks.size());
 
-    vector<int> surplus_costs = compute_all_surplus_costs(
+    vector<int> surplus_costs = cost_saturation::compute_all_surplus_costs(
         operator_costs, saturated_costs_by_landmark);
 
     vector<int> order(landmarks.size());

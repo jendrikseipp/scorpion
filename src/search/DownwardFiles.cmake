@@ -603,6 +603,7 @@ fast_downward_plugin(
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
         cost_saturation/saturated_cost_partitioning_online_heuristic
+        cost_saturation/scoring_functions
         #cost_saturation/scp_generator_tree_search
         cost_saturation/types.h
         cost_saturation/uniform_cost_partitioning_heuristic

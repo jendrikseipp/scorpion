@@ -8,7 +8,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
-#include "../cost_saturation/cost_partitioning_generator_greedy.h"
+#include "../cost_saturation/scoring_functions.h"
 #include "../lp/lp_solver.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
