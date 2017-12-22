@@ -25,7 +25,7 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
 
 Abstractions ProjectionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
-    utils::Timer timer;
+    utils::Timer patterns_timer;
     utils::Log log;
     TaskProxy task_proxy(*task);
 
@@ -35,7 +35,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_collection_info.get_patterns();
 
-    cout << "Number of patterns: " << patterns->size() << endl;
+    log << "Number of patterns: " << patterns->size() << endl;
+    log << "Time for computing patterns: " << patterns_timer << endl;
 
     if (dominance_pruning) {
         utils::Timer pdb_timer;
@@ -57,6 +58,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
     }
 
     log << "Build projections" << endl;
+    utils::Timer pdbs_timer;
     Abstractions abstractions;
     for (const pdbs::Pattern &pattern : *patterns) {
         if (static_cast<int>(pattern.size()) < min_pattern_size) {
@@ -72,9 +74,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
             abstractions.back()->dump();
         }
     }
-    cout << "Number of projections: " << abstractions.size() << endl;
-    log << "Done building projections" << endl;
-    cout << "Time for building projections: " << timer << endl;
+    log << "Time for building projections: " << pdbs_timer << endl;
+    log << "Number of projections: " << abstractions.size() << endl;
     return abstractions;
 }
 
