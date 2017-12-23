@@ -85,8 +85,6 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
     vector<int> used_costs;
     used_costs.reserve(landmarks.size());
     vector<int> surplus_costs = operator_costs;
-    vector<int> stolen_costs;
-    stolen_costs.reserve(landmarks.size());
     for (const LandmarkNode *node : landmarks) {
         int lmn_status = node->get_status();
         const set<int> &achievers = get_achievers(lmn_status, *node);
@@ -96,13 +94,17 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
             min_cost = min(min_cost, operator_costs[op_id]);
         }
         h_values.push_back(min_cost);
+        used_costs.push_back(min_cost * achievers.size());
         for (int op_id : achievers) {
             surplus_costs[op_id] -= min_cost;
         }
-        used_costs.push_back(min_cost * achievers.size());
     }
+    // Now surplus costs are computed.
+    vector<int> stolen_costs;
+    stolen_costs.reserve(landmarks.size());
     int i = 0;
     for (const LandmarkNode *node : landmarks) {
+        // TODO: Compute scores inside this function.
         int lmn_status = node->get_status();
         const set<int> &achievers = get_achievers(lmn_status, *node);
         int wanted_by_lm = h_values[i];
