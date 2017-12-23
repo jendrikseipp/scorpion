@@ -51,14 +51,14 @@ struct ProjectedEffect {
         : fact(projected_fact),
           conditions(move(conditions)),
           always_triggers(always_triggers) {
-}
+    }
 };
 
 class StateMap {
     const pdbs::Pattern pattern;
-    const std::vector<int> hash_multipliers;
+    const vector<int> hash_multipliers;
 public:
-    StateMap(const pdbs::Pattern &pattern, std::vector<int> &&hash_multipliers)
+    StateMap(const pdbs::Pattern &pattern, vector<int> &&hash_multipliers)
         : pattern(pattern),
           hash_multipliers(move(hash_multipliers)) {
     }
@@ -93,7 +93,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
       pattern_size(pattern.size()),
       num_operators(task_proxy.get_operators().size()),
       relevant_preconditions(
-        get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)) {
+          get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)) {
     assert(utils::is_sorted_unique(pattern));
 
     VariablesProxy variables = task_proxy.get_variables();
@@ -112,7 +112,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
     for (int domain_size : domain_sizes) {
         hash_multipliers.push_back(num_states);
         if (utils::is_product_within_limit(
-            num_states, domain_size, numeric_limits<int>::max())) {
+                num_states, domain_size, numeric_limits<int>::max())) {
             num_states *= domain_size;
         } else {
             cerr << "Given pattern is too large! (Overflow occured): " << endl;
@@ -256,9 +256,9 @@ void ExplicitProjectionFactory::add_transitions(
         } else {
             backward_graph[dest_rank].emplace_back(op_id, src_rank);
 #ifndef NDEBUG
-        vector<Transition> copied_transitions = backward_graph[dest_rank];
-        sort(copied_transitions.begin(), copied_transitions.end());
-        assert(utils::is_sorted_unique(copied_transitions));
+            vector<Transition> copied_transitions = backward_graph[dest_rank];
+            sort(copied_transitions.begin(), copied_transitions.end());
+            assert(utils::is_sorted_unique(copied_transitions));
 #endif
         }
     }
