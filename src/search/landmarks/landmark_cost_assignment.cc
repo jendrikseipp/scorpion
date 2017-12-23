@@ -67,21 +67,11 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
 }
 
 static double compute_score(
-    int h, const vector<int> &saturated_costs, int stolen_costs,
-    ScoringFunction scoring_function) {
+    int h, int used_costs, int stolen_costs, ScoringFunction scoring_function) {
     assert(scoring_function != ScoringFunction::MAX_HEURISTIC);
-    int used_costs = 0;
-    if (scoring_function == ScoringFunction::MIN_COSTS ||
-        scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
-        for (int cost : saturated_costs) {
-            assert(cost >= 0 && cost != cost_saturation::INF);
-            used_costs += cost;
-        }
-    } else if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
-               scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+    if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
+        scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
         used_costs = stolen_costs;
-    } else {
-        ABORT("Invalid scoring_function");
     }
     return cost_saturation::compute_score(h, used_costs, scoring_function, false);
 }
@@ -91,9 +81,9 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
     cost_saturation::ScoringFunction scoring_function) {
     // Compute h-values and saturated costs for each landmark.
     vector<int> h_values;
-    vector<vector<int>> saturated_costs_by_landmark;
     h_values.reserve(landmarks.size());
-    saturated_costs_by_landmark.reserve(landmarks.size());
+    vector<int> used_costs;
+    used_costs.reserve(landmarks.size());
     vector<int> surplus_costs = operator_costs;
     vector<int> stolen_costs;
     stolen_costs.reserve(landmarks.size());
@@ -106,12 +96,10 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
             min_cost = min(min_cost, operator_costs[op_id]);
         }
         h_values.push_back(min_cost);
-        vector<int> saturated_costs(operator_costs.size(), 0);
         for (int op_id : achievers) {
-            saturated_costs[op_id] = min_cost;
             surplus_costs[op_id] -= min_cost;
         }
-        saturated_costs_by_landmark.push_back(move(saturated_costs));
+        used_costs.push_back(min_cost * achievers.size());
     }
     int i = 0;
     for (const LandmarkNode *node : landmarks) {
@@ -126,7 +114,7 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
         ++i;
     }
     assert(h_values.size() == landmarks.size());
-    assert(saturated_costs_by_landmark.size() == landmarks.size());
+    assert(used_costs.size() == landmarks.size());
 
     vector<int> order(landmarks.size());
     iota(order.begin(), order.end(), 0);
@@ -143,7 +131,7 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
         for (size_t i = 0; i < landmarks.size(); ++i) {
             scores.push_back(
                 compute_score(
-                    h_values[i], saturated_costs_by_landmark[i],
+                    h_values[i], used_costs[i],
                     surplus_costs[i], scoring_function));
         }
         sort(order.begin(), order.end(), [&](int i, int j) {
