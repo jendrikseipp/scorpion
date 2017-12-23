@@ -244,7 +244,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
                 if (reuse_costs) {
                     remaining_cost -= min_cost;
                 } else {
-                    remaining_costs[op_id] = 0;
+                    remaining_cost = 0.0;
                 }
                 assert(remaining_cost >= 0);
                 --remaining_lms_per_op[op_id];
