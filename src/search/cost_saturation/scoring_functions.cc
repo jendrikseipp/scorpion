@@ -26,18 +26,10 @@ static int compute_stolen_costs(int wanted_by_abs, int surplus_cost) {
 
     // Both operands are finite.
     int surplus_for_rest = surplus_cost + wanted_by_abs;
-    if (wanted_by_abs >= 0) {
-        if (surplus_for_rest >= 0) {
-            return max(0, wanted_by_abs - surplus_for_rest);
-        } else {
-            return wanted_by_abs;
-        }
+    if (surplus_for_rest >= 0) {
+        return max(0, wanted_by_abs - surplus_for_rest);
     } else {
-        if (surplus_for_rest >= 0) {
-            return 0;
-        } else {
-            return max(wanted_by_abs, surplus_for_rest);
-        }
+        return max(wanted_by_abs, surplus_for_rest);
     }
 }
 
