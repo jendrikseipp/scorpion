@@ -1,5 +1,6 @@
 #include "projection_generator.h"
 
+#include "explicit_projection_factory.h"
 #include "projection.h"
 
 #include "../option_parser.h"
@@ -7,6 +8,7 @@
 
 #include "../pdbs/dominance_pruning.h"
 #include "../pdbs/pattern_generator.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
 #include <memory>
@@ -20,6 +22,7 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
       min_pattern_size(opts.get<int>("min_pattern_size")),
       dominance_pruning(opts.get<bool>("dominance_pruning")),
+      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -28,6 +31,11 @@ Abstractions ProjectionGenerator::generate_abstractions(
     utils::Timer patterns_timer;
     utils::Log log;
     TaskProxy task_proxy(*task);
+
+    task_properties::verify_no_axioms(task_proxy);
+    if (!create_complete_transition_system) {
+        task_properties::verify_no_conditional_effects(task_proxy);
+    }
 
     log << "Compute patterns" << endl;
     PatternCollectionInformation pattern_collection_info =
@@ -69,6 +77,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
                 << pattern << endl;
         }
         abstractions.push_back(
+            create_complete_transition_system ?
+            ExplicitProjectionFactory(task_proxy, pattern).convert_to_abstraction() :
             utils::make_unique_ptr<Projection>(task_proxy, pattern));
         if (debug) {
             abstractions.back()->dump();
@@ -96,6 +106,10 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "dominance_pruning",
         "prune dominated patterns",
+        "false");
+    parser.add_option<bool>(
+        "create_complete_transition_system",
+        "create complete transition system",
         "false");
     parser.add_option<bool>(
         "debug",

@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <limits>
+#include <utility>
 #include <vector>
 
 class State;
@@ -21,6 +22,14 @@ struct Transition {
     Transition(int op, int state)
         : op(op),
           state(state) {
+    }
+
+    bool operator<(const Transition &other) const {
+        return std::make_pair(op, state) < std::make_pair(other.op, other.state);
+    }
+
+    bool operator>=(const Transition &other) const {
+        return !(*this < other);
     }
 };
 

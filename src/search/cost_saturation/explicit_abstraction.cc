@@ -73,6 +73,14 @@ ExplicitAbstraction::ExplicitAbstraction(
     sort(active_operators.begin(), active_operators.end());
     sort(looping_operators.begin(), looping_operators.end());
     sort(goal_states.begin(), goal_states.end());
+
+#ifndef NDEBUG
+    for (int target = 0; target < get_num_states(); ++target) {
+        vector<Transition> copied_transitions = backward_graph[target];
+        sort(copied_transitions.begin(), copied_transitions.end());
+        assert(utils::is_sorted_unique(copied_transitions));
+    }
+#endif
 }
 
 vector<int> ExplicitAbstraction::compute_h_values(const vector<int> &costs) const {
