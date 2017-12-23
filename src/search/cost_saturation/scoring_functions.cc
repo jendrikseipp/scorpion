@@ -15,7 +15,7 @@
 using namespace std;
 
 namespace cost_saturation {
-static int compute_stolen_costs(int wanted_by_abs, int surplus_cost) {
+int compute_stolen_costs(int wanted_by_abs, int surplus_cost) {
     assert(wanted_by_abs != INF);
     assert(surplus_cost != -INF);
     if (surplus_cost == INF) {

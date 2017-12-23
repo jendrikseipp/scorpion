@@ -20,6 +20,8 @@ enum class ScoringFunction {
 extern double compute_score(
     int h, int used_costs, ScoringFunction scoring_function, bool use_exp);
 
+extern int compute_stolen_costs(int wanted_by_abs, int surplus_cost);
+
 extern std::vector<int> compute_all_surplus_costs(
     const std::vector<int> &costs,
     const std::vector<std::vector<int>> &saturated_costs_by_abstraction);
