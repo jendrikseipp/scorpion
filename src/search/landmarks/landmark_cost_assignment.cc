@@ -223,17 +223,14 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     if (reuse_costs || greedy) {
         // UOCP + ZOCP + SCP
         remaining_costs = original_costs;
-        remaining_lms_per_op = achieved_lms_by_op;
-
         order_landmarks(relevant_lms, scoring_function);
-
         for (const LandmarkNode *node : relevant_lms) {
             int lmn_status = node->get_status();
             const set<int> &achievers = get_achievers(lmn_status, *node);
             double min_cost = numeric_limits<double>::max();
             for (int op_id : achievers) {
-                assert(utils::in_bounds(op_id, remaining_lms_per_op));
-                int num_achieved = remaining_lms_per_op[op_id];
+                assert(utils::in_bounds(op_id, achieved_lms_by_op));
+                int num_achieved = achieved_lms_by_op[op_id];
                 assert(num_achieved >= 1);
                 assert(utils::in_bounds(op_id, remaining_costs));
                 double cost = greedy ? remaining_costs[op_id] :
@@ -251,7 +248,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
                     remaining_cost = 0.0;
                 }
                 assert(remaining_cost >= 0);
-                --remaining_lms_per_op[op_id];
+                --achieved_lms_by_op[op_id];
             }
         }
     } else {

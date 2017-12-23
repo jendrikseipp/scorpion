@@ -47,7 +47,6 @@ class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     // Store vectors as members to avoid allocations.
     const std::vector<double> original_costs;
     std::vector<double> remaining_costs;
-    std::vector<int> remaining_lms_per_op;
 
     void order_landmarks(
         std::vector<const LandmarkNode *> landmarks,
