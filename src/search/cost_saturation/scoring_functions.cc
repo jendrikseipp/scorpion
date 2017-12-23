@@ -36,6 +36,7 @@ static int compute_stolen_costs(int wanted_by_abs, int surplus_cost) {
 int compute_costs_stolen_by_heuristic(
     const vector<int> &saturated_costs,
     const vector<int> &surplus_costs) {
+    assert(saturated_costs.size() == surplus_costs.size());
     int num_operators = surplus_costs.size();
     int sum_stolen_costs = 0;
     for (int op_id = 0; op_id < num_operators; ++op_id) {

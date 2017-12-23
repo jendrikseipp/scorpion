@@ -123,8 +123,12 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
                 return h_values[i] > h_values[j];
             });
     } else {
-        vector<int> surplus_costs = cost_saturation::compute_all_surplus_costs(
-            operator_costs, saturated_costs_by_landmark);
+        vector<int> surplus_costs;
+        if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
+            scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+            surplus_costs = cost_saturation::compute_all_surplus_costs(
+                operator_costs, saturated_costs_by_landmark);
+        }
 
         vector<double> scores;
         scores.reserve(landmarks.size());
