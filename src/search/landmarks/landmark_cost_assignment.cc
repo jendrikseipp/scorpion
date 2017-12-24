@@ -134,7 +134,7 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
             scores.push_back(
                 compute_score(
                     h_values[i], used_costs[i],
-                    surplus_costs[i], scoring_function));
+                    stolen_costs[i], scoring_function));
         }
         sort(order.begin(), order.end(), [&](int i, int j) {
                 return scores[i] > scores[j];
