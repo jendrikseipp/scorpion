@@ -67,8 +67,7 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
 }
 
 void LandmarkUniformSharedCostAssignment::order_landmarks(
-    vector<const LandmarkNode *> landmarks,
-    cost_saturation::ScoringFunction scoring_function) {
+    vector<const LandmarkNode *> landmarks) {
     // Compute h-values and saturated costs for each landmark.
     vector<int> h_values;
     h_values.reserve(landmarks.size());
@@ -129,6 +128,7 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
     }
 
     vector<const LandmarkNode *> sorted_landmarks;
+    sorted_landmarks.reserve(landmarks.size());
     for (int i : order) {
         sorted_landmarks.push_back(landmarks[i]);
     }
@@ -208,7 +208,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     if (reuse_costs || greedy) {
         // UOCP + ZOCP + SCP
         remaining_costs = original_costs;
-        order_landmarks(relevant_lms, scoring_function);
+        order_landmarks(relevant_lms);
         for (const LandmarkNode *node : relevant_lms) {
             int lmn_status = node->get_status();
             const set<int> &achievers = get_achievers(lmn_status, *node);
