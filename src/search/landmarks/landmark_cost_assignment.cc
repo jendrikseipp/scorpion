@@ -73,7 +73,6 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
     h_values.reserve(achievers_by_lm.size());
     vector<int> used_costs;
     used_costs.reserve(achievers_by_lm.size());
-    vector<int> surplus_costs = operator_costs;
     for (const vector<int> &achievers : achievers_by_lm) {
         int min_cost = numeric_limits<int>::max();
         for (int op_id : achievers) {
@@ -82,13 +81,19 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
         }
         h_values.push_back(min_cost);
         used_costs.push_back(min_cost * achievers.size());
-        for (int op_id : achievers) {
-            surplus_costs[op_id] -= min_cost;
-        }
     }
-    // Now surplus costs are computed.
+    assert(h_values.size() == achievers_by_lm.size());
+    assert(used_costs.size() == achievers_by_lm.size());
+
     if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
         scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+        vector<int> surplus_costs = operator_costs;
+        for (size_t i = 0; i < achievers_by_lm.size(); ++i) {
+            const vector<int> &achievers = achievers_by_lm[i];
+            for (int op_id : achievers) {
+                surplus_costs[op_id] -= h_values[i];
+            }
+        }
         used_costs.clear();
         int i = 0;
         for (const vector<int> &achievers : achievers_by_lm) {
@@ -103,8 +108,6 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
         }
         assert(used_costs.size() == achievers_by_lm.size());
     }
-    assert(h_values.size() == achievers_by_lm.size());
-    assert(used_costs.size() == achievers_by_lm.size());
 
     vector<int> order(achievers_by_lm.size());
     iota(order.begin(), order.end(), 0);
