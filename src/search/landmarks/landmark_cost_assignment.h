@@ -48,8 +48,7 @@ class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     const std::vector<double> original_costs;
     std::vector<double> remaining_costs;
 
-    void order_landmarks(
-        std::vector<const LandmarkNode *> &landmarks,
+    std::vector<int> compute_landmark_order(
         const std::vector<std::vector<int>> &achievers_by_lm);
 
 public:
