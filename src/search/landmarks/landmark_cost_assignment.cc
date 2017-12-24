@@ -66,16 +66,6 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
       original_costs(convert_to_double(operator_costs)) {
 }
 
-static double compute_score(
-    int h, int used_costs, int stolen_costs, ScoringFunction scoring_function) {
-    assert(scoring_function != ScoringFunction::MAX_HEURISTIC);
-    if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
-        scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
-        used_costs = stolen_costs;
-    }
-    return cost_saturation::compute_score(h, used_costs, scoring_function, false);
-}
-
 void LandmarkUniformSharedCostAssignment::order_landmarks(
     vector<const LandmarkNode *> landmarks,
     cost_saturation::ScoringFunction scoring_function) {
@@ -100,10 +90,9 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
         }
     }
     // Now surplus costs are computed.
-    vector<int> stolen_costs;
     if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
         scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
-        stolen_costs.reserve(landmarks.size());
+        used_costs.clear();
         int i = 0;
         for (const LandmarkNode *node : landmarks) {
             int lmn_status = node->get_status();
@@ -114,9 +103,10 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
                 stolen += cost_saturation::compute_stolen_costs(
                     wanted_by_lm, surplus_costs[op_id]);
             }
-            stolen_costs.push_back(stolen);
+            used_costs.push_back(stolen);
             ++i;
         }
+        assert(used_costs.size() == landmarks.size());
     }
     assert(h_values.size() == landmarks.size());
     assert(used_costs.size() == landmarks.size());
@@ -126,18 +116,12 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
     // Avoid computing stolen/used costs when possible.
     if (scoring_function == ScoringFunction::RANDOM) {
         rng->shuffle(order);
-    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
-        sort(order.begin(), order.end(), [&](int i, int j) {
-                return h_values[i] > h_values[j];
-            });
     } else {
         vector<double> scores;
         scores.reserve(landmarks.size());
         for (size_t i = 0; i < landmarks.size(); ++i) {
-            scores.push_back(
-                compute_score(
-                    h_values[i], used_costs[i],
-                    stolen_costs[i], scoring_function));
+            scores.push_back(cost_saturation::compute_score(
+                h_values[i], used_costs[i], scoring_function, false));
         }
         sort(order.begin(), order.end(), [&](int i, int j) {
                 return scores[i] > scores[j];
