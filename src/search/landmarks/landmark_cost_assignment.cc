@@ -101,19 +101,22 @@ void LandmarkUniformSharedCostAssignment::order_landmarks(
     }
     // Now surplus costs are computed.
     vector<int> stolen_costs;
-    stolen_costs.reserve(landmarks.size());
-    int i = 0;
-    for (const LandmarkNode *node : landmarks) {
-        // TODO: Compute scores inside this function.
-        int lmn_status = node->get_status();
-        const set<int> &achievers = get_achievers(lmn_status, *node);
-        int wanted_by_lm = h_values[i];
-        int stolen = 0;
-        for (int op_id : achievers) {
-            stolen += cost_saturation::compute_stolen_costs(wanted_by_lm, surplus_costs[op_id]);
+    if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
+        scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+        stolen_costs.reserve(landmarks.size());
+        int i = 0;
+        for (const LandmarkNode *node : landmarks) {
+            int lmn_status = node->get_status();
+            const set<int> &achievers = get_achievers(lmn_status, *node);
+            int wanted_by_lm = h_values[i];
+            int stolen = 0;
+            for (int op_id : achievers) {
+                stolen += cost_saturation::compute_stolen_costs(
+                    wanted_by_lm, surplus_costs[op_id]);
+            }
             stolen_costs.push_back(stolen);
+            ++i;
         }
-        ++i;
     }
     assert(h_values.size() == landmarks.size());
     assert(used_costs.size() == landmarks.size());
