@@ -67,6 +67,9 @@ ExplicitAbstraction::ExplicitAbstraction(
     : Abstraction(num_operators),
       abstraction_function(function),
       backward_graph(move(backward_graph_)) {
+    /* We must compute active operators from the backward graph and not by
+       inspecting looping_ops and num_operators, since the sets of active and
+       looping operators may overlap. */
     active_operators = get_active_operators_from_graph(this->backward_graph);
     looping_operators = move(looping_operators_);
     goal_states = move(goal_states_);
