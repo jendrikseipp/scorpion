@@ -115,6 +115,9 @@ void add_scoring_function_to_parser(OptionParser &parser) {
     scoring_functions.push_back("MIN_STOLEN_COSTS");
     scoring_functions.push_back("MAX_HEURISTIC_PER_STOLEN_COSTS");
     parser.add_enum_option(
-        "scoring_function", scoring_functions, "scoring function", "MAX_HEURISTIC_PER_COSTS");
+        "scoring_function",
+        scoring_functions,
+        "scoring function",
+        "MAX_HEURISTIC_PER_STOLEN_COSTS");
 }
 }
