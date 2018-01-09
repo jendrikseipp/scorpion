@@ -68,6 +68,13 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
 
 vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
     const vector<vector<int>> &achievers_by_lm) {
+    vector<int> order(achievers_by_lm.size());
+    iota(order.begin(), order.end(), 0);
+    if (scoring_function == ScoringFunction::RANDOM) {
+        rng->shuffle(order);
+        return order;
+    }
+
     // Compute h-values and saturated costs for each landmark.
     vector<int> h_values;
     h_values.reserve(achievers_by_lm.size());
@@ -109,22 +116,15 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
         assert(used_costs.size() == achievers_by_lm.size());
     }
 
-    vector<int> order(achievers_by_lm.size());
-    iota(order.begin(), order.end(), 0);
-    // Avoid computing stolen/used costs when possible.
-    if (scoring_function == ScoringFunction::RANDOM) {
-        rng->shuffle(order);
-    } else {
-        vector<double> scores;
-        scores.reserve(achievers_by_lm.size());
-        for (size_t i = 0; i < achievers_by_lm.size(); ++i) {
-            scores.push_back(cost_saturation::compute_score(
-                h_values[i], used_costs[i], scoring_function, false));
-        }
-        sort(order.begin(), order.end(), [&](int i, int j) {
-                return scores[i] > scores[j];
-            });
+    vector<double> scores;
+    scores.reserve(achievers_by_lm.size());
+    for (size_t i = 0; i < achievers_by_lm.size(); ++i) {
+        scores.push_back(cost_saturation::compute_score(
+            h_values[i], used_costs[i], scoring_function, false));
     }
+    sort(order.begin(), order.end(), [&](int i, int j) {
+            return scores[i] > scores[j];
+        });
 
     if (false) {
         cout << "h-values: " << h_values << endl;
