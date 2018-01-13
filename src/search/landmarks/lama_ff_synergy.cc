@@ -181,6 +181,15 @@ static Synergy *_parse(OptionParser &parser) {
     */
     opts.set("pref", true);
 
+    if (opts.get<bool>("optimal")) {
+        ABORT("using optimal=true is not supported for synergies");
+    }
+    opts.set("cost_partitioning", 1); // suboptimal
+    opts.set("random_seed", -1);
+    opts.set("scoring_function", -1);
+    opts.set("greedy", false);
+    opts.set("reuse_costs", false);
+
     LamaFFSynergy *lama_ff_synergy = new LamaFFSynergy(opts);
     Synergy *syn = new Synergy;
     syn->heuristics.push_back(lama_ff_synergy->get_lama_heuristic_proxy());
