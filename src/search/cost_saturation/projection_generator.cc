@@ -23,6 +23,7 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
       min_pattern_size(opts.get<int>("min_pattern_size")),
       dominance_pruning(opts.get<bool>("dominance_pruning")),
       create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
+      use_add_after_delete_semantics(opts.get<bool>("use_add_after_delete_semantics")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -78,7 +79,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
         }
         abstractions.push_back(
             create_complete_transition_system ?
-            ExplicitProjectionFactory(task_proxy, pattern).convert_to_abstraction() :
+            ExplicitProjectionFactory(
+                task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction() :
             utils::make_unique_ptr<Projection>(task_proxy, pattern));
         if (debug) {
             abstractions.back()->dump();
@@ -110,6 +112,10 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "create_complete_transition_system",
         "create complete transition system",
+        "false");
+    parser.add_option<bool>(
+        "use_add_after_delete_semantics",
+        "skip transitions that are invalid according to add-after-delete semantics",
         "false");
     parser.add_option<bool>(
         "debug",

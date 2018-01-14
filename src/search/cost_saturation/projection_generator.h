@@ -17,6 +17,7 @@ class ProjectionGenerator : public AbstractionGenerator {
     const int min_pattern_size;
     const bool dominance_pruning;
     const bool create_complete_transition_system;
+    const bool use_add_after_delete_semantics;
     const bool debug;
 
 public:
