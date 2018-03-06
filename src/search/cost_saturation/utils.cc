@@ -171,27 +171,6 @@ CostPartitionedHeuristic compute_saturated_cost_partitioning(
     return cp_heuristic;
 }
 
-CostPartitionedHeuristic compute_cost_partitioning_for_static_order(
-    const TaskProxy &task_proxy,
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &costs,
-    CPFunction cp_function,
-    const State &state) {
-    options::Options greedy_opts;
-    greedy_opts.set("reverse_order", false);
-    greedy_opts.set("scoring_function", static_cast<int>(ScoringFunction::MAX_HEURISTIC_PER_COSTS));
-    greedy_opts.set("use_negative_costs", false);
-    greedy_opts.set("use_exp", false);
-    greedy_opts.set("dynamic", false);
-    greedy_opts.set("random_seed", 0);
-    CostPartitioningGeneratorGreedy greedy_generator(greedy_opts);
-    greedy_generator.initialize(task_proxy, abstractions, costs);
-    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-    Order order = greedy_generator.get_next_order(
-        task_proxy, abstractions, costs, local_state_ids, false);
-    return cp_function(abstractions, order, costs, true);
-}
-
 vector<State> sample_states(
     const TaskProxy &task_proxy,
     const function<int (const State &state)> &heuristic,

@@ -20,18 +20,9 @@ namespace cost_saturation {
 Diversifier::Diversifier(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &costs,
-    CPFunction cp_function,
+    function<int (const State &state)> sampling_heuristic,
     int num_samples,
     const shared_ptr<utils::RandomNumberGenerator> &rng) {
-    CostPartitionedHeuristic scp_for_sampling = compute_cost_partitioning_for_static_order(
-        task_proxy, abstractions, costs, cp_function, task_proxy.get_initial_state());
-
-    function<int (const State &state)> sampling_heuristic =
-        [&abstractions, &scp_for_sampling](const State &state) {
-            return scp_for_sampling.compute_heuristic(abstractions, state);
-        };
-
     vector<State> samples = sample_states(
         task_proxy, sampling_heuristic, num_samples, rng);
 

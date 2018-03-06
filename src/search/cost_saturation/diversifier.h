@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+class State;
 class TaskProxy;
 
 namespace utils {
@@ -20,8 +21,7 @@ public:
     Diversifier(
         const TaskProxy &task_proxy,
         const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs,
-        CPFunction cp_function,
+        std::function<int (const State &state)> sampling_heuristic,
         int num_samples,
         const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 

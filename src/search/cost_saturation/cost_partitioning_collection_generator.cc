@@ -51,19 +51,24 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
     const Abstractions &abstractions,
     const vector<int> &costs,
     CPFunction cp_function) const {
-    unique_ptr<Diversifier> diversifier;
-    if (diversify) {
-        diversifier = utils::make_unique_ptr<Diversifier>(
-            task_proxy, abstractions, costs, cp_function, num_samples, rng);
-    }
+    cp_generator->initialize(task_proxy, abstractions, costs);
 
     State initial_state = task_proxy.get_initial_state();
-    CostPartitionedHeuristic scp_for_sampling = compute_cost_partitioning_for_static_order(
-        task_proxy, abstractions, costs, cp_function, initial_state);
+    vector<int> local_state_ids = get_local_state_ids(abstractions, initial_state);
+    Order order = cp_generator->get_next_order(
+        task_proxy, abstractions, costs, local_state_ids, false);
+    CostPartitionedHeuristic scp_for_sampling = cp_function(abstractions, order, costs, true);
     function<int (const State &state)> sampling_heuristic =
         [&abstractions, &scp_for_sampling](const State &state) {
             return scp_for_sampling.compute_heuristic(abstractions, state);
         };
+
+    unique_ptr<Diversifier> diversifier;
+    if (diversify) {
+        diversifier = utils::make_unique_ptr<Diversifier>(
+            task_proxy, abstractions, sampling_heuristic, num_samples, rng);
+    }
+
     DeadEndDetector is_dead_end = [&sampling_heuristic](const State &state) {
                                       return sampling_heuristic(state) == INF;
                                   };
@@ -75,8 +80,6 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
                    scp_for_sampling
         };
     }
-
-    cp_generator->initialize(task_proxy, abstractions, costs);
 
     vector<CostPartitionedHeuristic> cp_heuristics;
     utils::CountdownTimer timer(max_time);

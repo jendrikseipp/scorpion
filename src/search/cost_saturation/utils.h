@@ -50,13 +50,6 @@ extern CostPartitionedHeuristic compute_saturated_cost_partitioning(
     const std::vector<int> &costs,
     bool sparse);
 
-extern CostPartitionedHeuristic compute_cost_partitioning_for_static_order(
-    const TaskProxy &task_proxy,
-    const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-    const std::vector<int> &costs,
-    CPFunction cp_function,
-    const State &state);
-
 extern std::vector<State> sample_states(
     const TaskProxy &task_proxy,
     const std::function<int (const State &)> &heuristic,
