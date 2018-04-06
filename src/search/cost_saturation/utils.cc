@@ -182,20 +182,17 @@ vector<State> sample_states(
     State initial_state = task_proxy.get_initial_state();
     int init_h = heuristic(initial_state);
     utils::Log() << "Initial h value for sampling: " << init_h << endl;
-    if (init_h == INF) {
-        return {
-                   move(initial_state)
-        };
-    }
+    assert(init_h != INF);
     DeadEndDetector is_dead_end = [&heuristic] (const State &state) {
                                       return heuristic(state) == INF;
                                   };
     sampling::RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
 
     vector<State> samples;
+    samples.push_back(move(initial_state));
     while (static_cast<int>(samples.size()) < num_samples) {
         State sample = sampler.sample_state();
-        assert(sample == initial_state || heuristic(sample) != INF);
+        assert(heuristic(sample) != INF);
         samples.push_back(move(sample));
     }
 

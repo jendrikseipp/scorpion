@@ -109,8 +109,8 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
     utils::Log() << "Start computing cost partitionings" << endl;
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            !timer.is_expired() && cp_generator->has_next_cost_partitioning()) {
-        State sample = sampler.sample_state();
-        assert(sample == initial_state || !is_dead_end(sample));
+        State sample = evaluated_orders == 0 ? initial_state : sampler.sample_state();
+        assert(!is_dead_end(sample));
         if (timer.is_expired() && !cp_heuristics.empty()) {
             break;
         }

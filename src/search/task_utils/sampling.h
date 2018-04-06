@@ -60,7 +60,6 @@ class RandomWalkSampler {
     const double average_operator_costs;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const DeadEndDetector is_dead_end;
-    bool returned_initial_state;
 
 public:
     RandomWalkSampler(

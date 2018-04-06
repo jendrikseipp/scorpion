@@ -111,24 +111,18 @@ RandomWalkSampler::RandomWalkSampler(
       init_h(init_h),
       average_operator_costs(task_properties::get_average_operator_cost(task_proxy)),
       rng(rng),
-      is_dead_end(is_dead_end),
-      returned_initial_state(false) {
+      is_dead_end(is_dead_end) {
     assert(init_h != numeric_limits<int>::max());
 }
 
 State RandomWalkSampler::sample_state() {
-    if (returned_initial_state) {
-        return sample_state_with_random_walk(
-            task_proxy,
-            *initial_state,
-            *successor_generator,
-            init_h,
-            average_operator_costs,
-            *rng,
-            is_dead_end);
-    } else {
-        returned_initial_state = true;
-        return *initial_state;
-    }
+    return sample_state_with_random_walk(
+        task_proxy,
+        *initial_state,
+        *successor_generator,
+        init_h,
+        average_operator_costs,
+        *rng,
+        is_dead_end);
 }
 }
