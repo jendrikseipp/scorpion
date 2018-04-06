@@ -34,25 +34,6 @@ Diversifier::Diversifier(
 
     // Initialize portfolio h values with -1 to ensure that first CP is diverse.
     portfolio_h_values.resize(local_state_ids_by_sample.size(), -1);
-
-    // Log percentage of abstract states covered by samples.
-    int num_abstract_states = 0;
-    int num_covered_states = 0;
-    for (size_t i = 0; i < abstractions.size(); ++i) {
-        const Abstraction &abstraction = *abstractions[i];
-        unordered_set<int> covered_states;
-        for (size_t j = 0; j < local_state_ids_by_sample.size(); ++j) {
-            const vector<int> &local_ids = local_state_ids_by_sample[j];
-            covered_states.insert(local_ids[i]);
-        }
-        num_abstract_states += abstraction.get_num_states();
-        num_covered_states += covered_states.size();
-    }
-    utils::Log() << "Covered abstract states: "
-                 << num_covered_states << "/" << num_abstract_states << " = "
-                 << (num_abstract_states ?
-        static_cast<double>(num_covered_states) / num_abstract_states : 1)
-                 << endl;
 }
 
 bool Diversifier::is_diverse(const CostPartitionedHeuristic &cp) {
