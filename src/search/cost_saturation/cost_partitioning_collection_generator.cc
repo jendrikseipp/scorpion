@@ -22,6 +22,23 @@
 using namespace std;
 
 namespace cost_saturation {
+static vector<vector<int>> sample_states_and_return_local_state_ids(
+    const TaskProxy &task_proxy,
+    const vector<unique_ptr<Abstraction>> &abstractions,
+    function<int (const State &state)> sampling_heuristic,
+    int num_samples,
+    const shared_ptr<utils::RandomNumberGenerator> &rng) {
+    vector<State> samples = sample_states(
+        task_proxy, sampling_heuristic, num_samples, rng);
+
+    vector<vector<int>> local_state_ids_by_sample;
+    for (const State &sample : samples) {
+        local_state_ids_by_sample.push_back(
+            get_local_state_ids(abstractions, sample));
+    }
+    return local_state_ids_by_sample;
+}
+
 CostPartitioningCollectionGenerator::CostPartitioningCollectionGenerator(
     const shared_ptr<CostPartitioningGenerator> &cp_generator,
     bool sparse,
@@ -74,17 +91,9 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
 
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
-        vector<State> samples = sample_states(
-            task_proxy, sampling_heuristic, num_samples, rng);
-
-        vector<vector<int>> local_state_ids_by_sample;
-        for (const State &sample : samples) {
-            local_state_ids_by_sample.push_back(
-                get_local_state_ids(abstractions, sample));
-        }
-        utils::release_vector_memory(samples);
-
-        diversifier = utils::make_unique_ptr<Diversifier>(move(local_state_ids_by_sample));
+        diversifier = utils::make_unique_ptr<Diversifier>(
+            sample_states_and_return_local_state_ids(
+                task_proxy, abstractions, sampling_heuristic, num_samples, rng));
     }
 
     int init_h = sampling_heuristic(initial_state);
