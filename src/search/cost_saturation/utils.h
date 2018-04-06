@@ -54,11 +54,6 @@ extern CostPartitionedHeuristic compute_saturated_cost_partitioning(
     const std::vector<int> &costs,
     bool sparse);
 
-extern std::vector<State> sample_states(
-    const TaskProxy &task_proxy,
-    sampling::RandomWalkSampler &sampler,
-    int num_samples);
-
 extern void reduce_costs(
     std::vector<int> &remaining_costs,
     const std::vector<int> &saturated_costs);

@@ -171,23 +171,6 @@ CostPartitionedHeuristic compute_saturated_cost_partitioning(
     return cp_heuristic;
 }
 
-vector<State> sample_states(
-    const TaskProxy &task_proxy, sampling::RandomWalkSampler &sampler, int num_samples) {
-    assert(num_samples >= 1);
-    utils::Timer sampling_timer;
-    utils::Log() << "Start sampling" << endl;
-    vector<State> samples;
-    samples.push_back(task_proxy.get_initial_state());
-    while (static_cast<int>(samples.size()) < num_samples) {
-        samples.push_back(sampler.sample_state());
-    }
-
-    utils::Log() << "Samples: " << samples.size() << endl;
-    utils::Log() << "Sampling time: " << sampling_timer << endl;
-
-    return samples;
-}
-
 void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
     for (size_t i = 0; i < remaining_costs.size(); ++i) {

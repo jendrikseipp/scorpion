@@ -27,7 +27,17 @@ static vector<vector<int>> sample_states_and_return_local_state_ids(
     const vector<unique_ptr<Abstraction>> &abstractions,
     sampling::RandomWalkSampler &sampler,
     int num_samples) {
-    vector<State> samples = sample_states(task_proxy, sampler, num_samples);
+    assert(num_samples >= 1);
+
+    utils::Timer sampling_timer;
+    utils::Log() << "Start sampling" << endl;
+    vector<State> samples;
+    samples.push_back(task_proxy.get_initial_state());
+    while (static_cast<int>(samples.size()) < num_samples) {
+        samples.push_back(sampler.sample_state());
+    }
+    utils::Log() << "Samples: " << samples.size() << endl;
+    utils::Log() << "Sampling time: " << sampling_timer << endl;
 
     vector<vector<int>> local_state_ids_by_sample;
     for (const State &sample : samples) {
