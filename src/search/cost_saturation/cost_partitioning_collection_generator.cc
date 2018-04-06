@@ -28,22 +28,17 @@ static vector<vector<int>> sample_states_and_return_local_state_ids(
     sampling::RandomWalkSampler &sampler,
     int num_samples) {
     assert(num_samples >= 1);
-
     utils::Timer sampling_timer;
     utils::Log() << "Start sampling" << endl;
-    vector<State> samples;
-    samples.push_back(task_proxy.get_initial_state());
-    while (static_cast<int>(samples.size()) < num_samples) {
-        samples.push_back(sampler.sample_state());
-    }
-    utils::Log() << "Samples: " << samples.size() << endl;
-    utils::Log() << "Sampling time: " << sampling_timer << endl;
-
     vector<vector<int>> local_state_ids_by_sample;
-    for (const State &sample : samples) {
+    local_state_ids_by_sample.push_back(
+        get_local_state_ids(abstractions, task_proxy.get_initial_state()));
+    while (static_cast<int>(local_state_ids_by_sample.size()) < num_samples) {
         local_state_ids_by_sample.push_back(
-            get_local_state_ids(abstractions, sample));
+            get_local_state_ids(abstractions, sampler.sample_state()));
     }
+    utils::Log() << "Samples: " << local_state_ids_by_sample.size() << endl;
+    utils::Log() << "Sampling time: " << sampling_timer << endl;
     return local_state_ids_by_sample;
 }
 
