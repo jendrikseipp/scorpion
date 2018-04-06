@@ -7,6 +7,7 @@
 #include "scp_optimizer.h"
 #include "utils.h"
 
+#include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 
@@ -119,7 +120,7 @@ static vector<vector<int>> sample_states_and_return_local_ids(
         }
     }
     cout << "Samples: " << samples.size() << endl;
-    cout << "Sampling time: " << sampling_timer << endl;
+    cout << "Sampling time: " << sampling_timer.get_elapsed_time() << endl;
 
     return get_local_state_ids_by_state(refinement_hierarchies, samples);
 }
@@ -438,7 +439,8 @@ static Heuristic *_parse(OptionParser &parser) {
 
         for (int i = 0; i < num_orders && !finding_orders_timer.is_expired(); ++i) {
             double optimization_time = min(
-                max_optimization_time, finding_orders_timer.get_remaining_time());
+                max_optimization_time,
+                static_cast<double>(finding_orders_timer.get_remaining_time()));
             pair<vector<vector<int>>, pair<int, int>> result =
                 scp_optimizer.find_cost_partitioning(
                     local_state_ids_by_state,
@@ -473,7 +475,7 @@ static Heuristic *_parse(OptionParser &parser) {
              << *scp_optimizer.order_evaluation_timer << endl;
         cout << "Time for updating portfolio h values: "
              << update_portfolio_h_values_timer << endl;
-        cout << "Time for finding orders: " << finding_orders_timer << endl;
+        cout << "Time for finding orders: " << finding_orders_timer.get_elapsed_time() << endl;
 
         return new MaxCartesianHeuristic(
             heuristic_opts,

@@ -111,7 +111,7 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
                 cp_function, timer, abstractions, costs, local_state_ids, order,
                 cp_heuristic, incumbent_h_value, steepest_ascent, sparse, verbose);
             if (verbose) {
-                utils::Log() << "Time for optimizing order: " << timer << endl;
+                utils::Log() << "Time for optimizing order: " << timer.get_elapsed_time() << endl;
                 utils::Log() << "Time for optimizing order has expired: " << timer.is_expired() << endl;
             }
         }
@@ -124,7 +124,7 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
     }
     int peak_memory_with_cps = utils::get_peak_memory_in_kb();
     utils::Log() << "Orders: " << cp_heuristics.size() << endl;
-    utils::Log() << "Time for computing cost partitionings: " << timer << endl;
+    utils::Log() << "Time for computing cost partitionings: " << timer.get_elapsed_time() << endl;
     utils::Log() << "Memory for cost partitionings: "
                  << peak_memory_with_cps - peak_memory_without_cps << " KB" << endl;
     return cp_heuristics;

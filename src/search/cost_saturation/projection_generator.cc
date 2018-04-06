@@ -55,7 +55,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
         cout << "PDB construction time: " << pdb_timer << endl;
         utils::Timer pruning_timer;
         max_additive_subsets = prune_dominated_subsets(
-            *pdbs, *max_additive_subsets, task_proxy.get_variables().size());
+            *pdbs, *max_additive_subsets, task_proxy.get_variables().size(),
+            numeric_limits<double>::infinity());
         cout << "Dominance pruning time: " << pruning_timer << endl;
         patterns->clear();
         for (const auto &subset : *max_additive_subsets) {

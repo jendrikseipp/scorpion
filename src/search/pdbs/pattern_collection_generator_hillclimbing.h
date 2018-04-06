@@ -86,7 +86,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     */
     std::pair<int, int> find_best_improving_pdb(
         const std::vector<State> &samples,
-        const std::vector<int> &current_samples_h_values,
+        const std::vector<int> &samples_h_values,
         PDBCollection &candidate_pdbs);
 
     /*

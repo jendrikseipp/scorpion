@@ -120,7 +120,7 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
     scores.reserve(achievers_by_lm.size());
     for (size_t i = 0; i < achievers_by_lm.size(); ++i) {
         scores.push_back(cost_saturation::compute_score(
-            h_values[i], used_costs[i], scoring_function, false));
+                             h_values[i], used_costs[i], scoring_function, false));
     }
     sort(order.begin(), order.end(), [&](int i, int j) {
             return scores[i] > scores[j];

@@ -2,9 +2,6 @@
 
 #include "match_tree.h"
 
-#include "../global_operator.h" // TODO: Remove.
-#include "../globals.h"  // TODO: Remove.
-
 #include "../algorithms/priority_queues.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
@@ -32,8 +29,6 @@ AbstractOperator::AbstractOperator(const vector<FactPair> &prev_pairs,
     : concrete_operator_id(concrete_operator_id),
       cost(cost),
       regression_preconditions(prev_pairs) {
-    assert(concrete_operator_id == -1 ||
-           utils::in_bounds(concrete_operator_id, g_operators));
     regression_preconditions.insert(regression_preconditions.end(),
                                     eff_pairs.begin(),
                                     eff_pairs.end());

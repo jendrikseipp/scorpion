@@ -28,9 +28,6 @@ extern std::vector<FactPair> get_fact_landmarks(
 */
 extern VarToValues get_prev_landmarks(
     const landmarks::LandmarkGraph &graph, const FactPair &fact);
-
-extern void write_landmark_graph_dot_file(
-    const landmarks::LandmarkGraph &graph, const std::string &filename);
 }
 
 #endif

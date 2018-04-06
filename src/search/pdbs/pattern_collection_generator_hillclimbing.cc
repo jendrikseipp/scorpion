@@ -197,7 +197,7 @@ void PatternCollectionGeneratorHillclimbing::sample_states(
 
 pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
     const vector<State> &samples,
-    const vector<int> &current_samples_h_values,
+    const vector<int> &samples_h_values,
     PDBCollection &candidate_pdbs) {
     /*
       TODO: The original implementation by Haslum et al. uses A* to compute
@@ -245,8 +245,8 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
             current_pdbs->get_max_additive_subsets(pdb->get_pattern());
         for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
             const State &sample = samples[sample_id];
-            assert(utils::in_bounds(sample_id, current_samples_h_values));
-            int h_collection = current_samples_h_values[sample_id];
+            assert(utils::in_bounds(sample_id, samples_h_values));
+            int h_collection = samples_h_values[sample_id];
             if (is_heuristic_improved(
                     *pdb, sample, h_collection, max_additive_subsets)) {
                 ++count;
@@ -339,7 +339,7 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
         successor_generator::SuccessorGenerator successor_generator(task_proxy);
 
         vector<State> samples;
-        vector<int> current_samples_h_values;
+        vector<int> samples_h_values;
 
         while (num_iterations < max_iterations) {
             ++num_iterations;
@@ -355,16 +355,15 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             }
 
             samples.clear();
-            current_samples_h_values.clear();
+            samples_h_values.clear();
             sample_states(
                 task_proxy, successor_generator, samples, average_operator_cost);
             for (const State &sample : samples) {
-                current_samples_h_values.push_back(current_pdbs->get_value(sample));
+                samples_h_values.push_back(current_pdbs->get_value(sample));
             }
 
             pair<int, int> improvement_and_index =
-                find_best_improving_pdb(
-                    samples, current_samples_h_values, candidate_pdbs);
+                find_best_improving_pdb(samples, samples_h_values, candidate_pdbs);
             int improvement = improvement_and_index.first;
             int best_pdb_index = improvement_and_index.second;
 
@@ -393,7 +392,8 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             // Remove the added PDB from candidate_pdbs.
             candidate_pdbs[best_pdb_index] = nullptr;
 
-            cout << "Hill climbing time so far: " << *hill_climbing_timer
+            cout << "Hill climbing time so far: "
+                 << hill_climbing_timer->get_elapsed_time()
                  << endl;
         }
     } catch (HillClimbingTimeout &) {
@@ -409,7 +409,8 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     cout << "iPDB: generated = " << generated_patterns.size() << endl;
     cout << "iPDB: rejected = " << num_rejected << endl;
     cout << "iPDB: maximum pdb size = " << max_pdb_size << endl;
-    cout << "iPDB: hill climbing time: " << *hill_climbing_timer << endl;
+    cout << "iPDB: hill climbing time: "
+         << hill_climbing_timer->get_elapsed_time() << endl;
 
     delete hill_climbing_timer;
     hill_climbing_timer = nullptr;
@@ -468,7 +469,9 @@ void add_hillclimbing_options(OptionParser &parser) {
         "max_time",
         "maximum time in seconds for improving the initial pattern "
         "collection via hill climbing. If set to 0, no hill climbing "
-        "is performed at all.",
+        "is performed at all. Note that this limit only affects hill "
+        "climbing. Use max_time_dominance_pruning to limit the time "
+        "spent for pruning dominated patterns.",
         "infinity",
         Bounds("0.0", "infinity"));
     parser.add_option<int>(
@@ -597,17 +600,14 @@ static Heuristic *_parse_ipdb(OptionParser &parser) {
     add_hillclimbing_options(parser);
 
     /*
+      Add, possibly among others, the options for dominance pruning.
+
       Note that using dominance pruning during hill climbing could lead to fewer
       discovered patterns and pattern collections. A dominated pattern
       (or pattern collection) might no longer be dominated after more patterns
       are added. We thus only use dominance pruning on the resulting collection.
     */
-    parser.add_option<bool>(
-        "dominance_pruning",
-        "Exclude patterns and additive subsets that will never contribute to "
-        "the heuristic value because there are dominating patterns in the "
-        "collection.",
-        "true");
+    add_canonical_pdbs_options_to_parser(parser);
 
     Heuristic::add_options_to_parser(parser);
 
@@ -630,8 +630,8 @@ static Heuristic *_parse_ipdb(OptionParser &parser) {
         "cache_estimates", opts.get<bool>("cache_estimates"));
     heuristic_opts.set<shared_ptr<PatternCollectionGenerator>>(
         "patterns", pgh);
-    heuristic_opts.set<bool>(
-        "dominance_pruning", opts.get<bool>("dominance_pruning"));
+    heuristic_opts.set<double>(
+        "max_time_dominance_pruning", opts.get<double>("max_time_dominance_pruning"));
 
     // Note: in the long run, this should return a shared pointer.
     return new CanonicalPDBsHeuristic(heuristic_opts);

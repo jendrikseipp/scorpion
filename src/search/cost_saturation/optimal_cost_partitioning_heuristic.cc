@@ -4,12 +4,12 @@
 #include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
-#include "../global_operator.h"
 #include "../global_state.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 
 #include "../task_utils/task_properties.h"
+#include "../tasks/root_task.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/timer.h"
@@ -42,7 +42,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
       allow_negative_costs(true),
       debug(false) {
     int num_operators = task_proxy.get_operators().size();
-    if (num_operators != static_cast<int>(g_operators.size())) {
+    if (num_operators != static_cast<int>(TaskProxy(*tasks::g_root_task).get_operators().size())) {
         ABORT("OptimalCostPartitioningHeuristic doesn't work for task "
               "transformations that add or remove operators");
     }
@@ -253,8 +253,9 @@ void OptimalCostPartitioningHeuristic::introduce_abstraction_variables(
             variable_lower_bounds.push_back(0);
         }
     }
-    action_cost_variables.push_back(vector<int>(g_operators.size()));
-    for (size_t op_id = 0; op_id < g_operators.size(); ++op_id) {
+    int num_operators = task_proxy.get_operators().size();
+    action_cost_variables.push_back(vector<int>(num_operators));
+    for (int op_id = 0; op_id < num_operators; ++op_id) {
         action_cost_variables[id][op_id] = variable_count++;
         if (allow_negative_costs && !looping_operators[id][op_id]) {
             variable_lower_bounds.push_back(-lp_solver->getInfinity());
@@ -298,13 +299,13 @@ void OptimalCostPartitioningHeuristic::add_action_cost_constraints(vector<Matrix
                                                                    vector<double> &constraint_upper_bounds) {
     //  * For a in actions
     //        0 <= sum_{p in PDBs} action_cost[p][a] <= a.cost
-    for (size_t op_id = 0; op_id < g_operators.size(); ++op_id) {
+    for (OperatorProxy op : task_proxy.get_operators()) {
         int row = constraint_count++;
         for (size_t id = 0; id < action_cost_variables.size(); ++id) {
-            int abstraction_col = action_cost_variables[id][op_id];
+            int abstraction_col = action_cost_variables[id][op.get_id()];
             matrix_entries.push_back(MatrixEntry(row, abstraction_col, 1));
         }
-        constraint_upper_bounds.push_back(g_operators[op_id].get_cost());
+        constraint_upper_bounds.push_back(op.get_cost());
     }
 }
 
