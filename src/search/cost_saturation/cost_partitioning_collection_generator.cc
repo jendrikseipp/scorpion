@@ -25,11 +25,9 @@ namespace cost_saturation {
 static vector<vector<int>> sample_states_and_return_local_state_ids(
     const TaskProxy &task_proxy,
     const vector<unique_ptr<Abstraction>> &abstractions,
-    function<int (const State &state)> sampling_heuristic,
-    int num_samples,
-    const shared_ptr<utils::RandomNumberGenerator> &rng) {
-    vector<State> samples = sample_states(
-        task_proxy, sampling_heuristic, num_samples, rng);
+    sampling::RandomWalkSampler &sampler,
+    int num_samples) {
+    vector<State> samples = sample_states(task_proxy, sampler, num_samples);
 
     vector<vector<int>> local_state_ids_by_sample;
     for (const State &sample : samples) {
@@ -89,18 +87,18 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
             return cp_for_sampling.compute_heuristic(abstractions, state);
         };
 
-    unique_ptr<Diversifier> diversifier;
-    if (diversify) {
-        diversifier = utils::make_unique_ptr<Diversifier>(
-            sample_states_and_return_local_state_ids(
-                task_proxy, abstractions, sampling_heuristic, num_samples, rng));
-    }
-
     int init_h = sampling_heuristic(initial_state);
     DeadEndDetector is_dead_end = [&sampling_heuristic](const State &state) {
                                       return sampling_heuristic(state) == INF;
                                   };
     sampling::RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
+
+    unique_ptr<Diversifier> diversifier;
+    if (diversify) {
+        diversifier = utils::make_unique_ptr<Diversifier>(
+            sample_states_and_return_local_state_ids(
+                task_proxy, abstractions, sampler, num_samples));
+    }
 
     vector<CostPartitionedHeuristic> cp_heuristics;
     utils::CountdownTimer timer(max_time);

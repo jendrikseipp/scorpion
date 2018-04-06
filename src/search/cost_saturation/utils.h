@@ -15,6 +15,10 @@ namespace options {
 class OptionParser;
 }
 
+namespace sampling {
+class RandomWalkSampler;
+}
+
 namespace utils {
 class RandomNumberGenerator;
 }
@@ -52,9 +56,8 @@ extern CostPartitionedHeuristic compute_saturated_cost_partitioning(
 
 extern std::vector<State> sample_states(
     const TaskProxy &task_proxy,
-    const std::function<int (const State &)> &heuristic,
-    int num_samples,
-    const std::shared_ptr<utils::RandomNumberGenerator> &rng);
+    sampling::RandomWalkSampler &sampler,
+    int num_samples);
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs,

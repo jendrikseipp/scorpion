@@ -172,28 +172,14 @@ CostPartitionedHeuristic compute_saturated_cost_partitioning(
 }
 
 vector<State> sample_states(
-    const TaskProxy &task_proxy,
-    const function<int (const State &state)> &heuristic,
-    int num_samples,
-    const shared_ptr<utils::RandomNumberGenerator> &rng) {
+    const TaskProxy &task_proxy, sampling::RandomWalkSampler &sampler, int num_samples) {
     assert(num_samples >= 1);
     utils::Timer sampling_timer;
     utils::Log() << "Start sampling" << endl;
-    State initial_state = task_proxy.get_initial_state();
-    int init_h = heuristic(initial_state);
-    utils::Log() << "Initial h value for sampling: " << init_h << endl;
-    assert(init_h != INF);
-    DeadEndDetector is_dead_end = [&heuristic] (const State &state) {
-                                      return heuristic(state) == INF;
-                                  };
-    sampling::RandomWalkSampler sampler(task_proxy, init_h, rng, is_dead_end);
-
     vector<State> samples;
-    samples.push_back(move(initial_state));
+    samples.push_back(task_proxy.get_initial_state());
     while (static_cast<int>(samples.size()) < num_samples) {
-        State sample = sampler.sample_state();
-        assert(heuristic(sample) != INF);
-        samples.push_back(move(sample));
+        samples.push_back(sampler.sample_state());
     }
 
     utils::Log() << "Samples: " << samples.size() << endl;
