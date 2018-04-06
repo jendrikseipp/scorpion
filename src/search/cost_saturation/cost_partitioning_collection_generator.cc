@@ -74,8 +74,17 @@ vector<CostPartitionedHeuristic> CostPartitioningCollectionGenerator::get_cost_p
 
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
-        diversifier = utils::make_unique_ptr<Diversifier>(
-            task_proxy, abstractions, sampling_heuristic, num_samples, rng);
+        vector<State> samples = sample_states(
+            task_proxy, sampling_heuristic, num_samples, rng);
+
+        vector<vector<int>> local_state_ids_by_sample;
+        for (const State &sample : samples) {
+            local_state_ids_by_sample.push_back(
+                get_local_state_ids(abstractions, sample));
+        }
+        utils::release_vector_memory(samples);
+
+        diversifier = utils::make_unique_ptr<Diversifier>(move(local_state_ids_by_sample));
     }
 
     int init_h = sampling_heuristic(initial_state);

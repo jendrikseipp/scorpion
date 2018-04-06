@@ -17,23 +17,10 @@
 using namespace std;
 
 namespace cost_saturation {
-Diversifier::Diversifier(
-    const TaskProxy &task_proxy,
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    function<int (const State &state)> sampling_heuristic,
-    int num_samples,
-    const shared_ptr<utils::RandomNumberGenerator> &rng) {
-    vector<State> samples = sample_states(
-        task_proxy, sampling_heuristic, num_samples, rng);
-
-    for (const State &sample : samples) {
-        local_state_ids_by_sample.push_back(
-            get_local_state_ids(abstractions, sample));
-    }
-    utils::release_vector_memory(samples);
-
+Diversifier::Diversifier(vector<vector<int>> &&local_state_ids_by_sample)
+    : local_state_ids_by_sample(move(local_state_ids_by_sample)) {
     // Initialize portfolio h values with -1 to ensure that first CP is diverse.
-    portfolio_h_values.resize(local_state_ids_by_sample.size(), -1);
+    portfolio_h_values.assign(this->local_state_ids_by_sample.size(), -1);
 }
 
 bool Diversifier::is_diverse(const CostPartitionedHeuristic &cp) {

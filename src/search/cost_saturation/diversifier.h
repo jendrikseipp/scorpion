@@ -18,12 +18,7 @@ class Diversifier {
     std::vector<std::vector<int>> local_state_ids_by_sample;
 
 public:
-    Diversifier(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        std::function<int (const State &state)> sampling_heuristic,
-        int num_samples,
-        const std::shared_ptr<utils::RandomNumberGenerator> &rng);
+    explicit Diversifier(std::vector<std::vector<int>> &&local_state_ids_by_sample);
 
     bool is_diverse(const CostPartitionedHeuristic &cp);
 };
