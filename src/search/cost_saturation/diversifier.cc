@@ -37,10 +37,8 @@ bool Diversifier::is_diverse(const CostPartitionedHeuristic &cp) {
 
     // Statistics.
     if (cp_improves_portfolio) {
-        int sum_portfolio_h = 0;
-        for (int h : portfolio_h_values) {
-            sum_portfolio_h += h;
-        }
+        int sum_portfolio_h = accumulate(
+            portfolio_h_values.begin(), portfolio_h_values.end(), 0);
         utils::Log() << "Portfolio sum h value: " << sum_portfolio_h << endl;
     }
 
