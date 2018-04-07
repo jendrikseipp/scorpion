@@ -17,13 +17,11 @@ extern int hacked_num_landmark_abstractions;
 
 class Abstraction;
 class SubtaskGenerator;
-class TransitionSystem;
 
 enum class CostPartitioningType {
     SATURATED,
     SATURATED_POSTHOC,
-    SATURATED_MAX,
-    OPTIMAL
+    SATURATED_MAX
 };
 
 class CostSaturation {
@@ -46,7 +44,6 @@ class CostSaturation {
     */
     std::vector<int> remaining_costs;
     std::vector<std::unique_ptr<Abstraction>> abstractions;
-    std::vector<std::shared_ptr<TransitionSystem>> transition_systems;
     int num_abstractions;
     int num_states;
     int num_non_looping_transitions;
@@ -76,7 +73,6 @@ public:
     void initialize(const std::shared_ptr<AbstractTask> &task);
 
     std::vector<std::unique_ptr<Abstraction>> extract_abstractions();
-    std::vector<std::shared_ptr<TransitionSystem>> extract_transition_systems();
 };
 
 extern void reduce_costs(

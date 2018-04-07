@@ -32,8 +32,6 @@ struct Flaw;
   RefinementHierarchy.
 */
 class Abstraction {
-    friend class TransitionSystem;
-
     const std::shared_ptr<AbstractTask> task;
     const TaskProxy task_proxy;
     const int max_states;

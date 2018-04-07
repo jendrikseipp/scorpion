@@ -3,7 +3,6 @@
 #include "abstraction.h"
 #include "cost_saturation.h"
 #include "max_cartesian_heuristic.h"
-#include "ocp_heuristic.h"
 #include "scp_optimizer.h"
 #include "utils.h"
 
@@ -205,7 +204,6 @@ static Heuristic *_parse(OptionParser &parser) {
     cp_types.push_back("SATURATED");
     cp_types.push_back("SATURATED_POSTHOC");
     cp_types.push_back("SATURATED_MAX");
-    cp_types.push_back("OPTIMAL");
     parser.add_enum_option(
         "cost_partitioning", cp_types, "cost partitioning method", "SATURATED");
     lp::add_lp_solver_option_to_parser(parser);
@@ -294,14 +292,7 @@ static Heuristic *_parse(OptionParser &parser) {
     if (utils::extra_memory_padding_is_reserved())
         utils::release_extra_memory_padding();
 
-    if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
-        heuristic_opts.set<bool>(
-            "use_general_costs", opts.get<bool>("use_general_costs"));
-        heuristic_opts.set<int>("lpsolver", opts.get_enum("lpsolver"));
-        return new OptimalCostPartitioningHeuristic(
-            heuristic_opts, cost_saturation.extract_transition_systems());
-    } else if (
-        cost_partitioning_type == CostPartitioningType::SATURATED ||
+    if (cost_partitioning_type == CostPartitioningType::SATURATED ||
         cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
         cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
         const int num_orders = opts.get<int>("orders");

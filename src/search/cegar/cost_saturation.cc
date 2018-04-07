@@ -3,7 +3,6 @@
 #include "abstraction.h"
 #include "additive_cartesian_heuristic.h"
 #include "subtask_generators.h"
-#include "transition_system.h"
 #include "utils.h"
 
 #include "../globals.h"
@@ -103,10 +102,6 @@ vector<unique_ptr<Abstraction>> CostSaturation::extract_abstractions() {
     return move(abstractions);
 }
 
-vector<shared_ptr<TransitionSystem>> CostSaturation::extract_transition_systems() {
-    return move(transition_systems);
-}
-
 void CostSaturation::reset(const TaskProxy &task_proxy) {
     remaining_costs = task_properties::get_operator_costs(task_proxy);
     num_abstractions = 0;
@@ -162,9 +157,6 @@ void CostSaturation::build_abstractions(
             if (!exclude_abstractions_with_zero_init_h || init_h > 0) {
                 abstractions.push_back(move(abstraction));
             }
-        } else if (cost_partitioning_type == CostPartitioningType::OPTIMAL) {
-            transition_systems.push_back(
-                make_shared<TransitionSystem>(move(*abstraction)));
         } else {
             ABORT("Invalid cost partitioning type");
         }
@@ -179,7 +171,6 @@ void CostSaturation::print_statistics() const {
     g_log << "Done initializing additive Cartesian heuristic" << endl;
     cout << "Cartesian abstractions built: " << num_abstractions << endl;
     cout << "Abstractions stored: " << abstractions.size() << endl;
-    cout << "Transition systems stored: " << transition_systems.size() << endl;
     cout << "Cartesian states: " << num_states << endl;
     cout << "Total number of non-looping transitions: "
          << num_non_looping_transitions << endl;
