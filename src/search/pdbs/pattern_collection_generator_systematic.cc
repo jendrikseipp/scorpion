@@ -47,7 +47,6 @@ static void compute_union_pattern(
 PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
     const Options &opts)
     : max_pattern_size(opts.get<int>("pattern_max_size")),
-      max_patterns(opts.get<int>("max_patterns")),
       only_interesting_patterns(opts.get<bool>("only_interesting_patterns")) {
 }
 
@@ -198,11 +197,8 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     }
 
     // Enqueue the SGA patterns.
-    for (const Pattern &pattern : sga_patterns) {
-        if (static_cast<int>(patterns->size()) >= max_patterns)
-            break;
+    for (const Pattern &pattern : sga_patterns)
         enqueue_pattern_if_new(pattern);
-    }
 
 
     cout << "Found " << sga_patterns.size() << " SGA patterns." << endl;
@@ -220,15 +216,11 @@ void PatternCollectionGeneratorSystematic::build_patterns(
         compute_connection_points(cg, pattern1, neighbors);
 
         for (int neighbor_var : neighbors) {
-            if (static_cast<int>(patterns->size()) >= max_patterns)
-                break;
             const auto &candidates = sga_patterns_by_var[neighbor_var];
             for (const Pattern *p_pattern2 : candidates) {
                 const Pattern &pattern2 = *p_pattern2;
                 if (pattern1.size() + pattern2.size() > max_pattern_size)
                     break;  // All remaining candidates are too large.
-                if (static_cast<int>(patterns->size()) >= max_patterns)
-                    break;
                 if (patterns_are_disjoint(pattern1, pattern2)) {
                     Pattern new_pattern;
                     compute_union_pattern(pattern1, pattern2, new_pattern);
@@ -297,11 +289,6 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "pattern_max_size",
         "max number of variables per pattern",
         "1",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_patterns",
-        "max number of patterns",
-        "infinity",
         Bounds("1", "infinity"));
     parser.add_option<bool>(
         "only_interesting_patterns",
