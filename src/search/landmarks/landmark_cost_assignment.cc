@@ -39,11 +39,7 @@ const set<int> &LandmarkCostAssignment::get_achievers(
 
 
 static vector<double> convert_to_double(const vector<int> &int_vec) {
-    vector<double> double_vec;
-    double_vec.reserve(int_vec.size());
-    for (int value : int_vec) {
-        double_vec.push_back(value);
-    }
+    vector<double> double_vec(int_vec.begin(), int_vec.end());
     return double_vec;
 }
 
