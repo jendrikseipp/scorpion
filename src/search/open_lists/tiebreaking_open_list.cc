@@ -49,6 +49,7 @@ public:
         EvaluationContext &eval_context) const override;
     virtual bool is_reliable_dead_end(
         EvaluationContext &eval_context) const override;
+    virtual void print_statistics() const override;
 };
 
 
@@ -140,6 +141,15 @@ bool TieBreakingOpenList<Entry>::is_reliable_dead_end(
             evaluator->dead_ends_are_reliable())
             return true;
     return false;
+}
+
+template<class Entry>
+void TieBreakingOpenList<Entry>::print_statistics() const {
+    for (Evaluator *evaluator : evaluators) {
+        evaluator->print_statistics();
+        // HACK: only print statistics for h once (eval1=g+h, eval2=h).
+        break;
+    }
 }
 
 TieBreakingOpenListFactory::TieBreakingOpenListFactory(const Options &options)

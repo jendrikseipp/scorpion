@@ -41,6 +41,8 @@ public:
 
     virtual void get_path_dependent_evaluators(
         std::set<Evaluator *> &evals) override;
+
+    virtual void print_statistics() const override;
 };
 }
 
