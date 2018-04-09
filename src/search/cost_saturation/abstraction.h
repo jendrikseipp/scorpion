@@ -1,6 +1,7 @@
 #ifndef COST_SATURATION_ABSTRACTION_H
 #define COST_SATURATION_ABSTRACTION_H
 
+#include <cassert>
 #include <vector>
 
 class State;
@@ -20,6 +21,8 @@ struct ExplicitTransition {
 
 
 class Abstraction {
+    bool has_transition_system;
+
 protected:
     std::vector<int> goal_states;
 
@@ -52,10 +55,12 @@ public:
         const std::vector<int> &costs) const;
 
     const std::vector<int> &get_active_operators() const {
+        assert(has_transition_system);
         return active_operators;
     }
 
     const std::vector<int> &get_looping_operators() const {
+        assert(has_transition_system);
         return looping_operators;
     }
 

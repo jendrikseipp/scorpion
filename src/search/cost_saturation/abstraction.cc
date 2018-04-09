@@ -6,7 +6,8 @@ using namespace std;
 
 namespace cost_saturation {
 Abstraction::Abstraction(int num_operators)
-    : num_operators(num_operators),
+    : has_transition_system(true),
+      num_operators(num_operators),
       use_general_costs(true) {
 }
 
@@ -21,12 +22,15 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
 }
 
 const vector<int> &Abstraction::get_goal_states() const {
+    assert(has_transition_system);
     return goal_states;
 }
 
 void Abstraction::release_transition_system_memory() {
+    assert(has_transition_system);
     utils::release_vector_memory(active_operators);
     utils::release_vector_memory(looping_operators);
     utils::release_vector_memory(goal_states);
+    has_transition_system = false;
 }
 }
