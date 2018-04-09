@@ -33,7 +33,7 @@ void PhOAbstractionConstraints::initialize_constraints(
             make_move_iterator(new_abstractions.begin()),
             make_move_iterator(new_abstractions.end()));
     }
-    operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
+    vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     constraint_offset = constraints.size();
     for (auto &abstraction : abstractions) {
         constraints.emplace_back(0, infinity);
