@@ -43,6 +43,7 @@ void PhOAbstractionConstraints::initialize_constraints(
             constraint.insert(op_id, operator_costs[op_id]);
         }
         h_values_by_abstraction.push_back(abstraction->compute_h_values(operator_costs));
+        abstraction->release_transition_system_memory();
     }
 }
 
