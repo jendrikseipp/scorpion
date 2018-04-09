@@ -44,9 +44,10 @@ void PhOAbstractionConstraints::initialize_constraints(
             auto pair = abstraction->compute_goal_distances_and_saturated_costs(operator_costs);
             vector<int> &h_values = pair.first;
             vector<int> &saturated_costs = pair.second;
-            for (int op_id : abstraction->get_active_operators()) {
-                assert(utils::in_bounds(op_id, saturated_costs));
-                constraint.insert(op_id, max(0, saturated_costs[op_id]));
+            for (size_t op_id = 0; op_id < saturated_costs.size(); ++op_id) {
+                if (saturated_costs[op_id] > 0) {
+                    constraint.insert(op_id, saturated_costs[op_id]);
+                }
             }
             h_values_by_abstraction.push_back(move(h_values));
             abstraction->release_transition_system_memory();
