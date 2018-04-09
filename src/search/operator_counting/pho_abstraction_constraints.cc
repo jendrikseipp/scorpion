@@ -18,7 +18,8 @@ namespace operator_counting {
 PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
     : abstraction_generators(
           opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
-              "abstraction_generators")) {
+              "abstraction_generators")),
+      saturated(opts.get<bool>("saturated")) {
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
@@ -35,15 +36,32 @@ void PhOAbstractionConstraints::initialize_constraints(
     }
     vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     constraint_offset = constraints.size();
-    for (auto &abstraction : abstractions) {
-        constraints.emplace_back(0, infinity);
-        lp::LPConstraint &constraint = constraints.back();
-        for (int op_id : abstraction->get_active_operators()) {
-            assert(utils::in_bounds(op_id, operator_costs));
-            constraint.insert(op_id, operator_costs[op_id]);
+    // TODO: Remove code duplication.
+    if (saturated) {
+        for (auto &abstraction : abstractions) {
+            constraints.emplace_back(0, infinity);
+            lp::LPConstraint &constraint = constraints.back();
+            auto pair = abstraction->compute_goal_distances_and_saturated_costs(operator_costs);
+            vector<int> &h_values = pair.first;
+            vector<int> &saturated_costs = pair.second;
+            for (int op_id : abstraction->get_active_operators()) {
+                assert(utils::in_bounds(op_id, saturated_costs));
+                constraint.insert(op_id, max(0, saturated_costs[op_id]));
+            }
+            h_values_by_abstraction.push_back(move(h_values));
+            abstraction->release_transition_system_memory();
         }
-        h_values_by_abstraction.push_back(abstraction->compute_h_values(operator_costs));
-        abstraction->release_transition_system_memory();
+    } else {
+        for (auto &abstraction : abstractions) {
+            constraints.emplace_back(0, infinity);
+            lp::LPConstraint &constraint = constraints.back();
+            for (int op_id : abstraction->get_active_operators()) {
+                assert(utils::in_bounds(op_id, operator_costs));
+                constraint.insert(op_id, operator_costs[op_id]);
+            }
+            h_values_by_abstraction.push_back(abstraction->compute_h_values(operator_costs));
+            abstraction->release_transition_system_memory();
+        }
     }
 }
 
@@ -75,6 +93,11 @@ static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
         "abstraction_generators",
         "abstraction generation methods",
         "[cartesian()]");
+
+    parser.add_option<bool>(
+        "saturated",
+        "use saturated instead of full operator costs in constraints",
+        "false");
 
     Options opts = parser.parse();
     if (parser.dry_run())

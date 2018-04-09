@@ -18,6 +18,7 @@ class AbstractionGenerator;
 namespace operator_counting {
 class PhOAbstractionConstraints : public ConstraintGenerator {
     const std::vector<std::shared_ptr<cost_saturation::AbstractionGenerator>> abstraction_generators;
+    const bool saturated;
 
     cost_saturation::Abstractions abstractions;
     std::vector<std::vector<int>> h_values_by_abstraction;
