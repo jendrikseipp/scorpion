@@ -29,11 +29,8 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     utils::Timer timer;
 
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    int num_operators = task_proxy.get_operators().size();
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
         h_values.push_back(abstraction->compute_h_values(costs));
-        looping_operators.push_back(
-            convert_to_bitvector(abstraction->get_looping_operators(), num_operators));
     }
 
     generate_lp();
@@ -171,10 +168,12 @@ void OptimalCostPartitioningHeuristic::add_abstraction_variables(
     }
 
     int num_operators = task_proxy.get_operators().size();
+    vector<bool> looping_operators = convert_to_bitvector(
+        abstraction.get_looping_operators(), num_operators);
     operator_cost_variables.emplace_back(num_operators);
     for (int op_id = 0; op_id < num_operators; ++op_id) {
         operator_cost_variables[id][op_id] = lp_variables.size();
-        double lower_bound = looping_operators[id][op_id] ? 0. : default_lower_bound;
+        double lower_bound = looping_operators[op_id] ? 0. : default_lower_bound;
         lp_variables.emplace_back(lower_bound, upper_bound, 0.);
     }
 }

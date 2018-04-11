@@ -7,8 +7,6 @@
 
 #include "../lp/lp_solver.h"
 
-// TODO: Don't store looping operators.
-
 namespace cost_saturation {
 /*
   Compute an optimal cost partitioning over abstraction heuristics.
@@ -42,7 +40,6 @@ class OptimalCostPartitioningHeuristic : public Heuristic {
     std::vector<std::vector<int>> operator_cost_variables;
 
     std::vector<std::vector<int>> h_values;
-    std::vector<std::vector<bool>> looping_operators;
 
     /*
       Cache the variables corresponding to the current state in all
