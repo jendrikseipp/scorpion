@@ -296,7 +296,7 @@ void OptimalCostPartitioningHeuristicOld::add_abstraction_constraints(
 }
 
 void OptimalCostPartitioningHeuristicOld::add_action_cost_constraints(vector<MatrixEntry> &matrix_entries,
-                                                                   vector<double> &constraint_upper_bounds) {
+                                                                      vector<double> &constraint_upper_bounds) {
     //  * For a in actions
     //        0 <= sum_{p in PDBs} action_cost[p][a] <= a.cost
     for (OperatorProxy op : task_proxy.get_operators()) {

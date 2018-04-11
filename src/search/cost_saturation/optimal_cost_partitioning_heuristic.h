@@ -7,44 +7,52 @@
 
 #include "../lp/lp_solver.h"
 
-// TODO: Update comments.
-// TODO: Add negative_costs parameter.
+// TODO: Don't store looping operators.
 
 namespace cost_saturation {
-class Abstraction;
-
+/*
+  Compute an optimal cost partitioning over abstraction heuristics.
+*/
 class OptimalCostPartitioningHeuristic : public Heuristic {
     const Abstractions abstractions;
     lp::LPSolver lp_solver;
     const bool allow_negative_costs;
 
-    // Column indices for heuristic variables indexed by PDB id.
-    // The variable with id heuristic_variables[p] encodes the shortest distance
-    // of the current abstract state to its nearest abstract goal state in pdb p
-    // using the cost partitioning.
-    std::vector<int> heuristic_variables;
+    /*
+      Column indices for abstraction variables indexed by abstraction id.
+      Variable abstraction_variables[A] encodes the shortest distance of the
+      current abstract state to its nearest abstract goal state in abstraction
+      A using the cost partitioning.
+    */
+    std::vector<int> abstraction_variables;
 
-    // Column indices for distance variables indexed by PDB id and abstract state id.
-    // The variable with id distance_variables[p][s] encodes the distance of abstract
-    // state s in pdb p from the current abstract state using the cost partitioning.
+    /*
+      Column indices for distance variables indexed by abstraction id and
+      abstract state id. Variable distance_variables[A][s] encodes the distance
+      of abstract state s in abstraction A from the current abstract state
+      using the cost partitioning.
+    */
     std::vector<std::vector<int>> distance_variables;
 
-    // Column indices for action cost variables indexed by PDB id and operator id.
-    // The variable with id action_cost_variables[p][a] encodes cost action a should
-    // have in pdb p.
-    std::vector<std::vector<int>> action_cost_variables;
+    /*
+      Column indices for operator cost variables indexed by abstraction id and
+      operator id. Variable operator_cost_variables[A][o] encodes the cost of
+      operator o in abstraction A.
+    */
+    std::vector<std::vector<int>> operator_cost_variables;
 
     std::vector<std::vector<int>> h_values;
     std::vector<std::vector<bool>> looping_operators;
 
-    // Cache the variables corresponding to the current state in all pdbs.
-    // This makes it easier to reset the bounds in each step.
+    /*
+      Cache the variables corresponding to the current state in all
+      abstractions. This makes it easier to reset the bounds for each
+      evaluation.
+    */
     std::vector<int> current_abstract_state_vars;
 
-    bool debug;
-
     void generate_lp();
-    void introduce_abstraction_variables(
+    void add_abstraction_variables(
         const Abstraction &abstraction,
         int abstraction_id,
         std::vector<lp::LPVariable> &lp_variables);
@@ -52,7 +60,8 @@ class OptimalCostPartitioningHeuristic : public Heuristic {
         const Abstraction &abstraction,
         int abstraction_id,
         std::vector<lp::LPConstraint> &lp_constraints);
-    void add_action_cost_constraints(std::vector<lp::LPConstraint> &lp_constraints);
+    void add_operator_cost_constraints(
+        std::vector<lp::LPConstraint> &lp_constraints);
     void release_memory();
 
 protected:
