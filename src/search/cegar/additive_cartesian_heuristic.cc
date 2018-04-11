@@ -10,7 +10,6 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
-#include "../lp/lp_solver.h"
 #include "../task_utils/sampling.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
@@ -206,7 +205,6 @@ static Heuristic *_parse(OptionParser &parser) {
     cp_types.push_back("SATURATED_MAX");
     parser.add_enum_option(
         "cost_partitioning", cp_types, "cost partitioning method", "SATURATED");
-    lp::add_lp_solver_option_to_parser(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",
