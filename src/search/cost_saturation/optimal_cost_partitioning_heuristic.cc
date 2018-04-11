@@ -25,7 +25,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
       abstractions(generate_abstractions(
                        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"))),
       lp_solver(lp::LPSolverType(opts.get_enum("lpsolver"))),
-      allow_negative_costs(true),
+      allow_negative_costs(opts.get<bool>("allow_negative_costs")),
       debug(false) {
     utils::Timer timer;
 
@@ -240,6 +240,10 @@ static Heuristic *_parse(OptionParser &parser) {
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
     lp::add_lp_solver_option_to_parser(parser);
+    parser.add_option<bool>(
+        "allow_negative_costs",
+        "use general instead of non-negative cost partitioning",
+        "true");
 
     Options opts = parser.parse();
     if (parser.help_mode())
