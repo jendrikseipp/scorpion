@@ -596,7 +596,6 @@ fast_downward_plugin(
         cost_saturation/explicit_projection_factory
         cost_saturation/max_heuristic
         cost_saturation/optimal_cost_partitioning_heuristic
-        cost_saturation/optimal_cost_partitioning_heuristic_old
         cost_saturation/order_generator_lookahead
         cost_saturation/order_optimizer
         cost_saturation/projection
