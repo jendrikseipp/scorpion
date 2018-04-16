@@ -2,6 +2,8 @@
 
 #include "../utils/collections.h"
 
+#include <cassert>
+
 using namespace std;
 
 namespace cost_saturation {
@@ -20,6 +22,16 @@ pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated
     vector<int> saturated_costs = compute_saturated_costs(
         h_values, num_operators, use_general_costs);
     return make_pair(move(h_values), move(saturated_costs));
+}
+
+const std::vector<int> &Abstraction::get_active_operators() const {
+    assert(has_transition_system);
+    return active_operators;
+}
+
+const std::vector<int> &Abstraction::get_looping_operators() const {
+    assert(has_transition_system);
+    return looping_operators;
 }
 
 const vector<int> &Abstraction::get_goal_states() const {
