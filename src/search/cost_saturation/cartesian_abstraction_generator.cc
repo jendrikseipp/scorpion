@@ -47,6 +47,9 @@ static unique_ptr<Abstraction> convert_abstraction(
             backward_graph[target].emplace_back(transition.op_id, src);
         }
     }
+    for (vector<Successor> &succesors : backward_graph) {
+        succesors.shrink_to_fit();
+    }
 
     // Store self-loop info.
     vector<int> looping_operators;
@@ -57,9 +60,11 @@ static unique_ptr<Abstraction> convert_abstraction(
             looping_operators.push_back(op_id);
         }
     }
+    looping_operators.shrink_to_fit();
 
     // Store goals.
     vector<int> goal_states;
+    goal_states.reserve(cartesian_abstraction.get_goals().size());
     for (const cegar::AbstractState *goal : cartesian_abstraction.get_goals()) {
         goal_states.push_back(goal->get_node()->get_state_id());
     }
