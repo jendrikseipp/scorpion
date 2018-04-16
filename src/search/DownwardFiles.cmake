@@ -584,7 +584,7 @@ fast_downward_plugin(
     SOURCES
         cost_saturation/abstraction
         cost_saturation/abstraction_generator
-        cost_saturation/canonical_heuristic
+        #cost_saturation/canonical_heuristic
         cost_saturation/cartesian_abstraction_generator
         cost_saturation/cost_partitioned_heuristic
         cost_saturation/cost_partitioning_collection_generator
@@ -594,20 +594,20 @@ fast_downward_plugin(
         cost_saturation/diversifier
         cost_saturation/explicit_abstraction
         cost_saturation/explicit_projection_factory
-        cost_saturation/max_heuristic
-        cost_saturation/optimal_cost_partitioning_heuristic
-        cost_saturation/order_generator_lookahead
+        #cost_saturation/max_heuristic
+        #cost_saturation/optimal_cost_partitioning_heuristic
+        #cost_saturation/order_generator_lookahead
         cost_saturation/order_optimizer
         cost_saturation/projection
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
-        cost_saturation/saturated_cost_partitioning_online_heuristic
+        #cost_saturation/saturated_cost_partitioning_online_heuristic
         cost_saturation/scoring_functions
         cost_saturation/types.h
-        cost_saturation/uniform_cost_partitioning_heuristic
+        #cost_saturation/uniform_cost_partitioning_heuristic
         cost_saturation/utils
-        cost_saturation/zero_one_cost_partitioning_heuristic
-    DEPENDS CEGAR LP_SOLVER PDBS
+        #cost_saturation/zero_one_cost_partitioning_heuristic
+    DEPENDS CEGAR PDBS #LP_SOLVER
 )
 
 fast_downward_plugin(
