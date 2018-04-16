@@ -367,8 +367,8 @@ int Projection::get_num_states() const {
     return num_states;
 }
 
-void Projection::release_transition_system_memory() {
-    Abstraction::release_transition_system_memory();
+void Projection::remove_transition_system() {
+    Abstraction::remove_transition_system();
     utils::release_vector_memory(abstract_operators);
     match_tree = nullptr;
 }

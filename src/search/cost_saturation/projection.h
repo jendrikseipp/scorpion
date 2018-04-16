@@ -108,7 +108,7 @@ public:
 
     virtual int get_num_states() const override;
 
-    virtual void release_transition_system_memory() override;
+    virtual void remove_transition_system() override;
 
     virtual void dump() const override;
 };

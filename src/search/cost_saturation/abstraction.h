@@ -70,7 +70,7 @@ public:
 
     const std::vector<int> &get_goal_states() const;
 
-    virtual void release_transition_system_memory();
+    virtual void remove_transition_system();
 
     virtual void dump() const = 0;
 };

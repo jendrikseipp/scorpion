@@ -64,7 +64,7 @@ public:
 
     virtual int get_abstract_state_id(const State &concrete_state) const override;
 
-    virtual void release_transition_system_memory() override;
+    virtual void remove_transition_system() override;
 
     virtual void dump() const override;
 };

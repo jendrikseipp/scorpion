@@ -158,8 +158,8 @@ int ExplicitAbstraction::get_abstract_state_id(const State &concrete_state) cons
     return abstraction_function(concrete_state);
 }
 
-void ExplicitAbstraction::release_transition_system_memory() {
-    Abstraction::release_transition_system_memory();
+void ExplicitAbstraction::remove_transition_system() {
+    Abstraction::remove_transition_system();
     utils::release_vector_memory(backward_graph);
 }
 

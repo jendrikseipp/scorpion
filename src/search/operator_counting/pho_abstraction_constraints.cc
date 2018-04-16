@@ -50,7 +50,7 @@ void PhOAbstractionConstraints::initialize_constraints(
                 }
             }
             h_values_by_abstraction.push_back(move(h_values));
-            abstraction->release_transition_system_memory();
+            abstraction->remove_transition_system();
         }
     } else {
         for (auto &abstraction : abstractions) {
@@ -61,7 +61,7 @@ void PhOAbstractionConstraints::initialize_constraints(
                 constraint.insert(op_id, operator_costs[op_id]);
             }
             h_values_by_abstraction.push_back(abstraction->compute_h_values(operator_costs));
-            abstraction->release_transition_system_memory();
+            abstraction->remove_transition_system();
         }
     }
 }

@@ -73,7 +73,7 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
     }
     for (auto &abstraction : abstractions) {
         if (abstraction) {
-            abstraction->release_transition_system_memory();
+            abstraction->remove_transition_system();
         }
     }
 }

@@ -26,7 +26,7 @@ const vector<int> &Abstraction::get_goal_states() const {
     return goal_states;
 }
 
-void Abstraction::release_transition_system_memory() {
+void Abstraction::remove_transition_system() {
     assert(has_transition_system);
     utils::release_vector_memory(active_operators);
     utils::release_vector_memory(looping_operators);
