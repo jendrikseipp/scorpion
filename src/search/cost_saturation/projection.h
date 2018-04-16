@@ -71,7 +71,7 @@ class Projection : public Abstraction {
 
     std::vector<int> compute_distances(
         const std::vector<int> &costs,
-        std::vector<ExplicitTransition> *transitions = nullptr) const;
+        std::vector<Transition> *transitions = nullptr) const;
 
     /*
       For a given abstract state (given as index), the according values
@@ -104,7 +104,7 @@ public:
     virtual std::vector<int> compute_h_values(
         const std::vector<int> &costs) const override;
 
-    virtual std::vector<ExplicitTransition> get_transitions() const override;
+    virtual std::vector<Transition> get_transitions() const override;
 
     virtual int get_num_states() const override;
 

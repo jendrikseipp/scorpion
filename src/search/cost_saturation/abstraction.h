@@ -7,12 +7,12 @@
 class State;
 
 namespace cost_saturation {
-struct ExplicitTransition {
+struct Transition {
     int src;
     int op;
     int target;
 
-    ExplicitTransition(int src, int op, int target)
+    Transition(int src, int op, int target)
         : src(src),
           op(op),
           target(target) {
@@ -64,7 +64,7 @@ public:
         return looping_operators;
     }
 
-    virtual std::vector<ExplicitTransition> get_transitions() const = 0;
+    virtual std::vector<Transition> get_transitions() const = 0;
 
     virtual int get_num_states() const = 0;
 

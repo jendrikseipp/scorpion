@@ -213,7 +213,7 @@ void Projection::build_abstract_operators(
 }
 
 vector<int> Projection::compute_distances(
-    const vector<int> &costs, vector<ExplicitTransition> *transitions) const {
+    const vector<int> &costs, vector<Transition> *transitions) const {
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
@@ -355,8 +355,8 @@ vector<int> Projection::compute_h_values(const vector<int> &costs) const {
     return compute_distances(costs);
 }
 
-vector<ExplicitTransition> Projection::get_transitions() const {
-    vector<ExplicitTransition> transitions;
+vector<Transition> Projection::get_transitions() const {
+    vector<Transition> transitions;
     // We can use an arbitrary cost function for computing the transitions.
     vector<int> unit_costs(num_operators, 1);
     compute_distances(unit_costs, &transitions);

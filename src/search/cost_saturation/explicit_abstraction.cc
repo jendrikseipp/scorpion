@@ -97,8 +97,8 @@ vector<int> ExplicitAbstraction::compute_h_values(const vector<int> &costs) cons
     return goal_distances;
 }
 
-vector<ExplicitTransition> ExplicitAbstraction::get_transitions() const {
-    vector<ExplicitTransition> transitions;
+vector<Transition> ExplicitAbstraction::get_transitions() const {
+    vector<Transition> transitions;
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
         for (const Successor &transition : backward_graph[target]) {

@@ -186,7 +186,7 @@ void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
       distance[A][s''] <= distance[A][s'] + operator_cost[A][o] which equals
       0 <= distance[A][s'] + operator_cost[A][o] - distance[A][s''] <= \infty
     */
-    for (const ExplicitTransition &transition : abstraction.get_transitions()) {
+    for (const Transition &transition : abstraction.get_transitions()) {
         int from_col = distance_variables[id][transition.src];
         int op_col = operator_cost_variables[id][transition.op];
         int to_col = distance_variables[id][transition.target];
