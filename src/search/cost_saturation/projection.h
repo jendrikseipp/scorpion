@@ -93,7 +93,9 @@ class Projection : public Abstraction {
 
 protected:
     virtual std::vector<int> compute_saturated_costs(
-        const std::vector<int> &h_values) const override;
+        const std::vector<int> &h_values,
+        int num_operators,
+        bool use_general_costs) const override;
 
 public:
     Projection(const TaskProxy &task_proxy, const pdbs::Pattern &pattern);

@@ -94,7 +94,6 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
       use_add_after_delete_semantics(use_add_after_delete_semantics),
       pattern(pattern),
       pattern_size(pattern.size()),
-      num_operators(task_proxy.get_operators().size()),
       relevant_preconditions(
           get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)) {
     assert(utils::is_sorted_unique(pattern));
@@ -278,6 +277,7 @@ void ExplicitProjectionFactory::add_transitions(
 }
 
 void ExplicitProjectionFactory::compute_transitions() {
+    int num_operators = task_proxy.get_operators().size();
     vector<vector<ProjectedEffect>> effects;
     effects.reserve(num_operators);
     for (OperatorProxy op : task_proxy.get_operators()) {
@@ -317,7 +317,6 @@ unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {
         StateMap(pattern, move(hash_multipliers)),
         move(backward_graph),
         looping_operators.pop_as_vector(),
-        move(goal_states),
-        num_operators);
+        move(goal_states));
 }
 }

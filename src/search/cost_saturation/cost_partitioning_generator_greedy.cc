@@ -114,7 +114,8 @@ Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
             assert(utils::in_bounds(abs_id, local_state_ids));
             int local_state_id = local_state_ids[abs_id];
             Abstraction &abstraction = *abstractions[abs_id];
-            auto pair = abstraction.compute_goal_distances_and_saturated_costs(remaining_costs);
+            auto pair = abstraction.compute_goal_distances_and_saturated_costs(
+                remaining_costs, true);
             vector<int> &h_values = pair.first;
             vector<int> &saturated_costs = pair.second;
             assert(utils::in_bounds(local_state_id, h_values));
@@ -166,7 +167,8 @@ void CostPartitioningGeneratorGreedy::initialize(
 
     vector<vector<int>> saturated_costs_by_abstraction;
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-        auto pair = abstraction->compute_goal_distances_and_saturated_costs(costs);
+        auto pair = abstraction->compute_goal_distances_and_saturated_costs(
+            costs, true);
         vector<int> &h_values = pair.first;
         vector<int> &saturated_costs = pair.second;
         h_values_by_abstraction.push_back(move(h_values));

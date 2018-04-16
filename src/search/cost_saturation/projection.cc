@@ -16,8 +16,7 @@ using namespace std;
 namespace cost_saturation {
 Projection::Projection(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern)
-    : Abstraction(task_proxy.get_operators().size()),
-      task_proxy(task_proxy),
+    : task_proxy(task_proxy),
       pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
 
@@ -312,7 +311,9 @@ bool Projection::operator_induces_loop(const OperatorProxy &op) const {
 }
 
 vector<int> Projection::compute_saturated_costs(
-    const vector<int> &h_values) const {
+    const vector<int> &h_values,
+    int num_operators,
+    bool use_general_costs) const {
     const int min_cost = use_general_costs ? -INF : 0;
 
     vector<int> saturated_costs(num_operators, min_cost);
@@ -358,6 +359,7 @@ vector<int> Projection::compute_h_values(const vector<int> &costs) const {
 vector<Transition> Projection::get_transitions() const {
     vector<Transition> transitions;
     // We can use an arbitrary cost function for computing the transitions.
+    int num_operators = task_proxy.get_operators().size();
     vector<int> unit_costs(num_operators, 1);
     compute_distances(unit_costs, &transitions);
     return transitions;

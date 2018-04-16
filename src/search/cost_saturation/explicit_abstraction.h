@@ -45,15 +45,16 @@ class ExplicitAbstraction : public Abstraction {
 
 protected:
     virtual std::vector<int> compute_saturated_costs(
-        const std::vector<int> &h_values) const override;
+        const std::vector<int> &h_values,
+        int num_operators,
+        bool use_general_costs) const override;
 
 public:
     ExplicitAbstraction(
         AbstractionFunction function,
         std::vector<std::vector<Successor>> &&backward_graph,
         std::vector<int> &&looping_operators,
-        std::vector<int> &&goal_states,
-        int num_operators);
+        std::vector<int> &&goal_states);
 
     virtual std::vector<int> compute_h_values(
         const std::vector<int> &costs) const override;

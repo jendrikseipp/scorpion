@@ -32,15 +32,13 @@ protected:
     // Operators inducing self-loops. May overlap with active operators.
     std::vector<int> looping_operators;
 
-    const int num_operators;
-
-    const bool use_general_costs;
-
     virtual std::vector<int> compute_saturated_costs(
-        const std::vector<int> &h_values) const = 0;
+        const std::vector<int> &h_values,
+        int num_operators,
+        bool use_general_costs) const = 0;
 
 public:
-    explicit Abstraction(int num_operators);
+    Abstraction();
     virtual ~Abstraction();
 
     Abstraction(const Abstraction &) = delete;
@@ -52,7 +50,7 @@ public:
 
     std::pair<std::vector<int>, std::vector<int>>
     compute_goal_distances_and_saturated_costs(
-        const std::vector<int> &costs) const;
+        const std::vector<int> &costs, bool use_general_costs) const;
 
     const std::vector<int> &get_active_operators() const {
         assert(has_transition_system);

@@ -26,7 +26,6 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
 }
 
 static unique_ptr<Abstraction> convert_abstraction(
-    const TaskProxy &task_proxy,
     const cegar::Abstraction &cartesian_abstraction) {
     int num_states = cartesian_abstraction.get_num_states();
     vector<vector<Successor>> backward_graph(num_states);
@@ -77,8 +76,7 @@ static unique_ptr<Abstraction> convert_abstraction(
         state_map,
         move(backward_graph),
         move(looping_operators),
-        move(goal_states),
-        task_proxy.get_operators().size());
+        move(goal_states));
 }
 
 Abstractions CartesianAbstractionGenerator::generate_abstractions(
@@ -114,8 +112,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
 
     log << "Convert to backward-graph abstractions" << endl;
     for (auto &cartesian_abstraction : cartesian_abstractions) {
-        abstractions.push_back(
-            convert_abstraction(task_proxy, *cartesian_abstraction));
+        abstractions.push_back(convert_abstraction(*cartesian_abstraction));
         cartesian_abstraction = nullptr;
     }
     log << "Done converting abstractions" << endl;
