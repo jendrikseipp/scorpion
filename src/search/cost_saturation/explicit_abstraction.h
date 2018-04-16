@@ -15,31 +15,31 @@ class State;
 namespace cost_saturation {
 using AbstractionFunction = std::function<int (const State &)>;
 
-struct Transition {
+struct Successor {
     int op;
     int state;
 
-    Transition(int op, int state)
+    Successor(int op, int state)
         : op(op),
           state(state) {
     }
 
-    bool operator<(const Transition &other) const {
+    bool operator<(const Successor &other) const {
         return std::make_pair(op, state) < std::make_pair(other.op, other.state);
     }
 
-    bool operator>=(const Transition &other) const {
+    bool operator>=(const Successor &other) const {
         return !(*this < other);
     }
 };
 
-std::ostream &operator<<(std::ostream &os, const Transition &transition);
+std::ostream &operator<<(std::ostream &os, const Successor &transition);
 
 class ExplicitAbstraction : public Abstraction {
     const AbstractionFunction abstraction_function;
 
     // State-changing transitions.
-    std::vector<std::vector<Transition>> backward_graph;
+    std::vector<std::vector<Successor>> backward_graph;
 
     mutable priority_queues::AdaptiveQueue<int> queue;
 
@@ -50,7 +50,7 @@ protected:
 public:
     ExplicitAbstraction(
         AbstractionFunction function,
-        std::vector<std::vector<Transition>> &&backward_graph,
+        std::vector<std::vector<Successor>> &&backward_graph,
         std::vector<int> &&looping_operators,
         std::vector<int> &&goal_states,
         int num_operators);

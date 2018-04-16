@@ -269,7 +269,7 @@ void ExplicitProjectionFactory::add_transitions(
         } else {
             backward_graph[dest_rank].emplace_back(op_id, src_rank);
 #ifndef NDEBUG
-            vector<Transition> copied_transitions = backward_graph[dest_rank];
+            vector<Successor> copied_transitions = backward_graph[dest_rank];
             sort(copied_transitions.begin(), copied_transitions.end());
             assert(utils::is_sorted_unique(copied_transitions));
 #endif

@@ -25,7 +25,7 @@ class ExplicitProjectionFactory {
     std::vector<int> variable_to_pattern_index;
     std::vector<int> domain_sizes;
 
-    std::vector<std::vector<Transition>> backward_graph;
+    std::vector<std::vector<Successor>> backward_graph;
     ordered_set::OrderedSet<int> looping_operators;
     std::vector<int> goal_states;
 

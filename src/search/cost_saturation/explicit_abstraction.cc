@@ -10,7 +10,7 @@ using namespace std;
 
 namespace cost_saturation {
 static void dijkstra_search(
-    const vector<vector<Transition>> &graph,
+    const vector<vector<Successor>> &graph,
     priority_queues::AdaptiveQueue<int> &queue,
     vector<int> &distances,
     const vector<int> &costs) {
@@ -23,7 +23,7 @@ static void dijkstra_search(
         if (state_distance < distance) {
             continue;
         }
-        for (const Transition &transition : graph[state]) {
+        for (const Successor &transition : graph[state]) {
             int successor = transition.state;
             int op = transition.op;
             assert(utils::in_bounds(op, costs));
@@ -39,17 +39,17 @@ static void dijkstra_search(
     }
 }
 
-ostream &operator<<(ostream &os, const Transition &transition) {
+ostream &operator<<(ostream &os, const Successor &transition) {
     os << "(" << transition.op << ", " << transition.state << ")";
     return os;
 }
 
 static vector<int> get_active_operators_from_graph(
-    const vector<vector<Transition>> &backward_graph) {
+    const vector<vector<Successor>> &backward_graph) {
     ordered_set::OrderedSet<int> active_operators;
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
-        for (const Transition &transition : backward_graph[target]) {
+        for (const Successor &transition : backward_graph[target]) {
             int op_id = transition.op;
             assert(transition.state != target);
             active_operators.insert(op_id);
@@ -60,7 +60,7 @@ static vector<int> get_active_operators_from_graph(
 
 ExplicitAbstraction::ExplicitAbstraction(
     AbstractionFunction function,
-    vector<vector<Transition>> &&backward_graph_,
+    vector<vector<Successor>> &&backward_graph_,
     vector<int> &&looping_operators_,
     vector<int> &&goal_states_,
     int num_operators)
@@ -79,7 +79,7 @@ ExplicitAbstraction::ExplicitAbstraction(
 
 #ifndef NDEBUG
     for (int target = 0; target < get_num_states(); ++target) {
-        vector<Transition> copied_transitions = backward_graph[target];
+        vector<Successor> copied_transitions = backward_graph[target];
         sort(copied_transitions.begin(), copied_transitions.end());
         assert(utils::is_sorted_unique(copied_transitions));
     }
@@ -101,7 +101,7 @@ vector<ExplicitTransition> ExplicitAbstraction::get_transitions() const {
     vector<ExplicitTransition> transitions;
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
-        for (const Transition &transition : backward_graph[target]) {
+        for (const Successor &transition : backward_graph[target]) {
             int op_id = transition.op;
             int src = transition.state;
             assert(src != target);
@@ -133,7 +133,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
             continue;
         }
 
-        for (const Transition &transition : backward_graph[target]) {
+        for (const Successor &transition : backward_graph[target]) {
             int op_id = transition.op;
             int src = transition.state;
             assert(src != target);

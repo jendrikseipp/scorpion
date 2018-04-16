@@ -29,7 +29,7 @@ static unique_ptr<Abstraction> convert_abstraction(
     const TaskProxy &task_proxy,
     const cegar::Abstraction &cartesian_abstraction) {
     int num_states = cartesian_abstraction.get_num_states();
-    vector<vector<Transition>> backward_graph(num_states);
+    vector<vector<Successor>> backward_graph(num_states);
 
     // Store non-looping transitions.
     for (cegar::AbstractState *state : cartesian_abstraction.get_states()) {
