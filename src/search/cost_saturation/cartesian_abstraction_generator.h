@@ -19,6 +19,7 @@ namespace cost_saturation {
 class CartesianAbstractionGenerator : public AbstractionGenerator {
     const std::vector<std::shared_ptr<cegar::SubtaskGenerator>> subtask_generators;
     const int max_transitions;
+    const bool exclude_abstractions_with_zero_init_h;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
 public:

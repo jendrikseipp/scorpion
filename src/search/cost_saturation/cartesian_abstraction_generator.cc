@@ -22,6 +22,8 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     : subtask_generators(
           opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
       max_transitions(opts.get<int>("max_transitions")),
+      exclude_abstractions_with_zero_init_h(
+          opts.get<bool>("exclude_abstractions_with_zero_init_h")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
@@ -94,8 +96,12 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
 
     log << "Generate CEGAR abstractions" << endl;
 
+    /* Experiments on IPC benchmarks showed that it's better to limit the number
+       of transitions than the time (non-deterministic) or the number of states
+       (refinement speed varies a lot between instances). */
     const int max_states = INF;
     const double max_time = numeric_limits<double>::infinity();
+    // Has no effect since we compute the cost partitioning(s) later.
     const bool use_general_costs = true;
     const bool exclude_abstractions_with_zero_init_h = true;
     cegar::CostSaturation cost_saturation(
@@ -140,6 +146,10 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         " all abstractions",
         "1000000",
         Bounds("0", "infinity"));
+    parser.add_option<bool>(
+        "exclude_abstractions_with_zero_init_h",
+        "ignore abstraction heuristics with h(s_0) = 0",
+        "true");
     parser.add_option<bool>(
         "debug",
         "print debugging info",
