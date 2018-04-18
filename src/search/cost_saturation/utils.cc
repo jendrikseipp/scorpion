@@ -4,7 +4,7 @@
 #include "abstraction_generator.h"
 #include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "cost_partitioning_generator_greedy.h"
 
 #include "../task_proxy.h"
@@ -41,7 +41,7 @@ Heuristic *get_max_cp_heuristic(
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
-    return new CostPartitioningHeuristic(
+    return new MaxCostPartitioningHeuristic(
         opts,
         move(abstractions),
         get_cp_collection_generator_from_options(opts).get_cost_partitionings(

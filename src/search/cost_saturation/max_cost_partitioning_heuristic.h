@@ -1,5 +1,5 @@
-#ifndef COST_SATURATION_COST_PARTITIONING_HEURISTIC_H
-#define COST_SATURATION_COST_PARTITIONING_HEURISTIC_H
+#ifndef COST_SATURATION_MAX_COST_PARTITIONING_HEURISTIC_H
+#define COST_SATURATION_MAX_COST_PARTITIONING_HEURISTIC_H
 
 #include "types.h"
 
@@ -16,7 +16,7 @@ namespace cost_saturation {
 class CostPartitionedHeuristic;
 class CostPartitioningCollectionGenerator;
 
-class CostPartitioningHeuristic : public Heuristic {
+class MaxCostPartitioningHeuristic : public Heuristic {
     Abstractions abstractions;
     const std::vector<CostPartitionedHeuristic> cp_heuristics;
     const bool debug;
@@ -30,11 +30,11 @@ protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
 
 public:
-    CostPartitioningHeuristic(
+    MaxCostPartitioningHeuristic(
         const options::Options &opts,
         Abstractions &&abstractions,
         std::vector<CostPartitionedHeuristic> &&cp_heuristics);
-    virtual ~CostPartitioningHeuristic() override;
+    virtual ~MaxCostPartitioningHeuristic() override;
 
     virtual void print_statistics() const override;
 };

@@ -590,10 +590,10 @@ fast_downward_plugin(
         cost_saturation/cost_partitioning_collection_generator
         cost_saturation/cost_partitioning_generator
         cost_saturation/cost_partitioning_generator_greedy
-        cost_saturation/cost_partitioning_heuristic
         cost_saturation/diversifier
         cost_saturation/explicit_abstraction
         cost_saturation/explicit_projection_factory
+        cost_saturation/max_cost_partitioning_heuristic
         #cost_saturation/max_heuristic
         #cost_saturation/optimal_cost_partitioning_heuristic
         #cost_saturation/order_generator_lookahead

@@ -1,4 +1,4 @@
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
 #include "cost_partitioned_heuristic.h"
@@ -18,7 +18,7 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningGenerator;
 
-CostPartitioningHeuristic::CostPartitioningHeuristic(
+MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     const Options &opts,
     Abstractions &&abstractions_,
     vector<CostPartitionedHeuristic> &&cp_heuristics_)
@@ -78,15 +78,15 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
     }
 }
 
-CostPartitioningHeuristic::~CostPartitioningHeuristic() {
+MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {
 }
 
-int CostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
+int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
     return compute_heuristic(state);
 }
 
-int CostPartitioningHeuristic::compute_heuristic(const State &state) {
+int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) {
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, local_state_ids, num_best_order);
@@ -96,7 +96,7 @@ int CostPartitioningHeuristic::compute_heuristic(const State &state) {
     return max_h;
 }
 
-void CostPartitioningHeuristic::print_statistics() const {
+void MaxCostPartitioningHeuristic::print_statistics() const {
     int num_orders = num_best_order.size();
     int num_probably_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
     int num_probably_useful = num_orders - num_probably_superfluous;

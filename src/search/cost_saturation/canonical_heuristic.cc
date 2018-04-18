@@ -2,7 +2,7 @@
 
 #include "abstraction.h"
 #include "abstraction_generator.h"
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"

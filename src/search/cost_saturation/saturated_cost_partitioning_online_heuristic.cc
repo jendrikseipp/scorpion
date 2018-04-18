@@ -4,7 +4,7 @@
 #include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
 #include "cost_partitioning_generator.h"
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
