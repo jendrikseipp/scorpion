@@ -152,7 +152,7 @@ CostPartitionedHeuristic compute_saturated_cost_partitioning(
     for (int pos : order) {
         const Abstraction &abstraction = *abstractions[pos];
         auto pair = abstraction.compute_goal_distances_and_saturated_costs(
-            remaining_costs, true);
+            remaining_costs);
         vector<int> &h_values = pair.first;
         vector<int> &saturated_costs = pair.second;
         if (debug) {
