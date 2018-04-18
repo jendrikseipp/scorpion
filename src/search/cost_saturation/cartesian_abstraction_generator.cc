@@ -103,7 +103,6 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     const double max_time = numeric_limits<double>::infinity();
     // Has no effect since we compute the cost partitioning(s) later.
     const bool use_general_costs = true;
-    const bool exclude_abstractions_with_zero_init_h = true;
     cegar::CostSaturation cost_saturation(
         cegar::CostPartitioningType::SATURATED_POSTHOC,
         subtask_generators,
