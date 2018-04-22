@@ -3,12 +3,15 @@
 
 #include "abstraction.h"
 
+#include "../task_proxy.h"
+
 #include "../algorithms/priority_queues.h"
-#include "../pdbs/pattern_database.h"
+#include "../pdbs/types.h"
 
 #include <vector>
 
 namespace pdbs {
+class AbstractOperator;
 class MatchTree;
 }
 

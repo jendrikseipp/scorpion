@@ -7,6 +7,7 @@
 #include "../plugin.h"
 
 #include "../pdbs/dominance_pruning.h"
+#include "../pdbs/pattern_database.h"
 #include "../pdbs/pattern_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"

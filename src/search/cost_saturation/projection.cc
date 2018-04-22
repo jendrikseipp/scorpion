@@ -2,8 +2,8 @@
 
 #include "types.h"
 
-#include "../algorithms/ordered_set.h"
 #include "../pdbs/match_tree.h"
+#include "../pdbs/pattern_database.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -103,7 +103,7 @@ vector<int> Projection::compute_goal_states() const {
         variable_to_index[pattern[i]] = i;
     }
 
-    // compute abstract goal var-val pairs
+    // Compute abstract goal var-val pairs.
     vector<FactPair> abstract_goals;
     for (FactProxy goal : task_proxy.get_goals()) {
         int var_id = goal.get_variable().get_id();
@@ -222,9 +222,10 @@ vector<int> Projection::compute_distances(
         distances[goal] = 0;
     }
 
-    // Dijkstra loop
     // Reuse vector to save allocations.
     vector<const pdbs::AbstractOperator *> applicable_operators;
+
+    // Run Dijkstra loop.
     while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
         int distance = node.first;
