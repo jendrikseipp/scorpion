@@ -17,7 +17,7 @@
 using namespace std;
 
 namespace cost_saturation {
-// Multiply all costs by this factor to avoid using real-values costs.
+// Multiply all costs by this factor to avoid using real-valued costs.
 static const int COST_FACTOR = 1000;
 
 static vector<int> compute_divided_costs(
