@@ -3,12 +3,15 @@
 
 #include "abstraction.h"
 
+#include "../task_proxy.h"
+
 #include "../algorithms/priority_queues.h"
-#include "../pdbs/pattern_database.h"
+#include "../pdbs/types.h"
 
 #include <vector>
 
 namespace pdbs {
+class AbstractOperator;
 class MatchTree;
 }
 
@@ -93,7 +96,9 @@ class Projection : public Abstraction {
 
 protected:
     virtual std::vector<int> compute_saturated_costs(
-        const std::vector<int> &h_values) const override;
+        const std::vector<int> &h_values,
+        int num_operators,
+        bool use_general_costs) const override;
 
 public:
     Projection(const TaskProxy &task_proxy, const pdbs::Pattern &pattern);
@@ -108,7 +113,7 @@ public:
 
     virtual int get_num_states() const override;
 
-    virtual void release_transition_system_memory() override;
+    virtual void remove_transition_system() override;
 
     virtual void dump() const override;
 };

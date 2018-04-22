@@ -3,8 +3,8 @@
 #include "abstraction.h"
 #include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
-#include "cost_partitioning_generator.h"
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
+#include "order_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -21,7 +21,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     Abstractions &&abstractions,
     CPHeuristics &&cp_heuristics)
     : Heuristic(opts),
-      cp_generator(opts.get<shared_ptr<CostPartitioningGenerator>>("orders")),
+      cp_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
       abstractions(move(abstractions)),
       cp_heuristics(move(cp_heuristics)),
       interval(opts.get<int>("interval")),

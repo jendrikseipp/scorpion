@@ -1,7 +1,7 @@
 #include "max_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -18,7 +18,7 @@ MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions &&abstractions)
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : this->abstractions) {
         h_values_by_abstraction.push_back(abstraction->compute_h_values(costs));
-        abstraction->release_transition_system_memory();
+        abstraction->remove_transition_system();
     }
 }
 

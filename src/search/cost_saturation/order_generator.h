@@ -1,5 +1,5 @@
-#ifndef COST_SATURATION_COST_PARTITIONING_GENERATOR_H
-#define COST_SATURATION_COST_PARTITIONING_GENERATOR_H
+#ifndef COST_SATURATION_ORDER_GENERATOR_H
+#define COST_SATURATION_ORDER_GENERATOR_H
 
 #include "types.h"
 
@@ -17,10 +17,10 @@ namespace cost_saturation {
 class Abstraction;
 class CostPartitionedHeuristic;
 
-class CostPartitioningGenerator {
+class OrderGenerator {
 public:
-    CostPartitioningGenerator() = default;
-    virtual ~CostPartitioningGenerator() = default;
+    OrderGenerator() = default;
+    virtual ~OrderGenerator() = default;
 
     virtual void initialize(
         const TaskProxy &task_proxy,

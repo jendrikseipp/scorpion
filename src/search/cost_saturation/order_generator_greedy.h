@@ -1,7 +1,7 @@
-#ifndef COST_SATURATION_COST_PARTITIONING_GENERATOR_GREEDY_H
-#define COST_SATURATION_COST_PARTITIONING_GENERATOR_GREEDY_H
+#ifndef COST_SATURATION_ORDER_GENERATOR_GREEDY_H
+#define COST_SATURATION_ORDER_GENERATOR_GREEDY_H
 
-#include "cost_partitioning_generator.h"
+#include "order_generator.h"
 #include "scoring_functions.h"
 
 namespace utils {
@@ -10,7 +10,7 @@ class RandomNumberGenerator;
 }
 
 namespace cost_saturation {
-class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
+class OrderGeneratorGreedy : public OrderGenerator {
     const bool reverse_order;
     const ScoringFunction scoring_function;
     const bool use_negative_costs;
@@ -37,7 +37,7 @@ class CostPartitioningGeneratorGreedy : public CostPartitioningGenerator {
         std::vector<int> remaining_costs) const;
 
 public:
-    explicit CostPartitioningGeneratorGreedy(const options::Options &opts);
+    explicit OrderGeneratorGreedy(const options::Options &opts);
 
     virtual void initialize(
         const TaskProxy &task_proxy,

@@ -22,11 +22,12 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     : subtask_generators(
           opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
       max_transitions(opts.get<int>("max_transitions")),
+      exclude_abstractions_with_zero_init_h(
+          opts.get<bool>("exclude_abstractions_with_zero_init_h")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
 static unique_ptr<Abstraction> convert_abstraction(
-    const TaskProxy &task_proxy,
     const cegar::Abstraction &cartesian_abstraction) {
     int num_states = cartesian_abstraction.get_num_states();
     vector<vector<Successor>> backward_graph(num_states);
@@ -48,6 +49,9 @@ static unique_ptr<Abstraction> convert_abstraction(
             backward_graph[target].emplace_back(transition.op_id, src);
         }
     }
+    for (vector<Successor> &succesors : backward_graph) {
+        succesors.shrink_to_fit();
+    }
 
     // Store self-loop info.
     vector<int> looping_operators;
@@ -58,9 +62,11 @@ static unique_ptr<Abstraction> convert_abstraction(
             looping_operators.push_back(op_id);
         }
     }
+    looping_operators.shrink_to_fit();
 
     // Store goals.
     vector<int> goal_states;
+    goal_states.reserve(cartesian_abstraction.get_goals().size());
     for (const cegar::AbstractState *goal : cartesian_abstraction.get_goals()) {
         goal_states.push_back(goal->get_node()->get_state_id());
     }
@@ -77,8 +83,7 @@ static unique_ptr<Abstraction> convert_abstraction(
         state_map,
         move(backward_graph),
         move(looping_operators),
-        move(goal_states),
-        task_proxy.get_operators().size());
+        move(goal_states));
 }
 
 Abstractions CartesianAbstractionGenerator::generate_abstractions(
@@ -91,10 +96,13 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
 
     log << "Generate CEGAR abstractions" << endl;
 
+    /* Experiments on IPC benchmarks showed that it's better to limit the number
+       of transitions than the time (non-deterministic) or the number of states
+       (refinement speed varies a lot between instances). */
     const int max_states = INF;
     const double max_time = numeric_limits<double>::infinity();
+    // Has no effect since we compute the cost partitioning(s) later.
     const bool use_general_costs = true;
-    const bool exclude_abstractions_with_zero_init_h = true;
     cegar::CostSaturation cost_saturation(
         cegar::CostPartitioningType::SATURATED_POSTHOC,
         subtask_generators,
@@ -114,8 +122,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
 
     log << "Convert to backward-graph abstractions" << endl;
     for (auto &cartesian_abstraction : cartesian_abstractions) {
-        abstractions.push_back(
-            convert_abstraction(task_proxy, *cartesian_abstraction));
+        abstractions.push_back(convert_abstraction(*cartesian_abstraction));
         cartesian_abstraction = nullptr;
     }
     log << "Done converting abstractions" << endl;
@@ -138,6 +145,10 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         " all abstractions",
         "1000000",
         Bounds("0", "infinity"));
+    parser.add_option<bool>(
+        "exclude_abstractions_with_zero_init_h",
+        "ignore abstraction heuristics with h(s_0) = 0",
+        "true");
     parser.add_option<bool>(
         "debug",
         "print debugging info",

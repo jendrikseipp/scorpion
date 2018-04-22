@@ -17,7 +17,7 @@
 using namespace std;
 
 namespace cost_saturation {
-// Multiply all costs by this factor to avoid using real-values costs.
+// Multiply all costs by this factor to avoid using real-valued costs.
 static const int COST_FACTOR = 1000;
 
 static vector<int> compute_divided_costs(
@@ -113,11 +113,11 @@ static CostPartitionedHeuristic compute_uniform_cost_partitioning(
 
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
     const Options &opts, Abstractions &&abstractions, CPHeuristics &&cp_heuristics)
-    : CostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics)) {
+    : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics)) {
 }
 
 int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    int result = CostPartitioningHeuristic::compute_heuristic(global_state);
+    int result = MaxCostPartitioningHeuristic::compute_heuristic(global_state);
     if (result == DEAD_END) {
         return DEAD_END;
     }

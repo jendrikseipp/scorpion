@@ -1,4 +1,4 @@
-#include "cost_partitioning_generator_greedy.h"
+#include "order_generator_greedy.h"
 
 #include "abstraction.h"
 #include "utils.h"
@@ -21,8 +21,8 @@
 using namespace std;
 
 namespace cost_saturation {
-CostPartitioningGeneratorGreedy::CostPartitioningGeneratorGreedy(const Options &opts)
-    : CostPartitioningGenerator(),
+OrderGeneratorGreedy::OrderGeneratorGreedy(const Options &opts)
+    : OrderGenerator(),
       reverse_order(opts.get<bool>("reverse_order")),
       scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
       use_negative_costs(opts.get<bool>("use_negative_costs")),
@@ -43,7 +43,7 @@ static int compute_used_costs(const vector<int> &saturated_costs, bool use_negat
     return sum;
 }
 
-double CostPartitioningGeneratorGreedy::rate_abstraction(
+double OrderGeneratorGreedy::rate_abstraction(
     const vector<int> &local_state_ids, int abs_id) const {
     assert(utils::in_bounds(abs_id, local_state_ids));
     int local_state_id = local_state_ids[abs_id];
@@ -70,7 +70,7 @@ double CostPartitioningGeneratorGreedy::rate_abstraction(
     return compute_score(h, stolen_costs, scoring_function, use_exp);
 }
 
-Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
+Order OrderGeneratorGreedy::compute_static_greedy_order_for_sample(
     const vector<int> &local_state_ids, bool verbose) const {
     assert(local_state_ids.size() == h_values_by_abstraction.size());
     assert(local_state_ids.size() == used_costs_by_abstraction.size());
@@ -93,7 +93,7 @@ Order CostPartitioningGeneratorGreedy::compute_static_greedy_order_for_sample(
     return order;
 }
 
-Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
+Order OrderGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &local_state_ids,
     vector<int> remaining_costs) const {
@@ -114,7 +114,8 @@ Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
             assert(utils::in_bounds(abs_id, local_state_ids));
             int local_state_id = local_state_ids[abs_id];
             Abstraction &abstraction = *abstractions[abs_id];
-            auto pair = abstraction.compute_goal_distances_and_saturated_costs(remaining_costs);
+            auto pair = abstraction.compute_goal_distances_and_saturated_costs(
+                remaining_costs);
             vector<int> &h_values = pair.first;
             vector<int> &saturated_costs = pair.second;
             assert(utils::in_bounds(local_state_id, h_values));
@@ -152,7 +153,7 @@ Order CostPartitioningGeneratorGreedy::compute_greedy_dynamic_order_for_sample(
     return order;
 }
 
-void CostPartitioningGeneratorGreedy::initialize(
+void OrderGeneratorGreedy::initialize(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs) {
@@ -189,7 +190,7 @@ void CostPartitioningGeneratorGreedy::initialize(
     utils::Log() << "Time for initializing greedy order generator: " << timer << endl;
 }
 
-Order CostPartitioningGeneratorGreedy::get_next_order(
+Order OrderGeneratorGreedy::get_next_order(
     const TaskProxy &,
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &costs,
@@ -224,7 +225,7 @@ Order CostPartitioningGeneratorGreedy::get_next_order(
 }
 
 
-static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser) {
+static shared_ptr<OrderGenerator> _parse_greedy(OptionParser &parser) {
     parser.add_option<bool>(
         "reverse_order",
         "invert initial order",
@@ -247,9 +248,9 @@ static shared_ptr<CostPartitioningGenerator> _parse_greedy(OptionParser &parser)
     if (parser.dry_run())
         return nullptr;
     else
-        return make_shared<CostPartitioningGeneratorGreedy>(opts);
+        return make_shared<OrderGeneratorGreedy>(opts);
 }
 
-static PluginShared<CostPartitioningGenerator> _plugin_greedy(
+static PluginShared<OrderGenerator> _plugin_greedy(
     "greedy", _parse_greedy);
 }

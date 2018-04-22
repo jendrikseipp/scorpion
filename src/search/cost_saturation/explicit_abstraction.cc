@@ -62,10 +62,8 @@ ExplicitAbstraction::ExplicitAbstraction(
     AbstractionFunction function,
     vector<vector<Successor>> &&backward_graph_,
     vector<int> &&looping_operators_,
-    vector<int> &&goal_states_,
-    int num_operators)
-    : Abstraction(num_operators),
-      abstraction_function(function),
+    vector<int> &&goal_states_)
+    : abstraction_function(function),
       backward_graph(move(backward_graph_)) {
     /* We must compute active operators from the backward graph and not by
        inspecting looping_ops and num_operators, since the sets of active and
@@ -112,7 +110,9 @@ vector<Transition> ExplicitAbstraction::get_transitions() const {
 }
 
 vector<int> ExplicitAbstraction::compute_saturated_costs(
-    const vector<int> &h_values) const {
+    const vector<int> &h_values,
+    int num_operators,
+    bool use_general_costs) const {
     const int min_cost = use_general_costs ? -INF : 0;
 
     vector<int> saturated_costs(num_operators, min_cost);
@@ -158,8 +158,8 @@ int ExplicitAbstraction::get_abstract_state_id(const State &concrete_state) cons
     return abstraction_function(concrete_state);
 }
 
-void ExplicitAbstraction::release_transition_system_memory() {
-    Abstraction::release_transition_system_memory();
+void ExplicitAbstraction::remove_transition_system() {
+    Abstraction::remove_transition_system();
     utils::release_vector_memory(backward_graph);
 }
 

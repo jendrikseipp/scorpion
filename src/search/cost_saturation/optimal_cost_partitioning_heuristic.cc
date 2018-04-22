@@ -1,7 +1,7 @@
 #include "optimal_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -142,7 +142,7 @@ void OptimalCostPartitioningHeuristic::generate_lp() {
         Abstraction &abstraction = *abstractions[id];
         add_abstraction_variables(abstraction, id, lp_variables);
         add_abstraction_constraints(abstraction, id, lp_constraints);
-        abstraction.release_transition_system_memory();
+        abstraction.remove_transition_system();
     }
     add_operator_cost_constraints(lp_constraints);
     lp_solver.load_problem(lp::LPObjectiveSense::MAXIMIZE, lp_variables, lp_constraints);

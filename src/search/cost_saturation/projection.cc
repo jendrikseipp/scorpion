@@ -2,8 +2,8 @@
 
 #include "types.h"
 
-#include "../algorithms/ordered_set.h"
 #include "../pdbs/match_tree.h"
+#include "../pdbs/pattern_database.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -16,8 +16,7 @@ using namespace std;
 namespace cost_saturation {
 Projection::Projection(
     const TaskProxy &task_proxy, const pdbs::Pattern &pattern)
-    : Abstraction(task_proxy.get_operators().size()),
-      task_proxy(task_proxy),
+    : task_proxy(task_proxy),
       pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
 
@@ -104,7 +103,7 @@ vector<int> Projection::compute_goal_states() const {
         variable_to_index[pattern[i]] = i;
     }
 
-    // compute abstract goal var-val pairs
+    // Compute abstract goal var-val pairs.
     vector<FactPair> abstract_goals;
     for (FactProxy goal : task_proxy.get_goals()) {
         int var_id = goal.get_variable().get_id();
@@ -223,9 +222,10 @@ vector<int> Projection::compute_distances(
         distances[goal] = 0;
     }
 
-    // Dijkstra loop
     // Reuse vector to save allocations.
     vector<const pdbs::AbstractOperator *> applicable_operators;
+
+    // Run Dijkstra loop.
     while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
         int distance = node.first;
@@ -312,7 +312,9 @@ bool Projection::operator_induces_loop(const OperatorProxy &op) const {
 }
 
 vector<int> Projection::compute_saturated_costs(
-    const vector<int> &h_values) const {
+    const vector<int> &h_values,
+    int num_operators,
+    bool use_general_costs) const {
     const int min_cost = use_general_costs ? -INF : 0;
 
     vector<int> saturated_costs(num_operators, min_cost);
@@ -358,6 +360,7 @@ vector<int> Projection::compute_h_values(const vector<int> &costs) const {
 vector<Transition> Projection::get_transitions() const {
     vector<Transition> transitions;
     // We can use an arbitrary cost function for computing the transitions.
+    int num_operators = task_proxy.get_operators().size();
     vector<int> unit_costs(num_operators, 1);
     compute_distances(unit_costs, &transitions);
     return transitions;
@@ -367,8 +370,8 @@ int Projection::get_num_states() const {
     return num_states;
 }
 
-void Projection::release_transition_system_memory() {
-    Abstraction::release_transition_system_memory();
+void Projection::remove_transition_system() {
+    Abstraction::remove_transition_system();
     utils::release_vector_memory(abstract_operators);
     match_tree = nullptr;
 }

@@ -17,7 +17,7 @@ using namespace std;
 
 namespace cost_saturation {
 OrderGeneratorLookahead::OrderGeneratorLookahead(const Options &opts)
-    : CostPartitioningGenerator(),
+    : OrderGenerator(),
       debug(opts.get<bool>("debug")),
       num_returned_orders(0) {
 }
@@ -131,7 +131,7 @@ Order OrderGeneratorLookahead::get_next_order(
 }
 
 
-static shared_ptr<CostPartitioningGenerator> _parse(OptionParser &parser) {
+static shared_ptr<OrderGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "debug",
         "show debugging messages",
@@ -143,5 +143,5 @@ static shared_ptr<CostPartitioningGenerator> _parse(OptionParser &parser) {
         return make_shared<OrderGeneratorLookahead>(opts);
 }
 
-static PluginShared<CostPartitioningGenerator> _plugin("lookahead", _parse);
+static PluginShared<OrderGenerator> _plugin("lookahead", _parse);
 }

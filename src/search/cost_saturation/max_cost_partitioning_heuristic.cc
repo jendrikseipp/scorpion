@@ -1,4 +1,4 @@
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
 #include "cost_partitioned_heuristic.h"
@@ -16,9 +16,9 @@ using namespace std;
 
 namespace cost_saturation {
 class AbstractionGenerator;
-class CostPartitioningGenerator;
+class OrderGenerator;
 
-CostPartitioningHeuristic::CostPartitioningHeuristic(
+MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     const Options &opts,
     Abstractions &&abstractions_,
     vector<CostPartitionedHeuristic> &&cp_heuristics_)
@@ -73,20 +73,20 @@ CostPartitioningHeuristic::CostPartitioningHeuristic(
     }
     for (auto &abstraction : abstractions) {
         if (abstraction) {
-            abstraction->release_transition_system_memory();
+            abstraction->remove_transition_system();
         }
     }
 }
 
-CostPartitioningHeuristic::~CostPartitioningHeuristic() {
+MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {
 }
 
-int CostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
+int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
     return compute_heuristic(state);
 }
 
-int CostPartitioningHeuristic::compute_heuristic(const State &state) {
+int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) {
     vector<int> local_state_ids = get_local_state_ids(abstractions, state);
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, local_state_ids, num_best_order);
@@ -96,7 +96,7 @@ int CostPartitioningHeuristic::compute_heuristic(const State &state) {
     return max_h;
 }
 
-void CostPartitioningHeuristic::print_statistics() const {
+void MaxCostPartitioningHeuristic::print_statistics() const {
     int num_orders = num_best_order.size();
     int num_probably_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
     int num_probably_useful = num_orders - num_probably_superfluous;
@@ -163,9 +163,9 @@ void prepare_parser_for_cost_partitioning_heuristic(
     parser.add_list_option<shared_ptr<AbstractionGenerator>>(
         "abstraction_generators",
         "methods that generate abstractions");
-    parser.add_option<shared_ptr<CostPartitioningGenerator>>(
+    parser.add_option<shared_ptr<OrderGenerator>>(
         "orders",
-        "cost partitioning generator",
+        "order generator",
         OptionParser::NONE);
     parser.add_option<bool>(
         "debug",
@@ -177,7 +177,7 @@ void prepare_parser_for_cost_partitioning_heuristic(
 CostPartitioningCollectionGenerator get_cp_collection_generator_from_options(
     const options::Options &opts) {
     return CostPartitioningCollectionGenerator(
-        opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
+        opts.get<shared_ptr<OrderGenerator>>("orders"),
         opts.get<bool>("sparse"),
         opts.get<int>("max_orders"),
         opts.get<double>("max_time"),

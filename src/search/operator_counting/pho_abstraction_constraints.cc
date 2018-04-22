@@ -26,6 +26,7 @@ void PhOAbstractionConstraints::initialize_constraints(
     const shared_ptr<AbstractTask> task,
     vector<lp::LPConstraint> &constraints,
     double infinity) {
+    TaskProxy task_proxy(*task);
     for (auto &abstraction_generator : abstraction_generators) {
         cost_saturation::Abstractions new_abstractions =
             abstraction_generator->generate_abstractions(task);
@@ -34,14 +35,15 @@ void PhOAbstractionConstraints::initialize_constraints(
             make_move_iterator(new_abstractions.begin()),
             make_move_iterator(new_abstractions.end()));
     }
-    vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
+    vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
     constraint_offset = constraints.size();
     // TODO: Remove code duplication.
     if (saturated) {
         for (auto &abstraction : abstractions) {
             constraints.emplace_back(0, infinity);
             lp::LPConstraint &constraint = constraints.back();
-            auto pair = abstraction->compute_goal_distances_and_saturated_costs(operator_costs);
+            auto pair = abstraction->compute_goal_distances_and_saturated_costs(
+                operator_costs);
             vector<int> &h_values = pair.first;
             vector<int> &saturated_costs = pair.second;
             for (size_t op_id = 0; op_id < saturated_costs.size(); ++op_id) {
@@ -50,7 +52,7 @@ void PhOAbstractionConstraints::initialize_constraints(
                 }
             }
             h_values_by_abstraction.push_back(move(h_values));
-            abstraction->release_transition_system_memory();
+            abstraction->remove_transition_system();
         }
     } else {
         for (auto &abstraction : abstractions) {
@@ -61,7 +63,7 @@ void PhOAbstractionConstraints::initialize_constraints(
                 constraint.insert(op_id, operator_costs[op_id]);
             }
             h_values_by_abstraction.push_back(abstraction->compute_h_values(operator_costs));
-            abstraction->release_transition_system_memory();
+            abstraction->remove_transition_system();
         }
     }
 }

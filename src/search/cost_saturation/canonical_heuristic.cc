@@ -2,7 +2,7 @@
 
 #include "abstraction.h"
 #include "abstraction_generator.h"
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -17,7 +17,7 @@ using namespace std;
 
 namespace cost_saturation {
 class AbstractionGenerator;
-class CostPartitioningGenerator;
+class OrderGenerator;
 
 static MaxAdditiveSubsets compute_max_additive_subsets(
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -88,7 +88,7 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
 
     utils::Log() << "Delete transition systems" << endl;
     for (auto &abstraction : abstractions) {
-        abstraction->release_transition_system_memory();
+        abstraction->remove_transition_system();
     }
 }
 
