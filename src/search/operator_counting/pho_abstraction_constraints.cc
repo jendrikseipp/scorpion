@@ -43,7 +43,7 @@ void PhOAbstractionConstraints::initialize_constraints(
             constraints.emplace_back(0, infinity);
             lp::LPConstraint &constraint = constraints.back();
             auto pair = abstraction->compute_goal_distances_and_saturated_costs(
-                operator_costs, true);
+                operator_costs);
             vector<int> &h_values = pair.first;
             vector<int> &saturated_costs = pair.second;
             for (size_t op_id = 0; op_id < saturated_costs.size(); ++op_id) {
