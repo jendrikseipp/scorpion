@@ -88,7 +88,7 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
 
     utils::Log() << "Delete transition systems" << endl;
     for (auto &abstraction : abstractions) {
-        abstraction->release_transition_system_memory();
+        abstraction->remove_transition_system();
     }
 }
 
