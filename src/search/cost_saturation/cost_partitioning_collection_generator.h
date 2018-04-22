@@ -18,10 +18,10 @@ class RandomNumberGenerator;
 namespace cost_saturation {
 class Abstraction;
 class CostPartitionedHeuristic;
-class CostPartitioningGenerator;
+class OrderGenerator;
 
 class CostPartitioningCollectionGenerator {
-    const std::shared_ptr<CostPartitioningGenerator> cp_generator;
+    const std::shared_ptr<OrderGenerator> cp_generator;
     const bool sparse;
     const int max_orders;
     const double max_time;
@@ -33,7 +33,7 @@ class CostPartitioningCollectionGenerator {
 
 public:
     CostPartitioningCollectionGenerator(
-        const std::shared_ptr<CostPartitioningGenerator> &cp_generator,
+        const std::shared_ptr<OrderGenerator> &cp_generator,
         bool sparse,
         int max_orders,
         double max_time,

@@ -9,10 +9,10 @@
 #include <vector>
 
 namespace cost_saturation {
-class CostPartitioningGenerator;
+class OrderGenerator;
 
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
-    const std::shared_ptr<CostPartitioningGenerator> cp_generator;
+    const std::shared_ptr<OrderGenerator> cp_generator;
     const Abstractions abstractions;
     CPHeuristics cp_heuristics;
     const int interval;

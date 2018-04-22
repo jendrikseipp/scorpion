@@ -16,7 +16,7 @@ using namespace std;
 
 namespace cost_saturation {
 class AbstractionGenerator;
-class CostPartitioningGenerator;
+class OrderGenerator;
 
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     const Options &opts,
@@ -163,9 +163,9 @@ void prepare_parser_for_cost_partitioning_heuristic(
     parser.add_list_option<shared_ptr<AbstractionGenerator>>(
         "abstraction_generators",
         "methods that generate abstractions");
-    parser.add_option<shared_ptr<CostPartitioningGenerator>>(
+    parser.add_option<shared_ptr<OrderGenerator>>(
         "orders",
-        "cost partitioning generator",
+        "order generator",
         OptionParser::NONE);
     parser.add_option<bool>(
         "debug",
@@ -177,7 +177,7 @@ void prepare_parser_for_cost_partitioning_heuristic(
 CostPartitioningCollectionGenerator get_cp_collection_generator_from_options(
     const options::Options &opts) {
     return CostPartitioningCollectionGenerator(
-        opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
+        opts.get<shared_ptr<OrderGenerator>>("orders"),
         opts.get<bool>("sparse"),
         opts.get<int>("max_orders"),
         opts.get<double>("max_time"),

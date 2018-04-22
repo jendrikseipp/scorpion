@@ -5,7 +5,7 @@
 #include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
 #include "max_cost_partitioning_heuristic.h"
-#include "cost_partitioning_generator_greedy.h"
+#include "order_generator_greedy.h"
 
 #include "../task_proxy.h"
 

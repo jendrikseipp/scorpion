@@ -2,8 +2,8 @@
 
 #include "abstraction.h"
 #include "cost_partitioned_heuristic.h"
-#include "cost_partitioning_generator.h"
 #include "diversifier.h"
+#include "order_generator.h"
 #include "order_optimizer.h"
 #include "utils.h"
 
@@ -43,7 +43,7 @@ static vector<vector<int>> sample_states_and_return_local_state_ids(
 }
 
 CostPartitioningCollectionGenerator::CostPartitioningCollectionGenerator(
-    const shared_ptr<CostPartitioningGenerator> &cp_generator,
+    const shared_ptr<OrderGenerator> &cp_generator,
     bool sparse,
     int max_orders,
     double max_time,

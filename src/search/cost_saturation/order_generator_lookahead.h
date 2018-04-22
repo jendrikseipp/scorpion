@@ -1,10 +1,10 @@
 #ifndef COST_SATURATION_ORDER_GENERATOR_LOOKAHEAD_H
 #define COST_SATURATION_ORDER_GENERATOR_LOOKAHEAD_H
 
-#include "cost_partitioning_generator.h"
+#include "order_generator.h"
 
 namespace cost_saturation {
-class OrderGeneratorLookahead : public CostPartitioningGenerator {
+class OrderGeneratorLookahead : public OrderGenerator {
     std::vector<int> original_costs;
     std::vector<std::vector<int>> h_values_by_abstraction;
     std::vector<std::vector<int>> saturated_costs_by_abstraction;

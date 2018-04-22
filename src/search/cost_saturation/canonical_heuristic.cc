@@ -17,7 +17,7 @@ using namespace std;
 
 namespace cost_saturation {
 class AbstractionGenerator;
-class CostPartitioningGenerator;
+class OrderGenerator;
 
 static MaxAdditiveSubsets compute_max_additive_subsets(
     const vector<unique_ptr<Abstraction>> &abstractions,

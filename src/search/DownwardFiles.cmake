@@ -588,8 +588,6 @@ fast_downward_plugin(
         cost_saturation/cartesian_abstraction_generator
         cost_saturation/cost_partitioned_heuristic
         cost_saturation/cost_partitioning_collection_generator
-        cost_saturation/cost_partitioning_generator
-        cost_saturation/cost_partitioning_generator_greedy
         cost_saturation/diversifier
         cost_saturation/explicit_abstraction
         cost_saturation/explicit_projection_factory
@@ -597,6 +595,8 @@ fast_downward_plugin(
         #cost_saturation/max_heuristic
         #cost_saturation/optimal_cost_partitioning_heuristic
         #cost_saturation/order_generator_lookahead
+        cost_saturation/order_generator
+        cost_saturation/order_generator_greedy
         cost_saturation/order_optimizer
         cost_saturation/projection
         cost_saturation/projection_generator

@@ -2,7 +2,7 @@
 
 #include "abstraction.h"
 #include "cost_partitioned_heuristic.h"
-#include "cost_partitioning_generator.h"
+#include "order_generator.h"
 #include "utils.h"
 
 #include "../task_proxy.h"
