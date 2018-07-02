@@ -13,9 +13,6 @@ class RandomNumberGenerator;
 }
 
 namespace cegar {
-// TODO: Remove.
-extern int hacked_num_landmark_abstractions;
-
 class Abstraction;
 class SubtaskGenerator;
 

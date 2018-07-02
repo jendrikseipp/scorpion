@@ -121,10 +121,7 @@ pair<vector<vector<int>>, pair<int, int>> SCPOptimizer::find_cost_partitioning(
         rng->shuffle(incumbent_order);
     }
     if (reverse_order) {
-        cout << "Landmark abstractions: " << hacked_num_landmark_abstractions
-             << "/" << abstractions.size() << endl;
-        reverse(incumbent_order.begin(), incumbent_order.begin() + hacked_num_landmark_abstractions);
-        reverse(incumbent_order.begin() + hacked_num_landmark_abstractions, incumbent_order.end());
+        reverse(incumbent_order.begin(), incumbent_order.end());
     }
 
     scp_computation_timer->resume();
