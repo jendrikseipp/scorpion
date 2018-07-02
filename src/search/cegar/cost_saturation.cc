@@ -149,14 +149,8 @@ void CostSaturation::build_abstractions(
         if (cost_partitioning_type == CostPartitioningType::SATURATED) {
             reduce_costs(remaining_costs, abstraction->get_saturated_costs());
         }
+        abstractions.push_back(move(abstraction));
 
-        if (cost_partitioning_type == CostPartitioningType::SATURATED ||
-            cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
-            cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
-            abstractions.push_back(move(abstraction));
-        } else {
-            ABORT("Invalid cost partitioning type");
-        }
         if (should_abort())
             break;
 
