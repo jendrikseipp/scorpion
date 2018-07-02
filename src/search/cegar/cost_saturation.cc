@@ -86,7 +86,7 @@ void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
                    initial_state_is_dead_end();
         };
 
-    for (shared_ptr<SubtaskGenerator> subtask_generator : subtask_generators) {
+    for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task);
         build_abstractions(subtasks, timer, should_abort);
         if (hacked_num_landmark_abstractions == -1) {
@@ -95,7 +95,7 @@ void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
         if (should_abort())
             break;
     }
-    print_statistics();
+    print_statistics(timer.get_elapsed_time());
 }
 
 vector<unique_ptr<Abstraction>> CostSaturation::extract_abstractions() {
@@ -153,10 +153,7 @@ void CostSaturation::build_abstractions(
         if (cost_partitioning_type == CostPartitioningType::SATURATED ||
             cost_partitioning_type == CostPartitioningType::SATURATED_POSTHOC ||
             cost_partitioning_type == CostPartitioningType::SATURATED_MAX) {
-            int init_h = abstraction->get_h_value_of_initial_state();
-            if (!exclude_abstractions_with_zero_init_h || init_h > 0) {
-                abstractions.push_back(move(abstraction));
-            }
+            abstractions.push_back(move(abstraction));
         } else {
             ABORT("Invalid cost partitioning type");
         }
@@ -167,10 +164,11 @@ void CostSaturation::build_abstractions(
     }
 }
 
-void CostSaturation::print_statistics() const {
+void CostSaturation::print_statistics(utils::Duration init_time) const {
     g_log << "Done initializing additive Cartesian heuristic" << endl;
+    cout << "Time for initializing additive Cartesian heuristic: "
+         << init_time << endl;
     cout << "Cartesian abstractions built: " << num_abstractions << endl;
-    cout << "Abstractions stored: " << abstractions.size() << endl;
     cout << "Cartesian states: " << num_states << endl;
     cout << "Total number of non-looping transitions: "
          << num_non_looping_transitions << endl;
