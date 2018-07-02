@@ -22,8 +22,6 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     : subtask_generators(
           opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
       max_transitions(opts.get<int>("max_transitions")),
-      exclude_abstractions_with_zero_init_h(
-          opts.get<bool>("exclude_abstractions_with_zero_init_h")),
       rng(utils::parse_rng_from_options(opts)) {
 }
 
@@ -110,7 +108,6 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         max_transitions,
         max_time,
         use_general_costs,
-        exclude_abstractions_with_zero_init_h,
         cegar::PickSplit::MAX_REFINED,
         *rng);
     cost_saturation.initialize(task);
@@ -145,10 +142,6 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         " all abstractions",
         "1000000",
         Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "exclude_abstractions_with_zero_init_h",
-        "ignore abstraction heuristics with h(s_0) = 0",
-        "true");
     parser.add_option<bool>(
         "debug",
         "print debugging info",

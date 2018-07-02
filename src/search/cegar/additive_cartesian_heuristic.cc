@@ -246,10 +246,6 @@ static Heuristic *_parse(OptionParser &parser) {
         "diversify",
         "search for orders that complement the portfolio",
         "false");
-    parser.add_option<bool>(
-        "exclude_abstractions_with_zero_init_h",
-        "throw away abstractions with h(s_0) = 0",
-        "true");
     Heuristic::add_options_to_parser(parser);
     utils::add_rng_options(parser);
     Options opts = parser.parse();
@@ -262,8 +258,6 @@ static Heuristic *_parse(OptionParser &parser) {
     const CostPartitioningType cost_partitioning_type =
         static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"));
     const int extra_memory_padding_in_mb = opts.get<int>("extra_memory_padding");
-    const bool exclude_abstractions_with_zero_init_h = opts.get<bool>(
-        "exclude_abstractions_with_zero_init_h");
     shared_ptr<utils::RandomNumberGenerator> rng = utils::parse_rng_from_options(opts);
 
     Options heuristic_opts;
@@ -281,7 +275,6 @@ static Heuristic *_parse(OptionParser &parser) {
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
-        exclude_abstractions_with_zero_init_h,
         static_cast<PickSplit>(opts.get<int>("pick")),
         *rng);
     if (extra_memory_padding_in_mb > 0)

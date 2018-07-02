@@ -47,7 +47,6 @@ CostSaturation::CostSaturation(
     int max_non_looping_transitions,
     double max_time,
     bool use_general_costs,
-    bool exclude_abstractions_with_zero_init_h,
     PickSplit pick_split,
     utils::RandomNumberGenerator &rng)
     : cost_partitioning_type(cost_partitioning_type),
@@ -56,7 +55,6 @@ CostSaturation::CostSaturation(
       max_non_looping_transitions(max_non_looping_transitions),
       max_time(max_time),
       use_general_costs(use_general_costs),
-      exclude_abstractions_with_zero_init_h(exclude_abstractions_with_zero_init_h),
       pick_split(pick_split),
       rng(rng),
       num_abstractions(0),
