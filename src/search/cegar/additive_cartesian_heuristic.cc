@@ -89,7 +89,7 @@ static vector<vector<int>> sample_states_and_return_local_ids(
     int init_h,
     int max_num_samples,
     double max_sampling_time,
-    utils::RandomNumberGenerator &rng) {
+    const shared_ptr<utils::RandomNumberGenerator> &rng) {
     function<bool(const State &state)> dead_end_function =
         [&](const State &state) {
             vector<int> local_state_ids = get_local_state_ids(
@@ -98,21 +98,12 @@ static vector<vector<int>> sample_states_and_return_local_ids(
                 local_state_ids, h_values_by_abstraction_for_default_order) == INF;
         };
 
-    successor_generator::SuccessorGenerator successor_generator(task_proxy);
-    const double average_operator_costs = task_properties::get_average_operator_cost(task_proxy);
-
-    State initial_state = task_proxy.get_initial_state();
     utils::CountdownTimer sampling_timer(max_sampling_time);
+    sampling::RandomWalkSampler sampler(task_proxy, init_h, rng);
     vector<State> samples;
     while (static_cast<int>(samples.size()) < max_num_samples &&
            !sampling_timer.is_expired()) {
-        State sample = sampling::sample_state_with_random_walk(
-            task_proxy,
-            initial_state,
-            successor_generator,
-            init_h,
-            average_operator_costs,
-            rng);
+        State sample = sampler.sample_state();
         if (!dead_end_function(sample)) {
             samples.push_back(move(sample));
         }
@@ -407,7 +398,7 @@ static Heuristic *_parse(OptionParser &parser) {
                 init_h,
                 max_num_samples,
                 max_sampling_time,
-                *rng);
+                rng);
         int num_samples = local_state_ids_by_state.size();
 
         utils::CountdownTimer finding_orders_timer(max_time_finding_orders);

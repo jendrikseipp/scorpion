@@ -60,7 +60,7 @@ Projection::Projection(
     }
 
     for (pdbs::AbstractOperator &op : abstract_operators) {
-        op.release_memory();
+        op.remove_regression_preconditions();
     }
 
     // Needs hash_multipliers.

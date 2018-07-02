@@ -37,7 +37,7 @@ public:
         return root.get();
     }
 
-    int get_local_state_id(const State &state) const;
+    int get_abstract_state_id(const State &state) const;
 };
 
 
@@ -58,6 +58,7 @@ class Node {
     int value;
 
     // Set when the hierarchy is finished.
+    // TODO: Set ID in the constructor.
     int state_id;
 
 public:
@@ -103,6 +104,7 @@ public:
 
     void set_state_id(int id) {
         assert(!is_split());
+        assert(state_id == -1);
         state_id = id;
     }
 };

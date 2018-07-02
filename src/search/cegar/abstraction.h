@@ -108,6 +108,7 @@ class Abstraction {
 
     void print_statistics();
 
+    // TODO: Set state IDs when creating new states and remove this method.
     void set_state_ids();
     void compress_self_loops();
 

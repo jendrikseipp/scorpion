@@ -2,8 +2,6 @@
 
 #include "successor_generator.h"
 
-#include "../task_proxy.h"
-
 #include "../task_utils/task_properties.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/memory.h"
@@ -13,7 +11,7 @@ using namespace std;
 
 
 namespace sampling {
-State sample_state_with_random_walk(
+static State sample_state_with_random_walk(
     const TaskProxy &task_proxy,
     const State &initial_state,
     const successor_generator::SuccessorGenerator &successor_generator,
@@ -113,6 +111,9 @@ RandomWalkSampler::RandomWalkSampler(
       rng(rng),
       is_dead_end(is_dead_end) {
     assert(init_h != numeric_limits<int>::max());
+}
+
+RandomWalkSampler::~RandomWalkSampler() {
 }
 
 State RandomWalkSampler::sample_state() {

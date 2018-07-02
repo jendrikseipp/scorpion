@@ -187,7 +187,7 @@ vector<int> get_local_state_ids(
     vector<int> local_state_ids;
     local_state_ids.reserve(refinement_hierarchies.size());
     for (const shared_ptr<RefinementHierarchy> &hierarchy : refinement_hierarchies) {
-        local_state_ids.push_back(hierarchy->get_local_state_id(state));
+        local_state_ids.push_back(hierarchy->get_abstract_state_id(state));
     }
     return local_state_ids;
 }
