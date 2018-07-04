@@ -23,14 +23,6 @@
 using namespace std;
 
 namespace cegar {
-static long factorial(int n) {
-    assert(n >= 0);
-    if (n == 0) {
-        return 1;
-    }
-    return n * factorial(n - 1);
-}
-
 static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &operator_costs) {
