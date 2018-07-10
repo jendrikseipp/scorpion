@@ -152,7 +152,7 @@ int ExplicitAbstraction::get_abstract_state_id(const State &concrete_state) cons
     return abstraction_function(concrete_state);
 }
 
-vector<int> ExplicitAbstraction::get_active_operators() const {
+const vector<int> &ExplicitAbstraction::get_active_operators() const {
     assert(has_transition_system());
     return active_operators;
 }

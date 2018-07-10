@@ -20,6 +20,7 @@ Projection::Projection(
       pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
 
+    active_operators = compute_active_operators();
     looping_operators = compute_looping_operators();
     assert(utils::is_sorted_unique(looping_operators));
 
@@ -71,7 +72,7 @@ int Projection::get_abstract_state_id(const State &concrete_state) const {
     return hash_index(concrete_state);
 }
 
-vector<int> Projection::get_active_operators() const {
+vector<int> Projection::compute_active_operators() const {
     vector<int> active_operators;
     for (OperatorProxy op : task_proxy.get_operators()) {
         if (is_operator_relevant(op)) {
@@ -360,6 +361,11 @@ vector<Transition> Projection::get_transitions() const {
 
 int Projection::get_num_states() const {
     return num_states;
+}
+
+const vector<int> &Projection::get_active_operators() const {
+    assert(has_transition_system());
+    return active_operators;
 }
 
 const vector<int> &Projection::get_looping_operators() const {

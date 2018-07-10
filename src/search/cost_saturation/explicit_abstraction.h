@@ -42,6 +42,7 @@ class ExplicitAbstraction : public Abstraction {
     // State-changing transitions.
     std::vector<std::vector<Successor>> backward_graph;
 
+    // Operators inducing state-changing transitions.
     std::vector<int> active_operators;
 
     // Operators inducing self-loops.
@@ -70,7 +71,7 @@ public:
     virtual std::vector<Transition> get_transitions() const override;
     virtual int get_num_states() const override;
     virtual int get_abstract_state_id(const State &concrete_state) const override;
-    virtual std::vector<int> get_active_operators() const override;
+    virtual const std::vector<int> &get_active_operators() const override;
     virtual const std::vector<int> &get_looping_operators() const override;
     virtual const std::vector<int> &get_goal_states() const override;
     virtual void dump() const override;
