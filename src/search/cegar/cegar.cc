@@ -159,7 +159,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     if (task_proxy.get_goals().size() == 1) {
         separate_facts_unreachable_before_goal();
     }
-    bool found_concrete_solution = false;
     while (may_keep_refining()) {
         unique_ptr<Solution> solution = abstract_search.find_solution(
             abstraction->get_transition_system().get_outgoing_transitions(),
@@ -167,14 +166,14 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             abstraction->get_initial_state()->get_id(),
             abstraction->get_goals());
         if (!solution) {
-            cout << "Abstract problem is unsolvable!" << endl;
+            cout << "Abstract problem is unsolvable." << endl;
             abstraction->get_initial_state()->set_goal_distance_estimate(INF);
-            return;
+            break;
         }
         update_goal_distances(*solution);
         unique_ptr<Flaw> flaw = find_flaw(*solution);
         if (!flaw) {
-            found_concrete_solution = true;
+            cout << "Found concrete solution during refinement." << endl;
             break;
         }
         AbstractState *abstract_state = flaw->current_abstract_state;
@@ -187,7 +186,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                   << max_non_looping_transitions << " transitions" << endl;
         }
     }
-    cout << "Concrete solution found: " << found_concrete_solution << endl;
 }
 
 unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
