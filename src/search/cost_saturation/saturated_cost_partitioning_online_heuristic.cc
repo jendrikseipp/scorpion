@@ -1,10 +1,11 @@
 #include "saturated_cost_partitioning_online_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioned_heuristic.h"
+#include "cost_partitioning_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
 #include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
+#include "saturated_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -57,20 +58,20 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     const GlobalState &global_state) {
     State state = convert_global_state(global_state);
     ++num_evaluated_states;
-    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
+    vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
     int max_h = compute_max_h_with_statistics(
-        cp_heuristics, local_state_ids, num_best_order);
+        cp_heuristics, abstract_state_ids, num_best_order);
     if (max_h == INF) {
         return DEAD_END;
     }
 
     if (should_compute_scp(state)) {
-        Order order = cp_generator->get_next_order(
-            task_proxy, abstractions, costs, local_state_ids, num_evaluated_states == 0);
-        CostPartitionedHeuristic cost_partitioning =
-            compute_saturated_cost_partitioning(abstractions, order, costs, true);
+        Order order = cp_generator->compute_order_for_state(
+            abstractions, costs, abstract_state_ids, num_evaluated_states == 0);
+        CostPartitioningHeuristic cost_partitioning =
+            compute_saturated_cost_partitioning(abstractions, order, costs);
         ++num_scps_computed;
-        int single_h = cost_partitioning.compute_heuristic(local_state_ids);
+        int single_h = cost_partitioning.compute_heuristic(abstract_state_ids);
         if (store_cost_partitionings && single_h > max_h) {
             cp_heuristics.push_back(move(cost_partitioning));
         }
@@ -93,7 +94,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
-    add_cost_partitioning_collection_options_to_parser(parser);
+    add_order_options_to_parser(parser);
 
     parser.add_option<int>(
         "interval",

@@ -69,9 +69,7 @@ class Abstraction {
 
     /* DAG with inner nodes for all split states and leaves for all
        current states. */
-    std::shared_ptr<RefinementHierarchy> refinement_hierarchy;
-
-    std::vector<bool> operator_induces_self_loop;
+    std::unique_ptr<RefinementHierarchy> refinement_hierarchy;
 
     const bool debug;
 
@@ -110,7 +108,6 @@ class Abstraction {
 
     // TODO: Set state IDs when creating new states and remove this method.
     void set_state_ids();
-    void compress_self_loops();
 
 public:
     Abstraction(
@@ -126,8 +123,9 @@ public:
 
     Abstraction(const Abstraction &) = delete;
 
-    std::shared_ptr<RefinementHierarchy> get_refinement_hierarchy() const {
-        return refinement_hierarchy;
+    std::unique_ptr<RefinementHierarchy> extract_refinement_hierarchy() {
+        assert(refinement_hierarchy);
+        return std::move(refinement_hierarchy);
     }
 
     std::vector<int> get_h_values() const;
@@ -161,6 +159,8 @@ public:
     void set_operator_costs(const std::vector<int> &new_costs);
 
     std::vector<bool> compute_active_operators();
+
+    std::vector<int> compute_looping_operators() const;
 };
 }
 

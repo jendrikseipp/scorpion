@@ -7,15 +7,15 @@
 
 namespace cost_saturation {
 class Abstraction;
-class CostPartitionedHeuristic;
+class CostPartitioningHeuristic;
 
 // Positive infinity. The name "INFINITY" is taken by an ISO C99 macro.
 const int INF = std::numeric_limits<int>::max();
 
 using Abstractions = std::vector<std::unique_ptr<Abstraction>>;
-using CPFunction = std::function<CostPartitionedHeuristic(
-                                     const Abstractions &, const std::vector<int> &, const std::vector<int> &, bool)>;
-using CPHeuristics = std::vector<CostPartitionedHeuristic>;
+using CPFunction = std::function<CostPartitioningHeuristic(
+                                     const Abstractions &, const std::vector<int> &, const std::vector<int> &)>;
+using CPHeuristics = std::vector<CostPartitioningHeuristic>;
 using Order = std::vector<int>;
 }
 

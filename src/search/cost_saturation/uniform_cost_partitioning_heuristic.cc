@@ -1,8 +1,8 @@
 #include "uniform_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioned_heuristic.h"
 #include "cost_partitioning_collection_generator.h"
+#include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -62,12 +62,11 @@ static vector<int> compute_divided_costs(
     return divided_costs;
 }
 
-static CostPartitionedHeuristic compute_uniform_cost_partitioning(
+static CostPartitioningHeuristic compute_uniform_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
     const vector<int> &order,
     const vector<int> &costs,
     bool dynamic,
-    bool sparse,
     bool debug) {
     assert(abstractions.size() == order.size());
 
@@ -80,7 +79,7 @@ static CostPartitionedHeuristic compute_uniform_cost_partitioning(
     vector<int> divided_costs = compute_divided_costs(
         abstractions, order, remaining_costs, 0, debug);
 
-    CostPartitionedHeuristic cp_heuristic;
+    CostPartitioningHeuristic cp_heuristic;
     for (size_t pos = 0; pos < order.size(); ++pos) {
         int abstraction_id = order[pos];
         Abstraction &abstraction = *abstractions[abstraction_id];
@@ -98,8 +97,7 @@ static CostPartitionedHeuristic compute_uniform_cost_partitioning(
             cout << "saturated costs: ";
             print_indexed_vector(saturated_costs);
         }
-        cp_heuristic.add_cp_heuristic_values(
-            abstraction_id, move(h_values), sparse);
+        cp_heuristic.add_lookup_table_if_nonzero(abstraction_id, move(h_values));
         if (dynamic) {
             reduce_costs(remaining_costs, saturated_costs);
         }
@@ -140,13 +138,12 @@ static shared_ptr<AbstractTask> get_scaled_costs_task(
 }
 
 
-static CostPartitionedHeuristic get_ucp_heuristic(
+static CostPartitioningHeuristic get_ucp_heuristic(
     const TaskProxy &task_proxy, const Abstractions &abstractions, bool debug) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     vector<int> order = get_default_order(abstractions.size());
-    bool sparse = true;
     return compute_uniform_cost_partitioning(
-        abstractions, order, costs, false, sparse, debug);
+        abstractions, order, costs, false, debug);
 }
 
 static CPHeuristics get_oucp_heuristics(
@@ -160,10 +157,9 @@ static CPHeuristics get_oucp_heuristics(
         [debug](
             const Abstractions &abstractions,
             const vector<int> &order,
-            const vector<int> &costs,
-            bool sparse) {
+            const vector<int> &costs) {
             return compute_uniform_cost_partitioning(
-                abstractions, order, costs, true, sparse, debug);
+                abstractions, order, costs, true, debug);
         });
 }
 
@@ -174,7 +170,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
-    add_cost_partitioning_collection_options_to_parser(parser);
+    add_order_options_to_parser(parser);
     parser.add_option<bool>(
         "dynamic",
         "recalculate costs after each considered abstraction",

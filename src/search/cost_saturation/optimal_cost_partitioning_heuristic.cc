@@ -18,6 +18,14 @@
 using namespace std;
 
 namespace cost_saturation {
+static vector<bool> convert_to_bitvector(const vector<int> &vec, int size) {
+    vector<bool> bitvector(size, false);
+    for (int value : vec) {
+        bitvector[value] = true;
+    }
+    return bitvector;
+}
+
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts)
     : Heuristic(opts),
@@ -30,7 +38,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
 
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-        h_values.push_back(abstraction->compute_h_values(costs));
+        h_values.push_back(abstraction->compute_goal_distances(costs));
     }
 
     generate_lp();

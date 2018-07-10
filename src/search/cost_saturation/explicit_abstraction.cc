@@ -2,18 +2,19 @@
 
 #include "types.h"
 
-#include "../algorithms/ordered_set.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
+
+#include <unordered_set>
 
 using namespace std;
 
 namespace cost_saturation {
 static void dijkstra_search(
     const vector<vector<Successor>> &graph,
+    const vector<int> &costs,
     priority_queues::AdaptiveQueue<int> &queue,
-    vector<int> &distances,
-    const vector<int> &costs) {
+    vector<int> &distances) {
     while (!queue.empty()) {
         pair<int, int> top_pair = queue.pop();
         int distance = top_pair.first;
@@ -39,14 +40,14 @@ static void dijkstra_search(
     }
 }
 
-ostream &operator<<(ostream &os, const Successor &transition) {
-    os << "(" << transition.op << ", " << transition.state << ")";
+ostream &operator<<(ostream &os, const Successor &successor) {
+    os << "(" << successor.op << ", " << successor.state << ")";
     return os;
 }
 
 static vector<int> get_active_operators_from_graph(
     const vector<vector<Successor>> &backward_graph) {
-    ordered_set::OrderedSet<int> active_operators;
+    unordered_set<int> active_operators;
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
         for (const Successor &transition : backward_graph[target]) {
@@ -55,47 +56,44 @@ static vector<int> get_active_operators_from_graph(
             active_operators.insert(op_id);
         }
     }
-    return active_operators.pop_as_vector();
+    vector<int> active_operators_sorted(active_operators.begin(), active_operators.end());
+    sort(active_operators_sorted.begin(), active_operators_sorted.end());
+    return active_operators_sorted;
 }
 
 ExplicitAbstraction::ExplicitAbstraction(
     AbstractionFunction function,
     vector<vector<Successor>> &&backward_graph_,
-    vector<int> &&looping_operators_,
-    vector<int> &&goal_states_)
+    vector<int> &&looping_operators,
+    vector<int> &&goal_states)
     : abstraction_function(function),
-      backward_graph(move(backward_graph_)) {
-    /* We must compute active operators from the backward graph and not by
-       inspecting looping_ops and num_operators, since the sets of active and
-       looping operators may overlap. */
-    active_operators = get_active_operators_from_graph(this->backward_graph);
-    looping_operators = move(looping_operators_);
-    goal_states = move(goal_states_);
-    sort(active_operators.begin(), active_operators.end());
-    sort(looping_operators.begin(), looping_operators.end());
-    sort(goal_states.begin(), goal_states.end());
-
+      backward_graph(move(backward_graph_)),
+      active_operators(get_active_operators_from_graph(backward_graph)),
+      looping_operators(move(looping_operators)),
+      goal_states(move(goal_states)) {
 #ifndef NDEBUG
+    // Check that no transition is stored multiple times.
     for (int target = 0; target < get_num_states(); ++target) {
-        vector<Successor> copied_transitions = backward_graph[target];
+        vector<Successor> copied_transitions = this->backward_graph[target];
         sort(copied_transitions.begin(), copied_transitions.end());
         assert(utils::is_sorted_unique(copied_transitions));
     }
 #endif
 }
 
-vector<int> ExplicitAbstraction::compute_h_values(const vector<int> &costs) const {
-    vector<int> goal_distances(backward_graph.size(), INF);
+vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs) const {
+    vector<int> goal_distances(get_num_states(), INF);
     queue.clear();
     for (int goal_state : goal_states) {
         goal_distances[goal_state] = 0;
         queue.push(0, goal_state);
     }
-    dijkstra_search(backward_graph, queue, goal_distances, costs);
+    dijkstra_search(backward_graph, costs, queue, goal_distances);
     return goal_distances;
 }
 
 vector<Transition> ExplicitAbstraction::get_transitions() const {
+    assert(has_transition_system());
     vector<Transition> transitions;
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
@@ -111,18 +109,13 @@ vector<Transition> ExplicitAbstraction::get_transitions() const {
 
 vector<int> ExplicitAbstraction::compute_saturated_costs(
     const vector<int> &h_values,
-    int num_operators,
-    bool use_general_costs) const {
-    const int min_cost = use_general_costs ? -INF : 0;
-
-    vector<int> saturated_costs(num_operators, min_cost);
+    int num_operators) const {
+    vector<int> saturated_costs(num_operators, -INF);
 
     /* To prevent negative cost cycles we ensure that all operators
        inducing self-loops have non-negative costs. */
-    if (use_general_costs) {
-        for (int op_id : looping_operators) {
-            saturated_costs[op_id] = 0;
-        }
+    for (int op_id : looping_operators) {
+        saturated_costs[op_id] = 0;
     }
 
     int num_states = backward_graph.size();
@@ -151,6 +144,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
 }
 
 int ExplicitAbstraction::get_num_states() const {
+    assert(has_transition_system());
     return backward_graph.size();
 }
 
@@ -158,19 +152,35 @@ int ExplicitAbstraction::get_abstract_state_id(const State &concrete_state) cons
     return abstraction_function(concrete_state);
 }
 
-void ExplicitAbstraction::remove_transition_system() {
-    Abstraction::remove_transition_system();
+vector<int> ExplicitAbstraction::get_active_operators() const {
+    assert(has_transition_system());
+    return active_operators;
+}
+
+const vector<int> &ExplicitAbstraction::get_looping_operators() const {
+    assert(has_transition_system());
+    return looping_operators;
+}
+
+const vector<int> &ExplicitAbstraction::get_goal_states() const {
+    assert(has_transition_system());
+    return goal_states;
+}
+
+void ExplicitAbstraction::release_transition_system_memory() {
+    utils::release_vector_memory(looping_operators);
+    utils::release_vector_memory(goal_states);
     utils::release_vector_memory(backward_graph);
 }
 
 void ExplicitAbstraction::dump() const {
+    assert(has_transition_system());
     cout << "State-changing transitions:" << endl;
     for (size_t state = 0; state < backward_graph.size(); ++state) {
         if (!backward_graph[state].empty()) {
             cout << "  " << state << " <- " << backward_graph[state] << endl;
         }
     }
-    cout << "Active operators: " << active_operators << endl;
     cout << "Looping operators: " << looping_operators << endl;
     cout << "Goal states: " << goal_states << endl;
 }

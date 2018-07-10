@@ -20,48 +20,44 @@ struct Transition {
 
 
 class Abstraction {
-    bool has_transition_system;
+    bool has_transition_system_;
 
 protected:
-    std::vector<int> goal_states;
-
-    // Operators inducing state-changing transitions.
-    std::vector<int> active_operators;
-
-    // Operators inducing self-loops. May overlap with active operators.
-    std::vector<int> looping_operators;
-
     virtual std::vector<int> compute_saturated_costs(
         const std::vector<int> &h_values,
-        int num_operators,
-        bool use_general_costs) const = 0;
+        int num_operators) const = 0;
+
+    virtual void release_transition_system_memory() = 0;
+
+    bool has_transition_system() const;
 
 public:
     Abstraction();
-    virtual ~Abstraction();
+    virtual ~Abstraction() = default;
 
     Abstraction(const Abstraction &) = delete;
 
     virtual int get_abstract_state_id(const State &concrete_state) const = 0;
 
-    virtual std::vector<int> compute_h_values(
+    virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const = 0;
 
     std::pair<std::vector<int>, std::vector<int>>
     compute_goal_distances_and_saturated_costs(
-        const std::vector<int> &costs, bool use_general_costs = true) const;
+        const std::vector<int> &costs) const;
 
-    const std::vector<int> &get_active_operators() const;
+    // Operators inducing state-changing transitions.
+    virtual std::vector<int> get_active_operators() const = 0;
 
-    const std::vector<int> &get_looping_operators() const;
+    // Operators inducing self-looping transitions. May overlap with active
+    // operators.
+    virtual const std::vector<int> &get_looping_operators() const = 0;
 
     virtual std::vector<Transition> get_transitions() const = 0;
-
     virtual int get_num_states() const = 0;
+    virtual const std::vector<int> &get_goal_states() const = 0;
 
-    const std::vector<int> &get_goal_states() const;
-
-    virtual void remove_transition_system();
+    void remove_transition_system();
 
     virtual void dump() const = 0;
 };

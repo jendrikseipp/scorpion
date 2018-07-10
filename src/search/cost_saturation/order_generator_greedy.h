@@ -4,51 +4,34 @@
 #include "order_generator.h"
 #include "scoring_functions.h"
 
-namespace utils {
-class CountdownTimer;
-class RandomNumberGenerator;
+namespace options {
+class Options;
 }
 
 namespace cost_saturation {
 class OrderGeneratorGreedy : public OrderGenerator {
-    const bool reverse_order;
     const ScoringFunction scoring_function;
-    const bool use_negative_costs;
-    const bool use_exp;
-    const bool dynamic;
-    const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
-    // Unpartitioned h values.
+    // Goal distances under the original cost function by abstraction.
     std::vector<std::vector<int>> h_values_by_abstraction;
-    std::vector<int> used_costs_by_abstraction;
     std::vector<int> stolen_costs_by_abstraction;
 
-    std::vector<int> random_order;
-
-    int num_returned_orders;
-
     double rate_abstraction(
-        const std::vector<int> &local_state_ids, int abs_id) const;
+        const std::vector<int> &abstract_state_ids, int abs_id) const;
     Order compute_static_greedy_order_for_sample(
-        const std::vector<int> &local_state_ids, bool verbose) const;
-    Order compute_greedy_dynamic_order_for_sample(
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &local_state_ids,
-        std::vector<int> remaining_costs) const;
+        const std::vector<int> &abstract_state_ids, bool verbose) const;
 
 public:
     explicit OrderGeneratorGreedy(const options::Options &opts);
 
     virtual void initialize(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+        const Abstractions &abstractions,
         const std::vector<int> &costs) override;
 
-    virtual Order get_next_order(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
+    virtual Order compute_order_for_state(
+        const Abstractions &abstractions,
         const std::vector<int> &costs,
-        const std::vector<int> &local_state_ids,
+        const std::vector<int> &abstract_state_ids,
         bool verbose) override;
 };
 }

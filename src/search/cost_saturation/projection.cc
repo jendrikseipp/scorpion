@@ -20,9 +20,7 @@ Projection::Projection(
       pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
 
-    active_operators = compute_active_operators();
     looping_operators = compute_looping_operators();
-    assert(utils::is_sorted_unique(active_operators));
     assert(utils::is_sorted_unique(looping_operators));
 
     hash_multipliers.reserve(pattern.size());
@@ -63,7 +61,6 @@ Projection::Projection(
         op.remove_regression_preconditions();
     }
 
-    // Needs hash_multipliers.
     goal_states = compute_goal_states();
 }
 
@@ -74,7 +71,7 @@ int Projection::get_abstract_state_id(const State &concrete_state) const {
     return hash_index(concrete_state);
 }
 
-vector<int> Projection::compute_active_operators() const {
+vector<int> Projection::get_active_operators() const {
     vector<int> active_operators;
     for (OperatorProxy op : task_proxy.get_operators()) {
         if (is_operator_relevant(op)) {
@@ -113,7 +110,7 @@ vector<int> Projection::compute_goal_states() const {
         }
     }
 
-    for (size_t state_index = 0; state_index < num_states; ++state_index) {
+    for (int state_index = 0; state_index < num_states; ++state_index) {
         if (is_goal_state(state_index, abstract_goals, variables)) {
             goal_states.push_back(state_index);
         }
@@ -313,18 +310,13 @@ bool Projection::operator_induces_loop(const OperatorProxy &op) const {
 
 vector<int> Projection::compute_saturated_costs(
     const vector<int> &h_values,
-    int num_operators,
-    bool use_general_costs) const {
-    const int min_cost = use_general_costs ? -INF : 0;
-
-    vector<int> saturated_costs(num_operators, min_cost);
+    int num_operators) const {
+    vector<int> saturated_costs(num_operators, -INF);
 
     /* To prevent negative cost cycles we ensure that all operators
        inducing self-loops have non-negative costs. */
-    if (use_general_costs) {
-        for (int op_id : looping_operators) {
-            saturated_costs[op_id] = 0;
-        }
+    for (int op_id : looping_operators) {
+        saturated_costs[op_id] = 0;
     }
 
     // Reuse vector to save allocations.
@@ -353,15 +345,15 @@ vector<int> Projection::compute_saturated_costs(
     return saturated_costs;
 }
 
-vector<int> Projection::compute_h_values(const vector<int> &costs) const {
+vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     return compute_distances(costs);
 }
 
 vector<Transition> Projection::get_transitions() const {
-    vector<Transition> transitions;
     // We can use an arbitrary cost function for computing the transitions.
     int num_operators = task_proxy.get_operators().size();
     vector<int> unit_costs(num_operators, 1);
+    vector<Transition> transitions;
     compute_distances(unit_costs, &transitions);
     return transitions;
 }
@@ -370,15 +362,26 @@ int Projection::get_num_states() const {
     return num_states;
 }
 
-void Projection::remove_transition_system() {
-    Abstraction::remove_transition_system();
+const vector<int> &Projection::get_looping_operators() const {
+    assert(has_transition_system());
+    return looping_operators;
+}
+
+const vector<int> &Projection::get_goal_states() const {
+    assert(has_transition_system());
+    return goal_states;
+}
+
+void Projection::release_transition_system_memory() {
     utils::release_vector_memory(abstract_operators);
+    utils::release_vector_memory(looping_operators);
+    utils::release_vector_memory(goal_states);
     match_tree = nullptr;
 }
 
 void Projection::dump() const {
+    assert(has_transition_system());
     cout << "Abstract operators: " << abstract_operators.size()
-         << ", active operators: " << active_operators.size()
          << ", looping operators: " << looping_operators.size()
          << ", goal states: " << goal_states.size() << "/" << num_states
          << endl;

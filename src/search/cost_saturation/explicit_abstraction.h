@@ -33,7 +33,8 @@ struct Successor {
     }
 };
 
-std::ostream &operator<<(std::ostream &os, const Successor &transition);
+std::ostream &operator<<(std::ostream &os, const Successor &successor);
+
 
 class ExplicitAbstraction : public Abstraction {
     const AbstractionFunction abstraction_function;
@@ -41,13 +42,21 @@ class ExplicitAbstraction : public Abstraction {
     // State-changing transitions.
     std::vector<std::vector<Successor>> backward_graph;
 
+    std::vector<int> active_operators;
+
+    // Operators inducing self-loops.
+    std::vector<int> looping_operators;
+
+    std::vector<int> goal_states;
+
     mutable priority_queues::AdaptiveQueue<int> queue;
 
 protected:
     virtual std::vector<int> compute_saturated_costs(
         const std::vector<int> &h_values,
-        int num_operators,
-        bool use_general_costs) const override;
+        int num_operators) const override;
+
+    virtual void release_transition_system_memory() override;
 
 public:
     ExplicitAbstraction(
@@ -56,17 +65,14 @@ public:
         std::vector<int> &&looping_operators,
         std::vector<int> &&goal_states);
 
-    virtual std::vector<int> compute_h_values(
+    virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;
-
     virtual std::vector<Transition> get_transitions() const override;
-
     virtual int get_num_states() const override;
-
     virtual int get_abstract_state_id(const State &concrete_state) const override;
-
-    virtual void remove_transition_system() override;
-
+    virtual std::vector<int> get_active_operators() const override;
+    virtual const std::vector<int> &get_looping_operators() const override;
+    virtual const std::vector<int> &get_goal_states() const override;
     virtual void dump() const override;
 };
 }

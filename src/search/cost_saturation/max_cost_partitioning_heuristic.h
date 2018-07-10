@@ -5,7 +5,6 @@
 
 #include "../heuristic.h"
 
-#include <memory>
 #include <vector>
 
 namespace options {
@@ -13,18 +12,17 @@ class Options;
 }
 
 namespace cost_saturation {
-class CostPartitionedHeuristic;
 class CostPartitioningCollectionGenerator;
+class CostPartitioningHeuristic;
 
 class MaxCostPartitioningHeuristic : public Heuristic {
     Abstractions abstractions;
-    const std::vector<CostPartitionedHeuristic> cp_heuristics;
-    const bool debug;
+    const std::vector<CostPartitioningHeuristic> cp_heuristics;
 
     // For statistics.
     mutable std::vector<int> num_best_order;
 
-    virtual int compute_heuristic(const State &state);
+    int compute_heuristic(const State &state) const;
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
@@ -33,13 +31,16 @@ public:
     MaxCostPartitioningHeuristic(
         const options::Options &opts,
         Abstractions &&abstractions,
-        std::vector<CostPartitionedHeuristic> &&cp_heuristics);
+        std::vector<CostPartitioningHeuristic> &&cp_heuristics);
     virtual ~MaxCostPartitioningHeuristic() override;
 
     virtual void print_statistics() const override;
 };
 
-extern void add_cost_partitioning_collection_options_to_parser(
+extern Heuristic *get_max_cp_heuristic(
+    options::OptionParser &parser, CPFunction cp_function);
+
+extern void add_order_options_to_parser(
     options::OptionParser &parser);
 
 extern void prepare_parser_for_cost_partitioning_heuristic(

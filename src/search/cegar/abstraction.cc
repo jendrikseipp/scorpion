@@ -89,7 +89,7 @@ Abstraction::Abstraction(
       deviations(0),
       unmet_preconditions(0),
       unmet_goals(0),
-      refinement_hierarchy(make_shared<RefinementHierarchy>(task)),
+      refinement_hierarchy(utils::make_unique_ptr<RefinementHierarchy>(task)),
       debug(debug) {
     assert(max_states >= 1);
     g_log << "Start building abstraction." << endl;
@@ -105,7 +105,6 @@ Abstraction::Abstraction(
     update_h_and_g_values();
 
     print_statistics();
-    compress_self_loops();
     set_state_ids();
 }
 
@@ -320,19 +319,24 @@ void Abstraction::set_state_ids() {
     }
 }
 
-void Abstraction::compress_self_loops() {
-    operator_induces_self_loop.resize(task_proxy.get_operators().size(), false);
+vector<int> Abstraction::compute_looping_operators() const {
+    int num_operators = task_proxy.get_operators().size();
+
+    vector<bool> operator_induces_self_loop(num_operators, false);
     for (AbstractState *state : states) {
         for (int op_id : state->get_loops()) {
             operator_induces_self_loop[op_id] = true;
         }
-        state->remove_loops();
-        state->release_domains_memory();
     }
-}
 
-const vector<bool> &Abstraction::get_operator_induces_self_loop() const {
-    return operator_induces_self_loop;
+    vector<int> looping_operators;
+    for (int op_id = 0; op_id < num_operators; ++op_id) {
+        if (operator_induces_self_loop[op_id]) {
+            looping_operators.push_back(op_id);
+        }
+    }
+    looping_operators.shrink_to_fit();
+    return looping_operators;
 }
 
 void Abstraction::set_operator_costs(const vector<int> &new_costs) {
@@ -348,18 +352,6 @@ vector<int> Abstraction::get_saturated_costs() {
     const int min_cost = use_general_costs ? -INF : 0;
 
     vector<int> saturated_costs(num_ops, min_cost);
-
-    /* To prevent negative cost cycles, all operators inducing
-       self-loops must have non-negative costs. */
-    if (use_general_costs) {
-        assert(static_cast<int>(operator_induces_self_loop.size()) == num_ops);
-        for (int op_id = 0; op_id < num_ops; ++op_id) {
-            if (operator_induces_self_loop[op_id]) {
-                saturated_costs[op_id] = 0;
-            }
-        }
-    }
-
     for (AbstractState *state : states) {
         const int g = state->get_search_info().get_g_value();
         const int h = state->get_h_value();
@@ -385,6 +377,14 @@ vector<int> Abstraction::get_saturated_costs() {
             const int op_id = transition.op_id;
             const int needed = h - succ_h;
             saturated_costs[op_id] = max(saturated_costs[op_id], needed);
+        }
+
+        if (use_general_costs) {
+            /* To prevent negative cost cycles, all operators inducing
+               self-loops must have non-negative costs. */
+            for (int op_id : state->get_loops()) {
+                saturated_costs[op_id] = max(saturated_costs[op_id], 0);
+            }
         }
     }
     return saturated_costs;

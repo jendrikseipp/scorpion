@@ -28,10 +28,10 @@ class RefinementHierarchy {
     std::shared_ptr<AbstractTask> task;
     std::unique_ptr<Node> root;
 
-    Node *get_node(const State &state) const;
-
 public:
     explicit RefinementHierarchy(const std::shared_ptr<AbstractTask> &task);
+
+    Node *get_node(const State &state) const;
 
     Node *get_root() const {
         return root.get();
@@ -57,7 +57,10 @@ class Node {
     int var;
     int value;
 
-    // Set when the hierarchy is finished.
+    // Estimated cost to nearest goal state from this node's state.
+    int h;
+
+    // Set after the abstraction is built.
     // TODO: Set ID in the constructor.
     int state_id;
 
@@ -95,6 +98,15 @@ public:
     }
 
     Node *get_child(int value) const;
+
+    void increase_h_value_to(int new_h) {
+        assert(new_h >= h);
+        h = new_h;
+    }
+
+    int get_h_value() const {
+        return h;
+    }
 
     int get_state_id() const {
         assert(!is_split());

@@ -10,6 +10,7 @@ Node::Node()
       right_child(nullptr),
       var(LEAF_NODE),
       value(LEAF_NODE),
+      h(0),
       state_id(-1) {
 }
 

@@ -572,6 +572,7 @@ fast_downward_plugin(
         cegar/abstract_search
         cegar/abstract_state
         cegar/additive_cartesian_heuristic
+        cegar/cartesian_heuristic_function
         cegar/cost_saturation
         cegar/domains
         cegar/max_cartesian_heuristic
@@ -594,8 +595,8 @@ fast_downward_plugin(
         cost_saturation/abstraction_generator
         cost_saturation/canonical_heuristic
         cost_saturation/cartesian_abstraction_generator
-        cost_saturation/cost_partitioned_heuristic
         cost_saturation/cost_partitioning_collection_generator
+        cost_saturation/cost_partitioning_heuristic
         cost_saturation/diversifier
         cost_saturation/explicit_abstraction
         cost_saturation/explicit_projection_factory
@@ -604,18 +605,20 @@ fast_downward_plugin(
         cost_saturation/optimal_cost_partitioning_heuristic
         #cost_saturation/order_generator_lookahead
         cost_saturation/order_generator
+        cost_saturation/order_generator_dynamic_greedy
         cost_saturation/order_generator_greedy
+        cost_saturation/order_generator_random
         cost_saturation/order_optimizer
         cost_saturation/projection
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
         cost_saturation/saturated_cost_partitioning_online_heuristic
         cost_saturation/scoring_functions
-        cost_saturation/types.h
+        cost_saturation/types
         cost_saturation/uniform_cost_partitioning_heuristic
         cost_saturation/utils
         cost_saturation/zero_one_cost_partitioning_heuristic
-    DEPENDS CEGAR LP_SOLVER PDBS
+    DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
 )
 
 fast_downward_plugin(

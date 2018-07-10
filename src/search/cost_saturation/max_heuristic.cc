@@ -17,7 +17,7 @@ MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions &&abstractions)
       abstractions(move(abstractions)) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : this->abstractions) {
-        h_values_by_abstraction.push_back(abstraction->compute_h_values(costs));
+        h_values_by_abstraction.push_back(abstraction->compute_goal_distances(costs));
         abstraction->remove_transition_system();
     }
 }

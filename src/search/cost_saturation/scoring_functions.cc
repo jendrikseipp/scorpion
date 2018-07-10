@@ -3,8 +3,6 @@
 #include "types.h"
 
 #include "../option_parser.h"
-#include "../plugin.h"
-#include "../task_proxy.h"
 
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -82,36 +80,25 @@ vector<int> compute_all_surplus_costs(
     return surplus_costs;
 }
 
-double compute_score(
-    int h, int used_costs, ScoringFunction scoring_function, bool use_exp) {
+double compute_score(int h, int used_costs, ScoringFunction scoring_function) {
     assert(h >= 0);
     assert(h != INF);
     assert(used_costs != INF);
     assert(used_costs != -INF);
     if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
         return h;
-    } else if (scoring_function == ScoringFunction::MIN_COSTS ||
-               scoring_function == ScoringFunction::MIN_STOLEN_COSTS) {
+    } else if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS) {
         return -used_costs;
-    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_COSTS ||
-               scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
-        if (use_exp) {
-            return exp(static_cast<double>(h - used_costs));
-        } else {
-            return static_cast<double>(h) / max(1, used_costs);
-        }
+    } else if (scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+        return static_cast<double>(h) / max(1, used_costs);
     } else {
         ABORT("Invalid scoring_function");
     }
 }
 
-
 void add_scoring_function_to_parser(OptionParser &parser) {
     vector<string> scoring_functions;
-    scoring_functions.push_back("RANDOM");
     scoring_functions.push_back("MAX_HEURISTIC");
-    scoring_functions.push_back("MIN_COSTS");
-    scoring_functions.push_back("MAX_HEURISTIC_PER_COSTS");
     scoring_functions.push_back("MIN_STOLEN_COSTS");
     scoring_functions.push_back("MAX_HEURISTIC_PER_STOLEN_COSTS");
     parser.add_enum_option(

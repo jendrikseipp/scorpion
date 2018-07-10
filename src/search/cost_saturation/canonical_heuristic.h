@@ -16,7 +16,7 @@ using MaxAdditiveSubset = std::vector<int>;
 using MaxAdditiveSubsets = std::vector<MaxAdditiveSubset>;
 
 class CanonicalHeuristic : public Heuristic {
-    int compute_max_h(const std::vector<int> &local_state_ids) const;
+    int compute_max_h(const std::vector<int> &abstract_state_ids) const;
     int compute_heuristic(const State &state);
 
 protected:

@@ -332,7 +332,7 @@ static Heuristic *_parse(OptionParser &parser) {
         vector<shared_ptr<RefinementHierarchy>> refinement_hierarchies;
         refinement_hierarchies.reserve(abstractions.size());
         for (unique_ptr<Abstraction> &abstraction : abstractions) {
-            refinement_hierarchies.push_back(abstraction->get_refinement_hierarchy());
+            refinement_hierarchies.push_back(abstraction->extract_refinement_hierarchy());
         }
 
         if (cost_partitioning_type == CostPartitioningType::SATURATED) {
