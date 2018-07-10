@@ -62,7 +62,8 @@ void PhOAbstractionConstraints::initialize_constraints(
                 assert(utils::in_bounds(op_id, operator_costs));
                 constraint.insert(op_id, operator_costs[op_id]);
             }
-            h_values_by_abstraction.push_back(abstraction->compute_h_values(operator_costs));
+            h_values_by_abstraction.push_back(
+                abstraction->compute_goal_distances(operator_costs));
             abstraction->remove_transition_system();
         }
     }

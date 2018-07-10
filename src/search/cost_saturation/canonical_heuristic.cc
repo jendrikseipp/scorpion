@@ -56,7 +56,7 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
 
 CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     : Heuristic(opts),
-      debug(opts.get<bool>("debug")) {
+      debug(false) {
     const vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
 
     vector<int> abstractions_per_generator;

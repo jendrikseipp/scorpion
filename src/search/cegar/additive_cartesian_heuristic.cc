@@ -34,7 +34,6 @@ static vector<vector<vector<int>>> compute_all_saturated_cost_partitionings(
             compute_saturated_cost_partitioning(
                 abstractions, indices, operator_costs));
     } while (next_permutation(indices.begin(), indices.end()));
-    assert(static_cast<long>(h_values_by_orders.size()) == factorial(abstractions.size()));
     return h_values_by_orders;
 }
 

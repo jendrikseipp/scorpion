@@ -192,7 +192,7 @@ static Heuristic *_parse(OptionParser &parser) {
         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
 
     TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
-    bool debug = opts.get<bool>("debug");
+    bool debug = false;
 
     CPHeuristics cp_heuristics;
     if (opts.get<bool>("dynamic")) {
