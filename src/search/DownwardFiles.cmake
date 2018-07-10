@@ -575,9 +575,7 @@ fast_downward_plugin(
         cegar/cartesian_heuristic_function
         cegar/cost_saturation
         cegar/domains
-        cegar/max_cartesian_heuristic
         cegar/refinement_hierarchy
-        cegar/scp_optimizer
         cegar/split_selector
         cegar/subtask_generators
         cegar/transition

@@ -1,7 +1,7 @@
 #include "cost_saturation.h"
 
 #include "abstraction.h"
-#include "additive_cartesian_heuristic.h"
+#include "cartesian_heuristic_function.h"
 #include "subtask_generators.h"
 #include "utils.h"
 
@@ -19,8 +19,87 @@
 using namespace std;
 
 namespace cegar {
-void reduce_costs(
-    vector<int> &remaining_costs, const vector<int> &saturated_costs) {
+/*
+  We reserve some memory to be able to recover from out-of-memory
+  situations gracefully. When the memory runs out, we stop refining and
+  start the next refinement or the search. Due to memory fragmentation
+  the memory used for building the abstraction (states, transitions,
+  etc.) often can't be reused for things that require big continuous
+  blocks of memory. It is for this reason that we require such a large
+  amount of memory padding.
+*/
+static const int memory_padding_in_mb = 75;
+
+CostSaturation::CostSaturation(
+    const vector<shared_ptr<SubtaskGenerator>> &subtask_generators,
+    int max_states,
+    int max_non_looping_transitions,
+    double max_time,
+    bool use_general_costs,
+    PickSplit pick_split,
+    utils::RandomNumberGenerator &rng)
+    : subtask_generators(subtask_generators),
+      max_states(max_states),
+      max_non_looping_transitions(max_non_looping_transitions),
+      max_time(max_time),
+      use_general_costs(use_general_costs),
+      pick_split(pick_split),
+      rng(rng),
+      num_abstractions(0),
+      num_states(0),
+      num_non_looping_transitions(0) {
+}
+
+vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
+    const shared_ptr<AbstractTask> &task) {
+    // For simplicity this is a member object. Make sure it is in a valid state.
+    assert(heuristic_functions.empty());
+
+    utils::CountdownTimer timer(max_time);
+
+    TaskProxy task_proxy(*task);
+
+    task_properties::verify_no_axioms(task_proxy);
+    task_properties::verify_no_conditional_effects(task_proxy);
+
+    reset(task_proxy);
+
+    State initial_state = TaskProxy(*task).get_initial_state();
+
+    function<bool()> should_abort =
+        [&] () {
+            return num_states >= max_states ||
+                   num_non_looping_transitions >= max_non_looping_transitions ||
+                   timer.is_expired() ||
+                   utils::is_out_of_memory() ||
+                   state_is_dead_end(initial_state);
+        };
+
+    utils::reserve_extra_memory_padding(memory_padding_in_mb);
+    for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
+        SharedTasks subtasks = subtask_generator->get_subtasks(task);
+        build_abstractions(subtasks, timer, should_abort);
+        if (should_abort())
+            break;
+    }
+    if (utils::extra_memory_padding_is_reserved())
+        utils::release_extra_memory_padding();
+    print_statistics(timer.get_elapsed_time());
+
+    vector<CartesianHeuristicFunction> functions;
+    swap(heuristic_functions, functions);
+
+    return functions;
+}
+
+void CostSaturation::reset(const TaskProxy &task_proxy) {
+    remaining_costs = task_properties::get_operator_costs(task_proxy);
+    num_abstractions = 0;
+    num_states = 0;
+}
+
+void CostSaturation::reduce_remaining_costs(
+    const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
     for (size_t i = 0; i < remaining_costs.size(); ++i) {
         int &remaining = remaining_costs[i];
@@ -40,66 +119,6 @@ void reduce_costs(
     }
 }
 
-CostSaturation::CostSaturation(
-    CostPartitioningType cost_partitioning_type,
-    const vector<shared_ptr<SubtaskGenerator>> &subtask_generators,
-    int max_states,
-    int max_non_looping_transitions,
-    double max_time,
-    bool use_general_costs,
-    PickSplit pick_split,
-    utils::RandomNumberGenerator &rng)
-    : cost_partitioning_type(cost_partitioning_type),
-      subtask_generators(subtask_generators),
-      max_states(max_states),
-      max_non_looping_transitions(max_non_looping_transitions),
-      max_time(max_time),
-      use_general_costs(use_general_costs),
-      pick_split(pick_split),
-      rng(rng),
-      num_abstractions(0),
-      num_states(0),
-      num_non_looping_transitions(0) {
-}
-
-void CostSaturation::initialize(const shared_ptr<AbstractTask> &task) {
-    utils::CountdownTimer timer(max_time);
-
-    TaskProxy task_proxy(*task);
-
-    task_properties::verify_no_axioms(task_proxy);
-    task_properties::verify_no_conditional_effects(task_proxy);
-
-    reset(task_proxy);
-
-    function<bool()> should_abort =
-        [&] () {
-            return num_states >= max_states ||
-                   num_non_looping_transitions >= max_non_looping_transitions ||
-                   timer.is_expired() ||
-                   utils::is_out_of_memory() ||
-                   initial_state_is_dead_end();
-        };
-
-    for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
-        SharedTasks subtasks = subtask_generator->get_subtasks(task);
-        build_abstractions(subtasks, timer, should_abort);
-        if (should_abort())
-            break;
-    }
-    print_statistics(timer.get_elapsed_time());
-}
-
-vector<unique_ptr<Abstraction>> CostSaturation::extract_abstractions() {
-    return move(abstractions);
-}
-
-void CostSaturation::reset(const TaskProxy &task_proxy) {
-    remaining_costs = task_properties::get_operator_costs(task_proxy);
-    num_abstractions = 0;
-    num_states = 0;
-}
-
 shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
     shared_ptr<AbstractTask> &parent) const {
     vector<int> costs = remaining_costs;
@@ -107,11 +126,12 @@ shared_ptr<AbstractTask> CostSaturation::get_remaining_costs_task(
         parent, move(costs));
 }
 
-bool CostSaturation::initial_state_is_dead_end() const {
-    return any_of(abstractions.begin(), abstractions.end(),
-                  [](const unique_ptr<Abstraction> &abstraction) {
-            return abstraction->get_h_value_of_initial_state() == INF;
-        });
+bool CostSaturation::state_is_dead_end(const State &state) const {
+    for (const CartesianHeuristicFunction &function : heuristic_functions) {
+        if (function.get_value(state) == INF)
+            return true;
+    }
+    return false;
 }
 
 void CostSaturation::build_abstractions(
@@ -123,7 +143,7 @@ void CostSaturation::build_abstractions(
         subtask = get_remaining_costs_task(subtask);
 
         assert(num_states < max_states);
-        unique_ptr<Abstraction> abstraction = utils::make_unique_ptr<Abstraction>(
+        Abstraction abstraction(
             subtask,
             max(1, (max_states - num_states) / rem_subtasks),
             max(1, (max_non_looping_transitions - num_non_looping_transitions) /
@@ -134,14 +154,13 @@ void CostSaturation::build_abstractions(
             rng);
 
         ++num_abstractions;
-        num_states += abstraction->get_num_states();
+        num_states += abstraction.get_num_states();
+        num_non_looping_transitions += abstraction.get_num_non_looping_transitions();
         assert(num_states <= max_states);
-        num_non_looping_transitions += abstraction->get_num_non_looping_transitions();
-
-        if (cost_partitioning_type == CostPartitioningType::SATURATED) {
-            reduce_costs(remaining_costs, abstraction->get_saturated_costs());
-        }
-        abstractions.push_back(move(abstraction));
+        reduce_remaining_costs(abstraction.get_saturated_costs());
+        heuristic_functions.emplace_back(
+            subtask,
+            abstraction.extract_refinement_hierarchy());
 
         if (should_abort())
             break;

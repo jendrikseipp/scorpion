@@ -20,7 +20,7 @@ using Solution = std::deque<Transition>;
   states.
 */
 class AbstractSearch {
-    std::vector<int> operator_costs;
+    const std::vector<int> operator_costs;
     AbstractStates &states;
 
     priority_queues::AdaptiveQueue<AbstractState *> open_queue;
@@ -48,8 +48,6 @@ public:
     const Solution &get_solution() {
         return solution;
     }
-
-    void set_operator_costs(const std::vector<int> &costs);
 };
 }
 

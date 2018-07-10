@@ -154,12 +154,6 @@ public:
 
     int get_h_value_of_initial_state() const;
 
-    const std::vector<bool> &get_operator_induces_self_loop() const;
-
-    void set_operator_costs(const std::vector<int> &new_costs);
-
-    std::vector<bool> compute_active_operators();
-
     std::vector<int> compute_looping_operators() const;
 };
 }

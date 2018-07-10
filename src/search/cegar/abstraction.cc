@@ -339,14 +339,6 @@ vector<int> Abstraction::compute_looping_operators() const {
     return looping_operators;
 }
 
-void Abstraction::set_operator_costs(const vector<int> &new_costs) {
-    abstract_search.set_operator_costs(new_costs);
-    abstract_search.backwards_dijkstra(goals);
-    for (AbstractState *state : states) {
-        state->set_h_value(state->get_search_info().get_g_value());
-    }
-}
-
 vector<int> Abstraction::get_saturated_costs() {
     const int num_ops = task_proxy.get_operators().size();
     const int min_cost = use_general_costs ? -INF : 0;
@@ -388,29 +380,6 @@ vector<int> Abstraction::get_saturated_costs() {
         }
     }
     return saturated_costs;
-}
-
-vector<bool> Abstraction::compute_active_operators() {
-    vector<bool> result(task_proxy.get_operators().size(), false);
-
-    for (AbstractState *state : states) {
-        const int g = state->get_search_info().get_g_value();
-        const int h = state->get_h_value();
-
-        if (g == INF || h == INF)
-            continue;
-
-        for (const Transition &transition : state->get_outgoing_transitions()) {
-            const AbstractState *successor = transition.target;
-            const int succ_h = successor->get_h_value();
-
-            if (succ_h == INF)
-                continue;
-
-            result[transition.op_id] = true;
-        }
-    }
-    return result;
 }
 
 void Abstraction::print_statistics() {

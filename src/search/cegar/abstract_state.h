@@ -157,8 +157,6 @@ public:
 
     AbstractSearchInfo &get_search_info() {return search_info; }
 
-    void release_domains_memory();
-
     friend std::ostream &operator<<(std::ostream &os, const AbstractState &state) {
         return os << state.domains;
     }
