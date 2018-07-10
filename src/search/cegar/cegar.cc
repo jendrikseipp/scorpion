@@ -130,10 +130,20 @@ void CEGAR::separate_facts_unreachable_before_goal() {
 }
 
 bool CEGAR::may_keep_refining() const {
-    return abstraction->get_num_states() < max_states &&
-           abstraction->get_transition_system().get_num_non_loops() < max_non_looping_transitions &&
-           !timer.is_expired() &&
-           utils::extra_memory_padding_is_reserved();
+    if (abstraction->get_num_states() >= max_states) {
+        cout << "Maximum number of states reached." << endl;
+        return false;
+    } else if (abstraction->get_transition_system().get_num_non_loops() >= max_non_looping_transitions) {
+        cout << "Maximum number of transitions reached." << endl;
+        return false;
+    } else if (timer.is_expired()) {
+        cout << "Reached time limit." << endl;
+        return false;
+    } else if (!utils::extra_memory_padding_is_reserved()) {
+        cout << "Reached memory limit." << endl;
+        return false;
+    }
+    return true;
 }
 
 void CEGAR::update_goal_distances(const Solution &solution) {
@@ -159,33 +169,53 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     if (task_proxy.get_goals().size() == 1) {
         separate_facts_unreachable_before_goal();
     }
+
+    utils::Timer search_timer;
+    utils::Timer find_flaw_timer;
+    utils::Timer refine_timer;
+    search_timer.stop();
+    find_flaw_timer.stop();
+    refine_timer.stop();
+
     while (may_keep_refining()) {
+        search_timer.resume();
         unique_ptr<Solution> solution = abstract_search.find_solution(
             abstraction->get_transition_system().get_outgoing_transitions(),
             abstraction->get_states(),
             abstraction->get_initial_state()->get_id(),
             abstraction->get_goals());
+        search_timer.stop();
         if (!solution) {
             cout << "Abstract problem is unsolvable." << endl;
             abstraction->get_initial_state()->set_goal_distance_estimate(INF);
             break;
         }
         update_goal_distances(*solution);
+
+        find_flaw_timer.resume();
         unique_ptr<Flaw> flaw = find_flaw(*solution);
+        find_flaw_timer.stop();
         if (!flaw) {
             cout << "Found concrete solution during refinement." << endl;
             break;
         }
+
+        refine_timer.resume();
         AbstractState *abstract_state = flaw->current_abstract_state;
         vector<Split> splits = flaw->get_possible_splits();
         const Split &split = split_selector.pick_split(*abstract_state, splits, rng);
         abstraction->refine(abstract_state, split.var_id, split.values);
+        refine_timer.stop();
+
         if (abstraction->get_num_states() % 1000 == 0) {
             g_log << abstraction->get_num_states() << "/" << max_states << " states, "
                   << abstraction->get_transition_system().get_num_non_loops() << "/"
                   << max_non_looping_transitions << " transitions" << endl;
         }
     }
+    cout << "Time for searching abstract plans: " << search_timer << endl;
+    cout << "Time for finding flaws: " << find_flaw_timer << endl;
+    cout << "Time for splitting states: " << refine_timer << endl;
 }
 
 unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
