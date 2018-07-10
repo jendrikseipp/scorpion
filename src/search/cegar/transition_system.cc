@@ -128,13 +128,17 @@ void TransitionSystem::rewire_incoming_transitions(
        u->v we need to add transitions u->v1, u->v2, or both. */
     int v1_id = v1->get_id();
     int v2_id = v2->get_id();
+
     for (const Transition &transition : old_incoming) {
         int op_id = transition.op_id;
         int u_id = transition.target_id;
-
         remove_transition(outgoing[u_id], Transition(op_id, v1_id));
         --num_non_loops;
+    }
 
+    for (const Transition &transition : old_incoming) {
+        int op_id = transition.op_id;
+        int u_id = transition.target_id;
         AbstractState *u = states[u_id];
         int post = get_postcondition_value(op_id, var);
         if (post == UNDEFINED) {
@@ -166,13 +170,17 @@ void TransitionSystem::rewire_outgoing_transitions(
        v->w we need to add transitions v1->w, v2->w, or both. */
     int v1_id = v1->get_id();
     int v2_id = v2->get_id();
+
     for (const Transition &transition : old_outgoing) {
         int op_id = transition.op_id;
         int w_id = transition.target_id;
-
         remove_transition(incoming[w_id], Transition(op_id, v1_id));
         --num_non_loops;
+    }
 
+    for (const Transition &transition : old_outgoing) {
+        int op_id = transition.op_id;
+        int w_id = transition.target_id;
         AbstractState *w = states[w_id];
         int pre = get_precondition_value(op_id, var);
         int post = get_postcondition_value(op_id, var);
