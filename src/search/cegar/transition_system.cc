@@ -67,12 +67,12 @@ static int lookup_value(const vector<FactPair> &facts, int var) {
     return UNDEFINED;
 }
 
-static void remove_transition(
-    Transitions &transitions, const Transition &transition) {
-    auto pos = find(transitions.begin(), transitions.end(), transition);
-    assert(pos != transitions.end());
-    swap(*pos, transitions.back());
-    transitions.pop_back();
+static void remove_transitions_from_or_to_state(Transitions &transitions, int state_id) {
+    auto new_end = remove_if(
+        transitions.begin(), transitions.end(),
+        [state_id](const Transition &t) {return t.target_id == state_id;});
+    assert(new_end < transitions.end());
+    transitions.erase(new_end, transitions.end());
 }
 
 
@@ -128,13 +128,20 @@ void TransitionSystem::rewire_incoming_transitions(
        u->v we need to add transitions u->v1, u->v2, or both. */
     int v1_id = v1->get_id();
     int v2_id = v2->get_id();
+
+    unordered_set<int> updated_states;
+    for (const Transition &transition : old_incoming) {
+        int u_id = transition.target_id;
+        if (!updated_states.count(u_id)) {
+            remove_transitions_from_or_to_state(outgoing[u_id], v1_id);
+            updated_states.insert(u_id);
+        }
+    }
+    num_non_loops -= old_incoming.size();
+
     for (const Transition &transition : old_incoming) {
         int op_id = transition.op_id;
         int u_id = transition.target_id;
-
-        remove_transition(outgoing[u_id], Transition(op_id, v1_id));
-        --num_non_loops;
-
         AbstractState *u = states[u_id];
         int post = get_postcondition_value(op_id, var);
         if (post == UNDEFINED) {
@@ -166,13 +173,20 @@ void TransitionSystem::rewire_outgoing_transitions(
        v->w we need to add transitions v1->w, v2->w, or both. */
     int v1_id = v1->get_id();
     int v2_id = v2->get_id();
+
+    unordered_set<int> updated_states;
+    for (const Transition &transition : old_outgoing) {
+        int w_id = transition.target_id;
+        if (!updated_states.count(w_id)) {
+            remove_transitions_from_or_to_state(incoming[w_id], v1_id);
+            updated_states.insert(w_id);
+        }
+    }
+    num_non_loops -= old_outgoing.size();
+
     for (const Transition &transition : old_outgoing) {
         int op_id = transition.op_id;
         int w_id = transition.target_id;
-
-        remove_transition(incoming[w_id], Transition(op_id, v1_id));
-        --num_non_loops;
-
         AbstractState *w = states[w_id];
         int pre = get_precondition_value(op_id, var);
         int post = get_postcondition_value(op_id, var);
