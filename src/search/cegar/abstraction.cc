@@ -110,7 +110,7 @@ void Abstraction::refine(AbstractState *state, int var, const vector<int> &wante
             init = v2;
         }
         if (debug) {
-            cout << "New init state #" << init->get_id() << ": " << *init << endl;
+            cout << "New init state " << init->get_id() << ": " << *init << endl;
         }
     }
     if (goals.count(v_id)) {
@@ -122,7 +122,7 @@ void Abstraction::refine(AbstractState *state, int var, const vector<int> &wante
             goals.insert(v2_id);
         }
         if (debug) {
-            cout << "goal states: " << goals.size() << endl;
+            cout << "Number of goal states: " << goals.size() << endl;
         }
     }
 
