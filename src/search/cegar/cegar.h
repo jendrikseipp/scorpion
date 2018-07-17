@@ -15,6 +15,7 @@ class RandomNumberGenerator;
 }
 
 namespace cegar {
+class AbstractSearch;
 class Abstraction;
 struct Flaw;
 
@@ -52,8 +53,6 @@ class CEGAR {
       simplifies the implementation.
     */
     void separate_facts_unreachable_before_goal();
-
-    void update_goal_distances(const Solution &solution);
 
     /* Try to convert the abstract solution into a concrete trace. Return the
        first encountered flaw or nullptr if there is no flaw. */

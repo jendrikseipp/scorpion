@@ -11,8 +11,7 @@ from relativescatter import RelativeScatterPlotReport
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
-REVISIONS = ["issue637-v3", "issue637-v4"]
-#REVISIONS = ["issue637-v4"]
+REVISIONS = ["issue637-v1-base", "issue637-v6"]
 DRIVER_OPTIONS = ["--overall-time-limit", "30m"]
 CONFIGS = [
     IssueConfig(
@@ -50,11 +49,11 @@ exp.add_parser(os.path.join(DIR, "parser.py"))
 exp.add_step('build', exp.build)
 exp.add_step('start', exp.start_runs)
 exp.add_fetcher(name='fetch')
-exp.add_fetcher(os.path.join(DIR, 'data/issue637-v3-eval'))
+
 
 attributes = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
-    "search_start_time", "search_start_memory", "init_time", "cartesian_states"]
-exp.add_absolute_report_step(attributes=attributes)
+    "search_start_memory", "init_time"]
+#exp.add_absolute_report_step(attributes=attributes)
 exp.add_comparison_table_step(attributes=attributes)
 
 if len(REVISIONS) == 2:

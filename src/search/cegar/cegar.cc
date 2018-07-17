@@ -146,18 +146,6 @@ bool CEGAR::may_keep_refining() const {
     return true;
 }
 
-void CEGAR::update_goal_distances(const Solution &solution) {
-    int goal_distance = 0;
-    for (auto it = solution.rbegin(); it != solution.rend(); ++it) {
-        const Transition &transition = *it;
-        AbstractState *current = abstraction->get_state(transition.target_id);
-        current->set_goal_distance_estimate(goal_distance);
-        int cost = task_proxy.get_operators()[transition.op_id].get_cost();
-        goal_distance += cost;
-    }
-    abstraction->get_initial_state()->set_goal_distance_estimate(goal_distance);
-}
-
 void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     /*
       For landmark tasks we have to map all states in which the
@@ -181,16 +169,13 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         search_timer.resume();
         unique_ptr<Solution> solution = abstract_search.find_solution(
             abstraction->get_transition_system().get_outgoing_transitions(),
-            abstraction->get_states(),
             abstraction->get_initial_state()->get_id(),
             abstraction->get_goals());
         search_timer.stop();
         if (!solution) {
-            cout << "Abstract problem is unsolvable." << endl;
-            abstraction->get_initial_state()->set_goal_distance_estimate(INF);
+            cout << "Abstract problem is unsolvable" << endl;
             break;
         }
-        update_goal_distances(*solution);
 
         find_flaw_timer.resume();
         unique_ptr<Flaw> flaw = find_flaw(*solution);
@@ -202,9 +187,13 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
 
         refine_timer.resume();
         AbstractState *abstract_state = flaw->current_abstract_state;
+        int state_id = abstract_state->get_id();
         vector<Split> splits = flaw->get_possible_splits();
         const Split &split = split_selector.pick_split(*abstract_state, splits, rng);
-        abstraction->refine(abstract_state, split.var_id, split.values);
+        auto new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
+        // Since h-values only increase we can assign the h-value to the children.
+        abstract_search.copy_h_value_to_children(
+            state_id, new_state_ids.first, new_state_ids.second);
         refine_timer.stop();
 
         if (abstraction->get_num_states() % 1000 == 0) {
@@ -276,6 +265,8 @@ unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
 
 void CEGAR::print_statistics() {
     abstraction->print_statistics();
+    int init_id = abstraction->get_initial_state()->get_id();
+    cout << "Initial h value: " << abstract_search.get_h_value(init_id) << endl;
     cout << endl;
 }
 }

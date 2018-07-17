@@ -285,7 +285,7 @@ void TransitionSystem::rewire(
     assert(incoming[v1_id].empty() && outgoing[v1_id].empty() && loops[v1_id].empty());
     assert(incoming[v2_id].empty() && outgoing[v2_id].empty() && loops[v2_id].empty());
 
-    // Add new transitions and remove old transitions.
+    // Remove old transitions and add new transitions.
     rewire_incoming_transitions(old_incoming, states, v1, v2, var);
     rewire_outgoing_transitions(old_outgoing, states, v1, v2, var);
     rewire_loops(old_loops, v1, v2, var);

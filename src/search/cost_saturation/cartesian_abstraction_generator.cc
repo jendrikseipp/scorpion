@@ -56,7 +56,7 @@ static vector<int> get_looping_operators(const cegar::TransitionSystem &ts) {
 }
 
 
-static unique_ptr<Abstraction> convert_abstraction(
+static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
     cegar::Abstraction &cartesian_abstraction, const vector<int> &operator_costs) {
     // Compute g and h values.
     const cegar::TransitionSystem &ts =
@@ -101,11 +101,15 @@ static unique_ptr<Abstraction> convert_abstraction(
             return refinement_hierarchy->get_abstract_state_id(state);
         };
 
-    return utils::make_unique_ptr<ExplicitAbstraction>(
-        state_map,
-        move(backward_graph),
-        move(looping_operators),
-        move(goal_states));
+    bool unsolvable = h_values[initial_state_id] == INF;
+    return {
+               unsolvable,
+               utils::make_unique_ptr<ExplicitAbstraction>(
+                   state_map,
+                   move(backward_graph),
+                   move(looping_operators),
+                   move(goal_states))
+    };
 }
 
 void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
@@ -131,12 +135,13 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
 
         num_states += cartesian_abstraction->get_num_states();
         num_transitions += cartesian_abstraction->get_transition_system().get_num_non_loops();
-        int init_h = cartesian_abstraction->get_initial_state()->get_goal_distance_estimate();
 
         vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*subtask));
-        abstractions.push_back(convert_abstraction(*cartesian_abstraction, operator_costs));
+        auto result = convert_abstraction(*cartesian_abstraction, operator_costs);
+        bool unsolvable = result.first;
+        abstractions.push_back(move(result.second));
 
-        if (total_size_limit_reached() || init_h == INF) {
+        if (total_size_limit_reached() || unsolvable) {
             break;
         }
 
