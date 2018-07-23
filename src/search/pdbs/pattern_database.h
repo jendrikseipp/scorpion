@@ -74,7 +74,7 @@ public:
       Returns the cost of the abstract operator (same as the cost of
       the original concrete operator)
     */
-    int get_cost() const {return cost; }
+    int get_cost() const {return cost;}
 
     void remove_regression_preconditions();
 

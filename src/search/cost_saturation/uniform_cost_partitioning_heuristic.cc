@@ -130,7 +130,7 @@ static shared_ptr<AbstractTask> get_scaled_costs_task(
     for (int &cost : costs) {
         if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
             cerr << "Overflowing cost : " << cost << endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
         cost *= COST_FACTOR;
     }
