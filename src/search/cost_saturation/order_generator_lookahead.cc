@@ -118,8 +118,8 @@ Order OrderGeneratorLookahead::get_next_order(
         scores.push_back(estimate_h(abs, local_state_ids));
     }
     sort(order.begin(), order.end(), [&](int abs1, int abs2) {
-            return scores[abs1] > scores[abs2];
-        });
+             return scores[abs1] > scores[abs2];
+         });
 
     if (verbose) {
         cout << "Scores: " << scores << endl;

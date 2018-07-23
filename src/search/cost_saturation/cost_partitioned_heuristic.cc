@@ -22,7 +22,7 @@ CostPartitionedHeuristic::CostPartitionedHeuristic() {
 void CostPartitionedHeuristic::add_cp_heuristic_values(
     int heuristic_id, vector<int> h_values, bool sparse) {
     if (!sparse ||
-        any_of(h_values.begin(), h_values.end(), [](int h) {return h != 0; })) {
+        any_of(h_values.begin(), h_values.end(), [](int h) {return h != 0;})) {
         h_values_by_heuristic.emplace_back(heuristic_id, move(h_values));
     }
 }
