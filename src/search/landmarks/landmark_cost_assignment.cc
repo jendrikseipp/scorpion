@@ -118,10 +118,6 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
              return scores[i] > scores[j];
          });
 
-    if (false) {
-        cout << "h-values: " << h_values << endl;
-        cout << "order: " << order << endl;
-    }
     return order;
 }
 
