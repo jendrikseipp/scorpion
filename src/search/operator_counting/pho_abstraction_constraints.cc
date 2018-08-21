@@ -23,7 +23,7 @@ PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
-    const shared_ptr<AbstractTask> task,
+    const std::shared_ptr<AbstractTask> &task,
     vector<lp::LPConstraint> &constraints,
     double infinity) {
     TaskProxy task_proxy(*task);

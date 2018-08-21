@@ -27,7 +27,7 @@ public:
     explicit PhOAbstractionConstraints(const options::Options &opts);
 
     virtual void initialize_constraints(
-        const std::shared_ptr<AbstractTask> task,
+        const std::shared_ptr<AbstractTask> &task,
         std::vector<lp::LPConstraint> &constraints,
         double infinity) override;
     virtual bool update_constraints(
