@@ -37,7 +37,7 @@ public:
     virtual void print_statistics() const override;
 };
 
-extern Heuristic *get_max_cp_heuristic(
+extern std::shared_ptr<Heuristic> get_max_cp_heuristic(
     options::OptionParser &parser, CPFunction cp_function);
 
 extern void add_order_options_to_parser(

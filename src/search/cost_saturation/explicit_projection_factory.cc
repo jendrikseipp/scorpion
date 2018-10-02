@@ -214,7 +214,7 @@ void ExplicitProjectionFactory::add_transitions(
     if (debug)
         cout << "source state: " << src_values << endl;
     UnrankedState definite_dest_values = src_values;
-    unordered_set<FactPair> possible_effects;
+    utils::HashSet<FactPair> possible_effects;
     for (const ProjectedEffect &effect : effects) {
         if (conditions_are_satisfied(effect.conditions, src_values)) {
             if (effect.always_triggers) {

@@ -41,7 +41,7 @@ int MaxHeuristic::compute_heuristic(const GlobalState &global_state) {
 }
 
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Max heuristic",
         "Maximize over a set of abstraction heuristics");
@@ -59,8 +59,8 @@ static Heuristic *_parse(OptionParser &parser) {
         opts.get<shared_ptr<AbstractTask>>("transform"),
         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
 
-    return new MaxHeuristic(opts, move(abstractions));
+    return make_shared<MaxHeuristic>(opts, move(abstractions));
 }
 
-static Plugin<Heuristic> _plugin("maximize", _parse);
+static Plugin<Evaluator> _plugin("maximize", _parse);
 }

@@ -36,12 +36,12 @@ static CostPartitioningHeuristic compute_zero_one_cost_partitioning(
     return cp_heuristic;
 }
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Zero-one cost partitioning heuristic",
         "");
     return get_max_cp_heuristic(parser, compute_zero_one_cost_partitioning);
 }
 
-static Plugin<Heuristic> _plugin("zero_one_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("zero_one_cost_partitioning", _parse);
 }

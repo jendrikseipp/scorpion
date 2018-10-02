@@ -34,7 +34,7 @@ CostPartitioningHeuristic compute_saturated_cost_partitioning(
     return cp_heuristic;
 }
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Saturated cost partitioning heuristic",
         "Compute the maximum over multiple saturated cost partitioning"
@@ -43,5 +43,5 @@ static Heuristic *_parse(OptionParser &parser) {
     return get_max_cp_heuristic(parser, compute_saturated_cost_partitioning);
 }
 
-static Plugin<Heuristic> _plugin("saturated_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("saturated_cost_partitioning", _parse);
 }

@@ -236,7 +236,7 @@ void OptimalCostPartitioningHeuristic::add_operator_cost_constraints(
     }
 }
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Optimal cost partitioning heuristic",
         "");
@@ -255,8 +255,8 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    return new OptimalCostPartitioningHeuristic(opts);
+    return make_shared<OptimalCostPartitioningHeuristic>(opts);
 }
 
-static Plugin<Heuristic> _plugin("optimal_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("optimal_cost_partitioning", _parse);
 }

@@ -139,7 +139,7 @@ void prepare_parser_for_cost_partitioning_heuristic(options::OptionParser &parse
     Heuristic::add_options_to_parser(parser);
 }
 
-Heuristic *get_max_cp_heuristic(
+shared_ptr<Heuristic> get_max_cp_heuristic(
     options::OptionParser &parser, CPFunction cp_function) {
     prepare_parser_for_cost_partitioning_heuristic(parser);
     add_order_options_to_parser(parser);
@@ -159,7 +159,7 @@ Heuristic *get_max_cp_heuristic(
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_collection_generator_from_options(opts).get_cost_partitionings(
             task_proxy, abstractions, costs, cp_function);
-    return new MaxCostPartitioningHeuristic(
+    return make_shared<MaxCostPartitioningHeuristic>(
         opts,
         move(abstractions),
         move(cp_heuristics));

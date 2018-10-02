@@ -164,7 +164,7 @@ static CPHeuristics get_oucp_heuristics(
 }
 
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Uniform cost partitioning heuristic",
         "");
@@ -206,8 +206,9 @@ static Heuristic *_parse(OptionParser &parser) {
                                     scaled_costs_task_proxy, abstractions, debug));
     }
 
-    return new UniformCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics));
+    return make_shared<UniformCostPartitioningHeuristic>(
+        opts, move(abstractions), move(cp_heuristics));
 }
 
-static Plugin<Heuristic> _plugin("uniform_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("uniform_cost_partitioning", _parse);
 }

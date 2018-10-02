@@ -136,7 +136,7 @@ void CanonicalHeuristic::print_statistics() const {
 }
 
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Canonical heuristic",
         "");
@@ -150,8 +150,8 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    return new CanonicalHeuristic(opts);
+    return make_shared<CanonicalHeuristic>(opts);
 }
 
-static Plugin<Heuristic> _plugin("canonical_heuristic", _parse);
+static Plugin<Evaluator> _plugin("canonical_heuristic", _parse);
 }

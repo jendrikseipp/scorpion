@@ -88,7 +88,7 @@ void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
 }
 
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Saturated cost partitioning online heuristic",
         "");
@@ -119,12 +119,12 @@ static Heuristic *_parse(OptionParser &parser) {
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
 
-    return new SaturatedCostPartitioningOnlineHeuristic(
+    return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
         move(abstractions),
         get_cp_collection_generator_from_options(opts).get_cost_partitionings(
             task_proxy, abstractions, costs, compute_saturated_cost_partitioning));
 }
 
-static Plugin<Heuristic> _plugin("saturated_cost_partitioning_online", _parse);
+static Plugin<Evaluator> _plugin("saturated_cost_partitioning_online", _parse);
 }
