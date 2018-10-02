@@ -109,7 +109,7 @@ pair<int, int> Abstraction::refine(
             init = v2;
         }
         if (debug) {
-            cout << "New init state " << init->get_id() << ": " << *init << endl;
+            cout << "New init state #" << init->get_id() << ": " << *init << endl;
         }
     }
     if (goals.count(v_id)) {
