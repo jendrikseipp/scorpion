@@ -91,7 +91,7 @@ public:
       the given state is cached, i.e., is_estimate_cached returns true.
     */
     virtual int get_cached_estimate(const GlobalState &state) const;
-    
+
     virtual void print_statistics() const {}
 };
 

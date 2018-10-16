@@ -244,7 +244,7 @@ vector<int> Projection::compute_distances(
             }
             assert(utils::in_bounds(op_id, costs));
             int alternative_cost = (costs[op_id] == INF) ?
-                                   INF : distances[state_index] + costs[op_id];
+                INF : distances[state_index] + costs[op_id];
             assert(utils::in_bounds(predecessor, distances));
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
