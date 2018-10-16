@@ -23,7 +23,7 @@ using cost_saturation::ScoringFunction;
 namespace landmarks {
 LandmarkCostAssignment::LandmarkCostAssignment(const vector<int> &operator_costs,
                                                const LandmarkGraph &graph)
-    : lm_graph(graph), operator_costs(operator_costs) {
+    : empty(), lm_graph(graph), operator_costs(operator_costs) {
 }
 
 const set<int> &LandmarkCostAssignment::get_achievers(
