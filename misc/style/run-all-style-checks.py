@@ -131,7 +131,8 @@ def check_search_code_with_clang_tidy():
         "command": "g++ -I{search_dir}/ext -std=c++11 -c {src_file}".format(**locals()),
         "file": src_file}
         # TODO: option_parser.h and token_parser.h are too tangled to be checked by clang-tidy.
-        for src_file in src_files if not src_file.endswith(("option_parser.h", "token_parser.h"))
+        for src_file in src_files if not src_file.endswith(
+            ("option_parser.h", "token_parser.h", "order_generator_lookahead.cc"))
     ]
     with open(os.path.join(build_dir, "compile_commands.json"), "w") as f:
         json.dump(compile_commands, f, indent=2)
