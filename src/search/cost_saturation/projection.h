@@ -96,7 +96,7 @@ class Projection : public Abstraction {
       Return true iff the given state is an abstract goal state.
     */
     bool is_goal_state(
-        const std::size_t state_index,
+        std::size_t state_index,
         const std::vector<FactPair> &abstract_goals,
         const VariablesProxy &variables) const;
 

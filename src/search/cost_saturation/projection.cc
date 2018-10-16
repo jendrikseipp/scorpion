@@ -257,7 +257,7 @@ vector<int> Projection::compute_distances(
 }
 
 bool Projection::is_goal_state(
-    const size_t state_index,
+    size_t state_index,
     const vector<FactPair> &abstract_goals,
     const VariablesProxy &variables) const {
     for (const FactPair &abstract_goal : abstract_goals) {
