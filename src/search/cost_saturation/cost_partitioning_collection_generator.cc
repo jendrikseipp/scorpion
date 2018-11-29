@@ -118,7 +118,7 @@ CostPartitioningCollectionGenerator::get_cost_partitionings(
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            !timer.is_expired()) {
         // Use initial state as first sample.
-        State sample = evaluated_orders == 0
+        State sample = (evaluated_orders == 0)
             ? initial_state
             : sampler.sample_state(init_h, is_dead_end);
         assert(!is_dead_end(sample));

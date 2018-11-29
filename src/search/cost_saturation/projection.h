@@ -19,6 +19,52 @@ namespace cost_saturation {
 /*
   TODO: Reduce code duplication with pdbs::PatternDatabase.
 */
+
+extern bool increment(
+    const std::vector<int> &pattern_domain_sizes, std::vector<FactPair> &facts);
+
+
+class AbstractForwardOperator {
+    // The ID of the concrete operator is needed for cost partitioning.
+    const int concrete_operator_id;
+
+    std::vector<int> unaffected_variables;
+
+    int precondition_hash;
+
+    /*
+      Effect of the operator during forward search on a given abstract state
+      number.
+    */
+    int hash_effect;
+public:
+    /*
+      AbstractForwardOperators are built from concrete operators. The
+      parameters follow the usual name convention of SAS+ operators,
+      meaning prevail, preconditions and effects are all related to
+      progression search.
+    */
+    AbstractForwardOperator(const std::vector<FactPair> &prevail,
+                            const std::vector<FactPair> &preconditions,
+                            const std::vector<FactPair> &effects,
+                            const std::vector<std::size_t> &hash_multipliers,
+                            int concrete_operator_id);
+
+    int get_concrete_operator_id() const;
+
+    const std::vector<int> &get_unaffected_variables() const {
+        return unaffected_variables;
+    }
+
+    /*
+      Returns the effect of the abstract operator in form of a value change to
+      an abstract state index.
+    */
+    int get_hash_effect() const {return hash_effect;}
+
+    int get_precondition_hash() const {return precondition_hash;}
+};
+
 class Projection : public Abstraction {
     const TaskProxy task_proxy;
     const pdbs::Pattern pattern;
@@ -26,11 +72,22 @@ class Projection : public Abstraction {
     std::vector<pdbs::AbstractOperator> abstract_operators;
     std::unique_ptr<pdbs::MatchTree> match_tree;
 
+    std::vector<AbstractForwardOperator> abstract_forward_operators;
+
     // Number of abstract states in the projection.
     int num_states;
 
     // Multipliers for each variable for perfect hash function.
     std::vector<std::size_t> hash_multipliers;
+
+    /*
+      For each variable store its index in the pattern or -1 if it is not in
+      the pattern.
+    */
+    std::vector<int> variable_to_pattern_index;
+
+    // Domain size of each variable in the pattern.
+    std::vector<int> pattern_domain_sizes;
 
     std::vector<int> goal_states;
 
@@ -53,6 +110,37 @@ class Projection : public Abstraction {
     std::vector<int> compute_active_operators() const;
     std::vector<int> compute_looping_operators() const;
     std::vector<int> compute_goal_states() const;
+
+    /*
+      Apply a function to all transitions in the projection (including
+      irrelevant transitions).
+    */
+    template<class Callback>
+    void for_each_transition(const Callback &callback) const {
+        // Reuse vector to save allocations.
+        std::vector<FactPair> abstract_facts;
+
+        for (const AbstractForwardOperator &op : abstract_forward_operators) {
+            abstract_facts.clear();
+            for (int var : op.get_unaffected_variables()) {
+                abstract_facts.emplace_back(var, 0);
+            }
+
+            int precondition_hash = op.get_precondition_hash();
+            bool has_next_match = true;
+            while (has_next_match) {
+                int state = precondition_hash;
+                for (const FactPair &fact : abstract_facts) {
+                    state += hash_multipliers[fact.var] * fact.value;
+                }
+                callback(
+                    Transition(
+                        state, op.get_concrete_operator_id(), state + op.get_hash_effect()));
+
+                has_next_match = increment(pattern_domain_sizes, abstract_facts);
+            }
+        }
+    }
 
     /*
       Recursive method; called by build_abstract_operators. In the case
@@ -78,27 +166,36 @@ class Projection : public Abstraction {
     */
     void build_abstract_operators(
         const OperatorProxy &op, int cost,
-        const std::vector<int> &variable_to_index,
+        const std::vector<int> &variable_to_pattern_index,
         const VariablesProxy &variables,
         std::vector<pdbs::AbstractOperator> &abstract_operators) const;
 
+    void multiply_out_forward(
+        int pos, int cost, int op_id,
+        std::vector<FactPair> &prev_pairs,
+        std::vector<FactPair> &pre_pairs,
+        std::vector<FactPair> &eff_pairs,
+        const std::vector<FactPair> &effects_without_pre,
+        const VariablesProxy &variables,
+        std::vector<AbstractForwardOperator> &abstract_operators) const;
+
+    void build_abstract_forward_operators(
+        const OperatorProxy &op, int cost,
+        const std::vector<int> &variable_to_pattern_index,
+        const VariablesProxy &variables,
+        std::vector<AbstractForwardOperator> &abstract_operators) const;
+
     /*
-      Use Dijkstra's algorithm to compute all goal distances. If 'transitions'
-      is given it is filled with all transitions visited during the execution
-      of Dijkstra's algorithm, i.e., all transitions that may be part of any
-      plan from any abstract state in the projection.
+      Use Dijkstra's algorithm to compute all goal distances.
     */
-    std::vector<int> compute_distances(
-        const std::vector<int> &costs,
-        std::vector<Transition> *transitions = nullptr) const;
+    std::vector<int> compute_distances(const std::vector<int> &costs) const;
 
     /*
       Return true iff the given state is an abstract goal state.
     */
-    bool is_goal_state(
+    bool is_consistent(
         std::size_t state_index,
-        const std::vector<FactPair> &abstract_goals,
-        const VariablesProxy &variables) const;
+        const std::vector<FactPair> &abstract_goals) const;
 
     /*
       Use the given concrete state to calculate the index of the corresponding
