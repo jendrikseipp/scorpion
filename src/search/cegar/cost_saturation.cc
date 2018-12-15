@@ -124,7 +124,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
             return num_states >= max_states ||
                    num_non_looping_transitions >= max_non_looping_transitions ||
                    timer.is_expired() ||
-                   utils::is_out_of_memory() ||
+                   !utils::extra_memory_padding_is_reserved() ||
                    state_is_dead_end(initial_state);
         };
 
