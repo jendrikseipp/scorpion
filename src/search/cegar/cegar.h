@@ -15,7 +15,6 @@ class RandomNumberGenerator;
 }
 
 namespace cegar {
-class AbstractSearch;
 class Abstraction;
 struct Flaw;
 

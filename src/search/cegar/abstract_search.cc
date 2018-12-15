@@ -106,7 +106,6 @@ int AbstractSearch::astar_search(
         if (new_f < old_f)
             continue;
         if (goals && goals->count(state_id) == 1) {
-            open_queue.clear();
             return state_id;
         }
         assert(utils::in_bounds(state_id, transitions));
