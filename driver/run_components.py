@@ -99,8 +99,20 @@ def run_translate(args):
 
 def transform_task(args):
     logging.info("Run task transformation (%s)." % args.transform_task)
+    time_limit = limits.get_time_limit(None, args.overall_time_limit)
+    memory_limit = limits.get_memory_limit(None, args.overall_memory_limit)
     try:
-        call.check_call("transform-task", [args.transform_task], stdin="output.sas")
+        call.check_call(
+            "transform-task",
+            [args.transform_task],
+            stdin="output.sas",
+            time_limit=time_limit,
+            memory_limit=memory_limit)
+    except IOError as err:
+        if err.errno == errno.ENOENT:
+            print("Translator output file missing. Skipping task transformation.")
+        else:
+            raise
     except OSError as err:
         if err.errno == errno.ENOENT:
             sys.exit("Error: {} not found. Is it on the PATH?".format(
