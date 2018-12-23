@@ -15,19 +15,6 @@
 using namespace std;
 
 namespace cost_saturation {
-bool increment(const vector<int> &pattern_domain_sizes, vector<FactPair> &facts) {
-    for (size_t i = 0; i < facts.size(); ++i) {
-        ++facts[i].value;
-        if (facts[i].value > pattern_domain_sizes[facts[i].var] - 1) {
-            facts[i].value = 0;
-        } else {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 AbstractForwardOperator::AbstractForwardOperator(
     const vector<FactPair> &prev_pairs,
     const vector<FactPair> &pre_pairs,
@@ -61,11 +48,12 @@ AbstractForwardOperator::AbstractForwardOperator(
     for (size_t pos = 0; pos < hash_multipliers.size(); ++pos) {
         int pre_val = abstract_preconditions[pos];
         if (pre_val == -1) {
-            unaffected_variables.push_back(pos);
+            first_facts_of_unaffected_variables.emplace_back(pos, 0);
         } else {
             precondition_hash += hash_multipliers[pos] * pre_val;
         }
     }
+    first_facts_of_unaffected_variables.shrink_to_fit();
 }
 
 int AbstractForwardOperator::get_concrete_operator_id() const {
@@ -107,32 +95,48 @@ Projection::Projection(
         pattern_domain_sizes.push_back(variables[pattern_var].get_domain_size());
     }
 
-    // Compute abstract operators.
+    // Compute abstract forward and backward operators.
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorProxy op : operators) {
         build_abstract_operators(
-            op, -1, variable_to_pattern_index, variables, abstract_operators);
-    }
-    for (OperatorProxy op : operators) {
-        build_abstract_forward_operators(
-            op, -1, variable_to_pattern_index, variables, abstract_forward_operators);
+            op, -1, variable_to_pattern_index, variables,
+            [this](
+                const vector<FactPair> &prevail,
+                const vector<FactPair> &preconditions,
+                const vector<FactPair> &effects,
+                int cost,
+                const vector<size_t> &hash_multipliers,
+                int concrete_operator_id) {
+                abstract_forward_operators.emplace_back(
+                    prevail, preconditions, effects, hash_multipliers, concrete_operator_id);
+                abstract_backward_operators.emplace_back(
+                    prevail, preconditions, effects, cost, hash_multipliers, concrete_operator_id);
+            });
     }
 
     // Create match tree.
-    match_tree = utils::make_unique_ptr<pdbs::MatchTree>(
+    match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
         task_proxy, pattern, hash_multipliers);
-    for (const pdbs::AbstractOperator &op : abstract_operators) {
-        match_tree->insert(op);
-    }
-
-    for (pdbs::AbstractOperator &op : abstract_operators) {
-        op.remove_regression_preconditions();
+    for (const pdbs::AbstractOperator &op : abstract_backward_operators) {
+        match_tree_backward->insert(op);
     }
 
     goal_states = compute_goal_states();
 }
 
 Projection::~Projection() {
+}
+
+bool Projection::increment_to_next_state(vector<FactPair> &facts) const {
+    for (FactPair &fact : facts) {
+        ++fact.value;
+        if (fact.value > pattern_domain_sizes[fact.var] - 1) {
+            fact.value = 0;
+        } else {
+            return true;
+        }
+    }
+    return false;
 }
 
 int Projection::get_abstract_state_id(const State &concrete_state) const {
@@ -181,19 +185,17 @@ vector<int> Projection::compute_goal_states() const {
     return goal_states;
 }
 
-void Projection::multiply_out(
-    int pos, int cost, int op_id,
-    vector<FactPair> &prev_pairs,
-    vector<FactPair> &pre_pairs,
-    vector<FactPair> &eff_pairs,
-    const vector<FactPair> &effects_without_pre,
-    const VariablesProxy &variables,
-    vector<pdbs::AbstractOperator> &operators) const {
+void Projection::multiply_out(int pos, int cost, int op_id,
+                              vector<FactPair> &prev_pairs,
+                              vector<FactPair> &pre_pairs,
+                              vector<FactPair> &eff_pairs,
+                              const vector<FactPair> &effects_without_pre,
+                              const VariablesProxy &variables,
+                              const OperatorCallback &callback) const {
     if (pos == static_cast<int>(effects_without_pre.size())) {
         // All effects without precondition have been checked: insert op.
         if (!eff_pairs.empty()) {
-            operators.emplace_back(
-                prev_pairs, pre_pairs, eff_pairs, cost, hash_multipliers, op_id);
+            callback(prev_pairs, pre_pairs, eff_pairs, cost, hash_multipliers, op_id);
         }
     } else {
         // For each possible value for the current variable, build an
@@ -209,7 +211,7 @@ void Projection::multiply_out(
                 prev_pairs.emplace_back(var_id, i);
             }
             multiply_out(pos + 1, cost, op_id, prev_pairs, pre_pairs, eff_pairs,
-                         effects_without_pre, variables, operators);
+                         effects_without_pre, variables, callback);
             if (i != eff) {
                 pre_pairs.pop_back();
                 eff_pairs.pop_back();
@@ -224,7 +226,7 @@ void Projection::build_abstract_operators(
     const OperatorProxy &op, int cost,
     const vector<int> &variable_to_index,
     const VariablesProxy &variables,
-    vector<pdbs::AbstractOperator> &operators) const {
+    const OperatorCallback &callback) const {
     // All variable value pairs that are a prevail condition
     vector<FactPair> prev_pairs;
     // All variable value pairs that are a precondition (value != -1)
@@ -267,139 +269,7 @@ void Projection::build_abstract_operators(
         }
     }
     multiply_out(0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
-                 effects_without_pre, variables, operators);
-}
-
-void Projection::multiply_out_forward(
-    int pos, int cost, int op_id,
-    vector<FactPair> &prev_pairs,
-    vector<FactPair> &pre_pairs,
-    vector<FactPair> &eff_pairs,
-    const vector<FactPair> &effects_without_pre,
-    const VariablesProxy &variables,
-    vector<AbstractForwardOperator> &operators) const {
-    if (pos == static_cast<int>(effects_without_pre.size())) {
-        // All effects without precondition have been checked: insert op.
-        if (!eff_pairs.empty()) {
-            operators.emplace_back(
-                prev_pairs, pre_pairs, eff_pairs, hash_multipliers, op_id);
-        }
-    } else {
-        // For each possible value for the current variable, build an
-        // abstract operator.
-        int var_id = effects_without_pre[pos].var;
-        int eff = effects_without_pre[pos].value;
-        VariableProxy var = variables[pattern[var_id]];
-        for (int i = 0; i < var.get_domain_size(); ++i) {
-            if (i != eff) {
-                pre_pairs.emplace_back(var_id, i);
-                eff_pairs.emplace_back(var_id, eff);
-            } else {
-                prev_pairs.emplace_back(var_id, i);
-            }
-            multiply_out_forward(pos + 1, cost, op_id, prev_pairs, pre_pairs, eff_pairs,
-                                 effects_without_pre, variables, operators);
-            if (i != eff) {
-                pre_pairs.pop_back();
-                eff_pairs.pop_back();
-            } else {
-                prev_pairs.pop_back();
-            }
-        }
-    }
-}
-
-void Projection::build_abstract_forward_operators(
-    const OperatorProxy &op, int cost,
-    const vector<int> &variable_to_index,
-    const VariablesProxy &variables,
-    vector<AbstractForwardOperator> &operators) const {
-    // All variable value pairs that are a prevail condition
-    vector<FactPair> prev_pairs;
-    // All variable value pairs that are a precondition (value != -1)
-    vector<FactPair> pre_pairs;
-    // All variable value pairs that are an effect
-    vector<FactPair> eff_pairs;
-    // All variable value pairs that are a precondition (value = -1)
-    vector<FactPair> effects_without_pre;
-
-    size_t num_vars = variables.size();
-    vector<bool> has_precond_and_effect_on_var(num_vars, false);
-    vector<bool> has_precondition_on_var(num_vars, false);
-
-    for (FactProxy pre : op.get_preconditions())
-        has_precondition_on_var[pre.get_variable().get_id()] = true;
-
-    for (EffectProxy eff : op.get_effects()) {
-        int var_id = eff.get_fact().get_variable().get_id();
-        int pattern_var_id = variable_to_index[var_id];
-        int val = eff.get_fact().get_value();
-        if (pattern_var_id != -1) {
-            if (has_precondition_on_var[var_id]) {
-                has_precond_and_effect_on_var[var_id] = true;
-                eff_pairs.emplace_back(pattern_var_id, val);
-            } else {
-                effects_without_pre.emplace_back(pattern_var_id, val);
-            }
-        }
-    }
-    for (FactProxy pre : op.get_preconditions()) {
-        int var_id = pre.get_variable().get_id();
-        int pattern_var_id = variable_to_index[var_id];
-        int val = pre.get_value();
-        if (pattern_var_id != -1) { // variable occurs in pattern
-            if (has_precond_and_effect_on_var[var_id]) {
-                pre_pairs.emplace_back(pattern_var_id, val);
-            } else {
-                prev_pairs.emplace_back(pattern_var_id, val);
-            }
-        }
-    }
-    multiply_out_forward(0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
-                         effects_without_pre, variables, operators);
-}
-
-vector<int> Projection::compute_distances(const vector<int> &costs) const {
-    vector<int> distances(num_states, INF);
-
-    // Initialize queue.
-    assert(pq.empty());
-    for (int goal : goal_states) {
-        pq.push(0, goal);
-        distances[goal] = 0;
-    }
-
-    // Reuse vector to save allocations.
-    vector<const pdbs::AbstractOperator *> applicable_operators;
-
-    // Run Dijkstra loop.
-    while (!pq.empty()) {
-        pair<int, size_t> node = pq.pop();
-        int distance = node.first;
-        size_t state_index = node.second;
-        assert(utils::in_bounds(state_index, distances));
-        if (distance > distances[state_index]) {
-            continue;
-        }
-
-        // Regress abstract state.
-        applicable_operators.clear();
-        match_tree->get_applicable_operators(state_index, applicable_operators);
-        for (const pdbs::AbstractOperator *op : applicable_operators) {
-            size_t predecessor = state_index + op->get_hash_effect();
-            int op_id = op->get_concrete_operator_id();
-            assert(utils::in_bounds(op_id, costs));
-            int alternative_cost = (costs[op_id] == INF) ?
-                INF : distances[state_index] + costs[op_id];
-            assert(utils::in_bounds(predecessor, distances));
-            if (alternative_cost < distances[predecessor]) {
-                distances[predecessor] = alternative_cost;
-                pq.push(alternative_cost, predecessor);
-            }
-        }
-    }
-    pq.clear();
-    return distances;
+                 effects_without_pre, variables, callback);
 }
 
 bool Projection::is_consistent(
@@ -455,6 +325,7 @@ bool Projection::operator_induces_loop(const OperatorProxy &op) const {
 vector<int> Projection::compute_saturated_costs(
     const vector<int> &h_values,
     int num_operators) const {
+    assert(has_transition_system());
     vector<int> saturated_costs(num_operators, -INF);
 
     /* To prevent negative cost cycles, we ensure that all operators
@@ -479,11 +350,48 @@ vector<int> Projection::compute_saturated_costs(
 }
 
 vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
-    return compute_distances(costs);
-}
+    assert(has_transition_system());
+    assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
+    vector<int> distances(num_states, INF);
 
-vector<Transition> Projection::get_transitions() const {
-    ABORT("TODO: Remove get_transitions() and use for_each_transition() instead.");
+    // Initialize queue.
+    assert(pq.empty());
+    for (int goal : goal_states) {
+        pq.push(0, goal);
+        distances[goal] = 0;
+    }
+
+    // Reuse vector to save allocations.
+    vector<const pdbs::AbstractOperator *> applicable_operators;
+
+    // Run Dijkstra loop.
+    while (!pq.empty()) {
+        pair<int, size_t> node = pq.pop();
+        int distance = node.first;
+        size_t state_index = node.second;
+        assert(utils::in_bounds(state_index, distances));
+        if (distance > distances[state_index]) {
+            continue;
+        }
+
+        // Regress abstract state.
+        applicable_operators.clear();
+        match_tree_backward->get_applicable_operators(state_index, applicable_operators);
+        for (const pdbs::AbstractOperator *op : applicable_operators) {
+            size_t predecessor = state_index + op->get_hash_effect();
+            int op_id = op->get_concrete_operator_id();
+            assert(utils::in_bounds(op_id, costs));
+            int alternative_cost = (costs[op_id] == INF) ?
+                INF : distances[state_index] + costs[op_id];
+            assert(utils::in_bounds(predecessor, distances));
+            if (alternative_cost < distances[predecessor]) {
+                distances[predecessor] = alternative_cost;
+                pq.push(alternative_cost, predecessor);
+            }
+        }
+    }
+    pq.clear();
+    return distances;
 }
 
 int Projection::get_num_states() const {
@@ -506,15 +414,15 @@ const vector<int> &Projection::get_goal_states() const {
 }
 
 void Projection::release_transition_system_memory() {
-    utils::release_vector_memory(abstract_operators);
+    utils::release_vector_memory(abstract_backward_operators);
     utils::release_vector_memory(looping_operators);
     utils::release_vector_memory(goal_states);
-    match_tree = nullptr;
+    match_tree_backward = nullptr;
 }
 
 void Projection::dump() const {
     assert(has_transition_system());
-    cout << "Abstract operators: " << abstract_operators.size()
+    cout << "Abstract operators: " << abstract_backward_operators.size()
          << ", looping operators: " << looping_operators.size()
          << ", goal states: " << goal_states.size() << "/" << num_states
          << endl;

@@ -4,7 +4,7 @@
 #include "util.h"
 
 #include "../algorithms/max_cliques.h"
-#include "../cost_saturation/scoring_functions.h"
+#include "../cost_saturation/greedy_order_utils.h"
 #include "../cost_saturation/types.h"
 #include "../utils/collections.h"
 #include "../utils/language.h"

@@ -20,15 +20,12 @@ namespace cost_saturation {
   TODO: Reduce code duplication with pdbs::PatternDatabase.
 */
 
-extern bool increment(
-    const std::vector<int> &pattern_domain_sizes, std::vector<FactPair> &facts);
-
-
 class AbstractForwardOperator {
-    // The ID of the concrete operator is needed for cost partitioning.
+    // We need the concrete operator ID for cost partitioning.
     const int concrete_operator_id;
 
-    std::vector<int> unaffected_variables;
+    // For each variable V that is not changed by this operator we store the fact V=0.      .
+    std::vector<FactPair> first_facts_of_unaffected_variables;
 
     int precondition_hash;
 
@@ -52,8 +49,8 @@ public:
 
     int get_concrete_operator_id() const;
 
-    const std::vector<int> &get_unaffected_variables() const {
-        return unaffected_variables;
+    const std::vector<FactPair> &get_first_facts_of_unaffected_variables() const {
+        return first_facts_of_unaffected_variables;
     }
 
     /*
@@ -66,13 +63,16 @@ public:
 };
 
 class Projection : public Abstraction {
-    const TaskProxy task_proxy;
-    const pdbs::Pattern pattern;
+    TaskProxy task_proxy;
+    pdbs::Pattern pattern;
 
-    std::vector<pdbs::AbstractOperator> abstract_operators;
-    std::unique_ptr<pdbs::MatchTree> match_tree;
+    using Facts = std::vector<FactPair>;
+    using OperatorCallback =
+        std::function<void (Facts &, Facts &, Facts &, int, const std::vector<size_t> &, int)>;
 
     std::vector<AbstractForwardOperator> abstract_forward_operators;
+    std::vector<pdbs::AbstractOperator> abstract_backward_operators;
+    std::unique_ptr<pdbs::MatchTree> match_tree_backward;
 
     // Number of abstract states in the projection.
     int num_states;
@@ -112,6 +112,12 @@ class Projection : public Abstraction {
     std::vector<int> compute_goal_states() const;
 
     /*
+      Given an abstract state (represented as a vector of facts), compute the
+      "next" fact. Return true iff there is a next fact.
+    */
+    bool increment_to_next_state(std::vector<FactPair> &facts) const;
+
+    /*
       Apply a function to all transitions in the projection (including
       irrelevant transitions).
     */
@@ -121,15 +127,10 @@ class Projection : public Abstraction {
         std::vector<FactPair> abstract_facts;
 
         for (const AbstractForwardOperator &op : abstract_forward_operators) {
-            abstract_facts.clear();
-            for (int var : op.get_unaffected_variables()) {
-                abstract_facts.emplace_back(var, 0);
-            }
-
-            int precondition_hash = op.get_precondition_hash();
+            abstract_facts = op.get_first_facts_of_unaffected_variables();
             bool has_next_match = true;
             while (has_next_match) {
-                int state = precondition_hash;
+                int state = op.get_precondition_hash();
                 for (const FactPair &fact : abstract_facts) {
                     state += hash_multipliers[fact.var] * fact.value;
                 }
@@ -137,7 +138,7 @@ class Projection : public Abstraction {
                     Transition(
                         state, op.get_concrete_operator_id(), state + op.get_hash_effect()));
 
-                has_next_match = increment(pattern_domain_sizes, abstract_facts);
+                has_next_match = increment_to_next_state(abstract_facts);
             }
         }
     }
@@ -156,7 +157,7 @@ class Projection : public Abstraction {
         std::vector<FactPair> &eff_pairs,
         const std::vector<FactPair> &effects_without_pre,
         const VariablesProxy &variables,
-        std::vector<pdbs::AbstractOperator> &abstract_operators) const;
+        const OperatorCallback &callback) const;
 
     /*
       Compute all abstract operators for a given concrete operator. Initialize
@@ -168,27 +169,7 @@ class Projection : public Abstraction {
         const OperatorProxy &op, int cost,
         const std::vector<int> &variable_to_pattern_index,
         const VariablesProxy &variables,
-        std::vector<pdbs::AbstractOperator> &abstract_operators) const;
-
-    void multiply_out_forward(
-        int pos, int cost, int op_id,
-        std::vector<FactPair> &prev_pairs,
-        std::vector<FactPair> &pre_pairs,
-        std::vector<FactPair> &eff_pairs,
-        const std::vector<FactPair> &effects_without_pre,
-        const VariablesProxy &variables,
-        std::vector<AbstractForwardOperator> &abstract_operators) const;
-
-    void build_abstract_forward_operators(
-        const OperatorProxy &op, int cost,
-        const std::vector<int> &variable_to_pattern_index,
-        const VariablesProxy &variables,
-        std::vector<AbstractForwardOperator> &abstract_operators) const;
-
-    /*
-      Use Dijkstra's algorithm to compute all goal distances.
-    */
-    std::vector<int> compute_distances(const std::vector<int> &costs) const;
+        const OperatorCallback &callback) const;
 
     /*
       Return true iff all abstract facts hold in the given state.
@@ -217,7 +198,6 @@ public:
     virtual int get_abstract_state_id(const State &concrete_state) const override;
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;
-    virtual std::vector<Transition> get_transitions() const override;
     virtual int get_num_states() const override;
     virtual const std::vector<int> &get_active_operators() const override;
     virtual const std::vector<int> &get_looping_operators() const override;

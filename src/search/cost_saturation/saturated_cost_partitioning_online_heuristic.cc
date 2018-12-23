@@ -2,7 +2,7 @@
 
 #include "abstraction.h"
 #include "cost_partitioning_heuristic.h"
-#include "cost_partitioning_collection_generator.h"
+#include "cost_partitioning_heuristic_collection_generator.h"
 #include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
 #include "saturated_cost_partitioning_heuristic.h"
@@ -122,7 +122,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
         move(abstractions),
-        get_cp_collection_generator_from_options(opts).get_cost_partitionings(
+        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
             task_proxy, abstractions, costs, compute_saturated_cost_partitioning));
 }
 

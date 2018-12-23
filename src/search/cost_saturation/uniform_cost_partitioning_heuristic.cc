@@ -1,7 +1,7 @@
 #include "uniform_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_collection_generator.h"
+#include "cost_partitioning_heuristic_collection_generator.h"
 #include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
@@ -87,17 +87,16 @@ static CostPartitioningHeuristic compute_uniform_cost_partitioning(
             divided_costs = compute_divided_costs(
                 abstractions, order, remaining_costs, pos, debug);
         }
-        auto pair = abstraction.compute_goal_distances_and_saturated_costs(
-            divided_costs);
-        vector<int> &h_values = pair.first;
-        vector<int> &saturated_costs = pair.second;
+        vector<int> h_values = abstraction.compute_goal_distances(divided_costs);
+        vector<int> saturated_costs = abstraction.compute_saturated_costs(
+            h_values, divided_costs.size());
         if (debug) {
             cout << "h-values: ";
             print_indexed_vector(h_values);
             cout << "saturated costs: ";
             print_indexed_vector(saturated_costs);
         }
-        cp_heuristic.add_lookup_table_if_nonzero(abstraction_id, move(h_values));
+        cp_heuristic.add_h_values(abstraction_id, move(h_values));
         if (dynamic) {
             reduce_costs(remaining_costs, saturated_costs);
         }
@@ -149,10 +148,10 @@ static CostPartitioningHeuristic get_ucp_heuristic(
 static CPHeuristics get_oucp_heuristics(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
-    const CostPartitioningCollectionGenerator &cps_generator,
+    const CostPartitioningHeuristicCollectionGenerator &cps_generator,
     bool debug) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    return cps_generator.get_cost_partitionings(
+    return cps_generator.generate_cost_partitionings(
         task_proxy, abstractions, costs,
         [debug](
             const Abstractions &abstractions,
@@ -199,7 +198,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         cp_heuristics = get_oucp_heuristics(
             scaled_costs_task_proxy,
             abstractions,
-            get_cp_collection_generator_from_options(opts),
+            get_cp_heuristic_collection_generator_from_options(opts),
             debug);
     } else {
         cp_heuristics.push_back(get_ucp_heuristic(

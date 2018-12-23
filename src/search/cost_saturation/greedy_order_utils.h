@@ -1,5 +1,5 @@
-#ifndef COST_SATURATION_SCORING_FUNCTIONS_H
-#define COST_SATURATION_SCORING_FUNCTIONS_H
+#ifndef COST_SATURATION_GREEDY_ORDER_UTILS_H
+#define COST_SATURATION_GREEDY_ORDER_UTILS_H
 
 #include <vector>
 
@@ -8,6 +8,13 @@ class OptionParser;
 }
 
 namespace cost_saturation {
+/*
+  Scoring functions for OrderGeneratorGreedy.
+
+  Each scoring function estimates how good it is to let the cost partitioning
+  algorithm consider a heuristic early. The greedy ordering algorithm orders
+  heuristics by their scores in decreasing order.
+*/
 enum class ScoringFunction {
     MAX_HEURISTIC,
     MIN_STOLEN_COSTS,

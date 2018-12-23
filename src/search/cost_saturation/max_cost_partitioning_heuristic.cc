@@ -1,8 +1,8 @@
 #include "max_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_collection_generator.h"
 #include "cost_partitioning_heuristic.h"
+#include "cost_partitioning_heuristic_collection_generator.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -15,7 +15,7 @@ using namespace std;
 
 namespace cost_saturation {
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
-    const Options &opts,
+    const options::Options &opts,
     Abstractions &&abstractions_,
     vector<CostPartitioningHeuristic> &&cp_heuristics_)
     : Heuristic(opts),
@@ -51,7 +51,7 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     // Collect IDs of useful abstractions.
     vector<bool> useful_abstractions(num_abstractions, false);
     for (const auto &cp_heuristic : cp_heuristics) {
-        cp_heuristic.mark_useful_heuristics(useful_abstractions);
+        cp_heuristic.mark_useful_abstractions(useful_abstractions);
     }
     int num_useful_abstractions = count(
         useful_abstractions.begin(), useful_abstractions.end(), true);
@@ -73,9 +73,6 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
             abstraction->remove_transition_system();
         }
     }
-}
-
-MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {
 }
 
 int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -143,7 +140,7 @@ shared_ptr<Heuristic> get_max_cp_heuristic(
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
     vector<CostPartitioningHeuristic> cp_heuristics =
-        get_cp_collection_generator_from_options(opts).get_cost_partitionings(
+        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
             task_proxy, abstractions, costs, cp_function);
     return make_shared<MaxCostPartitioningHeuristic>(
         opts,
@@ -184,9 +181,9 @@ void add_order_options_to_parser(OptionParser &parser) {
     utils::add_rng_options(parser);
 }
 
-CostPartitioningCollectionGenerator get_cp_collection_generator_from_options(
+CostPartitioningHeuristicCollectionGenerator get_cp_heuristic_collection_generator_from_options(
     const options::Options &opts) {
-    return CostPartitioningCollectionGenerator(
+    return CostPartitioningHeuristicCollectionGenerator(
         opts.get<shared_ptr<OrderGenerator>>("orders"),
         opts.get<int>("max_orders"),
         opts.get<double>("max_time"),

@@ -15,6 +15,7 @@ static void dijkstra_search(
     const vector<int> &costs,
     priority_queues::AdaptiveQueue<int> &queue,
     vector<int> &distances) {
+    assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     while (!queue.empty()) {
         pair<int, int> top_pair = queue.pop();
         int distance = top_pair.first;
@@ -84,6 +85,7 @@ ExplicitAbstraction::ExplicitAbstraction(
 }
 
 vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs) const {
+    assert(has_transition_system());
     vector<int> goal_distances(get_num_states(), INF);
     queue.clear();
     for (int goal_state : goal_states) {
@@ -94,23 +96,10 @@ vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs
     return goal_distances;
 }
 
-vector<Transition> ExplicitAbstraction::get_transitions() const {
-    assert(has_transition_system());
-    vector<Transition> transitions;
-    int num_states = backward_graph.size();
-    for (int target = 0; target < num_states; ++target) {
-        for (const Successor &transition : backward_graph[target]) {
-            int op_id = transition.op;
-            int src = transition.state;
-            transitions.emplace_back(src, op_id, target);
-        }
-    }
-    return transitions;
-}
-
 vector<int> ExplicitAbstraction::compute_saturated_costs(
     const vector<int> &h_values,
     int num_operators) const {
+    assert(has_transition_system());
     vector<int> saturated_costs(num_operators, -INF);
 
     /* To prevent negative cost cycles we ensure that all operators

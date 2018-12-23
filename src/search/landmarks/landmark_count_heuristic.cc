@@ -9,7 +9,7 @@
 #include "../per_state_bitset.h"
 #include "../plugin.h"
 
-#include "../cost_saturation/scoring_functions.h"
+#include "../cost_saturation/greedy_order_utils.h"
 #include "../lp/lp_solver.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"

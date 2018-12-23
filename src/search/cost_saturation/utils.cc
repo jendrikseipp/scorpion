@@ -18,6 +18,7 @@
 #include "../utils/logging.h"
 
 #include <cassert>
+#include <numeric>
 
 using namespace std;
 
@@ -42,7 +43,6 @@ Abstractions generate_abstractions(
 Order get_default_order(int num_abstractions) {
     vector<int> indices(num_abstractions);
     iota(indices.begin(), indices.end(), 0);
-    assert(utils::is_sorted_unique(indices));
     return indices;
 }
 

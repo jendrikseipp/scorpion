@@ -27,7 +27,7 @@ static CostPartitioningHeuristic compute_zero_one_cost_partitioning(
             cout << "remaining costs: ";
             print_indexed_vector(remaining_costs);
         }
-        cp_heuristic.add_lookup_table_if_nonzero(
+        cp_heuristic.add_h_values(
             pos, abstraction.compute_goal_distances(remaining_costs));
         for (int op_id : abstraction.get_active_operators()) {
             remaining_costs[op_id] = 0;
