@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import logging
+import os
 import sys
 
 from . import aliases
@@ -33,6 +34,9 @@ def main():
                 run_components.transform_task(args)
         elif component == "search":
             (exitcode, continue_execution) = run_components.run_search(args)
+            if not args.keep_sas_file:
+                print("Remove intermediate file {}".format(args.sas_file))
+                os.remove(args.sas_file)
         elif component == "validate":
             (exitcode, continue_execution) = run_components.run_validate(args)
         else:
