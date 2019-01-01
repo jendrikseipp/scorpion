@@ -65,11 +65,6 @@ public:
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
         const std::shared_ptr<AbstractTask> &task);
 };
-
-std::vector<int> compute_distances(
-    const std::vector<Transitions> &transitions,
-    const std::vector<int> &costs,
-    const std::unordered_set<int> &start_ids);
 }
 
 #endif
