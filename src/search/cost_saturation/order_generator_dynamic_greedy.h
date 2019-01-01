@@ -1,8 +1,8 @@
 #ifndef COST_SATURATION_ORDER_GENERATOR_DYNAMIC_GREEDY_H
 #define COST_SATURATION_ORDER_GENERATOR_DYNAMIC_GREEDY_H
 
+#include "greedy_order_utils.h"
 #include "order_generator.h"
-#include "scoring_functions.h"
 
 namespace options {
 class Options;

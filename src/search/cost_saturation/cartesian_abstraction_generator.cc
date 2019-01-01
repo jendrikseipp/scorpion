@@ -7,9 +7,9 @@
 #include "../plugin.h"
 
 #include "../cegar/abstraction.h"
-#include "../cegar/abstract_search.h"
 #include "../cegar/abstract_state.h"
 #include "../cegar/cegar.h"
+#include "../cegar/cost_saturation.h"
 #include "../cegar/refinement_hierarchy.h"
 #include "../cegar/split_selector.h"
 #include "../cegar/subtask_generators.h"
@@ -61,12 +61,11 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
     // Compute g and h values.
     const cegar::TransitionSystem &ts =
         cartesian_abstraction.get_transition_system();
-    cegar::AbstractSearch search(operator_costs);
     int initial_state_id = cartesian_abstraction.get_initial_state()->get_id();
-    vector<int> g_values = search.compute_distances(
-        ts.get_outgoing_transitions(), {initial_state_id});
-    vector<int> h_values = search.compute_distances(
-        ts.get_incoming_transitions(), cartesian_abstraction.get_goals());
+    vector<int> g_values = cegar::compute_distances(
+        ts.get_outgoing_transitions(), operator_costs, {initial_state_id});
+    vector<int> h_values = cegar::compute_distances(
+        ts.get_incoming_transitions(), operator_costs, cartesian_abstraction.get_goals());
 
     // Retrieve non-looping transitions.
     vector<vector<Successor>> backward_graph(cartesian_abstraction.get_num_states());
