@@ -173,10 +173,6 @@ class Projection : public Abstraction {
     std::size_t hash_index(const State &state) const;
 
 protected:
-    virtual std::vector<int> compute_saturated_costs(
-        const std::vector<int> &h_values,
-        int num_operators) const override;
-
     virtual void release_transition_system_memory() override;
 
 public:
@@ -186,6 +182,9 @@ public:
     virtual int get_abstract_state_id(const State &concrete_state) const override;
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;
+    virtual std::vector<int> compute_saturated_costs(
+        const std::vector<int> &h_values,
+        int num_operators) const override;
     virtual int get_num_states() const override;
     virtual const std::vector<int> &get_active_operators() const override;
     virtual const std::vector<int> &get_looping_operators() const override;
