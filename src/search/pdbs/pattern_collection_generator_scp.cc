@@ -146,6 +146,7 @@ int PatternCollectionGeneratorSCP::compute_best_variable_to_add(
         return -1;
     }
 
+    // TODO: try simple hill climbing.
     int best_var = -1;
     int max_improvement = min_improvement - 1;
     for (int var : relevant_vars) {
@@ -229,7 +230,8 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
         // Sample states.
         log << "Start sampling states" << endl;
         samples.clear();
-        sample_states(sampler, init_h, samples);
+        //sample_states(sampler, init_h, samples);
+        samples.push_back(task_proxy.get_initial_state());
         sample_h_values.resize(samples.size(), 0);
         log << "Finished sampling states" << endl;
 
