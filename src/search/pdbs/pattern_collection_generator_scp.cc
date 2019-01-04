@@ -80,6 +80,7 @@ PatternCollectionGeneratorSCP::PatternCollectionGeneratorSCP(const Options &opts
       num_samples(opts.get<int>("num_samples")),
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
+      debug(opts.get<bool>("debug")),
       rng(utils::parse_rng_from_options(opts)),
       init_h(0) {
 }
@@ -146,7 +147,7 @@ int PatternCollectionGeneratorSCP::compute_best_variable_to_add(
     }
 
     int best_var = -1;
-    int max_improvement = 0;
+    int max_improvement = min_improvement - 1;
     for (int var : relevant_vars) {
         if (timer.is_expired()) {
             break;
@@ -182,6 +183,9 @@ Pattern PatternCollectionGeneratorSCP::compute_next_pattern(
         sort(pattern.begin(), pattern.end());
         int domain_size = task_proxy.get_variables()[var].get_domain_size();
         num_states *= domain_size;
+        if (debug) {
+            utils::Log() << "Current pattern " << pattern << ", size: " << num_states << endl;
+        }
     }
     return pattern;
 }
@@ -212,6 +216,7 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
     const shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
     utils::CountdownTimer timer(max_time);
+    utils::Log log;
 
     relevant_neighbours = compute_relevant_neighbours(task_proxy);
     goal_vars = get_goal_variables(task_proxy);
@@ -222,17 +227,23 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     while (!timer.is_expired()) {
         // Sample states.
+        log << "Start sampling states" << endl;
         samples.clear();
         sample_states(sampler, init_h, samples);
         sample_h_values.resize(samples.size(), 0);
+        log << "Finished sampling states" << endl;
 
         // Find pattern.
         Pattern pattern = compute_next_pattern(task_proxy, costs, timer);
+        if (pattern.empty()) {
+            break;
+        }
         patterns->push_back(pattern);
         projections.push_back(utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, pattern));
         cost_saturation::Projection &projection = *projections.back();
         vector<int> h_values = projection.compute_goal_distances(costs);
         cost_partitioned_h_values.push_back(h_values);
+        log << "Add pattern " << pattern << endl;
 
         // Update h values for initial state and samples.
         int init_id = projection.get_abstract_state_id(task_proxy.get_initial_state());
@@ -289,6 +300,10 @@ static void add_options(OptionParser &parser) {
         "maximum time in seconds for generating patterns",
         "infinity",
         Bounds("0.0", "infinity"));
+    parser.add_option<bool>(
+        "debug",
+        "print debugging messages",
+        "false");
     utils::add_rng_options(parser);
 }
 

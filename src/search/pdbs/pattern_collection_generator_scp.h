@@ -33,6 +33,7 @@ class PatternCollectionGeneratorSCP : public PatternCollectionGenerator {
     const int num_samples;
     const int min_improvement;
     const double max_time;
+    const bool debug;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::vector<std::unique_ptr<cost_saturation::Projection>> projections;
