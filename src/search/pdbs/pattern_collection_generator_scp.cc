@@ -89,10 +89,8 @@ void PatternCollectionGeneratorSCP::sample_states(
     const sampling::RandomWalkSampler &sampler,
     int init_h,
     vector<State> &samples) {
-    assert(samples.empty());
-
     samples.reserve(num_samples);
-    for (int i = 0; i < num_samples; ++i) {
+    while (static_cast<int>(samples.size()) < num_samples) {
         samples.push_back(
             sampler.sample_state(
                 init_h,
@@ -163,6 +161,9 @@ int PatternCollectionGeneratorSCP::compute_best_variable_to_add(
         // TODO: Store best PDB?
         PatternDatabase pdb(task_proxy, new_pattern, false, costs);
         int improvement = evaluate_pdb(pdb);
+        if (debug) {
+            cout << "Candidate extension " << new_pattern << ": " << improvement << endl;
+        }
         if (improvement > max_improvement) {
             best_var = var;
             max_improvement = improvement;
@@ -230,8 +231,8 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
         // Sample states.
         log << "Start sampling states" << endl;
         samples.clear();
-        //sample_states(sampler, init_h, samples);
         samples.push_back(task_proxy.get_initial_state());
+        sample_states(sampler, init_h, samples);
         sample_h_values.resize(samples.size(), 0);
         log << "Finished sampling states" << endl;
 
