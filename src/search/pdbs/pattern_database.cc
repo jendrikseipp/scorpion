@@ -258,8 +258,11 @@ void PatternDatabase::create_pdb(
         vector<const AbstractOperator *> applicable_operators;
         match_tree.get_applicable_operators(state_index, applicable_operators);
         for (const AbstractOperator *op : applicable_operators) {
+            int infinity = numeric_limits<int>::max();
             size_t predecessor = state_index + op->get_hash_effect();
-            int alternative_cost = distances[state_index] + op->get_cost();
+            int alternative_cost = (op->get_cost() == infinity)
+                ? infinity
+                : distances[state_index] + op->get_cost();
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
                 pq.push(alternative_cost, predecessor);
