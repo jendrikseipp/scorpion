@@ -167,9 +167,7 @@ pair<int, double> PatternCollectionGeneratorSCP::compute_best_variable_to_add(
         // TODO: Store best PDB?
         PatternDatabase pdb(task_proxy, new_pattern, false, costs);
         double improvement = evaluate_pdb(pdb);
-        if (debug) {
-            cout << "Candidate extension " << new_pattern << ": " << improvement << endl;
-        }
+        cout << "pattern " << new_pattern << ": " << improvement << endl;
         if (improvement > max_improvement) {
             best_var = var;
             max_improvement = improvement;
@@ -197,9 +195,8 @@ Pattern PatternCollectionGeneratorSCP::compute_next_pattern(
         int domain_size = task_proxy.get_variables()[var].get_domain_size();
         num_states *= domain_size;
         score = new_score;
-        if (debug) {
-            utils::Log() << "Current pattern " << pattern << ", size: " << num_states << endl;
-        }
+        utils::Log() << "pattern: " << pattern << ", score: " << score
+                     << ", size: " << num_states << endl;
     }
     return pattern;
 }
@@ -241,12 +238,10 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     while (!timer.is_expired()) {
         // Sample states.
-        log << "Start sampling states" << endl;
         samples.clear();
         samples.push_back(task_proxy.get_initial_state());
         sample_states(sampler, init_h, samples);
         sample_h_values.resize(samples.size(), 0);
-        log << "Finished sampling states" << endl;
 
         // Find pattern.
         Pattern pattern = compute_next_pattern(task_proxy, costs, timer);
@@ -278,6 +273,10 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
         cost_saturation::reduce_costs(costs, saturated_costs);
 
         projection.remove_transition_system();
+        if (num_samples == 0) {
+            projections.pop_back();
+            cost_partitioned_h_values.pop_back();
+        }
     }
 
     cout << "Pattern generation (scp) time: " << timer.get_elapsed_time() << endl;
