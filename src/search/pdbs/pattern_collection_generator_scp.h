@@ -31,7 +31,7 @@ class PatternCollectionGeneratorSCP : public PatternCollectionGenerator {
     const int pdb_max_size;
     const int collection_max_size;
     const int num_samples;
-    const int min_improvement;
+    const double min_improvement;
     const double max_time;
     const bool debug;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
@@ -50,7 +50,7 @@ class PatternCollectionGeneratorSCP : public PatternCollectionGenerator {
         const sampling::RandomWalkSampler &sampler,
         int init_h,
         std::vector<State> &samples);
-    int evaluate_pdb(const PatternDatabase &pdb);
+    double evaluate_pdb(const PatternDatabase &pdb);
     int compute_best_variable_to_add(
         const TaskProxy &task_proxy, const std::vector<int> &costs,
         const Pattern &pattern, int num_states, const utils::CountdownTimer &timer);

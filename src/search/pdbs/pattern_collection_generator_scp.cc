@@ -78,7 +78,7 @@ PatternCollectionGeneratorSCP::PatternCollectionGeneratorSCP(const Options &opts
     : pdb_max_size(opts.get<int>("pdb_max_size")),
       collection_max_size(opts.get<int>("collection_max_size")),
       num_samples(opts.get<int>("num_samples")),
-      min_improvement(opts.get<int>("min_improvement")),
+      min_improvement(opts.get<double>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       debug(opts.get<bool>("debug")),
       rng(utils::parse_rng_from_options(opts)),
@@ -100,16 +100,20 @@ void PatternCollectionGeneratorSCP::sample_states(
     }
 }
 
-int PatternCollectionGeneratorSCP::evaluate_pdb(const PatternDatabase &pdb) {
-    int num_improvements = 0;
-    for (size_t i = 0; i < samples.size(); ++i) {
-        int old_h = sample_h_values[i];
-        int new_h = pdb.get_value(samples[i]);
-        if (new_h > old_h) {
-            ++num_improvements;
+double PatternCollectionGeneratorSCP::evaluate_pdb(const PatternDatabase &pdb) {
+    if (num_samples == 0) {
+        return pdb.compute_mean_finite_h();
+    } else {
+        int num_improvements = 0;
+        for (size_t i = 0; i < samples.size(); ++i) {
+            int old_h = sample_h_values[i];
+            int new_h = pdb.get_value(samples[i]);
+            if (new_h > old_h) {
+                ++num_improvements;
+            }
         }
+        return num_improvements;
     }
-    return num_improvements;
 }
 
 vector<int> PatternCollectionGeneratorSCP::get_connected_variables(
@@ -146,7 +150,7 @@ int PatternCollectionGeneratorSCP::compute_best_variable_to_add(
 
     // TODO: try simple hill climbing.
     int best_var = -1;
-    int max_improvement = min_improvement - 1;
+    double max_improvement = (num_samples > 0) ? min_improvement - 1 : 0.;
     for (int var : relevant_vars) {
         if (timer.is_expired()) {
             break;
@@ -160,7 +164,7 @@ int PatternCollectionGeneratorSCP::compute_best_variable_to_add(
         sort(new_pattern.begin(), new_pattern.end());
         // TODO: Store best PDB?
         PatternDatabase pdb(task_proxy, new_pattern, false, costs);
-        int improvement = evaluate_pdb(pdb);
+        double improvement = evaluate_pdb(pdb);
         if (debug) {
             cout << "Candidate extension " << new_pattern << ": " << improvement << endl;
         }
@@ -288,16 +292,16 @@ static void add_options(OptionParser &parser) {
     parser.add_option<int>(
         "num_samples",
         "number of samples (random states) on which to evaluate each "
-        "candidate pattern",
-        "1000",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
+        "candidate pattern. If num_samples=0, use average h value.",
+        "0",
+        Bounds("0", "infinity"));
+    parser.add_option<double>(
         "min_improvement",
         "minimum number of samples on which a candidate pattern "
         "must improve on the current one to be considered "
         "as the next pattern collection ",
-        "1",
-        Bounds("1", "infinity"));
+        "0.001",
+        Bounds("0.001", "infinity"));
     parser.add_option<double>(
         "max_time",
         "maximum time in seconds for generating patterns",
@@ -310,13 +314,6 @@ static void add_options(OptionParser &parser) {
     utils::add_rng_options(parser);
 }
 
-static void check_options(
-    OptionParser &parser, const Options &opts) {
-    if (opts.get<int>("min_improvement") > opts.get<int>("num_samples"))
-        parser.error("minimum improvement must not be higher than number of "
-                     "samples");
-}
-
 static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     add_options(parser);
 
@@ -324,7 +321,6 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     if (parser.help_mode())
         return nullptr;
 
-    check_options(parser, opts);
     if (parser.dry_run())
         return nullptr;
 
