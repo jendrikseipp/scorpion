@@ -132,7 +132,7 @@ vector<int> PatternCollectionGeneratorSCP::get_connected_variables(
     }
 }
 
-int PatternCollectionGeneratorSCP::compute_best_variable_to_add(
+pair<int, double> PatternCollectionGeneratorSCP::compute_best_variable_to_add(
     const TaskProxy &task_proxy, const vector<int> &costs,
     const Pattern &pattern, int num_states, const utils::CountdownTimer &timer) {
     vector<int> connected_vars = get_connected_variables(pattern);
@@ -145,7 +145,9 @@ int PatternCollectionGeneratorSCP::compute_best_variable_to_add(
         back_inserter(relevant_vars));
 
     if (relevant_vars.empty()) {
-        return -1;
+        return {
+                   -1, 0.
+        };
     }
 
     // TODO: try simple hill climbing.
@@ -173,22 +175,28 @@ int PatternCollectionGeneratorSCP::compute_best_variable_to_add(
             max_improvement = improvement;
         }
     }
-    return best_var;
+    return {
+               best_var, max_improvement
+    };
 }
 
 Pattern PatternCollectionGeneratorSCP::compute_next_pattern(
     const TaskProxy &task_proxy, const vector<int> &costs, const utils::CountdownTimer &timer) {
     Pattern pattern;
     int num_states = 1;
+    double score = 0.;
     while (!timer.is_expired()) {
-        int var = compute_best_variable_to_add(task_proxy, costs, pattern, num_states, timer);
-        if (var == -1) {
+        auto result = compute_best_variable_to_add(task_proxy, costs, pattern, num_states, timer);
+        int var = result.first;
+        double new_score = result.second;
+        if (var == -1 || new_score <= score) {
             break;
         }
         pattern.push_back(var);
         sort(pattern.begin(), pattern.end());
         int domain_size = task_proxy.get_variables()[var].get_domain_size();
         num_states *= domain_size;
+        score = new_score;
         if (debug) {
             utils::Log() << "Current pattern " << pattern << ", size: " << num_states << endl;
         }
