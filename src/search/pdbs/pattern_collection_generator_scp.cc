@@ -286,7 +286,8 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
         }
     }
 
-    cout << "Pattern generation (scp) time: " << timer.get_elapsed_time() << endl;
+    log << "Pattern collection size: " << collection_size << endl;
+    log << "Pattern generation (SCP) time: " << timer.get_elapsed_time() << endl;
     return PatternCollectionInformation(task_proxy, patterns);
 }
 
