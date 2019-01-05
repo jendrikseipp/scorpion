@@ -44,7 +44,13 @@ Abstractions ProjectionGenerator::generate_abstractions(
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_collection_info.get_patterns();
 
+    vector<int> pattern_sizes;
+    pattern_sizes.reserve(patterns->size());
+    for (const Pattern &pattern : *patterns) {
+        pattern_sizes.push_back(pattern.size());
+    }
     log << "Number of patterns: " << patterns->size() << endl;
+    log << "Pattern sizes: " << pattern_sizes << endl;
     log << "Time for computing patterns: " << patterns_timer << endl;
 
     if (dominance_pruning) {
