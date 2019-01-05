@@ -53,9 +53,10 @@ class PatternCollectionGeneratorSCP : public PatternCollectionGenerator {
     double evaluate_pdb(const PatternDatabase &pdb);
     std::pair<int, double> compute_best_variable_to_add(
         const TaskProxy &task_proxy, const std::vector<int> &costs,
-        const Pattern &pattern, int num_states, const utils::CountdownTimer &timer);
+        const Pattern &pattern, int num_states, int max_states,
+        const utils::CountdownTimer &timer);
     Pattern compute_next_pattern(
-        const TaskProxy &task_proxy, const std::vector<int> &costs,
+        const TaskProxy &task_proxy, const std::vector<int> &costs, int max_states,
         const utils::CountdownTimer &timer);
     int compute_current_heuristic(const State &state) const;
     std::vector<int> get_connected_variables(const Pattern &pattern);

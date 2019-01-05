@@ -134,7 +134,8 @@ vector<int> PatternCollectionGeneratorSCP::get_connected_variables(
 
 pair<int, double> PatternCollectionGeneratorSCP::compute_best_variable_to_add(
     const TaskProxy &task_proxy, const vector<int> &costs,
-    const Pattern &pattern, int num_states, const utils::CountdownTimer &timer) {
+    const Pattern &pattern, int num_states, int max_states,
+    const utils::CountdownTimer &timer) {
     vector<int> connected_vars = get_connected_variables(pattern);
 
     // Ignore variables already in the pattern.
@@ -158,7 +159,7 @@ pair<int, double> PatternCollectionGeneratorSCP::compute_best_variable_to_add(
             break;
         }
         int domain_size = task_proxy.get_variables()[var].get_domain_size();
-        if (!utils::is_product_within_limit(num_states, domain_size, pdb_max_size)) {
+        if (!utils::is_product_within_limit(num_states, domain_size, max_states)) {
             continue;
         }
         vector<int> new_pattern = pattern;
@@ -179,12 +180,14 @@ pair<int, double> PatternCollectionGeneratorSCP::compute_best_variable_to_add(
 }
 
 Pattern PatternCollectionGeneratorSCP::compute_next_pattern(
-    const TaskProxy &task_proxy, const vector<int> &costs, const utils::CountdownTimer &timer) {
+    const TaskProxy &task_proxy, const vector<int> &costs, int max_states,
+    const utils::CountdownTimer &timer) {
     Pattern pattern;
     int num_states = 1;
     double score = 0.;
     while (!timer.is_expired()) {
-        auto result = compute_best_variable_to_add(task_proxy, costs, pattern, num_states, timer);
+        auto result = compute_best_variable_to_add(
+            task_proxy, costs, pattern, num_states, max_states, timer);
         int var = result.first;
         double new_score = result.second;
         if (var == -1 || new_score <= score) {
@@ -235,6 +238,7 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     sampling::RandomWalkSampler sampler(task_proxy, *rng);
 
+    int collection_size = 0;
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     while (!timer.is_expired()) {
         // Sample states.
@@ -244,16 +248,19 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
         sample_h_values.resize(samples.size(), 0);
 
         // Find pattern.
-        Pattern pattern = compute_next_pattern(task_proxy, costs, timer);
+        int max_size = min(pdb_max_size, collection_max_size - collection_size);
+        assert(max_size >= 0);
+        Pattern pattern = compute_next_pattern(task_proxy, costs, max_size, timer);
         if (pattern.empty()) {
             break;
         }
+        log << "Add pattern " << pattern << endl;
         patterns->push_back(pattern);
         projections.push_back(utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, pattern));
         cost_saturation::Projection &projection = *projections.back();
         vector<int> h_values = projection.compute_goal_distances(costs);
         cost_partitioned_h_values.push_back(h_values);
-        log << "Add pattern " << pattern << endl;
+        collection_size += projection.get_num_states();
 
         // Update h values for initial state and samples.
         int init_id = projection.get_abstract_state_id(task_proxy.get_initial_state());
@@ -290,7 +297,6 @@ static void add_options(OptionParser &parser) {
         "maximal number of states per pattern database ",
         "2000000",
         Bounds("1", "infinity"));
-    // TODO: Respect collection_max_size.
     parser.add_option<int>(
         "collection_max_size",
         "maximal number of states in the pattern collection",
