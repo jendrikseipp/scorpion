@@ -745,6 +745,7 @@ fast_downward_plugin(
         pdbs/pattern_collection_information
         pdbs/pattern_database
         pdbs/pattern_collection_generator_combo
+        pdbs/pattern_collection_generator_filtered_systematic
         pdbs/pattern_collection_generator_genetic
         pdbs/pattern_collection_generator_hillclimbing
         pdbs/pattern_collection_generator_manual
