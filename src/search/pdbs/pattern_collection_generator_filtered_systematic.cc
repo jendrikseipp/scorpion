@@ -22,8 +22,6 @@
 using namespace std;
 
 namespace pdbs {
-static const int INF = numeric_limits<int>::max();
-
 PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFilteredSystematic(
     const Options &opts)
     : max_pattern_size(opts.get<int>("max_pattern_size")),
@@ -68,21 +66,20 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         PatternCollectionInformation pci = generator.generate(task);
         for (const Pattern &pattern : *pci.get_patterns()) {
             if (timer.is_expired()) {
+                cout << "Reached time limit." << endl;
                 return;
             }
             int remaining_size = max_collection_size - collection_size;
-            if (get_pdb_size(variable_domains, pattern) > remaining_size) {
+            int pdb_size = get_pdb_size(variable_domains, pattern);
+            if (pdb_size > remaining_size) {
+                cout << "Reached maximum collection size." << endl;
                 return;
             }
             if (static_cast<int>(pattern.size()) == pattern_size) {
-                // TODO: Select a PDB as soon as Dijkstra settles a state with g > 0.
-                // TODO: Skip patterns that affect only zero-cost operators.
-                // TODO: Add PDBs that detect additional dead-ends?
-                PatternDatabase pdb(task_proxy, pattern, false, costs);
-                int init_h = pdb.get_value(initial_state);
-                double avg_h = pdb.compute_mean_finite_h();
-
                 if (debug) {
+                    PatternDatabase pdb(task_proxy, pattern, false, costs);
+                    int init_h = pdb.get_value(initial_state);
+                    double avg_h = pdb.compute_mean_finite_h();
                     cost_saturation::Projection projection(task_proxy, pattern);
                     vector<int> h_values = projection.compute_goal_distances(costs);
                     vector<int> saturated_costs = projection.compute_saturated_costs(
@@ -98,13 +95,8 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                          << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
                 }
 
-                if (avg_h > 0.) {
-                    patterns.push_back(pattern);
-                    collection_size += pdb.get_size();
-                    if (init_h == INF) {
-                        return;
-                    }
-                }
+                patterns.push_back(pattern);
+                collection_size += pdb_size;
             }
         }
     }
