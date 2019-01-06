@@ -187,6 +187,10 @@ public:
     */
     double compute_mean_finite_h() const;
 
+    const std::vector<int> &get_distances() const {
+        return distances;
+    }
+
     // Returns true iff op has an effect on a variable in the pattern.
     bool is_operator_relevant(const OperatorProxy &op) const;
 };
