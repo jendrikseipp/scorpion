@@ -55,17 +55,25 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                 // TODO: Add PDBs that detect additional dead-ends?
                 PatternDatabase pdb(task_proxy, pattern, false, costs);
                 double avg_h = pdb.compute_mean_finite_h();
-                if (debug)
-                    cout << "pattern " << pattern << ": " << avg_h << endl;
-                if (avg_h > 0.) {
-                    patterns.push_back(pattern);
-                    // Compute SCF and reduce remaining costs.
+
+                if (debug) {
                     cost_saturation::Projection projection(task_proxy, pattern);
                     vector<int> h_values = projection.compute_goal_distances(costs);
                     vector<int> saturated_costs = projection.compute_saturated_costs(
                         h_values, costs.size());
-                    cost_saturation::reduce_costs(costs, saturated_costs);
-                    if (h_values[projection.get_abstract_state_id(initial_state)] == INF) {
+                    int used_costs = 0;
+                    for (int c : saturated_costs) {
+                        if (c > 0) {
+                            used_costs += c;
+                        }
+                    }
+                    cout << "pattern " << pattern << ": " << avg_h << " / " << used_costs
+                         << " = " << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
+                }
+
+                if (avg_h > 0.) {
+                    patterns.push_back(pattern);
+                    if (pdb.get_value(initial_state) == INF) {
                         return;
                     }
                 }
