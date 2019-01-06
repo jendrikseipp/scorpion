@@ -13,6 +13,7 @@ class Options;
 namespace pdbs {
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
     int max_pattern_size;
+    const int max_collection_size;
     const double max_time;
     const bool debug;
 

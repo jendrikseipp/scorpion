@@ -27,8 +27,27 @@ static const int INF = numeric_limits<int>::max();
 PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFilteredSystematic(
     const Options &opts)
     : max_pattern_size(opts.get<int>("max_pattern_size")),
+      max_collection_size(opts.get<int>("max_collection_size")),
       max_time(opts.get<double>("max_time")),
       debug(opts.get<bool>("debug")) {
+}
+
+static vector<int> get_variable_domains(const TaskProxy &task_proxy) {
+    VariablesProxy variables = task_proxy.get_variables();
+    vector<int> variable_domains;
+    variable_domains.reserve(variables.size());
+    for (VariableProxy var : variables) {
+        variable_domains.push_back(var.get_domain_size());
+    }
+    return variable_domains;
+}
+
+static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern) {
+    int size = 1;
+    for (int var : pattern) {
+        size += domain_sizes[var];
+    }
+    return size;
 }
 
 void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
@@ -37,7 +56,9 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     utils::CountdownTimer timer(max_time);
     TaskProxy task_proxy(*task);
     State initial_state = task_proxy.get_initial_state();
+    vector<int> variable_domains = get_variable_domains(task_proxy);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
+    int collection_size = 0;
     for (int pattern_size = 1; pattern_size <= max_pattern_size; ++pattern_size) {
         cout << "Generate patterns for size " << pattern_size << endl;
         options::Options opts;
@@ -47,6 +68,10 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         PatternCollectionInformation pci = generator.generate(task);
         for (const Pattern &pattern : *pci.get_patterns()) {
             if (timer.is_expired()) {
+                return;
+            }
+            int remaining_size = max_collection_size - collection_size;
+            if (get_pdb_size(variable_domains, pattern) > remaining_size) {
                 return;
             }
             if (static_cast<int>(pattern.size()) == pattern_size) {
@@ -75,6 +100,7 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 
                 if (avg_h > 0.) {
                     patterns.push_back(pattern);
+                    collection_size += pdb.get_size();
                     if (init_h == INF) {
                         return;
                     }
@@ -99,8 +125,13 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
 static void add_options(OptionParser &parser) {
     parser.add_option<int>(
         "max_pattern_size",
-        "maximal number of variables per pattern",
+        "maximum number of variables per pattern",
         "2",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_collection_size",
+        "maximum number of states in the pattern collection",
+        "200000000",
         Bounds("1", "infinity"));
     parser.add_option<double>(
         "max_time",
