@@ -54,6 +54,7 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                 // TODO: Skip patterns that affect only zero-cost operators.
                 // TODO: Add PDBs that detect additional dead-ends?
                 PatternDatabase pdb(task_proxy, pattern, false, costs);
+                int init_h = pdb.get_value(initial_state);
                 double avg_h = pdb.compute_mean_finite_h();
 
                 if (debug) {
@@ -67,13 +68,14 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                             used_costs += c;
                         }
                     }
-                    cout << "pattern " << pattern << ": " << avg_h << " / " << used_costs
-                         << " = " << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
+                    cout << "pattern " << pattern << ": " << init_h << ", "
+                         << avg_h << " / " << used_costs << " = "
+                         << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
                 }
 
                 if (avg_h > 0.) {
                     patterns.push_back(pattern);
-                    if (pdb.get_value(initial_state) == INF) {
+                    if (init_h == INF) {
                         return;
                     }
                 }
