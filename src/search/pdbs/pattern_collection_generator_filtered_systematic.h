@@ -12,13 +12,13 @@ class Options;
 
 namespace pdbs {
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
-    int pattern_max_size;
+    int max_pattern_size;
     const double max_time;
     const bool debug;
 
     void select_systematic_patterns(
         const std::shared_ptr<AbstractTask> &task,
-        int pattern_max_size,
+        int max_pattern_size,
         PatternCollection &patterns);
 public:
     explicit PatternCollectionGeneratorFilteredSystematic(const options::Options &opts);

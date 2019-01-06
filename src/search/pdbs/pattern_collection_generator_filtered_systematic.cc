@@ -26,19 +26,19 @@ static const int INF = numeric_limits<int>::max();
 
 PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFilteredSystematic(
     const Options &opts)
-    : pattern_max_size(opts.get<int>("pattern_max_size")),
+    : max_pattern_size(opts.get<int>("max_pattern_size")),
       max_time(opts.get<double>("max_time")),
       debug(opts.get<bool>("debug")) {
 }
 
 void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
-    const shared_ptr<AbstractTask> &task, int pattern_max_size,
+    const shared_ptr<AbstractTask> &task, int max_pattern_size,
     PatternCollection &patterns) {
     utils::CountdownTimer timer(max_time);
     TaskProxy task_proxy(*task);
     State initial_state = task_proxy.get_initial_state();
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    for (int pattern_size = 1; pattern_size <= pattern_max_size; ++pattern_size) {
+    for (int pattern_size = 1; pattern_size <= max_pattern_size; ++pattern_size) {
         cout << "Generate patterns for size " << pattern_size << endl;
         options::Options opts;
         opts.set<int>("pattern_max_size", pattern_size);
@@ -89,8 +89,8 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
 
     TaskProxy task_proxy(*task);
-    pattern_max_size = min(pattern_max_size, static_cast<int>(task_proxy.get_variables().size()));
-    select_systematic_patterns(task, pattern_max_size, *patterns);
+    max_pattern_size = min(max_pattern_size, static_cast<int>(task_proxy.get_variables().size()));
+    select_systematic_patterns(task, max_pattern_size, *patterns);
 
     return PatternCollectionInformation(task_proxy, patterns);
 }
@@ -98,7 +98,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
 
 static void add_options(OptionParser &parser) {
     parser.add_option<int>(
-        "pattern_max_size",
+        "max_pattern_size",
         "maximal number of variables per pattern",
         "2",
         Bounds("1", "infinity"));
