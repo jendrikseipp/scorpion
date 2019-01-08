@@ -84,8 +84,15 @@ Abstractions ProjectionGenerator::generate_abstractions(
             abstractions.back()->dump();
         }
     }
+
+    int collection_size = 0;
+    for (auto &abstraction : abstractions) {
+        collection_size += abstraction->get_num_states();
+    }
+
     log << "Time for building projections: " << pdbs_timer << endl;
     log << "Number of projections: " << abstractions.size() << endl;
+    log << "Number of states in projections: " << collection_size << endl;
     return abstractions;
 }
 
