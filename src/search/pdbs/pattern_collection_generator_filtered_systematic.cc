@@ -48,6 +48,23 @@ static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern)
     return size;
 }
 
+static PatternCollection get_patterns(
+    const shared_ptr<AbstractTask> &task, int pattern_size) {
+    cout << "Generate patterns for size " << pattern_size << endl;
+    options::Options opts;
+    opts.set<int>("pattern_max_size", pattern_size);
+    opts.set<bool>("only_interesting_patterns", true);
+    PatternCollectionGeneratorSystematic generator(opts);
+    PatternCollectionInformation pci = generator.generate(task);
+    PatternCollection patterns;
+    for (const Pattern &pattern : *pci.get_patterns()) {
+        if (static_cast<int>(pattern.size()) == pattern_size) {
+            patterns.push_back(pattern);
+        }
+    }
+    return patterns;
+}
+
 void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<AbstractTask> &task, int max_pattern_size,
     PatternCollection &patterns) {
@@ -58,13 +75,7 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     int collection_size = 0;
     for (int pattern_size = 1; pattern_size <= max_pattern_size; ++pattern_size) {
-        cout << "Generate patterns for size " << pattern_size << endl;
-        options::Options opts;
-        opts.set<int>("pattern_max_size", pattern_size);
-        opts.set<bool>("only_interesting_patterns", true);
-        PatternCollectionGeneratorSystematic generator(opts);
-        PatternCollectionInformation pci = generator.generate(task);
-        for (const Pattern &pattern : *pci.get_patterns()) {
+        for (const Pattern &pattern : get_patterns(task, pattern_size)) {
             if (timer.is_expired()) {
                 cout << "Reached time limit." << endl;
                 return;
@@ -75,29 +86,27 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                 cout << "Reached maximum collection size." << endl;
                 return;
             }
-            if (static_cast<int>(pattern.size()) == pattern_size) {
-                if (debug) {
-                    PatternDatabase pdb(task_proxy, pattern, false, costs);
-                    int init_h = pdb.get_value(initial_state);
-                    double avg_h = pdb.compute_mean_finite_h();
-                    cost_saturation::Projection projection(task_proxy, pattern);
-                    vector<int> h_values = projection.compute_goal_distances(costs);
-                    vector<int> saturated_costs = projection.compute_saturated_costs(
-                        h_values, costs.size());
-                    int used_costs = 0;
-                    for (int c : saturated_costs) {
-                        if (c > 0) {
-                            used_costs += c;
-                        }
+            if (debug) {
+                PatternDatabase pdb(task_proxy, pattern, false, costs);
+                int init_h = pdb.get_value(initial_state);
+                double avg_h = pdb.compute_mean_finite_h();
+                cost_saturation::Projection projection(task_proxy, pattern);
+                vector<int> h_values = projection.compute_goal_distances(costs);
+                vector<int> saturated_costs = projection.compute_saturated_costs(
+                    h_values, costs.size());
+                int used_costs = 0;
+                for (int c : saturated_costs) {
+                    if (c > 0) {
+                        used_costs += c;
                     }
-                    cout << "pattern " << pattern << ": " << init_h << ", "
-                         << avg_h << " / " << used_costs << " = "
-                         << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
                 }
-
-                patterns.push_back(pattern);
-                collection_size += pdb_size;
+                cout << "pattern " << pattern << ": " << init_h << ", "
+                     << avg_h << " / " << used_costs << " = "
+                     << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
             }
+
+            patterns.push_back(pattern);
+            collection_size += pdb_size;
         }
     }
 }
