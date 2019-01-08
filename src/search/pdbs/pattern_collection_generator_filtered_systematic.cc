@@ -22,14 +22,6 @@
 using namespace std;
 
 namespace pdbs {
-PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFilteredSystematic(
-    const Options &opts)
-    : max_pattern_size(opts.get<int>("max_pattern_size")),
-      max_collection_size(opts.get<int>("max_collection_size")),
-      max_time(opts.get<double>("max_time")),
-      debug(opts.get<bool>("debug")) {
-}
-
 static vector<int> get_variable_domains(const TaskProxy &task_proxy) {
     VariablesProxy variables = task_proxy.get_variables();
     vector<int> variable_domains;
@@ -65,60 +57,103 @@ static PatternCollection get_patterns(
     return patterns;
 }
 
+
+class SequentialPatternGenerator {
+    shared_ptr<AbstractTask> task;
+    int max_pattern_size;
+    int current_pattern_size;
+    PatternCollection current_patterns;
+public:
+    SequentialPatternGenerator(const shared_ptr<AbstractTask> &task, int max_pattern_size)
+        : task(task),
+          max_pattern_size(max_pattern_size),
+          current_pattern_size(1),
+          current_patterns(get_patterns(task, current_pattern_size)) {
+        max_pattern_size = min(
+            max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
+        assert(current_pattern_size <= max_pattern_size);
+    }
+
+    Pattern get_next_pattern() {
+        if (!current_patterns.empty()) {
+            Pattern pattern = current_patterns.back();
+            current_patterns.pop_back();
+            assert(!pattern.empty());
+            return pattern;
+        } else if (current_pattern_size < max_pattern_size) {
+            ++current_pattern_size;
+            current_patterns = get_patterns(task, current_pattern_size);
+            return get_next_pattern();
+        } else {
+            return {};
+        }
+    }
+};
+
+
+PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFilteredSystematic(
+    const Options &opts)
+    : max_pattern_size(opts.get<int>("max_pattern_size")),
+      max_collection_size(opts.get<int>("max_collection_size")),
+      max_time(opts.get<double>("max_time")),
+      debug(opts.get<bool>("debug")) {
+}
+
 void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
-    const shared_ptr<AbstractTask> &task, int max_pattern_size,
-    PatternCollection &patterns) {
+    const shared_ptr<AbstractTask> &task, PatternCollection &patterns) {
     utils::CountdownTimer timer(max_time);
     TaskProxy task_proxy(*task);
     State initial_state = task_proxy.get_initial_state();
     vector<int> variable_domains = get_variable_domains(task_proxy);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
+    SequentialPatternGenerator pattern_generator(task, max_pattern_size);
     int collection_size = 0;
-    for (int pattern_size = 1; pattern_size <= max_pattern_size; ++pattern_size) {
-        for (const Pattern &pattern : get_patterns(task, pattern_size)) {
-            if (timer.is_expired()) {
-                cout << "Reached time limit." << endl;
-                return;
-            }
-            int remaining_size = max_collection_size - collection_size;
-            int pdb_size = get_pdb_size(variable_domains, pattern);
-            if (pdb_size > remaining_size) {
-                cout << "Reached maximum collection size." << endl;
-                return;
-            }
-            if (debug) {
-                PatternDatabase pdb(task_proxy, pattern, false, costs);
-                int init_h = pdb.get_value(initial_state);
-                double avg_h = pdb.compute_mean_finite_h();
-                cost_saturation::Projection projection(task_proxy, pattern);
-                vector<int> h_values = projection.compute_goal_distances(costs);
-                vector<int> saturated_costs = projection.compute_saturated_costs(
-                    h_values, costs.size());
-                int used_costs = 0;
-                for (int c : saturated_costs) {
-                    if (c > 0) {
-                        used_costs += c;
-                    }
-                }
-                cout << "pattern " << pattern << ": " << init_h << ", "
-                     << avg_h << " / " << used_costs << " = "
-                     << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
-            }
-
-            patterns.push_back(pattern);
-            collection_size += pdb_size;
+    while (true) {
+        Pattern pattern = pattern_generator.get_next_pattern();
+        if (pattern.empty()) {
+            cout << "Generated all patterns up to size " << max_pattern_size
+                 << "." << endl;
+            break;
         }
+        if (timer.is_expired()) {
+            cout << "Reached time limit." << endl;
+            break;
+        }
+        int remaining_size = max_collection_size - collection_size;
+        int pdb_size = get_pdb_size(variable_domains, pattern);
+        if (pdb_size > remaining_size) {
+            cout << "Reached maximum collection size." << endl;
+            break;
+        }
+        if (debug) {
+            PatternDatabase pdb(task_proxy, pattern, false, costs);
+            int init_h = pdb.get_value(initial_state);
+            double avg_h = pdb.compute_mean_finite_h();
+            cost_saturation::Projection projection(task_proxy, pattern);
+            vector<int> h_values = projection.compute_goal_distances(costs);
+            vector<int> saturated_costs = projection.compute_saturated_costs(
+                h_values, costs.size());
+            int used_costs = 0;
+            for (int c : saturated_costs) {
+                if (c > 0) {
+                    used_costs += c;
+                }
+            }
+            cout << "pattern " << pattern << ": " << init_h << ", "
+                 << avg_h << " / " << used_costs << " = "
+                 << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
+        }
+
+        patterns.push_back(pattern);
+        collection_size += pdb_size;
     }
 }
 
 PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::generate(
     const shared_ptr<AbstractTask> &task) {
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
-
     TaskProxy task_proxy(*task);
-    max_pattern_size = min(max_pattern_size, static_cast<int>(task_proxy.get_variables().size()));
-    select_systematic_patterns(task, max_pattern_size, *patterns);
-
+    select_systematic_patterns(task, *patterns);
     return PatternCollectionInformation(task_proxy, patterns);
 }
 
