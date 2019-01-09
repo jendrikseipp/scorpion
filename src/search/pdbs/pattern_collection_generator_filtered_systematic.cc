@@ -70,9 +70,9 @@ class SequentialPatternGenerator {
     int current_pattern_size;
     PatternCollection current_patterns;
 public:
-    SequentialPatternGenerator(const shared_ptr<AbstractTask> &task, int max_pattern_size)
+    SequentialPatternGenerator(const shared_ptr<AbstractTask> &task, int max_pattern_size_)
         : task(task),
-          max_pattern_size(max_pattern_size),
+          max_pattern_size(max_pattern_size_),
           current_pattern_size(1),
           current_patterns(get_patterns(task, current_pattern_size)) {
         max_pattern_size = min(
