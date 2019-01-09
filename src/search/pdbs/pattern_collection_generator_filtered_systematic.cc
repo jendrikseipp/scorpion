@@ -35,7 +35,7 @@ static vector<int> get_variable_domains(const TaskProxy &task_proxy) {
 static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern) {
     int size = 1;
     for (int var : pattern) {
-        size += domain_sizes[var];
+        size *= domain_sizes[var];
     }
     return size;
 }
