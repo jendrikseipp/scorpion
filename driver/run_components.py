@@ -5,6 +5,7 @@ from __future__ import print_function
 import errno
 import logging
 import os.path
+import signal
 import subprocess
 import sys
 
@@ -108,6 +109,10 @@ def transform_task(args):
             stdin="output.sas",
             time_limit=time_limit,
             memory_limit=memory_limit)
+    except subprocess.CalledProcessError as err:
+        if err.returncode != -signal.SIGXCPU:
+            returncodes.print_stderr(
+                "Task transformation returned exit status {}".format(err.returncode))
     except IOError as err:
         if err.errno == errno.ENOENT:
             print("Translator output file missing. Skipping task transformation.")
