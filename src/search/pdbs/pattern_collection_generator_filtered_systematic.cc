@@ -13,6 +13,7 @@
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
+#include "../utils/math.h"
 
 #include <algorithm>
 #include <cassert>
@@ -35,7 +36,12 @@ static vector<int> get_variable_domains(const TaskProxy &task_proxy) {
 static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern) {
     int size = 1;
     for (int var : pattern) {
-        size *= domain_sizes[var];
+        if (utils::is_product_within_limit(
+                size, domain_sizes[var], numeric_limits<int>::max())) {
+            size *= domain_sizes[var];
+        } else {
+            return -1;
+        }
     }
     return size;
 }
@@ -119,8 +125,13 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             cout << "Reached time limit." << endl;
             break;
         }
-        int remaining_size = max_collection_size - collection_size;
         int pdb_size = get_pdb_size(variable_domains, pattern);
+        if (pdb_size == -1) {
+            // Pattern is too large.
+            cout << "Reached too large pattern." << endl;
+            break;
+        }
+        int remaining_size = max_collection_size - collection_size;
         if (pdb_size > remaining_size) {
             cout << "Reached maximum collection size." << endl;
             break;
