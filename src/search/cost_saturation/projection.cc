@@ -58,7 +58,6 @@ Projection::Projection(
     assert(utils::is_sorted_unique(pattern));
 
     active_operators = compute_active_operators();
-    looping_operators = compute_looping_operators();
 
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
@@ -164,16 +163,6 @@ vector<int> Projection::compute_active_operators() const {
         }
     }
     return active_operators;
-}
-
-vector<bool> Projection::compute_looping_operators() const {
-    OperatorsProxy operators = task_proxy.get_operators();
-    vector<bool> looping_operators;
-    looping_operators.reserve(operators.size());
-    for (OperatorProxy op : operators) {
-        looping_operators.push_back(operator_induces_loop(op));
-    }
-    return looping_operators;
 }
 
 vector<int> Projection::compute_goal_states() const {
@@ -344,7 +333,7 @@ vector<int> Projection::compute_saturated_costs(
     /* To prevent negative cost cycles, we ensure that all operators
        inducing self-loops have non-negative costs. */
     for (int op_id = 0; op_id < num_operators; ++op_id) {
-        if (looping_operators[op_id]) {
+        if (operator_induces_self_loop(op_id)) {
             saturated_costs[op_id] = 0;
         }
     }
@@ -419,7 +408,7 @@ const vector<int> &Projection::get_active_operators() const {
 }
 
 bool Projection::operator_induces_self_loop(int op_id) const {
-    return looping_operators[op_id];
+    return operator_induces_loop(task_proxy.get_operators()[op_id]);
 }
 
 const vector<int> &Projection::get_goal_states() const {
@@ -431,7 +420,6 @@ void Projection::release_transition_system_memory() {
     assert(has_transition_system());
     utils::release_vector_memory(abstract_forward_operators);
     utils::release_vector_memory(abstract_backward_operators);
-    utils::release_vector_memory(looping_operators);
     utils::release_vector_memory(goal_states);
     match_tree_backward = nullptr;
     unaffected_variables_per_operator = nullptr;
