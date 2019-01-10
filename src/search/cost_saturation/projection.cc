@@ -59,7 +59,6 @@ Projection::Projection(
 
     active_operators = compute_active_operators();
     looping_operators = compute_looping_operators();
-    assert(utils::is_sorted_unique(looping_operators));
 
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
@@ -167,12 +166,12 @@ vector<int> Projection::compute_active_operators() const {
     return active_operators;
 }
 
-vector<int> Projection::compute_looping_operators() const {
-    vector<int> looping_operators;
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        if (operator_induces_loop(op)) {
-            looping_operators.push_back(op.get_id());
-        }
+vector<bool> Projection::compute_looping_operators() const {
+    OperatorsProxy operators = task_proxy.get_operators();
+    vector<bool> looping_operators;
+    looping_operators.reserve(operators.size());
+    for (OperatorProxy op : operators) {
+        looping_operators.push_back(operator_induces_loop(op));
     }
     return looping_operators;
 }
@@ -344,8 +343,10 @@ vector<int> Projection::compute_saturated_costs(
 
     /* To prevent negative cost cycles, we ensure that all operators
        inducing self-loops have non-negative costs. */
-    for (int op_id : looping_operators) {
-        saturated_costs[op_id] = 0;
+    for (int op_id = 0; op_id < num_operators; ++op_id) {
+        if (looping_operators[op_id]) {
+            saturated_costs[op_id] = 0;
+        }
     }
 
     for_each_transition(
@@ -417,13 +418,8 @@ const vector<int> &Projection::get_active_operators() const {
     return active_operators;
 }
 
-const vector<int> &Projection::get_looping_operators() const {
-    assert(has_transition_system());
-    return looping_operators;
-}
-
 bool Projection::operator_induces_self_loop(int op_id) const {
-    return operator_induces_loop(task_proxy.get_operators()[op_id]);
+    return looping_operators[op_id];
 }
 
 const vector<int> &Projection::get_goal_states() const {
@@ -444,7 +440,6 @@ void Projection::release_transition_system_memory() {
 void Projection::dump() const {
     assert(has_transition_system());
     cout << "Abstract operators: " << abstract_backward_operators.size()
-         << ", looping operators: " << looping_operators.size()
          << ", goal states: " << goal_states.size() << "/" << num_states
          << endl;
 }

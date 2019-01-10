@@ -77,7 +77,7 @@ class Projection : public Abstraction {
     std::vector<int> active_operators;
 
     // Operators inducing self-loops.
-    std::vector<int> looping_operators;
+    std::vector<bool> looping_operators;
 
     // Reuse the queue to save memory allocations.
     mutable priority_queues::AdaptiveQueue<size_t> pq;
@@ -90,7 +90,7 @@ class Projection : public Abstraction {
     bool operator_induces_loop(const OperatorProxy &op) const;
 
     std::vector<int> compute_active_operators() const;
-    std::vector<int> compute_looping_operators() const;
+    std::vector<bool> compute_looping_operators() const;
     std::vector<int> compute_goal_states() const;
 
     /*
@@ -187,7 +187,6 @@ public:
         int num_operators) const override;
     virtual int get_num_states() const override;
     virtual const std::vector<int> &get_active_operators() const override;
-    virtual const std::vector<int> &get_looping_operators() const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
     virtual const std::vector<int> &get_goal_states() const override;
 

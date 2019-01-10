@@ -63,7 +63,6 @@ public:
 
     // Operators inducing self-looping transitions. May overlap with active
     // operators.
-    virtual const std::vector<int> &get_looping_operators() const = 0;
     virtual bool operator_induces_self_loop(int op_id) const = 0;
 
     virtual int get_num_states() const = 0;
