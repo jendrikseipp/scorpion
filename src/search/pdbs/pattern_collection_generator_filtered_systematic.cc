@@ -101,6 +101,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
     const Options &opts)
     : max_pattern_size(opts.get<int>("max_pattern_size")),
       max_collection_size(opts.get<int>("max_collection_size")),
+      max_patterns(opts.get<int>("max_patterns")),
       max_time(opts.get<double>("max_time")),
       debug(opts.get<bool>("debug")) {
 }
@@ -115,6 +116,10 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     SequentialPatternGenerator pattern_generator(task, max_pattern_size);
     int collection_size = 0;
     while (true) {
+        if (static_cast<int>(patterns.size()) == max_patterns) {
+            cout << "Reached maximum number of patterns." << endl;
+            break;
+        }
         Pattern pattern = pattern_generator.get_next_pattern();
         if (pattern.empty()) {
             cout << "Generated all patterns up to size " << max_pattern_size
@@ -179,6 +184,11 @@ static void add_options(OptionParser &parser) {
         "max_collection_size",
         "maximum number of states in the pattern collection",
         "200000000",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_patterns",
+        "maximum number of patterns",
+        "infinity",
         Bounds("1", "infinity"));
     parser.add_option<double>(
         "max_time",
