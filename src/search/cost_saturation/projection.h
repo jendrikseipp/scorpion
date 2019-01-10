@@ -84,9 +84,6 @@ class Projection : public Abstraction {
 
     std::vector<int> goal_states;
 
-    // Operators inducing state-changing transitions.
-    std::vector<int> active_operators;
-
     // Reuse the queue to save memory allocations.
     mutable priority_queues::AdaptiveQueue<size_t> pq;
 

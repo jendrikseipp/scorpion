@@ -111,8 +111,6 @@ Projection::Projection(
           utils::make_unique_ptr<array_pool::ArrayPool>()) {
     assert(utils::is_sorted_unique(pattern));
 
-    active_operators = compute_active_operators();
-
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
     for (int pattern_var_id : pattern) {
@@ -458,7 +456,7 @@ int Projection::get_num_states() const {
 
 const vector<int> &Projection::get_active_operators() const {
     assert(has_transition_system());
-    return active_operators;
+    ABORT("Not implemented");
 }
 
 bool Projection::operator_induces_self_loop(int op_id) const {
