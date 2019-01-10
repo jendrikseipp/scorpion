@@ -110,6 +110,8 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<AbstractTask> &task, PatternCollection &patterns) {
     utils::CountdownTimer timer(max_time);
     TaskProxy task_proxy(*task);
+    shared_ptr<cost_saturation::TaskInfo> task_info =
+        make_shared<cost_saturation::TaskInfo>(task_proxy);
     State initial_state = task_proxy.get_initial_state();
     vector<int> variable_domains = get_variable_domains(task_proxy);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
@@ -145,7 +147,7 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             PatternDatabase pdb(task_proxy, pattern, false, costs);
             int init_h = pdb.get_value(initial_state);
             double avg_h = pdb.compute_mean_finite_h();
-            cost_saturation::Projection projection(task_proxy, pattern);
+            cost_saturation::Projection projection(task_proxy, task_info, pattern);
             vector<int> h_values = projection.compute_goal_distances(costs);
             vector<int> saturated_costs = projection.compute_saturated_costs(
                 h_values, costs.size());

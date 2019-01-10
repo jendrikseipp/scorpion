@@ -18,6 +18,16 @@ class MatchTree;
 }
 
 namespace cost_saturation {
+class TaskInfo {
+    array_pool::ArrayPool changed_variables;
+    std::vector<array_pool::ArrayPoolIndex> changed_variables_indices;
+    std::vector<int> changed_variables_counts;
+public:
+    explicit TaskInfo(const TaskProxy &task_proxy);
+
+    bool operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const;
+};
+
 struct AbstractForwardOperator {
     int concrete_operator_id;
     int precondition_hash;
@@ -48,6 +58,7 @@ class Projection : public Abstraction {
         std::function<void (Facts &, Facts &, Facts &, int, const std::vector<size_t> &, int)>;
 
     TaskProxy task_proxy;
+    std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
 
     std::unique_ptr<array_pool::ArrayPool> unaffected_variables_per_operator;
@@ -172,7 +183,10 @@ protected:
     virtual void release_transition_system_memory() override;
 
 public:
-    Projection(const TaskProxy &task_proxy, const pdbs::Pattern &pattern);
+    Projection(
+        const TaskProxy &task_proxy,
+        const std::shared_ptr<TaskInfo> &task_info,
+        const pdbs::Pattern &pattern);
     virtual ~Projection() override;
 
     virtual int get_abstract_state_id(const State &concrete_state) const override;

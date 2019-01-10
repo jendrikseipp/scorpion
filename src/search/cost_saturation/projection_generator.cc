@@ -69,6 +69,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
 
     log << "Build projections" << endl;
     utils::Timer pdbs_timer;
+    shared_ptr<TaskInfo> task_info = make_shared<TaskInfo>(task_proxy);
     Abstractions abstractions;
     for (const pdbs::Pattern &pattern : *patterns) {
         if (debug) {
@@ -79,7 +80,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
             create_complete_transition_system ?
             ExplicitProjectionFactory(
                 task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction() :
-            utils::make_unique_ptr<Projection>(task_proxy, pattern));
+            utils::make_unique_ptr<Projection>(task_proxy, task_info, pattern));
         if (debug) {
             abstractions.back()->dump();
         }

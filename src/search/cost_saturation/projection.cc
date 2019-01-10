@@ -48,10 +48,64 @@ static int compute_forward_hash_effect(
     return hash_effect;
 }
 
+static vector<int> get_changed_variables(const OperatorProxy &op) {
+    unordered_map<int, int> var_to_precondition;
+    for (FactProxy precondition : op.get_preconditions()) {
+        const FactPair fact = precondition.get_pair();
+        var_to_precondition[fact.var] = fact.value;
+    }
+    vector<int> changed_variables;
+    for (EffectProxy effect : op.get_effects()) {
+        const FactPair fact = effect.get_fact().get_pair();
+        auto it = var_to_precondition.find(fact.var);
+        if (it != var_to_precondition.end() && it->second != fact.value) {
+            changed_variables.push_back(fact.var);
+        }
+    }
+    sort(changed_variables.begin(), changed_variables.end());
+    return changed_variables;
+}
+
+
+TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
+    int num_operators = task_proxy.get_operators().size();
+    changed_variables_indices.reserve(num_operators);
+    changed_variables_counts.reserve(num_operators);
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        vector<int> changed = get_changed_variables(op);
+        assert(utils::is_sorted_unique(changed));
+        array_pool::ArrayPoolIndex index = changed_variables.append(changed);
+        changed_variables_indices.push_back(index);
+        changed_variables_counts.push_back(changed.size());
+    }
+}
+
+bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const {
+    assert(utils::is_sorted_unique(pattern));
+    array_pool::ArrayPoolSlice slice = changed_variables.get_slice(
+        changed_variables_indices[op_id], changed_variables_counts[op_id]);
+    // Return false iff the operator reads and writes a variable in the pattern.
+    auto it1 = pattern.begin();
+    auto it2 = slice.begin();
+    while (it1 != pattern.end() && it2 != slice.end()) {
+        if (*it1 < *it2) {
+            ++it1;
+        } else if (*it2 < *it1) {
+            ++it2;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 Projection::Projection(
-    const TaskProxy &task_proxy, const pdbs::Pattern &pattern)
+    const TaskProxy &task_proxy,
+    const shared_ptr<TaskInfo> &task_info,
+    const pdbs::Pattern &pattern)
     : task_proxy(task_proxy),
+      task_info(task_info),
       pattern(pattern),
       unaffected_variables_per_operator(
           utils::make_unique_ptr<array_pool::ArrayPool>()) {
@@ -408,7 +462,9 @@ const vector<int> &Projection::get_active_operators() const {
 }
 
 bool Projection::operator_induces_self_loop(int op_id) const {
-    return operator_induces_loop(task_proxy.get_operators()[op_id]);
+    bool induces_loop = task_info->operator_induces_self_loop(pattern, op_id);
+    assert(induces_loop == operator_induces_loop(task_proxy.get_operators()[op_id]));
+    return induces_loop;
 }
 
 const vector<int> &Projection::get_goal_states() const {
