@@ -151,6 +151,11 @@ const vector<int> &ExplicitAbstraction::get_looping_operators() const {
     return looping_operators;
 }
 
+bool ExplicitAbstraction::operator_induces_self_loop(int op_id) const {
+    return find(looping_operators.begin(), looping_operators.end(), op_id) !=
+           looping_operators.end();
+}
+
 const vector<int> &ExplicitAbstraction::get_goal_states() const {
     assert(has_transition_system());
     return goal_states;

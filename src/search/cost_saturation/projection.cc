@@ -422,6 +422,10 @@ const vector<int> &Projection::get_looping_operators() const {
     return looping_operators;
 }
 
+bool Projection::operator_induces_self_loop(int op_id) const {
+    return operator_induces_loop(task_proxy.get_operators()[op_id]);
+}
+
 const vector<int> &Projection::get_goal_states() const {
     assert(has_transition_system());
     return goal_states;
