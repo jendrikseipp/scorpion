@@ -132,6 +132,7 @@ Projection::Projection(
     // Fill match tree after creating the operator vectors to have valid pointers.
     for (pdbs::AbstractOperator &op : abstract_backward_operators) {
         match_tree_backward->insert(op);
+        op.remove_regression_preconditions();
     }
 
     goal_states = compute_goal_states();
