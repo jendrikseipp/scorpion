@@ -186,7 +186,7 @@ static void add_options(OptionParser &parser) {
     parser.add_option<int>(
         "max_collection_size",
         "maximum number of states in the pattern collection",
-        "200000000",
+        "infinity",
         Bounds("1", "infinity"));
     parser.add_option<int>(
         "max_patterns",
