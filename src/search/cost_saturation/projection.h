@@ -9,6 +9,7 @@
 #include "../heuristics/array_pool.h"
 #include "../pdbs/pattern_database.h"
 #include "../pdbs/types.h"
+#include "../utils/logging.h"
 
 #include <vector>
 
@@ -19,12 +20,17 @@ class MatchTree;
 
 namespace cost_saturation {
 class TaskInfo {
+    array_pool::ArrayPool operator_variables;
+    std::vector<array_pool::ArrayPoolIndex> operator_variables_indices;
+    std::vector<int> operator_variables_sizes;
+
     array_pool::ArrayPool changed_variables;
     std::vector<array_pool::ArrayPoolIndex> changed_variables_indices;
-    std::vector<int> changed_variables_counts;
+    std::vector<int> changed_variables_sizes;
 public:
     explicit TaskInfo(const TaskProxy &task_proxy);
 
+    bool operator_mentions_variable(int op_id, int var) const;
     bool operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const;
 };
 
@@ -110,27 +116,37 @@ class Projection : public Abstraction {
     template<class Callback>
     void for_each_transition(const Callback &callback) const {
         // Reuse vector to save allocations.
+        std::vector<FactPair> old_abstract_facts;
         std::vector<FactPair> abstract_facts;
 
         int num_operators = abstract_forward_operators.size();
         for (int op_id = 0; op_id < num_operators; ++op_id) {
             const AbstractForwardOperator &op = abstract_forward_operators[op_id];
-            abstract_facts.clear();
+            old_abstract_facts.clear();
             for (int var : unaffected_variables_per_operator->get_slice(
                      op.unaffected_variables,
                      op.num_unaffected_variables)) {
-                abstract_facts.emplace_back(var, 0);
+                old_abstract_facts.emplace_back(var, 0);
             }
+
+            abstract_facts.clear();
+            for (int var : pattern) {
+                if (!task_info->operator_mentions_variable(op.concrete_operator_id, var)) {
+                    abstract_facts.emplace_back(variable_to_pattern_index[var], 0);
+                }
+            }
+            assert(abstract_facts == old_abstract_facts);
+
             bool has_next_match = true;
             while (has_next_match) {
                 int state = op.precondition_hash;
-                for (const FactPair &fact : abstract_facts) {
+                for (const FactPair &fact : old_abstract_facts) {
                     state += hash_multipliers[fact.var] * fact.value;
                 }
                 callback(Transition(state,
                                     op.concrete_operator_id,
                                     state + op.hash_effect));
-                has_next_match = increment_to_next_state(abstract_facts);
+                has_next_match = increment_to_next_state(old_abstract_facts);
             }
         }
     }

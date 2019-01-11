@@ -48,6 +48,20 @@ static int compute_forward_hash_effect(
     return hash_effect;
 }
 
+static vector<int> get_variables(const OperatorProxy &op) {
+    unordered_set<int> vars;
+    vars.reserve(op.get_preconditions().size());
+    for (FactProxy precondition : op.get_preconditions()) {
+        vars.insert(precondition.get_variable().get_id());
+    }
+    for (EffectProxy effect : op.get_effects()) {
+        vars.insert(effect.get_fact().get_variable().get_id());
+    }
+    vector<int> variables(vars.begin(), vars.end());
+    sort(variables.begin(), variables.end());
+    return variables;
+}
+
 static vector<int> get_changed_variables(const OperatorProxy &op) {
     unordered_map<int, int> var_to_precondition;
     for (FactProxy precondition : op.get_preconditions()) {
@@ -69,21 +83,33 @@ static vector<int> get_changed_variables(const OperatorProxy &op) {
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     int num_operators = task_proxy.get_operators().size();
+    operator_variables_indices.reserve(num_operators);
+    operator_variables_sizes.reserve(num_operators);
     changed_variables_indices.reserve(num_operators);
-    changed_variables_counts.reserve(num_operators);
+    changed_variables_sizes.reserve(num_operators);
     for (OperatorProxy op : task_proxy.get_operators()) {
-        vector<int> changed = get_changed_variables(op);
-        assert(utils::is_sorted_unique(changed));
-        array_pool::ArrayPoolIndex index = changed_variables.append(changed);
-        changed_variables_indices.push_back(index);
-        changed_variables_counts.push_back(changed.size());
+        vector<int> pre_vars = get_variables(op);
+        assert(utils::is_sorted_unique(pre_vars));
+        operator_variables_indices.push_back(operator_variables.append(pre_vars));
+        operator_variables_sizes.push_back(pre_vars.size());
+
+        vector<int> changed_vars = get_changed_variables(op);
+        assert(utils::is_sorted_unique(changed_vars));
+        changed_variables_indices.push_back(changed_variables.append(changed_vars));
+        changed_variables_sizes.push_back(changed_vars.size());
     }
+}
+
+bool TaskInfo::operator_mentions_variable(int op_id, int var) const {
+    array_pool::ArrayPoolSlice slice = operator_variables.get_slice(
+        operator_variables_indices[op_id], operator_variables_sizes[op_id]);
+    return binary_search(slice.begin(), slice.end(), var);
 }
 
 bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const {
     assert(utils::is_sorted_unique(pattern));
     array_pool::ArrayPoolSlice slice = changed_variables.get_slice(
-        changed_variables_indices[op_id], changed_variables_counts[op_id]);
+        changed_variables_indices[op_id], changed_variables_sizes[op_id]);
     // Return false iff the operator reads and writes a variable in the pattern.
     auto it1 = pattern.begin();
     auto it2 = slice.begin();
