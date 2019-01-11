@@ -197,7 +197,7 @@ Projection::Projection(
                 }
 
                 abstract_forward_operators.emplace_back(
-                    concrete_operator_id, precondition_hash,
+                    precondition_hash,
                     compute_forward_hash_effect(
                         preconditions, effects, hash_multipliers));
             });

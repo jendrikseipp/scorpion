@@ -33,16 +33,13 @@ public:
 };
 
 struct AbstractForwardOperator {
-    int concrete_operator_id;
     int precondition_hash;
     int hash_effect;
 
     AbstractForwardOperator(
-        int concrete_operator_id,
         int precondition_hash,
         int hash_effect)
-        : concrete_operator_id(concrete_operator_id),
-          precondition_hash(precondition_hash),
+        : precondition_hash(precondition_hash),
           hash_effect(hash_effect) {
     }
 };
@@ -125,9 +122,10 @@ class Projection : public Abstraction {
         int num_operators = abstract_forward_operators.size();
         for (int op_id = 0; op_id < num_operators; ++op_id) {
             const AbstractForwardOperator &op = abstract_forward_operators[op_id];
+            int concrete_op_id = abstract_backward_operators[op_id].concrete_operator_id;
             abstract_facts.clear();
             for (int var : pattern) {
-                if (!task_info->operator_mentions_variable(op.concrete_operator_id, var)) {
+                if (!task_info->operator_mentions_variable(concrete_op_id, var)) {
                     abstract_facts.emplace_back(variable_to_pattern_index[var], 0);
                 }
             }
@@ -139,7 +137,7 @@ class Projection : public Abstraction {
                     state += hash_multipliers[fact.var] * fact.value;
                 }
                 callback(Transition(state,
-                                    op.concrete_operator_id,
+                                    concrete_op_id,
                                     state + op.hash_effect));
                 has_next_match = increment_to_next_state(abstract_facts);
             }
