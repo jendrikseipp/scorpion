@@ -7,14 +7,12 @@
 
 #include "../algorithms/priority_queues.h"
 #include "../heuristics/array_pool.h"
-#include "../pdbs/pattern_database.h"
 #include "../pdbs/types.h"
 #include "../utils/logging.h"
 
 #include <vector>
 
 namespace pdbs {
-class AbstractOperator;
 class MatchTree;
 }
 
@@ -49,6 +47,18 @@ struct AbstractForwardOperator {
     }
 };
 
+struct AbstractBackwardOperator {
+    int concrete_operator_id;
+    int hash_effect;
+
+    AbstractBackwardOperator(
+        int concrete_operator_id,
+        int hash_effect)
+        : concrete_operator_id(concrete_operator_id),
+          hash_effect(hash_effect) {
+    }
+};
+
 /*
   TODO: Reduce code duplication with pdbs::PatternDatabase.
 */
@@ -64,7 +74,7 @@ class Projection : public Abstraction {
     std::unique_ptr<array_pool::ArrayPool> unaffected_variables_per_operator;
     std::vector<AbstractForwardOperator> abstract_forward_operators;
 
-    std::vector<pdbs::AbstractOperator> abstract_backward_operators;
+    std::vector<AbstractBackwardOperator> abstract_backward_operators;
     std::unique_ptr<pdbs::MatchTree> match_tree_backward;
 
     // Number of abstract states in the projection.

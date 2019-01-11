@@ -3,6 +3,7 @@
 #include "types.h"
 
 #include "../pdbs/match_tree.h"
+#include "../pdbs/pattern_database.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -177,9 +178,13 @@ Projection::Projection(
                 int cost,
                 const vector<size_t> &hash_multipliers,
                 int concrete_operator_id) {
-                abstract_backward_operators.emplace_back(
+                pdbs::AbstractOperator backward_match_op(
                     prevail, preconditions, effects, cost, hash_multipliers,
                     concrete_operator_id);
+                int abs_op_id = abstract_backward_operators.size();
+                abstract_backward_operators.emplace_back(
+                    concrete_operator_id, backward_match_op.get_hash_effect());
+                match_tree_backward->insert(abs_op_id, backward_match_op.get_regression_preconditions());
 
                 vector<int> abstract_preconditions = get_abstract_preconditions(
                     prevail, preconditions, hash_multipliers);
@@ -199,13 +204,6 @@ Projection::Projection(
     }
     abstract_forward_operators.shrink_to_fit();
     abstract_backward_operators.shrink_to_fit();
-
-    // Fill match tree after creating the operator vectors to have valid pointers.
-    for (size_t op_id = 0; op_id < abstract_backward_operators.size(); ++op_id) {
-        pdbs::AbstractOperator &op = abstract_backward_operators[op_id];
-        match_tree_backward->insert(op_id, op.get_regression_preconditions());
-        op.remove_regression_preconditions();
-    }
 
     goal_states = compute_goal_states();
 }
@@ -456,9 +454,9 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
         applicable_operators.clear();
         match_tree_backward->get_applicable_operators(state_index, applicable_operators);
         for (int abs_op_id : applicable_operators) {
-            const pdbs::AbstractOperator &op = abstract_backward_operators[abs_op_id];
-            size_t predecessor = state_index + op.get_hash_effect();
-            int conc_op_id = op.get_concrete_operator_id();
+            const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
+            size_t predecessor = state_index + op.hash_effect;
+            int conc_op_id = op.concrete_operator_id;
             assert(utils::in_bounds(conc_op_id, costs));
             int alternative_cost = (costs[conc_op_id] == INF) ?
                 INF : distances[state_index] + costs[conc_op_id];
