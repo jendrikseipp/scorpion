@@ -183,22 +183,17 @@ Projection::Projection(
 
                 vector<int> abstract_preconditions = get_abstract_preconditions(
                     prevail, preconditions, hash_multipliers);
-                vector<int> unaffected_variables;
                 int precondition_hash = 0;
                 for (size_t pos = 0; pos < hash_multipliers.size(); ++pos) {
                     int pre_val = abstract_preconditions[pos];
-                    if (pre_val == -1) {
-                        unaffected_variables.emplace_back(pos);
-                    } else {
+                    if (pre_val != -1) {
                         precondition_hash += hash_multipliers[pos] * pre_val;
                     }
                 }
-                array_pool::ArrayPoolIndex index =
-                    unaffected_variables_per_operator->append(unaffected_variables);
 
                 abstract_forward_operators.emplace_back(
-                    concrete_operator_id, precondition_hash, index,
-                    unaffected_variables.size(), compute_forward_hash_effect(
+                    concrete_operator_id, precondition_hash,
+                    compute_forward_hash_effect(
                         preconditions, effects, hash_multipliers));
             });
     }

@@ -37,20 +37,14 @@ public:
 struct AbstractForwardOperator {
     int concrete_operator_id;
     int precondition_hash;
-    array_pool::ArrayPoolIndex unaffected_variables;
-    int num_unaffected_variables;
     int hash_effect;
 
     AbstractForwardOperator(
         int concrete_operator_id,
         int precondition_hash,
-        array_pool::ArrayPoolIndex unaffected_variables,
-        int num_unaffected_variables,
         int hash_effect)
         : concrete_operator_id(concrete_operator_id),
           precondition_hash(precondition_hash),
-          unaffected_variables(unaffected_variables),
-          num_unaffected_variables(num_unaffected_variables),
           hash_effect(hash_effect) {
     }
 };
@@ -116,37 +110,28 @@ class Projection : public Abstraction {
     template<class Callback>
     void for_each_transition(const Callback &callback) const {
         // Reuse vector to save allocations.
-        std::vector<FactPair> old_abstract_facts;
         std::vector<FactPair> abstract_facts;
 
         int num_operators = abstract_forward_operators.size();
         for (int op_id = 0; op_id < num_operators; ++op_id) {
             const AbstractForwardOperator &op = abstract_forward_operators[op_id];
-            old_abstract_facts.clear();
-            for (int var : unaffected_variables_per_operator->get_slice(
-                     op.unaffected_variables,
-                     op.num_unaffected_variables)) {
-                old_abstract_facts.emplace_back(var, 0);
-            }
-
             abstract_facts.clear();
             for (int var : pattern) {
                 if (!task_info->operator_mentions_variable(op.concrete_operator_id, var)) {
                     abstract_facts.emplace_back(variable_to_pattern_index[var], 0);
                 }
             }
-            assert(abstract_facts == old_abstract_facts);
 
             bool has_next_match = true;
             while (has_next_match) {
                 int state = op.precondition_hash;
-                for (const FactPair &fact : old_abstract_facts) {
+                for (const FactPair &fact : abstract_facts) {
                     state += hash_multipliers[fact.var] * fact.value;
                 }
                 callback(Transition(state,
                                     op.concrete_operator_id,
                                     state + op.hash_effect));
-                has_next_match = increment_to_next_state(old_abstract_facts);
+                has_next_match = increment_to_next_state(abstract_facts);
             }
         }
     }
