@@ -116,7 +116,7 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     vector<int> variable_domains = get_variable_domains(task_proxy);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     SequentialPatternGenerator pattern_generator(task, max_pattern_size);
-    int collection_size = 0;
+    int64_t collection_size = 0;
     while (true) {
         if (static_cast<int>(patterns.size()) == max_patterns) {
             cout << "Reached maximum number of patterns." << endl;
@@ -138,8 +138,9 @@ void PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             cout << "Reached too large pattern." << endl;
             break;
         }
-        int remaining_size = max_collection_size - collection_size;
-        if (pdb_size > remaining_size) {
+
+        if (max_collection_size != numeric_limits<int>::max() &&
+            pdb_size > static_cast<int64_t>(max_collection_size) - collection_size) {
             cout << "Reached maximum collection size." << endl;
             break;
         }
