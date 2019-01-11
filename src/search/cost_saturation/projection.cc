@@ -201,8 +201,9 @@ Projection::Projection(
     abstract_backward_operators.shrink_to_fit();
 
     // Fill match tree after creating the operator vectors to have valid pointers.
-    for (pdbs::AbstractOperator &op : abstract_backward_operators) {
-        match_tree_backward->insert(op);
+    for (size_t op_id = 0; op_id < abstract_backward_operators.size(); ++op_id) {
+        pdbs::AbstractOperator &op = abstract_backward_operators[op_id];
+        match_tree_backward->insert(op_id, op.get_regression_preconditions());
         op.remove_regression_preconditions();
     }
 
@@ -439,7 +440,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     }
 
     // Reuse vector to save allocations.
-    vector<const pdbs::AbstractOperator *> applicable_operators;
+    vector<int> applicable_operators;
 
     // Run Dijkstra loop.
     while (!pq.empty()) {
@@ -454,12 +455,13 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
         // Regress abstract state.
         applicable_operators.clear();
         match_tree_backward->get_applicable_operators(state_index, applicable_operators);
-        for (const pdbs::AbstractOperator *op : applicable_operators) {
-            size_t predecessor = state_index + op->get_hash_effect();
-            int op_id = op->get_concrete_operator_id();
-            assert(utils::in_bounds(op_id, costs));
-            int alternative_cost = (costs[op_id] == INF) ?
-                INF : distances[state_index] + costs[op_id];
+        for (int abs_op_id : applicable_operators) {
+            const pdbs::AbstractOperator &op = abstract_backward_operators[abs_op_id];
+            size_t predecessor = state_index + op.get_hash_effect();
+            int conc_op_id = op.get_concrete_operator_id();
+            assert(utils::in_bounds(conc_op_id, costs));
+            int alternative_cost = (costs[conc_op_id] == INF) ?
+                INF : distances[state_index] + costs[conc_op_id];
             assert(utils::in_bounds(predecessor, distances));
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
