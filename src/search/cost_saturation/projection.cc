@@ -83,21 +83,20 @@ static vector<int> get_changed_variables(const OperatorProxy &op) {
 
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
+    num_variables = task_proxy.get_variables().size();
     int num_operators = task_proxy.get_operators().size();
     operator_variables_indices.reserve(num_operators);
     operator_variables_sizes.reserve(num_operators);
-    changed_variables_indices.reserve(num_operators);
-    changed_variables_sizes.reserve(num_operators);
+    pre_eff_variables.resize(num_operators * num_variables, false);
     for (OperatorProxy op : task_proxy.get_operators()) {
         vector<int> pre_vars = get_variables(op);
         assert(utils::is_sorted_unique(pre_vars));
         operator_variables_indices.push_back(operator_variables.append(pre_vars));
         operator_variables_sizes.push_back(pre_vars.size());
 
-        vector<int> changed_vars = get_changed_variables(op);
-        assert(utils::is_sorted_unique(changed_vars));
-        changed_variables_indices.push_back(changed_variables.append(changed_vars));
-        changed_variables_sizes.push_back(changed_vars.size());
+        for (int changed_var : get_changed_variables(op)) {
+            pre_eff_variables[op.get_id() * num_variables + changed_var] = true;
+        }
     }
 }
 
@@ -108,18 +107,9 @@ bool TaskInfo::operator_mentions_variable(int op_id, int var) const {
 }
 
 bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const {
-    assert(utils::is_sorted_unique(pattern));
-    array_pool::ArrayPoolSlice slice = changed_variables.get_slice(
-        changed_variables_indices[op_id], changed_variables_sizes[op_id]);
-    // Return false iff the operator reads and writes a variable in the pattern.
-    auto it1 = pattern.begin();
-    auto it2 = slice.begin();
-    while (it1 != pattern.end() && it2 != slice.end()) {
-        if (*it1 < *it2) {
-            ++it1;
-        } else if (*it2 < *it1) {
-            ++it2;
-        } else {
+    // Return false iff the operator has a precondition and effect for a pattern variable.
+    for (int var : pattern) {
+        if (pre_eff_variables[op_id * num_variables + var]) {
             return false;
         }
     }

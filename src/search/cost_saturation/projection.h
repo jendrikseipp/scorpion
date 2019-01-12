@@ -18,13 +18,15 @@ class MatchTree;
 
 namespace cost_saturation {
 class TaskInfo {
+    int num_variables;
+
     array_pool::ArrayPool operator_variables;
     std::vector<array_pool::ArrayPoolIndex> operator_variables_indices;
     std::vector<int> operator_variables_sizes;
 
-    array_pool::ArrayPool changed_variables;
-    std::vector<array_pool::ArrayPoolIndex> changed_variables_indices;
-    std::vector<int> changed_variables_sizes;
+    /* Set bit at position op_id * num_variables + var to true iff the operator
+       has a precondition and (different) effect on variable var. */
+    std::vector<bool> pre_eff_variables;
 public:
     explicit TaskInfo(const TaskProxy &task_proxy);
 
