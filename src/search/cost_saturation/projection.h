@@ -6,7 +6,6 @@
 #include "../task_proxy.h"
 
 #include "../algorithms/priority_queues.h"
-#include "../heuristics/array_pool.h"
 #include "../pdbs/types.h"
 #include "../utils/logging.h"
 
@@ -20,9 +19,9 @@ namespace cost_saturation {
 class TaskInfo {
     int num_variables;
 
-    array_pool::ArrayPool operator_variables;
-    std::vector<array_pool::ArrayPoolIndex> operator_variables_indices;
-    std::vector<int> operator_variables_sizes;
+    /* Set bit at position op_id * num_variables + var to true iff the operator
+       has a precondition or an effect on variable var. */
+    std::vector<bool> mentioned_variables;
 
     /* Set bit at position op_id * num_variables + var to true iff the operator
        has a precondition and (different) effect on variable var. */
@@ -70,7 +69,6 @@ class Projection : public Abstraction {
     std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
 
-    std::unique_ptr<array_pool::ArrayPool> unaffected_variables_per_operator;
     std::vector<AbstractForwardOperator> abstract_forward_operators;
 
     std::vector<AbstractBackwardOperator> abstract_backward_operators;

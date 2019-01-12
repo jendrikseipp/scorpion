@@ -85,15 +85,12 @@ static vector<int> get_changed_variables(const OperatorProxy &op) {
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     num_variables = task_proxy.get_variables().size();
     int num_operators = task_proxy.get_operators().size();
-    operator_variables_indices.reserve(num_operators);
-    operator_variables_sizes.reserve(num_operators);
+    mentioned_variables.resize(num_operators * num_variables, false);
     pre_eff_variables.resize(num_operators * num_variables, false);
     for (OperatorProxy op : task_proxy.get_operators()) {
-        vector<int> pre_vars = get_variables(op);
-        assert(utils::is_sorted_unique(pre_vars));
-        operator_variables_indices.push_back(operator_variables.append(pre_vars));
-        operator_variables_sizes.push_back(pre_vars.size());
-
+        for (int var : get_variables(op)) {
+            mentioned_variables[op.get_id() * num_variables + var] = true;
+        }
         for (int changed_var : get_changed_variables(op)) {
             pre_eff_variables[op.get_id() * num_variables + changed_var] = true;
         }
@@ -101,9 +98,7 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
 }
 
 bool TaskInfo::operator_mentions_variable(int op_id, int var) const {
-    array_pool::ArrayPoolSlice slice = operator_variables.get_slice(
-        operator_variables_indices[op_id], operator_variables_sizes[op_id]);
-    return binary_search(slice.begin(), slice.end(), var);
+    return mentioned_variables[op_id * num_variables + var];
 }
 
 bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const {
@@ -123,9 +118,7 @@ Projection::Projection(
     const pdbs::Pattern &pattern)
     : task_proxy(task_proxy),
       task_info(task_info),
-      pattern(pattern),
-      unaffected_variables_per_operator(
-          utils::make_unique_ptr<array_pool::ArrayPool>()) {
+      pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
 
     hash_multipliers.reserve(pattern.size());
@@ -487,7 +480,6 @@ void Projection::release_transition_system_memory() {
     utils::release_vector_memory(abstract_backward_operators);
     utils::release_vector_memory(goal_states);
     match_tree_backward = nullptr;
-    unaffected_variables_per_operator = nullptr;
 }
 
 void Projection::dump() const {
