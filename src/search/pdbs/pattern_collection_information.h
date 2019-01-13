@@ -21,6 +21,7 @@ class PatternCollectionInformation {
     TaskProxy task_proxy;
     std::shared_ptr<PatternCollection> patterns;
     std::shared_ptr<PDBCollection> pdbs;
+    std::shared_ptr<ProjectionCollection> projections;
     std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets;
 
     void create_pdbs_if_missing();
@@ -34,11 +35,13 @@ public:
     ~PatternCollectionInformation() = default;
 
     void set_pdbs(const std::shared_ptr<PDBCollection> &pdbs);
+    void set_projections(std::shared_ptr<ProjectionCollection> &&projections);
     void set_max_additive_subsets(
         const std::shared_ptr<MaxAdditivePDBSubsets> &max_additive_subsets);
 
     std::shared_ptr<PatternCollection> get_patterns();
     std::shared_ptr<PDBCollection> get_pdbs();
+    std::shared_ptr<ProjectionCollection> get_projections();
     std::shared_ptr<MaxAdditivePDBSubsets> get_max_additive_subsets();
 };
 }

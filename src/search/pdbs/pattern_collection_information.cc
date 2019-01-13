@@ -93,6 +93,11 @@ void PatternCollectionInformation::set_pdbs(const shared_ptr<PDBCollection> &pdb
     assert(information_is_valid());
 }
 
+void PatternCollectionInformation::set_projections(
+    shared_ptr<ProjectionCollection> &&projections_) {
+    projections = projections_;
+}
+
 void PatternCollectionInformation::set_max_additive_subsets(
     const shared_ptr<MaxAdditivePDBSubsets> &max_additive_subsets_) {
     max_additive_subsets = max_additive_subsets_;
@@ -107,6 +112,10 @@ shared_ptr<PatternCollection> PatternCollectionInformation::get_patterns() {
 shared_ptr<PDBCollection> PatternCollectionInformation::get_pdbs() {
     create_pdbs_if_missing();
     return pdbs;
+}
+
+shared_ptr<ProjectionCollection> PatternCollectionInformation::get_projections() {
+    return projections;
 }
 
 shared_ptr<MaxAdditivePDBSubsets> PatternCollectionInformation::get_max_additive_subsets() {
