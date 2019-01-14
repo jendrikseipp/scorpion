@@ -146,7 +146,53 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_patterns(opts.get<int>("max_patterns")),
       max_time(opts.get<double>("max_time")),
       keep_best(opts.get<bool>("keep_best")),
+      scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
       debug(opts.get<bool>("debug")) {
+}
+
+double PatternCollectionGeneratorFilteredSystematic::rate_projection(
+    const cost_saturation::Projection &projection,
+    const vector<int> &costs,
+    const State &initial_state) {
+    vector<int> h_values = projection.compute_goal_distances(costs);
+    vector<int> saturated_costs = projection.compute_saturated_costs(
+        h_values, costs.size());
+    double avg_h = compute_mean_finite_value(h_values);
+    int init_id = projection.get_abstract_state_id(initial_state);
+    double init_h = h_values[init_id];
+    int size = projection.get_num_states();
+    int used_costs = 0;
+    for (int c : saturated_costs) {
+        if (c > 0) {
+            used_costs += c;
+        }
+    }
+    used_costs = max(used_costs, 1);
+
+    double score;
+    if (scoring_function == ScoringFunction::INIT_H) {
+        score = init_h;
+    } else if (scoring_function == ScoringFunction::AVG_H) {
+        score = avg_h;
+    } else if (scoring_function == ScoringFunction::INIT_H_PER_COSTS) {
+        score = init_h / used_costs;
+    } else if (scoring_function == ScoringFunction::AVG_H_PER_COSTS) {
+        score = avg_h / used_costs;
+    } else if (scoring_function == ScoringFunction::INIT_H_PER_SIZE) {
+        score = init_h / size;
+    } else if (scoring_function == ScoringFunction::AVG_H_PER_SIZE) {
+        score = avg_h / size;
+    } else {
+        ABORT("Scoring function not implemented");
+    }
+
+    if (debug) {
+        cout << "pattern: " << projection.get_pattern() << ", init-h: "
+             << init_h << ", avg-h: " << avg_h << ", costs: " << used_costs
+             << ", size: " << size << endl;
+    }
+
+    return score;
 }
 
 PatternCollectionInformation
@@ -193,25 +239,7 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 
         unique_ptr<cost_saturation::Projection> projection =
             utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, task_info, pattern);
-        vector<int> h_values = projection->compute_goal_distances(costs);
-        vector<int> saturated_costs = projection->compute_saturated_costs(
-            h_values, costs.size());
-        double avg_h = compute_mean_finite_value(h_values);
-        int init_id = projection->get_abstract_state_id(initial_state);
-        int init_h = h_values[init_id];
-        int used_costs = 0;
-        for (int c : saturated_costs) {
-            if (c > 0) {
-                used_costs += c;
-            }
-        }
-        if (debug) {
-            cout << "pattern " << pattern << ": " << init_h << ", "
-                 << avg_h << " / " << used_costs << " = "
-                 << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
-        }
-
-        double score = avg_h;
+        double score = rate_projection(*projection, costs, initial_state);
         candidates.emplace(move(projection), score);
         collection_size += pdb_size;
 
@@ -270,6 +298,18 @@ static void add_options(OptionParser &parser) {
         "keep_best",
         "keep best patterns",
         "false");
+    vector<string> scoring_functions;
+    scoring_functions.push_back("INIT_H");
+    scoring_functions.push_back("AVG_H");
+    scoring_functions.push_back("INIT_H_PER_COSTS");
+    scoring_functions.push_back("AVG_H_PER_COSTS");
+    scoring_functions.push_back("INIT_H_PER_SIZE");
+    scoring_functions.push_back("AVG_H_PER_SIZE");
+    parser.add_enum_option(
+        "scoring_function",
+        scoring_functions,
+        "scoring function",
+        "INIT_H");
     parser.add_option<bool>(
         "debug",
         "print debugging messages",
