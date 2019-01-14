@@ -211,7 +211,7 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                  << (used_costs == 0 ? 0 : avg_h / used_costs) << endl;
         }
 
-        double score = init_h;
+        double score = avg_h;
         candidates.emplace(move(projection), score);
         collection_size += pdb_size;
 
