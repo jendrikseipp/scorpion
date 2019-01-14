@@ -206,6 +206,7 @@ public:
     virtual bool operator_induces_self_loop(int op_id) const override;
     virtual const std::vector<int> &get_goal_states() const override;
 
+    const pdbs::Pattern &get_pattern() const;
     virtual void dump() const override;
 };
 }

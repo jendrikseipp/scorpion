@@ -94,7 +94,7 @@ void PatternCollectionInformation::set_pdbs(const shared_ptr<PDBCollection> &pdb
 }
 
 void PatternCollectionInformation::set_projections(
-    shared_ptr<ProjectionCollection> &&projections_) {
+    std::shared_ptr<ProjectionCollection> &projections_) {
     projections = projections_;
 }
 

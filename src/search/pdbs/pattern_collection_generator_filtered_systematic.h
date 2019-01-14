@@ -16,10 +16,11 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const int max_collection_size;
     const int max_patterns;
     const double max_time;
+    const bool keep_best;
     const bool debug;
 
-    void select_systematic_patterns(
-        const std::shared_ptr<AbstractTask> &task, PatternCollection &patterns);
+    PatternCollectionInformation select_systematic_patterns(
+        const std::shared_ptr<AbstractTask> &task);
 public:
     explicit PatternCollectionGeneratorFilteredSystematic(const options::Options &opts);
 

@@ -482,6 +482,10 @@ void Projection::release_transition_system_memory() {
     match_tree_backward = nullptr;
 }
 
+const pdbs::Pattern &Projection::get_pattern() const {
+    return pattern;
+}
+
 void Projection::dump() const {
     assert(has_transition_system());
     cout << "Abstract operators: " << abstract_backward_operators.size()

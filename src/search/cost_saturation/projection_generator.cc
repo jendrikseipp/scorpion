@@ -43,6 +43,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
         pattern_generator->generate(task);
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_collection_info.get_patterns();
+    shared_ptr<pdbs::ProjectionCollection> projections =
+        pattern_collection_info.get_projections();
 
     int max_pattern_size = 0;
     for (const pdbs::Pattern &pattern : *patterns) {
@@ -82,11 +84,15 @@ Abstractions ProjectionGenerator::generate_abstractions(
             log << "Pattern " << abstractions.size() + 1 << ": "
                 << pattern << endl;
         }
-        abstractions.push_back(
-            create_complete_transition_system ?
-            ExplicitProjectionFactory(
-                task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction() :
-            utils::make_unique_ptr<Projection>(task_proxy, task_info, pattern));
+        if (projections) {
+            abstractions.push_back(move((*projections)[abstractions.size()]));
+        } else {
+            abstractions.push_back(
+                create_complete_transition_system ?
+                ExplicitProjectionFactory(
+                    task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction() :
+                utils::make_unique_ptr<Projection>(task_proxy, task_info, pattern));
+        }
         if (debug) {
             abstractions.back()->dump();
         }

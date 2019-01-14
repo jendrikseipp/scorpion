@@ -13,7 +13,7 @@ class PatternDatabase;
 using Pattern = std::vector<int>;
 using PatternCollection = std::vector<Pattern>;
 using PDBCollection = std::vector<std::shared_ptr<PatternDatabase>>;
-using ProjectionCollection = std::vector<std::unique_ptr<PatternDatabase>>;
+using ProjectionCollection = std::vector<std::unique_ptr<cost_saturation::Projection>>;
 using MaxAdditivePDBSubsets = std::vector<PDBCollection>;
 }
 

@@ -35,7 +35,7 @@ public:
     ~PatternCollectionInformation() = default;
 
     void set_pdbs(const std::shared_ptr<PDBCollection> &pdbs);
-    void set_projections(std::shared_ptr<ProjectionCollection> &&projections);
+    void set_projections(std::shared_ptr<ProjectionCollection> &projections);
     void set_max_additive_subsets(
         const std::shared_ptr<MaxAdditivePDBSubsets> &max_additive_subsets);
 
