@@ -198,7 +198,7 @@ Pattern PatternCollectionGeneratorSCP::compute_next_pattern(
         int domain_size = task_proxy.get_variables()[var].get_domain_size();
         num_states *= domain_size;
         score = new_score;
-        utils::Log() << "pattern: " << pattern << ", score: " << score
+        utils::Log() << "New pattern: " << pattern << ", score: " << score
                      << ", size: " << num_states << endl;
     }
     return pattern;
