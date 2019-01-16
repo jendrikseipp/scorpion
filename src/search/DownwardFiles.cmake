@@ -749,7 +749,7 @@ fast_downward_plugin(
         pdbs/pattern_collection_generator_genetic
         pdbs/pattern_collection_generator_hillclimbing
         pdbs/pattern_collection_generator_manual
-        #pdbs/pattern_collection_generator_scp
+        pdbs/pattern_collection_generator_scp
         pdbs/pattern_collection_generator_systematic
         pdbs/pattern_generator_greedy
         pdbs/pattern_generator_manual

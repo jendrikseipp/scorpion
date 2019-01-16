@@ -234,6 +234,8 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
 
     relevant_neighbours = compute_relevant_neighbours(task_proxy);
     goal_vars = get_goal_variables(task_proxy);
+    shared_ptr<cost_saturation::TaskInfo> task_info =
+        make_shared<cost_saturation::TaskInfo>(task_proxy);
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     sampling::RandomWalkSampler sampler(task_proxy, *rng);
@@ -256,7 +258,8 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
         }
         log << "Add pattern " << pattern << endl;
         patterns->push_back(pattern);
-        projections.push_back(utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, pattern));
+        projections.push_back(utils::make_unique_ptr<cost_saturation::Projection>(
+                                  task_proxy, task_info, pattern));
         cost_saturation::Projection &projection = *projections.back();
         vector<int> h_values = projection.compute_goal_distances(costs);
         cost_partitioned_h_values.push_back(h_values);
