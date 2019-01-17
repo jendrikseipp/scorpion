@@ -2,6 +2,7 @@
 
 #include "canonical_pdbs_heuristic.h"
 #include "incremental_canonical_pdbs.h"
+#include "incremental_max_pdbs.h"
 #include "pattern_database.h"
 #include "validation.h"
 
@@ -240,17 +241,29 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
           see above) earlier.
         */
         int count = 0;
-        IncrementalCanonicalPDBs *incremental_canonical_pdbs =
-            dynamic_cast<IncrementalCanonicalPDBs *>(current_pdbs.get());
-        MaxAdditivePDBSubsets max_additive_subsets =
-            incremental_canonical_pdbs->get_max_additive_subsets(pdb->get_pattern());
-        for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
-            const State &sample = samples[sample_id];
-            assert(utils::in_bounds(sample_id, samples_h_values));
-            int h_collection = samples_h_values[sample_id];
-            if (is_heuristic_improved(
-                    *pdb, sample, h_collection, max_additive_subsets)) {
-                ++count;
+        if (cp_type == CostPartitioningType::CANONICAL) {
+            IncrementalCanonicalPDBs *incremental_canonical_pdbs =
+                dynamic_cast<IncrementalCanonicalPDBs *>(current_pdbs.get());
+            MaxAdditivePDBSubsets max_additive_subsets =
+                incremental_canonical_pdbs->get_max_additive_subsets(pdb->get_pattern());
+            for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
+                const State &sample = samples[sample_id];
+                assert(utils::in_bounds(sample_id, samples_h_values));
+                int h_collection = samples_h_values[sample_id];
+                if (is_heuristic_improved(
+                        *pdb, sample, h_collection, max_additive_subsets)) {
+                    ++count;
+                }
+            }
+        } else {
+            for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
+                const State &sample = samples[sample_id];
+                assert(utils::in_bounds(sample_id, samples_h_values));
+                int h_collection = samples_h_values[sample_id];
+                int h_pattern = pdb->get_value(sample);
+                if (h_pattern > h_collection) {
+                    ++count;
+                }
             }
         }
         if (count > improvement) {
@@ -428,6 +441,9 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
     }
     if (cp_type == CostPartitioningType::CANONICAL) {
         current_pdbs = utils::make_unique_ptr<IncrementalCanonicalPDBs>(
+            task_proxy, initial_pattern_collection);
+    } else if (cp_type == CostPartitioningType::MAX) {
+        current_pdbs = utils::make_unique_ptr<IncrementalMaxPDBs>(
             task_proxy, initial_pattern_collection);
     } else {
         ABORT("not implemented");
