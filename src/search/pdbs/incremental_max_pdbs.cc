@@ -1,11 +1,7 @@
 #include "incremental_max_pdbs.h"
 
-#include "canonical_pdbs.h"
 #include "pattern_database.h"
 
-#include "../utils/timer.h"
-
-#include <iostream>
 #include <limits>
 
 using namespace std;
@@ -13,22 +9,8 @@ using namespace std;
 namespace pdbs {
 IncrementalMaxPDBs::IncrementalMaxPDBs(
     const TaskProxy &task_proxy,
-    const PatternCollection &intitial_patterns)
-    : task_proxy(task_proxy),
-      patterns(make_shared<PatternCollection>(intitial_patterns.begin(),
-                                              intitial_patterns.end())),
-      pattern_databases(make_shared<PDBCollection>()),
-      size(0) {
-    utils::Timer timer;
-    pattern_databases->reserve(patterns->size());
-    for (const Pattern &pattern : *patterns)
-        add_pdb_for_pattern(pattern);
-    cout << "PDB collection construction time: " << timer << endl;
-}
-
-void IncrementalMaxPDBs::add_pdb_for_pattern(const Pattern &pattern) {
-    pattern_databases->push_back(make_shared<PatternDatabase>(task_proxy, pattern));
-    size += pattern_databases->back()->get_size();
+    const PatternCollection &initial_patterns)
+    : IncrementalPDBs(task_proxy, initial_patterns) {
 }
 
 void IncrementalMaxPDBs::add_pdb(const shared_ptr<PatternDatabase> &pdb) {
