@@ -116,9 +116,10 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       max_generated_patterns(opts.get<int>("max_generated_patterns")),
+      cp_type(static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"))),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
-      hill_climbing_timer(0) {
+      hill_climbing_timer(nullptr) {
 }
 
 int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
@@ -423,8 +424,13 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
         int goal_var_id = goal.get_variable().get_id();
         initial_pattern_collection.emplace_back(1, goal_var_id);
     }
-    current_pdbs = utils::make_unique_ptr<IncrementalCanonicalPDBs>(
-        task_proxy, initial_pattern_collection);
+    if (cp_type == CostPartitioningType::CANONICAL) {
+        current_pdbs = utils::make_unique_ptr<IncrementalCanonicalPDBs>(
+            task_proxy, initial_pattern_collection);
+    } else {
+        ABORT("not implemented");
+    }
+
     cout << "Done calculating initial PDB collection" << endl;
 
     State initial_state = task_proxy.get_initial_state();
@@ -475,6 +481,14 @@ void add_hillclimbing_options(OptionParser &parser) {
         "maximum number of generated patterns",
         "infinity",
         Bounds("0", "infinity"));
+    vector<string> cp_types;
+    cp_types.push_back("CANONICAL");
+    cp_types.push_back("MAX");
+    parser.add_enum_option(
+        "cost_partitioning",
+        cp_types,
+        "cost partitioning algorithm for evaluating PDB collection",
+        "CANONICAL");
     utils::add_rng_options(parser);
 }
 

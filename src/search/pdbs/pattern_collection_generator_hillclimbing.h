@@ -29,6 +29,11 @@ class CanonicalPDBsHeuristic;
 class IncrementalCanonicalPDBs;
 class PatternDatabase;
 
+enum class CostPartitioningType {
+    CANONICAL,
+    MAX,
+};
+
 // Implementation of the pattern generation algorithm by Haslum et al.
 class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator {
     // maximum number of states for each pdb
@@ -40,6 +45,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     const int min_improvement;
     const double max_time;
     const int max_generated_patterns;
+    const CostPartitioningType cp_type;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::unique_ptr<IncrementalCanonicalPDBs> current_pdbs;
