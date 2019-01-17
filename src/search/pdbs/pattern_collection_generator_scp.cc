@@ -181,7 +181,7 @@ pair<int, double> PatternCollectionGeneratorSCP::compute_best_variable_to_add(
 
 Pattern PatternCollectionGeneratorSCP::compute_next_pattern(
     const TaskProxy &task_proxy, const vector<int> &costs, int max_states,
-    const utils::CountdownTimer &timer) {
+    const utils::CountdownTimer &timer, PatternCollection &patterns) {
     Pattern pattern;
     int num_states = 1;
     double score = 0.;
@@ -200,6 +200,7 @@ Pattern PatternCollectionGeneratorSCP::compute_next_pattern(
         score = new_score;
         utils::Log() << "New pattern: " << pattern << ", score: " << score
                      << ", size: " << num_states << endl;
+        patterns.push_back(pattern);
     }
     return pattern;
 }
@@ -252,12 +253,10 @@ PatternCollectionInformation PatternCollectionGeneratorSCP::generate(
         // Find pattern.
         int max_size = min(pdb_max_size, collection_max_size - collection_size);
         assert(max_size >= 0);
-        Pattern pattern = compute_next_pattern(task_proxy, costs, max_size, timer);
+        Pattern pattern = compute_next_pattern(task_proxy, costs, max_size, timer, *patterns);
         if (pattern.empty()) {
             break;
         }
-        log << "Add pattern " << pattern << endl;
-        patterns->push_back(pattern);
         projections.push_back(utils::make_unique_ptr<cost_saturation::Projection>(
                                   task_proxy, task_info, pattern));
         cost_saturation::Projection &projection = *projections.back();

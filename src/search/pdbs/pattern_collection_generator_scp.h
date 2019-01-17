@@ -57,7 +57,7 @@ class PatternCollectionGeneratorSCP : public PatternCollectionGenerator {
         const utils::CountdownTimer &timer);
     Pattern compute_next_pattern(
         const TaskProxy &task_proxy, const std::vector<int> &costs, int max_states,
-        const utils::CountdownTimer &timer);
+        const utils::CountdownTimer &timer, PatternCollection &patterns);
     int compute_current_heuristic(const State &state) const;
     std::vector<int> get_connected_variables(const Pattern &pattern);
 public:
