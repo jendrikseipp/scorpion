@@ -740,6 +740,7 @@ fast_downward_plugin(
         pdbs/dominance_pruning
         pdbs/incremental_canonical_pdbs
         pdbs/incremental_max_pdbs
+        pdbs/incremental_pdbs
         pdbs/match_tree
         pdbs/max_additive_pdb_sets
         pdbs/max_cliques
