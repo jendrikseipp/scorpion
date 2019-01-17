@@ -26,7 +26,7 @@ int IncrementalMaxPDBs::get_value(const State &state) const {
         if (h == numeric_limits<int>::max()) {
             return h;
         } else {
-            h = max(h, max_h);
+            max_h = max(h, max_h);
         }
     }
     return max_h;
