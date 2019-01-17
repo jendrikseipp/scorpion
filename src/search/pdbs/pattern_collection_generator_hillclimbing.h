@@ -26,7 +26,7 @@ class RandomWalkSampler;
 
 namespace pdbs {
 class CanonicalPDBsHeuristic;
-class IncrementalCanonicalPDBs;
+class IncrementalPDBs;
 class PatternDatabase;
 
 enum class CostPartitioningType {
@@ -48,7 +48,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     const CostPartitioningType cp_type;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
-    std::unique_ptr<IncrementalCanonicalPDBs> current_pdbs;
+    std::unique_ptr<IncrementalPDBs> current_pdbs;
 
     // for stats only
     int num_rejected;
