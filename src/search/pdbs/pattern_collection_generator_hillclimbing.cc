@@ -118,6 +118,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       max_time(opts.get<double>("max_time")),
       max_generated_patterns(opts.get<int>("max_generated_patterns")),
       cp_type(static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"))),
+      use_initial_state(opts.get<bool>("use_initial_state")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
       hill_climbing_timer(nullptr) {
@@ -180,10 +181,8 @@ void PatternCollectionGeneratorHillclimbing::sample_states(
     const sampling::RandomWalkSampler &sampler,
     int init_h,
     vector<State> &samples) {
-    assert(samples.empty());
-
     samples.reserve(num_samples);
-    for (int i = 0; i < num_samples; ++i) {
+    while (static_cast<int>(samples.size()) < num_samples) {
         samples.push_back(sampler.sample_state(
                               init_h,
                               [this](const State &state) {
@@ -369,6 +368,9 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
 
             samples.clear();
             samples_h_values.clear();
+            if (use_initial_state) {
+                samples.push_back(task_proxy.get_initial_state());
+            }
             sample_states(sampler, init_h, samples);
             for (const State &sample : samples) {
                 samples_h_values.push_back(current_pdbs->get_value(sample));
@@ -507,6 +509,10 @@ void add_hillclimbing_options(OptionParser &parser) {
         cp_types,
         "cost partitioning algorithm for evaluating PDB collection",
         "CANONICAL");
+    parser.add_option<bool>(
+        "use_initial_state",
+        "use initial state as first sample",
+        "false");
     utils::add_rng_options(parser);
 }
 
