@@ -119,6 +119,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       max_generated_patterns(opts.get<int>("max_generated_patterns")),
       cp_type(static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"))),
       use_initial_state(opts.get<bool>("use_initial_state")),
+      use_vns(opts.get<bool>("use_vns")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
       hill_climbing_timer(nullptr) {
@@ -166,7 +167,8 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
                         make_shared<PatternDatabase>(task_proxy, new_pattern));
                     max_pdb_size = max(max_pdb_size,
                                        candidate_pdbs.back()->get_size());
-                    if (static_cast<int>(generated_patterns.size()) >= max_generated_patterns)
+                    if (static_cast<int>(generated_patterns.size()) >=
+                        max_generated_patterns)
                         throw HillClimbingMaxPDBsGenerated();
                 }
             } else {
@@ -381,6 +383,43 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             int improvement = improvement_and_index.first;
             int best_pdb_index = improvement_and_index.second;
 
+            if (improvement < min_improvement && use_vns) {
+                cout << "Switch to VNS." << endl;
+                PDBCollection candidate_pdbs_vns_current = candidate_pdbs;
+                set<Pattern> generated_patterns_vns = generated_patterns;
+                while (improvement < min_improvement) {
+                    cout << "Start VNS iteration." << endl;
+                    PDBCollection candidate_pdbs_vns_previous =
+                        move(candidate_pdbs_vns_current);
+                    assert(candidate_pdbs_vns_current.empty());
+                    for (const auto &pdb : candidate_pdbs_vns_previous) {
+                        if (pdb) {
+                            int new_max_pdb_size = generate_candidate_pdbs(
+                                task_proxy, relevant_neighbours, *pdb,
+                                generated_patterns_vns, candidate_pdbs_vns_current);
+                            max_pdb_size = max(max_pdb_size, new_max_pdb_size);
+                        }
+                    }
+                    cout << "Found " << candidate_pdbs_vns_current.size()
+                         << " VNS candidates" << endl;
+                    if (candidate_pdbs_vns_current.empty()) {
+                        break;
+                    }
+                    improvement_and_index =
+                        find_best_improving_pdb(
+                            samples, samples_h_values, candidate_pdbs_vns_current);
+                    improvement = improvement_and_index.first;
+                    best_pdb_index = improvement_and_index.second;
+                }
+                if (best_pdb_index != -1) {
+                    shared_ptr<PatternDatabase> best_pdb =
+                        candidate_pdbs_vns_current[best_pdb_index];
+                    best_pdb_index = candidate_pdbs.size();
+                    candidate_pdbs.push_back(best_pdb);
+                    generated_patterns.insert(best_pdb->get_pattern());
+                }
+            }
+
             if (improvement < min_improvement) {
                 cout << "Improvement below threshold. Stop hill climbing."
                      << endl;
@@ -512,6 +551,10 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<bool>(
         "use_initial_state",
         "use initial state as first sample",
+        "false");
+    parser.add_option<bool>(
+        "use_vns",
+        "use variable-neighbourhood search",
         "false");
     utils::add_rng_options(parser);
 }
