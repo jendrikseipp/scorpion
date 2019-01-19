@@ -390,38 +390,78 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
 
             if (improvement < min_improvement && use_vns) {
                 cout << "Switch to VNS." << endl;
-                PDBCollection candidate_pdbs_vns_current = candidate_pdbs;
-                set<Pattern> generated_patterns_vns = generated_patterns;
-                while (improvement < min_improvement) {
-                    cout << "Start VNS iteration." << endl;
-                    PDBCollection candidate_pdbs_vns_previous;
-                    candidate_pdbs_vns_previous.swap(candidate_pdbs_vns_current);
-                    assert(candidate_pdbs_vns_current.empty());
-                    for (const auto &pdb : candidate_pdbs_vns_previous) {
-                        if (pdb) {
-                            int new_max_pdb_size = generate_candidate_pdbs(
-                                task_proxy, relevant_neighbours, *pdb,
-                                generated_patterns_vns, candidate_pdbs_vns_current);
-                            max_pdb_size = max(max_pdb_size, new_max_pdb_size);
+                if (use_simple_hill_climbing) {
+                    PDBCollection candidate_pdbs_vns_current = candidate_pdbs;
+                    set<Pattern> generated_patterns_vns = generated_patterns;
+                    while (improvement < min_improvement) {
+                        cout << "Start VNS iteration." << endl;
+                        PDBCollection candidate_pdbs_vns_previous;
+                        candidate_pdbs_vns_previous.swap(candidate_pdbs_vns_current);
+                        assert(candidate_pdbs_vns_current.empty());
+                        for (const auto &pdb : candidate_pdbs_vns_previous) {
+                            if (pdb) {
+                                PDBCollection next_candidate_pdbs;
+                                int new_max_pdb_size = generate_candidate_pdbs(
+                                    task_proxy, relevant_neighbours, *pdb,
+                                    generated_patterns_vns, next_candidate_pdbs);
+                                max_pdb_size = max(max_pdb_size, new_max_pdb_size);
+                                improvement_and_index =
+                                    find_best_improving_pdb(
+                                        samples, samples_h_values, next_candidate_pdbs);
+                                improvement = improvement_and_index.first;
+                                best_pdb_index = improvement_and_index.second;
+                                if (improvement >= min_improvement) {
+                                    shared_ptr<PatternDatabase> best_pdb =
+                                        next_candidate_pdbs[best_pdb_index];
+                                    best_pdb_index = candidate_pdbs.size();
+                                    candidate_pdbs.push_back(best_pdb);
+                                    generated_patterns.insert(best_pdb->get_pattern());
+                                    break;
+                                }
+                                candidate_pdbs_vns_current.insert(
+                                    candidate_pdbs_vns_current.end(),
+                                    next_candidate_pdbs.begin(),
+                                    next_candidate_pdbs.end());
+                            }
+                        }
+                        if (candidate_pdbs_vns_current.empty()) {
+                            break;
                         }
                     }
-                    cout << "Found " << candidate_pdbs_vns_current.size()
-                         << " VNS candidates" << endl;
-                    if (candidate_pdbs_vns_current.empty()) {
-                        break;
+                } else {
+                    PDBCollection candidate_pdbs_vns_current = candidate_pdbs;
+                    set<Pattern> generated_patterns_vns = generated_patterns;
+                    while (improvement < min_improvement) {
+                        cout << "Start VNS iteration." << endl;
+                        PDBCollection candidate_pdbs_vns_previous;
+                        candidate_pdbs_vns_previous.swap(candidate_pdbs_vns_current);
+                        assert(candidate_pdbs_vns_current.empty());
+                        for (const auto &pdb : candidate_pdbs_vns_previous) {
+                            if (pdb) {
+                                int new_max_pdb_size = generate_candidate_pdbs(
+                                    task_proxy, relevant_neighbours, *pdb,
+                                    generated_patterns_vns, candidate_pdbs_vns_current);
+                                max_pdb_size = max(max_pdb_size, new_max_pdb_size);
+                            }
+                        }
+                        cout << "Found " << candidate_pdbs_vns_current.size()
+                             << " VNS candidates" << endl;
+                        if (candidate_pdbs_vns_current.empty()) {
+                            break;
+                        }
+                        improvement_and_index =
+                            find_best_improving_pdb(
+                                samples, samples_h_values, candidate_pdbs_vns_current);
+                        improvement = improvement_and_index.first;
+                        best_pdb_index = improvement_and_index.second;
                     }
-                    improvement_and_index =
-                        find_best_improving_pdb(
-                            samples, samples_h_values, candidate_pdbs_vns_current);
-                    improvement = improvement_and_index.first;
-                    best_pdb_index = improvement_and_index.second;
-                }
-                if (best_pdb_index != -1) {
-                    shared_ptr<PatternDatabase> best_pdb =
-                        candidate_pdbs_vns_current[best_pdb_index];
-                    best_pdb_index = candidate_pdbs.size();
-                    candidate_pdbs.push_back(best_pdb);
-                    generated_patterns.insert(best_pdb->get_pattern());
+                    if (best_pdb_index != -1) {
+                        shared_ptr<PatternDatabase> best_pdb =
+                            candidate_pdbs_vns_current[best_pdb_index];
+                        best_pdb_index = candidate_pdbs.size();
+                        candidate_pdbs.push_back(best_pdb);
+                        generated_patterns.insert(best_pdb->get_pattern());
+                    }
                 }
             }
 
