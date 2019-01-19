@@ -48,6 +48,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     const CostPartitioningType cp_type;
     const bool use_initial_state;
     const bool use_vns;
+    const bool use_simple_hill_climbing;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::unique_ptr<IncrementalPDBs> current_pdbs;

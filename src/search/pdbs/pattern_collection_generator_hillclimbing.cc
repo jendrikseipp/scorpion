@@ -120,6 +120,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       cp_type(static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"))),
       use_initial_state(opts.get<bool>("use_initial_state")),
       use_vns(opts.get<bool>("use_vns")),
+      use_simple_hill_climbing(opts.get<bool>("simple_hill_climbing")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
       hill_climbing_timer(nullptr) {
@@ -267,13 +268,16 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
                 }
             }
         }
-        if (count > improvement) {
-            improvement = count;
-            best_pdb_index = i;
-        }
         if (count > 0) {
             cout << "pattern: " << candidate_pdbs[i]->get_pattern()
                  << " - improvement: " << count << endl;
+        }
+        if (count > improvement) {
+            improvement = count;
+            best_pdb_index = i;
+            if (use_simple_hill_climbing) {
+                break;
+            }
         }
     }
 
@@ -555,6 +559,10 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<bool>(
         "use_vns",
         "use variable-neighbourhood search",
+        "false");
+    parser.add_option<bool>(
+        "simple_hill_climbing",
+        "commit to first improving successor",
         "false");
     utils::add_rng_options(parser);
 }
