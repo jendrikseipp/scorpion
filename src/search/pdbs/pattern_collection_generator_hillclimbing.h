@@ -49,6 +49,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     const bool use_initial_state;
     const bool use_vns;
     const bool use_simple_hill_climbing;
+    const bool debug;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::unique_ptr<IncrementalPDBs> current_pdbs;

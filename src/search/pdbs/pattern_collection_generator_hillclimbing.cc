@@ -121,6 +121,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       use_initial_state(opts.get<bool>("use_initial_state")),
       use_vns(opts.get<bool>("use_vns")),
       use_simple_hill_climbing(opts.get<bool>("simple_hill_climbing")),
+      debug(opts.get<bool>("debug")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
       hill_climbing_timer(nullptr) {
@@ -268,7 +269,7 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
                 }
             }
         }
-        if (count > 0) {
+        if (debug || count > 0) {
             cout << "pattern: " << candidate_pdbs[i]->get_pattern()
                  << " - improvement: " << count << endl;
         }
@@ -563,6 +564,10 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<bool>(
         "simple_hill_climbing",
         "commit to first improving successor",
+        "false");
+    parser.add_option<bool>(
+        "debug",
+        "print debug messages",
         "false");
     utils::add_rng_options(parser);
 }
