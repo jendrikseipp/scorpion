@@ -163,7 +163,7 @@ void MatchTree::get_applicable_operators_recursive(
 }
 
 void MatchTree::get_applicable_operators(size_t state_index,
-                                         std::vector<int> &applicable_operators) const {
+                                         vector<int> &applicable_operators) const {
     if (root)
         get_applicable_operators_recursive(root, state_index,
                                            applicable_operators);
