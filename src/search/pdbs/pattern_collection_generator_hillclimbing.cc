@@ -121,6 +121,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       use_initial_state(opts.get<bool>("use_initial_state")),
       use_vns(opts.get<bool>("use_vns")),
       use_simple_hill_climbing(opts.get<bool>("simple_hill_climbing")),
+      check_newest_candidates_first(opts.get<bool>("check_newest_candidates_first")),
       debug(opts.get<bool>("debug")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
@@ -216,6 +217,10 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
     for (size_t i = 0; i < candidate_pdbs.size(); ++i) {
         if (hill_climbing_timer->is_expired())
             throw HillClimbingTimeout();
+
+        if (check_newest_candidates_first) {
+            i = candidate_pdbs.size() - 1 - i;
+        }
 
         const shared_ptr<PatternDatabase> &pdb = candidate_pdbs[i];
         if (!pdb) {
@@ -604,6 +609,10 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<bool>(
         "simple_hill_climbing",
         "commit to first improving successor",
+        "false");
+    parser.add_option<bool>(
+        "check_newest_candidates_first",
+        "go through candidate vector backwards",
         "false");
     parser.add_option<bool>(
         "debug",
