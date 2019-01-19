@@ -269,16 +269,16 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
                 }
             }
         }
+        if (count > improvement) {
+            improvement = count;
+            best_pdb_index = i;
+        }
         if (debug || count > 0) {
             cout << "pattern: " << candidate_pdbs[i]->get_pattern()
                  << " - improvement: " << count << endl;
         }
-        if (count > improvement) {
-            improvement = count;
-            best_pdb_index = i;
-            if (use_simple_hill_climbing) {
-                break;
-            }
+        if (use_simple_hill_climbing && count >= min_improvement) {
+            break;
         }
     }
 
