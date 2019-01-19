@@ -394,8 +394,8 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
                 set<Pattern> generated_patterns_vns = generated_patterns;
                 while (improvement < min_improvement) {
                     cout << "Start VNS iteration." << endl;
-                    PDBCollection candidate_pdbs_vns_previous =
-                        move(candidate_pdbs_vns_current);
+                    PDBCollection candidate_pdbs_vns_previous;
+                    candidate_pdbs_vns_previous.swap(candidate_pdbs_vns_current);
                     assert(candidate_pdbs_vns_current.empty());
                     for (const auto &pdb : candidate_pdbs_vns_previous) {
                         if (pdb) {
