@@ -84,6 +84,7 @@ public:
 
 // Implements a single pattern database
 class PatternDatabase {
+    TaskProxy task_proxy;
     Pattern pattern;
 
     // size of the PDB
@@ -93,7 +94,7 @@ class PatternDatabase {
       final h-values for abstract-states.
       dead-ends are represented by numeric_limits<int>::max()
     */
-    std::vector<int> distances;
+    mutable std::vector<int> distances;
 
     // multipliers for each variable for perfect hash function
     std::vector<std::size_t> hash_multipliers;
@@ -112,7 +113,7 @@ class PatternDatabase {
         std::vector<FactPair> &eff_pairs,
         const std::vector<FactPair> &effects_without_pre,
         const VariablesProxy &variables,
-        std::vector<AbstractOperator> &operators);
+        std::vector<AbstractOperator> &operators) const;
 
     /*
       Computes all abstract operators for a given concrete operator (by
@@ -124,7 +125,7 @@ class PatternDatabase {
         const OperatorProxy &op, int cost,
         const std::vector<int> &variable_to_index,
         const VariablesProxy &variables,
-        std::vector<AbstractOperator> &operators);
+        std::vector<AbstractOperator> &operators) const;
 
     /*
       Computes all abstract operators, builds the match tree (successor
@@ -135,7 +136,7 @@ class PatternDatabase {
     */
     void create_pdb(
         const TaskProxy &task_proxy,
-        const std::vector<int> &operator_costs = std::vector<int>());
+        const std::vector<int> &operator_costs = std::vector<int>()) const;
 
     /*
       For a given abstract state (given as index), the according values
@@ -169,7 +170,8 @@ public:
         const TaskProxy &task_proxy,
         const Pattern &pattern,
         bool dump = false,
-        const std::vector<int> &operator_costs = std::vector<int>());
+        const std::vector<int> &operator_costs = std::vector<int>(),
+        bool on_demand = false);
     ~PatternDatabase() = default;
 
     int get_value(const State &state) const;
@@ -195,6 +197,8 @@ public:
     double compute_mean_finite_h() const;
 
     const std::vector<int> &get_distances() const {
+        if (distances.empty())
+            create_pdb(task_proxy);
         return distances;
     }
 

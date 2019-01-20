@@ -81,8 +81,9 @@ PatternDatabase::PatternDatabase(
     const TaskProxy &task_proxy,
     const Pattern &pattern,
     bool dump,
-    const vector<int> &operator_costs)
-    : pattern(pattern) {
+    const vector<int> &operator_costs, bool on_demand)
+    : task_proxy(task_proxy),
+      pattern(pattern) {
     task_properties::verify_no_axioms(task_proxy);
     task_properties::verify_no_conditional_effects(task_proxy);
     assert(operator_costs.empty() ||
@@ -104,7 +105,8 @@ PatternDatabase::PatternDatabase(
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
     }
-    create_pdb(task_proxy, operator_costs);
+    if (!on_demand)
+        create_pdb(task_proxy, operator_costs);
     if (dump)
         cout << "PDB construction time: " << timer << endl;
 }
@@ -115,7 +117,7 @@ void PatternDatabase::multiply_out(
     vector<FactPair> &eff_pairs,
     const vector<FactPair> &effects_without_pre,
     const VariablesProxy &variables,
-    vector<AbstractOperator> &operators) {
+    vector<AbstractOperator> &operators) const {
     if (pos == static_cast<int>(effects_without_pre.size())) {
         // All effects without precondition have been checked: insert op.
         if (!eff_pairs.empty()) {
@@ -152,7 +154,7 @@ void PatternDatabase::build_abstract_operators(
     const OperatorProxy &op, int cost,
     const vector<int> &variable_to_index,
     const VariablesProxy &variables,
-    vector<AbstractOperator> &operators) {
+    vector<AbstractOperator> &operators) const {
     // All variable value pairs that are a prevail condition
     vector<FactPair> prev_pairs;
     // All variable value pairs that are a precondition (value != -1)
@@ -199,7 +201,7 @@ void PatternDatabase::build_abstract_operators(
 }
 
 void PatternDatabase::create_pdb(
-    const TaskProxy &task_proxy, const vector<int> &operator_costs) {
+    const TaskProxy &task_proxy, const vector<int> &operator_costs) const {
     VariablesProxy variables = task_proxy.get_variables();
     vector<int> variable_to_index(variables.size(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
@@ -303,10 +305,16 @@ size_t PatternDatabase::hash_index(const State &state) const {
 }
 
 int PatternDatabase::get_value(const State &state) const {
+    if (distances.empty()) {
+        create_pdb(task_proxy);
+    }
     return distances[hash_index(state)];
 }
 
 double PatternDatabase::compute_mean_finite_h() const {
+    if (distances.empty())
+        create_pdb(task_proxy);
+
     double sum = 0;
     int size = 0;
     for (size_t i = 0; i < distances.size(); ++i) {
