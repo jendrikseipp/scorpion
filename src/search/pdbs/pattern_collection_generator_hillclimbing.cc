@@ -122,6 +122,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       use_vns(opts.get<bool>("use_vns")),
       use_simple_hill_climbing(opts.get<bool>("simple_hill_climbing")),
       check_newest_candidates_first(opts.get<bool>("check_newest_candidates_first")),
+      compute_pdbs_on_demand(opts.get<bool>("compute_pdbs_on_demand")),
       debug(opts.get<bool>("debug")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
@@ -167,7 +168,9 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
                     */
                     generated_patterns.insert(new_pattern);
                     candidate_pdbs.push_back(
-                        make_shared<PatternDatabase>(task_proxy, new_pattern));
+                        make_shared<PatternDatabase>(
+                            task_proxy, new_pattern, false, vector<int>(),
+                            compute_pdbs_on_demand));
                     max_pdb_size = max(max_pdb_size,
                                        candidate_pdbs.back()->get_size());
                     if (static_cast<int>(generated_patterns.size()) >=
@@ -613,6 +616,10 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<bool>(
         "check_newest_candidates_first",
         "go through candidate vector backwards",
+        "false");
+    parser.add_option<bool>(
+        "compute_pdbs_on_demand",
+        "compute PDB when evaluating a pattern instead of when generating it",
         "false");
     parser.add_option<bool>(
         "debug",
