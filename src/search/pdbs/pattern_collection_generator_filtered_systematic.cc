@@ -142,6 +142,7 @@ struct Candidate {
 PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFilteredSystematic(
     const Options &opts)
     : max_pattern_size(opts.get<int>("max_pattern_size")),
+      max_pdb_size(opts.get<int>("max_pdb_size")),
       max_collection_size(opts.get<int>("max_collection_size")),
       max_patterns(opts.get<int>("max_patterns")),
       max_time(opts.get<double>("max_time")),
@@ -221,7 +222,7 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             break;
         }
         int pdb_size = get_pdb_size(variable_domains, pattern);
-        if (pdb_size == -1) {
+        if (pdb_size == -1 || pdb_size > max_pdb_size) {
             // Pattern is too large.
             continue;
         }
@@ -294,6 +295,11 @@ static void add_options(OptionParser &parser) {
         "max_pattern_size",
         "maximum number of variables per pattern",
         "2",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_pdb_size",
+        "maximum number of states in a PDB",
+        "infinity",
         Bounds("1", "infinity"));
     parser.add_option<int>(
         "max_collection_size",

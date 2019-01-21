@@ -22,6 +22,7 @@ enum class ScoringFunction {
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
     const int max_pattern_size;
+    const int max_pdb_size;
     const int max_collection_size;
     const int max_patterns;
     const double max_time;
