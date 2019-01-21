@@ -11,6 +11,10 @@
 #include <set>
 #include <vector>
 
+namespace cost_saturation {
+class TaskInfo;
+}
+
 namespace options {
 class Options;
 }
@@ -65,10 +69,15 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::unique_ptr<IncrementalPDBs> current_pdbs;
+    std::shared_ptr<cost_saturation::TaskInfo> task_info;
+    std::vector<int> costs;
 
     // for stats only
     int num_rejected;
     utils::CountdownTimer *hill_climbing_timer;
+
+    void add_pdb_to_collection(
+        const TaskProxy &task_proxy, const std::shared_ptr<PatternDatabase> &pdb);
 
     /*
       For the given PDB, all possible extensions of its pattern by one

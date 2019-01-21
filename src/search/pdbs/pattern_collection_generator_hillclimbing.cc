@@ -10,6 +10,8 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../cost_saturation/projection.h"
+#include "../cost_saturation/utils.h"
 #include "../heuristics/ff_heuristic.h"
 #include "../task_utils/causal_graph.h"
 #include "../task_utils/sampling.h"
@@ -133,6 +135,19 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       hill_climbing_timer(nullptr) {
 }
 
+void PatternCollectionGeneratorHillclimbing::add_pdb_to_collection(
+    const TaskProxy &task_proxy, const shared_ptr<PatternDatabase> &pdb) {
+    current_pdbs->add_pdb(pdb);
+
+    if (cp_type == CostPartitioningType::SCP) {
+        cost_saturation::Projection projection(
+            task_proxy, task_info, pdb->get_pattern());
+        vector<int> saturated_costs = projection.compute_saturated_costs(
+            pdb->get_distances(), costs.size());
+        cost_saturation::reduce_costs(costs, saturated_costs);
+    }
+}
+
 int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
     const TaskProxy &task_proxy,
     const vector<vector<int>> &relevant_neighbours,
@@ -173,7 +188,7 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
                     generated_patterns.insert(new_pattern);
                     candidate_pdbs.push_back(
                         make_shared<PatternDatabase>(
-                            task_proxy, new_pattern, false, vector<int>(),
+                            task_proxy, new_pattern, false, costs,
                             compute_pdbs_on_demand));
                     max_pdb_size = max(max_pdb_size,
                                        candidate_pdbs.back()->get_size());
@@ -521,7 +536,7 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             cout << "found a better pattern with improvement " << improvement
                  << endl;
             cout << "pattern: " << best_pattern << endl;
-            current_pdbs->add_pdb(best_pdb);
+            add_pdb_to_collection(task_proxy, best_pdb);
 
             // Generate candidate patterns and PDBs for next iteration.
             int new_max_pdb_size = generate_candidate_pdbs(
@@ -568,12 +583,12 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
         current_pdbs = utils::make_unique_ptr<IncrementalMaxPDBs>(task_proxy);
     } else if (cp_type == CostPartitioningType::SCP) {
         current_pdbs = utils::make_unique_ptr<IncrementalSCPPDBs>(task_proxy);
-        ABORT("not implemented");
     } else {
         ABORT("not implemented");
     }
 
-    vector<int> costs = task_properties::get_operator_costs(task_proxy);
+    task_info = make_shared<cost_saturation::TaskInfo>(task_proxy);
+    costs = task_properties::get_operator_costs(task_proxy);
 
     // Generate initial collection: a pattern for each goal variable.
     for (FactProxy goal : task_proxy.get_goals()) {
@@ -582,7 +597,7 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
         bool verbose = false;
         shared_ptr<PatternDatabase> pdb = make_shared<PatternDatabase>(
             task_proxy, pattern, verbose, costs, compute_pdbs_on_demand);
-        current_pdbs->add_pdb(pdb);
+        add_pdb_to_collection(task_proxy, pdb);
     }
 
     cout << "Done calculating initial PDB collection" << endl;
