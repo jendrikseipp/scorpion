@@ -235,8 +235,7 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         if (!keep_best &&
             max_collection_size != numeric_limits<int>::max() &&
             pdb_size > static_cast<int64_t>(max_collection_size) - collection_size) {
-            cout << "Reached maximum collection size." << endl;
-            break;
+            continue;
         }
 
         unique_ptr<cost_saturation::Projection> projection =
