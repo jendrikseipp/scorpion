@@ -94,9 +94,11 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
       state. At the end of each random walk, the last state visited is taken as
       a sample state, thus totalling exactly num_samples of sample states.
     */
+    using DeadEndDetector = std::function<bool (State)>;
     void sample_states(
         const sampling::RandomWalkSampler &sampler,
         int init_h,
+        const DeadEndDetector &is_dead_end,
         std::vector<State> &samples);
 
     /*

@@ -110,14 +110,6 @@ static vector<vector<int>> compute_relevant_neighbours(const TaskProxy &task_pro
     return connected_vars_by_variable;
 }
 
-int get_init_ff_value(const shared_ptr<AbstractTask> &task) {
-    Options opts;
-    opts.set<shared_ptr<AbstractTask>>("transform", task);
-    opts.set<bool>("cache_estimates", false);
-    ff_heuristic::FFHeuristic ff(opts);
-    return ff.compute_heuristic_for_cegar(TaskProxy(*task).get_initial_state());
-}
-
 
 PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(const Options &opts)
     : pdb_max_size(opts.get<int>("pdb_max_size")),
@@ -198,14 +190,11 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
 void PatternCollectionGeneratorHillclimbing::sample_states(
     const sampling::RandomWalkSampler &sampler,
     int init_h,
+    const DeadEndDetector &is_dead_end,
     vector<State> &samples) {
     samples.reserve(num_samples);
     while (static_cast<int>(samples.size()) < num_samples) {
-        samples.push_back(sampler.sample_state(
-                              init_h,
-                              [this](const State &state) {
-                                  return current_pdbs->is_dead_end(state);
-                              }));
+        samples.push_back(sampler.sample_state(init_h, is_dead_end));
         if (hill_climbing_timer->is_expired()) {
             throw HillClimbingTimeout();
         }
@@ -405,13 +394,26 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
                 int sampling_init_h = init_h;
                 if (sampling_type == SamplingType::FF ||
                     sampling_type == SamplingType::FF_HALF) {
-                    sampling_init_h = get_init_ff_value(task);
+                    Options opts;
+                    opts.set<shared_ptr<AbstractTask>>("transform", task);
+                    opts.set<bool>("cache_estimates", false);
+                    ff_heuristic::FFHeuristic ff(opts);
+                    sampling_init_h = ff.compute_heuristic_for_cegar(initial_state);
                     if (sampling_type == SamplingType::FF_HALF) {
                         sampling_init_h /= 2;
                     }
+                    DeadEndDetector is_dead_end = [&ff](const State &state) {
+                            return ff.compute_heuristic_for_cegar(state) == -1;
+                        };
+                    cout << "Sample states with init-h estimate " << sampling_init_h << endl;
+                    sample_states(sampler, sampling_init_h, is_dead_end, samples);
+                } else {
+                    DeadEndDetector is_dead_end = [this](const State &state) {
+                            return current_pdbs->is_dead_end(state);
+                        };
+                    cout << "Sample states with init-h estimate " << sampling_init_h << endl;
+                    sample_states(sampler, sampling_init_h, is_dead_end, samples);
                 }
-                cout << "Sample states with init-h estimate " << sampling_init_h << endl;
-                sample_states(sampler, sampling_init_h, samples);
                 sampling_timer.stop();
             }
             for (const State &sample : samples) {
