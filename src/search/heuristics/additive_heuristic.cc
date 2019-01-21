@@ -139,8 +139,8 @@ int AdditiveHeuristic::compute_heuristic(const GlobalState &global_state) {
     return compute_heuristic(convert_global_state(global_state));
 }
 
-void AdditiveHeuristic::compute_heuristic_for_cegar(const State &state) {
-    compute_heuristic(state);
+int AdditiveHeuristic::compute_heuristic_for_cegar(const State &state) {
+    return compute_heuristic(state);
 }
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
