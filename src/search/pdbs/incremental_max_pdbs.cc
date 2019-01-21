@@ -7,10 +7,8 @@
 using namespace std;
 
 namespace pdbs {
-IncrementalMaxPDBs::IncrementalMaxPDBs(
-    const TaskProxy &task_proxy,
-    const PatternCollection &initial_patterns)
-    : IncrementalPDBs(task_proxy, initial_patterns) {
+IncrementalMaxPDBs::IncrementalMaxPDBs(const TaskProxy &task_proxy)
+    : IncrementalPDBs(task_proxy) {
 }
 
 void IncrementalMaxPDBs::add_pdb(const shared_ptr<PatternDatabase> &pdb) {

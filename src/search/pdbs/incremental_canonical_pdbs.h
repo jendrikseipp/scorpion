@@ -14,8 +14,7 @@ class IncrementalCanonicalPDBs : public IncrementalPDBs {
 
     void recompute_max_additive_subsets();
 public:
-    IncrementalCanonicalPDBs(const TaskProxy &task_proxy,
-                             const PatternCollection &intitial_patterns);
+    explicit IncrementalCanonicalPDBs(const TaskProxy &task_proxy);
 
     // Adds a new PDB to the collection and recomputes max_additive_subsets.
     virtual void add_pdb(const std::shared_ptr<PatternDatabase> &pdb) override;

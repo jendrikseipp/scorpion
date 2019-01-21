@@ -9,8 +9,7 @@
 namespace pdbs {
 class IncrementalSCPPDBs : public IncrementalPDBs {
 public:
-    IncrementalSCPPDBs(const TaskProxy &task_proxy,
-                       const PatternCollection &initial_patterns);
+    explicit IncrementalSCPPDBs(const TaskProxy &task_proxy);
 
     virtual void add_pdb(const std::shared_ptr<PatternDatabase> &pdb) override;
     virtual int get_value(const State &state) const override;

@@ -562,24 +562,27 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
     TaskProxy task_proxy(*task);
     utils::Timer timer;
 
-    // Generate initial collection: a pattern for each goal variable.
-    PatternCollection initial_pattern_collection;
-    for (FactProxy goal : task_proxy.get_goals()) {
-        int goal_var_id = goal.get_variable().get_id();
-        initial_pattern_collection.emplace_back(1, goal_var_id);
-    }
     if (cp_type == CostPartitioningType::CANONICAL) {
-        current_pdbs = utils::make_unique_ptr<IncrementalCanonicalPDBs>(
-            task_proxy, initial_pattern_collection);
+        current_pdbs = utils::make_unique_ptr<IncrementalCanonicalPDBs>(task_proxy);
     } else if (cp_type == CostPartitioningType::MAX) {
-        current_pdbs = utils::make_unique_ptr<IncrementalMaxPDBs>(
-            task_proxy, initial_pattern_collection);
+        current_pdbs = utils::make_unique_ptr<IncrementalMaxPDBs>(task_proxy);
     } else if (cp_type == CostPartitioningType::SCP) {
-        current_pdbs = utils::make_unique_ptr<IncrementalSCPPDBs>(
-            task_proxy, initial_pattern_collection);
+        current_pdbs = utils::make_unique_ptr<IncrementalSCPPDBs>(task_proxy);
         ABORT("not implemented");
     } else {
         ABORT("not implemented");
+    }
+
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
+
+    // Generate initial collection: a pattern for each goal variable.
+    for (FactProxy goal : task_proxy.get_goals()) {
+        int goal_var_id = goal.get_variable().get_id();
+        Pattern pattern = {goal_var_id};
+        bool verbose = false;
+        shared_ptr<PatternDatabase> pdb = make_shared<PatternDatabase>(
+            task_proxy, pattern, verbose, costs, compute_pdbs_on_demand);
+        current_pdbs->add_pdb(pdb);
     }
 
     cout << "Done calculating initial PDB collection" << endl;

@@ -11,9 +11,8 @@
 using namespace std;
 
 namespace pdbs {
-IncrementalCanonicalPDBs::IncrementalCanonicalPDBs(
-    const TaskProxy &task_proxy, const PatternCollection &intitial_patterns)
-    : IncrementalPDBs(task_proxy, intitial_patterns),
+IncrementalCanonicalPDBs::IncrementalCanonicalPDBs(const TaskProxy &task_proxy)
+    : IncrementalPDBs(task_proxy),
       max_additive_subsets(nullptr) {
     are_additive = compute_additive_vars(task_proxy);
     recompute_max_additive_subsets();

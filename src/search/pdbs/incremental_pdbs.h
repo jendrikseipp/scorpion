@@ -18,11 +18,8 @@ protected:
 
     // The sum of all abstract state sizes of all pdbs in the collection.
     int size;
-
-    void add_pdb_for_pattern(const Pattern &pattern);
 public:
-    IncrementalPDBs(const TaskProxy &task_proxy,
-                    const PatternCollection &intitial_patterns);
+    explicit IncrementalPDBs(const TaskProxy &task_proxy);
     virtual ~IncrementalPDBs() = default;
 
     virtual void add_pdb(const std::shared_ptr<PatternDatabase> &pdb) = 0;
