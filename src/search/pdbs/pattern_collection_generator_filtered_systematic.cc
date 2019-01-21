@@ -259,8 +259,7 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             collection_size += pdb_size;
         }
 
-        if (static_cast<int>(candidates.size()) > max_patterns) {
-            assert(keep_best);
+        if (keep_best && static_cast<int>(candidates.size()) > max_patterns) {
             if (debug) {
                 cout << "Remove pattern " << candidates.top().projection->get_pattern()
                      << " with score " << candidates.top().score << endl;
