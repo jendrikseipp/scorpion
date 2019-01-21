@@ -3,6 +3,7 @@
 #include "canonical_pdbs_heuristic.h"
 #include "incremental_canonical_pdbs.h"
 #include "incremental_max_pdbs.h"
+#include "incremental_scp_pdbs.h"
 #include "pattern_database.h"
 #include "validation.h"
 
@@ -573,6 +574,10 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
     } else if (cp_type == CostPartitioningType::MAX) {
         current_pdbs = utils::make_unique_ptr<IncrementalMaxPDBs>(
             task_proxy, initial_pattern_collection);
+    } else if (cp_type == CostPartitioningType::SCP) {
+        current_pdbs = utils::make_unique_ptr<IncrementalSCPPDBs>(
+            task_proxy, initial_pattern_collection);
+        ABORT("not implemented");
     } else {
         ABORT("not implemented");
     }
@@ -630,6 +635,7 @@ void add_hillclimbing_options(OptionParser &parser) {
     vector<string> cp_types;
     cp_types.push_back("CANONICAL");
     cp_types.push_back("MAX");
+    cp_types.push_back("SCP");
     parser.add_enum_option(
         "cost_partitioning",
         cp_types,

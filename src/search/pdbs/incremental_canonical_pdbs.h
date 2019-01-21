@@ -12,9 +12,6 @@ class IncrementalCanonicalPDBs : public IncrementalPDBs {
     // A pair of variables is additive if no operator has an effect on both.
     VariableAdditivity are_additive;
 
-    // Adds a PDB for pattern but does not recompute max_additive_subsets.
-    void add_pdb_for_pattern(const Pattern &pattern);
-
     void recompute_max_additive_subsets();
 public:
     IncrementalCanonicalPDBs(const TaskProxy &task_proxy,

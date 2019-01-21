@@ -32,6 +32,7 @@ class PatternDatabase;
 enum class CostPartitioningType {
     CANONICAL,
     MAX,
+    SCP,
 };
 
 enum class SamplingType {
