@@ -27,6 +27,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const double max_time;
     const bool keep_best;
     const ScoringFunction scoring_function;
+    const bool saturate;
     const bool debug;
 
     double rate_projection(

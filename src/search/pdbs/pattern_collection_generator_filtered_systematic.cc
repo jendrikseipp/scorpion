@@ -147,6 +147,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_time(opts.get<double>("max_time")),
       keep_best(opts.get<bool>("keep_best")),
       scoring_function(static_cast<ScoringFunction>(opts.get_enum("scoring_function"))),
+      saturate(opts.get<bool>("saturate")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -239,9 +240,24 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 
         unique_ptr<cost_saturation::Projection> projection =
             utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, task_info, pattern);
-        double score = rate_projection(*projection, costs, initial_state);
-        candidates.emplace(move(projection), score);
-        collection_size += pdb_size;
+        double score = 0.;
+        if (saturate) {
+            vector<int> goal_distances = projection->compute_goal_distances(costs);
+            score = compute_mean_finite_value(goal_distances);
+            if (score > 0.) {
+                vector<int> saturated_costs = projection->compute_saturated_costs(
+                    goal_distances, costs.size());
+                cost_saturation::reduce_costs(costs, saturated_costs);
+            }
+        } else {
+            score = rate_projection(*projection, costs, initial_state);
+        }
+        if (score > 0.) {
+            utils::Log() << "Add pattern " << projection->get_pattern()
+                         << " with score " << score << endl;
+            candidates.emplace(move(projection), score);
+            collection_size += pdb_size;
+        }
 
         if (static_cast<int>(candidates.size()) > max_patterns) {
             assert(keep_best);
@@ -310,6 +326,10 @@ static void add_options(OptionParser &parser) {
         scoring_functions,
         "scoring function",
         "INIT_H");
+    parser.add_option<bool>(
+        "saturate",
+        "compute saturated cost function after adding a pattern",
+        "false");
     parser.add_option<bool>(
         "debug",
         "print debugging messages",
