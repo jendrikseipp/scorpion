@@ -9,6 +9,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../heuristics/ff_heuristic.h"
 #include "../task_utils/causal_graph.h"
 #include "../task_utils/sampling.h"
 #include "../task_utils/task_properties.h"
@@ -109,6 +110,14 @@ static vector<vector<int>> compute_relevant_neighbours(const TaskProxy &task_pro
     return connected_vars_by_variable;
 }
 
+int get_init_ff_value(const shared_ptr<AbstractTask> &task) {
+    Options opts;
+    opts.set<shared_ptr<AbstractTask>>("transform", task);
+    opts.set<bool>("cache_estimates", false);
+    ff_heuristic::FFHeuristic ff(opts);
+    return ff.compute_heuristic_for_cegar(TaskProxy(*task).get_initial_state());
+}
+
 
 PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(const Options &opts)
     : pdb_max_size(opts.get<int>("pdb_max_size")),
@@ -118,6 +127,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       max_time(opts.get<double>("max_time")),
       max_generated_patterns(opts.get<int>("max_generated_patterns")),
       cp_type(static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"))),
+      sampling_type(static_cast<SamplingType>(opts.get_enum("sampling"))),
       use_initial_state(opts.get<bool>("use_initial_state")),
       use_vns(opts.get<bool>("use_vns")),
       use_simple_hill_climbing(opts.get<bool>("simple_hill_climbing")),
@@ -329,8 +339,12 @@ bool PatternCollectionGeneratorHillclimbing::is_heuristic_improved(
 }
 
 void PatternCollectionGeneratorHillclimbing::hill_climbing(
-    const TaskProxy &task_proxy) {
+    const shared_ptr<AbstractTask> &task) {
+    TaskProxy task_proxy(*task);
     hill_climbing_timer = new utils::CountdownTimer(max_time);
+
+    utils::Timer sampling_timer;
+    sampling_timer.stop();
 
     cout << "Average operator cost: "
          << task_properties::get_average_operator_cost(task_proxy) << endl;
@@ -381,12 +395,25 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
                 cout << init_h << endl;
             }
 
-            samples.clear();
             samples_h_values.clear();
-            if (use_initial_state) {
-                samples.push_back(task_proxy.get_initial_state());
+            if (samples.empty() || sampling_type == SamplingType::PDBS) {
+                sampling_timer.resume();
+                samples.clear();
+                if (use_initial_state) {
+                    samples.push_back(task_proxy.get_initial_state());
+                }
+                int sampling_init_h = init_h;
+                if (sampling_type == SamplingType::FF ||
+                    sampling_type == SamplingType::FF_HALF) {
+                    sampling_init_h = get_init_ff_value(task);
+                    if (sampling_type == SamplingType::FF_HALF) {
+                        sampling_init_h /= 2;
+                    }
+                }
+                cout << "Sample states with init-h estimate " << sampling_init_h << endl;
+                sample_states(sampler, sampling_init_h, samples);
+                sampling_timer.stop();
             }
-            sample_states(sampler, init_h, samples);
             for (const State &sample : samples) {
                 samples_h_values.push_back(current_pdbs->get_value(sample));
             }
@@ -515,6 +542,7 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     cout << "iPDB: generated = " << generated_patterns.size() << endl;
     cout << "iPDB: rejected = " << num_rejected << endl;
     cout << "iPDB: maximum pdb size = " << max_pdb_size << endl;
+    cout << "iPDB: sampling time: " << sampling_timer() << endl;
     cout << "iPDB: hill climbing time: "
          << hill_climbing_timer->get_elapsed_time() << endl;
 
@@ -547,7 +575,7 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
 
     State initial_state = task_proxy.get_initial_state();
     if (!current_pdbs->is_dead_end(initial_state) && max_time > 0) {
-        hill_climbing(task_proxy);
+        hill_climbing(task);
     }
 
     cout << "Pattern generation (hill climbing) time: " << timer << endl;
@@ -601,6 +629,16 @@ void add_hillclimbing_options(OptionParser &parser) {
         cp_types,
         "cost partitioning algorithm for evaluating PDB collection",
         "CANONICAL");
+    vector<string> sampling_types;
+    sampling_types.push_back("PDBS");
+    sampling_types.push_back("PDBS_ONCE");
+    sampling_types.push_back("FF");
+    sampling_types.push_back("FF_HALF");
+    parser.add_enum_option(
+        "sampling",
+        sampling_types,
+        "sampling type",
+        "PDBS");
     parser.add_option<bool>(
         "use_initial_state",
         "use initial state as first sample",

@@ -34,6 +34,13 @@ enum class CostPartitioningType {
     MAX,
 };
 
+enum class SamplingType {
+    PDBS,
+    PDBS_ONCE,
+    FF,
+    FF_HALF,
+};
+
 // Implementation of the pattern generation algorithm by Haslum et al.
 class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator {
     // maximum number of states for each pdb
@@ -46,6 +53,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     const double max_time;
     const int max_generated_patterns;
     const CostPartitioningType cp_type;
+    const SamplingType sampling_type;
     const bool use_initial_state;
     const bool use_vns;
     const bool use_simple_hill_climbing;
@@ -135,7 +143,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
       Storing the PDBs has the only purpose to avoid re-computation of the same
       PDBs. This is quite a large time gain, but may use a lot of memory.
     */
-    void hill_climbing(const TaskProxy &task_proxy);
+    void hill_climbing(const std::shared_ptr<AbstractTask> &task);
 
 public:
     explicit PatternCollectionGeneratorHillclimbing(const options::Options &opts);
