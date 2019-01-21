@@ -125,6 +125,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       use_simple_hill_climbing(opts.get<bool>("simple_hill_climbing")),
       check_newest_candidates_first(opts.get<bool>("check_newest_candidates_first")),
       compute_pdbs_on_demand(opts.get<bool>("compute_pdbs_on_demand")),
+      delete_non_improving_pdbs(opts.get<bool>("delete_non_improving_pdbs")),
       debug(opts.get<bool>("debug")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
@@ -286,6 +287,9 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
         }
         if (use_simple_hill_climbing && count >= min_improvement) {
             break;
+        }
+        if (delete_non_improving_pdbs && count == 0) {
+            candidate_pdbs[i] = nullptr;
         }
     }
 
@@ -660,6 +664,10 @@ void add_hillclimbing_options(OptionParser &parser) {
     parser.add_option<bool>(
         "compute_pdbs_on_demand",
         "compute PDB when evaluating a pattern instead of when generating it",
+        "false");
+    parser.add_option<bool>(
+        "delete_non_improving_pdbs",
+        "delete a candidate if it improves none of the sample h values",
         "false");
     parser.add_option<bool>(
         "debug",
