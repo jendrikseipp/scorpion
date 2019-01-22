@@ -291,6 +291,7 @@ void PatternCollectionGeneratorSystematic::generate(
     try {
         build_patterns(task_proxy, handle_pattern);
     } catch (const Timeout &) {
+        cout << "Reached time limit while generating systematic patterns." << endl;
     }
 }
 

@@ -53,7 +53,9 @@ static bool contains_positive_finite_value(const vector<int> &values) {
 }
 
 static PatternCollection get_patterns(
-    const shared_ptr<AbstractTask> &task, int pattern_size) {
+    const shared_ptr<AbstractTask> &task,
+    int pattern_size,
+    const utils::CountdownTimer &timer) {
     cout << "Generate patterns for size " << pattern_size << endl;
     options::Options opts;
     opts.set<int>("pattern_max_size", pattern_size);
@@ -61,11 +63,11 @@ static PatternCollection get_patterns(
     PatternCollectionGeneratorSystematic generator(opts);
     PatternCollection patterns;
     generator.generate(
-        task, [pattern_size, &patterns](const Pattern &pattern) {
+        task, [pattern_size, &patterns, &timer](const Pattern &pattern) {
             if (static_cast<int>(pattern.size()) == pattern_size) {
                 patterns.push_back(pattern);
             }
-            return false;
+            return timer.is_expired();
         });
     return patterns;
 }
@@ -86,7 +88,7 @@ public:
             max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
     }
 
-    Pattern get_next_pattern() {
+    Pattern get_next_pattern(const utils::CountdownTimer &timer) {
         if (!current_patterns.empty()) {
             Pattern pattern = current_patterns.back();
             current_patterns.pop_back();
@@ -94,8 +96,8 @@ public:
             return pattern;
         } else if (current_pattern_size < max_pattern_size) {
             ++current_pattern_size;
-            current_patterns = get_patterns(task, current_pattern_size);
-            return get_next_pattern();
+            current_patterns = get_patterns(task, current_pattern_size, timer);
+            return get_next_pattern(timer);
         } else {
             return {};
         }
@@ -132,7 +134,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             cout << "Reached restart time limit." << endl;
             return false;
         }
-        Pattern pattern = pattern_generator.get_next_pattern();
+        Pattern pattern = pattern_generator.get_next_pattern(timer);
         if (pattern.empty()) {
             cout << "Generated all patterns up to size " << max_pattern_size
                  << "." << endl;
