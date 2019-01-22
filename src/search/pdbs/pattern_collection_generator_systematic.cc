@@ -122,9 +122,8 @@ void PatternCollectionGeneratorSystematic::enqueue_pattern_if_new(
             if (done) {
                 throw Timeout();
             }
-        } else {
-            patterns->push_back(pattern);
         }
+        patterns->push_back(pattern);
     }
 }
 
