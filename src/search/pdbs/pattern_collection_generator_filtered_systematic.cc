@@ -79,11 +79,10 @@ public:
     SequentialPatternGenerator(const shared_ptr<AbstractTask> &task, int max_pattern_size_)
         : task(task),
           max_pattern_size(max_pattern_size_),
-          current_pattern_size(1),
-          current_patterns(get_patterns(task, current_pattern_size)) {
+          current_pattern_size(0) {
+        assert(max_pattern_size_ >= 0);
         max_pattern_size = min(
             max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
-        assert(current_pattern_size <= max_pattern_size);
     }
 
     Pattern get_next_pattern() {
