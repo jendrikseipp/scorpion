@@ -56,7 +56,7 @@ static PatternCollection get_patterns(
     const shared_ptr<AbstractTask> &task,
     int pattern_size,
     const utils::CountdownTimer &timer) {
-    cout << "Generate patterns for size " << pattern_size << endl;
+    utils::Log() << "Generate patterns for size " << pattern_size << endl;
     options::Options opts;
     opts.set<int>("pattern_max_size", pattern_size);
     opts.set<bool>("only_interesting_patterns", true);
@@ -68,7 +68,7 @@ static PatternCollection get_patterns(
                 patterns.push_back(pattern);
             }
             return timer.is_expired();
-        });
+        }, timer);
     return patterns;
 }
 
@@ -123,6 +123,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     PatternSet &pattern_set,
     int64_t &collection_size,
     double overall_remaining_time) {
+    utils::Log log;
     utils::CountdownTimer timer(min(overall_remaining_time, max_time_per_restart));
     TaskProxy task_proxy(*task);
     State initial_state = task_proxy.get_initial_state();
@@ -131,13 +132,13 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     SequentialPatternGenerator pattern_generator(task, max_pattern_size);
     while (true) {
         if (timer.is_expired()) {
-            cout << "Reached restart time limit." << endl;
+            log << "Reached restart time limit." << endl;
             return false;
         }
         Pattern pattern = pattern_generator.get_next_pattern(timer);
         if (pattern.empty()) {
-            cout << "Generated all patterns up to size " << max_pattern_size
-                 << "." << endl;
+            log << "Generated all patterns up to size " << max_pattern_size
+                << "." << endl;
             return false;
         } else if (pattern_set.count(pattern)) {
             continue;
@@ -149,13 +150,13 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         }
 
         if (static_cast<int>(projections->size()) == max_patterns) {
-            cout << "Reached maximum number of patterns." << endl;
+            log << "Reached maximum number of patterns." << endl;
             return true;
         }
 
         if (max_collection_size != numeric_limits<int>::max() &&
             pdb_size > static_cast<int64_t>(max_collection_size) - collection_size) {
-            cout << "Reached maximum collection size." << endl;
+            log << "Reached maximum collection size." << endl;
             return true;
         }
 
@@ -163,7 +164,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, task_info, pattern);
         vector<int> goal_distances = projection->compute_goal_distances(costs);
         if (contains_positive_finite_value(goal_distances)) {
-            utils::Log() << "Add pattern " << projection->get_pattern() << endl;
+            log << "Add pattern " << projection->get_pattern() << endl;
             vector<int> saturated_costs = projection->compute_saturated_costs(
                 goal_distances, costs.size());
             cost_saturation::reduce_costs(costs, saturated_costs);
@@ -177,6 +178,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::generate(
     const shared_ptr<AbstractTask> &task) {
     utils::CountdownTimer timer(max_time);
+    utils::Log log;
     TaskProxy task_proxy(*task);
     shared_ptr<cost_saturation::TaskInfo> task_info =
         make_shared<cost_saturation::TaskInfo>(task_proxy);
@@ -185,18 +187,18 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     int64_t collection_size = 0;
     bool limit_reached = false;
     while (!limit_reached) {
-        utils::Log() << "Patterns: " << projections->size() << ", collection size: "
-                     << collection_size << endl;
+        log << "Patterns: " << projections->size() << ", collection size: "
+            << collection_size << endl;
         int collection_size_before = collection_size;
         limit_reached = select_systematic_patterns(
             task, task_info, projections, pattern_set, collection_size,
             timer.get_remaining_time());
         if (collection_size == collection_size_before) {
-            cout << "Restart did not add any pattern." << endl;
+            log << "Restart did not add any pattern." << endl;
             break;
         }
         if (timer.is_expired()) {
-            cout << "Reached overall time limit." << endl;
+            log << "Reached overall time limit." << endl;
             break;
         }
     }

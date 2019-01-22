@@ -7,6 +7,8 @@
 #include "../task_proxy.h"
 
 #include "../task_utils/causal_graph.h"
+#include "../utils/countdown_timer.h"
+#include "../utils/logging.h"
 #include "../utils/markup.h"
 
 #include <algorithm>
@@ -184,7 +186,8 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
 
 void PatternCollectionGeneratorSystematic::build_patterns(
     const TaskProxy &task_proxy,
-    const PatternHandler &handle_pattern) {
+    const PatternHandler &handle_pattern,
+    const utils::CountdownTimer *timer) {
     int num_variables = task_proxy.get_variables().size();
     const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
 
@@ -213,7 +216,7 @@ void PatternCollectionGeneratorSystematic::build_patterns(
         enqueue_pattern_if_new(pattern, handle_pattern);
 
 
-    cout << "Found " << sga_patterns.size() << " SGA patterns." << endl;
+    utils::Log() << "Found " << sga_patterns.size() << " SGA patterns." << endl;
 
     /*
       Combine patterns in the queue with SGA patterns until all
@@ -221,6 +224,9 @@ void PatternCollectionGeneratorSystematic::build_patterns(
       during the computation.
     */
     for (size_t pattern_no = 0; pattern_no < patterns->size(); ++pattern_no) {
+        if (timer && timer->is_expired())
+            break;
+
         // We must copy the pattern because references to patterns can be invalidated.
         Pattern pattern1 = (*patterns)[pattern_no];
 
@@ -243,7 +249,7 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     }
 
     pattern_set.clear();
-    cout << "Found " << patterns->size() << " interesting patterns." << endl;
+    utils::Log() << "Found " << patterns->size() << " interesting patterns." << endl;
 }
 
 void PatternCollectionGeneratorSystematic::build_patterns_naive(
@@ -276,7 +282,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
     patterns = make_shared<PatternCollection>();
     pattern_set.clear();
     if (only_interesting_patterns) {
-        build_patterns(task_proxy, nullptr);
+        build_patterns(task_proxy);
     } else {
         build_patterns_naive(task_proxy);
     }
@@ -284,12 +290,14 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
 }
 
 void PatternCollectionGeneratorSystematic::generate(
-    const std::shared_ptr<AbstractTask> &task, const PatternHandler &handle_pattern) {
+    const std::shared_ptr<AbstractTask> &task,
+    const PatternHandler &handle_pattern,
+    const utils::CountdownTimer &timer) {
     TaskProxy task_proxy(*task);
     patterns = make_shared<PatternCollection>();
     pattern_set.clear();
     try {
-        build_patterns(task_proxy, handle_pattern);
+        build_patterns(task_proxy, handle_pattern, &timer);
     } catch (const Timeout &) {
         cout << "Reached time limit while generating systematic patterns." << endl;
     }

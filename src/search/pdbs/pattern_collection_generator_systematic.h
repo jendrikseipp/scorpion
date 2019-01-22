@@ -21,6 +21,10 @@ namespace options {
 class Options;
 }
 
+namespace utils {
+class CountdownTimer;
+}
+
 namespace pdbs {
 class CanonicalPDBsHeuristic;
 
@@ -48,7 +52,10 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
         const TaskProxy &task_proxy,
         const causal_graph::CausalGraph &cg,
         const PatternHandler &handle_pattern);
-    void build_patterns(const TaskProxy &task_proxy, const PatternHandler &handle_pattern);
+    void build_patterns(
+        const TaskProxy &task_proxy,
+        const PatternHandler &handle_pattern = nullptr,
+        const utils::CountdownTimer *timer = nullptr);
     void build_patterns_naive(const TaskProxy &task_proxy);
 public:
     explicit PatternCollectionGeneratorSystematic(const options::Options &opts);
@@ -58,7 +65,8 @@ public:
 
     void generate(
         const std::shared_ptr<AbstractTask> &task,
-        const PatternHandler &handle_pattern);
+        const PatternHandler &handle_pattern,
+        const utils::CountdownTimer &timer);
 };
 }
 
