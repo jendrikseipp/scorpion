@@ -47,20 +47,9 @@ static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern)
     return size;
 }
 
-double compute_mean_finite_value(const vector<int> &values) {
-    double sum = 0;
-    int size = 0;
-    for (size_t i = 0; i < values.size(); ++i) {
-        if (values[i] != numeric_limits<int>::max()) {
-            sum += values[i];
-            ++size;
-        }
-    }
-    if (size == 0) {
-        return numeric_limits<double>::infinity();
-    } else {
-        return sum / size;
-    }
+static bool contains_positive_finite_value(const vector<int> &values) {
+    return any_of(values.begin(), values.end(),
+                  [](int v) {return v > 0 && v != numeric_limits<int>::max();});
 }
 
 static PatternCollection get_patterns(
@@ -171,10 +160,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         unique_ptr<cost_saturation::Projection> projection =
             utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, task_info, pattern);
         vector<int> goal_distances = projection->compute_goal_distances(costs);
-        double score = compute_mean_finite_value(goal_distances);
-        if (score > 0.) {
-            utils::Log() << "Add pattern " << projection->get_pattern()
-                         << " with score " << score << endl;
+        if (contains_positive_finite_value(goal_distances)) {
+            utils::Log() << "Add pattern " << projection->get_pattern() << endl;
             vector<int> saturated_costs = projection->compute_saturated_costs(
                 goal_distances, costs.size());
             cost_saturation::reduce_costs(costs, saturated_costs);
