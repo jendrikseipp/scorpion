@@ -14,10 +14,6 @@ namespace options {
 class Options;
 }
 
-namespace utils {
-class CountdownTimer;
-}
-
 namespace pdbs {
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
     using PatternSet = utils::HashSet<Pattern>;
@@ -27,6 +23,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const int max_collection_size;
     const int max_patterns;
     const double max_time;
+    const double max_time_per_restart;
     const bool debug;
 
     bool select_systematic_patterns(
@@ -35,7 +32,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,
         int64_t &collection_size,
-        utils::CountdownTimer &timer);
+        double overall_remaining_time);
 public:
     explicit PatternCollectionGeneratorFilteredSystematic(const options::Options &opts);
 

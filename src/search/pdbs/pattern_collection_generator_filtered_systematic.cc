@@ -121,6 +121,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_collection_size(opts.get<int>("max_collection_size")),
       max_patterns(opts.get<int>("max_patterns")),
       max_time(opts.get<double>("max_time")),
+      max_time_per_restart(opts.get<double>("max_time_per_restart")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -130,7 +131,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
     int64_t &collection_size,
-    utils::CountdownTimer &timer) {
+    double overall_remaining_time) {
+    utils::CountdownTimer timer(min(overall_remaining_time, max_time_per_restart));
     TaskProxy task_proxy(*task);
     State initial_state = task_proxy.get_initial_state();
     vector<int> variable_domains = get_variable_domains(task_proxy);
@@ -138,8 +140,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     SequentialPatternGenerator pattern_generator(task, max_pattern_size);
     while (true) {
         if (timer.is_expired()) {
-            cout << "Reached time limit." << endl;
-            return true;
+            cout << "Reached restart time limit." << endl;
+            return false;
         }
         Pattern pattern = pattern_generator.get_next_pattern();
         if (pattern.empty()) {
@@ -193,11 +195,12 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     PatternSet pattern_set;
     int64_t collection_size = 0;
     bool limit_reached = false;
-    while (!limit_reached) {
+    while (!limit_reached && !timer.is_expired()) {
         utils::Log() << "Patterns: " << projections->size() << ", collection size: "
                      << collection_size << endl;
         limit_reached = select_systematic_patterns(
-            task, task_info, projections, pattern_set, collection_size, timer);
+            task, task_info, projections, pattern_set, collection_size,
+            timer.get_remaining_time());
     }
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());
@@ -234,6 +237,11 @@ static void add_options(OptionParser &parser) {
     parser.add_option<double>(
         "max_time",
         "maximum time in seconds for generating patterns",
+        "infinity",
+        Bounds("0.0", "infinity"));
+    parser.add_option<double>(
+        "max_time_per_restart",
+        "maximum time in seconds for each restart",
         "infinity",
         Bounds("0.0", "infinity"));
     parser.add_option<bool>(
