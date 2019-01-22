@@ -182,12 +182,21 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     PatternSet pattern_set;
     int64_t collection_size = 0;
     bool limit_reached = false;
-    while (!limit_reached && !timer.is_expired()) {
+    while (!limit_reached) {
         utils::Log() << "Patterns: " << projections->size() << ", collection size: "
                      << collection_size << endl;
+        int collection_size_before = collection_size;
         limit_reached = select_systematic_patterns(
             task, task_info, projections, pattern_set, collection_size,
             timer.get_remaining_time());
+        if (collection_size == collection_size_before) {
+            cout << "Restart did not add any pattern." << endl;
+            break;
+        }
+        if (timer.is_expired()) {
+            cout << "Reached overall time limit." << endl;
+            break;
+        }
     }
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());
