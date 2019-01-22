@@ -16,6 +16,8 @@
 using namespace std;
 
 namespace pdbs {
+struct Timeout : public exception {};
+
 static bool patterns_are_disjoint(
     const Pattern &pattern1, const Pattern &pattern2) {
     size_t i = 0;
@@ -113,13 +115,23 @@ void PatternCollectionGeneratorSystematic::compute_connection_points(
 }
 
 void PatternCollectionGeneratorSystematic::enqueue_pattern_if_new(
-    const Pattern &pattern) {
-    if (pattern_set.insert(pattern).second)
-        patterns->push_back(pattern);
+    const Pattern &pattern, const PatternHandler &handle_pattern) {
+    if (pattern_set.insert(pattern).second) {
+        if (handle_pattern) {
+            bool done = handle_pattern(pattern);
+            if (done) {
+                throw Timeout();
+            }
+        } else {
+            patterns->push_back(pattern);
+        }
+    }
 }
 
 void PatternCollectionGeneratorSystematic::build_sga_patterns(
-    const TaskProxy &task_proxy, const causal_graph::CausalGraph &cg) {
+    const TaskProxy &task_proxy,
+    const causal_graph::CausalGraph &cg,
+    const PatternHandler &handle_pattern) {
     assert(max_pattern_size >= 1);
     assert(pattern_set.empty());
     assert(patterns && patterns->empty());
@@ -143,7 +155,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
         int var_id = goal.get_variable().get_id();
         Pattern goal_pattern;
         goal_pattern.push_back(var_id);
-        enqueue_pattern_if_new(goal_pattern);
+        enqueue_pattern_if_new(goal_pattern, handle_pattern);
     }
 
     /*
@@ -164,7 +176,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
             new_pattern.push_back(neighbor_var_id);
             sort(new_pattern.begin(), new_pattern.end());
 
-            enqueue_pattern_if_new(new_pattern);
+            enqueue_pattern_if_new(new_pattern, handle_pattern);
         }
     }
 
@@ -172,14 +184,15 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
 }
 
 void PatternCollectionGeneratorSystematic::build_patterns(
-    const TaskProxy &task_proxy) {
+    const TaskProxy &task_proxy,
+    const PatternHandler &handle_pattern) {
     int num_variables = task_proxy.get_variables().size();
     const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
 
     // Generate SGA (single-goal-ancestor) patterns.
     // They are generated into the patterns variable,
     // so we swap them from there.
-    build_sga_patterns(task_proxy, cg);
+    build_sga_patterns(task_proxy, cg, handle_pattern);
     PatternCollection sga_patterns;
     patterns->swap(sga_patterns);
 
@@ -198,7 +211,7 @@ void PatternCollectionGeneratorSystematic::build_patterns(
 
     // Enqueue the SGA patterns.
     for (const Pattern &pattern : sga_patterns)
-        enqueue_pattern_if_new(pattern);
+        enqueue_pattern_if_new(pattern, handle_pattern);
 
 
     cout << "Found " << sga_patterns.size() << " SGA patterns." << endl;
@@ -224,7 +237,7 @@ void PatternCollectionGeneratorSystematic::build_patterns(
                 if (patterns_are_disjoint(pattern1, pattern2)) {
                     Pattern new_pattern;
                     compute_union_pattern(pattern1, pattern2, new_pattern);
-                    enqueue_pattern_if_new(new_pattern);
+                    enqueue_pattern_if_new(new_pattern, handle_pattern);
                 }
             }
         }
@@ -264,11 +277,22 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
     patterns = make_shared<PatternCollection>();
     pattern_set.clear();
     if (only_interesting_patterns) {
-        build_patterns(task_proxy);
+        build_patterns(task_proxy, nullptr);
     } else {
         build_patterns_naive(task_proxy);
     }
     return PatternCollectionInformation(task_proxy, patterns);
+}
+
+void PatternCollectionGeneratorSystematic::generate(
+    const std::shared_ptr<AbstractTask> &task, const PatternHandler &handle_pattern) {
+    TaskProxy task_proxy(*task);
+    patterns = make_shared<PatternCollection>();
+    pattern_set.clear();
+    try {
+        build_patterns(task_proxy, handle_pattern);
+    } catch (const Timeout &) {
+    }
 }
 
 static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {

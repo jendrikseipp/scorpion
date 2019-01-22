@@ -24,6 +24,8 @@ class Options;
 namespace pdbs {
 class CanonicalPDBsHeuristic;
 
+using PatternHandler = std::function<bool (const Pattern &)>;
+
 // Invariant: patterns are always sorted.
 class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
     using PatternSet = utils::HashSet<Pattern>;
@@ -33,7 +35,8 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
     std::shared_ptr<PatternCollection> patterns;
     PatternSet pattern_set;  // Cleared after pattern computation.
 
-    void enqueue_pattern_if_new(const Pattern &pattern);
+    void enqueue_pattern_if_new(
+        const Pattern &pattern, const PatternHandler &handle_pattern);
     void compute_eff_pre_neighbors(const causal_graph::CausalGraph &cg,
                                    const Pattern &pattern,
                                    std::vector<int> &result) const;
@@ -41,14 +44,21 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
                                    const Pattern &pattern,
                                    std::vector<int> &result) const;
 
-    void build_sga_patterns(const TaskProxy &task_proxy, const causal_graph::CausalGraph &cg);
-    void build_patterns(const TaskProxy &task_proxy);
+    void build_sga_patterns(
+        const TaskProxy &task_proxy,
+        const causal_graph::CausalGraph &cg,
+        const PatternHandler &handle_pattern);
+    void build_patterns(const TaskProxy &task_proxy, const PatternHandler &handle_pattern);
     void build_patterns_naive(const TaskProxy &task_proxy);
 public:
     explicit PatternCollectionGeneratorSystematic(const options::Options &opts);
 
     virtual PatternCollectionInformation generate(
         const std::shared_ptr<AbstractTask> &task) override;
+
+    void generate(
+        const std::shared_ptr<AbstractTask> &task,
+        const PatternHandler &handle_pattern);
 };
 }
 
