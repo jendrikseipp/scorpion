@@ -124,29 +124,30 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       debug(opts.get<bool>("debug")) {
 }
 
-PatternCollectionInformation
-PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
-    const shared_ptr<AbstractTask> &task) {
-    utils::CountdownTimer timer(max_time);
+bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
+    const shared_ptr<AbstractTask> &task,
+    const shared_ptr<cost_saturation::TaskInfo> &task_info,
+    const shared_ptr<ProjectionCollection> &projections,
+    PatternSet &pattern_set,
+    int64_t &collection_size,
+    utils::CountdownTimer &timer) {
     TaskProxy task_proxy(*task);
-    shared_ptr<cost_saturation::TaskInfo> task_info =
-        make_shared<cost_saturation::TaskInfo>(task_proxy);
     State initial_state = task_proxy.get_initial_state();
     vector<int> variable_domains = get_variable_domains(task_proxy);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     SequentialPatternGenerator pattern_generator(task, max_pattern_size);
-    shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
-    int64_t collection_size = 0;
     while (true) {
         if (timer.is_expired()) {
             cout << "Reached time limit." << endl;
-            break;
+            return true;
         }
         Pattern pattern = pattern_generator.get_next_pattern();
         if (pattern.empty()) {
             cout << "Generated all patterns up to size " << max_pattern_size
                  << "." << endl;
-            break;
+            return false;
+        } else if (pattern_set.count(pattern)) {
+            continue;
         }
         int pdb_size = get_pdb_size(variable_domains, pattern);
         if (pdb_size == -1 || pdb_size > max_pdb_size) {
@@ -156,9 +157,10 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 
         if (static_cast<int>(projections->size()) == max_patterns) {
             cout << "Reached maximum number of patterns." << endl;
-            break;
+            return true;
         }
 
+        // TODO: Abort.
         if (max_collection_size != numeric_limits<int>::max() &&
             pdb_size > static_cast<int64_t>(max_collection_size) - collection_size) {
             continue;
@@ -175,8 +177,27 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                 goal_distances, costs.size());
             cost_saturation::reduce_costs(costs, saturated_costs);
             projections->push_back(move(projection));
+            pattern_set.insert(pattern);
             collection_size += pdb_size;
         }
+    }
+}
+
+PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::generate(
+    const shared_ptr<AbstractTask> &task) {
+    utils::CountdownTimer timer(max_time);
+    TaskProxy task_proxy(*task);
+    shared_ptr<cost_saturation::TaskInfo> task_info =
+        make_shared<cost_saturation::TaskInfo>(task_proxy);
+    shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
+    PatternSet pattern_set;
+    int64_t collection_size = 0;
+    bool limit_reached = false;
+    while (!limit_reached) {
+        utils::Log() << "Patterns: " << projections->size() << ", collection size: "
+                     << collection_size << endl;
+        limit_reached = select_systematic_patterns(
+            task, task_info, projections, pattern_set, collection_size, timer);
     }
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());
@@ -186,11 +207,6 @@ PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     PatternCollectionInformation pci(task_proxy, patterns);
     pci.set_projections(projections);
     return pci;
-}
-
-PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::generate(
-    const shared_ptr<AbstractTask> &task) {
-    return select_systematic_patterns(task);
 }
 
 
