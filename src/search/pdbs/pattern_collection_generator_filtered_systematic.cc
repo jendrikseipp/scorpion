@@ -59,13 +59,14 @@ static PatternCollection get_patterns(
     opts.set<int>("pattern_max_size", pattern_size);
     opts.set<bool>("only_interesting_patterns", true);
     PatternCollectionGeneratorSystematic generator(opts);
-    PatternCollectionInformation pci = generator.generate(task);
     PatternCollection patterns;
-    for (const Pattern &pattern : *pci.get_patterns()) {
-        if (static_cast<int>(pattern.size()) == pattern_size) {
-            patterns.push_back(pattern);
-        }
-    }
+    generator.generate(
+        task, [pattern_size, &patterns](const Pattern &pattern) {
+            if (static_cast<int>(pattern.size()) == pattern_size) {
+                patterns.push_back(pattern);
+            }
+            return false;
+        });
     return patterns;
 }
 
