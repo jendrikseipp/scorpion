@@ -31,6 +31,8 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const bool saturate;
     const bool debug;
 
+    int num_evaluated_patterns;
+
     std::unique_ptr<utils::Timer> pattern_computation_timer;
     std::unique_ptr<utils::Timer> projection_computation_timer;
     std::unique_ptr<utils::Timer> projection_evaluation_timer;

@@ -140,6 +140,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         pattern_computation_timer->resume();
         Pattern pattern = pattern_generator.get_next_pattern(timer);
         pattern_computation_timer->stop();
+        ++num_evaluated_patterns;
 
         if (pattern.empty()) {
             log << "Generated all patterns up to size " << max_pattern_size
@@ -208,6 +209,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     int64_t collection_size = 0;
+    num_evaluated_patterns = 0;
     bool limit_reached = false;
     while (!limit_reached) {
         log << "Patterns: " << projections->size() << ", collection size: "
@@ -232,6 +234,10 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         << *projection_computation_timer << endl;
     log << "Time for evaluating ordered systematic projections: "
         << *projection_evaluation_timer << endl;
+    double percent_selected = (num_evaluated_patterns == 0) ? 0.
+        : static_cast<double>(projections->size()) / num_evaluated_patterns;
+    log << "Selected ordered systematic patterns: " << projections->size()
+        << "/" << num_evaluated_patterns << " = " << percent_selected << endl;
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());
