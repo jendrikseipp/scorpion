@@ -24,6 +24,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const int max_patterns;
     const double max_time;
     const double max_time_per_restart;
+    const bool saturate;
     const bool debug;
 
     bool select_systematic_patterns(

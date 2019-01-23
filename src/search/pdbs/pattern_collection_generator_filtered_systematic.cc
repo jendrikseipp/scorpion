@@ -113,6 +113,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_patterns(opts.get<int>("max_patterns")),
       max_time(opts.get<double>("max_time")),
       max_time_per_restart(opts.get<double>("max_time_per_restart")),
+      saturate(opts.get<bool>("saturate")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -162,12 +163,19 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 
         unique_ptr<cost_saturation::Projection> projection =
             utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, task_info, pattern);
-        vector<int> goal_distances = projection->compute_goal_distances(costs);
-        if (contains_positive_finite_value(goal_distances)) {
-            log << "Add pattern " << projection->get_pattern() << endl;
-            vector<int> saturated_costs = projection->compute_saturated_costs(
-                goal_distances, costs.size());
-            cost_saturation::reduce_costs(costs, saturated_costs);
+        bool select_pattern = true;
+        if (saturate) {
+            vector<int> goal_distances = projection->compute_goal_distances(costs);
+            select_pattern = contains_positive_finite_value(goal_distances);
+            if (select_pattern) {
+                vector<int> saturated_costs = projection->compute_saturated_costs(
+                    goal_distances, costs.size());
+                cost_saturation::reduce_costs(costs, saturated_costs);
+            }
+        }
+
+        if (select_pattern) {
+            log << "Add pattern " << pattern << endl;
             projections->push_back(move(projection));
             pattern_set.insert(pattern);
             collection_size += pdb_size;
@@ -244,6 +252,10 @@ static void add_options(OptionParser &parser) {
         "maximum time in seconds for each restart",
         "infinity",
         Bounds("0.0", "infinity"));
+    parser.add_option<bool>(
+        "saturate",
+        "compute saturated cost partitionings",
+        "true");
     parser.add_option<bool>(
         "debug",
         "print debugging messages",
