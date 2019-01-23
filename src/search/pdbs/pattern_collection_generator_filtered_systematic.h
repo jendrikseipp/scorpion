@@ -14,6 +14,10 @@ namespace options {
 class Options;
 }
 
+namespace utils {
+class Timer;
+}
+
 namespace pdbs {
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
     using PatternSet = utils::HashSet<Pattern>;
@@ -26,6 +30,9 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const double max_time_per_restart;
     const bool saturate;
     const bool debug;
+
+    std::unique_ptr<utils::Timer> pattern_computation_timer;
+    std::unique_ptr<utils::Timer> projection_computation_timer;
 
     bool select_systematic_patterns(
         const std::shared_ptr<AbstractTask> &task,

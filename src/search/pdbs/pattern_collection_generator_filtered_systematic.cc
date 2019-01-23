@@ -136,7 +136,11 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             log << "Reached restart time limit." << endl;
             return false;
         }
+
+        pattern_computation_timer->resume();
         Pattern pattern = pattern_generator.get_next_pattern(timer);
+        pattern_computation_timer->stop();
+
         if (pattern.empty()) {
             log << "Generated all patterns up to size " << max_pattern_size
                 << "." << endl;
@@ -161,8 +165,11 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             return true;
         }
 
+        projection_computation_timer->resume();
         unique_ptr<cost_saturation::Projection> projection =
             utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, task_info, pattern);
+        projection_computation_timer->stop();
+
         bool select_pattern = true;
         if (saturate) {
             vector<int> goal_distances = projection->compute_goal_distances(costs);
@@ -186,6 +193,10 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::generate(
     const shared_ptr<AbstractTask> &task) {
     utils::CountdownTimer timer(max_time);
+    pattern_computation_timer = utils::make_unique_ptr<utils::Timer>();
+    pattern_computation_timer->stop();
+    projection_computation_timer = utils::make_unique_ptr<utils::Timer>();
+    projection_computation_timer->stop();
     utils::Log log;
     TaskProxy task_proxy(*task);
     shared_ptr<cost_saturation::TaskInfo> task_info =
@@ -210,6 +221,12 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
             break;
         }
     }
+
+    log << "Time for computing ordered systematic patterns: "
+        << *pattern_computation_timer << endl;
+    log << "Time for computing ordered systematic projections: "
+        << *projection_computation_timer << endl;
+
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());
     for (auto &projection : *projections) {
