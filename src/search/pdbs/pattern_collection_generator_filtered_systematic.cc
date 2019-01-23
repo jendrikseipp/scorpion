@@ -172,8 +172,10 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 
         bool select_pattern = true;
         if (saturate) {
+            projection_evaluation_timer->resume();
             vector<int> goal_distances = projection->compute_goal_distances(costs);
             select_pattern = contains_positive_finite_value(goal_distances);
+            projection_evaluation_timer->stop();
             if (select_pattern) {
                 vector<int> saturated_costs = projection->compute_saturated_costs(
                     goal_distances, costs.size());
@@ -197,6 +199,8 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     pattern_computation_timer->stop();
     projection_computation_timer = utils::make_unique_ptr<utils::Timer>();
     projection_computation_timer->stop();
+    projection_evaluation_timer = utils::make_unique_ptr<utils::Timer>();
+    projection_evaluation_timer->stop();
     utils::Log log;
     TaskProxy task_proxy(*task);
     shared_ptr<cost_saturation::TaskInfo> task_info =
@@ -226,6 +230,8 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         << *pattern_computation_timer << endl;
     log << "Time for computing ordered systematic projections: "
         << *projection_computation_timer << endl;
+    log << "Time for evaluating ordered systematic projections: "
+        << *projection_evaluation_timer << endl;
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());

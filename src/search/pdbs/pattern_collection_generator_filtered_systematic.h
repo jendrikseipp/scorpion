@@ -33,6 +33,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
 
     std::unique_ptr<utils::Timer> pattern_computation_timer;
     std::unique_ptr<utils::Timer> projection_computation_timer;
+    std::unique_ptr<utils::Timer> projection_evaluation_timer;
 
     bool select_systematic_patterns(
         const std::shared_ptr<AbstractTask> &task,
