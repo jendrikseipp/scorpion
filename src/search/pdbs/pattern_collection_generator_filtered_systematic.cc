@@ -34,6 +34,21 @@ static vector<int> get_variable_domains(const TaskProxy &task_proxy) {
     return variable_domains;
 }
 
+static vector<vector<int>> get_relevant_operators_per_variable(
+    const TaskProxy &task_proxy) {
+    vector<vector<int>> operators_per_variable(task_proxy.get_variables().size());
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        for (EffectProxy effect : op.get_effects()) {
+            int var = effect.get_fact().get_variable().get_id();
+            operators_per_variable[var].push_back(op.get_id());
+        }
+    }
+    for (auto &operators : operators_per_variable) {
+        operators.shrink_to_fit();
+    }
+    return operators_per_variable;
+}
+
 static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern) {
     int size = 1;
     for (int var : pattern) {
@@ -50,6 +65,20 @@ static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern)
 static bool contains_positive_finite_value(const vector<int> &values) {
     return any_of(values.begin(), values.end(),
                   [](int v) {return v > 0 && v != numeric_limits<int>::max();});
+}
+
+static bool only_free_operators_affect_pdb(
+    const Pattern &pattern,
+    const vector<int> &costs,
+    const vector<vector<int>> &relevant_operators_per_variable) {
+    for (int var : pattern) {
+        for (int op : relevant_operators_per_variable[var]) {
+            if (costs[op] > 0 && costs[op] != numeric_limits<int>::max()) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 static PatternCollection get_patterns(
@@ -114,6 +143,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_time(opts.get<double>("max_time")),
       max_time_per_restart(opts.get<double>("max_time_per_restart")),
       saturate(opts.get<bool>("saturate")),
+      ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -166,6 +196,13 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             return true;
         }
 
+        if (ignore_useless_patterns &&
+            only_free_operators_affect_pdb(pattern, costs, relevant_operators_per_variable)) {
+            if (debug)
+                log << "Only free operators affect " << pattern << endl;
+            continue;
+        }
+
         projection_computation_timer->resume();
         unique_ptr<cost_saturation::Projection> projection =
             utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, task_info, pattern);
@@ -206,6 +243,9 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     TaskProxy task_proxy(*task);
     shared_ptr<cost_saturation::TaskInfo> task_info =
         make_shared<cost_saturation::TaskInfo>(task_proxy);
+    if (ignore_useless_patterns) {
+        relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
+    }
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     int64_t collection_size = 0;
@@ -284,6 +324,10 @@ static void add_options(OptionParser &parser) {
     parser.add_option<bool>(
         "saturate",
         "compute saturated cost partitionings",
+        "true");
+    parser.add_option<bool>(
+        "ignore_useless_patterns",
+        "ignore patterns with only variables that are changed by free operators",
         "true");
     parser.add_option<bool>(
         "debug",
