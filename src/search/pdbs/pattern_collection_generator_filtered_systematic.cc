@@ -144,6 +144,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_time_per_restart(opts.get<double>("max_time_per_restart")),
       saturate(opts.get<bool>("saturate")),
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
+      store_orders(opts.get<bool>("store_orders")),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -252,13 +253,22 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     num_evaluated_patterns = 0;
     bool limit_reached = false;
     while (!limit_reached) {
-        log << "Patterns: " << projections->size() << ", collection size: "
-            << collection_size << endl;
-        int collection_size_before = collection_size;
+        int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, projections, pattern_set, collection_size,
             timer.get_remaining_time());
-        if (collection_size == collection_size_before) {
+        int num_patterns_after = projections->size();
+        log << "Patterns: " << num_patterns_after << ", collection size: "
+            << collection_size << endl;
+        if (store_orders && num_patterns_after > num_patterns_before) {
+            cost_saturation::Order order;
+            for (int i = num_patterns_before; i < num_patterns_after; ++i) {
+                order.push_back(i);
+            }
+            cout << "Store order " << order << endl;
+            cost_saturation::systematic_generator_orders_hacked.push_back(order);
+        }
+        if (num_patterns_after == num_patterns_before) {
             log << "Restart did not add any pattern." << endl;
             break;
         }
@@ -329,6 +339,10 @@ static void add_options(OptionParser &parser) {
         "ignore_useless_patterns",
         "ignore patterns with only variables that are changed by free operators",
         "true");
+    parser.add_option<bool>(
+        "store_orders",
+        "store orders",
+        "false");
     parser.add_option<bool>(
         "debug",
         "print debugging messages",

@@ -30,6 +30,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const double max_time_per_restart;
     const bool saturate;
     const bool ignore_useless_patterns;
+    const bool store_orders;
     const bool debug;
 
     std::vector<std::vector<int>> relevant_operators_per_variable;

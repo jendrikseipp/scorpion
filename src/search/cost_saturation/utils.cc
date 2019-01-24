@@ -23,6 +23,8 @@
 using namespace std;
 
 namespace cost_saturation {
+std::vector<Order> systematic_generator_orders_hacked;
+
 Abstractions generate_abstractions(
     const shared_ptr<AbstractTask> &task,
     const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators) {

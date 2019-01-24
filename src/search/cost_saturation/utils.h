@@ -17,6 +17,8 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningHeuristic;
 
+extern std::vector<Order> systematic_generator_orders_hacked;
+
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
     const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators);
