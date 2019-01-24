@@ -166,6 +166,43 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
 
         ++evaluated_orders;
     }
+    /* Loop over systematic projection orders, create full orders and add them
+       if they're diverse or unconditionally, if diversification is off. */
+    int num_abstractions = abstractions.size();
+    int num_projections = 0;
+    int num_selected_projection_orders = 0;
+    bool debug = false;
+    for (const Order &sys_order : systematic_generator_orders_hacked) {
+        num_projections += sys_order.size();
+        Order order = sys_order;
+        unordered_set<int> used(order.begin(), order.end());
+        for (int abs_id : get_default_order(abstractions.size())) {
+            if (used.insert(abs_id).second) {
+                order.push_back(abs_id);
+            }
+        }
+        if (debug) {
+            cout << "Converted order " << sys_order << " to " << order << endl;
+        }
+        CostPartitioningHeuristic cp_heuristic = cp_function(
+            abstractions, order, costs);
+        if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
+            if (debug) {
+                cout << "Select order " << order << endl;
+            }
+            cp_heuristics.push_back(move(cp_heuristic));
+            ++num_selected_projection_orders;
+        }
+    }
+    if (num_projections != num_abstractions) {
+        ABORT("Storing orders is only allowed if systematic_filtered() is the "
+              "only generator.");
+    }
+    int num_projection_orders = systematic_generator_orders_hacked.size();
+    double selected_percentage = (num_projection_orders == 0) ? 0
+        : num_selected_projection_orders / static_cast<double>(num_projection_orders);
+    log << "Selected projection orders: " << num_selected_projection_orders
+        << "/" << num_projection_orders << " = " << selected_percentage << endl;
     log << "Evaluated orders: " << evaluated_orders << endl;
     log << "Cost partitionings: " << cp_heuristics.size() << endl;
     log << "Time for computing cost partitionings: " << timer.get_elapsed_time()
