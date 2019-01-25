@@ -194,8 +194,9 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
             ++num_selected_projection_orders;
         }
     }
-    if (num_projections != num_abstractions) {
-        ABORT("Storing orders is only allowed if systematic_filtered() is the "
+    if (!systematic_generator_orders_hacked.empty()
+        && num_projections != num_abstractions) {
+        ABORT("Storing orders is only allowed if filtered_systematic() is the "
               "only generator.");
     }
     int num_projection_orders = systematic_generator_orders_hacked.size();
