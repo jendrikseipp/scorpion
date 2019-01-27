@@ -1,8 +1,7 @@
 #include "pattern_evaluator.h"
 
-#include "match_tree.h"
-
 #include "../algorithms/priority_queues.h"
+#include "../task_utils/successor_generator.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -45,7 +44,6 @@ PatternEvaluator::PatternEvaluator(
     : task_proxy(task_proxy) {
     assert(utils::is_sorted_unique(pattern));
 
-    vector<size_t> hash_multipliers;
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
     for (int pattern_var_id : pattern) {
@@ -73,28 +71,25 @@ PatternEvaluator::PatternEvaluator(
         domain_sizes.push_back(var.get_domain_size());
     }
 
-    vector<int> pattern_domain_sizes;
     pattern_domain_sizes.reserve(pattern.size());
     for (int pattern_var : pattern) {
         pattern_domain_sizes.push_back(domain_sizes[pattern_var]);
     }
 
-    match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
-        task_proxy, pattern, hash_multipliers);
+    vector<vector<FactPair>> preconditions_per_operator;
 
     // Compute abstract forward and backward operators.
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorProxy op : operators) {
         build_abstract_operators(
             pattern, hash_multipliers, op, -1, variable_to_pattern_index, domain_sizes,
-            [this](
+            [this, &preconditions_per_operator](
                 const vector<FactPair> &prevail,
                 const vector<FactPair> &preconditions,
                 const vector<FactPair> &effects,
                 int,
                 const vector<size_t> &hash_multipliers,
                 int concrete_operator_id) {
-                int abs_op_id = abstract_backward_operators.size();
                 abstract_backward_operators.emplace_back(
                     concrete_operator_id,
                     compute_hash_effect(preconditions, effects, hash_multipliers, false));
@@ -102,10 +97,14 @@ PatternEvaluator::PatternEvaluator(
                 regression_preconditions.insert(
                     regression_preconditions.end(), effects.begin(), effects.end());
                 sort(regression_preconditions.begin(), regression_preconditions.end());
-                match_tree_backward->insert(abs_op_id, regression_preconditions);
+                preconditions_per_operator.push_back(move(regression_preconditions));
             });
     }
     abstract_backward_operators.shrink_to_fit();
+
+    backward_successor_generator =
+        utils::make_unique_ptr<successor_generator::SuccessorGenerator>(
+            pattern_domain_sizes, move(preconditions_per_operator));
 
     goal_states = compute_goal_states(hash_multipliers, pattern_domain_sizes, variable_to_pattern_index);
 }
@@ -260,7 +259,7 @@ bool PatternEvaluator::is_useful(
     }
 
     // Reuse vector to save allocations.
-    vector<int> applicable_operators;
+    vector<OperatorID> applicable_operators;
 
     // Run Dijkstra loop.
     while (!pq.empty()) {
@@ -276,11 +275,24 @@ bool PatternEvaluator::is_useful(
             return true;
         }
 
+
+        // Unrank state.
+        vector<int> state_values;
+        state_values.reserve(hash_multipliers.size());
+        for (size_t i = 0; i < hash_multipliers.size(); ++i) {
+            int temp = state_index / hash_multipliers[i];
+            int val = temp % pattern_domain_sizes[i];
+            state_values.push_back(val);
+        }
+        State state(move(state_values));
+
         // Regress abstract state.
         applicable_operators.clear();
-        match_tree_backward->get_applicable_operators(state_index, applicable_operators);
-        for (int abs_op_id : applicable_operators) {
-            const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
+        backward_successor_generator->generate_applicable_ops(
+            state, applicable_operators);
+        for (OperatorID abs_op_id : applicable_operators) {
+            const AbstractBackwardOperator &op =
+                abstract_backward_operators[abs_op_id.get_index()];
             size_t predecessor = state_index + op.hash_effect;
             int conc_op_id = op.concrete_operator_id;
             assert(utils::in_bounds(conc_op_id, costs));

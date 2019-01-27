@@ -165,10 +165,7 @@ public:
 };
 
 
-SuccessorGeneratorFactory::SuccessorGeneratorFactory(
-    const TaskProxy &task_proxy)
-    : task_proxy(task_proxy) {
-}
+SuccessorGeneratorFactory::SuccessorGeneratorFactory() = default;
 
 SuccessorGeneratorFactory::~SuccessorGeneratorFactory() = default;
 
@@ -206,8 +203,7 @@ GeneratorPtr SuccessorGeneratorFactory::construct_leaf(
 
 GeneratorPtr SuccessorGeneratorFactory::construct_switch(
     int switch_var_id, ValuesAndGenerators values_and_generators) const {
-    VariablesProxy variables = task_proxy.get_variables();
-    int var_domain = variables[switch_var_id].get_domain_size();
+    int var_domain = domain_sizes[switch_var_id];
     int num_children = values_and_generators.size();
 
     assert(num_children > 0);
@@ -280,12 +276,36 @@ static vector<FactPair> build_sorted_precondition(const OperatorProxy &op) {
     return precond;
 }
 
-GeneratorPtr SuccessorGeneratorFactory::create() {
+GeneratorPtr SuccessorGeneratorFactory::create(const TaskProxy &task_proxy) {
+    domain_sizes.reserve(task_proxy.get_variables().size());
+    for (VariableProxy var : task_proxy.get_variables()) {
+        domain_sizes.push_back(var.get_domain_size());
+    }
+
     OperatorsProxy operators = task_proxy.get_operators();
     operator_infos.reserve(operators.size());
     for (OperatorProxy op : operators) {
         operator_infos.emplace_back(
             OperatorID(op.get_id()), build_sorted_precondition(op));
+    }
+    /* Use stable_sort rather than sort for reproducibility.
+       This amounts to breaking ties by operator ID. */
+    stable_sort(operator_infos.begin(), operator_infos.end());
+
+    OperatorRange full_range(0, operator_infos.size());
+    GeneratorPtr root = construct_recursive(0, full_range);
+    operator_infos.clear();
+    return root;
+}
+
+GeneratorPtr SuccessorGeneratorFactory::create(
+    const vector<int> &domain_sizes_, vector<vector<FactPair>> &&preconditions) {
+    domain_sizes = domain_sizes_;
+
+    operator_infos.reserve(preconditions.size());
+    for (size_t op_id = 0; op_id < preconditions.size(); ++op_id) {
+        operator_infos.emplace_back(
+            OperatorID(op_id), move(preconditions[op_id]));
     }
     /* Use stable_sort rather than sort for reproducibility.
        This amounts to breaking ties by operator ID. */

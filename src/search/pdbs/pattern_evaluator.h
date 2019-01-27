@@ -12,9 +12,11 @@ template<typename Value>
 class AdaptiveQueue;
 }
 
-namespace pdbs {
-class MatchTree;
+namespace successor_generator {
+class SuccessorGenerator;
+}
 
+namespace pdbs {
 struct AbstractBackwardOperator {
     int concrete_operator_id;
     int hash_effect;
@@ -35,10 +37,11 @@ class PatternEvaluator {
     TaskProxy task_proxy;
 
     std::vector<AbstractBackwardOperator> abstract_backward_operators;
-    std::unique_ptr<pdbs::MatchTree> match_tree_backward;
+    std::unique_ptr<successor_generator::SuccessorGenerator> backward_successor_generator;
 
     int num_states;
-
+    std::vector<std::size_t> hash_multipliers;
+    std::vector<int> pattern_domain_sizes;
     std::vector<int> goal_states;
 
     std::vector<int> compute_goal_states(

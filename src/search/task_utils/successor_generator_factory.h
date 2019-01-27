@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+struct FactPair;
 class TaskProxy;
 
 namespace successor_generator {
@@ -18,8 +19,8 @@ class OperatorInfo;
 class SuccessorGeneratorFactory {
     using ValuesAndGenerators = std::vector<std::pair<int, GeneratorPtr>>;
 
-    const TaskProxy &task_proxy;
     std::vector<OperatorInfo> operator_infos;
+    std::vector<int> domain_sizes;
 
     GeneratorPtr construct_fork(std::vector<GeneratorPtr> nodes) const;
     GeneratorPtr construct_leaf(OperatorRange range) const;
@@ -27,10 +28,13 @@ class SuccessorGeneratorFactory {
         int switch_var_id, ValuesAndGenerators values_and_generators) const;
     GeneratorPtr construct_recursive(int depth, OperatorRange range) const;
 public:
-    explicit SuccessorGeneratorFactory(const TaskProxy &task_proxy);
+    SuccessorGeneratorFactory();
     // Destructor cannot be implicit because OperatorInfo is forward-declared.
     ~SuccessorGeneratorFactory();
-    GeneratorPtr create();
+    GeneratorPtr create(const TaskProxy &task_proxy);
+    GeneratorPtr create(
+        const std::vector<int> &domain_sizes,
+        std::vector<std::vector<FactPair>> &&preconditions);
 };
 }
 

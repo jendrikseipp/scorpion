@@ -10,7 +10,13 @@ using namespace std;
 
 namespace successor_generator {
 SuccessorGenerator::SuccessorGenerator(const TaskProxy &task_proxy)
-    : root(SuccessorGeneratorFactory(task_proxy).create()) {
+    : root(SuccessorGeneratorFactory().create(task_proxy)) {
+}
+
+SuccessorGenerator::SuccessorGenerator(
+    const vector<int> &domain_sizes,
+    vector<vector<FactPair>> &&preconditions)
+    : root(SuccessorGeneratorFactory().create(domain_sizes, move(preconditions))) {
 }
 
 SuccessorGenerator::~SuccessorGenerator() = default;

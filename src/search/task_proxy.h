@@ -570,6 +570,9 @@ public:
         : task(&task), values(std::move(values)) {
         assert(static_cast<int>(size()) == this->task->get_num_variables());
     }
+    State(std::vector<int> &&values)
+        : task(nullptr), values(std::move(values)) {
+    }
     ~State() = default;
     State(const State &) = default;
 
@@ -597,6 +600,11 @@ public:
 
     std::size_t size() const {
         return values.size();
+    }
+
+    int get_value(std::size_t var_id) const {
+        assert(var_id < size());
+        return values[var_id];
     }
 
     FactProxy operator[](std::size_t var_id) const {
