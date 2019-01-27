@@ -152,6 +152,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
 bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<AbstractTask> &task,
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
+    const shared_ptr<TaskInfo> &evaluator_task_info,
     priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
@@ -207,7 +208,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         }
 
         projection_computation_timer->resume();
-        PatternEvaluator pattern_evaluator(task_proxy, pattern);
+        PatternEvaluator pattern_evaluator(task_proxy, evaluator_task_info, pattern);
         projection_computation_timer->stop();
 
         bool select_pattern = true;
@@ -251,6 +252,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     TaskProxy task_proxy(*task);
     shared_ptr<cost_saturation::TaskInfo> task_info =
         make_shared<cost_saturation::TaskInfo>(task_proxy);
+    shared_ptr<TaskInfo> evaluator_task_info = make_shared<TaskInfo>(task_proxy);
     if (ignore_useless_patterns) {
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
@@ -263,8 +265,8 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     while (!limit_reached) {
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
-            task, task_info, pq, projections, pattern_set, collection_size,
-            timer.get_remaining_time());
+            task, task_info, evaluator_task_info, pq, projections, pattern_set,
+            collection_size, timer.get_remaining_time());
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "
             << collection_size << endl;

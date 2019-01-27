@@ -24,6 +24,8 @@ class Timer;
 }
 
 namespace pdbs {
+struct TaskInfo;
+
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
     using PatternSet = utils::HashSet<Pattern>;
 
@@ -49,6 +51,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     bool select_systematic_patterns(
         const std::shared_ptr<AbstractTask> &task,
         const std::shared_ptr<cost_saturation::TaskInfo> &task_info,
+        const std::shared_ptr<TaskInfo> &evaluator_task_info,
         priority_queues::AdaptiveQueue<size_t> &pq,
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,

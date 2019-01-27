@@ -37,9 +37,30 @@ static int compute_hash_effect(
     return hash_effect;
 }
 
+OperatorInfo::OperatorInfo(const OperatorProxy &op)
+    : concrete_operator_id(op.get_id()) {
+    preconditions.reserve(op.get_preconditions().size());
+    for (FactProxy pre : op.get_preconditions()) {
+        preconditions.push_back(pre.get_pair());
+    }
+
+    effects.reserve(op.get_effects().size());
+    for (EffectProxy eff : op.get_effects()) {
+        effects.push_back(eff.get_fact().get_pair());
+    }
+}
+
+TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
+    operator_infos.reserve(task_proxy.get_operators().size());
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        operator_infos.emplace_back(op);
+    }
+}
+
 
 PatternEvaluator::PatternEvaluator(
     const TaskProxy &task_proxy,
+    const shared_ptr<TaskInfo> &task_info,
     const pdbs::Pattern &pattern)
     : task_proxy(task_proxy) {
     assert(utils::is_sorted_unique(pattern));
@@ -79,10 +100,9 @@ PatternEvaluator::PatternEvaluator(
     vector<vector<FactPair>> preconditions_per_operator;
 
     // Compute abstract forward and backward operators.
-    OperatorsProxy operators = task_proxy.get_operators();
-    for (OperatorProxy op : operators) {
+    for (OperatorInfo op_info : task_info->operator_infos) {
         build_abstract_operators(
-            pattern, hash_multipliers, op, -1, variable_to_pattern_index, domain_sizes,
+            pattern, hash_multipliers, op_info, -1, variable_to_pattern_index, domain_sizes,
             [this, &preconditions_per_operator](
                 const vector<FactPair> &prevail,
                 const vector<FactPair> &preconditions,
@@ -180,7 +200,7 @@ void PatternEvaluator::multiply_out(const Pattern &pattern,
 void PatternEvaluator::build_abstract_operators(
     const Pattern &pattern,
     const vector<size_t> &hash_multipliers,
-    const OperatorProxy &op, int cost,
+    const OperatorInfo &op, int cost,
     const vector<int> &variable_to_index,
     const vector<int> &domain_sizes,
     const OperatorCallback &callback) const {
@@ -197,13 +217,13 @@ void PatternEvaluator::build_abstract_operators(
     vector<bool> has_precond_and_effect_on_var(num_vars, false);
     vector<bool> has_precondition_on_var(num_vars, false);
 
-    for (FactProxy pre : op.get_preconditions())
-        has_precondition_on_var[pre.get_variable().get_id()] = true;
+    for (const FactPair &pre : op.preconditions)
+        has_precondition_on_var[pre.var] = true;
 
-    for (EffectProxy eff : op.get_effects()) {
-        int var_id = eff.get_fact().get_variable().get_id();
+    for (const FactPair &eff : op.effects) {
+        int var_id = eff.var;
         int pattern_var_id = variable_to_index[var_id];
-        int val = eff.get_fact().get_value();
+        int val = eff.value;
         if (pattern_var_id != -1) {
             if (has_precondition_on_var[var_id]) {
                 has_precond_and_effect_on_var[var_id] = true;
@@ -213,10 +233,10 @@ void PatternEvaluator::build_abstract_operators(
             }
         }
     }
-    for (FactProxy pre : op.get_preconditions()) {
-        int var_id = pre.get_variable().get_id();
+    for (const FactPair &pre : op.preconditions) {
+        int var_id = pre.var;
         int pattern_var_id = variable_to_index[var_id];
-        int val = pre.get_value();
+        int val = pre.value;
         if (pattern_var_id != -1) { // variable occurs in pattern
             if (has_precond_and_effect_on_var[var_id]) {
                 pre_pairs.emplace_back(pattern_var_id, val);
@@ -226,7 +246,8 @@ void PatternEvaluator::build_abstract_operators(
         }
     }
     multiply_out(
-        pattern, hash_multipliers, 0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
+        pattern, hash_multipliers, 0, cost, op.concrete_operator_id,
+        prev_pairs, pre_pairs, eff_pairs,
         effects_without_pre, domain_sizes, callback);
 }
 

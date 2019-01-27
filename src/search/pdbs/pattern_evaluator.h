@@ -29,6 +29,20 @@ struct AbstractBackwardOperator {
     }
 };
 
+struct OperatorInfo {
+    int concrete_operator_id;
+    std::vector<FactPair> preconditions;
+    std::vector<FactPair> effects;
+public:
+    explicit OperatorInfo(const OperatorProxy &op);
+};
+
+struct TaskInfo {
+    std::vector<OperatorInfo> operator_infos;
+public:
+    explicit TaskInfo(const TaskProxy &task_proxy);
+};
+
 class PatternEvaluator {
     using Facts = std::vector<FactPair>;
     using OperatorCallback =
@@ -63,7 +77,8 @@ class PatternEvaluator {
     void build_abstract_operators(
         const Pattern &pattern,
         const std::vector<std::size_t> &hash_multipliers,
-        const OperatorProxy &op, int cost,
+        const OperatorInfo &op,
+        int cost,
         const std::vector<int> &variable_to_pattern_index,
         const std::vector<int> &domain_sizes,
         const OperatorCallback &callback) const;
@@ -80,6 +95,7 @@ class PatternEvaluator {
 public:
     PatternEvaluator(
         const TaskProxy &task_proxy,
+        const std::shared_ptr<TaskInfo> &task_info,
         const pdbs::Pattern &pattern);
     ~PatternEvaluator();
 
