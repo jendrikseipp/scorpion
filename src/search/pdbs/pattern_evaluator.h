@@ -55,14 +55,14 @@ class PatternEvaluator {
         std::vector<FactPair> &pre_pairs,
         std::vector<FactPair> &eff_pairs,
         const std::vector<FactPair> &effects_without_pre,
-        const VariablesProxy &variables,
+        const std::vector<int> &domain_sizes,
         const OperatorCallback &callback) const;
 
     void build_abstract_operators(
         const std::vector<std::size_t> &hash_multipliers,
         const OperatorProxy &op, int cost,
         const std::vector<int> &variable_to_pattern_index,
-        const VariablesProxy &variables,
+        const std::vector<int> &domain_sizes,
         const OperatorCallback &callback) const;
 
     /*

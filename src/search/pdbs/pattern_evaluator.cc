@@ -67,10 +67,17 @@ PatternEvaluator::PatternEvaluator(
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_pattern_index[pattern[i]] = i;
     }
+
+    vector<int> domain_sizes;
+    domain_sizes.reserve(variables.size());
+    for (VariableProxy var : variables) {
+        domain_sizes.push_back(var.get_domain_size());
+    }
+
     vector<int> pattern_domain_sizes;
     pattern_domain_sizes.reserve(pattern.size());
     for (int pattern_var : pattern) {
-        pattern_domain_sizes.push_back(variables[pattern_var].get_domain_size());
+        pattern_domain_sizes.push_back(domain_sizes[pattern_var]);
     }
 
     match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
@@ -80,7 +87,7 @@ PatternEvaluator::PatternEvaluator(
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorProxy op : operators) {
         build_abstract_operators(
-            hash_multipliers, op, -1, variable_to_pattern_index, variables,
+            hash_multipliers, op, -1, variable_to_pattern_index, domain_sizes,
             [this](
                 const vector<FactPair> &prevail,
                 const vector<FactPair> &preconditions,
@@ -139,7 +146,7 @@ void PatternEvaluator::multiply_out(const vector<size_t> &hash_multipliers,
                                     vector<FactPair> &pre_pairs,
                                     vector<FactPair> &eff_pairs,
                                     const vector<FactPair> &effects_without_pre,
-                                    const VariablesProxy &variables,
+                                    const vector<int> &domain_sizes,
                                     const OperatorCallback &callback) const {
     if (pos == static_cast<int>(effects_without_pre.size())) {
         // All effects without precondition have been checked: insert op.
@@ -151,8 +158,7 @@ void PatternEvaluator::multiply_out(const vector<size_t> &hash_multipliers,
         // abstract operator.
         int var_id = effects_without_pre[pos].var;
         int eff = effects_without_pre[pos].value;
-        VariableProxy var = variables[pattern[var_id]];
-        for (int i = 0; i < var.get_domain_size(); ++i) {
+        for (int i = 0; i < domain_sizes[pattern[var_id]]; ++i) {
             if (i != eff) {
                 pre_pairs.emplace_back(var_id, i);
                 eff_pairs.emplace_back(var_id, eff);
@@ -161,7 +167,7 @@ void PatternEvaluator::multiply_out(const vector<size_t> &hash_multipliers,
             }
             multiply_out(hash_multipliers, pos + 1, cost, op_id,
                          prev_pairs, pre_pairs, eff_pairs,
-                         effects_without_pre, variables, callback);
+                         effects_without_pre, domain_sizes, callback);
             if (i != eff) {
                 pre_pairs.pop_back();
                 eff_pairs.pop_back();
@@ -176,7 +182,7 @@ void PatternEvaluator::build_abstract_operators(
     const vector<size_t> &hash_multipliers,
     const OperatorProxy &op, int cost,
     const vector<int> &variable_to_index,
-    const VariablesProxy &variables,
+    const vector<int> &domain_sizes,
     const OperatorCallback &callback) const {
     // All variable value pairs that are a prevail condition
     vector<FactPair> prev_pairs;
@@ -187,7 +193,7 @@ void PatternEvaluator::build_abstract_operators(
     // All variable value pairs that are a precondition (value = -1)
     vector<FactPair> effects_without_pre;
 
-    size_t num_vars = variables.size();
+    size_t num_vars = domain_sizes.size();
     vector<bool> has_precond_and_effect_on_var(num_vars, false);
     vector<bool> has_precondition_on_var(num_vars, false);
 
@@ -221,7 +227,7 @@ void PatternEvaluator::build_abstract_operators(
     }
     multiply_out(
         hash_multipliers, 0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
-        effects_without_pre, variables, callback);
+        effects_without_pre, domain_sizes, callback);
 }
 
 bool PatternEvaluator::is_consistent(
