@@ -38,19 +38,18 @@ class PatternEvaluator {
     // Number of abstract states in the PatternEvaluator.
     int num_states;
 
-    // Multipliers for each variable for perfect hash function.
-    std::vector<std::size_t> hash_multipliers;
-
     std::vector<int> goal_states;
 
     // Reuse the queue to save memory allocations.
     mutable priority_queues::AdaptiveQueue<size_t> pq;
 
     std::vector<int> compute_goal_states(
+        const std::vector<std::size_t> &hash_multipliers,
         const std::vector<int> &pattern_domain_sizes,
         const std::vector<int> &variable_to_pattern_index) const;
 
     void multiply_out(
+        const std::vector<size_t> &hash_multipliers,
         int pos, int cost, int op_id,
         std::vector<FactPair> &prev_pairs,
         std::vector<FactPair> &pre_pairs,
@@ -60,6 +59,7 @@ class PatternEvaluator {
         const OperatorCallback &callback) const;
 
     void build_abstract_operators(
+        const std::vector<std::size_t> &hash_multipliers,
         const OperatorProxy &op, int cost,
         const std::vector<int> &variable_to_pattern_index,
         const VariablesProxy &variables,
@@ -69,6 +69,7 @@ class PatternEvaluator {
       Return true iff all abstract facts hold in the given state.
     */
     bool is_consistent(
+        const std::vector<size_t> &hash_multipliers,
         const std::vector<int> &pattern_domain_sizes,
         std::size_t state_index,
         const std::vector<FactPair> &abstract_facts) const;

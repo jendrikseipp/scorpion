@@ -44,6 +44,7 @@ PatternEvaluator::PatternEvaluator(
       pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
 
+    vector<size_t> hash_multipliers;
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
     for (int pattern_var_id : pattern) {
@@ -77,7 +78,7 @@ PatternEvaluator::PatternEvaluator(
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorProxy op : operators) {
         build_abstract_operators(
-            op, -1, variable_to_pattern_index, variables,
+            hash_multipliers, op, -1, variable_to_pattern_index, variables,
             [this](
                 const vector<FactPair> &prevail,
                 const vector<FactPair> &preconditions,
@@ -98,13 +99,14 @@ PatternEvaluator::PatternEvaluator(
     }
     abstract_backward_operators.shrink_to_fit();
 
-    goal_states = compute_goal_states(pattern_domain_sizes, variable_to_pattern_index);
+    goal_states = compute_goal_states(hash_multipliers, pattern_domain_sizes, variable_to_pattern_index);
 }
 
 PatternEvaluator::~PatternEvaluator() {
 }
 
 vector<int> PatternEvaluator::compute_goal_states(
+    const vector<size_t> &hash_multipliers,
     const vector<int> &pattern_domain_sizes,
     const vector<int> &variable_to_pattern_index) const {
     vector<int> goal_states;
@@ -120,7 +122,8 @@ vector<int> PatternEvaluator::compute_goal_states(
     }
 
     for (int state_index = 0; state_index < num_states; ++state_index) {
-        if (is_consistent(pattern_domain_sizes, state_index, abstract_goals)) {
+        if (is_consistent(
+                hash_multipliers, pattern_domain_sizes, state_index, abstract_goals)) {
             goal_states.push_back(state_index);
         }
     }
@@ -128,7 +131,8 @@ vector<int> PatternEvaluator::compute_goal_states(
     return goal_states;
 }
 
-void PatternEvaluator::multiply_out(int pos, int cost, int op_id,
+void PatternEvaluator::multiply_out(const vector<size_t> &hash_multipliers,
+                                    int pos, int cost, int op_id,
                                     vector<FactPair> &prev_pairs,
                                     vector<FactPair> &pre_pairs,
                                     vector<FactPair> &eff_pairs,
@@ -153,7 +157,8 @@ void PatternEvaluator::multiply_out(int pos, int cost, int op_id,
             } else {
                 prev_pairs.emplace_back(var_id, i);
             }
-            multiply_out(pos + 1, cost, op_id, prev_pairs, pre_pairs, eff_pairs,
+            multiply_out(hash_multipliers, pos + 1, cost, op_id,
+                         prev_pairs, pre_pairs, eff_pairs,
                          effects_without_pre, variables, callback);
             if (i != eff) {
                 pre_pairs.pop_back();
@@ -166,6 +171,7 @@ void PatternEvaluator::multiply_out(int pos, int cost, int op_id,
 }
 
 void PatternEvaluator::build_abstract_operators(
+    const vector<size_t> &hash_multipliers,
     const OperatorProxy &op, int cost,
     const vector<int> &variable_to_index,
     const VariablesProxy &variables,
@@ -211,11 +217,13 @@ void PatternEvaluator::build_abstract_operators(
             }
         }
     }
-    multiply_out(0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
-                 effects_without_pre, variables, callback);
+    multiply_out(
+        hash_multipliers, 0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
+        effects_without_pre, variables, callback);
 }
 
 bool PatternEvaluator::is_consistent(
+    const vector<size_t> &hash_multipliers,
     const vector<int> &pattern_domain_sizes,
     size_t state_index,
     const vector<FactPair> &abstract_facts) const {
