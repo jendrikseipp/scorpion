@@ -44,10 +44,6 @@ public:
 };
 
 class PatternEvaluator {
-    using Facts = std::vector<FactPair>;
-    using OperatorCallback =
-        std::function<void (Facts &, Facts &, Facts &, int, const std::vector<size_t> &, int)>;
-
     TaskProxy task_proxy;
 
     std::vector<AbstractBackwardOperator> abstract_backward_operators;
@@ -72,7 +68,8 @@ class PatternEvaluator {
         std::vector<FactPair> &eff_pairs,
         const std::vector<FactPair> &effects_without_pre,
         const std::vector<int> &domain_sizes,
-        const OperatorCallback &callback) const;
+        std::vector<AbstractBackwardOperator> &abstract_backward_operators,
+        std::vector<std::vector<FactPair>> &preconditions_per_operator) const;
 
     void build_abstract_operators(
         const Pattern &pattern,
@@ -81,7 +78,8 @@ class PatternEvaluator {
         int cost,
         const std::vector<int> &variable_to_pattern_index,
         const std::vector<int> &domain_sizes,
-        const OperatorCallback &callback) const;
+        std::vector<AbstractBackwardOperator> &abstract_backward_operators,
+        std::vector<std::vector<FactPair>> &preconditions_per_operator) const;
 
     /*
       Return true iff all abstract facts hold in the given state.

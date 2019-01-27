@@ -102,23 +102,8 @@ PatternEvaluator::PatternEvaluator(
     // Compute abstract forward and backward operators.
     for (OperatorInfo op_info : task_info->operator_infos) {
         build_abstract_operators(
-            pattern, hash_multipliers, op_info, -1, variable_to_pattern_index, domain_sizes,
-            [this, &preconditions_per_operator](
-                const vector<FactPair> &prevail,
-                const vector<FactPair> &preconditions,
-                const vector<FactPair> &effects,
-                int,
-                const vector<size_t> &hash_multipliers,
-                int concrete_operator_id) {
-                abstract_backward_operators.emplace_back(
-                    concrete_operator_id,
-                    compute_hash_effect(preconditions, effects, hash_multipliers, false));
-                vector<FactPair> regression_preconditions = prevail;
-                regression_preconditions.insert(
-                    regression_preconditions.end(), effects.begin(), effects.end());
-                sort(regression_preconditions.begin(), regression_preconditions.end());
-                preconditions_per_operator.push_back(move(regression_preconditions));
-            });
+            pattern, hash_multipliers, op_info, -1, variable_to_pattern_index,
+            domain_sizes, abstract_backward_operators, preconditions_per_operator);
     }
     abstract_backward_operators.shrink_to_fit();
 
@@ -158,19 +143,28 @@ vector<int> PatternEvaluator::compute_goal_states(
     return goal_states;
 }
 
-void PatternEvaluator::multiply_out(const Pattern &pattern,
-                                    const vector<size_t> &hash_multipliers,
-                                    int pos, int cost, int op_id,
-                                    vector<FactPair> &prev_pairs,
-                                    vector<FactPair> &pre_pairs,
-                                    vector<FactPair> &eff_pairs,
-                                    const vector<FactPair> &effects_without_pre,
-                                    const vector<int> &domain_sizes,
-                                    const OperatorCallback &callback) const {
+void PatternEvaluator::multiply_out(
+    const Pattern &pattern,
+    const vector<size_t> &hash_multipliers,
+    int pos, int cost, int op_id,
+    vector<FactPair> &prevails,
+    vector<FactPair> &preconditions,
+    vector<FactPair> &effects,
+    const vector<FactPair> &effects_without_pre,
+    const vector<int> &domain_sizes,
+    vector<AbstractBackwardOperator> &abstract_backward_operators,
+    vector<vector<FactPair>> &preconditions_per_operator) const {
     if (pos == static_cast<int>(effects_without_pre.size())) {
         // All effects without precondition have been checked: insert op.
-        if (!eff_pairs.empty()) {
-            callback(prev_pairs, pre_pairs, eff_pairs, cost, hash_multipliers, op_id);
+        if (!effects.empty()) {
+            abstract_backward_operators.emplace_back(
+                op_id,
+                compute_hash_effect(preconditions, effects, hash_multipliers, false));
+            vector<FactPair> regression_preconditions = prevails;
+            regression_preconditions.insert(
+                regression_preconditions.end(), effects.begin(), effects.end());
+            sort(regression_preconditions.begin(), regression_preconditions.end());
+            preconditions_per_operator.push_back(move(regression_preconditions));
         }
     } else {
         // For each possible value for the current variable, build an
@@ -179,19 +173,20 @@ void PatternEvaluator::multiply_out(const Pattern &pattern,
         int eff = effects_without_pre[pos].value;
         for (int i = 0; i < domain_sizes[pattern[var_id]]; ++i) {
             if (i != eff) {
-                pre_pairs.emplace_back(var_id, i);
-                eff_pairs.emplace_back(var_id, eff);
+                preconditions.emplace_back(var_id, i);
+                effects.emplace_back(var_id, eff);
             } else {
-                prev_pairs.emplace_back(var_id, i);
+                prevails.emplace_back(var_id, i);
             }
             multiply_out(pattern, hash_multipliers, pos + 1, cost, op_id,
-                         prev_pairs, pre_pairs, eff_pairs,
-                         effects_without_pre, domain_sizes, callback);
+                         prevails, preconditions, effects,
+                         effects_without_pre, domain_sizes,
+                         abstract_backward_operators, preconditions_per_operator);
             if (i != eff) {
-                pre_pairs.pop_back();
-                eff_pairs.pop_back();
+                preconditions.pop_back();
+                effects.pop_back();
             } else {
-                prev_pairs.pop_back();
+                prevails.pop_back();
             }
         }
     }
@@ -203,7 +198,8 @@ void PatternEvaluator::build_abstract_operators(
     const OperatorInfo &op, int cost,
     const vector<int> &variable_to_index,
     const vector<int> &domain_sizes,
-    const OperatorCallback &callback) const {
+    vector<AbstractBackwardOperator> &abstract_backward_operators,
+    vector<vector<FactPair>> &preconditions_per_operator) const {
     // All variable value pairs that are a prevail condition
     vector<FactPair> prev_pairs;
     // All variable value pairs that are a precondition (value != -1)
@@ -248,7 +244,8 @@ void PatternEvaluator::build_abstract_operators(
     multiply_out(
         pattern, hash_multipliers, 0, cost, op.concrete_operator_id,
         prev_pairs, pre_pairs, eff_pairs,
-        effects_without_pre, domain_sizes, callback);
+        effects_without_pre, domain_sizes, abstract_backward_operators,
+        preconditions_per_operator);
 }
 
 bool PatternEvaluator::is_consistent(
