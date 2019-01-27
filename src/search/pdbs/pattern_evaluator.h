@@ -33,12 +33,10 @@ class PatternEvaluator {
         std::function<void (Facts &, Facts &, Facts &, int, const std::vector<size_t> &, int)>;
 
     TaskProxy task_proxy;
-    pdbs::Pattern pattern;
 
     std::vector<AbstractBackwardOperator> abstract_backward_operators;
     std::unique_ptr<pdbs::MatchTree> match_tree_backward;
 
-    // Number of abstract states in the PatternEvaluator.
     int num_states;
 
     std::vector<int> goal_states;
@@ -49,6 +47,7 @@ class PatternEvaluator {
         const std::vector<int> &variable_to_pattern_index) const;
 
     void multiply_out(
+        const Pattern &pattern,
         const std::vector<size_t> &hash_multipliers,
         int pos, int cost, int op_id,
         std::vector<FactPair> &prev_pairs,
@@ -59,6 +58,7 @@ class PatternEvaluator {
         const OperatorCallback &callback) const;
 
     void build_abstract_operators(
+        const Pattern &pattern,
         const std::vector<std::size_t> &hash_multipliers,
         const OperatorProxy &op, int cost,
         const std::vector<int> &variable_to_pattern_index,
@@ -83,8 +83,6 @@ public:
     bool is_useful(
         priority_queues::AdaptiveQueue<size_t> &pq,
         const std::vector<int> &costs) const;
-
-    const pdbs::Pattern &get_pattern() const;
 };
 }
 

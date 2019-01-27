@@ -42,8 +42,7 @@ static int compute_hash_effect(
 PatternEvaluator::PatternEvaluator(
     const TaskProxy &task_proxy,
     const pdbs::Pattern &pattern)
-    : task_proxy(task_proxy),
-      pattern(pattern) {
+    : task_proxy(task_proxy) {
     assert(utils::is_sorted_unique(pattern));
 
     vector<size_t> hash_multipliers;
@@ -87,7 +86,7 @@ PatternEvaluator::PatternEvaluator(
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorProxy op : operators) {
         build_abstract_operators(
-            hash_multipliers, op, -1, variable_to_pattern_index, domain_sizes,
+            pattern, hash_multipliers, op, -1, variable_to_pattern_index, domain_sizes,
             [this](
                 const vector<FactPair> &prevail,
                 const vector<FactPair> &preconditions,
@@ -140,7 +139,8 @@ vector<int> PatternEvaluator::compute_goal_states(
     return goal_states;
 }
 
-void PatternEvaluator::multiply_out(const vector<size_t> &hash_multipliers,
+void PatternEvaluator::multiply_out(const Pattern &pattern,
+                                    const vector<size_t> &hash_multipliers,
                                     int pos, int cost, int op_id,
                                     vector<FactPair> &prev_pairs,
                                     vector<FactPair> &pre_pairs,
@@ -165,7 +165,7 @@ void PatternEvaluator::multiply_out(const vector<size_t> &hash_multipliers,
             } else {
                 prev_pairs.emplace_back(var_id, i);
             }
-            multiply_out(hash_multipliers, pos + 1, cost, op_id,
+            multiply_out(pattern, hash_multipliers, pos + 1, cost, op_id,
                          prev_pairs, pre_pairs, eff_pairs,
                          effects_without_pre, domain_sizes, callback);
             if (i != eff) {
@@ -179,6 +179,7 @@ void PatternEvaluator::multiply_out(const vector<size_t> &hash_multipliers,
 }
 
 void PatternEvaluator::build_abstract_operators(
+    const Pattern &pattern,
     const vector<size_t> &hash_multipliers,
     const OperatorProxy &op, int cost,
     const vector<int> &variable_to_index,
@@ -226,7 +227,7 @@ void PatternEvaluator::build_abstract_operators(
         }
     }
     multiply_out(
-        hash_multipliers, 0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
+        pattern, hash_multipliers, 0, cost, op.get_id(), prev_pairs, pre_pairs, eff_pairs,
         effects_without_pre, domain_sizes, callback);
 }
 
@@ -293,9 +294,5 @@ bool PatternEvaluator::is_useful(
         }
     }
     return false;
-}
-
-const pdbs::Pattern &PatternEvaluator::get_pattern() const {
-    return pattern;
 }
 }
