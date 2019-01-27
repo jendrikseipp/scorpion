@@ -1,7 +1,7 @@
 #include "pattern_collection_generator_filtered_systematic.h"
 
 #include "pattern_collection_generator_systematic.h"
-#include "pattern_database.h"
+#include "pattern_evaluator.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -62,7 +62,7 @@ static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern)
     return size;
 }
 
-static bool contains_positive_finite_value(const vector<int> &values) {
+bool contains_positive_finite_value(const vector<int> &values) {
     return any_of(values.begin(), values.end(),
                   [](int v) {return v > 0 && v != numeric_limits<int>::max();});
 }
@@ -205,25 +205,30 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         }
 
         projection_computation_timer->resume();
-        unique_ptr<cost_saturation::Projection> projection =
-            utils::make_unique_ptr<cost_saturation::Projection>(task_proxy, task_info, pattern);
+        PatternEvaluator pattern_evaluator(task_proxy, pattern);
         projection_computation_timer->stop();
 
         bool select_pattern = true;
         if (saturate) {
             projection_evaluation_timer->resume();
-            vector<int> goal_distances = projection->compute_goal_distances(costs);
-            select_pattern = contains_positive_finite_value(goal_distances);
+            select_pattern = pattern_evaluator.is_useful(costs);
+            assert(select_pattern == contains_positive_finite_value(
+                       cost_saturation::Projection(
+                           task_proxy, task_info, pattern).compute_goal_distances(costs)));
             projection_evaluation_timer->stop();
-            if (select_pattern) {
-                vector<int> saturated_costs = projection->compute_saturated_costs(
-                    goal_distances, costs.size());
-                cost_saturation::reduce_costs(costs, saturated_costs);
-            }
         }
 
         if (select_pattern) {
             log << "Add pattern " << pattern << endl;
+            unique_ptr<cost_saturation::Projection> projection =
+                utils::make_unique_ptr<cost_saturation::Projection>(
+                    task_proxy, task_info, pattern);
+            if (saturate) {
+                vector<int> goal_distances = projection->compute_goal_distances(costs);
+                vector<int> saturated_costs = projection->compute_saturated_costs(
+                    goal_distances, costs.size());
+                cost_saturation::reduce_costs(costs, saturated_costs);
+            }
             projections->push_back(move(projection));
             pattern_set.insert(pattern);
             collection_size += pdb_size;

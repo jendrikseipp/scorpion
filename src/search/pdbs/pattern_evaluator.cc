@@ -235,7 +235,7 @@ bool PatternEvaluator::is_useful(const vector<int> &costs) const {
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
-    assert(pq.empty());
+    pq.clear();
     for (int goal : goal_states) {
         pq.push(0, goal);
         distances[goal] = 0;
@@ -275,7 +275,6 @@ bool PatternEvaluator::is_useful(const vector<int> &costs) const {
             }
         }
     }
-    pq.clear();
     return false;
 }
 
