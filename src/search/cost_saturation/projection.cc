@@ -31,10 +31,11 @@ static vector<int> get_abstract_preconditions(
     return abstract_preconditions;
 }
 
-static int compute_forward_hash_effect(
+static int compute_hash_effect(
     const vector<FactPair> &preconditions,
     const vector<FactPair> &effects,
-    const vector<size_t> &hash_multipliers) {
+    const vector<size_t> &hash_multipliers,
+    bool forward) {
     int hash_effect = 0;
     assert(preconditions.size() == effects.size());
     for (size_t i = 0; i < preconditions.size(); ++i) {
@@ -43,6 +44,9 @@ static int compute_forward_hash_effect(
         int old_val = preconditions[i].value;
         int new_val = effects[i].value;
         assert(old_val != -1);
+        if (!forward) {
+            swap(old_val, new_val);
+        }
         int effect = (new_val - old_val) * hash_multipliers[var];
         hash_effect += effect;
     }
@@ -166,7 +170,8 @@ Projection::Projection(
                     concrete_operator_id);
                 int abs_op_id = abstract_backward_operators.size();
                 abstract_backward_operators.emplace_back(
-                    concrete_operator_id, backward_match_op.get_hash_effect());
+                    concrete_operator_id,
+                    compute_hash_effect(preconditions, effects, hash_multipliers, false));
                 match_tree_backward->insert(abs_op_id, backward_match_op.get_regression_preconditions());
 
                 vector<int> abstract_preconditions = get_abstract_preconditions(
@@ -181,8 +186,8 @@ Projection::Projection(
 
                 abstract_forward_operators.emplace_back(
                     precondition_hash,
-                    compute_forward_hash_effect(
-                        preconditions, effects, hash_multipliers));
+                    compute_hash_effect(
+                        preconditions, effects, hash_multipliers, true));
             });
     }
     abstract_forward_operators.shrink_to_fit();
