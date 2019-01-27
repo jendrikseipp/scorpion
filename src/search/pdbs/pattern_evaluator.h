@@ -5,9 +5,12 @@
 
 #include "../task_proxy.h"
 
-#include "../algorithms/priority_queues.h"
-
 #include <vector>
+
+namespace priority_queues {
+template<typename Value>
+class AdaptiveQueue;
+}
 
 namespace pdbs {
 class MatchTree;
@@ -39,9 +42,6 @@ class PatternEvaluator {
     int num_states;
 
     std::vector<int> goal_states;
-
-    // Reuse the queue to save memory allocations.
-    mutable priority_queues::AdaptiveQueue<size_t> pq;
 
     std::vector<int> compute_goal_states(
         const std::vector<std::size_t> &hash_multipliers,
@@ -80,7 +80,9 @@ public:
         const pdbs::Pattern &pattern);
     ~PatternEvaluator();
 
-    bool is_useful(const std::vector<int> &costs) const;
+    bool is_useful(
+        priority_queues::AdaptiveQueue<size_t> &pq,
+        const std::vector<int> &costs) const;
 
     const pdbs::Pattern &get_pattern() const;
 };

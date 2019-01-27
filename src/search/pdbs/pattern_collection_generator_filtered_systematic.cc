@@ -7,6 +7,7 @@
 #include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../algorithms/priority_queues.h"
 #include "../cost_saturation/projection.h"
 #include "../cost_saturation/utils.h"
 #include "../task_utils/task_properties.h"
@@ -151,6 +152,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
 bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<AbstractTask> &task,
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
+    priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
     int64_t &collection_size,
@@ -211,7 +213,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         bool select_pattern = true;
         if (saturate) {
             projection_evaluation_timer->resume();
-            select_pattern = pattern_evaluator.is_useful(costs);
+            select_pattern = pattern_evaluator.is_useful(pq, costs);
             assert(select_pattern == contains_positive_finite_value(
                        cost_saturation::Projection(
                            task_proxy, task_info, pattern).compute_goal_distances(costs)));
@@ -252,6 +254,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     if (ignore_useless_patterns) {
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
+    priority_queues::AdaptiveQueue<size_t> pq;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     int64_t collection_size = 0;
@@ -260,7 +263,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     while (!limit_reached) {
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
-            task, task_info, projections, pattern_set, collection_size,
+            task, task_info, pq, projections, pattern_set, collection_size,
             timer.get_remaining_time());
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "

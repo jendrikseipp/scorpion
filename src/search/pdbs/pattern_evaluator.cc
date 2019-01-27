@@ -1,6 +1,8 @@
 #include "pattern_evaluator.h"
 
-#include "../pdbs/match_tree.h"
+#include "match_tree.h"
+
+#include "../algorithms/priority_queues.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -238,7 +240,8 @@ bool PatternEvaluator::is_consistent(
     return true;
 }
 
-bool PatternEvaluator::is_useful(const vector<int> &costs) const {
+bool PatternEvaluator::is_useful(
+    priority_queues::AdaptiveQueue<size_t> &pq, const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     vector<int> distances(num_states, INF);
 

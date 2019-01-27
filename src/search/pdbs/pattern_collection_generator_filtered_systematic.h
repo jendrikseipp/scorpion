@@ -14,6 +14,11 @@ namespace options {
 class Options;
 }
 
+namespace priority_queues {
+template<typename Value>
+class AdaptiveQueue;
+}
+
 namespace utils {
 class Timer;
 }
@@ -44,6 +49,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     bool select_systematic_patterns(
         const std::shared_ptr<AbstractTask> &task,
         const std::shared_ptr<cost_saturation::TaskInfo> &task_info,
+        priority_queues::AdaptiveQueue<size_t> &pq,
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,
         int64_t &collection_size,
