@@ -137,7 +137,7 @@ Projection::Projection(
     }
 
     VariablesProxy variables = task_proxy.get_variables();
-    variable_to_pattern_index.resize(variables.size(), -1);
+    vector<int> variable_to_pattern_index(variables.size(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_pattern_index[pattern[i]] = i;
     }
@@ -188,7 +188,7 @@ Projection::Projection(
     abstract_forward_operators.shrink_to_fit();
     abstract_backward_operators.shrink_to_fit();
 
-    goal_states = compute_goal_states();
+    goal_states = compute_goal_states(variable_to_pattern_index);
 }
 
 Projection::~Projection() {
@@ -220,7 +220,8 @@ vector<int> Projection::compute_active_operators() const {
     return active_operators;
 }
 
-vector<int> Projection::compute_goal_states() const {
+vector<int> Projection::compute_goal_states(
+    const vector<int> &variable_to_pattern_index) const {
     vector<int> goal_states;
 
     // Compute abstract goal var-val pairs.

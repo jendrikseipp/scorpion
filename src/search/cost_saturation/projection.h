@@ -80,12 +80,6 @@ class Projection : public Abstraction {
     // Multipliers for each variable for perfect hash function.
     std::vector<std::size_t> hash_multipliers;
 
-    /*
-      For each variable store its index in the pattern or -1 if it is not in
-      the pattern.
-    */
-    std::vector<int> variable_to_pattern_index;
-
     // Domain size of each variable in the pattern.
     std::vector<int> pattern_domain_sizes;
 
@@ -102,7 +96,8 @@ class Projection : public Abstraction {
     bool operator_induces_loop(const OperatorProxy &op) const;
 
     std::vector<int> compute_active_operators() const;
-    std::vector<int> compute_goal_states() const;
+    std::vector<int> compute_goal_states(
+        const std::vector<int> &variable_to_pattern_index) const;
 
     /*
       Given an abstract state (represented as a vector of facts), compute the
@@ -124,9 +119,10 @@ class Projection : public Abstraction {
             const AbstractForwardOperator &op = abstract_forward_operators[op_id];
             int concrete_op_id = abstract_backward_operators[op_id].concrete_operator_id;
             abstract_facts.clear();
-            for (int var : pattern) {
+            for (size_t i = 0; i < pattern.size(); ++i) {
+                int var = pattern[i];
                 if (!task_info->operator_mentions_variable(concrete_op_id, var)) {
-                    abstract_facts.emplace_back(variable_to_pattern_index[var], 0);
+                    abstract_facts.emplace_back(i, 0);
                 }
             }
 
