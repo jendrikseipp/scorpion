@@ -3,7 +3,6 @@
 #include "types.h"
 
 #include "../pdbs/match_tree.h"
-#include "../pdbs/pattern_database.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -162,17 +161,18 @@ Projection::Projection(
                 const vector<FactPair> &prevail,
                 const vector<FactPair> &preconditions,
                 const vector<FactPair> &effects,
-                int cost,
+                int,
                 const vector<size_t> &hash_multipliers,
                 int concrete_operator_id) {
-                pdbs::AbstractOperator backward_match_op(
-                    prevail, preconditions, effects, cost, hash_multipliers,
-                    concrete_operator_id);
                 int abs_op_id = abstract_backward_operators.size();
                 abstract_backward_operators.emplace_back(
                     concrete_operator_id,
                     compute_hash_effect(preconditions, effects, hash_multipliers, false));
-                match_tree_backward->insert(abs_op_id, backward_match_op.get_regression_preconditions());
+                vector<FactPair> regression_preconditions = prevail;
+                regression_preconditions.insert(
+                    regression_preconditions.end(), effects.begin(), effects.end());
+                sort(regression_preconditions.begin(), regression_preconditions.end());
+                match_tree_backward->insert(abs_op_id, regression_preconditions);
 
                 vector<int> abstract_preconditions = get_abstract_preconditions(
                     prevail, preconditions, hash_multipliers);
