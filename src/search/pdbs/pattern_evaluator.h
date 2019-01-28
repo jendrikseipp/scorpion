@@ -12,11 +12,9 @@ template<typename Value>
 class AdaptiveQueue;
 }
 
-namespace successor_generator {
-class SuccessorGenerator;
-}
-
 namespace pdbs {
+class MatchTree;
+
 struct AbstractBackwardOperator {
     int concrete_operator_id;
     int hash_effect;
@@ -54,11 +52,10 @@ class PatternEvaluator {
     TaskProxy task_proxy;
 
     std::vector<AbstractBackwardOperator> abstract_backward_operators;
-    std::unique_ptr<successor_generator::SuccessorGenerator> backward_successor_generator;
+    std::unique_ptr<pdbs::MatchTree> match_tree_backward;
 
     int num_states;
-    std::vector<std::size_t> hash_multipliers;
-    std::vector<int> pattern_domain_sizes;
+
     std::vector<int> goal_states;
 
     std::vector<int> compute_goal_states(
@@ -69,14 +66,12 @@ class PatternEvaluator {
     void multiply_out(
         const Pattern &pattern,
         const std::vector<size_t> &hash_multipliers,
-        int pos, int cost, int op_id,
+        int pos, int cost, int conc_op_id,
         std::vector<FactPair> &prev_pairs,
         std::vector<FactPair> &pre_pairs,
         std::vector<FactPair> &eff_pairs,
         const std::vector<FactPair> &effects_without_pre,
-        const std::vector<int> &domain_sizes,
-        std::vector<AbstractBackwardOperator> &abstract_backward_operators,
-        std::vector<std::vector<FactPair>> &preconditions_per_operator) const;
+        const std::vector<int> &domain_sizes);
 
     void build_abstract_operators(
         const Pattern &pattern,
@@ -84,9 +79,7 @@ class PatternEvaluator {
         const OperatorInfo &op,
         int cost,
         const std::vector<int> &variable_to_pattern_index,
-        const std::vector<int> &domain_sizes,
-        std::vector<AbstractBackwardOperator> &abstract_backward_operators,
-        std::vector<std::vector<FactPair>> &preconditions_per_operator) const;
+        const std::vector<int> &domain_sizes);
 
     /*
       Return true iff all abstract facts hold in the given state.

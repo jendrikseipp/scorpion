@@ -6,7 +6,6 @@
 #include <memory>
 #include <vector>
 
-struct FactPair;
 class GlobalState;
 class OperatorID;
 class State;
@@ -20,9 +19,6 @@ class SuccessorGenerator {
 
 public:
     explicit SuccessorGenerator(const TaskProxy &task_proxy);
-    SuccessorGenerator(
-        const std::vector<int> &domain_sizes,
-        std::vector<std::vector<FactPair>> &&preconditions);
     /*
       We cannot use the default destructor (implicitly or explicitly)
       here because GeneratorBase is a forward declaration and the
