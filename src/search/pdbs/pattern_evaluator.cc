@@ -44,11 +44,13 @@ OperatorInfo::OperatorInfo(const OperatorProxy &op)
     for (FactProxy pre : op.get_preconditions()) {
         preconditions.push_back(pre.get_pair());
     }
+    sort(preconditions.begin(), preconditions.end());
 
     effects.reserve(op.get_effects().size());
     for (EffectProxy eff : op.get_effects()) {
         effects.push_back(eff.get_fact().get_pair());
     }
+    sort(effects.begin(), effects.end());
 }
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
