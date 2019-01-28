@@ -208,7 +208,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         }
 
         projection_computation_timer->resume();
-        PatternEvaluator pattern_evaluator(task_proxy, evaluator_task_info, pattern);
+        PatternEvaluator pattern_evaluator(task_proxy, evaluator_task_info, pattern, costs);
         projection_computation_timer->stop();
 
         bool select_pattern = true;

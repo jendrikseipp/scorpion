@@ -15,6 +15,9 @@ class AdaptiveQueue;
 namespace pdbs {
 class MatchTree;
 
+using AbstractOperatorSet = utils::HashMap<
+    std::vector<FactPair>, std::vector<std::vector<FactPair>>>;
+
 struct AbstractBackwardOperator {
     int concrete_operator_id;
     int hash_effect;
@@ -94,7 +97,8 @@ public:
     PatternEvaluator(
         const TaskProxy &task_proxy,
         const TaskInfo &task_info,
-        const pdbs::Pattern &pattern);
+        const pdbs::Pattern &pattern,
+        const std::vector<int> &costs);
     ~PatternEvaluator();
 
     bool is_useful(

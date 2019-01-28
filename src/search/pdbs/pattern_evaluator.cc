@@ -78,11 +78,63 @@ bool TaskInfo::operator_affects_pattern(const Pattern &pattern, int op_id) const
     return false;
 }
 
+static bool operator_is_subsumed(
+    const OperatorInfo &op,
+    const vector<int> &variable_to_pattern_index,
+    AbstractOperatorSet &seen_abstract_ops) {
+    vector<FactPair> abstract_preconditions;
+    for (const FactPair &pre : op.preconditions) {
+        int pattern_var_id = variable_to_pattern_index[pre.var];
+        if (pattern_var_id != -1) {
+            abstract_preconditions.emplace_back(pattern_var_id, pre.value);
+        }
+    }
+
+    vector<FactPair> abstract_effects;
+    for (const FactPair &eff : op.effects) {
+        int pattern_var_id = variable_to_pattern_index[eff.var];
+        if (pattern_var_id != -1) {
+            abstract_effects.emplace_back(pattern_var_id, eff.value);
+        }
+    }
+
+    assert(is_sorted(abstract_preconditions.begin(), abstract_preconditions.end()));
+    assert(is_sorted(abstract_effects.begin(), abstract_effects.end()));
+
+    auto it = seen_abstract_ops.find(abstract_effects);
+    if (it == seen_abstract_ops.end()) {
+        seen_abstract_ops[move(abstract_effects)] = {abstract_preconditions};
+    } else {
+        vector<vector<FactPair>> &seen_preconditions = it->second;
+        for (const vector<FactPair> &preconditions : seen_preconditions) {
+            if (includes(
+                    abstract_preconditions.begin(), abstract_preconditions.end(),
+                    preconditions.begin(), preconditions.end())) {
+                return true;
+            }
+        }
+        seen_preconditions.push_back(move(abstract_preconditions));
+    }
+    return false;
+}
+
+struct SortByCost {
+    const vector<int> &costs;
+    SortByCost (const vector<int> &costs)
+        : costs(costs) {
+    }
+
+    bool operator()(int i, int j) {
+        return costs[i] < costs[j];
+    }
+};
+
 
 PatternEvaluator::PatternEvaluator(
     const TaskProxy &task_proxy,
     const TaskInfo &task_info,
-    const pdbs::Pattern &pattern)
+    const pdbs::Pattern &pattern,
+    const vector<int> &costs)
     : task_proxy(task_proxy) {
     assert(utils::is_sorted_unique(pattern));
 
@@ -124,9 +176,18 @@ PatternEvaluator::PatternEvaluator(
         task_proxy, pattern, hash_multipliers);
     vector<vector<FactPair>> preconditions_per_operator;
 
-    // Compute abstract forward and backward operators.
+    vector<int> sorted_active_op_ids;
     for (const OperatorInfo &op : task_info.operator_infos) {
         if (task_info.operator_affects_pattern(pattern, op.concrete_operator_id)) {
+            sorted_active_op_ids.push_back(op.concrete_operator_id);
+        }
+    }
+    sort(sorted_active_op_ids.begin(), sorted_active_op_ids.end(), SortByCost(costs));
+
+    AbstractOperatorSet seen_abstract_ops;
+    for (int op_id : sorted_active_op_ids) {
+        const OperatorInfo &op = task_info.operator_infos[op_id];
+        if (!operator_is_subsumed(op, variable_to_pattern_index, seen_abstract_ops)) {
             build_abstract_operators(
                 pattern, hash_multipliers, op, -1, variable_to_pattern_index,
                 domain_sizes);
@@ -249,6 +310,7 @@ void PatternEvaluator::build_abstract_operators(
             }
         }
     }
+
     for (const FactPair &pre : op.preconditions) {
         int var_id = pre.var;
         int pattern_var_id = variable_to_index[var_id];
@@ -261,6 +323,7 @@ void PatternEvaluator::build_abstract_operators(
             }
         }
     }
+
     multiply_out(
         pattern, hash_multipliers, 0, cost, op.concrete_operator_id,
         prev_pairs, pre_pairs, eff_pairs, effects_without_pre, domain_sizes);
