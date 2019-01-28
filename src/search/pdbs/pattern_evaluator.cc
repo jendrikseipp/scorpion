@@ -100,7 +100,7 @@ PatternEvaluator::PatternEvaluator(
     vector<vector<FactPair>> preconditions_per_operator;
 
     // Compute abstract forward and backward operators.
-    for (OperatorInfo op_info : task_info->operator_infos) {
+    for (const OperatorInfo &op_info : task_info->operator_infos) {
         build_abstract_operators(
             pattern, hash_multipliers, op_info, -1, variable_to_pattern_index,
             domain_sizes, abstract_backward_operators, preconditions_per_operator);
@@ -195,7 +195,8 @@ void PatternEvaluator::multiply_out(
 void PatternEvaluator::build_abstract_operators(
     const Pattern &pattern,
     const vector<size_t> &hash_multipliers,
-    const OperatorInfo &op, int cost,
+    const OperatorInfo &op,
+    int cost,
     const vector<int> &variable_to_index,
     const vector<int> &domain_sizes,
     vector<AbstractBackwardOperator> &abstract_backward_operators,
