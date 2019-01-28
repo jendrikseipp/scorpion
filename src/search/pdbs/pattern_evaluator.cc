@@ -51,10 +51,28 @@ OperatorInfo::OperatorInfo(const OperatorProxy &op)
 }
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
-    operator_infos.reserve(task_proxy.get_operators().size());
+    num_variables = task_proxy.get_variables().size();
+    int num_operators = task_proxy.get_operators().size();
+    operator_infos.reserve(num_operators);
     for (OperatorProxy op : task_proxy.get_operators()) {
         operator_infos.emplace_back(op);
     }
+
+    variable_effects.resize(num_operators * num_variables, false);
+    for (const OperatorInfo &op : operator_infos) {
+        for (const FactPair &effect : op.effects) {
+            variable_effects[op.concrete_operator_id * num_variables + effect.var] = true;
+        }
+    }
+}
+
+bool TaskInfo::operator_affects_pattern(const Pattern &pattern, int op_id) const {
+    for (int var : pattern) {
+        if (variable_effects[op_id * num_variables + var]) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -100,10 +118,12 @@ PatternEvaluator::PatternEvaluator(
     vector<vector<FactPair>> preconditions_per_operator;
 
     // Compute abstract forward and backward operators.
-    for (const OperatorInfo &op_info : task_info.operator_infos) {
-        build_abstract_operators(
-            pattern, hash_multipliers, op_info, -1, variable_to_pattern_index,
-            domain_sizes, abstract_backward_operators, preconditions_per_operator);
+    for (const OperatorInfo &op : task_info.operator_infos) {
+        if (task_info.operator_affects_pattern(pattern, op.concrete_operator_id)) {
+            build_abstract_operators(
+                pattern, hash_multipliers, op, -1, variable_to_pattern_index,
+                domain_sizes, abstract_backward_operators, preconditions_per_operator);
+        }
     }
     abstract_backward_operators.shrink_to_fit();
 
