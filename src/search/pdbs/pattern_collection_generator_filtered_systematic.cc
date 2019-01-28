@@ -152,7 +152,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
 bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<AbstractTask> &task,
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
-    const shared_ptr<TaskInfo> &evaluator_task_info,
+    const TaskInfo &evaluator_task_info,
     priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
@@ -252,7 +252,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     TaskProxy task_proxy(*task);
     shared_ptr<cost_saturation::TaskInfo> task_info =
         make_shared<cost_saturation::TaskInfo>(task_proxy);
-    shared_ptr<TaskInfo> evaluator_task_info = make_shared<TaskInfo>(task_proxy);
+    TaskInfo evaluator_task_info(task_proxy);
     if (ignore_useless_patterns) {
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }

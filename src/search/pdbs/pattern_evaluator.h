@@ -93,7 +93,7 @@ class PatternEvaluator {
 public:
     PatternEvaluator(
         const TaskProxy &task_proxy,
-        const std::shared_ptr<TaskInfo> &task_info,
+        const TaskInfo &task_info,
         const pdbs::Pattern &pattern);
     ~PatternEvaluator();
 

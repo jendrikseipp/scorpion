@@ -60,7 +60,7 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
 
 PatternEvaluator::PatternEvaluator(
     const TaskProxy &task_proxy,
-    const shared_ptr<TaskInfo> &task_info,
+    const TaskInfo &task_info,
     const pdbs::Pattern &pattern)
     : task_proxy(task_proxy) {
     assert(utils::is_sorted_unique(pattern));
@@ -100,7 +100,7 @@ PatternEvaluator::PatternEvaluator(
     vector<vector<FactPair>> preconditions_per_operator;
 
     // Compute abstract forward and backward operators.
-    for (const OperatorInfo &op_info : task_info->operator_infos) {
+    for (const OperatorInfo &op_info : task_info.operator_infos) {
         build_abstract_operators(
             pattern, hash_multipliers, op_info, -1, variable_to_pattern_index,
             domain_sizes, abstract_backward_operators, preconditions_per_operator);
