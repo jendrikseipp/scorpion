@@ -106,6 +106,8 @@ static bool operator_is_subsumed(
         seen_abstract_ops[move(abstract_effects)] = {abstract_preconditions};
     } else {
         vector<vector<FactPair>> &seen_preconditions = it->second;
+
+        // Find precondition more general than the new one.
         for (const vector<FactPair> &preconditions : seen_preconditions) {
             if (includes(
                     abstract_preconditions.begin(), abstract_preconditions.end(),
@@ -113,6 +115,17 @@ static bool operator_is_subsumed(
                 return true;
             }
         }
+
+        // Optimization: remove preconditions less general than the new one.
+        for (size_t i = 0; i < seen_preconditions.size(); ++i) {
+            const vector<FactPair> &preconditions = seen_preconditions[i];
+            if (includes(
+                    preconditions.begin(), preconditions.end(),
+                    abstract_preconditions.begin(), abstract_preconditions.end())) {
+                utils::swap_and_pop_from_vector(seen_preconditions, i);
+            }
+        }
+
         seen_preconditions.push_back(move(abstract_preconditions));
     }
     return false;
