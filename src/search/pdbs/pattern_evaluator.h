@@ -5,6 +5,8 @@
 
 #include "../task_proxy.h"
 
+#include "../algorithms/array_pool.h"
+
 #include <vector>
 
 namespace priority_queues {
@@ -55,7 +57,9 @@ public:
 };
 
 class PartialStateCollection {
-    std::vector<std::vector<FactPair>> partial_states;
+    array_pool::ArrayPool<FactPair> partial_states;
+    std::vector<array_pool::ArrayPoolIndex<FactPair>> indices;
+    std::vector<int> sizes;
 
 public:
     void add(std::vector<FactPair> &&facts);

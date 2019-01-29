@@ -80,15 +80,18 @@ bool TaskInfo::operator_affects_pattern(const Pattern &pattern, int op_id) const
 
 void PartialStateCollection::add(vector<FactPair> &&facts) {
     assert(is_sorted(facts.begin(), facts.end()));
-    partial_states.push_back(move(facts));
+    sizes.push_back(facts.size());
+    indices.push_back(partial_states.append(move(facts)));
 }
 
 bool PartialStateCollection::subsumes(const std::vector<FactPair> &facts) const {
     assert(is_sorted(facts.begin(), facts.end()));
-    for (const vector<FactPair> &partial_state : partial_states) {
+    for (size_t i = 0; i < indices.size(); ++i) {
+        array_pool::ArrayPoolSlice<FactPair> slice =
+            partial_states.get_slice(indices[i], sizes[i]);
         if (includes(
                 facts.begin(), facts.end(),
-                partial_state.begin(), partial_state.end())) {
+                slice.begin(), slice.end())) {
             return true;
         }
     }
