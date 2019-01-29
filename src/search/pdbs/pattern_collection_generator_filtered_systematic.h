@@ -25,6 +25,7 @@ class Timer;
 
 namespace pdbs {
 enum class DeadEndTreatment;
+class PartialStateCollection;
 struct TaskInfo;
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
@@ -54,6 +55,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
         const std::shared_ptr<AbstractTask> &task,
         const std::shared_ptr<cost_saturation::TaskInfo> &task_info,
         const TaskInfo &evaluator_task_info,
+        PartialStateCollection &dead_ends,
         priority_queues::AdaptiveQueue<size_t> &pq,
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,

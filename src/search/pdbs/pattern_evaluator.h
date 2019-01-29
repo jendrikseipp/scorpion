@@ -107,6 +107,11 @@ class PatternEvaluator {
         std::size_t state_index,
         const std::vector<FactPair> &abstract_facts) const;
 
+    bool detects_new_dead_ends(
+        const Pattern &pattern,
+        const std::vector<int> &distances,
+        PartialStateCollection &dead_ends) const;
+
 public:
     PatternEvaluator(
         const TaskProxy &task_proxy,
@@ -116,7 +121,9 @@ public:
     ~PatternEvaluator();
 
     bool is_useful(
+        const Pattern &pattern,
         priority_queues::AdaptiveQueue<size_t> &pq,
+        PartialStateCollection &dead_ends,
         DeadEndTreatment dead_end_treatment,
         const std::vector<int> &costs) const;
 };

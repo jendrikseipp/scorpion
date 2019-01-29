@@ -79,10 +79,12 @@ bool TaskInfo::operator_affects_pattern(const Pattern &pattern, int op_id) const
 }
 
 void PartialStateCollection::add(vector<FactPair> &&facts) {
+    assert(is_sorted(facts.begin(), facts.end()));
     partial_states.push_back(move(facts));
 }
 
 bool PartialStateCollection::subsumes(const std::vector<FactPair> &facts) const {
+    assert(is_sorted(facts.begin(), facts.end()));
     for (const vector<FactPair> &partial_state : partial_states) {
         if (includes(
                 facts.begin(), facts.end(),
@@ -360,8 +362,39 @@ bool PatternEvaluator::is_consistent(
     return true;
 }
 
+bool PatternEvaluator::detects_new_dead_ends(
+    const Pattern &pattern,
+    const vector<int> &distances,
+    PartialStateCollection &dead_ends) const {
+    const vector<size_t> &hash_multipliers = match_tree_backward->get_hash_multipliers();
+    int pattern_size = hash_multipliers.size();
+    bool new_dead_end_detected = false;
+    for (size_t index = 0; index < distances.size(); ++index) {
+        if (distances[index] == INF) {
+            // Reverse index to partial state.
+            vector<FactPair> partial_state;
+            partial_state.reserve(pattern_size);
+            int remaining_index = index;
+            for (int i = pattern_size - 1; i >= 0; --i) {
+                int var = pattern[i];
+                int value = remaining_index / hash_multipliers[i];
+                partial_state.emplace_back(var, value);
+                remaining_index -= value * hash_multipliers[i];
+            }
+            reverse(partial_state.begin(), partial_state.end());
+            if (!dead_ends.subsumes(partial_state)) {
+                new_dead_end_detected = true;
+                dead_ends.add(move(partial_state));
+            }
+        }
+    }
+    return new_dead_end_detected;
+}
+
 bool PatternEvaluator::is_useful(
+    const Pattern &pattern,
     priority_queues::AdaptiveQueue<size_t> &pq,
+    PartialStateCollection &dead_ends,
     DeadEndTreatment dead_end_treatment,
     const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
@@ -412,16 +445,20 @@ bool PatternEvaluator::is_useful(
         }
     }
 
+    bool has_dead_end = (num_settled < num_states);
+    assert(has_dead_end ==
+           any_of(distances.begin(), distances.end(), [](int d) {return d == INF;}));
     if (dead_end_treatment == DeadEndTreatment::IGNORE) {
         return false;
     } else if (dead_end_treatment == DeadEndTreatment::ALL) {
-        bool has_dead_end = (num_settled < num_states);
-        assert(has_dead_end == any_of(
-                   distances.begin(), distances.end(), [](int d) {return d == INF;}));
         return has_dead_end;
     } else {
         assert(dead_end_treatment == DeadEndTreatment::NEW);
-        ABORT("not implemented");
+        if (has_dead_end) {
+            return detects_new_dead_ends(pattern, distances, dead_ends);
+        } else {
+            return false;
+        }
     }
 }
 }

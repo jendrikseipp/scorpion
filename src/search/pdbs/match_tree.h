@@ -52,6 +52,9 @@ public:
     void get_applicable_operators(
         size_t state_index,
         std::vector<int> &applicable_operators) const;
+    const std::vector<std::size_t> &get_hash_multipliers() const {
+        return hash_multipliers;
+    }
     void dump() const;
 };
 }

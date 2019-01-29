@@ -154,6 +154,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<AbstractTask> &task,
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
     const TaskInfo &evaluator_task_info,
+    PartialStateCollection &dead_ends,
     priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
@@ -215,7 +216,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         bool select_pattern = true;
         if (saturate) {
             projection_evaluation_timer->resume();
-            select_pattern = pattern_evaluator.is_useful(pq, dead_end_treatment, costs);
+            select_pattern = pattern_evaluator.is_useful(
+                pattern, pq, dead_ends, dead_end_treatment, costs);
             projection_evaluation_timer->stop();
 #ifndef NDEBUG
             vector<int> goal_distances = cost_saturation::Projection(
@@ -229,7 +231,6 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                               [](int d) {return d > 0;}));
             } else {
                 assert(dead_end_treatment == DeadEndTreatment::NEW);
-                ABORT("not implemented");
             }
 #endif
         }
@@ -270,6 +271,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
     priority_queues::AdaptiveQueue<size_t> pq;
+    PartialStateCollection dead_ends;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     int64_t collection_size = 0;
@@ -278,8 +280,8 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     while (!limit_reached) {
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
-            task, task_info, evaluator_task_info, pq, projections, pattern_set,
-            collection_size, timer.get_remaining_time());
+            task, task_info, evaluator_task_info, dead_ends, pq, projections,
+            pattern_set, collection_size, timer.get_remaining_time());
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "
             << collection_size << endl;
