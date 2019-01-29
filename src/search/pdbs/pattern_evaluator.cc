@@ -119,21 +119,14 @@ static bool operator_is_subsumed(
 
     auto it = seen_abstract_ops.find(abstract_effects);
     if (it == seen_abstract_ops.end()) {
-        seen_abstract_ops[move(abstract_effects)] = {abstract_preconditions};
+        seen_abstract_ops[move(abstract_effects)].add(move(abstract_preconditions));
     } else {
-        vector<vector<FactPair>> &seen_preconditions = it->second;
-
-        // Find an old precondition that is more general than the new one.
-        for (const vector<FactPair> &preconditions : seen_preconditions) {
-            if (includes(
-                    abstract_preconditions.begin(), abstract_preconditions.end(),
-                    preconditions.begin(), preconditions.end())) {
-                return true;
-            }
+        PartialStateCollection &preconditions_collection = it->second;
+        if (preconditions_collection.subsumes(abstract_preconditions)) {
+            return true;
+        } else {
+            preconditions_collection.add(move(abstract_preconditions));
         }
-
-        seen_preconditions.push_back(move(abstract_preconditions));
-
         /* Note: we could remove old preconditions that are less general than
            the new one, but experiments showed that this hurts performance. */
     }

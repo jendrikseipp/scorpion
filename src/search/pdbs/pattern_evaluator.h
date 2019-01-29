@@ -15,9 +15,6 @@ class AdaptiveQueue;
 namespace pdbs {
 class MatchTree;
 
-using AbstractOperatorSet = utils::HashMap<
-    std::vector<FactPair>, std::vector<std::vector<FactPair>>>;
-
 enum class DeadEndTreatment {
     IGNORE,
     ALL,
@@ -64,6 +61,9 @@ public:
     void add(std::vector<FactPair> &&facts);
     bool subsumes(const std::vector<FactPair> &facts) const;
 };
+
+using AbstractOperatorSet = utils::HashMap<
+    std::vector<FactPair>, PartialStateCollection>;
 
 class PatternEvaluator {
     TaskProxy task_proxy;
