@@ -169,6 +169,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME ARRAY_POOL
+    HELP "Compact collection of arrays"
+    SOURCES
+        algorithms/array_pool
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
     NAME DYNAMIC_BITSET
     HELP "Poor man's version of boost::dynamic_bitset"
     SOURCES
@@ -764,7 +772,7 @@ fast_downward_plugin(
         pdbs/validation
         pdbs/zero_one_pdbs
         pdbs/zero_one_pdbs_heuristic
-    DEPENDS CAUSAL_GRAPH MAX_CLIQUES PRIORITY_QUEUES SAMPLING SUCCESSOR_GENERATOR TASK_PROPERTIES VARIABLE_ORDER_FINDER
+    DEPENDS ARRAY_POOL CAUSAL_GRAPH MAX_CLIQUES PRIORITY_QUEUES SAMPLING SUCCESSOR_GENERATOR TASK_PROPERTIES VARIABLE_ORDER_FINDER
 )
 
 fast_downward_plugin(
