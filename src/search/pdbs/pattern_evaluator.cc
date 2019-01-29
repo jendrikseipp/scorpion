@@ -357,6 +357,7 @@ bool PatternEvaluator::is_useful(
     const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     vector<int> distances(num_states, INF);
+    int num_settled = 0;
 
     // Initialize queue.
     pq.clear();
@@ -378,6 +379,7 @@ bool PatternEvaluator::is_useful(
         if (distance > distances[state_index]) {
             continue;
         }
+        ++num_settled;
 
         if (distance > 0) {
             return true;
@@ -404,7 +406,10 @@ bool PatternEvaluator::is_useful(
     if (dead_end_treatment == DeadEndTreatment::IGNORE) {
         return false;
     } else if (dead_end_treatment == DeadEndTreatment::ALL) {
-        return any_of(distances.begin(), distances.end(), [](int d) {return d == INF;});
+        bool has_dead_end = (num_settled < num_states);
+        assert(has_dead_end == any_of(
+                   distances.begin(), distances.end(), [](int d) {return d == INF;}));
+        return has_dead_end;
     } else {
         assert(dead_end_treatment == DeadEndTreatment::NEW);
         ABORT("not implemented");
