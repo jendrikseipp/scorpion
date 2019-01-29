@@ -146,6 +146,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       saturate(opts.get<bool>("saturate")),
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_orders(opts.get<bool>("store_orders")),
+      dead_end_treatment(static_cast<DeadEndTreatment>(opts.get_enum("dead_ends"))),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -214,11 +215,23 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         bool select_pattern = true;
         if (saturate) {
             projection_evaluation_timer->resume();
-            select_pattern = pattern_evaluator.is_useful(pq, costs);
-            assert(select_pattern == contains_positive_finite_value(
-                       cost_saturation::Projection(
-                           task_proxy, task_info, pattern).compute_goal_distances(costs)));
+            select_pattern = pattern_evaluator.is_useful(pq, dead_end_treatment, costs);
             projection_evaluation_timer->stop();
+#ifndef NDEBUG
+            vector<int> goal_distances = cost_saturation::Projection(
+                task_proxy, task_info, pattern).compute_goal_distances(costs);
+            if (dead_end_treatment == DeadEndTreatment::IGNORE) {
+                assert(select_pattern ==
+                       contains_positive_finite_value(goal_distances));
+            } else if (dead_end_treatment == DeadEndTreatment::ALL) {
+                assert(select_pattern ==
+                       any_of(goal_distances.begin(), goal_distances.end(),
+                              [](int d) {return d > 0;}));
+            } else {
+                assert(dead_end_treatment == DeadEndTreatment::NEW);
+                ABORT("not implemented");
+            }
+#endif
         }
 
         if (select_pattern) {
@@ -353,6 +366,15 @@ static void add_options(OptionParser &parser) {
         "store_orders",
         "store orders",
         "false");
+    vector<string> dead_end_treatments;
+    dead_end_treatments.push_back("IGNORE");
+    dead_end_treatments.push_back("ALL");
+    dead_end_treatments.push_back("NEW");
+    parser.add_enum_option(
+        "dead_ends",
+        dead_end_treatments,
+        "how to handle dead ends",
+        "IGNORE");
     parser.add_option<bool>(
         "debug",
         "print debugging messages",

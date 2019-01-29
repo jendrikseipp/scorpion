@@ -24,6 +24,7 @@ class Timer;
 }
 
 namespace pdbs {
+enum class DeadEndTreatment;
 struct TaskInfo;
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
@@ -38,6 +39,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const bool saturate;
     const bool ignore_useless_patterns;
     const bool store_orders;
+    const DeadEndTreatment dead_end_treatment;
     const bool debug;
 
     std::vector<std::vector<int>> relevant_operators_per_variable;

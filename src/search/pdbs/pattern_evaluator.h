@@ -18,6 +18,12 @@ class MatchTree;
 using AbstractOperatorSet = utils::HashMap<
     std::vector<FactPair>, std::vector<std::vector<FactPair>>>;
 
+enum class DeadEndTreatment {
+    IGNORE,
+    ALL,
+    NEW,
+};
+
 struct AbstractBackwardOperator {
     int concrete_operator_id;
     int hash_effect;
@@ -103,6 +109,7 @@ public:
 
     bool is_useful(
         priority_queues::AdaptiveQueue<size_t> &pq,
+        DeadEndTreatment dead_end_treatment,
         const std::vector<int> &costs) const;
 };
 }

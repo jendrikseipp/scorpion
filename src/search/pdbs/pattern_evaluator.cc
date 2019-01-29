@@ -352,7 +352,9 @@ bool PatternEvaluator::is_consistent(
 }
 
 bool PatternEvaluator::is_useful(
-    priority_queues::AdaptiveQueue<size_t> &pq, const vector<int> &costs) const {
+    priority_queues::AdaptiveQueue<size_t> &pq,
+    DeadEndTreatment dead_end_treatment,
+    const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     vector<int> distances(num_states, INF);
 
@@ -372,11 +374,12 @@ bool PatternEvaluator::is_useful(
         int distance = node.first;
         size_t state_index = node.second;
         assert(utils::in_bounds(state_index, distances));
+        assert(distance != INF);
         if (distance > distances[state_index]) {
             continue;
         }
 
-        if (distance > 0 && distance != INF) {
+        if (distance > 0) {
             return true;
         }
 
@@ -397,6 +400,14 @@ bool PatternEvaluator::is_useful(
             }
         }
     }
-    return false;
+
+    if (dead_end_treatment == DeadEndTreatment::IGNORE) {
+        return false;
+    } else if (dead_end_treatment == DeadEndTreatment::ALL) {
+        return any_of(distances.begin(), distances.end(), [](int d) {return d == INF;});
+    } else {
+        assert(dead_end_treatment == DeadEndTreatment::NEW);
+        ABORT("not implemented");
+    }
 }
 }
