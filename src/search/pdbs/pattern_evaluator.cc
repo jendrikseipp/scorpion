@@ -78,6 +78,22 @@ bool TaskInfo::operator_affects_pattern(const Pattern &pattern, int op_id) const
     return false;
 }
 
+void PartialStateCollection::add(vector<FactPair> &&facts) {
+    partial_states.push_back(move(facts));
+}
+
+bool PartialStateCollection::subsumes(const std::vector<FactPair> &facts) const {
+    for (const vector<FactPair> &partial_state : partial_states) {
+        if (includes(
+                facts.begin(), facts.end(),
+                partial_state.begin(), partial_state.end())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 static bool operator_is_subsumed(
     const OperatorInfo &op,
     const vector<int> &variable_to_pattern_index,

@@ -57,6 +57,14 @@ public:
     bool operator_affects_pattern(const Pattern &pattern, int op_id) const;
 };
 
+class PartialStateCollection {
+    std::vector<std::vector<FactPair>> partial_states;
+
+public:
+    void add(std::vector<FactPair> &&facts);
+    bool subsumes(const std::vector<FactPair> &facts) const;
+};
+
 class PatternEvaluator {
     TaskProxy task_proxy;
 
