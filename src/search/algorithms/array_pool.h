@@ -61,9 +61,11 @@ private:
 template<typename Value>
 class ArrayPool {
     std::vector<Value> data;
+    std::vector<int> positions;
 public:
     ArrayPoolIndex<Value> append(const std::vector<Value> &vec) {
         ArrayPoolIndex<Value> index(data.size());
+        positions.push_back(data.size());
         data.insert(data.end(), vec.begin(), vec.end());
         return index;
     }
@@ -74,6 +76,21 @@ public:
                index.position + size <= static_cast<int>(data.size()));
         return ArrayPoolSlice<Value>(
             data.begin() + index.position, data.begin() + index.position + size);
+    }
+
+    ArrayPoolSlice<Value> get_slice(int index) const {
+        int size = (index == static_cast<int>(positions.size() - 1))
+            ? data.size() - positions[index]
+            : positions[index + 1] - positions[index];
+        assert(positions[index] >= 0 &&
+               size >= 0 &&
+               positions[index] + size <= static_cast<int>(data.size()));
+        return ArrayPoolSlice<Value>(
+            data.begin() + positions[index], data.begin() + positions[index] + size);
+    }
+
+    int size() const {
+        return positions.size();
     }
 };
 }

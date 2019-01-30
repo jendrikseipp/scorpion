@@ -58,9 +58,6 @@ public:
 
 class PartialStateCollection {
     array_pool::ArrayPool<FactPair> partial_states;
-    std::vector<array_pool::ArrayPoolIndex<FactPair>> indices;
-    std::vector<int> sizes;
-
 public:
     void add(std::vector<FactPair> &&facts);
     bool subsumes(const std::vector<FactPair> &facts) const;
