@@ -63,6 +63,16 @@ class ArrayPool {
     std::vector<Value> data;
     std::vector<int> positions;
 public:
+    ArrayPoolIndex<Value> append(std::vector<Value> &&vec) {
+        ArrayPoolIndex<Value> index(data.size());
+        positions.push_back(data.size());
+        data.insert(
+            data.end(),
+            std::make_move_iterator(vec.begin()),
+            std::make_move_iterator(vec.end()));
+        return index;
+    }
+
     ArrayPoolIndex<Value> append(const std::vector<Value> &vec) {
         ArrayPoolIndex<Value> index(data.size());
         positions.push_back(data.size());

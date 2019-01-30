@@ -129,8 +129,8 @@ public:
             };
         } else if (cached_pattern_size < max_pattern_size) {
             ++cached_pattern_size;
-            for (const Pattern &pattern : get_patterns(task, cached_pattern_size, timer)) {
-                patterns.append(pattern);
+            for (Pattern &pattern : get_patterns(task, cached_pattern_size, timer)) {
+                patterns.append(move(pattern));
             }
             return get_pattern(pattern_id, timer);
         } else {
