@@ -159,6 +159,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<AbstractTask> &task,
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
     const TaskInfo &evaluator_task_info,
+    SequentialPatternGenerator &pattern_generator,
     PartialStateCollection &dead_ends,
     priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
@@ -171,7 +172,6 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     State initial_state = task_proxy.get_initial_state();
     vector<int> variable_domains = get_variable_domains(task_proxy);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    SequentialPatternGenerator pattern_generator(task, max_pattern_size);
     int pattern_id = -1;
     while (true) {
         if (timer.is_expired()) {
@@ -278,6 +278,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     if (ignore_useless_patterns) {
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
+    SequentialPatternGenerator pattern_generator(task, max_pattern_size);
     priority_queues::AdaptiveQueue<size_t> pq;
     PartialStateCollection dead_ends;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
@@ -288,8 +289,9 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     while (!limit_reached) {
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
-            task, task_info, evaluator_task_info, dead_ends, pq, projections,
-            pattern_set, collection_size, timer.get_remaining_time());
+            task, task_info, evaluator_task_info, pattern_generator, dead_ends,
+            pq, projections, pattern_set, collection_size,
+            timer.get_remaining_time());
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "
             << collection_size << endl;
