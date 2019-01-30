@@ -100,6 +100,7 @@ static PatternCollection get_patterns(
             }
             return timer.is_expired();
         }, timer);
+    reverse(patterns.begin(), patterns.end());
     return patterns;
 }
 
