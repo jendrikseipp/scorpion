@@ -202,21 +202,14 @@ PatternEvaluator::PatternEvaluator(
     }
     sort(sorted_active_op_ids.begin(), sorted_active_op_ids.end(), SortByCost(costs));
 
-    /* Calculate non-subsumed operators before building abstract operators for
-       better cache-locality. */
     AbstractOperatorSet seen_abstract_ops;
-    vector<int> non_subsumed_op_ids;
     for (int op_id : sorted_active_op_ids) {
         const OperatorInfo &op = task_info.operator_infos[op_id];
         if (!operator_is_subsumed(op, variable_to_pattern_index, seen_abstract_ops)) {
-            non_subsumed_op_ids.push_back(op_id);
+            build_abstract_operators(
+                pattern, hash_multipliers, op, -1, variable_to_pattern_index,
+                domain_sizes);
         }
-    }
-    for (int op_id : non_subsumed_op_ids) {
-        const OperatorInfo &op = task_info.operator_infos[op_id];
-        build_abstract_operators(
-            pattern, hash_multipliers, op, -1, variable_to_pattern_index,
-            domain_sizes);
     }
     abstract_backward_operators.shrink_to_fit();
 
