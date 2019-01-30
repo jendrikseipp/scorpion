@@ -84,7 +84,8 @@ class PatternEvaluator {
     void multiply_out(
         const Pattern &pattern,
         const std::vector<size_t> &hash_multipliers,
-        int pos, int cost, int conc_op_id,
+        int pos,
+        int conc_op_id,
         std::vector<FactPair> &prev_pairs,
         std::vector<FactPair> &pre_pairs,
         std::vector<FactPair> &eff_pairs,
@@ -95,7 +96,6 @@ class PatternEvaluator {
         const Pattern &pattern,
         const std::vector<std::size_t> &hash_multipliers,
         const OperatorInfo &op,
-        int cost,
         const std::vector<int> &variable_to_pattern_index,
         const std::vector<int> &domain_sizes);
 

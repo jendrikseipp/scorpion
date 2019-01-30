@@ -208,7 +208,7 @@ PatternEvaluator::PatternEvaluator(
         const OperatorInfo &op = task_info.operator_infos[op_and_num_preconditions.first];
         if (!operator_is_subsumed(op, variable_to_pattern_index, seen_abstract_ops)) {
             build_abstract_operators(
-                pattern, hash_multipliers, op, -1, variable_to_pattern_index,
+                pattern, hash_multipliers, op, variable_to_pattern_index,
                 domain_sizes);
         }
     }
@@ -249,7 +249,8 @@ vector<int> PatternEvaluator::compute_goal_states(
 void PatternEvaluator::multiply_out(
     const Pattern &pattern,
     const vector<size_t> &hash_multipliers,
-    int pos, int cost, int conc_op_id,
+    int pos,
+    int conc_op_id,
     vector<FactPair> &prevails,
     vector<FactPair> &preconditions,
     vector<FactPair> &effects,
@@ -280,7 +281,7 @@ void PatternEvaluator::multiply_out(
             } else {
                 prevails.emplace_back(var_id, i);
             }
-            multiply_out(pattern, hash_multipliers, pos + 1, cost, conc_op_id,
+            multiply_out(pattern, hash_multipliers, pos + 1, conc_op_id,
                          prevails, preconditions, effects,
                          effects_without_pre, domain_sizes);
             if (i != eff) {
@@ -297,7 +298,6 @@ void PatternEvaluator::build_abstract_operators(
     const Pattern &pattern,
     const vector<size_t> &hash_multipliers,
     const OperatorInfo &op,
-    int cost,
     const vector<int> &variable_to_index,
     const vector<int> &domain_sizes) {
     // All variable value pairs that are a prevail condition
@@ -344,7 +344,7 @@ void PatternEvaluator::build_abstract_operators(
     }
 
     multiply_out(
-        pattern, hash_multipliers, 0, cost, op.concrete_operator_id,
+        pattern, hash_multipliers, 0, op.concrete_operator_id,
         prev_pairs, pre_pairs, eff_pairs, effects_without_pre, domain_sizes);
 }
 
