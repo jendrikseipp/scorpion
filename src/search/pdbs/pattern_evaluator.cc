@@ -185,7 +185,8 @@ PatternEvaluator::PatternEvaluator(
 
     vector<pair<int, int>> active_ops;
     for (const OperatorInfo &op : task_info.operator_infos) {
-        if (task_info.operator_affects_pattern(pattern, op.concrete_operator_id)) {
+        if (costs[op.concrete_operator_id] != INF
+            && task_info.operator_affects_pattern(pattern, op.concrete_operator_id)) {
             int num_preconditions = 0;
             for (const FactPair &pre : op.preconditions) {
                 if (variable_to_pattern_index[pre.var] != -1) {
