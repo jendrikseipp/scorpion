@@ -339,7 +339,7 @@ static void add_options(OptionParser &parser) {
     parser.add_option<int>(
         "max_pattern_size",
         "maximum number of variables per pattern",
-        "2",
+        "infinity",
         Bounds("1", "infinity"));
     parser.add_option<int>(
         "max_pdb_size",
@@ -359,12 +359,12 @@ static void add_options(OptionParser &parser) {
     parser.add_option<double>(
         "max_time",
         "maximum time in seconds for generating patterns",
-        "infinity",
+        "100",
         Bounds("0.0", "infinity"));
     parser.add_option<double>(
         "max_time_per_restart",
         "maximum time in seconds for each restart",
-        "infinity",
+        "10",
         Bounds("0.0", "infinity"));
     parser.add_option<bool>(
         "saturate",
@@ -373,11 +373,11 @@ static void add_options(OptionParser &parser) {
     parser.add_option<bool>(
         "ignore_useless_patterns",
         "ignore patterns with only variables that are changed by free operators",
-        "true");
+        "false");
     parser.add_option<bool>(
         "store_orders",
         "store orders",
-        "false");
+        "true");
     vector<string> dead_end_treatments;
     dead_end_treatments.push_back("IGNORE");
     dead_end_treatments.push_back("ALL");
@@ -386,7 +386,7 @@ static void add_options(OptionParser &parser) {
         "dead_ends",
         dead_end_treatments,
         "how to handle dead ends",
-        "IGNORE");
+        "NEW");
     parser.add_option<bool>(
         "debug",
         "print debugging messages",
