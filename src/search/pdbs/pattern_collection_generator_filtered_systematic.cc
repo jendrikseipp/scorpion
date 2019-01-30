@@ -7,6 +7,7 @@
 #include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../algorithms/array_pool.h"
 #include "../algorithms/priority_queues.h"
 #include "../cost_saturation/projection.h"
 #include "../cost_saturation/utils.h"
@@ -106,28 +107,32 @@ static PatternCollection get_patterns(
 class SequentialPatternGenerator {
     shared_ptr<AbstractTask> task;
     int max_pattern_size;
-    int current_pattern_size;
-    PatternCollection current_patterns;
+    array_pool::ArrayPool<int> patterns;
+    int cached_pattern_size;
 public:
-    SequentialPatternGenerator(const shared_ptr<AbstractTask> &task, int max_pattern_size_)
+    SequentialPatternGenerator(
+        const shared_ptr<AbstractTask> &task, int max_pattern_size_)
         : task(task),
           max_pattern_size(max_pattern_size_),
-          current_pattern_size(0) {
+          cached_pattern_size(0) {
         assert(max_pattern_size_ >= 0);
         max_pattern_size = min(
             max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
     }
 
-    Pattern get_next_pattern(const utils::CountdownTimer &timer) {
-        if (!current_patterns.empty()) {
-            Pattern pattern = current_patterns.back();
-            current_patterns.pop_back();
-            assert(!pattern.empty());
-            return pattern;
-        } else if (current_pattern_size < max_pattern_size) {
-            ++current_pattern_size;
-            current_patterns = get_patterns(task, current_pattern_size, timer);
-            return get_next_pattern(timer);
+    Pattern get_pattern(int pattern_id, const utils::CountdownTimer &timer) {
+        assert(pattern_id >= 0);
+        if (pattern_id < patterns.size()) {
+            array_pool::ArrayPoolSlice<int> slice = patterns.get_slice(pattern_id);
+            return {
+                       slice.begin(), slice.end()
+            };
+        } else if (cached_pattern_size < max_pattern_size) {
+            ++cached_pattern_size;
+            for (const Pattern &pattern : get_patterns(task, cached_pattern_size, timer)) {
+                patterns.append(pattern);
+            }
+            return get_pattern(pattern_id, timer);
         } else {
             return {};
         }
@@ -167,14 +172,17 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     vector<int> variable_domains = get_variable_domains(task_proxy);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     SequentialPatternGenerator pattern_generator(task, max_pattern_size);
+    int pattern_id = -1;
     while (true) {
         if (timer.is_expired()) {
             log << "Reached restart time limit." << endl;
             return false;
         }
 
+        ++pattern_id;
+
         pattern_computation_timer->resume();
-        Pattern pattern = pattern_generator.get_next_pattern(timer);
+        Pattern pattern = pattern_generator.get_pattern(pattern_id, timer);
         pattern_computation_timer->stop();
         ++num_evaluated_patterns;
 
