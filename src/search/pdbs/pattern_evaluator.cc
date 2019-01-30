@@ -136,17 +136,6 @@ static bool operator_is_subsumed(
     return false;
 }
 
-struct SortByCost {
-    const vector<int> &costs;
-    SortByCost (const vector<int> &costs)
-        : costs(costs) {
-    }
-
-    bool operator()(int i, int j) {
-        return costs[i] < costs[j];
-    }
-};
-
 
 PatternEvaluator::PatternEvaluator(
     const TaskProxy &task_proxy,
@@ -194,17 +183,28 @@ PatternEvaluator::PatternEvaluator(
         task_proxy, pattern, hash_multipliers);
     vector<vector<FactPair>> preconditions_per_operator;
 
-    vector<int> sorted_active_op_ids;
+    vector<pair<int, int>> active_ops;
     for (const OperatorInfo &op : task_info.operator_infos) {
         if (task_info.operator_affects_pattern(pattern, op.concrete_operator_id)) {
-            sorted_active_op_ids.push_back(op.concrete_operator_id);
+            int num_preconditions = 0;
+            for (const FactPair &pre : op.preconditions) {
+                if (variable_to_pattern_index[pre.var] != -1) {
+                    ++num_preconditions;
+                }
+            }
+            active_ops.emplace_back(op.concrete_operator_id, num_preconditions);
         }
     }
-    sort(sorted_active_op_ids.begin(), sorted_active_op_ids.end(), SortByCost(costs));
+    // Sort by increasing cost and precondition size.
+    sort(active_ops.begin(), active_ops.end(),
+         [&costs](pair<int, int> f1, pair<int, int> f2) {
+             return make_pair(costs[f1.first], f1.second)
+             < make_pair(costs[f2.first], f2.second);
+         });
 
     AbstractOperatorSet seen_abstract_ops;
-    for (int op_id : sorted_active_op_ids) {
-        const OperatorInfo &op = task_info.operator_infos[op_id];
+    for (pair<int, int> op_and_num_preconditions : active_ops) {
+        const OperatorInfo &op = task_info.operator_infos[op_and_num_preconditions.first];
         if (!operator_is_subsumed(op, variable_to_pattern_index, seen_abstract_ops)) {
             build_abstract_operators(
                 pattern, hash_multipliers, op, -1, variable_to_pattern_index,
