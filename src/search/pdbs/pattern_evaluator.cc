@@ -162,26 +162,20 @@ PatternEvaluator::PatternEvaluator(
     }
 
     VariablesProxy variables = task_proxy.get_variables();
+
     vector<int> variable_to_pattern_index(variables.size(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_pattern_index[pattern[i]] = i;
     }
 
-    vector<int> domain_sizes;
-    domain_sizes.reserve(variables.size());
-    for (VariableProxy var : variables) {
-        domain_sizes.push_back(var.get_domain_size());
-    }
-
     vector<int> pattern_domain_sizes;
     pattern_domain_sizes.reserve(pattern.size());
-    for (int pattern_var : pattern) {
-        pattern_domain_sizes.push_back(domain_sizes[pattern_var]);
+    for (int var : pattern) {
+        pattern_domain_sizes.push_back(variables[var].get_domain_size());
     }
 
     match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
         task_proxy, pattern, hash_multipliers);
-    vector<vector<FactPair>> preconditions_per_operator;
 
     vector<pair<int, int>> active_ops;
     for (const OperatorInfo &op : task_info.operator_infos) {
@@ -208,13 +202,13 @@ PatternEvaluator::PatternEvaluator(
         const OperatorInfo &op = task_info.operator_infos[op_and_num_preconditions.first];
         if (!operator_is_subsumed(op, variable_to_pattern_index, seen_abstract_ops)) {
             build_abstract_operators(
-                pattern, hash_multipliers, op, variable_to_pattern_index,
-                domain_sizes);
+                hash_multipliers, op, variable_to_pattern_index, pattern_domain_sizes);
         }
     }
     abstract_backward_operators.shrink_to_fit();
 
-    goal_states = compute_goal_states(hash_multipliers, pattern_domain_sizes, variable_to_pattern_index);
+    goal_states = compute_goal_states(
+        hash_multipliers, pattern_domain_sizes, variable_to_pattern_index);
 }
 
 PatternEvaluator::~PatternEvaluator() {
@@ -247,7 +241,6 @@ vector<int> PatternEvaluator::compute_goal_states(
 }
 
 void PatternEvaluator::multiply_out(
-    const Pattern &pattern,
     const vector<size_t> &hash_multipliers,
     int pos,
     int conc_op_id,
@@ -255,7 +248,7 @@ void PatternEvaluator::multiply_out(
     vector<FactPair> &preconditions,
     vector<FactPair> &effects,
     const vector<FactPair> &effects_without_pre,
-    const vector<int> &domain_sizes) {
+    const vector<int> &pattern_domain_sizes) {
     if (pos == static_cast<int>(effects_without_pre.size())) {
         // All effects without precondition have been checked: insert op.
         if (!effects.empty()) {
@@ -274,16 +267,16 @@ void PatternEvaluator::multiply_out(
         // abstract operator.
         int var_id = effects_without_pre[pos].var;
         int eff = effects_without_pre[pos].value;
-        for (int i = 0; i < domain_sizes[pattern[var_id]]; ++i) {
+        for (int i = 0; i < pattern_domain_sizes[var_id]; ++i) {
             if (i != eff) {
                 preconditions.emplace_back(var_id, i);
                 effects.emplace_back(var_id, eff);
             } else {
                 prevails.emplace_back(var_id, i);
             }
-            multiply_out(pattern, hash_multipliers, pos + 1, conc_op_id,
+            multiply_out(hash_multipliers, pos + 1, conc_op_id,
                          prevails, preconditions, effects,
-                         effects_without_pre, domain_sizes);
+                         effects_without_pre, pattern_domain_sizes);
             if (i != eff) {
                 preconditions.pop_back();
                 effects.pop_back();
@@ -295,11 +288,10 @@ void PatternEvaluator::multiply_out(
 }
 
 void PatternEvaluator::build_abstract_operators(
-    const Pattern &pattern,
     const vector<size_t> &hash_multipliers,
     const OperatorInfo &op,
     const vector<int> &variable_to_index,
-    const vector<int> &domain_sizes) {
+    const vector<int> &pattern_domain_sizes) {
     // All variable value pairs that are a prevail condition
     vector<FactPair> prev_pairs;
     // All variable value pairs that are a precondition (value != -1)
@@ -309,20 +301,24 @@ void PatternEvaluator::build_abstract_operators(
     // All variable value pairs that are a precondition (value = -1)
     vector<FactPair> effects_without_pre;
 
-    size_t num_vars = domain_sizes.size();
-    vector<bool> has_precond_and_effect_on_var(num_vars, false);
-    vector<bool> has_precondition_on_var(num_vars, false);
+    int pattern_size = pattern_domain_sizes.size();
+    vector<bool> has_precond_and_effect_on_var(pattern_size, false);
+    vector<bool> has_precondition_on_var(pattern_size, false);
 
-    for (const FactPair &pre : op.preconditions)
-        has_precondition_on_var[pre.var] = true;
+    for (const FactPair &pre : op.preconditions) {
+        int pattern_var_id = variable_to_index[pre.var];
+        if (pattern_var_id != -1) {
+            has_precondition_on_var[pattern_var_id] = true;
+        }
+    }
 
     for (const FactPair &eff : op.effects) {
         int var_id = eff.var;
         int pattern_var_id = variable_to_index[var_id];
         int val = eff.value;
         if (pattern_var_id != -1) {
-            if (has_precondition_on_var[var_id]) {
-                has_precond_and_effect_on_var[var_id] = true;
+            if (has_precondition_on_var[pattern_var_id]) {
+                has_precond_and_effect_on_var[pattern_var_id] = true;
                 eff_pairs.emplace_back(pattern_var_id, val);
             } else {
                 effects_without_pre.emplace_back(pattern_var_id, val);
@@ -335,7 +331,7 @@ void PatternEvaluator::build_abstract_operators(
         int pattern_var_id = variable_to_index[var_id];
         int val = pre.value;
         if (pattern_var_id != -1) { // variable occurs in pattern
-            if (has_precond_and_effect_on_var[var_id]) {
+            if (has_precond_and_effect_on_var[pattern_var_id]) {
                 pre_pairs.emplace_back(pattern_var_id, val);
             } else {
                 prev_pairs.emplace_back(pattern_var_id, val);
@@ -344,8 +340,8 @@ void PatternEvaluator::build_abstract_operators(
     }
 
     multiply_out(
-        pattern, hash_multipliers, 0, op.concrete_operator_id,
-        prev_pairs, pre_pairs, eff_pairs, effects_without_pre, domain_sizes);
+        hash_multipliers, 0, op.concrete_operator_id, prev_pairs, pre_pairs,
+        eff_pairs, effects_without_pre, pattern_domain_sizes);
 }
 
 bool PatternEvaluator::is_consistent(

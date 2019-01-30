@@ -82,7 +82,6 @@ class PatternEvaluator {
         const std::vector<int> &variable_to_pattern_index) const;
 
     void multiply_out(
-        const Pattern &pattern,
         const std::vector<size_t> &hash_multipliers,
         int pos,
         int conc_op_id,
@@ -90,14 +89,13 @@ class PatternEvaluator {
         std::vector<FactPair> &pre_pairs,
         std::vector<FactPair> &eff_pairs,
         const std::vector<FactPair> &effects_without_pre,
-        const std::vector<int> &domain_sizes);
+        const std::vector<int> &pattern_domain_sizes);
 
     void build_abstract_operators(
-        const Pattern &pattern,
         const std::vector<std::size_t> &hash_multipliers,
         const OperatorInfo &op,
         const std::vector<int> &variable_to_pattern_index,
-        const std::vector<int> &domain_sizes);
+        const std::vector<int> &pattern_domain_sizes);
 
     /*
       Return true iff all abstract facts hold in the given state.
