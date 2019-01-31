@@ -29,6 +29,14 @@ class PartialStateCollection;
 class SequentialPatternGenerator;
 struct TaskInfo;
 
+enum class PatternOrder {
+    ORIGINAL,
+    RANDOM,
+    REVERSE,
+    INCREASING_PDB_SIZE,
+    DECREASING_PDB_SIZE,
+};
+
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
     using PatternSet = utils::HashSet<Pattern>;
 
@@ -42,6 +50,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const bool ignore_useless_patterns;
     const bool store_orders;
     const DeadEndTreatment dead_end_treatment;
+    const PatternOrder pattern_order;
     const bool debug;
 
     std::vector<std::vector<int>> relevant_operators_per_variable;

@@ -86,6 +86,8 @@ static bool only_free_operators_affect_pdb(
 static PatternCollection get_patterns(
     const shared_ptr<AbstractTask> &task,
     int pattern_size,
+    PatternOrder order,
+    const vector<int> &domains,
     const utils::CountdownTimer &timer) {
     utils::Log() << "Generate patterns for size " << pattern_size << endl;
     options::Options opts;
@@ -100,7 +102,23 @@ static PatternCollection get_patterns(
             }
             return timer.is_expired();
         }, timer);
-    random_shuffle(patterns.begin(), patterns.end());
+    if (order == PatternOrder::RANDOM) {
+        random_shuffle(patterns.begin(), patterns.end());
+    } else if (order == PatternOrder::REVERSE) {
+        reverse(patterns.begin(), patterns.end());
+    } else if (order == PatternOrder::INCREASING_PDB_SIZE) {
+        sort(patterns.begin(), patterns.end(),
+             [&domains](const Pattern &p1, const Pattern &p2) {
+                 return get_pdb_size(domains, p1) < get_pdb_size(domains, p2);
+             });
+    } else if (order == PatternOrder::DECREASING_PDB_SIZE) {
+        sort(patterns.begin(), patterns.end(),
+             [&domains](const Pattern &p1, const Pattern &p2) {
+                 return get_pdb_size(domains, p1) > get_pdb_size(domains, p2);
+             });
+    } else {
+        assert(order == PatternOrder::ORIGINAL);
+    }
     return patterns;
 }
 
@@ -108,13 +126,17 @@ static PatternCollection get_patterns(
 class SequentialPatternGenerator {
     shared_ptr<AbstractTask> task;
     int max_pattern_size;
+    PatternOrder order;
+    vector<int> domains;
     array_pool::ArrayPool<int> patterns;
     int cached_pattern_size;
 public:
     SequentialPatternGenerator(
-        const shared_ptr<AbstractTask> &task, int max_pattern_size_)
+        const shared_ptr<AbstractTask> &task, int max_pattern_size_, PatternOrder order)
         : task(task),
           max_pattern_size(max_pattern_size_),
+          order(order),
+          domains(get_variable_domains(TaskProxy(*task))),
           cached_pattern_size(0) {
         assert(max_pattern_size_ >= 0);
         max_pattern_size = min(
@@ -130,7 +152,8 @@ public:
             };
         } else if (cached_pattern_size < max_pattern_size) {
             ++cached_pattern_size;
-            for (Pattern &pattern : get_patterns(task, cached_pattern_size, timer)) {
+            for (Pattern &pattern : get_patterns(
+                     task, cached_pattern_size, order, domains, timer)) {
                 patterns.append(move(pattern));
             }
             return get_pattern(pattern_id, timer);
@@ -153,6 +176,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_orders(opts.get<bool>("store_orders")),
       dead_end_treatment(static_cast<DeadEndTreatment>(opts.get_enum("dead_ends"))),
+      pattern_order(static_cast<PatternOrder>(opts.get_enum("order"))),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -279,7 +303,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     if (ignore_useless_patterns) {
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
-    SequentialPatternGenerator pattern_generator(task, max_pattern_size);
+    SequentialPatternGenerator pattern_generator(task, max_pattern_size, pattern_order);
     priority_queues::AdaptiveQueue<size_t> pq;
     PartialStateCollection dead_ends;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
@@ -388,6 +412,17 @@ static void add_options(OptionParser &parser) {
         dead_end_treatments,
         "how to handle dead ends",
         "NEW");
+    vector<string> pattern_orders;
+    pattern_orders.push_back("ORIGINAL");
+    pattern_orders.push_back("RANDOM");
+    pattern_orders.push_back("REVERSE");
+    pattern_orders.push_back("INCREASING_PDB_SIZE");
+    pattern_orders.push_back("DECREASING_PDB_SIZE");
+    parser.add_enum_option(
+        "order",
+        pattern_orders,
+        "order in which to consider patterns of the same size",
+        "ORIGINAL");
     parser.add_option<bool>(
         "debug",
         "print debugging messages",
