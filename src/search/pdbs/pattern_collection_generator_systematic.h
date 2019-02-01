@@ -36,11 +36,14 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
 
     const size_t max_pattern_size;
     const bool only_interesting_patterns;
+    const bool only_sga_patterns;
     std::shared_ptr<PatternCollection> patterns;
     PatternSet pattern_set;  // Cleared after pattern computation.
 
     void enqueue_pattern_if_new(
-        const Pattern &pattern, const PatternHandler &handle_pattern, bool is_sga);
+        const Pattern &pattern,
+        const PatternHandler &handle_pattern,
+        bool handle = true);
     void compute_eff_pre_neighbors(const causal_graph::CausalGraph &cg,
                                    const Pattern &pattern,
                                    std::vector<int> &result) const;

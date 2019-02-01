@@ -86,6 +86,7 @@ static bool only_free_operators_affect_pdb(
 static PatternCollection get_patterns(
     const shared_ptr<AbstractTask> &task,
     int pattern_size,
+    bool only_sga_patterns,
     PatternOrder order,
     const vector<int> &domains,
     const utils::CountdownTimer &timer) {
@@ -93,11 +94,13 @@ static PatternCollection get_patterns(
     options::Options opts;
     opts.set<int>("pattern_max_size", pattern_size);
     opts.set<bool>("only_interesting_patterns", true);
+    opts.set<bool>("only_sga_patterns", only_sga_patterns);
     PatternCollectionGeneratorSystematic generator(opts);
     PatternCollection patterns;
     generator.generate(
-        task, [pattern_size, &patterns, &timer](const Pattern &pattern, bool is_sga) {
-            if (!is_sga && static_cast<int>(pattern.size()) == pattern_size) {
+        task, [pattern_size, &patterns, &timer](
+            const Pattern &pattern, bool handle) {
+            if (handle && static_cast<int>(pattern.size()) == pattern_size) {
                 patterns.push_back(pattern);
             }
             return timer.is_expired();
@@ -126,15 +129,20 @@ static PatternCollection get_patterns(
 class SequentialPatternGenerator {
     shared_ptr<AbstractTask> task;
     int max_pattern_size;
+    bool only_sga_patterns;
     PatternOrder order;
     vector<int> domains;
     array_pool::ArrayPool<int> patterns;
     int cached_pattern_size;
 public:
     SequentialPatternGenerator(
-        const shared_ptr<AbstractTask> &task, int max_pattern_size_, PatternOrder order)
+        const shared_ptr<AbstractTask> &task,
+        int max_pattern_size_,
+        bool only_sga_patterns,
+        PatternOrder order)
         : task(task),
           max_pattern_size(max_pattern_size_),
+          only_sga_patterns(only_sga_patterns),
           order(order),
           domains(get_variable_domains(TaskProxy(*task))),
           cached_pattern_size(0) {
@@ -153,7 +161,7 @@ public:
         } else if (cached_pattern_size < max_pattern_size) {
             ++cached_pattern_size;
             for (Pattern &pattern : get_patterns(
-                     task, cached_pattern_size, order, domains, timer)) {
+                     task, cached_pattern_size, only_sga_patterns, order, domains, timer)) {
                 patterns.append(move(pattern));
             }
             return get_pattern(pattern_id, timer);
@@ -173,6 +181,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_time(opts.get<double>("max_time")),
       max_time_per_restart(opts.get<double>("max_time_per_restart")),
       saturate(opts.get<bool>("saturate")),
+      only_sga_patterns(opts.get<bool>("only_sga_patterns")),
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_orders(opts.get<bool>("store_orders")),
       dead_end_treatment(static_cast<DeadEndTreatment>(opts.get_enum("dead_ends"))),
@@ -307,7 +316,8 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     if (ignore_useless_patterns) {
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
-    SequentialPatternGenerator pattern_generator(task, max_pattern_size, pattern_order);
+    SequentialPatternGenerator pattern_generator(
+        task, max_pattern_size, only_sga_patterns, pattern_order);
     priority_queues::AdaptiveQueue<size_t> pq;
     PartialStateCollection dead_ends;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
@@ -399,6 +409,10 @@ static void add_options(OptionParser &parser) {
         "saturate",
         "compute saturated cost partitionings",
         "true");
+    parser.add_option<bool>(
+        "only_sga_patterns",
+        "only consider SGA patterns",
+        "false");
     parser.add_option<bool>(
         "ignore_useless_patterns",
         "ignore patterns with only variables that are changed by free operators",

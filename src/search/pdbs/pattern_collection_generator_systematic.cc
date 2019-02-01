@@ -51,7 +51,8 @@ static void compute_union_pattern(
 PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
     const Options &opts)
     : max_pattern_size(opts.get<int>("pattern_max_size")),
-      only_interesting_patterns(opts.get<bool>("only_interesting_patterns")) {
+      only_interesting_patterns(opts.get<bool>("only_interesting_patterns")),
+      only_sga_patterns(opts.get<bool>("only_sga_patterns")) {
 }
 
 void PatternCollectionGeneratorSystematic::compute_eff_pre_neighbors(
@@ -117,10 +118,10 @@ void PatternCollectionGeneratorSystematic::compute_connection_points(
 }
 
 void PatternCollectionGeneratorSystematic::enqueue_pattern_if_new(
-    const Pattern &pattern, const PatternHandler &handle_pattern, bool is_sga) {
+    const Pattern &pattern, const PatternHandler &handle_pattern, bool handle) {
     if (pattern_set.insert(pattern).second) {
         if (handle_pattern) {
-            bool done = handle_pattern(pattern, is_sga);
+            bool done = handle_pattern(pattern, handle);
             if (done) {
                 throw Timeout();
             }
@@ -156,7 +157,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
         int var_id = goal.get_variable().get_id();
         Pattern goal_pattern;
         goal_pattern.push_back(var_id);
-        enqueue_pattern_if_new(goal_pattern, handle_pattern, true);
+        enqueue_pattern_if_new(goal_pattern, handle_pattern);
     }
 
     /*
@@ -177,7 +178,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
             new_pattern.push_back(neighbor_var_id);
             sort(new_pattern.begin(), new_pattern.end());
 
-            enqueue_pattern_if_new(new_pattern, handle_pattern, true);
+            enqueue_pattern_if_new(new_pattern, handle_pattern);
         }
     }
 
@@ -195,6 +196,10 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     // They are generated into the patterns variable,
     // so we swap them from there.
     build_sga_patterns(task_proxy, cg, handle_pattern);
+    if (only_sga_patterns) {
+        pattern_set.clear();
+        return;
+    }
     PatternCollection sga_patterns;
     patterns->swap(sga_patterns);
 
@@ -242,7 +247,7 @@ void PatternCollectionGeneratorSystematic::build_patterns(
                 if (patterns_are_disjoint(pattern1, pattern2)) {
                     Pattern new_pattern;
                     compute_union_pattern(pattern1, pattern2, new_pattern);
-                    enqueue_pattern_if_new(new_pattern, handle_pattern, false);
+                    enqueue_pattern_if_new(new_pattern, handle_pattern);
                 }
             }
         }
@@ -327,6 +332,10 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "Only consider the union of two disjoint patterns if the union has "
         "more information than the individual patterns.",
         "true");
+    parser.add_option<bool>(
+        "only_sga_patterns",
+        "Only consider SGA patterns.",
+        "false");
 
     Options opts = parser.parse();
     if (parser.dry_run())
