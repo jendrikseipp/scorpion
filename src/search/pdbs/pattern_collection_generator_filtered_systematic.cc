@@ -211,6 +211,10 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         pattern_computation_timer->stop();
         ++num_evaluated_patterns;
 
+        if (debug) {
+            cout << "Pattern " << pattern_id << ": " << pattern << endl;
+        }
+
         if (pattern.empty()) {
             log << "Generated all patterns up to size " << max_pattern_size
                 << "." << endl;
