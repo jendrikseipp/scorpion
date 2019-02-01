@@ -96,8 +96,8 @@ static PatternCollection get_patterns(
     PatternCollectionGeneratorSystematic generator(opts);
     PatternCollection patterns;
     generator.generate(
-        task, [pattern_size, &patterns, &timer](const Pattern &pattern) {
-            if (static_cast<int>(pattern.size()) == pattern_size) {
+        task, [pattern_size, &patterns, &timer](const Pattern &pattern, bool is_sga) {
+            if (!is_sga && static_cast<int>(pattern.size()) == pattern_size) {
                 patterns.push_back(pattern);
             }
             return timer.is_expired();
