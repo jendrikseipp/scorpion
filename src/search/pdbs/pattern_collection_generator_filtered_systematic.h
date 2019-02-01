@@ -35,6 +35,12 @@ enum class PatternOrder {
     REVERSE,
     INCREASING_PDB_SIZE,
     DECREASING_PDB_SIZE,
+    CG_SUM_UP,
+    CG_SUM_DOWN,
+    CG_MIN_UP,
+    CG_MIN_DOWN,
+    CG_MAX_UP,
+    CG_MAX_DOWN,
 };
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {

@@ -64,6 +64,31 @@ static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern)
     return size;
 }
 
+static int get_sum(const Pattern &pattern) {
+    int sum = 0;
+    for (int var : pattern) {
+        sum += var;
+    }
+    return sum;
+}
+
+
+static int get_min(const Pattern &pattern) {
+    int res = numeric_limits<int>::max();
+    for (int var : pattern) {
+        res = min(res, var);
+    }
+    return res;
+}
+
+static int get_max(const Pattern &pattern) {
+    int res = -1;
+    for (int var : pattern) {
+        res = max(res, var);
+    }
+    return res;
+}
+
 bool contains_positive_finite_value(const vector<int> &values) {
     return any_of(values.begin(), values.end(),
                   [](int v) {return v > 0 && v != numeric_limits<int>::max();});
@@ -123,6 +148,36 @@ static unique_ptr<PatternCollection> get_patterns(
         sort(patterns.begin(), patterns.end(),
              [&domains](const Pattern &p1, const Pattern &p2) {
                  return get_pdb_size(domains, p1) > get_pdb_size(domains, p2);
+             });
+    } else if (order == PatternOrder::CG_SUM_UP) {
+        sort(patterns.begin(), patterns.end(),
+             [](const Pattern &p1, const Pattern &p2) {
+                 return get_sum(p1) < get_sum(p2);
+             });
+    } else if (order == PatternOrder::CG_SUM_DOWN) {
+        sort(patterns.begin(), patterns.end(),
+             [](const Pattern &p1, const Pattern &p2) {
+                 return get_sum(p1) > get_sum(p2);
+             });
+    } else if (order == PatternOrder::CG_MIN_UP) {
+        sort(patterns.begin(), patterns.end(),
+             [](const Pattern &p1, const Pattern &p2) {
+                 return get_min(p1) < get_min(p2);
+             });
+    } else if (order == PatternOrder::CG_MIN_DOWN) {
+        sort(patterns.begin(), patterns.end(),
+             [](const Pattern &p1, const Pattern &p2) {
+                 return get_min(p1) > get_min(p2);
+             });
+    } else if (order == PatternOrder::CG_MAX_UP) {
+        sort(patterns.begin(), patterns.end(),
+             [](const Pattern &p1, const Pattern &p2) {
+                 return get_max(p1) < get_max(p2);
+             });
+    } else if (order == PatternOrder::CG_MAX_DOWN) {
+        sort(patterns.begin(), patterns.end(),
+             [](const Pattern &p1, const Pattern &p2) {
+                 return get_max(p1) > get_max(p2);
              });
     } else {
         assert(order == PatternOrder::ORIGINAL);
@@ -446,6 +501,12 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("REVERSE");
     pattern_orders.push_back("INCREASING_PDB_SIZE");
     pattern_orders.push_back("DECREASING_PDB_SIZE");
+    pattern_orders.push_back("CG_SUM_UP");
+    pattern_orders.push_back("CG_SUM_DOWN");
+    pattern_orders.push_back("CG_MIN_UP");
+    pattern_orders.push_back("CG_MIN_DOWN");
+    pattern_orders.push_back("CG_MAX_UP");
+    pattern_orders.push_back("CG_MAX_DOWN");
     parser.add_enum_option(
         "order",
         pattern_orders,
