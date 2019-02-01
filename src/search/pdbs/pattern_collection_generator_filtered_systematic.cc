@@ -83,7 +83,7 @@ static bool only_free_operators_affect_pdb(
     return true;
 }
 
-static PatternCollection get_patterns(
+static unique_ptr<PatternCollection> get_patterns(
     const shared_ptr<AbstractTask> &task,
     int pattern_size,
     bool only_sga_patterns,
@@ -96,7 +96,9 @@ static PatternCollection get_patterns(
     opts.set<bool>("only_interesting_patterns", true);
     opts.set<bool>("only_sga_patterns", only_sga_patterns);
     PatternCollectionGeneratorSystematic generator(opts);
-    PatternCollection patterns;
+    unique_ptr<PatternCollection> patterns_ptr =
+        utils::make_unique_ptr<PatternCollection>();
+    PatternCollection &patterns = *patterns_ptr;
     generator.generate(
         task, [pattern_size, &patterns, &timer](
             const Pattern &pattern, bool handle) {
@@ -105,6 +107,9 @@ static PatternCollection get_patterns(
             }
             return timer.is_expired();
         }, timer);
+    if (timer.is_expired()) {
+        return nullptr;
+    }
     if (order == PatternOrder::RANDOM) {
         random_shuffle(patterns.begin(), patterns.end());
     } else if (order == PatternOrder::REVERSE) {
@@ -122,7 +127,7 @@ static PatternCollection get_patterns(
     } else {
         assert(order == PatternOrder::ORIGINAL);
     }
-    return patterns;
+    return patterns_ptr;
 }
 
 
@@ -159,15 +164,18 @@ public:
                        slice.begin(), slice.end()
             };
         } else if (cached_pattern_size < max_pattern_size) {
-            ++cached_pattern_size;
-            for (Pattern &pattern : get_patterns(
-                     task, cached_pattern_size, only_sga_patterns, order, domains, timer)) {
-                patterns.append(move(pattern));
+            unique_ptr<PatternCollection> current_patterns = get_patterns(
+                task, cached_pattern_size + 1, only_sga_patterns, order, domains, timer);
+            if (current_patterns) {
+                ++cached_pattern_size;
+                cout << "Store patterns of size " << cached_pattern_size << endl;
+                for (Pattern &pattern : *current_patterns) {
+                    patterns.append(move(pattern));
+                }
+                return get_pattern(pattern_id, timer);
             }
-            return get_pattern(pattern_id, timer);
-        } else {
-            return {};
         }
+        return {};
     }
 };
 
@@ -208,16 +216,17 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     int pattern_id = -1;
     while (true) {
-        if (timer.is_expired()) {
-            log << "Reached restart time limit." << endl;
-            return false;
-        }
-
         ++pattern_id;
 
         pattern_computation_timer->resume();
         Pattern pattern = pattern_generator.get_pattern(pattern_id, timer);
         pattern_computation_timer->stop();
+
+        if (timer.is_expired()) {
+            log << "Reached restart time limit." << endl;
+            return false;
+        }
+
         ++num_evaluated_patterns;
 
         if (debug) {
@@ -231,6 +240,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         } else if (pattern_set.count(pattern)) {
             continue;
         }
+
         int pdb_size = get_pdb_size(variable_domains, pattern);
         if (pdb_size == -1 || pdb_size > max_pdb_size) {
             // Pattern is too large.
