@@ -131,8 +131,7 @@ void PatternCollectionGeneratorSystematic::enqueue_pattern_if_new(
 
 void PatternCollectionGeneratorSystematic::build_sga_patterns(
     const TaskProxy &task_proxy,
-    const causal_graph::CausalGraph &cg,
-    const PatternHandler &handle_pattern) {
+    const causal_graph::CausalGraph &cg) {
     assert(max_pattern_size >= 1);
     assert(pattern_set.empty());
     assert(patterns && patterns->empty());
@@ -156,7 +155,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
         int var_id = goal.get_variable().get_id();
         Pattern goal_pattern;
         goal_pattern.push_back(var_id);
-        enqueue_pattern_if_new(goal_pattern, handle_pattern);
+        enqueue_pattern_if_new(goal_pattern);
     }
 
     /*
@@ -177,7 +176,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
             new_pattern.push_back(neighbor_var_id);
             sort(new_pattern.begin(), new_pattern.end());
 
-            enqueue_pattern_if_new(new_pattern, handle_pattern);
+            enqueue_pattern_if_new(new_pattern);
         }
     }
 
@@ -194,7 +193,7 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     // Generate SGA (single-goal-ancestor) patterns.
     // They are generated into the patterns variable,
     // so we swap them from there.
-    build_sga_patterns(task_proxy, cg, handle_pattern);
+    build_sga_patterns(task_proxy, cg);
     PatternCollection sga_patterns;
     patterns->swap(sga_patterns);
 
