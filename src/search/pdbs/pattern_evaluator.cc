@@ -130,8 +130,6 @@ static bool operator_is_subsumed(
         } else {
             preconditions_collection.add(move(abstract_preconditions));
         }
-        /* Note: we could remove old preconditions that are less general than
-           the new one, but experiments showed that this hurts performance. */
     }
     return false;
 }
