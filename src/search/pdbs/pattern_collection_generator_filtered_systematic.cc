@@ -179,6 +179,18 @@ static unique_ptr<PatternCollection> get_patterns(
              [](const Pattern &p1, const Pattern &p2) {
                  return get_max(p1) > get_max(p2);
              });
+    } else if (order == PatternOrder::CG_MIN_DOWN_CG_SUM_DOWN) {
+        sort(patterns.begin(), patterns.end(),
+             [](const Pattern &p1, const Pattern &p2) {
+                 return make_pair(get_min(p1), get_sum(p1)) >
+                 make_pair(get_min(p2), get_sum(p2));
+             });
+    } else if (order == PatternOrder::CG_MIN_DOWN_PDB_SIZE_DOWN) {
+        sort(patterns.begin(), patterns.end(),
+             [&domains](const Pattern &p1, const Pattern &p2) {
+                 return make_pair(get_min(p1), get_pdb_size(domains, p1)) >
+                 make_pair(get_min(p2), get_pdb_size(domains, p2));
+             });
     } else {
         assert(order == PatternOrder::ORIGINAL);
     }
@@ -507,6 +519,8 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("CG_MIN_DOWN");
     pattern_orders.push_back("CG_MAX_UP");
     pattern_orders.push_back("CG_MAX_DOWN");
+    pattern_orders.push_back("CG_MIN_DOWN_CG_SUM_DOWN");
+    pattern_orders.push_back("CG_MIN_DOWN_PDB_SIZE_DOWN");
     parser.add_enum_option(
         "order",
         pattern_orders,
