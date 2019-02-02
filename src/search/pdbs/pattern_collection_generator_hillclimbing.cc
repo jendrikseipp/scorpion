@@ -12,7 +12,6 @@
 
 #include "../cost_saturation/projection.h"
 #include "../cost_saturation/utils.h"
-#include "../heuristics/ff_heuristic.h"
 #include "../task_utils/causal_graph.h"
 #include "../task_utils/sampling.h"
 #include "../task_utils/task_properties.h"
@@ -412,28 +411,11 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
                     samples.push_back(task_proxy.get_initial_state());
                 }
                 int sampling_init_h = init_h;
-                if (sampling_type == SamplingType::FF ||
-                    sampling_type == SamplingType::FF_HALF) {
-                    Options opts;
-                    opts.set<shared_ptr<AbstractTask>>("transform", task);
-                    opts.set<bool>("cache_estimates", false);
-                    ff_heuristic::FFHeuristic ff(opts);
-                    sampling_init_h = ff.compute_heuristic_for_cegar(initial_state);
-                    if (sampling_type == SamplingType::FF_HALF) {
-                        sampling_init_h /= 2;
-                    }
-                    DeadEndDetector is_dead_end = [&ff](const State &state) {
-                            return ff.compute_heuristic_for_cegar(state) == -1;
-                        };
-                    cout << "Sample states with init-h estimate " << sampling_init_h << endl;
-                    sample_states(sampler, sampling_init_h, is_dead_end, samples);
-                } else {
-                    DeadEndDetector is_dead_end = [this](const State &state) {
-                            return current_pdbs->is_dead_end(state);
-                        };
-                    cout << "Sample states with init-h estimate " << sampling_init_h << endl;
-                    sample_states(sampler, sampling_init_h, is_dead_end, samples);
-                }
+                DeadEndDetector is_dead_end = [this](const State &state) {
+                        return current_pdbs->is_dead_end(state);
+                    };
+                cout << "Sample states with init-h estimate " << sampling_init_h << endl;
+                sample_states(sampler, sampling_init_h, is_dead_end, samples);
                 sampling_timer.stop();
             }
             for (const State &sample : samples) {
@@ -662,8 +644,6 @@ void add_hillclimbing_options(OptionParser &parser) {
     vector<string> sampling_types;
     sampling_types.push_back("PDBS");
     sampling_types.push_back("PDBS_ONCE");
-    sampling_types.push_back("FF");
-    sampling_types.push_back("FF_HALF");
     parser.add_enum_option(
         "sampling",
         sampling_types,

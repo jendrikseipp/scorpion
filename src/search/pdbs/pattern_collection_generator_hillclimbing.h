@@ -42,8 +42,6 @@ enum class CostPartitioningType {
 enum class SamplingType {
     PDBS,
     PDBS_ONCE,
-    FF,
-    FF_HALF,
 };
 
 // Implementation of the pattern generation algorithm by Haslum et al.
