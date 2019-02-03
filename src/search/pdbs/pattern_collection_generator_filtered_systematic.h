@@ -20,6 +20,7 @@ class AdaptiveQueue;
 }
 
 namespace utils {
+class RandomNumberGenerator;
 class Timer;
 }
 
@@ -60,6 +61,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const bool store_orders;
     const DeadEndTreatment dead_end_treatment;
     const PatternOrder pattern_order;
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
 
     std::vector<std::vector<int>> relevant_operators_per_variable;

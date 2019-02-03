@@ -16,6 +16,8 @@
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
+#include "../utils/rng.h"
+#include "../utils/rng_options.h"
 
 #include <algorithm>
 #include <cassert>
@@ -114,6 +116,7 @@ static unique_ptr<PatternCollection> get_patterns(
     bool only_sga_patterns,
     PatternOrder order,
     const vector<int> &domains,
+    utils::RandomNumberGenerator &rng,
     const utils::CountdownTimer &timer) {
     utils::Log() << "Generate patterns for size " << pattern_size << endl;
     options::Options opts;
@@ -136,7 +139,7 @@ static unique_ptr<PatternCollection> get_patterns(
         return nullptr;
     }
     if (order == PatternOrder::RANDOM) {
-        random_shuffle(patterns.begin(), patterns.end());
+        rng.shuffle(patterns);
     } else if (order == PatternOrder::REVERSE) {
         reverse(patterns.begin(), patterns.end());
     } else if (order == PatternOrder::INCREASING_PDB_SIZE) {
@@ -203,6 +206,7 @@ class SequentialPatternGenerator {
     int max_pattern_size;
     bool only_sga_patterns;
     PatternOrder order;
+    utils::RandomNumberGenerator &rng;
     vector<int> domains;
     array_pool::ArrayPool<int> patterns;
     int cached_pattern_size;
@@ -211,11 +215,13 @@ public:
         const shared_ptr<AbstractTask> &task,
         int max_pattern_size_,
         bool only_sga_patterns,
-        PatternOrder order)
+        PatternOrder order,
+        utils::RandomNumberGenerator &rng)
         : task(task),
           max_pattern_size(max_pattern_size_),
           only_sga_patterns(only_sga_patterns),
           order(order),
+          rng(rng),
           domains(get_variable_domains(TaskProxy(*task))),
           cached_pattern_size(0) {
         assert(max_pattern_size_ >= 0);
@@ -232,7 +238,8 @@ public:
             };
         } else if (cached_pattern_size < max_pattern_size) {
             unique_ptr<PatternCollection> current_patterns = get_patterns(
-                task, cached_pattern_size + 1, only_sga_patterns, order, domains, timer);
+                task, cached_pattern_size + 1, only_sga_patterns, order, domains,
+                rng, timer);
             if (current_patterns) {
                 ++cached_pattern_size;
                 cout << "Store patterns of size " << cached_pattern_size << endl;
@@ -261,6 +268,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       store_orders(opts.get<bool>("store_orders")),
       dead_end_treatment(static_cast<DeadEndTreatment>(opts.get_enum("dead_ends"))),
       pattern_order(static_cast<PatternOrder>(opts.get_enum("order"))),
+      rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")) {
 }
 
@@ -394,7 +402,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
     SequentialPatternGenerator pattern_generator(
-        task, max_pattern_size, only_sga_patterns, pattern_order);
+        task, max_pattern_size, only_sga_patterns, pattern_order, *rng);
     priority_queues::AdaptiveQueue<size_t> pq;
     PartialStateCollection dead_ends;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
@@ -526,6 +534,7 @@ static void add_options(OptionParser &parser) {
         pattern_orders,
         "order in which to consider patterns of the same size",
         "ORIGINAL");
+    utils::add_rng_options(parser);
     parser.add_option<bool>(
         "debug",
         "print debugging messages",
