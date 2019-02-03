@@ -496,7 +496,7 @@ static void add_options(OptionParser &parser) {
         "false");
     parser.add_option<bool>(
         "store_orders",
-        "store orders",
+        "store orders (filtered_systematic() must be the first generator)",
         "true");
     vector<string> dead_end_treatments;
     dead_end_treatments.push_back("IGNORE");
