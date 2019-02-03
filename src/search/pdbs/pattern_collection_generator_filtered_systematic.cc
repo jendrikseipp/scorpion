@@ -246,7 +246,8 @@ public:
             }
             assert(internal_id != -1);
             array_pool::ArrayPoolSlice<int> slice = patterns.get_slice(internal_id);
-            assert(equal(slice.begin(), slice.end(), patterns.get_slice(pattern_id).begin()));
+            assert(order_type == PatternOrder::RANDOM ||
+                   equal(slice.begin(), slice.end(), patterns.get_slice(pattern_id).begin()));
             return {
                        slice.begin(), slice.end()
             };
@@ -268,6 +269,14 @@ public:
             }
         }
         return {};
+    }
+
+    void restart() {
+        if (order_type == PatternOrder::RANDOM) {
+            for (vector<int> &order : orders) {
+                rng.shuffle(order);
+            }
+        }
     }
 };
 
@@ -429,6 +438,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     num_evaluated_patterns = 0;
     bool limit_reached = false;
     while (!limit_reached) {
+        pattern_generator.restart();
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator, dead_ends,
