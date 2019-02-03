@@ -205,10 +205,11 @@ class SequentialPatternGenerator {
     shared_ptr<AbstractTask> task;
     int max_pattern_size;
     bool only_sga_patterns;
-    PatternOrder order;
+    PatternOrder order_type;
     utils::RandomNumberGenerator &rng;
     vector<int> domains;
     array_pool::ArrayPool<int> patterns;
+    vector<vector<int>> orders;
     int cached_pattern_size;
 public:
     SequentialPatternGenerator(
@@ -220,7 +221,7 @@ public:
         : task(task),
           max_pattern_size(max_pattern_size_),
           only_sga_patterns(only_sga_patterns),
-          order(order),
+          order_type(order),
           rng(rng),
           domains(get_variable_domains(TaskProxy(*task))),
           cached_pattern_size(0) {
@@ -232,17 +233,34 @@ public:
     Pattern get_pattern(int pattern_id, const utils::CountdownTimer &timer) {
         assert(pattern_id >= 0);
         if (pattern_id < patterns.size()) {
-            array_pool::ArrayPoolSlice<int> slice = patterns.get_slice(pattern_id);
+            int internal_id = -1;
+            int start_id = 0;
+            int end_id = -1;
+            for (const vector<int> &order : orders) {
+                end_id += order.size();
+                if (pattern_id >= start_id && pattern_id <= end_id) {
+                    internal_id = order[pattern_id - start_id];
+                    break;
+                }
+                start_id += order.size();
+            }
+            assert(internal_id != -1);
+            array_pool::ArrayPoolSlice<int> slice = patterns.get_slice(internal_id);
+            assert(equal(slice.begin(), slice.end(), patterns.get_slice(pattern_id).begin()));
             return {
                        slice.begin(), slice.end()
             };
         } else if (cached_pattern_size < max_pattern_size) {
             unique_ptr<PatternCollection> current_patterns = get_patterns(
-                task, cached_pattern_size + 1, only_sga_patterns, order, domains,
+                task, cached_pattern_size + 1, only_sga_patterns, order_type, domains,
                 rng, timer);
             if (current_patterns) {
                 ++cached_pattern_size;
                 cout << "Store patterns of size " << cached_pattern_size << endl;
+                assert(patterns.size() == pattern_id);
+                vector<int> current_order(current_patterns->size(), -1);
+                iota(current_order.begin(), current_order.end(), pattern_id);
+                orders.push_back(move(current_order));
                 for (Pattern &pattern : *current_patterns) {
                     patterns.append(move(pattern));
                 }
