@@ -21,6 +21,7 @@ enum class DeadEndTreatment {
     IGNORE,
     ALL,
     NEW,
+    NEW_FOR_CURRENT_ORDER,
 };
 
 struct AbstractBackwardOperator {
@@ -61,6 +62,7 @@ class PartialStateCollection {
 public:
     void add(std::vector<FactPair> &&facts);
     bool subsumes(const std::vector<FactPair> &facts) const;
+    void clear();
 };
 
 using AbstractOperatorSet = utils::HashMap<

@@ -388,7 +388,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                        any_of(goal_distances.begin(), goal_distances.end(),
                               [](int d) {return d > 0;}));
             } else {
-                assert(dead_end_treatment == DeadEndTreatment::NEW);
+                assert(dead_end_treatment == DeadEndTreatment::NEW ||
+                       dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER);
             }
 #endif
         }
@@ -439,6 +440,9 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     bool limit_reached = false;
     while (!limit_reached) {
         pattern_generator.restart();
+        if (dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER) {
+            dead_ends.clear();
+        }
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator, dead_ends,
@@ -538,6 +542,7 @@ static void add_options(OptionParser &parser) {
     dead_end_treatments.push_back("IGNORE");
     dead_end_treatments.push_back("ALL");
     dead_end_treatments.push_back("NEW");
+    dead_end_treatments.push_back("NEW_FOR_CURRENT_ORDER");
     parser.add_enum_option(
         "dead_ends",
         dead_end_treatments,

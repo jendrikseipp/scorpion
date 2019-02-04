@@ -96,6 +96,10 @@ bool PartialStateCollection::subsumes(const std::vector<FactPair> &facts) const 
     return false;
 }
 
+void PartialStateCollection::clear() {
+    partial_states = array_pool::ArrayPool<FactPair>();
+}
+
 
 static bool operator_is_subsumed(
     const OperatorInfo &op,
@@ -449,7 +453,8 @@ bool PatternEvaluator::is_useful(
     } else if (dead_end_treatment == DeadEndTreatment::ALL) {
         return has_dead_end;
     } else {
-        assert(dead_end_treatment == DeadEndTreatment::NEW);
+        assert(dead_end_treatment == DeadEndTreatment::NEW ||
+               dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER);
         if (has_dead_end) {
             return detects_new_dead_ends(pattern, distances, dead_ends);
         } else {
