@@ -309,22 +309,15 @@ public:
         for (vector<int> &order : orders) {
             if (order_type == PatternOrder::RANDOM) {
                 rng.shuffle(order);
-            } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP) {
-                sort(order.begin(), order.end(), [this, used_var_pairs](int i, int j) {
-                         array_pool::ArrayPoolSlice<int> slice_i = patterns.get_slice(i);
-                         int novelty_i = get_num_new_var_pairs(slice_i, used_var_pairs);
-                         array_pool::ArrayPoolSlice<int> slice_j = patterns.get_slice(j);
-                         int novelty_j = get_num_new_var_pairs(slice_j, used_var_pairs);
-                         return novelty_i < novelty_j;
+            } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
+                       order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
+                sort(order.begin(), order.end(), [this, &used_var_pairs](int i, int j) {
+                         return get_num_new_var_pairs(patterns.get_slice(i), used_var_pairs)
+                         < get_num_new_var_pairs(patterns.get_slice(j), used_var_pairs);
                      });
-            } else if (order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
-                sort(order.begin(), order.end(), [this, used_var_pairs](int i, int j) {
-                         array_pool::ArrayPoolSlice<int> slice_i = patterns.get_slice(i);
-                         int novelty_i = get_num_new_var_pairs(slice_i, used_var_pairs);
-                         array_pool::ArrayPoolSlice<int> slice_j = patterns.get_slice(j);
-                         int novelty_j = get_num_new_var_pairs(slice_j, used_var_pairs);
-                         return novelty_i > novelty_j;
-                     });
+                if (order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
+                    reverse(order.begin(), order.end());
+                }
             }
         }
     }
