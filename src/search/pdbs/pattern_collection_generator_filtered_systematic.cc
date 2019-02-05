@@ -96,7 +96,7 @@ static int get_max(const Iterable &pattern) {
 
 template<typename Iterable>
 static int get_num_new_var_pairs(
-    Iterable &pattern,
+    const Iterable &pattern,
     const vector<vector<bool>> &used_var_pairs) {
     int num_new_var_pairs = 0;
     for (auto it1 = pattern.begin(); it1 != pattern.end(); ++it1) {
@@ -163,6 +163,7 @@ static void compute_pattern_order(
     vector<int> &order,
     PatternOrder order_type,
     const vector<int> &domains,
+    const vector<vector<bool>> &used_var_pairs,
     utils::RandomNumberGenerator &rng) {
     if (order_type != PatternOrder::ORIGINAL && order_type != PatternOrder::REVERSE) {
         rng.shuffle(order);
@@ -209,19 +210,24 @@ static void compute_pattern_order(
                  make_pair(get_min(patterns.get_slice(j)),
                            get_pdb_size(domains, patterns.get_slice(j)));
              });
+    } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP) {
+        sort(order.begin(), order.end(),
+             [&patterns, &used_var_pairs](int i, int j) {
+                 return get_num_new_var_pairs(patterns.get_slice(i), used_var_pairs)
+                 < get_num_new_var_pairs(patterns.get_slice(j), used_var_pairs);
+             });
     } else {
         assert(order_type == PatternOrder::ORIGINAL ||
                order_type == PatternOrder::RANDOM ||
-               order_type == PatternOrder::REVERSE ||
-               order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
-               order_type == PatternOrder::NEW_VAR_PAIRS_DOWN);
+               order_type == PatternOrder::REVERSE);
     }
 
     if (order_type == PatternOrder::REVERSE ||
         order_type == PatternOrder::PDB_SIZE_DOWN ||
         order_type == PatternOrder::CG_SUM_DOWN ||
         order_type == PatternOrder::CG_MIN_DOWN ||
-        order_type == PatternOrder::CG_MAX_DOWN) {
+        order_type == PatternOrder::CG_MAX_DOWN ||
+        order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
         reverse(order.begin(), order.end());
     }
 }
@@ -256,7 +262,10 @@ public:
             max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
     }
 
-    Pattern get_pattern(int pattern_id, const utils::CountdownTimer &timer) {
+    Pattern get_pattern(
+        int pattern_id,
+        const vector<vector<bool>> &used_var_pairs,
+        const utils::CountdownTimer &timer) {
         assert(pattern_id >= 0);
         if (pattern_id < patterns.size()) {
             int internal_id = -1;
@@ -287,9 +296,10 @@ public:
                 }
                 vector<int> current_order(current_patterns->size(), -1);
                 iota(current_order.begin(), current_order.end(), pattern_id);
-                compute_pattern_order(patterns, current_order, order_type, domains, rng);
+                compute_pattern_order(
+                    patterns, current_order, order_type, domains, used_var_pairs, rng);
                 orders.push_back(move(current_order));
-                return get_pattern(pattern_id, timer);
+                return get_pattern(pattern_id, used_var_pairs, timer);
             }
         }
         return {};
@@ -362,7 +372,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         ++pattern_id;
 
         pattern_computation_timer->resume();
-        Pattern pattern = pattern_generator.get_pattern(pattern_id, timer);
+        Pattern pattern = pattern_generator.get_pattern(
+            pattern_id, used_var_pairs, timer);
         pattern_computation_timer->stop();
 
         if (timer.is_expired()) {
