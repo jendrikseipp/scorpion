@@ -155,49 +155,34 @@ static unique_ptr<PatternCollection> get_patterns(
     if (timer.is_expired()) {
         return nullptr;
     }
-    if (order == PatternOrder::RANDOM) {
+
+    if (order != PatternOrder::ORIGINAL && order != PatternOrder::REVERSE) {
         rng.shuffle(patterns);
-    } else if (order == PatternOrder::REVERSE) {
-        reverse(patterns.begin(), patterns.end());
-    } else if (order == PatternOrder::INCREASING_PDB_SIZE) {
+    }
+
+    if (order == PatternOrder::INCREASING_PDB_SIZE ||
+        order == PatternOrder::DECREASING_PDB_SIZE) {
         sort(patterns.begin(), patterns.end(),
              [&domains](const Pattern &p1, const Pattern &p2) {
                  return get_pdb_size(domains, p1) < get_pdb_size(domains, p2);
              });
-    } else if (order == PatternOrder::DECREASING_PDB_SIZE) {
-        sort(patterns.begin(), patterns.end(),
-             [&domains](const Pattern &p1, const Pattern &p2) {
-                 return get_pdb_size(domains, p1) > get_pdb_size(domains, p2);
-             });
-    } else if (order == PatternOrder::CG_SUM_UP) {
+    } else if (order == PatternOrder::CG_SUM_UP ||
+               order == PatternOrder::CG_SUM_DOWN) {
         sort(patterns.begin(), patterns.end(),
              [](const Pattern &p1, const Pattern &p2) {
                  return get_sum(p1) < get_sum(p2);
              });
-    } else if (order == PatternOrder::CG_SUM_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [](const Pattern &p1, const Pattern &p2) {
-                 return get_sum(p1) > get_sum(p2);
-             });
-    } else if (order == PatternOrder::CG_MIN_UP) {
+    } else if (order == PatternOrder::CG_MIN_UP ||
+               order == PatternOrder::CG_MIN_DOWN) {
         sort(patterns.begin(), patterns.end(),
              [](const Pattern &p1, const Pattern &p2) {
                  return get_min(p1) < get_min(p2);
              });
-    } else if (order == PatternOrder::CG_MIN_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [](const Pattern &p1, const Pattern &p2) {
-                 return get_min(p1) > get_min(p2);
-             });
-    } else if (order == PatternOrder::CG_MAX_UP) {
+    } else if (order == PatternOrder::CG_MAX_UP ||
+               order == PatternOrder::CG_MAX_DOWN) {
         sort(patterns.begin(), patterns.end(),
              [](const Pattern &p1, const Pattern &p2) {
                  return get_max(p1) < get_max(p2);
-             });
-    } else if (order == PatternOrder::CG_MAX_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [](const Pattern &p1, const Pattern &p2) {
-                 return get_max(p1) > get_max(p2);
              });
     } else if (order == PatternOrder::CG_MIN_DOWN_CG_SUM_DOWN) {
         sort(patterns.begin(), patterns.end(),
@@ -213,9 +198,20 @@ static unique_ptr<PatternCollection> get_patterns(
              });
     } else {
         assert(order == PatternOrder::ORIGINAL ||
+               order == PatternOrder::RANDOM ||
+               order == PatternOrder::REVERSE ||
                order == PatternOrder::NEW_VAR_PAIRS_UP ||
                order == PatternOrder::NEW_VAR_PAIRS_DOWN);
     }
+
+    if (order == PatternOrder::REVERSE ||
+        order == PatternOrder::DECREASING_PDB_SIZE ||
+        order == PatternOrder::CG_SUM_DOWN ||
+        order == PatternOrder::CG_MIN_DOWN ||
+        order == PatternOrder::CG_MAX_DOWN) {
+        reverse(patterns.begin(), patterns.end());
+    }
+
     return patterns_ptr;
 }
 
