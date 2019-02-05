@@ -54,7 +54,17 @@ struct TaskInfo {
 public:
     explicit TaskInfo(const TaskProxy &task_proxy);
 
-    bool operator_affects_pattern(const Pattern &pattern, int op_id) const;
+    template<typename Iterable>
+    bool operator_affects_pattern(const Iterable &pattern, int op_id) const {
+        for (int var : pattern) {
+            if (variable_effects[op_id * num_variables + var]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    int get_num_operators() const;
 };
 
 class PartialStateCollection {

@@ -69,14 +69,10 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     }
 }
 
-bool TaskInfo::operator_affects_pattern(const Pattern &pattern, int op_id) const {
-    for (int var : pattern) {
-        if (variable_effects[op_id * num_variables + var]) {
-            return true;
-        }
-    }
-    return false;
+int TaskInfo::get_num_operators() const {
+    return operator_infos.size();
 }
+
 
 void PartialStateCollection::add(vector<FactPair> &&facts) {
     assert(is_sorted(facts.begin(), facts.end()));

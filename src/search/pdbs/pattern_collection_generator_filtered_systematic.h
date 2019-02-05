@@ -46,6 +46,8 @@ enum class PatternOrder {
     CG_MIN_DOWN_PDB_SIZE_DOWN,
     NEW_VAR_PAIRS_UP,
     NEW_VAR_PAIRS_DOWN,
+    ACTIVE_OPS_UP,
+    ACTIVE_OPS_DOWN,
 };
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {

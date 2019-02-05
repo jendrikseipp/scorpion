@@ -111,6 +111,19 @@ static int get_num_new_var_pairs(
     return num_new_var_pairs;
 }
 
+template<typename Iterable>
+static int get_num_active_ops(
+    const Iterable &pattern,
+    const TaskInfo &task_info) {
+    int num_active_ops = 0;
+    for (int op_id = 0; op_id < task_info.get_num_operators(); ++op_id) {
+        if (task_info.operator_affects_pattern(pattern, op_id)) {
+            ++num_active_ops;
+        }
+    }
+    return num_active_ops;
+}
+
 bool contains_positive_finite_value(const vector<int> &values) {
     return any_of(values.begin(), values.end(),
                   [](int v) {return v > 0 && v != numeric_limits<int>::max();});
@@ -162,6 +175,7 @@ static void compute_pattern_order(
     const array_pool::ArrayPool<int> &patterns,
     vector<int> &order,
     PatternOrder order_type,
+    const TaskInfo &task_info,
     const vector<int> &domains,
     const vector<vector<bool>> &used_var_pairs,
     utils::RandomNumberGenerator &rng) {
@@ -217,6 +231,13 @@ static void compute_pattern_order(
                  return get_num_new_var_pairs(patterns.get_slice(i), used_var_pairs)
                  < get_num_new_var_pairs(patterns.get_slice(j), used_var_pairs);
              });
+    } else if (order_type == PatternOrder::ACTIVE_OPS_UP ||
+               order_type == PatternOrder::ACTIVE_OPS_DOWN) {
+        sort(order.begin(), order.end(),
+             [&patterns, &task_info](int i, int j) {
+                 return get_num_active_ops(patterns.get_slice(i), task_info)
+                 < get_num_active_ops(patterns.get_slice(j), task_info);
+             });
     } else {
         assert(order_type == PatternOrder::ORIGINAL ||
                order_type == PatternOrder::RANDOM ||
@@ -228,7 +249,8 @@ static void compute_pattern_order(
         order_type == PatternOrder::CG_SUM_DOWN ||
         order_type == PatternOrder::CG_MIN_DOWN ||
         order_type == PatternOrder::CG_MAX_DOWN ||
-        order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
+        order_type == PatternOrder::NEW_VAR_PAIRS_DOWN ||
+        order_type == PatternOrder::ACTIVE_OPS_DOWN) {
         reverse(order.begin(), order.end());
     }
 }
@@ -236,6 +258,7 @@ static void compute_pattern_order(
 
 class SequentialPatternGenerator {
     shared_ptr<AbstractTask> task;
+    const TaskInfo &task_info;
     int max_pattern_size;
     bool only_sga_patterns;
     PatternOrder order_type;
@@ -247,11 +270,13 @@ class SequentialPatternGenerator {
 public:
     SequentialPatternGenerator(
         const shared_ptr<AbstractTask> &task,
+        const TaskInfo &task_info,
         int max_pattern_size_,
         bool only_sga_patterns,
         PatternOrder order,
         utils::RandomNumberGenerator &rng)
         : task(task),
+          task_info(task_info),
           max_pattern_size(max_pattern_size_),
           only_sga_patterns(only_sga_patterns),
           order_type(order),
@@ -298,7 +323,7 @@ public:
                 vector<int> current_order(current_patterns->size(), -1);
                 iota(current_order.begin(), current_order.end(), pattern_id);
                 compute_pattern_order(
-                    patterns, current_order, order_type, domains, used_var_pairs, rng);
+                    patterns, current_order, order_type, task_info, domains, used_var_pairs, rng);
                 orders.push_back(move(current_order));
                 return get_pattern(pattern_id, used_var_pairs, timer);
             }
@@ -312,7 +337,7 @@ public:
             order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
             for (vector<int> &order : orders) {
                 compute_pattern_order(
-                    patterns, order, order_type, domains, used_var_pairs, rng);
+                    patterns, order, order_type, task_info, domains, used_var_pairs, rng);
             }
         }
     }
@@ -476,7 +501,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
     SequentialPatternGenerator pattern_generator(
-        task, max_pattern_size, only_sga_patterns, pattern_order, *rng);
+        task, evaluator_task_info, max_pattern_size, only_sga_patterns, pattern_order, *rng);
     priority_queues::AdaptiveQueue<size_t> pq;
     PartialStateCollection dead_ends;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
@@ -615,6 +640,8 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("CG_MIN_DOWN_PDB_SIZE_DOWN");
     pattern_orders.push_back("NEW_VAR_PAIRS_UP");
     pattern_orders.push_back("NEW_VAR_PAIRS_DOWN");
+    pattern_orders.push_back("ACTIVE_OPS_UP");
+    pattern_orders.push_back("ACTIVE_OPS_DOWN");
     parser.add_enum_option(
         "order",
         pattern_orders,
