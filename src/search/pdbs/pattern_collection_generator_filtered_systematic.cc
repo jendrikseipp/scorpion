@@ -307,18 +307,7 @@ public:
 
     void restart(const vector<vector<bool>> &used_var_pairs) {
         for (vector<int> &order : orders) {
-            if (order_type == PatternOrder::RANDOM) {
-                rng.shuffle(order);
-            } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
-                       order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
-                sort(order.begin(), order.end(), [this, &used_var_pairs](int i, int j) {
-                         return get_num_new_var_pairs(patterns.get_slice(i), used_var_pairs)
-                         < get_num_new_var_pairs(patterns.get_slice(j), used_var_pairs);
-                     });
-                if (order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
-                    reverse(order.begin(), order.end());
-                }
-            }
+            compute_pattern_order(patterns, order, order_type, domains, used_var_pairs, rng);
         }
     }
 };
