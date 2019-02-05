@@ -44,6 +44,8 @@ enum class PatternOrder {
     CG_MAX_DOWN,
     CG_MIN_DOWN_CG_SUM_DOWN,
     CG_MIN_DOWN_PDB_SIZE_DOWN,
+    NEW_VAR_PAIRS_UP,
+    NEW_VAR_PAIRS_DOWN,
 };
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
@@ -81,6 +83,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
         priority_queues::AdaptiveQueue<size_t> &pq,
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,
+        std::vector<std::vector<bool>> &used_var_pairs,
         int64_t &collection_size,
         double overall_remaining_time);
 public:

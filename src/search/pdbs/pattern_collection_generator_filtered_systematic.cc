@@ -91,6 +91,23 @@ static int get_max(const Pattern &pattern) {
     return res;
 }
 
+template<typename Iterable>
+static int get_num_new_var_pairs(
+    Iterable &pattern,
+    const vector<vector<bool>> &used_var_pairs) {
+    int num_new_var_pairs = 0;
+    for (auto it1 = pattern.begin(); it1 != pattern.end(); ++it1) {
+        for (auto it2 = it1 + 1; it2 != pattern.end(); ++it2) {
+            int var1 = *it1;
+            int var2 = *it2;
+            if (!used_var_pairs[var1][var2]) {
+                ++num_new_var_pairs;
+            }
+        }
+    }
+    return num_new_var_pairs;
+}
+
 bool contains_positive_finite_value(const vector<int> &values) {
     return any_of(values.begin(), values.end(),
                   [](int v) {return v > 0 && v != numeric_limits<int>::max();});
@@ -195,7 +212,9 @@ static unique_ptr<PatternCollection> get_patterns(
                  make_pair(get_min(p2), get_pdb_size(domains, p2));
              });
     } else {
-        assert(order == PatternOrder::ORIGINAL);
+        assert(order == PatternOrder::ORIGINAL ||
+               order == PatternOrder::NEW_VAR_PAIRS_UP ||
+               order == PatternOrder::NEW_VAR_PAIRS_DOWN);
     }
     return patterns_ptr;
 }
@@ -246,8 +265,6 @@ public:
             }
             assert(internal_id != -1);
             array_pool::ArrayPoolSlice<int> slice = patterns.get_slice(internal_id);
-            assert(order_type == PatternOrder::RANDOM ||
-                   equal(slice.begin(), slice.end(), patterns.get_slice(pattern_id).begin()));
             return {
                        slice.begin(), slice.end()
             };
@@ -271,10 +288,26 @@ public:
         return {};
     }
 
-    void restart() {
-        if (order_type == PatternOrder::RANDOM) {
-            for (vector<int> &order : orders) {
+    void restart(const vector<vector<bool>> &used_var_pairs) {
+        for (vector<int> &order : orders) {
+            if (order_type == PatternOrder::RANDOM) {
                 rng.shuffle(order);
+            } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP) {
+                sort(order.begin(), order.end(), [this, used_var_pairs](int i, int j) {
+                         array_pool::ArrayPoolSlice<int> slice_i = patterns.get_slice(i);
+                         int novelty_i = get_num_new_var_pairs(slice_i, used_var_pairs);
+                         array_pool::ArrayPoolSlice<int> slice_j = patterns.get_slice(j);
+                         int novelty_j = get_num_new_var_pairs(slice_j, used_var_pairs);
+                         return novelty_i < novelty_j;
+                     });
+            } else if (order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
+                sort(order.begin(), order.end(), [this, used_var_pairs](int i, int j) {
+                         array_pool::ArrayPoolSlice<int> slice_i = patterns.get_slice(i);
+                         int novelty_i = get_num_new_var_pairs(slice_i, used_var_pairs);
+                         array_pool::ArrayPoolSlice<int> slice_j = patterns.get_slice(j);
+                         int novelty_j = get_num_new_var_pairs(slice_j, used_var_pairs);
+                         return novelty_i > novelty_j;
+                     });
             }
         }
     }
@@ -308,6 +341,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
+    vector<vector<bool>> &used_var_pairs,
     int64_t &collection_size,
     double overall_remaining_time) {
     utils::Log log;
@@ -332,7 +366,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         ++num_evaluated_patterns;
 
         if (debug) {
-            cout << "Pattern " << pattern_id << ": " << pattern << endl;
+            cout << "Pattern " << pattern_id << ": " << pattern << " "
+                 << get_num_new_var_pairs(pattern, used_var_pairs) << endl;
         }
 
         if (pattern.empty()) {
@@ -407,6 +442,11 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             }
             projections->push_back(move(projection));
             pattern_set.insert(pattern);
+            for (int var1 : pattern) {
+                for (int var2 : pattern) {
+                    used_var_pairs[var1][var2] = true;
+                }
+            }
             collection_size += pdb_size;
         }
     }
@@ -435,18 +475,23 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     PartialStateCollection dead_ends;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
+    int num_vars = task_proxy.get_variables().size();
+    vector<vector<bool>> used_var_pairs;
+    for (int i = 0; i < num_vars; ++i) {
+        used_var_pairs.emplace_back(num_vars, false);
+    }
     int64_t collection_size = 0;
     num_evaluated_patterns = 0;
     bool limit_reached = false;
     while (!limit_reached) {
-        pattern_generator.restart();
+        pattern_generator.restart(used_var_pairs);
         if (dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER) {
             dead_ends.clear();
         }
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator, dead_ends,
-            pq, projections, pattern_set, collection_size,
+            pq, projections, pattern_set, used_var_pairs, collection_size,
             timer.get_remaining_time());
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "
@@ -562,6 +607,8 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("CG_MAX_DOWN");
     pattern_orders.push_back("CG_MIN_DOWN_CG_SUM_DOWN");
     pattern_orders.push_back("CG_MIN_DOWN_PDB_SIZE_DOWN");
+    pattern_orders.push_back("NEW_VAR_PAIRS_UP");
+    pattern_orders.push_back("NEW_VAR_PAIRS_DOWN");
     parser.add_enum_option(
         "order",
         pattern_orders,
