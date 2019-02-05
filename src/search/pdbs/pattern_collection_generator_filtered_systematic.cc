@@ -210,7 +210,8 @@ static void compute_pattern_order(
                  make_pair(get_min(patterns.get_slice(j)),
                            get_pdb_size(domains, patterns.get_slice(j)));
              });
-    } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP) {
+    } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
+               order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
         sort(order.begin(), order.end(),
              [&patterns, &used_var_pairs](int i, int j) {
                  return get_num_new_var_pairs(patterns.get_slice(i), used_var_pairs)
@@ -306,8 +307,13 @@ public:
     }
 
     void restart(const vector<vector<bool>> &used_var_pairs) {
-        for (vector<int> &order : orders) {
-            compute_pattern_order(patterns, order, order_type, domains, used_var_pairs, rng);
+        if (order_type == PatternOrder::RANDOM ||
+            order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
+            order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
+            for (vector<int> &order : orders) {
+                compute_pattern_order(
+                    patterns, order, order_type, domains, used_var_pairs, rng);
+            }
         }
     }
 };
