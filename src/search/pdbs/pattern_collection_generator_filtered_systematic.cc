@@ -160,8 +160,8 @@ static unique_ptr<PatternCollection> get_patterns(
         rng.shuffle(patterns);
     }
 
-    if (order == PatternOrder::INCREASING_PDB_SIZE ||
-        order == PatternOrder::DECREASING_PDB_SIZE) {
+    if (order == PatternOrder::PDB_SIZE_UP ||
+        order == PatternOrder::PDB_SIZE_DOWN) {
         sort(patterns.begin(), patterns.end(),
              [&domains](const Pattern &p1, const Pattern &p2) {
                  return get_pdb_size(domains, p1) < get_pdb_size(domains, p2);
@@ -205,7 +205,7 @@ static unique_ptr<PatternCollection> get_patterns(
     }
 
     if (order == PatternOrder::REVERSE ||
-        order == PatternOrder::DECREASING_PDB_SIZE ||
+        order == PatternOrder::PDB_SIZE_DOWN ||
         order == PatternOrder::CG_SUM_DOWN ||
         order == PatternOrder::CG_MIN_DOWN ||
         order == PatternOrder::CG_MAX_DOWN) {
@@ -593,8 +593,8 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("ORIGINAL");
     pattern_orders.push_back("RANDOM");
     pattern_orders.push_back("REVERSE");
-    pattern_orders.push_back("INCREASING_PDB_SIZE");
-    pattern_orders.push_back("DECREASING_PDB_SIZE");
+    pattern_orders.push_back("PDB_SIZE_UP");
+    pattern_orders.push_back("PDB_SIZE_DOWN");
     pattern_orders.push_back("CG_SUM_UP");
     pattern_orders.push_back("CG_SUM_DOWN");
     pattern_orders.push_back("CG_MIN_UP");
