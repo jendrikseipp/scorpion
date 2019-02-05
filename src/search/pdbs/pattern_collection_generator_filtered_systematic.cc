@@ -53,7 +53,8 @@ static vector<vector<int>> get_relevant_operators_per_variable(
     return operators_per_variable;
 }
 
-static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern) {
+template<typename Iterable>
+static int get_pdb_size(const vector<int> &domain_sizes, const Iterable &pattern) {
     int size = 1;
     for (int var : pattern) {
         if (utils::is_product_within_limit(
@@ -66,7 +67,8 @@ static int get_pdb_size(const vector<int> &domain_sizes, const Pattern &pattern)
     return size;
 }
 
-static int get_sum(const Pattern &pattern) {
+template<typename Iterable>
+static int get_sum(const Iterable &pattern) {
     int sum = 0;
     for (int var : pattern) {
         sum += var;
@@ -74,8 +76,8 @@ static int get_sum(const Pattern &pattern) {
     return sum;
 }
 
-
-static int get_min(const Pattern &pattern) {
+template<typename Iterable>
+static int get_min(const Iterable &pattern) {
     int res = numeric_limits<int>::max();
     for (int var : pattern) {
         res = min(res, var);
@@ -83,7 +85,8 @@ static int get_min(const Pattern &pattern) {
     return res;
 }
 
-static int get_max(const Pattern &pattern) {
+template<typename Iterable>
+static int get_max(const Iterable &pattern) {
     int res = -1;
     for (int var : pattern) {
         res = max(res, var);
@@ -131,9 +134,6 @@ static unique_ptr<PatternCollection> get_patterns(
     const shared_ptr<AbstractTask> &task,
     int pattern_size,
     bool only_sga_patterns,
-    PatternOrder order,
-    const vector<int> &domains,
-    utils::RandomNumberGenerator &rng,
     const utils::CountdownTimer &timer) {
     utils::Log() << "Generate patterns for size " << pattern_size << endl;
     options::Options opts;
@@ -155,64 +155,75 @@ static unique_ptr<PatternCollection> get_patterns(
     if (timer.is_expired()) {
         return nullptr;
     }
+    return patterns_ptr;
+}
 
-    if (order != PatternOrder::ORIGINAL && order != PatternOrder::REVERSE) {
-        rng.shuffle(patterns);
+static void compute_pattern_order(
+    const array_pool::ArrayPool<int> &patterns,
+    vector<int> &order,
+    PatternOrder order_type,
+    const vector<int> &domains,
+    utils::RandomNumberGenerator &rng) {
+    if (order_type != PatternOrder::ORIGINAL && order_type != PatternOrder::REVERSE) {
+        rng.shuffle(order);
     }
 
-    if (order == PatternOrder::PDB_SIZE_UP ||
-        order == PatternOrder::PDB_SIZE_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [&domains](const Pattern &p1, const Pattern &p2) {
-                 return get_pdb_size(domains, p1) < get_pdb_size(domains, p2);
+    if (order_type == PatternOrder::PDB_SIZE_UP ||
+        order_type == PatternOrder::PDB_SIZE_DOWN) {
+        sort(order.begin(), order.end(),
+             [&patterns, &domains](int i, int j) {
+                 return get_pdb_size(domains, patterns.get_slice(i))
+                 < get_pdb_size(domains, patterns.get_slice(j));
              });
-    } else if (order == PatternOrder::CG_SUM_UP ||
-               order == PatternOrder::CG_SUM_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [](const Pattern &p1, const Pattern &p2) {
-                 return get_sum(p1) < get_sum(p2);
+    } else if (order_type == PatternOrder::CG_SUM_UP ||
+               order_type == PatternOrder::CG_SUM_DOWN) {
+        sort(order.begin(), order.end(),
+             [&patterns](int i, int j) {
+                 return get_sum(patterns.get_slice(i)) < get_sum(patterns.get_slice(j));
              });
-    } else if (order == PatternOrder::CG_MIN_UP ||
-               order == PatternOrder::CG_MIN_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [](const Pattern &p1, const Pattern &p2) {
-                 return get_min(p1) < get_min(p2);
+    } else if (order_type == PatternOrder::CG_MIN_UP ||
+               order_type == PatternOrder::CG_MIN_DOWN) {
+        sort(order.begin(), order.end(),
+             [&patterns](int i, int j) {
+                 return get_min(patterns.get_slice(i)) < get_min(patterns.get_slice(j));
              });
-    } else if (order == PatternOrder::CG_MAX_UP ||
-               order == PatternOrder::CG_MAX_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [](const Pattern &p1, const Pattern &p2) {
-                 return get_max(p1) < get_max(p2);
+    } else if (order_type == PatternOrder::CG_MAX_UP ||
+               order_type == PatternOrder::CG_MAX_DOWN) {
+        sort(order.begin(), order.end(),
+             [&patterns](int i, int j) {
+                 return get_max(patterns.get_slice(i)) < get_max(patterns.get_slice(j));
              });
-    } else if (order == PatternOrder::CG_MIN_DOWN_CG_SUM_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [](const Pattern &p1, const Pattern &p2) {
-                 return make_pair(get_min(p1), get_sum(p1)) >
-                 make_pair(get_min(p2), get_sum(p2));
+    } else if (order_type == PatternOrder::CG_MIN_DOWN_CG_SUM_DOWN) {
+        sort(order.begin(), order.end(),
+             [&patterns](int i, int j) {
+                 return make_pair(get_min(patterns.get_slice(i)),
+                                  get_sum(patterns.get_slice(i))) >
+                 make_pair(get_min(patterns.get_slice(j)),
+                           get_sum(patterns.get_slice(j)));
              });
-    } else if (order == PatternOrder::CG_MIN_DOWN_PDB_SIZE_DOWN) {
-        sort(patterns.begin(), patterns.end(),
-             [&domains](const Pattern &p1, const Pattern &p2) {
-                 return make_pair(get_min(p1), get_pdb_size(domains, p1)) >
-                 make_pair(get_min(p2), get_pdb_size(domains, p2));
+    } else if (order_type == PatternOrder::CG_MIN_DOWN_PDB_SIZE_DOWN) {
+        sort(order.begin(), order.end(),
+             [&patterns, &domains](int i, int j) {
+                 return make_pair(get_min(patterns.get_slice(i)),
+                                  get_pdb_size(domains, patterns.get_slice(i))) >
+                 make_pair(get_min(patterns.get_slice(j)),
+                           get_pdb_size(domains, patterns.get_slice(j)));
              });
     } else {
-        assert(order == PatternOrder::ORIGINAL ||
-               order == PatternOrder::RANDOM ||
-               order == PatternOrder::REVERSE ||
-               order == PatternOrder::NEW_VAR_PAIRS_UP ||
-               order == PatternOrder::NEW_VAR_PAIRS_DOWN);
+        assert(order_type == PatternOrder::ORIGINAL ||
+               order_type == PatternOrder::RANDOM ||
+               order_type == PatternOrder::REVERSE ||
+               order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
+               order_type == PatternOrder::NEW_VAR_PAIRS_DOWN);
     }
 
-    if (order == PatternOrder::REVERSE ||
-        order == PatternOrder::PDB_SIZE_DOWN ||
-        order == PatternOrder::CG_SUM_DOWN ||
-        order == PatternOrder::CG_MIN_DOWN ||
-        order == PatternOrder::CG_MAX_DOWN) {
-        reverse(patterns.begin(), patterns.end());
+    if (order_type == PatternOrder::REVERSE ||
+        order_type == PatternOrder::PDB_SIZE_DOWN ||
+        order_type == PatternOrder::CG_SUM_DOWN ||
+        order_type == PatternOrder::CG_MIN_DOWN ||
+        order_type == PatternOrder::CG_MAX_DOWN) {
+        reverse(order.begin(), order.end());
     }
-
-    return patterns_ptr;
 }
 
 
@@ -266,18 +277,18 @@ public:
             };
         } else if (cached_pattern_size < max_pattern_size) {
             unique_ptr<PatternCollection> current_patterns = get_patterns(
-                task, cached_pattern_size + 1, only_sga_patterns, order_type, domains,
-                rng, timer);
+                task, cached_pattern_size + 1, only_sga_patterns, timer);
             if (current_patterns) {
                 ++cached_pattern_size;
                 cout << "Store patterns of size " << cached_pattern_size << endl;
                 assert(patterns.size() == pattern_id);
-                vector<int> current_order(current_patterns->size(), -1);
-                iota(current_order.begin(), current_order.end(), pattern_id);
-                orders.push_back(move(current_order));
                 for (Pattern &pattern : *current_patterns) {
                     patterns.append(move(pattern));
                 }
+                vector<int> current_order(current_patterns->size(), -1);
+                iota(current_order.begin(), current_order.end(), pattern_id);
+                compute_pattern_order(patterns, current_order, order_type, domains, rng);
+                orders.push_back(move(current_order));
                 return get_pattern(pattern_id, timer);
             }
         }

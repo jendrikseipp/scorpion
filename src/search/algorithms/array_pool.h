@@ -39,11 +39,11 @@ template<typename Value>
 class ArrayPoolSlice {
 public:
     using Iterator = typename std::vector<Value>::const_iterator;
-    Iterator begin() {
+    Iterator begin() const {
         return first;
     }
 
-    Iterator end() {
+    Iterator end() const {
         return last;
     }
 private:
