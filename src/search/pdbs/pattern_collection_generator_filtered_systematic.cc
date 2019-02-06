@@ -315,7 +315,7 @@ public:
                 task, cached_pattern_size + 1, only_sga_patterns, timer);
             if (current_patterns) {
                 ++cached_pattern_size;
-                cout << "Store patterns of size " << cached_pattern_size << endl;
+                utils::Log() << "Store patterns of size " << cached_pattern_size << endl;
                 assert(patterns.size() == pattern_id);
                 for (Pattern &pattern : *current_patterns) {
                     patterns.append(move(pattern));
@@ -325,6 +325,7 @@ public:
                 compute_pattern_order(
                     patterns, current_order, order_type, task_info, domains, used_var_pairs, rng);
                 orders.push_back(move(current_order));
+                utils::Log() << "Finished storing patterns of size " << cached_pattern_size << endl;
                 return get_pattern(pattern_id, used_var_pairs, timer);
             }
         }
