@@ -171,6 +171,39 @@ static unique_ptr<PatternCollection> get_patterns(
     return patterns_ptr;
 }
 
+static int compute_score(
+    const array_pool::ArrayPoolSlice<int> &pattern,
+    PatternOrder order_type,
+    const TaskInfo &task_info,
+    const vector<int> &domains,
+    const vector<vector<bool>> &used_var_pairs) {
+    if (order_type == PatternOrder::PDB_SIZE_UP ||
+        order_type == PatternOrder::PDB_SIZE_DOWN) {
+        return get_pdb_size(domains, pattern);
+    } else if (order_type == PatternOrder::CG_SUM_UP ||
+               order_type == PatternOrder::CG_SUM_DOWN) {
+        return get_sum(pattern);
+    } else if (order_type == PatternOrder::CG_MIN_UP ||
+               order_type == PatternOrder::CG_MIN_DOWN) {
+        return get_min(pattern);
+    } else if (order_type == PatternOrder::CG_MAX_UP ||
+               order_type == PatternOrder::CG_MAX_DOWN) {
+        return get_max(pattern);
+    } else if (order_type == PatternOrder::CG_MIN_DOWN_CG_SUM_DOWN) {
+        return get_min(pattern) * 1000 + get_sum(pattern);
+    } else if (order_type == PatternOrder::CG_MIN_DOWN_PDB_SIZE_DOWN) {
+        return get_min(pattern) * 1000000 + get_pdb_size(domains, pattern);
+    } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
+               order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
+        return get_num_new_var_pairs(pattern, used_var_pairs);
+    } else if (order_type == PatternOrder::ACTIVE_OPS_UP ||
+               order_type == PatternOrder::ACTIVE_OPS_DOWN) {
+        return get_num_active_ops(pattern, task_info);
+    } else {
+        ABORT("wrong order_type");
+    }
+}
+
 static void compute_pattern_order(
     const array_pool::ArrayPool<int> &patterns,
     vector<int> &order,
@@ -179,73 +212,35 @@ static void compute_pattern_order(
     const vector<int> &domains,
     const vector<vector<bool>> &used_var_pairs,
     utils::RandomNumberGenerator &rng) {
-    if (order_type != PatternOrder::ORIGINAL && order_type != PatternOrder::REVERSE) {
-        rng.shuffle(order);
+    assert(patterns.size() == static_cast<int>(order.size()));
+    if (order_type == PatternOrder::ORIGINAL) {
+        return;
+    } else if (order_type == PatternOrder::REVERSE) {
+        reverse(order.begin(), order.end());
+        return;
     }
 
-    if (order_type == PatternOrder::PDB_SIZE_UP ||
-        order_type == PatternOrder::PDB_SIZE_DOWN) {
-        sort(order.begin(), order.end(),
-             [&patterns, &domains](int i, int j) {
-                 return get_pdb_size(domains, patterns.get_slice(i))
-                 < get_pdb_size(domains, patterns.get_slice(j));
-             });
-    } else if (order_type == PatternOrder::CG_SUM_UP ||
-               order_type == PatternOrder::CG_SUM_DOWN) {
-        sort(order.begin(), order.end(),
-             [&patterns](int i, int j) {
-                 return get_sum(patterns.get_slice(i)) < get_sum(patterns.get_slice(j));
-             });
-    } else if (order_type == PatternOrder::CG_MIN_UP ||
-               order_type == PatternOrder::CG_MIN_DOWN) {
-        sort(order.begin(), order.end(),
-             [&patterns](int i, int j) {
-                 return get_min(patterns.get_slice(i)) < get_min(patterns.get_slice(j));
-             });
-    } else if (order_type == PatternOrder::CG_MAX_UP ||
-               order_type == PatternOrder::CG_MAX_DOWN) {
-        sort(order.begin(), order.end(),
-             [&patterns](int i, int j) {
-                 return get_max(patterns.get_slice(i)) < get_max(patterns.get_slice(j));
-             });
-    } else if (order_type == PatternOrder::CG_MIN_DOWN_CG_SUM_DOWN) {
-        sort(order.begin(), order.end(),
-             [&patterns](int i, int j) {
-                 return make_pair(get_min(patterns.get_slice(i)),
-                                  get_sum(patterns.get_slice(i))) >
-                 make_pair(get_min(patterns.get_slice(j)),
-                           get_sum(patterns.get_slice(j)));
-             });
-    } else if (order_type == PatternOrder::CG_MIN_DOWN_PDB_SIZE_DOWN) {
-        sort(order.begin(), order.end(),
-             [&patterns, &domains](int i, int j) {
-                 return make_pair(get_min(patterns.get_slice(i)),
-                                  get_pdb_size(domains, patterns.get_slice(i))) >
-                 make_pair(get_min(patterns.get_slice(j)),
-                           get_pdb_size(domains, patterns.get_slice(j)));
-             });
-    } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
-               order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
-        sort(order.begin(), order.end(),
-             [&patterns, &used_var_pairs](int i, int j) {
-                 return get_num_new_var_pairs(patterns.get_slice(i), used_var_pairs)
-                 < get_num_new_var_pairs(patterns.get_slice(j), used_var_pairs);
-             });
-    } else if (order_type == PatternOrder::ACTIVE_OPS_UP ||
-               order_type == PatternOrder::ACTIVE_OPS_DOWN) {
-        sort(order.begin(), order.end(),
-             [&patterns, &task_info](int i, int j) {
-                 return get_num_active_ops(patterns.get_slice(i), task_info)
-                 < get_num_active_ops(patterns.get_slice(j), task_info);
-             });
-    } else {
-        assert(order_type == PatternOrder::ORIGINAL ||
-               order_type == PatternOrder::RANDOM ||
-               order_type == PatternOrder::REVERSE);
+    rng.shuffle(order);
+
+    if (order_type == PatternOrder::RANDOM) {
+        return;
     }
 
-    if (order_type == PatternOrder::REVERSE ||
-        order_type == PatternOrder::PDB_SIZE_DOWN ||
+    vector<int> scores;
+    scores.reserve(patterns.size());
+    for (int pattern_id = 0; pattern_id < patterns.size(); ++pattern_id) {
+        scores.push_back(
+            compute_score(
+                patterns.get_slice(pattern_id), order_type, task_info, domains,
+                used_var_pairs));
+    }
+
+    sort(order.begin(), order.end(),
+         [&scores](int i, int j) {
+             return scores[i] < scores[j];
+         });
+
+    if (order_type == PatternOrder::PDB_SIZE_DOWN ||
         order_type == PatternOrder::CG_SUM_DOWN ||
         order_type == PatternOrder::CG_MIN_DOWN ||
         order_type == PatternOrder::CG_MAX_DOWN ||
