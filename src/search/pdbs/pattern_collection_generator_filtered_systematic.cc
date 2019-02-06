@@ -253,12 +253,24 @@ class SequentialPatternGenerator {
     int max_pattern_size;
     bool only_sga_patterns;
     PatternOrder order_type;
+    PatternOrder default_order_type;
     utils::RandomNumberGenerator &rng;
     vector<int> domains;
     vector<array_pool::ArrayPool<int>> patterns;
     vector<vector<int>> orders;
     int cached_pattern_size;
     int num_generated_patterns;
+
+    PatternOrder get_order_type() {
+        if (order_type == PatternOrder::ALT_TWO) {
+            if (rng(2) == 0) {
+                return PatternOrder::CG_MIN_DOWN;
+            } else {
+                return PatternOrder::ACTIVE_OPS_UP;
+            }
+        }
+        return order_type;
+    }
 public:
     SequentialPatternGenerator(
         const shared_ptr<AbstractTask> &task,
@@ -279,6 +291,7 @@ public:
         assert(max_pattern_size_ >= 0);
         max_pattern_size = min(
             max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
+        default_order_type = get_order_type();
     }
 
     Pattern get_pattern(
@@ -320,9 +333,11 @@ public:
                 vector<int> current_order(current_patterns->size(), -1);
                 iota(current_order.begin(), current_order.end(), 0);
                 compute_pattern_order(
-                    patterns.back(), current_order, order_type, task_info, domains, used_var_pairs, rng);
+                    patterns.back(), current_order, default_order_type,
+                    task_info, domains, used_var_pairs, rng);
                 orders.push_back(move(current_order));
-                utils::Log() << "Finished storing patterns of size " << cached_pattern_size << endl;
+                utils::Log() << "Finished storing patterns of size "
+                             << cached_pattern_size << endl;
                 return get_pattern(pattern_id, used_var_pairs, timer);
             }
         }
@@ -332,11 +347,13 @@ public:
     void restart(const vector<vector<bool>> &used_var_pairs) {
         if (order_type == PatternOrder::RANDOM ||
             order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
-            order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
+            order_type == PatternOrder::NEW_VAR_PAIRS_DOWN ||
+            order_type == PatternOrder::ALT_TWO) {
+            PatternOrder current_order_type = get_order_type();
             for (size_t i = 0; i < orders.size(); ++i) {
                 vector<int> &order = orders[i];
                 compute_pattern_order(
-                    patterns[i], order, order_type, task_info, domains, used_var_pairs, rng);
+                    patterns[i], order, current_order_type, task_info, domains, used_var_pairs, rng);
             }
         }
     }
@@ -652,6 +669,7 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("NEW_VAR_PAIRS_DOWN");
     pattern_orders.push_back("ACTIVE_OPS_UP");
     pattern_orders.push_back("ACTIVE_OPS_DOWN");
+    pattern_orders.push_back("ALT_TWO");
     parser.add_enum_option(
         "order",
         pattern_orders,
