@@ -189,10 +189,6 @@ static int compute_score(
     } else if (order_type == PatternOrder::CG_MAX_UP ||
                order_type == PatternOrder::CG_MAX_DOWN) {
         return get_max(pattern);
-    } else if (order_type == PatternOrder::CG_MIN_DOWN_CG_SUM_DOWN) {
-        return get_min(pattern) * 1000 + get_sum(pattern);
-    } else if (order_type == PatternOrder::CG_MIN_DOWN_PDB_SIZE_DOWN) {
-        return get_min(pattern) * 1000000 + get_pdb_size(domains, pattern);
     } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
                order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
         return get_num_new_var_pairs(pattern, used_var_pairs);
@@ -652,8 +648,6 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("CG_MIN_DOWN");
     pattern_orders.push_back("CG_MAX_UP");
     pattern_orders.push_back("CG_MAX_DOWN");
-    pattern_orders.push_back("CG_MIN_DOWN_CG_SUM_DOWN");
-    pattern_orders.push_back("CG_MIN_DOWN_PDB_SIZE_DOWN");
     pattern_orders.push_back("NEW_VAR_PAIRS_UP");
     pattern_orders.push_back("NEW_VAR_PAIRS_DOWN");
     pattern_orders.push_back("ACTIVE_OPS_UP");

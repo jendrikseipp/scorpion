@@ -42,8 +42,6 @@ enum class PatternOrder {
     CG_MIN_DOWN,
     CG_MAX_UP,
     CG_MAX_DOWN,
-    CG_MIN_DOWN_CG_SUM_DOWN,
-    CG_MIN_DOWN_PDB_SIZE_DOWN,
     NEW_VAR_PAIRS_UP,
     NEW_VAR_PAIRS_DOWN,
     ACTIVE_OPS_UP,
