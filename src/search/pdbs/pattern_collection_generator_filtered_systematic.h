@@ -47,6 +47,8 @@ enum class PatternOrder {
     ACTIVE_OPS_UP,
     ACTIVE_OPS_DOWN,
     ALT_TWO,
+    ACTIVE_OPS_UP_CG_MIN_DOWN,
+    CG_MIN_DOWN_ACTIVE_OPS_UP,
 };
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {

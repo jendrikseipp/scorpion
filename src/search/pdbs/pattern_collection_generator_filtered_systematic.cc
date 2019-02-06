@@ -222,6 +222,31 @@ static void compute_pattern_order(
         return;
     }
 
+    if (order_type == PatternOrder::ACTIVE_OPS_UP_CG_MIN_DOWN ||
+        order_type == PatternOrder::CG_MIN_DOWN_ACTIVE_OPS_UP) {
+        vector<pair<int, int>> pairs;
+        pairs.reserve(patterns.size());
+        for (int pattern_id = 0; pattern_id < patterns.size(); ++pattern_id) {
+            int active_ops = compute_score(
+                patterns.get_slice(pattern_id), PatternOrder::ACTIVE_OPS_UP,
+                task_info, domains, used_var_pairs);
+            int cg_min = compute_score(
+                patterns.get_slice(pattern_id), PatternOrder::CG_MIN_DOWN,
+                task_info, domains, used_var_pairs);
+            if (order_type == PatternOrder::ACTIVE_OPS_UP_CG_MIN_DOWN) {
+                pairs.emplace_back(active_ops, -cg_min);
+            } else {
+                assert(order_type == PatternOrder::CG_MIN_DOWN_ACTIVE_OPS_UP);
+                pairs.emplace_back(-cg_min, active_ops);
+            }
+        }
+        sort(order.begin(), order.end(),
+             [&pairs](int i, int j) {
+                 return pairs[i] < pairs[j];
+             });
+        return;
+    }
+
     vector<int> scores;
     scores.reserve(patterns.size());
     for (int pattern_id = 0; pattern_id < patterns.size(); ++pattern_id) {
@@ -419,8 +444,9 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         }
 
         if (debug) {
-            cout << "Pattern " << pattern_id << ": " << pattern << " "
-                 << get_num_new_var_pairs(pattern, used_var_pairs) << endl;
+            cout << "Pattern " << pattern_id << ": " << pattern << " new:"
+                 << get_num_new_var_pairs(pattern, used_var_pairs) << " ops:"
+                 << get_num_active_ops(pattern, evaluator_task_info) << endl;
         }
 
         if (pattern.empty()) {
@@ -670,6 +696,8 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("ACTIVE_OPS_UP");
     pattern_orders.push_back("ACTIVE_OPS_DOWN");
     pattern_orders.push_back("ALT_TWO");
+    pattern_orders.push_back("ACTIVE_OPS_UP_CG_MIN_DOWN");
+    pattern_orders.push_back("CG_MIN_DOWN_ACTIVE_OPS_UP");
     parser.add_enum_option(
         "order",
         pattern_orders,
