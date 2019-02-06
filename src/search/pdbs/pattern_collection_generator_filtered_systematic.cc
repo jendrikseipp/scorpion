@@ -264,9 +264,10 @@ class SequentialPatternGenerator {
     PatternOrder order_type;
     utils::RandomNumberGenerator &rng;
     vector<int> domains;
-    array_pool::ArrayPool<int> patterns;
+    vector<array_pool::ArrayPool<int>> patterns;
     vector<vector<int>> orders;
     int cached_pattern_size;
+    int num_generated_patterns;
 public:
     SequentialPatternGenerator(
         const shared_ptr<AbstractTask> &task,
@@ -282,7 +283,8 @@ public:
           order_type(order),
           rng(rng),
           domains(get_variable_domains(TaskProxy(*task))),
-          cached_pattern_size(0) {
+          cached_pattern_size(0),
+          num_generated_patterns(0) {
         assert(max_pattern_size_ >= 0);
         max_pattern_size = min(
             max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
@@ -293,20 +295,23 @@ public:
         const vector<vector<bool>> &used_var_pairs,
         const utils::CountdownTimer &timer) {
         assert(pattern_id >= 0);
-        if (pattern_id < patterns.size()) {
+        if (pattern_id < num_generated_patterns) {
+            int bucket_id = -1;
             int internal_id = -1;
             int start_id = 0;
             int end_id = -1;
-            for (const vector<int> &order : orders) {
+            for (size_t i = 0; i < orders.size(); ++i) {
+                const vector<int> &order = orders[i];
                 end_id += order.size();
                 if (pattern_id >= start_id && pattern_id <= end_id) {
                     internal_id = order[pattern_id - start_id];
+                    bucket_id = i;
                     break;
                 }
                 start_id += order.size();
             }
             assert(internal_id != -1);
-            array_pool::ArrayPoolSlice<int> slice = patterns.get_slice(internal_id);
+            array_pool::ArrayPoolSlice<int> slice = patterns[bucket_id].get_slice(internal_id);
             return {
                        slice.begin(), slice.end()
             };
@@ -316,14 +321,15 @@ public:
             if (current_patterns) {
                 ++cached_pattern_size;
                 utils::Log() << "Store patterns of size " << cached_pattern_size << endl;
-                assert(patterns.size() == pattern_id);
+                num_generated_patterns += current_patterns->size();
+                patterns.emplace_back();
                 for (Pattern &pattern : *current_patterns) {
-                    patterns.append(move(pattern));
+                    patterns.back().append(move(pattern));
                 }
                 vector<int> current_order(current_patterns->size(), -1);
-                iota(current_order.begin(), current_order.end(), pattern_id);
+                iota(current_order.begin(), current_order.end(), 0);
                 compute_pattern_order(
-                    patterns, current_order, order_type, task_info, domains, used_var_pairs, rng);
+                    patterns.back(), current_order, order_type, task_info, domains, used_var_pairs, rng);
                 orders.push_back(move(current_order));
                 utils::Log() << "Finished storing patterns of size " << cached_pattern_size << endl;
                 return get_pattern(pattern_id, used_var_pairs, timer);
@@ -336,15 +342,16 @@ public:
         if (order_type == PatternOrder::RANDOM ||
             order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
             order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
-            for (vector<int> &order : orders) {
+            for (size_t i = 0; i < orders.size(); ++i) {
+                vector<int> &order = orders[i];
                 compute_pattern_order(
-                    patterns, order, order_type, task_info, domains, used_var_pairs, rng);
+                    patterns[i], order, order_type, task_info, domains, used_var_pairs, rng);
             }
         }
     }
 
     int get_num_generated_patterns() const {
-        return patterns.size();
+        return num_generated_patterns;
     }
 
     int get_max_generated_pattern_size() const {
