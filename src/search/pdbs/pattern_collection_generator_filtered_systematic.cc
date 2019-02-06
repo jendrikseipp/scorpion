@@ -341,6 +341,10 @@ public:
             }
         }
     }
+
+    int get_num_generated_patterns() const {
+        return patterns.size();
+    }
 };
 
 
@@ -393,8 +397,6 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             log << "Reached restart time limit." << endl;
             return false;
         }
-
-        ++num_evaluated_patterns;
 
         if (debug) {
             cout << "Pattern " << pattern_id << ": " << pattern << " "
@@ -460,6 +462,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 #endif
         }
 
+        ++num_pattern_evaluations;
+
         if (select_pattern) {
             log << "Add pattern " << pattern << endl;
             unique_ptr<cost_saturation::Projection> projection =
@@ -512,7 +516,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         used_var_pairs.emplace_back(num_vars, false);
     }
     int64_t collection_size = 0;
-    num_evaluated_patterns = 0;
+    num_pattern_evaluations = 0;
     bool limit_reached = false;
     while (!limit_reached) {
         pattern_generator.restart(used_var_pairs);
@@ -551,10 +555,12 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         << *projection_computation_timer << endl;
     log << "Time for evaluating ordered systematic projections: "
         << *projection_evaluation_timer << endl;
-    double percent_selected = (num_evaluated_patterns == 0) ? 0.
-        : static_cast<double>(projections->size()) / num_evaluated_patterns;
+    log << "Ordered systematic pattern evaluations: "
+        << num_pattern_evaluations << endl;
+    double percent_selected = (num_pattern_evaluations == 0) ? 0.
+        : static_cast<double>(projections->size()) / num_pattern_evaluations;
     log << "Selected ordered systematic patterns: " << projections->size()
-        << "/" << num_evaluated_patterns << " = " << percent_selected << endl;
+        << "/" << num_pattern_evaluations << " = " << percent_selected << endl;
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());

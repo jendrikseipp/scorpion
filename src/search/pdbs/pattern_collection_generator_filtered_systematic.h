@@ -70,7 +70,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
 
     std::vector<std::vector<int>> relevant_operators_per_variable;
 
-    int num_evaluated_patterns;
+    int num_pattern_evaluations;
 
     std::unique_ptr<utils::Timer> pattern_computation_timer;
     std::unique_ptr<utils::Timer> projection_computation_timer;
