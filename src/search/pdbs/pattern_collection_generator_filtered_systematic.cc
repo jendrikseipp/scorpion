@@ -345,6 +345,10 @@ public:
     int get_num_generated_patterns() const {
         return patterns.size();
     }
+
+    int get_max_generated_pattern_size() const {
+        return cached_pattern_size;
+    }
 };
 
 
@@ -557,10 +561,13 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         << *projection_evaluation_timer << endl;
     log << "Ordered systematic pattern evaluations: "
         << num_pattern_evaluations << endl;
-    double percent_selected = (num_pattern_evaluations == 0) ? 0.
-        : static_cast<double>(projections->size()) / num_pattern_evaluations;
+    log << "Maximum generated ordered systematic pattern size: "
+        << pattern_generator.get_max_generated_pattern_size() << endl;
+    int num_generated_patterns = pattern_generator.get_num_generated_patterns();
+    double percent_selected = (num_generated_patterns == 0) ? 0.
+        : static_cast<double>(projections->size()) / num_generated_patterns;
     log << "Selected ordered systematic patterns: " << projections->size()
-        << "/" << num_pattern_evaluations << " = " << percent_selected << endl;
+        << "/" << num_generated_patterns << " = " << percent_selected << endl;
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());
