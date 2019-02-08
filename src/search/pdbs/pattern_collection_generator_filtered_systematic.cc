@@ -284,6 +284,7 @@ class SequentialPatternGenerator {
     vector<array_pool::ArrayPool<int>> patterns;
     vector<vector<int>> orders;
     int cached_pattern_size;
+    int max_generated_pattern_size; // Only count layers that actually have patterns.
     int num_generated_patterns;
 
     PatternOrder get_order_type() {
@@ -312,6 +313,7 @@ public:
           rng(rng),
           domains(get_variable_domains(TaskProxy(*task))),
           cached_pattern_size(0),
+          max_generated_pattern_size(0),
           num_generated_patterns(0) {
         assert(max_pattern_size_ >= 0);
         max_pattern_size = min(
@@ -349,20 +351,27 @@ public:
                 task, cached_pattern_size + 1, only_sga_patterns, timer);
             if (current_patterns) {
                 ++cached_pattern_size;
-                utils::Log() << "Store patterns of size " << cached_pattern_size << endl;
-                num_generated_patterns += current_patterns->size();
-                patterns.emplace_back();
-                for (Pattern &pattern : *current_patterns) {
-                    patterns.back().append(move(pattern));
+                if (current_patterns->empty()) {
+                    utils::Log() << "Found no patterns of size "
+                                 << cached_pattern_size << endl;
+                } else {
+                    utils::Log() << "Store patterns of size "
+                                 << cached_pattern_size << endl;
+                    max_generated_pattern_size = cached_pattern_size;
+                    num_generated_patterns += current_patterns->size();
+                    patterns.emplace_back();
+                    for (Pattern &pattern : *current_patterns) {
+                        patterns.back().append(move(pattern));
+                    }
+                    vector<int> current_order(current_patterns->size(), -1);
+                    iota(current_order.begin(), current_order.end(), 0);
+                    compute_pattern_order(
+                        patterns.back(), current_order, default_order_type,
+                        task_info, domains, used_var_pairs, rng);
+                    orders.push_back(move(current_order));
+                    utils::Log() << "Finished storing patterns of size "
+                                 << cached_pattern_size << endl;
                 }
-                vector<int> current_order(current_patterns->size(), -1);
-                iota(current_order.begin(), current_order.end(), 0);
-                compute_pattern_order(
-                    patterns.back(), current_order, default_order_type,
-                    task_info, domains, used_var_pairs, rng);
-                orders.push_back(move(current_order));
-                utils::Log() << "Finished storing patterns of size "
-                             << cached_pattern_size << endl;
                 return get_pattern(pattern_id, used_var_pairs, timer);
             }
         }
@@ -388,7 +397,7 @@ public:
     }
 
     int get_max_generated_pattern_size() const {
-        return cached_pattern_size;
+        return max_generated_pattern_size;
     }
 };
 
