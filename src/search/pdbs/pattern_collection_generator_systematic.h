@@ -59,7 +59,10 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
         const TaskProxy &task_proxy,
         const PatternHandler &handle_pattern = nullptr,
         const utils::CountdownTimer *timer = nullptr);
-    void build_patterns_naive(const TaskProxy &task_proxy);
+    void build_patterns_naive(
+        const TaskProxy &task_proxy,
+        const PatternHandler &handle_pattern = nullptr,
+        const utils::CountdownTimer *timer = nullptr);
 public:
     explicit PatternCollectionGeneratorSystematic(const options::Options &opts);
 

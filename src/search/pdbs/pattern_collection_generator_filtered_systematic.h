@@ -62,6 +62,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const double max_time_per_restart;
     const bool saturate;
     const bool only_sga_patterns;
+    const bool only_interesting_patterns;
     const bool ignore_useless_patterns;
     const bool store_orders;
     const DeadEndTreatment dead_end_treatment;

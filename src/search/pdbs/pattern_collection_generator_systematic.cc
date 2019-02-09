@@ -258,7 +258,9 @@ void PatternCollectionGeneratorSystematic::build_patterns(
 }
 
 void PatternCollectionGeneratorSystematic::build_patterns_naive(
-    const TaskProxy &task_proxy) {
+    const TaskProxy &task_proxy,
+    const PatternHandler &handle_pattern,
+    const utils::CountdownTimer *) {
     int num_variables = task_proxy.get_variables().size();
     PatternCollection current_patterns(1);
     PatternCollection next_patterns;
@@ -271,6 +273,12 @@ void PatternCollectionGeneratorSystematic::build_patterns_naive(
                 Pattern pattern = current_pattern;
                 pattern.push_back(var);
                 next_patterns.push_back(pattern);
+                if (handle_pattern) {
+                    bool done = handle_pattern(pattern, true);
+                    if (done) {
+                        throw Timeout();
+                    }
+                }
                 patterns->push_back(pattern);
             }
         }
@@ -302,7 +310,11 @@ void PatternCollectionGeneratorSystematic::generate(
     patterns = make_shared<PatternCollection>();
     pattern_set.clear();
     try {
-        build_patterns(task_proxy, handle_pattern, &timer);
+        if (only_interesting_patterns) {
+            build_patterns(task_proxy, handle_pattern, &timer);
+        } else {
+            build_patterns_naive(task_proxy, handle_pattern, &timer);
+        }
     } catch (const Timeout &) {
         cout << "Reached time limit while generating systematic patterns." << endl;
     }
