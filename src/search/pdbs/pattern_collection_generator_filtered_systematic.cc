@@ -355,7 +355,8 @@ public:
                     utils::Log() << "Found no patterns of size "
                                  << cached_pattern_size << endl;
                 } else {
-                    utils::Log() << "Store patterns of size "
+                    utils::Log() << "Store " << current_patterns->size()
+                                 << " patterns of size "
                                  << cached_pattern_size << endl;
                     max_generated_pattern_size = cached_pattern_size;
                     num_generated_patterns += current_patterns->size();
