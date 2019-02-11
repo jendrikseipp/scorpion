@@ -296,6 +296,9 @@ class SequentialPatternGenerator {
             } else {
                 return PatternOrder::ACTIVE_OPS_UP;
             }
+        } else if (order_type == PatternOrder::PATTERN_UP ||
+                   order_type == PatternOrder::PATTERN_DOWN) {
+            return PatternOrder::ORIGINAL;
         }
         return order_type;
     }
@@ -363,6 +366,11 @@ public:
                     utils::Log() << "Store " << current_patterns->size()
                                  << " patterns of size "
                                  << cached_pattern_size << endl;
+                    if (order_type == PatternOrder::PATTERN_UP) {
+                        sort(current_patterns->begin(), current_patterns->end(), less<Pattern>());
+                    } else if (order_type == PatternOrder::PATTERN_DOWN) {
+                        sort(current_patterns->begin(), current_patterns->end(), greater<Pattern>());
+                    }
                     max_generated_pattern_size = cached_pattern_size;
                     num_generated_patterns += current_patterns->size();
                     patterns.emplace_back();
@@ -719,6 +727,8 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("ALT_TWO");
     pattern_orders.push_back("ACTIVE_OPS_UP_CG_MIN_DOWN");
     pattern_orders.push_back("CG_MIN_DOWN_ACTIVE_OPS_UP");
+    pattern_orders.push_back("PATTERN_UP");
+    pattern_orders.push_back("PATTERN_DOWN");
     parser.add_enum_option(
         "order",
         pattern_orders,
