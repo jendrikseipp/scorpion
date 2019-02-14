@@ -125,17 +125,9 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
             order = order_for_init;
             cp_heuristic = cp_for_init;
         } else {
-            State sample = sampler.sample_state(init_h, is_dead_end);
-            assert(!is_dead_end(sample));
-            // If sampling took too long and we already found a cost partitioning,
-            // abort the loop.
-            if (timer.is_expired() && !cp_heuristics.empty()) {
-                break;
-            }
-            abstract_state_ids = get_abstract_state_ids(abstractions, sample);
-
-            // Find order and compute cost partitioning for it.
-            Order order = order_generator->compute_order_for_state(
+            abstract_state_ids = get_abstract_state_ids(
+                abstractions, sampler.sample_state(init_h, is_dead_end));
+            order = order_generator->compute_order_for_state(
                 abstractions, costs, abstract_state_ids, false);
             cp_heuristic = cp_function(abstractions, order, costs);
         }
