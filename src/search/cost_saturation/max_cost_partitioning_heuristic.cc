@@ -15,6 +15,7 @@ using namespace std;
 
 namespace cost_saturation {
 static vector<bool> get_unsolvable_states(const Abstraction &abstraction, int num_ops) {
+    // Note: we could use a simple queue instead of a priority queue for this.
     vector<bool> unsolvable_states(abstraction.get_num_states(), false);
     vector<int> unit_costs(num_ops, 1);
     vector<int> goal_distances = abstraction.compute_goal_distances(unit_costs);
