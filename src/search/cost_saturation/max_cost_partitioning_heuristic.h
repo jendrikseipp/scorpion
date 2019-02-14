@@ -21,6 +21,7 @@ class CostPartitioningHeuristic;
 class MaxCostPartitioningHeuristic : public Heuristic {
     Abstractions abstractions;
     const std::vector<CostPartitioningHeuristic> cp_heuristics;
+    std::vector<std::pair<int, std::vector<bool>>> unsolvable_states;
 
     // For statistics.
     mutable std::vector<int> num_best_order;

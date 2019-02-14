@@ -24,7 +24,7 @@ void CostPartitioningHeuristic::add_h_values(
                      << " " << store << "=" << should_store << endl;
     }
 
-    if (any_of(h_values.begin(), h_values.end(), [](int h) {return h > 0;})) {
+    if (any_of(h_values.begin(), h_values.end(), [](int h) {return h > 0 && h != INF;})) {
         lookup_tables.emplace_back(abstraction_id, move(h_values));
     }
 }
@@ -37,10 +37,7 @@ int CostPartitioningHeuristic::compute_heuristic(
         int state_id = abstract_state_ids[lookup_table.abstraction_id];
         assert(utils::in_bounds(state_id, lookup_table.h_values));
         int h = lookup_table.h_values[state_id];
-        assert(h >= 0);
-        if (h == INF) {
-            return INF;
-        }
+        assert(h >= 0 && h != INF);
         sum_h += h;
         assert(sum_h >= 0);
     }

@@ -34,6 +34,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
     }
+    ABORT("Unsolvable states are not detected.");
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
@@ -61,9 +62,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
-    if (max_h == INF) {
-        return DEAD_END;
-    }
+    assert(max_h != INF);
 
     if (should_compute_scp(state)) {
         Order order = cp_generator->compute_order_for_state(
@@ -75,9 +74,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         if (store_cost_partitionings && single_h > max_h) {
             cp_heuristics.push_back(move(cost_partitioning));
         }
-        if (single_h == INF) {
-            return DEAD_END;
-        }
+        assert(single_h != INF);
         return max(max_h, single_h);
     }
     return max_h;

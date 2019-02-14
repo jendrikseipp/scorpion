@@ -84,9 +84,7 @@ int compute_max_h_with_statistics(
             max_h = sum_h;
             best_id = current_id;
         }
-        if (sum_h == INF) {
-            break;
-        }
+        assert(sum_h != INF);
         ++current_id;
     }
     assert(max_h >= 0);
