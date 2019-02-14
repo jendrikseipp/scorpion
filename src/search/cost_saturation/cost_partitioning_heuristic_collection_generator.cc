@@ -45,6 +45,7 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
     return abstract_state_ids_by_sample;
 }
 
+
 CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectionGenerator(
     const shared_ptr<OrderGenerator> &order_generator,
     int max_orders,
@@ -92,7 +93,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     vector<int> abstract_state_ids_for_init = get_abstract_state_ids(
         abstractions, initial_state);
     Order order_for_init = order_generator->compute_order_for_state(
-        abstractions, costs, abstract_state_ids_for_init, false);
+        abstractions, costs, abstract_state_ids_for_init, true);
     CostPartitioningHeuristic cp_for_init = cp_function(
         abstractions, order_for_init, costs);
     int init_h = cp_for_init.compute_heuristic(abstract_state_ids_for_init);
@@ -113,26 +114,31 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     log << "Start computing cost partitionings" << endl;
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            (!timer.is_expired() || cp_heuristics.empty())) {
-        // Use initial state as first sample.
-        State sample = (evaluated_orders == 0)
-            ? initial_state
-            : sampler.sample_state(init_h, is_dead_end);
-        assert(!is_dead_end(sample));
-        // If sampling took too long and we already found a cost partitioning,
-        // abort the loop.
-        if (timer.is_expired() && !cp_heuristics.empty()) {
-            break;
+        bool first_order = (evaluated_orders == 0);
+
+        vector<int> abstract_state_ids;
+        Order order;
+        CostPartitioningHeuristic cp_heuristic;
+        if (first_order) {
+            // Use initial state as first sample.
+            abstract_state_ids = abstract_state_ids_for_init;
+            order = order_for_init;
+            cp_heuristic = cp_for_init;
+        } else {
+            State sample = sampler.sample_state(init_h, is_dead_end);
+            assert(!is_dead_end(sample));
+            // If sampling took too long and we already found a cost partitioning,
+            // abort the loop.
+            if (timer.is_expired() && !cp_heuristics.empty()) {
+                break;
+            }
+            abstract_state_ids = get_abstract_state_ids(abstractions, sample);
+
+            // Find order and compute cost partitioning for it.
+            Order order = order_generator->compute_order_for_state(
+                abstractions, costs, abstract_state_ids, false);
+            cp_heuristic = cp_function(abstractions, order, costs);
         }
-        vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, sample);
-
-        // Only be verbose for first sample.
-        bool verbose = (evaluated_orders == 0);
-
-        // Find order and compute cost partitioning for it.
-        Order order = order_generator->compute_order_for_state(
-            abstractions, costs, abstract_state_ids, verbose);
-        CostPartitioningHeuristic cp_heuristic = cp_function(
-            abstractions, order, costs);
 
         // Optimize order.
         if (max_optimization_time > 0) {
@@ -140,8 +146,8 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
             int incumbent_h_value = cp_heuristic.compute_heuristic(abstract_state_ids);
             optimize_order_with_hill_climbing(
                 cp_function, timer, abstractions, costs, abstract_state_ids, order,
-                cp_heuristic, incumbent_h_value, verbose);
-            if (verbose) {
+                cp_heuristic, incumbent_h_value, first_order);
+            if (first_order) {
                 log << "Time for optimizing order: " << timer.get_elapsed_time()
                     << endl;
             }
