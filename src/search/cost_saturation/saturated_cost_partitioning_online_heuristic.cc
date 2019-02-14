@@ -20,11 +20,13 @@ namespace cost_saturation {
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
     Abstractions &&abstractions,
-    CPHeuristics &&cp_heuristics)
+    CPHeuristics &&cp_heuristics,
+    UnsolvabilityHeuristic &&unsolvability_heuristic)
     : Heuristic(opts),
       cp_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
       abstractions(move(abstractions)),
       cp_heuristics(move(cp_heuristics)),
+      unsolvability_heuristic(move(unsolvability_heuristic)),
       interval(opts.get<int>("interval")),
       store_cost_partitionings(opts.get<bool>("store_cost_partitionings")),
       costs(task_properties::get_operator_costs(task_proxy)),
@@ -34,7 +36,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
     }
-    ABORT("Dead end detection not implemented.");
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
@@ -60,6 +61,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     State state = convert_global_state(global_state);
     ++num_evaluated_states;
     vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
+    if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
+        return DEAD_END;
+    }
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
     assert(max_h != INF);
@@ -116,13 +120,16 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
     UnsolvabilityHeuristic unsolvability_heuristic(abstractions, costs.size());
+    CPHeuristics cp_heuristics =
+        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
+            task_proxy, abstractions, costs, compute_saturated_cost_partitioning,
+            unsolvability_heuristic);
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
         move(abstractions),
-        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, compute_saturated_cost_partitioning,
-            unsolvability_heuristic));
+        move(cp_heuristics),
+        move(unsolvability_heuristic));
 }
 
 static Plugin<Evaluator> _plugin("saturated_cost_partitioning_online", _parse);
