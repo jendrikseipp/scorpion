@@ -5,7 +5,6 @@
 
 #include "../task_proxy.h"
 
-#include "../algorithms/priority_queues.h"
 #include "../pdbs/types.h"
 #include "../utils/logging.h"
 
@@ -84,9 +83,6 @@ class Projection : public Abstraction {
     std::vector<int> pattern_domain_sizes;
 
     std::vector<int> goal_states;
-
-    // Reuse the queue to save memory allocations.
-    mutable priority_queues::AdaptiveQueue<size_t> pq;
 
     // Return true iff op has an effect on a variable in the pattern.
     bool is_operator_relevant(const OperatorProxy &op) const;

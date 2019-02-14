@@ -2,6 +2,7 @@
 
 #include "types.h"
 
+#include "../algorithms/priority_queues.h"
 #include "../pdbs/match_tree.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -420,7 +421,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
-    assert(pq.empty());
+    priority_queues::AdaptiveQueue<size_t> pq;
     for (int goal : goal_states) {
         pq.push(0, goal);
         distances[goal] = 0;
@@ -456,7 +457,6 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
             }
         }
     }
-    pq.clear();
     return distances;
 }
 
