@@ -1,14 +1,29 @@
 #include "cost_partitioning_heuristic.h"
 
 #include "../utils/collections.h"
+#include "../utils/logging.h"
 
 #include <cassert>
+#include <iostream>
 
 using namespace std;
 
 namespace cost_saturation {
 void CostPartitioningHeuristic::add_h_values(
-    int abstraction_id, vector<int> h_values) {
+    int abstraction_id, std::vector<int> &&h_values) {
+    if (false) {
+        double total = h_values.size();
+        int zeros = count(h_values.begin(), h_values.end(), 0);
+        int infs = count(h_values.begin(), h_values.end(), INF);
+        bool store = any_of(
+            h_values.begin(), h_values.end(), [](int h) {return h > 0;});
+        bool should_store = any_of(
+            h_values.begin(), h_values.end(), [](int h) {return h > 0 && h != INF;});
+        utils::Log() << zeros / total << " + " << (total - zeros - infs) / total
+                     << " + " << infs / total << " = " << h_values.size()
+                     << " " << store << "=" << should_store << endl;
+    }
+
     if (any_of(h_values.begin(), h_values.end(), [](int h) {return h > 0;})) {
         lookup_tables.emplace_back(abstraction_id, move(h_values));
     }
