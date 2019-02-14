@@ -34,7 +34,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
     }
-    ABORT("Unsolvable states are not detected.");
+    ABORT("Dead end detection not implemented.");
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {

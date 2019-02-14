@@ -2,6 +2,7 @@
 
 #include "cost_partitioning_heuristic.h"
 #include "diversifier.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
 #include "order_optimizer.h"
 #include "utils.h"
@@ -68,39 +69,35 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     const vector<int> &costs,
     CPFunction cp_function) const {
     utils::Log log;
-    State initial_state = task_proxy.get_initial_state();
-    vector<int> abstract_state_ids_for_init = get_abstract_state_ids(
-        abstractions, initial_state);
+    UnsolvabilityHeuristic unsolvability_heuristic(
+        abstractions, task_proxy.get_operators().size());
 
-    // If any abstraction detects unsolvability in the initial state, we only
-    // need a single order (any order suffices).
-    CostPartitioningHeuristic default_order_cp = cp_function(
-        abstractions, get_default_order(abstractions.size()), costs);
-    if (default_order_cp.compute_heuristic(abstract_state_ids_for_init) == INF) {
-        return {
-                   default_order_cp
+    DeadEndDetector is_dead_end =
+        [&abstractions, &unsolvability_heuristic](const State &state) {
+            return unsolvability_heuristic.is_unsolvable(
+                get_abstract_state_ids(abstractions, state));
         };
+
+    State initial_state = task_proxy.get_initial_state();
+
+    // If the unsolvability heuristic detects unsolvability in the initial state,
+    // we don't need any orders.
+    if (is_dead_end(initial_state)) {
+        log << "Initial state is unsolvable." << endl;
+        return {};
     }
 
     order_generator->initialize(abstractions, costs);
 
-    // Compute cost partitioning heuristic for sampling.
-    Order order = order_generator->compute_order_for_state(
+    // Compute h^SCP(s_0) using a greedy order for s_0.
+    vector<int> abstract_state_ids_for_init = get_abstract_state_ids(
+        abstractions, initial_state);
+    Order order_for_init = order_generator->compute_order_for_state(
         abstractions, costs, abstract_state_ids_for_init, false);
-    CostPartitioningHeuristic cp_for_sampling = cp_function(
-        abstractions, order, costs);
-    function<int (const State &state)> sampling_heuristic =
-        [&abstractions, &cp_for_sampling](const State &state) {
-            return cp_for_sampling.compute_heuristic(
-                get_abstract_state_ids(abstractions, state));
-        };
+    CostPartitioningHeuristic cp_for_init = cp_function(
+        abstractions, order_for_init, costs);
+    int init_h = cp_for_init.compute_heuristic(abstract_state_ids_for_init);
 
-    int init_h = sampling_heuristic(initial_state);
-
-    // Compute dead end detector which uses the sampling heuristic.
-    DeadEndDetector is_dead_end = [&sampling_heuristic](const State &state) {
-            return sampling_heuristic(state) == INF;
-        };
     sampling::RandomWalkSampler sampler(task_proxy, *rng);
 
     utils::CountdownTimer timer(max_time);
