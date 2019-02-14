@@ -747,9 +747,6 @@ fast_downward_plugin(
         pdbs/canonical_pdbs_heuristic
         pdbs/dominance_pruning
         pdbs/incremental_canonical_pdbs
-        pdbs/incremental_max_pdbs
-        pdbs/incremental_scp_pdbs
-        pdbs/incremental_pdbs
         pdbs/match_tree
         pdbs/max_additive_pdb_sets
         pdbs/max_cliques
@@ -760,7 +757,6 @@ fast_downward_plugin(
         pdbs/pattern_collection_generator_genetic
         pdbs/pattern_collection_generator_hillclimbing
         pdbs/pattern_collection_generator_manual
-        pdbs/pattern_collection_generator_scp
         pdbs/pattern_collection_generator_systematic
         pdbs/pattern_evaluator
         pdbs/pattern_generator_greedy

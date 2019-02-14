@@ -2,16 +2,12 @@
 
 #include "canonical_pdbs_heuristic.h"
 #include "incremental_canonical_pdbs.h"
-#include "incremental_max_pdbs.h"
-#include "incremental_scp_pdbs.h"
 #include "pattern_database.h"
 #include "validation.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
 
-#include "../cost_saturation/projection.h"
-#include "../cost_saturation/utils.h"
 #include "../task_utils/causal_graph.h"
 #include "../task_utils/sampling.h"
 #include "../task_utils/task_properties.h"
@@ -120,31 +116,9 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       max_generated_patterns(opts.get<int>("max_generated_patterns")),
-      cp_type(static_cast<CostPartitioningType>(opts.get_enum("cost_partitioning"))),
-      sampling_type(static_cast<SamplingType>(opts.get_enum("sampling"))),
-      use_initial_state(opts.get<bool>("use_initial_state")),
-      use_vns(opts.get<bool>("use_vns")),
-      use_simple_hill_climbing(opts.get<bool>("simple_hill_climbing")),
-      check_newest_candidates_first(opts.get<bool>("check_newest_candidates_first")),
-      compute_pdbs_on_demand(opts.get<bool>("compute_pdbs_on_demand")),
-      delete_non_improving_pdbs(opts.get<bool>("delete_non_improving_pdbs")),
-      debug(opts.get<bool>("debug")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
-      hill_climbing_timer(nullptr) {
-}
-
-void PatternCollectionGeneratorHillclimbing::add_pdb_to_collection(
-    const TaskProxy &task_proxy, const shared_ptr<PatternDatabase> &pdb) {
-    current_pdbs->add_pdb(pdb);
-
-    if (cp_type == CostPartitioningType::SCP) {
-        cost_saturation::Projection projection(
-            task_proxy, task_info, pdb->get_pattern());
-        vector<int> saturated_costs = projection.compute_saturated_costs(
-            pdb->get_distances(), costs.size());
-        cost_saturation::reduce_costs(costs, saturated_costs);
-    }
+      hill_climbing_timer(0) {
 }
 
 int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
@@ -186,13 +160,10 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
                     */
                     generated_patterns.insert(new_pattern);
                     candidate_pdbs.push_back(
-                        make_shared<PatternDatabase>(
-                            task_proxy, new_pattern, false, costs,
-                            compute_pdbs_on_demand));
+                        make_shared<PatternDatabase>(task_proxy, new_pattern));
                     max_pdb_size = max(max_pdb_size,
                                        candidate_pdbs.back()->get_size());
-                    if (static_cast<int>(generated_patterns.size()) >=
-                        max_generated_patterns)
+                    if (static_cast<int>(generated_patterns.size()) >= max_generated_patterns)
                         throw HillClimbingMaxPDBsGenerated();
                 }
             } else {
@@ -206,11 +177,16 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
 void PatternCollectionGeneratorHillclimbing::sample_states(
     const sampling::RandomWalkSampler &sampler,
     int init_h,
-    const DeadEndDetector &is_dead_end,
     vector<State> &samples) {
+    assert(samples.empty());
+
     samples.reserve(num_samples);
-    while (static_cast<int>(samples.size()) < num_samples) {
-        samples.push_back(sampler.sample_state(init_h, is_dead_end));
+    for (int i = 0; i < num_samples; ++i) {
+        samples.push_back(sampler.sample_state(
+                              init_h,
+                              [this](const State &state) {
+                                  return current_pdbs->is_dead_end(state);
+                              }));
         if (hill_climbing_timer->is_expired()) {
             throw HillClimbingTimeout();
         }
@@ -235,10 +211,6 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
     for (size_t i = 0; i < candidate_pdbs.size(); ++i) {
         if (hill_climbing_timer->is_expired())
             throw HillClimbingTimeout();
-
-        if (check_newest_candidates_first) {
-            i = candidate_pdbs.size() - 1 - i;
-        }
 
         const shared_ptr<PatternDatabase> &pdb = candidate_pdbs[i];
         if (!pdb) {
@@ -267,44 +239,24 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
           see above) earlier.
         */
         int count = 0;
-        if (cp_type == CostPartitioningType::CANONICAL) {
-            IncrementalCanonicalPDBs *incremental_canonical_pdbs =
-                dynamic_cast<IncrementalCanonicalPDBs *>(current_pdbs.get());
-            MaxAdditivePDBSubsets max_additive_subsets =
-                incremental_canonical_pdbs->get_max_additive_subsets(pdb->get_pattern());
-            for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
-                const State &sample = samples[sample_id];
-                assert(utils::in_bounds(sample_id, samples_h_values));
-                int h_collection = samples_h_values[sample_id];
-                if (is_heuristic_improved(
-                        *pdb, sample, h_collection, max_additive_subsets)) {
-                    ++count;
-                }
-            }
-        } else {
-            for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
-                const State &sample = samples[sample_id];
-                assert(utils::in_bounds(sample_id, samples_h_values));
-                int h_collection = samples_h_values[sample_id];
-                int h_pattern = pdb->get_value(sample);
-                if (h_pattern > h_collection) {
-                    ++count;
-                }
+        MaxAdditivePDBSubsets max_additive_subsets =
+            current_pdbs->get_max_additive_subsets(pdb->get_pattern());
+        for (int sample_id = 0; sample_id < num_samples; ++sample_id) {
+            const State &sample = samples[sample_id];
+            assert(utils::in_bounds(sample_id, samples_h_values));
+            int h_collection = samples_h_values[sample_id];
+            if (is_heuristic_improved(
+                    *pdb, sample, h_collection, max_additive_subsets)) {
+                ++count;
             }
         }
         if (count > improvement) {
             improvement = count;
             best_pdb_index = i;
         }
-        if (debug || count > 0) {
+        if (count > 0) {
             cout << "pattern: " << candidate_pdbs[i]->get_pattern()
                  << " - improvement: " << count << endl;
-        }
-        if (use_simple_hill_climbing && count >= min_improvement) {
-            break;
-        }
-        if (delete_non_improving_pdbs && count == 0) {
-            candidate_pdbs[i] = nullptr;
         }
     }
 
@@ -347,12 +299,8 @@ bool PatternCollectionGeneratorHillclimbing::is_heuristic_improved(
 }
 
 void PatternCollectionGeneratorHillclimbing::hill_climbing(
-    const shared_ptr<AbstractTask> &task) {
-    TaskProxy task_proxy(*task);
+    const TaskProxy &task_proxy) {
     hill_climbing_timer = new utils::CountdownTimer(max_time);
-
-    utils::Timer sampling_timer;
-    sampling_timer.stop();
 
     cout << "Average operator cost: "
          << task_properties::get_average_operator_cost(task_proxy) << endl;
@@ -403,21 +351,9 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
                 cout << init_h << endl;
             }
 
+            samples.clear();
             samples_h_values.clear();
-            if (samples.empty() || sampling_type == SamplingType::PDBS) {
-                sampling_timer.resume();
-                samples.clear();
-                if (use_initial_state) {
-                    samples.push_back(task_proxy.get_initial_state());
-                }
-                int sampling_init_h = init_h;
-                DeadEndDetector is_dead_end = [this](const State &state) {
-                        return current_pdbs->is_dead_end(state);
-                    };
-                cout << "Sample states with init-h estimate " << sampling_init_h << endl;
-                sample_states(sampler, sampling_init_h, is_dead_end, samples);
-                sampling_timer.stop();
-            }
+            sample_states(sampler, init_h, samples);
             for (const State &sample : samples) {
                 samples_h_values.push_back(current_pdbs->get_value(sample));
             }
@@ -426,83 +362,6 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
                 find_best_improving_pdb(samples, samples_h_values, candidate_pdbs);
             int improvement = improvement_and_index.first;
             int best_pdb_index = improvement_and_index.second;
-
-            if (improvement < min_improvement && use_vns) {
-                cout << "Switch to VNS." << endl;
-                if (use_simple_hill_climbing) {
-                    PDBCollection candidate_pdbs_vns_current = candidate_pdbs;
-                    set<Pattern> generated_patterns_vns = generated_patterns;
-                    while (improvement < min_improvement) {
-                        cout << "Start VNS iteration." << endl;
-                        PDBCollection candidate_pdbs_vns_previous;
-                        candidate_pdbs_vns_previous.swap(candidate_pdbs_vns_current);
-                        assert(candidate_pdbs_vns_current.empty());
-                        for (const auto &pdb : candidate_pdbs_vns_previous) {
-                            if (pdb) {
-                                PDBCollection next_candidate_pdbs;
-                                int new_max_pdb_size = generate_candidate_pdbs(
-                                    task_proxy, relevant_neighbours, *pdb,
-                                    generated_patterns_vns, next_candidate_pdbs);
-                                max_pdb_size = max(max_pdb_size, new_max_pdb_size);
-                                improvement_and_index =
-                                    find_best_improving_pdb(
-                                        samples, samples_h_values, next_candidate_pdbs);
-                                improvement = improvement_and_index.first;
-                                best_pdb_index = improvement_and_index.second;
-                                if (improvement >= min_improvement) {
-                                    shared_ptr<PatternDatabase> best_pdb =
-                                        next_candidate_pdbs[best_pdb_index];
-                                    best_pdb_index = candidate_pdbs.size();
-                                    candidate_pdbs.push_back(best_pdb);
-                                    generated_patterns.insert(best_pdb->get_pattern());
-                                    break;
-                                }
-                                candidate_pdbs_vns_current.insert(
-                                    candidate_pdbs_vns_current.end(),
-                                    next_candidate_pdbs.begin(),
-                                    next_candidate_pdbs.end());
-                            }
-                        }
-                        if (candidate_pdbs_vns_current.empty()) {
-                            break;
-                        }
-                    }
-                } else {
-                    PDBCollection candidate_pdbs_vns_current = candidate_pdbs;
-                    set<Pattern> generated_patterns_vns = generated_patterns;
-                    while (improvement < min_improvement) {
-                        cout << "Start VNS iteration." << endl;
-                        PDBCollection candidate_pdbs_vns_previous;
-                        candidate_pdbs_vns_previous.swap(candidate_pdbs_vns_current);
-                        assert(candidate_pdbs_vns_current.empty());
-                        for (const auto &pdb : candidate_pdbs_vns_previous) {
-                            if (pdb) {
-                                int new_max_pdb_size = generate_candidate_pdbs(
-                                    task_proxy, relevant_neighbours, *pdb,
-                                    generated_patterns_vns, candidate_pdbs_vns_current);
-                                max_pdb_size = max(max_pdb_size, new_max_pdb_size);
-                            }
-                        }
-                        cout << "Found " << candidate_pdbs_vns_current.size()
-                             << " VNS candidates" << endl;
-                        if (candidate_pdbs_vns_current.empty()) {
-                            break;
-                        }
-                        improvement_and_index =
-                            find_best_improving_pdb(
-                                samples, samples_h_values, candidate_pdbs_vns_current);
-                        improvement = improvement_and_index.first;
-                        best_pdb_index = improvement_and_index.second;
-                    }
-                    if (best_pdb_index != -1) {
-                        shared_ptr<PatternDatabase> best_pdb =
-                            candidate_pdbs_vns_current[best_pdb_index];
-                        best_pdb_index = candidate_pdbs.size();
-                        candidate_pdbs.push_back(best_pdb);
-                        generated_patterns.insert(best_pdb->get_pattern());
-                    }
-                }
-            }
 
             if (improvement < min_improvement) {
                 cout << "Improvement below threshold. Stop hill climbing."
@@ -518,7 +377,7 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             cout << "found a better pattern with improvement " << improvement
                  << endl;
             cout << "pattern: " << best_pattern << endl;
-            add_pdb_to_collection(task_proxy, best_pdb);
+            current_pdbs->add_pdb(best_pdb);
 
             // Generate candidate patterns and PDBs for next iteration.
             int new_max_pdb_size = generate_candidate_pdbs(
@@ -546,7 +405,6 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     cout << "iPDB: generated = " << generated_patterns.size() << endl;
     cout << "iPDB: rejected = " << num_rejected << endl;
     cout << "iPDB: maximum pdb size = " << max_pdb_size << endl;
-    cout << "iPDB: sampling time: " << sampling_timer() << endl;
     cout << "iPDB: hill climbing time: "
          << hill_climbing_timer->get_elapsed_time() << endl;
 
@@ -559,34 +417,19 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
     TaskProxy task_proxy(*task);
     utils::Timer timer;
 
-    if (cp_type == CostPartitioningType::CANONICAL) {
-        current_pdbs = utils::make_unique_ptr<IncrementalCanonicalPDBs>(task_proxy);
-    } else if (cp_type == CostPartitioningType::MAX) {
-        current_pdbs = utils::make_unique_ptr<IncrementalMaxPDBs>(task_proxy);
-    } else if (cp_type == CostPartitioningType::SCP) {
-        current_pdbs = utils::make_unique_ptr<IncrementalSCPPDBs>(task_proxy);
-    } else {
-        ABORT("not implemented");
-    }
-
-    task_info = make_shared<cost_saturation::TaskInfo>(task_proxy);
-    costs = task_properties::get_operator_costs(task_proxy);
-
     // Generate initial collection: a pattern for each goal variable.
+    PatternCollection initial_pattern_collection;
     for (FactProxy goal : task_proxy.get_goals()) {
         int goal_var_id = goal.get_variable().get_id();
-        Pattern pattern = {goal_var_id};
-        bool verbose = false;
-        shared_ptr<PatternDatabase> pdb = make_shared<PatternDatabase>(
-            task_proxy, pattern, verbose, costs, compute_pdbs_on_demand);
-        add_pdb_to_collection(task_proxy, pdb);
+        initial_pattern_collection.emplace_back(1, goal_var_id);
     }
-
+    current_pdbs = utils::make_unique_ptr<IncrementalCanonicalPDBs>(
+        task_proxy, initial_pattern_collection);
     cout << "Done calculating initial PDB collection" << endl;
 
     State initial_state = task_proxy.get_initial_state();
     if (!current_pdbs->is_dead_end(initial_state) && max_time > 0) {
-        hill_climbing(task);
+        hill_climbing(task_proxy);
     }
 
     cout << "Pattern generation (hill climbing) time: " << timer << endl;
@@ -632,51 +475,6 @@ void add_hillclimbing_options(OptionParser &parser) {
         "maximum number of generated patterns",
         "infinity",
         Bounds("0", "infinity"));
-    vector<string> cp_types;
-    cp_types.push_back("CANONICAL");
-    cp_types.push_back("MAX");
-    cp_types.push_back("SCP");
-    parser.add_enum_option(
-        "cost_partitioning",
-        cp_types,
-        "cost partitioning algorithm for evaluating PDB collection",
-        "CANONICAL");
-    vector<string> sampling_types;
-    sampling_types.push_back("PDBS");
-    sampling_types.push_back("PDBS_ONCE");
-    parser.add_enum_option(
-        "sampling",
-        sampling_types,
-        "sampling type",
-        "PDBS");
-    parser.add_option<bool>(
-        "use_initial_state",
-        "use initial state as first sample",
-        "false");
-    parser.add_option<bool>(
-        "use_vns",
-        "use variable-neighbourhood search",
-        "false");
-    parser.add_option<bool>(
-        "simple_hill_climbing",
-        "commit to first improving successor",
-        "false");
-    parser.add_option<bool>(
-        "check_newest_candidates_first",
-        "go through candidate vector backwards",
-        "false");
-    parser.add_option<bool>(
-        "compute_pdbs_on_demand",
-        "compute PDB when evaluating a pattern instead of when generating it",
-        "false");
-    parser.add_option<bool>(
-        "delete_non_improving_pdbs",
-        "delete a candidate if it improves none of the sample h values",
-        "false");
-    parser.add_option<bool>(
-        "debug",
-        "print debug messages",
-        "false");
     utils::add_rng_options(parser);
 }
 

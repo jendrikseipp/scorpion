@@ -11,10 +11,6 @@
 #include <set>
 #include <vector>
 
-namespace cost_saturation {
-class TaskInfo;
-}
-
 namespace options {
 class Options;
 }
@@ -30,19 +26,8 @@ class RandomWalkSampler;
 
 namespace pdbs {
 class CanonicalPDBsHeuristic;
-class IncrementalPDBs;
+class IncrementalCanonicalPDBs;
 class PatternDatabase;
-
-enum class CostPartitioningType {
-    CANONICAL,
-    MAX,
-    SCP,
-};
-
-enum class SamplingType {
-    PDBS,
-    PDBS_ONCE,
-};
 
 // Implementation of the pattern generation algorithm by Haslum et al.
 class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator {
@@ -55,27 +40,13 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     const int min_improvement;
     const double max_time;
     const int max_generated_patterns;
-    const CostPartitioningType cp_type;
-    const SamplingType sampling_type;
-    const bool use_initial_state;
-    const bool use_vns;
-    const bool use_simple_hill_climbing;
-    const bool check_newest_candidates_first;
-    const bool compute_pdbs_on_demand;
-    const bool delete_non_improving_pdbs;
-    const bool debug;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
-    std::unique_ptr<IncrementalPDBs> current_pdbs;
-    std::shared_ptr<cost_saturation::TaskInfo> task_info;
-    std::vector<int> costs;
+    std::unique_ptr<IncrementalCanonicalPDBs> current_pdbs;
 
     // for stats only
     int num_rejected;
     utils::CountdownTimer *hill_climbing_timer;
-
-    void add_pdb_to_collection(
-        const TaskProxy &task_proxy, const std::shared_ptr<PatternDatabase> &pdb);
 
     /*
       For the given PDB, all possible extensions of its pattern by one
@@ -103,11 +74,9 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
       state. At the end of each random walk, the last state visited is taken as
       a sample state, thus totalling exactly num_samples of sample states.
     */
-    using DeadEndDetector = std::function<bool (State)>;
     void sample_states(
         const sampling::RandomWalkSampler &sampler,
         int init_h,
-        const DeadEndDetector &is_dead_end,
         std::vector<State> &samples);
 
     /*
@@ -154,7 +123,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
       Storing the PDBs has the only purpose to avoid re-computation of the same
       PDBs. This is quite a large time gain, but may use a lot of memory.
     */
-    void hill_climbing(const std::shared_ptr<AbstractTask> &task);
+    void hill_climbing(const TaskProxy &task_proxy);
 
 public:
     explicit PatternCollectionGeneratorHillclimbing(const options::Options &opts);
