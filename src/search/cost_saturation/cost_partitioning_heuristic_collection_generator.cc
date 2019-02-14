@@ -71,6 +71,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     const CPFunction &cp_function,
     const UnsolvabilityHeuristic &unsolvability_heuristic) const {
     utils::Log log;
+    utils::CountdownTimer timer(max_time);
 
     DeadEndDetector is_dead_end =
         [&abstractions, &unsolvability_heuristic](const State &state) {
@@ -100,7 +101,6 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
 
     sampling::RandomWalkSampler sampler(task_proxy, *rng);
 
-    utils::CountdownTimer timer(max_time);
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
         double max_sampling_time = timer.get_remaining_time();
