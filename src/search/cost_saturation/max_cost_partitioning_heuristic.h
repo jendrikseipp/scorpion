@@ -55,7 +55,8 @@ public:
     MaxCostPartitioningHeuristic(
         const options::Options &opts,
         Abstractions &&abstractions,
-        std::vector<CostPartitioningHeuristic> &&cp_heuristics);
+        std::vector<CostPartitioningHeuristic> &&cp_heuristics,
+        UnsolvabilityHeuristic &&unsolvability_heuristic);
 
     virtual void print_statistics() const override;
 };

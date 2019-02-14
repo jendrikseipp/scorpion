@@ -56,11 +56,12 @@ void UnsolvabilityHeuristic::mark_useful_abstractions(
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     const options::Options &opts,
     Abstractions &&abstractions_,
-    vector<CostPartitioningHeuristic> &&cp_heuristics_)
+    vector<CostPartitioningHeuristic> &&cp_heuristics_,
+    UnsolvabilityHeuristic &&unsolvability_heuristic_)
     : Heuristic(opts),
       abstractions(move(abstractions_)),
       cp_heuristics(move(cp_heuristics_)),
-      unsolvability_heuristic(abstractions, task_proxy.get_operators().size()) {
+      unsolvability_heuristic(move(unsolvability_heuristic_)) {
     int num_abstractions = abstractions.size();
 
     // Print statistics about the number of lookup tables.
@@ -181,13 +182,15 @@ shared_ptr<Heuristic> get_max_cp_heuristic(
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+    UnsolvabilityHeuristic unsolvability_heuristic(abstractions, costs.size());
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, cp_function);
+            task_proxy, abstractions, costs, cp_function, unsolvability_heuristic);
     return make_shared<MaxCostPartitioningHeuristic>(
         opts,
         move(abstractions),
-        move(cp_heuristics));
+        move(cp_heuristics),
+        move(unsolvability_heuristic));
 }
 
 void add_order_options_to_parser(OptionParser &parser) {

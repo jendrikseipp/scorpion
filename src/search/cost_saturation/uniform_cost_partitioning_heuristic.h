@@ -12,7 +12,8 @@ public:
     UniformCostPartitioningHeuristic(
         const options::Options &opts,
         Abstractions &&abstractions,
-        CPHeuristics &&cp_heuristics);
+        CPHeuristics &&cp_heuristics,
+        UnsolvabilityHeuristic &&unsolvability_heuristic);
 };
 }
 

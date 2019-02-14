@@ -67,10 +67,9 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
     const vector<int> &costs,
-    CPFunction cp_function) const {
+    const CPFunction &cp_function,
+    const UnsolvabilityHeuristic &unsolvability_heuristic) const {
     utils::Log log;
-    UnsolvabilityHeuristic unsolvability_heuristic(
-        abstractions, task_proxy.get_operators().size());
 
     DeadEndDetector is_dead_end =
         [&abstractions, &unsolvability_heuristic](const State &state) {

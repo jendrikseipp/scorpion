@@ -115,12 +115,14 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+    UnsolvabilityHeuristic unsolvability_heuristic(abstractions, costs.size());
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
         move(abstractions),
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, compute_saturated_cost_partitioning));
+            task_proxy, abstractions, costs, compute_saturated_cost_partitioning,
+            unsolvability_heuristic));
 }
 
 static Plugin<Evaluator> _plugin("saturated_cost_partitioning_online", _parse);
