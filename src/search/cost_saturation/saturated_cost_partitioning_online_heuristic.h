@@ -1,6 +1,7 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 
+#include "max_cost_partitioning_heuristic.h"
 #include "types.h"
 
 #include "../heuristic.h"
@@ -10,7 +11,6 @@
 
 namespace cost_saturation {
 class OrderGenerator;
-class UnsolvabilityHeuristic;
 
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> cp_generator;
