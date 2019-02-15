@@ -535,7 +535,9 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         ++num_pattern_evaluations;
 
         if (select_pattern) {
-            log << "Add pattern " << pattern << endl;
+            if (saturate) {
+                log << "Add pattern " << pattern << endl;
+            }
             unique_ptr<cost_saturation::Projection> projection =
                 utils::make_unique_ptr<cost_saturation::Projection>(
                     task_proxy, task_info, pattern);
