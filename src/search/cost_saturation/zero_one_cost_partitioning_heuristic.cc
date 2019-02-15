@@ -29,8 +29,10 @@ static CostPartitioningHeuristic compute_zero_one_cost_partitioning(
         }
         cp_heuristic.add_h_values(
             pos, abstraction.compute_goal_distances(remaining_costs));
-        for (int op_id : abstraction.get_active_operators()) {
-            remaining_costs[op_id] = 0;
+        for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
+            if (abstraction.operator_is_active(op_id)) {
+                remaining_costs[op_id] = 0;
+            }
         }
     }
     return cp_heuristic;

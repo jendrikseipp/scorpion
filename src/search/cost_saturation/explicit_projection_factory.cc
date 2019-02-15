@@ -3,15 +3,12 @@
 #include "explicit_abstraction.h"
 #include "types.h"
 
-#include "../algorithms/ordered_set.h"
 #include "../pdbs/match_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
 #include "../utils/memory.h"
-
-#include <unordered_map>
 
 using namespace std;
 

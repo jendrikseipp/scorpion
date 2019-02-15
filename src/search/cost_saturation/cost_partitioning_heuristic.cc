@@ -10,7 +10,7 @@ using namespace std;
 
 namespace cost_saturation {
 void CostPartitioningHeuristic::add_h_values(
-    int abstraction_id, std::vector<int> &&h_values) {
+    int abstraction_id, vector<int> &&h_values) {
     if (false) {
         double total = h_values.size();
         int zeros = count(h_values.begin(), h_values.end(), 0);

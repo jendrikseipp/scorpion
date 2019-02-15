@@ -91,12 +91,17 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     int num_operators = task_proxy.get_operators().size();
     mentioned_variables.resize(num_operators * num_variables, false);
     pre_eff_variables.resize(num_operators * num_variables, false);
+    effect_variables.resize(num_operators * num_variables, false);
     for (OperatorProxy op : task_proxy.get_operators()) {
         for (int var : get_variables(op)) {
             mentioned_variables[op.get_id() * num_variables + var] = true;
         }
         for (int changed_var : get_changed_variables(op)) {
             pre_eff_variables[op.get_id() * num_variables + changed_var] = true;
+        }
+        for (EffectProxy effect : op.get_effects()) {
+            int var = effect.get_fact().get_variable().get_id();
+            effect_variables[op.get_id() * num_variables + var] = true;
         }
     }
 }
@@ -113,6 +118,15 @@ bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_i
         }
     }
     return true;
+}
+
+bool TaskInfo::operator_is_active(const pdbs::Pattern &pattern, int op_id) const {
+    for (int var : pattern) {
+        if (effect_variables[op_id * num_variables + var]) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -214,16 +228,6 @@ bool Projection::increment_to_next_state(vector<FactPair> &facts) const {
 
 int Projection::get_abstract_state_id(const State &concrete_state) const {
     return hash_index(concrete_state);
-}
-
-vector<int> Projection::compute_active_operators() const {
-    vector<int> active_operators;
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        if (is_operator_relevant(op)) {
-            active_operators.push_back(op.get_id());
-        }
-    }
-    return active_operators;
 }
 
 vector<int> Projection::compute_goal_states(
@@ -464,9 +468,10 @@ int Projection::get_num_states() const {
     return num_states;
 }
 
-const vector<int> &Projection::get_active_operators() const {
-    assert(has_transition_system());
-    ABORT("Not implemented");
+bool Projection::operator_is_active(int op_id) const {
+    bool active = task_info->operator_is_active(pattern, op_id);
+    assert(active == is_operator_relevant(task_proxy.get_operators()[op_id]));
+    return active;
 }
 
 bool Projection::operator_induces_self_loop(int op_id) const {

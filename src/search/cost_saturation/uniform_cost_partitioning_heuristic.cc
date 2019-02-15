@@ -32,8 +32,10 @@ static vector<int> compute_divided_costs(
     vector<int> op_usages(remaining_costs.size(), 0);
     for (size_t i = pos; i < order.size(); ++i) {
         const Abstraction &abstraction = *abstractions[order[i]];
-        for (int op_id : abstraction.get_active_operators()) {
-            ++op_usages[op_id];
+        for (size_t op_id = 0; op_id < remaining_costs.size(); ++op_id) {
+            if (abstraction.operator_is_active(op_id)) {
+                ++op_usages[op_id];
+            }
         }
     }
     if (debug) {
@@ -150,10 +152,10 @@ static CostPartitioningHeuristic get_ucp_heuristic(
 static CPHeuristics get_oucp_heuristics(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
+    const UnsolvabilityHeuristic &unsolvability_heuristic,
     const CostPartitioningHeuristicCollectionGenerator &cps_generator,
     bool debug) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    UnsolvabilityHeuristic unsolvability_heuristic(abstractions, costs.size());
     return cps_generator.generate_cost_partitionings(
         task_proxy, abstractions, costs,
         [debug](
@@ -193,6 +195,9 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     Abstractions abstractions = generate_abstractions(
         scaled_costs_task,
         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+    UnsolvabilityHeuristic unsolvability_heuristic(
+        abstractions,
+        TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")).get_operators().size());
 
     TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
     bool debug = false;
@@ -202,6 +207,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         cp_heuristics = get_oucp_heuristics(
             scaled_costs_task_proxy,
             abstractions,
+            unsolvability_heuristic,
             get_cp_heuristic_collection_generator_from_options(opts),
             debug);
     } else {
@@ -209,8 +215,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
                                     scaled_costs_task_proxy, abstractions, debug));
     }
 
-    UnsolvabilityHeuristic unsolvability_heuristic(
-        abstractions, scaled_costs_task_proxy.get_operators().size());
     return make_shared<UniformCostPartitioningHeuristic>(
         opts, move(abstractions), move(cp_heuristics), move(unsolvability_heuristic));
 }

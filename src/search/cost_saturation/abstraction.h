@@ -58,11 +58,11 @@ public:
         const std::vector<int> &h_values,
         int num_operators) const = 0;
 
-    // Operators inducing state-changing transitions.
-    virtual const std::vector<int> &get_active_operators() const = 0;
+    // Return true iff operator induces a state-changing transition.
+    virtual bool operator_is_active(int op_id) const = 0;
 
-    // Operators inducing self-looping transitions. May overlap with active
-    // operators.
+    // Return true iff operator induces a self-loop. Note that an operator may
+    // induce both state-changing transitions and self-loops.
     virtual bool operator_induces_self_loop(int op_id) const = 0;
 
     virtual int get_num_states() const = 0;
