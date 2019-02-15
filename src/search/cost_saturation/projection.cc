@@ -2,6 +2,7 @@
 
 #include "types.h"
 
+#include "../algorithms/priority_queues.h"
 #include "../pdbs/match_tree.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -30,10 +31,11 @@ static vector<int> get_abstract_preconditions(
     return abstract_preconditions;
 }
 
-static int compute_forward_hash_effect(
+static int compute_hash_effect(
     const vector<FactPair> &preconditions,
     const vector<FactPair> &effects,
-    const vector<size_t> &hash_multipliers) {
+    const vector<size_t> &hash_multipliers,
+    bool forward) {
     int hash_effect = 0;
     assert(preconditions.size() == effects.size());
     for (size_t i = 0; i < preconditions.size(); ++i) {
@@ -42,24 +44,86 @@ static int compute_forward_hash_effect(
         int old_val = preconditions[i].value;
         int new_val = effects[i].value;
         assert(old_val != -1);
+        if (!forward) {
+            swap(old_val, new_val);
+        }
         int effect = (new_val - old_val) * hash_multipliers[var];
         hash_effect += effect;
     }
     return hash_effect;
 }
 
+static vector<int> get_variables(const OperatorProxy &op) {
+    unordered_set<int> vars;
+    vars.reserve(op.get_preconditions().size());
+    for (FactProxy precondition : op.get_preconditions()) {
+        vars.insert(precondition.get_variable().get_id());
+    }
+    for (EffectProxy effect : op.get_effects()) {
+        vars.insert(effect.get_fact().get_variable().get_id());
+    }
+    vector<int> variables(vars.begin(), vars.end());
+    sort(variables.begin(), variables.end());
+    return variables;
+}
+
+static vector<int> get_changed_variables(const OperatorProxy &op) {
+    unordered_map<int, int> var_to_precondition;
+    for (FactProxy precondition : op.get_preconditions()) {
+        const FactPair fact = precondition.get_pair();
+        var_to_precondition[fact.var] = fact.value;
+    }
+    vector<int> changed_variables;
+    for (EffectProxy effect : op.get_effects()) {
+        const FactPair fact = effect.get_fact().get_pair();
+        auto it = var_to_precondition.find(fact.var);
+        if (it != var_to_precondition.end() && it->second != fact.value) {
+            changed_variables.push_back(fact.var);
+        }
+    }
+    sort(changed_variables.begin(), changed_variables.end());
+    return changed_variables;
+}
+
+
+TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
+    num_variables = task_proxy.get_variables().size();
+    int num_operators = task_proxy.get_operators().size();
+    mentioned_variables.resize(num_operators * num_variables, false);
+    pre_eff_variables.resize(num_operators * num_variables, false);
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        for (int var : get_variables(op)) {
+            mentioned_variables[op.get_id() * num_variables + var] = true;
+        }
+        for (int changed_var : get_changed_variables(op)) {
+            pre_eff_variables[op.get_id() * num_variables + changed_var] = true;
+        }
+    }
+}
+
+bool TaskInfo::operator_mentions_variable(int op_id, int var) const {
+    return mentioned_variables[op_id * num_variables + var];
+}
+
+bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const {
+    // Return false iff the operator has a precondition and effect for a pattern variable.
+    for (int var : pattern) {
+        if (pre_eff_variables[op_id * num_variables + var]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 Projection::Projection(
-    const TaskProxy &task_proxy, const pdbs::Pattern &pattern)
+    const TaskProxy &task_proxy,
+    const shared_ptr<TaskInfo> &task_info,
+    const pdbs::Pattern &pattern)
     : task_proxy(task_proxy),
-      pattern(pattern),
-      unaffected_variables_per_operator(
-          utils::make_unique_ptr<array_pool::ArrayPool>()) {
+      task_info(task_info),
+      pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
-
-    active_operators = compute_active_operators();
-    looping_operators = compute_looping_operators();
-    assert(utils::is_sorted_unique(looping_operators));
 
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
@@ -77,7 +141,7 @@ Projection::Projection(
     }
 
     VariablesProxy variables = task_proxy.get_variables();
-    variable_to_pattern_index.resize(variables.size(), -1);
+    vector<int> variable_to_pattern_index(variables.size(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_pattern_index[pattern[i]] = i;
     }
@@ -98,43 +162,39 @@ Projection::Projection(
                 const vector<FactPair> &prevail,
                 const vector<FactPair> &preconditions,
                 const vector<FactPair> &effects,
-                int cost,
+                int,
                 const vector<size_t> &hash_multipliers,
                 int concrete_operator_id) {
+                int abs_op_id = abstract_backward_operators.size();
                 abstract_backward_operators.emplace_back(
-                    prevail, preconditions, effects, cost, hash_multipliers,
-                    concrete_operator_id);
+                    concrete_operator_id,
+                    compute_hash_effect(preconditions, effects, hash_multipliers, false));
+                vector<FactPair> regression_preconditions = prevail;
+                regression_preconditions.insert(
+                    regression_preconditions.end(), effects.begin(), effects.end());
+                sort(regression_preconditions.begin(), regression_preconditions.end());
+                match_tree_backward->insert(abs_op_id, regression_preconditions);
 
                 vector<int> abstract_preconditions = get_abstract_preconditions(
                     prevail, preconditions, hash_multipliers);
-                vector<int> unaffected_variables;
                 int precondition_hash = 0;
                 for (size_t pos = 0; pos < hash_multipliers.size(); ++pos) {
                     int pre_val = abstract_preconditions[pos];
-                    if (pre_val == -1) {
-                        unaffected_variables.emplace_back(pos);
-                    } else {
+                    if (pre_val != -1) {
                         precondition_hash += hash_multipliers[pos] * pre_val;
                     }
                 }
-                array_pool::ArrayPoolIndex index =
-                    unaffected_variables_per_operator->append(unaffected_variables);
 
                 abstract_forward_operators.emplace_back(
-                    concrete_operator_id, precondition_hash, index,
-                    unaffected_variables.size(), compute_forward_hash_effect(
-                        preconditions, effects, hash_multipliers));
+                    precondition_hash,
+                    compute_hash_effect(
+                        preconditions, effects, hash_multipliers, true));
             });
     }
     abstract_forward_operators.shrink_to_fit();
     abstract_backward_operators.shrink_to_fit();
 
-    // Fill match tree after creating the operator vectors to have valid pointers.
-    for (pdbs::AbstractOperator &op : abstract_backward_operators) {
-        match_tree_backward->insert(op);
-    }
-
-    goal_states = compute_goal_states();
+    goal_states = compute_goal_states(variable_to_pattern_index);
 }
 
 Projection::~Projection() {
@@ -166,17 +226,8 @@ vector<int> Projection::compute_active_operators() const {
     return active_operators;
 }
 
-vector<int> Projection::compute_looping_operators() const {
-    vector<int> looping_operators;
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        if (operator_induces_loop(op)) {
-            looping_operators.push_back(op.get_id());
-        }
-    }
-    return looping_operators;
-}
-
-vector<int> Projection::compute_goal_states() const {
+vector<int> Projection::compute_goal_states(
+    const vector<int> &variable_to_pattern_index) const {
     vector<int> goal_states;
 
     // Compute abstract goal var-val pairs.
@@ -343,8 +394,10 @@ vector<int> Projection::compute_saturated_costs(
 
     /* To prevent negative cost cycles, we ensure that all operators
        inducing self-loops have non-negative costs. */
-    for (int op_id : looping_operators) {
-        saturated_costs[op_id] = 0;
+    for (int op_id = 0; op_id < num_operators; ++op_id) {
+        if (operator_induces_self_loop(op_id)) {
+            saturated_costs[op_id] = 0;
+        }
     }
 
     for_each_transition(
@@ -368,14 +421,14 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
-    assert(pq.empty());
+    priority_queues::AdaptiveQueue<size_t> pq;
     for (int goal : goal_states) {
         pq.push(0, goal);
         distances[goal] = 0;
     }
 
     // Reuse vector to save allocations.
-    vector<const pdbs::AbstractOperator *> applicable_operators;
+    vector<int> applicable_operators;
 
     // Run Dijkstra loop.
     while (!pq.empty()) {
@@ -390,12 +443,13 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
         // Regress abstract state.
         applicable_operators.clear();
         match_tree_backward->get_applicable_operators(state_index, applicable_operators);
-        for (const pdbs::AbstractOperator *op : applicable_operators) {
-            size_t predecessor = state_index + op->get_hash_effect();
-            int op_id = op->get_concrete_operator_id();
-            assert(utils::in_bounds(op_id, costs));
-            int alternative_cost = (costs[op_id] == INF) ?
-                INF : distances[state_index] + costs[op_id];
+        for (int abs_op_id : applicable_operators) {
+            const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
+            size_t predecessor = state_index + op.hash_effect;
+            int conc_op_id = op.concrete_operator_id;
+            assert(utils::in_bounds(conc_op_id, costs));
+            int alternative_cost = (costs[conc_op_id] == INF) ?
+                INF : distances[state_index] + costs[conc_op_id];
             assert(utils::in_bounds(predecessor, distances));
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
@@ -403,7 +457,6 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
             }
         }
     }
-    pq.clear();
     return distances;
 }
 
@@ -413,12 +466,13 @@ int Projection::get_num_states() const {
 
 const vector<int> &Projection::get_active_operators() const {
     assert(has_transition_system());
-    return active_operators;
+    ABORT("Not implemented");
 }
 
-const vector<int> &Projection::get_looping_operators() const {
-    assert(has_transition_system());
-    return looping_operators;
+bool Projection::operator_induces_self_loop(int op_id) const {
+    bool induces_loop = task_info->operator_induces_self_loop(pattern, op_id);
+    assert(induces_loop == operator_induces_loop(task_proxy.get_operators()[op_id]));
+    return induces_loop;
 }
 
 const vector<int> &Projection::get_goal_states() const {
@@ -430,16 +484,13 @@ void Projection::release_transition_system_memory() {
     assert(has_transition_system());
     utils::release_vector_memory(abstract_forward_operators);
     utils::release_vector_memory(abstract_backward_operators);
-    utils::release_vector_memory(looping_operators);
     utils::release_vector_memory(goal_states);
     match_tree_backward = nullptr;
-    unaffected_variables_per_operator = nullptr;
 }
 
 void Projection::dump() const {
     assert(has_transition_system());
     cout << "Abstract operators: " << abstract_backward_operators.size()
-         << ", looping operators: " << looping_operators.size()
          << ", goal states: " << goal_states.size() << "/" << num_states
          << endl;
 }

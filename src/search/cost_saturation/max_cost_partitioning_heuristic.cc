@@ -14,13 +14,55 @@
 using namespace std;
 
 namespace cost_saturation {
+static vector<bool> get_unsolvable_states(const Abstraction &abstraction, int num_ops) {
+    // Note: we could use a simple queue instead of a priority queue for this.
+    vector<bool> unsolvable_states(abstraction.get_num_states(), false);
+    vector<int> unit_costs(num_ops, 1);
+    vector<int> goal_distances = abstraction.compute_goal_distances(unit_costs);
+    for (size_t i = 0; i < goal_distances.size(); ++i) {
+        if (goal_distances[i] == INF) {
+            unsolvable_states[i] = true;
+        }
+    }
+    return unsolvable_states;
+}
+
+UnsolvabilityHeuristic::UnsolvabilityHeuristic(
+    const Abstractions &abstractions, int num_operators) {
+    for (size_t i = 0; i < abstractions.size(); ++i) {
+        vector<bool> unsolvable = get_unsolvable_states(*abstractions[i], num_operators);
+        if (any_of(unsolvable.begin(), unsolvable.end(), [](bool b) {return b;})) {
+            unsolvable_states.emplace_back(i, move(unsolvable));
+        }
+    }
+}
+
+bool UnsolvabilityHeuristic::is_unsolvable(const vector<int> &abstract_state_ids) const {
+    for (const auto &info : unsolvable_states) {
+        if (info.unsolvable_states[abstract_state_ids[info.abstraction_id]]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void UnsolvabilityHeuristic::mark_useful_abstractions(
+    vector<bool> &useful_abstractions) const {
+    for (const auto &info : unsolvable_states) {
+        useful_abstractions[info.abstraction_id] = true;
+    }
+}
+
+
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     const options::Options &opts,
     Abstractions &&abstractions_,
-    vector<CostPartitioningHeuristic> &&cp_heuristics_)
+    vector<CostPartitioningHeuristic> &&cp_heuristics_,
+    UnsolvabilityHeuristic &&unsolvability_heuristic_)
     : Heuristic(opts),
       abstractions(move(abstractions_)),
-      cp_heuristics(move(cp_heuristics_)) {
+      cp_heuristics(move(cp_heuristics_)),
+      unsolvability_heuristic(move(unsolvability_heuristic_)) {
     int num_abstractions = abstractions.size();
 
     // Print statistics about the number of lookup tables.
@@ -50,6 +92,7 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
 
     // Collect IDs of useful abstractions.
     vector<bool> useful_abstractions(num_abstractions, false);
+    unsolvability_heuristic.mark_useful_abstractions(useful_abstractions);
     for (const auto &cp_heuristic : cp_heuristics) {
         cp_heuristic.mark_useful_abstractions(useful_abstractions);
     }
@@ -82,10 +125,11 @@ int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_st
 
 int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) const {
     vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
-    int max_h = compute_max_h_with_statistics(cp_heuristics, abstract_state_ids, num_best_order);
-    if (max_h == INF) {
+    if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
         return DEAD_END;
     }
+    int max_h = compute_max_h_with_statistics(cp_heuristics, abstract_state_ids, num_best_order);
+    assert(max_h != INF);
     return max_h;
 }
 
@@ -139,13 +183,15 @@ shared_ptr<Heuristic> get_max_cp_heuristic(
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+    UnsolvabilityHeuristic unsolvability_heuristic(abstractions, costs.size());
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, cp_function);
+            task_proxy, abstractions, costs, cp_function, unsolvability_heuristic);
     return make_shared<MaxCostPartitioningHeuristic>(
         opts,
         move(abstractions),
-        move(cp_heuristics));
+        move(cp_heuristics),
+        move(unsolvability_heuristic));
 }
 
 void add_order_options_to_parser(OptionParser &parser) {

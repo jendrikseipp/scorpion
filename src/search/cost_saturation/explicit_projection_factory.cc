@@ -3,15 +3,12 @@
 #include "explicit_abstraction.h"
 #include "types.h"
 
-#include "../algorithms/ordered_set.h"
 #include "../pdbs/match_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
 #include "../utils/memory.h"
-
-#include <unordered_map>
 
 using namespace std;
 
@@ -264,7 +261,7 @@ void ExplicitProjectionFactory::add_transitions(
             cout << "dest state: " << possible_dest_values << endl;
         int dest_rank = rank(possible_dest_values);
         if (dest_rank == src_rank) {
-            looping_operators.insert(op_id);
+            looping_operators[op_id] = true;
         } else {
             backward_graph[dest_rank].emplace_back(op_id, src_rank);
 #ifndef NDEBUG
@@ -316,7 +313,7 @@ unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {
     return utils::make_unique_ptr<ExplicitAbstraction>(
         StateMap(pattern, move(hash_multipliers)),
         move(backward_graph),
-        looping_operators.pop_as_vector(),
+        move(looping_operators),
         move(goal_states));
 }
 }

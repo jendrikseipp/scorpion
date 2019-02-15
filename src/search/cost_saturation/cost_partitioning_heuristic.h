@@ -35,7 +35,7 @@ class CostPartitioningHeuristic {
     std::vector<LookupTable> lookup_tables;
 
 public:
-    void add_h_values(int abstraction_id, std::vector<int> h_values);
+    void add_h_values(int abstraction_id, std::vector<int> &&h_values);
 
     /*
       Compute cost-partitioned heuristic value for a concrete state s. Callers

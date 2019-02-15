@@ -5,7 +5,6 @@
 
 #include "../task_proxy.h"
 
-#include "../algorithms/ordered_set.h"
 #include "../pdbs/types.h"
 
 #include <vector>
@@ -25,7 +24,7 @@ class ExplicitProjectionFactory {
     std::vector<int> domain_sizes;
 
     std::vector<std::vector<Successor>> backward_graph;
-    ordered_set::OrderedSet<int> looping_operators;
+    std::vector<bool> looping_operators;
     std::vector<int> goal_states;
 
     // size of the PDB

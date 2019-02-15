@@ -1,6 +1,7 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 
+#include "max_cost_partitioning_heuristic.h"
 #include "types.h"
 
 #include "../heuristic.h"
@@ -15,6 +16,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> cp_generator;
     const Abstractions abstractions;
     CPHeuristics cp_heuristics;
+    UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
     const bool store_cost_partitionings;
     const std::vector<int> costs;
@@ -34,7 +36,8 @@ public:
     SaturatedCostPartitioningOnlineHeuristic(
         const options::Options &opts,
         Abstractions &&abstractions,
-        CPHeuristics &&cp_heuristics);
+        CPHeuristics &&cp_heuristics,
+        UnsolvabilityHeuristic &&unsolvability_heuristic);
 
     virtual void print_statistics() const override;
 };

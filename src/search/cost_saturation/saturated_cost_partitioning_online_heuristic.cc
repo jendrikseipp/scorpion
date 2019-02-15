@@ -3,7 +3,6 @@
 #include "abstraction.h"
 #include "cost_partitioning_heuristic.h"
 #include "cost_partitioning_heuristic_collection_generator.h"
-#include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
 #include "saturated_cost_partitioning_heuristic.h"
 #include "utils.h"
@@ -20,11 +19,13 @@ namespace cost_saturation {
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
     Abstractions &&abstractions,
-    CPHeuristics &&cp_heuristics)
+    CPHeuristics &&cp_heuristics,
+    UnsolvabilityHeuristic &&unsolvability_heuristic)
     : Heuristic(opts),
       cp_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
       abstractions(move(abstractions)),
       cp_heuristics(move(cp_heuristics)),
+      unsolvability_heuristic(move(unsolvability_heuristic)),
       interval(opts.get<int>("interval")),
       store_cost_partitionings(opts.get<bool>("store_cost_partitionings")),
       costs(task_properties::get_operator_costs(task_proxy)),
@@ -59,11 +60,12 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     State state = convert_global_state(global_state);
     ++num_evaluated_states;
     vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
-    int max_h = compute_max_h_with_statistics(
-        cp_heuristics, abstract_state_ids, num_best_order);
-    if (max_h == INF) {
+    if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
         return DEAD_END;
     }
+    int max_h = compute_max_h_with_statistics(
+        cp_heuristics, abstract_state_ids, num_best_order);
+    assert(max_h != INF);
 
     if (should_compute_scp(state)) {
         Order order = cp_generator->compute_order_for_state(
@@ -75,9 +77,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         if (store_cost_partitionings && single_h > max_h) {
             cp_heuristics.push_back(move(cost_partitioning));
         }
-        if (single_h == INF) {
-            return DEAD_END;
-        }
+        assert(single_h != INF);
         return max(max_h, single_h);
     }
     return max_h;
@@ -118,12 +118,17 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+    UnsolvabilityHeuristic unsolvability_heuristic(abstractions, costs.size());
+    CPHeuristics cp_heuristics =
+        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
+            task_proxy, abstractions, costs, compute_saturated_cost_partitioning,
+            unsolvability_heuristic);
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
         move(abstractions),
-        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, compute_saturated_cost_partitioning));
+        move(cp_heuristics),
+        move(unsolvability_heuristic));
 }
 
 static Plugin<Evaluator> _plugin("saturated_cost_partitioning_online", _parse);
