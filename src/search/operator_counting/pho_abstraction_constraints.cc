@@ -58,9 +58,11 @@ void PhOAbstractionConstraints::initialize_constraints(
         for (auto &abstraction : abstractions) {
             constraints.emplace_back(0, infinity);
             lp::LPConstraint &constraint = constraints.back();
-            for (int op_id : abstraction->get_active_operators()) {
-                assert(utils::in_bounds(op_id, operator_costs));
-                constraint.insert(op_id, operator_costs[op_id]);
+            for (size_t op_id = 0; op_id < operator_costs.size(); ++op_id) {
+                if (abstraction->operator_is_active(op_id)) {
+                    assert(utils::in_bounds(op_id, operator_costs));
+                    constraint.insert(op_id, operator_costs[op_id]);
+                }
             }
             h_values_by_abstraction.push_back(
                 abstraction->compute_goal_distances(operator_costs));
