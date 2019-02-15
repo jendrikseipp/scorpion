@@ -25,11 +25,16 @@ class TaskInfo {
     /* Set bit at position op_id * num_variables + var to true iff the operator
        has a precondition and (different) effect on variable var. */
     std::vector<bool> pre_eff_variables;
+
+    /* Set bit at position op_id * num_variables + var to true iff the operator
+       has an effect on variable var. */
+    std::vector<bool> effect_variables;
 public:
     explicit TaskInfo(const TaskProxy &task_proxy);
 
     bool operator_mentions_variable(int op_id, int var) const;
     bool operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const;
+    bool operator_is_active(const pdbs::Pattern &pattern, int op_id) const;
 };
 
 struct AbstractForwardOperator {
@@ -91,7 +96,6 @@ class Projection : public Abstraction {
        has a precondition and (different) effect. */
     bool operator_induces_loop(const OperatorProxy &op) const;
 
-    std::vector<int> compute_active_operators() const;
     std::vector<int> compute_goal_states(
         const std::vector<int> &variable_to_pattern_index) const;
 
@@ -195,7 +199,7 @@ public:
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;
     virtual int get_num_states() const override;
-    virtual const std::vector<int> &get_active_operators() const override;
+    virtual bool operator_is_active(int op_id) const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
     virtual const std::vector<int> &get_goal_states() const override;
 

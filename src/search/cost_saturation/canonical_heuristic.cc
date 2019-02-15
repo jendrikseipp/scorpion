@@ -28,8 +28,10 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
     relevant_operators.reserve(num_abstractions);
     for (const auto &abstraction : abstractions) {
         dynamic_bitset::DynamicBitset<> active_ops(num_operators);
-        for (int op_id : abstraction->get_active_operators()) {
-            active_ops.set(op_id);
+        for (int op_id = 0; op_id < num_operators; ++op_id) {
+            if (abstraction->operator_is_active(op_id)) {
+                active_ops.set(op_id);
+            }
         }
         relevant_operators.push_back(move(active_ops));
     }

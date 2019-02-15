@@ -32,8 +32,10 @@ static vector<int> compute_divided_costs(
     vector<int> op_usages(remaining_costs.size(), 0);
     for (size_t i = pos; i < order.size(); ++i) {
         const Abstraction &abstraction = *abstractions[order[i]];
-        for (int op_id : abstraction.get_active_operators()) {
-            ++op_usages[op_id];
+        for (size_t op_id = 0; op_id < remaining_costs.size(); ++op_id) {
+            if (abstraction.operator_is_active(op_id)) {
+                ++op_usages[op_id];
+            }
         }
     }
     if (debug) {
