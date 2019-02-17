@@ -68,50 +68,6 @@ static int get_pdb_size(const vector<int> &domain_sizes, const Iterable &pattern
 }
 
 template<typename Iterable>
-static int get_sum(const Iterable &pattern) {
-    int sum = 0;
-    for (int var : pattern) {
-        sum += var;
-    }
-    return sum;
-}
-
-template<typename Iterable>
-static int get_min(const Iterable &pattern) {
-    int res = numeric_limits<int>::max();
-    for (int var : pattern) {
-        res = min(res, var);
-    }
-    return res;
-}
-
-template<typename Iterable>
-static int get_max(const Iterable &pattern) {
-    int res = -1;
-    for (int var : pattern) {
-        res = max(res, var);
-    }
-    return res;
-}
-
-template<typename Iterable>
-static int get_num_new_var_pairs(
-    const Iterable &pattern,
-    const vector<vector<bool>> &used_var_pairs) {
-    int num_new_var_pairs = 0;
-    for (auto it1 = pattern.begin(); it1 != pattern.end(); ++it1) {
-        for (auto it2 = it1 + 1; it2 != pattern.end(); ++it2) {
-            int var1 = *it1;
-            int var2 = *it2;
-            if (!used_var_pairs[var1][var2]) {
-                ++num_new_var_pairs;
-            }
-        }
-    }
-    return num_new_var_pairs;
-}
-
-template<typename Iterable>
 static int get_num_active_ops(
     const Iterable &pattern,
     const TaskInfo &task_info) {
@@ -176,26 +132,15 @@ static int compute_score(
     const array_pool::ArrayPoolSlice<int> &pattern,
     PatternOrder order_type,
     const TaskInfo &task_info,
-    const vector<int> &domains,
-    const vector<vector<bool>> &used_var_pairs) {
-    if (order_type == PatternOrder::PDB_SIZE_UP ||
-        order_type == PatternOrder::PDB_SIZE_DOWN) {
+    const vector<int> &domains) {
+    if (order_type == PatternOrder::PDB_SIZE_UP) {
         return get_pdb_size(domains, pattern);
-    } else if (order_type == PatternOrder::CG_SUM_UP ||
-               order_type == PatternOrder::CG_SUM_DOWN) {
-        return get_sum(pattern);
-    } else if (order_type == PatternOrder::CG_MIN_UP ||
-               order_type == PatternOrder::CG_MIN_DOWN) {
-        return get_min(pattern);
-    } else if (order_type == PatternOrder::CG_MAX_UP ||
-               order_type == PatternOrder::CG_MAX_DOWN) {
-        return get_max(pattern);
-    } else if (order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
-               order_type == PatternOrder::NEW_VAR_PAIRS_DOWN) {
-        return get_num_new_var_pairs(pattern, used_var_pairs);
-    } else if (order_type == PatternOrder::ACTIVE_OPS_UP ||
-               order_type == PatternOrder::ACTIVE_OPS_DOWN) {
+    } else if (order_type == PatternOrder::PDB_SIZE_DOWN) {
+        return -get_pdb_size(domains, pattern);
+    } else if (order_type == PatternOrder::ACTIVE_OPS_UP) {
         return get_num_active_ops(pattern, task_info);
+    } else if (order_type == PatternOrder::ACTIVE_OPS_DOWN) {
+        return -get_num_active_ops(pattern, task_info);
     } else {
         ABORT("wrong order_type");
     }
@@ -207,7 +152,6 @@ static void compute_pattern_order(
     PatternOrder order_type,
     const TaskInfo &task_info,
     const vector<int> &domains,
-    const vector<vector<bool>> &used_var_pairs,
     utils::RandomNumberGenerator &rng) {
     assert(patterns.size() == static_cast<int>(order.size()));
     if (order_type == PatternOrder::ORIGINAL) {
@@ -215,36 +159,14 @@ static void compute_pattern_order(
     } else if (order_type == PatternOrder::REVERSE) {
         reverse(order.begin(), order.end());
         return;
-    }
-
-    rng.shuffle(order);
-
-    if (order_type == PatternOrder::RANDOM) {
+    } else if (order_type == PatternOrder::PATTERN_UP ||
+               order_type == PatternOrder::PATTERN_DOWN) {
+        // Nothing to do since these orders are total.
         return;
     }
 
-    if (order_type == PatternOrder::ACTIVE_OPS_UP_CG_MIN_DOWN ||
-        order_type == PatternOrder::CG_MIN_DOWN_ACTIVE_OPS_UP) {
-        vector<pair<int, int>> pairs;
-        pairs.reserve(patterns.size());
-        for (int pattern_id = 0; pattern_id < patterns.size(); ++pattern_id) {
-            int active_ops = compute_score(
-                patterns.get_slice(pattern_id), PatternOrder::ACTIVE_OPS_UP,
-                task_info, domains, used_var_pairs);
-            int cg_min = compute_score(
-                patterns.get_slice(pattern_id), PatternOrder::CG_MIN_DOWN,
-                task_info, domains, used_var_pairs);
-            if (order_type == PatternOrder::ACTIVE_OPS_UP_CG_MIN_DOWN) {
-                pairs.emplace_back(active_ops, -cg_min);
-            } else {
-                assert(order_type == PatternOrder::CG_MIN_DOWN_ACTIVE_OPS_UP);
-                pairs.emplace_back(-cg_min, active_ops);
-            }
-        }
-        sort(order.begin(), order.end(),
-             [&pairs](int i, int j) {
-                 return pairs[i] < pairs[j];
-             });
+    if (order_type == PatternOrder::RANDOM) {
+        rng.shuffle(order);
         return;
     }
 
@@ -253,23 +175,13 @@ static void compute_pattern_order(
     for (int pattern_id = 0; pattern_id < patterns.size(); ++pattern_id) {
         scores.push_back(
             compute_score(
-                patterns.get_slice(pattern_id), order_type, task_info, domains,
-                used_var_pairs));
+                patterns.get_slice(pattern_id), order_type, task_info, domains));
     }
 
-    sort(order.begin(), order.end(),
-         [&scores](int i, int j) {
-             return scores[i] < scores[j];
-         });
-
-    if (order_type == PatternOrder::PDB_SIZE_DOWN ||
-        order_type == PatternOrder::CG_SUM_DOWN ||
-        order_type == PatternOrder::CG_MIN_DOWN ||
-        order_type == PatternOrder::CG_MAX_DOWN ||
-        order_type == PatternOrder::NEW_VAR_PAIRS_DOWN ||
-        order_type == PatternOrder::ACTIVE_OPS_DOWN) {
-        reverse(order.begin(), order.end());
-    }
+    stable_sort(order.begin(), order.end(),
+                [&scores](int i, int j) {
+                    return scores[i] < scores[j];
+                });
 }
 
 
@@ -280,7 +192,6 @@ class SequentialPatternGenerator {
     bool only_sga_patterns;
     bool only_interesting_patterns;
     PatternOrder order_type;
-    PatternOrder default_order_type;
     utils::RandomNumberGenerator &rng;
     vector<int> domains;
     vector<array_pool::ArrayPool<int>> patterns;
@@ -288,20 +199,6 @@ class SequentialPatternGenerator {
     int cached_pattern_size;
     int max_generated_pattern_size; // Only count layers that actually have patterns.
     int num_generated_patterns;
-
-    PatternOrder get_order_type() {
-        if (order_type == PatternOrder::ALT_TWO) {
-            if (rng(2) == 0) {
-                return PatternOrder::CG_MIN_DOWN;
-            } else {
-                return PatternOrder::ACTIVE_OPS_UP;
-            }
-        } else if (order_type == PatternOrder::PATTERN_UP ||
-                   order_type == PatternOrder::PATTERN_DOWN) {
-            return PatternOrder::ORIGINAL;
-        }
-        return order_type;
-    }
 public:
     SequentialPatternGenerator(
         const shared_ptr<AbstractTask> &task,
@@ -325,12 +222,10 @@ public:
         assert(max_pattern_size_ >= 0);
         max_pattern_size = min(
             max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
-        default_order_type = get_order_type();
     }
 
     Pattern get_pattern(
         int pattern_id,
-        const vector<vector<bool>> &used_var_pairs,
         const utils::CountdownTimer &timer) {
         assert(pattern_id >= 0);
         if (pattern_id < num_generated_patterns) {
@@ -366,11 +261,14 @@ public:
                     utils::Log() << "Store " << current_patterns->size()
                                  << " patterns of size "
                                  << cached_pattern_size << endl;
+
                     if (order_type == PatternOrder::PATTERN_UP) {
                         sort(current_patterns->begin(), current_patterns->end(), less<Pattern>());
-                    } else if (order_type == PatternOrder::PATTERN_DOWN) {
+                    } else {
+                        // Use PATTERN_DOWN for tie-breaking.
                         sort(current_patterns->begin(), current_patterns->end(), greater<Pattern>());
                     }
+
                     max_generated_pattern_size = cached_pattern_size;
                     num_generated_patterns += current_patterns->size();
                     patterns.emplace_back();
@@ -380,28 +278,24 @@ public:
                     vector<int> current_order(current_patterns->size(), -1);
                     iota(current_order.begin(), current_order.end(), 0);
                     compute_pattern_order(
-                        patterns.back(), current_order, default_order_type,
-                        task_info, domains, used_var_pairs, rng);
+                        patterns.back(), current_order, order_type,
+                        task_info, domains, rng);
                     orders.push_back(move(current_order));
                     utils::Log() << "Finished storing patterns of size "
                                  << cached_pattern_size << endl;
                 }
-                return get_pattern(pattern_id, used_var_pairs, timer);
+                return get_pattern(pattern_id, timer);
             }
         }
         return {};
     }
 
-    void restart(const vector<vector<bool>> &used_var_pairs) {
-        if (order_type == PatternOrder::RANDOM ||
-            order_type == PatternOrder::NEW_VAR_PAIRS_UP ||
-            order_type == PatternOrder::NEW_VAR_PAIRS_DOWN ||
-            order_type == PatternOrder::ALT_TWO) {
-            PatternOrder current_order_type = get_order_type();
+    void restart() {
+        if (order_type == PatternOrder::RANDOM) {
             for (size_t i = 0; i < orders.size(); ++i) {
                 vector<int> &order = orders[i];
                 compute_pattern_order(
-                    patterns[i], order, current_order_type, task_info, domains, used_var_pairs, rng);
+                    patterns[i], order, order_type, task_info, domains, rng);
             }
         }
     }
@@ -444,7 +338,6 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
-    vector<vector<bool>> &used_var_pairs,
     int64_t &collection_size,
     double overall_remaining_time) {
     utils::Log log;
@@ -458,8 +351,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         ++pattern_id;
 
         pattern_computation_timer->resume();
-        Pattern pattern = pattern_generator.get_pattern(
-            pattern_id, used_var_pairs, timer);
+        Pattern pattern = pattern_generator.get_pattern(pattern_id, timer);
         pattern_computation_timer->stop();
 
         if (timer.is_expired()) {
@@ -468,8 +360,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         }
 
         if (debug) {
-            cout << "Pattern " << pattern_id << ": " << pattern << " new:"
-                 << get_num_new_var_pairs(pattern, used_var_pairs) << " ops:"
+            cout << "Pattern " << pattern_id << ": " << pattern << " size:"
+                 << get_pdb_size(variable_domains, pattern) << " ops:"
                  << get_num_active_ops(pattern, evaluator_task_info) << endl;
         }
 
@@ -549,11 +441,6 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             }
             projections->push_back(move(projection));
             pattern_set.insert(pattern);
-            for (int var1 : pattern) {
-                for (int var2 : pattern) {
-                    used_var_pairs[var1][var2] = true;
-                }
-            }
             collection_size += pdb_size;
         }
     }
@@ -583,23 +470,18 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     PartialStateCollection dead_ends;
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
-    int num_vars = task_proxy.get_variables().size();
-    vector<vector<bool>> used_var_pairs;
-    for (int i = 0; i < num_vars; ++i) {
-        used_var_pairs.emplace_back(num_vars, false);
-    }
     int64_t collection_size = 0;
     num_pattern_evaluations = 0;
     bool limit_reached = false;
     while (!limit_reached) {
-        pattern_generator.restart(used_var_pairs);
+        pattern_generator.restart();
         if (dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER) {
             dead_ends.clear();
         }
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator, dead_ends,
-            pq, projections, pattern_set, used_var_pairs, collection_size,
+            pq, projections, pattern_set, collection_size,
             timer.get_remaining_time());
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "
@@ -716,19 +598,8 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("REVERSE");
     pattern_orders.push_back("PDB_SIZE_UP");
     pattern_orders.push_back("PDB_SIZE_DOWN");
-    pattern_orders.push_back("CG_SUM_UP");
-    pattern_orders.push_back("CG_SUM_DOWN");
-    pattern_orders.push_back("CG_MIN_UP");
-    pattern_orders.push_back("CG_MIN_DOWN");
-    pattern_orders.push_back("CG_MAX_UP");
-    pattern_orders.push_back("CG_MAX_DOWN");
-    pattern_orders.push_back("NEW_VAR_PAIRS_UP");
-    pattern_orders.push_back("NEW_VAR_PAIRS_DOWN");
     pattern_orders.push_back("ACTIVE_OPS_UP");
     pattern_orders.push_back("ACTIVE_OPS_DOWN");
-    pattern_orders.push_back("ALT_TWO");
-    pattern_orders.push_back("ACTIVE_OPS_UP_CG_MIN_DOWN");
-    pattern_orders.push_back("CG_MIN_DOWN_ACTIVE_OPS_UP");
     pattern_orders.push_back("PATTERN_UP");
     pattern_orders.push_back("PATTERN_DOWN");
     parser.add_enum_option(
