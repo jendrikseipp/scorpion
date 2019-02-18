@@ -7,9 +7,13 @@
 using namespace std;
 
 namespace cost_saturation {
+bool g_store_unsolvable_states_once_hacked = true;
+
 void CostPartitioningHeuristic::add_h_values(
     int abstraction_id, vector<int> &&h_values) {
-    if (any_of(h_values.begin(), h_values.end(), [](int h) {return h > 0 && h != INF;})) {
+    if (any_of(h_values.begin(), h_values.end(), [](int h) {
+                   return h > 0 && (!g_store_unsolvable_states_once_hacked || h != INF);
+               })) {
         lookup_tables.emplace_back(abstraction_id, move(h_values));
     }
 }

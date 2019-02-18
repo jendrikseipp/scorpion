@@ -178,6 +178,8 @@ shared_ptr<Heuristic> get_max_cp_heuristic(
     if (parser.dry_run())
         return nullptr;
 
+    g_store_unsolvable_states_once_hacked = opts.get<bool>("store_unsolvable_states_once");
+
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
@@ -224,6 +226,15 @@ void add_order_options_to_parser(OptionParser &parser) {
         "maximum time for optimizing each order with hill climbing",
         "2.0",
         Bounds("0.0", "infinity"));
+    parser.add_option<bool>(
+        "store_unsolvable_states_once",
+        "store unsolvable states once per abstraction, instead of once per order. "
+        "If store_unsolvable_states_once=true, we store unsolvable states in "
+        "UnsolvabilityHeuristic. If store_unsolvable_states_once=false, we "
+        "additionally store them in the lookup tables. In any case, we use "
+        "UnsolvabilityHeuristic to detect unsolvable states. "
+        "(this option only affects the saturated_cost_partitioning() plugin)",
+        "true");
     utils::add_rng_options(parser);
 }
 
