@@ -46,29 +46,6 @@ Order get_default_order(int num_abstractions) {
     return indices;
 }
 
-int compute_sum_h(
-    const vector<int> &abstract_state_ids,
-    const vector<vector<int>> &h_values_by_abstraction) {
-    int sum_h = 0;
-    assert(abstract_state_ids.size() == h_values_by_abstraction.size());
-    for (size_t i = 0; i < abstract_state_ids.size(); ++i) {
-        const vector<int> &h_values = h_values_by_abstraction[i];
-        int state_id = abstract_state_ids[i];
-        if (state_id == -1) {
-            // Abstract state has been pruned.
-            return INF;
-        }
-        assert(utils::in_bounds(state_id, h_values));
-        int value = h_values[state_id];
-        assert(value >= 0);
-        if (value == INF)
-            return INF;
-        sum_h += value;
-        assert(sum_h >= 0);
-    }
-    return sum_h;
-}
-
 int compute_max_h_with_statistics(
     const CPHeuristics &cp_heuristics,
     const vector<int> &abstract_state_ids,

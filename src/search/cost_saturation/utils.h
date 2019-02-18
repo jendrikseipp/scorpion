@@ -9,23 +9,14 @@
 class AbstractTask;
 class State;
 
-namespace options {
-class OptionParser;
-}
-
 namespace cost_saturation {
 class AbstractionGenerator;
-class CostPartitioningHeuristic;
 
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
     const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators);
 
 extern Order get_default_order(int num_abstractions);
-
-extern int compute_sum_h(
-    const std::vector<int> &abstract_state_ids,
-    const std::vector<std::vector<int>> &h_values_by_abstraction);
 
 extern int compute_max_h_with_statistics(
     const CPHeuristics &cp_heuristics,
