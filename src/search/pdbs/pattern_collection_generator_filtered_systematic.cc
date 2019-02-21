@@ -165,7 +165,8 @@ static void compute_pattern_order(
         return;
     }
 
-    if (order_type == PatternOrder::RANDOM) {
+    if (order_type == PatternOrder::RANDOM ||
+        order_type == PatternOrder::RANDOM_ONCE) {
         rng.shuffle(order);
         return;
     }
@@ -602,6 +603,7 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("ACTIVE_OPS_DOWN");
     pattern_orders.push_back("PATTERN_UP");
     pattern_orders.push_back("PATTERN_DOWN");
+    pattern_orders.push_back("RANDOM_ONCE");
     parser.add_enum_option(
         "order",
         pattern_orders,
