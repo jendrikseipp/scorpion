@@ -110,7 +110,7 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     }
 }
 
-const std::vector<FactPair> &TaskInfo::get_goals() const {
+const vector<FactPair> &TaskInfo::get_goals() const {
     return goals;
 }
 
