@@ -3,18 +3,23 @@
 
 #include "abstraction.h"
 
-#include "../task_proxy.h"
+#include "../abstract_task.h"
 
 #include "../pdbs/types.h"
-#include "../utils/logging.h"
 
+#include <functional>
 #include <vector>
+
+class OperatorProxy;
+class TaskProxy;
+class VariablesProxy;
 
 namespace pdbs {
 class MatchTree;
 }
 
 namespace cost_saturation {
+/* Precompute and store information about a task that is useful for projections. */
 class TaskInfo {
     int num_variables;
     std::vector<FactPair> goals;

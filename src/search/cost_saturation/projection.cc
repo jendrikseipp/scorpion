@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+#include "../task_proxy.h"
+
 #include "../algorithms/priority_queues.h"
 #include "../pdbs/match_tree.h"
 #include "../task_utils/task_properties.h"
