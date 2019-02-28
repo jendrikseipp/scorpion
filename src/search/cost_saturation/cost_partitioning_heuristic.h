@@ -18,8 +18,8 @@ extern bool g_store_unsolvable_states_once_hacked;
   abstractions themselves. This allows them to compute the mapping only once
   instead of for each order.
 
-  We call an abstraction A useful if h^A(s) > 0 for at least one state s. To
-  save space, we only store h values for useful abstractions.
+  We call an abstraction A useful if 0 < h^A(s) < INF for at least one state s.
+  To save space, we only store h values for useful abstractions.
 */
 class CostPartitioningHeuristic {
     struct LookupTable {
@@ -44,6 +44,9 @@ public:
       need to precompute the abstract state IDs that s corresponds to in all
       abstractions (not only useful abstractions). The result is the sum of all
       stored heuristic values for abstract states corresponding to s.
+
+      It is an error (guarded by an assertion) to call this method for an
+      unsolvable abstract state.
     */
     int compute_heuristic(const std::vector<int> &abstract_state_ids) const;
 
@@ -53,7 +56,7 @@ public:
     // Return the total number of stored heuristic values.
     int get_num_heuristic_values() const;
 
-    // An abstraction A is useful if h^A(s) > 0 for at least one state s (see above).
+    // See class documentation.
     void mark_useful_abstractions(std::vector<bool> &useful_abstractions) const;
 };
 }

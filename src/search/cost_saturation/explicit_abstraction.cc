@@ -148,6 +148,7 @@ bool ExplicitAbstraction::operator_is_active(int op_id) const {
 }
 
 bool ExplicitAbstraction::operator_induces_self_loop(int op_id) const {
+    assert(has_transition_system());
     return looping_operators[op_id];
 }
 
