@@ -90,8 +90,7 @@ static CostPartitioningHeuristic compute_uniform_cost_partitioning(
                 abstractions, order, remaining_costs, pos, debug);
         }
         vector<int> h_values = abstraction.compute_goal_distances(divided_costs);
-        vector<int> saturated_costs = abstraction.compute_saturated_costs(
-            h_values, divided_costs.size());
+        vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
         if (debug) {
             cout << "h-values: ";
             print_indexed_vector(h_values);

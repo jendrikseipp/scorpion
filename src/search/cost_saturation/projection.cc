@@ -91,8 +91,8 @@ static vector<int> get_changed_variables(const OperatorProxy &op) {
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     num_variables = task_proxy.get_variables().size();
+    num_operators = task_proxy.get_operators().size();
     goals = task_properties::get_fact_pairs(task_proxy.get_goals());
-    int num_operators = task_proxy.get_operators().size();
     mentioned_variables.resize(num_operators * num_variables, false);
     pre_eff_variables.resize(num_operators * num_variables, false);
     effect_variables.resize(num_operators * num_variables, false);
@@ -112,6 +112,10 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
 
 const vector<FactPair> &TaskInfo::get_goals() const {
     return goals;
+}
+
+int TaskInfo::get_num_operators() const {
+    return num_operators;
 }
 
 bool TaskInfo::operator_mentions_variable(int op_id, int var) const {
@@ -363,9 +367,9 @@ bool Projection::is_consistent(
 }
 
 vector<int> Projection::compute_saturated_costs(
-    const vector<int> &h_values,
-    int num_operators) const {
+    const vector<int> &h_values) const {
     assert(has_transition_system());
+    int num_operators = task_info->get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
 
     /* To prevent negative cost cycles, we ensure that all operators

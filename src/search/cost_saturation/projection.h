@@ -22,6 +22,7 @@ namespace cost_saturation {
 /* Precompute and store information about a task that is useful for projections. */
 class TaskInfo {
     int num_variables;
+    int num_operators;
     std::vector<FactPair> goals;
 
     /* Set bit at position op_id * num_variables + var to true iff the operator
@@ -43,6 +44,7 @@ public:
     explicit TaskInfo(const TaskProxy &task_proxy);
 
     const std::vector<FactPair> &get_goals() const;
+    int get_num_operators() const;
     bool operator_mentions_variable(int op_id, int var) const;
     bool operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const;
     bool operator_is_active(const pdbs::Pattern &pattern, int op_id) const;
@@ -193,8 +195,7 @@ public:
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;
     virtual std::vector<int> compute_saturated_costs(
-        const std::vector<int> &h_values,
-        int num_operators) const override;
+        const std::vector<int> &h_values) const override;
     virtual int get_num_states() const override;
     virtual bool operator_is_active(int op_id) const override;
     virtual bool operator_induces_self_loop(int op_id) const override;

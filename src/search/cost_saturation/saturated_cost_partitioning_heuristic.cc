@@ -24,10 +24,8 @@ CostPartitioningHeuristic compute_saturated_cost_partitioning(
     vector<int> remaining_costs = costs;
     for (int pos : order) {
         const Abstraction &abstraction = *abstractions[pos];
-        vector<int> h_values = abstraction.compute_goal_distances(
-            remaining_costs);
-        vector<int> saturated_costs = abstraction.compute_saturated_costs(
-            h_values, costs.size());
+        vector<int> h_values = abstraction.compute_goal_distances(remaining_costs);
+        vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
         cp_heuristic.add_h_values(pos, move(h_values));
         reduce_costs(remaining_costs, saturated_costs);
     }
