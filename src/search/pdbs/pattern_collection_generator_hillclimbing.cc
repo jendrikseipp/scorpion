@@ -23,15 +23,19 @@
 
 #include <algorithm>
 #include <cassert>
-#include <exception>
 #include <iostream>
 #include <limits>
 
 using namespace std;
 
 namespace pdbs {
-struct HillClimbingTimeout : public exception {};
-struct HillClimbingMaxPDBsGenerated : public exception {};
+/* Since this exception class is only used for control flow and thus has no need
+   for an error message, we use a standalone class instead of inheriting from
+   utils::Exception. */
+class HillClimbingTimeout {
+};
+class HillClimbingMaxPDBsGenerated {
+};
 
 static vector<int> get_goal_variables(const TaskProxy &task_proxy) {
     vector<int> goal_vars;
@@ -315,29 +319,28 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     PDBCollection candidate_pdbs;
     // The maximum size over all PDBs in candidate_pdbs.
     int max_pdb_size = 0;
+    for (const shared_ptr<PatternDatabase> &current_pdb :
+         *(current_pdbs->get_pattern_databases())) {
+        int new_max_pdb_size = generate_candidate_pdbs(
+            task_proxy, relevant_neighbours, *current_pdb, generated_patterns,
+            candidate_pdbs);
+        max_pdb_size = max(max_pdb_size, new_max_pdb_size);
+    }
+    /*
+      NOTE: The initial set of candidate patterns (in generated_patterns) is
+      guaranteed to be "normalized" in the sense that there are no duplicates
+      and patterns are sorted.
+    */
+    cout << "Done calculating initial candidate PDBs" << endl;
 
     int num_iterations = 0;
+    State initial_state = task_proxy.get_initial_state();
+
+    sampling::RandomWalkSampler sampler(task_proxy, *rng);
+    vector<State> samples;
+    vector<int> samples_h_values;
 
     try {
-        for (const shared_ptr<PatternDatabase> &current_pdb :
-             *(current_pdbs->get_pattern_databases())) {
-            int new_max_pdb_size = generate_candidate_pdbs(
-                task_proxy, relevant_neighbours, *current_pdb, generated_patterns,
-                candidate_pdbs);
-            max_pdb_size = max(max_pdb_size, new_max_pdb_size);
-        }
-        /*
-          NOTE: The initial set of candidate patterns (in generated_patterns) is
-          guaranteed to be "normalized" in the sense that there are no duplicates
-          and patterns are sorted.
-        */
-        cout << "Done calculating initial candidate PDBs" << endl;
-
-        State initial_state = task_proxy.get_initial_state();
-        sampling::RandomWalkSampler sampler(task_proxy, *rng);
-        vector<State> samples;
-        vector<int> samples_h_values;
-
         while (true) {
             ++num_iterations;
             int init_h = current_pdbs->get_value(initial_state);

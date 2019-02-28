@@ -24,10 +24,8 @@ AbstractOperator::AbstractOperator(const vector<FactPair> &prev_pairs,
                                    const vector<FactPair> &pre_pairs,
                                    const vector<FactPair> &eff_pairs,
                                    int cost,
-                                   const vector<size_t> &hash_multipliers,
-                                   int concrete_operator_id)
-    : concrete_operator_id(concrete_operator_id),
-      cost(cost),
+                                   const vector<size_t> &hash_multipliers)
+    : cost(cost),
       regression_preconditions(prev_pairs) {
     regression_preconditions.insert(regression_preconditions.end(),
                                     eff_pairs.begin(),
@@ -52,11 +50,6 @@ AbstractOperator::AbstractOperator(const vector<FactPair> &prev_pairs,
 }
 
 AbstractOperator::~AbstractOperator() {
-}
-
-int AbstractOperator::get_concrete_operator_id() const {
-    assert(concrete_operator_id != -1);
-    return concrete_operator_id;
 }
 
 void AbstractOperator::dump(const Pattern &pattern,
@@ -211,6 +204,7 @@ void PatternDatabase::create_pdb(
         } else {
             op_cost = operator_costs[op.get_id()];
         }
+        assert(op_cost >= 0 && op_cost != numeric_limits<int>::max());
         build_abstract_operators(
             op, op_cost, variable_to_index, variables, operators);
     }
@@ -256,15 +250,12 @@ void PatternDatabase::create_pdb(
         }
 
         // regress abstract_state
-        vector<int> applicable_operators;
-        match_tree.get_applicable_operators(state_index, applicable_operators);
-        for (int op_id : applicable_operators) {
+        vector<int> applicable_operator_ids;
+        match_tree.get_applicable_operator_ids(state_index, applicable_operator_ids);
+        for (int op_id : applicable_operator_ids) {
             const AbstractOperator &op = operators[op_id];
-            int infinity = numeric_limits<int>::max();
             size_t predecessor = state_index + op.get_hash_effect();
-            int alternative_cost = (op.get_cost() == infinity)
-                ? infinity
-                : distances[state_index] + op.get_cost();
+            int alternative_cost = distances[state_index] + op.get_cost();
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
                 pq.push(alternative_cost, predecessor);

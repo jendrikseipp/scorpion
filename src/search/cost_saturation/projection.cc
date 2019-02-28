@@ -432,7 +432,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     }
 
     // Reuse vector to save allocations.
-    vector<int> applicable_operators;
+    vector<int> applicable_operator_ids;
 
     // Run Dijkstra loop.
     while (!pq.empty()) {
@@ -445,9 +445,10 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
         }
 
         // Regress abstract state.
-        applicable_operators.clear();
-        match_tree_backward->get_applicable_operators(state_index, applicable_operators);
-        for (int abs_op_id : applicable_operators) {
+        applicable_operator_ids.clear();
+        match_tree_backward->get_applicable_operator_ids(
+            state_index, applicable_operator_ids);
+        for (int abs_op_id : applicable_operator_ids) {
             const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
             size_t predecessor = state_index + op.hash_effect;
             int conc_op_id = op.concrete_operator_id;
