@@ -17,6 +17,7 @@ class MatchTree;
 namespace cost_saturation {
 class TaskInfo {
     int num_variables;
+    std::vector<FactPair> goals;
 
     /* Set bit at position op_id * num_variables + var to true iff the operator
        has a precondition or an effect on variable var. */
@@ -32,6 +33,7 @@ class TaskInfo {
 public:
     explicit TaskInfo(const TaskProxy &task_proxy);
 
+    const std::vector<FactPair> &get_goals() const;
     bool operator_mentions_variable(int op_id, int var) const;
     bool operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const;
     bool operator_is_active(const pdbs::Pattern &pattern, int op_id) const;
