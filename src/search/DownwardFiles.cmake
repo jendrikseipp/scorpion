@@ -650,6 +650,7 @@ fast_downward_plugin(
         cost_saturation/saturated_cost_partitioning_online_heuristic
         cost_saturation/types
         cost_saturation/uniform_cost_partitioning_heuristic
+        cost_saturation/unsolvability_heuristic
         cost_saturation/utils
         cost_saturation/zero_one_cost_partitioning_heuristic
     DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES

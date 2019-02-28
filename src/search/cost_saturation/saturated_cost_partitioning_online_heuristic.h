@@ -1,8 +1,8 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 
-#include "max_cost_partitioning_heuristic.h"
 #include "types.h"
+#include "unsolvability_heuristic.h"
 
 #include "../heuristic.h"
 

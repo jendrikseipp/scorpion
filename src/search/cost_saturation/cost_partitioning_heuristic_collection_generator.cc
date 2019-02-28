@@ -2,9 +2,9 @@
 
 #include "cost_partitioning_heuristic.h"
 #include "diversifier.h"
-#include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
 #include "order_optimizer.h"
+#include "unsolvability_heuristic.h"
 #include "utils.h"
 
 #include "../task_proxy.h"
