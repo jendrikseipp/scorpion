@@ -140,8 +140,7 @@ Projection::Projection(
     const TaskProxy &task_proxy,
     const shared_ptr<TaskInfo> &task_info,
     const pdbs::Pattern &pattern)
-    : task_proxy(task_proxy),
-      task_info(task_info),
+    : task_info(task_info),
       pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
 
@@ -363,34 +362,6 @@ size_t Projection::hash_index(const State &state) const {
     return index;
 }
 
-bool Projection::is_operator_relevant(const OperatorProxy &op) const {
-    for (EffectProxy effect : op.get_effects()) {
-        int var_id = effect.get_fact().get_variable().get_id();
-        if (binary_search(pattern.begin(), pattern.end(), var_id)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool Projection::operator_induces_loop(const OperatorProxy &op) const {
-    unordered_map<int, int> var_to_precondition;
-    for (FactProxy precondition : op.get_preconditions()) {
-        const FactPair fact = precondition.get_pair();
-        var_to_precondition[fact.var] = fact.value;
-    }
-    for (EffectProxy effect : op.get_effects()) {
-        const FactPair fact = effect.get_fact().get_pair();
-        auto it = var_to_precondition.find(fact.var);
-        if (it != var_to_precondition.end() &&
-            it->second != fact.value &&
-            binary_search(pattern.begin(), pattern.end(), fact.var)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 vector<int> Projection::compute_saturated_costs(
     const vector<int> &h_values,
     int num_operators) const {
@@ -471,15 +442,11 @@ int Projection::get_num_states() const {
 }
 
 bool Projection::operator_is_active(int op_id) const {
-    bool active = task_info->operator_is_active(pattern, op_id);
-    assert(active == is_operator_relevant(task_proxy.get_operators()[op_id]));
-    return active;
+    return task_info->operator_is_active(pattern, op_id);
 }
 
 bool Projection::operator_induces_self_loop(int op_id) const {
-    bool induces_loop = task_info->operator_induces_self_loop(pattern, op_id);
-    assert(induces_loop == operator_induces_loop(task_proxy.get_operators()[op_id]));
-    return induces_loop;
+    return task_info->operator_induces_self_loop(pattern, op_id);
 }
 
 const vector<int> &Projection::get_goal_states() const {

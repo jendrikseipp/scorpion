@@ -75,7 +75,6 @@ class Projection : public Abstraction {
     using OperatorCallback =
         std::function<void (Facts &, Facts &, Facts &, int, const std::vector<size_t> &, int)>;
 
-    TaskProxy task_proxy;
     std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
 
@@ -94,13 +93,6 @@ class Projection : public Abstraction {
     std::vector<int> pattern_domain_sizes;
 
     std::vector<int> goal_states;
-
-    // Return true iff op has an effect on a variable in the pattern.
-    bool is_operator_relevant(const OperatorProxy &op) const;
-
-    /* Return true iff there is no variable in the pattern for which op
-       has a precondition and (different) effect. */
-    bool operator_induces_loop(const OperatorProxy &op) const;
 
     std::vector<int> compute_goal_states(
         const std::vector<int> &variable_to_pattern_index) const;
