@@ -96,14 +96,14 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     effect_variables.resize(num_operators * num_variables, false);
     for (OperatorProxy op : task_proxy.get_operators()) {
         for (int var : get_variables(op)) {
-            mentioned_variables[op.get_id() * num_variables + var] = true;
+            mentioned_variables[get_index(op.get_id(), var)] = true;
         }
         for (int changed_var : get_changed_variables(op)) {
-            pre_eff_variables[op.get_id() * num_variables + changed_var] = true;
+            pre_eff_variables[get_index(op.get_id(), changed_var)] = true;
         }
         for (EffectProxy effect : op.get_effects()) {
             int var = effect.get_fact().get_variable().get_id();
-            effect_variables[op.get_id() * num_variables + var] = true;
+            effect_variables[get_index(op.get_id(), var)] = true;
         }
     }
 }
@@ -113,13 +113,13 @@ const std::vector<FactPair> &TaskInfo::get_goals() const {
 }
 
 bool TaskInfo::operator_mentions_variable(int op_id, int var) const {
-    return mentioned_variables[op_id * num_variables + var];
+    return mentioned_variables[get_index(op_id, var)];
 }
 
 bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const {
     // Return false iff the operator has a precondition and effect for a pattern variable.
     for (int var : pattern) {
-        if (pre_eff_variables[op_id * num_variables + var]) {
+        if (pre_eff_variables[get_index(op_id, var)]) {
             return false;
         }
     }
@@ -128,7 +128,7 @@ bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_i
 
 bool TaskInfo::operator_is_active(const pdbs::Pattern &pattern, int op_id) const {
     for (int var : pattern) {
-        if (effect_variables[op_id * num_variables + var]) {
+        if (effect_variables[get_index(op_id, var)]) {
             return true;
         }
     }

@@ -30,6 +30,10 @@ class TaskInfo {
     /* Set bit at position op_id * num_variables + var to true iff the operator
        has an effect on variable var. */
     std::vector<bool> effect_variables;
+
+    int get_index(int op_id, int var) const {
+        return op_id * num_variables + var;
+    }
 public:
     explicit TaskInfo(const TaskProxy &task_proxy);
 
