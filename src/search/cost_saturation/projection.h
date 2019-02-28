@@ -179,12 +179,6 @@ class Projection : public Abstraction {
         std::size_t state_index,
         const std::vector<FactPair> &abstract_facts) const;
 
-    /*
-      Use the given concrete state to calculate the index of the corresponding
-      abstract state. This is only used for table lookup during search.
-    */
-    std::size_t hash_index(const State &state) const;
-
 protected:
     virtual std::vector<int> compute_saturated_costs(
         const std::vector<int> &h_values,

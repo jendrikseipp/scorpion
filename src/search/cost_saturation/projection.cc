@@ -234,7 +234,11 @@ bool Projection::increment_to_next_state(vector<FactPair> &facts) const {
 }
 
 int Projection::get_abstract_state_id(const State &concrete_state) const {
-    return hash_index(concrete_state);
+    size_t index = 0;
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        index += hash_multipliers[i] * concrete_state[pattern[i]].get_value();
+    }
+    return index;
 }
 
 vector<int> Projection::compute_goal_states(
@@ -356,14 +360,6 @@ bool Projection::is_consistent(
         }
     }
     return true;
-}
-
-size_t Projection::hash_index(const State &state) const {
-    size_t index = 0;
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        index += hash_multipliers[i] * state[pattern[i]].get_value();
-    }
-    return index;
 }
 
 vector<int> Projection::compute_saturated_costs(
