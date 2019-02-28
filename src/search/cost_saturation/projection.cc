@@ -240,7 +240,8 @@ vector<int> Projection::compute_goal_states(
     vector<FactPair> abstract_goals;
     for (FactPair goal : task_info->get_goals()) {
         if (variable_to_pattern_index[goal.var] != -1) {
-            abstract_goals.emplace_back(variable_to_pattern_index[goal.var], goal.value);
+            abstract_goals.emplace_back(
+                variable_to_pattern_index[goal.var], goal.value);
         }
     }
 
@@ -261,7 +262,7 @@ void Projection::multiply_out(int pos, int cost, int op_id,
                               const VariablesProxy &variables,
                               const OperatorCallback &callback) const {
     if (pos == static_cast<int>(effects_without_pre.size())) {
-        // All effects without precondition have been checked: insert op.
+        // All effects without precondition have been checked.
         if (!eff_pairs.empty()) {
             callback(prev_pairs, pre_pairs, eff_pairs, cost, hash_multipliers, op_id);
         }
@@ -291,8 +292,9 @@ void Projection::multiply_out(int pos, int cost, int op_id,
 }
 
 void Projection::build_abstract_operators(
-    const OperatorProxy &op, int cost,
-    const vector<int> &variable_to_index,
+    const OperatorProxy &op,
+    int cost,
+    const vector<int> &variable_to_pattern_index,
     const VariablesProxy &variables,
     const OperatorCallback &callback) const {
     // All variable value pairs that are a prevail condition
@@ -313,7 +315,7 @@ void Projection::build_abstract_operators(
 
     for (EffectProxy eff : op.get_effects()) {
         int var_id = eff.get_fact().get_variable().get_id();
-        int pattern_var_id = variable_to_index[var_id];
+        int pattern_var_id = variable_to_pattern_index[var_id];
         int val = eff.get_fact().get_value();
         if (pattern_var_id != -1) {
             if (has_precondition_on_var[var_id]) {
@@ -326,7 +328,7 @@ void Projection::build_abstract_operators(
     }
     for (FactProxy pre : op.get_preconditions()) {
         int var_id = pre.get_variable().get_id();
-        int pattern_var_id = variable_to_index[var_id];
+        int pattern_var_id = variable_to_pattern_index[var_id];
         int val = pre.get_value();
         if (pattern_var_id != -1) { // variable occurs in pattern
             if (has_precond_and_effect_on_var[var_id]) {

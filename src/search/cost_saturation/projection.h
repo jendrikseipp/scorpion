@@ -161,7 +161,8 @@ class Projection : public Abstraction {
       pattern or -1.
     */
     void build_abstract_operators(
-        const OperatorProxy &op, int cost,
+        const OperatorProxy &op,
+        int cost,
         const std::vector<int> &variable_to_pattern_index,
         const VariablesProxy &variables,
         const OperatorCallback &callback) const;
