@@ -20,6 +20,9 @@ extern bool g_store_unsolvable_states_once_hacked;
 
   We call an abstraction A useful if 0 < h^A(s) < INF for at least one state s.
   To save space, we only store h values for useful abstractions.
+
+  This class only supports retrieving finite heuristic estimates (see
+  compute_heuristic() below).
 */
 class CostPartitioningHeuristic {
     struct LookupTable {
@@ -46,7 +49,8 @@ public:
       stored heuristic values for abstract states corresponding to s.
 
       It is an error (guarded by an assertion) to call this method for an
-      unsolvable abstract state.
+      unsolvable abstract state s. Before calling this method, query
+      UnsolvabilityHeuristic to see whether s is unsolvable.
     */
     int compute_heuristic(const std::vector<int> &abstract_state_ids) const;
 
