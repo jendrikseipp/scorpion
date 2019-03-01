@@ -204,7 +204,6 @@ void PatternDatabase::create_pdb(
         } else {
             op_cost = operator_costs[op.get_id()];
         }
-        assert(op_cost >= 0 && op_cost != numeric_limits<int>::max());
         build_abstract_operators(
             op, op_cost, variable_to_index, variables, operators);
     }
