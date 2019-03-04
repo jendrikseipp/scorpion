@@ -18,14 +18,6 @@
 using namespace std;
 
 namespace cost_saturation {
-static vector<bool> convert_to_bitvector(const vector<int> &vec, int size) {
-    vector<bool> bitvector(size, false);
-    for (int value : vec) {
-        bitvector[value] = true;
-    }
-    return bitvector;
-}
-
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts)
     : Heuristic(opts),
@@ -176,12 +168,12 @@ void OptimalCostPartitioningHeuristic::add_abstraction_variables(
     }
 
     int num_operators = task_proxy.get_operators().size();
-    vector<bool> looping_operators = convert_to_bitvector(
-        abstraction.get_looping_operators(), num_operators);
     operator_cost_variables.emplace_back(num_operators);
     for (int op_id = 0; op_id < num_operators; ++op_id) {
         operator_cost_variables[id][op_id] = lp_variables.size();
-        double lower_bound = looping_operators[op_id] ? 0. : default_lower_bound;
+        double lower_bound = abstraction.operator_induces_self_loop(op_id)
+            ? 0.
+            : default_lower_bound;
         lp_variables.emplace_back(lower_bound, upper_bound, 0.);
     }
 }
@@ -194,16 +186,17 @@ void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
       distance[A][s''] <= distance[A][s'] + operator_cost[A][o] which equals
       0 <= distance[A][s'] + operator_cost[A][o] - distance[A][s''] <= \infty
     */
-    for (const Transition &transition : abstraction.get_transitions()) {
-        int from_col = distance_variables[id][transition.src];
-        int op_col = operator_cost_variables[id][transition.op];
-        int to_col = distance_variables[id][transition.target];
-        lp::LPConstraint constraint(0., lp_solver.get_infinity());
-        constraint.insert(from_col, 1);
-        constraint.insert(op_col, 1);
-        constraint.insert(to_col, -1);
-        lp_constraints.push_back(move(constraint));
-    }
+    abstraction.for_each_transition(
+        [this, id, &lp_constraints](const Transition &transition) {
+            int from_col = distance_variables[id][transition.src];
+            int op_col = operator_cost_variables[id][transition.op];
+            int to_col = distance_variables[id][transition.target];
+            lp::LPConstraint constraint(0., lp_solver.get_infinity());
+            constraint.insert(from_col, 1);
+            constraint.insert(op_col, 1);
+            constraint.insert(to_col, -1);
+            lp_constraints.push_back(move(constraint));
+        });
 
     /*
       For each abstract goal state s' in abstraction A add constraint

@@ -638,7 +638,7 @@ fast_downward_plugin(
         cost_saturation/greedy_order_utils
         cost_saturation/max_cost_partitioning_heuristic
         cost_saturation/max_heuristic
-        #cost_saturation/optimal_cost_partitioning_heuristic
+        cost_saturation/optimal_cost_partitioning_heuristic
         cost_saturation/order_generator
         cost_saturation/order_generator_dynamic_greedy
         cost_saturation/order_generator_greedy
