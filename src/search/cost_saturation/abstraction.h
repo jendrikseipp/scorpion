@@ -2,12 +2,16 @@
 #define COST_SATURATION_ABSTRACTION_H
 
 #include <cassert>
+#include <functional>
 #include <ostream>
 #include <vector>
 
 class State;
 
 namespace cost_saturation {
+struct Transition;
+using TransitionCallback = std::function<void (const Transition &)>;
+
 struct Transition {
     int src;
     int op;
@@ -63,6 +67,9 @@ public:
     // Return true iff operator induced a self-loop. Note that an operator may
     // induce both state-changing transitions and self-loops.
     virtual bool operator_induces_self_loop(int op_id) const = 0;
+
+    // Call a function for each state-changing transition.
+    virtual void for_each_transition(const TransitionCallback &callback) const = 0;
 
     virtual int get_num_states() const = 0;
     virtual const std::vector<int> &get_goal_states() const = 0;

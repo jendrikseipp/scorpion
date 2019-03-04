@@ -380,7 +380,7 @@ vector<int> Projection::compute_saturated_costs(
         }
     }
 
-    for_each_transition(
+    for_each_transition_impl(
         [&saturated_costs, &h_values](const Transition &t) {
             assert(utils::in_bounds(t.src, h_values));
             assert(utils::in_bounds(t.target, h_values));
@@ -451,6 +451,10 @@ bool Projection::operator_is_active(int op_id) const {
 
 bool Projection::operator_induces_self_loop(int op_id) const {
     return task_info->operator_induces_self_loop(pattern, op_id);
+}
+
+void Projection::for_each_transition(const TransitionCallback &callback) const {
+    return for_each_transition_impl(callback);
 }
 
 const vector<int> &Projection::get_goal_states() const {

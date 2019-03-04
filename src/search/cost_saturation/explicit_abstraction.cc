@@ -152,6 +152,17 @@ bool ExplicitAbstraction::operator_induces_self_loop(int op_id) const {
     return looping_operators[op_id];
 }
 
+void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback) const {
+    int num_states = get_num_states();
+    for (int target = 0; target < num_states; ++target) {
+        for (const Successor &transition : backward_graph[target]) {
+            int op_id = transition.op;
+            int src = transition.state;
+            callback(Transition(src, op_id, target));
+        }
+    }
+}
+
 const vector<int> &ExplicitAbstraction::get_goal_states() const {
     assert(has_transition_system());
     return goal_states;

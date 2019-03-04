@@ -115,7 +115,7 @@ class Projection : public Abstraction {
       irrelevant transitions).
     */
     template<class Callback>
-    void for_each_transition(const Callback &callback) const {
+    void for_each_transition_impl(const Callback &callback) const {
         // Reuse vector to save allocations.
         std::vector<FactPair> abstract_facts;
 
@@ -199,6 +199,7 @@ public:
     virtual int get_num_states() const override;
     virtual bool operator_is_active(int op_id) const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
+    virtual void for_each_transition(const TransitionCallback &callback) const override;
     virtual const std::vector<int> &get_goal_states() const override;
 
     virtual void dump() const override;

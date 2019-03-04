@@ -70,6 +70,7 @@ public:
     virtual int get_abstract_state_id(const State &concrete_state) const override;
     virtual bool operator_is_active(int op_id) const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
+    virtual void for_each_transition(const TransitionCallback &callback) const override;
     virtual const std::vector<int> &get_goal_states() const override;
     virtual void dump() const override;
 };
