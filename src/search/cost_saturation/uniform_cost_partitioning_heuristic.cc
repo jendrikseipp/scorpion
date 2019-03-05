@@ -52,7 +52,7 @@ static vector<int> compute_divided_costs(
         } else if (usages == 0) {
             /* Operator is inactive in subsequent abstractions so we
                can use an arbitrary value here. */
-            divided_costs.push_back(-1);
+            divided_costs.push_back(INF);
         } else {
             divided_costs.push_back(remaining_costs[op_id] / usages);
         }
@@ -65,10 +65,26 @@ static vector<int> compute_divided_costs(
 }
 
 static CostPartitioningHeuristic compute_uniform_cost_partitioning(
-    const vector<unique_ptr<Abstraction>> &abstractions,
+    const Abstractions &abstractions,
+    const vector<int> &costs,
+    bool debug) {
+    vector<int> remaining_costs = costs;
+    vector<int> order = get_default_order(abstractions.size());
+    vector<int> divided_costs = compute_divided_costs(
+        abstractions, order, remaining_costs, 0, debug);
+
+    CostPartitioningHeuristic cp_heuristic;
+    for (size_t i = 0; i < abstractions.size(); ++i) {
+        vector<int> h_values = abstractions[i]->compute_goal_distances(divided_costs);
+        cp_heuristic.add_h_values(i, move(h_values));
+    }
+    return cp_heuristic;
+}
+
+static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning(
+    const Abstractions &abstractions,
     const vector<int> &order,
     const vector<int> &costs,
-    bool dynamic,
     bool debug) {
     assert(abstractions.size() == order.size());
 
@@ -85,23 +101,19 @@ static CostPartitioningHeuristic compute_uniform_cost_partitioning(
     for (size_t pos = 0; pos < order.size(); ++pos) {
         int abstraction_id = order[pos];
         Abstraction &abstraction = *abstractions[abstraction_id];
-        if (dynamic) {
-            divided_costs = compute_divided_costs(
-                abstractions, order, remaining_costs, pos, debug);
-        }
+        divided_costs = compute_divided_costs(
+            abstractions, order, remaining_costs, pos, debug);
         vector<int> h_values = abstraction.compute_goal_distances(divided_costs);
         vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
         if (debug) {
-            cout << "h-values: ";
+            cout << "h values: ";
             print_indexed_vector(h_values);
             cout << "saturated costs: ";
             print_indexed_vector(saturated_costs);
         }
         cp_heuristic.add_h_values(abstraction_id, move(h_values));
-        if (dynamic) {
-            reduce_costs(remaining_costs, saturated_costs);
-        }
-        if (dynamic && debug) {
+        reduce_costs(remaining_costs, saturated_costs);
+        if (debug) {
             cout << "remaining costs: ";
             print_indexed_vector(remaining_costs);
         }
@@ -143,9 +155,7 @@ static shared_ptr<AbstractTask> get_scaled_costs_task(
 static CostPartitioningHeuristic get_ucp_heuristic(
     const TaskProxy &task_proxy, const Abstractions &abstractions, bool debug) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    vector<int> order = get_default_order(abstractions.size());
-    return compute_uniform_cost_partitioning(
-        abstractions, order, costs, false, debug);
+    return compute_uniform_cost_partitioning(abstractions, costs, debug);
 }
 
 static CPHeuristics get_oucp_heuristics(
@@ -161,8 +171,8 @@ static CPHeuristics get_oucp_heuristics(
             const Abstractions &abstractions,
             const vector<int> &order,
             const vector<int> &costs) {
-            return compute_uniform_cost_partitioning(
-                abstractions, order, costs, true, debug);
+            return compute_opportunistic_uniform_cost_partitioning(
+                abstractions, order, costs, debug);
         },
         unsolvability_heuristic);
 }
