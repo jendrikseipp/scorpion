@@ -32,8 +32,6 @@ std::ostream &operator<<(std::ostream &os, const Successor &successor);
 
 
 class ExplicitAbstraction : public Abstraction {
-    std::unique_ptr<AbstractionFunction> abstraction_function;
-
     // State-changing transitions.
     std::vector<std::vector<Successor>> backward_graph;
 
@@ -52,7 +50,7 @@ protected:
 
 public:
     ExplicitAbstraction(
-        std::unique_ptr<AbstractionFunction> &&abstraction_function,
+        std::unique_ptr<AbstractionFunction> abstraction_function,
         std::vector<std::vector<Successor>> &&backward_graph,
         std::vector<bool> &&looping_operators,
         std::vector<int> &&goal_states);

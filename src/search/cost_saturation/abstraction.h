@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <functional>
+#include <memory>
 #include <ostream>
 #include <vector>
 
@@ -51,12 +52,13 @@ class Abstraction {
     bool has_transition_system_;
 
 protected:
+    std::unique_ptr<AbstractionFunction> abstraction_function;
     virtual void release_transition_system_memory() = 0;
 
     bool has_transition_system() const;
 
 public:
-    Abstraction();
+    explicit Abstraction(std::unique_ptr<AbstractionFunction> abstraction_function);
     virtual ~Abstraction() = default;
 
     Abstraction(const Abstraction &) = delete;
@@ -82,6 +84,7 @@ public:
     virtual const std::vector<int> &get_goal_states() const = 0;
 
     void remove_transition_system();
+    std::unique_ptr<AbstractionFunction> extract_abstraction_function();
 
     virtual void dump() const = 0;
 };

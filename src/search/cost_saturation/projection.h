@@ -75,16 +75,16 @@ struct AbstractBackwardOperator {
 };
 
 
-class ProjectionFunction : AbstractionFunction {
+class ProjectionFunction : public AbstractionFunction {
     pdbs::Pattern pattern;
     // Multipliers for each pattern variable for perfect hash function.
     std::vector<std::size_t> hash_multipliers;
 
 public:
     ProjectionFunction(
-        const pdbs::Pattern &pattern, std::vector<std::size_t> &&hash_multipliers_)
+        const pdbs::Pattern &pattern, const std::vector<std::size_t> &hash_multipliers)
         : pattern(pattern),
-          hash_multipliers(move(hash_multipliers_)) {
+          hash_multipliers(move(hash_multipliers)) {
         assert(pattern.size() == hash_multipliers.size());
     }
 

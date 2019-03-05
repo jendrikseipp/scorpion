@@ -60,11 +60,11 @@ static vector<bool> get_active_operators_from_graph(
 }
 
 ExplicitAbstraction::ExplicitAbstraction(
-    unique_ptr<AbstractionFunction> &&abstraction_function,
+    unique_ptr<AbstractionFunction> abstraction_function,
     vector<vector<Successor>> &&backward_graph_,
     vector<bool> &&looping_operators,
     vector<int> &&goal_states)
-    : abstraction_function(move(abstraction_function)),
+    : Abstraction(move(abstraction_function)),
       backward_graph(move(backward_graph_)),
       active_operators(get_active_operators_from_graph(
                            backward_graph, looping_operators.size())),

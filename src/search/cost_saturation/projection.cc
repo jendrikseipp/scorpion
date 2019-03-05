@@ -155,7 +155,8 @@ Projection::Projection(
     const TaskProxy &task_proxy,
     const shared_ptr<TaskInfo> &task_info,
     const pdbs::Pattern &pattern)
-    : task_info(task_info),
+    : Abstraction(nullptr),
+      task_info(task_info),
       pattern(pattern) {
     assert(utils::is_sorted_unique(pattern));
 
@@ -173,6 +174,9 @@ Projection::Projection(
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
     }
+
+    abstraction_function = utils::make_unique_ptr<ProjectionFunction>(
+        pattern, hash_multipliers);
 
     VariablesProxy variables = task_proxy.get_variables();
     vector<int> variable_to_pattern_index(variables.size(), -1);
