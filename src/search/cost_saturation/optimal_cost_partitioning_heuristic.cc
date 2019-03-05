@@ -21,44 +21,40 @@ namespace cost_saturation {
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts)
     : Heuristic(opts),
-      abstractions(generate_abstractions(
-                       task, opts.get_list<shared_ptr<AbstractionGenerator>>(
-                           "abstraction_generators"))),
       lp_solver(lp::LPSolverType(opts.get_enum("lpsolver"))),
       allow_negative_costs(opts.get<bool>("allow_negative_costs")) {
     utils::Timer timer;
 
+    Abstractions abstractions = generate_abstractions(
+        task,
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    for (const unique_ptr<Abstraction> &abstraction : abstractions) {
+    for (auto &abstraction : abstractions) {
         h_values.push_back(abstraction->compute_goal_distances(costs));
     }
 
-    generate_lp();
+    generate_lp(abstractions);
+
+    for (auto &abstraction : abstractions) {
+        abstraction_functions.push_back(abstraction->extract_abstraction_function());
+    }
+
     cout << "LP construction time: " << timer << endl;
     lp_solver.print_statistics();
 
-    timer.reset();
-
-    lp_solver.solve();
-    cout << "LP solving time: " << timer << endl;
-
-    // Cache indices for the last evaluated state to speed-up adapting the LP.
-    current_abstract_state_vars.resize(abstractions.size());
+    // Cache indices for the last evaluated state to speed up adapting the LP.
+    current_abstract_state_vars.resize(abstraction_functions.size());
     State initial_state = task_proxy.get_initial_state();
-    for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
-        int initial_state_index = abstractions[id]->get_abstract_state_id(initial_state);
-        if (initial_state_index == -1) {
-            current_abstract_state_vars[id] = -1;
-        } else {
-            current_abstract_state_vars[id] = distance_variables[id][initial_state_index];
-        }
+    for (int i = 0; i < static_cast<int>(abstraction_functions.size()); ++i) {
+        int init_id = abstraction_functions[i]->get_abstract_state_id(initial_state);
+        current_abstract_state_vars[i] = distance_variables[i][init_id];
     }
 
     release_memory();
 }
 
 void OptimalCostPartitioningHeuristic::release_memory() {
-    // Memory for the transition systems is released in generate_lp().
     utils::release_vector_memory(abstraction_variables);
     utils::release_vector_memory(operator_cost_variables);
 }
@@ -67,9 +63,8 @@ int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
     State concrete_state = convert_global_state(global_state);
     // Set upper bound for distance of current abstract states to 0 and for all other
     // abstract states to infinity.
-    for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
-        const Abstraction &abstraction = *abstractions[id];
-        int new_state_id = abstraction.get_abstract_state_id(concrete_state);
+    for (int id = 0; id < static_cast<int>(abstraction_functions.size()); ++id) {
+        int new_state_id = abstraction_functions[id]->get_abstract_state_id(concrete_state);
         if (new_state_id == -1 || h_values[id][new_state_id] == INF) {
             return DEAD_END;
         }
@@ -98,7 +93,7 @@ int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &globa
     return static_cast<int>(ceil(h_val - epsilon));
 }
 
-void OptimalCostPartitioningHeuristic::generate_lp() {
+void OptimalCostPartitioningHeuristic::generate_lp(const Abstractions &abstractions) {
     /*
       Build the following LP:
 
@@ -142,7 +137,6 @@ void OptimalCostPartitioningHeuristic::generate_lp() {
         Abstraction &abstraction = *abstractions[id];
         add_abstraction_variables(abstraction, id, lp_variables);
         add_abstraction_constraints(abstraction, id, lp_constraints);
-        abstraction.remove_transition_system();
     }
     add_operator_cost_constraints(lp_constraints);
     lp_solver.load_problem(lp::LPObjectiveSense::MAXIMIZE, lp_variables, lp_constraints);
