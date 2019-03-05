@@ -5,6 +5,7 @@
 
 #include "../cost_saturation/abstraction.h"
 #include "../cost_saturation/abstraction_generator.h"
+#include "../cost_saturation/utils.h"
 #include "../lp/lp_solver.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
@@ -26,19 +27,10 @@ void PhOAbstractionConstraints::initialize_constraints(
     const shared_ptr<AbstractTask> &task,
     vector<lp::LPConstraint> &constraints,
     double infinity) {
-    TaskProxy task_proxy(*task);
-    // Build abstractions.
-    cost_saturation::Abstractions abstractions;
-    for (auto &abstraction_generator : abstraction_generators) {
-        cost_saturation::Abstractions new_abstractions =
-            abstraction_generator->generate_abstractions(task);
-        abstractions.insert(
-            abstractions.end(),
-            make_move_iterator(new_abstractions.begin()),
-            make_move_iterator(new_abstractions.end()));
-    }
+    cost_saturation::Abstractions abstractions =
+        cost_saturation::generate_abstractions(task, abstraction_generators);
 
-    vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
+    vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     constraint_offset = constraints.size();
     // TODO: Remove code duplication.
     if (saturated) {
