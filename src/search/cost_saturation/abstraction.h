@@ -40,6 +40,13 @@ struct Transition {
 };
 
 
+class AbstractionFunction {
+public:
+    virtual ~AbstractionFunction() = default;
+    virtual int get_abstract_state_id(const State &concrete_state) const = 0;
+};
+
+
 class Abstraction {
     bool has_transition_system_;
 

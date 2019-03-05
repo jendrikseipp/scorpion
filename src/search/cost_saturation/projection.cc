@@ -142,6 +142,15 @@ bool TaskInfo::operator_is_active(const pdbs::Pattern &pattern, int op_id) const
 }
 
 
+int ProjectionFunction::get_abstract_state_id(const State &concrete_state) const {
+    size_t index = 0;
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        index += hash_multipliers[i] * concrete_state[pattern[i]].get_value();
+    }
+    return index;
+}
+
+
 Projection::Projection(
     const TaskProxy &task_proxy,
     const shared_ptr<TaskInfo> &task_info,

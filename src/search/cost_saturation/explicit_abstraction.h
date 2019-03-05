@@ -5,16 +5,11 @@
 
 #include "../algorithms/priority_queues.h"
 
-#include <functional>
-#include <limits>
+#include <memory>
 #include <utility>
 #include <vector>
 
-class State;
-
 namespace cost_saturation {
-using AbstractionFunction = std::function<int (const State &)>;
-
 struct Successor {
     int op;
     int state;
@@ -37,7 +32,7 @@ std::ostream &operator<<(std::ostream &os, const Successor &successor);
 
 
 class ExplicitAbstraction : public Abstraction {
-    const AbstractionFunction abstraction_function;
+    std::unique_ptr<AbstractionFunction> abstraction_function;
 
     // State-changing transitions.
     std::vector<std::vector<Successor>> backward_graph;
@@ -57,7 +52,7 @@ protected:
 
 public:
     ExplicitAbstraction(
-        AbstractionFunction function,
+        std::unique_ptr<AbstractionFunction> &&abstraction_function,
         std::vector<std::vector<Successor>> &&backward_graph,
         std::vector<bool> &&looping_operators,
         std::vector<int> &&goal_states);

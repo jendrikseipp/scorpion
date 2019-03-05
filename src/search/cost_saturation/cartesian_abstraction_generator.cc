@@ -18,11 +18,24 @@
 #include "../utils/logging.h"
 #include "../utils/rng_options.h"
 
-#include <memory>
-
 using namespace std;
 
 namespace cost_saturation {
+class CartesianAbstractionFunction : public AbstractionFunction {
+    unique_ptr<cegar::RefinementHierarchy> refinement_hierarchy;
+
+public:
+    explicit CartesianAbstractionFunction(
+        unique_ptr<cegar::RefinementHierarchy> refinement_hierarchy)
+        : refinement_hierarchy(move(refinement_hierarchy)) {
+    }
+
+    virtual int get_abstract_state_id(const State &concrete_state) const override {
+        return refinement_hierarchy->get_abstract_state_id(concrete_state);
+    }
+};
+
+
 CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     const options::Options &opts)
     : subtask_generators(
@@ -82,20 +95,12 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
         cartesian_abstraction.get_goals().begin(),
         cartesian_abstraction.get_goals().end());
 
-    // Convert to shared_ptr since std::function requires copy-constructible arguments.
-    shared_ptr<cegar::RefinementHierarchy> refinement_hierarchy =
-        cartesian_abstraction.extract_refinement_hierarchy();
-    AbstractionFunction state_map =
-        [refinement_hierarchy](const State &state) {
-            assert(refinement_hierarchy);
-            return refinement_hierarchy->get_abstract_state_id(state);
-        };
-
     bool unsolvable = h_values[initial_state_id] == INF;
     return {
                unsolvable,
                utils::make_unique_ptr<ExplicitAbstraction>(
-                   state_map,
+                   utils::make_unique_ptr<CartesianAbstractionFunction>(
+                       cartesian_abstraction.extract_refinement_hierarchy()),
                    move(backward_graph),
                    move(looping_operators),
                    move(goal_states))

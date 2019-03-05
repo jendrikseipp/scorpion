@@ -60,11 +60,11 @@ static vector<bool> get_active_operators_from_graph(
 }
 
 ExplicitAbstraction::ExplicitAbstraction(
-    AbstractionFunction function,
+    unique_ptr<AbstractionFunction> &&abstraction_function,
     vector<vector<Successor>> &&backward_graph_,
     vector<bool> &&looping_operators,
     vector<int> &&goal_states)
-    : abstraction_function(function),
+    : abstraction_function(move(abstraction_function)),
       backward_graph(move(backward_graph_)),
       active_operators(get_active_operators_from_graph(
                            backward_graph, looping_operators.size())),
@@ -139,7 +139,8 @@ int ExplicitAbstraction::get_num_states() const {
 }
 
 int ExplicitAbstraction::get_abstract_state_id(const State &concrete_state) const {
-    return abstraction_function(concrete_state);
+    assert(abstraction_function);
+    return abstraction_function->get_abstract_state_id(concrete_state);
 }
 
 bool ExplicitAbstraction::operator_is_active(int op_id) const {
