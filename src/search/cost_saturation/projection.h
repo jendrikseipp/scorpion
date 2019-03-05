@@ -209,7 +209,6 @@ public:
         const pdbs::Pattern &pattern);
     virtual ~Projection() override;
 
-    virtual int get_abstract_state_id(const State &concrete_state) const override;
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;
     virtual std::vector<int> compute_saturated_costs(

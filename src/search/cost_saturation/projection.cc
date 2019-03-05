@@ -250,14 +250,6 @@ bool Projection::increment_to_next_state(vector<FactPair> &facts) const {
     return false;
 }
 
-int Projection::get_abstract_state_id(const State &concrete_state) const {
-    size_t index = 0;
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        index += hash_multipliers[i] * concrete_state[pattern[i]].get_value();
-    }
-    return index;
-}
-
 vector<int> Projection::compute_goal_states(
     const vector<int> &variable_to_pattern_index) const {
     vector<FactPair> abstract_goals;

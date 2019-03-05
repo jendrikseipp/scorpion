@@ -138,11 +138,6 @@ int ExplicitAbstraction::get_num_states() const {
     return backward_graph.size();
 }
 
-int ExplicitAbstraction::get_abstract_state_id(const State &concrete_state) const {
-    assert(abstraction_function);
-    return abstraction_function->get_abstract_state_id(concrete_state);
-}
-
 bool ExplicitAbstraction::operator_is_active(int op_id) const {
     assert(has_transition_system());
     return active_operators[op_id];

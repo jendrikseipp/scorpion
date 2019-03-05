@@ -22,6 +22,11 @@ void Abstraction::remove_transition_system() {
     has_transition_system_ = false;
 }
 
+int Abstraction::get_abstract_state_id(const State &concrete_state) const {
+    assert(abstraction_function);
+    return abstraction_function->get_abstract_state_id(concrete_state);
+}
+
 std::unique_ptr<AbstractionFunction> Abstraction::extract_abstraction_function() {
     return move(abstraction_function);
 }

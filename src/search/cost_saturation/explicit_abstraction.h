@@ -60,7 +60,6 @@ public:
     virtual std::vector<int> compute_saturated_costs(
         const std::vector<int> &h_values) const override;
     virtual int get_num_states() const override;
-    virtual int get_abstract_state_id(const State &concrete_state) const override;
     virtual bool operator_is_active(int op_id) const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
     virtual void for_each_transition(const TransitionCallback &callback) const override;

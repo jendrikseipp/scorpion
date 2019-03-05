@@ -63,8 +63,6 @@ public:
 
     Abstraction(const Abstraction &) = delete;
 
-    virtual int get_abstract_state_id(const State &concrete_state) const = 0;
-
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const = 0;
     virtual std::vector<int> compute_saturated_costs(
@@ -84,6 +82,7 @@ public:
     virtual const std::vector<int> &get_goal_states() const = 0;
 
     void remove_transition_system();
+    int get_abstract_state_id(const State &concrete_state) const;
     std::unique_ptr<AbstractionFunction> extract_abstraction_function();
 
     virtual void dump() const = 0;
