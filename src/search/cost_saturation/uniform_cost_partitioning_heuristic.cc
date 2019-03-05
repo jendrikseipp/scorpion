@@ -186,8 +186,8 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     prepare_parser_for_cost_partitioning_heuristic(parser);
     add_order_options_to_parser(parser);
     parser.add_option<bool>(
-        "dynamic",
-        "recalculate costs after each considered abstraction",
+        "opportunistic",
+        "recalculate uniform cost partitioning after each considered abstraction",
         "false");
 
     Options opts = parser.parse();
@@ -212,7 +212,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     bool debug = false;
 
     CPHeuristics cp_heuristics;
-    if (opts.get<bool>("dynamic")) {
+    if (opts.get<bool>("opportunistic")) {
         cp_heuristics = get_oucp_heuristics(
             scaled_costs_task_proxy,
             abstractions,
