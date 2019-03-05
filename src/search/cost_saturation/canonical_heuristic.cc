@@ -57,27 +57,17 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
 }
 
 CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
-    : Heuristic(opts),
-      debug(false) {
+    : Heuristic(opts) {
     const vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
 
-    vector<int> abstractions_per_generator;
+    Abstractions abstractions;
     for (const shared_ptr<AbstractionGenerator> &generator :
          opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
-        int abstractions_before = abstractions.size();
         for (auto &abstraction : generator->generate_abstractions(task)) {
             abstractions.push_back(move(abstraction));
         }
-        abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
     }
     cout << "Abstractions: " << abstractions.size() << endl;
-    cout << "Abstractions per generator: " << abstractions_per_generator << endl;
-
-    if (debug) {
-        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-            abstraction->dump();
-        }
-    }
 
     utils::Log() << "Compute distances" << endl;
     for (const auto &abstraction : abstractions) {
@@ -88,9 +78,8 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     max_additive_subsets = compute_max_additive_subsets(
         abstractions, operator_costs.size());
 
-    utils::Log() << "Delete transition systems" << endl;
     for (auto &abstraction : abstractions) {
-        abstraction->remove_transition_system();
+        abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
 }
 
@@ -100,7 +89,7 @@ int CanonicalHeuristic::compute_heuristic(const GlobalState &global_state) {
 }
 
 int CanonicalHeuristic::compute_heuristic(const State &state) {
-    vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
+    vector<int> abstract_state_ids = get_abstract_state_ids(abstraction_functions, state);
     int max_h = compute_max_h(abstract_state_ids);
     if (max_h == INF) {
         return DEAD_END;
@@ -113,11 +102,8 @@ int CanonicalHeuristic::compute_max_h(const vector<int> &abstract_state_ids) con
     for (const MaxAdditiveSubset &additive_subset : max_additive_subsets) {
         int sum_h = 0;
         for (int abstraction_id : additive_subset) {
-            assert(utils::in_bounds(abstraction_id, abstract_state_ids));
             int state_id = abstract_state_ids[abstraction_id];
-            assert(utils::in_bounds(abstraction_id, h_values_by_abstraction));
             const vector<int> &h_values = h_values_by_abstraction[abstraction_id];
-            assert(utils::in_bounds(state_id, h_values));
             int h = h_values[state_id];
             if (h == INF) {
                 return INF;
@@ -127,7 +113,6 @@ int CanonicalHeuristic::compute_max_h(const vector<int> &abstract_state_ids) con
         max_h = max(max_h, sum_h);
     }
     assert(max_h >= 0);
-
     return max_h;
 }
 
