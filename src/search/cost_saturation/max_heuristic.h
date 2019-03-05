@@ -7,14 +7,14 @@
 
 namespace cost_saturation {
 class MaxHeuristic : public Heuristic {
-    Abstractions abstractions;
+    AbstractionFunctions abstraction_functions;
     std::vector<std::vector<int>> h_values_by_abstraction;
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
 
 public:
-    MaxHeuristic(const options::Options &opts, Abstractions &&abstractions);
+    MaxHeuristic(const options::Options &opts, Abstractions abstractions);
 };
 }
 

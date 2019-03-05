@@ -12,30 +12,26 @@
 using namespace std;
 
 namespace cost_saturation {
-MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions &&abstractions)
-    : Heuristic(opts),
-      abstractions(move(abstractions)) {
+MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions abstractions)
+    : Heuristic(opts) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    for (auto &abstraction : this->abstractions) {
+    for (auto &abstraction : abstractions) {
         h_values_by_abstraction.push_back(abstraction->compute_goal_distances(costs));
-        abstraction->remove_transition_system();
+        abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
 }
 
 int MaxHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
     int max_h = 0;
-    for (size_t i = 0; i < abstractions.size(); ++i) {
-        assert(utils::in_bounds(i, abstractions));
-        int local_state_id = abstractions[i]->get_abstract_state_id(state);
-        assert(utils::in_bounds(i, h_values_by_abstraction));
-        assert(utils::in_bounds(local_state_id, h_values_by_abstraction[i]));
+    for (size_t i = 0; i < abstraction_functions.size(); ++i) {
+        int local_state_id = abstraction_functions[i]->get_abstract_state_id(state);
         int h = h_values_by_abstraction[i][local_state_id];
         assert(h >= 0);
+        if (h == INF) {
+            return DEAD_END;
+        }
         max_h = max(max_h, h);
-    }
-    if (max_h == INF) {
-        return DEAD_END;
     }
     return max_h;
 }
