@@ -38,6 +38,7 @@ public:
         Abstractions &&abstractions,
         std::vector<CostPartitioningHeuristic> &&cp_heuristics,
         UnsolvabilityHeuristic &&unsolvability_heuristic);
+    virtual ~MaxCostPartitioningHeuristic() override;
 
     virtual void print_statistics() const override;
 };
