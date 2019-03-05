@@ -84,7 +84,6 @@ ExplicitAbstraction::ExplicitAbstraction(
 }
 
 vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs) const {
-    assert(has_transition_system());
     vector<int> goal_distances(get_num_states(), INF);
     queue.clear();
     for (int goal_state : goal_states) {
@@ -97,7 +96,6 @@ vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs
 
 vector<int> ExplicitAbstraction::compute_saturated_costs(
     const vector<int> &h_values) const {
-    assert(has_transition_system());
     int num_operators = looping_operators.size();
     vector<int> saturated_costs(num_operators, -INF);
 
@@ -134,17 +132,14 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
 }
 
 int ExplicitAbstraction::get_num_states() const {
-    assert(has_transition_system());
     return backward_graph.size();
 }
 
 bool ExplicitAbstraction::operator_is_active(int op_id) const {
-    assert(has_transition_system());
     return active_operators[op_id];
 }
 
 bool ExplicitAbstraction::operator_induces_self_loop(int op_id) const {
-    assert(has_transition_system());
     return looping_operators[op_id];
 }
 
@@ -160,19 +155,10 @@ void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback
 }
 
 const vector<int> &ExplicitAbstraction::get_goal_states() const {
-    assert(has_transition_system());
     return goal_states;
 }
 
-void ExplicitAbstraction::release_transition_system_memory() {
-    utils::release_vector_memory(active_operators);
-    utils::release_vector_memory(looping_operators);
-    utils::release_vector_memory(goal_states);
-    utils::release_vector_memory(backward_graph);
-}
-
 void ExplicitAbstraction::dump() const {
-    assert(has_transition_system());
     cout << "State-changing transitions:" << endl;
     for (int state = 0; state < get_num_states(); ++state) {
         if (!backward_graph[state].empty()) {

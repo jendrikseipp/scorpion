@@ -45,9 +45,6 @@ class ExplicitAbstraction : public Abstraction {
 
     mutable priority_queues::AdaptiveQueue<int> queue;
 
-protected:
-    virtual void release_transition_system_memory() override;
-
 public:
     ExplicitAbstraction(
         std::unique_ptr<AbstractionFunction> abstraction_function,

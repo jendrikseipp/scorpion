@@ -49,13 +49,8 @@ public:
 
 
 class Abstraction {
-    bool has_transition_system_;
-
 protected:
     std::unique_ptr<AbstractionFunction> abstraction_function;
-    virtual void release_transition_system_memory() = 0;
-
-    bool has_transition_system() const;
 
 public:
     explicit Abstraction(std::unique_ptr<AbstractionFunction> abstraction_function);
@@ -81,7 +76,6 @@ public:
     virtual int get_num_states() const = 0;
     virtual const std::vector<int> &get_goal_states() const = 0;
 
-    void remove_transition_system();
     int get_abstract_state_id(const State &concrete_state) const;
     std::unique_ptr<AbstractionFunction> extract_abstraction_function();
 

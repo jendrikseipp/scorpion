@@ -199,9 +199,6 @@ class Projection : public Abstraction {
         std::size_t state_index,
         const std::vector<FactPair> &abstract_facts) const;
 
-protected:
-    virtual void release_transition_system_memory() override;
-
 public:
     Projection(
         const TaskProxy &task_proxy,

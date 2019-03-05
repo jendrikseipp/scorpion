@@ -373,7 +373,6 @@ bool Projection::is_consistent(
 
 vector<int> Projection::compute_saturated_costs(
     const vector<int> &h_values) const {
-    assert(has_transition_system());
     int num_operators = task_info->get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
 
@@ -401,7 +400,6 @@ vector<int> Projection::compute_saturated_costs(
 }
 
 vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
-    assert(has_transition_system());
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     vector<int> distances(num_states, INF);
 
@@ -463,20 +461,10 @@ void Projection::for_each_transition(const TransitionCallback &callback) const {
 }
 
 const vector<int> &Projection::get_goal_states() const {
-    assert(has_transition_system());
     return goal_states;
 }
 
-void Projection::release_transition_system_memory() {
-    assert(has_transition_system());
-    utils::release_vector_memory(abstract_forward_operators);
-    utils::release_vector_memory(abstract_backward_operators);
-    utils::release_vector_memory(goal_states);
-    match_tree_backward = nullptr;
-}
-
 void Projection::dump() const {
-    assert(has_transition_system());
     cout << "Abstract operators: " << abstract_backward_operators.size()
          << ", goal states: " << goal_states.size() << "/" << num_states
          << endl;
