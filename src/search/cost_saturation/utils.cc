@@ -91,6 +91,22 @@ vector<int> get_abstract_state_ids(
     return abstract_state_ids;
 }
 
+vector<int> get_abstract_state_ids(
+    const AbstractionFunctions &abstraction_functions, const State &state) {
+    vector<int> abstract_state_ids;
+    abstract_state_ids.reserve(abstraction_functions.size());
+    for (auto &abstraction_function : abstraction_functions) {
+        if (abstraction_function) {
+            // Only add local state IDs for useful abstractions.
+            abstract_state_ids.push_back(abstraction_function->get_abstract_state_id(state));
+        } else {
+            // Add dummy value if abstraction will never be used.
+            abstract_state_ids.push_back(-1);
+        }
+    }
+    return abstract_state_ids;
+}
+
 void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
     for (size_t i = 0; i < remaining_costs.size(); ++i) {

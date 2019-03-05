@@ -26,6 +26,9 @@ extern int compute_max_h_with_statistics(
 extern std::vector<int> get_abstract_state_ids(
     const Abstractions &abstractions, const State &state);
 
+extern std::vector<int> get_abstract_state_ids(
+    const AbstractionFunctions &abstraction_functions, const State &state);
+
 extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
 

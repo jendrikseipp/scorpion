@@ -6,6 +6,7 @@
 
 #include "../heuristic.h"
 
+#include <memory>
 #include <vector>
 
 namespace options {
@@ -13,6 +14,7 @@ class Options;
 }
 
 namespace cost_saturation {
+class AbstractionFunction;
 class CostPartitioningHeuristicCollectionGenerator;
 class CostPartitioningHeuristic;
 
@@ -20,7 +22,7 @@ class CostPartitioningHeuristic;
   Compute the maximum over multiple cost partitioning heuristics.
 */
 class MaxCostPartitioningHeuristic : public Heuristic {
-    Abstractions abstractions;
+    std::vector<std::unique_ptr<AbstractionFunction>> abstraction_functions;
     std::vector<CostPartitioningHeuristic> cp_heuristics;
     UnsolvabilityHeuristic unsolvability_heuristic;
 
@@ -36,7 +38,7 @@ protected:
 public:
     MaxCostPartitioningHeuristic(
         const options::Options &opts,
-        Abstractions &&abstractions,
+        Abstractions abstractions,
         std::vector<CostPartitioningHeuristic> &&cp_heuristics,
         UnsolvabilityHeuristic &&unsolvability_heuristic);
     virtual ~MaxCostPartitioningHeuristic() override;
