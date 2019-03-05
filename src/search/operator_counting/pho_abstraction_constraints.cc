@@ -27,6 +27,8 @@ void PhOAbstractionConstraints::initialize_constraints(
     vector<lp::LPConstraint> &constraints,
     double infinity) {
     TaskProxy task_proxy(*task);
+    // Build abstractions.
+    cost_saturation::Abstractions abstractions;
     for (auto &abstraction_generator : abstraction_generators) {
         cost_saturation::Abstractions new_abstractions =
             abstraction_generator->generate_abstractions(task);
@@ -35,6 +37,7 @@ void PhOAbstractionConstraints::initialize_constraints(
             make_move_iterator(new_abstractions.begin()),
             make_move_iterator(new_abstractions.end()));
     }
+
     vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
     constraint_offset = constraints.size();
     // TODO: Remove code duplication.
@@ -52,7 +55,6 @@ void PhOAbstractionConstraints::initialize_constraints(
                 }
             }
             h_values_by_abstraction.push_back(move(h_values));
-            abstraction->remove_transition_system();
         }
     } else {
         for (auto &abstraction : abstractions) {
@@ -66,17 +68,19 @@ void PhOAbstractionConstraints::initialize_constraints(
             }
             h_values_by_abstraction.push_back(
                 abstraction->compute_goal_distances(operator_costs));
-            abstraction->remove_transition_system();
         }
+    }
+
+    for (auto &abstraction : abstractions) {
+        abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
 }
 
 bool PhOAbstractionConstraints::update_constraints(
     const State &state, lp::LPSolver &lp_solver) {
-    for (size_t i = 0; i < abstractions.size(); ++i) {
+    for (size_t i = 0; i < abstraction_functions.size(); ++i) {
         int constraint_id = constraint_offset + i;
-        const cost_saturation::Abstraction &abstraction = *abstractions[i];
-        int state_id = abstraction.get_abstract_state_id(state);
+        int state_id = abstraction_functions[i]->get_abstract_state_id(state);
         assert(utils::in_bounds(i, h_values_by_abstraction));
         const vector<int> &h_values = h_values_by_abstraction[i];
         assert(utils::in_bounds(state_id, h_values));
