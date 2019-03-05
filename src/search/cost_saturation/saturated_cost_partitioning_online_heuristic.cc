@@ -38,6 +38,10 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     }
 }
 
+SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuristic() {
+    print_statistics();
+}
+
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
     if (interval > 0) {
         return num_evaluated_states % interval == 0;

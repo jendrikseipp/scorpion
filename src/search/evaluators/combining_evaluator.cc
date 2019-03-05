@@ -50,10 +50,4 @@ void CombiningEvaluator::get_path_dependent_evaluators(
     for (auto &subevaluator : subevaluators)
         subevaluator->get_path_dependent_evaluators(evals);
 }
-
-void CombiningEvaluator::print_statistics() const {
-    for (const shared_ptr<Evaluator> &subevaluator : subevaluators) {
-        subevaluator->print_statistics();
-    }
-}
 }

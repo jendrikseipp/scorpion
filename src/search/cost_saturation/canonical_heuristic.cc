@@ -94,9 +94,6 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     }
 }
 
-CanonicalHeuristic::~CanonicalHeuristic() {
-}
-
 int CanonicalHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
     return compute_heuristic(state);
@@ -132,9 +129,6 @@ int CanonicalHeuristic::compute_max_h(const vector<int> &abstract_state_ids) con
     assert(max_h >= 0);
 
     return max_h;
-}
-
-void CanonicalHeuristic::print_statistics() const {
 }
 
 

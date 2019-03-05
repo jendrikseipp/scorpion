@@ -27,6 +27,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     // For statistics.
     mutable std::vector<int> num_best_order;
 
+    void print_statistics() const;
     bool should_compute_scp(const State &state);
 
 protected:
@@ -38,8 +39,7 @@ public:
         Abstractions &&abstractions,
         CPHeuristics &&cp_heuristics,
         UnsolvabilityHeuristic &&unsolvability_heuristic);
-
-    virtual void print_statistics() const override;
+    virtual ~SaturatedCostPartitioningOnlineHeuristic() override;
 };
 }
 

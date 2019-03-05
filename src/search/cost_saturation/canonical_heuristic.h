@@ -29,9 +29,6 @@ protected:
 
 public:
     explicit CanonicalHeuristic(const options::Options &opts);
-    virtual ~CanonicalHeuristic() override;
-
-    virtual void print_statistics() const override;
 };
 }
 
