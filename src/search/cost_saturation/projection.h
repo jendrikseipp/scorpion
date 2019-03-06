@@ -92,9 +92,6 @@ public:
 };
 
 
-/*
-  TODO: Reduce code duplication with pdbs::PatternDatabase.
-*/
 class Projection : public Abstraction {
     using Facts = std::vector<FactPair>;
     using OperatorCallback =
