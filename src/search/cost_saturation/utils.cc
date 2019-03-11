@@ -3,16 +3,7 @@
 #include "abstraction.h"
 #include "abstraction_generator.h"
 #include "cost_partitioning_heuristic.h"
-#include "max_cost_partitioning_heuristic.h"
-#include "order_generator_greedy.h"
 
-#include "../task_proxy.h"
-
-#include "../options/option_parser.h"
-#include "../options/options.h"
-#include "../task_utils/sampling.h"
-#include "../task_utils/successor_generator.h"
-#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 
@@ -58,52 +49,16 @@ int compute_max_h_with_statistics(
             max_h = sum_h;
             best_id = current_id;
         }
-        if (sum_h == INF) {
-            break;
-        }
         ++current_id;
     }
-    assert(max_h >= 0);
+    assert(max_h >= 0 && max_h != INF);
 
     num_best_order.resize(cp_heuristics.size(), 0);
     if (best_id != -1) {
-        assert(utils::in_bounds(best_id, num_best_order));
         ++num_best_order[best_id];
     }
 
     return max_h;
-}
-
-vector<int> get_abstract_state_ids(
-    const Abstractions &abstractions, const State &state) {
-    vector<int> abstract_state_ids;
-    abstract_state_ids.reserve(abstractions.size());
-    for (auto &abstraction : abstractions) {
-        if (abstraction) {
-            // Only add local state IDs for useful abstractions.
-            abstract_state_ids.push_back(abstraction->get_abstract_state_id(state));
-        } else {
-            // Add dummy value if abstraction will never be used.
-            abstract_state_ids.push_back(-1);
-        }
-    }
-    return abstract_state_ids;
-}
-
-vector<int> get_abstract_state_ids(
-    const AbstractionFunctions &abstraction_functions, const State &state) {
-    vector<int> abstract_state_ids;
-    abstract_state_ids.reserve(abstraction_functions.size());
-    for (auto &abstraction_function : abstraction_functions) {
-        if (abstraction_function) {
-            // Only add local state IDs for useful abstractions.
-            abstract_state_ids.push_back(abstraction_function->get_abstract_state_id(state));
-        } else {
-            // Add dummy value if abstraction will never be used.
-            abstract_state_ids.push_back(-1);
-        }
-    }
-    return abstract_state_ids;
 }
 
 void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_costs) {
