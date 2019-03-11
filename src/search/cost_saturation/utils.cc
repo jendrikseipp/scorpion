@@ -3,7 +3,6 @@
 #include "abstraction.h"
 #include "abstraction_generator.h"
 #include "cost_partitioning_heuristic.h"
-#include "cost_partitioning_collection_generator.h"
 #include "max_cost_partitioning_heuristic.h"
 #include "order_generator_greedy.h"
 
