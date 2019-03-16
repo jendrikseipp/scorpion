@@ -56,16 +56,15 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
 
 CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     : Heuristic(opts) {
-    const vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
 
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
-    cout << "Abstractions: " << abstractions.size() << endl;
 
     utils::Log() << "Compute abstract goal distances" << endl;
     for (const auto &abstraction : abstractions) {
         h_values_by_abstraction.push_back(
-            abstraction->compute_goal_distances(operator_costs));
+            abstraction->compute_goal_distances(costs));
     }
 
     utils::Log() << "Compute max additive subsets" << endl;
