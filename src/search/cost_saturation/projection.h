@@ -136,8 +136,8 @@ class Projection : public Abstraction {
         // Reuse vector to save allocations.
         std::vector<FactPair> abstract_facts;
 
-        int num_operators = abstract_forward_operators.size();
-        for (int op_id = 0; op_id < num_operators; ++op_id) {
+        int num_abstract_operators = abstract_forward_operators.size();
+        for (int op_id = 0; op_id < num_abstract_operators; ++op_id) {
             const AbstractForwardOperator &op = abstract_forward_operators[op_id];
             int concrete_op_id = abstract_backward_operators[op_id].concrete_operator_id;
             abstract_facts.clear();

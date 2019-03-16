@@ -383,7 +383,7 @@ bool Projection::is_consistent(
 
 vector<int> Projection::compute_saturated_costs(
     const vector<int> &h_values) const {
-    int num_operators = task_info->get_num_operators();
+    int num_operators = get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
 
     /* To prevent negative cost cycles, we ensure that all operators

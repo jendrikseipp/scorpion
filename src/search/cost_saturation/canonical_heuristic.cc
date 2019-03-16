@@ -18,13 +18,13 @@ namespace cost_saturation {
 class AbstractionGenerator;
 
 static MaxAdditiveSubsets compute_max_additive_subsets(
-    const Abstractions &abstractions,
-    int num_operators) {
+    const Abstractions &abstractions) {
     int num_abstractions = abstractions.size();
 
     vector<dynamic_bitset::DynamicBitset<>> relevant_operators;
     relevant_operators.reserve(num_abstractions);
     for (const auto &abstraction : abstractions) {
+        int num_operators = abstraction->get_num_operators();
         dynamic_bitset::DynamicBitset<> active_ops(num_operators);
         for (int op_id = 0; op_id < num_operators; ++op_id) {
             if (abstraction->operator_is_active(op_id)) {
@@ -69,8 +69,7 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     }
 
     utils::Log() << "Compute max additive subsets" << endl;
-    max_additive_subsets = compute_max_additive_subsets(
-        abstractions, operator_costs.size());
+    max_additive_subsets = compute_max_additive_subsets(abstractions);
 
     for (auto &abstraction : abstractions) {
         abstraction_functions.push_back(abstraction->extract_abstraction_function());
