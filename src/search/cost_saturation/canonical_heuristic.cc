@@ -1,7 +1,6 @@
 #include "canonical_heuristic.h"
 
 #include "abstraction.h"
-#include "abstraction_generator.h"
 #include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
@@ -17,10 +16,9 @@ using namespace std;
 
 namespace cost_saturation {
 class AbstractionGenerator;
-class OrderGenerator;
 
 static MaxAdditiveSubsets compute_max_additive_subsets(
-    const vector<unique_ptr<Abstraction>> &abstractions,
+    const Abstractions &abstractions,
     int num_operators) {
     int num_abstractions = abstractions.size();
 
@@ -60,18 +58,14 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     : Heuristic(opts) {
     const vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
 
-    Abstractions abstractions;
-    for (const shared_ptr<AbstractionGenerator> &generator :
-         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
-        for (auto &abstraction : generator->generate_abstractions(task)) {
-            abstractions.push_back(move(abstraction));
-        }
-    }
+    Abstractions abstractions = generate_abstractions(
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
     cout << "Abstractions: " << abstractions.size() << endl;
 
-    utils::Log() << "Compute distances" << endl;
+    utils::Log() << "Compute abstract goal distances" << endl;
     for (const auto &abstraction : abstractions) {
-        h_values_by_abstraction.push_back(abstraction->compute_goal_distances(operator_costs));
+        h_values_by_abstraction.push_back(
+            abstraction->compute_goal_distances(operator_costs));
     }
 
     utils::Log() << "Compute max additive subsets" << endl;
@@ -119,7 +113,7 @@ int CanonicalHeuristic::compute_max_h(const vector<int> &abstract_state_ids) con
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Canonical heuristic",
+        "Canonical heuristic for abstraction heuristics",
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
