@@ -63,6 +63,8 @@ public:
     virtual std::vector<int> compute_saturated_costs(
         const std::vector<int> &h_values) const = 0;
 
+    virtual int get_num_operators() const = 0;
+
     // Return true iff operator induced a state-changing transition.
     virtual bool operator_is_active(int op_id) const = 0;
 

@@ -131,6 +131,10 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     return saturated_costs;
 }
 
+int ExplicitAbstraction::get_num_operators() const {
+    return looping_operators.size();
+}
+
 int ExplicitAbstraction::get_num_states() const {
     return backward_graph.size();
 }

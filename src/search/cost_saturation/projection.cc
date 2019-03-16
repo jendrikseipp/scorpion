@@ -409,6 +409,10 @@ vector<int> Projection::compute_saturated_costs(
     return saturated_costs;
 }
 
+int Projection::get_num_operators() const {
+    return task_info->get_num_operators();
+}
+
 vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     vector<int> distances(num_states, INF);
