@@ -20,7 +20,7 @@ class CanonicalHeuristic : public Heuristic {
     std::vector<std::vector<int>> h_values_by_abstraction;
     MaxAdditiveSubsets max_additive_subsets;
 
-    int compute_max_h(const std::vector<int> &abstract_state_ids) const;
+    int compute_max_over_sums(const std::vector<int> &h_values_for_state) const;
     int compute_heuristic(const State &state);
 
 protected:
