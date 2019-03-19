@@ -151,10 +151,19 @@ bool TaskInfo::operator_is_active(const pdbs::Pattern &pattern, int op_id) const
 }
 
 
+ProjectionFunction::ProjectionFunction(
+    const pdbs::Pattern &pattern, const vector<size_t> &hash_multipliers) {
+    assert(pattern.size() == hash_multipliers.size());
+    variables_and_multipliers.reserve(pattern.size());
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        variables_and_multipliers.emplace_back(pattern[i], hash_multipliers[i]);
+    }
+}
+
 int ProjectionFunction::get_abstract_state_id(const State &concrete_state) const {
     size_t index = 0;
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        index += hash_multipliers[i] * concrete_state[pattern[i]].get_value();
+    for (const VariableAndMultiplier &pair : variables_and_multipliers) {
+        index += pair.hash_multiplier * concrete_state[pair.pattern_var].get_value();
     }
     return index;
 }

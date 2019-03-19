@@ -76,17 +76,20 @@ struct AbstractBackwardOperator {
 
 
 class ProjectionFunction : public AbstractionFunction {
-    pdbs::Pattern pattern;
-    // Multipliers for each pattern variable for perfect hash function.
-    std::vector<std::size_t> hash_multipliers;
+    struct VariableAndMultiplier {
+        int pattern_var;
+        int hash_multiplier;
+
+        VariableAndMultiplier(int pattern_var, int hash_multiplier)
+            : pattern_var(pattern_var),
+              hash_multiplier(hash_multiplier) {
+        }
+    };
+    std::vector<VariableAndMultiplier> variables_and_multipliers;
 
 public:
     ProjectionFunction(
-        const pdbs::Pattern &pattern, const std::vector<std::size_t> &hash_multipliers)
-        : pattern(pattern),
-          hash_multipliers(move(hash_multipliers)) {
-        assert(pattern.size() == hash_multipliers.size());
-    }
+        const pdbs::Pattern &pattern, const std::vector<std::size_t> &hash_multipliers);
 
     virtual int get_abstract_state_id(const State &concrete_state) const override;
 };
