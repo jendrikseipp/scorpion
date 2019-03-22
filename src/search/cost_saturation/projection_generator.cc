@@ -54,23 +54,13 @@ Abstractions ProjectionGenerator::generate_abstractions(
     log << "Time for computing patterns: " << patterns_timer << endl;
 
     if (dominance_pruning) {
-        utils::Timer pdb_timer;
         shared_ptr<PDBCollection> pdbs = pattern_collection_info.get_pdbs();
-        shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets =
-            pattern_collection_info.get_max_additive_subsets();
-        cout << "PDB construction time: " << pdb_timer << endl;
-        utils::Timer pruning_timer;
-        max_additive_subsets = prune_dominated_subsets(
-            *pdbs, *max_additive_subsets, task_proxy.get_variables().size(),
+        shared_ptr<std::vector<PatternClique>> pattern_cliques =
+            pattern_collection_info.get_pattern_cliques();
+        prune_dominated_cliques(
+            *patterns,
+            *pdbs, *pattern_cliques, task_proxy.get_variables().size(),
             numeric_limits<double>::infinity());
-        cout << "Dominance pruning time: " << pruning_timer << endl;
-        patterns->clear();
-        for (const auto &subset : *max_additive_subsets) {
-            for (const shared_ptr<PatternDatabase> &pdb : subset) {
-                patterns->push_back(pdb->get_pattern());
-            }
-        }
-        cout << "Number of non-dominated patterns: " << patterns->size() << endl;
     }
 
     log << "Build projections" << endl;
