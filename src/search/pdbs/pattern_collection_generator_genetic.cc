@@ -1,13 +1,15 @@
 #include "pattern_collection_generator_genetic.h"
 
+#include "utils.h"
 #include "validation.h"
 #include "zero_one_pdbs.h"
 
-#include "../causal_graph.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../task_utils/causal_graph.h"
+#include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/math.h"
 #include "../utils/rng.h"
@@ -57,7 +59,7 @@ void PatternCollectionGeneratorGenetic::select(
             // Find first entry which is strictly greater than random.
             selected = upper_bound(cumulative_fitness.begin(),
                                    cumulative_fitness.end(), random) -
-                       cumulative_fitness.begin();
+                cumulative_fitness.begin();
         }
         new_pattern_collections.push_back(pattern_collections[selected]);
     }
@@ -112,7 +114,7 @@ void PatternCollectionGeneratorGenetic::remove_irrelevant_variables(
           there is a pre->eff arc from the variable to a relevant variable.
           Note that there is no point in considering eff->eff arcs here.
         */
-        const CausalGraph &cg = task_proxy.get_causal_graph();
+        const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
 
         const vector<int> &rel = cg.get_eff_to_pre(var);
         for (size_t i = 0; i < rel.size(); ++i) {
@@ -254,9 +256,7 @@ void PatternCollectionGeneratorGenetic::bin_packing() {
     }
 }
 
-void PatternCollectionGeneratorGenetic::genetic_algorithm(
-    const shared_ptr<AbstractTask> &task_) {
-    task = task_;
+void PatternCollectionGeneratorGenetic::genetic_algorithm() {
     best_fitness = -1;
     best_patterns = nullptr;
     bin_packing();
@@ -274,13 +274,18 @@ void PatternCollectionGeneratorGenetic::genetic_algorithm(
 }
 
 PatternCollectionInformation PatternCollectionGeneratorGenetic::generate(
-    const shared_ptr<AbstractTask> &task) {
+    const shared_ptr<AbstractTask> &task_) {
     utils::Timer timer;
-    genetic_algorithm(task);
-    cout << "Pattern generation (Edelkamp) time: " << timer << endl;
-    assert(best_patterns);
+    cout << "Generating patterns using the genetic generator..." << endl;
+    task = task_;
+    genetic_algorithm();
+
     TaskProxy task_proxy(*task);
-    return PatternCollectionInformation(task_proxy, best_patterns);
+    assert(best_patterns);
+    PatternCollectionInformation pci(task_proxy, best_patterns);
+    dump_pattern_collection_generation_statistics(
+        "Genetic generator", timer(), pci);
+    return pci;
 }
 
 static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
@@ -292,13 +297,14 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "to optimize the pattern collections with an objective function that "
         "estimates the mean heuristic value of the the pattern collections. "
         "Pattern collections with higher mean heuristic estimates are more "
-        "likely selected for the next generation." + utils::format_paper_reference(
+        "likely selected for the next generation." + utils::format_conference_reference(
             {"Stefan Edelkamp"},
             "Automated Creation of Pattern Database Search Heuristics",
             "http://www.springerlink.com/content/20613345434608x1/",
             "Proceedings of the 4th Workshop on Model Checking and Artificial"
             " Intelligence (!MoChArt 2006)",
             "35-50",
+            "AAAI Press",
             "2007"));
     parser.document_language_support("action costs", "supported");
     parser.document_language_support("conditional effects", "not supported");
@@ -366,12 +372,14 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "fitness) if its patterns are not disjoint",
         "false");
 
+    utils::add_rng_options(parser);
+
     Options opts = parser.parse();
     if (parser.dry_run())
-        return 0;
+        return nullptr;
 
     return make_shared<PatternCollectionGeneratorGenetic>(opts);
 }
 
-static PluginShared<PatternCollectionGenerator> _plugin("genetic", _parse);
+static Plugin<PatternCollectionGenerator> _plugin("genetic", _parse);
 }

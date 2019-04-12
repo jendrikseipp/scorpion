@@ -3,38 +3,43 @@
 
 #include "parse_tree.h"
 
-#include <iosfwd>
+#include "../utils/exceptions.h"
+
 #include <string>
 
+
+#define ABORT_WITH_DEMANGLING_HINT(msg, type_name) \
+    ( \
+        (std::cerr << "Critical error in file " << __FILE__ \
+                   << ", line " << __LINE__ << ": " << std::endl \
+                   << (msg) << std::endl), \
+        (std::cerr << options::get_demangling_hint(type_name) << std::endl), \
+        (abort()), \
+        (void)0 \
+    )
+
 namespace options {
-struct ArgError {
-    ArgError(std::string msg);
-
+class OptionParserError : public utils::Exception {
     std::string msg;
+public:
+    explicit OptionParserError(const std::string &msg);
 
-    friend std::ostream &operator<<(std::ostream &out, const ArgError &err) {
-        return out << "argument error: " << err.msg;
-    }
+    virtual void print() const override;
 };
 
-struct ParseError {
-    ParseError(std::string m, ParseTree pt);
-    ParseError(std::string m, ParseTree pt, std::string correct_substring);
 
+class ParseError : public utils::Exception {
     std::string msg;
     ParseTree parse_tree;
-    std::string substr;
+    std::string substring;
+public:
+    ParseError(const std::string &error, const ParseTree &parse_tree,
+               const std::string &substring = "");
 
-    friend std::ostream &operator<<(std::ostream &out, const ParseError &pe) {
-        out << "parse error: " << std::endl
-            << pe.msg << " at: " << std::endl;
-        kptree::print_tree_bracketed<ParseNode>(pe.parse_tree, out);
-        if (pe.substr.size() > 0) {
-            out << " (cannot continue parsing after \"" << pe.substr << "\")" << std::endl;
-        }
-        return out;
-    }
+    virtual void print() const override;
 };
+
+extern std::string get_demangling_hint(const std::string &type_name);
 }
 
 #endif

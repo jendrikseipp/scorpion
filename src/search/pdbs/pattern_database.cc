@@ -2,9 +2,8 @@
 
 #include "match_tree.h"
 
-#include "../priority_queue.h"
-#include "../task_tools.h"
-
+#include "../algorithms/priority_queues.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -73,8 +72,8 @@ PatternDatabase::PatternDatabase(
     bool dump,
     const vector<int> &operator_costs)
     : pattern(pattern) {
-    verify_no_axioms(task_proxy);
-    verify_no_conditional_effects(task_proxy);
+    task_properties::verify_no_axioms(task_proxy);
+    task_properties::verify_no_conditional_effects(task_proxy);
     assert(operator_costs.empty() ||
            operator_costs.size() == task_proxy.get_operators().size());
     assert(utils::is_sorted_unique(pattern));
@@ -91,7 +90,7 @@ PatternDatabase::PatternDatabase(
         } else {
             cerr << "Given pattern is too large! (Overflow occured): " << endl;
             cerr << pattern << endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
     }
     create_pdb(task_proxy, operator_costs);
@@ -211,8 +210,9 @@ void PatternDatabase::create_pdb(
 
     // build the match tree
     MatchTree match_tree(task_proxy, pattern, hash_multipliers);
-    for (const AbstractOperator &op : operators) {
-        match_tree.insert(op);
+    for (size_t op_id = 0; op_id < operators.size(); ++op_id) {
+        const AbstractOperator &op = operators[op_id];
+        match_tree.insert(op_id, op.get_regression_preconditions());
     }
 
     // compute abstract goal var-val pairs
@@ -227,7 +227,7 @@ void PatternDatabase::create_pdb(
 
     distances.reserve(num_states);
     // first implicit entry: priority, second entry: index for an abstract state
-    AdaptiveQueue<size_t> pq;
+    priority_queues::AdaptiveQueue<size_t> pq;
 
     // initialize queue
     for (size_t state_index = 0; state_index < num_states; ++state_index) {
@@ -249,11 +249,12 @@ void PatternDatabase::create_pdb(
         }
 
         // regress abstract_state
-        vector<const AbstractOperator *> applicable_operators;
-        match_tree.get_applicable_operators(state_index, applicable_operators);
-        for (const AbstractOperator *op : applicable_operators) {
-            size_t predecessor = state_index + op->get_hash_effect();
-            int alternative_cost = distances[state_index] + op->get_cost();
+        vector<int> applicable_operator_ids;
+        match_tree.get_applicable_operator_ids(state_index, applicable_operator_ids);
+        for (int op_id : applicable_operator_ids) {
+            const AbstractOperator &op = operators[op_id];
+            size_t predecessor = state_index + op.get_hash_effect();
+            int alternative_cost = distances[state_index] + op.get_cost();
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
                 pq.push(alternative_cost, predecessor);

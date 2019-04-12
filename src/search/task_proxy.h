@@ -2,7 +2,11 @@
 #define TASK_PROXY_H
 
 #include "abstract_task.h"
+#include "global_state.h"
+#include "operator_id.h"
+#include "task_id.h"
 
+#include "utils/collections.h"
 #include "utils/hash.h"
 #include "utils/system.h"
 
@@ -14,7 +18,6 @@
 
 
 class AxiomsProxy;
-class CausalGraph;
 class ConditionsProxy;
 class EffectProxy;
 class EffectConditionsProxy;
@@ -29,6 +32,10 @@ class State;
 class TaskProxy;
 class VariableProxy;
 class VariablesProxy;
+
+namespace causal_graph {
+class CausalGraph;
+}
 
 /*
   Overview of the task interface.
@@ -88,7 +95,7 @@ class VariablesProxy;
   task.
 
   For helper functions that work on task related objects, please see the
-  task_tools.h module.
+  task_properties.h module.
 */
 
 
@@ -227,7 +234,7 @@ public:
   We don't implement size() because it would not be constant-time.
 
   FactsProxy supports iteration, e.g. for range-based for loops. This
-  iterates over all facts in order of increasing variable id, and in
+  iterates over all facts in order of increasing variable ID, and in
   order of increasing value for each variable.
 */
 class FactsProxy {
@@ -471,8 +478,14 @@ public:
         return index;
     }
 
-    const GlobalOperator *get_global_operator() const {
-        return task->get_global_operator(index, is_an_axiom);
+    /*
+      Eventually, this method should perhaps not be part of OperatorProxy but
+      live in a class that handles the task transformation and known about both
+      the original and the transformed task.
+    */
+    OperatorID get_ancestor_operator_id(const AbstractTask *ancestor_task) const {
+        assert(!is_an_axiom);
+        return OperatorID(task->convert_operator_index(index, ancestor_task));
     }
 };
 
@@ -496,6 +509,10 @@ public:
     OperatorProxy operator[](std::size_t index) const {
         assert(index < size());
         return OperatorProxy(*task, index, false);
+    }
+
+    OperatorProxy operator[](OperatorID id) const {
+        return (*this)[id.get_index()];
     }
 };
 
@@ -540,7 +557,8 @@ public:
 };
 
 
-bool does_fire(EffectProxy effect, const State &state);
+bool does_fire(const EffectProxy &effect, const State &state);
+bool does_fire(const EffectProxy &effect, const GlobalState &state);
 
 
 class State {
@@ -560,9 +578,11 @@ public:
         other.task = nullptr;
     }
 
-    State &operator=(const State &&other) {
+    State &operator=(State &&other) {
         if (this != &other) {
+            task = other.task;
             values = std::move(other.values);
+            other.task = nullptr;
         }
         return *this;
     }
@@ -574,11 +594,6 @@ public:
 
     bool operator!=(const State &other) const {
         return !(*this == other);
-    }
-
-    std::size_t hash() const {
-        std::hash<std::vector<int>> hasher;
-        return hasher(values);
     }
 
     std::size_t size() const {
@@ -602,7 +617,7 @@ public:
 
     State get_successor(OperatorProxy op) const {
         if (task->get_num_axioms() > 0) {
-            ABORT("State::apply currently does not support axioms.");
+            ABORT("State::get_successor currently does not support axioms.");
         }
         assert(!op.is_axiom());
         //assert(is_applicable(op, state));
@@ -615,19 +630,13 @@ public:
         }
         return State(*task, std::move(new_values));
     }
-
-    void dump_pddl() const;
-    void dump_fdr() const;
 };
 
 
-namespace std {
-template<>
-struct hash<State> {
-    size_t operator()(const State &state) const {
-        return state.hash();
-    }
-};
+namespace utils {
+inline void feed(HashState &hash_state, const State &state) {
+    feed(hash_state, state.get_values());
+}
 }
 
 
@@ -637,6 +646,14 @@ public:
     explicit TaskProxy(const AbstractTask &task)
         : task(&task) {}
     ~TaskProxy() = default;
+
+    TaskID get_id() const {
+        return TaskID(task);
+    }
+
+    void subscribe_to_task_destruction(subscriber::Subscriber<AbstractTask> *subscriber) const {
+        task->subscribe(subscriber);
+    }
 
     VariablesProxy get_variables() const {
         return VariablesProxy(*task);
@@ -654,8 +671,12 @@ public:
         return GoalsProxy(*task);
     }
 
+    State create_state(std::vector<int> &&state_values) const {
+        return State(*task, std::move(state_values));
+    }
+
     State get_initial_state() const {
-        return State(*task, task->get_initial_state_values());
+        return create_state(task->get_initial_state_values());
     }
 
     /*
@@ -664,16 +685,20 @@ public:
       this task in the sense that this task is the result of a sequence
       of task transformations on the ancestor task. If this is not the
       case, the function aborts.
+
+      Eventually, this method should perhaps not be part of TaskProxy but live
+      in a class that handles the task transformation and known about both the
+      original and the transformed task.
     */
     State convert_ancestor_state(const State &ancestor_state) const {
         TaskProxy ancestor_task_proxy = ancestor_state.get_task();
         // Create a copy of the state values for the new state.
         std::vector<int> state_values = ancestor_state.get_values();
         task->convert_state_values(state_values, ancestor_task_proxy.task);
-        return State(*task, std::move(state_values));
+        return create_state(std::move(state_values));
     }
 
-    const CausalGraph &get_causal_graph() const;
+    const causal_graph::CausalGraph &get_causal_graph() const;
 };
 
 
@@ -696,9 +721,18 @@ inline TaskProxy State::get_task() const {
     return TaskProxy(*task);
 }
 
-inline bool does_fire(EffectProxy effect, const State &state) {
+inline bool does_fire(const EffectProxy &effect, const State &state) {
     for (FactProxy condition : effect.get_conditions()) {
         if (state[condition.get_variable()] != condition)
+            return false;
+    }
+    return true;
+}
+
+inline bool does_fire(const EffectProxy &effect, const GlobalState &state) {
+    for (FactProxy condition : effect.get_conditions()) {
+        FactPair condition_pair = condition.get_pair();
+        if (state[condition_pair.var] != condition_pair.value)
             return false;
     }
     return true;

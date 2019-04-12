@@ -1,15 +1,15 @@
 #ifndef ABSTRACT_TASK_H
 #define ABSTRACT_TASK_H
 
+#include "operator_id.h"
+
+#include "algorithms/subscriber.h"
 #include "utils/hash.h"
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-class GlobalOperator;
-class GlobalState;
 
 namespace options {
 class Options;
@@ -45,21 +45,18 @@ struct FactPair {
 
 std::ostream &operator<<(std::ostream &os, const FactPair &fact_pair);
 
-namespace std {
-template<>
-struct hash<FactPair> {
-    size_t operator()(const FactPair &fact) const {
-        std::pair<int, int> raw_fact(fact.var, fact.value);
-        std::hash<std::pair<int, int>> hasher;
-        return hasher(raw_fact);
-    }
-};
+namespace utils {
+inline void feed(HashState &hash_state, const FactPair &fact) {
+    feed(hash_state, fact.var);
+    feed(hash_state, fact.value);
+}
 }
 
-class AbstractTask {
+
+class AbstractTask : public subscriber::SubscriberService<AbstractTask> {
 public:
     AbstractTask() = default;
-    virtual ~AbstractTask() = default;
+    virtual ~AbstractTask() override = default;
     virtual int get_num_variables() const = 0;
     virtual std::string get_variable_name(int var) const = 0;
     virtual int get_variable_domain_size(int var) const = 0;
@@ -81,7 +78,14 @@ public:
         int op_index, int eff_index, int cond_index, bool is_axiom) const = 0;
     virtual FactPair get_operator_effect(
         int op_index, int eff_index, bool is_axiom) const = 0;
-    virtual const GlobalOperator *get_global_operator(int index, bool is_axiom) const = 0;
+
+    /*
+      Convert an operator index from this task, C (child), into an operator index
+      from an ancestor task A (ancestor). Task A has to be an ancestor of C in
+      the sense that C is the result of a sequence of task transformations on A.
+    */
+    virtual int convert_operator_index(
+        int index, const AbstractTask *ancestor_task) const = 0;
 
     virtual int get_num_axioms() const = 0;
 

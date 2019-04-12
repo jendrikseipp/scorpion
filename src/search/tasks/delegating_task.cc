@@ -75,8 +75,13 @@ FactPair DelegatingTask::get_operator_effect(
     return parent->get_operator_effect(op_index, eff_index, is_axiom);
 }
 
-const GlobalOperator *DelegatingTask::get_global_operator(int index, bool is_axiom) const {
-    return parent->get_global_operator(index, is_axiom);
+int DelegatingTask::convert_operator_index(
+    int index, const AbstractTask *ancestor_task) const {
+    if (ancestor_task == this) {
+        return index;
+    }
+    int parent_index = convert_operator_index_to_parent(index);
+    return parent->convert_operator_index(parent_index, ancestor_task);
 }
 
 int DelegatingTask::get_num_axioms() const {

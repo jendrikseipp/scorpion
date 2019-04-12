@@ -1,8 +1,9 @@
 #ifndef HEURISTICS_LM_CUT_LANDMARKS_H
 #define HEURISTICS_LM_CUT_LANDMARKS_H
 
-#include "../priority_queue.h"
-#include "../task_tools.h"
+#include "../task_proxy.h"
+
+#include "../algorithms/priority_queues.h"
 
 #include <cassert>
 #include <functional>
@@ -53,9 +54,8 @@ class LandmarkCutLandmarks {
     RelaxedProposition artificial_precondition;
     RelaxedProposition artificial_goal;
     int num_propositions;
-    AdaptiveQueue<RelaxedProposition *> priority_queue;
+    priority_queues::AdaptiveQueue<RelaxedProposition *> priority_queue;
 
-    void initialize();
     void build_relaxed_operator(const OperatorProxy &op);
     void add_relaxed_operator(std::vector<RelaxedProposition *> &&precondition,
                               std::vector<RelaxedProposition *> &&effects,
@@ -66,7 +66,7 @@ class LandmarkCutLandmarks {
     void first_exploration(const State &state);
     void first_exploration_incremental(std::vector<RelaxedOperator *> &cut);
     void second_exploration(const State &state,
-                            std::vector<RelaxedProposition *> &queue,
+                            std::vector<RelaxedProposition *> &second_exploration_queue,
                             std::vector<RelaxedOperator *> &cut);
 
     void enqueue_if_necessary(RelaxedProposition *prop, int cost) {

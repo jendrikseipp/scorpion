@@ -1,18 +1,19 @@
 #include "cea_heuristic.h"
 
-#include "../domain_transition_graph.h"
-#include "../global_operator.h"
+#include "domain_transition_graph.h"
+
 #include "../global_state.h"
-#include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
+
+#include "../task_utils/task_properties.h"
 
 #include <cassert>
 #include <limits>
 #include <vector>
 
 using namespace std;
+using namespace domain_transition_graph;
 
 /* Implementation notes:
 
@@ -132,7 +133,7 @@ LocalProblem *ContextEnhancedAdditiveHeuristic::build_problem_for_variable(
     int var_no) const {
     LocalProblem *problem = new LocalProblem;
 
-    DomainTransitionGraph *dtg = transition_graphs[var_no];
+    DomainTransitionGraph *dtg = transition_graphs[var_no].get();
 
     problem->context_variables = &dtg->local_to_global_child;
 
@@ -152,8 +153,8 @@ LocalProblem *ContextEnhancedAdditiveHeuristic::build_problem_for_variable(
             LocalProblemNode &target = problem->nodes[target_value];
             for (const ValueTransitionLabel &label : dtg_trans.labels) {
                 OperatorProxy op = label.is_axiom ?
-                                   task_proxy.get_axioms()[label.op_id] :
-                                   task_proxy.get_operators()[label.op_id];
+                    task_proxy.get_axioms()[label.op_id] :
+                    task_proxy.get_operators()[label.op_id];
                 LocalTransition trans(&node, &target, &label, op.get_cost());
                 node.outgoing_transitions.push_back(trans);
             }
@@ -364,9 +365,9 @@ void ContextEnhancedAdditiveHeuristic::mark_helpful_transitions(
             // Transition possibly applicable.
             const ValueTransitionLabel &label = *first_on_path->label;
             OperatorProxy op = label.is_axiom ?
-                               task_proxy.get_axioms()[label.op_id] :
-                               task_proxy.get_operators()[label.op_id];
-            if (min_action_cost != 0 || is_applicable(op, state)) {
+                task_proxy.get_axioms()[label.op_id] :
+                task_proxy.get_operators()[label.op_id];
+            if (min_action_cost != 0 || task_properties::is_applicable(op, state)) {
                 // If there are no zero-cost actions, the target_cost/
                 // action_cost test above already guarantees applicability.
                 assert(!op.is_axiom());
@@ -390,8 +391,9 @@ void ContextEnhancedAdditiveHeuristic::mark_helpful_transitions(
     }
 }
 
-int ContextEnhancedAdditiveHeuristic::compute_heuristic(const GlobalState &g_state) {
-    const State state = convert_global_state(g_state);
+int ContextEnhancedAdditiveHeuristic::compute_heuristic(
+    const GlobalState &global_state) {
+    const State state = convert_global_state(global_state);
     initialize_heap();
     goal_problem->base_priority = -1;
     for (LocalProblem *problem : local_problems)
@@ -410,10 +412,10 @@ int ContextEnhancedAdditiveHeuristic::compute_heuristic(const GlobalState &g_sta
 ContextEnhancedAdditiveHeuristic::ContextEnhancedAdditiveHeuristic(
     const Options &opts)
     : Heuristic(opts),
-      min_action_cost(get_min_operator_cost(task_proxy)) {
+      min_action_cost(task_properties::get_min_operator_cost(task_proxy)) {
     cout << "Initializing context-enhanced additive heuristic..." << endl;
 
-    DTGFactory factory(task_proxy, true, [](int, int) {return false; });
+    DTGFactory factory(task_proxy, true, [](int, int) {return false;});
     transition_graphs = factory.build_dtgs();
 
     goal_problem = build_problem_for_goal();
@@ -434,15 +436,13 @@ ContextEnhancedAdditiveHeuristic::~ContextEnhancedAdditiveHeuristic() {
 
     for (LocalProblem *problem : local_problems)
         delete problem;
-    for (DomainTransitionGraph *dtg : transition_graphs)
-        delete dtg;
 }
 
 bool ContextEnhancedAdditiveHeuristic::dead_ends_are_reliable() const {
     return false;
 }
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis("Context-enhanced additive heuristic", "");
     parser.document_language_support("action costs", "supported");
     parser.document_language_support("conditional effects", "supported");
@@ -460,10 +460,10 @@ static Heuristic *_parse(OptionParser &parser) {
     Options opts = parser.parse();
 
     if (parser.dry_run())
-        return 0;
+        return nullptr;
     else
-        return new ContextEnhancedAdditiveHeuristic(opts);
+        return make_shared<ContextEnhancedAdditiveHeuristic>(opts);
 }
 
-static Plugin<Heuristic> _plugin("cea", _parse);
+static Plugin<Evaluator> _plugin("cea", _parse);
 }

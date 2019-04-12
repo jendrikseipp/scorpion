@@ -10,6 +10,7 @@
 #include <vector>
 
 namespace merge_and_shrink {
+class Distances;
 class LabelEquivalenceRelation;
 class LabelGroup;
 class Labels;
@@ -99,7 +100,7 @@ private:
     std::unique_ptr<LabelEquivalenceRelation> label_equivalence_relation;
 
     /*
-      The transitions of a label group are indexed via its id. The id of a
+      The transitions of a label group are indexed via its ID. The ID of a
       group does not change, and hence its transitions are never moved.
 
       We tested different alternatives to store the transitions, but they all
@@ -133,11 +134,11 @@ public:
         int num_variables,
         std::vector<int> &&incorporated_variables,
         std::unique_ptr<LabelEquivalenceRelation> &&label_equivalence_relation,
-        std::vector<std::vector<Transition>> &&transitions_by_label,
+        std::vector<std::vector<Transition>> &&transitions_by_group_id,
         int num_states,
         std::vector<bool> &&goal_states,
-        int init_state,
-        bool compute_label_equivalence_relation);
+        int init_state);
+    TransitionSystem(const TransitionSystem &other);
     ~TransitionSystem();
     /*
       Factory method to construct the merge of two transition systems.
@@ -158,7 +159,7 @@ public:
       old states are only mapped to the same new state if they are in the same
       equivalence class as specified in state_equivalence_relation.
     */
-    bool apply_abstraction(
+    void apply_abstraction(
         const StateEquivalenceRelation &state_equivalence_relation,
         const std::vector<int> &abstraction_mapping,
         Verbosity verbosity);
@@ -198,8 +199,9 @@ public:
       sorted (by source, by target) and there are no duplicates.
     */
     bool are_transitions_sorted_unique() const;
+    bool in_sync_with_label_equivalence_relation() const;
 
-    bool is_solvable() const;
+    bool is_solvable(const Distances &distances) const;
     void dump_dot_graph() const;
     void dump_labels_and_transitions() const;
     void statistics() const;

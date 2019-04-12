@@ -1,13 +1,16 @@
 #include "pattern_collection_generator_systematic.h"
 
+#include "utils.h"
 #include "validation.h"
 
-#include "../causal_graph.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../task_utils/causal_graph.h"
+#include "../utils/logging.h"
 #include "../utils/markup.h"
+#include "../utils/timer.h"
 
 #include <algorithm>
 #include <cassert>
@@ -51,7 +54,7 @@ PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
 }
 
 void PatternCollectionGeneratorSystematic::compute_eff_pre_neighbors(
-    const CausalGraph &cg, const Pattern &pattern, vector<int> &result) const {
+    const causal_graph::CausalGraph &cg, const Pattern &pattern, vector<int> &result) const {
     /*
       Compute all variables that are reachable from pattern by an
       (eff, pre) arc and are not already contained in the pattern.
@@ -73,7 +76,7 @@ void PatternCollectionGeneratorSystematic::compute_eff_pre_neighbors(
 }
 
 void PatternCollectionGeneratorSystematic::compute_connection_points(
-    const CausalGraph &cg, const Pattern &pattern, vector<int> &result) const {
+    const causal_graph::CausalGraph &cg, const Pattern &pattern, vector<int> &result) const {
     /*
       The "connection points" of a pattern are those variables of which
       one must be contained in an SGA pattern that can be attached to this
@@ -82,7 +85,7 @@ void PatternCollectionGeneratorSystematic::compute_connection_points(
 
       A variable is a connection point if it satisfies the following criteria:
       1. We can get from the pattern to the connection point via
-         an (pre, eff) or (eff, eff) arc in the causal graph.
+         a (pre, eff) or (eff, eff) arc in the causal graph.
       2. It is not part of pattern.
       3. We *cannot* get from the pattern to the connection point
          via an (eff, pre) arc.
@@ -119,7 +122,7 @@ void PatternCollectionGeneratorSystematic::enqueue_pattern_if_new(
 }
 
 void PatternCollectionGeneratorSystematic::build_sga_patterns(
-    const TaskProxy &task_proxy, const CausalGraph &cg) {
+    const TaskProxy &task_proxy, const causal_graph::CausalGraph &cg) {
     assert(max_pattern_size >= 1);
     assert(pattern_set.empty());
     assert(patterns && patterns->empty());
@@ -174,7 +177,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
 void PatternCollectionGeneratorSystematic::build_patterns(
     const TaskProxy &task_proxy) {
     int num_variables = task_proxy.get_variables().size();
-    const CausalGraph &cg = task_proxy.get_causal_graph();
+    const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
 
     // Generate SGA (single-goal-ancestor) patterns.
     // They are generated into the patterns variable,
@@ -260,6 +263,8 @@ void PatternCollectionGeneratorSystematic::build_patterns_naive(
 
 PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
     const shared_ptr<AbstractTask> &task) {
+    utils::Timer timer;
+    cout << "Generating patterns using the systematic generator..." << endl;
     TaskProxy task_proxy(*task);
     patterns = make_shared<PatternCollection>();
     pattern_set.clear();
@@ -268,7 +273,12 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
     } else {
         build_patterns_naive(task_proxy);
     }
-    return PatternCollectionInformation(task_proxy, patterns);
+    PatternCollectionInformation pci(task_proxy, patterns);
+    /* Do not dump the collection since it can be very large for
+       pattern_max_size >= 3. */
+    dump_pattern_collection_generation_statistics(
+        "Systematic generator", timer(), pci, false);
+    return pci;
 }
 
 static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
@@ -276,13 +286,14 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "Systematically generated patterns",
         "Generates all (interesting) patterns with up to pattern_max_size "
         "variables. "
-        "For details, see" + utils::format_paper_reference(
+        "For details, see" + utils::format_conference_reference(
             {"Florian Pommerening", "Gabriele Roeger", "Malte Helmert"},
             "Getting the Most Out of Pattern Databases for Classical Planning",
-            "http://ai.cs.unibas.ch/papers/pommerening-et-al-ijcai2013.pdf",
+            "https://ai.dmi.unibas.ch/papers/pommerening-et-al-ijcai2013.pdf",
             "Proceedings of the Twenty-Third International Joint"
             " Conference on Artificial Intelligence (IJCAI 2013)",
             "2357-2364",
+            "AAAI Press",
             "2013"));
 
     parser.add_option<int>(
@@ -303,5 +314,5 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     return make_shared<PatternCollectionGeneratorSystematic>(opts);
 }
 
-static PluginShared<PatternCollectionGenerator> _plugin("systematic", _parse);
+static Plugin<PatternCollectionGenerator> _plugin("systematic", _parse);
 }

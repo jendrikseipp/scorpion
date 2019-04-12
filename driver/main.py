@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 import logging
-import subprocess
+import os
 import sys
 
 from . import aliases
@@ -26,24 +26,29 @@ def main():
         cleanup.cleanup_temporary_files(args)
         sys.exit()
 
-    # If validation succeeds, exit with the search component's exitcode.
     exitcode = None
     for component in args.components:
-        try:
-            if component == "translate":
-                run_components.run_translate(args)
-                if args.transform_task:
-                    run_components.transform_task(args)
-            elif component == "search":
-                exitcode = run_components.run_search(args)
-            elif component == "validate":
-                run_components.run_validate(args)
-            else:
-                assert False
-        except subprocess.CalledProcessError as err:
-            print(err)
-            exitcode = err.returncode
+        if component == "translate":
+            (exitcode, continue_execution) = run_components.run_translate(args)
+            if args.transform_task:
+                run_components.transform_task(args)
+        elif component == "search":
+            (exitcode, continue_execution) = run_components.run_search(args)
+            if not args.keep_sas_file:
+                print("Remove intermediate file {}".format(args.sas_file))
+                os.remove(args.sas_file)
+        elif component == "validate":
+            (exitcode, continue_execution) = run_components.run_validate(args)
+        else:
+            assert False, "Error: unhandled component: {}".format(component)
+        print()
+        print("{component} exit code: {exitcode}".format(**locals()))
+        if not continue_execution:
+            print("Driver aborting after {}".format(component))
             break
+    # Exit with the exit code of the last component that ran successfully.
+    # This means for example that if no plan was found, validate is not run,
+    # and therefore the return code is that of the search.
     sys.exit(exitcode)
 
 

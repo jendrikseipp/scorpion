@@ -2,8 +2,7 @@
 
 #include "domain_abstracted_task.h"
 
-#include "../task_tools.h"
-
+#include "../task_utils/task_properties.h"
 #include "../utils/language.h"
 
 #include <sstream>
@@ -39,10 +38,10 @@ DomainAbstractedTaskFactory::DomainAbstractedTaskFactory(
     const shared_ptr<AbstractTask> &parent,
     const VarToGroups &value_groups) {
     TaskProxy parent_proxy(*parent);
-    if (has_axioms(parent_proxy)) {
+    if (task_properties::has_axioms(parent_proxy)) {
         ABORT("DomainAbstractedTask doesn't support axioms.");
     }
-    if (has_conditional_effects(parent_proxy)) {
+    if (task_properties::has_conditional_effects(parent_proxy)) {
         ABORT("DomainAbstractedTask doesn't support conditional effects.");
     }
 
@@ -95,8 +94,8 @@ void DomainAbstractedTaskFactory::initialize(const AbstractTask &parent) {
 
 string DomainAbstractedTaskFactory::get_combined_fact_name(
     int var, const ValueGroup &values) const {
-    stringstream name;
-    string sep = "";
+    ostringstream name;
+    string sep;
     for (int value : values) {
         name << sep << fact_names[var][value];
         sep = " OR ";

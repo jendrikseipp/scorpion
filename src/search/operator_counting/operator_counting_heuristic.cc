@@ -24,7 +24,7 @@ OperatorCountingHeuristic::OperatorCountingHeuristic(const Options &opts)
         variables.push_back(lp::LPVariable(0, infinity, op_cost));
     }
     vector<lp::LPConstraint> constraints;
-    for (auto generator : constraint_generators) {
+    for (const auto &generator : constraint_generators) {
         generator->initialize_constraints(task, constraints, infinity);
     }
     lp_solver.load_problem(lp::LPObjectiveSense::MINIMIZE, variables, constraints);
@@ -40,7 +40,7 @@ int OperatorCountingHeuristic::compute_heuristic(const GlobalState &global_state
 
 int OperatorCountingHeuristic::compute_heuristic(const State &state) {
     assert(!lp_solver.has_temporary_constraints());
-    for (auto generator : constraint_generators) {
+    for (const auto &generator : constraint_generators) {
         bool dead_end = generator->update_constraints(state, lp_solver);
         if (dead_end) {
             lp_solver.clear_temporary_constraints();
@@ -60,7 +60,7 @@ int OperatorCountingHeuristic::compute_heuristic(const State &state) {
     return result;
 }
 
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Operator counting heuristic",
         "An operator counting heuristic computes a linear program (LP) in each "
@@ -70,7 +70,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "are guaranteed to have a solution with Count_o = occurrences(o, pi) "
         "for every plan pi. Minimizing the total cost of operators subject to "
         "some operator counting constraints is an admissible heuristic. "
-        "For details, see" + utils::format_paper_reference(
+        "For details, see" + utils::format_conference_reference(
             {"Florian Pommerening", "Gabriele Roeger", "Malte Helmert",
              "Blai Bonet"},
             "LP-based Heuristics for Cost-optimal Planning",
@@ -78,7 +78,8 @@ static Heuristic *_parse(OptionParser &parser) {
             "Proceedings of the Twenty-Fourth International Conference"
             " on Automated Planning and Scheduling (ICAPS 2014)",
             "226-234",
-            "AAAI Press 2014"));
+            "AAAI Press",
+            "2014"));
 
     parser.document_language_support("action costs", "supported");
     parser.document_language_support(
@@ -110,8 +111,8 @@ static Heuristic *_parse(OptionParser &parser) {
         "constraint_generators");
     if (parser.dry_run())
         return nullptr;
-    return new OperatorCountingHeuristic(opts);
+    return make_shared<OperatorCountingHeuristic>(opts);
 }
 
-static Plugin<Heuristic> _plugin("operatorcounting", _parse);
+static Plugin<Evaluator> _plugin("operatorcounting", _parse);
 }

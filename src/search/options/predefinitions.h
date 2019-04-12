@@ -1,39 +1,50 @@
 #ifndef OPTIONS_PREDEFINITIONS_H
 #define OPTIONS_PREDEFINITIONS_H
 
-#include <algorithm>
-#include <map>
+#include "any.h"
+#include "errors.h"
+
+#include "../utils/system.h"
+
+#include <iostream>
 #include <string>
+#include <typeindex>
+#include <unordered_map>
+#include <utility>
 
 namespace options {
-/*
-  Predefinitions<T> maps strings to pointers to already created
-  plug-in objects.
-*/
-template<typename T>
 class Predefinitions {
+    std::unordered_map<std::string, std::pair<std::type_index, Any>> predefined;
 public:
-    static Predefinitions<T> *instance() {
-        static Predefinitions<T> instance_;
-        return &instance_;
+    Predefinitions() = default;
+
+    template<typename T>
+    void predefine(const std::string &key, T object) {
+        if (predefined.count(key)) {
+            throw OptionParserError(key + " is already used in a predefinition.");
+        }
+        predefined.emplace(key, std::make_pair(std::type_index(typeid(T)), object));
     }
 
-    void predefine(std::string k, T obj) {
-        transform(k.begin(), k.end(), k.begin(), ::tolower);
-        predefined[k] = obj;
+    bool contains(const std::string &key) const {
+        return predefined.find(key) != predefined.end();
     }
 
-    bool contains(const std::string &k) {
-        return predefined.find(k) != predefined.end();
+    template<typename T>
+    T get(const std::string &key) const {
+        try {
+            return any_cast<T>(predefined.at(key).second);
+        } catch (BadAnyCast &) {
+            throw OptionParserError(
+                      "Tried to look up a predefinition with a wrong type: " +
+                      key + "(type: " + typeid(T).name() + ")");
+        }
     }
 
-    T get(const std::string &k) {
-        return predefined[k];
+    template<typename T>
+    T get(const std::string &key, const T &default_value) const {
+        return (!contains(key)) ? default_value : get<T>(key);
     }
-
-private:
-    Predefinitions<T>() = default;
-    std::map<std::string, T> predefined;
 };
 }
 

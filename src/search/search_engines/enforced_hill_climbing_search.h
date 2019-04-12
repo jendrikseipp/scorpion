@@ -2,9 +2,8 @@
 #define SEARCH_ENGINES_ENFORCED_HILL_CLIMBING_SEARCH_H
 
 #include "../evaluation_context.h"
+#include "../open_list.h"
 #include "../search_engine.h"
-
-#include "../open_lists/open_list.h"
 
 #include <map>
 #include <memory>
@@ -32,9 +31,9 @@ enum class PreferredUsage {
 class EnforcedHillClimbingSearch : public SearchEngine {
     std::unique_ptr<EdgeOpenList> open_list;
 
-    Heuristic *heuristic;
-    std::vector<Heuristic *> preferred_operator_heuristics;
-    std::set<Heuristic *> heuristics;
+    std::shared_ptr<Evaluator> evaluator;
+    std::vector<std::shared_ptr<Evaluator>> preferred_operator_evaluators;
+    std::set<Evaluator *> path_dependent_evaluators;
     bool use_preferred;
     PreferredUsage preferred_usage;
 
@@ -49,11 +48,11 @@ class EnforcedHillClimbingSearch : public SearchEngine {
     void insert_successor_into_open_list(
         const EvaluationContext &eval_context,
         int parent_g,
-        const GlobalOperator *op,
+        OperatorID op_id,
         bool preferred);
     void expand(EvaluationContext &eval_context);
     void reach_state(
-        const GlobalState &parent, const GlobalOperator &op,
+        const GlobalState &parent, OperatorID op_id,
         const GlobalState &state);
     SearchStatus ehc();
 

@@ -1,6 +1,8 @@
 #include "canonical_pdbs_heuristic.h"
 
+#include "dominance_pruning.h"
 #include "pattern_generator.h"
+#include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -19,15 +21,44 @@ CanonicalPDBs get_canonical_pdbs_from_options(
     shared_ptr<PatternCollectionGenerator> pattern_generator =
         opts.get<shared_ptr<PatternCollectionGenerator>>("patterns");
     utils::Timer timer;
+    cout << "Initializing canonical PDB heuristic..." << endl;
     PatternCollectionInformation pattern_collection_info =
         pattern_generator->generate(task);
+    shared_ptr<PatternCollection> patterns =
+        pattern_collection_info.get_patterns();
+    /*
+      We compute PDBs and pattern cliques here (if they have not been
+      computed before) so that their computation is not taken into account
+      for dominance pruning time.
+    */
     shared_ptr<PDBCollection> pdbs = pattern_collection_info.get_pdbs();
-    shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets =
-        pattern_collection_info.get_max_additive_subsets();
-    cout << "PDB collection construction time: " << timer << endl;
+    shared_ptr<vector<PatternClique>> pattern_cliques =
+        pattern_collection_info.get_pattern_cliques();
 
-    bool dominance_pruning = opts.get<bool>("dominance_pruning");
-    return CanonicalPDBs(pdbs, max_additive_subsets, dominance_pruning);
+    double max_time_dominance_pruning = opts.get<double>("max_time_dominance_pruning");
+    if (max_time_dominance_pruning > 0.0) {
+        int num_variables = TaskProxy(*task).get_variables().size();
+        /*
+          NOTE: Dominance pruning could also be computed without having access
+          to the PDBs, but since we want to delete patterns, we also want to
+          update the list of corresponding PDBs so they are synchronized.
+
+          In the long term, we plan to have patterns and their PDBs live
+          together, in which case we would only need to pass their container
+          and the pattern cliques.
+        */
+        prune_dominated_cliques(
+            *patterns,
+            *pdbs,
+            *pattern_cliques,
+            num_variables,
+            max_time_dominance_pruning);
+    }
+
+    // Do not dump pattern collections for size reasons.
+    dump_pattern_collection_generation_statistics(
+        "Canonical PDB heuristic", timer(), pattern_collection_info, false);
+    return CanonicalPDBs(pdbs, pattern_cliques);
 }
 
 CanonicalPDBsHeuristic::CanonicalPDBsHeuristic(const Options &opts)
@@ -49,7 +80,18 @@ int CanonicalPDBsHeuristic::compute_heuristic(const State &state) const {
     }
 }
 
-static Heuristic *_parse(OptionParser &parser) {
+void add_canonical_pdbs_options_to_parser(options::OptionParser &parser) {
+    parser.add_option<double>(
+        "max_time_dominance_pruning",
+        "The maximum time in seconds spent on dominance pruning. Using 0.0 "
+        "turns off dominance pruning. Dominance pruning excludes patterns "
+        "and additive subsets that will never contribute to the heuristic "
+        "value because there are dominating subsets in the collection.",
+        "infinity",
+        Bounds("0.0", "infinity"));
+}
+
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Canonical PDB",
         "The canonical pattern database heuristic is calculated as follows. "
@@ -70,12 +112,8 @@ static Heuristic *_parse(OptionParser &parser) {
         "patterns",
         "pattern generation method",
         "systematic(1)");
-    parser.add_option<bool>(
-        "dominance_pruning",
-        "Exclude patterns and pattern collections that will never contribute to "
-        "the heuristic value because there are dominating patterns in the "
-        "collection.",
-        "true");
+
+    add_canonical_pdbs_options_to_parser(parser);
 
     Heuristic::add_options_to_parser(parser);
 
@@ -83,8 +121,8 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    return new CanonicalPDBsHeuristic(opts);
+    return make_shared<CanonicalPDBsHeuristic>(opts);
 }
 
-static Plugin<Heuristic> _plugin("cpdbs", _parse);
+static Plugin<Evaluator> _plugin("cpdbs", _parse, "heuristics_pdb");
 }
