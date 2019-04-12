@@ -106,7 +106,7 @@ def transform_task(args):
         call.check_call(
             "transform-task",
             [args.transform_task],
-            stdin="output.sas",
+            stdin=args.sas_file,
             time_limit=time_limit,
             memory_limit=memory_limit)
     except subprocess.CalledProcessError as err:
