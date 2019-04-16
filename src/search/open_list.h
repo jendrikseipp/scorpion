@@ -2,7 +2,6 @@
 #define OPEN_LIST_H
 
 #include <set>
-#include <vector>
 
 #include "evaluation_context.h"
 #include "operator_id.h"
@@ -124,9 +123,6 @@ public:
     virtual bool is_dead_end(EvaluationContext &eval_context) const = 0;
     virtual bool is_reliable_dead_end(
         EvaluationContext &eval_context) const = 0;
-
-    virtual void print_statistics() const {
-    }
 };
 
 

@@ -3,6 +3,7 @@
 #include "abstraction.h"
 #include "cost_partitioning_heuristic.h"
 #include "cost_partitioning_heuristic_collection_generator.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
 #include "saturated_cost_partitioning_heuristic.h"
 #include "utils.h"
@@ -35,6 +36,10 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
     }
+}
+
+SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuristic() {
+    print_statistics();
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
@@ -118,7 +123,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
-    UnsolvabilityHeuristic unsolvability_heuristic(abstractions, costs.size());
+    UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
     CPHeuristics cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
             task_proxy, abstractions, costs, compute_saturated_cost_partitioning,

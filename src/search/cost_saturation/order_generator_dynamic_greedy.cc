@@ -42,7 +42,7 @@ Order OrderGeneratorDynamicGreedy::compute_dynamic_greedy_order_for_sample(
             vector<int> h_values = abstraction.compute_goal_distances(
                 remaining_costs);
             vector<int> saturated_costs = abstraction.compute_saturated_costs(
-                h_values, remaining_costs.size());
+                h_values);
             assert(utils::in_bounds(abstract_state_id, h_values));
             int h = h_values[abstract_state_id];
             current_h_values.push_back(h);

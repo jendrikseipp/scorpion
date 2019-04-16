@@ -3,17 +3,7 @@
 #include "abstraction.h"
 #include "abstraction_generator.h"
 #include "cost_partitioning_heuristic.h"
-#include "cost_partitioning_collection_generator.h"
-#include "max_cost_partitioning_heuristic.h"
-#include "order_generator_greedy.h"
 
-#include "../task_proxy.h"
-
-#include "../options/option_parser.h"
-#include "../options/options.h"
-#include "../task_utils/sampling.h"
-#include "../task_utils/successor_generator.h"
-#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 
@@ -48,29 +38,6 @@ Order get_default_order(int num_abstractions) {
     return indices;
 }
 
-int compute_sum_h(
-    const vector<int> &abstract_state_ids,
-    const vector<vector<int>> &h_values_by_abstraction) {
-    int sum_h = 0;
-    assert(abstract_state_ids.size() == h_values_by_abstraction.size());
-    for (size_t i = 0; i < abstract_state_ids.size(); ++i) {
-        const vector<int> &h_values = h_values_by_abstraction[i];
-        int state_id = abstract_state_ids[i];
-        if (state_id == -1) {
-            // Abstract state has been pruned.
-            return INF;
-        }
-        assert(utils::in_bounds(state_id, h_values));
-        int value = h_values[state_id];
-        assert(value >= 0);
-        if (value == INF)
-            return INF;
-        sum_h += value;
-        assert(sum_h >= 0);
-    }
-    return sum_h;
-}
-
 int compute_max_h_with_statistics(
     const CPHeuristics &cp_heuristics,
     const vector<int> &abstract_state_ids,
@@ -84,41 +51,23 @@ int compute_max_h_with_statistics(
             max_h = sum_h;
             best_id = current_id;
         }
-        assert(sum_h != INF);
         ++current_id;
     }
-    assert(max_h >= 0);
+    assert(max_h >= 0 && max_h != INF);
 
     num_best_order.resize(cp_heuristics.size(), 0);
     if (best_id != -1) {
-        assert(utils::in_bounds(best_id, num_best_order));
         ++num_best_order[best_id];
     }
 
     return max_h;
 }
 
-vector<int> get_abstract_state_ids(
-    const Abstractions &abstractions, const State &state) {
-    vector<int> abstract_state_ids;
-    abstract_state_ids.reserve(abstractions.size());
-    for (auto &abstraction : abstractions) {
-        if (abstraction) {
-            // Only add local state IDs for useful abstractions.
-            abstract_state_ids.push_back(abstraction->get_abstract_state_id(state));
-        } else {
-            // Add dummy value if abstraction will never be used.
-            abstract_state_ids.push_back(-1);
-        }
-    }
-    return abstract_state_ids;
-}
-
 void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
     for (size_t i = 0; i < remaining_costs.size(); ++i) {
         int &remaining = remaining_costs[i];
-        const int &saturated = saturated_costs[i];
+        int saturated = saturated_costs[i];
         assert(saturated <= remaining);
         /* Since we ignore transitions from states s with h(s)=INF, all
            saturated costs (h(s)-h(s')) are finite or -INF. */

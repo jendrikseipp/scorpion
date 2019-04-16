@@ -3,20 +3,27 @@
 
 #include "abstraction.h"
 
-#include "../task_proxy.h"
+#include "../abstract_task.h"
 
 #include "../pdbs/types.h"
-#include "../utils/logging.h"
 
+#include <functional>
 #include <vector>
+
+class OperatorProxy;
+class TaskProxy;
+class VariablesProxy;
 
 namespace pdbs {
 class MatchTree;
 }
 
 namespace cost_saturation {
+/* Precompute and store information about a task that is useful for projections. */
 class TaskInfo {
     int num_variables;
+    int num_operators;
+    std::vector<FactPair> goals;
 
     /* Set bit at position op_id * num_variables + var to true iff the operator
        has a precondition or an effect on variable var. */
@@ -29,9 +36,15 @@ class TaskInfo {
     /* Set bit at position op_id * num_variables + var to true iff the operator
        has an effect on variable var. */
     std::vector<bool> effect_variables;
+
+    int get_index(int op_id, int var) const {
+        return op_id * num_variables + var;
+    }
 public:
     explicit TaskInfo(const TaskProxy &task_proxy);
 
+    const std::vector<FactPair> &get_goals() const;
+    int get_num_operators() const;
     bool operator_mentions_variable(int op_id, int var) const;
     bool operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const;
     bool operator_is_active(const pdbs::Pattern &pattern, int op_id) const;
@@ -61,17 +74,36 @@ struct AbstractBackwardOperator {
     }
 };
 
-/*
-  TODO: Reduce code duplication with pdbs::PatternDatabase.
-*/
+
+class ProjectionFunction : public AbstractionFunction {
+    struct VariableAndMultiplier {
+        int pattern_var;
+        int hash_multiplier;
+
+        VariableAndMultiplier(int pattern_var, int hash_multiplier)
+            : pattern_var(pattern_var),
+              hash_multiplier(hash_multiplier) {
+        }
+    };
+    std::vector<VariableAndMultiplier> variables_and_multipliers;
+
+public:
+    ProjectionFunction(
+        const pdbs::Pattern &pattern, const std::vector<std::size_t> &hash_multipliers);
+
+    virtual int get_abstract_state_id(const State &concrete_state) const override;
+};
+
+
 class Projection : public Abstraction {
     using Facts = std::vector<FactPair>;
     using OperatorCallback =
         std::function<void (Facts &, Facts &, Facts &, int, const std::vector<size_t> &, int)>;
 
-    TaskProxy task_proxy;
     std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
+
+    std::vector<bool> looping_operators;
 
     std::vector<AbstractForwardOperator> abstract_forward_operators;
 
@@ -89,13 +121,6 @@ class Projection : public Abstraction {
 
     std::vector<int> goal_states;
 
-    // Return true iff op has an effect on a variable in the pattern.
-    bool is_operator_relevant(const OperatorProxy &op) const;
-
-    /* Return true iff there is no variable in the pattern for which op
-       has a precondition and (different) effect. */
-    bool operator_induces_loop(const OperatorProxy &op) const;
-
     std::vector<int> compute_goal_states(
         const std::vector<int> &variable_to_pattern_index) const;
 
@@ -110,12 +135,12 @@ class Projection : public Abstraction {
       irrelevant transitions).
     */
     template<class Callback>
-    void for_each_transition(const Callback &callback) const {
+    void for_each_transition_impl(const Callback &callback) const {
         // Reuse vector to save allocations.
         std::vector<FactPair> abstract_facts;
 
-        int num_operators = abstract_forward_operators.size();
-        for (int op_id = 0; op_id < num_operators; ++op_id) {
+        int num_abstract_operators = abstract_forward_operators.size();
+        for (int op_id = 0; op_id < num_abstract_operators; ++op_id) {
             const AbstractForwardOperator &op = abstract_forward_operators[op_id];
             int concrete_op_id = abstract_backward_operators[op_id].concrete_operator_id;
             abstract_facts.clear();
@@ -163,7 +188,8 @@ class Projection : public Abstraction {
       pattern or -1.
     */
     void build_abstract_operators(
-        const OperatorProxy &op, int cost,
+        const OperatorProxy &op,
+        int cost,
         const std::vector<int> &variable_to_pattern_index,
         const VariablesProxy &variables,
         const OperatorCallback &callback) const;
@@ -175,15 +201,6 @@ class Projection : public Abstraction {
         std::size_t state_index,
         const std::vector<FactPair> &abstract_facts) const;
 
-    /*
-      Use the given concrete state to calculate the index of the corresponding
-      abstract state. This is only used for table lookup during search.
-    */
-    std::size_t hash_index(const State &state) const;
-
-protected:
-    virtual void release_transition_system_memory() override;
-
 public:
     Projection(
         const TaskProxy &task_proxy,
@@ -191,15 +208,15 @@ public:
         const pdbs::Pattern &pattern);
     virtual ~Projection() override;
 
-    virtual int get_abstract_state_id(const State &concrete_state) const override;
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;
     virtual std::vector<int> compute_saturated_costs(
-        const std::vector<int> &h_values,
-        int num_operators) const override;
-    virtual int get_num_states() const override;
+        const std::vector<int> &h_values) const override;
+    virtual int get_num_operators() const override;
     virtual bool operator_is_active(int op_id) const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
+    virtual void for_each_transition(const TransitionCallback &callback) const override;
+    virtual int get_num_states() const override;
     virtual const std::vector<int> &get_goal_states() const override;
 
     const pdbs::Pattern &get_pattern() const;

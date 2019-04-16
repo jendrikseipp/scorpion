@@ -51,20 +51,21 @@ struct ProjectedEffect {
     }
 };
 
-class StateMap {
-    const pdbs::Pattern pattern;
-    const vector<int> hash_multipliers;
+
+class ExplicitProjectionFunction : public AbstractionFunction {
+    pdbs::Pattern pattern;
+    vector<int> hash_multipliers;
 public:
-    StateMap(const pdbs::Pattern &pattern, vector<int> &&hash_multipliers)
+    ExplicitProjectionFunction(const pdbs::Pattern &pattern, vector<int> &&hash_multipliers_)
         : pattern(pattern),
-          hash_multipliers(move(hash_multipliers)) {
+          hash_multipliers(move(hash_multipliers_)) {
+        assert(pattern.size() == hash_multipliers_.size());
     }
 
-    int operator()(const State &state) const {
-        assert(pattern.size() == hash_multipliers.size());
+    virtual int get_abstract_state_id(const State &concrete_state) const {
         int index = 0;
         for (size_t i = 0; i < pattern.size(); ++i) {
-            index += hash_multipliers[i] * state[pattern[i]].get_value();
+            index += hash_multipliers[i] * concrete_state[pattern[i]].get_value();
         }
         return index;
     }
@@ -311,7 +312,7 @@ bool ExplicitProjectionFactory::is_goal_state(
 
 unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {
     return utils::make_unique_ptr<ExplicitAbstraction>(
-        StateMap(pattern, move(hash_multipliers)),
+        utils::make_unique_ptr<ExplicitProjectionFunction>(pattern, move(hash_multipliers)),
         move(backward_graph),
         move(looping_operators),
         move(goal_states));

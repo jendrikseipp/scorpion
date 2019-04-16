@@ -12,7 +12,7 @@ namespace cost_saturation {
   Compute an optimal cost partitioning over abstraction heuristics.
 */
 class OptimalCostPartitioningHeuristic : public Heuristic {
-    const Abstractions abstractions;
+    AbstractionFunctions abstraction_functions;
     lp::LPSolver lp_solver;
     const bool allow_negative_costs;
 
@@ -43,12 +43,11 @@ class OptimalCostPartitioningHeuristic : public Heuristic {
 
     /*
       Cache the variables corresponding to the current state in all
-      abstractions. This makes it easier to reset the bounds for each
-      evaluation.
+      abstractions. This speeds up resetting the bounds for each evaluation.
     */
     std::vector<int> current_abstract_state_vars;
 
-    void generate_lp();
+    void generate_lp(const Abstractions &abstractions);
     void add_abstraction_variables(
         const Abstraction &abstraction,
         int abstraction_id,

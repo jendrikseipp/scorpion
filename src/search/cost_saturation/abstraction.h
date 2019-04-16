@@ -2,12 +2,17 @@
 #define COST_SATURATION_ABSTRACTION_H
 
 #include <cassert>
+#include <functional>
+#include <memory>
 #include <ostream>
 #include <vector>
 
 class State;
 
 namespace cost_saturation {
+struct Transition;
+using TransitionCallback = std::function<void (const Transition &)>;
+
 struct Transition {
     int src;
     int op;
@@ -36,27 +41,29 @@ struct Transition {
 };
 
 
+class AbstractionFunction {
+public:
+    virtual ~AbstractionFunction() = default;
+    virtual int get_abstract_state_id(const State &concrete_state) const = 0;
+};
+
+
 class Abstraction {
-    bool has_transition_system_;
-
 protected:
-    virtual void release_transition_system_memory() = 0;
-
-    bool has_transition_system() const;
+    std::unique_ptr<AbstractionFunction> abstraction_function;
 
 public:
-    Abstraction();
+    explicit Abstraction(std::unique_ptr<AbstractionFunction> abstraction_function);
     virtual ~Abstraction() = default;
 
     Abstraction(const Abstraction &) = delete;
 
-    virtual int get_abstract_state_id(const State &concrete_state) const = 0;
-
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const = 0;
     virtual std::vector<int> compute_saturated_costs(
-        const std::vector<int> &h_values,
-        int num_operators) const = 0;
+        const std::vector<int> &h_values) const = 0;
+
+    virtual int get_num_operators() const = 0;
 
     // Return true iff operator induces a state-changing transition.
     virtual bool operator_is_active(int op_id) const = 0;
@@ -65,10 +72,14 @@ public:
     // induce both state-changing transitions and self-loops.
     virtual bool operator_induces_self_loop(int op_id) const = 0;
 
+    // Call a function for each state-changing transition.
+    virtual void for_each_transition(const TransitionCallback &callback) const = 0;
+
     virtual int get_num_states() const = 0;
     virtual const std::vector<int> &get_goal_states() const = 0;
 
-    void remove_transition_system();
+    int get_abstract_state_id(const State &concrete_state) const;
+    std::unique_ptr<AbstractionFunction> extract_abstraction_function();
 
     virtual void dump() const = 0;
 };

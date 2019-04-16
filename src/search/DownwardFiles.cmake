@@ -110,6 +110,7 @@ fast_downward_plugin(
     SOURCES
         utils/collections
         utils/countdown_timer
+        utils/exceptions
         utils/hash
         utils/language
         utils/logging
@@ -134,6 +135,13 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME BEST_FIRST_OPEN_LIST
+    HELP "Open list that selects the best element according to a single evaluation function"
+    SOURCES
+        open_lists/best_first_open_list
+)
+
+fast_downward_plugin(
     NAME EPSILON_GREEDY_OPEN_LIST
     HELP "Open list that chooses an entry randomly with probability epsilon"
     SOURCES
@@ -145,13 +153,6 @@ fast_downward_plugin(
     HELP "Pareto open list"
     SOURCES
         open_lists/pareto_open_list
-)
-
-fast_downward_plugin(
-    NAME STANDARD_SCALAR_OPEN_LIST
-    HELP "Standard scalar open list"
-    SOURCES
-        open_lists/standard_scalar_open_list
 )
 
 fast_downward_plugin(
@@ -349,7 +350,7 @@ fast_downward_plugin(
     HELP "Basic classes used for all search engines"
     SOURCES
         search_engines/search_common
-    DEPENDS ALTERNATION_OPEN_LIST G_EVALUATOR STANDARD_SCALAR_OPEN_LIST SUM_EVALUATOR TIEBREAKING_OPEN_LIST WEIGHTED_EVALUATOR
+    DEPENDS ALTERNATION_OPEN_LIST G_EVALUATOR BEST_FIRST_OPEN_LIST SUM_EVALUATOR TIEBREAKING_OPEN_LIST WEIGHTED_EVALUATOR
     DEPENDENCY_ONLY
 )
 
@@ -615,9 +616,9 @@ fast_downward_plugin(
         cegar/abstract_state
         cegar/additive_cartesian_heuristic
         cegar/cartesian_heuristic_function
+        cegar/cartesian_set
         cegar/cegar
         cegar/cost_saturation
-        cegar/domains
         cegar/refinement_hierarchy
         cegar/split_selector
         cegar/subtask_generators
@@ -645,7 +646,7 @@ fast_downward_plugin(
         cost_saturation/greedy_order_utils
         cost_saturation/max_cost_partitioning_heuristic
         cost_saturation/max_heuristic
-        #cost_saturation/optimal_cost_partitioning_heuristic
+        cost_saturation/optimal_cost_partitioning_heuristic
         cost_saturation/order_generator
         cost_saturation/order_generator_dynamic_greedy
         cost_saturation/order_generator_greedy
@@ -657,6 +658,7 @@ fast_downward_plugin(
         cost_saturation/saturated_cost_partitioning_online_heuristic
         cost_saturation/types
         cost_saturation/uniform_cost_partitioning_heuristic
+        cost_saturation/unsolvability_heuristic
         cost_saturation/utils
         cost_saturation/zero_one_cost_partitioning_heuristic
     DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
@@ -748,23 +750,25 @@ fast_downward_plugin(
         pdbs/dominance_pruning
         pdbs/incremental_canonical_pdbs
         pdbs/match_tree
-        pdbs/max_additive_pdb_sets
         pdbs/max_cliques
+        pdbs/pattern_cliques
         pdbs/pattern_collection_information
-        pdbs/pattern_database
         pdbs/pattern_collection_generator_combo
         pdbs/pattern_collection_generator_filtered_systematic
         pdbs/pattern_collection_generator_genetic
         pdbs/pattern_collection_generator_hillclimbing
         pdbs/pattern_collection_generator_manual
         pdbs/pattern_collection_generator_systematic
+        pdbs/pattern_database
         pdbs/pattern_evaluator
         pdbs/pattern_generator_greedy
         pdbs/pattern_generator_manual
         pdbs/pattern_generator
+        pdbs/pattern_information
         pdbs/pdb_heuristic
         pdbs/plugin_group
         pdbs/types
+        pdbs/utils
         pdbs/validation
         pdbs/zero_one_pdbs
         pdbs/zero_one_pdbs_heuristic

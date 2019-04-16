@@ -1,8 +1,8 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 
-#include "max_cost_partitioning_heuristic.h"
 #include "types.h"
+#include "unsolvability_heuristic.h"
 
 #include "../heuristic.h"
 
@@ -27,6 +27,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     // For statistics.
     mutable std::vector<int> num_best_order;
 
+    void print_statistics() const;
     bool should_compute_scp(const State &state);
 
 protected:
@@ -38,8 +39,7 @@ public:
         Abstractions &&abstractions,
         CPHeuristics &&cp_heuristics,
         UnsolvabilityHeuristic &&unsolvability_heuristic);
-
-    virtual void print_statistics() const override;
+    virtual ~SaturatedCostPartitioningOnlineHeuristic() override;
 };
 }
 

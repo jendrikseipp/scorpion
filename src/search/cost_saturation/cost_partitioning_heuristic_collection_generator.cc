@@ -2,9 +2,9 @@
 
 #include "cost_partitioning_heuristic.h"
 #include "diversifier.h"
-#include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
 #include "order_optimizer.h"
+#include "unsolvability_heuristic.h"
 #include "utils.h"
 
 #include "../task_proxy.h"
@@ -90,7 +90,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
 
     order_generator->initialize(abstractions, costs);
 
-    // Compute h^SCP(s_0) using a greedy order for s_0.
+    // Compute h(s_0) using a greedy order for s_0.
     vector<int> abstract_state_ids_for_init = get_abstract_state_ids(
         abstractions, initial_state);
     Order order_for_init = order_generator->compute_order_for_state(

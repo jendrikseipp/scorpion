@@ -14,55 +14,9 @@
 using namespace std;
 
 namespace cost_saturation {
-static vector<bool> get_unsolvable_states(const Abstraction &abstraction, int num_ops) {
-    // Note: we could use a simple queue instead of a priority queue for this.
-    vector<bool> unsolvable_states(abstraction.get_num_states(), false);
-    vector<int> unit_costs(num_ops, 1);
-    vector<int> goal_distances = abstraction.compute_goal_distances(unit_costs);
-    for (size_t i = 0; i < goal_distances.size(); ++i) {
-        if (goal_distances[i] == INF) {
-            unsolvable_states[i] = true;
-        }
-    }
-    return unsolvable_states;
-}
-
-UnsolvabilityHeuristic::UnsolvabilityHeuristic(
-    const Abstractions &abstractions, int num_operators) {
-    for (size_t i = 0; i < abstractions.size(); ++i) {
-        vector<bool> unsolvable = get_unsolvable_states(*abstractions[i], num_operators);
-        if (any_of(unsolvable.begin(), unsolvable.end(), [](bool b) {return b;})) {
-            unsolvable_states.emplace_back(i, move(unsolvable));
-        }
-    }
-}
-
-bool UnsolvabilityHeuristic::is_unsolvable(const vector<int> &abstract_state_ids) const {
-    for (const auto &info : unsolvable_states) {
-        if (info.unsolvable_states[abstract_state_ids[info.abstraction_id]]) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void UnsolvabilityHeuristic::mark_useful_abstractions(
-    vector<bool> &useful_abstractions) const {
-    for (const auto &info : unsolvable_states) {
-        useful_abstractions[info.abstraction_id] = true;
-    }
-}
-
-
-MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
-    const options::Options &opts,
-    Abstractions &&abstractions_,
-    vector<CostPartitioningHeuristic> &&cp_heuristics_,
-    UnsolvabilityHeuristic &&unsolvability_heuristic_)
-    : Heuristic(opts),
-      abstractions(move(abstractions_)),
-      cp_heuristics(move(cp_heuristics_)),
-      unsolvability_heuristic(move(unsolvability_heuristic_)) {
+static void log_info_about_stored_lookup_tables(
+    const Abstractions &abstractions,
+    const vector<CostPartitioningHeuristic> &cp_heuristics) {
     int num_abstractions = abstractions.size();
 
     // Print statistics about the number of lookup tables.
@@ -89,6 +43,13 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     utils::Log() << "Stored values: " << num_stored_values << "/"
                  << num_total_values << " = "
                  << num_stored_values / static_cast<double>(num_total_values) << endl;
+}
+
+static AbstractionFunctions extract_abstraction_functions_from_useful_abstractions(
+    const vector<CostPartitioningHeuristic> &cp_heuristics,
+    const UnsolvabilityHeuristic &unsolvability_heuristic,
+    Abstractions &abstractions) {
+    int num_abstractions = abstractions.size();
 
     // Collect IDs of useful abstractions.
     vector<bool> useful_abstractions(num_abstractions, false);
@@ -96,26 +57,44 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     for (const auto &cp_heuristic : cp_heuristics) {
         cp_heuristic.mark_useful_abstractions(useful_abstractions);
     }
-    int num_useful_abstractions = count(
-        useful_abstractions.begin(), useful_abstractions.end(), true);
+
+    AbstractionFunctions abstraction_functions;
+    abstraction_functions.reserve(num_abstractions);
+    for (int i = 0; i < num_abstractions; ++i) {
+        if (useful_abstractions[i]) {
+            abstraction_functions.push_back(
+                abstractions[i]->extract_abstraction_function());
+        } else {
+            abstraction_functions.push_back(nullptr);
+        }
+    }
+    return abstraction_functions;
+}
+
+MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
+    const options::Options &opts,
+    Abstractions abstractions,
+    vector<CostPartitioningHeuristic> &&cp_heuristics_,
+    UnsolvabilityHeuristic &&unsolvability_heuristic_)
+    : Heuristic(opts),
+      cp_heuristics(move(cp_heuristics_)),
+      unsolvability_heuristic(move(unsolvability_heuristic_)) {
+    log_info_about_stored_lookup_tables(abstractions, cp_heuristics);
+
+    // We only need abstraction functions during search and no transition systems.
+    abstraction_functions = extract_abstraction_functions_from_useful_abstractions(
+        cp_heuristics, unsolvability_heuristic, abstractions);
+
+    int num_abstractions = abstractions.size();
+    int num_useful_abstractions = abstraction_functions.size();
     utils::Log() << "Useful abstractions: " << num_useful_abstractions << "/"
                  << num_abstractions << " = "
                  << static_cast<double>(num_useful_abstractions) / num_abstractions
                  << endl;
+}
 
-    // Delete useless abstractions.
-    for (int i = 0; i < num_abstractions; ++i) {
-        if (!useful_abstractions[i]) {
-            abstractions[i] = nullptr;
-        }
-    }
-
-    // Delete transition systems since they are not required during the search.
-    for (auto &abstraction : abstractions) {
-        if (abstraction) {
-            abstraction->remove_transition_system();
-        }
-    }
+MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {
+    print_statistics();
 }
 
 int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -124,13 +103,12 @@ int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_st
 }
 
 int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) const {
-    vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
+    vector<int> abstract_state_ids = get_abstract_state_ids(
+        abstraction_functions, state);
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
         return DEAD_END;
     }
-    int max_h = compute_max_h_with_statistics(cp_heuristics, abstract_state_ids, num_best_order);
-    assert(max_h != INF);
-    return max_h;
+    return compute_max_h_with_statistics(cp_heuristics, abstract_state_ids, num_best_order);
 }
 
 void MaxCostPartitioningHeuristic::print_statistics() const {
@@ -178,12 +156,14 @@ shared_ptr<Heuristic> get_max_cp_heuristic(
     if (parser.dry_run())
         return nullptr;
 
+    g_store_unsolvable_states_once_hacked = opts.get<bool>("store_unsolvable_states_once");
+
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
-    UnsolvabilityHeuristic unsolvability_heuristic(abstractions, costs.size());
+    UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
             task_proxy, abstractions, costs, cp_function, unsolvability_heuristic);
@@ -224,6 +204,15 @@ void add_order_options_to_parser(OptionParser &parser) {
         "maximum time for optimizing each order with hill climbing",
         "2.0",
         Bounds("0.0", "infinity"));
+    parser.add_option<bool>(
+        "store_unsolvable_states_once",
+        "store unsolvable states once per abstraction, instead of once per order. "
+        "If store_unsolvable_states_once=true, we store unsolvable states in "
+        "UnsolvabilityHeuristic. If store_unsolvable_states_once=false, we "
+        "additionally store them in the lookup tables. In any case, we use "
+        "UnsolvabilityHeuristic to detect unsolvable states. "
+        "(this option only affects the saturated_cost_partitioning() plugin)",
+        "true");
     utils::add_rng_options(parser);
 }
 

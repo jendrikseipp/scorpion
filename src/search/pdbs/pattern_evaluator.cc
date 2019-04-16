@@ -425,7 +425,7 @@ bool PatternEvaluator::is_useful(
 
         // Regress abstract state.
         applicable_operators.clear();
-        match_tree_backward->get_applicable_operators(state_index, applicable_operators);
+        match_tree_backward->get_applicable_operator_ids(state_index, applicable_operators);
         for (int abs_op_id : applicable_operators) {
             const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
             size_t predecessor = state_index + op.hash_effect;

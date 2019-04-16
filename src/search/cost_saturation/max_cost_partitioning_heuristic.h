@@ -2,9 +2,11 @@
 #define COST_SATURATION_MAX_COST_PARTITIONING_HEURISTIC_H
 
 #include "types.h"
+#include "unsolvability_heuristic.h"
 
 #include "../heuristic.h"
 
+#include <memory>
 #include <vector>
 
 namespace options {
@@ -12,40 +14,22 @@ class Options;
 }
 
 namespace cost_saturation {
+class AbstractionFunction;
 class CostPartitioningHeuristicCollectionGenerator;
 class CostPartitioningHeuristic;
-
-class UnsolvabilityHeuristic {
-    struct UnsolvabilityInfo {
-        int abstraction_id;
-        std::vector<bool> unsolvable_states;
-
-        UnsolvabilityInfo(int abstraction_id, std::vector<bool> &&unsolvable_states)
-            : abstraction_id(abstraction_id),
-              unsolvable_states(move(unsolvable_states)) {
-        }
-    };
-
-    std::vector<UnsolvabilityInfo> unsolvable_states;
-
-public:
-    UnsolvabilityHeuristic(const Abstractions &abstractions, int num_operators);
-
-    bool is_unsolvable(const std::vector<int> &abstract_state_ids) const;
-    void mark_useful_abstractions(std::vector<bool> &useful_abstractions) const;
-};
 
 /*
   Compute the maximum over multiple cost partitioning heuristics.
 */
 class MaxCostPartitioningHeuristic : public Heuristic {
-    Abstractions abstractions;
-    const std::vector<CostPartitioningHeuristic> cp_heuristics;
+    std::vector<std::unique_ptr<AbstractionFunction>> abstraction_functions;
+    std::vector<CostPartitioningHeuristic> cp_heuristics;
     UnsolvabilityHeuristic unsolvability_heuristic;
 
     // For statistics.
     mutable std::vector<int> num_best_order;
 
+    void print_statistics() const;
     int compute_heuristic(const State &state) const;
 
 protected:
@@ -54,11 +38,10 @@ protected:
 public:
     MaxCostPartitioningHeuristic(
         const options::Options &opts,
-        Abstractions &&abstractions,
+        Abstractions abstractions,
         std::vector<CostPartitioningHeuristic> &&cp_heuristics,
         UnsolvabilityHeuristic &&unsolvability_heuristic);
-
-    virtual void print_statistics() const override;
+    virtual ~MaxCostPartitioningHeuristic() override;
 };
 
 extern std::shared_ptr<Heuristic> get_max_cp_heuristic(

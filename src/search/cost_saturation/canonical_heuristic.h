@@ -16,22 +16,18 @@ using MaxAdditiveSubset = std::vector<int>;
 using MaxAdditiveSubsets = std::vector<MaxAdditiveSubset>;
 
 class CanonicalHeuristic : public Heuristic {
-    int compute_max_h(const std::vector<int> &abstract_state_ids) const;
+    AbstractionFunctions abstraction_functions;
+    std::vector<std::vector<int>> h_values_by_abstraction;
+    MaxAdditiveSubsets max_additive_subsets;
+
+    int compute_max_over_sums(const std::vector<int> &h_values_for_state) const;
     int compute_heuristic(const State &state);
 
 protected:
-    Abstractions abstractions;
-    std::vector<std::vector<int>> h_values_by_abstraction;
-    MaxAdditiveSubsets max_additive_subsets;
-    const bool debug;
-
     virtual int compute_heuristic(const GlobalState &global_state) override;
 
 public:
     explicit CanonicalHeuristic(const options::Options &opts);
-    virtual ~CanonicalHeuristic() override;
-
-    virtual void print_statistics() const override;
 };
 }
 

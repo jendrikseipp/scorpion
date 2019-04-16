@@ -437,7 +437,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             if (saturate) {
                 vector<int> goal_distances = projection->compute_goal_distances(costs);
                 vector<int> saturated_costs = projection->compute_saturated_costs(
-                    goal_distances, costs.size());
+                    goal_distances);
                 cost_saturation::reduce_costs(costs, saturated_costs);
             }
             projections->push_back(move(projection));
