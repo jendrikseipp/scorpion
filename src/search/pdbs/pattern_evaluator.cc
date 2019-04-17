@@ -92,6 +92,24 @@ bool PartialStateCollection::subsumes(const std::vector<FactPair> &facts) const 
     return false;
 }
 
+static bool consistent(const State &state, const array_pool::ArrayPoolSlice<FactPair> &slice) {
+    for (const FactPair &fact : slice) {
+        if (state[fact.var].get_value() != fact.value) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool PartialStateCollection::subsumes(const State &state) const {
+    for (int i = 0; i < partial_states.size(); ++i) {
+        if (consistent(state, partial_states.get_slice(i))) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void PartialStateCollection::clear() {
     partial_states = array_pool::ArrayPool<FactPair>();
 }

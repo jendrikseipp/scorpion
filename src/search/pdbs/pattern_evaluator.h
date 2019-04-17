@@ -73,6 +73,7 @@ class PartialStateCollection {
 public:
     void add(std::vector<FactPair> &&facts);
     bool subsumes(const std::vector<FactPair> &facts) const;
+    bool subsumes(const State &state) const;
     void clear();
     int size() const;
     void dump() const;
