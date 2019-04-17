@@ -100,6 +100,19 @@ int PartialStateCollection::size() const {
     return partial_states.size();
 }
 
+void PartialStateCollection::dump() const {
+    // TODO: Make output prettier.
+    for (int i = 0; i < partial_states.size(); ++i) {
+        array_pool::ArrayPoolSlice<FactPair> slice = partial_states.get_slice(i);
+        cout << "[";
+        for (const FactPair &fact : slice) {
+            cout << fact << ",";
+        }
+        cout << "], ";
+    }
+    cout << endl;
+}
+
 
 static bool operator_is_subsumed(
     const OperatorInfo &op,

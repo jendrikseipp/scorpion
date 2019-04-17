@@ -423,6 +423,10 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                 assert(dead_end_treatment == DeadEndTreatment::NEW ||
                        dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER);
             }
+            if (debug) {
+                cout << "Dead ends: ";
+                dead_ends.dump();
+            }
 #endif
         }
 

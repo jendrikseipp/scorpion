@@ -75,6 +75,7 @@ public:
     bool subsumes(const std::vector<FactPair> &facts) const;
     void clear();
     int size() const;
+    void dump() const;
 };
 
 using AbstractOperatorSet = utils::HashMap<
