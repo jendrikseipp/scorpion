@@ -103,6 +103,9 @@ int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_st
 }
 
 int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) const {
+    if (dead_ends_hacked && dead_ends_hacked->subsumes(state)) {
+        return DEAD_END;
+    }
     vector<int> abstract_state_ids = get_abstract_state_ids(
         abstraction_functions, state);
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
