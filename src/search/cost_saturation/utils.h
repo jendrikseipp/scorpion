@@ -4,6 +4,8 @@
 #include "abstraction.h"
 #include "types.h"
 
+#include "../pdbs/pattern_evaluator.h"
+
 #include <iostream>
 #include <vector>
 
@@ -14,6 +16,7 @@ namespace cost_saturation {
 class AbstractionGenerator;
 
 extern std::vector<Order> systematic_generator_orders_hacked;
+extern std::unique_ptr<pdbs::PartialStateCollection> dead_ends_hacked;
 
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,

@@ -473,7 +473,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         task, evaluator_task_info, max_pattern_size, only_sga_patterns,
         only_interesting_patterns, pattern_order, *rng);
     priority_queues::AdaptiveQueue<size_t> pq;
-    PartialStateCollection dead_ends;
+    cost_saturation::dead_ends_hacked = utils::make_unique_ptr<PartialStateCollection>();
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     int64_t collection_size = 0;
@@ -482,11 +482,12 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     while (!limit_reached) {
         pattern_generator.restart();
         if (dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER) {
-            dead_ends.clear();
+            cost_saturation::dead_ends_hacked->clear();
         }
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
-            task, task_info, evaluator_task_info, pattern_generator, dead_ends,
+            task, task_info, evaluator_task_info, pattern_generator,
+            *cost_saturation::dead_ends_hacked,
             pq, projections, pattern_set, collection_size,
             timer.get_remaining_time());
         int num_patterns_after = projections->size();
@@ -525,7 +526,10 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         : static_cast<double>(projections->size()) / num_generated_patterns;
     log << "Selected ordered systematic patterns: " << projections->size()
         << "/" << num_generated_patterns << " = " << percent_selected << endl;
-    log << "Systematic dead ends: " << dead_ends.size() << endl;
+    log << "Systematic dead ends: " << cost_saturation::dead_ends_hacked->size() << endl;
+    if (dead_end_treatment != DeadEndTreatment::STORE) {
+        cost_saturation::dead_ends_hacked = nullptr;
+    }
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());
