@@ -22,6 +22,7 @@ enum class DeadEndTreatment {
     ALL,
     NEW,
     NEW_FOR_CURRENT_ORDER,
+    STORE,
 };
 
 struct AbstractBackwardOperator {
@@ -73,6 +74,7 @@ public:
     void add(std::vector<FactPair> &&facts);
     bool subsumes(const std::vector<FactPair> &facts) const;
     void clear();
+    int size() const;
 };
 
 using AbstractOperatorSet = utils::HashMap<

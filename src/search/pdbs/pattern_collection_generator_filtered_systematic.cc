@@ -411,7 +411,8 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 #ifndef NDEBUG
             vector<int> goal_distances = cost_saturation::Projection(
                 task_proxy, task_info, pattern).compute_goal_distances(costs);
-            if (dead_end_treatment == DeadEndTreatment::IGNORE) {
+            if (dead_end_treatment == DeadEndTreatment::IGNORE ||
+                dead_end_treatment == DeadEndTreatment::STORE) {
                 assert(select_pattern ==
                        contains_positive_finite_value(goal_distances));
             } else if (dead_end_treatment == DeadEndTreatment::ALL) {
@@ -520,6 +521,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         : static_cast<double>(projections->size()) / num_generated_patterns;
     log << "Selected ordered systematic patterns: " << projections->size()
         << "/" << num_generated_patterns << " = " << percent_selected << endl;
+    log << "Systematic dead ends: " << dead_ends.size() << endl;
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     patterns->reserve(projections->size());
@@ -588,6 +590,7 @@ static void add_options(OptionParser &parser) {
     dead_end_treatments.push_back("ALL");
     dead_end_treatments.push_back("NEW");
     dead_end_treatments.push_back("NEW_FOR_CURRENT_ORDER");
+    dead_end_treatments.push_back("STORE");
     parser.add_enum_option(
         "dead_ends",
         dead_end_treatments,

@@ -96,6 +96,10 @@ void PartialStateCollection::clear() {
     partial_states = array_pool::ArrayPool<FactPair>();
 }
 
+int PartialStateCollection::size() const {
+    return partial_states.size();
+}
+
 
 static bool operator_is_subsumed(
     const OperatorInfo &op,
@@ -448,6 +452,12 @@ bool PatternEvaluator::is_useful(
         return false;
     } else if (dead_end_treatment == DeadEndTreatment::ALL) {
         return has_dead_end;
+    } else if (dead_end_treatment == DeadEndTreatment::STORE) {
+        if (has_dead_end) {
+            // Add new dead ends to database, ignore result.
+            detects_new_dead_ends(pattern, distances, dead_ends);
+        }
+        return false;
     } else {
         assert(dead_end_treatment == DeadEndTreatment::NEW ||
                dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER);
