@@ -110,10 +110,6 @@ bool PartialStateCollection::subsumes(const State &state) const {
     return false;
 }
 
-void PartialStateCollection::clear() {
-    partial_states = array_pool::ArrayPool<FactPair>();
-}
-
 int PartialStateCollection::size() const {
     return partial_states.size();
 }
@@ -490,8 +486,7 @@ bool PatternEvaluator::is_useful(
         }
         return false;
     } else {
-        assert(dead_end_treatment == DeadEndTreatment::NEW ||
-               dead_end_treatment == DeadEndTreatment::NEW_FOR_CURRENT_ORDER);
+        assert(dead_end_treatment == DeadEndTreatment::NEW);
         if (has_dead_end) {
             return detects_new_dead_ends(pattern, distances, dead_ends);
         } else {

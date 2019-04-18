@@ -21,7 +21,6 @@ enum class DeadEndTreatment {
     IGNORE,
     ALL,
     NEW,
-    NEW_FOR_CURRENT_ORDER,
     STORE,
 };
 
@@ -74,7 +73,6 @@ public:
     void add(std::vector<FactPair> &&facts);
     bool subsumes(const std::vector<FactPair> &facts) const;
     bool subsumes(const State &state) const;
-    void clear();
     int size() const;
     void dump() const;
 };
