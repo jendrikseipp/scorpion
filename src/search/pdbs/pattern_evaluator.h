@@ -81,8 +81,7 @@ public:
     void dump() const;
 };
 
-using AbstractOperatorSet = utils::HashMap<
-    std::vector<FactPair>, PartialStateCollection>;
+using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PartialStateTree>;
 
 class PatternEvaluator {
     const TaskInfo &task_info;

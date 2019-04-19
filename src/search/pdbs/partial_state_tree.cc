@@ -118,7 +118,10 @@ PartialStateTree::~PartialStateTree() {
 
 void PartialStateTree::add(
     const std::vector<FactPair> &partial_state, const vector<int> &domain_sizes) {
-    assert(!partial_state.empty());
+    if (partial_state.empty()) {
+        // The empty partial state subsumes everything.
+        root = utils::make_unique_ptr<PartialStateTreeLeafNode>();
+    }
     if (!root) {
         int root_var = partial_state[0].var;
         root = utils::make_unique_ptr<PartialStateTreeSwitchNode>(

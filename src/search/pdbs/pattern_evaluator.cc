@@ -141,6 +141,7 @@ void PartialStateCollection::dump() const {
 static bool operator_is_subsumed(
     const OperatorInfo &op,
     const vector<int> &variable_to_pattern_index,
+    const vector<int> &pattern_domain_sizes,
     AbstractOperatorSet &seen_abstract_ops) {
     vector<FactPair> abstract_preconditions;
     for (const FactPair &pre : op.preconditions) {
@@ -163,13 +164,15 @@ static bool operator_is_subsumed(
 
     auto it = seen_abstract_ops.find(abstract_effects);
     if (it == seen_abstract_ops.end()) {
-        seen_abstract_ops[move(abstract_effects)].add(move(abstract_preconditions));
+        seen_abstract_ops[move(abstract_effects)].add(
+            abstract_preconditions, pattern_domain_sizes);
     } else {
-        PartialStateCollection &preconditions_collection = it->second;
+        PartialStateTree &preconditions_collection = it->second;
         if (preconditions_collection.subsumes(abstract_preconditions)) {
             return true;
         } else {
-            preconditions_collection.add(move(abstract_preconditions));
+            preconditions_collection.add(
+                abstract_preconditions, pattern_domain_sizes);
         }
     }
     return false;
@@ -236,7 +239,8 @@ PatternEvaluator::PatternEvaluator(
     AbstractOperatorSet seen_abstract_ops;
     for (pair<int, int> op_and_num_preconditions : active_ops) {
         const OperatorInfo &op = task_info.operator_infos[op_and_num_preconditions.first];
-        if (!operator_is_subsumed(op, variable_to_pattern_index, seen_abstract_ops)) {
+        if (!operator_is_subsumed(
+                op, variable_to_pattern_index, pattern_domain_sizes, seen_abstract_ops)) {
             build_abstract_operators(
                 hash_multipliers, op, variable_to_pattern_index, pattern_domain_sizes);
         }
