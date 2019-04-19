@@ -74,6 +74,10 @@ int TaskInfo::get_num_operators() const {
     return operator_infos.size();
 }
 
+int TaskInfo::get_num_variables() const {
+    return num_variables;
+}
+
 
 void PartialStateCollection::add(vector<FactPair> &&facts) {
     assert(is_sorted(facts.begin(), facts.end()));
@@ -182,12 +186,11 @@ PatternEvaluator::PatternEvaluator(
     vector<size_t> hash_multipliers;
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
-    for (int pattern_var_id : pattern) {
+    for (int var : pattern) {
         hash_multipliers.push_back(num_states);
-        VariableProxy var = task_proxy.get_variables()[pattern_var_id];
-        if (utils::is_product_within_limit(num_states, var.get_domain_size(),
-                                           numeric_limits<int>::max())) {
-            num_states *= var.get_domain_size();
+        if (utils::is_product_within_limit(
+                num_states, domain_sizes[var], numeric_limits<int>::max())) {
+            num_states *= domain_sizes[var];
         } else {
             cerr << "Given pattern is too large! (Overflow occured): " << endl;
             cerr << pattern << endl;
@@ -195,9 +198,7 @@ PatternEvaluator::PatternEvaluator(
         }
     }
 
-    VariablesProxy variables = task_proxy.get_variables();
-
-    vector<int> variable_to_pattern_index(variables.size(), -1);
+    vector<int> variable_to_pattern_index(task_info.get_num_variables(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_pattern_index[pattern[i]] = i;
     }
@@ -205,7 +206,7 @@ PatternEvaluator::PatternEvaluator(
     vector<int> pattern_domain_sizes;
     pattern_domain_sizes.reserve(pattern.size());
     for (int var : pattern) {
-        pattern_domain_sizes.push_back(variables[var].get_domain_size());
+        pattern_domain_sizes.push_back(domain_sizes[var]);
     }
 
     match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(

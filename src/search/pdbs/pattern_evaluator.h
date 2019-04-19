@@ -66,6 +66,7 @@ public:
     }
 
     int get_num_operators() const;
+    int get_num_variables() const;
 };
 
 class PartialStateCollection {
