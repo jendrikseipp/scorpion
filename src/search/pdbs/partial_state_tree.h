@@ -9,20 +9,18 @@ namespace pdbs {
 class PartialStateTreeNode;
 
 class PartialStateTree {
-    int num_dead_ends;
-    PartialStateTreeNode *root;
+    int num_partial_states;
+    std::unique_ptr<PartialStateTreeNode> root;
 public:
     PartialStateTree();
     ~PartialStateTree();
 
-    void add(const std::vector<FactProxy> &dead);
-
-    bool recognizes(const std::vector<FactProxy> &partial_state) const;
-    bool recognizes(const State &state) const;
-
-    int size() {
-        return num_dead_ends;
-    }
+    void add(
+        const std::vector<FactPair> &partial_state,
+        const std::vector<int> &domain_sizes);
+    bool subsumes(const std::vector<FactPair> &partial_state) const;
+    bool subsumes(const State &state) const;
+    int size();
 };
 }
 
