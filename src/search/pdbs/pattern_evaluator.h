@@ -48,11 +48,12 @@ public:
 struct TaskInfo {
     int num_variables;
     std::vector<OperatorInfo> operator_infos;
+    std::vector<FactPair> goals;
 
     /* The bit at position op_id * num_variables + var is true iff the operator
        has an effect on variable var. */
     std::vector<bool> variable_effects;
-public:
+
     explicit TaskInfo(const TaskProxy &task_proxy);
 
     template<typename Iterable>
@@ -83,7 +84,7 @@ using AbstractOperatorSet = utils::HashMap<
     std::vector<FactPair>, PartialStateCollection>;
 
 class PatternEvaluator {
-    TaskProxy task_proxy;
+    const TaskInfo &task_info;
     std::vector<int> domain_sizes;
 
     std::vector<AbstractBackwardOperator> abstract_backward_operators;

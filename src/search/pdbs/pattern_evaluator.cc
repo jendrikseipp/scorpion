@@ -4,6 +4,7 @@
 #include "partial_state_tree.h"
 
 #include "../algorithms/priority_queues.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
@@ -56,6 +57,7 @@ OperatorInfo::OperatorInfo(const OperatorProxy &op)
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     num_variables = task_proxy.get_variables().size();
+    goals = task_properties::get_fact_pairs(task_proxy.get_goals());
     int num_operators = task_proxy.get_operators().size();
     operator_infos.reserve(num_operators);
     for (OperatorProxy op : task_proxy.get_operators()) {
@@ -176,7 +178,7 @@ PatternEvaluator::PatternEvaluator(
     const TaskInfo &task_info,
     const pdbs::Pattern &pattern,
     const vector<int> &costs)
-    : task_proxy(task_proxy) {
+    : task_info(task_info) {
     assert(utils::is_sorted_unique(pattern));
 
     for (VariableProxy var : task_proxy.get_variables()) {
@@ -257,11 +259,9 @@ vector<int> PatternEvaluator::compute_goal_states(
 
     // Compute abstract goal var-val pairs.
     vector<FactPair> abstract_goals;
-    for (FactProxy goal : task_proxy.get_goals()) {
-        int var_id = goal.get_variable().get_id();
-        int val = goal.get_value();
-        if (variable_to_pattern_index[var_id] != -1) {
-            abstract_goals.emplace_back(variable_to_pattern_index[var_id], val);
+    for (const FactPair &goal : task_info.goals) {
+        if (variable_to_pattern_index[goal.var] != -1) {
+            abstract_goals.emplace_back(variable_to_pattern_index[goal.var], goal.value);
         }
     }
 
