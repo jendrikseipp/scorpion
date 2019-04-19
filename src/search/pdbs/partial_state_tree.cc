@@ -55,12 +55,10 @@ public:
         const vector<int> &domain_sizes,
         int index) override {
         const FactPair &current_fact = partial_state[index];
-        int current_var = current_fact.var;
-        int current_value = current_fact.value;
         PartialStateTreeNode **successor;
         int next_index = index;
-        if (var_id == current_var) {
-            successor = &value_successors[current_value];
+        if (var_id == current_fact.var) {
+            successor = &value_successors[current_fact.value];
             ++next_index;
         } else {
             successor = &ignore_successor;
@@ -83,12 +81,10 @@ public:
         if (index == static_cast<int>(partial_state.size()))
             return false;
         const FactPair &current_fact = partial_state[index];
-        int current_var_id = current_fact.var;
-        int current_value = current_fact.value;
         int next_index = index;
-        if (var_id == current_var_id) {
+        if (var_id == current_fact.var) {
             ++next_index;
-            PartialStateTreeNode *value_successor = value_successors[current_value];
+            PartialStateTreeNode *value_successor = value_successors[current_fact.value];
             if (value_successor && value_successor->contains(partial_state, next_index))
                 return true;
         }
@@ -99,11 +95,8 @@ public:
 
     virtual bool contains(const State &state) const override {
         PartialStateTreeNode *value_successor = value_successors[state[var_id].get_value()];
-        if (value_successor && value_successor->contains(state))
-            return true;
-        if (ignore_successor && ignore_successor->contains(state))
-            return true;
-        return false;
+        return (value_successor && value_successor->contains(state)) ||
+               (ignore_successor && ignore_successor->contains(state));
     }
 };
 
