@@ -44,8 +44,6 @@ enum class PatternOrder {
 };
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
-    using PatternSet = utils::HashSet<Pattern>;
-
     const int max_pattern_size;
     const int max_pdb_size;
     const int max_collection_size;
@@ -79,6 +77,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
         priority_queues::AdaptiveQueue<size_t> &pq,
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,
+        PatternSet &patterns_checked_for_dead_ends,
         int64_t &collection_size,
         double overall_remaining_time);
 public:
