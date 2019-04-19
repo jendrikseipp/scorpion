@@ -84,60 +84,6 @@ int TaskInfo::get_num_variables() const {
 }
 
 
-void PartialStateCollection::add(vector<FactPair> &&facts) {
-    assert(is_sorted(facts.begin(), facts.end()));
-    partial_states.append(move(facts));
-}
-
-bool PartialStateCollection::subsumes(const std::vector<FactPair> &facts) const {
-    assert(is_sorted(facts.begin(), facts.end()));
-    for (int i = 0; i < partial_states.size(); ++i) {
-        array_pool::ArrayPoolSlice<FactPair> slice = partial_states.get_slice(i);
-        if (includes(
-                facts.begin(), facts.end(),
-                slice.begin(), slice.end())) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool consistent(const State &state, const array_pool::ArrayPoolSlice<FactPair> &slice) {
-    for (const FactPair &fact : slice) {
-        if (state[fact.var].get_value() != fact.value) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool PartialStateCollection::subsumes(const State &state) const {
-    for (int i = 0; i < partial_states.size(); ++i) {
-        if (consistent(state, partial_states.get_slice(i))) {
-            return true;
-        }
-    }
-    return false;
-}
-
-int PartialStateCollection::size() const {
-    return partial_states.size();
-}
-
-void PartialStateCollection::dump() const {
-    // TODO: Make output prettier.
-    for (int i = 0; i < partial_states.size(); ++i) {
-        array_pool::ArrayPoolSlice<FactPair> slice = partial_states.get_slice(i);
-        cout << "[";
-        for (const FactPair &fact : slice) {
-            cout << fact << ",";
-        }
-        cout << "], ";
-    }
-    cout << endl;
-}
-
-
 static bool operator_is_subsumed(
     const OperatorInfo &op,
     const vector<int> &variable_to_pattern_index,

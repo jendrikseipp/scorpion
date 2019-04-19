@@ -18,6 +18,8 @@ namespace pdbs {
 class MatchTree;
 class PartialStateTree;
 
+using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PartialStateTree>;
+
 enum class DeadEndTreatment {
     IGNORE,
     ALL,
@@ -36,6 +38,7 @@ struct AbstractBackwardOperator {
           hash_effect(hash_effect) {
     }
 };
+
 
 struct OperatorInfo {
     int concrete_operator_id;
@@ -70,18 +73,6 @@ struct TaskInfo {
     int get_num_operators() const;
     int get_num_variables() const;
 };
-
-class PartialStateCollection {
-    array_pool::ArrayPool<FactPair> partial_states;
-public:
-    void add(std::vector<FactPair> &&facts);
-    bool subsumes(const std::vector<FactPair> &facts) const;
-    bool subsumes(const State &state) const;
-    int size() const;
-    void dump() const;
-};
-
-using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PartialStateTree>;
 
 class PatternEvaluator {
     const TaskInfo &task_info;
