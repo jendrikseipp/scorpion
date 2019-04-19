@@ -751,6 +751,7 @@ fast_downward_plugin(
         pdbs/incremental_canonical_pdbs
         pdbs/match_tree
         pdbs/max_cliques
+        pdbs/partial_state_tree
         pdbs/pattern_cliques
         pdbs/pattern_collection_information
         pdbs/pattern_collection_generator_combo
