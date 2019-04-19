@@ -57,6 +57,9 @@ OperatorInfo::OperatorInfo(const OperatorProxy &op)
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     num_variables = task_proxy.get_variables().size();
+    for (VariableProxy var : task_proxy.get_variables()) {
+        domain_sizes.push_back(var.get_domain_size());
+    }
     goals = task_properties::get_fact_pairs(task_proxy.get_goals());
     int num_operators = task_proxy.get_operators().size();
     operator_infos.reserve(num_operators);
@@ -181,18 +184,14 @@ PatternEvaluator::PatternEvaluator(
     : task_info(task_info) {
     assert(utils::is_sorted_unique(pattern));
 
-    for (VariableProxy var : task_proxy.get_variables()) {
-        domain_sizes.push_back(var.get_domain_size());
-    }
-
     vector<size_t> hash_multipliers;
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
     for (int var : pattern) {
         hash_multipliers.push_back(num_states);
         if (utils::is_product_within_limit(
-                num_states, domain_sizes[var], numeric_limits<int>::max())) {
-            num_states *= domain_sizes[var];
+                num_states, task_info.domain_sizes[var], numeric_limits<int>::max())) {
+            num_states *= task_info.domain_sizes[var];
         } else {
             cerr << "Given pattern is too large! (Overflow occured): " << endl;
             cerr << pattern << endl;
@@ -208,7 +207,7 @@ PatternEvaluator::PatternEvaluator(
     vector<int> pattern_domain_sizes;
     pattern_domain_sizes.reserve(pattern.size());
     for (int var : pattern) {
-        pattern_domain_sizes.push_back(domain_sizes[var]);
+        pattern_domain_sizes.push_back(task_info.domain_sizes[var]);
     }
 
     match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
@@ -417,7 +416,7 @@ bool PatternEvaluator::detects_new_dead_ends(
             reverse(partial_state.begin(), partial_state.end());
             if (!dead_ends.subsumes(partial_state)) {
                 new_dead_end_detected = true;
-                dead_ends.add(partial_state, domain_sizes);
+                dead_ends.add(partial_state, task_info.domain_sizes);
             }
         }
     }

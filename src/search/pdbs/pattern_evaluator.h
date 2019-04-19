@@ -47,6 +47,7 @@ public:
 
 struct TaskInfo {
     int num_variables;
+    std::vector<int> domain_sizes;
     std::vector<OperatorInfo> operator_infos;
     std::vector<FactPair> goals;
 
@@ -85,7 +86,6 @@ using AbstractOperatorSet = utils::HashMap<
 
 class PatternEvaluator {
     const TaskInfo &task_info;
-    std::vector<int> domain_sizes;
 
     std::vector<AbstractBackwardOperator> abstract_backward_operators;
     std::unique_ptr<pdbs::MatchTree> match_tree_backward;
