@@ -1,6 +1,7 @@
 #include "pattern_evaluator.h"
 
 #include "match_tree.h"
+#include "partial_state_tree.h"
 
 #include "../algorithms/priority_queues.h"
 #include "../utils/collections.h"
@@ -173,6 +174,10 @@ PatternEvaluator::PatternEvaluator(
     const vector<int> &costs)
     : task_proxy(task_proxy) {
     assert(utils::is_sorted_unique(pattern));
+
+    for (VariableProxy var : task_proxy.get_variables()) {
+        domain_sizes.push_back(var.get_domain_size());
+    }
 
     vector<size_t> hash_multipliers;
     hash_multipliers.reserve(pattern.size());
@@ -392,7 +397,7 @@ bool PatternEvaluator::is_consistent(
 bool PatternEvaluator::detects_new_dead_ends(
     const Pattern &pattern,
     const vector<int> &distances,
-    PartialStateCollection &dead_ends) const {
+    PartialStateTree &dead_ends) const {
     const vector<size_t> &hash_multipliers = match_tree_backward->get_hash_multipliers();
     int pattern_size = hash_multipliers.size();
     bool new_dead_end_detected = false;
@@ -411,7 +416,7 @@ bool PatternEvaluator::detects_new_dead_ends(
             reverse(partial_state.begin(), partial_state.end());
             if (!dead_ends.subsumes(partial_state)) {
                 new_dead_end_detected = true;
-                dead_ends.add(move(partial_state));
+                dead_ends.add(partial_state, domain_sizes);
             }
         }
     }
@@ -421,7 +426,7 @@ bool PatternEvaluator::detects_new_dead_ends(
 bool PatternEvaluator::is_useful(
     const Pattern &pattern,
     priority_queues::AdaptiveQueue<size_t> &pq,
-    PartialStateCollection &dead_ends,
+    PartialStateTree &dead_ends,
     DeadEndTreatment dead_end_treatment,
     const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));

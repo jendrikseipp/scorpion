@@ -335,7 +335,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
     const TaskInfo &evaluator_task_info,
     SequentialPatternGenerator &pattern_generator,
-    PartialStateCollection &dead_ends,
+    PartialStateTree &dead_ends,
     priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
@@ -429,10 +429,6 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
             } else {
                 assert(dead_end_treatment == DeadEndTreatment::NEW);
             }
-            if (debug) {
-                cout << "Dead ends: ";
-                dead_ends.dump();
-            }
 #endif
         }
 
@@ -479,7 +475,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         task, evaluator_task_info, max_pattern_size, only_sga_patterns,
         only_interesting_patterns, pattern_order, *rng);
     priority_queues::AdaptiveQueue<size_t> pq;
-    cost_saturation::dead_ends_hacked = utils::make_unique_ptr<PartialStateCollection>();
+    cost_saturation::dead_ends_hacked = utils::make_unique_ptr<PartialStateTree>();
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     PatternSet patterns_checked_for_dead_ends;
