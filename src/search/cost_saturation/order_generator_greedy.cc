@@ -15,7 +15,8 @@ using namespace std;
 
 namespace cost_saturation {
 OrderGeneratorGreedy::OrderGeneratorGreedy(const Options &opts)
-    : scoring_function(
+    : OrderGenerator(opts),
+      scoring_function(
           static_cast<ScoringFunction>(opts.get_enum("scoring_function"))) {
 }
 
@@ -107,6 +108,7 @@ Order OrderGeneratorGreedy::compute_order_for_state(
 
 static shared_ptr<OrderGenerator> _parse_greedy(OptionParser &parser) {
     add_scoring_function_to_parser(parser);
+    add_common_order_generator_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
