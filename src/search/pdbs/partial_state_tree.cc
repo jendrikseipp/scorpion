@@ -65,7 +65,9 @@ public:
         }
 
         if (*successor) {
-            (*successor)->add(partial_state, domain_sizes, next_index);
+            if (next_index < static_cast<int>(partial_state.size())) {
+                (*successor)->add(partial_state, domain_sizes, next_index);
+            }
         } else {
             if (next_index == static_cast<int>(partial_state.size())) {
                 *successor = new PartialStateTreeLeafNode();
