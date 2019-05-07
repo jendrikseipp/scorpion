@@ -393,6 +393,8 @@ bool PatternEvaluator::is_useful(
     // Reuse vector to save allocations.
     vector<int> applicable_operators;
 
+    bool found_positive_finite_goal_distance = false;
+
     // Run Dijkstra loop.
     while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
@@ -406,7 +408,7 @@ bool PatternEvaluator::is_useful(
         ++num_settled;
 
         if (distance > 0) {
-            return true;
+            found_positive_finite_goal_distance = true;
         }
 
         // Regress abstract state.
@@ -431,21 +433,22 @@ bool PatternEvaluator::is_useful(
     assert(has_dead_end ==
            any_of(distances.begin(), distances.end(), [](int d) {return d == INF;}));
     if (dead_end_treatment == DeadEndTreatment::IGNORE) {
-        return false;
+        return found_positive_finite_goal_distance;
     } else if (dead_end_treatment == DeadEndTreatment::ALL) {
-        return has_dead_end;
+        return found_positive_finite_goal_distance || has_dead_end;
     } else if (dead_end_treatment == DeadEndTreatment::STORE) {
         if (has_dead_end) {
             // Add new dead ends to database, ignore result.
             detects_new_dead_ends(pattern, distances, dead_ends);
         }
-        return false;
+        return found_positive_finite_goal_distance;
     } else {
         assert(dead_end_treatment == DeadEndTreatment::NEW);
         if (has_dead_end) {
-            return detects_new_dead_ends(pattern, distances, dead_ends);
+            return detects_new_dead_ends(pattern, distances, dead_ends) ||
+                   found_positive_finite_goal_distance;
         } else {
-            return false;
+            return found_positive_finite_goal_distance;
         }
     }
 }
