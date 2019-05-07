@@ -117,7 +117,8 @@ class PatternEvaluator {
     bool detects_new_dead_ends(
         const Pattern &pattern,
         const std::vector<int> &distances,
-        PartialStateTree &dead_ends) const;
+        PartialStateTree &dead_ends,
+        const PartialStateTree *ignored_dead_ends = nullptr) const;
 
 public:
     PatternEvaluator(
@@ -130,7 +131,8 @@ public:
     bool is_useful(
         const Pattern &pattern,
         priority_queues::AdaptiveQueue<size_t> &pq,
-        PartialStateTree &dead_ends,
+        PartialStateTree &recognized_dead_ends,
+        PartialStateTree &extra_dead_ends,
         DeadEndTreatment dead_end_treatment,
         const std::vector<int> &costs) const;
 };
