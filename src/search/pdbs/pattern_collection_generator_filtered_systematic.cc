@@ -319,6 +319,8 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_patterns(opts.get<int>("max_patterns")),
       max_time(opts.get<double>("max_time")),
       max_time_per_restart(opts.get<double>("max_time_per_restart")),
+      max_evaluations_per_restart(opts.get<int>("max_evaluations_per_restart")),
+      max_total_evaluations(opts.get<int>("max_total_evaluations")),
       saturate(opts.get<bool>("saturate")),
       only_sga_patterns(opts.get<bool>("only_sga_patterns")),
       only_interesting_patterns(opts.get<bool>("only_interesting_patterns")),
@@ -344,6 +346,12 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     double overall_remaining_time) {
     utils::Log log;
     utils::CountdownTimer timer(min(overall_remaining_time, max_time_per_restart));
+    int remaining_total_evaluations = max_total_evaluations - num_pattern_evaluations;
+    assert(remaining_total_evaluations >= 0);
+    int max_evaluations_this_restart =
+        min(remaining_total_evaluations, max_evaluations_per_restart);
+    int final_num_evaluations_this_restart =
+        num_pattern_evaluations + max_evaluations_this_restart;
     TaskProxy task_proxy(*task);
     State initial_state = task_proxy.get_initial_state();
     vector<int> variable_domains = get_variable_domains(task_proxy);
@@ -358,6 +366,11 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
 
         if (timer.is_expired()) {
             log << "Reached restart time limit." << endl;
+            return false;
+        }
+
+        if (num_pattern_evaluations >= final_num_evaluations_this_restart) {
+            log << "Reached maximum pattern evaluations per restart." << endl;
             return false;
         }
 
@@ -509,6 +522,10 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
             log << "Reached overall time limit." << endl;
             break;
         }
+        if (num_pattern_evaluations >= max_total_evaluations) {
+            log << "Reached maximum total pattern evaluations." << endl;
+            break;
+        }
     }
 
     log << "Time for computing ordered systematic patterns: "
@@ -573,6 +590,16 @@ static void add_options(OptionParser &parser) {
         "maximum time in seconds for each restart",
         "10",
         Bounds("0.0", "infinity"));
+    parser.add_option<int>(
+        "max_evaluations_per_restart",
+        "maximum pattern evaluations in the inner loop",
+        "infinity",
+        Bounds("0", "infinity"));
+    parser.add_option<int>(
+        "max_total_evaluations",
+        "maximum total pattern evaluations",
+        "infinity",
+        Bounds("0", "infinity"));
     parser.add_option<bool>(
         "saturate",
         "compute saturated cost partitionings",
