@@ -347,8 +347,7 @@ bool PatternEvaluator::is_consistent(
 bool PatternEvaluator::detects_new_dead_ends(
     const Pattern &pattern,
     const vector<int> &distances,
-    PartialStateTree &dead_ends,
-    const PartialStateTree *ignored_dead_ends) const {
+    PartialStateTree &dead_ends) const {
     const vector<size_t> &hash_multipliers = match_tree_backward->get_hash_multipliers();
     int pattern_size = hash_multipliers.size();
     bool new_dead_end_detected = false;
@@ -365,8 +364,7 @@ bool PatternEvaluator::detects_new_dead_ends(
                 remaining_index -= value * hash_multipliers[i];
             }
             reverse(partial_state.begin(), partial_state.end());
-            if (!dead_ends.subsumes(partial_state) &&
-                (!ignored_dead_ends || !ignored_dead_ends->subsumes(partial_state))) {
+            if (!dead_ends.subsumes(partial_state)) {
                 new_dead_end_detected = true;
                 dead_ends.add(partial_state, task_info.domain_sizes);
             }
@@ -378,8 +376,7 @@ bool PatternEvaluator::detects_new_dead_ends(
 bool PatternEvaluator::is_useful(
     const Pattern &pattern,
     priority_queues::AdaptiveQueue<size_t> &pq,
-    PartialStateTree &recognized_dead_ends,
-    PartialStateTree &extra_dead_ends,
+    PartialStateTree &dead_ends,
     DeadEndTreatment dead_end_treatment,
     const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
@@ -435,26 +432,24 @@ bool PatternEvaluator::is_useful(
     bool has_dead_end = (num_settled < num_states);
     assert(has_dead_end ==
            any_of(distances.begin(), distances.end(), [](int d) {return d == INF;}));
-    if (found_positive_finite_goal_distance && has_dead_end) {
-        // Add new dead ends to database, ignore result.
-        detects_new_dead_ends(pattern, distances, recognized_dead_ends);
-    }
-    bool select_for_dead_ends = false;
     if (dead_end_treatment == DeadEndTreatment::IGNORE) {
+        return found_positive_finite_goal_distance;
     } else if (dead_end_treatment == DeadEndTreatment::ALL) {
-        select_for_dead_ends = has_dead_end;
+        return found_positive_finite_goal_distance || has_dead_end;
     } else if (dead_end_treatment == DeadEndTreatment::STORE) {
         if (has_dead_end) {
             // Add new dead ends to database, ignore result.
-            detects_new_dead_ends(pattern, distances, extra_dead_ends, &recognized_dead_ends);
+            detects_new_dead_ends(pattern, distances, dead_ends);
         }
+        return found_positive_finite_goal_distance;
     } else {
         assert(dead_end_treatment == DeadEndTreatment::NEW);
         if (has_dead_end) {
-            select_for_dead_ends = detects_new_dead_ends(
-                pattern, distances, extra_dead_ends);
+            return detects_new_dead_ends(pattern, distances, dead_ends) ||
+                   found_positive_finite_goal_distance;
+        } else {
+            return found_positive_finite_goal_distance;
         }
     }
-    return found_positive_finite_goal_distance || select_for_dead_ends;
 }
 }
