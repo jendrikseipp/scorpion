@@ -106,9 +106,7 @@ bool PartialStateTreeNode::contains(const vector<FactPair> &partial_state) const
         if (value_successor && value_successor->contains(partial_state))
             return true;
     }
-    if (ignore_successor && ignore_successor->contains(partial_state))
-        return true;
-    return false;
+    return ignore_successor && ignore_successor->contains(partial_state);
 }
 
 bool PartialStateTreeNode::contains(const State &state) const {
@@ -120,11 +118,8 @@ bool PartialStateTreeNode::contains(const State &state) const {
     }
 
     const auto &value_successor = (*value_successors)[state[var_id].get_value()];
-    if (value_successor && value_successor->contains(state))
-        return true;
-    if (ignore_successor && ignore_successor->contains(state))
-        return true;
-    return false;
+    return (value_successor && value_successor->contains(state)) ||
+           (ignore_successor && ignore_successor->contains(state));
 }
 
 int PartialStateTreeNode::get_num_nodes() const {
