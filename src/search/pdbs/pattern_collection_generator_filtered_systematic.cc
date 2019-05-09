@@ -544,6 +544,8 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     log << "Selected ordered systematic patterns: " << projections->size()
         << "/" << num_generated_patterns << " = " << percent_selected << endl;
     log << "Systematic dead ends: " << cost_saturation::dead_ends_hacked->size() << endl;
+    log << "Systematic dead end tree nodes: "
+        << cost_saturation::dead_ends_hacked->get_num_nodes() << endl;
     if (dead_end_treatment != DeadEndTreatment::STORE) {
         cost_saturation::dead_ends_hacked = nullptr;
     }

@@ -124,9 +124,11 @@ bool PartialStateTreeNode::contains(const State &state) const {
 
 int PartialStateTreeNode::get_num_nodes() const {
     int num_nodes = 1;
-    for (const unique_ptr<PartialStateTreeNode> &successor : *value_successors) {
-        if (successor) {
-            num_nodes += successor->get_num_nodes();
+    if (value_successors) {
+        for (const unique_ptr<PartialStateTreeNode> &successor : *value_successors) {
+            if (successor) {
+                num_nodes += successor->get_num_nodes();
+            }
         }
     }
     if (ignore_successor) {
