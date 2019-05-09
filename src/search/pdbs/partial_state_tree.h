@@ -8,7 +8,7 @@
 namespace pdbs {
 class PartialStateTreeNode {
     int var_id;
-    std::vector<std::unique_ptr<PartialStateTreeNode>> value_successors;
+    std::unique_ptr<std::vector<std::unique_ptr<PartialStateTreeNode>>> value_successors;
     std::unique_ptr<PartialStateTreeNode> ignore_successor;
 public:
     PartialStateTreeNode();

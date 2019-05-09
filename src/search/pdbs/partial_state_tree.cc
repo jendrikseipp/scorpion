@@ -24,7 +24,7 @@ void PartialStateTreeNode::add(
           Cut the subtree by replacing the node with a dead-end leaf node.
         */
         var_id = DEAD_END_LEAF;
-        value_successors.clear();
+        value_successors = nullptr;
         ignore_successor = nullptr;
         return;
     }
@@ -43,7 +43,8 @@ void PartialStateTreeNode::add(
           We create the pointers to child nodes, but create the nodes on demand.
         */
         var_id = uncovered_vars.back();
-        value_successors.resize(domain_sizes[var_id]);
+        value_successors = utils::make_unique_ptr<vector<unique_ptr<PartialStateTreeNode>>>();
+        value_successors->resize(domain_sizes[var_id]);
     }
 
     /*
@@ -53,7 +54,7 @@ void PartialStateTreeNode::add(
     unique_ptr<PartialStateTreeNode> *successor = &ignore_successor;
     for (const FactPair &fact : partial_state) {
         if (fact.var == var_id) {
-            successor = &value_successors[fact.value];
+            successor = &(*value_successors)[fact.value];
             /*
               var_id is a variable of the partial state, remove it from uncovered
               since we will cover it in this step.
@@ -98,7 +99,7 @@ bool PartialStateTreeNode::contains(const vector<FactPair> &partial_state) const
     }
 
     if (value != -1) {
-        const auto &value_successor = value_successors[value];
+        const auto &value_successor = (*value_successors)[value];
         if (value_successor && value_successor->contains(partial_state))
             return true;
     }
@@ -115,7 +116,7 @@ bool PartialStateTreeNode::contains(const State &state) const {
         return false;
     }
 
-    const auto &value_successor = value_successors[state[var_id].get_value()];
+    const auto &value_successor = (*value_successors)[state[var_id].get_value()];
     if (value_successor && value_successor->contains(state))
         return true;
     if (ignore_successor && ignore_successor->contains(state))
@@ -125,7 +126,7 @@ bool PartialStateTreeNode::contains(const State &state) const {
 
 int PartialStateTreeNode::get_num_nodes() const {
     int num_nodes = 1;
-    for (const unique_ptr<PartialStateTreeNode> &successor : value_successors) {
+    for (const unique_ptr<PartialStateTreeNode> &successor : *value_successors) {
         if (successor) {
             num_nodes += successor->get_num_nodes();
         }
