@@ -6,14 +6,28 @@
 #include "../task_proxy.h"
 
 namespace pdbs {
-class PartialStateTreeNode;
+class PartialStateTreeNode {
+    int var_id;
+    std::vector<std::unique_ptr<PartialStateTreeNode>> value_successors;
+    std::unique_ptr<PartialStateTreeNode> ignore_successor;
+public:
+    PartialStateTreeNode();
+
+    void add(
+        const std::vector<FactPair> &partial_state,
+        const std::vector<int> &domain_sizes,
+        std::vector<int> &uncovered_vars);
+    bool contains(const std::vector<FactPair> &partial_state) const;
+    bool contains(const State &state) const;
+
+    int get_num_nodes() const;
+};
 
 class PartialStateTree {
     int num_partial_states;
-    std::unique_ptr<PartialStateTreeNode> root;
+    PartialStateTreeNode root;
 public:
     PartialStateTree();
-    ~PartialStateTree();
 
     void add(
         const std::vector<FactPair> &partial_state,
@@ -21,6 +35,7 @@ public:
     bool subsumes(const std::vector<FactPair> &partial_state) const;
     bool subsumes(const State &state) const;
     int size();
+    int get_num_nodes() const;
 };
 }
 

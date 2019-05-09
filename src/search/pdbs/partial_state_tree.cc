@@ -5,136 +5,167 @@
 using namespace std;
 
 namespace pdbs {
-class PartialStateTreeNode {
-public:
-    virtual ~PartialStateTreeNode() = default;
-    virtual void add(
-        const vector<FactPair> &partial_state,
-        const vector<int> &domain_sizes,
-        int index) = 0;
-    virtual bool contains(const std::vector<FactPair> &partial_state, int index) const = 0;
-    virtual bool contains(const State &state) const = 0;
-};
+static const int DEAD_END_LEAF = -2;
+static const int REGULAR_LEAF = -1;
 
+PartialStateTreeNode::PartialStateTreeNode()
+    : var_id(REGULAR_LEAF) {
+}
 
-class PartialStateTreeLeafNode : public PartialStateTreeNode {
-public:
-    virtual void add(
-        const vector<FactPair> &, const vector<int> &, int) override {
+void PartialStateTreeNode::add(
+    const vector<FactPair> &partial_state,
+    const vector<int> &domain_sizes,
+    vector<int> &uncovered_vars) {
+    if (uncovered_vars.empty()) {
+        /*
+          We already covered all variables of partial_state, but there is
+          a subtree below the current node. This means we previously found more
+          specific dead ends and are now considering a more general one.
+          Cut the subtree by replacing the node with a dead-end leaf node.
+        */
+        var_id = DEAD_END_LEAF;
+        value_successors.clear();
+        ignore_successor = nullptr;
+        return;
+    }
+    if (var_id == DEAD_END_LEAF) {
+        /*
+          We ended up in a dead-end leaf. This means we previously found a more
+          general dead end and are now considering a more specific one.
+          No need to add the more specific one.
+        */
+        return;
+    }
+    if (var_id == REGULAR_LEAF) {
+        /*
+          We ended up in a leaf but we still have variables to cover. Pick one
+          of them and turn the current leaf into a node for this variable.
+          We create the pointers to child nodes, but create the nodes on demand.
+        */
+        var_id = uncovered_vars.back();
+        value_successors.resize(domain_sizes[var_id]);
     }
 
-    virtual bool contains(const std::vector<FactPair> &, int) const override {
+    /*
+      If we end up here, the node has a var_id of an actual variable.
+      Now look for the right successor.
+    */
+    unique_ptr<PartialStateTreeNode> *successor = &ignore_successor;
+    for (const FactPair &fact : partial_state) {
+        if (fact.var == var_id) {
+            successor = &value_successors[fact.value];
+            /*
+              var_id is a variable of the partial state, remove it from uncovered
+              since we will cover it in this step.
+            */
+            uncovered_vars.erase(
+                remove(uncovered_vars.begin(), uncovered_vars.end(), fact.var),
+                uncovered_vars.end());
+            break;
+        }
+        /*
+          If the above test never triggers, var_id is not mentioned in the partial
+          state and we stick with the ignore_successor.
+        */
+    }
+
+    /*
+      We found the correct successor, now make sure there is a tree node there.
+      Since we generate nodes on demand, the successor might still be a nullptr.
+    */
+    if (!*successor) {
+        *successor = utils::make_unique_ptr<PartialStateTreeNode>();
+    }
+
+    (*successor)->add(partial_state, domain_sizes, uncovered_vars);
+}
+
+bool PartialStateTreeNode::contains(const vector<FactPair> &partial_state) const {
+    if (var_id == DEAD_END_LEAF) {
         return true;
     }
-
-    virtual bool contains(const State &) const override {
-        return true;
-    }
-};
-
-
-class PartialStateTreeSwitchNode : public PartialStateTreeNode {
-    int var_id;
-    vector<PartialStateTreeNode *> value_successors;
-    PartialStateTreeNode *ignore_successor;
-public:
-    PartialStateTreeSwitchNode(int var, int domain_size)
-        : var_id(var),
-          value_successors(domain_size, nullptr),
-          ignore_successor(nullptr) {
-    }
-
-    virtual ~PartialStateTreeSwitchNode() override {
-        for (PartialStateTreeNode *child : value_successors)
-            delete child;
-        delete ignore_successor;
-    }
-
-    virtual void add(
-        const vector<FactPair> &partial_state,
-        const vector<int> &domain_sizes,
-        int index) override {
-        const FactPair &current_fact = partial_state[index];
-        PartialStateTreeNode **successor;
-        int next_index = index;
-        if (var_id == current_fact.var) {
-            successor = &value_successors[current_fact.value];
-            ++next_index;
-        } else {
-            successor = &ignore_successor;
-        }
-
-        if (*successor) {
-            if (next_index < static_cast<int>(partial_state.size())) {
-                (*successor)->add(partial_state, domain_sizes, next_index);
-            }
-        } else {
-            if (next_index == static_cast<int>(partial_state.size())) {
-                *successor = new PartialStateTreeLeafNode();
-            } else {
-                int next_var = partial_state[next_index].var;
-                *successor = new PartialStateTreeSwitchNode(next_var, domain_sizes[next_var]);
-                (*successor)->add(partial_state, domain_sizes, next_index);
-            }
-        }
-    }
-
-    virtual bool contains(const std::vector<FactPair> &partial_state, int index) const override {
-        if (index == static_cast<int>(partial_state.size()))
-            return false;
-        const FactPair &current_fact = partial_state[index];
-        int next_index = index;
-        if (var_id == current_fact.var) {
-            ++next_index;
-            PartialStateTreeNode *value_successor = value_successors[current_fact.value];
-            if (value_successor && value_successor->contains(partial_state, next_index))
-                return true;
-        }
-        if (ignore_successor && ignore_successor->contains(partial_state, next_index))
-            return true;
+    if (var_id == REGULAR_LEAF) {
         return false;
     }
 
-    virtual bool contains(const State &state) const override {
-        PartialStateTreeNode *value_successor = value_successors[state[var_id].get_value()];
-        return (value_successor && value_successor->contains(state)) ||
-               (ignore_successor && ignore_successor->contains(state));
+    // See if partial_state has a value for var_id.
+    int value = -1;
+    for (const FactPair &fact : partial_state) {
+        if (fact.var == var_id) {
+            value = fact.value;
+            break;
+        }
     }
-};
+
+    if (value != -1) {
+        const auto &value_successor = value_successors[value];
+        if (value_successor && value_successor->contains(partial_state))
+            return true;
+    }
+    if (ignore_successor && ignore_successor->contains(partial_state))
+        return true;
+    return false;
+}
+
+bool PartialStateTreeNode::contains(const State &state) const {
+    if (var_id == DEAD_END_LEAF) {
+        return true;
+    }
+    if (var_id == REGULAR_LEAF) {
+        return false;
+    }
+
+    const auto &value_successor = value_successors[state[var_id].get_value()];
+    if (value_successor && value_successor->contains(state))
+        return true;
+    if (ignore_successor && ignore_successor->contains(state))
+        return true;
+    return false;
+}
+
+int PartialStateTreeNode::get_num_nodes() const {
+    int num_nodes = 1;
+    for (const unique_ptr<PartialStateTreeNode> &successor : value_successors) {
+        if (successor) {
+            num_nodes += successor->get_num_nodes();
+        }
+    }
+    if (ignore_successor) {
+        num_nodes += ignore_successor->get_num_nodes();
+    }
+    return num_nodes;
+}
 
 
 PartialStateTree::PartialStateTree()
-    : num_partial_states(0),
-      root(nullptr) {
-}
-
-PartialStateTree::~PartialStateTree() {
+    : num_partial_states(0) {
 }
 
 void PartialStateTree::add(
-    const std::vector<FactPair> &partial_state, const vector<int> &domain_sizes) {
-    if (partial_state.empty()) {
-        // The empty partial state subsumes everything.
-        root = utils::make_unique_ptr<PartialStateTreeLeafNode>();
+    const vector<FactPair> &partial_state, const vector<int> &domain_sizes) {
+    assert(!partial_state.empty());
+    vector<int> uncovered_vars;
+    uncovered_vars.reserve(partial_state.size());
+    for (const FactPair &fact : partial_state) {
+        uncovered_vars.push_back(fact.var);
     }
-    if (!root) {
-        int root_var = partial_state[0].var;
-        root = utils::make_unique_ptr<PartialStateTreeSwitchNode>(
-            root_var, domain_sizes[root_var]);
-    }
-    root->add(partial_state, domain_sizes, 0);
+    root.add(partial_state, domain_sizes, uncovered_vars);
     ++num_partial_states;
 }
 
 bool PartialStateTree::subsumes(const std::vector<FactPair> &partial_state) const {
-    return root && root->contains(partial_state, 0);
+    return root.contains(partial_state);
 }
 
 bool PartialStateTree::subsumes(const State &state) const {
-    return root && root->contains(state);
+    return root.contains(state);
 }
 
 int PartialStateTree::size() {
     return num_partial_states;
+}
+
+int PartialStateTree::get_num_nodes() const {
+    return root.get_num_nodes();
 }
 }
