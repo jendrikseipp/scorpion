@@ -16,6 +16,7 @@ void PartialStateTreeNode::add(
     const vector<FactPair> &partial_state,
     const vector<int> &domain_sizes,
     vector<int> &uncovered_vars) {
+    assert(is_sorted(partial_state.begin(), partial_state.end()));
     if (uncovered_vars.empty()) {
         /*
           We already covered all variables of partial_state, but there is
@@ -48,8 +49,9 @@ void PartialStateTreeNode::add(
     }
 
     /*
-      If we end up here, the node has a var_id of an actual variable.
-      Now look for the right successor.
+      If we end up here, the node has a var_id of an actual variable. Now look
+      for the right successor. If var_id is not mentioned in the partial state,
+      we stick with the ignore_successor.
     */
     unique_ptr<PartialStateTreeNode> *successor = &ignore_successor;
     for (const FactPair &fact : partial_state) {
@@ -63,11 +65,9 @@ void PartialStateTreeNode::add(
                 remove(uncovered_vars.begin(), uncovered_vars.end(), fact.var),
                 uncovered_vars.end());
             break;
+        } else if (fact.var > var_id) {
+            break;
         }
-        /*
-          If the above test never triggers, var_id is not mentioned in the partial
-          state and we stick with the ignore_successor.
-        */
     }
 
     /*
@@ -82,6 +82,7 @@ void PartialStateTreeNode::add(
 }
 
 bool PartialStateTreeNode::contains(const vector<FactPair> &partial_state) const {
+    assert(is_sorted(partial_state.begin(), partial_state.end()));
     if (var_id == DEAD_END_LEAF) {
         return true;
     }
@@ -94,6 +95,8 @@ bool PartialStateTreeNode::contains(const vector<FactPair> &partial_state) const
     for (const FactPair &fact : partial_state) {
         if (fact.var == var_id) {
             value = fact.value;
+            break;
+        } else if (fact.var > var_id) {
             break;
         }
     }
