@@ -20,12 +20,6 @@ class PartialStateTree;
 
 using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PartialStateTree>;
 
-enum class DeadEndTreatment {
-    IGNORE,
-    NEW,
-    STORE,
-};
-
 struct AbstractBackwardOperator {
     int concrete_operator_id;
     int hash_effect;
@@ -129,8 +123,7 @@ public:
     bool is_useful(
         const Pattern &pattern,
         priority_queues::AdaptiveQueue<size_t> &pq,
-        PartialStateTree &dead_ends,
-        DeadEndTreatment dead_end_treatment,
+        PartialStateTree *dead_ends,
         const std::vector<int> &costs) const;
 };
 }

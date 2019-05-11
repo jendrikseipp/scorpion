@@ -285,7 +285,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       only_interesting_patterns(opts.get<bool>("only_interesting_patterns")),
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_orders(opts.get<bool>("store_orders")),
-      dead_end_treatment(static_cast<DeadEndTreatment>(opts.get_enum("dead_ends"))),
+      store_dead_ends(opts.get<bool>("store_dead_ends")),
       pattern_order(static_cast<PatternOrder>(opts.get_enum("order"))),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")) {
@@ -296,7 +296,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
     const TaskInfo &evaluator_task_info,
     SequentialPatternGenerator &pattern_generator,
-    PartialStateTree &dead_ends,
+    PartialStateTree *dead_ends,
     priority_queues::AdaptiveQueue<size_t> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
@@ -378,25 +378,21 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
         bool select_pattern = true;
         if (saturate) {
             projection_evaluation_timer->resume();
-            DeadEndTreatment dead_end_treatment_for_pattern = dead_end_treatment;
-            if (patterns_checked_for_dead_ends.count(pattern)) {
-                dead_end_treatment_for_pattern = DeadEndTreatment::IGNORE;
-            } else {
-                patterns_checked_for_dead_ends.insert(pattern);
+            // Only check each pattern for dead ends once.
+            PartialStateTree *tmp_dead_ends = dead_ends;
+            if (tmp_dead_ends) {
+                if (patterns_checked_for_dead_ends.count(pattern)) {
+                    tmp_dead_ends = nullptr;
+                } else {
+                    patterns_checked_for_dead_ends.insert(pattern);
+                }
             }
-            select_pattern = pattern_evaluator.is_useful(
-                pattern, pq, dead_ends, dead_end_treatment_for_pattern, costs);
+            select_pattern = pattern_evaluator.is_useful(pattern, pq, tmp_dead_ends, costs);
             projection_evaluation_timer->stop();
 #ifndef NDEBUG
             vector<int> goal_distances = cost_saturation::Projection(
                 task_proxy, task_info, pattern).compute_goal_distances(costs);
-            if (dead_end_treatment == DeadEndTreatment::IGNORE ||
-                dead_end_treatment == DeadEndTreatment::STORE) {
-                assert(select_pattern ==
-                       contains_positive_finite_value(goal_distances));
-            } else {
-                assert(dead_end_treatment == DeadEndTreatment::NEW);
-            }
+            assert(select_pattern == contains_positive_finite_value(goal_distances));
 #endif
         }
 
@@ -443,7 +439,9 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         task, evaluator_task_info, max_pattern_size,
         only_interesting_patterns, pattern_order, *rng);
     priority_queues::AdaptiveQueue<size_t> pq;
-    cost_saturation::dead_ends_hacked = utils::make_unique_ptr<PartialStateTree>();
+    if (store_dead_ends) {
+        cost_saturation::dead_ends_hacked = utils::make_unique_ptr<PartialStateTree>();
+    }
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     PatternSet patterns_checked_for_dead_ends;
@@ -454,7 +452,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator,
-            *cost_saturation::dead_ends_hacked,
+            cost_saturation::dead_ends_hacked.get(),
             pq, projections, pattern_set, patterns_checked_for_dead_ends,
             collection_size, timer.get_remaining_time());
         int num_patterns_after = projections->size();
@@ -497,11 +495,10 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         : static_cast<double>(projections->size()) / num_generated_patterns;
     log << "Selected ordered systematic patterns: " << projections->size()
         << "/" << num_generated_patterns << " = " << percent_selected << endl;
-    log << "Systematic dead ends: " << cost_saturation::dead_ends_hacked->size() << endl;
-    log << "Systematic dead end tree nodes: "
-        << cost_saturation::dead_ends_hacked->get_num_nodes() << endl;
-    if (dead_end_treatment != DeadEndTreatment::STORE) {
-        cost_saturation::dead_ends_hacked = nullptr;
+    if (store_dead_ends) {
+        log << "Systematic dead ends: " << cost_saturation::dead_ends_hacked->size() << endl;
+        log << "Systematic dead end tree nodes: "
+            << cost_saturation::dead_ends_hacked->get_num_nodes() << endl;
     }
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
@@ -572,15 +569,10 @@ static void add_options(OptionParser &parser) {
         "store_orders",
         "store orders (filtered_systematic() must be the first generator)",
         "true");
-    vector<string> dead_end_treatments;
-    dead_end_treatments.push_back("IGNORE");
-    dead_end_treatments.push_back("NEW");
-    dead_end_treatments.push_back("STORE");
-    parser.add_enum_option(
-        "dead_ends",
-        dead_end_treatments,
-        "how to handle dead ends",
-        "NEW");
+    parser.add_option<bool>(
+        "store_dead_ends",
+        "store dead ends in dead end database",
+        "true");
     vector<string> pattern_orders;
     pattern_orders.push_back("RANDOM");
     pattern_orders.push_back("PDB_SIZE_UP");

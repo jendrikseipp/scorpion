@@ -376,8 +376,7 @@ bool PatternEvaluator::detects_new_dead_ends(
 bool PatternEvaluator::is_useful(
     const Pattern &pattern,
     priority_queues::AdaptiveQueue<size_t> &pq,
-    PartialStateTree &dead_ends,
-    DeadEndTreatment dead_end_treatment,
+    PartialStateTree *dead_ends,
     const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     vector<int> distances(num_states, INF);
@@ -432,22 +431,10 @@ bool PatternEvaluator::is_useful(
     bool has_dead_end = (num_settled < num_states);
     assert(has_dead_end ==
            any_of(distances.begin(), distances.end(), [](int d) {return d == INF;}));
-    if (dead_end_treatment == DeadEndTreatment::IGNORE) {
-        return found_positive_finite_goal_distance;
-    } else if (dead_end_treatment == DeadEndTreatment::STORE) {
-        if (has_dead_end) {
-            // Add new dead ends to database, ignore result.
-            detects_new_dead_ends(pattern, distances, dead_ends);
-        }
-        return found_positive_finite_goal_distance;
-    } else {
-        assert(dead_end_treatment == DeadEndTreatment::NEW);
-        if (has_dead_end) {
-            return detects_new_dead_ends(pattern, distances, dead_ends) ||
-                   found_positive_finite_goal_distance;
-        } else {
-            return found_positive_finite_goal_distance;
-        }
+    if (dead_ends && has_dead_end) {
+        // Add new dead ends to database, ignore result.
+        detects_new_dead_ends(pattern, distances, *dead_ends);
     }
+    return found_positive_finite_goal_distance;
 }
 }
