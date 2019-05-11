@@ -127,9 +127,7 @@ static unique_ptr<PatternCollection> get_patterns(
 }
 
 static int compute_score(
-    const array_pool::ArrayPoolSlice<int> &pattern,
-    PatternOrder order_type,
-    const TaskInfo &task_info) {
+    const Pattern &pattern, PatternOrder order_type, const TaskInfo &task_info) {
     if (order_type == PatternOrder::PDB_SIZE_UP) {
         return get_pdb_size(task_info.domain_sizes, pattern);
     } else if (order_type == PatternOrder::PDB_SIZE_DOWN) {
@@ -143,39 +141,38 @@ static int compute_score(
     }
 }
 
-static void compute_pattern_order(
-    const array_pool::ArrayPool<int> &patterns,
-    vector<int> &order,
+static void order_patterns_of_same_size(
+    PatternCollection &patterns,
     PatternOrder order_type,
     const TaskInfo &task_info,
     utils::RandomNumberGenerator &rng) {
-    assert(patterns.size() == static_cast<int>(order.size()));
-    if (order_type == PatternOrder::ORIGINAL) {
-        return;
-    } else if (order_type == PatternOrder::REVERSE) {
-        reverse(order.begin(), order.end());
-        return;
-    } else if (order_type == PatternOrder::PATTERN_UP ||
-               order_type == PatternOrder::PATTERN_DOWN) {
-        // Nothing to do since these orders are total.
-        return;
+    // Use PATTERN_DOWN for tie-breaking.
+    sort(patterns.begin(), patterns.end(), greater<Pattern>());
+    if (order_type == PatternOrder::PATTERN_UP) {
+        sort(patterns.begin(), patterns.end(), less<Pattern>());
+    } else if (order_type == PatternOrder::PATTERN_DOWN) {
+        // This is the base order -> nothing to do.
     } else if (order_type == PatternOrder::RANDOM) {
-        rng.shuffle(order);
-        return;
+        rng.shuffle(patterns);
+    } else {
+        vector<int> scores;
+        scores.reserve(patterns.size());
+        for (const Pattern &pattern : patterns) {
+            scores.push_back(compute_score(pattern, order_type, task_info));
+        }
+        vector<int> order(patterns.size(), -1);
+        iota(order.begin(), order.end(), 0);
+        stable_sort(order.begin(), order.end(),
+                    [&scores](int i, int j) {
+                        return scores[i] < scores[j];
+                    });
+        PatternCollection sorted_patterns;
+        sorted_patterns.reserve(patterns.size());
+        for (int id : order) {
+            sorted_patterns.push_back(move(patterns[id]));
+        }
+        swap(patterns, sorted_patterns);
     }
-
-    vector<int> scores;
-    scores.reserve(patterns.size());
-    for (int pattern_id = 0; pattern_id < patterns.size(); ++pattern_id) {
-        scores.push_back(
-            compute_score(
-                patterns.get_slice(pattern_id), order_type, task_info));
-    }
-
-    stable_sort(order.begin(), order.end(),
-                [&scores](int i, int j) {
-                    return scores[i] < scores[j];
-                });
 }
 
 
@@ -187,7 +184,6 @@ class SequentialPatternGenerator {
     PatternOrder order_type;
     utils::RandomNumberGenerator &rng;
     vector<array_pool::ArrayPool<int>> patterns;
-    vector<vector<int>> orders;
     int cached_pattern_size;
     int max_generated_pattern_size; // Only count layers that actually have patterns.
     int num_generated_patterns;
@@ -221,15 +217,15 @@ public:
             int internal_id = -1;
             int start_id = 0;
             int end_id = -1;
-            for (size_t i = 0; i < orders.size(); ++i) {
-                const vector<int> &order = orders[i];
-                end_id += order.size();
+            for (size_t i = 0; i < patterns.size(); ++i) {
+                const array_pool::ArrayPool<int> &patterns_of_same_size = patterns[i];
+                end_id += patterns_of_same_size.size();
                 if (pattern_id >= start_id && pattern_id <= end_id) {
-                    internal_id = order[pattern_id - start_id];
+                    internal_id = pattern_id - start_id;
                     bucket_id = i;
                     break;
                 }
-                start_id += order.size();
+                start_id += patterns_of_same_size.size();
             }
             assert(internal_id != -1);
             array_pool::ArrayPoolSlice<int> slice = patterns[bucket_id].get_slice(internal_id);
@@ -248,25 +244,14 @@ public:
                     utils::Log() << "Store " << current_patterns->size()
                                  << " patterns of size "
                                  << cached_pattern_size << endl;
-
-                    if (order_type == PatternOrder::PATTERN_UP) {
-                        sort(current_patterns->begin(), current_patterns->end(), less<Pattern>());
-                    } else {
-                        // Use PATTERN_DOWN for tie-breaking.
-                        sort(current_patterns->begin(), current_patterns->end(), greater<Pattern>());
-                    }
-
                     max_generated_pattern_size = cached_pattern_size;
                     num_generated_patterns += current_patterns->size();
+                    order_patterns_of_same_size(
+                        *current_patterns, order_type, task_info, rng);
                     patterns.emplace_back();
                     for (Pattern &pattern : *current_patterns) {
                         patterns.back().append(move(pattern));
                     }
-                    vector<int> current_order(current_patterns->size(), -1);
-                    iota(current_order.begin(), current_order.end(), 0);
-                    compute_pattern_order(
-                        patterns.back(), current_order, order_type, task_info, rng);
-                    orders.push_back(move(current_order));
                     utils::Log() << "Finished storing patterns of size "
                                  << cached_pattern_size << endl;
                 }
@@ -597,9 +582,7 @@ static void add_options(OptionParser &parser) {
         "how to handle dead ends",
         "NEW");
     vector<string> pattern_orders;
-    pattern_orders.push_back("ORIGINAL");
     pattern_orders.push_back("RANDOM");
-    pattern_orders.push_back("REVERSE");
     pattern_orders.push_back("PDB_SIZE_UP");
     pattern_orders.push_back("PDB_SIZE_DOWN");
     pattern_orders.push_back("ACTIVE_OPS_UP");
@@ -610,7 +593,7 @@ static void add_options(OptionParser &parser) {
         "order",
         pattern_orders,
         "order in which to consider patterns of the same size",
-        "ORIGINAL");
+        "PATTERN_DOWN");
     utils::add_rng_options(parser);
     parser.add_option<bool>(
         "debug",

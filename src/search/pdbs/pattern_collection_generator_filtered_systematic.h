@@ -31,9 +31,7 @@ class SequentialPatternGenerator;
 struct TaskInfo;
 
 enum class PatternOrder {
-    ORIGINAL,
     RANDOM,
-    REVERSE,
     PDB_SIZE_UP,
     PDB_SIZE_DOWN,
     ACTIVE_OPS_UP,
