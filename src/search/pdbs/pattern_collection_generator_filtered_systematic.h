@@ -53,7 +53,6 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
     const int max_evaluations_per_restart;
     const int max_total_evaluations;
     const bool saturate;
-    const bool only_sga_patterns;
     const bool only_interesting_patterns;
     const bool ignore_useless_patterns;
     const bool store_orders;

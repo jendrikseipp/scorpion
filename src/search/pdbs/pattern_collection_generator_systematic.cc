@@ -53,8 +53,7 @@ static void compute_union_pattern(
 PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
     const Options &opts)
     : max_pattern_size(opts.get<int>("pattern_max_size")),
-      only_interesting_patterns(opts.get<bool>("only_interesting_patterns")),
-      only_sga_patterns(opts.get<bool>("only_sga_patterns")) {
+      only_interesting_patterns(opts.get<bool>("only_interesting_patterns")) {
 }
 
 void PatternCollectionGeneratorSystematic::compute_eff_pre_neighbors(
@@ -198,10 +197,6 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     // They are generated into the patterns variable,
     // so we swap them from there.
     build_sga_patterns(task_proxy, cg, handle_pattern);
-    if (only_sga_patterns) {
-        pattern_set.clear();
-        return;
-    }
     PatternCollection sga_patterns;
     patterns->swap(sga_patterns);
 
@@ -354,10 +349,6 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "Only consider the union of two disjoint patterns if the union has "
         "more information than the individual patterns.",
         "true");
-    parser.add_option<bool>(
-        "only_sga_patterns",
-        "Only consider SGA patterns.",
-        "false");
 
     Options opts = parser.parse();
     if (parser.dry_run())

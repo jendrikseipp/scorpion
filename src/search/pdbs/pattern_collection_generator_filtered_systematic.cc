@@ -102,14 +102,12 @@ static bool only_free_operators_affect_pdb(
 static unique_ptr<PatternCollection> get_patterns(
     const shared_ptr<AbstractTask> &task,
     int pattern_size,
-    bool only_sga_patterns,
     bool only_interesting_patterns,
     const utils::CountdownTimer &timer) {
     utils::Log() << "Generate patterns for size " << pattern_size << endl;
     options::Options opts;
     opts.set<int>("pattern_max_size", pattern_size);
     opts.set<bool>("only_interesting_patterns", only_interesting_patterns);
-    opts.set<bool>("only_sga_patterns", only_sga_patterns);
     PatternCollectionGeneratorSystematic generator(opts);
     unique_ptr<PatternCollection> patterns_ptr =
         utils::make_unique_ptr<PatternCollection>();
@@ -190,7 +188,6 @@ class SequentialPatternGenerator {
     shared_ptr<AbstractTask> task;
     const TaskInfo &task_info;
     int max_pattern_size;
-    bool only_sga_patterns;
     bool only_interesting_patterns;
     PatternOrder order_type;
     utils::RandomNumberGenerator &rng;
@@ -205,14 +202,12 @@ public:
         const shared_ptr<AbstractTask> &task,
         const TaskInfo &task_info,
         int max_pattern_size_,
-        bool only_sga_patterns,
         bool only_interesting_patterns,
         PatternOrder order,
         utils::RandomNumberGenerator &rng)
         : task(task),
           task_info(task_info),
           max_pattern_size(max_pattern_size_),
-          only_sga_patterns(only_sga_patterns),
           only_interesting_patterns(only_interesting_patterns),
           order_type(order),
           rng(rng),
@@ -251,8 +246,7 @@ public:
             };
         } else if (cached_pattern_size < max_pattern_size) {
             unique_ptr<PatternCollection> current_patterns = get_patterns(
-                task, cached_pattern_size + 1, only_sga_patterns,
-                only_interesting_patterns, timer);
+                task, cached_pattern_size + 1, only_interesting_patterns, timer);
             if (current_patterns) {
                 ++cached_pattern_size;
                 if (current_patterns->empty()) {
@@ -322,7 +316,6 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       max_evaluations_per_restart(opts.get<int>("max_evaluations_per_restart")),
       max_total_evaluations(opts.get<int>("max_total_evaluations")),
       saturate(opts.get<bool>("saturate")),
-      only_sga_patterns(opts.get<bool>("only_sga_patterns")),
       only_interesting_patterns(opts.get<bool>("only_interesting_patterns")),
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_orders(opts.get<bool>("store_orders")),
@@ -485,7 +478,7 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
     SequentialPatternGenerator pattern_generator(
-        task, evaluator_task_info, max_pattern_size, only_sga_patterns,
+        task, evaluator_task_info, max_pattern_size,
         only_interesting_patterns, pattern_order, *rng);
     priority_queues::AdaptiveQueue<size_t> pq;
     cost_saturation::dead_ends_hacked = utils::make_unique_ptr<PartialStateTree>();
@@ -606,10 +599,6 @@ static void add_options(OptionParser &parser) {
         "saturate",
         "compute saturated cost partitionings",
         "true");
-    parser.add_option<bool>(
-        "only_sga_patterns",
-        "only consider SGA patterns",
-        "false");
     parser.add_option<bool>(
         "only_interesting_patterns",
         "only consider interesting patterns instead of all patterns",
