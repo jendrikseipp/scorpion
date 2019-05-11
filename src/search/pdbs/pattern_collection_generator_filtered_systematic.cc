@@ -129,12 +129,11 @@ static unique_ptr<PatternCollection> get_patterns(
 static int compute_score(
     const array_pool::ArrayPoolSlice<int> &pattern,
     PatternOrder order_type,
-    const TaskInfo &task_info,
-    const vector<int> &domains) {
+    const TaskInfo &task_info) {
     if (order_type == PatternOrder::PDB_SIZE_UP) {
-        return get_pdb_size(domains, pattern);
+        return get_pdb_size(task_info.domain_sizes, pattern);
     } else if (order_type == PatternOrder::PDB_SIZE_DOWN) {
-        return -get_pdb_size(domains, pattern);
+        return -get_pdb_size(task_info.domain_sizes, pattern);
     } else if (order_type == PatternOrder::ACTIVE_OPS_UP) {
         return get_num_active_ops(pattern, task_info);
     } else if (order_type == PatternOrder::ACTIVE_OPS_DOWN) {
@@ -149,7 +148,6 @@ static void compute_pattern_order(
     vector<int> &order,
     PatternOrder order_type,
     const TaskInfo &task_info,
-    const vector<int> &domains,
     utils::RandomNumberGenerator &rng) {
     assert(patterns.size() == static_cast<int>(order.size()));
     if (order_type == PatternOrder::ORIGINAL) {
@@ -171,7 +169,7 @@ static void compute_pattern_order(
     for (int pattern_id = 0; pattern_id < patterns.size(); ++pattern_id) {
         scores.push_back(
             compute_score(
-                patterns.get_slice(pattern_id), order_type, task_info, domains));
+                patterns.get_slice(pattern_id), order_type, task_info));
     }
 
     stable_sort(order.begin(), order.end(),
@@ -188,7 +186,6 @@ class SequentialPatternGenerator {
     bool only_interesting_patterns;
     PatternOrder order_type;
     utils::RandomNumberGenerator &rng;
-    vector<int> domains;
     vector<array_pool::ArrayPool<int>> patterns;
     vector<vector<int>> orders;
     int cached_pattern_size;
@@ -208,13 +205,11 @@ public:
           only_interesting_patterns(only_interesting_patterns),
           order_type(order),
           rng(rng),
-          domains(get_variable_domains(TaskProxy(*task))),
           cached_pattern_size(0),
           max_generated_pattern_size(0),
           num_generated_patterns(0) {
         assert(max_pattern_size_ >= 0);
-        max_pattern_size = min(
-            max_pattern_size, static_cast<int>(TaskProxy(*task).get_variables().size()));
+        max_pattern_size = min(max_pattern_size, task_info.get_num_variables());
     }
 
     Pattern get_pattern(
@@ -270,8 +265,7 @@ public:
                     vector<int> current_order(current_patterns->size(), -1);
                     iota(current_order.begin(), current_order.end(), 0);
                     compute_pattern_order(
-                        patterns.back(), current_order, order_type,
-                        task_info, domains, rng);
+                        patterns.back(), current_order, order_type, task_info, rng);
                     orders.push_back(move(current_order));
                     utils::Log() << "Finished storing patterns of size "
                                  << cached_pattern_size << endl;
