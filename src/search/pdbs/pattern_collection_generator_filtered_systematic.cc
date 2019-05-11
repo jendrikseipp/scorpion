@@ -415,10 +415,6 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
                 dead_end_treatment == DeadEndTreatment::STORE) {
                 assert(select_pattern ==
                        contains_positive_finite_value(goal_distances));
-            } else if (dead_end_treatment == DeadEndTreatment::ALL) {
-                assert(select_pattern ==
-                       any_of(goal_distances.begin(), goal_distances.end(),
-                              [](int d) {return d > 0;}));
             } else {
                 assert(dead_end_treatment == DeadEndTreatment::NEW);
             }
@@ -599,7 +595,6 @@ static void add_options(OptionParser &parser) {
         "true");
     vector<string> dead_end_treatments;
     dead_end_treatments.push_back("IGNORE");
-    dead_end_treatments.push_back("ALL");
     dead_end_treatments.push_back("NEW");
     dead_end_treatments.push_back("STORE");
     parser.add_enum_option(

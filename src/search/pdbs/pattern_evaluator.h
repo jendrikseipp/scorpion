@@ -22,7 +22,6 @@ using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PartialStateTr
 
 enum class DeadEndTreatment {
     IGNORE,
-    ALL,
     NEW,
     STORE,
 };

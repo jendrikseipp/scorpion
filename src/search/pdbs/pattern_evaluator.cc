@@ -434,8 +434,6 @@ bool PatternEvaluator::is_useful(
            any_of(distances.begin(), distances.end(), [](int d) {return d == INF;}));
     if (dead_end_treatment == DeadEndTreatment::IGNORE) {
         return found_positive_finite_goal_distance;
-    } else if (dead_end_treatment == DeadEndTreatment::ALL) {
-        return found_positive_finite_goal_distance || has_dead_end;
     } else if (dead_end_treatment == DeadEndTreatment::STORE) {
         if (has_dead_end) {
             // Add new dead ends to database, ignore result.
