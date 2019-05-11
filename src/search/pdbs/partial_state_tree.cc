@@ -144,7 +144,6 @@ PartialStateTree::PartialStateTree()
 
 void PartialStateTree::add(
     const vector<FactPair> &partial_state, const vector<int> &domain_sizes) {
-    assert(!partial_state.empty());
     vector<int> uncovered_vars;
     uncovered_vars.reserve(partial_state.size());
     for (const FactPair &fact : partial_state) {
