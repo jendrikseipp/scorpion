@@ -40,7 +40,6 @@ enum class PatternOrder {
     ACTIVE_OPS_DOWN,
     PATTERN_UP,
     PATTERN_DOWN,
-    RANDOM_ONCE,
 };
 
 class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {

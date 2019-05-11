@@ -161,10 +161,7 @@ static void compute_pattern_order(
                order_type == PatternOrder::PATTERN_DOWN) {
         // Nothing to do since these orders are total.
         return;
-    }
-
-    if (order_type == PatternOrder::RANDOM ||
-        order_type == PatternOrder::RANDOM_ONCE) {
+    } else if (order_type == PatternOrder::RANDOM) {
         rng.shuffle(order);
         return;
     }
@@ -283,16 +280,6 @@ public:
             }
         }
         return {};
-    }
-
-    void restart() {
-        if (order_type == PatternOrder::RANDOM) {
-            for (size_t i = 0; i < orders.size(); ++i) {
-                vector<int> &order = orders[i];
-                compute_pattern_order(
-                    patterns[i], order, order_type, task_info, domains, rng);
-            }
-        }
     }
 
     int get_num_generated_patterns() const {
@@ -489,7 +476,6 @@ PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::gener
     num_pattern_evaluations = 0;
     bool limit_reached = false;
     while (!limit_reached) {
-        pattern_generator.restart();
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator,
@@ -631,7 +617,6 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("ACTIVE_OPS_DOWN");
     pattern_orders.push_back("PATTERN_UP");
     pattern_orders.push_back("PATTERN_DOWN");
-    pattern_orders.push_back("RANDOM_ONCE");
     parser.add_enum_option(
         "order",
         pattern_orders,
