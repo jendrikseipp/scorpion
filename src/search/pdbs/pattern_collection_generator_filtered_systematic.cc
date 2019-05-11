@@ -218,14 +218,14 @@ public:
             int start_id = 0;
             int end_id = -1;
             for (size_t i = 0; i < patterns.size(); ++i) {
-                const array_pool::ArrayPool<int> &patterns_of_same_size = patterns[i];
-                end_id += patterns_of_same_size.size();
+                const array_pool::ArrayPool<int> &pattern_layer = patterns[i];
+                end_id += pattern_layer.size();
                 if (pattern_id >= start_id && pattern_id <= end_id) {
                     internal_id = pattern_id - start_id;
                     bucket_id = i;
                     break;
                 }
-                start_id += patterns_of_same_size.size();
+                start_id += pattern_layer.size();
             }
             assert(internal_id != -1);
             array_pool::ArrayPoolSlice<int> slice = patterns[bucket_id].get_slice(internal_id);
