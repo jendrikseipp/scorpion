@@ -115,8 +115,6 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
 
     /* Loop over systematic projection orders, create full orders and add them
        if they're diverse or unconditionally, if diversification is off. */
-    int num_selected_projection_orders = 0;
-    bool debug = false;
     for (const Order &sys_order : systematic_generator_orders_hacked) {
         Order order = sys_order;
         unordered_set<int> used(order.begin(), order.end());
@@ -125,20 +123,21 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
                 order.push_back(abs_id);
             }
         }
-        if (debug) {
-            log << "Converted order " << sys_order << " to " << order << endl;
-        }
         CostPartitioningHeuristic cp_heuristic = cp_function(
             abstractions, order, costs);
         if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
-            if (debug) {
-                log << "Select order " << order << endl;
-            }
             cp_heuristics.push_back(move(cp_heuristic));
-            ++num_selected_projection_orders;
+            if (diversifier) {
+                log << "Sum over max h values for " << num_samples
+                    << " samples after " << timer.get_elapsed_time()
+                    << " of diversification for systematic sequences: "
+                    << diversifier->compute_sum_portfolio_h_value_for_samples()
+                    << endl;
+            }
         }
     }
     int num_projection_orders = systematic_generator_orders_hacked.size();
+    int num_selected_projection_orders = cp_heuristics.size();
     double selected_percentage = (num_projection_orders == 0) ? 0
         : num_selected_projection_orders / static_cast<double>(num_projection_orders);
     log << "Selected projection orders: " << num_selected_projection_orders
@@ -181,7 +180,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
         // added orders.
         if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
             cp_heuristics.push_back(move(cp_heuristic));
-            if (diversify) {
+            if (diversifier) {
                 log << "Sum over max h values for " << num_samples
                     << " samples after " << timer.get_elapsed_time()
                     << " of diversification: "
