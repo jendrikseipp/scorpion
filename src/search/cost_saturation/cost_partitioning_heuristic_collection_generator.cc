@@ -109,9 +109,41 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
                 task_proxy, abstractions, sampler, num_samples, init_h, is_dead_end, max_sampling_time));
     }
 
+    log << "Start computing cost partitionings" << endl;
     vector<CostPartitioningHeuristic> cp_heuristics;
     int evaluated_orders = 0;
-    log << "Start computing cost partitionings" << endl;
+
+    /* Loop over systematic projection orders, create full orders and add them
+       if they're diverse or unconditionally, if diversification is off. */
+    int num_selected_projection_orders = 0;
+    bool debug = false;
+    for (const Order &sys_order : systematic_generator_orders_hacked) {
+        Order order = sys_order;
+        unordered_set<int> used(order.begin(), order.end());
+        for (int abs_id : get_default_order(abstractions.size())) {
+            if (used.insert(abs_id).second) {
+                order.push_back(abs_id);
+            }
+        }
+        if (debug) {
+            log << "Converted order " << sys_order << " to " << order << endl;
+        }
+        CostPartitioningHeuristic cp_heuristic = cp_function(
+            abstractions, order, costs);
+        if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
+            if (debug) {
+                log << "Select order " << order << endl;
+            }
+            cp_heuristics.push_back(move(cp_heuristic));
+            ++num_selected_projection_orders;
+        }
+    }
+    int num_projection_orders = systematic_generator_orders_hacked.size();
+    double selected_percentage = (num_projection_orders == 0) ? 0
+        : num_selected_projection_orders / static_cast<double>(num_projection_orders);
+    log << "Selected projection orders: " << num_selected_projection_orders
+        << "/" << num_projection_orders << " = " << selected_percentage << endl;
+
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            (!timer.is_expired() || cp_heuristics.empty())) {
         bool first_order = (evaluated_orders == 0);
@@ -160,36 +192,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
 
         ++evaluated_orders;
     }
-    /* Loop over systematic projection orders, create full orders and add them
-       if they're diverse or unconditionally, if diversification is off. */
-    int num_selected_projection_orders = 0;
-    bool debug = false;
-    for (const Order &sys_order : systematic_generator_orders_hacked) {
-        Order order = sys_order;
-        unordered_set<int> used(order.begin(), order.end());
-        for (int abs_id : get_default_order(abstractions.size())) {
-            if (used.insert(abs_id).second) {
-                order.push_back(abs_id);
-            }
-        }
-        if (debug) {
-            log << "Converted order " << sys_order << " to " << order << endl;
-        }
-        CostPartitioningHeuristic cp_heuristic = cp_function(
-            abstractions, order, costs);
-        if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
-            if (debug) {
-                log << "Select order " << order << endl;
-            }
-            cp_heuristics.push_back(move(cp_heuristic));
-            ++num_selected_projection_orders;
-        }
-    }
-    int num_projection_orders = systematic_generator_orders_hacked.size();
-    double selected_percentage = (num_projection_orders == 0) ? 0
-        : num_selected_projection_orders / static_cast<double>(num_projection_orders);
-    log << "Selected projection orders: " << num_selected_projection_orders
-        << "/" << num_projection_orders << " = " << selected_percentage << endl;
+
     log << "Evaluated orders: " << evaluated_orders << endl;
     log << "Cost partitionings: " << cp_heuristics.size() << endl;
     log << "Time for computing cost partitionings: " << timer.get_elapsed_time()
