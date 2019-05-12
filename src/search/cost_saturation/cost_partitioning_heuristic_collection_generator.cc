@@ -116,6 +116,11 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     /* Loop over systematic projection orders, create full orders and add them
        if they're diverse or unconditionally, if diversification is off. */
     for (const Order &sys_order : systematic_generator_orders_hacked) {
+        if (static_cast<int>(cp_heuristics.size()) >= max_orders ||
+            (timer.is_expired() && !cp_heuristics.empty())) {
+            break;
+        }
+
         Order order = sys_order;
         unordered_set<int> used(order.begin(), order.end());
         for (int abs_id : get_default_order(abstractions.size())) {
