@@ -107,7 +107,7 @@ class PatternEvaluator {
         std::size_t state_index,
         const std::vector<FactPair> &abstract_facts) const;
 
-    bool detects_new_dead_ends(
+    void store_new_dead_ends(
         const Pattern &pattern,
         const std::vector<int> &distances,
         PartialStateTree &dead_ends) const;

@@ -344,13 +344,12 @@ bool PatternEvaluator::is_consistent(
     return true;
 }
 
-bool PatternEvaluator::detects_new_dead_ends(
+void PatternEvaluator::store_new_dead_ends(
     const Pattern &pattern,
     const vector<int> &distances,
     PartialStateTree &dead_ends) const {
     const vector<size_t> &hash_multipliers = match_tree_backward->get_hash_multipliers();
     int pattern_size = hash_multipliers.size();
-    bool new_dead_end_detected = false;
     for (size_t index = 0; index < distances.size(); ++index) {
         if (distances[index] == INF) {
             // Reverse index to partial state.
@@ -365,12 +364,10 @@ bool PatternEvaluator::detects_new_dead_ends(
             }
             reverse(partial_state.begin(), partial_state.end());
             if (!dead_ends.subsumes(partial_state)) {
-                new_dead_end_detected = true;
                 dead_ends.add(partial_state, task_info.domain_sizes);
             }
         }
     }
-    return new_dead_end_detected;
 }
 
 bool PatternEvaluator::is_useful(
@@ -432,8 +429,8 @@ bool PatternEvaluator::is_useful(
     assert(has_dead_end ==
            any_of(distances.begin(), distances.end(), [](int d) {return d == INF;}));
     if (dead_ends && has_dead_end) {
-        // Add new dead ends to database, ignore result.
-        detects_new_dead_ends(pattern, distances, *dead_ends);
+        // Add new dead ends to database.
+        store_new_dead_ends(pattern, distances, *dead_ends);
     }
     return found_positive_finite_goal_distance;
 }
