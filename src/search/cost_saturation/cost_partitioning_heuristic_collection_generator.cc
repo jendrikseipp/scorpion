@@ -173,13 +173,13 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
             }
         }
         if (debug) {
-            cout << "Converted order " << sys_order << " to " << order << endl;
+            log << "Converted order " << sys_order << " to " << order << endl;
         }
         CostPartitioningHeuristic cp_heuristic = cp_function(
             abstractions, order, costs);
         if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
             if (debug) {
-                cout << "Select order " << order << endl;
+                log << "Select order " << order << endl;
             }
             cp_heuristics.push_back(move(cp_heuristic));
             ++num_selected_projection_orders;
