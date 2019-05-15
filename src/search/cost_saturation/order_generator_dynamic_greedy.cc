@@ -8,6 +8,7 @@
 
 #include "../utils/collections.h"
 #include "../utils/logging.h"
+#include "../utils/rng.h"
 
 #include <cassert>
 
@@ -15,7 +16,8 @@ using namespace std;
 
 namespace cost_saturation {
 OrderGeneratorDynamicGreedy::OrderGeneratorDynamicGreedy(const Options &opts)
-    : scoring_function(
+    : OrderGenerator(opts),
+      scoring_function(
           static_cast<ScoringFunction>(opts.get_enum("scoring_function"))) {
 }
 
@@ -34,6 +36,8 @@ Order OrderGeneratorDynamicGreedy::compute_dynamic_greedy_order_for_sample(
         current_h_values.reserve(num_remaining);
         current_saturated_costs.reserve(num_remaining);
 
+        // Shuffle remaining abstractions to break ties randomly.
+        rng->shuffle(remaining_abstractions);
         vector<int> saturated_costs_for_best_abstraction;
         for (int abs_id : remaining_abstractions) {
             assert(utils::in_bounds(abs_id, abstract_state_ids));
@@ -99,6 +103,7 @@ Order OrderGeneratorDynamicGreedy::compute_order_for_state(
 
 static shared_ptr<OrderGenerator> _parse_greedy(OptionParser &parser) {
     add_scoring_function_to_parser(parser);
+    add_common_order_generator_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
