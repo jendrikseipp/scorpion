@@ -1,4 +1,4 @@
-#include "pattern_collection_generator_filtered_systematic.h"
+#include "pattern_collection_generator_systematic_scp.h"
 
 #include "pattern_collection_generator_systematic.h"
 #include "pattern_evaluator.h"
@@ -271,7 +271,7 @@ public:
 };
 
 
-PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFilteredSystematic(
+PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP(
     const Options &opts)
     : max_pattern_size(opts.get<int>("max_pattern_size")),
       max_pdb_size(opts.get<int>("max_pdb_size")),
@@ -291,7 +291,7 @@ PatternCollectionGeneratorFilteredSystematic::PatternCollectionGeneratorFiltered
       debug(opts.get<bool>("debug")) {
 }
 
-bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
+bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
     const shared_ptr<AbstractTask> &task,
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
     const TaskInfo &evaluator_task_info,
@@ -418,7 +418,7 @@ bool PatternCollectionGeneratorFilteredSystematic::select_systematic_patterns(
     }
 }
 
-PatternCollectionInformation PatternCollectionGeneratorFilteredSystematic::generate(
+PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
     const shared_ptr<AbstractTask> &task) {
     utils::CountdownTimer timer(max_time);
     pattern_computation_timer = utils::make_unique_ptr<utils::Timer>();
@@ -603,7 +603,7 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    return make_shared<PatternCollectionGeneratorFilteredSystematic>(opts);
+    return make_shared<PatternCollectionGeneratorSystematicSCP>(opts);
 }
 
 static Plugin<PatternCollectionGenerator> _plugin("filtered_systematic", _parse);

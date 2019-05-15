@@ -1,5 +1,5 @@
-#ifndef PDBS_PATTERN_COLLECTION_GENERATOR_FILTERED_SYSTEMATIC_H
-#define PDBS_PATTERN_COLLECTION_GENERATOR_FILTERED_SYSTEMATIC_H
+#ifndef PDBS_PATTERN_COLLECTION_GENERATOR_SYSTEMATIC_SCP_H
+#define PDBS_PATTERN_COLLECTION_GENERATOR_SYSTEMATIC_SCP_H
 
 #include "pattern_generator.h"
 #include "types.h"
@@ -39,7 +39,7 @@ enum class PatternOrder {
     PATTERN_DOWN,
 };
 
-class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGenerator {
+class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerator {
     const int max_pattern_size;
     const int max_pdb_size;
     const int max_collection_size;
@@ -78,7 +78,7 @@ class PatternCollectionGeneratorFilteredSystematic : public PatternCollectionGen
         int64_t &collection_size,
         double overall_remaining_time);
 public:
-    explicit PatternCollectionGeneratorFilteredSystematic(const options::Options &opts);
+    explicit PatternCollectionGeneratorSystematicSCP(const options::Options &opts);
 
     virtual PatternCollectionInformation generate(
         const std::shared_ptr<AbstractTask> &task) override;
