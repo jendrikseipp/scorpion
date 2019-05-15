@@ -15,6 +15,7 @@
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
+#include "../utils/rng.h"
 
 #include <cassert>
 
@@ -123,7 +124,9 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
 
         Order order = sys_order;
         unordered_set<int> used(order.begin(), order.end());
-        for (int abs_id : get_default_order(abstractions.size())) {
+        vector<int> abstraction_ids = get_default_order(abstractions.size());
+        rng->shuffle(abstraction_ids);
+        for (int abs_id : abstraction_ids) {
             if (used.insert(abs_id).second) {
                 order.push_back(abs_id);
             }
