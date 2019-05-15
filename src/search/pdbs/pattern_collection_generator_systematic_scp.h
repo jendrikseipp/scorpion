@@ -31,12 +31,12 @@ struct TaskInfo;
 
 enum class PatternOrder {
     RANDOM,
-    PDB_SIZE_UP,
-    PDB_SIZE_DOWN,
-    ACTIVE_OPS_UP,
-    ACTIVE_OPS_DOWN,
-    PATTERN_UP,
-    PATTERN_DOWN,
+    STATES_UP,
+    STATES_DOWN,
+    OPS_UP,
+    OPS_DOWN,
+    CG_UP,
+    CG_DOWN,
 };
 
 class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerator {

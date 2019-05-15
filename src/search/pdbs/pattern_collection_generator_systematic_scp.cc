@@ -128,13 +128,13 @@ static unique_ptr<PatternCollection> get_patterns(
 
 static int compute_score(
     const Pattern &pattern, PatternOrder order_type, const TaskInfo &task_info) {
-    if (order_type == PatternOrder::PDB_SIZE_UP) {
+    if (order_type == PatternOrder::STATES_UP) {
         return get_pdb_size(task_info.domain_sizes, pattern);
-    } else if (order_type == PatternOrder::PDB_SIZE_DOWN) {
+    } else if (order_type == PatternOrder::STATES_DOWN) {
         return -get_pdb_size(task_info.domain_sizes, pattern);
-    } else if (order_type == PatternOrder::ACTIVE_OPS_UP) {
+    } else if (order_type == PatternOrder::OPS_UP) {
         return get_num_active_ops(pattern, task_info);
-    } else if (order_type == PatternOrder::ACTIVE_OPS_DOWN) {
+    } else if (order_type == PatternOrder::OPS_DOWN) {
         return -get_num_active_ops(pattern, task_info);
     } else {
         ABORT("wrong order_type");
@@ -146,11 +146,11 @@ static void order_patterns_of_same_size(
     PatternOrder order_type,
     const TaskInfo &task_info,
     utils::RandomNumberGenerator &rng) {
-    // Use PATTERN_DOWN for tie-breaking.
+    // Use CG_DOWN for tie-breaking.
     sort(patterns.begin(), patterns.end(), greater<Pattern>());
-    if (order_type == PatternOrder::PATTERN_UP) {
+    if (order_type == PatternOrder::CG_UP) {
         sort(patterns.begin(), patterns.end(), less<Pattern>());
-    } else if (order_type == PatternOrder::PATTERN_DOWN) {
+    } else if (order_type == PatternOrder::CG_DOWN) {
         // This is the base order -> nothing to do.
     } else if (order_type == PatternOrder::RANDOM) {
         rng.shuffle(patterns);
@@ -575,17 +575,17 @@ static void add_options(OptionParser &parser) {
         "true");
     vector<string> pattern_orders;
     pattern_orders.push_back("RANDOM");
-    pattern_orders.push_back("PDB_SIZE_UP");
-    pattern_orders.push_back("PDB_SIZE_DOWN");
-    pattern_orders.push_back("ACTIVE_OPS_UP");
-    pattern_orders.push_back("ACTIVE_OPS_DOWN");
-    pattern_orders.push_back("PATTERN_UP");
-    pattern_orders.push_back("PATTERN_DOWN");
+    pattern_orders.push_back("STATES_UP");
+    pattern_orders.push_back("STATES_DOWN");
+    pattern_orders.push_back("OPS_UP");
+    pattern_orders.push_back("OPS_DOWN");
+    pattern_orders.push_back("CG_UP");
+    pattern_orders.push_back("CG_DOWN");
     parser.add_enum_option(
         "order",
         pattern_orders,
         "order in which to consider patterns of the same size",
-        "PATTERN_DOWN");
+        "CG_DOWN");
     utils::add_rng_options(parser);
     parser.add_option<bool>(
         "debug",
