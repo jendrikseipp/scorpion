@@ -133,14 +133,16 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
         }
 
         // Optimize order.
-        if (max_optimization_time > 0) {
-            utils::CountdownTimer timer(max_optimization_time);
+        double optimization_time = min(
+            static_cast<double>(timer.get_remaining_time()), max_optimization_time);
+        if (optimization_time > 0) {
+            utils::CountdownTimer opt_timer(optimization_time);
             int incumbent_h_value = cp_heuristic.compute_heuristic(abstract_state_ids);
             optimize_order_with_hill_climbing(
-                cp_function, timer, abstractions, costs, abstract_state_ids, order,
+                cp_function, opt_timer, abstractions, costs, abstract_state_ids, order,
                 cp_heuristic, incumbent_h_value, first_order);
             if (first_order) {
-                log << "Time for optimizing order: " << timer.get_elapsed_time()
+                log << "Time for optimizing order: " << opt_timer.get_elapsed_time()
                     << endl;
             }
         }
