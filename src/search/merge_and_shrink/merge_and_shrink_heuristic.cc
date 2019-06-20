@@ -12,6 +12,7 @@
 
 #include "../task_utils/task_properties.h"
 
+#include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/system.h"
 
@@ -25,7 +26,7 @@ using utils::ExitCode;
 namespace merge_and_shrink {
 MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const options::Options &opts)
     : Heuristic(opts),
-      verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))) {
+      verbosity(static_cast<utils::Verbosity>(opts.get_enum("verbosity"))) {
     cout << "Initializing merge-and-shrink heuristic..." << endl;
     MergeAndShrinkAlgorithm algorithm(opts);
     FactoredTransitionSystem fts = algorithm.build_factored_transition_system(task_proxy);
@@ -59,7 +60,7 @@ void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
     */
 
     int active_factors_count = fts.get_num_active_entries();
-    if (verbosity >= Verbosity::NORMAL) {
+    if (verbosity >= utils::Verbosity::NORMAL) {
         cout << "Number of remaining factors: " << active_factors_count << endl;
     }
 
@@ -68,7 +69,7 @@ void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
         if (!fts.is_factor_solvable(index)) {
             mas_representations.reserve(1);
             finalize_factor(fts, index);
-            if (verbosity >= Verbosity::NORMAL) {
+            if (verbosity >= utils::Verbosity::NORMAL) {
                 cout << fts.get_transition_system(index).tag()
                      << "use this unsolvable factor as heuristic."
                      << endl;
@@ -82,7 +83,7 @@ void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
     for (int index : fts) {
         finalize_factor(fts, index);
     }
-    if (verbosity >= Verbosity::NORMAL) {
+    if (verbosity >= utils::Verbosity::NORMAL) {
         cout << "Use all factors in a maximum heuristic." << endl;
     }
 
@@ -189,15 +190,12 @@ static shared_ptr<Heuristic> _parse(options::OptionParser &parser) {
         "A currently recommended good configuration uses bisimulation "
         "based shrinking, the merge strategy SCC-DFP, and the appropriate "
         "label reduction setting (max_states has been altered to be between "
-        "10000 and 200000 in the literature):\n"
+        "10k and 200k in the literature):\n"
         "{{{\nmerge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),"
         "merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector="
         "score_based_filtering(scoring_functions=[goal_relevance,dfp,"
         "total_order])),label_reduction=exact(before_shrinking=true,"
-        "before_merging=false),max_states=50000,threshold_before_merge=1)\n}}}\n"
-        "Note that for versions of Fast Downward prior to 2016-08-19, the "
-        "syntax differs. See the recommendation in the file "
-        "merge_and_shrink_heuristic.cc for an example configuration.");
+        "before_merging=false),max_states=50k,threshold_before_merge=1)\n}}}\n");
 
     Heuristic::add_options_to_parser(parser);
     add_merge_and_shrink_algorithm_options_to_parser(parser);
