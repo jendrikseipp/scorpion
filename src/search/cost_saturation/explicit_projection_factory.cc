@@ -59,7 +59,7 @@ public:
     ExplicitProjectionFunction(const pdbs::Pattern &pattern, vector<int> &&hash_multipliers_)
         : pattern(pattern),
           hash_multipliers(move(hash_multipliers_)) {
-        assert(pattern.size() == hash_multipliers_.size());
+        assert(pattern.size() == hash_multipliers.size());
     }
 
     virtual int get_abstract_state_id(const State &concrete_state) const {
@@ -93,7 +93,8 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
       pattern(pattern),
       pattern_size(pattern.size()),
       relevant_preconditions(
-          get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)) {
+          get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)),
+      looping_operators(task_proxy.get_operators().size(), false) {
     assert(utils::is_sorted_unique(pattern));
 
     VariablesProxy variables = task_proxy.get_variables();
