@@ -3,7 +3,6 @@
 
 #include "abstraction_generator.h"
 
-#include <functional>
 #include <memory>
 #include <vector>
 
@@ -16,6 +15,7 @@ class SubtaskGenerator;
 }
 
 namespace utils {
+class CountdownTimer;
 class RandomNumberGenerator;
 }
 
@@ -24,6 +24,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const std::vector<std::shared_ptr<cegar::SubtaskGenerator>> subtask_generators;
     const int max_states;
     const int max_transitions;
+    const double max_time;
     const bool prune_unreachable_transitions;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
@@ -33,7 +34,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
 
     void build_abstractions_for_subtasks(
         const std::vector<std::shared_ptr<AbstractTask>> &subtasks,
-        std::function<bool()> total_size_limit_reached,
+        const utils::CountdownTimer &timer,
         Abstractions &abstractions);
 
 public:

@@ -42,6 +42,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
           opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
       max_states(opts.get<int>("max_states")),
       max_transitions(opts.get<int>("max_transitions")),
+      max_time(opts.get<double>("max_time")),
       prune_unreachable_transitions(opts.get<bool>("prune_unreachable_transitions")),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")),
@@ -113,19 +114,15 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
 
 void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
     const vector<shared_ptr<AbstractTask>> &subtasks,
-    function<bool()> total_size_limit_reached,
+    const utils::CountdownTimer &timer,
     Abstractions &abstractions) {
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
-        /* To make the abstraction refinement process deterministic, we don't
-           set a time limit. */
-        const double max_time = numeric_limits<double>::infinity();
-
         cegar::CEGAR cegar(
             subtask,
             max(1, (max_states - num_states) / remaining_subtasks),
             max(1, (max_transitions - num_transitions) / remaining_subtasks),
-            max_time,
+            timer.get_remaining_time() / remaining_subtasks,
             cegar::PickSplit::MAX_REFINED,
             *rng,
             debug);
@@ -141,7 +138,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         bool unsolvable = result.first;
         abstractions.push_back(move(result.second));
 
-        if (total_size_limit_reached() || unsolvable) {
+        if (num_states >= max_states || num_transitions >= max_transitions || unsolvable) {
             break;
         }
 
@@ -151,7 +148,9 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
 
 Abstractions CartesianAbstractionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task) {
-    utils::Timer timer;
+    utils::CountdownTimer timer(max_time);
+    num_states = 0;
+    num_transitions = 0;
     utils::Log log;
     log << "Build Cartesian abstractions" << endl;
 
@@ -160,17 +159,13 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
        some "dummy" memory. */
     utils::reserve_extra_memory_padding(0);
 
-    function<bool()> total_size_limit_reached =
-        [&] () {
-            return num_states >= max_states || num_transitions >= max_transitions;
-        };
-
     Abstractions abstractions;
     for (const auto &subtask_generator : subtask_generators) {
         cegar::SharedTasks subtasks = subtask_generator->get_subtasks(task);
-        build_abstractions_for_subtasks(
-            subtasks, total_size_limit_reached, abstractions);
-        if (total_size_limit_reached()) {
+        build_abstractions_for_subtasks(subtasks, timer, abstractions);
+        if (num_states >= max_states ||
+            num_transitions >= max_transitions ||
+            timer.is_expired()) {
             break;
         }
     }
@@ -179,8 +174,12 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         utils::release_extra_memory_padding();
     }
 
-    log << "Cartesian abstractions built: " << abstractions.size() << endl;
-    log << "Time for building Cartesian abstractions: " << timer << endl;
+    log << "Cartesian abstractions: " << abstractions.size() << endl;
+    log << "Time for building Cartesian abstractions: "
+        << timer.get_elapsed_time() << endl;
+    log << "Total number of Cartesian states: " << num_states << endl;
+    log << "Total number of transitions in Cartesian abstractions: "
+        << num_transitions << endl;
     return abstractions;
 }
 
@@ -204,6 +203,11 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "all abstractions",
         "1000000",
         Bounds("0", "infinity"));
+    parser.add_option<double>(
+        "max_time",
+        "maximum time for computing abstractions",
+        "infinity",
+        Bounds("0.0", "infinity"));
     parser.add_option<bool>(
         "prune_unreachable_transitions",
         "remove transitions from and to unreachable Cartesian states",
