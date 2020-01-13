@@ -43,6 +43,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_states(opts.get<int>("max_states")),
       max_transitions(opts.get<int>("max_transitions")),
       max_time(opts.get<double>("max_time")),
+      extra_memory_padding_mb(opts.get<int>("memory_padding")),
       prune_unreachable_transitions(opts.get<bool>("prune_unreachable_transitions")),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")),
@@ -112,22 +113,30 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
     };
 }
 
+unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_for_subtask(
+    const shared_ptr<AbstractTask> &subtask,
+    int remaining_subtasks,
+    const utils::CountdownTimer &timer) {
+    cegar::CEGAR cegar(
+        subtask,
+        max(1, (max_states - num_states) / remaining_subtasks),
+        max(1, (max_transitions - num_transitions) / remaining_subtasks),
+        timer.get_remaining_time() / remaining_subtasks,
+        cegar::PickSplit::MAX_REFINED,
+        *rng,
+        debug);
+    cout << endl;
+    return cegar.extract_abstraction();
+}
+
 void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
     const vector<shared_ptr<AbstractTask>> &subtasks,
     const utils::CountdownTimer &timer,
     Abstractions &abstractions) {
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
-        cegar::CEGAR cegar(
-            subtask,
-            max(1, (max_states - num_states) / remaining_subtasks),
-            max(1, (max_transitions - num_transitions) / remaining_subtasks),
-            timer.get_remaining_time() / remaining_subtasks,
-            cegar::PickSplit::MAX_REFINED,
-            *rng,
-            debug);
-
-        unique_ptr<cegar::Abstraction> cartesian_abstraction = cegar.extract_abstraction();
+        unique_ptr<cegar::Abstraction> cartesian_abstraction =
+            build_abstraction_for_subtask(subtask, remaining_subtasks, timer);
 
         num_states += cartesian_abstraction->get_num_states();
         num_transitions += cartesian_abstraction->get_transition_system().get_num_non_loops();
@@ -138,7 +147,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         bool unsolvable = result.first;
         abstractions.push_back(move(result.second));
 
-        if (num_states >= max_states || num_transitions >= max_transitions || unsolvable) {
+        if (num_states >= max_states || num_transitions >= max_transitions ||
+            !utils::extra_memory_padding_is_reserved() || unsolvable) {
             break;
         }
 
@@ -154,10 +164,8 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     utils::Log log;
     log << "Build Cartesian abstractions" << endl;
 
-    /* The CEGAR code expects that some extra memory is reserved. Since using
-       a memory padding leads to nondeterministic results, we only reserve
-       some "dummy" memory. */
-    utils::reserve_extra_memory_padding(0);
+    // The CEGAR code expects that some extra memory is reserved.
+    utils::reserve_extra_memory_padding(extra_memory_padding_mb);
 
     Abstractions abstractions;
     for (const auto &subtask_generator : subtask_generators) {
@@ -165,7 +173,8 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         build_abstractions_for_subtasks(subtasks, timer, abstractions);
         if (num_states >= max_states ||
             num_transitions >= max_transitions ||
-            timer.is_expired()) {
+            timer.is_expired() ||
+            !utils::extra_memory_padding_is_reserved()) {
             break;
         }
     }
@@ -208,6 +217,17 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "maximum time for computing abstractions",
         "infinity",
         Bounds("0.0", "infinity"));
+    parser.add_option<int>(
+        "memory_padding",
+        "amount of extra memory in MB to reserve for recovering from "
+        "out-of-memory situations gracefully. When the memory runs out, we "
+        "stop refining and start the search. Due to memory fragmentation, "
+        "the memory used for building the abstraction (states, transitions, "
+        "etc.) often can't be reused for things that require big continuous "
+        "blocks of memory. It is for this reason that we require a rather "
+        "large amount of memory padding by default.",
+        "500",
+        Bounds("0", "infinity"));
     parser.add_option<bool>(
         "prune_unreachable_transitions",
         "remove transitions from and to unreachable Cartesian states",
