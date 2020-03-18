@@ -29,6 +29,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       cp_heuristics(move(cp_heuristics)),
       unsolvability_heuristic(move(unsolvability_heuristic)),
       interval(opts.get<int>("interval")),
+      skip_seen_orders(opts.get<bool>("skip_seen_orders")),
       costs(task_properties::get_operator_costs(task_proxy)),
       num_evaluated_states(0),
       num_scps_computed(0) {
@@ -72,7 +73,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     if (should_compute_scp(state)) {
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
-        if (!seen_orders.count(order)) {
+        if (!skip_seen_orders || !seen_orders.count(order)) {
             CostPartitioningHeuristic cost_partitioning =
                 compute_saturated_cost_partitioning(abstractions, order, costs);
             seen_orders.insert(move(order));
@@ -104,6 +105,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "compute SCP for every interval-th state",
         OptionParser::NONE,
         Bounds("-1", "infinity"));
+    parser.add_option<bool>(
+        "skip_seen_orders",
+        "compute SCP only once for each order",
+        "true");
 
     Options opts = parser.parse();
     if (parser.help_mode())

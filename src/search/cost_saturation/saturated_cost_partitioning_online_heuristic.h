@@ -18,6 +18,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     CPHeuristics cp_heuristics;
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
+    const bool skip_seen_orders;
     const std::vector<int> costs;
     std::vector<std::vector<bool>> seen_facts;
     utils::HashSet<Order> seen_orders;
