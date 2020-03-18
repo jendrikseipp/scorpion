@@ -103,6 +103,10 @@ void add_order_options_to_parser(OptionParser &parser) {
         "200",
         Bounds("0", "infinity"));
     parser.add_option<bool>(
+        "skip_seen_orders",
+        "compute SCP only once for each order",
+        "false");
+    parser.add_option<bool>(
         "diversify",
         "only keep orders that have a higher heuristic value than all previous "
         "orders for any of the samples",
@@ -126,6 +130,7 @@ get_cp_heuristic_collection_generator_from_options(const options::Options &opts)
         opts.get<shared_ptr<OrderGenerator>>("orders"),
         opts.get<int>("max_orders"),
         opts.get<double>("max_time"),
+        opts.get<bool>("skip_seen_orders"),
         opts.get<bool>("diversify"),
         opts.get<int>("samples"),
         opts.get<double>("max_optimization_time"),

@@ -50,6 +50,7 @@ CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectio
     const shared_ptr<OrderGenerator> &order_generator,
     int max_orders,
     double max_time,
+    bool skip_seen_orders,
     bool diversify,
     int num_samples,
     double max_optimization_time,
@@ -57,6 +58,7 @@ CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectio
     : order_generator(order_generator),
       max_orders(max_orders),
       max_time(max_time),
+      skip_seen_orders(skip_seen_orders),
       diversify(diversify),
       num_samples(num_samples),
       max_optimization_time(max_optimization_time),
@@ -112,6 +114,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     log << "Start computing cost partitionings" << endl;
     vector<CostPartitioningHeuristic> cp_heuristics;
     int evaluated_orders = 0;
+    utils::HashSet<Order> seen_orders;
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            (!timer.is_expired() || cp_heuristics.empty())) {
         bool first_order = (evaluated_orders == 0);
@@ -129,6 +132,13 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
                 abstractions, sampler.sample_state(init_h, is_dead_end));
             order = order_generator->compute_order_for_state(
                 abstract_state_ids, false);
+            if (skip_seen_orders) {
+                if (seen_orders.count(order)) {
+                    continue;
+                } else {
+                    seen_orders.insert(order);
+                }
+            }
             cp_heuristic = cp_function(abstractions, order, costs);
         }
 
