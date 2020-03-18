@@ -1,140 +1,109 @@
 #ifndef OPTIONS_REGISTRIES_H
 #define OPTIONS_REGISTRIES_H
 
-#include "../utils/system.h"
+#include "any.h"
+#include "doc_utils.h"
+#include "raw_registry.h"
 
-#include <iostream>
-#include <map>
+#include <functional>
 #include <string>
 #include <typeindex>
+#include <unordered_map>
 #include <vector>
+
 
 namespace options {
 class OptionParser;
+class Predefinitions;
 
-//a registry<T> maps a string to a T-factory
-template<typename T>
 class Registry {
-public:
-    typedef T (*Factory)(OptionParser &);
-    static Registry<T> *instance() {
-        static Registry<T> instance_;
-        return &instance_;
-    }
-
-    void insert(const std::string &k, Factory f) {
-        if (registered.count(k)) {
-            std::cerr << "duplicate key in registry: " << k << std::endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-        }
-        registered[k] = f;
-    }
-
-    bool contains(const std::string &k) {
-        return registered.find(k) != registered.end();
-    }
-
-    Factory get(const std::string &k) {
-        return registered[k];
-    }
-
-    std::vector<std::string> get_keys() {
-        std::vector<std::string> keys;
-        for (auto it : registered) {
-            keys.push_back(it.first);
-        }
-        return keys;
-    }
-
-private:
-    Registry() = default;
-    std::map<std::string, Factory> registered;
-};
-
-
-/*
-  The plugin type info class contains meta-information for a given
-  type of plugins (e.g. "SearchEngine" or "MergeStrategyFactory").
-*/
-class PluginTypeInfo {
-    std::type_index type;
-
+    std::unordered_map<std::type_index, std::unordered_map<std::string, Any>> plugin_factories;
     /*
-      The type name should be "user-friendly". It is for example used
-      as the name of the wiki page that documents this plugin type.
-      It follows wiki conventions (e.g. "Heuristic", "SearchEngine",
-      "ShrinkStrategy").
+      plugin_type_infos collects information about all plugin types
+      in use and gives access to the underlying information. This is used,
+      for example, to generate the complete help output.
     */
-    std::string type_name;
-
+    std::unordered_map<std::type_index, PluginTypeInfo> plugin_type_infos;
     /*
-      General documentation for the plugin type. This is included at
-      the top of the wiki page for this plugin type.
+      The plugin group registry collects information about plugin groups.
+      A plugin group is a set of plugins (which should be of the same
+      type, although the code does not enforce this) that should be
+      grouped together in user documentation.
+
+      For example, all PDB heuristics could be grouped together so that
+      the documention page for the heuristics looks nicer.
     */
-    std::string documentation;
+    std::unordered_map<std::string, PluginGroupInfo> plugin_group_infos;
+    /*
+       plugin_infos collects the information about all plugins. This is used,
+       for example, to generate the documentation.
+    */
+    std::unordered_map<std::string, PluginInfo> plugin_infos;
+    /*
+       Map from predefinition keyword to predefinition function.
+    */
+    std::unordered_map<std::string, PredefinitionFunction> predefinition_functions;
+
+    void insert_plugin_types(const RawRegistry &raw_registry,
+                             std::vector<std::string> &errors);
+    void insert_plugin_groups(const RawRegistry &raw_registry,
+                              std::vector<std::string> &errors);
+    void insert_plugins(const RawRegistry &raw_registry,
+                        std::vector<std::string> &errors);
+
+    void insert_plugin(const std::string &key, const Any &factory,
+                       const std::string &group,
+                       const PluginTypeNameGetter &type_name_factory,
+                       const std::type_index &type);
+    void insert_type_info(const PluginTypeInfo &info);
+    void insert_group_info(const PluginGroupInfo &info);
+
 public:
-    PluginTypeInfo(const std::type_index &type,
-                   const std::string &type_name,
-                   const std::string &documentation)
-        : type(type),
-          type_name(type_name),
-          documentation(documentation) {
+    explicit Registry(const RawRegistry &raw_registry);
+
+    template<typename T>
+    std::function<T(OptionParser &)> get_factory(const std::string &key) const {
+        std::type_index type(typeid(T));
+        return any_cast<std::function<T(OptionParser &)>>(plugin_factories.at(type).at(key));
     }
 
-    ~PluginTypeInfo() {
-    }
+    bool is_predefinition(const std::string &key) const;
+    void handle_predefinition(const std::string &key, const std::string &arg,
+                              Predefinitions &predefinitions, bool dry_run);
 
-    const std::type_index &get_type() const {
-        return type;
-    }
+    const PluginTypeInfo &get_type_info(const std::type_index &type) const;
+    std::vector<PluginTypeInfo> get_sorted_type_infos() const;
 
-    const std::string &get_type_name() const {
-        return type_name;
-    }
+    const PluginGroupInfo &get_group_info(const std::string &key) const;
 
-    const std::string &get_documentation() const {
-        return documentation;
-    }
-};
 
-/*
-  The plugin type registry collects information about all plugin types
-  in use and gives access to the underlying information. This is used,
-  for example, to generate the complete help output.
+    PluginInfo &get_plugin_info(const std::string &key);
 
-  Note that the information for individual plugins (rather than plugin
-  types) is organized in separate registries, one for each plugin
-  type. For example, there is a Registry<Heuristic> that organizes the
-  Heuristic plugins.
-*/
+    void add_plugin_info_arg(
+        const std::string &key,
+        const std::string &arg_name,
+        const std::string &help,
+        const std::string &type_name,
+        const std::string &default_value,
+        const Bounds &bounds,
+        const ValueExplanations &value_explanations = ValueExplanations());
 
-// TODO: Reduce code duplication with Registry<T>.
-class PluginTypeRegistry {
-    using Map = std::map<std::type_index, PluginTypeInfo>;
-    PluginTypeRegistry() = default;
-    ~PluginTypeRegistry() = default;
-    Map registry;
-public:
-    static PluginTypeRegistry *instance();
-    void insert(const PluginTypeInfo &info);
-    const PluginTypeInfo &get(const std::type_index &type) const;
+    void set_plugin_info_synopsis(
+        const std::string &key, const std::string &name, const std::string &description);
 
-    Map::const_iterator begin() const {
-        /*
-          TODO (post-issue586): We want plugin types sorted by name in
-          output. One way to achieve this is by defining the map's
-          comparison function to sort first by the name and then by
-          the type_index, but this is actually a bit difficult if the
-          name isn't part of the key. One option to work around this
-          is to use a set instead of a map as the internal data
-          structure here.
-        */
-        return registry.cbegin();
-    }
+    void add_plugin_info_property(
+        const std::string &key, const std::string &name, const std::string &description);
 
-    Map::const_iterator end() const {
-        return registry.cend();
-    }
+    void add_plugin_info_feature(
+        const std::string &key, const std::string &feature, const std::string &description);
+
+    void add_plugin_info_note(
+        const std::string &key,
+        const std::string &name,
+        const std::string &description,
+        bool long_text);
+
+    std::vector<std::string> get_sorted_plugin_info_keys();
 };
 }
 

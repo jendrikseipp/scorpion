@@ -1,98 +1,83 @@
-#include "saturated_cost_partitioning_heuristic.h"
-
 #include "abstraction.h"
-#include "cost_partitioning_collection_generator.h"
+#include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
 
-#include "../utils/rng_options.h"
+#include "../utils/markup.h"
 
 using namespace std;
 
 namespace cost_saturation {
-static CostPartitioning compute_saturated_cost_partitioning(
+CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,
-    const vector<int> &costs,
-    bool debug) {
+    const vector<int> &costs) {
     assert(abstractions.size() == order.size());
-    vector<vector<int>> h_values_by_abstraction(abstractions.size());
+    CostPartitioningHeuristic cp_heuristic;
     vector<int> remaining_costs = costs;
     for (int pos : order) {
         const Abstraction &abstraction = *abstractions[pos];
-        auto pair = abstraction.compute_goal_distances_and_saturated_costs(
-            remaining_costs);
-        vector<int> &h_values = pair.first;
-        vector<int> &saturated_costs = pair.second;
-        if (debug) {
-            cout << "h-values: ";
-            print_indexed_vector(h_values);
-            cout << "saturated costs: ";
-            print_indexed_vector(saturated_costs);
-        }
-        h_values_by_abstraction[pos] = move(h_values);
+        vector<int> h_values = abstraction.compute_goal_distances(remaining_costs);
+        vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
+        cp_heuristic.add_h_values(pos, move(h_values));
         reduce_costs(remaining_costs, saturated_costs);
-        if (debug) {
-            cout << "remaining costs: ";
-            print_indexed_vector(remaining_costs);
-        }
     }
-    return h_values_by_abstraction;
+    return cp_heuristic;
 }
 
-SaturatedCostPartitioningHeuristic::SaturatedCostPartitioningHeuristic(const Options &opts)
-    : CostPartitioningHeuristic(opts) {
-    const bool verbose = debug;
-
-    CostPartitioningCollectionGenerator cps_generator(
-        opts.get<shared_ptr<CostPartitioningGenerator>>("orders"),
-        opts.get<int>("max_orders"),
-        opts.get<double>("max_time"),
-        opts.get<bool>("diversify"),
-        utils::parse_rng_from_options(opts));
-    vector<int> costs = get_operator_costs(task_proxy);
-    cp_heuristics =
-        cps_generator.get_cost_partitionings(
-            task_proxy, abstractions, costs,
-            [verbose](const Abstractions &abstractions, const vector<int> &order, const vector<int> &costs) {
-            return compute_saturated_cost_partitioning(abstractions, order, costs, verbose);
-        }, opts.get<bool>("filter_zero_h_values"));
-
-    int num_heuristics = abstractions.size() * cp_heuristics.size();
-    int num_stored_heuristics = 0;
-    for (const auto &cp_heuristic: cp_heuristics) {
-        num_stored_heuristics += cp_heuristic.size();
-    }
-    cout << "Stored heuristics: " << num_stored_heuristics << "/"
-         << num_heuristics << " = "
-         << num_stored_heuristics / static_cast<double>(num_heuristics) << endl;
-
-    for (auto &abstraction : abstractions) {
-        abstraction->release_transition_system_memory();
-    }
-}
-
-
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Saturated cost partitioning heuristic",
-        "");
-
-    prepare_parser_for_cost_partitioning_heuristic(parser);
-    add_cost_partitioning_collection_options_to_parser(parser);
-
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    return new SaturatedCostPartitioningHeuristic(opts);
+        "Saturated cost partitioning",
+        "Compute the maximum over multiple saturated cost partitioning "
+        "heuristics using different orders. Depending on the options, orders "
+        "may be greedy, optimized and/or diverse. We describe saturated cost "
+        "partitioning in the paper" +
+        utils::format_journal_reference(
+            {"Jendrik Seipp", "Malte Helmert"},
+            "Counterexample-Guided Cartesian Abstraction Refinement for "
+            "Classical Planning",
+            "https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf",
+            "Journal of Artificial Intelligence Research",
+            "62",
+            "535-577",
+            "2018") +
+        "and show how to compute saturated cost partitioning heuristics for "
+        "multiple (diverse) orders in" +
+        utils::format_conference_reference(
+            {"Jendrik Seipp", "Thomas Keller", "Malte Helmert"},
+            "Narrowing the Gap Between Saturated and Optimal Cost Partitioning "
+            "for Classical Planning",
+            "https://ai.dmi.unibas.ch/papers/seipp-et-al-aaai2017.pdf",
+            "Proceedings of the 31st AAAI Conference on Artificial Intelligence "
+            "(AAAI 2017)",
+            "3651-3657",
+            "AAAI Press",
+            "2017") +
+        "Greedy orders for saturated cost partitioning are introduced in" +
+        utils::format_conference_reference(
+            {"Jendrik Seipp"},
+            "Better Orders for Saturated Cost Partitioning in Optimal "
+            "Classical Planning",
+            "https://ai.dmi.unibas.ch/papers/seipp-socs2017.pdf",
+            "Proceedings of the 10th Annual Symposium on Combinatorial Search "
+            "(SoCS 2017)",
+            "149-153",
+            "AAAI Press",
+            "2017"));
+    parser.document_note(
+        "Difference to cegar()",
+        "The cegar() plugin computes a single saturated cost partitioning over "
+        "Cartesian abstraction heuristics. In contrast, "
+        "saturated_cost_partitioning() supports computing the maximum over "
+        "multiple saturated cost partitionings using different heuristic "
+        "orders, and it supports both Cartesian abstraction heuristics and "
+        "pattern database heuristics. While cegar() interleaves abstraction "
+        "computation with cost partitioning, saturated_cost_partitioning() "
+        "computes all abstractions using the original costs.");
+    return get_max_cp_heuristic(parser, compute_saturated_cost_partitioning);
 }
 
-static Plugin<Heuristic> _plugin("saturated_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("scp", _parse);
 }

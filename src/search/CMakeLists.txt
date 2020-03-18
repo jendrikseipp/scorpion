@@ -46,9 +46,9 @@ option(
   TRUE)
 
 if(PLUGIN_LP_SOLVER_ENABLED AND USE_LP)
-    find_package(OSI OPTIONAL_COMPONENTS Cpx Clp Grb)
-    if(OSI_FOUND AND (OSI_Cpx_FOUND OR OSI_Clp_FOUND OR OSI_Grb_FOUND))
-        foreach(SOLVER Cpx Clp Grb)
+    find_package(OSI OPTIONAL_COMPONENTS Cpx Clp Grb Spx)
+    if(OSI_FOUND AND (OSI_Cpx_FOUND OR OSI_Clp_FOUND OR OSI_Grb_FOUND OR OSI_Spx_FOUND))
+        foreach(SOLVER Cpx Clp Grb Spx)
             if(OSI_${SOLVER}_FOUND)
                 string(TOUPPER ${SOLVER} TMP_SOLVER_UPPER_CASE)
                 mark_as_advanced(TMP_SOLVER_UPPER_CASE)
@@ -62,6 +62,12 @@ if(PLUGIN_LP_SOLVER_ENABLED AND USE_LP)
         add_definitions("-D USE_LP")
         include_directories(${OSI_INCLUDE_DIRS})
         target_link_libraries(downward ${OSI_LIBRARIES})
+
+        find_package(ZLIB REQUIRED)
+        if(ZLIB_FOUND)
+            include_directories(${ZLIB_INCLUDE_DIRS})
+            target_link_libraries(downward ${ZLIB_LIBRARIES})
+        endif()
     endif()
 
     if(OSI_Cpx_FOUND AND CPLEX_RUNTIME_LIBRARY)
@@ -71,20 +77,4 @@ if(PLUGIN_LP_SOLVER_ENABLED AND USE_LP)
             $<TARGET_FILE_DIR:downward>
         )
     endif()
-endif()
-
-if ($ENV{DOWNWARD_USE_ISNAN_WORKAROUND})
-    set(USE_ISNAN_WORKAROUND_DEFAULT_VALUE TRUE)
-else()
-    set(USE_ISNAN_WORKAROUND_DEFAULT_VALUE FALSE)
-endif()
-
-option(
-  USE_ISNAN_WORKAROUND
-  "With some compilers this workaround fixes compilation errors involving the isnan stdlib function."
-  ${USE_ISNAN_WORKAROUND_DEFAULT_VALUE})
-
-message("USE_ISNAN_WORKAROUND: ${USE_ISNAN_WORKAROUND}")
-if(USE_ISNAN_WORKAROUND)
-    add_definitions("-D USE_ISNAN_WORKAROUND")
 endif()

@@ -1,35 +1,35 @@
 #include "canonical_heuristic.h"
 
 #include "abstraction.h"
-#include "abstraction_generator.h"
-#include "cost_partitioning_heuristic.h"
+#include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
 
-#include "../pdbs/max_cliques.h"
-#include "../utils/dynamic_bitset.h"
+#include "../algorithms/max_cliques.h"
+#include "../algorithms/dynamic_bitset.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
 using namespace std;
 
 namespace cost_saturation {
 class AbstractionGenerator;
-class CostPartitioningGenerator;
 
 static MaxAdditiveSubsets compute_max_additive_subsets(
-    const vector<unique_ptr<Abstraction>> &abstractions,
-    int num_operators) {
+    const Abstractions &abstractions) {
     int num_abstractions = abstractions.size();
 
-    vector<utils::DynamicBitset<>> relevant_operators;
+    vector<dynamic_bitset::DynamicBitset<>> relevant_operators;
     relevant_operators.reserve(num_abstractions);
     for (const auto &abstraction : abstractions) {
-        utils::DynamicBitset<> active_ops(num_operators);
-        for (int op_id : abstraction->get_active_operators()) {
-            active_ops.set(op_id);
+        int num_operators = abstraction->get_num_operators();
+        dynamic_bitset::DynamicBitset<> active_ops(num_operators);
+        for (int op_id = 0; op_id < num_operators; ++op_id) {
+            if (abstraction->operator_is_active(op_id)) {
+                active_ops.set(op_id);
+            }
         }
         relevant_operators.push_back(move(active_ops));
     }
@@ -50,49 +50,29 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
     }
 
     MaxAdditiveSubsets max_cliques;
-    pdbs::compute_max_cliques(cgraph, max_cliques);
+    max_cliques::compute_max_cliques(cgraph, max_cliques);
     return max_cliques;
 }
 
 CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
-    : Heuristic(opts),
-      debug(opts.get<bool>("debug")) {
-    const vector<int> operator_costs = get_operator_costs(task_proxy);
+    : Heuristic(opts) {
+    vector<int> costs = task_properties::get_operator_costs(task_proxy);
 
-    vector<int> abstractions_per_generator;
-    for (const shared_ptr<AbstractionGenerator> &generator :
-         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
-        int abstractions_before = abstractions.size();
-        for (auto &abstraction : generator->generate_abstractions(task)) {
-            abstractions.push_back(move(abstraction));
-        }
-        abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
-    }
-    cout << "Abstractions: " << abstractions.size() << endl;
-    cout << "Abstractions per generator: " << abstractions_per_generator << endl;
+    Abstractions abstractions = generate_abstractions(
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
-    if (debug) {
-        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-            abstraction->dump();
-        }
-    }
-
-    utils::Log() << "Compute distances" << endl;
+    utils::Log() << "Compute abstract goal distances" << endl;
     for (const auto &abstraction : abstractions) {
-        h_values_by_abstraction.push_back(abstraction->compute_h_values(operator_costs));
+        h_values_by_abstraction.push_back(
+            abstraction->compute_goal_distances(costs));
     }
 
     utils::Log() << "Compute max additive subsets" << endl;
-    max_additive_subsets = compute_max_additive_subsets(
-        abstractions, operator_costs.size());
+    max_additive_subsets = compute_max_additive_subsets(abstractions);
 
-    utils::Log() << "Delete transition systems" << endl;
     for (auto &abstraction : abstractions) {
-        abstraction->release_transition_system_memory();
+        abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
-}
-
-CanonicalHeuristic::~CanonicalHeuristic() {
 }
 
 int CanonicalHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -101,44 +81,39 @@ int CanonicalHeuristic::compute_heuristic(const GlobalState &global_state) {
 }
 
 int CanonicalHeuristic::compute_heuristic(const State &state) {
-    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-    int max_h = compute_max_h(local_state_ids);
-    if (max_h == INF) {
-        return DEAD_END;
+    vector<int> h_values_for_state;
+    h_values_for_state.reserve(abstraction_functions.size());
+    for (size_t i = 0; i < abstraction_functions.size(); ++i) {
+        int state_id = abstraction_functions[i]->get_abstract_state_id(state);
+        int h = h_values_by_abstraction[i][state_id];
+        if (h == INF) {
+            return DEAD_END;
+        }
+        h_values_for_state.push_back(h);
     }
-    return max_h;
+    return compute_max_over_sums(h_values_for_state);
 }
 
-int CanonicalHeuristic::compute_max_h(const vector<int> &local_state_ids) const {
+int CanonicalHeuristic::compute_max_over_sums(
+    const vector<int> &h_values_for_state) const {
     int max_h = 0;
     for (const MaxAdditiveSubset &additive_subset : max_additive_subsets) {
         int sum_h = 0;
         for (int abstraction_id : additive_subset) {
-            assert(utils::in_bounds(abstraction_id, local_state_ids));
-            int state_id = local_state_ids[abstraction_id];
-            assert(utils::in_bounds(abstraction_id, h_values_by_abstraction));
-            const vector<int> &h_values = h_values_by_abstraction[abstraction_id];
-            assert(utils::in_bounds(state_id, h_values));
-            int h = h_values[state_id];
-            if (h == INF) {
-                return INF;
-            }
+            int h = h_values_for_state[abstraction_id];
+            assert(h != INF);
             sum_h += h;
+            assert(sum_h >= 0);
         }
         max_h = max(max_h, sum_h);
     }
-    assert(max_h >= 0);
-
     return max_h;
 }
 
-void CanonicalHeuristic::print_statistics() const {
-}
 
-
-static Heuristic *_parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Canonical heuristic",
+        "Canonical heuristic for abstraction heuristics",
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
@@ -150,8 +125,8 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    return new CanonicalHeuristic(opts);
+    return make_shared<CanonicalHeuristic>(opts);
 }
 
-static Plugin<Heuristic> _plugin("canonical_heuristic", _parse);
+static Plugin<Evaluator> _plugin("canonical_heuristic", _parse);
 }

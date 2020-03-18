@@ -1,150 +1,55 @@
 #include "cost_partitioning_heuristic.h"
 
-#include "abstraction.h"
-#include "abstraction_generator.h"
-#include "utils.h"
+#include "../utils/collections.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
-#include "../utils/logging.h"
-#include "../utils/rng.h"
-#include "../utils/rng_options.h"
+#include <cassert>
 
 using namespace std;
 
 namespace cost_saturation {
-class AbstractionGenerator;
-class CostPartitioningGenerator;
+bool g_store_unsolvable_states_once_hacked = true;
 
-CostPartitioningHeuristic::CostPartitioningHeuristic(const Options &opts)
-    : Heuristic(opts),
-      rng(utils::parse_rng_from_options(opts)),
-      debug(opts.get<bool>("debug")) {
-    for (const shared_ptr<AbstractionGenerator> &generator :
-         opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators")) {
-        int abstractions_before = abstractions.size();
-        for (auto &abstraction : generator->generate_abstractions(task)) {
-            abstractions.push_back(move(abstraction));
-        }
-        abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
-    }
-    cout << "Abstractions: " << abstractions.size() << endl;
-    cout << "Abstractions per generator: " << abstractions_per_generator << endl;
-
-    if (debug) {
-        for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-            abstraction->dump();
-        }
+void CostPartitioningHeuristic::add_h_values(
+    int abstraction_id, vector<int> &&h_values) {
+    if (any_of(h_values.begin(), h_values.end(), [](int h) {
+                   return h > 0 && (!g_store_unsolvable_states_once_hacked || h != INF);
+               })) {
+        lookup_tables.emplace_back(abstraction_id, move(h_values));
     }
 }
 
-CostPartitioningHeuristic::~CostPartitioningHeuristic() {
-}
-
-int CostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int CostPartitioningHeuristic::compute_heuristic(const State &state) {
-    vector<int> local_state_ids = get_local_state_ids(abstractions, state);
-    int max_h = compute_max_h_with_statistics(local_state_ids);
-    if (max_h == INF) {
-        return DEAD_END;
+int CostPartitioningHeuristic::compute_heuristic(
+    const vector<int> &abstract_state_ids) const {
+    int sum_h = 0;
+    for (const LookupTable &lookup_table : lookup_tables) {
+        assert(utils::in_bounds(lookup_table.abstraction_id, abstract_state_ids));
+        int state_id = abstract_state_ids[lookup_table.abstraction_id];
+        assert(utils::in_bounds(state_id, lookup_table.h_values));
+        int h = lookup_table.h_values[state_id];
+        assert(h >= 0 && h != INF);
+        sum_h += h;
+        assert(sum_h >= 0);
     }
-    return max_h;
+    return sum_h;
 }
 
-int CostPartitioningHeuristic::compute_max_h_with_statistics(
-    const vector<int> &local_state_ids) const {
-    int max_h = 0;
-    int best_id = -1;
-    int current_id = 0;
-    for (const CostPartitionedHeuristic &cp_heuristic : cp_heuristics) {
-        int sum_h = cp_heuristic.compute_heuristic(local_state_ids);
-        if (sum_h > max_h) {
-            max_h = sum_h;
-            best_id = current_id;
-        }
-        if (sum_h == INF) {
-            break;
-        }
-        ++current_id;
+int CostPartitioningHeuristic::get_num_lookup_tables() const {
+    return lookup_tables.size();
+}
+
+int CostPartitioningHeuristic::get_num_heuristic_values() const {
+    int num_values = 0;
+    for (const auto &lookup_table : lookup_tables) {
+        num_values += lookup_table.h_values.size();
     }
-    assert(max_h >= 0);
+    return num_values;
+}
 
-    num_best_order.resize(cp_heuristics.size(), 0);
-    if (best_id != -1) {
-        assert(utils::in_bounds(best_id, num_best_order));
-        ++num_best_order[best_id];
+void CostPartitioningHeuristic::mark_useful_abstractions(
+    vector<bool> &useful_abstractions) const {
+    for (const auto &lookup_table : lookup_tables) {
+        assert(utils::in_bounds(lookup_table.abstraction_id, useful_abstractions));
+        useful_abstractions[lookup_table.abstraction_id] = true;
     }
-
-    return max_h;
-}
-
-void CostPartitioningHeuristic::print_statistics() const {
-    int num_orders = num_best_order.size();
-    int num_probably_superfluous = count(num_best_order.begin(), num_best_order.end(), 0);
-    int num_probably_useful = num_orders - num_probably_superfluous;
-    cout << "Number of times each order was the best order: "
-         << num_best_order << endl;
-    cout << "Probably useful orders: " << num_probably_useful << "/" << num_orders
-         << " = " << 100. * num_probably_useful / num_orders << "%" << endl;
-}
-
-void add_cost_partitioning_collection_options_to_parser(OptionParser &parser) {
-    parser.add_option<int>(
-        "max_orders",
-        "maximum number of abstraction orders",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time for finding cost partitionings",
-        "10",
-        Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "diversify",
-        "keep orders that improve the portfolio's heuristic value for any of the samples",
-        "true");
-    parser.add_option<bool>(
-        "filter_zero_h_values",
-        "don't store h-value vectors that only contain zeros",
-        "false");
-    utils::add_rng_options(parser);
-}
-
-void prepare_parser_for_cost_partitioning_heuristic(
-    options::OptionParser &parser) {
-    parser.document_language_support("action costs", "supported");
-    parser.document_language_support(
-        "conditional effects",
-        "not supported (the heuristic supports them in theory, but none of "
-        "the currently implemented abstraction generators do)");
-    parser.document_language_support(
-        "axioms",
-        "not supported (the heuristic supports them in theory, but none of "
-        "the currently implemented abstraction generators do)");
-    parser.document_property("admissible", "yes");
-    parser.document_property(
-        "consistent",
-        "yes, if all abstraction generators represent consistent heuristics");
-    parser.document_property("safe", "yes");
-    parser.document_property("preferred operators", "no");
-
-    parser.add_list_option<shared_ptr<AbstractionGenerator>>(
-        "abstraction_generators",
-        "methods that generate abstractions");
-    parser.add_option<shared_ptr<CostPartitioningGenerator>>(
-        "orders",
-        "cost partitioning generator",
-        OptionParser::NONE);
-    parser.add_option<bool>(
-        "debug",
-        "print debugging information",
-        "false");
-    utils::add_rng_options(parser);
-    Heuristic::add_options_to_parser(parser);
 }
 }

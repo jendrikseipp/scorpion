@@ -1,32 +1,20 @@
 #include "abstraction.h"
 
-#include "../utils/collections.h"
+#include <cassert>
 
 using namespace std;
 
 namespace cost_saturation {
-Abstraction::Abstraction(int num_operators)
-    : num_operators(num_operators),
-      use_general_costs(true) {
+Abstraction::Abstraction(unique_ptr<AbstractionFunction> abstraction_function)
+    : abstraction_function(move(abstraction_function)) {
 }
 
-Abstraction::~Abstraction() {
+int Abstraction::get_abstract_state_id(const State &concrete_state) const {
+    assert(abstraction_function);
+    return abstraction_function->get_abstract_state_id(concrete_state);
 }
 
-pair<vector<int>, vector<int>> Abstraction::compute_goal_distances_and_saturated_costs(
-    const vector<int> &costs) const {
-    vector<int> h_values = compute_h_values(costs);
-    vector<int> saturated_costs = compute_saturated_costs(h_values);
-    return make_pair(move(h_values), move(saturated_costs));
-}
-
-const vector<int> &Abstraction::get_goal_states() const {
-    return goal_states;
-}
-
-void Abstraction::release_transition_system_memory() {
-    utils::release_vector_memory(active_operators);
-    utils::release_vector_memory(looping_operators);
-    utils::release_vector_memory(goal_states);
+unique_ptr<AbstractionFunction> Abstraction::extract_abstraction_function() {
+    return move(abstraction_function);
 }
 }

@@ -10,8 +10,6 @@
 
 namespace pdbs {
 class AbstractOperator {
-    const int concrete_operator_id;
-
     /*
       This class represents an abstract operator how it is needed for
       the regression search performed during the PDB-construction. As
@@ -21,7 +19,7 @@ class AbstractOperator {
       abstract state.
     */
 
-    const int cost;
+    int cost;
 
     /*
       Preconditions for the regression search, corresponds to normal
@@ -45,11 +43,8 @@ public:
                      const std::vector<FactPair> &preconditions,
                      const std::vector<FactPair> &effects,
                      int cost,
-                     const std::vector<std::size_t> &hash_multipliers,
-                     int concrete_operator_id = -1);
+                     const std::vector<std::size_t> &hash_multipliers);
     ~AbstractOperator();
-
-    int get_concrete_operator_id() const;
 
     /*
       Returns variable value pairs which represent the preconditions of
@@ -63,16 +58,13 @@ public:
       Returns the effect of the abstract operator in form of a value
       change (+ or -) to an abstract state index
     */
-    std::size_t get_hash_effect() const {return hash_effect; }
+    std::size_t get_hash_effect() const {return hash_effect;}
 
     /*
       Returns the cost of the abstract operator (same as the cost of
       the original concrete operator)
     */
-    int get_cost() const {return cost; }
-
-    void release_memory();
-
+    int get_cost() const {return cost;}
     void dump(const Pattern &pattern,
               const VariablesProxy &variables) const;
 };
@@ -139,7 +131,7 @@ class PatternDatabase {
       state is a goal state.
     */
     bool is_goal_state(
-        const std::size_t state_index,
+        std::size_t state_index,
         const std::vector<FactPair> &abstract_goals,
         const VariablesProxy &variables) const;
 
@@ -175,7 +167,7 @@ public:
     }
 
     // Returns the size (number of abstract states) of the PDB
-    std::size_t get_size() const {
+    int get_size() const {
         return num_states;
     }
 

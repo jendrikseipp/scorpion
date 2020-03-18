@@ -3,27 +3,21 @@
 
 #include "types.h"
 
-class TaskProxy;
-
-namespace utils {
-class RandomNumberGenerator;
-}
-
 namespace cost_saturation {
+class CostPartitioningHeuristic;
+
 class Diversifier {
-    const int max_samples = 1000;
+    std::vector<std::vector<int>> abstract_state_ids_by_sample;
     std::vector<int> portfolio_h_values;
-    std::vector<std::vector<int>> local_state_ids_by_sample;
 
 public:
-    Diversifier(
-        const TaskProxy &task_proxy,
-        const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-        const std::vector<int> &costs,
-        CPFunction cp_function,
-        const std::shared_ptr<utils::RandomNumberGenerator> &rng);
+    explicit Diversifier(std::vector<std::vector<int>> &&abstract_state_ids_by_sample);
 
-    bool is_diverse(const CostPartitioning &cp);
+    /* Return true iff the cost-partitioned heuristic has a higher heuristic
+       value than all previously seen heuristics for at least one sample. */
+    bool is_diverse(const CostPartitioningHeuristic &cp_heuristic);
+
+    int compute_sum_portfolio_h_value_for_samples() const;
 };
 }
 

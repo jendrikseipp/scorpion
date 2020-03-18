@@ -8,20 +8,19 @@
 
 #include <vector>
 
-class GlobalOperator;
 class GlobalState;
+class OperatorProxy;
+class TaskProxy;
 
 
 class SearchNode {
     const StateRegistry &state_registry;
     StateID state_id;
     SearchNodeInfo &info;
-    OperatorCost cost_type;
 public:
     SearchNode(const StateRegistry &state_registry,
                StateID state_id,
-               SearchNodeInfo &info,
-               OperatorCost cost_type);
+               SearchNodeInfo &info);
 
     StateID get_state_id() const {
         return state_id;
@@ -38,15 +37,18 @@ public:
 
     void open_initial();
     void open(const SearchNode &parent_node,
-              const GlobalOperator *parent_op);
+              const OperatorProxy &parent_op,
+              int adjusted_cost);
     void reopen(const SearchNode &parent_node,
-                const GlobalOperator *parent_op);
+                const OperatorProxy &parent_op,
+                int adjusted_cost);
     void update_parent(const SearchNode &parent_node,
-                       const GlobalOperator *parent_op);
+                       const OperatorProxy &parent_op,
+                       int adjusted_cost);
     void close();
     void mark_as_dead_end();
 
-    void dump() const;
+    void dump(const TaskProxy &task_proxy) const;
 };
 
 
@@ -54,15 +56,14 @@ class SearchSpace {
     PerStateInformation<SearchNodeInfo> search_node_infos;
 
     StateRegistry &state_registry;
-    OperatorCost cost_type;
 public:
-    SearchSpace(StateRegistry &state_registry, OperatorCost cost_type);
+    explicit SearchSpace(StateRegistry &state_registry);
 
     SearchNode get_node(const GlobalState &state);
     void trace_path(const GlobalState &goal_state,
-                    std::vector<const GlobalOperator *> &path) const;
+                    std::vector<OperatorID> &path) const;
 
-    void dump() const;
+    void dump(const TaskProxy &task_proxy) const;
     void print_statistics() const;
 };
 

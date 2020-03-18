@@ -4,13 +4,10 @@
 #include "types.h"
 
 #include <memory>
-#include <vector>
 
 class AbstractTask;
 
 namespace cost_saturation {
-class Abstraction;
-
 class AbstractionGenerator {
 public:
     virtual Abstractions generate_abstractions(

@@ -3,8 +3,9 @@
 #include "landmark_graph.h"
 #include "util.h"
 
-#include "../cost_saturation/cost_partitioning_generator_greedy.h"
-#include "../pdbs/max_cliques.h"
+#include "../algorithms/max_cliques.h"
+#include "../cost_saturation/greedy_order_utils.h"
+#include "../cost_saturation/types.h"
 #include "../utils/collections.h"
 #include "../utils/language.h"
 #include "../utils/logging.h"
@@ -17,11 +18,12 @@
 #include <limits>
 
 using namespace std;
+using cost_saturation::ScoringFunction;
 
 namespace landmarks {
 LandmarkCostAssignment::LandmarkCostAssignment(const vector<int> &operator_costs,
                                                const LandmarkGraph &graph)
-    : lm_graph(graph), operator_costs(operator_costs) {
+    : empty(), lm_graph(graph), operator_costs(operator_costs) {
 }
 
 const set<int> &LandmarkCostAssignment::get_achievers(
@@ -37,11 +39,7 @@ const set<int> &LandmarkCostAssignment::get_achievers(
 
 
 static vector<double> convert_to_double(const vector<int> &int_vec) {
-    vector<double> double_vec;
-    double_vec.reserve(int_vec.size());
-    for (int value : int_vec) {
-        double_vec.push_back(value);
-    }
+    vector<double> double_vec(int_vec.begin(), int_vec.end());
     return double_vec;
 }
 
@@ -64,75 +62,77 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
       original_costs(convert_to_double(operator_costs)) {
 }
 
-void LandmarkUniformSharedCostAssignment::order_landmarks(
-    vector<const LandmarkNode *> landmarks,
-    cost_saturation::ScoringFunction scoring_function) {
+vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
+    const vector<vector<int>> &achievers_by_lm) {
+    vector<int> order(achievers_by_lm.size());
+    iota(order.begin(), order.end(), 0);
+
     // Compute h-values and saturated costs for each landmark.
     vector<int> h_values;
-    vector<int> saturated_costs;
-    h_values.reserve(landmarks.size());
-    saturated_costs.reserve(landmarks.size());
-    for (const LandmarkNode *node : landmarks) {
-        int lmn_status = node->get_status();
-        const set<int> &achievers = get_achievers(lmn_status, *node);
+    h_values.reserve(achievers_by_lm.size());
+    vector<int> used_costs;
+    used_costs.reserve(achievers_by_lm.size());
+    for (const vector<int> &achievers : achievers_by_lm) {
         int min_cost = numeric_limits<int>::max();
         for (int op_id : achievers) {
             assert(utils::in_bounds(op_id, operator_costs));
             min_cost = min(min_cost, operator_costs[op_id]);
         }
         h_values.push_back(min_cost);
-        saturated_costs.push_back(achievers.size() * min_cost);
+        used_costs.push_back(min_cost * achievers.size());
     }
-    assert(h_values.size() == landmarks.size());
-    assert(saturated_costs.size() == landmarks.size());
+    assert(h_values.size() == achievers_by_lm.size());
+    assert(used_costs.size() == achievers_by_lm.size());
 
-    // Sort landmarks according to the scoring function.
-    vector<int> indices(landmarks.size());
-    iota(indices.begin(), indices.end(), 0);
-    if (scoring_function == cost_saturation::ScoringFunction::RANDOM) {
-        rng->shuffle(indices);
-    } else if (scoring_function == cost_saturation::ScoringFunction::MAX_HEURISTIC) {
-        sort(indices.begin(), indices.end(), [&h_values](int i, int j) {
-                return h_values[i] > h_values[j];
-            });
-    } else if (scoring_function == cost_saturation::ScoringFunction::MIN_COSTS) {
-        sort(indices.begin(), indices.end(), [&saturated_costs](int i, int j) {
-                return (1 / (saturated_costs[i] + 1.0)) > (1 / (saturated_costs[j] + 1.0));
-            });
-    } else if (scoring_function == cost_saturation::ScoringFunction::MAX_HEURISTIC_PER_COSTS) {
-        sort(indices.begin(), indices.end(), [&h_values, &saturated_costs](int i, int j) {
-                return h_values[i] / (saturated_costs[i] + 1.0) >
-                h_values[j] / (saturated_costs[j] + 1.0);
-            });
-    } else {
-        ABORT("invalid scoring function");
+    if (scoring_function == ScoringFunction::MIN_STOLEN_COSTS ||
+        scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
+        vector<int> surplus_costs = operator_costs;
+        for (size_t i = 0; i < achievers_by_lm.size(); ++i) {
+            const vector<int> &achievers = achievers_by_lm[i];
+            for (int op_id : achievers) {
+                surplus_costs[op_id] -= h_values[i];
+            }
+        }
+        used_costs.clear();
+        int i = 0;
+        for (const vector<int> &achievers : achievers_by_lm) {
+            int wanted_by_lm = h_values[i];
+            int stolen = 0;
+            for (int op_id : achievers) {
+                stolen += cost_saturation::compute_stolen_costs(
+                    wanted_by_lm, surplus_costs[op_id]);
+            }
+            used_costs.push_back(stolen);
+            ++i;
+        }
+        assert(used_costs.size() == achievers_by_lm.size());
     }
-    vector<const LandmarkNode *> sorted_landmarks;
-    for (int i : indices) {
-        sorted_landmarks.push_back(landmarks[i]);
+
+    vector<double> scores;
+    scores.reserve(achievers_by_lm.size());
+    for (size_t i = 0; i < achievers_by_lm.size(); ++i) {
+        scores.push_back(cost_saturation::compute_score(
+                             h_values[i], used_costs[i], scoring_function));
     }
-    if (false) {
-        cout << "landmarks: " << landmarks << endl;
-        cout << "h-values: " << h_values << endl;
-        cout << "saturated costs: " << saturated_costs << endl;
-        cout << "indices: " << indices << endl;
-        cout << "sorted_landmarks: " << sorted_landmarks << endl;
-    }
-    swap(landmarks, sorted_landmarks);
+    sort(order.begin(), order.end(), [&](int i, int j) {
+             return scores[i] > scores[j];
+         });
+
+    return order;
 }
 
 double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     vector<int> achieved_lms_by_op(operator_costs.size(), 0);
     vector<bool> action_landmarks(operator_costs.size(), false);
 
-    const set<LandmarkNode *> &nodes = lm_graph.get_nodes();
+    const LandmarkGraph::Nodes &nodes = lm_graph.get_nodes();
 
     double h = 0;
 
     /* First pass:
        compute which op achieves how many landmarks. Along the way,
        mark action landmarks and add their cost to h. */
-    for (const LandmarkNode *node : nodes) {
+    for (auto &node : nodes) {
         int lmn_status = node->get_status();
         if (lmn_status != lm_reached) {
             const set<int> &achievers = get_achievers(lmn_status, *node);
@@ -160,7 +160,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
        remove landmarks from consideration that are covered by
        an action landmark; decrease the counters accordingly
        so that no unnecessary cost is assigned to these landmarks. */
-    for (const LandmarkNode *node : nodes) {
+    for (auto &node : nodes) {
         int lmn_status = node->get_status();
         if (lmn_status != lm_reached) {
             const set<int> &achievers = get_achievers(lmn_status, *node);
@@ -178,7 +178,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
                     --achieved_lms_by_op[op_id];
                 }
             } else {
-                relevant_lms.push_back(node);
+                relevant_lms.push_back(node.get());
             }
         }
     }
@@ -188,21 +188,23 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     if (reuse_costs || greedy) {
         // UOCP + ZOCP + SCP
         remaining_costs = original_costs;
-        remaining_lms_per_op = achieved_lms_by_op;
-
-        order_landmarks(relevant_lms, scoring_function);
-
+        vector<vector<int>> achievers_by_lm;
+        achievers_by_lm.reserve(relevant_lms.size());
         for (const LandmarkNode *node : relevant_lms) {
             int lmn_status = node->get_status();
             const set<int> &achievers = get_achievers(lmn_status, *node);
+            achievers_by_lm.emplace_back(achievers.begin(), achievers.end());
+        }
+        for (int lm_id : compute_landmark_order(achievers_by_lm)) {
+            const vector<int> &achievers = achievers_by_lm[lm_id];
             double min_cost = numeric_limits<double>::max();
             for (int op_id : achievers) {
-                assert(utils::in_bounds(op_id, remaining_lms_per_op));
-                int num_achieved = remaining_lms_per_op[op_id];
+                assert(utils::in_bounds(op_id, achieved_lms_by_op));
+                int num_achieved = achieved_lms_by_op[op_id];
                 assert(num_achieved >= 1);
                 assert(utils::in_bounds(op_id, remaining_costs));
                 double cost = greedy ? remaining_costs[op_id] :
-                              remaining_costs[op_id] / num_achieved;
+                    remaining_costs[op_id] / num_achieved;
                 min_cost = min(min_cost, cost);
             }
             h += min_cost;
@@ -213,10 +215,10 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
                 if (reuse_costs) {
                     remaining_cost -= min_cost;
                 } else {
-                    remaining_costs[op_id] = 0;
+                    remaining_cost = 0.0;
                 }
                 assert(remaining_cost >= 0);
-                --remaining_lms_per_op[op_id];
+                --achieved_lms_by_op[op_id];
             }
         }
     } else {
@@ -285,7 +287,7 @@ vector<vector<int>> LandmarkCanonicalHeuristic::compute_max_additive_subsets(
     }
 
     vector<vector<int>> max_cliques;
-    pdbs::compute_max_cliques(cgraph, max_cliques);
+    max_cliques::compute_max_cliques(cgraph, max_cliques);
     return max_cliques;
 }
 
@@ -304,9 +306,9 @@ int LandmarkCanonicalHeuristic::compute_minimum_landmark_cost(const LandmarkNode
 double LandmarkCanonicalHeuristic::cost_sharing_h_value() {
     // Ignore reached landmarks.
     vector<const LandmarkNode *> relevant_landmarks;
-    for (const LandmarkNode *node : lm_graph.get_nodes()) {
+    for (auto &node : lm_graph.get_nodes()) {
         if (node->get_status() != lm_reached) {
-            relevant_landmarks.push_back(node);
+            relevant_landmarks.push_back(node.get());
         }
     }
 

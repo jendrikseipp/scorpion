@@ -28,7 +28,6 @@ RandomNumberGenerator::~RandomNumberGenerator() {
 }
 
 void RandomNumberGenerator::seed(int seed) {
-    last_seed = seed;
     rng.seed(seed);
 }
 }

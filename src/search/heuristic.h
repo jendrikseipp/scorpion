@@ -1,8 +1,9 @@
 #ifndef HEURISTIC_H
 #define HEURISTIC_H
 
+#include "evaluator.h"
+#include "operator_id.h"
 #include "per_state_information.h"
-#include "scalar_evaluator.h"
 #include "task_proxy.h"
 
 #include "algorithms/ordered_set.h"
@@ -10,8 +11,6 @@
 #include <memory>
 #include <vector>
 
-class GlobalOperator;
-class GlobalState;
 class TaskProxy;
 
 namespace options {
@@ -19,7 +18,7 @@ class OptionParser;
 class Options;
 }
 
-class Heuristic : public ScalarEvaluator {
+class Heuristic : public Evaluator {
     struct HEntry {
         /* dirty is conceptually a bool, but Visual C++ does not support
            packing ints and bools together in a bitfield. */
@@ -32,8 +31,6 @@ class Heuristic : public ScalarEvaluator {
     };
     static_assert(sizeof(HEntry) == 4, "HEntry has unexpected size.");
 
-    std::string description;
-
     /*
       TODO: We might want to get rid of the preferred_operators
       attribute. It is currently only used by compute_result() and the
@@ -45,17 +42,17 @@ class Heuristic : public ScalarEvaluator {
       being able to reuse the data structure from one iteration to the
       next, but this seems to be the only potential downside.
     */
-    algorithms::OrderedSet<const GlobalOperator *> preferred_operators;
+    ordered_set::OrderedSet<OperatorID> preferred_operators;
 
 protected:
     /*
       Cache for saving h values
-      Before accessing this cache always make sure that the cache_h_values
+      Before accessing this cache always make sure that the cache_evaluator_values
       flag is set to true - as soon as the cache is accessed it will create
       entries for all existing states
     */
     PerStateInformation<HEntry> heuristic_cache;
-    bool cache_h_values;
+    bool cache_evaluator_values;
 
     // Hold a reference to the task implementation and pass it to objects that need it.
     const std::shared_ptr<AbstractTask> task;
@@ -72,8 +69,6 @@ protected:
       is OK -- it will only appear once in the list of preferred
       operators for this heuristic.
     */
-    // TODO: Make private once all heuristics use the TaskProxy class.
-    void set_preferred(const GlobalOperator *op);
     void set_preferred(const OperatorProxy &op);
 
     /* TODO: Make private and use State instead of GlobalState once all
@@ -81,30 +76,21 @@ protected:
     State convert_global_state(const GlobalState &global_state) const;
 
 public:
-    explicit Heuristic(const options::Options &options);
+    explicit Heuristic(const options::Options &opts);
     virtual ~Heuristic() override;
 
-    virtual void notify_initial_state(const GlobalState & /*initial_state*/) {
-    }
-
-    virtual bool notify_state_transition(
-        const GlobalState &parent_state, const GlobalOperator &op,
-        const GlobalState &state);
-
-    virtual void get_involved_heuristics(std::set<Heuristic *> &hset) override {
-        hset.insert(this);
+    virtual void get_path_dependent_evaluators(
+        std::set<Evaluator *> & /*evals*/) override {
     }
 
     static void add_options_to_parser(options::OptionParser &parser);
-    static options::Options default_options();
 
     virtual EvaluationResult compute_result(
         EvaluationContext &eval_context) override;
 
-    std::string get_description() const;
-    bool is_h_dirty(GlobalState &state) {
-        return heuristic_cache[state].dirty;
-    }
+    virtual bool does_cache_estimates() const override;
+    virtual bool is_estimate_cached(const GlobalState &state) const override;
+    virtual int get_cached_estimate(const GlobalState &state) const override;
 };
 
 #endif

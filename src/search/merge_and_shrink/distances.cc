@@ -3,7 +3,8 @@
 #include "label_equivalence_relation.h"
 #include "transition_system.h"
 
-#include "../priority_queue.h"
+#include "../algorithms/priority_queues.h"
+#include "../utils/logging.h"
 
 #include <cassert>
 #include <deque>
@@ -18,13 +19,9 @@ Distances::Distances(const TransitionSystem &transition_system)
     clear_distances();
 }
 
-Distances::~Distances() {
-}
-
 void Distances::clear_distances() {
-    max_f = DISTANCE_UNKNOWN;
-    max_g = DISTANCE_UNKNOWN;
-    max_h = DISTANCE_UNKNOWN;
+    init_distances_computed = false;
+    goal_distances_computed = false;
     init_distances.clear();
     goal_distances.clear();
 }
@@ -42,7 +39,7 @@ bool Distances::is_unit_cost() const {
       that the actual shortest-path algorithms (e.g.
       compute_goal_distances_general_cost) do.
     */
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const LabelGroup &label_group = gat.label_group;
         if (label_group.get_cost() != 1)
             return false;
@@ -68,7 +65,7 @@ static void breadth_first_search(
 
 void Distances::compute_init_distances_unit_cost() {
     vector<vector<int>> forward_graph(get_num_states());
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const vector<Transition> &transitions = gat.transitions;
         for (const Transition &transition : transitions) {
             forward_graph[transition.src].push_back(transition.target);
@@ -76,19 +73,14 @@ void Distances::compute_init_distances_unit_cost() {
     }
 
     deque<int> queue;
-    // TODO: This is an oddly inefficient initialization! Fix it.
-    for (int state = 0; state < get_num_states(); ++state) {
-        if (state == transition_system.get_init_state()) {
-            init_distances[state] = 0;
-            queue.push_back(state);
-        }
-    }
+    queue.push_back(transition_system.get_init_state());
+    init_distances[transition_system.get_init_state()] = 0;
     breadth_first_search(forward_graph, queue, init_distances);
 }
 
 void Distances::compute_goal_distances_unit_cost() {
     vector<vector<int>> backward_graph(get_num_states());
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const vector<Transition> &transitions = gat.transitions;
         for (const Transition &transition : transitions) {
             backward_graph[transition.target].push_back(transition.src);
@@ -107,7 +99,7 @@ void Distances::compute_goal_distances_unit_cost() {
 
 static void dijkstra_search(
     const vector<vector<pair<int, int>>> &graph,
-    AdaptiveQueue<int> &queue,
+    priority_queues::AdaptiveQueue<int> &queue,
     vector<int> &distances) {
     while (!queue.empty()) {
         pair<int, int> top_pair = queue.pop();
@@ -132,7 +124,7 @@ static void dijkstra_search(
 
 void Distances::compute_init_distances_general_cost() {
     vector<vector<pair<int, int>>> forward_graph(get_num_states());
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const LabelGroup &label_group = gat.label_group;
         const vector<Transition> &transitions = gat.transitions;
         int cost = label_group.get_cost();
@@ -144,20 +136,15 @@ void Distances::compute_init_distances_general_cost() {
 
     // TODO: Reuse the same queue for multiple computations to save speed?
     //       Also see compute_goal_distances_general_cost.
-    AdaptiveQueue<int> queue;
-    // TODO: This is an oddly inefficient initialization! Fix it.
-    for (int state = 0; state < get_num_states(); ++state) {
-        if (state == transition_system.get_init_state()) {
-            init_distances[state] = 0;
-            queue.push(0, state);
-        }
-    }
+    priority_queues::AdaptiveQueue<int> queue;
+    init_distances[transition_system.get_init_state()] = 0;
+    queue.push(0, transition_system.get_init_state());
     dijkstra_search(forward_graph, queue, init_distances);
 }
 
 void Distances::compute_goal_distances_general_cost() {
     vector<vector<pair<int, int>>> backward_graph(get_num_states());
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const LabelGroup &label_group = gat.label_group;
         const vector<Transition> &transitions = gat.transitions;
         int cost = label_group.get_cost();
@@ -169,7 +156,7 @@ void Distances::compute_goal_distances_general_cost() {
 
     // TODO: Reuse the same queue for multiple computations to save speed?
     //       Also see compute_init_distances_general_cost.
-    AdaptiveQueue<int> queue;
+    priority_queues::AdaptiveQueue<int> queue;
     for (int state = 0; state < get_num_states(); ++state) {
         if (transition_system.is_goal_state(state)) {
             goal_distances[state] = 0;
@@ -179,105 +166,125 @@ void Distances::compute_goal_distances_general_cost() {
     dijkstra_search(backward_graph, queue, goal_distances);
 }
 
-bool Distances::are_distances_computed() const {
-    if (max_h == DISTANCE_UNKNOWN) {
-        assert(max_f == DISTANCE_UNKNOWN);
-        assert(max_g == DISTANCE_UNKNOWN);
-        assert(init_distances.empty());
-        assert(goal_distances.empty());
-        return false;
-    }
-    return true;
-}
-
-vector<bool> Distances::compute_distances(Verbosity verbosity) {
+void Distances::compute_distances(
+    bool compute_init_distances,
+    bool compute_goal_distances,
+    utils::Verbosity verbosity) {
+    assert(compute_init_distances || compute_goal_distances);
     /*
       This method does the following:
       - Computes the distances of abstract states from the abstract
-        initial state ("abstract g") and from the abstract goal states
-        ("abstract h").
-      - Set max_f, max_g and max_h.
-      - Return a vector<bool> that indicates which states can be pruned
-        because the are unreachable (abstract g is infinite) or
-        irrelevant (abstract h is infinite).
+        initial state ("abstract g") and to the abstract goal states
+        ("abstract h"), depending on the given flags.
     */
 
-    if (verbosity >= Verbosity::VERBOSE) {
+    if (are_init_distances_computed()) {
+        /*
+          The only scenario where distance information is allowed to be
+          present when computing distances is when computing goal distances
+          for the final transition system in a setting where only init
+          distances have been computed during the merge-and-shrink computation.
+        */
+        assert(!are_goal_distances_computed());
+        assert(goal_distances.empty());
+        assert(!compute_init_distances);
+        assert(compute_goal_distances);
+    } else {
+        /*
+          Otherwise, when computing distances, the previous (invalid)
+          distance information must have been cleared before.
+        */
+        assert(!are_init_distances_computed() && !are_goal_distances_computed());
+        assert(init_distances.empty() && goal_distances.empty());
+    }
+
+    if (verbosity >= utils::Verbosity::VERBOSE) {
         cout << transition_system.tag();
     }
-    assert(!are_distances_computed());
-    assert(init_distances.empty() && goal_distances.empty());
 
     int num_states = get_num_states();
-
     if (num_states == 0) {
-        if (verbosity >= Verbosity::VERBOSE) {
+        if (verbosity >= utils::Verbosity::VERBOSE) {
             cout << "empty transition system, no distances to compute" << endl;
         }
-        max_f = max_g = max_h = INF;
-        return vector<bool>();
+        init_distances_computed = true;
+        goal_distances_computed = true;
+        return;
     }
 
-    init_distances.resize(num_states, INF);
-    goal_distances.resize(num_states, INF);
+    if (compute_init_distances) {
+        init_distances.resize(num_states, INF);
+    }
+    if (compute_goal_distances) {
+        goal_distances.resize(num_states, INF);
+    }
+    if (verbosity >= utils::Verbosity::VERBOSE) {
+        cout << "computing ";
+        if (compute_init_distances && compute_goal_distances) {
+            cout << "init and goal";
+        } else if (compute_init_distances) {
+            cout << "init";
+        } else if (compute_goal_distances) {
+            cout << "goal";
+        }
+        cout << " distances using ";
+    }
     if (is_unit_cost()) {
-        if (verbosity >= Verbosity::VERBOSE) {
-            cout << "computing distances using unit-cost algorithm" << endl;
+        if (verbosity >= utils::Verbosity::VERBOSE) {
+            cout << "unit-cost";
         }
-        compute_init_distances_unit_cost();
-        compute_goal_distances_unit_cost();
+        if (compute_init_distances) {
+            compute_init_distances_unit_cost();
+        }
+        if (compute_goal_distances) {
+            compute_goal_distances_unit_cost();
+        }
     } else {
-        if (verbosity >= Verbosity::VERBOSE) {
-            cout << "computing distances using general-cost algorithm" << endl;
+        if (verbosity >= utils::Verbosity::VERBOSE) {
+            cout << "general-cost";
         }
-        compute_init_distances_general_cost();
-        compute_goal_distances_general_cost();
-    }
-
-    max_f = 0;
-    max_g = 0;
-    max_h = 0;
-
-    int unreachable_count = 0, irrelevant_count = 0;
-    vector<bool> prunable_states(num_states, false);
-    for (int i = 0; i < num_states; ++i) {
-        int g = init_distances[i];
-        int h = goal_distances[i];
-        // States that are both unreachable and irrelevant are counted
-        // as unreachable, not irrelevant. (Doesn't really matter, of
-        // course.)
-        if (g == INF) {
-            ++unreachable_count;
-            prunable_states[i] = true;
-        } else if (h == INF) {
-            ++irrelevant_count;
-            prunable_states[i] = true;
-        } else {
-            max_f = max(max_f, g + h);
-            max_g = max(max_g, g);
-            max_h = max(max_h, h);
+        if (compute_init_distances) {
+            compute_init_distances_general_cost();
+        }
+        if (compute_goal_distances) {
+            compute_goal_distances_general_cost();
         }
     }
-    if (verbosity >= Verbosity::VERBOSE &&
-        (unreachable_count || irrelevant_count)) {
-        cout << transition_system.tag()
-             << "unreachable: " << unreachable_count << " states, "
-             << "irrelevant: " << irrelevant_count << " states" << endl;
+    if (verbosity >= utils::Verbosity::VERBOSE) {
+        cout << " algorithm" << endl;
     }
-    assert(are_distances_computed());
-    return prunable_states;
+
+    if (compute_init_distances) {
+        init_distances_computed = true;
+    }
+    if (compute_goal_distances) {
+        goal_distances_computed = true;
+    }
 }
 
 void Distances::apply_abstraction(
     const StateEquivalenceRelation &state_equivalence_relation,
-    Verbosity verbosity) {
-    assert(are_distances_computed());
-    assert(state_equivalence_relation.size() < init_distances.size());
-    assert(state_equivalence_relation.size() < goal_distances.size());
+    bool compute_init_distances,
+    bool compute_goal_distances,
+    utils::Verbosity verbosity) {
+    if (compute_init_distances) {
+        assert(are_init_distances_computed());
+        assert(state_equivalence_relation.size() < init_distances.size());
+    }
+    if (compute_goal_distances) {
+        assert(are_goal_distances_computed());
+        assert(state_equivalence_relation.size() < goal_distances.size());
+    }
 
     int new_num_states = state_equivalence_relation.size();
-    vector<int> new_init_distances(new_num_states, DISTANCE_UNKNOWN);
-    vector<int> new_goal_distances(new_num_states, DISTANCE_UNKNOWN);
+    vector<int> new_init_distances;
+    vector<int> new_goal_distances;
+    if (compute_init_distances) {
+        new_init_distances.resize(new_num_states, DISTANCE_UNKNOWN);
+    }
+    if (compute_goal_distances) {
+        new_goal_distances.resize(new_num_states, DISTANCE_UNKNOWN);
+    }
 
     bool must_recompute = false;
     for (int new_state = 0; new_state < new_num_states; ++new_state) {
@@ -286,16 +293,22 @@ void Distances::apply_abstraction(
         assert(!state_equivalence_class.empty());
 
         StateEquivalenceClass::const_iterator pos = state_equivalence_class.begin();
-        int new_init_dist = init_distances[*pos];
-        int new_goal_dist = goal_distances[*pos];
+        int new_init_dist = -1;
+        int new_goal_dist = -1;
+        if (compute_init_distances) {
+            new_init_dist = init_distances[*pos];
+        }
+        if (compute_goal_distances) {
+            new_goal_dist = goal_distances[*pos];
+        }
 
         ++pos;
         for (; pos != state_equivalence_class.end(); ++pos) {
-            if (init_distances[*pos] != new_init_dist) {
+            if (compute_init_distances && init_distances[*pos] != new_init_dist) {
                 must_recompute = true;
                 break;
             }
-            if (goal_distances[*pos] != new_goal_dist) {
+            if (compute_goal_distances && goal_distances[*pos] != new_goal_dist) {
                 must_recompute = true;
                 break;
             }
@@ -304,17 +317,22 @@ void Distances::apply_abstraction(
         if (must_recompute)
             break;
 
-        new_init_distances[new_state] = new_init_dist;
-        new_goal_distances[new_state] = new_goal_dist;
+        if (compute_init_distances) {
+            new_init_distances[new_state] = new_init_dist;
+        }
+        if (compute_goal_distances) {
+            new_goal_distances[new_state] = new_goal_dist;
+        }
     }
 
     if (must_recompute) {
-        if (verbosity >= Verbosity::VERBOSE) {
+        if (verbosity >= utils::Verbosity::VERBOSE) {
             cout << transition_system.tag()
                  << "simplification was not f-preserving!" << endl;
         }
         clear_distances();
-        compute_distances(verbosity);
+        compute_distances(
+            compute_init_distances, compute_goal_distances, verbosity);
     } else {
         init_distances = move(new_init_distances);
         goal_distances = move(new_goal_distances);
@@ -322,22 +340,34 @@ void Distances::apply_abstraction(
 }
 
 void Distances::dump() const {
-    cout << "Distances: ";
-    for (size_t i = 0; i < goal_distances.size(); ++i) {
-        cout << i << ": " << goal_distances[i] << ", ";
+    if (are_init_distances_computed()) {
+        cout << "Init distances: ";
+        for (size_t i = 0; i < init_distances.size(); ++i) {
+            cout << i << ": " << init_distances[i];
+            if (i != init_distances.size() - 1) {
+                cout << ", ";
+            }
+        }
+        cout << endl;
     }
-    cout << endl;
+    if (are_goal_distances_computed()) {
+        cout << "Goal distances: ";
+        for (size_t i = 0; i < goal_distances.size(); ++i) {
+            cout << i << ": " << goal_distances[i] << ", ";
+            if (i != goal_distances.size() - 1) {
+                cout << ", ";
+            }
+        }
+        cout << endl;
+    }
 }
 
 void Distances::statistics() const {
     cout << transition_system.tag();
-    if (!are_distances_computed()) {
-        cout << "distances not computed";
-    } else if (transition_system.is_solvable()) {
-        cout << "init h=" << get_goal_distance(transition_system.get_init_state())
-             << ", max f=" << get_max_f()
-             << ", max g=" << get_max_g()
-             << ", max h=" << get_max_h();
+    if (!are_goal_distances_computed()) {
+        cout << "goal distances not computed";
+    } else if (transition_system.is_solvable(*this)) {
+        cout << "init h=" << get_goal_distance(transition_system.get_init_state());
     } else {
         cout << "transition system is unsolvable";
     }

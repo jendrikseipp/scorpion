@@ -10,7 +10,6 @@ namespace utils {
 class RandomNumberGenerator {
     // Mersenne Twister random number generator.
     std::mt19937 rng;
-    int last_seed;
 
 public:
     RandomNumberGenerator(); // Seed with a value depending on time and process ID.
@@ -47,10 +46,6 @@ public:
     template<typename T>
     void shuffle(std::vector<T> &vec) {
         std::shuffle(vec.begin(), vec.end(), rng);
-    }
-
-    int get_last_seed() const {
-        return last_seed;
     }
 };
 }

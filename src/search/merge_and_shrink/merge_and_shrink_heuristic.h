@@ -6,53 +6,27 @@
 #include <memory>
 
 namespace utils {
-class Timer;
+enum class Verbosity;
 }
 
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
-class LabelReduction;
 class MergeAndShrinkRepresentation;
-class MergeStrategyFactory;
-class ShrinkStrategy;
-class TransitionSystem;
-enum class Verbosity;
 
 class MergeAndShrinkHeuristic : public Heuristic {
-    // TODO: when the option parser supports it, the following should become
-    // unique pointers.
-    std::shared_ptr<MergeStrategyFactory> merge_strategy_factory;
-    std::shared_ptr<ShrinkStrategy> shrink_strategy;
-    std::shared_ptr<LabelReduction> label_reduction;
+    const utils::Verbosity verbosity;
 
-    // Options for shrinking
-    // Hard limit: the maximum size of a transition system at any point.
-    const int max_states;
-    // Hard limit: the maximum size of a transition system before being merged.
-    const int max_states_before_merge;
-    /* A soft limit for triggering shrinking even if the hard limits
-       max_states and max_states_before_merge are not violated. */
-    const int shrink_threshold_before_merge;
+    // The final merge-and-shrink representations, storing goal distances.
+    std::vector<std::unique_ptr<MergeAndShrinkRepresentation>> mas_representations;
 
-    const Verbosity verbosity;
-    long starting_peak_memory;
-    // The final merge-and-shrink representation, storing goal distances.
-    std::unique_ptr<MergeAndShrinkRepresentation> mas_representation;
-
-    std::pair<bool, bool> shrink_before_merge(
-        FactoredTransitionSystem &fts, int index1, int index2);
-    void build(const utils::Timer &timer);
-
-    void report_peak_memory_delta(bool final = false) const;
-    void dump_options() const;
-    void warn_on_unusual_options() const;
+    void extract_factor(FactoredTransitionSystem &fts, int index);
+    bool extract_unsolvable_factor(FactoredTransitionSystem &fts);
+    void extract_nontrivial_factors(FactoredTransitionSystem &fts);
+    void extract_factors(FactoredTransitionSystem &fts);
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
 public:
     explicit MergeAndShrinkHeuristic(const options::Options &opts);
-    virtual ~MergeAndShrinkHeuristic() override = default;
-    static void add_shrink_limit_options_to_parser(options::OptionParser &parser);
-    static void handle_shrink_limit_options_defaults(options::Options &opts);
 };
 }
 

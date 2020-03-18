@@ -14,13 +14,12 @@ using namespace std;
 namespace merge_and_shrink {
 MergeStrategyFactoryStateless::MergeStrategyFactoryStateless(
     options::Options &options)
-    : MergeStrategyFactory(),
-      merge_selector(options.get<shared_ptr<MergeSelector>>("merge_selector")) {
+    : merge_selector(options.get<shared_ptr<MergeSelector>>("merge_selector")) {
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryStateless::compute_merge_strategy(
     const TaskProxy &task_proxy,
-    FactoredTransitionSystem &fts) {
+    const FactoredTransitionSystem &fts) {
     merge_selector->initialize(task_proxy);
     return utils::make_unique_ptr<MergeStrategyStateless>(fts, merge_selector);
 }
@@ -31,6 +30,14 @@ string MergeStrategyFactoryStateless::name() const {
 
 void MergeStrategyFactoryStateless::dump_strategy_specific_options() const {
     merge_selector->dump_options();
+}
+
+bool MergeStrategyFactoryStateless::requires_init_distances() const {
+    return merge_selector->requires_init_distances();
+}
+
+bool MergeStrategyFactoryStateless::requires_goal_distances() const {
+    return merge_selector->requires_goal_distances();
 }
 
 static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
@@ -50,5 +57,5 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
         return make_shared<MergeStrategyFactoryStateless>(opts);
 }
 
-static options::PluginShared<MergeStrategyFactory> _plugin("merge_stateless", _parse);
+static options::Plugin<MergeStrategyFactory> _plugin("merge_stateless", _parse);
 }

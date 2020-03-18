@@ -2,123 +2,218 @@
 
 #include "pattern_database.h"
 
+#include "../utils/countdown_timer.h"
 #include "../utils/hash.h"
-#include "../utils/timer.h"
 
-#include <algorithm>
 #include <cassert>
-#include <unordered_set>
-#include <utility>
+#include <unordered_map>
 #include <vector>
 
 using namespace std;
 
 namespace pdbs {
-using PDBRelation = unordered_set<pair<PatternDatabase *, PatternDatabase *>>;
+class Pruner {
+    /*
+      Algorithm for pruning dominated patterns.
 
-PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
-    PDBRelation superset_relation;
-    for (const shared_ptr<PatternDatabase> &pdb1 : pattern_databases) {
-        const Pattern &pattern1 = pdb1->get_pattern();
-        for (const shared_ptr<PatternDatabase> &pdb2 : pattern_databases) {
-            const Pattern &pattern2 = pdb2->get_pattern();
-            // Note that includes assumes that patterns are sorted.
-            if (includes(pattern1.begin(), pattern1.end(),
-                         pattern2.begin(), pattern2.end())) {
-                superset_relation.insert(make_pair(pdb1.get(), pdb2.get()));
-                /*
-                  If we already added the inverse tuple to the relation, the
-                  PDBs use the same pattern, which violates the invariant that
-                  lists of patterns are sorted and unique.
-                */
-                assert(pdb1 == pdb2 ||
-                       superset_relation.count(make_pair(pdb2.get(),
-                                                         pdb1.get())) == 0);
+      "patterns" is the vector of patterns used.
+      Each pattern is a vector of variable IDs.
+
+      "pattern_cliques" is the vector of pattern cliques.
+
+      The algorithm works by setting a "current pattern collection"
+      against which other patterns and collections can be tested for
+      dominance efficiently.
+
+      "variable_to_pattern_id" encodes the relevant information about the
+      current clique. For every variable v, variable_to_pattern_id[v] is
+      the id of the pattern containing v in the current clique,
+      or -1 if the variable is not contained in the current
+      clique. (Note that patterns in a pattern clique must be
+      disjoint, which is verified by an assertion in debug mode.)
+
+      To test if a given pattern v_1, ..., v_k is dominated by the
+      current clique, we check that all entries variable_to_pattern_id[v_i]
+      are equal and different from -1.
+
+      "dominated_patterns" is a vector<bool> that can be used to
+      quickly test whether a given pattern is dominated by the current
+      clique. This is precomputed for every pattern whenever the
+      current clique is set.
+    */
+
+    const PatternCollection &patterns;
+    const vector<PatternClique> &pattern_cliques;
+    const int num_variables;
+
+    vector<int> variable_to_pattern_id;
+    vector<bool> dominated_patterns;
+
+    void set_current_clique(int clique_id) {
+        /*
+          Set the current pattern collection to be used for
+          is_pattern_dominated() or is_collection_dominated(). Compute
+          dominated_patterns based on the current pattern collection.
+        */
+        variable_to_pattern_id.assign(num_variables, -1);
+        assert(variable_to_pattern_id == vector<int>(num_variables, -1));
+        for (PatternID pattern_id : pattern_cliques[clique_id]) {
+            for (int variable : patterns[pattern_id]) {
+                assert(variable_to_pattern_id[variable] == -1);
+                variable_to_pattern_id[variable] = pattern_id;
             }
+        }
+
+        dominated_patterns.clear();
+        dominated_patterns.reserve(patterns.size());
+        for (size_t i = 0; i < patterns.size(); ++i) {
+            dominated_patterns.push_back(is_pattern_dominated(i));
         }
     }
-    return superset_relation;
-}
 
-bool collection_dominates(const PDBCollection &superset,
-                          const PDBCollection &subset,
-                          const PDBRelation &superset_relation) {
-    for (const shared_ptr<PatternDatabase> &p_subset : subset) {
-        // Assume there is no superset until we found one.
-        bool found_superset = false;
-        for (const shared_ptr<PatternDatabase> &p_superset : superset) {
-            if (superset_relation.count(make_pair(p_superset.get(),
-                                                  p_subset.get()))) {
-                found_superset = true;
-                break;
-            }
-        }
-        if (!found_superset) {
+    bool is_pattern_dominated(int pattern_id) const {
+        /*
+          Check if the pattern with the given pattern_id is dominated
+          by the current pattern clique.
+        */
+        const Pattern &pattern = patterns[pattern_id];
+        assert(!pattern.empty());
+        PatternID clique_pattern_id = variable_to_pattern_id[pattern[0]];
+        if (clique_pattern_id == -1) {
             return false;
         }
-    }
-    return true;
-}
-
-shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets(
-    const PDBCollection &pattern_databases,
-    const MaxAdditivePDBSubsets &max_additive_subsets) {
-    utils::Timer timer;
-    int num_patterns = pattern_databases.size();
-    int num_additive_subsets = max_additive_subsets.size();
-
-
-    shared_ptr<MaxAdditivePDBSubsets> nondominated_subsets =
-        make_shared<MaxAdditivePDBSubsets>();
-    /*
-      Remember which collections are already removed and don't use them to prune
-      other collections. This prevents removing both copies of a collection that
-      occurs twice.
-    */
-    vector<bool> subset_removed(num_additive_subsets, false);
-
-    PDBRelation superset_relation = compute_superset_relation(pattern_databases);
-    // Check all pairs of collections for dominance.
-    for (int c1_id = 0; c1_id < num_additive_subsets; ++c1_id) {
-        const PDBCollection &c1 = max_additive_subsets[c1_id];
-        /*
-          Collection c1 is useful if it is not dominated by any collection c2.
-          Assume that it is useful and set it to false if any dominating
-          collection is found.
-        */
-        bool c1_is_useful = true;
-        for (int c2_id = 0; c2_id < num_additive_subsets; ++c2_id) {
-            if (c1_id == c2_id || subset_removed[c2_id]) {
-                continue;
+        int pattern_size = pattern.size();
+        for (int i = 1; i < pattern_size; ++i) {
+            if (variable_to_pattern_id[pattern[i]] != clique_pattern_id) {
+                return false;
             }
-            const PDBCollection &c2 = max_additive_subsets[c2_id];
+        }
+        return true;
+    }
 
-            if (collection_dominates(c2, c1, superset_relation)) {
-                c1_is_useful = false;
+    bool is_clique_dominated(int clique_id) const {
+        /*
+          Check if the collection with the given collection_id is
+          dominated by the current pattern collection.
+        */
+        for (PatternID pattern_id : pattern_cliques[clique_id]) {
+            if (!dominated_patterns[pattern_id]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+public:
+    Pruner(
+        const PatternCollection &patterns,
+        const vector<PatternClique> &pattern_cliques,
+        int num_variables)
+        : patterns(patterns),
+          pattern_cliques(pattern_cliques),
+          num_variables(num_variables) {
+    }
+
+    vector<bool> get_pruned_cliques(const utils::CountdownTimer &timer) {
+        int num_cliques = pattern_cliques.size();
+        vector<bool> pruned(num_cliques, false);
+        /*
+          Already pruned cliques are not used to prune other
+          cliques. This makes things faster and helps handle
+          duplicate cliques in the correct way: the first copy
+          will survive and prune all duplicates.
+        */
+        for (int c1 = 0; c1 < num_cliques; ++c1) {
+            if (!pruned[c1]) {
+                set_current_clique(c1);
+                for (int c2 = 0; c2 < num_cliques; ++c2) {
+                    if (c1 != c2 && !pruned[c2] && is_clique_dominated(c2))
+                        pruned[c2] = true;
+                }
+            }
+            if (timer.is_expired()) {
+                /*
+                  Since after each iteration, we determined if a given
+                  clique is pruned or not, we can just break the
+                  computation here if reaching the time limit and use all
+                  information we collected so far.
+                */
+                cout << "Time limit reached. Abort dominance pruning." << endl;
                 break;
             }
         }
-        if (c1_is_useful) {
-            nondominated_subsets->push_back(c1);
-        } else {
-            subset_removed[c1_id] = true;
+
+        return pruned;
+    }
+};
+
+void prune_dominated_cliques(
+    PatternCollection &patterns,
+    PDBCollection &pdbs,
+    vector<PatternClique> &pattern_cliques,
+    int num_variables,
+    double max_time) {
+    cout << "Running dominance pruning..." << endl;
+    utils::CountdownTimer timer(max_time);
+
+    int num_patterns = patterns.size();
+    int num_cliques = pattern_cliques.size();
+
+    vector<bool> pruned = Pruner(
+        patterns,
+        pattern_cliques,
+        num_variables).get_pruned_cliques(timer);
+
+    vector<PatternClique> remaining_pattern_cliques;
+    vector<bool> is_remaining_pattern(num_patterns, false);
+    int num_remaining_patterns = 0;
+    for (size_t i = 0; i < pattern_cliques.size(); ++i) {
+        if (!pruned[i]) {
+            PatternClique &clique = pattern_cliques[i];
+            for (PatternID pattern_id : clique) {
+                if (!is_remaining_pattern[pattern_id]) {
+                    is_remaining_pattern[pattern_id] = true;
+                    ++num_remaining_patterns;
+                }
+            }
+            remaining_pattern_cliques.push_back(move(clique));
         }
     }
 
-    cout << "Pruned " << num_additive_subsets - nondominated_subsets->size() <<
-        " of " << num_additive_subsets << " maximal additive subsets" << endl;
-
-    unordered_set<PatternDatabase *> remaining_pdbs;
-    for (const PDBCollection &collection : *nondominated_subsets) {
-        for (const shared_ptr<PatternDatabase> &pdb : collection) {
-            remaining_pdbs.insert(pdb.get());
+    PatternCollection remaining_patterns;
+    PDBCollection remaining_pdbs;
+    remaining_patterns.reserve(num_remaining_patterns);
+    remaining_pdbs.reserve(num_remaining_patterns);
+    vector<PatternID> old_to_new_pattern_id(num_patterns, -1);
+    for (PatternID old_pattern_id = 0; old_pattern_id < num_patterns; ++old_pattern_id) {
+        if (is_remaining_pattern[old_pattern_id]) {
+            PatternID new_pattern_id = remaining_patterns.size();
+            old_to_new_pattern_id[old_pattern_id] = new_pattern_id;
+            remaining_patterns.push_back(move(patterns[old_pattern_id]));
+            remaining_pdbs.push_back(move(pdbs[old_pattern_id]));
         }
     }
-    cout << "Pruned " << num_patterns - remaining_pdbs.size() <<
-        " of " << num_patterns << " PDBs" << endl;
+    for (PatternClique &clique : remaining_pattern_cliques) {
+        for (size_t i = 0; i < clique.size(); ++i) {
+            PatternID old_pattern_id = clique[i];
+            PatternID new_pattern_id = old_to_new_pattern_id[old_pattern_id];
+            assert(new_pattern_id != -1);
+            clique[i] = new_pattern_id;
+        }
+    }
 
-    cout << "Dominance pruning took " << timer << endl;
+    int num_pruned_collections = num_cliques - remaining_pattern_cliques.size();
+    cout << "Pruned " << num_pruned_collections << " of " << num_cliques
+         << " pattern cliques" << endl;
 
-    return nondominated_subsets;
+    int num_pruned_patterns = num_patterns - num_remaining_patterns;
+    cout << "Pruned " << num_pruned_patterns << " of " << num_patterns
+         << " PDBs" << endl;
+
+    patterns.swap(remaining_patterns);
+    pdbs.swap(remaining_pdbs);
+    pattern_cliques.swap(remaining_pattern_cliques);
+
+    cout << "Dominance pruning took " << timer.get_elapsed_time() << endl;
 }
 }

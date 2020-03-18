@@ -34,16 +34,11 @@ void LandmarkFactoryRpgExhaust::generate_landmarks(
         for (int value = 0; value < var.get_domain_size(); ++value) {
             const FactPair lm(var.get_id(), value);
             if (!lm_graph->simple_landmark_exists(lm)) {
-                LandmarkNode *new_lm = &lm_graph->landmark_add_simple(lm);
-                if (initial_state[lm.var].get_value() != lm.value &&
-                    relaxed_task_solvable(task_proxy, exploration, true, new_lm)) {
-                    assert(lm_graph->landmark_exists(lm));
-                    LandmarkNode *node;
-                    if (lm_graph->simple_landmark_exists(lm))
-                        node = &lm_graph->get_simple_lm_node(lm);
-                    else
-                        node = &lm_graph->get_disj_lm_node(lm);
-                    lm_graph->rm_landmark_node(node);
+                vector<FactPair> facts = {lm};
+                LandmarkNode node(facts, false);
+                if (initial_state[lm.var].get_value() == lm.value ||
+                    !relaxed_task_solvable(task_proxy, exploration, true, &node)) {
+                    lm_graph->landmark_add_simple(lm);
                 }
             }
         }
@@ -54,7 +49,7 @@ bool LandmarkFactoryRpgExhaust::supports_conditional_effects() const {
     return false;
 }
 
-static LandmarkFactory *_parse(OptionParser &parser) {
+static shared_ptr<LandmarkFactory> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Exhaustive Landmarks",
         "Exhaustively checks for each fact if it is a landmark."
@@ -69,13 +64,11 @@ static LandmarkFactory *_parse(OptionParser &parser) {
     parser.document_language_support("conditional_effects",
                                      "ignored, i.e. not supported");
 
-    if (parser.dry_run()) {
+    if (parser.dry_run())
         return nullptr;
-    } else {
-        return new LandmarkFactoryRpgExhaust(opts);
-    }
+    else
+        return make_shared<LandmarkFactoryRpgExhaust>(opts);
 }
 
-static Plugin<LandmarkFactory> _plugin(
-    "lm_exhaust", _parse);
+static Plugin<LandmarkFactory> _plugin("lm_exhaust", _parse);
 }

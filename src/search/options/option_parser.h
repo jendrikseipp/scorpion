@@ -1,19 +1,19 @@
 #ifndef OPTIONS_OPTION_PARSER_H
 #define OPTIONS_OPTION_PARSER_H
 
-#include "doc_store.h"
+#include "doc_utils.h"
 #include "options.h"
+#include "predefinitions.h"
+#include "registries.h"
 
-#include <algorithm>
-#include <iostream>
-#include <limits>
-#include <map>
+#include "../utils/math.h"
+#include "../utils/strings.h"
+
+#include <cctype>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
-
-class SearchEngine;
 
 namespace options {
 /*
@@ -22,107 +22,258 @@ namespace options {
   result is added to the Options.
 */
 class OptionParser {
-    static int parse_int_arg(const std::string &name, const std::string &value);
-    static SearchEngine *parse_cmd_line_aux(
-        const std::vector<std::string> &args, bool dry_run);
-public:
-    OptionParser(const OptionParser &other) = delete;
-    OptionParser &operator=(const OptionParser &other) = delete;
-    OptionParser(std::string config, bool dr);
-    OptionParser(ParseTree pt, bool dr);
-    ~OptionParser() = default;
+    Options opts;
+    const ParseTree parse_tree;
+    /*
+      Cannot be const in the current design. The plugin factory methods insert
+      PluginInfo structs into the registry when they are called. This could
+      be improved later.
+    */
+    Registry &registry;
+    const Predefinitions &predefinitions;
+    const bool dry_run_;
+    const bool help_mode_;
 
-    static const std::string NONE;
+    ParseTree::sibling_iterator next_unparsed_argument;
+    std::vector<std::string> valid_keys;
 
-    //this is where input from the commandline goes:
-    static SearchEngine *parse_cmd_line(
-        int argc, const char **argv, bool dr, bool is_unit_cost);
-
-    static std::string usage(std::string progname);
-
-    //this function initiates parsing of T (the root node of parse_tree
-    //will be parsed as T). Usually T=SearchEngine*, ScalarEvaluator* or LandmarkFactory*
-    template<typename T>
-    T start_parsing();
+    std::string get_unparsed_config() const;
 
     template<class T>
     void check_bounds(
         const std::string &key, const T &value, const Bounds &bounds);
 
+
+public:
+    OptionParser(const ParseTree &parse_tree, Registry &registry,
+                 const Predefinitions &predefinitions,
+                 bool dry_run, bool help_mode = false);
+    OptionParser(const std::string &config, Registry &registry,
+                 const Predefinitions &predefinitions,
+                 bool dry_run, bool help_mode = false);
+    ~OptionParser() = default;
+    OptionParser(const OptionParser &other) = delete;
+    OptionParser &operator=(const OptionParser &other) = delete;
+
+    /* This function initiates parsing of T (the root node of parse_tree will be
+       parsed as T).*/
+    template<typename T>
+    T start_parsing();
+
     /* Add option with default value. Use def_val=NONE for optional
        parameters without default values. */
     template<typename T>
     void add_option(
-        std::string k, std::string h = "", std::string def_val = "",
-        Bounds bounds = Bounds::unlimited());
+        const std::string &key,
+        const std::string &help = "",
+        const std::string &default_value = "",
+        const Bounds &bounds = Bounds::unlimited());
 
-    void add_enum_option(std::string k,
-                         std::vector<std::string > enumeration,
-                         std::string h = "", std::string def_val = "",
-                         std::vector<std::string> enum_doc = std::vector<std::string>());
+    void add_enum_option(
+        const std::string &key,
+        const std::vector<std::string> &names,
+        const std::string &help = "",
+        const std::string &default_value = "",
+        const std::vector<std::string> &docs = {});
+
     template<typename T>
-    void add_list_option(std::string k,
-                         std::string h = "", std::string def_val = "");
+    void add_list_option(
+        const std::string &key,
+        const std::string &help = "",
+        const std::string &default_value = "");
 
-    bool is_valid_option(const std::string &k) const;
+    void document_synopsis(
+        const std::string &name, const std::string &note) const;
 
-    void document_values(std::string argument,
-                         ValueExplanations value_explanations) const;
-    void document_synopsis(std::string name, std::string note) const;
-    void document_property(std::string property, std::string note) const;
-    void document_language_support(std::string feature, std::string note) const;
-    void document_note(std::string name, std::string note, bool long_text = false) const;
-    void document_hide() const;
+    void document_property(
+        const std::string &property, const std::string &note) const;
 
-    static void static_error(std::string msg);
-    void error(std::string msg);
-    void warning(std::string msg);
+    void document_language_support(
+        const std::string &feature, const std::string &note) const;
 
-    Options parse(); //parse is not the best name for this function. It just does some checks and returns the parsed options Parsing happens before that. Change?
+    void document_note(
+        const std::string &name, const std::string &note, bool long_text = false) const;
+
+    void error(const std::string &msg) const;
+
+    /* TODO: "parse" is not the best name for this function. It just does some
+       checks and returns the parsed options. Parsing happens before that. */
+    Options parse();
+
     const ParseTree *get_parse_tree();
-    void set_help_mode(bool m);
+    Registry &get_registry();
+    const Predefinitions &get_predefinitions() const;
+    const std::string &get_root_value() const;
 
     bool dry_run() const;
     bool help_mode() const;
 
-    template<typename T>
-    static std::string to_str(T in) {
-        std::ostringstream out;
-        out << std::boolalpha << in;
-        return out.str();
-    }
+    static const std::string NONE;
+};
 
-private:
-    std::string unparsed_config;
-    Options opts;
-    const ParseTree parse_tree;
-    bool dry_run_;
-    bool help_mode_;
 
-    ParseTree::sibling_iterator next_unparsed_argument;
-    std::vector<std::string> valid_keys;
-
-    void set_unparsed_config();
+/*
+  TokenParser<T> wraps functions to parse supported types T.
+*/
+template<typename T>
+class TokenParser {
+public:
+    static inline T parse(OptionParser &parser);
 };
 
 /*
-  TODO: OptionParser and TokenParser are currently so tangled that we
-  *must* have this #include statement right here, after defining
-  OptionParser and before defining its methods. This obviously needs
-  more work.
+  We need to give specializations of the class for the cases we want
+  to *partially* specialize, i.e., give a specialization that is still
+  templated. For fully specialized cases (e.g. parsing "int"), it is
+  not necessary to specialize the class; we just need to specialize
+  the method.
 */
-}
-#include "token_parser.h"
+template<typename T>
+class TokenParser<std::shared_ptr<T>> {
+public:
+    static inline std::shared_ptr<T> parse(OptionParser &parser);
+};
 
-namespace options {
-//Definitions of OptionParsers template functions:
+template<typename T>
+class TokenParser<std::vector<T>> {
+public:
+    static inline std::vector<T> parse(OptionParser &parser);
+};
+
+/*
+  If T has no template specialization, try to parse it directly from
+  the input string. As of this writing, this default implementation is
+  used only for string and bool.
+*/
+template<typename T>
+inline T TokenParser<T>::parse(OptionParser &parser) {
+    const std::string &value = parser.get_root_value();
+    std::istringstream stream(value);
+    T x;
+    if ((stream >> std::boolalpha >> x).fail()) {
+        parser.error("could not parse argument " + value + " of type " +
+                     TypeNamer<T>::name(parser.get_registry()));
+    }
+    return x;
+}
+
+// int needs a specialization to allow "infinity".
+template<>
+inline int TokenParser<int>::parse(OptionParser &parser) {
+    std::string value = parser.get_root_value();
+
+    if (value.empty()) {
+        parser.error("int argument must not be empty");
+    } else if (value == "infinity") {
+        return std::numeric_limits<int>::max();
+    }
+
+    char suffix = value.back();
+    int factor = 1;
+    if (isalpha(suffix)) {
+        /* Option values from the command line are already lower case, but
+           default values specified in the code might be upper case. */
+        suffix = static_cast<char>(std::tolower(suffix));
+        if (suffix == 'k') {
+            factor = 1000;
+        } else if (suffix == 'm') {
+            factor = 1000000;
+        } else if (suffix == 'g') {
+            factor = 1000000000;
+        } else {
+            parser.error("invalid suffix for int argument (valid: K, M, G)");
+        }
+        value.pop_back();
+    }
+
+    std::istringstream stream(value);
+    int x;
+    stream >> std::noskipws >> x;
+    if (stream.fail() || !stream.eof()) {
+        parser.error("could not parse int argument");
+    }
+
+    int min_int = std::numeric_limits<int>::min();
+    // Reserve highest value for "infinity".
+    int max_int = std::numeric_limits<int>::max() - 1;
+    if (!utils::is_product_within_limits(x, factor, min_int, max_int)) {
+        parser.error("overflow for int argument");
+    }
+    return x * factor;
+}
+
+// double needs a specialization to allow "infinity".
+template<>
+inline double TokenParser<double>::parse(OptionParser &parser) {
+    const std::string &value = parser.get_root_value();
+    if (value == "infinity") {
+        return std::numeric_limits<double>::infinity();
+    } else {
+        std::istringstream stream(value);
+        double x;
+        stream >> std::noskipws >> x;
+        if (stream.fail() || !stream.eof()) {
+            parser.error("could not parse double argument");
+        }
+        return x;
+    }
+}
+
+// Helper functions for the TokenParser-specializations.
+
+template<typename T>
+static std::shared_ptr<T> lookup_in_registry(OptionParser &parser) {
+    const std::string &value = parser.get_root_value();
+    try {
+        return parser.get_registry().get_factory<std::shared_ptr<T>>(value)(parser);
+    } catch (const std::out_of_range &) {
+        parser.error(TypeNamer<std::shared_ptr<T>>::name(parser.get_registry()) + " " + value + " not found");
+    }
+    return nullptr;
+}
+
+template<typename T>
+static std::shared_ptr<T> lookup_in_predefinitions(OptionParser &parser, bool &found) {
+    using TPtr = std::shared_ptr<T>;
+    const std::string &value = parser.get_root_value();
+    found = parser.get_predefinitions().contains(value);
+    return parser.get_predefinitions().get<TPtr>(value, nullptr);
+}
+
+template<typename T>
+inline std::shared_ptr<T> TokenParser<std::shared_ptr<T>>::parse(OptionParser &parser) {
+    bool predefined;
+    std::shared_ptr<T> result = lookup_in_predefinitions<T>(parser, predefined);
+    if (predefined)
+        return result;
+    return lookup_in_registry<T>(parser);
+}
+
+// Needed for iterated search.
+template<>
+inline ParseTree TokenParser<ParseTree>::parse(OptionParser &parser) {
+    return *parser.get_parse_tree();
+}
+
+template<typename T>
+inline std::vector<T> TokenParser<std::vector<T>>::parse(OptionParser &parser) {
+    if (parser.get_parse_tree()->begin()->value != "list") {
+        parser.error("expected list");
+    }
+    std::vector<T> results;
+    for (auto tree_it = first_child_of_root(*parser.get_parse_tree());
+         tree_it != end_of_roots_children(*parser.get_parse_tree());
+         ++tree_it) {
+        OptionParser subparser(subtree(*parser.get_parse_tree(), tree_it),
+                               parser.get_registry(), parser.get_predefinitions(),
+                               parser.dry_run());
+        results.push_back(TokenParser<T>::parse(subparser));
+    }
+    return results;
+}
 
 template<typename T>
 T OptionParser::start_parsing() {
-    if (help_mode()) {
-        DocStore::instance()->register_object(parse_tree.begin()->value,
-                                              TypeNamer<T>::name());
-    }
     return TokenParser<T>::parse(*this);
 }
 
@@ -141,55 +292,60 @@ void OptionParser::check_bounds<double>(
 
 template<typename T>
 void OptionParser::add_option(
-    std::string k, std::string h, std::string default_value, Bounds bounds) {
+    const std::string &key,
+    const std::string &help,
+    const std::string &default_value,
+    const Bounds &bounds) {
     if (help_mode()) {
-        DocStore::instance()->add_arg(parse_tree.begin()->value,
-                                      k, h,
-                                      TypeNamer<T>::name(), default_value,
-                                      bounds);
+        registry.add_plugin_info_arg(
+            get_root_value(),
+            key,
+            help,
+            TypeNamer<T>::name(registry),
+            default_value,
+            bounds);
         return;
     }
-    valid_keys.push_back(k);
-    bool use_default(false);
+    valid_keys.push_back(key);
+    bool use_default = false;
     ParseTree::sibling_iterator arg = next_unparsed_argument;
-    //scenario where we have already handled all arguments
     if (arg == parse_tree.end(parse_tree.begin())) {
+        // We have already handled all arguments.
         if (default_value.empty()) {
-            error("missing option: " + k);
+            error("missing option: " + key);
         } else if (default_value == NONE) {
             return;
         } else {
             use_default = true;
         }
-    } else {
-        //handling arguments with explicit keyword:
-        if (!arg->key.empty()) { //to check if we reached the params supplied with key
-            //try to find a parameter passed with keyword k
-            for (; arg != parse_tree.end(parse_tree.begin()); ++arg) {
-                if (arg->key.compare(k) == 0)
-                    break;
-            }
-            if (arg == parse_tree.end(parse_tree.begin())) {
-                if (default_value.empty()) {
-                    error("missing option: " + k);
-                } else if (default_value == NONE) {
-                    return;
-                } else {
-                    use_default = true;
-                }
+    } else if (!arg->key.empty()) {
+        // Handle arguments with explicit keyword.
+        // Try to find a parameter passed with keyword key.
+        for (; arg != parse_tree.end(parse_tree.begin()); ++arg) {
+            if (arg->key == key)
+                break;
+        }
+        if (arg == parse_tree.end(parse_tree.begin())) {
+            if (default_value.empty()) {
+                error("missing option: " + key);
+            } else if (default_value == NONE) {
+                return;
+            } else {
+                use_default = true;
             }
         }
     }
-    std::unique_ptr<OptionParser> subparser(
+    std::unique_ptr<OptionParser> subparser =
         use_default ?
-        new OptionParser(default_value, dry_run()) :
-        new OptionParser(subtree(parse_tree, arg), dry_run()));
+        utils::make_unique_ptr<OptionParser>(default_value, registry,
+                                             predefinitions, dry_run()) :
+        utils::make_unique_ptr<OptionParser>(subtree(parse_tree, arg), registry,
+                                             predefinitions, dry_run());
     T result = TokenParser<T>::parse(*subparser);
-    check_bounds<T>(k, result, bounds);
-    opts.set<T>(k, result);
-    //if we have not reached the keyword parameters yet
-    //and did not use the default value,
-    //increment the argument position pointer
+    check_bounds<T>(key, result, bounds);
+    opts.set<T>(key, result);
+    /* If we have not reached the keyword parameters yet and have not used the
+       default value, increment the argument position pointer. */
     if (!use_default && arg->key.empty()) {
         ++next_unparsed_argument;
     }
@@ -197,8 +353,30 @@ void OptionParser::add_option(
 
 template<typename T>
 void OptionParser::add_list_option(
-    std::string k, std::string h, std::string def_val) {
-    add_option<std::vector<T>>(k, h, def_val);
+    const std::string &key,
+    const std::string &help,
+    const std::string &default_value) {
+    add_option<std::vector<T>>(key, help, default_value);
+}
+
+template<typename T>
+void predefine_plugin(const std::string &arg, Registry &registry,
+                      Predefinitions &predefinitions, bool dry_run) {
+    std::pair<std::string, std::string> predefinition;
+    try {
+        predefinition = utils::split(arg, "=");
+    } catch (utils::StringOperationError &) {
+        throw OptionParserError("Predefinition error: Predefinition has to be "
+                                "of the form [name]=[definition].");
+    }
+
+    std::string key = predefinition.first;
+    std::string value = predefinition.second;
+    utils::strip(key);
+    utils::strip(value);
+
+    OptionParser parser(value, registry, predefinitions, dry_run);
+    predefinitions.predefine(key, parser.start_parsing<std::shared_ptr<T>>());
 }
 }
 

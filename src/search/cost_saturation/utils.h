@@ -1,43 +1,63 @@
 #ifndef COST_SATURATION_UTILS_H
 #define COST_SATURATION_UTILS_H
 
+#include "abstraction.h"
 #include "types.h"
 
 #include <iostream>
 #include <vector>
 
-class TaskProxy;
+class AbstractTask;
+class Evaluator;
+class State;
 
-namespace utils {
-class RandomNumberGenerator;
+namespace options {
+class OptionParser;
+class Options;
 }
 
 namespace cost_saturation {
-extern std::vector<int> get_default_order(int num_abstractions);
+class AbstractionGenerator;
+class CostPartitioningHeuristicCollectionGenerator;
 
-extern int compute_sum_h(
-    const std::vector<int> &local_state_ids,
-    const std::vector<std::vector<int>> &h_values_by_abstraction);
+extern Abstractions generate_abstractions(
+    const std::shared_ptr<AbstractTask> &task,
+    const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators);
 
-extern std::vector<int> get_local_state_ids(
-    const Abstractions &abstractions, const State &state);
+extern Order get_default_order(int num_abstractions);
 
-extern CostPartitioning compute_cost_partitioning_for_static_order(
-    const TaskProxy &task_proxy,
-    const std::vector<std::unique_ptr<Abstraction>> &abstractions,
-    const std::vector<int> &costs,
-    CPFunction cp_function,
-    const State &state);
+extern int compute_max_h_with_statistics(
+    const CPHeuristics &cp_heuristics,
+    const std::vector<int> &abstract_state_ids,
+    std::vector<int> &num_best_order);
 
-extern std::vector<State> sample_states(
-    const TaskProxy &task_proxy,
-    const std::function<int (const State &)> &heuristic,
-    int num_samples,
-    const std::shared_ptr<utils::RandomNumberGenerator> &rng);
+template<typename AbstractionsOrFunctions>
+std::vector<int> get_abstract_state_ids(
+    const AbstractionsOrFunctions &abstractions, const State &state) {
+    std::vector<int> abstract_state_ids;
+    abstract_state_ids.reserve(abstractions.size());
+    for (auto &abstraction : abstractions) {
+        if (abstraction) {
+            // Only add local state IDs for useful abstractions.
+            abstract_state_ids.push_back(abstraction->get_abstract_state_id(state));
+        } else {
+            // Add dummy value if abstraction will never be used.
+            abstract_state_ids.push_back(-1);
+        }
+    }
+    return abstract_state_ids;
+}
 
 extern void reduce_costs(
-    std::vector<int> &remaining_costs,
-    const std::vector<int> &saturated_costs);
+    std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
+
+
+extern void add_order_options_to_parser(options::OptionParser &parser);
+extern void prepare_parser_for_cost_partitioning_heuristic(options::OptionParser &parser);
+extern std::shared_ptr<Evaluator> get_max_cp_heuristic(
+    options::OptionParser &parser, CPFunction cp_function);
+extern CostPartitioningHeuristicCollectionGenerator
+get_cp_heuristic_collection_generator_from_options(const options::Options &opts);
 
 template<typename T>
 void print_indexed_vector(const std::vector<T> &vec) {
@@ -57,9 +77,6 @@ void print_indexed_vector(const std::vector<T> &vec) {
     }
     std::cout << std::endl;
 }
-
-extern std::vector<bool> convert_to_bitvector(
-    const std::vector<int> &vec, int size);
 }
 
 #endif

@@ -5,15 +5,12 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../task_tools.h"
 
 #include "../heuristics/additive_heuristic.h"
-
 #include "../landmarks/landmark_graph.h"
-
+#include "../task_utils/task_properties.h"
 #include "../tasks/domain_abstracted_task_factory.h"
 #include "../tasks/modified_goals_task.h"
-
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
 
@@ -53,8 +50,8 @@ static void remove_initial_state_facts(
     const TaskProxy &task_proxy, Facts &facts) {
     State initial_state = task_proxy.get_initial_state();
     facts.erase(remove_if(facts.begin(), facts.end(), [&](FactPair fact) {
-            return initial_state[fact.var].get_value() == fact.value;
-        }), facts.end());
+                              return initial_state[fact.var].get_value() == fact.value;
+                          }), facts.end());
 }
 
 static void order_facts(
@@ -78,7 +75,7 @@ static void order_facts(
         break;
     default:
         cerr << "Invalid task order: " << static_cast<int>(fact_order) << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 }
 
@@ -101,6 +98,7 @@ TaskDuplicator::TaskDuplicator(const Options &opts)
 SharedTasks TaskDuplicator::get_subtasks(
     const shared_ptr<AbstractTask> &task) const {
     SharedTasks subtasks;
+    subtasks.reserve(num_copies);
     for (int i = 0; i < num_copies; ++i) {
         subtasks.push_back(task);
     }
@@ -116,7 +114,7 @@ SharedTasks GoalDecomposition::get_subtasks(
     const shared_ptr<AbstractTask> &task) const {
     SharedTasks subtasks;
     TaskProxy task_proxy(*task);
-    Facts goal_facts = get_fact_pairs(task_proxy.get_goals());
+    Facts goal_facts = task_properties::get_fact_pairs(task_proxy.get_goals());
     filter_and_order_facts(task, fact_order, goal_facts, *rng);
     for (const FactPair &goal : goal_facts) {
         shared_ptr<AbstractTask> subtask =
@@ -216,11 +214,11 @@ static shared_ptr<SubtaskGenerator> _parse_landmarks(OptionParser &parser) {
         return make_shared<LandmarkDecomposition>(opts);
 }
 
-static PluginShared<SubtaskGenerator> _plugin_original(
+static Plugin<SubtaskGenerator> _plugin_original(
     "original", _parse_original);
-static PluginShared<SubtaskGenerator> _plugin_goals(
+static Plugin<SubtaskGenerator> _plugin_goals(
     "goals", _parse_goals);
-static PluginShared<SubtaskGenerator> _plugin_landmarks(
+static Plugin<SubtaskGenerator> _plugin_landmarks(
     "landmarks", _parse_landmarks);
 
 static PluginTypePlugin<SubtaskGenerator> _type_plugin(

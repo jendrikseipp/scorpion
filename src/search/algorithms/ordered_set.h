@@ -2,13 +2,13 @@
 #define ALGORITHMS_ORDERED_SET_H
 
 #include "../utils/collections.h"
+#include "../utils/hash.h"
 #include "../utils/rng.h"
 
 #include <cassert>
-#include <unordered_set>
 #include <vector>
 
-namespace algorithms {
+namespace ordered_set {
 /*
   Combine vector and unordered_set to store a set of elements, ordered
   by insertion time.
@@ -16,7 +16,7 @@ namespace algorithms {
 template<typename T>
 class OrderedSet {
     std::vector<T> ordered_items;
-    std::unordered_set<T> unordered_items;
+    utils::HashSet<T> unordered_items;
 
 public:
     bool empty() const {

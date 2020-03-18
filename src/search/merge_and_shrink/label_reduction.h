@@ -4,8 +4,11 @@
 #include <memory>
 #include <vector>
 
-class EquivalenceRelation;
 class TaskProxy;
+
+namespace equivalence_relation {
+class EquivalenceRelation;
+}
 
 namespace options {
 class Options;
@@ -13,11 +16,11 @@ class Options;
 
 namespace utils {
 class RandomNumberGenerator;
+enum class Verbosity;
 }
 
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
-enum class Verbosity;
 
 class LabelReduction {
     // Options for label reduction
@@ -45,8 +48,8 @@ class LabelReduction {
     /*
       Order in which iterations of label reduction considers the set of all
       transition systems. Regular is the fast downward order plus appending
-      new composite transition systems after the atomic ones, revers is the
-      reversed regulard order and random is a random one. All orders are
+      new composite transition systems after the atomic ones, reverse is the
+      reversed regular order and random is a random one. All orders are
       precomputed and reused for every call to reduce().
     */
     enum LabelReductionSystemOrder {
@@ -59,23 +62,24 @@ class LabelReduction {
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     bool initialized() const;
-    // Apply the given label equivalence relation to the set of labels and compute
-    // the resulting label mapping.
+    /* Apply the given label equivalence relation to the set of labels and
+       compute the resulting label mapping. */
     void compute_label_mapping(
-        const EquivalenceRelation *relation,
+        const equivalence_relation::EquivalenceRelation *relation,
         const FactoredTransitionSystem &fts,
         std::vector<std::pair<int, std::vector<int>>> &label_mapping,
-        Verbosity verbosity);
-    EquivalenceRelation *compute_combinable_equivalence_relation(
+        utils::Verbosity verbosity) const;
+    equivalence_relation::EquivalenceRelation
+    *compute_combinable_equivalence_relation(
         int ts_index,
         const FactoredTransitionSystem &fts) const;
 public:
     explicit LabelReduction(const options::Options &options);
     void initialize(const TaskProxy &task_proxy);
     bool reduce(
-        std::pair<int, int> next_merge,
+        const std::pair<int, int> &next_merge,
         FactoredTransitionSystem &fts,
-        Verbosity verbosity);
+        utils::Verbosity verbosity) const;
     void dump_options() const;
     bool reduce_before_shrinking() const {
         return lr_before_shrinking;

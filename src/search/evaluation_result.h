@@ -1,16 +1,16 @@
 #ifndef EVALUATION_RESULT_H
 #define EVALUATION_RESULT_H
 
+#include "operator_id.h"
+
 #include <limits>
 #include <vector>
-
-class GlobalOperator;
 
 class EvaluationResult {
     static const int UNINITIALIZED = -2;
 
-    int h_value;
-    std::vector<const GlobalOperator *> preferred_operators;
+    int evaluator_value;
+    std::vector<OperatorID> preferred_operators;
     bool count_evaluation;
 public:
     // "INFINITY" is an ISO C99 macro and "INFINITE" is a macro in windows.h.
@@ -40,13 +40,12 @@ public:
 
     bool is_uninitialized() const;
     bool is_infinite() const;
-    int get_h_value() const;
+    int get_evaluator_value() const;
     bool get_count_evaluation() const;
-    const std::vector<const GlobalOperator *> &get_preferred_operators() const;
+    const std::vector<OperatorID> &get_preferred_operators() const;
 
-    void set_h_value(int value);
-    void set_preferred_operators(
-        std::vector<const GlobalOperator *> &&preferred_operators);
+    void set_evaluator_value(int value);
+    void set_preferred_operators(std::vector<OperatorID> &&preferred_operators);
     void set_count_evaluation(bool count_eval);
 };
 

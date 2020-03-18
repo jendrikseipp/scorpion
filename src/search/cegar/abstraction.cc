@@ -1,12 +1,12 @@
 #include "abstraction.h"
 
 #include "abstract_state.h"
+#include "refinement_hierarchy.h"
+#include "transition.h"
+#include "transition_system.h"
 #include "utils.h"
 
-#include "../globals.h"
-#include "../task_tools.h"
-
-#include "../utils/language.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
 #include "../utils/memory.h"
@@ -19,430 +19,126 @@
 using namespace std;
 
 namespace cegar {
-struct Flaw {
-    // Last concrete and abstract state reached while tracing solution.
-    const State concrete_state;
-    // TODO: After conversion to smart pointers, store as unique_ptr?
-    AbstractState *current_abstract_state;
-    // Hypothetical Cartesian set we would have liked to reach.
-    const AbstractState desired_abstract_state;
-
-    Flaw(
-        State &&concrete_state,
-        AbstractState *current_abstract_state,
-        AbstractState &&desired_abstract_state)
-        : concrete_state(move(concrete_state)),
-          current_abstract_state(current_abstract_state),
-          desired_abstract_state(move(desired_abstract_state)) {
-    }
-
-    vector<Split> get_possible_splits() const {
-        vector<Split> splits;
-        /*
-          For each fact in the concrete state that is not contained in
-          the current abstract state (reason: abstract and concrete
-          traces diverged) or the desired abstract state (reason:
-          unsatisfied precondition or goal), loop over all values of
-          the corresponding variable. The values that are in both the
-          current and the desired abstract state are the "wanted" ones.
-        */
-        for (FactProxy wanted_fact_proxy : concrete_state) {
-            FactPair fact = wanted_fact_proxy.get_pair();
-            if (!current_abstract_state->contains(fact.var, fact.value) ||
-                !desired_abstract_state.contains(fact.var, fact.value)) {
-                VariableProxy var = wanted_fact_proxy.get_variable();
-                int var_id = var.get_id();
-                vector<int> wanted;
-                for (int value = 0; value < var.get_domain_size(); ++value) {
-                    if (current_abstract_state->contains(var_id, value) &&
-                        desired_abstract_state.contains(var_id, value)) {
-                        wanted.push_back(value);
-                    }
-                }
-                assert(!wanted.empty());
-                splits.emplace_back(var_id, move(wanted));
-            }
-        }
-        assert(!splits.empty());
-        return splits;
-    }
-};
-
-Abstraction::Abstraction(
-    const shared_ptr<AbstractTask> task,
-    int max_states,
-    int max_non_looping_transitions,
-    double max_time,
-    bool use_general_costs,
-    PickSplit pick,
-    utils::RandomNumberGenerator &rng,
-    bool debug)
-    : task(task),
-      task_proxy(*task),
-      max_states(max_states),
-      max_non_looping_transitions(max_non_looping_transitions),
-      use_general_costs(use_general_costs),
-      abstract_search(get_operator_costs(task_proxy), states),
-      split_selector(task, pick),
-      transition_updater(task_proxy.get_operators()),
-      timer(max_time),
-      init(nullptr),
-      deviations(0),
-      unmet_preconditions(0),
-      unmet_goals(0),
-      refinement_hierarchy(make_shared<RefinementHierarchy>(task)),
+Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
+    : transition_system(utils::make_unique_ptr<TransitionSystem>(TaskProxy(*task).get_operators())),
+      concrete_initial_state(TaskProxy(*task).get_initial_state()),
+      goal_facts(task_properties::get_fact_pairs(TaskProxy(*task).get_goals())),
+      refinement_hierarchy(utils::make_unique_ptr<RefinementHierarchy>(task)),
       debug(debug) {
-    assert(max_states >= 1);
-    g_log << "Start building abstraction." << endl;
-    cout << "Maximum number of states: " << max_states << endl;
-    cout << "Maximum number of transitions: "
-         << max_non_looping_transitions << endl;
-    build(rng);
-    g_log << "Done building abstraction." << endl;
-    cout << "Time for building abstraction: " << timer << endl;
-
-    /* Even if we found a concrete solution, we might have refined in the
-       last iteration, so we should update the distances. */
-    update_h_and_g_values();
-
-    print_statistics();
-    compress_self_loops();
-    set_state_ids();
+    initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
 }
 
 Abstraction::~Abstraction() {
-    for (AbstractState *state : states)
-        delete state;
 }
 
-vector<int> Abstraction::get_h_values() const {
-    vector<int> h_values(states.size(), -1);
-    for (const AbstractState *state: states) {
-        int state_id = state->get_node()->get_state_id();
-        h_values[state_id] = state->get_h_value();
-    }
-    assert(all_of(h_values.begin(), h_values.end(), [](int h) {return h != -1; }));
-    return h_values;
+const AbstractState &Abstraction::get_initial_state() const {
+    return *states[init_id];
 }
 
-bool Abstraction::is_goal(AbstractState *state) const {
-    return goals.count(state) == 1;
+int Abstraction::get_num_states() const {
+    return states.size();
 }
 
-void Abstraction::separate_facts_unreachable_before_goal() {
-    assert(goals.size() == 1);
-    assert(states.size() == 1);
-    assert(task_proxy.get_goals().size() == 1);
-    FactProxy goal = task_proxy.get_goals()[0];
-    unordered_set<FactProxy> reachable_facts = get_relaxed_possible_before(
-        task_proxy, goal);
-    for (VariableProxy var : task_proxy.get_variables()) {
-        if (!may_keep_refining())
-            break;
-        int var_id = var.get_id();
-        vector<int> unreachable_values;
-        for (int value = 0; value < var.get_domain_size(); ++value) {
-            FactProxy fact = var.get_fact(value);
-            if (reachable_facts.count(fact) == 0)
-                unreachable_values.push_back(value);
-        }
-        if (!unreachable_values.empty())
-            refine(init, var_id, unreachable_values);
-    }
+const Goals &Abstraction::get_goals() const {
+    return goals;
+}
+
+const AbstractState &Abstraction::get_state(int state_id) const {
+    return *states[state_id];
+}
+
+const TransitionSystem &Abstraction::get_transition_system() const {
+    return *transition_system;
+}
+
+unique_ptr<RefinementHierarchy> Abstraction::extract_refinement_hierarchy() {
+    assert(refinement_hierarchy);
+    return move(refinement_hierarchy);
+}
+
+void Abstraction::mark_all_states_as_goals() {
     goals.clear();
-    goals.insert(states.begin(), states.end());
+    for (auto &state : states) {
+        goals.insert(state->get_id());
+    }
 }
 
-void Abstraction::create_trivial_abstraction() {
-    init = AbstractState::get_trivial_abstract_state(
-        task_proxy, refinement_hierarchy->get_root());
-    transition_updater.add_loops_to_trivial_abstract_state(init);
-    goals.insert(init);
-    states.insert(init);
+void Abstraction::initialize_trivial_abstraction(const vector<int> &domain_sizes) {
+    unique_ptr<AbstractState> init_state =
+        AbstractState::get_trivial_abstract_state(domain_sizes);
+    init_id = init_state->get_id();
+    goals.insert(init_state->get_id());
+    states.push_back(move(init_state));
 }
 
-bool Abstraction::may_keep_refining() const {
-    return !utils::is_out_of_memory() &&
-           get_num_states() < max_states &&
-           transition_updater.get_num_non_loops() < max_non_looping_transitions &&
-           !timer.is_expired();
-}
+pair<int, int> Abstraction::refine(
+    const AbstractState &state, int var, const vector<int> &wanted) {
+    if (debug)
+        cout << "Refine " << state << " for " << var << "=" << wanted << endl;
 
-void Abstraction::build(utils::RandomNumberGenerator &rng) {
-    create_trivial_abstraction();
+    int v_id = state.get_id();
+    // Reuse state ID from obsolete parent to obtain consecutive IDs.
+    int v1_id = v_id;
+    int v2_id = get_num_states();
+
+    // Update refinement hierarchy.
+    pair<NodeID, NodeID> node_ids = refinement_hierarchy->split(
+        state.get_node_id(), var, wanted, v1_id, v2_id);
+
+    pair<CartesianSet, CartesianSet> cartesian_sets =
+        state.split_domain(var, wanted);
+
+    unique_ptr<AbstractState> v1 = utils::make_unique_ptr<AbstractState>(
+        v1_id, node_ids.first, move(cartesian_sets.first));
+    unique_ptr<AbstractState> v2 = utils::make_unique_ptr<AbstractState>(
+        v2_id, node_ids.second, move(cartesian_sets.second));
+    assert(state.includes(*v1));
+    assert(state.includes(*v2));
+
     /*
-      For landmark tasks we have to map all states in which the
-      landmark might have been achieved to arbitrary abstract goal
-      states. For the other types of subtasks our method won't find
-      unreachable facts, but calling it unconditionally for subtasks
-      with one goal doesn't hurt and simplifies the implementation.
+      Due to the way we split the state into v1 and v2, v2 is never the new
+      initial state and v1 is never a goal state.
     */
-    if (task_proxy.get_goals().size() == 1) {
-        separate_facts_unreachable_before_goal();
-    }
-    bool found_concrete_solution = false;
-    while (may_keep_refining()) {
-        bool found_abstract_solution = abstract_search.find_solution(init, goals);
-        if (!found_abstract_solution) {
-            cout << "Abstract problem is unsolvable!" << endl;
-            break;
-        }
-        unique_ptr<Flaw> flaw = find_flaw(abstract_search.get_solution());
-        if (!flaw) {
-            found_concrete_solution = true;
-            break;
-        }
-        AbstractState *abstract_state = flaw->current_abstract_state;
-        vector<Split> splits = flaw->get_possible_splits();
-        const Split &split = split_selector.pick_split(*abstract_state, splits, rng);
-        refine(abstract_state, split.var_id, split.values);
-    }
-    cout << "Concrete solution found: " << found_concrete_solution << endl;
-}
-
-void Abstraction::refine(AbstractState *state, int var, const vector<int> &wanted) {
-    if (debug)
-        cout << "Refine " << *state << " for " << var << "=" << wanted << endl;
-    pair<AbstractState *, AbstractState *> new_states = state->split(var, wanted);
-    AbstractState *v1 = new_states.first;
-    AbstractState *v2 = new_states.second;
-
-    transition_updater.rewire(state, v1, v2, var);
-
-    states.erase(state);
-    states.insert(v1);
-    states.insert(v2);
-
-    /* Since the search is always started from the abstract initial state, v2
-       is never the new initial state and v1 is never a goal state. */
-    if (state == init) {
-        assert(v1->includes(task_proxy.get_initial_state()));
-        assert(!v2->includes(task_proxy.get_initial_state()));
-        init = v1;
-        if (debug)
-            cout << "New init state: " << *init << endl;
-    }
-    if (is_goal(state)) {
-        goals.erase(state);
-        goals.insert(v2);
-        if (debug)
-            cout << "New/additional goal state: " << *v2 << endl;
-    }
-
-    int num_states = get_num_states();
-    if (num_states % 1000 == 0) {
-        g_log << num_states << "/" << max_states << " states, "
-              << transition_updater.get_num_non_loops() << "/"
-              << max_non_looping_transitions << " transitions" << endl;
-    }
-
-    delete state;
-}
-
-unique_ptr<Flaw> Abstraction::find_flaw(const Solution &solution) {
-    if (debug)
-        cout << "Check solution:" << endl;
-
-    AbstractState *abstract_state = init;
-    State concrete_state = task_proxy.get_initial_state();
-    assert(abstract_state->includes(concrete_state));
-
-    if (debug)
-        cout << "  Initial abstract state: " << *abstract_state << endl;
-
-    for (const Transition &step : solution) {
-        if (utils::is_out_of_memory())
-            break;
-        OperatorProxy op = task_proxy.get_operators()[step.op_id];
-        AbstractState *next_abstract_state = step.target;
-        if (is_applicable(op, concrete_state)) {
-            if (debug)
-                cout << "  Move to " << *next_abstract_state << " with "
-                     << op.get_name() << endl;
-            State next_concrete_state = concrete_state.get_successor(op);
-            if (!next_abstract_state->includes(next_concrete_state)) {
-                if (debug)
-                    cout << "  Paths deviate." << endl;
-                ++deviations;
-                return utils::make_unique_ptr<Flaw>(
-                    move(concrete_state),
-                    abstract_state,
-                    next_abstract_state->regress(op));
-            }
-            abstract_state = next_abstract_state;
-            concrete_state = move(next_concrete_state);
+    if (state.get_id() == init_id) {
+        if (v1->includes(concrete_initial_state)) {
+            assert(!v2->includes(concrete_initial_state));
+            init_id = v1_id;
         } else {
-            if (debug)
-                cout << "  Operator not applicable: " << op.get_name() << endl;
-            ++unmet_preconditions;
-            return utils::make_unique_ptr<Flaw>(
-                move(concrete_state),
-                abstract_state,
-                AbstractState::get_abstract_state(
-                    task_proxy, op.get_preconditions()));
+            assert(v2->includes(concrete_initial_state));
+            init_id = v2_id;
+        }
+        if (debug) {
+            cout << "New init state #" << init_id << ": " << get_state(init_id)
+                 << endl;
         }
     }
-    assert(is_goal(abstract_state));
-    if (is_goal_state(task_proxy, concrete_state)) {
-        // We found a concrete solution.
-        return nullptr;
-    } else {
-        if (debug)
-            cout << "  Goal test failed." << endl;
-        ++unmet_goals;
-        return utils::make_unique_ptr<Flaw>(
-            move(concrete_state),
-            abstract_state,
-            AbstractState::get_abstract_state(
-                task_proxy, task_proxy.get_goals()));
-    }
-}
-
-void Abstraction::update_h_and_g_values() {
-    abstract_search.backwards_dijkstra(goals);
-    for (AbstractState *state : states) {
-        state->increase_h_value_to(state->get_search_info().get_g_value());
-    }
-    // Update g values.
-    // TODO: updating h values overwrites g values. Find better solution.
-    abstract_search.forward_dijkstra(init);
-}
-
-int Abstraction::get_h_value_of_initial_state() const {
-    return init->get_h_value();
-}
-
-void Abstraction::set_state_ids() {
-    int state_id = 0;
-    for (const AbstractState *state: states) {
-        state->get_node()->set_state_id(state_id++);
-    }
-}
-
-void Abstraction::compress_self_loops() {
-    operator_induces_self_loop.resize(task_proxy.get_operators().size(), false);
-    for (AbstractState *state : states) {
-        for (int op_id : state->get_loops()) {
-            operator_induces_self_loop[op_id] = true;
+    if (goals.count(v_id)) {
+        goals.erase(v_id);
+        if (v1->includes(goal_facts)) {
+            goals.insert(v1_id);
         }
-        state->remove_loops();
-        state->release_domains_memory();
-    }
-}
-
-const vector<bool> &Abstraction::get_operator_induces_self_loop() const {
-    return operator_induces_self_loop;
-}
-
-void Abstraction::set_operator_costs(const vector<int> &new_costs) {
-    abstract_search.set_operator_costs(new_costs);
-    abstract_search.backwards_dijkstra(goals);
-    for (AbstractState *state : states) {
-        state->set_h_value(state->get_search_info().get_g_value());
-    }
-}
-
-vector<int> Abstraction::get_saturated_costs() {
-    const int num_ops = task_proxy.get_operators().size();
-    const int min_cost = use_general_costs ? -INF : 0;
-
-    vector<int> saturated_costs(num_ops, min_cost);
-
-    /* To prevent negative cost cycles, all operators inducing
-       self-loops must have non-negative costs. */
-    if (use_general_costs) {
-        assert(static_cast<int>(operator_induces_self_loop.size()) == num_ops);
-        for (int op_id = 0; op_id < num_ops; ++op_id) {
-            if (operator_induces_self_loop[op_id]) {
-                saturated_costs[op_id] = 0;
-            }
+        if (v2->includes(goal_facts)) {
+            goals.insert(v2_id);
+        }
+        if (debug) {
+            cout << "Goal states: " << goals.size() << endl;
         }
     }
 
-    for (AbstractState *state : states) {
-        const int g = state->get_search_info().get_g_value();
-        const int h = state->get_h_value();
+    transition_system->rewire(states, v_id, *v1, *v2, var);
 
-        /*
-          No need to maintain goal distances of unreachable (g == INF)
-          and dead end states (h == INF).
+    states[v1_id] = move(v1);
+    assert(static_cast<int>(states.size()) == v2_id);
+    states.push_back(move(v2));
 
-          Note that the "succ_h == INF" test below is sufficient for
-          ignoring dead end states. The "h == INF" test is a speed
-          optimization.
-        */
-        if (g == INF || h == INF)
-            continue;
-
-        for (const Transition &transition: state->get_outgoing_transitions()) {
-            const AbstractState *successor = transition.target;
-            const int succ_h = successor->get_h_value();
-
-            if (succ_h == INF)
-                continue;
-
-            const int op_id = transition.op_id;
-            const int needed = h - succ_h;
-            saturated_costs[op_id] = max(saturated_costs[op_id], needed);
-        }
-    }
-    return saturated_costs;
+    return {
+               v1_id, v2_id
+    };
 }
 
-vector<bool> Abstraction::compute_active_operators() {
-    vector<bool> result(task_proxy.get_operators().size(), false);
-
-    for (AbstractState *state : states) {
-        const int g = state->get_search_info().get_g_value();
-        const int h = state->get_h_value();
-
-        if (g == INF || h == INF)
-            continue;
-
-        for (const Transition &transition : state->get_outgoing_transitions()) {
-            const AbstractState *successor = transition.target;
-            const int succ_h = successor->get_h_value();
-
-            if (succ_h == INF)
-                continue;
-
-            result[transition.op_id] = true;
-        }
-    }
-    return result;
-}
-
-void Abstraction::print_statistics() {
-    int total_incoming_transitions = 0;
-    int total_outgoing_transitions = 0;
-    int total_loops = 0;
-    int dead_ends = 0;
-    for (AbstractState *state : states) {
-        if (state->get_h_value() == INF)
-            ++dead_ends;
-        total_incoming_transitions += state->get_incoming_transitions().size();
-        total_outgoing_transitions += state->get_outgoing_transitions().size();
-        total_loops += state->get_loops().size();
-    }
-    assert(total_outgoing_transitions == total_incoming_transitions);
-
-    int total_cost = 0;
-    for (OperatorProxy op : task_proxy.get_operators())
-        total_cost += op.get_cost();
-
-    cout << "Total operator cost: " << total_cost << endl;
+void Abstraction::print_statistics() const {
     cout << "States: " << get_num_states() << endl;
-    cout << "Dead ends: " << dead_ends << endl;
-    cout << "Init h: " << get_h_value_of_initial_state() << endl;
-
-    assert(transition_updater.get_num_loops() == total_loops);
-    assert(transition_updater.get_num_non_loops() == total_outgoing_transitions);
-    cout << "Looping transitions: " << total_loops << endl;
-    cout << "Non-looping transitions: " << total_outgoing_transitions << endl;
-
-    cout << "Deviations: " << deviations << endl;
-    cout << "Unmet preconditions: " << unmet_preconditions << endl;
-    cout << "Unmet goals: " << unmet_goals << endl;
-    cout << endl;
+    cout << "Goal states: " << goals.size() << endl;
+    transition_system->print_statistics();
 }
 }

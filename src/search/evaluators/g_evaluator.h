@@ -1,12 +1,10 @@
 #ifndef EVALUATORS_G_EVALUATOR_H
 #define EVALUATORS_G_EVALUATOR_H
 
-#include "../scalar_evaluator.h"
-
-class Heuristic;
+#include "../evaluator.h"
 
 namespace g_evaluator {
-class GEvaluator : public ScalarEvaluator {
+class GEvaluator : public Evaluator {
 public:
     GEvaluator() = default;
     virtual ~GEvaluator() override = default;
@@ -14,7 +12,7 @@ public:
     virtual EvaluationResult compute_result(
         EvaluationContext &eval_context) override;
 
-    virtual void get_involved_heuristics(std::set<Heuristic *> &) override {}
+    virtual void get_path_dependent_evaluators(std::set<Evaluator *> &) override {}
 };
 }
 

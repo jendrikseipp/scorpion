@@ -13,14 +13,18 @@
 
 class TaskProxy;
 
+namespace utils {
+enum class Verbosity;
+}
+
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
-enum class Verbosity;
 
 extern FactoredTransitionSystem create_factored_transition_system(
     const TaskProxy &task_proxy,
-    Verbosity verbosity,
-    bool finalize_if_unsolvable = true);
+    bool compute_init_distances,
+    bool compute_goal_distances,
+    utils::Verbosity verbosity);
 }
 
 #endif
