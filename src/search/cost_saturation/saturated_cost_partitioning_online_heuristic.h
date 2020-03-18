@@ -19,12 +19,14 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
     const bool skip_seen_orders;
+    const double max_time;
+    const bool diversify;
+
     const std::vector<int> costs;
     std::vector<std::vector<bool>> seen_facts;
     utils::HashSet<Order> seen_orders;
     int num_evaluated_states;
     int num_scps_computed;
-    int num_diverse_scps;
 
     // For statistics.
     mutable std::vector<int> num_best_order;

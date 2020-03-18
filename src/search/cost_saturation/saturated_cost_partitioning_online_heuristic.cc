@@ -30,10 +30,11 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       unsolvability_heuristic(move(unsolvability_heuristic)),
       interval(opts.get<int>("interval")),
       skip_seen_orders(opts.get<bool>("skip_seen_orders")),
+      max_time(opts.get<double>("max_time")),
+      diversify(opts.get<bool>("diversify")),
       costs(task_properties::get_operator_costs(task_proxy)),
       num_evaluated_states(0),
-      num_scps_computed(0),
-      num_diverse_scps(0) {
+      num_scps_computed(0) {
     seen_facts.resize(task_proxy.get_variables().size());
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
@@ -77,19 +78,25 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     if (should_compute_scp(state)) {
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
-        if (!skip_seen_orders || !seen_orders.count(order)) {
+        if (skip_seen_orders) {
+            if (!seen_orders.count(order)) {
+                CostPartitioningHeuristic cost_partitioning =
+                    compute_saturated_cost_partitioning(abstractions, order, costs);
+                ++num_scps_computed;
+                int h = cost_partitioning.compute_heuristic(abstract_state_ids);
+                bool is_diverse = h > max_h;
+                if (!diversify || is_diverse) {
+                    cp_heuristics.push_back(move(cost_partitioning));
+                }
+                max_h = max(max_h, h);
+                seen_orders.insert(move(order));
+            }
+        } else {
             CostPartitioningHeuristic cost_partitioning =
                 compute_saturated_cost_partitioning(abstractions, order, costs);
             ++num_scps_computed;
             int h = cost_partitioning.compute_heuristic(abstract_state_ids);
-            if (h > max_h) {
-                max_h = h;
-                ++num_diverse_scps;
-            }
-            if (skip_seen_orders) {
-                seen_orders.insert(move(order));
-                cp_heuristics.push_back(move(cost_partitioning));
-            }
+            return max(max_h, h);
         }
     }
     return max_h;
@@ -97,7 +104,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
     cout << "Computed SCPs: " << num_scps_computed << endl;
-    cout << "Diverse SCPs: " << num_diverse_scps << endl;
+    cout << "Stored SCPs: " << cp_heuristics.size() << endl;
 }
 
 
@@ -118,6 +125,16 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "skip_seen_orders",
         "compute SCP only once for each order",
         "true");
+    parser.add_option<double>(
+        "max_time",
+        "maximum time in seconds for computing cost partitionings",
+        "infinity",
+        Bounds("0", "infinity"));
+    parser.add_option<bool>(
+        "diversify",
+        "only store cost partitionings that have a higher heuristic value for "
+        "the evaluated state than all previously stored cost partitionings",
+        "false");
 
     Options opts = parser.parse();
     if (parser.help_mode())
