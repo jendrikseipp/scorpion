@@ -103,7 +103,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "interval",
         "compute SCP for every interval-th state",
-        OptionParser::NONE,
+        "1",
         Bounds("-1", "infinity"));
     parser.add_option<bool>(
         "skip_seen_orders",
