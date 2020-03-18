@@ -9,6 +9,10 @@
 #include <memory>
 #include <vector>
 
+namespace utils {
+class Timer;
+}
+
 namespace cost_saturation {
 class OrderGenerator;
 
@@ -25,6 +29,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::vector<int> costs;
     std::vector<std::vector<bool>> seen_facts;
     utils::HashSet<Order> seen_orders;
+    std::unique_ptr<utils::Timer> timer;
     int num_evaluated_states;
     int num_scps_computed;
 

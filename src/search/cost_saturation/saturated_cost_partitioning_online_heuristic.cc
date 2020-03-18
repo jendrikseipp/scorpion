@@ -14,6 +14,7 @@
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 #include "../utils/rng_options.h"
+#include "../utils/timer.h"
 
 using namespace std;
 
@@ -39,6 +40,9 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
     }
+
+    timer = utils::make_unique_ptr<utils::Timer>();
+    timer->stop();
 }
 
 SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuristic() {
@@ -75,7 +79,12 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
 
+    if ((*timer)() > max_time) {
+        return max_h;
+    }
+
     if (should_compute_scp(state)) {
+        timer->resume();
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
         if (skip_seen_orders) {
@@ -96,8 +105,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
                 compute_saturated_cost_partitioning(abstractions, order, costs);
             ++num_scps_computed;
             int h = cost_partitioning.compute_heuristic(abstract_state_ids);
-            return max(max_h, h);
+            max_h = max(max_h, h);
         }
+        timer->stop();
     }
     return max_h;
 }
@@ -105,6 +115,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
     cout << "Computed SCPs: " << num_scps_computed << endl;
     cout << "Stored SCPs: " << cp_heuristics.size() << endl;
+    cout << "Time for computing SCPs: " << *timer << endl;
 }
 
 
