@@ -70,20 +70,24 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         return DEAD_END;
     }
 
+    int max_h = compute_max_h_with_statistics(
+        cp_heuristics, abstract_state_ids, num_best_order);
+
     if (should_compute_scp(state)) {
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
         if (!skip_seen_orders || !seen_orders.count(order)) {
             CostPartitioningHeuristic cost_partitioning =
                 compute_saturated_cost_partitioning(abstractions, order, costs);
-            seen_orders.insert(move(order));
-            cp_heuristics.push_back(move(cost_partitioning));
             ++num_scps_computed;
+            int h = cost_partitioning.compute_heuristic(abstract_state_ids);
+            max_h = max(max_h, h);
+            if (skip_seen_orders) {
+                seen_orders.insert(move(order));
+                cp_heuristics.push_back(move(cost_partitioning));
+            }
         }
     }
-    int max_h = compute_max_h_with_statistics(
-        cp_heuristics, abstract_state_ids, num_best_order);
-    assert(max_h != INF);
     return max_h;
 }
 
