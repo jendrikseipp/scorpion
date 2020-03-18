@@ -12,6 +12,7 @@
 #include "../plugin.h"
 
 #include "../task_utils/task_properties.h"
+#include "../utils/logging.h"
 #include "../utils/rng_options.h"
 
 using namespace std;
@@ -28,7 +29,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       cp_heuristics(move(cp_heuristics)),
       unsolvability_heuristic(move(unsolvability_heuristic)),
       interval(opts.get<int>("interval")),
-      store_cost_partitionings(opts.get<bool>("store_cost_partitionings")),
       costs(task_properties::get_operator_costs(task_proxy)),
       num_evaluated_states(0),
       num_scps_computed(0) {
@@ -68,23 +68,21 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
         return DEAD_END;
     }
-    int max_h = compute_max_h_with_statistics(
-        cp_heuristics, abstract_state_ids, num_best_order);
-    assert(max_h != INF);
 
     if (should_compute_scp(state)) {
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
-        CostPartitioningHeuristic cost_partitioning =
-            compute_saturated_cost_partitioning(abstractions, order, costs);
-        ++num_scps_computed;
-        int single_h = cost_partitioning.compute_heuristic(abstract_state_ids);
-        if (store_cost_partitionings && single_h > max_h) {
+        if (!seen_orders.count(order)) {
+            CostPartitioningHeuristic cost_partitioning =
+                compute_saturated_cost_partitioning(abstractions, order, costs);
+            seen_orders.insert(move(order));
             cp_heuristics.push_back(move(cost_partitioning));
+            ++num_scps_computed;
         }
-        assert(single_h != INF);
-        return max(max_h, single_h);
     }
+    int max_h = compute_max_h_with_statistics(
+        cp_heuristics, abstract_state_ids, num_best_order);
+    assert(max_h != INF);
     return max_h;
 }
 
@@ -106,10 +104,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "compute SCP for every interval-th state",
         OptionParser::NONE,
         Bounds("-1", "infinity"));
-    parser.add_option<bool>(
-        "store_cost_partitionings",
-        "store saturated cost partitionings if diverse",
-        OptionParser::NONE);
 
     Options opts = parser.parse();
     if (parser.help_mode())

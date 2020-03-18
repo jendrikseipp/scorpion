@@ -18,9 +18,9 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     CPHeuristics cp_heuristics;
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
-    const bool store_cost_partitionings;
     const std::vector<int> costs;
     std::vector<std::vector<bool>> seen_facts;
+    utils::HashSet<Order> seen_orders;
     int num_evaluated_states;
     int num_scps_computed;
 
