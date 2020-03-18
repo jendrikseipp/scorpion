@@ -32,7 +32,8 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       skip_seen_orders(opts.get<bool>("skip_seen_orders")),
       costs(task_properties::get_operator_costs(task_proxy)),
       num_evaluated_states(0),
-      num_scps_computed(0) {
+      num_scps_computed(0),
+      num_diverse_scps(0) {
     seen_facts.resize(task_proxy.get_variables().size());
     for (VariableProxy var : task_proxy.get_variables()) {
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
@@ -81,7 +82,10 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
                 compute_saturated_cost_partitioning(abstractions, order, costs);
             ++num_scps_computed;
             int h = cost_partitioning.compute_heuristic(abstract_state_ids);
-            max_h = max(max_h, h);
+            if (h > max_h) {
+                max_h = h;
+                ++num_diverse_scps;
+            }
             if (skip_seen_orders) {
                 seen_orders.insert(move(order));
                 cp_heuristics.push_back(move(cost_partitioning));
@@ -93,6 +97,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
     cout << "Computed SCPs: " << num_scps_computed << endl;
+    cout << "Diverse SCPs: " << num_diverse_scps << endl;
 }
 
 

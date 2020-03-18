@@ -24,6 +24,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     utils::HashSet<Order> seen_orders;
     int num_evaluated_states;
     int num_scps_computed;
+    int num_diverse_scps;
 
     // For statistics.
     mutable std::vector<int> num_best_order;
