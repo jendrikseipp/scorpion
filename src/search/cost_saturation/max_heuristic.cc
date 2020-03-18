@@ -53,7 +53,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
 
     Abstractions abstractions = generate_abstractions(
         opts.get<shared_ptr<AbstractTask>>("transform"),
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
     return make_shared<MaxHeuristic>(opts, move(abstractions));
 }

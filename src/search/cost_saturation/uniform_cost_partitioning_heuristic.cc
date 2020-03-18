@@ -204,7 +204,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
 
     Abstractions abstractions = generate_abstractions(
         scaled_costs_task,
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
 
     TaskProxy scaled_costs_task_proxy(*scaled_costs_task);

@@ -15,7 +15,6 @@ class Options;
 
 namespace cost_saturation {
 class AbstractionFunction;
-class CostPartitioningHeuristicCollectionGenerator;
 class CostPartitioningHeuristic;
 
 /*
@@ -43,19 +42,6 @@ public:
         UnsolvabilityHeuristic &&unsolvability_heuristic);
     virtual ~MaxCostPartitioningHeuristic() override;
 };
-
-extern std::shared_ptr<Heuristic> get_max_cp_heuristic(
-    options::OptionParser &parser, CPFunction cp_function);
-
-extern void add_order_options_to_parser(
-    options::OptionParser &parser);
-
-extern void prepare_parser_for_cost_partitioning_heuristic(
-    options::OptionParser &parser);
-
-extern CostPartitioningHeuristicCollectionGenerator
-get_cp_heuristic_collection_generator_from_options(
-    const options::Options &opts);
 }
 
 #endif

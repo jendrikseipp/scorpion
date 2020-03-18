@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import os
 
 from .util import DRIVER_DIR
@@ -123,9 +120,9 @@ def _get_lama(**kwargs):
                          lazy_wastar([hff2,hlm2],preferred=[hff2,hlm2],w=2),
                          lazy_wastar([hff2,hlm2],preferred=[hff2,hlm2],w=1)
                          ],repeat_last=true,continue_on_fail=true)""",
-        "--always"]
         # Append --always to be on the safe side if we want to append
         # additional options later.
+        "--always"]
 
 ALIASES["seq-sat-lama-2011"] = _get_lama(pref="true")
 ALIASES["lama"] = _get_lama(pref="false")
@@ -145,15 +142,6 @@ ALIASES["seq-opt-bjolp"] = [
 
 ALIASES["seq-opt-lmcut"] = [
     "--search", "astar(lmcut())"]
-
-# Note: The IPC 2018 version of Scorpion used h^2 mutexes to prune operators
-# between the translation and the search phase.
-ALIASES["scorpion"] = [
-    "--search",
-    """astar(saturated_cost_partitioning([
-        projections(systematic(2)), projections(hillclimbing(max_time=100)), cartesian()],
-        max_time=200, max_optimization_time=2, diversify=true, orders=greedy_orders()),
-        pruning=stubborn_sets_simple(min_required_pruning_ratio=0.2))"""]
 
 
 PORTFOLIOS = {}

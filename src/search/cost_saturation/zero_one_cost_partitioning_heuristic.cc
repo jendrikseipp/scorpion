@@ -38,7 +38,7 @@ static CostPartitioningHeuristic compute_zero_one_cost_partitioning(
     return cp_heuristic;
 }
 
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
+static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Zero-one cost partitioning heuristic",
         "");

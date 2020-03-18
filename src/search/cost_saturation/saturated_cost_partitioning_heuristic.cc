@@ -1,16 +1,11 @@
 #include "abstraction.h"
 #include "cost_partitioning_heuristic.h"
-#include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
 
-#include "../task_utils/task_properties.h"
-#include "../utils/logging.h"
 #include "../utils/markup.h"
-#include "../utils/rng.h"
-#include "../utils/rng_options.h"
 
 using namespace std;
 
@@ -32,7 +27,7 @@ CostPartitioningHeuristic compute_saturated_cost_partitioning(
     return cp_heuristic;
 }
 
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
+static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Saturated cost partitioning",
         "Compute the maximum over multiple saturated cost partitioning "
@@ -84,5 +79,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     return get_max_cp_heuristic(parser, compute_saturated_cost_partitioning);
 }
 
-static Plugin<Evaluator> _plugin("saturated_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("scp", _parse);
 }

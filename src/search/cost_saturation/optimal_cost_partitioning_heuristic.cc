@@ -27,7 +27,7 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
 
     Abstractions abstractions = generate_abstractions(
         task,
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : abstractions) {

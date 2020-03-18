@@ -59,7 +59,7 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
 
     Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
     utils::Log() << "Compute abstract goal distances" << endl;
     for (const auto &abstraction : abstractions) {

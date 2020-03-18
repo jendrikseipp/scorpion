@@ -8,10 +8,17 @@
 #include <vector>
 
 class AbstractTask;
+class Evaluator;
 class State;
+
+namespace options {
+class OptionParser;
+class Options;
+}
 
 namespace cost_saturation {
 class AbstractionGenerator;
+class CostPartitioningHeuristicCollectionGenerator;
 
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
@@ -43,6 +50,14 @@ std::vector<int> get_abstract_state_ids(
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
+
+
+extern void add_order_options_to_parser(options::OptionParser &parser);
+extern void prepare_parser_for_cost_partitioning_heuristic(options::OptionParser &parser);
+extern std::shared_ptr<Evaluator> get_max_cp_heuristic(
+    options::OptionParser &parser, CPFunction cp_function);
+extern CostPartitioningHeuristicCollectionGenerator
+get_cp_heuristic_collection_generator_from_options(const options::Options &opts);
 
 template<typename T>
 void print_indexed_vector(const std::vector<T> &vec) {

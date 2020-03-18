@@ -74,7 +74,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     if (should_compute_scp(state)) {
         Order order = cp_generator->compute_order_for_state(
-            abstractions, costs, abstract_state_ids, num_evaluated_states == 0);
+            abstract_state_ids, num_evaluated_states == 0);
         CostPartitioningHeuristic cost_partitioning =
             compute_saturated_cost_partitioning(abstractions, order, costs);
         ++num_scps_computed;
@@ -122,7 +122,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
     CPHeuristics cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
@@ -136,5 +136,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         move(unsolvability_heuristic));
 }
 
-static Plugin<Evaluator> _plugin("saturated_cost_partitioning_online", _parse);
+static Plugin<Evaluator> _plugin("scp_online", _parse);
 }

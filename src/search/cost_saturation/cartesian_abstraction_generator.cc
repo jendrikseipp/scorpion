@@ -85,7 +85,9 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
             continue;
         }
         for (const cegar::Transition &transition : ts.get_outgoing_transitions()[state_id]) {
-            // Prune transitions to unsolvable states (we know target is reachable).
+            /* Prune transitions to unsolvable states (no need to check unreachability:
+               either the state and thus the target is reachable or
+               prune_unreachable_transitions is false). */
             if (h_values[transition.target_id] == INF) {
                 continue;
             }
@@ -207,7 +209,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_list_option<shared_ptr<cegar::SubtaskGenerator>>(
         "subtasks",
         "subtask generators",
-        "[landmarks(order=random, random_seed=0), goals(order=random, random_seed=0)]");
+        "[landmarks(order=random), goals(order=random)]");
     parser.add_option<int>(
         "max_states",
         "maximum sum of abstract states over all abstractions",
