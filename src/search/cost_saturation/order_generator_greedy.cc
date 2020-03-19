@@ -42,15 +42,15 @@ Order OrderGeneratorGreedy::compute_static_greedy_order_for_sample(
     int num_abstractions = abstract_state_ids.size();
     Order order = get_default_order(num_abstractions);
     // Shuffle order to break ties randomly.
-    //rng->shuffle(order);
+    rng->shuffle(order);
     vector<double> scores;
     scores.reserve(num_abstractions);
     for (int abs = 0; abs < num_abstractions; ++abs) {
         scores.push_back(rate_abstraction(abstract_state_ids, abs));
     }
-    stable_sort(order.begin(), order.end(), [&](int abs1, int abs2) {
-                    return scores[abs1] > scores[abs2];
-                });
+    sort(order.begin(), order.end(), [&](int abs1, int abs2) {
+             return scores[abs1] > scores[abs2];
+         });
     if (verbose) {
         cout << "Static greedy scores: " << scores << endl;
         unordered_set<double> unique_scores(scores.begin(), scores.end());
