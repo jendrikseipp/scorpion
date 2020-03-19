@@ -30,6 +30,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::vector<std::vector<bool>> seen_facts;
     utils::HashSet<Order> seen_orders;
     std::unique_ptr<utils::Timer> timer;
+    int num_duplicate_orders;
     int num_evaluated_states;
     int num_scps_computed;
 

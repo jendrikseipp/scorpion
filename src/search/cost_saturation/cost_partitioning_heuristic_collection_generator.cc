@@ -114,6 +114,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     log << "Start computing cost partitionings" << endl;
     vector<CostPartitioningHeuristic> cp_heuristics;
     int evaluated_orders = 0;
+    int num_duplicate_orders = 0;
     utils::HashSet<Order> seen_orders;
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            (!timer.is_expired() || cp_heuristics.empty())) {
@@ -134,6 +135,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
                 abstract_state_ids, false);
             if (skip_seen_orders) {
                 if (seen_orders.count(order)) {
+                    ++num_duplicate_orders;
                     continue;
                 } else {
                     seen_orders.insert(order);
@@ -174,6 +176,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     }
 
     log << "Evaluated orders: " << evaluated_orders << endl;
+    log << "Duplicate orders: " << num_duplicate_orders << endl;
     log << "Cost partitionings: " << cp_heuristics.size() << endl;
     log << "Time for computing cost partitionings: " << timer.get_elapsed_time()
         << endl;

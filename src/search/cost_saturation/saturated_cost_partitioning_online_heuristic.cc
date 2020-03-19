@@ -34,6 +34,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       max_time(opts.get<double>("max_time")),
       diversify(opts.get<bool>("diversify")),
       costs(task_properties::get_operator_costs(task_proxy)),
+      num_duplicate_orders(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
     seen_facts.resize(task_proxy.get_variables().size());
@@ -88,7 +89,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
         if (skip_seen_orders) {
-            if (!seen_orders.count(order)) {
+            if (seen_orders.count(order)) {
+                ++num_duplicate_orders;
+            } else {
                 CostPartitioningHeuristic cost_partitioning =
                     compute_saturated_cost_partitioning(abstractions, order, costs);
                 ++num_scps_computed;
@@ -113,6 +116,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
+    cout << "Duplicate orders: " << num_duplicate_orders << endl;
     cout << "Computed SCPs: " << num_scps_computed << endl;
     cout << "Stored SCPs: " << cp_heuristics.size() << endl;
     cout << "Time for computing SCPs: " << *timer << endl;
