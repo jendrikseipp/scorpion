@@ -42,12 +42,25 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
         seen_facts[var.get_id()].resize(var.get_domain_size(), false);
     }
 
+    fact_id_offsets.reserve(task_proxy.get_variables().size());
+    int num_facts = 0;
+    for (VariableProxy var : task_proxy.get_variables()) {
+        fact_id_offsets.push_back(num_facts);
+        num_facts += var.get_domain_size();
+    }
+    seen_fact_ids.resize(num_facts, false);
+    cout << "Fact ID offsets: " << fact_id_offsets << endl;
+
     timer = utils::make_unique_ptr<utils::Timer>();
     timer->stop();
 }
 
 SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuristic() {
     print_statistics();
+}
+
+int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(FactPair fact) const {
+    return fact_id_offsets[fact.var] + fact.value;
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
@@ -61,6 +74,12 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &s
                 novel = true;
                 seen_facts[fact.var][fact.value] = true;
             }
+            int fact_id = get_fact_id(fact);
+            if (!seen_fact_ids[fact_id]) {
+                novel = true;
+                seen_fact_ids[fact_id] = true;
+            }
+            assert(!(seen_facts[fact.var][fact.value] ^ seen_fact_ids[fact_id]));
         }
         return novel;
     } else {

@@ -27,7 +27,11 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const bool diversify;
 
     const std::vector<int> costs;
+
     std::vector<std::vector<bool>> seen_facts;
+    std::vector<bool> seen_fact_ids;
+    std::vector<int> fact_id_offsets;
+
     utils::HashSet<Order> seen_orders;
     std::unique_ptr<utils::Timer> timer;
     int num_duplicate_orders;
@@ -38,6 +42,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     mutable std::vector<int> num_best_order;
 
     void print_statistics() const;
+    int get_fact_id(FactPair fact) const;
     bool should_compute_scp(const State &state);
 
 protected:
