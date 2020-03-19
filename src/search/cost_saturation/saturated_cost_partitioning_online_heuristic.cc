@@ -37,19 +37,22 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       num_duplicate_orders(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
-    seen_facts.resize(task_proxy.get_variables().size());
-    for (VariableProxy var : task_proxy.get_variables()) {
-        seen_facts[var.get_id()].resize(var.get_domain_size(), false);
-    }
-
     fact_id_offsets.reserve(task_proxy.get_variables().size());
     int num_facts = 0;
     for (VariableProxy var : task_proxy.get_variables()) {
         fact_id_offsets.push_back(num_facts);
         num_facts += var.get_domain_size();
     }
-    seen_fact_ids.resize(num_facts, false);
     cout << "Fact ID offsets: " << fact_id_offsets << endl;
+
+    if (interval == -1) {
+        seen_facts.resize(num_facts, false);
+    } else if (interval == -2) {
+        seen_fact_pairs.resize(num_facts);
+        for (int fact_id = 0; fact_id < num_facts; ++fact_id) {
+            seen_fact_pairs[fact_id].resize(num_facts, false);
+        }
+    }
 
     timer = utils::make_unique_ptr<utils::Timer>();
     timer->stop();
@@ -59,29 +62,41 @@ SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuris
     print_statistics();
 }
 
-int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(FactPair fact) const {
-    return fact_id_offsets[fact.var] + fact.value;
+int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(int var, int value) const {
+    return fact_id_offsets[var] + value;
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
     if (interval > 0) {
         return num_evaluated_states % interval == 0;
     } else if (interval == -1) {
-        bool novel = false;
-        for (FactProxy fact_proxy : state) {
-            FactPair fact = fact_proxy.get_pair();
-            if (!seen_facts[fact.var][fact.value]) {
-                novel = true;
-                seen_facts[fact.var][fact.value] = true;
+        const vector<int> &values = state.get_values();
+        int num_vars = values.size();
+        for (int var = 0; var < num_vars; ++var) {
+            int value = values[var];
+            int fact_id = get_fact_id(var, value);
+            if (!seen_facts[fact_id]) {
+                seen_facts[fact_id] = true;
+                return true;
             }
-            int fact_id = get_fact_id(fact);
-            if (!seen_fact_ids[fact_id]) {
-                novel = true;
-                seen_fact_ids[fact_id] = true;
-            }
-            assert(!(seen_facts[fact.var][fact.value] ^ seen_fact_ids[fact_id]));
         }
-        return novel;
+        return false;
+    } else if (interval == -2) {
+        const vector<int> &values = state.get_values();
+        int num_vars = values.size();
+        for (int var1 = 0; var1 < num_vars; ++var1) {
+            int value1 = values[var1];
+            int fact1 = get_fact_id(var1, value1);
+            for (int var2 = var1 + 1; var2 < num_vars; ++var2) {
+                int value2 = values[var2];
+                int fact2 = get_fact_id(var2, value2);
+                if (!seen_fact_pairs[fact1][fact2]) {
+                    seen_fact_pairs[fact1][fact2] = true;
+                    return true;
+                }
+            }
+        }
+        return false;
     } else {
         ABORT("invalid value for interval");
     }
@@ -154,7 +169,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "interval",
         "compute SCP for every interval-th state",
         "1",
-        Bounds("-1", "infinity"));
+        Bounds("-2", "infinity"));
     parser.add_option<bool>(
         "skip_seen_orders",
         "compute SCP only once for each order",
