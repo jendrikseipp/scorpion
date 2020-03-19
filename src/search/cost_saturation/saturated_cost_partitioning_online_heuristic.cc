@@ -67,23 +67,27 @@ int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(int var, int value) co
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
+    // TODO: if computing the novelty turns out to be a bottleneck, compute it
+    //       by looping over the applied operator's effects.
     if (interval > 0) {
         return num_evaluated_states % interval == 0;
     } else if (interval == -1) {
         const vector<int> &values = state.get_values();
         int num_vars = values.size();
+        bool novel = false;
         for (int var = 0; var < num_vars; ++var) {
             int value = values[var];
             int fact_id = get_fact_id(var, value);
             if (!seen_facts[fact_id]) {
                 seen_facts[fact_id] = true;
-                return true;
+                novel = true;
             }
         }
-        return false;
+        return novel;
     } else if (interval == -2) {
         const vector<int> &values = state.get_values();
         int num_vars = values.size();
+        bool novel = false;
         for (int var1 = 0; var1 < num_vars; ++var1) {
             int value1 = values[var1];
             int fact1 = get_fact_id(var1, value1);
@@ -92,11 +96,11 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &s
                 int fact2 = get_fact_id(var2, value2);
                 if (!seen_fact_pairs[fact1][fact2]) {
                     seen_fact_pairs[fact1][fact2] = true;
-                    return true;
+                    novel = true;
                 }
             }
         }
-        return false;
+        return novel;
     } else {
         ABORT("invalid value for interval");
     }
