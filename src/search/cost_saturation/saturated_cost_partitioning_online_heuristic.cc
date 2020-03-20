@@ -35,6 +35,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       interval(opts.get<int>("interval")),
       max_time(opts.get<double>("max_time")),
       diversify(opts.get<bool>("diversify")),
+      num_samples(opts.get<int>("samples")),
       costs(task_properties::get_operator_costs(task_proxy)),
       num_duplicate_orders(0),
       num_evaluated_states(0),
@@ -194,11 +195,33 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
                 compute_saturated_cost_partitioning(abstractions, order, costs);
             ++num_scps_computed;
             int h = cost_partitioning.compute_heuristic(abstract_state_ids);
+
             bool is_diverse = h > max_h;
+            max_h = max(max_h, h);
+
+            samples.emplace_front(move(abstract_state_ids), max_h);
+            if (static_cast<int>(samples.size()) > num_samples) {
+                samples.pop_back();
+            }
+
+            if (diversify) {
+                for (auto &sample : samples) {
+                    if (is_diverse) {
+                        break;
+                    }
+                    const vector<int> &sample_abstract_state_ids = sample.first;
+                    int &old_h = sample.second;
+                    int new_h = cost_partitioning.compute_heuristic(sample_abstract_state_ids);
+                    if (new_h > old_h) {
+                        is_diverse = true;
+                        old_h = new_h;
+                    }
+                }
+            }
             if (!diversify || is_diverse) {
                 cp_heuristics.push_back(move(cost_partitioning));
             }
-            max_h = max(max_h, h);
+
             seen_orders.insert(move(order));
         }
         timer->stop();

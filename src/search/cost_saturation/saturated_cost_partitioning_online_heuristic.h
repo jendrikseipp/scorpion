@@ -6,6 +6,7 @@
 
 #include "../heuristic.h"
 
+#include <deque>
 #include <memory>
 #include <vector>
 
@@ -24,12 +25,15 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const int interval;
     const double max_time;
     const bool diversify;
+    const int num_samples;
 
     const std::vector<int> costs;
 
     std::vector<int> fact_id_offsets;
     std::vector<bool> seen_facts;
     std::vector<std::vector<bool>> seen_fact_pairs;
+
+    std::deque<std::pair<std::vector<int>, int>> samples;
 
     utils::HashSet<Order> seen_orders;
     std::unique_ptr<utils::Timer> timer;
