@@ -33,7 +33,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       cp_heuristics(move(cp_heuristics)),
       unsolvability_heuristic(move(unsolvability_heuristic)),
       interval(opts.get<int>("interval")),
-      skip_seen_orders(opts.get<bool>("skip_seen_orders")),
       max_time(opts.get<double>("max_time")),
       diversify(opts.get<bool>("diversify")),
       costs(task_properties::get_operator_costs(task_proxy)),
@@ -187,27 +186,20 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         timer->resume();
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
-        if (skip_seen_orders) {
-            if (seen_orders.count(order)) {
-                ++num_duplicate_orders;
-            } else {
-                CostPartitioningHeuristic cost_partitioning =
-                    compute_saturated_cost_partitioning(abstractions, order, costs);
-                ++num_scps_computed;
-                int h = cost_partitioning.compute_heuristic(abstract_state_ids);
-                bool is_diverse = h > max_h;
-                if (!diversify || is_diverse) {
-                    cp_heuristics.push_back(move(cost_partitioning));
-                }
-                max_h = max(max_h, h);
-                seen_orders.insert(move(order));
-            }
+
+        if (seen_orders.count(order)) {
+            ++num_duplicate_orders;
         } else {
             CostPartitioningHeuristic cost_partitioning =
                 compute_saturated_cost_partitioning(abstractions, order, costs);
             ++num_scps_computed;
             int h = cost_partitioning.compute_heuristic(abstract_state_ids);
+            bool is_diverse = h > max_h;
+            if (!diversify || is_diverse) {
+                cp_heuristics.push_back(move(cost_partitioning));
+            }
             max_h = max(max_h, h);
+            seen_orders.insert(move(order));
         }
         timer->stop();
     }
@@ -235,10 +227,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "compute SCP for every interval-th state",
         "1",
         Bounds("-2", "infinity"));
-    parser.add_option<bool>(
-        "skip_seen_orders",
-        "compute SCP only once for each order",
-        "true");
     parser.add_option<double>(
         "max_time",
         "maximum time in seconds for computing cost partitionings",

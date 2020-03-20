@@ -22,7 +22,6 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     CPHeuristics cp_heuristics;
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
-    const bool skip_seen_orders;
     const double max_time;
     const bool diversify;
 
