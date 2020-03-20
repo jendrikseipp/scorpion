@@ -274,10 +274,12 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
-    CPHeuristics cp_heuristics =
-        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, compute_saturated_cost_partitioning,
-            unsolvability_heuristic);
+    CPHeuristics cp_heuristics = {};
+    //get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
+    //    task_proxy, abstractions, costs, compute_saturated_cost_partitioning,
+    //    unsolvability_heuristic);
+    shared_ptr<OrderGenerator> order_generator = opts.get<shared_ptr<OrderGenerator>>("orders");
+    order_generator->initialize(abstractions, costs);
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
