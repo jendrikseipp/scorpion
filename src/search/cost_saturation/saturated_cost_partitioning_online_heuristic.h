@@ -43,7 +43,9 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
 
     void print_statistics() const;
     int get_fact_id(int var, int value) const;
-    bool should_compute_scp(const State &state);
+    bool visit_fact_pair(int fact_id1, int fact_id2);
+    bool is_novel(const OperatorID op_id, const GlobalState &state);
+    bool should_compute_scp(const GlobalState &global_state);
 
 protected:
     virtual int compute_heuristic(const GlobalState &state) override;
@@ -55,6 +57,18 @@ public:
         CPHeuristics &&cp_heuristics,
         UnsolvabilityHeuristic &&unsolvability_heuristic);
     virtual ~SaturatedCostPartitioningOnlineHeuristic() override;
+
+    virtual void get_path_dependent_evaluators(
+        std::set<Evaluator *> &evals) override {
+        evals.insert(this);
+    }
+
+    virtual void notify_initial_state(const GlobalState &initial_state) override;
+
+    virtual void notify_state_transition(
+        const GlobalState &,
+        OperatorID op_id,
+        const GlobalState &state) override;
 };
 }
 

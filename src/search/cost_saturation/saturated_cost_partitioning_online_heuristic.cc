@@ -19,6 +19,9 @@
 using namespace std;
 
 namespace cost_saturation {
+static const int IS_NOVEL = -3;
+static const int IS_NOT_NOVEL = -4;
+
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
     Abstractions &&abstractions,
@@ -62,22 +65,23 @@ SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuris
     print_statistics();
 }
 
-int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(int var, int value) const {
-    return fact_id_offsets[var] + value;
+bool SaturatedCostPartitioningOnlineHeuristic::visit_fact_pair(int fact_id1, int fact_id2) {
+    if (fact_id1 > fact_id2) {
+        swap(fact_id1, fact_id2);
+    }
+    assert(fact_id1 < fact_id2);
+    bool novel = !seen_fact_pairs[fact_id1][fact_id2];
+    seen_fact_pairs[fact_id1][fact_id2] = true;
+    return novel;
 }
 
-bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &state) {
-    // TODO: if computing the novelty turns out to be a bottleneck, compute it
-    //       by looping over the applied operator's effects.
-    if (interval > 0) {
-        return num_evaluated_states % interval == 0;
-    } else if (interval == -1) {
-        const vector<int> &values = state.get_values();
-        int num_vars = values.size();
+bool SaturatedCostPartitioningOnlineHeuristic::is_novel(
+    const OperatorID op_id, const GlobalState &state) {
+    if (interval == -1) {
         bool novel = false;
-        for (int var = 0; var < num_vars; ++var) {
-            int value = values[var];
-            int fact_id = get_fact_id(var, value);
+        for (EffectProxy effect : task_proxy.get_operators()[op_id].get_effects()) {
+            FactPair fact = effect.get_fact().get_pair();
+            int fact_id = get_fact_id(fact.var, fact.value);
             if (!seen_facts[fact_id]) {
                 seen_facts[fact_id] = true;
                 novel = true;
@@ -85,22 +89,79 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &s
         }
         return novel;
     } else if (interval == -2) {
-        const vector<int> &values = state.get_values();
-        int num_vars = values.size();
+        int num_vars = fact_id_offsets.size();
         bool novel = false;
-        for (int var1 = 0; var1 < num_vars; ++var1) {
-            int value1 = values[var1];
-            int fact1 = get_fact_id(var1, value1);
-            for (int var2 = var1 + 1; var2 < num_vars; ++var2) {
-                int value2 = values[var2];
-                int fact2 = get_fact_id(var2, value2);
-                if (!seen_fact_pairs[fact1][fact2]) {
-                    seen_fact_pairs[fact1][fact2] = true;
+        for (EffectProxy effect : task_proxy.get_operators()[op_id].get_effects()) {
+            FactPair fact1 = effect.get_fact().get_pair();
+            int fact_id1 = get_fact_id(fact1.var, fact1.value);
+            for (int var2 = 0; var2 < num_vars; ++var2) {
+                if (fact1.var == var2) {
+                    continue;
+                }
+                FactPair fact2(var2, state[var2]);
+                int fact_id2 = get_fact_id(fact2.var, fact2.value);
+                if (visit_fact_pair(fact_id1, fact_id2)) {
                     novel = true;
                 }
             }
         }
         return novel;
+    } else {
+        ABORT("invalid value for interval");
+    }
+}
+
+void SaturatedCostPartitioningOnlineHeuristic::notify_initial_state(
+    const GlobalState &initial_state) {
+    if (interval >= 1) {
+        return;
+    }
+
+    heuristic_cache[initial_state].h = IS_NOVEL;
+    int num_vars = fact_id_offsets.size();
+    if (interval == -1) {
+        for (int var = 0; var < num_vars; ++var) {
+            seen_facts[get_fact_id(var, initial_state[var])] = true;
+        }
+    } else if (interval == -2) {
+        for (int var1 = 0; var1 < num_vars; ++var1) {
+            int fact_id1 = get_fact_id(var1, initial_state[var1]);
+            for (int var2 = var1 + 1; var2 < num_vars; ++var2) {
+                int fact_id2 = get_fact_id(var2, initial_state[var2]);
+                visit_fact_pair(fact_id1, fact_id2);
+            }
+        }
+    } else {
+        ABORT("invalid value for interval");
+    }
+}
+
+void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
+    const GlobalState &, OperatorID op_id, const GlobalState &state) {
+    if (interval >= 1) {
+        return;
+    }
+
+    // We only need to compute novelty for new states.
+    if (heuristic_cache[state].h == NO_VALUE) {
+        if (is_novel(op_id, state)) {
+            heuristic_cache[state].h = IS_NOVEL;
+        } else {
+            heuristic_cache[state].h = IS_NOT_NOVEL;
+        }
+        assert(heuristic_cache[state].dirty);
+    }
+}
+
+int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(int var, int value) const {
+    return fact_id_offsets[var] + value;
+}
+
+bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalState &global_state) {
+    if (interval > 0) {
+        return num_evaluated_states % interval == 0;
+    } else if (interval == -1 || interval == -2) {
+        return heuristic_cache[global_state].h == IS_NOVEL;
     } else {
         ABORT("invalid value for interval");
     }
@@ -122,7 +183,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         return max_h;
     }
 
-    if (should_compute_scp(state)) {
+    if (should_compute_scp(global_state)) {
         timer->resume();
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
