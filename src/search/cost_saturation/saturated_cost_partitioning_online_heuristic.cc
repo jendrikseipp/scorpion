@@ -170,7 +170,6 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalSt
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     const GlobalState &global_state) {
     State state = convert_global_state(global_state);
-    ++num_evaluated_states;
     vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
         return DEAD_END;
@@ -179,11 +178,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
 
-    if ((*timer)() > max_time) {
-        return max_h;
-    }
-
-    if (should_compute_scp(global_state)) {
+    if ((*timer)() <= max_time && should_compute_scp(global_state)) {
         timer->resume();
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
@@ -226,6 +221,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         }
         timer->stop();
     }
+    ++num_evaluated_states;
     return max_h;
 }
 
