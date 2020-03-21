@@ -40,6 +40,12 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       num_duplicate_orders(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
+    if (opts.get<double>("max_optimization_time") != 0.0) {
+        ABORT("Order optimization is not implemented for online SCP.");
+    }
+    if (opts.get<int>("max_orders") != INF) {
+        ABORT("Limiting the number of orders is not implemented for online SCP.");
+    }
     fact_id_offsets.reserve(task_proxy.get_variables().size());
     int num_facts = 0;
     for (VariableProxy var : task_proxy.get_variables()) {
@@ -246,16 +252,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "compute SCP for every interval-th state",
         "1",
         Bounds("-2", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time in seconds for computing cost partitionings",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "diversify",
-        "only store cost partitionings that have a higher heuristic value for "
-        "the evaluated state than all previously stored cost partitionings",
-        "false");
 
     Options opts = parser.parse();
     if (parser.help_mode())
