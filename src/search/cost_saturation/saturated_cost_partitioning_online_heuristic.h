@@ -37,7 +37,17 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::deque<std::pair<std::vector<int>, int>> samples;
 
     utils::HashSet<Order> seen_orders;
-    std::unique_ptr<utils::Timer> timer;
+    std::unique_ptr<utils::Timer> compute_heuristic_timer;
+    std::unique_ptr<utils::Timer> convert_global_state_timer;
+    std::unique_ptr<utils::Timer> improve_heuristic_timer;
+    std::unique_ptr<utils::Timer> compute_orders_timer;
+    std::unique_ptr<utils::Timer> get_abstract_state_ids_timer;
+    std::unique_ptr<utils::Timer> unsolvability_heuristic_timer;
+    std::unique_ptr<utils::Timer> compute_max_h_timer;
+    std::unique_ptr<utils::Timer> compute_novelty_timer;
+    std::unique_ptr<utils::Timer> compute_scp_timer;
+    std::unique_ptr<utils::Timer> compute_h_timer;
+    std::unique_ptr<utils::Timer> diversification_timer;
     int num_duplicate_orders;
     int num_evaluated_states;
     int num_scps_computed;
