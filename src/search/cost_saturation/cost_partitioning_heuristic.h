@@ -6,8 +6,6 @@
 #include <vector>
 
 namespace cost_saturation {
-extern bool g_store_unsolvable_states_once_hacked;
-
 /*
   Compactly store cost-partitioned goal distances and compute heuristic values
   by summing the goal distances of abstract states corresponding to a given
