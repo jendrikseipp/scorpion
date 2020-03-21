@@ -5,6 +5,11 @@
 
 #include <vector>
 
+namespace options {
+class OptionParser;
+class Options;
+}
+
 namespace cost_saturation {
 class CostPartitioningHeuristic;
 
@@ -13,6 +18,9 @@ extern CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const std::vector<int> &order,
     const std::vector<int> &costs,
     const std::vector<int> &abstract_state_ids);
+
+extern void add_saturator_option(options::OptionParser &parser);
+extern CPFunction get_cp_function_from_options(const options::Options &opts);
 }
 
 #endif
