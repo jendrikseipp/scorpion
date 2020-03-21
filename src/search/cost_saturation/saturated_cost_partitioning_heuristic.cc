@@ -115,6 +115,21 @@ void add_saturator_option(OptionParser &parser) {
         "ALL");
 }
 
+CPFunction get_cp_function_from_options(const Options &opts) {
+    Saturator saturator_type = static_cast<Saturator>(opts.get_enum("saturator"));
+    CPFunction cp_function = nullptr;
+    if (saturator_type == Saturator::ALL) {
+        cp_function = compute_saturated_cost_partitioning;
+    } else if (saturator_type == Saturator::PERIM) {
+        cp_function = compute_perim_saturated_cost_partitioning;
+    } else if (saturator_type == Saturator::PERIMSTAR) {
+        cp_function = compute_perimstar_saturated_cost_partitioning;
+    } else {
+        ABORT("Invalid value for saturator.");
+    }
+    return cp_function;
+}
+
 static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Saturated cost partitioning",
@@ -177,24 +192,13 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    Saturator saturator_type = static_cast<Saturator>(opts.get_enum("saturator"));
-    CPFunction cp_function = nullptr;
-    if (saturator_type == Saturator::ALL) {
-        cp_function = compute_saturated_cost_partitioning;
-    } else if (saturator_type == Saturator::PERIM) {
-        cp_function = compute_perim_saturated_cost_partitioning;
-    } else if (saturator_type == Saturator::PERIMSTAR) {
-        cp_function = compute_perimstar_saturated_cost_partitioning;
-    } else {
-        ABORT("Invalid value for saturator.");
-    }
-
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
+    CPFunction cp_function = get_cp_function_from_options(opts);
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
             task_proxy, abstractions, costs, cp_function, unsolvability_heuristic);
