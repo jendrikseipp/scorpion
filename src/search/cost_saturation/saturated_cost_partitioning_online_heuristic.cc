@@ -193,7 +193,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             ++num_duplicate_orders;
         } else {
             CostPartitioningHeuristic cost_partitioning =
-                compute_saturated_cost_partitioning(abstractions, order, costs);
+                compute_saturated_cost_partitioning(abstractions, order, costs, abstract_state_ids);
             ++num_scps_computed;
             int h = cost_partitioning.compute_heuristic(abstract_state_ids);
 

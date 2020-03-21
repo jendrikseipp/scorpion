@@ -11,7 +11,8 @@ class CostPartitioningHeuristic;
 extern CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const std::vector<int> &order,
-    const std::vector<int> &costs);
+    const std::vector<int> &costs,
+    const std::vector<int> &abstract_state_ids);
 }
 
 #endif

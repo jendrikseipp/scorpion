@@ -13,7 +13,8 @@ namespace cost_saturation {
 CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,
-    const vector<int> &costs) {
+    const vector<int> &costs,
+    const vector<int> &) {
     assert(abstractions.size() == order.size());
     CostPartitioningHeuristic cp_heuristic;
     vector<int> remaining_costs = costs;

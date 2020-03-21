@@ -98,7 +98,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     Order order_for_init = order_generator->compute_order_for_state(
         abstract_state_ids_for_init, true);
     CostPartitioningHeuristic cp_for_init = cp_function(
-        abstractions, order_for_init, costs);
+        abstractions, order_for_init, costs, abstract_state_ids_for_init);
     int init_h = cp_for_init.compute_heuristic(abstract_state_ids_for_init);
 
     sampling::RandomWalkSampler sampler(task_proxy, *rng);
@@ -141,7 +141,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
                     seen_orders.insert(order);
                 }
             }
-            cp_heuristic = cp_function(abstractions, order, costs);
+            cp_heuristic = cp_function(abstractions, order, costs, abstract_state_ids);
         }
 
         // Optimize order.
