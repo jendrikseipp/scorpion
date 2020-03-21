@@ -49,6 +49,10 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     int get_fact_id(int var, int value) const;
     bool visit_fact_pair(int fact_id1, int fact_id2);
     bool is_novel(const OperatorID op_id, const GlobalState &state);
+    bool cp_improves_old_samples(
+        const CostPartitioningHeuristic &cp,
+        std::vector<int> &&abstract_state_ids,
+        int max_h);
     bool should_compute_scp(const GlobalState &global_state);
 
 protected:

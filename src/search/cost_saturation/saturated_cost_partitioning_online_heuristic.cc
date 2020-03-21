@@ -174,6 +174,25 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalSt
     }
 }
 
+bool SaturatedCostPartitioningOnlineHeuristic::cp_improves_old_samples(
+    const CostPartitioningHeuristic &cp, vector<int> &&abstract_state_ids, int max_h) {
+    samples.emplace_front(move(abstract_state_ids), max_h);
+    if (static_cast<int>(samples.size()) > num_samples) {
+        samples.pop_back();
+    }
+    bool result = false;
+    for (auto &sample : samples) {
+        const vector<int> &sample_abstract_state_ids = sample.first;
+        int &old_h = sample.second;
+        int new_h = cp.compute_heuristic(sample_abstract_state_ids);
+        if (new_h > old_h) {
+            result = true;
+            old_h = new_h;
+        }
+    }
+    return result;
+}
+
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     const GlobalState &global_state) {
     State state = convert_global_state(global_state);
@@ -201,24 +220,10 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             bool is_diverse = h > max_h;
             max_h = max(max_h, h);
 
-            samples.emplace_front(move(abstract_state_ids), max_h);
-            if (static_cast<int>(samples.size()) > num_samples) {
-                samples.pop_back();
-            }
-
-            if (diversify) {
-                for (auto &sample : samples) {
-                    if (is_diverse) {
-                        break;
-                    }
-                    const vector<int> &sample_abstract_state_ids = sample.first;
-                    int &old_h = sample.second;
-                    int new_h = cost_partitioning.compute_heuristic(sample_abstract_state_ids);
-                    if (new_h > old_h) {
-                        is_diverse = true;
-                        old_h = new_h;
-                    }
-                }
+            if (diversify &&
+                cp_improves_old_samples(
+                    cost_partitioning, move(abstract_state_ids), max_h)) {
+                is_diverse = true;
             }
             if (!diversify || is_diverse) {
                 cp_heuristics.push_back(move(cost_partitioning));
