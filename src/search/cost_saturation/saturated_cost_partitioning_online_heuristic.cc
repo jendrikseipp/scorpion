@@ -221,6 +221,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             max_h = max(max_h, h);
 
             if (diversify &&
+                num_samples > 1 &&
                 cp_improves_old_samples(
                     cost_partitioning, move(abstract_state_ids), max_h)) {
                 is_diverse = true;
