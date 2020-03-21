@@ -43,6 +43,22 @@ Order get_default_order(int num_abstractions) {
     return indices;
 }
 
+bool is_sum_within_range(int a, int b) {
+    return (b >= 0 && a <= numeric_limits<int>::max() - b) ||
+           (b < 0 && a >= numeric_limits<int>::min() - b);
+}
+
+int left_addition(int a, int b) {
+    if (a == -INF || a == INF) {
+        return a;
+    } else if (b == -INF || b == INF) {
+        return b;
+    } else {
+        assert(is_sum_within_range(a, b));
+        return a + b;
+    }
+}
+
 int compute_max_h_with_statistics(
     const CPHeuristics &cp_heuristics,
     const vector<int> &abstract_state_ids,
