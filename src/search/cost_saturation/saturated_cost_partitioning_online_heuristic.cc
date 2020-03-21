@@ -28,7 +28,8 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     CPHeuristics &&cp_heuristics,
     UnsolvabilityHeuristic &&unsolvability_heuristic)
     : Heuristic(opts),
-      cp_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
+      order_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
+      cp_function(get_cp_function_from_options(opts)),
       abstractions(move(abstractions)),
       cp_heuristics(move(cp_heuristics)),
       unsolvability_heuristic(move(unsolvability_heuristic)),
@@ -186,14 +187,14 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     if ((*timer)() <= max_time && should_compute_scp(global_state)) {
         timer->resume();
-        Order order = cp_generator->compute_order_for_state(
+        Order order = order_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
 
         if (seen_orders.count(order)) {
             ++num_duplicate_orders;
         } else {
             CostPartitioningHeuristic cost_partitioning =
-                compute_saturated_cost_partitioning(abstractions, order, costs, abstract_state_ids);
+                cp_function(abstractions, order, costs, abstract_state_ids);
             ++num_scps_computed;
             int h = cost_partitioning.compute_heuristic(abstract_state_ids);
 
@@ -245,6 +246,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
+    add_saturator_option(parser);
     add_order_options_to_parser(parser);
 
     parser.add_option<int>(
@@ -267,9 +269,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
     CPHeuristics cp_heuristics = {};
-    //get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-    //    task_proxy, abstractions, costs, compute_saturated_cost_partitioning,
-    //    unsolvability_heuristic);
     shared_ptr<OrderGenerator> order_generator = opts.get<shared_ptr<OrderGenerator>>("orders");
     order_generator->initialize(abstractions, costs);
 

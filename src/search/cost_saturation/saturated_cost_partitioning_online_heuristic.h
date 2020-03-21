@@ -18,7 +18,8 @@ namespace cost_saturation {
 class OrderGenerator;
 
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
-    const std::shared_ptr<OrderGenerator> cp_generator;
+    const std::shared_ptr<OrderGenerator> order_generator;
+    const CPFunction cp_function;
     const Abstractions abstractions;
     CPHeuristics cp_heuristics;
     UnsolvabilityHeuristic unsolvability_heuristic;
