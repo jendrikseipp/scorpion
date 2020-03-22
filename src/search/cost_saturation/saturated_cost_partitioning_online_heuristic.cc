@@ -264,6 +264,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
             if (!diversify || is_diverse) {
                 cp_heuristics.push_back(move(cost_partitioning));
+                if (diversify) {
+                    cout << "Stored SCPs: " << cp_heuristics.size() << endl;
+                }
             }
 
             seen_orders.insert(move(order));
