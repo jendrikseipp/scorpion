@@ -15,6 +15,7 @@ class Timer;
 }
 
 namespace cost_saturation {
+class Diversifier;
 class OrderGenerator;
 
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
@@ -34,7 +35,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::vector<bool> seen_facts;
     std::vector<std::vector<bool>> seen_fact_pairs;
 
-    std::deque<std::pair<std::vector<int>, int>> samples;
+    std::unique_ptr<Diversifier> diversifier;
 
     utils::HashSet<Order> seen_orders;
     std::unique_ptr<utils::Timer> compute_heuristic_timer;
@@ -56,13 +57,10 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     mutable std::vector<int> num_best_order;
 
     void print_statistics() const;
+    void setup_diversifier(utils::RandomNumberGenerator &rng);
     int get_fact_id(int var, int value) const;
     bool visit_fact_pair(int fact_id1, int fact_id2);
-    bool is_novel(const OperatorID op_id, const GlobalState &state);
-    bool cp_improves_old_samples(
-        const CostPartitioningHeuristic &cp,
-        std::vector<int> &&abstract_state_ids,
-        int max_h);
+    bool is_novel(OperatorID op_id, const GlobalState &state);
     bool should_compute_scp(const GlobalState &global_state);
 
 protected:
