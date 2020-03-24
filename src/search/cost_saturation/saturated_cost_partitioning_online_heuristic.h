@@ -56,6 +56,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     // For statistics.
     mutable std::vector<int> num_best_order;
 
+    void print_heuristic_size_statistics() const;
     void print_statistics() const;
     void setup_diversifier(utils::RandomNumberGenerator &rng);
     int get_fact_id(int var, int value) const;

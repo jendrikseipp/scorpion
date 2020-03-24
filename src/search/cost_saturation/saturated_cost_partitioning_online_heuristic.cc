@@ -293,20 +293,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     if (improve_heuristic && (*improve_heuristic_timer)() > max_time) {
         improve_heuristic = false;
         erase_useless_abstractions(cp_heuristics, unsolvability_heuristic, abstractions);
-
-        // Print the number of stored lookup tables.
-        int num_stored_lookup_tables = 0;
-        for (const auto &cp_heuristic: cp_heuristics) {
-            num_stored_lookup_tables += cp_heuristic.get_num_lookup_tables();
-        }
-        utils::Log() << "Stored lookup tables: " << num_stored_lookup_tables << endl;
-
-        // Print the number of stored values.
-        int num_stored_values = 0;
-        for (const auto &cp_heuristic : cp_heuristics) {
-            num_stored_values += cp_heuristic.get_num_heuristic_values();
-        }
-        utils::Log() << "Stored values: " << num_stored_values << endl;
+        print_heuristic_size_statistics();
     }
     if (improve_heuristic && should_compute_scp(global_state)) {
         compute_orders_timer->resume();
@@ -340,7 +327,26 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     return max_h;
 }
 
+void SaturatedCostPartitioningOnlineHeuristic::print_heuristic_size_statistics() const {
+    // Print the number of stored lookup tables.
+    int num_stored_lookup_tables = 0;
+    for (const auto &cp_heuristic: cp_heuristics) {
+        num_stored_lookup_tables += cp_heuristic.get_num_lookup_tables();
+    }
+    utils::Log() << "Stored lookup tables: " << num_stored_lookup_tables << endl;
+
+    // Print the number of stored values.
+    int num_stored_values = 0;
+    for (const auto &cp_heuristic : cp_heuristics) {
+        num_stored_values += cp_heuristic.get_num_heuristic_values();
+    }
+    utils::Log() << "Stored values: " << num_stored_values << endl;
+}
+
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
+    if (improve_heuristic) {
+        print_heuristic_size_statistics();
+    }
     cout << "Computed SCPs: " << num_scps_computed << endl;
     cout << "Stored SCPs: " << cp_heuristics.size() << endl;
     cout << "Time for computing heuristic: " << *compute_heuristic_timer << endl;
