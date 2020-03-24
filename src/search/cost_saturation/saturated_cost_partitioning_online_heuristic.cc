@@ -268,9 +268,8 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         cp_heuristics, abstract_state_ids, num_best_order);
     compute_max_h_timer->stop();
 
+    improve_heuristic_timer->resume();
     if ((*improve_heuristic_timer)() <= max_time && should_compute_scp(global_state)) {
-        improve_heuristic_timer->resume();
-
         compute_orders_timer->resume();
         Order order = order_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
@@ -300,8 +299,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
             seen_orders.insert(move(order));
         }
-        improve_heuristic_timer->stop();
     }
+    improve_heuristic_timer->stop();
+
     ++num_evaluated_states;
     compute_heuristic_timer->stop();
     return max_h;
