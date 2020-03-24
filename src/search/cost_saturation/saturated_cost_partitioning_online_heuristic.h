@@ -21,7 +21,7 @@ class OrderGenerator;
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> order_generator;
     const CPFunction cp_function;
-    const Abstractions abstractions;
+    Abstractions abstractions;
     CPHeuristics cp_heuristics;
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;

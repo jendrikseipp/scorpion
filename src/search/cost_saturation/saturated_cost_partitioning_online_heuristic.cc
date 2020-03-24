@@ -48,6 +48,27 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
     return abstract_state_ids_by_sample;
 }
 
+// TODO: avoid code duplication
+static void erase_useless_abstractions(
+    const vector<CostPartitioningHeuristic> &cp_heuristics,
+    const UnsolvabilityHeuristic &unsolvability_heuristic,
+    Abstractions &abstractions) {
+    int num_abstractions = abstractions.size();
+
+    // Collect IDs of useful abstractions.
+    vector<bool> useful_abstractions(num_abstractions, false);
+    unsolvability_heuristic.mark_useful_abstractions(useful_abstractions);
+    for (const auto &cp_heuristic : cp_heuristics) {
+        cp_heuristic.mark_useful_abstractions(useful_abstractions);
+    }
+
+    for (int i = 0; i < num_abstractions; ++i) {
+        if (!useful_abstractions[i]) {
+            abstractions[i] = nullptr;
+        }
+    }
+}
+
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
     Abstractions &&abstractions,
@@ -272,6 +293,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     improve_heuristic_timer->resume();
     if (improve_heuristic && (*improve_heuristic_timer)() > max_time) {
         improve_heuristic = false;
+        erase_useless_abstractions(cp_heuristics, unsolvability_heuristic, abstractions);
     }
     if (improve_heuristic && should_compute_scp(global_state)) {
         compute_orders_timer->resume();
