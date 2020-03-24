@@ -64,6 +64,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       diversify(opts.get<bool>("diversify")),
       num_samples(opts.get<int>("samples")),
       costs(task_properties::get_operator_costs(task_proxy)),
+      improve_heuristic(true),
       num_duplicate_orders(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
@@ -269,7 +270,10 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     compute_max_h_timer->stop();
 
     improve_heuristic_timer->resume();
-    if ((*improve_heuristic_timer)() <= max_time && should_compute_scp(global_state)) {
+    if (improve_heuristic && (*improve_heuristic_timer)() > max_time) {
+        improve_heuristic = false;
+    }
+    if (improve_heuristic && should_compute_scp(global_state)) {
         compute_orders_timer->resume();
         Order order = order_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);

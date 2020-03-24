@@ -31,6 +31,8 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
 
     const std::vector<int> costs;
 
+    bool improve_heuristic;
+
     std::vector<int> fact_id_offsets;
     std::vector<bool> seen_facts;
     std::vector<std::vector<bool>> seen_fact_pairs;
