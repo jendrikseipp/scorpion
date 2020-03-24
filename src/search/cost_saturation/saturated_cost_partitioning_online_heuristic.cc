@@ -294,6 +294,13 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         improve_heuristic = false;
         erase_useless_abstractions(cp_heuristics, unsolvability_heuristic, abstractions);
 
+        // Print the number of stored lookup tables.
+        int num_stored_lookup_tables = 0;
+        for (const auto &cp_heuristic: cp_heuristics) {
+            num_stored_lookup_tables += cp_heuristic.get_num_lookup_tables();
+        }
+        utils::Log() << "Stored lookup tables: " << num_stored_lookup_tables << endl;
+
         // Print the number of stored values.
         int num_stored_values = 0;
         for (const auto &cp_heuristic : cp_heuristics) {
