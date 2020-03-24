@@ -86,7 +86,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       num_samples(opts.get<int>("samples")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
-      num_duplicate_orders(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
     if (!diversify) {
@@ -301,30 +300,24 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             abstract_state_ids, num_evaluated_states == 0);
         compute_orders_timer->stop();
 
-        if (seen_orders.count(order)) {
-            ++num_duplicate_orders;
-        } else {
-            compute_scp_timer->resume();
-            CostPartitioningHeuristic cost_partitioning =
-                cp_function(abstractions, order, costs, abstract_state_ids);
-            compute_scp_timer->stop();
-            ++num_scps_computed;
+        compute_scp_timer->resume();
+        CostPartitioningHeuristic cost_partitioning =
+            cp_function(abstractions, order, costs, abstract_state_ids);
+        compute_scp_timer->stop();
+        ++num_scps_computed;
 
-            compute_h_timer->resume();
-            int h = cost_partitioning.compute_heuristic(abstract_state_ids);
-            compute_h_timer->stop();
+        compute_h_timer->resume();
+        int h = cost_partitioning.compute_heuristic(abstract_state_ids);
+        compute_h_timer->stop();
 
-            max_h = max(max_h, h);
+        max_h = max(max_h, h);
 
-            diversification_timer->resume();
-            if (diversifier->is_diverse(cost_partitioning)) {
-                cp_heuristics.push_back(move(cost_partitioning));
-                cout << "Stored SCPs: " << cp_heuristics.size() << endl;
-            }
-            diversification_timer->stop();
-
-            seen_orders.insert(move(order));
+        diversification_timer->resume();
+        if (diversifier->is_diverse(cost_partitioning)) {
+            cp_heuristics.push_back(move(cost_partitioning));
+            cout << "Stored SCPs: " << cp_heuristics.size() << endl;
         }
+        diversification_timer->stop();
     }
     improve_heuristic_timer->stop();
 
@@ -334,7 +327,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
-    cout << "Duplicate orders: " << num_duplicate_orders << endl;
     cout << "Computed SCPs: " << num_scps_computed << endl;
     cout << "Stored SCPs: " << cp_heuristics.size() << endl;
     cout << "Time for computing heuristic: " << *compute_heuristic_timer << endl;

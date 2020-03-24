@@ -39,7 +39,6 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
 
     std::unique_ptr<Diversifier> diversifier;
 
-    utils::HashSet<Order> seen_orders;
     std::unique_ptr<utils::Timer> compute_heuristic_timer;
     std::unique_ptr<utils::Timer> convert_global_state_timer;
     std::unique_ptr<utils::Timer> improve_heuristic_timer;
@@ -51,7 +50,6 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::unique_ptr<utils::Timer> compute_scp_timer;
     std::unique_ptr<utils::Timer> compute_h_timer;
     std::unique_ptr<utils::Timer> diversification_timer;
-    int num_duplicate_orders;
     int num_evaluated_states;
     int num_scps_computed;
 
