@@ -312,13 +312,13 @@ void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
     cout << "Computed SCPs: " << num_scps_computed << endl;
     cout << "Stored SCPs: " << cp_heuristics.size() << endl;
     cout << "Time for computing heuristic: " << *compute_heuristic_timer << endl;
-    cout << "Time for computing converting state: " << *convert_global_state_timer << endl;
-    cout << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
-    cout << "Time for computing orders: " << *compute_orders_timer << endl;
+    cout << "Time for converting state: " << *convert_global_state_timer << endl;
     cout << "Time for computing abstract state IDs: " << *get_abstract_state_ids_timer << endl;
     cout << "Time for checking unsolvability: " << *unsolvability_heuristic_timer << endl;
     cout << "Time for computing max_h: " << *compute_max_h_timer << endl;
+    cout << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
     cout << "Time for computing novelty: " << *compute_novelty_timer << endl;
+    cout << "Time for computing orders: " << *compute_orders_timer << endl;
     cout << "Time for computing SCPs: " << *compute_scp_timer << endl;
     cout << "Time for computing h: " << *compute_h_timer << endl;
     cout << "Time for diversification: " << *diversification_timer << endl;
