@@ -293,6 +293,13 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     if (improve_heuristic && (*improve_heuristic_timer)() > max_time) {
         improve_heuristic = false;
         erase_useless_abstractions(cp_heuristics, unsolvability_heuristic, abstractions);
+
+        // Print the number of stored values.
+        int num_stored_values = 0;
+        for (const auto &cp_heuristic : cp_heuristics) {
+            num_stored_values += cp_heuristic.get_num_heuristic_values();
+        }
+        utils::Log() << "Stored values: " << num_stored_values << endl;
     }
     if (improve_heuristic && should_compute_scp(global_state)) {
         compute_orders_timer->resume();
