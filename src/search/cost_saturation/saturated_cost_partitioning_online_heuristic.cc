@@ -238,7 +238,7 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
     }
 
     // We only need to compute novelty for new states.
-    compute_novelty_timer->reset();
+    compute_novelty_timer->resume();
     if (heuristic_cache[state].h == NO_VALUE) {
         if (is_novel(op_id, state)) {
             heuristic_cache[state].h = IS_NOVEL;
