@@ -349,6 +349,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         improve_heuristic = false;
         online_diversifier = nullptr;
         diversifier = nullptr;
+        utils::release_vector_memory(fact_id_offsets);
+        utils::release_vector_memory(seen_facts);
+        utils::release_vector_memory(seen_fact_pairs);
         erase_useless_abstractions(cp_heuristics, unsolvability_heuristic, abstractions);
         print_heuristic_size_statistics();
     }
