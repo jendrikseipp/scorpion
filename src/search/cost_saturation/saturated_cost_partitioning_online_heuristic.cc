@@ -271,6 +271,7 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
         return;
     }
 
+    compute_heuristic_timer->resume();
     if (online_diversifier) {
         convert_global_state_timer->resume();
         State state = convert_global_state(global_state);
@@ -292,6 +293,7 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
             online_diversifier->add_sample(global_state.get_id(), move(abstract_state_ids), max_h);
         }
     }
+    compute_heuristic_timer->stop();
 
     if (interval >= 1) {
         return;
