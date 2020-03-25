@@ -360,6 +360,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     improve_heuristic_timer->resume();
     if (improve_heuristic && (*improve_heuristic_timer)() > max_time) {
+        utils::Log() << "Stop heuristic improvement phase." << endl;
         improve_heuristic = false;
         online_diversifier = nullptr;
         diversifier = nullptr;
