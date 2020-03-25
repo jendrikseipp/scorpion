@@ -69,6 +69,30 @@ static void erase_useless_abstractions(
     }
 }
 
+
+bool OnlineDiversifier::add_cp_if_diverse(const CostPartitioningHeuristic &cp_heuristic) {
+    bool cp_improves_portfolio = false;
+    for (auto &pair : samples) {
+        Sample &sample = pair.second;
+        int cp_h_value = cp_heuristic.compute_heuristic(sample.abstract_state_ids);
+        int &portfolio_h_value = sample.max_h;
+        if (cp_h_value > portfolio_h_value) {
+            cp_improves_portfolio = true;
+            portfolio_h_value = cp_h_value;
+        }
+    }
+    return cp_improves_portfolio;
+}
+
+void OnlineDiversifier::add_sample(StateID state_id, std::vector<int> &&abstract_state_ids, int max_h) {
+    samples.emplace(state_id, Sample(move(abstract_state_ids), max_h));
+}
+
+void OnlineDiversifier::remove_sample(StateID state_id) {
+    samples.erase(state_id);
+}
+
+
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
     Abstractions &&abstractions,
@@ -84,6 +108,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       max_time(opts.get<double>("max_time")),
       diversify(opts.get<bool>("diversify")),
       num_samples(opts.get<int>("samples")),
+      sample_from_generated_states(opts.get<bool>("sample_from_generated_states")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
       num_evaluated_states(0),
@@ -114,7 +139,11 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
         }
     }
 
-    setup_diversifier(*utils::parse_rng_from_options(opts));
+    if (sample_from_generated_states) {
+        online_diversifier = utils::make_unique_ptr<OnlineDiversifier>();
+    } else {
+        setup_diversifier(*utils::parse_rng_from_options(opts));
+    }
 
     compute_heuristic_timer = utils::make_unique_ptr<utils::Timer>(false);
     convert_global_state_timer = utils::make_unique_ptr<utils::Timer>(false);
@@ -232,20 +261,46 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_initial_state(
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
-    const GlobalState &, OperatorID op_id, const GlobalState &state) {
+    const GlobalState &, OperatorID op_id, const GlobalState &global_state) {
+    if (!improve_heuristic) {
+        return;
+    }
+
+    if (online_diversifier) {
+        convert_global_state_timer->resume();
+        State state = convert_global_state(global_state);
+        convert_global_state_timer->stop();
+
+        get_abstract_state_ids_timer->resume();
+        vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
+        get_abstract_state_ids_timer->stop();
+
+        unsolvability_heuristic_timer->resume();
+        bool is_unsolvable = unsolvability_heuristic.is_unsolvable(abstract_state_ids);
+        unsolvability_heuristic_timer->stop();
+
+        if (!is_unsolvable) {
+            compute_max_h_timer->resume();
+            int max_h = compute_max_h_with_statistics(
+                cp_heuristics, abstract_state_ids, num_best_order);
+            compute_max_h_timer->stop();
+            online_diversifier->add_sample(global_state.get_id(), move(abstract_state_ids), max_h);
+        }
+    }
+
     if (interval >= 1) {
         return;
     }
 
     // We only need to compute novelty for new states.
     compute_novelty_timer->resume();
-    if (heuristic_cache[state].h == NO_VALUE) {
-        if (is_novel(op_id, state)) {
-            heuristic_cache[state].h = IS_NOVEL;
+    if (heuristic_cache[global_state].h == NO_VALUE) {
+        if (is_novel(op_id, global_state)) {
+            heuristic_cache[global_state].h = IS_NOVEL;
         } else {
-            heuristic_cache[state].h = IS_NOT_NOVEL;
+            heuristic_cache[global_state].h = IS_NOT_NOVEL;
         }
-        assert(heuristic_cache[state].dirty);
+        assert(heuristic_cache[global_state].dirty);
     }
     compute_novelty_timer->stop();
 }
@@ -292,8 +347,13 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     improve_heuristic_timer->resume();
     if (improve_heuristic && (*improve_heuristic_timer)() > max_time) {
         improve_heuristic = false;
+        online_diversifier = nullptr;
+        diversifier = nullptr;
         erase_useless_abstractions(cp_heuristics, unsolvability_heuristic, abstractions);
         print_heuristic_size_statistics();
+    }
+    if (online_diversifier) {
+        online_diversifier->remove_sample(global_state.get_id());
     }
     if (improve_heuristic && should_compute_scp(global_state)) {
         compute_orders_timer->resume();
@@ -314,7 +374,12 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         max_h = max(max_h, h);
 
         diversification_timer->resume();
-        if (diversifier->is_diverse(cost_partitioning)) {
+        bool is_diverse =
+            (online_diversifier &&
+             online_diversifier->add_cp_if_diverse(cost_partitioning)) ||
+            (diversifier &&
+             diversifier->is_diverse(cost_partitioning));
+        if (is_diverse) {
             cp_heuristics.push_back(move(cost_partitioning));
             cout << "Stored SCPs: " << cp_heuristics.size() << endl;
         }
@@ -377,6 +442,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "compute SCP for every interval-th state",
         "1",
         Bounds("-2", "infinity"));
+    parser.add_option<bool>(
+        "sample_from_generated_states",
+        "use generated but not yet evaluated states for diversification",
+        "false");
 
     Options opts = parser.parse();
     if (parser.help_mode())

@@ -18,6 +18,24 @@ namespace cost_saturation {
 class Diversifier;
 class OrderGenerator;
 
+struct Sample {
+    std::vector<int> abstract_state_ids;
+    int max_h;
+
+    Sample(std::vector<int> &&abstract_state_ids, int max_h)
+        : abstract_state_ids(move(abstract_state_ids)),
+          max_h(max_h) {
+    }
+};
+
+class OnlineDiversifier {
+    utils::HashMap<StateID, Sample> samples;
+public:
+    bool add_cp_if_diverse(const CostPartitioningHeuristic &cp_heuristic);
+    void add_sample(StateID state_id, std::vector<int> &&abstract_state_ids, int max_h);
+    void remove_sample(StateID state_id);
+};
+
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> order_generator;
     const CPFunction cp_function;
@@ -28,6 +46,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const double max_time;
     const bool diversify;
     const int num_samples;
+    const bool sample_from_generated_states;
 
     const std::vector<int> costs;
 
@@ -38,6 +57,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::vector<std::vector<bool>> seen_fact_pairs;
 
     std::unique_ptr<Diversifier> diversifier;
+    std::unique_ptr<OnlineDiversifier> online_diversifier;
 
     std::unique_ptr<utils::Timer> compute_heuristic_timer;
     std::unique_ptr<utils::Timer> convert_global_state_timer;
@@ -85,7 +105,7 @@ public:
     virtual void notify_state_transition(
         const GlobalState &,
         OperatorID op_id,
-        const GlobalState &state) override;
+        const GlobalState &global_state) override;
 };
 }
 
