@@ -119,9 +119,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       improve_heuristic(true),
       num_evaluated_states(0),
       num_scps_computed(0) {
-    if (!diversify) {
-        ABORT("Online SCP needs diversify=true.");
-    }
     if (opts.get<double>("max_optimization_time") != 0.0) {
         ABORT("Order optimization is not implemented for online SCP.");
     }
@@ -147,7 +144,8 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
 
     if (sample_from_generated_states) {
         online_diversifier = utils::make_unique_ptr<OnlineDiversifier>();
-    } else {
+    }
+    if (diversify) {
         setup_diversifier(*utils::parse_rng_from_options(opts));
     }
 
