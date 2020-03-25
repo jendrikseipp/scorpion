@@ -49,10 +49,11 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
 }
 
 // TODO: avoid code duplication
-static void erase_useless_abstractions(
+static void extract_useful_abstraction_functions(
     const vector<CostPartitioningHeuristic> &cp_heuristics,
     const UnsolvabilityHeuristic &unsolvability_heuristic,
-    Abstractions &abstractions) {
+    Abstractions &abstractions,
+    AbstractionFunctions &abstraction_functions) {
     int num_abstractions = abstractions.size();
 
     // Collect IDs of useful abstractions.
@@ -62,11 +63,15 @@ static void erase_useless_abstractions(
         cp_heuristic.mark_useful_abstractions(useful_abstractions);
     }
 
+    abstraction_functions.reserve(num_abstractions);
     for (int i = 0; i < num_abstractions; ++i) {
-        if (!useful_abstractions[i]) {
-            abstractions[i] = nullptr;
+        if (useful_abstractions[i]) {
+            abstraction_functions.push_back(abstractions[i]->extract_abstraction_function());
+        } else {
+            abstraction_functions.push_back(nullptr);
         }
     }
+    assert(abstraction_functions.size() == abstractions.size());
 }
 
 
@@ -328,7 +333,14 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     convert_global_state_timer->stop();
 
     get_abstract_state_ids_timer->resume();
-    vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
+    vector<int> abstract_state_ids;
+    if (improve_heuristic) {
+        assert(!abstractions.empty() && abstraction_functions.empty());
+        abstract_state_ids = get_abstract_state_ids(abstractions, state);
+    } else {
+        assert(abstractions.empty() && !abstraction_functions.empty());
+        abstract_state_ids = get_abstract_state_ids(abstraction_functions, state);
+    }
     get_abstract_state_ids_timer->stop();
 
     unsolvability_heuristic_timer->resume();
@@ -352,7 +364,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         utils::release_vector_memory(fact_id_offsets);
         utils::release_vector_memory(seen_facts);
         utils::release_vector_memory(seen_fact_pairs);
-        erase_useless_abstractions(cp_heuristics, unsolvability_heuristic, abstractions);
+        extract_useful_abstraction_functions(
+            cp_heuristics, unsolvability_heuristic, abstractions, abstraction_functions);
+        utils::release_vector_memory(abstractions);
         print_heuristic_size_statistics();
     }
     if (online_diversifier) {

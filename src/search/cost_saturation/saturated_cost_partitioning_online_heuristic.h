@@ -40,6 +40,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> order_generator;
     const CPFunction cp_function;
     Abstractions abstractions;
+    AbstractionFunctions abstraction_functions;
     CPHeuristics cp_heuristics;
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
