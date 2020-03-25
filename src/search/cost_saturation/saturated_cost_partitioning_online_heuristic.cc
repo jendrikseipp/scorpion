@@ -114,6 +114,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       diversify(opts.get<bool>("diversify")),
       num_samples(opts.get<int>("samples")),
       sample_from_generated_states(opts.get<bool>("sample_from_generated_states")),
+      use_evaluated_state_as_sample(opts.get<bool>("use_evaluated_state_as_sample")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
       num_evaluated_states(0),
@@ -391,10 +392,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         int h = cost_partitioning.compute_heuristic(abstract_state_ids);
         compute_h_timer->stop();
 
-        max_h = max(max_h, h);
-
         diversification_timer->resume();
         bool is_diverse =
+            (use_evaluated_state_as_sample && h > max_h) ||
             (online_diversifier &&
              online_diversifier->add_cp_if_diverse(cost_partitioning)) ||
             (diversifier &&
@@ -404,6 +404,8 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             cout << "Stored SCPs: " << cp_heuristics.size() << endl;
         }
         diversification_timer->stop();
+
+        max_h = max(max_h, h);
     }
     improve_heuristic_timer->stop();
 
@@ -465,6 +467,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "sample_from_generated_states",
         "use generated but not yet evaluated states for diversification",
+        "false");
+    parser.add_option<bool>(
+        "use_evaluated_state_as_sample",
+        "keep CP if it improves the overall heuristic  value of the evaluated state",
         "false");
 
     Options opts = parser.parse();
