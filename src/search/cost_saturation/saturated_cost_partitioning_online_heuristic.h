@@ -45,7 +45,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
     const double max_time;
-    const bool diversify;
+    const bool use_offline_samples;
     const int num_samples;
     const bool sample_from_generated_states;
     const bool use_evaluated_state_as_sample;

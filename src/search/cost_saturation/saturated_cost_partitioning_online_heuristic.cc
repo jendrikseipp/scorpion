@@ -2,6 +2,7 @@
 
 #include "abstraction.h"
 #include "cost_partitioning_heuristic.h"
+#include "cost_partitioning_heuristic_collection_generator.h"
 #include "diversifier.h"
 #include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
@@ -111,7 +112,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       unsolvability_heuristic(move(unsolvability_heuristic)),
       interval(opts.get<int>("interval")),
       max_time(opts.get<double>("max_time")),
-      diversify(opts.get<bool>("diversify")),
+      use_offline_samples(opts.get<bool>("use_offline_samples")),
       num_samples(opts.get<int>("samples")),
       sample_from_generated_states(opts.get<bool>("sample_from_generated_states")),
       use_evaluated_state_as_sample(opts.get<bool>("use_evaluated_state_as_sample")),
@@ -145,7 +146,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     if (sample_from_generated_states) {
         online_diversifier = utils::make_unique_ptr<OnlineDiversifier>();
     }
-    if (diversify) {
+    if (use_offline_samples) {
         setup_diversifier(*utils::parse_rng_from_options(opts));
     }
 
@@ -463,12 +464,20 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "1",
         Bounds("-2", "infinity"));
     parser.add_option<bool>(
+        "use_offline_samples",
+        "use offline samples",
+        "false");
+    parser.add_option<bool>(
         "sample_from_generated_states",
         "use generated but not yet evaluated states for diversification",
         "false");
     parser.add_option<bool>(
         "use_evaluated_state_as_sample",
         "keep CP if it improves the overall heuristic  value of the evaluated state",
+        "false");
+    parser.add_option<bool>(
+        "diversify_offline",
+        "add diverse SCP heuristics found offline",
         "false");
 
     Options opts = parser.parse();
@@ -485,8 +494,14 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
     CPHeuristics cp_heuristics = {};
-    shared_ptr<OrderGenerator> order_generator = opts.get<shared_ptr<OrderGenerator>>("orders");
-    order_generator->initialize(abstractions, costs);
+    if (opts.get<bool>("diversify_offline")) {
+        cp_heuristics =
+            get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
+                task_proxy, abstractions, costs, get_cp_function_from_options(opts), unsolvability_heuristic);
+    } else {
+        shared_ptr<OrderGenerator> order_generator = opts.get<shared_ptr<OrderGenerator>>("orders");
+        order_generator->initialize(abstractions, costs);
+    }
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
