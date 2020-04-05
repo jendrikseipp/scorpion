@@ -6,7 +6,6 @@
 #include "diversifier.h"
 #include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
-#include "saturated_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -106,6 +105,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     UnsolvabilityHeuristic &&unsolvability_heuristic)
     : Heuristic(opts),
       order_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
+      saturator(static_cast<Saturator>(opts.get_enum("saturator"))),
       cp_function(get_cp_function_from_options(opts)),
       abstractions(move(abstractions)),
       cp_heuristics(move(cp_heuristics)),
@@ -382,14 +382,30 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         compute_orders_timer->stop();
 
         compute_scp_timer->resume();
-        CostPartitioningHeuristic cost_partitioning =
-            cp_function(abstractions, order, costs, abstract_state_ids);
+        CostPartitioningHeuristic cost_partitioning;
+        vector<int> remaining_costs;
+        if (saturator == Saturator::PERIMSTAR) {
+            // Compute only the first SCP here, and the second below if h > max_h.
+            remaining_costs = costs;
+            cost_partitioning = compute_perim_saturated_cost_partitioning_change_costs(
+                abstractions, order, remaining_costs, abstract_state_ids);
+        } else {
+            cost_partitioning = cp_function(abstractions, order, costs, abstract_state_ids);
+        }
         compute_scp_timer->stop();
         ++num_scps_computed;
 
         compute_h_timer->resume();
         int h = cost_partitioning.compute_heuristic(abstract_state_ids);
         compute_h_timer->stop();
+
+        compute_scp_timer->resume();
+        if (saturator == Saturator::PERIMSTAR && h > max_h) {
+            cost_partitioning.add(
+                compute_saturated_cost_partitioning(
+                    abstractions, order, remaining_costs, abstract_state_ids));
+        }
+        compute_scp_timer->stop();
 
         diversification_timer->resume();
         bool is_diverse =

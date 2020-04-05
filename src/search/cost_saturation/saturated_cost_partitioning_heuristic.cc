@@ -1,3 +1,5 @@
+#include "saturated_cost_partitioning_heuristic.h"
+
 #include "abstraction.h"
 #include "abstraction_generator.h"
 #include "cost_partitioning_heuristic.h"
@@ -14,12 +16,6 @@
 using namespace std;
 
 namespace cost_saturation {
-enum class Saturator {
-    ALL,
-    PERIM,
-    PERIMSTAR,
-};
-
 CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,

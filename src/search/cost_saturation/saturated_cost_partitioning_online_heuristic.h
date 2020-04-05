@@ -1,6 +1,7 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 
+#include "saturated_cost_partitioning_heuristic.h"
 #include "types.h"
 #include "unsolvability_heuristic.h"
 
@@ -38,6 +39,7 @@ public:
 
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> order_generator;
+    const Saturator saturator;
     const CPFunction cp_function;
     Abstractions abstractions;
     AbstractionFunctions abstraction_functions;
