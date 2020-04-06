@@ -370,7 +370,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         extract_useful_abstraction_functions(
             cp_heuristics, unsolvability_heuristic, abstractions, abstraction_functions);
         utils::release_vector_memory(abstractions);
-        print_heuristic_size_statistics();
+        print_diversification_statistics();
     }
     if (online_diversifier) {
         online_diversifier->remove_sample(global_state.get_id());
@@ -430,7 +430,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     return max_h;
 }
 
-void SaturatedCostPartitioningOnlineHeuristic::print_heuristic_size_statistics() const {
+void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics() const {
     // Print the number of stored lookup tables.
     int num_stored_lookup_tables = 0;
     for (const auto &cp_heuristic: cp_heuristics) {
@@ -444,11 +444,18 @@ void SaturatedCostPartitioningOnlineHeuristic::print_heuristic_size_statistics()
         num_stored_values += cp_heuristic.get_num_heuristic_values();
     }
     utils::Log() << "Stored values: " << num_stored_values << endl;
+
+    cout << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
+    cout << "Time for computing novelty: " << *compute_novelty_timer << endl;
+    cout << "Time for computing orders: " << *compute_orders_timer << endl;
+    cout << "Time for computing SCPs: " << *compute_scp_timer << endl;
+    cout << "Time for computing h: " << *compute_h_timer << endl;
+    cout << "Time for diversification: " << *diversification_timer << endl;
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
     if (improve_heuristic) {
-        print_heuristic_size_statistics();
+        print_diversification_statistics();
     }
     cout << "Computed SCPs: " << num_scps_computed << endl;
     cout << "Stored SCPs: " << cp_heuristics.size() << endl;
@@ -457,12 +464,6 @@ void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
     cout << "Time for computing abstract state IDs: " << *get_abstract_state_ids_timer << endl;
     cout << "Time for checking unsolvability: " << *unsolvability_heuristic_timer << endl;
     cout << "Time for computing max_h: " << *compute_max_h_timer << endl;
-    cout << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
-    cout << "Time for computing novelty: " << *compute_novelty_timer << endl;
-    cout << "Time for computing orders: " << *compute_orders_timer << endl;
-    cout << "Time for computing SCPs: " << *compute_scp_timer << endl;
-    cout << "Time for computing h: " << *compute_h_timer << endl;
-    cout << "Time for diversification: " << *diversification_timer << endl;
 }
 
 
