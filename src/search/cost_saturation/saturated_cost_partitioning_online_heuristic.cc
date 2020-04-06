@@ -416,7 +416,8 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
              diversifier->is_diverse(cost_partitioning));
         if (is_diverse) {
             cp_heuristics.push_back(move(cost_partitioning));
-            cout << "Stored SCPs: " << cp_heuristics.size() << endl;
+            utils::Log() << "Stored SCPs in " << *improve_heuristic_timer << ": "
+                         << cp_heuristics.size() << endl;
         }
         diversification_timer->stop();
 
