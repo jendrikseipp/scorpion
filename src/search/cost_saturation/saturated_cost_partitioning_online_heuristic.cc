@@ -320,7 +320,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
 
-    improve_heuristic_timer->resume();
+    if (improve_heuristic) {
+        improve_heuristic_timer->resume();
+    }
     if (improve_heuristic && (*improve_heuristic_timer)() > max_time) {
         utils::Log() << "Stop heuristic improvement phase." << endl;
         improve_heuristic = false;
@@ -374,7 +376,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         }
         max_h = max(max_h, h);
     }
-    improve_heuristic_timer->stop();
+    if (improve_heuristic) {
+        improve_heuristic_timer->stop();
+    }
 
     ++num_evaluated_states;
     return max_h;
