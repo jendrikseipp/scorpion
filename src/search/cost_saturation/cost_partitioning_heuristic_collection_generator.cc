@@ -49,6 +49,7 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
 CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectionGenerator(
     const shared_ptr<OrderGenerator> &order_generator,
     int max_orders,
+    int max_size_kb,
     double max_time,
     bool diversify,
     int num_samples,
@@ -56,6 +57,7 @@ CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectio
     const shared_ptr<utils::RandomNumberGenerator> &rng)
     : order_generator(order_generator),
       max_orders(max_orders),
+      max_size_kb(max_size_kb),
       max_time(max_time),
       diversify(diversify),
       num_samples(num_samples),
@@ -112,8 +114,10 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     log << "Start computing cost partitionings" << endl;
     vector<CostPartitioningHeuristic> cp_heuristics;
     int evaluated_orders = 0;
+    int size_kb = 0;
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
-           (!timer.is_expired() || cp_heuristics.empty())) {
+           (!timer.is_expired() || cp_heuristics.empty()) &&
+           (size_kb < max_size_kb)) {
         bool first_order = (evaluated_orders == 0);
 
         vector<int> abstract_state_ids;
@@ -150,6 +154,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
         // If diversify=true, only add order if it improves upon previously
         // added orders.
         if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
+            size_kb += cp_heuristic.estimate_size_in_kb();
             cp_heuristics.push_back(move(cp_heuristic));
             if (diversifier) {
                 log << "Sum over max h values for " << num_samples
@@ -167,6 +172,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     log << "Cost partitionings: " << cp_heuristics.size() << endl;
     log << "Time for computing cost partitionings: " << timer.get_elapsed_time()
         << endl;
+    log << "Estimated heuristic size: " << size_kb << " KiB" << endl;
     return cp_heuristics;
 }
 }

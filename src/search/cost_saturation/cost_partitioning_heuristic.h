@@ -63,6 +63,8 @@ public:
     // Return the total number of stored heuristic values.
     int get_num_heuristic_values() const;
 
+    int estimate_size_in_kb() const;
+
     // See class documentation.
     void mark_useful_abstractions(std::vector<bool> &useful_abstractions) const;
 };

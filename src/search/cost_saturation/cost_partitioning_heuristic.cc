@@ -78,6 +78,11 @@ int CostPartitioningHeuristic::get_num_heuristic_values() const {
     return num_values;
 }
 
+int CostPartitioningHeuristic::estimate_size_in_kb() const {
+    return (get_num_heuristic_values() * sizeof(int) +
+            lookup_tables.size() * sizeof(std::vector<int>)) / 1024.;
+}
+
 void CostPartitioningHeuristic::mark_useful_abstractions(
     vector<bool> &useful_abstractions) const {
     for (const auto &lookup_table : lookup_tables) {

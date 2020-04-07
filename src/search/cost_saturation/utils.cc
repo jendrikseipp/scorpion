@@ -113,6 +113,11 @@ void add_order_options_to_parser(OptionParser &parser) {
         "maximum number of orders",
         "infinity",
         Bounds("0", "infinity"));
+    parser.add_option<int>(
+        "max_size",
+        "maximum heuristic size in KiB",
+        "infinity",
+        Bounds("0", "infinity"));
     parser.add_option<double>(
         "max_time",
         "maximum time in seconds for finding orders",
@@ -141,6 +146,7 @@ get_cp_heuristic_collection_generator_from_options(const options::Options &opts)
     return CostPartitioningHeuristicCollectionGenerator(
         opts.get<shared_ptr<OrderGenerator>>("orders"),
         opts.get<int>("max_orders"),
+        opts.get<int>("max_size"),
         opts.get<double>("max_time"),
         opts.get<bool>("diversify"),
         opts.get<int>("samples"),
