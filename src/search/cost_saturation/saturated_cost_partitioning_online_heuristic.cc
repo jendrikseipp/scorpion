@@ -112,12 +112,14 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       unsolvability_heuristic(move(unsolvability_heuristic)),
       interval(opts.get<int>("interval")),
       max_time(opts.get<double>("max_time")),
+      max_size_kb(opts.get<int>("max_size")),
       use_offline_samples(opts.get<bool>("use_offline_samples")),
       num_samples(opts.get<int>("samples")),
       sample_from_generated_states(opts.get<bool>("sample_from_generated_states")),
       use_evaluated_state_as_sample(opts.get<bool>("use_evaluated_state_as_sample")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
+      size_kb(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
     if (opts.get<double>("max_optimization_time") != 0.0) {
@@ -126,6 +128,10 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     if (opts.get<int>("max_orders") != INF) {
         ABORT("Limiting the number of orders is not implemented for online SCP.");
     }
+    for (auto &cp : cp_heuristics) {
+        size_kb += cp.estimate_size_in_kb();
+    }
+
     fact_id_offsets.reserve(task_proxy.get_variables().size());
     int num_facts = 0;
     for (VariableProxy var : task_proxy.get_variables()) {
@@ -323,7 +329,8 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     if (improve_heuristic) {
         improve_heuristic_timer->resume();
     }
-    if (improve_heuristic && (*improve_heuristic_timer)() > max_time) {
+    if (improve_heuristic &&
+        ((*improve_heuristic_timer)() > max_time || size_kb >= max_size_kb)) {
         utils::Log() << "Stop heuristic improvement phase." << endl;
         improve_heuristic = false;
         online_diversifier = nullptr;
@@ -370,6 +377,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             (diversifier &&
              diversifier->is_diverse(cost_partitioning));
         if (is_diverse) {
+            size_kb += cost_partitioning.estimate_size_in_kb();
             cp_heuristics.push_back(move(cost_partitioning));
             utils::Log() << "Stored SCPs in " << *improve_heuristic_timer << ": "
                          << cp_heuristics.size() << endl;
@@ -399,7 +407,8 @@ void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics(
     }
     utils::Log() << "Stored values: " << num_stored_values << endl;
 
-    cout << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
+    utils::Log() << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
+    utils::Log() << "Estimated heuristic size: " << size_kb << " KiB" << endl;
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {

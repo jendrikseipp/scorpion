@@ -47,6 +47,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
     const double max_time;
+    const int max_size_kb;
     const bool use_offline_samples;
     const int num_samples;
     const bool sample_from_generated_states;
@@ -64,6 +65,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::unique_ptr<OnlineDiversifier> online_diversifier;
 
     std::unique_ptr<utils::Timer> improve_heuristic_timer;
+    int size_kb;
     int num_evaluated_states;
     int num_scps_computed;
 
