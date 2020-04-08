@@ -309,6 +309,10 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalSt
 
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     const GlobalState &global_state) {
+    if (improve_heuristic) {
+        improve_heuristic_timer->resume();
+    }
+
     State state = convert_global_state(global_state);
     vector<int> abstract_state_ids;
     if (improve_heuristic) {
@@ -320,15 +324,15 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     }
 
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
+        if (improve_heuristic) {
+            improve_heuristic_timer->stop();
+        }
         return DEAD_END;
     }
 
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
 
-    if (improve_heuristic) {
-        improve_heuristic_timer->resume();
-    }
     if (improve_heuristic &&
         ((*improve_heuristic_timer)() > max_time || size_kb >= max_size_kb)) {
         utils::Log() << "Stop heuristic improvement phase." << endl;
