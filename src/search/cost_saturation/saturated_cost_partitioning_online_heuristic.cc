@@ -284,12 +284,14 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
 
     // We only need to compute novelty for new states.
     if (heuristic_cache[global_state].h == NO_VALUE) {
+        improve_heuristic_timer->resume();
         if (is_novel(op_id, global_state)) {
             heuristic_cache[global_state].h = IS_NOVEL;
         } else {
             heuristic_cache[global_state].h = IS_NOT_NOVEL;
         }
         assert(heuristic_cache[global_state].dirty);
+        improve_heuristic_timer->stop();
     }
 }
 
