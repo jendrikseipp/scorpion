@@ -431,6 +431,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "Saturated cost partitioning online heuristic",
         "");
 
+    // TODO: document that online version is not consistent.
     prepare_parser_for_cost_partitioning_heuristic(parser);
     add_saturator_option(parser);
     add_order_options_to_parser(parser);
