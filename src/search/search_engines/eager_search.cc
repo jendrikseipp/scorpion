@@ -152,6 +152,7 @@ SearchStatus EagerSearch::step() {
 
             if (lazy_evaluator->is_estimate_cached(s)) {
                 int old_h = lazy_evaluator->get_cached_estimate(s);
+                lazy_evaluator->remove_cached_estimate(s);
                 int new_h = eval_context.get_evaluator_value_or_infinity(lazy_evaluator.get());
                 if (open_list->is_dead_end(eval_context)) {
                     node->mark_as_dead_end();

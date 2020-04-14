@@ -68,6 +68,10 @@ int Evaluator::get_cached_estimate(const GlobalState &) const {
     ABORT("Called get_cached_estimate when estimate is not cached.");
 }
 
+void Evaluator::remove_cached_estimate(const GlobalState &) {
+    ABORT("Called remove_cached_estimate when estimate is not cached.");
+}
+
 static PluginTypePlugin<Evaluator> _type_plugin(
     "Evaluator",
     "An evaluator specification is either a newly created evaluator "
