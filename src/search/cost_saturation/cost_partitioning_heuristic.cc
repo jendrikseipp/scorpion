@@ -26,7 +26,10 @@ int CostPartitioningHeuristic::compute_heuristic(
         int state_id = abstract_state_ids[lookup_table.abstraction_id];
         assert(utils::in_bounds(state_id, lookup_table.h_values));
         int h = lookup_table.h_values[state_id];
-        assert(h >= 0 && h != INF);
+        assert(h >= 0);
+        if (h == INF) {
+            return INF;
+        }
         sum_h += h;
         assert(sum_h >= 0);
     }
