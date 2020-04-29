@@ -152,10 +152,10 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
         if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
             cp_heuristics.push_back(move(cp_heuristic));
             if (diversifier) {
-                log << "Sum over max h values for " << num_samples
+                log << "Average finite h-value for " << num_samples
                     << " samples after " << timer.get_elapsed_time()
                     << " of diversification: "
-                    << diversifier->compute_sum_portfolio_h_value_for_samples()
+                    << diversifier->compute_avg_finite_sample_h_value()
                     << endl;
             }
         }
