@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace cost_saturation {
-extern bool g_store_unsolvable_states_once_hacked;
+class UnsolvabilityHeuristic;
 
 /*
   Compactly store cost-partitioned goal distances and compute heuristic values
@@ -41,6 +41,8 @@ class CostPartitioningHeuristic {
 
 public:
     void add_h_values(int abstraction_id, std::vector<int> &&h_values);
+
+    void mark_unsolvable_states(UnsolvabilityHeuristic &unsolvability_heuristic);
 
     /*
       Compute cost-partitioned heuristic value for a concrete state s. Callers

@@ -41,7 +41,7 @@ public:
         const Abstractions &abstractions,
         const std::vector<int> &costs,
         const CPFunction &cp_function,
-        const UnsolvabilityHeuristic &unsolvability_heuristic) const;
+        UnsolvabilityHeuristic &unsolvability_heuristic) const;
 };
 }
 

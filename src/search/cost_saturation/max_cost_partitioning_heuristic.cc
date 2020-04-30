@@ -42,7 +42,7 @@ static void log_info_about_stored_lookup_tables(
 
 static AbstractionFunctions extract_abstraction_functions_from_useful_abstractions(
     const vector<CostPartitioningHeuristic> &cp_heuristics,
-    const UnsolvabilityHeuristic &unsolvability_heuristic,
+    UnsolvabilityHeuristic &unsolvability_heuristic,
     Abstractions &abstractions) {
     int num_abstractions = abstractions.size();
 

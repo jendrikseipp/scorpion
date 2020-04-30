@@ -15,13 +15,14 @@ class UnsolvabilityHeuristic {
         }
     };
 
-    std::vector<UnsolvabilityInfo> unsolvable_states;
+    std::vector<UnsolvabilityInfo> unsolvability_infos;
 
 public:
     explicit UnsolvabilityHeuristic(const Abstractions &abstractions);
 
+    void mark_unsolvable_states(int abstraction_id, const std::vector<int> &h_values);
     bool is_unsolvable(const std::vector<int> &abstract_state_ids) const;
-    void mark_useful_abstractions(std::vector<bool> &useful_abstractions) const;
+    void mark_useful_abstractions(std::vector<bool> &useful_abstractions);
 };
 }
 

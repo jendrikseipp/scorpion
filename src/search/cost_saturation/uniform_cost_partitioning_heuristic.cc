@@ -158,7 +158,7 @@ static CostPartitioningHeuristic get_ucp_heuristic(
 static CPHeuristics get_oucp_heuristics(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
-    const UnsolvabilityHeuristic &unsolvability_heuristic,
+    UnsolvabilityHeuristic &unsolvability_heuristic,
     const CostPartitioningHeuristicCollectionGenerator &cps_generator,
     bool debug) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
