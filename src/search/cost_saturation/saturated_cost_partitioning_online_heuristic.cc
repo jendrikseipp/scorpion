@@ -326,12 +326,12 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "interval",
         "select every i-th state for diversification. values -1 and -2 select "
         "states with novelty 1 and 2",
-        "1",
+        "-2",
         Bounds("-2", "infinity"));
     parser.add_option<bool>(
         "store_diverse_orders",
         "keep SCP heuristic if it improves the estimate of the evaluated state",
-        "false");
+        "true");
 
     Options opts = parser.parse();
     if (parser.help_mode())
