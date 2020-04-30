@@ -28,7 +28,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const int interval;
     const double max_time;
     const int max_size_kb;
-    const bool use_evaluated_state_as_sample;
+    const bool store_diverse_orders;
 
     const std::vector<int> costs;
 

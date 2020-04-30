@@ -61,7 +61,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       interval(opts.get<int>("interval")),
       max_time(opts.get<double>("max_time")),
       max_size_kb(opts.get<int>("max_size")),
-      use_evaluated_state_as_sample(opts.get<bool>("use_evaluated_state_as_sample")),
+      store_diverse_orders(opts.get<bool>("store_diverse_orders")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
       size_kb(0),
@@ -262,14 +262,13 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
         int h = cost_partitioning.compute_heuristic(abstract_state_ids);
 
-        if (saturator == Saturator::PERIMSTAR && h > max_h) {
-            cost_partitioning.add(
-                compute_saturated_cost_partitioning(
-                    abstractions, order, remaining_costs, abstract_state_ids));
-        }
-
-        bool is_diverse = (use_evaluated_state_as_sample && h > max_h);
+        bool is_diverse = (store_diverse_orders && h > max_h);
         if (is_diverse) {
+            if (saturator == Saturator::PERIMSTAR) {
+                cost_partitioning.add(
+                    compute_saturated_cost_partitioning(
+                        abstractions, order, remaining_costs, abstract_state_ids));
+            }
             size_kb += cost_partitioning.estimate_size_in_kb();
             cp_heuristics.push_back(move(cost_partitioning));
             utils::Log() << "Stored SCPs in " << *timer << ": "
@@ -325,12 +324,13 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
 
     parser.add_option<int>(
         "interval",
-        "compute SCP for every interval-th state",
+        "select every i-th state for diversification. values -1 and -2 select "
+        "states with novelty 1 and 2",
         "1",
         Bounds("-2", "infinity"));
     parser.add_option<bool>(
-        "use_evaluated_state_as_sample",
-        "keep CP if it improves the overall heuristic  value of the evaluated state",
+        "store_diverse_orders",
+        "keep SCP heuristic if it improves the estimate of the evaluated state",
         "false");
 
     Options opts = parser.parse();
