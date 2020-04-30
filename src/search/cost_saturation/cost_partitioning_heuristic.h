@@ -25,6 +25,8 @@ class UnsolvabilityHeuristic;
   compute_heuristic() below).
 */
 class CostPartitioningHeuristic {
+    friend class UnsolvabilityHeuristic;
+
     struct LookupTable {
         int abstraction_id;
         /* h_values[i] is the goal distance of abstract state i under the cost
@@ -41,8 +43,6 @@ class CostPartitioningHeuristic {
 
 public:
     void add_h_values(int abstraction_id, std::vector<int> &&h_values);
-
-    void mark_unsolvable_states(UnsolvabilityHeuristic &unsolvability_heuristic);
 
     /*
       Compute cost-partitioned heuristic value for a concrete state s. Callers

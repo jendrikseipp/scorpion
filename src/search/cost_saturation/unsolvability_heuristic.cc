@@ -1,6 +1,7 @@
 #include "max_cost_partitioning_heuristic.h"
 
 #include "abstraction.h"
+#include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -10,16 +11,32 @@
 using namespace std;
 
 namespace cost_saturation {
-UnsolvabilityHeuristic::UnsolvabilityHeuristic(const Abstractions &abstractions) {
-    for (size_t i = 0; i < abstractions.size(); ++i) {
-        unsolvability_infos.emplace_back(i, vector<bool>(abstractions[i]->get_num_states(), false));
-    }
-}
+UnsolvabilityHeuristic::UnsolvabilityHeuristic(
+    const Abstractions &abstractions, const CPHeuristics &cp_heuristics) {
+    // Ensure that we didn't mess up while moving these vectors.
+    assert(!abstractions.empty());
+    assert(!cp_heuristics.empty());
 
-void UnsolvabilityHeuristic::mark_unsolvable_states(int abstraction_id, const std::vector<int> &h_values) {
-    for (size_t state = 0; state < h_values.size(); ++state) {
-        if (h_values[state] == INF) {
-            unsolvability_infos[abstraction_id].unsolvable_states[state] = true;
+    int num_abstractions = abstractions.size();
+    vector<vector<bool>> unsolvable;
+    unsolvable.reserve(num_abstractions);
+    for (int i = 0; i < num_abstractions; ++i) {
+        unsolvable.emplace_back(abstractions[i]->get_num_states(), false);
+    }
+    vector<bool> has_unsolvable_states(num_abstractions, false);
+    for (auto &cp : cp_heuristics) {
+        for (const auto &lookup_table : cp.lookup_tables) {
+            for (size_t state = 0; state < lookup_table.h_values.size(); ++state) {
+                if (lookup_table.h_values[state] == INF) {
+                    unsolvable[lookup_table.abstraction_id][state] = true;
+                    has_unsolvable_states[lookup_table.abstraction_id] = true;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < num_abstractions; ++i) {
+        if (has_unsolvable_states[i]) {
+            unsolvability_infos.emplace_back(i, move(unsolvable[i]));
         }
     }
 }
@@ -34,15 +51,7 @@ bool UnsolvabilityHeuristic::is_unsolvable(const vector<int> &abstract_state_ids
 }
 
 void UnsolvabilityHeuristic::mark_useful_abstractions(
-    vector<bool> &useful_abstractions) {
-    // Remove bitvectors with only solvable states.
-    unsolvability_infos.erase(
-        remove_if(unsolvability_infos.begin(), unsolvability_infos.end(), [](const UnsolvabilityInfo &info) {
-                      const vector<bool> &unsolvable = info.unsolvable_states;
-                      return none_of(unsolvable.begin(), unsolvable.end(), [](bool b) {return b;});
-                  }), unsolvability_infos.end());
-
-    // Mark remaining abstractions as useful.
+    vector<bool> &useful_abstractions) const {
     for (const auto &info : unsolvability_infos) {
         useful_abstractions[info.abstraction_id] = true;
     }

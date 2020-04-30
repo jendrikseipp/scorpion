@@ -1,7 +1,5 @@
 #include "cost_partitioning_heuristic.h"
 
-#include "unsolvability_heuristic.h"
-
 #include "../utils/collections.h"
 
 #include <cassert>
@@ -9,13 +7,6 @@
 using namespace std;
 
 namespace cost_saturation {
-void CostPartitioningHeuristic::mark_unsolvable_states(
-    UnsolvabilityHeuristic &unsolvability_heuristic) {
-    for (const auto &lookup_table : lookup_tables) {
-        unsolvability_heuristic.mark_unsolvable_states(lookup_table.abstraction_id, lookup_table.h_values);
-    }
-}
-
 void CostPartitioningHeuristic::add_h_values(
     int abstraction_id, vector<int> &&h_values) {
     if (any_of(h_values.begin(), h_values.end(), [](int h) {return h > 0;})) {

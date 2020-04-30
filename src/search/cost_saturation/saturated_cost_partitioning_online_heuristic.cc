@@ -19,14 +19,13 @@ using namespace std;
 namespace cost_saturation {
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
-    Abstractions &&abstractions,
-    CPHeuristics &&cp_heuristics,
-    UnsolvabilityHeuristic &&unsolvability_heuristic)
+    Abstractions &&abstractions_,
+    CPHeuristics &&cp_heuristics_)
     : Heuristic(opts),
       cp_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
-      abstractions(move(abstractions)),
-      cp_heuristics(move(cp_heuristics)),
-      unsolvability_heuristic(move(unsolvability_heuristic)),
+      abstractions(move(abstractions_)),
+      cp_heuristics(move(cp_heuristics_)),
+      unsolvability_heuristic(abstractions, cp_heuristics),
       interval(opts.get<int>("interval")),
       store_cost_partitionings(opts.get<bool>("store_cost_partitionings")),
       costs(task_properties::get_operator_costs(task_proxy)),
@@ -123,17 +122,14 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-    UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
     CPHeuristics cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, compute_saturated_cost_partitioning,
-            unsolvability_heuristic);
+            task_proxy, abstractions, costs, compute_saturated_cost_partitioning);
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
         move(abstractions),
-        move(cp_heuristics),
-        move(unsolvability_heuristic));
+        move(cp_heuristics));
 }
 
 static Plugin<Evaluator> _plugin("scp_online", _parse);

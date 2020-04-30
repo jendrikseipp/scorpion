@@ -4,7 +4,6 @@
 #include "diversifier.h"
 #include "order_generator.h"
 #include "order_optimizer.h"
-#include "unsolvability_heuristic.h"
 #include "utils.h"
 
 #include "../task_proxy.h"
@@ -68,8 +67,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
     const vector<int> &costs,
-    const CPFunction &cp_function,
-    UnsolvabilityHeuristic &unsolvability_heuristic) const {
+    const CPFunction &cp_function) const {
     utils::Log log;
     utils::CountdownTimer timer(max_time);
 
@@ -88,8 +86,9 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
 
     if (init_h == INF) {
         log << "Initial state is unsolvable." << endl;
-        cp_for_init.mark_unsolvable_states(unsolvability_heuristic);
-        return {};
+        return {
+                   cp_for_init
+        };
     }
 
     sampling::RandomWalkSampler sampler(task_proxy, *rng);
@@ -148,7 +147,6 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
         // If diversify=true, only add order if it improves upon previously
         // added orders.
         if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
-            cp_heuristic.mark_unsolvable_states(unsolvability_heuristic);
             cp_heuristics.push_back(move(cp_heuristic));
             if (diversifier) {
                 log << "Average finite h-value for " << num_samples

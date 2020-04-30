@@ -16,6 +16,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> cp_generator;
     const Abstractions abstractions;
     CPHeuristics cp_heuristics;
+    // TODO: update unsolvability heuristic with new CP heuristics found online.
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
     const bool store_cost_partitionings;
@@ -37,8 +38,7 @@ public:
     SaturatedCostPartitioningOnlineHeuristic(
         const options::Options &opts,
         Abstractions &&abstractions,
-        CPHeuristics &&cp_heuristics,
-        UnsolvabilityHeuristic &&unsolvability_heuristic);
+        CPHeuristics &&cp_heuristics);
     virtual ~SaturatedCostPartitioningOnlineHeuristic() override;
 };
 }

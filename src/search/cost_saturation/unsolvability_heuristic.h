@@ -18,11 +18,10 @@ class UnsolvabilityHeuristic {
     std::vector<UnsolvabilityInfo> unsolvability_infos;
 
 public:
-    explicit UnsolvabilityHeuristic(const Abstractions &abstractions);
+    explicit UnsolvabilityHeuristic(const Abstractions &abstractions, const CPHeuristics &cp_heuristics);
 
-    void mark_unsolvable_states(int abstraction_id, const std::vector<int> &h_values);
     bool is_unsolvable(const std::vector<int> &abstract_state_ids) const;
-    void mark_useful_abstractions(std::vector<bool> &useful_abstractions);
+    void mark_useful_abstractions(std::vector<bool> &useful_abstractions) const;
 };
 }
 
