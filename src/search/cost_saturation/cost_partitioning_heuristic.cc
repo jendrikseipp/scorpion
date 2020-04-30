@@ -14,6 +14,15 @@ void CostPartitioningHeuristic::add_h_values(
     }
 }
 
+void CostPartitioningHeuristic::remove_useless_lookup_tables() {
+    lookup_tables.erase(
+        remove_if(lookup_tables.begin(), lookup_tables.end(),
+                  [](const LookupTable &table) {
+                      return all_of(table.h_values.begin(), table.h_values.end(),
+                                    [](int h) {return h == 0 || h == INF;});
+                  }), lookup_tables.end());
+}
+
 int CostPartitioningHeuristic::compute_heuristic(
     const vector<int> &abstract_state_ids) const {
     int sum_h = 0;
