@@ -1,12 +1,7 @@
-#include "max_cost_partitioning_heuristic.h"
+#include "unsolvability_heuristic.h"
 
 #include "abstraction.h"
 #include "cost_partitioning_heuristic.h"
-#include "utils.h"
-
-#include "../option_parser.h"
-
-#include "../task_utils/task_properties.h"
 
 using namespace std;
 
