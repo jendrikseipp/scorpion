@@ -3,21 +3,23 @@
 #include "abstraction.h"
 #include "cost_partitioning_heuristic.h"
 
+#include <algorithm>
+
 using namespace std;
 
 namespace cost_saturation {
 UnsolvabilityHeuristic::UnsolvabilityHeuristic(
-    const Abstractions &abstractions, const CPHeuristics &cp_heuristics) {
-    // Ensure that we didn't mess up while moving these vectors.
-    assert(!abstractions.empty());
-    assert(!cp_heuristics.empty());
-
+    const Abstractions &abstractions, CPHeuristics &cp_heuristics) {
     int num_abstractions = abstractions.size();
+
+    // Create temporary data structure for storing unsolvable states.
     vector<vector<bool>> unsolvable;
     unsolvable.reserve(num_abstractions);
     for (int i = 0; i < num_abstractions; ++i) {
         unsolvable.emplace_back(abstractions[i]->get_num_states(), false);
     }
+
+    // Collect unsolvable states from cost-partitioned heuristics.
     vector<bool> has_unsolvable_states(num_abstractions, false);
     for (auto &cp : cp_heuristics) {
         for (const auto &lookup_table : cp.lookup_tables) {
@@ -29,10 +31,22 @@ UnsolvabilityHeuristic::UnsolvabilityHeuristic(
             }
         }
     }
+
+    // Store unsolvable states.
     for (int i = 0; i < num_abstractions; ++i) {
         if (has_unsolvable_states[i]) {
             unsolvability_infos.emplace_back(i, move(unsolvable[i]));
         }
+    }
+
+    // Remove lookup tables that only contain entries equal to 0 or infinity.
+    for (auto &cp : cp_heuristics) {
+        cp.lookup_tables.erase(
+            remove_if(cp.lookup_tables.begin(), cp.lookup_tables.end(),
+                      [](const CostPartitioningHeuristic::LookupTable &table) {
+                          return all_of(table.h_values.begin(), table.h_values.end(),
+                                        [](int h) {return h == 0 || h == INF;});
+                      }), cp.lookup_tables.end());
     }
 }
 

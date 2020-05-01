@@ -73,10 +73,6 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     : Heuristic(opts),
       cp_heuristics(move(cp_heuristics_)),
       unsolvability_heuristic(abstractions, cp_heuristics) {
-    for (CostPartitioningHeuristic &cp_heuristic : cp_heuristics) {
-        cp_heuristic.remove_useless_lookup_tables();
-    }
-
     log_info_about_stored_lookup_tables(abstractions, cp_heuristics);
 
     // We only need abstraction functions during search and no transition systems.

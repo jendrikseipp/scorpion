@@ -6,8 +6,6 @@
 #include <vector>
 
 namespace cost_saturation {
-class UnsolvabilityHeuristic;
-
 /*
   Compactly store cost-partitioned goal distances and use them to compute
   heuristic values for a given concrete state.
@@ -20,6 +18,7 @@ class UnsolvabilityHeuristic;
   To save space, we only store lookup tables that contain positive estimates.
 */
 class CostPartitioningHeuristic {
+    // Allow this class to extract and compress information about unsolvable states.
     friend class UnsolvabilityHeuristic;
 
     struct LookupTable {
@@ -38,7 +37,6 @@ class CostPartitioningHeuristic {
 
 public:
     void add_h_values(int abstraction_id, std::vector<int> &&h_values);
-    void remove_useless_lookup_tables();
 
     /*
       Compute cost-partitioned heuristic value for a concrete state s. Callers
