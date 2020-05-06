@@ -184,7 +184,7 @@ void ShortestPaths::dijkstra_from_orphans(
             int op = incoming.op_id;
             Transition &t = shortest_path[u];
             if (t.target_id == v &&
-                operator_costs[op] <= operator_costs[t.op_id]) {
+                operator_costs[op] == operator_costs[t.op_id]) {
                 assert(operator_costs[op] == operator_costs[t.op_id]);
                 t = Transition(op, state);
             }
