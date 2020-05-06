@@ -32,6 +32,8 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
         static_cast<PickSplit>(opts.get<int>("pick")),
+        static_cast<HUpdateStrategy>(opts.get<int>("h_update")),
+        opts.get<int>("memory_padding"),
         *rng,
         opts.get<bool>("debug"));
     return cost_saturation.generate_heuristic_functions(
@@ -135,10 +137,22 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     pick_strategies.push_back("MAX_HADD");
     parser.add_enum_option(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
+    add_h_update_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",
         "true");
+    parser.add_option<int>(
+        "memory_padding",
+        "amount of extra memory in MB to reserve for recovering from "
+        "out-of-memory situations gracefully. When the memory runs out, we "
+        "stop refining and start the search. Due to memory fragmentation, "
+        "the memory used for building the abstraction (states, transitions, "
+        "etc.) often can't be reused for things that require big continuous "
+        "blocks of memory. It is for this reason that we require a rather "
+        "large amount of memory padding by default.",
+        "500",
+        Bounds("0", "infinity"));
     parser.add_option<bool>(
         "debug",
         "print debugging output",

@@ -1,5 +1,10 @@
 #include "utils.h"
 
+#include "abstract_state.h"
+#include "abstraction.h"
+#include "transition.h"
+#include "transition_system.h"
+
 #include "../option_parser.h"
 
 #include "../heuristics/additive_heuristic.h"
@@ -8,7 +13,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <unordered_map>
+#include <map>
 
 using namespace std;
 
@@ -87,5 +92,53 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
     for (VariableProxy var : task.get_variables())
         domain_sizes.push_back(var.get_domain_size());
     return domain_sizes;
+}
+
+void add_h_update_option(options::OptionParser &parser) {
+    vector<string> h_update;
+    h_update.push_back("STATES_ON_TRACE");
+    h_update.push_back("COST_MINUS_G");
+    h_update.push_back("FULL_DIJKSTRA");
+    h_update.push_back("DIJKSTRA_FROM_ORPHANS");
+    h_update.push_back("DIJKSTRA_FROM_UNCONNECTED_ORPHANS");
+    h_update.push_back("INCREMENTAL_UNINFORMED_SEARCH");
+    h_update.push_back("INCREMENTAL_HEURISTIC_SEARCH");
+    h_update.push_back("OPTIMIZED_INCREMENTAL_UNINFORMED_SEARCH");
+    h_update.push_back("OPTIMIZED_INCREMENTAL_HEURISTIC_SEARCH");
+    parser.add_enum_option(
+        "h_update",
+        h_update,
+        "strategy for updating goal distances or distance estimates",
+        "COST_MINUS_G");
+}
+
+void dump_dot_graph(const Abstraction &abstraction) {
+    int num_states = abstraction.get_num_states();
+    cout << "digraph transition_system";
+    cout << " {" << endl;
+    cout << "    node [shape = none] start;" << endl;
+    for (int i = 0; i < num_states; ++i) {
+        bool is_init = (i == abstraction.get_initial_state().get_id());
+        bool is_goal = abstraction.get_goals().count(i);
+        cout << "    node [shape = " << (is_goal ? "doublecircle" : "circle")
+             << "] " << i << ";" << endl;
+        if (is_init)
+            cout << "    start -> " << i << ";" << endl;
+    }
+    for (int state_id = 0; state_id < num_states; ++state_id) {
+        map<int, vector<int>> parallel_transitions;
+        auto transitions = abstraction.get_transition_system().get_outgoing_transitions();
+        for (const Transition &t : transitions[state_id]) {
+            parallel_transitions[t.target_id].push_back(t.op_id);
+        }
+        for (auto &pair : parallel_transitions) {
+            int target = pair.first;
+            vector<int> &operators = pair.second;
+            sort(operators.begin(), operators.end());
+            cout << "    " << state_id << " -> " << target
+                 << " [label = \"" << utils::join(operators, "_") << "\"];" << endl;
+        }
+    }
+    cout << "}" << endl;
 }
 }

@@ -12,6 +12,7 @@ class Options;
 
 namespace cegar {
 class Abstraction;
+enum class HUpdateStrategy;
 class SubtaskGenerator;
 }
 
@@ -26,6 +27,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_states;
     const int max_transitions;
     const double max_time;
+    const cegar::HUpdateStrategy h_update;
     const int extra_memory_padding_mb;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;

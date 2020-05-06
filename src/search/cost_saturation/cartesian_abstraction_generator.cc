@@ -7,6 +7,7 @@
 #include "../plugin.h"
 
 #include "../cegar/abstraction.h"
+#include "../cegar/abstract_search.h"
 #include "../cegar/abstract_state.h"
 #include "../cegar/cegar.h"
 #include "../cegar/cost_saturation.h"
@@ -14,6 +15,7 @@
 #include "../cegar/split_selector.h"
 #include "../cegar/subtask_generators.h"
 #include "../cegar/transition_system.h"
+#include "../cegar/utils.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 #include "../utils/rng_options.h"
@@ -101,6 +103,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_states(opts.get<int>("max_states")),
       max_transitions(opts.get<int>("max_transitions")),
       max_time(opts.get<double>("max_time")),
+      h_update(static_cast<cegar::HUpdateStrategy>(opts.get_enum("h_update"))),
       extra_memory_padding_mb(opts.get<int>("memory_padding")),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")),
@@ -118,6 +121,7 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         max(1, (max_transitions - num_transitions) / remaining_subtasks),
         timer.get_remaining_time() / remaining_subtasks,
         cegar::PickSplit::MAX_REFINED,
+        h_update,
         *rng,
         debug);
     cout << endl;
@@ -217,6 +221,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "maximum time for computing abstractions",
         "infinity",
         Bounds("0.0", "infinity"));
+    cegar::add_h_update_option(parser);
     parser.add_option<int>(
         "memory_padding",
         "amount of extra memory in MB to reserve for recovering from "

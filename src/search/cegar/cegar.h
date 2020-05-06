@@ -1,8 +1,8 @@
 #ifndef CEGAR_CEGAR_H
 #define CEGAR_CEGAR_H
 
-#include "abstract_search.h"
 #include "split_selector.h"
+#include "types.h"
 
 #include "../task_proxy.h"
 
@@ -16,7 +16,9 @@ class RandomNumberGenerator;
 
 namespace cegar {
 class Abstraction;
+class AbstractSearch;
 struct Flaw;
+class ShortestPaths;
 
 /*
   Iteratively refine a Cartesian abstraction with counterexample-guided
@@ -32,9 +34,11 @@ class CEGAR {
     const int max_states;
     const int max_non_looping_transitions;
     const SplitSelector split_selector;
+    const HUpdateStrategy h_update;
 
     std::unique_ptr<Abstraction> abstraction;
-    AbstractSearch abstract_search;
+    std::unique_ptr<AbstractSearch> abstract_search;
+    std::unique_ptr<ShortestPaths> shortest_paths;
 
     // Limit the time for building the abstraction.
     utils::CountdownTimer timer;
@@ -51,7 +55,7 @@ class CEGAR {
       for other subtasks with a single goal fact doesn't hurt and
       simplifies the implementation.
     */
-    void separate_facts_unreachable_before_goal();
+    int separate_facts_unreachable_before_goal();
 
     /* Try to convert the abstract solution into a concrete trace. Return the
        first encountered flaw or nullptr if there is no flaw. */
@@ -69,6 +73,7 @@ public:
         int max_non_looping_transitions,
         double max_time,
         PickSplit pick,
+        HUpdateStrategy h_update,
         utils::RandomNumberGenerator &rng,
         bool debug);
     ~CEGAR();

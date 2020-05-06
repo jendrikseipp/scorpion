@@ -1,8 +1,10 @@
 #include "cegar.h"
 
 #include "abstraction.h"
+#include "abstract_search.h"
 #include "abstract_state.h"
 #include "cartesian_set.h"
+#include "shortest_paths.h"
 #include "transition_system.h"
 #include "utils.h"
 
@@ -84,6 +86,7 @@ CEGAR::CEGAR(
     int max_non_looping_transitions,
     double max_time,
     PickSplit pick,
+    HUpdateStrategy h_update,
     utils::RandomNumberGenerator &rng,
     bool debug)
     : task_proxy(*task),
@@ -91,15 +94,26 @@ CEGAR::CEGAR(
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       split_selector(task, pick),
+      h_update(h_update),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
-      abstract_search(task_properties::get_operator_costs(task_proxy)),
       timer(max_time),
       debug(debug) {
     assert(max_states >= 1);
+    if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+        abstract_search = utils::make_unique_ptr<AbstractSearch>(
+            task_properties::get_operator_costs(task_proxy));
+    } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+        shortest_paths = utils::make_unique_ptr<ShortestPaths>(
+            task_properties::get_operator_costs(task_proxy), debug);
+    } else {
+        ABORT("Unknown search strategy");
+    }
+
     utils::g_log << "Start building abstraction." << endl;
     cout << "Maximum number of states: " << max_states << endl;
     cout << "Maximum number of transitions: "
          << max_non_looping_transitions << endl;
+
     refinement_loop(rng);
     utils::g_log << "Done building abstraction." << endl;
     cout << "Time for building abstraction: " << timer.get_elapsed_time() << endl;
@@ -115,7 +129,7 @@ unique_ptr<Abstraction> CEGAR::extract_abstraction() {
     return move(abstraction);
 }
 
-void CEGAR::separate_facts_unreachable_before_goal() {
+int CEGAR::separate_facts_unreachable_before_goal() {
     assert(abstraction->get_goals().size() == 1);
     assert(abstraction->get_num_states() == 1);
     assert(task_proxy.get_goals().size() == 1);
@@ -135,7 +149,16 @@ void CEGAR::separate_facts_unreachable_before_goal() {
         if (!unreachable_values.empty())
             abstraction->refine(abstraction->get_initial_state(), var_id, unreachable_values);
     }
+    cout << "Mark all states as goals." << endl;
     abstraction->mark_all_states_as_goals();
+    /*
+      Split off the goal fact from the initial state. Then the new initial
+      state is the only non-goal state and no goal state will have to be split
+      later.
+    */
+    auto state_ids = abstraction->refine(
+        abstraction->get_initial_state(), goal.get_variable().get_id(), {goal.get_value()});
+    return state_ids.second;
 }
 
 bool CEGAR::may_keep_refining() const {
@@ -162,26 +185,101 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
       states. For the other types of subtasks our method won't find
       unreachable facts, but calling it unconditionally for subtasks
       with one goal doesn't hurt and simplifies the implementation.
+
+      In any case, we separate all goal states from non-goal states
+      to simplify the implementation. This way, we don't have to split
+      goal states later.
     */
+    int goal_in_possibly_before_set;
     if (task_proxy.get_goals().size() == 1) {
-        separate_facts_unreachable_before_goal();
+        goal_in_possibly_before_set = separate_facts_unreachable_before_goal();
+
+        // Find a cheapest goal state. It will always remain a cheapest goal state.
+        AbstractSearch astar_search(task_properties::get_operator_costs(task_proxy));
+        unique_ptr<Solution> solution = astar_search.find_solution(
+            abstraction->get_transition_system().get_outgoing_transitions(),
+            abstraction->get_initial_state().get_id(),
+            abstraction->get_goals());
+        if (!solution) {
+            cout << "Abstract task is unsolvable." << endl;
+            return;
+        } else if (solution->empty()) {
+            goal_in_possibly_before_set = abstraction->get_initial_state().get_id();
+        } else {
+            goal_in_possibly_before_set = solution->back().target_id;
+        }
+    } else {
+        // Iteratively split off the next goal fact from the current goal state.
+        assert(abstraction->get_num_states() == 1);
+        const AbstractState *current = &abstraction->get_initial_state();
+        for (FactProxy goal : task_proxy.get_goals()) {
+            FactPair fact = goal.get_pair();
+            auto pair = abstraction->refine(*current, fact.var, {fact.value});
+            current = &abstraction->get_state(pair.second);
+        }
+        assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
+        assert(static_cast<int>(abstraction->get_goals().size()) == 1);
+        goal_in_possibly_before_set = current->get_id();
+    }
+    assert(abstraction->get_goals().count(goal_in_possibly_before_set));
+
+    if (debug) {
+        cout << "Goal state in possibly before set: " << goal_in_possibly_before_set << endl;
+    }
+
+    // Initialize abstract goal distances and shortest path tree.
+    if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+        shortest_paths->full_dijkstra(
+            abstraction->get_transition_system().get_incoming_transitions(),
+            abstraction->get_goals());
+        assert(shortest_paths->test_distances(
+                   abstraction->get_transition_system().get_incoming_transitions(),
+                   abstraction->get_transition_system().get_outgoing_transitions(),
+                   abstraction->get_goals()));
+    }
+
+    if (debug) {
+        dump_dot_graph(*abstraction);
     }
 
     utils::Timer find_trace_timer;
     utils::Timer find_flaw_timer;
     utils::Timer refine_timer;
+    utils::Timer update_h_timer;
     find_trace_timer.stop();
     find_flaw_timer.stop();
     refine_timer.stop();
+    update_h_timer.stop();
 
     while (may_keep_refining()) {
         find_trace_timer.resume();
-        unique_ptr<Solution> solution = abstract_search.find_solution(
-            abstraction->get_transition_system().get_outgoing_transitions(),
-            abstraction->get_initial_state().get_id(),
-            abstraction->get_goals());
+        unique_ptr<Solution> solution;
+        if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+            solution = abstract_search->find_solution(
+                abstraction->get_transition_system().get_outgoing_transitions(),
+                abstraction->get_initial_state().get_id(),
+                abstraction->get_goals());
+        } else {
+            solution = shortest_paths->extract_solution_from_shortest_path_tree(
+                abstraction->get_initial_state().get_id(), abstraction->get_goals());
+        }
         find_trace_timer.stop();
-        if (!solution) {
+        if (solution) {
+            update_h_timer.resume();
+            if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+                abstract_search->update_goal_distances_of_states_on_trace(
+                    *solution, abstraction->get_initial_state().get_id());
+            }
+            update_h_timer.stop();
+
+            if (debug) {
+                cout << "Found abstract solution:" << endl;
+                for (const Transition &t : *solution) {
+                    OperatorProxy op = task_proxy.get_operators()[t.op_id];
+                    cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+                }
+            }
+        } else {
             cout << "Abstract task is unsolvable." << endl;
             break;
         }
@@ -197,13 +295,38 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         refine_timer.resume();
         const AbstractState &abstract_state = flaw->current_abstract_state;
         int state_id = abstract_state.get_id();
+        assert(!abstraction->get_goals().count(state_id));
         vector<Split> splits = flaw->get_possible_splits();
         const Split &split = split_selector.pick_split(abstract_state, splits, rng);
         auto new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
-        // Since h-values only increase we can assign the h-value to the children.
-        abstract_search.copy_h_value_to_children(
-            state_id, new_state_ids.first, new_state_ids.second);
+        assert(abstraction->get_goals().count(goal_in_possibly_before_set));
         refine_timer.stop();
+
+        if (debug) {
+            dump_dot_graph(*abstraction);
+        }
+
+        update_h_timer.resume();
+        if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+            // Since h-values only increase we can assign the h-value to the children.
+            abstract_search->copy_h_value_to_children(
+                state_id, new_state_ids.first, new_state_ids.second);
+        } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+            shortest_paths->dijkstra_from_orphans(
+                abstraction->get_transition_system().get_incoming_transitions(),
+                abstraction->get_transition_system().get_outgoing_transitions(),
+                state_id, new_state_ids.first, new_state_ids.second, true);
+        } else {
+            ABORT("Unknown h-update strategy");
+        }
+
+        if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+            assert(shortest_paths->test_distances(
+                       abstraction->get_transition_system().get_incoming_transitions(),
+                       abstraction->get_transition_system().get_outgoing_transitions(),
+                       abstraction->get_goals()));
+        }
+        update_h_timer.stop();
 
         if (abstraction->get_num_states() % 1000 == 0) {
             utils::g_log << abstraction->get_num_states() << "/" << max_states << " states, "
@@ -214,6 +337,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     cout << "Time for finding abstract traces: " << find_trace_timer << endl;
     cout << "Time for finding flaws: " << find_flaw_timer << endl;
     cout << "Time for splitting states: " << refine_timer << endl;
+    cout << "Time for updating h values: " << update_h_timer << endl;
 }
 
 unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
@@ -272,8 +396,5 @@ unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
 
 void CEGAR::print_statistics() {
     abstraction->print_statistics();
-    int init_id = abstraction->get_initial_state().get_id();
-    cout << "Initial h value: " << abstract_search.get_h_value(init_id) << endl;
-    cout << endl;
 }
 }
