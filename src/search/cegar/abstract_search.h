@@ -73,7 +73,6 @@ public:
     void copy_h_value_to_children(int v, int v1, int v2);
     void update_goal_distances_of_states_on_trace(
         const Solution &solution, int init_id);
-    void update_goal_distances(const Solution &solution);
 };
 
 extern std::vector<int> compute_distances(

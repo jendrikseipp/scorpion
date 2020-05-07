@@ -49,45 +49,6 @@ void AbstractSearch::update_goal_distances_of_states_on_trace(
     set_h_value(init_id, goal_distance);
 }
 
-void AbstractSearch::update_goal_distances(const Solution &solution) {
-    /*
-      Originally, we only updated the goal distances of states that are part of
-      the trace (see Seipp and Helmert, JAIR 2018). The code below generalizes
-      this idea and potentially updates the goal distances of all states.
-
-      Let C* be the cost of the trace and g(s) be the g value of states s when
-      A* finds the trace. Then for all states s with g(s) < \infty (i.e., s has
-      been reached by the search), C*-g(s) is a lower bound on the goal
-      distance. This is the case since
-
-      g(s) >= g*(s) [1]
-
-      and
-
-          f*(s) >= C*         (optimality of A* with an admissible heuristic)
-      ==> g*(s) + h*(s) >= C* (definition of f values)
-      ==> g(s) + h*(s) >= C*  (using [1])
-      ==> h*(s) >= C* - g(s)  (arithmetic)
-
-      Together with our existing lower bound h*(s) >= h(s), i.e., the h values
-      from the last iteration, for each abstract state s with g(s) < \infty, we
-      can set h(s) = max(h(s), C*-g(s)).
-    */
-    int solution_cost = 0;
-    for (const Transition &transition : solution) {
-        solution_cost += operator_costs[transition.op_id];
-    }
-    assert(solution_cost >= 0);
-    for (size_t i = 0; i < search_info.size(); ++i) {
-        int g = search_info[i].get_g_value();
-        if (g < INF) {
-            int new_h = max(goal_distances[i], solution_cost - g);
-            assert(new_h >= 0);
-            goal_distances[i] = new_h;
-        }
-    }
-}
-
 unique_ptr<Solution> AbstractSearch::find_solution(
     const vector<Transitions> &transitions,
     int init_id,
