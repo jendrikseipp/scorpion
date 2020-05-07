@@ -69,14 +69,12 @@ class ShortestPaths {
     int convert_to_32_bit_cost(Cost cost) const;
     Cost convert_to_64_bit_cost(int cost) const;
 
-    Cost get_h_value(int state_id) const;
-    void set_h_value(int state_id, Cost h);
     void mark_dirty(int state);
     void mark_orphaned_predecessors(
         const std::vector<Transitions> &in, int state);
 
 public:
-    explicit ShortestPaths(const std::vector<int> &costs, bool debug);
+    ShortestPaths(const std::vector<int> &costs, bool debug);
 
     std::unique_ptr<Solution> extract_solution_from_shortest_path_tree(
         int init_id,

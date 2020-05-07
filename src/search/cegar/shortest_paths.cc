@@ -97,21 +97,14 @@ unique_ptr<Solution> ShortestPaths::extract_solution_from_shortest_path_tree(
 }
 
 void ShortestPaths::mark_dirty(int state) {
+    if (debug) {
+        cout << "Mark " << state << " as dirty" << endl;
+    }
     goal_distances[state] = DIRTY;
     // Previous shortest path is invalid now.
     shortest_path[state] = Transition();
-    assert(find(dirty_states.begin(), dirty_states.end(), state) == dirty_states.end());
+    assert(!count(dirty_states.begin(), dirty_states.end(), state));
     dirty_states.push_back(state);
-}
-
-Cost ShortestPaths::get_h_value(int state_id) const {
-    assert(utils::in_bounds(state_id, goal_distances));
-    return goal_distances[state_id];
-}
-
-void ShortestPaths::set_h_value(int state_id, Cost h) {
-    assert(utils::in_bounds(state_id, goal_distances));
-    goal_distances[state_id] = h;
 }
 
 void ShortestPaths::mark_orphaned_predecessors(
@@ -185,8 +178,8 @@ void ShortestPaths::dijkstra_from_orphans(
             Transition &t = shortest_path[u];
             if (t.target_id == v &&
                 operator_costs[op] == operator_costs[t.op_id]) {
-                assert(operator_costs[op] == operator_costs[t.op_id]);
                 t = Transition(op, state);
+                break;
             }
         }
     }
@@ -210,6 +203,10 @@ void ShortestPaths::dijkstra_from_orphans(
 
         while (!candidate_queue.empty()) {
             int state = candidate_queue.pop().second;
+            if (debug) {
+                cout << "Try to reconnect " << state
+                     << " with h=" << goal_distances[state] << endl;
+            }
             assert(goal_distances[state] != INF_COSTS);
             assert(goal_distances[state] != DIRTY);
             bool reconnected = false;
@@ -219,6 +216,7 @@ void ShortestPaths::dijkstra_from_orphans(
                 int op_id = t.op_id;
                 if (goal_distances[succ] != DIRTY &&
                     goal_distances[succ] != INF_COSTS &&
+                    operator_costs[op_id] != INF_COSTS &&
                     goal_distances[succ] + operator_costs[op_id]
                     == goal_distances[state]) {
                     if (debug) {
@@ -235,6 +233,9 @@ void ShortestPaths::dijkstra_from_orphans(
                     int prev = t.target_id;
                     if (goal_distances[prev] != DIRTY &&
                         shortest_path[prev].target_id == state) {
+                        if (debug) {
+                            cout << "Add " << prev << " to candidate queue" << endl;
+                        }
                         candidate_queue.push(goal_distances[prev], prev);
                     }
                 }
@@ -255,7 +256,7 @@ void ShortestPaths::dijkstra_from_orphans(
 #ifndef NDEBUG
     for (int i = 0; i < num_states; ++i) {
         if (goal_distances[i] == DIRTY) {
-            assert(find(dirty_states.begin(), dirty_states.end(), i) != dirty_states.end());
+            assert(count(dirty_states.begin(), dirty_states.end(), i) == 1);
         }
     }
 #endif
@@ -279,12 +280,12 @@ void ShortestPaths::dijkstra_from_orphans(
         for (const Transition &t : out[state]) {
             int succ = t.target_id;
             int op_id = t.op_id;
-            Cost cost = operator_costs[op_id];
-            assert(cost != INF_COSTS);
-
             if (goal_distances[succ] != DIRTY) {
                 Cost succ_dist = goal_distances[succ];
-                Cost new_dist = (succ_dist < INF_COSTS) ? (cost + succ_dist) : INF_COSTS;
+                Cost cost = operator_costs[op_id];
+                assert(cost != INF_COSTS);  // TODO: valid assertion?
+                Cost new_dist = (cost != INF_COSTS && succ_dist != INF_COSTS)
+                    ? (cost + succ_dist) : INF_COSTS;
                 if (new_dist < min_dist) {
                     min_dist = new_dist;
                     shortest_path[state] = Transition(op_id, succ);
