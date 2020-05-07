@@ -55,7 +55,7 @@ class ShortestPaths {
     static const Cost INF_COSTS;
 
     const bool debug;
-    bool task_has_zero_costs;
+    const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;
 
     // Keep data structures around to avoid reallocating them.
