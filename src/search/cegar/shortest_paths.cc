@@ -179,7 +179,6 @@ void ShortestPaths::dijkstra_from_orphans(
             if (t.target_id == v &&
                 operator_costs[op] == operator_costs[t.op_id]) {
                 t = Transition(op, state);
-                break;
             }
         }
     }
