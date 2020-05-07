@@ -62,6 +62,7 @@ class ShortestPaths {
     HeapQueue candidate_queue;
     HeapQueue open_queue;
     std::vector<Cost> goal_distances;
+    std::vector<bool> dirty_candidate;
     std::vector<int> dirty_states;
     using ShortestPathTree = std::vector<Transition>;
     ShortestPathTree shortest_path;

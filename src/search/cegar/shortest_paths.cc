@@ -198,7 +198,11 @@ void ShortestPaths::dijkstra_from_orphans(
           orphaned and push its SPT-children (who have strictly larger h-values
           due to no 0-cost operators) into the candidate queue.
         */
-        candidate_queue.clear();
+        assert(candidate_queue.empty());
+        assert(!count(dirty_candidate.begin(), dirty_candidate.end(), true));
+
+        dirty_candidate.resize(num_states, false);
+        dirty_candidate[v1] = true;
         candidate_queue.push(goal_distances[v1], v1);
 
         while (!candidate_queue.empty()) {
@@ -207,6 +211,7 @@ void ShortestPaths::dijkstra_from_orphans(
                 cout << "Try to reconnect " << state
                      << " with h=" << goal_distances[state] << endl;
             }
+            assert(dirty_candidate[state]);
             assert(goal_distances[state] != INF_COSTS);
             assert(goal_distances[state] != DIRTY);
             bool reconnected = false;
@@ -231,15 +236,18 @@ void ShortestPaths::dijkstra_from_orphans(
                 mark_dirty(state);
                 for (const Transition &t : in[state]) {
                     int prev = t.target_id;
-                    if (goal_distances[prev] != DIRTY &&
+                    if (!dirty_candidate[prev] &&
+                        goal_distances[prev] != DIRTY &&
                         shortest_path[prev].target_id == state) {
                         if (debug) {
                             cout << "Add " << prev << " to candidate queue" << endl;
                         }
+                        dirty_candidate[prev] = true;
                         candidate_queue.push(goal_distances[prev], prev);
                     }
                 }
             }
+            dirty_candidate[state] = false;
         }
     } else {
         // v1 and all its predecessors are orphaned.
