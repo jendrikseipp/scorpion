@@ -48,6 +48,11 @@ ShortestPaths::ShortestPaths(const vector<int> &costs, bool debug)
     }
 }
 
+Cost ShortestPaths::add_costs(Cost a, Cost b) {
+    assert(a != DIRTY && b != DIRTY);
+    return (a == INF_COSTS || b == INF_COSTS) ? INF_COSTS : a + b;
+}
+
 int ShortestPaths::convert_to_32_bit_cost(Cost cost) const {
     assert(cost != DIRTY);
     if (cost == INF_COSTS) {
@@ -219,9 +224,7 @@ void ShortestPaths::dijkstra_from_orphans(
                 int succ = t.target_id;
                 int op_id = t.op_id;
                 if (goal_distances[succ] != DIRTY &&
-                    goal_distances[succ] != INF_COSTS &&
-                    operator_costs[op_id] != INF_COSTS &&
-                    goal_distances[succ] + operator_costs[op_id]
+                    add_costs(goal_distances[succ], operator_costs[op_id])
                     == goal_distances[state]) {
                     if (debug) {
                         cout << "Reconnect " << state << " to " << succ << " via " << op_id << endl;
@@ -290,9 +293,7 @@ void ShortestPaths::dijkstra_from_orphans(
             if (goal_distances[succ] != DIRTY) {
                 Cost succ_dist = goal_distances[succ];
                 Cost cost = operator_costs[op_id];
-                assert(cost != INF_COSTS);  // TODO: valid assertion?
-                Cost new_dist = (cost != INF_COSTS && succ_dist != INF_COSTS)
-                    ? (cost + succ_dist) : INF_COSTS;
+                Cost new_dist = add_costs(cost, succ_dist);
                 if (new_dist < min_dist) {
                     min_dist = new_dist;
                     shortest_path[state] = Transition(op_id, succ);
@@ -318,8 +319,7 @@ void ShortestPaths::dijkstra_from_orphans(
             int succ = t.target_id;
             int op_id = t.op_id;
             Cost cost = operator_costs[op_id];
-            assert(cost != INF_COSTS);
-            Cost succ_g = cost + g;
+            Cost succ_g = add_costs(cost, g);
 
             if (goal_distances[succ] == DIRTY || succ_g < goal_distances[succ]) {
                 goal_distances[succ] = succ_g;
@@ -357,7 +357,7 @@ void ShortestPaths::full_dijkstra(
             int succ_id = t.target_id;
             int op_id = t.op_id;
             Cost op_cost = operator_costs[op_id];
-            Cost succ_g = (op_cost == INF_COSTS) ? INF_COSTS : g + op_cost;
+            Cost succ_g = add_costs(g, op_cost);
             if (succ_g < goal_distances[succ_id]) {
                 goal_distances[succ_id] = succ_g;
                 shortest_path[succ_id] = Transition(op_id, state_id);
@@ -401,7 +401,7 @@ bool ShortestPaths::test_distances(
             }
             assert(count(out[i].begin(), out[i].end(), t) == 1);
             assert(goal_distances[i] ==
-                   operator_costs[t.op_id] + goal_distances[t.target_id]);
+                   add_costs(operator_costs[t.op_id], goal_distances[t.target_id]));
         }
     }
 

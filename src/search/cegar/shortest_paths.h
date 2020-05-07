@@ -67,6 +67,7 @@ class ShortestPaths {
     using ShortestPathTree = std::vector<Transition>;
     ShortestPathTree shortest_path;
 
+    static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
     Cost convert_to_64_bit_cost(int cost) const;
 
