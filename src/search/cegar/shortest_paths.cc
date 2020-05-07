@@ -175,10 +175,10 @@ void ShortestPaths::dijkstra_from_orphans(
         for (const Transition &incoming : in[state]) {
             int u = incoming.target_id;
             int op = incoming.op_id;
-            Transition &t = shortest_path[u];
-            if (t.target_id == v &&
-                operator_costs[op] == operator_costs[t.op_id]) {
-                t = Transition(op, state);
+            Transition &sp = shortest_path[u];
+            if (sp.target_id == v &&
+                operator_costs[op] == operator_costs[sp.op_id]) {
+                sp = Transition(op, state);
             }
         }
     }
@@ -396,13 +396,10 @@ bool ShortestPaths::test_distances(
                 cout << "SP: " << t << endl;
             }
             assert(t.is_defined());
-            assert(any_of(out[i].begin(), out[i].end(),
-                          [this, &t](const Transition &other) {
-                              if (debug) {
-                                  cout << other << endl;
-                              }
-                              return t == other;
-                          }));
+            if (debug) {
+                cout << "Outgoing transitions: " << out[i] << endl;
+            }
+            assert(count(out[i].begin(), out[i].end(), t) == 1);
             assert(goal_distances[i] ==
                    operator_costs[t.op_id] + goal_distances[t.target_id]);
         }
