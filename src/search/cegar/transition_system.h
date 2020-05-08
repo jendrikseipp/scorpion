@@ -65,6 +65,7 @@ public:
     int get_num_loops() const;
 
     void print_statistics() const;
+    void dump() const;
 };
 }
 

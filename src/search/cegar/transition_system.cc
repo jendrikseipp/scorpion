@@ -7,6 +7,7 @@
 #include "../task_proxy.h"
 
 #include "../task_utils/task_properties.h"
+#include "../utils/logging.h"
 
 #include <algorithm>
 #include <map>
@@ -337,5 +338,14 @@ void TransitionSystem::print_statistics() const {
     assert(get_num_non_loops() == total_outgoing_transitions);
     cout << "Looping transitions: " << total_loops << endl;
     cout << "Non-looping transitions: " << total_outgoing_transitions << endl;
+}
+
+void TransitionSystem::dump() const {
+    for (int i = 0; i < get_num_states(); ++i) {
+        cout << "State " << i << endl;
+        cout << "  in: " << incoming[i] << endl;
+        cout << "  out: " << outgoing[i] << endl;
+        cout << "  loops: " << loops[i] << endl;
+    }
 }
 }
