@@ -82,9 +82,8 @@ pair<int, int> Abstraction::refine(
     int v2_id = get_num_states();
 
     // Ensure that the initial state always has state ID 0.
-    if (v1_id == init_id &&
-        find(wanted.begin(), wanted.end(),
-             concrete_initial_state[var].get_value()) != wanted.end()) {
+    if (v_id == init_id &&
+        count(wanted.begin(), wanted.end(), concrete_initial_state[var].get_value())) {
         swap(v1_id, v2_id);
     }
 
