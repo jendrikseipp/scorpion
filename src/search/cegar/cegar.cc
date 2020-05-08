@@ -215,6 +215,9 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         for (FactProxy goal : task_proxy.get_goals()) {
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
+            if (debug) {
+                dump_dot_graph(*abstraction);
+            }
             current = &abstraction->get_state(pair.second);
         }
         assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
