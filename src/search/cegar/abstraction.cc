@@ -1,6 +1,7 @@
 #include "abstraction.h"
 
 #include "abstract_state.h"
+#include "match_tree.h"
 #include "refinement_hierarchy.h"
 #include "transition.h"
 #include "transition_system.h"
@@ -26,6 +27,8 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
       refinement_hierarchy(utils::make_unique_ptr<RefinementHierarchy>(task)),
       debug(debug) {
     initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
+    match_tree = utils::make_unique_ptr<MatchTree>(
+        TaskProxy(*task).get_operators(), *refinement_hierarchy, debug);
 }
 
 Abstraction::~Abstraction() {
@@ -115,6 +118,10 @@ pair<int, int> Abstraction::refine(
     }
 
     transition_system->rewire(states, v_id, *v1, *v2, var);
+    match_tree->rewire(states, state, *v1, *v2, var);
+
+    transition_system->dump();
+    match_tree->dump();
 
     states.emplace_back();
     states[v1_id] = move(v1);

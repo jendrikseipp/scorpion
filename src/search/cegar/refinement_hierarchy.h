@@ -28,6 +28,8 @@ class Node;
   this structure a directed acyclic graph (instead of a tree).
 */
 class RefinementHierarchy {
+    friend class MatchTree;
+
     std::shared_ptr<AbstractTask> task;
     std::vector<Node> nodes;
 
@@ -52,6 +54,8 @@ public:
 
 
 class Node {
+    friend class MatchTree;
+
     /*
       While right_child is always the node of a (possibly split)
       abstract state, left_child may be a helper node. We add helper
@@ -91,7 +95,6 @@ public:
     }
 
     int get_state_id() const {
-        assert(!is_split());
         return state_id;
     }
 

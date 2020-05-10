@@ -12,6 +12,7 @@
 
 namespace cegar {
 class AbstractState;
+class MatchTree;
 class RefinementHierarchy;
 class TransitionSystem;
 
@@ -36,6 +37,8 @@ class Abstraction {
     /* DAG with inner nodes for all split states and leaves for all
        current states. */
     std::unique_ptr<RefinementHierarchy> refinement_hierarchy;
+
+    std::unique_ptr<MatchTree> match_tree;
 
     const bool debug;
 

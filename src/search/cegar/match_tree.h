@@ -9,12 +9,15 @@ struct FactPair;
 class OperatorsProxy;
 
 namespace cegar {
+class RefinementHierarchy;
+
 /*
   Rewire transitions after each split.
 */
 class MatchTree {
     const std::vector<std::vector<FactPair>> preconditions_by_operator;
     const std::vector<std::vector<FactPair>> postconditions_by_operator;
+    const RefinementHierarchy &refinement_hierarchy;
 
     // Transitions from and to other abstract states.
     std::vector<Transitions> incoming;
@@ -25,6 +28,8 @@ class MatchTree {
 
     int num_non_loops;
     int num_loops;
+
+    const bool debug;
 
     void enlarge_vectors_by_one();
 
@@ -38,26 +43,31 @@ class MatchTree {
     void add_loop(int state_id, int op_id);
 
     void rewire_incoming_transitions(
-        const Transitions &old_incoming, const AbstractStates &states,
-        int v_id, const AbstractState &v1, const AbstractState &v2, int var);
+        const AbstractStates &states, int v_id, const AbstractState &v1,
+        const AbstractState &v2, int var);
     void rewire_outgoing_transitions(
-        const Transitions &old_outgoing, const AbstractStates &states,
+        const AbstractStates &states,
         int v_id, const AbstractState &v1, const AbstractState &v2, int var);
     void rewire_loops(
-        const Loops &old_loops,
-        const AbstractState &v1, const AbstractState &v2, int var);
+        NodeID v_id, const AbstractState &v1, const AbstractState &v2, int var);
 
 public:
-    explicit MatchTree(const OperatorsProxy &ops);
+    MatchTree(
+        const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
+        bool debug);
 
     // Update transition system after v has been split for var into v1 and v2.
     void rewire(
-        const AbstractStates &states, int v_id,
+        const AbstractStates &states, const AbstractState &v,
         const AbstractState &v1, const AbstractState &v2, int var);
 
     const std::vector<Transitions> &get_incoming_transitions() const;
     const std::vector<Transitions> &get_outgoing_transitions() const;
     const std::vector<Loops> &get_loops() const;
+
+    void get_incoming_transitions(Transitions &transitions) const;
+    void get_outgoing_transitions(Transitions &transitions) const;
+    void get_loops(Loops &loops) const;
 
     int get_num_states() const;
     int get_num_operators() const;
