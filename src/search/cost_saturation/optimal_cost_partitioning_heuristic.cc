@@ -211,10 +211,11 @@ void OptimalCostPartitioningHeuristic::add_operator_cost_constraints(
     vector<lp::LPConstraint> &lp_constraints) {
     /*
       For o in operators add constraint
-      0 <= sum_{A in abstractions} operator_cost[A][o] <= cost(o)
+      (0 <= ) sum_{A in abstractions} operator_cost[A][o] <= cost(o)
     */
+    double min_cost = allow_negative_costs ? -lp_solver.get_infinity() : 0.;
     for (OperatorProxy op : task_proxy.get_operators()) {
-        lp_constraints.emplace_back(0., op.get_cost());
+        lp_constraints.emplace_back(min_cost, op.get_cost());
         lp::LPConstraint &constraint = lp_constraints.back();
         for (size_t id = 0; id < operator_cost_variables.size(); ++id) {
             int abstraction_col = operator_cost_variables[id][op.get_id()];
