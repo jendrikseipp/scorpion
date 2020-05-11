@@ -31,8 +31,8 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
-        static_cast<PickSplit>(opts.get<int>("pick")),
-        static_cast<HUpdateStrategy>(opts.get<int>("h_update")),
+        opts.get<PickSplit>("pick"),
+        opts.get<HUpdateStrategy>("h_update"),
         opts.get<int>("memory_padding"),
         *rng,
         opts.get<bool>("debug"));
@@ -135,7 +135,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     pick_strategies.push_back("MAX_REFINED");
     pick_strategies.push_back("MIN_HADD");
     pick_strategies.push_back("MAX_HADD");
-    parser.add_enum_option(
+    parser.add_enum_option<PickSplit>(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
     add_h_update_option(parser);
     parser.add_option<bool>(

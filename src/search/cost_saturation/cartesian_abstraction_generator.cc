@@ -103,7 +103,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_states(opts.get<int>("max_states")),
       max_transitions(opts.get<int>("max_transitions")),
       max_time(opts.get<double>("max_time")),
-      h_update(static_cast<cegar::HUpdateStrategy>(opts.get_enum("h_update"))),
+      h_update(opts.get<cegar::HUpdateStrategy>("h_update")),
       extra_memory_padding_mb(opts.get<int>("memory_padding")),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")),

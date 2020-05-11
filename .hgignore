@@ -1,4 +1,5 @@
 \.pyc$
+^.vscode/
 ^driver/.cache/v/cache/lastfailed$
 ^experiments/issue[0-9]*/data/
 ^experiments/issue[0-9]*/venv.*/
