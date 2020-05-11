@@ -105,11 +105,11 @@ void add_h_update_option(options::OptionParser &parser) {
     h_update.push_back("INCREMENTAL_HEURISTIC_SEARCH");
     h_update.push_back("OPTIMIZED_INCREMENTAL_UNINFORMED_SEARCH");
     h_update.push_back("OPTIMIZED_INCREMENTAL_HEURISTIC_SEARCH");
-    parser.add_enum_option(
+    parser.add_enum_option<HUpdateStrategy>(
         "h_update",
         h_update,
         "strategy for updating goal distances or distance estimates",
-        "COST_MINUS_G");
+        "DIJKSTRA_FROM_UNCONNECTED_ORPHANS");
 }
 
 void dump_dot_graph(const Abstraction &abstraction) {
