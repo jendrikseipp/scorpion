@@ -21,7 +21,7 @@ namespace cost_saturation {
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts)
     : Heuristic(opts),
-      lp_solver(lp::LPSolverType(opts.get_enum("lpsolver"))),
+      lp_solver(opts.get<lp::LPSolverType>("lpsolver")),
       allow_negative_costs(opts.get<bool>("allow_negative_costs")) {
     utils::Timer timer;
 
