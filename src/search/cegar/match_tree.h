@@ -39,6 +39,8 @@ class MatchTree {
     int get_precondition_value(int op_id, int var) const;
     int get_postcondition_value(int op_id, int var) const;
 
+    int get_state_id(NodeID node_id) const;
+
     void add_transition(int src_id, int op_id, int target_id);
     void add_loop(int state_id, int op_id);
 
@@ -61,13 +63,9 @@ public:
         const AbstractStates &states, const AbstractState &v,
         const AbstractState &v1, const AbstractState &v2, int var);
 
-    const std::vector<Transitions> &get_incoming_transitions() const;
-    const std::vector<Transitions> &get_outgoing_transitions() const;
+    Transitions get_incoming_transitions(const AbstractState &state) const;
+    Transitions get_outgoing_transitions(const AbstractState &state) const;
     const std::vector<Loops> &get_loops() const;
-
-    void get_incoming_transitions(Transitions &transitions) const;
-    void get_outgoing_transitions(Transitions &transitions) const;
-    void get_loops(Loops &loops) const;
 
     int get_num_states() const;
     int get_num_operators() const;

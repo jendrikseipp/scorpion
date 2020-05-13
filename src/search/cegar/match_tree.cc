@@ -99,6 +99,10 @@ int MatchTree::get_postcondition_value(int op_id, int var) const {
     return lookup_value(postconditions_by_operator[op_id], var);
 }
 
+int MatchTree::get_state_id(NodeID node_id) const {
+    return refinement_hierarchy.nodes[node_id].get_state_id();
+}
+
 void MatchTree::enlarge_vectors_by_one() {
     int new_num_states = get_num_states() + 1;
     outgoing.resize(new_num_states);
@@ -147,7 +151,7 @@ void MatchTree::rewire_incoming_transitions(
         int u_id = transition.target_id;
         // TODO: only remove invalid transitions.
         remove_transition(outgoing[u_id], op_id, v_id);
-        const AbstractState &u = *states[refinement_hierarchy.nodes[u_id].get_state_id()];
+        const AbstractState &u = *states[get_state_id(u_id)];
         int post = get_postcondition_value(op_id, var);
         if (post == UNDEFINED) {
             // op has no precondition and no effect on var.
@@ -189,7 +193,7 @@ void MatchTree::rewire_outgoing_transitions(
         int w_id = transition.target_id;
         // TODO: only remove invalid transitions.
         remove_transition(incoming[w_id], op_id, v_id);
-        const AbstractState &w = *states[refinement_hierarchy.nodes[w_id].get_state_id()];
+        const AbstractState &w = *states[get_state_id(w_id)];
         int pre = get_precondition_value(op_id, var);
         int post = get_postcondition_value(op_id, var);
         if (post == UNDEFINED) {
@@ -357,12 +361,70 @@ void MatchTree::rewire(
     rewire_loops(v_node_id, v1, v2, var);
 }
 
-const vector<Transitions> &MatchTree::get_incoming_transitions() const {
-    return incoming;
+Transitions MatchTree::get_incoming_transitions(const AbstractState &state) const {
+    NodeID state_node_id = state.get_node_id();
+
+    // Collect transitions from inner (and leave) nodes.
+    Transitions transitions_from_nodes;
+    refinement_hierarchy.for_each_visited_node(
+        state, [&](const NodeID &node_id) {
+            for (const Transition &t : incoming[node_id]) {
+                transitions_from_nodes.push_back(t);
+            }
+        });
+    if (debug) {
+        cout << "Transitions from (inner) nodes: " << transitions_from_nodes << endl;
+    }
+
+    // Expand inner nodes to leave nodes and then convert to state IDs.
+    Transitions transitions_from_states;
+    for (const Transition &t : transitions_from_nodes) {
+        refinement_hierarchy.for_all_leaves(
+            t.target_id, [&](NodeID leave_id) {
+                // Filter self-loops.
+                if (leave_id != state_node_id) {
+                    transitions_from_states.emplace_back(t.op_id, get_state_id(leave_id));
+                }
+            });
+    }
+    if (debug) {
+        cout << "Transitions from states: " << transitions_from_states << endl;
+    }
+
+    return transitions_from_states;
 }
 
-const vector<Transitions> &MatchTree::get_outgoing_transitions() const {
-    return outgoing;
+Transitions MatchTree::get_outgoing_transitions(const AbstractState &state) const {
+    NodeID state_node_id = state.get_node_id();
+
+    // Collect transitions to inner (and leave) nodes.
+    Transitions transitions_to_nodes;
+    refinement_hierarchy.for_each_visited_node(
+        state, [&](const NodeID &node_id) {
+            for (const Transition &t : outgoing[node_id]) {
+                transitions_to_nodes.push_back(t);
+            }
+        });
+    if (debug) {
+        cout << "Transitions to (inner) nodes: " << transitions_to_nodes << endl;
+    }
+
+    // Expand inner nodes to leave nodes and then convert to state IDs.
+    Transitions transitions_to_states;
+    for (const Transition &t : transitions_to_nodes) {
+        refinement_hierarchy.for_all_leaves(
+            t.target_id, [&](NodeID leave_id) {
+                // Filter self-loops.
+                if (leave_id != state_node_id) {
+                    transitions_to_states.emplace_back(t.op_id, get_state_id(leave_id));
+                }
+            });
+    }
+    if (debug) {
+        cout << "Transitions to states: " << transitions_to_states << endl;
+    }
+
+    return transitions_to_states;
 }
 
 const vector<Loops> &MatchTree::get_loops() const {
@@ -406,7 +468,7 @@ void MatchTree::print_statistics() const {
 void MatchTree::dump() const {
     for (int i = 0; i < get_num_states(); ++i) {
         cout << "Node " << i << endl;
-        cout << "  ID: " << refinement_hierarchy.nodes[i].get_state_id() << endl;
+        cout << "  ID: " << get_state_id(i) << endl;
         cout << "  in: " << incoming[i] << endl;
         cout << "  out: " << outgoing[i] << endl;
         cout << "  loops: " << loops[i] << endl;

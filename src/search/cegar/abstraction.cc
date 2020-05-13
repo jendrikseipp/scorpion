@@ -130,6 +130,24 @@ pair<int, int> Abstraction::refine(
     assert(init_id == 0);
     assert(get_initial_state().includes(concrete_initial_state));
 
+    refinement_hierarchy->dump();
+
+    for (int state = 0; state < get_num_states(); ++state) {
+        cout << "State " << state << ", node: " << states[state]->get_node_id() << endl;
+
+        Transitions ts_out = transition_system->get_outgoing_transitions()[state];
+        Transitions mt_out = match_tree->get_outgoing_transitions(*states[state]);
+        cout << "  TS out: " << ts_out << endl;
+        cout << "  MT out: " << mt_out << endl;
+        assert(ts_out == mt_out);
+
+        Transitions ts_in = transition_system->get_incoming_transitions()[state];
+        Transitions mt_in = match_tree->get_incoming_transitions(*states[state]);
+        cout << "  TS in: " << ts_in << endl;
+        cout << "  MT in: " << mt_in << endl;
+        assert(ts_in == mt_in);
+    }
+
     return make_pair(v1_id, v2_id);
 }
 

@@ -1,6 +1,7 @@
 #ifndef CEGAR_REFINEMENT_HIERARCHY_H
 #define CEGAR_REFINEMENT_HIERARCHY_H
 
+#include "abstract_state.h"
 #include "types.h"
 
 #include <cassert>
@@ -14,6 +15,15 @@ class State;
 
 namespace cegar {
 class Node;
+
+struct Siblings {
+    NodeID correct_child;
+    NodeID other_child;
+
+    Siblings(NodeID correct_child, NodeID other_child)
+        : correct_child(correct_child), other_child(other_child) {
+    }
+};
 
 /*
   This class stores the refinement hierarchy of a Cartesian
@@ -50,11 +60,23 @@ public:
         int left_state_id, int right_state_id);
 
     int get_abstract_state_id(const State &state) const;
+
+    template<typename Callback>
+    void for_each_visited_node(const AbstractState &state, const Callback &callback) const;
+
+    template<typename Callback>
+    void for_each_visited_sibling_pair(const AbstractState &state, const Callback &callback) const;
+
+    template<typename Callback>
+    void for_all_leaves(NodeID node_id, const Callback &callback) const;
+
+    void dump(int level = 0, NodeID id = 0) const;
 };
 
 
 class Node {
     friend class MatchTree;
+    friend class RefinementHierarchy;
 
     /*
       While right_child is always the node of a (possibly split)
@@ -94,12 +116,55 @@ public:
         return left_child;
     }
 
+    Siblings get_children(const AbstractState &state) const;
+
     int get_state_id() const {
         return state_id;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Node &node);
 };
+
+template<typename Callback>
+void RefinementHierarchy::for_each_visited_node(
+    const AbstractState &state, const Callback &callback) const {
+    // TODO: ignore helper nodes.
+    NodeID state_node_id = state.get_node_id();
+    NodeID node_id = 0;
+    while (true) {
+        callback(node_id);
+        if (node_id == state_node_id) {
+            break;
+        }
+        node_id = nodes[node_id].get_children(state).correct_child;
+    }
+}
+
+template<typename Callback>
+void RefinementHierarchy::for_each_visited_sibling_pair(
+    const AbstractState &state, const Callback &callback) const {
+    // TODO: ignore helper nodes.
+    NodeID state_node_id = state.get_node_id();
+    NodeID node_id = 0;
+    while (node_id != state_node_id) {
+        Siblings siblings = nodes[node_id].get_children(state);
+        callback(siblings);
+        node_id = siblings.correct_child;
+    }
+}
+
+template<typename Callback>
+void RefinementHierarchy::for_all_leaves(NodeID node_id, const Callback &callback) const {
+    // TODO: ignore helper nodes.
+    // TODO: turn into while-loop.
+    Node node = nodes[node_id];
+    if (node.is_split()) {
+        for_all_leaves(node.left_child, callback);
+        for_all_leaves(node.right_child, callback);
+    } else {
+        callback(node_id);
+    }
+}
 }
 
 #endif
