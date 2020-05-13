@@ -135,7 +135,7 @@ void MatchTree::add_loop(int state_id, int op_id) {
 }
 
 void MatchTree::rewire_incoming_transitions(
-    const AbstractStates &states, int v_id,
+    const CartesianSets &cartesian_sets, int v_id,
     const AbstractState &v1, const AbstractState &v2, int var) {
     /* State v has been split into v1 and v2. Now for all transitions
        u->v we need to add transitions u->v1, u->v2, or both. */
@@ -151,12 +151,12 @@ void MatchTree::rewire_incoming_transitions(
         int u_id = transition.target_id;
         // TODO: only remove invalid transitions.
         remove_transition(outgoing[u_id], op_id, v_id);
-        const AbstractState &u = *states[get_state_id(u_id)];
+        const CartesianSet &u = *cartesian_sets[u_id];
         int post = get_postcondition_value(op_id, var);
         if (post == UNDEFINED) {
             // op has no precondition and no effect on var.
-            bool u_and_v1_intersect = u.domain_subsets_intersect(v1, var);
-            bool u_and_v2_intersect = u.domain_subsets_intersect(v2, var);
+            bool u_and_v1_intersect = v1.domain_subsets_intersect(u, var);
+            bool u_and_v2_intersect = v2.domain_subsets_intersect(u, var);
             if (u_and_v1_intersect && u_and_v2_intersect) {
                 add_transition(u_id, op_id, v_id);
             } else if (u_and_v1_intersect) {
@@ -177,7 +177,7 @@ void MatchTree::rewire_incoming_transitions(
 }
 
 void MatchTree::rewire_outgoing_transitions(
-    const AbstractStates &states, NodeID v_id,
+    const CartesianSets &cartesian_sets, NodeID v_id,
     const AbstractState &v1, const AbstractState &v2, int var) {
     /* State v has been split into v1 and v2. Now for all transitions
        v->w we need to add transitions v1->w, v2->w, or both. */
@@ -193,7 +193,7 @@ void MatchTree::rewire_outgoing_transitions(
         int w_id = transition.target_id;
         // TODO: only remove invalid transitions.
         remove_transition(incoming[w_id], op_id, v_id);
-        const AbstractState &w = *states[get_state_id(w_id)];
+        const CartesianSet &w = *cartesian_sets[w_id];
         int pre = get_precondition_value(op_id, var);
         int post = get_postcondition_value(op_id, var);
         if (post == UNDEFINED) {
@@ -281,7 +281,7 @@ void MatchTree::rewire_loops(
 }
 
 void MatchTree::rewire(
-    const AbstractStates &states, const AbstractState &v,
+    const CartesianSets &cartesian_sets, const AbstractState &v,
     const AbstractState &v1, const AbstractState &v2, int var) {
     NodeID v_node_id = v.get_node_id();
     NodeID node_id = 0;
@@ -356,8 +356,8 @@ void MatchTree::rewire(
     enlarge_vectors_by_one();
     enlarge_vectors_by_one();
 
-    rewire_incoming_transitions(states, v_node_id, v1, v2, var);
-    rewire_outgoing_transitions(states, v_node_id, v1, v2, var);
+    rewire_incoming_transitions(cartesian_sets, v_node_id, v1, v2, var);
+    rewire_outgoing_transitions(cartesian_sets, v_node_id, v1, v2, var);
     rewire_loops(v_node_id, v1, v2, var);
 }
 
@@ -383,7 +383,9 @@ Transitions MatchTree::get_incoming_transitions(const AbstractState &state) cons
             t.target_id, [&](NodeID leave_id) {
                 // Filter self-loops.
                 if (leave_id != state_node_id) {
-                    transitions_from_states.emplace_back(t.op_id, get_state_id(leave_id));
+                    int state_id = get_state_id(leave_id);
+                    assert(state_id != UNDEFINED);
+                    transitions_from_states.emplace_back(t.op_id, state_id);
                 }
             });
     }
@@ -416,7 +418,9 @@ Transitions MatchTree::get_outgoing_transitions(const AbstractState &state) cons
             t.target_id, [&](NodeID leave_id) {
                 // Filter self-loops.
                 if (leave_id != state_node_id) {
-                    transitions_to_states.emplace_back(t.op_id, get_state_id(leave_id));
+                    int state_id = get_state_id(leave_id);
+                    assert(state_id != UNDEFINED);
+                    transitions_to_states.emplace_back(t.op_id, state_id);
                 }
             });
     }

@@ -45,10 +45,10 @@ class MatchTree {
     void add_loop(int state_id, int op_id);
 
     void rewire_incoming_transitions(
-        const AbstractStates &states, int v_id, const AbstractState &v1,
+        const CartesianSets &cartesian_sets, int v_id, const AbstractState &v1,
         const AbstractState &v2, int var);
     void rewire_outgoing_transitions(
-        const AbstractStates &states,
+        const CartesianSets &cartesian_sets,
         int v_id, const AbstractState &v1, const AbstractState &v2, int var);
     void rewire_loops(
         NodeID v_id, const AbstractState &v1, const AbstractState &v2, int var);
@@ -60,7 +60,7 @@ public:
 
     // Update transition system after v has been split for var into v1 and v2.
     void rewire(
-        const AbstractStates &states, const AbstractState &v,
+        const CartesianSets &cartesian_sets, const AbstractState &v,
         const AbstractState &v1, const AbstractState &v2, int var);
 
     Transitions get_incoming_transitions(const AbstractState &state) const;

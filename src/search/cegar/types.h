@@ -9,6 +9,7 @@
 
 namespace cegar {
 class AbstractState;
+class CartesianSet;
 struct Transition;
 
 enum class HUpdateStrategy {
@@ -17,6 +18,7 @@ enum class HUpdateStrategy {
 };
 
 using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
+using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;
 // TODO: Store goals IDs in vector once we no longer use A* search.
 using Goals = std::unordered_set<int>;
 using NodeID = int;

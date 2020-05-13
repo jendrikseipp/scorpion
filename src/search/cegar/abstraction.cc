@@ -72,6 +72,7 @@ void Abstraction::initialize_trivial_abstraction(const vector<int> &domain_sizes
     init_id = init_state->get_id();
     goals.insert(init_state->get_id());
     states.push_back(move(init_state));
+    cartesian_sets.push_back(utils::make_unique_ptr<CartesianSet>(domain_sizes));
 }
 
 pair<int, int> Abstraction::refine(
@@ -97,6 +98,10 @@ pair<int, int> Abstraction::refine(
     pair<CartesianSet, CartesianSet> cartesian_sets =
         state.split_domain(var, wanted);
 
+    this->cartesian_sets.resize(max(node_ids.first, node_ids.second) + 1);
+    this->cartesian_sets[node_ids.first] = utils::make_unique_ptr<CartesianSet>(cartesian_sets.first);
+    this->cartesian_sets[node_ids.second] = utils::make_unique_ptr<CartesianSet>(cartesian_sets.second);
+
     unique_ptr<AbstractState> v1 = utils::make_unique_ptr<AbstractState>(
         v1_id, node_ids.first, move(cartesian_sets.first));
     unique_ptr<AbstractState> v2 = utils::make_unique_ptr<AbstractState>(
@@ -118,7 +123,7 @@ pair<int, int> Abstraction::refine(
     }
 
     transition_system->rewire(states, v_id, *v1, *v2, var);
-    match_tree->rewire(states, state, *v1, *v2, var);
+    match_tree->rewire(this->cartesian_sets, state, *v1, *v2, var);
 
     transition_system->dump();
     match_tree->dump();

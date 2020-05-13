@@ -29,6 +29,7 @@ class Abstraction {
 
     // All (as of yet unsplit) abstract states.
     AbstractStates states;
+    CartesianSets cartesian_sets;
     // State ID of abstract initial state.
     int init_id;
     // Abstract goal states. Only landmark tasks can have multiple goal states.

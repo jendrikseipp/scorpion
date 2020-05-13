@@ -33,6 +33,7 @@ public:
     AbstractState(const AbstractState &) = delete;
 
     bool domain_subsets_intersect(const AbstractState &other, int var) const;
+    bool domain_subsets_intersect(const CartesianSet &other, int var) const;
 
     // Return the size of var's abstract domain for this state.
     int count(int var) const;
