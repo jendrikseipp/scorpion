@@ -25,6 +25,16 @@ struct Siblings {
     }
 };
 
+struct Family {
+    NodeID parent;
+    NodeID correct_child;
+    NodeID other_child;
+
+    Family(NodeID parent, NodeID correct_child, NodeID other_child)
+        : parent(parent), correct_child(correct_child), other_child(other_child) {
+    }
+};
+
 /*
   This class stores the refinement hierarchy of a Cartesian
   abstraction. The hierarchy forms a DAG with inner nodes for each
@@ -65,7 +75,7 @@ public:
     void for_each_visited_node(const AbstractState &state, const Callback &callback) const;
 
     template<typename Callback>
-    void for_each_visited_sibling_pair(const AbstractState &state, const Callback &callback) const;
+    void for_each_visited_family(const AbstractState &state, const Callback &callback) const;
 
     template<typename Callback>
     void for_all_leaves(NodeID node_id, const Callback &callback) const;
@@ -141,14 +151,15 @@ void RefinementHierarchy::for_each_visited_node(
 }
 
 template<typename Callback>
-void RefinementHierarchy::for_each_visited_sibling_pair(
+void RefinementHierarchy::for_each_visited_family(
     const AbstractState &state, const Callback &callback) const {
     // TODO: ignore helper nodes.
     NodeID state_node_id = state.get_node_id();
     NodeID node_id = 0;
     while (node_id != state_node_id) {
         Siblings siblings = nodes[node_id].get_children(state);
-        callback(siblings);
+        Family family(node_id, siblings.correct_child, siblings.other_child);
+        callback(family);
         node_id = siblings.correct_child;
     }
 }

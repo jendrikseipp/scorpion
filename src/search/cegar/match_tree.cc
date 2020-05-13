@@ -283,79 +283,69 @@ void MatchTree::rewire_loops(
 void MatchTree::rewire(
     const CartesianSets &cartesian_sets, const AbstractState &v,
     const AbstractState &v1, const AbstractState &v2, int var) {
+    refinement_hierarchy.for_each_visited_family(
+        v, [&](const Family &family) {
+            NodeID node_id = family.parent;
+            NodeID v_ancestor_id = family.correct_child;
+            NodeID other_node_id = family.other_child;
+
+            Transitions &out = outgoing[node_id];
+            for (auto it = out.begin(); it != out.end();) {
+                Transition &t = *it;
+                // TODO: simplify this and compute lazily.
+                int post = get_postcondition_value(t.op_id, var);
+                int pre = get_precondition_value(t.op_id, var);
+                if (post == UNDEFINED) {
+                    ++it;
+                } else if (pre == UNDEFINED) {
+                    ++it;
+                } else {
+                    // TODO: use swap and pop or fill separate vector.
+                    it = out.erase(it);
+                    remove_transition(incoming[t.target_id], t.op_id, node_id);
+                    --num_non_loops;
+                    add_transition(v_ancestor_id, t.op_id, t.target_id);
+                    add_transition(other_node_id, t.op_id, t.target_id);
+                }
+            }
+
+            Transitions &in = incoming[node_id];
+            for (auto it = in.begin(); it != in.end();) {
+                Transition &t = *it;
+                NodeID u_id = t.target_id;
+                int post = get_postcondition_value(t.op_id, var);
+                if (post == UNDEFINED) {
+                    ++it;
+                } else {
+                    // TODO: use swap and pop or fill separate vector.
+                    it = in.erase(it);
+                    remove_transition(outgoing[u_id], t.op_id, node_id);
+                    --num_non_loops;
+                    add_transition(u_id, t.op_id, v_ancestor_id);
+                    add_transition(u_id, t.op_id, other_node_id);
+                }
+            }
+
+            for (auto it = loops[node_id].begin(); it != loops[node_id].end();) {
+                int op_id = *it;
+                int post = get_postcondition_value(op_id, var);
+                if (post == UNDEFINED) {
+                    ++it;
+                } else {
+                    // TODO: use swap and pop or fill separate vector.
+                    it = loops[node_id].erase(it);
+                    add_loop(v_ancestor_id, op_id);
+                    add_loop(other_node_id, op_id);
+                }
+            }
+
+            node_id = v_ancestor_id;
+        });
+
+    enlarge_vectors_by_one();
+    enlarge_vectors_by_one();
+
     NodeID v_node_id = v.get_node_id();
-    NodeID node_id = 0;
-    while (node_id != v_node_id) {
-        Node node = refinement_hierarchy.nodes[node_id];
-        int node_var = node.get_var();
-        int node_value = node.value;
-        NodeID v_ancestor_id = node.left_child;
-        NodeID other_node_id = node.right_child;
-        if (v.contains(node_var, node_value)) {
-            swap(v_ancestor_id, other_node_id);
-        }
-
-        if (debug) {
-            cout << "node: " << node_id << ", a: " << v_ancestor_id
-                 << ", b: " << other_node_id << endl;
-        }
-
-        Transitions &out = outgoing[node_id];
-        for (auto it = out.begin(); it != out.end();) {
-            Transition &t = *it;
-            // TODO: simplify this and compute lazily.
-            int post = get_postcondition_value(t.op_id, var);
-            int pre = get_precondition_value(t.op_id, var);
-            if (post == UNDEFINED) {
-                ++it;
-            } else if (pre == UNDEFINED) {
-                ++it;
-            } else {
-                // TODO: use swap and pop or fill separate vector.
-                it = out.erase(it);
-                remove_transition(incoming[t.target_id], t.op_id, node_id);
-                --num_non_loops;
-                add_transition(v_ancestor_id, t.op_id, t.target_id);
-                add_transition(other_node_id, t.op_id, t.target_id);
-            }
-        }
-
-        Transitions &in = incoming[node_id];
-        for (auto it = in.begin(); it != in.end();) {
-            Transition &t = *it;
-            NodeID u_id = t.target_id;
-            int post = get_postcondition_value(t.op_id, var);
-            if (post == UNDEFINED) {
-                ++it;
-            } else {
-                // TODO: use swap and pop or fill separate vector.
-                it = in.erase(it);
-                remove_transition(outgoing[u_id], t.op_id, node_id);
-                --num_non_loops;
-                add_transition(u_id, t.op_id, v_ancestor_id);
-                add_transition(u_id, t.op_id, other_node_id);
-            }
-        }
-
-        for (auto it = loops[node_id].begin(); it != loops[node_id].end();) {
-            int op_id = *it;
-            int post = get_postcondition_value(op_id, var);
-            if (post == UNDEFINED) {
-                ++it;
-            } else {
-                // TODO: use swap and pop or fill separate vector.
-                it = loops[node_id].erase(it);
-                add_loop(v_ancestor_id, op_id);
-                add_loop(other_node_id, op_id);
-            }
-        }
-
-        node_id = v_ancestor_id;
-    }
-
-    enlarge_vectors_by_one();
-    enlarge_vectors_by_one();
-
     rewire_incoming_transitions(cartesian_sets, v_node_id, v1, v2, var);
     rewire_outgoing_transitions(cartesian_sets, v_node_id, v1, v2, var);
     rewire_loops(v_node_id, v1, v2, var);
