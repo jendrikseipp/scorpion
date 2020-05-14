@@ -244,7 +244,8 @@ void MatchTree::rewire_loops(
             // op has no precondition on var --> it must start in v1 and v2.
             if (post == UNDEFINED) {
                 // op has no effect on var --> it must end in v1 and v2.
-                add_loop(v_id, op_id);
+                add_loop(v1_id, op_id);
+                add_loop(v2_id, op_id);
             } else if (v2.contains(var, post)) {
                 // op must end in v2.
                 add_transition(v_id, op_id, v2_id);
@@ -296,6 +297,8 @@ void MatchTree::rewire(
                 int post = get_postcondition_value(t.op_id, var);
                 int pre = get_precondition_value(t.op_id, var);
                 if (post == UNDEFINED) {
+                    assert(cartesian_sets[v_ancestor_id]->intersects(*cartesian_sets[t.target_id], var));
+                    assert(cartesian_sets[other_node_id]->intersects(*cartesian_sets[t.target_id], var));
                     ++it;
                 } else if (pre == UNDEFINED) {
                     ++it;
@@ -326,18 +329,7 @@ void MatchTree::rewire(
                 }
             }
 
-            for (auto it = loops[node_id].begin(); it != loops[node_id].end();) {
-                int op_id = *it;
-                int post = get_postcondition_value(op_id, var);
-                if (post == UNDEFINED) {
-                    ++it;
-                } else {
-                    // TODO: use swap and pop or fill separate vector.
-                    it = loops[node_id].erase(it);
-                    add_loop(v_ancestor_id, op_id);
-                    add_loop(other_node_id, op_id);
-                }
-            }
+            assert(loops[node_id].empty());
 
             node_id = v_ancestor_id;
         });

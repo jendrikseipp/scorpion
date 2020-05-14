@@ -98,6 +98,7 @@ pair<int, int> Abstraction::refine(
     pair<CartesianSet, CartesianSet> cartesian_sets =
         state.split_domain(var, wanted);
 
+    // TODO: store Cartesian sets only here and link to them from abstract states.
     this->cartesian_sets.resize(max(node_ids.first, node_ids.second) + 1);
     this->cartesian_sets[node_ids.first] = utils::make_unique_ptr<CartesianSet>(cartesian_sets.first);
     this->cartesian_sets[node_ids.second] = utils::make_unique_ptr<CartesianSet>(cartesian_sets.second);
