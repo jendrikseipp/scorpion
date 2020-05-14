@@ -89,6 +89,7 @@ MatchTree::MatchTree(
       num_loops(0),
       debug(debug) {
     add_loops_in_trivial_abstraction();
+    assert(is_consistent());
 }
 
 int MatchTree::get_precondition_value(int op_id, int var) const {
@@ -103,15 +104,42 @@ int MatchTree::get_state_id(NodeID node_id) const {
     return refinement_hierarchy.nodes[node_id].get_state_id();
 }
 
+bool MatchTree::is_consistent() const {
+    for (int node_id = 0; node_id < get_num_nodes(); ++node_id) {
+        for (const Transition &t : incoming[node_id]) {
+            assert(count(outgoing[t.target_id].begin(),
+                         outgoing[t.target_id].end(), Transition(t.op_id, node_id)) == 1);
+        }
+        for (const Transition &t : outgoing[node_id]) {
+            assert(count(incoming[t.target_id].begin(),
+                         incoming[t.target_id].end(), Transition(t.op_id, node_id)) == 1);
+        }
+    }
+
+    int total_incoming_transitions = 0;
+    int total_outgoing_transitions = 0;
+    int total_loops = 0;
+    for (int node_id = 0; node_id < get_num_nodes(); ++node_id) {
+        total_incoming_transitions += incoming[node_id].size();
+        total_outgoing_transitions += outgoing[node_id].size();
+        total_loops += loops[node_id].size();
+    }
+    assert(total_outgoing_transitions == total_incoming_transitions);
+    assert(get_num_loops() == total_loops);
+    assert(get_num_non_loops() == total_outgoing_transitions);
+
+    return true;
+}
+
 void MatchTree::enlarge_vectors_by_one() {
-    int new_num_states = get_num_states() + 1;
+    int new_num_states = get_num_nodes() + 1;
     outgoing.resize(new_num_states);
     incoming.resize(new_num_states);
     loops.resize(new_num_states);
 }
 
 void MatchTree::add_loops_in_trivial_abstraction() {
-    assert(get_num_states() == 0);
+    assert(get_num_nodes() == 0);
     enlarge_vectors_by_one();
     int init_id = 0;
     for (int i = 0; i < get_num_operators(); ++i) {
@@ -343,6 +371,7 @@ void MatchTree::rewire(
     rewire_incoming_transitions(cartesian_sets, v_node_id, v1, v2, var);
     rewire_outgoing_transitions(cartesian_sets, v_node_id, v1, v2, var);
     rewire_loops(v_node_id, v1, v2, var);
+    assert(is_consistent());
 }
 
 Transitions MatchTree::get_incoming_transitions(const AbstractState &state) const {
@@ -415,7 +444,7 @@ const vector<Loops> &MatchTree::get_loops() const {
     return loops;
 }
 
-int MatchTree::get_num_states() const {
+int MatchTree::get_num_nodes() const {
     assert(incoming.size() == outgoing.size());
     assert(loops.size() == outgoing.size());
     return outgoing.size();
@@ -437,10 +466,10 @@ void MatchTree::print_statistics() const {
     int total_incoming_transitions = 0;
     int total_outgoing_transitions = 0;
     int total_loops = 0;
-    for (int state_id = 0; state_id < get_num_states(); ++state_id) {
-        total_incoming_transitions += incoming[state_id].size();
-        total_outgoing_transitions += outgoing[state_id].size();
-        total_loops += loops[state_id].size();
+    for (int node_id = 0; node_id < get_num_nodes(); ++node_id) {
+        total_incoming_transitions += incoming[node_id].size();
+        total_outgoing_transitions += outgoing[node_id].size();
+        total_loops += loops[node_id].size();
     }
     assert(total_outgoing_transitions == total_incoming_transitions);
     assert(get_num_loops() == total_loops);
@@ -450,7 +479,7 @@ void MatchTree::print_statistics() const {
 }
 
 void MatchTree::dump() const {
-    for (int i = 0; i < get_num_states(); ++i) {
+    for (int i = 0; i < get_num_nodes(); ++i) {
         cout << "Node " << i << endl;
         cout << "  ID: " << get_state_id(i) << endl;
         cout << "  in: " << incoming[i] << endl;

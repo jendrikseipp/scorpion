@@ -31,6 +31,8 @@ class MatchTree {
 
     const bool debug;
 
+    bool is_consistent() const;
+
     void enlarge_vectors_by_one();
 
     // Add self-loops to single abstract state in trivial abstraction.
@@ -67,7 +69,7 @@ public:
     Transitions get_outgoing_transitions(const AbstractState &state) const;
     const std::vector<Loops> &get_loops() const;
 
-    int get_num_states() const;
+    int get_num_nodes() const;
     int get_num_operators() const;
     int get_num_non_loops() const;
     int get_num_loops() const;
