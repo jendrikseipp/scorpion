@@ -248,11 +248,13 @@ void MatchTree::rewire_loops(
                 add_loop(v2_id, op_id);
             } else if (v2.contains(var, post)) {
                 // op must end in v2.
-                add_transition(v_id, op_id, v2_id);
+                add_transition(v1_id, op_id, v2_id);
+                add_loop(v2_id, op_id);
             } else {
                 // op must end in v1.
                 assert(v1.contains(var, post));
-                add_transition(v_id, op_id, v1_id);
+                add_transition(v2_id, op_id, v1_id);
+                add_loop(v1_id, op_id);
             }
         } else if (v1.contains(var, pre)) {
             // op must start in v1.
