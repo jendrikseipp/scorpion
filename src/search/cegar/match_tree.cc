@@ -365,12 +365,10 @@ Transitions MatchTree::get_incoming_transitions(const AbstractState &state) cons
     for (const Transition &t : transitions_from_nodes) {
         refinement_hierarchy.for_all_leaves(
             t.target_id, [&](NodeID leave_id) {
-                // Filter self-loops.
-                if (leave_id != state_node_id) {
-                    int state_id = get_state_id(leave_id);
-                    assert(state_id != UNDEFINED);
-                    transitions_from_states.emplace_back(t.op_id, state_id);
-                }
+                assert(leave_id != state_node_id);
+                int state_id = get_state_id(leave_id);
+                assert(state_id != UNDEFINED);
+                transitions_from_states.emplace_back(t.op_id, state_id);
             });
     }
     if (debug) {
@@ -400,12 +398,10 @@ Transitions MatchTree::get_outgoing_transitions(const AbstractState &state) cons
     for (const Transition &t : transitions_to_nodes) {
         refinement_hierarchy.for_all_leaves(
             t.target_id, [&](NodeID leave_id) {
-                // Filter self-loops.
-                if (leave_id != state_node_id) {
-                    int state_id = get_state_id(leave_id);
-                    assert(state_id != UNDEFINED);
-                    transitions_to_states.emplace_back(t.op_id, state_id);
-                }
+                assert(leave_id != state_node_id);
+                int state_id = get_state_id(leave_id);
+                assert(state_id != UNDEFINED);
+                transitions_to_states.emplace_back(t.op_id, state_id);
             });
     }
     if (debug) {
