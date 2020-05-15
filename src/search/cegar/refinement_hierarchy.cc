@@ -98,8 +98,14 @@ void cegar::RefinementHierarchy::dump(int level, NodeID id) const {
     for (int i = 0; i < level; ++i) {
         cout << "  ";
     }
-    cout << id << endl;
     Node node = nodes[id];
+
+    cout << id;
+    if (node.is_split()) {
+        cout << " (" << node.var << "=" << node.value << ")";
+    }
+    cout << endl;
+
     if (node.is_split()) {
         ++level;
         dump(level, nodes[id].left_child);
