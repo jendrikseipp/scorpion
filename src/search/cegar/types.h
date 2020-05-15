@@ -21,8 +21,9 @@ using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
 using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;
 // TODO: Store goals IDs in vector once we no longer use A* search.
 using Goals = std::unordered_set<int>;
-using NodeID = int;
 using Loops = std::vector<int>;
+using NodeID = int;
+using Operators = std::vector<int>;
 using Solution = std::deque<Transition>;
 using Transitions = std::vector<Transition>;
 

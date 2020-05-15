@@ -124,7 +124,7 @@ pair<int, int> Abstraction::refine(
     }
 
     transition_system->rewire(states, v_id, *v1, *v2, var);
-    match_tree->rewire(this->cartesian_sets, state, *v1, *v2, var);
+    match_tree->split(this->cartesian_sets, state, var);
 
     transition_system->dump();
     match_tree->dump();
@@ -142,20 +142,24 @@ pair<int, int> Abstraction::refine(
         cout << "State " << state << ", node: " << states[state]->get_node_id() << endl;
 
         Transitions ts_out = transition_system->get_outgoing_transitions()[state];
-        Transitions mt_out = match_tree->get_outgoing_transitions(*states[state]);
+        Operators ops_out = match_tree->get_outgoing_operators(*states[state]);
+        Transitions mt_out;
         cout << "  TS out: " << ts_out << endl;
+        cout << "  Operators out: " << ops_out << endl;
         cout << "  MT out: " << mt_out << endl;
         sort(ts_out.begin(), ts_out.end());
         sort(mt_out.begin(), mt_out.end());
-        assert(ts_out == mt_out);
+        //assert(ts_out == mt_out);
 
         Transitions ts_in = transition_system->get_incoming_transitions()[state];
-        Transitions mt_in = match_tree->get_incoming_transitions(*states[state]);
+        Operators ops_in = match_tree->get_incoming_operators(*states[state]);
+        Transitions mt_in;
         cout << "  TS in: " << ts_in << endl;
+        cout << "  Operators in: " << ops_in << endl;
         cout << "  MT in: " << mt_in << endl;
         sort(ts_in.begin(), ts_in.end());
         sort(mt_in.begin(), mt_in.end());
-        assert(ts_in == mt_in);
+        //assert(ts_in == mt_in);
     }
 
     return make_pair(v1_id, v2_id);

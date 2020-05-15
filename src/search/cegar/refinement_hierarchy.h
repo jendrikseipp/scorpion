@@ -154,13 +154,14 @@ template<typename Callback>
 void RefinementHierarchy::for_each_visited_family(
     const AbstractState &state, const Callback &callback) const {
     // TODO: ignore helper nodes.
-    NodeID state_node_id = state.get_node_id();
     NodeID node_id = 0;
-    while (node_id != state_node_id) {
-        Siblings siblings = nodes[node_id].get_children(state);
+    Node node = nodes[node_id];
+    while (node.is_split()) {
+        Siblings siblings = node.get_children(state);
         Family family(node_id, siblings.correct_child, siblings.other_child);
         callback(family);
         node_id = siblings.correct_child;
+        node = nodes[node_id];
     }
 }
 
