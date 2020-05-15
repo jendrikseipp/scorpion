@@ -292,6 +292,20 @@ void TransitionSystem::rewire(
     rewire_incoming_transitions(old_incoming, states, v_id, v1, v2, var);
     rewire_outgoing_transitions(old_outgoing, states, v_id, v1, v2, var);
     rewire_loops(old_loops, v1, v2, var);
+
+#ifndef NDEBUG
+    // The states vector has not been updated yet.
+    for (auto state : {&v1, &v2}) {
+        int state_id = state->get_id();
+        for (const Transition &t : outgoing[state_id]) {
+            assert(all_of(preconditions_by_operator[t.op_id].begin(),
+                          preconditions_by_operator[t.op_id].end(),
+                          [&](const FactPair &fact) {
+                              return state->contains(fact.var, fact.value);
+                          }));
+        }
+    }
+#endif
 }
 
 const vector<Transitions> &TransitionSystem::get_incoming_transitions() const {

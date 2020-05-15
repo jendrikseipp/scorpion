@@ -78,7 +78,9 @@ public:
     void for_each_visited_family(const AbstractState &state, const Callback &callback) const;
 
     template<typename Callback>
-    void for_all_leaves(NodeID node_id, const Callback &callback) const;
+    void for_each_leaf(
+        const CartesianSets &all_cartesian_sets,
+        const CartesianSet &cartesian_set, const Callback &callback, NodeID node_id = 0) const;
 
     void dump(int level = 0, NodeID id = 0) const;
 };
@@ -166,13 +168,19 @@ void RefinementHierarchy::for_each_visited_family(
 }
 
 template<typename Callback>
-void RefinementHierarchy::for_all_leaves(NodeID node_id, const Callback &callback) const {
+void RefinementHierarchy::for_each_leaf(
+    const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set, const Callback &callback, NodeID node_id) const {
     // TODO: ignore helper nodes.
     // TODO: turn into while-loop.
     Node node = nodes[node_id];
     if (node.is_split()) {
-        for_all_leaves(node.left_child, callback);
-        for_all_leaves(node.right_child, callback);
+        // TODO: Can we use test() instead of intersects() here and in more places?
+        if (cartesian_set.intersects(*all_cartesian_sets[node.left_child], node.var)) {
+            for_each_leaf(all_cartesian_sets, cartesian_set, callback, node.left_child);
+        }
+        if (cartesian_set.intersects(*all_cartesian_sets[node.right_child], node.var)) {
+            for_each_leaf(all_cartesian_sets, cartesian_set, callback, node.right_child);
+        }
     } else {
         callback(node_id);
     }

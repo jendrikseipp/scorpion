@@ -37,6 +37,7 @@ void Node::split(int var, int value, NodeID left_child, NodeID right_child) {
 }
 
 Siblings Node::get_children(const AbstractState &state) const {
+    // This method assumes that node is an ancestor of state.
     NodeID state_ancestor_id = left_child;
     NodeID other_node_id = right_child;
     if (state.contains(var, value)) {

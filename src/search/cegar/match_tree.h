@@ -45,6 +45,9 @@ public:
     Operators get_incoming_operators(const AbstractState &state) const;
     Operators get_outgoing_operators(const AbstractState &state) const;
 
+    Transitions get_outgoing_transitions(
+        const CartesianSets &cartesian_sets, const AbstractState &state) const;
+
     int get_num_nodes() const;
     int get_num_operators() const;
 

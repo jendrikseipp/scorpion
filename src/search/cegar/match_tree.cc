@@ -188,6 +188,33 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     return operators;
 }
 
+Transitions MatchTree::get_outgoing_transitions(
+    const CartesianSets &cartesian_sets, const AbstractState &state) const {
+    Transitions transitions;
+    Operators ops = get_outgoing_operators(state);
+    for (int op_id : ops) {
+        CartesianSet dest = state.get_cartesian_set();
+        // Check that the operator is applicable.
+        cout << "Cartesian set " << dest << ", pre: " << preconditions_by_operator[op_id] << endl;
+        assert(all_of(preconditions_by_operator[op_id].begin(), preconditions_by_operator[op_id].end(),
+                      [&](const FactPair &fact) {return state.contains(fact.var, fact.value);}));
+        for (const FactPair &fact : postconditions_by_operator[op_id]) {
+            dest.set_single_value(fact.var, fact.value);
+        }
+        cout << "  apply " << op_id << " in " << state << " -> " << dest << endl;
+        refinement_hierarchy.for_each_leaf(
+            cartesian_sets, dest, [&](NodeID leaf_id) {
+                int dest_state_id = get_state_id(leaf_id);
+                // Filter self-loops.
+                // TODO: can we filter self-loops earlier?
+                if (dest_state_id != state.get_id()) {
+                    transitions.emplace_back(op_id, dest_state_id);
+                }
+            });
+    }
+    return transitions;
+}
+
 int MatchTree::get_num_nodes() const {
     assert(incoming.size() == outgoing.size());
     return outgoing.size();

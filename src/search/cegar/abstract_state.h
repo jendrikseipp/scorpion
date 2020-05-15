@@ -59,6 +59,10 @@ public:
 
     NodeID get_node_id() const;
 
+    const CartesianSet &get_cartesian_set() const {
+        return cartesian_set;
+    }
+
     friend std::ostream &operator<<(std::ostream &os, const AbstractState &state) {
         return os << "#" << state.get_id() << state.cartesian_set;
     }

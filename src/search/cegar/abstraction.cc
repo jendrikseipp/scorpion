@@ -143,13 +143,13 @@ pair<int, int> Abstraction::refine(
 
         Transitions ts_out = transition_system->get_outgoing_transitions()[state];
         Operators ops_out = match_tree->get_outgoing_operators(*states[state]);
-        Transitions mt_out;
+        Transitions mt_out = match_tree->get_outgoing_transitions(this->cartesian_sets, *states[state]);
         cout << "  TS out: " << ts_out << endl;
         cout << "  Operators out: " << ops_out << endl;
         cout << "  MT out: " << mt_out << endl;
         sort(ts_out.begin(), ts_out.end());
         sort(mt_out.begin(), mt_out.end());
-        //assert(ts_out == mt_out);
+        assert(ts_out == mt_out);
 
         Transitions ts_in = transition_system->get_incoming_transitions()[state];
         Operators ops_in = match_tree->get_incoming_operators(*states[state]);
