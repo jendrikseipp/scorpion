@@ -39,8 +39,6 @@ struct Family {
   this structure a directed acyclic graph (instead of a tree).
 */
 class RefinementHierarchy {
-    friend class MatchTree;
-
     std::shared_ptr<AbstractTask> task;
     std::vector<Node> nodes;
 
@@ -61,6 +59,7 @@ public:
         int left_state_id, int right_state_id);
 
     int get_abstract_state_id(const State &state) const;
+    int get_abstract_state_id(NodeID node_id) const;
 
     template<typename Callback>
     void for_each_visited_node(const AbstractState &state, const Callback &callback) const;
@@ -78,7 +77,6 @@ public:
 
 
 class Node {
-    friend class MatchTree;
     friend class RefinementHierarchy;
 
     /*

@@ -82,6 +82,10 @@ int RefinementHierarchy::get_abstract_state_id(const State &state) const {
     return nodes[get_node_id(subtask_state)].get_state_id();
 }
 
+int RefinementHierarchy::get_abstract_state_id(NodeID node_id) const {
+    return nodes[node_id].get_state_id();
+}
+
 void cegar::RefinementHierarchy::dump(int level, NodeID id) const {
     for (int i = 0; i < level; ++i) {
         cout << "  ";

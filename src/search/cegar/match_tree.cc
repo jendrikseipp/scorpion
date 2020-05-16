@@ -106,7 +106,7 @@ int MatchTree::get_postcondition_value(int op_id, int var) const {
 }
 
 int MatchTree::get_state_id(NodeID node_id) const {
-    return refinement_hierarchy.nodes[node_id].get_state_id();
+    return refinement_hierarchy.get_abstract_state_id(node_id);
 }
 
 void MatchTree::enlarge_vectors_by_one() {
