@@ -28,6 +28,22 @@ static vector<vector<FactPair>> get_preconditions_by_operator(
     return preconditions_by_operator;
 }
 
+static vector<vector<FactPair>> get_effects_by_operator(
+    const OperatorsProxy &ops) {
+    vector<vector<FactPair>> effects_by_operator;
+    effects_by_operator.reserve(ops.size());
+    for (OperatorProxy op : ops) {
+        vector<FactPair> effects;
+        effects.reserve(op.get_effects().size());
+        for (EffectProxy effect : op.get_effects()) {
+            effects.push_back(effect.get_fact().get_pair());
+        }
+        sort(effects.begin(), effects.end());
+        effects_by_operator.push_back(move(effects));
+    }
+    return effects_by_operator;
+}
+
 static vector<FactPair> get_postconditions(
     const OperatorProxy &op) {
     // Use map to obtain sorted postconditions.
@@ -74,6 +90,7 @@ MatchTree::MatchTree(
     const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
     bool debug)
     : preconditions_by_operator(get_preconditions_by_operator(ops)),
+      effects_by_operator(get_effects_by_operator(ops)),
       postconditions_by_operator(get_postconditions_by_operator(ops)),
       refinement_hierarchy(refinement_hierarchy),
       debug(debug) {
@@ -186,6 +203,32 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
             }
         });
     return operators;
+}
+
+Transitions MatchTree::get_incoming_transitions(
+    const CartesianSets &cartesian_sets, const AbstractState &state) const {
+    Transitions transitions;
+    Operators ops = get_incoming_operators(state);
+    for (int op_id : ops) {
+        CartesianSet regression = state.get_cartesian_set();
+        for (const FactPair &fact : effects_by_operator[op_id]) {
+            regression.add_all(fact.var);
+        }
+        for (const FactPair &fact : preconditions_by_operator[op_id]) {
+            regression.set_single_value(fact.var, fact.value);
+        }
+        cout << "  apply " << op_id << " in " << regression << " -> " << state << endl;
+        refinement_hierarchy.for_each_leaf(
+            cartesian_sets, regression, [&](NodeID leaf_id) {
+                int src_state_id = get_state_id(leaf_id);
+                // Filter self-loops.
+                // TODO: can we filter self-loops earlier?
+                if (src_state_id != state.get_id()) {
+                    transitions.emplace_back(op_id, src_state_id);
+                }
+            });
+    }
+    return transitions;
 }
 
 Transitions MatchTree::get_outgoing_transitions(

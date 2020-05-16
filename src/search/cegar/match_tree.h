@@ -16,6 +16,7 @@ class RefinementHierarchy;
 */
 class MatchTree {
     const std::vector<std::vector<FactPair>> preconditions_by_operator;
+    const std::vector<std::vector<FactPair>> effects_by_operator;
     const std::vector<std::vector<FactPair>> postconditions_by_operator;
     const RefinementHierarchy &refinement_hierarchy;
 
@@ -45,6 +46,8 @@ public:
     Operators get_incoming_operators(const AbstractState &state) const;
     Operators get_outgoing_operators(const AbstractState &state) const;
 
+    Transitions get_incoming_transitions(
+        const CartesianSets &cartesian_sets, const AbstractState &state) const;
     Transitions get_outgoing_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
 
