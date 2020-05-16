@@ -128,6 +128,13 @@ public:
         return left_child;
     }
 
+    NodeID get_child(const AbstractState &state) const {
+        assert(is_split());
+        if (state.contains(var, value))
+            return right_child;
+        return left_child;
+    }
+
     Siblings get_children(const AbstractState &state) const;
 
     int get_state_id() const {
@@ -148,7 +155,7 @@ void RefinementHierarchy::for_each_visited_node(
         if (node_id == state_node_id) {
             break;
         }
-        node_id = nodes[node_id].get_children(state).correct_child;
+        node_id = nodes[node_id].get_child(state);
     }
 }
 

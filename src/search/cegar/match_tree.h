@@ -35,6 +35,9 @@ class MatchTree {
 
     int get_state_id(NodeID node_id) const;
 
+    Operators get_incoming_operators(const AbstractState &state) const;
+    Operators get_outgoing_operators(const AbstractState &state) const;
+
 public:
     MatchTree(
         const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
@@ -42,9 +45,6 @@ public:
 
     // Update match tree after v has been split for var.
     void split(const CartesianSets &cartesian_sets, const AbstractState &v, int var);
-
-    Operators get_incoming_operators(const AbstractState &state) const;
-    Operators get_outgoing_operators(const AbstractState &state) const;
 
     Transitions get_incoming_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
