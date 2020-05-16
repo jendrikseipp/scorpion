@@ -109,15 +109,14 @@ int MatchTree::get_state_id(NodeID node_id) const {
     return refinement_hierarchy.get_abstract_state_id(node_id);
 }
 
-void MatchTree::enlarge_vectors_by_one() {
-    int new_num_nodes = get_num_nodes() + 1;
-    outgoing.resize(new_num_nodes);
-    incoming.resize(new_num_nodes);
+void MatchTree::resize_vectors(int new_size) {
+    outgoing.resize(new_size);
+    incoming.resize(new_size);
 }
 
 void MatchTree::add_operators_in_trivial_abstraction() {
     assert(get_num_nodes() == 0);
-    enlarge_vectors_by_one();
+    resize_vectors(1);
     int init_id = 0;
     incoming[init_id].reserve(get_num_operators());
     outgoing[init_id].reserve(get_num_operators());
@@ -129,8 +128,11 @@ void MatchTree::add_operators_in_trivial_abstraction() {
 
 void MatchTree::split(
     const CartesianSets &cartesian_sets, const AbstractState &v, int var) {
-    enlarge_vectors_by_one();
-    enlarge_vectors_by_one();
+    int new_num_nodes = cartesian_sets.size();
+    resize_vectors(new_num_nodes);
+    resize_vectors(new_num_nodes);
+    assert(get_num_nodes() == new_num_nodes);
+
     // TODO: use shrink_to_fit() after updating the vectors?
     refinement_hierarchy.for_each_visited_family(
         v, [&](const Family &family) {

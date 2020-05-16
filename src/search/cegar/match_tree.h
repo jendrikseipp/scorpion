@@ -26,7 +26,7 @@ class MatchTree {
 
     const bool debug;
 
-    void enlarge_vectors_by_one();
+    void resize_vectors(int new_size);
 
     void add_operators_in_trivial_abstraction();
 
