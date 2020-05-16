@@ -99,8 +99,14 @@ void cegar::RefinementHierarchy::dump(int level, NodeID id) const {
     cout << endl;
 
     if (node.is_split()) {
+        // Skip helper nodes.
+        NodeID helper = node.left_child;
+        while (nodes[helper].right_child == node.right_child) {
+            helper = nodes[helper].left_child;
+        }
+
         ++level;
-        dump(level, nodes[id].left_child);
+        dump(level, helper);
         dump(level, nodes[id].right_child);
     }
 }
