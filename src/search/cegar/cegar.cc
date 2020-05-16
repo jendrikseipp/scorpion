@@ -306,7 +306,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         refine_timer.stop();
 
         if (debug) {
-            dump_dot_graph(*abstraction);
+            //dump_dot_graph(*abstraction);
         }
 
         update_h_timer.resume();
