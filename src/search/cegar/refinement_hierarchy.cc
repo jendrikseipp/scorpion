@@ -36,15 +36,6 @@ void Node::split(int var, int value, NodeID left_child, NodeID right_child) {
     assert(is_split());
 }
 
-Siblings Node::get_children(const AbstractState &state) const {
-    NodeID state_ancestor_id = left_child;
-    NodeID other_node_id = right_child;
-    if (state.contains(var, value)) {
-        swap(state_ancestor_id, other_node_id);
-    }
-    return Siblings(state_ancestor_id, other_node_id);
-}
-
 
 ostream &operator<<(ostream &os, const Node &node) {
     return os << "<Node: var=" << node.var << " value=" << node.value

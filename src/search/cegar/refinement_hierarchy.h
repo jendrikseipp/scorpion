@@ -16,15 +16,6 @@ class State;
 namespace cegar {
 class Node;
 
-struct Siblings {
-    NodeID correct_child;
-    NodeID other_child;
-
-    Siblings(NodeID correct_child, NodeID other_child)
-        : correct_child(correct_child), other_child(other_child) {
-    }
-};
-
 struct Family {
     NodeID parent;
     NodeID correct_child;
@@ -135,8 +126,6 @@ public:
         return left_child;
     }
 
-    Siblings get_children(const AbstractState &state) const;
-
     int get_state_id() const {
         return state_id;
     }
@@ -144,10 +133,10 @@ public:
     friend std::ostream &operator<<(std::ostream &os, const Node &node);
 };
 
+// Invoke the callback function on normal *and* helper nodes.
 template<typename Callback>
 void RefinementHierarchy::for_each_visited_node(
     const AbstractState &state, const Callback &callback) const {
-    // TODO: ignore helper nodes.
     NodeID state_node_id = state.get_node_id();
     NodeID node_id = 0;
     while (true) {
@@ -162,14 +151,25 @@ void RefinementHierarchy::for_each_visited_node(
 template<typename Callback>
 void RefinementHierarchy::for_each_visited_family(
     const AbstractState &state, const Callback &callback) const {
-    // TODO: ignore helper nodes.
     NodeID node_id = 0;
     Node node = nodes[node_id];
     while (node.is_split()) {
-        Siblings siblings = node.get_children(state);
-        Family family(node_id, siblings.correct_child, siblings.other_child);
+        // Skip helper nodes.
+        NodeID helper = node.left_child;
+        while (nodes[helper].right_child == node.right_child) {
+            helper = nodes[helper].left_child;
+        }
+
+        NodeID state_ancestor_id = helper;
+        NodeID other_node_id = node.right_child;
+        // We only need to test one value (and none of the helper values), since
+        // the children contain either all or none of the values.
+        if (state.contains(node.var, node.value)) {
+            std::swap(state_ancestor_id, other_node_id);
+        }
+        Family family(node_id, state_ancestor_id, other_node_id);
         callback(family);
-        node_id = siblings.correct_child;
+        node_id = state_ancestor_id;
         node = nodes[node_id];
     }
 }
