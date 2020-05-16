@@ -131,6 +131,7 @@ void MatchTree::split(
     const CartesianSets &cartesian_sets, const AbstractState &v, int var) {
     enlarge_vectors_by_one();
     enlarge_vectors_by_one();
+    // TODO: use shrink_to_fit() after updating the vectors?
     refinement_hierarchy.for_each_visited_family(
         v, [&](const Family &family) {
             NodeID node_id = family.parent;
@@ -217,7 +218,7 @@ Transitions MatchTree::get_incoming_transitions(
         for (const FactPair &fact : preconditions_by_operator[op_id]) {
             regression.set_single_value(fact.var, fact.value);
         }
-        cout << "  apply " << op_id << " in " << regression << " -> " << state << endl;
+        //cout << "  apply " << op_id << " in " << regression << " -> " << state << endl;
         refinement_hierarchy.for_each_leaf(
             cartesian_sets, regression, [&](NodeID leaf_id) {
                 int src_state_id = get_state_id(leaf_id);
@@ -238,13 +239,13 @@ Transitions MatchTree::get_outgoing_transitions(
     for (int op_id : ops) {
         CartesianSet dest = state.get_cartesian_set();
         // Check that the operator is applicable.
-        cout << "Cartesian set " << dest << ", pre: " << preconditions_by_operator[op_id] << endl;
+        //cout << "Cartesian set " << dest << ", pre: " << preconditions_by_operator[op_id] << endl;
         assert(all_of(preconditions_by_operator[op_id].begin(), preconditions_by_operator[op_id].end(),
                       [&](const FactPair &fact) {return state.contains(fact.var, fact.value);}));
         for (const FactPair &fact : postconditions_by_operator[op_id]) {
             dest.set_single_value(fact.var, fact.value);
         }
-        cout << "  apply " << op_id << " in " << state << " -> " << dest << endl;
+        //cout << "  apply " << op_id << " in " << state << " -> " << dest << endl;
         refinement_hierarchy.for_each_leaf(
             cartesian_sets, dest, [&](NodeID leaf_id) {
                 int dest_state_id = get_state_id(leaf_id);
@@ -270,12 +271,15 @@ int MatchTree::get_num_operators() const {
 void MatchTree::print_statistics() const {
     int total_incoming_ops = 0;
     int total_outgoing_ops = 0;
+    int total_capacity = 0;
     for (int node_id = 0; node_id < get_num_nodes(); ++node_id) {
         total_incoming_ops += incoming[node_id].size();
         total_outgoing_ops += outgoing[node_id].size();
+        total_capacity += incoming[node_id].capacity() + outgoing[node_id].capacity();
     }
-    cout << "Incoming operators: " << total_incoming_ops << endl;
-    cout << "Outgoing operators: " << total_outgoing_ops << endl;
+    cout << "Match tree incoming operators: " << total_incoming_ops << endl;
+    cout << "Match tree outgoing operators: " << total_outgoing_ops << endl;
+    cout << "Match tree capactity: " << total_capacity << endl;
 }
 
 void MatchTree::dump() const {

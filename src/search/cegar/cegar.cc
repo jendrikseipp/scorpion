@@ -104,7 +104,7 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy));
     } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-            task_properties::get_operator_costs(task_proxy), debug);
+            task_properties::get_operator_costs(task_proxy), false);
     } else {
         ABORT("Unknown search strategy");
     }

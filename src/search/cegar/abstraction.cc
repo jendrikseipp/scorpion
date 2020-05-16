@@ -126,8 +126,10 @@ pair<int, int> Abstraction::refine(
     transition_system->rewire(states, v_id, *v1, *v2, var);
     match_tree->split(this->cartesian_sets, state, var);
 
-    transition_system->dump();
-    match_tree->dump();
+    if (debug) {
+        transition_system->dump();
+        match_tree->dump();
+    }
 
     states.emplace_back();
     states[v1_id] = move(v1);
@@ -136,28 +138,32 @@ pair<int, int> Abstraction::refine(
     assert(init_id == 0);
     assert(get_initial_state().includes(concrete_initial_state));
 
-    refinement_hierarchy->dump();
+    if (debug) {
+        refinement_hierarchy->dump();
+    }
 
     for (int state_id = 0; state_id < get_num_states(); ++state_id) {
         const AbstractState &state = *states[state_id];
-        cout << "State " << state_id << ", node: " << state.get_node_id() << endl;
+        if (debug) {
+            cout << "State " << state_id << ", node: " << state.get_node_id() << endl;
+        }
 
         Transitions ts_out = transition_system->get_outgoing_transitions()[state_id];
-        Operators ops_out = match_tree->get_outgoing_operators(state);
         Transitions mt_out = match_tree->get_outgoing_transitions(this->cartesian_sets, state);
-        cout << "  TS out: " << ts_out << endl;
-        cout << "  Operators out: " << ops_out << endl;
-        cout << "  MT out: " << mt_out << endl;
+        if (debug) {
+            cout << "  TS out: " << ts_out << endl;
+            cout << "  MT out: " << mt_out << endl;
+        }
         sort(ts_out.begin(), ts_out.end());
         sort(mt_out.begin(), mt_out.end());
         assert(ts_out == mt_out);
 
         Transitions ts_in = transition_system->get_incoming_transitions()[state_id];
-        Operators ops_in = match_tree->get_incoming_operators(state);
         Transitions mt_in = match_tree->get_incoming_transitions(this->cartesian_sets, state);
-        cout << "  TS in: " << ts_in << endl;
-        cout << "  Operators in: " << ops_in << endl;
-        cout << "  MT in: " << mt_in << endl;
+        if (debug) {
+            cout << "  TS in: " << ts_in << endl;
+            cout << "  MT in: " << mt_in << endl;
+        }
         sort(ts_in.begin(), ts_in.end());
         sort(mt_in.begin(), mt_in.end());
         assert(ts_in == mt_in);
@@ -169,6 +175,11 @@ pair<int, int> Abstraction::refine(
 void Abstraction::print_statistics() const {
     cout << "States: " << get_num_states() << endl;
     cout << "Goal states: " << goals.size() << endl;
-    transition_system->print_statistics();
+    if (transition_system) {
+        transition_system->print_statistics();
+    }
+    if (match_tree) {
+        match_tree->print_statistics();
+    }
 }
 }
