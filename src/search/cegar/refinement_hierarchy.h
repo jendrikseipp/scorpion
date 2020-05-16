@@ -176,16 +176,36 @@ void RefinementHierarchy::for_each_visited_family(
 
 template<typename Callback>
 void RefinementHierarchy::for_each_leaf(
-    const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set, const Callback &callback, NodeID node_id) const {
-    // TODO: ignore helper nodes.
+    const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set,
+    const Callback &callback, NodeID node_id) const {
     // TODO: turn into while-loop.
     Node node = nodes[node_id];
     if (node.is_split()) {
-        // TODO: Can we use test() instead of intersects() here and in more places?
-        if (cartesian_set.intersects(*all_cartesian_sets[node.left_child], node.var)) {
-            for_each_leaf(all_cartesian_sets, cartesian_set, callback, node.left_child);
+        bool intersects_with_right_child = cartesian_set.test(node.var, node.value);
+        // Traverse helper nodes.
+        NodeID helper = node.left_child;
+        while (nodes[helper].right_child == node.right_child) {
+            if (!intersects_with_right_child &&
+                cartesian_set.test(nodes[helper].var, nodes[helper].value)) {
+                intersects_with_right_child = true;
+            }
+            helper = nodes[helper].left_child;
         }
-        if (cartesian_set.intersects(*all_cartesian_sets[node.right_child], node.var)) {
+
+        NodeID real_left_child = helper;
+
+        // The Cartesian set must intersect with one or two of the children.
+        bool intersects_with_left_child = !intersects_with_right_child ||
+            cartesian_set.intersects(*all_cartesian_sets[real_left_child], node.var);
+        assert(intersects_with_left_child ==
+               cartesian_set.intersects(*all_cartesian_sets[real_left_child], node.var));
+        if (intersects_with_left_child) {
+            for_each_leaf(all_cartesian_sets, cartesian_set, callback, real_left_child);
+        }
+
+        assert(intersects_with_right_child ==
+               cartesian_set.intersects(*all_cartesian_sets[node.right_child], node.var));
+        if (intersects_with_right_child) {
             for_each_leaf(all_cartesian_sets, cartesian_set, callback, node.right_child);
         }
     } else {

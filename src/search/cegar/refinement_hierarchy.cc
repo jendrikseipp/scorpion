@@ -66,9 +66,6 @@ NodeID RefinementHierarchy::get_node_id(const State &state) const {
 
 pair<NodeID, NodeID> RefinementHierarchy::split(
     NodeID node_id, int var, const vector<int> &values, int left_state_id, int right_state_id) {
-    if (values.size() != 1) {
-        ABORT("Not implemented");
-    }
     NodeID helper_id = node_id;
     NodeID right_child_id = add_node(right_state_id);
     for (int value : values) {

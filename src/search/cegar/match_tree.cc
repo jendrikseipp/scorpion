@@ -150,6 +150,7 @@ void MatchTree::split(
                     ++it;
                 } else {
                     // TODO: use swap and pop or fill separate vector.
+                    // TODO: at least one of the children must get the operator.
                     it = out.erase(it);
                     if (cartesian_sets[v_ancestor_id]->test(var, pre)) {
                         outgoing[v_ancestor_id].push_back(op_id);
@@ -168,6 +169,7 @@ void MatchTree::split(
                     ++it;
                 } else {
                     // TODO: use swap and pop or fill separate vector.
+                    // TODO: at least one of the children must get the operator.
                     it = in.erase(it);
                     if (cartesian_sets[v_ancestor_id]->test(var, post)) {
                         incoming[v_ancestor_id].push_back(op_id);
