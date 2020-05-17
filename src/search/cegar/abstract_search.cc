@@ -1,6 +1,7 @@
 #include "abstract_search.h"
 
 #include "abstract_state.h"
+#include "abstraction.h"
 #include "transition_system.h"
 #include "utils.h"
 
@@ -127,11 +128,11 @@ void AbstractSearch::copy_h_value_to_children(int v, int v1, int v2) {
 }
 
 
-vector<int> compute_distances(
-    const vector<Transitions> &transitions,
+vector<int> compute_goal_distances(
+    const Abstraction &abstraction,
     const vector<int> &costs,
     const unordered_set<int> &start_ids) {
-    vector<int> distances(transitions.size(), INF);
+    vector<int> distances(abstraction.get_num_states(), INF);
     priority_queues::AdaptiveQueue<int> open_queue;
     for (int goal_id : start_ids) {
         distances[goal_id] = 0;
@@ -147,8 +148,7 @@ vector<int> compute_distances(
         assert(g <= old_g);
         if (g < old_g)
             continue;
-        assert(utils::in_bounds(state_id, transitions));
-        for (const Transition &transition : transitions[state_id]) {
+        for (const Transition &transition : abstraction.get_incoming_transitions(state_id)) {
             const int op_cost = costs[transition.op_id];
             assert(op_cost >= 0);
             int succ_g = (op_cost == INF) ? INF : g + op_cost;

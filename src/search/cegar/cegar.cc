@@ -100,6 +100,9 @@ CEGAR::CEGAR(
       debug(debug) {
     assert(max_states >= 1);
     if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+        if (g_hacked_use_cartesian_match_tree) {
+            ABORT("states_on_trace strategy does not support Cartesian match tree");
+        }
         abstract_search = utils::make_unique_ptr<AbstractSearch>(
             task_properties::get_operator_costs(task_proxy));
     } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
@@ -165,7 +168,7 @@ bool CEGAR::may_keep_refining() const {
     if (abstraction->get_num_states() >= max_states) {
         cout << "Reached maximum number of states." << endl;
         return false;
-    } else if (abstraction->get_transition_system().get_num_non_loops() >= max_non_looping_transitions) {
+    } else if (abstraction->get_num_transitions() >= max_non_looping_transitions) {
         cout << "Reached maximum number of transitions." << endl;
         return false;
     } else if (timer.is_expired()) {
@@ -211,12 +214,9 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     // Initialize abstract goal distances and shortest path tree.
     if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
         shortest_paths->full_dijkstra(
-            abstraction->get_transition_system().get_incoming_transitions(),
+            *abstraction,
             abstraction->get_goals());
-        assert(shortest_paths->test_distances(
-                   abstraction->get_transition_system().get_incoming_transitions(),
-                   abstraction->get_transition_system().get_outgoing_transitions(),
-                   abstraction->get_goals()));
+        assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
     }
 
     if (debug) {
@@ -293,24 +293,20 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 state_id, new_state_ids.first, new_state_ids.second);
         } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
             shortest_paths->dijkstra_from_orphans(
-                abstraction->get_transition_system().get_incoming_transitions(),
-                abstraction->get_transition_system().get_outgoing_transitions(),
+                *abstraction,
                 state_id, new_state_ids.first, new_state_ids.second, true);
         } else {
             ABORT("Unknown h-update strategy");
         }
 
         if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
-            assert(shortest_paths->test_distances(
-                       abstraction->get_transition_system().get_incoming_transitions(),
-                       abstraction->get_transition_system().get_outgoing_transitions(),
-                       abstraction->get_goals()));
+            assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
         }
         update_h_timer.stop();
 
         if (abstraction->get_num_states() % 1000 == 0) {
             utils::g_log << abstraction->get_num_states() << "/" << max_states << " states, "
-                         << abstraction->get_transition_system().get_num_non_loops() << "/"
+                         << abstraction->get_num_transitions() << "/"
                          << max_non_looping_transitions << " transitions" << endl;
         }
     }

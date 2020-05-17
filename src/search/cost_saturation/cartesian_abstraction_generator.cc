@@ -57,8 +57,8 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
     const cegar::TransitionSystem &ts =
         cartesian_abstraction.get_transition_system();
     int initial_state_id = cartesian_abstraction.get_initial_state().get_id();
-    vector<int> h_values = cegar::compute_distances(
-        ts.get_incoming_transitions(), operator_costs, cartesian_abstraction.get_goals());
+    vector<int> h_values = cegar::compute_goal_distances(
+        cartesian_abstraction, operator_costs, cartesian_abstraction.get_goals());
 
     // Retrieve non-looping transitions.
     vector<vector<Successor>> backward_graph(cartesian_abstraction.get_num_states());

@@ -21,14 +21,29 @@ using namespace std;
 
 namespace cegar {
 Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
-    : transition_system(utils::make_unique_ptr<TransitionSystem>(TaskProxy(*task).get_operators())),
-      concrete_initial_state(TaskProxy(*task).get_initial_state()),
+    : concrete_initial_state(TaskProxy(*task).get_initial_state()),
       goal_facts(task_properties::get_fact_pairs(TaskProxy(*task).get_goals())),
       refinement_hierarchy(utils::make_unique_ptr<RefinementHierarchy>(task)),
       debug(debug) {
     initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
-    match_tree = utils::make_unique_ptr<MatchTree>(
-        TaskProxy(*task).get_operators(), *refinement_hierarchy, debug);
+
+    if (g_hacked_use_cartesian_match_tree) {
+        match_tree = utils::make_unique_ptr<MatchTree>(
+            TaskProxy(*task).get_operators(), *refinement_hierarchy, debug);
+    } else {
+        transition_system = utils::make_unique_ptr<TransitionSystem>(
+            TaskProxy(*task).get_operators());
+    }
+#ifndef NDEBUG
+    if (!transition_system) {
+        transition_system = utils::make_unique_ptr<TransitionSystem>(
+            TaskProxy(*task).get_operators());
+    }
+    if (!match_tree) {
+        match_tree = utils::make_unique_ptr<MatchTree>(
+            TaskProxy(*task).get_operators(), *refinement_hierarchy, debug);
+    }
+#endif
 }
 
 Abstraction::~Abstraction() {
@@ -57,6 +72,34 @@ const TransitionSystem &Abstraction::get_transition_system() const {
 unique_ptr<RefinementHierarchy> Abstraction::extract_refinement_hierarchy() {
     assert(refinement_hierarchy);
     return move(refinement_hierarchy);
+}
+
+int Abstraction::get_num_operators() const {
+    if (match_tree) {
+        return match_tree->get_num_operators();
+    }
+    return transition_system->get_num_operators();
+}
+
+int Abstraction::get_num_transitions() const {
+    if (match_tree) {
+        return 0;
+    }
+    return transition_system->get_num_non_loops();
+}
+
+Transitions Abstraction::get_incoming_transitions(int state_id) const {
+    if (match_tree) {
+        return match_tree->get_incoming_transitions(cartesian_sets, *states[state_id]);
+    }
+    return transition_system->get_incoming_transitions()[state_id];
+}
+
+Transitions Abstraction::get_outgoing_transitions(int state_id) const {
+    if (match_tree) {
+        return match_tree->get_outgoing_transitions(cartesian_sets, *states[state_id]);
+    }
+    return transition_system->get_outgoing_transitions()[state_id];
 }
 
 void Abstraction::mark_all_states_as_goals() {
@@ -123,8 +166,12 @@ pair<int, int> Abstraction::refine(
         }
     }
 
-    transition_system->rewire(states, v_id, *v1, *v2, var);
-    match_tree->split(this->cartesian_sets, state, var);
+    if (transition_system) {
+        transition_system->rewire(states, v_id, *v1, *v2, var);
+    }
+    if (match_tree) {
+        match_tree->split(this->cartesian_sets, state, var);
+    }
 
     if (debug) {
         //transition_system->dump();
@@ -142,6 +189,7 @@ pair<int, int> Abstraction::refine(
         refinement_hierarchy->dump();
     }
 
+#ifndef NDEBUG
     for (int state_id = 0; state_id < get_num_states(); ++state_id) {
         const AbstractState &state = *states[state_id];
         Transitions ts_out = transition_system->get_outgoing_transitions()[state_id];
@@ -166,6 +214,7 @@ pair<int, int> Abstraction::refine(
         }
         assert(ts_in == mt_in);
     }
+#endif
 
     return make_pair(v1_id, v2_id);
 }

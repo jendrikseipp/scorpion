@@ -8,6 +8,7 @@
 #include <vector>
 
 namespace cegar {
+class Abstraction;
 class AbstractState;
 class CartesianSet;
 struct Transition;

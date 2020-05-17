@@ -24,12 +24,12 @@ using namespace std;
 
 namespace cegar {
 static vector<int> compute_saturated_costs(
-    const TransitionSystem &transition_system,
+    const Abstraction &abstraction,
     const vector<int> &g_values,
     const vector<int> &h_values,
     bool use_general_costs) {
     const int min_cost = use_general_costs ? -INF : 0;
-    vector<int> saturated_costs(transition_system.get_num_operators(), min_cost);
+    vector<int> saturated_costs(abstraction.get_num_operators(), min_cost);
     assert(g_values.size() == h_values.size());
     int num_states = h_values.size();
     for (int state_id = 0; state_id < num_states; ++state_id) {
@@ -48,7 +48,7 @@ static vector<int> compute_saturated_costs(
             continue;
 
         for (const Transition &transition:
-             transition_system.get_outgoing_transitions()[state_id]) {
+             abstraction.get_outgoing_transitions(state_id)) {
             int op_id = transition.op_id;
             int succ_id = transition.target_id;
             int succ_h = h_values[succ_id];
@@ -63,9 +63,10 @@ static vector<int> compute_saturated_costs(
         if (use_general_costs) {
             /* To prevent negative cost cycles, all operators inducing
                self-loops must have non-negative costs. */
-            for (int op_id : transition_system.get_loops()[state_id]) {
+            ABORT("Computing looping operators is not implemented");
+            /*for (int op_id : transition_system.get_loops()[state_id]) {
                 saturated_costs[op_id] = max(saturated_costs[op_id], 0);
-            }
+            }*/
         }
     }
     return saturated_costs;
@@ -202,25 +203,29 @@ void CostSaturation::build_abstractions(
 
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
         num_states += abstraction->get_num_states();
-        num_non_looping_transitions += abstraction->get_transition_system().get_num_non_loops();
+        num_non_looping_transitions += abstraction->get_num_transitions();
         assert(num_states <= max_states);
 
         vector<int> costs = task_properties::get_operator_costs(TaskProxy(*subtask));
-        vector<int> init_distances = compute_distances(
+        vector<int> init_distances(num_states, 0); // Don't prune unreachable transitions.
+        /* = compute_distances(
             abstraction->get_transition_system().get_outgoing_transitions(),
             costs,
-            {abstraction->get_initial_state().get_id()});
-        vector<int> goal_distances = compute_distances(
-            abstraction->get_transition_system().get_incoming_transitions(),
+            {abstraction->get_initial_state().get_id()}); */
+        vector<int> goal_distances = compute_goal_distances(
+            *abstraction,
             costs,
             abstraction->get_goals());
-        vector<int> saturated_costs = compute_saturated_costs(
-            abstraction->get_transition_system(),
+        /*vector<int> saturated_costs = compute_saturated_costs(
+            *abstraction,
             init_distances,
             goal_distances,
             use_general_costs);
 
-        reduce_remaining_costs(saturated_costs);
+        reduce_remaining_costs(saturated_costs);*/
+        if (subtasks.size() != 1) {
+            ABORT("SCP is not implemented for match tree");
+        }
 
         int num_unsolvable_states = count(goal_distances.begin(), goal_distances.end(), INF);
         cout << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;

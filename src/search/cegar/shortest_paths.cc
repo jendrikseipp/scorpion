@@ -1,6 +1,7 @@
 #include "shortest_paths.h"
 
 #include "abstract_search.h"
+#include "abstraction.h"
 #include "transition_system.h"
 #include "utils.h"
 
@@ -113,22 +114,21 @@ void ShortestPaths::mark_dirty(int state) {
 }
 
 void ShortestPaths::mark_orphaned_predecessors(
-    const vector<Transitions> &in, int state) {
+    const Abstraction &abstraction, int state) {
     mark_dirty(state);
-    for (const Transition &t : in[state]) {
+    for (const Transition &t : abstraction.get_incoming_transitions(state)) {
         int prev = t.target_id;
         assert(prev != state);
         assert(prev != UNDEFINED);
         if (goal_distances[prev] != DIRTY &&
             shortest_path[prev].target_id == state) {
-            mark_orphaned_predecessors(in, prev);
+            mark_orphaned_predecessors(abstraction, prev);
         }
     }
 }
 
 void ShortestPaths::dijkstra_from_orphans(
-    const vector<Transitions> &in,
-    const vector<Transitions> &out,
+    const Abstraction &abstraction,
     int v, int v1, int v2, bool filter_orphans) {
     /*
       Assumption: all h-values correspond to the perfect heuristic for the
@@ -139,8 +139,7 @@ void ShortestPaths::dijkstra_from_orphans(
       at least one of its possible shortest-path successors is orphaned,
       starting with s_1. We start by assuming g=\infty for all orphaned states.
     */
-    assert(in.size() == out.size());
-    int num_states = in.size();
+    int num_states = abstraction.get_num_states();
     shortest_path.resize(num_states);
     goal_distances.resize(num_states, 0);
     dirty_states.clear();
@@ -153,11 +152,13 @@ void ShortestPaths::dijkstra_from_orphans(
 
 #ifndef NDEBUG
     Transition old_arc = shortest_path[v];
-    bool v1_settled = any_of(out[v1].begin(), out[v1].end(),
+    Transitions v1_out = abstraction.get_outgoing_transitions(v1);
+    bool v1_settled = any_of(v1_out.begin(), v1_out.end(),
                              [&old_arc](const Transition &t) {
                                  return t == old_arc;
                              });
-    bool v2_settled = any_of(out[v2].begin(), out[v2].end(),
+    Transitions v2_out = abstraction.get_outgoing_transitions(v2);
+    bool v2_settled = any_of(v2_out.begin(), v2_out.end(),
                              [&old_arc](const Transition &t) {
                                  return t == old_arc;
                              });
@@ -177,7 +178,7 @@ void ShortestPaths::dijkstra_from_orphans(
        will be updated again if v1 is dirty. We therefore prefer reconnecting
        states to v2 instead of v1, which is why we test v2 after v1. */
     for (int state : {v1, v2}) {
-        for (const Transition &incoming : in[state]) {
+        for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
             int u = incoming.target_id;
             int op = incoming.op_id;
             Transition &sp = shortest_path[u];
@@ -220,7 +221,7 @@ void ShortestPaths::dijkstra_from_orphans(
             assert(goal_distances[state] != DIRTY);
             bool reconnected = false;
             // Try to reconnect to settled, solvable state.
-            for (const Transition &t : out[state]) {
+            for (const Transition &t : abstraction.get_outgoing_transitions(state)) {
                 int succ = t.target_id;
                 int op_id = t.op_id;
                 if (goal_distances[succ] != DIRTY &&
@@ -236,7 +237,7 @@ void ShortestPaths::dijkstra_from_orphans(
             }
             if (!reconnected) {
                 mark_dirty(state);
-                for (const Transition &t : in[state]) {
+                for (const Transition &t : abstraction.get_incoming_transitions(state)) {
                     int prev = t.target_id;
                     if (!dirty_candidate[prev] &&
                         goal_distances[prev] != DIRTY &&
@@ -253,7 +254,7 @@ void ShortestPaths::dijkstra_from_orphans(
         }
     } else {
         // v1 and all its predecessors are orphaned.
-        mark_orphaned_predecessors(in, v1);
+        mark_orphaned_predecessors(abstraction, v1);
     }
 
     if (debug) {
@@ -261,13 +262,15 @@ void ShortestPaths::dijkstra_from_orphans(
         cout << "Dirty states: " << dirty_states << endl;
     }
 
-    assert(dirty_states.size() < in.size()); // Goal states must never be dirty.
-
 #ifndef NDEBUG
     for (int i = 0; i < num_states; ++i) {
         if (goal_distances[i] == DIRTY) {
             assert(count(dirty_states.begin(), dirty_states.end(), i) == 1);
         }
+    }
+    // Goal states must never be dirty.
+    for (int goal : abstraction.get_goals()) {
+        assert(!count(dirty_states.begin(), dirty_states.end(), goal));
     }
 #endif
 
@@ -287,7 +290,7 @@ void ShortestPaths::dijkstra_from_orphans(
         Cost &dist = goal_distances[state];
         assert(dist == DIRTY);
         Cost min_dist = INF_COSTS;
-        for (const Transition &t : out[state]) {
+        for (const Transition &t : abstraction.get_outgoing_transitions(state)) {
             int succ = t.target_id;
             int op_id = t.op_id;
             if (goal_distances[succ] != DIRTY) {
@@ -315,7 +318,7 @@ void ShortestPaths::dijkstra_from_orphans(
             continue;
         assert(g == goal_distances[state]);
         assert(g != INF_COSTS);
-        for (const Transition &t : in[state]) {
+        for (const Transition &t : abstraction.get_incoming_transitions(state)) {
             int succ = t.target_id;
             int op_id = t.op_id;
             Cost cost = operator_costs[op_id];
@@ -331,11 +334,11 @@ void ShortestPaths::dijkstra_from_orphans(
 }
 
 void ShortestPaths::full_dijkstra(
-    const vector<Transitions> &in,
+    const Abstraction &abstraction,
     const unordered_set<int> &goals) {
     open_queue.clear();
-    shortest_path.resize(in.size());
-    goal_distances = vector<Cost>(in.size(), INF_COSTS);
+    shortest_path.resize(abstraction.get_num_states());
+    goal_distances = vector<Cost>(abstraction.get_num_states(), INF_COSTS);
     for (int goal : goals) {
         Cost dist = 0;
         goal_distances[goal] = dist;
@@ -352,8 +355,7 @@ void ShortestPaths::full_dijkstra(
         assert(g <= old_g);
         if (g < old_g)
             continue;
-        assert(utils::in_bounds(state_id, in));
-        for (const Transition &t : in[state_id]) {
+        for (const Transition &t : abstraction.get_incoming_transitions(state_id)) {
             int succ_id = t.target_id;
             int op_id = t.op_id;
             Cost op_cost = operator_costs[op_id];
@@ -368,12 +370,11 @@ void ShortestPaths::full_dijkstra(
 }
 
 bool ShortestPaths::test_distances(
-    const vector<Transitions> &in,
-    const vector<Transitions> &out,
+    const Abstraction &abstraction,
     const unordered_set<int> &goals) {
     assert(none_of(goal_distances.begin(), goal_distances.end(),
                    [](Cost d) {return d == DIRTY;}));
-    int num_states = in.size();
+    int num_states = abstraction.get_num_states();
 
     vector<int> costs;
     costs.reserve(operator_costs.size());
@@ -381,8 +382,9 @@ bool ShortestPaths::test_distances(
         costs.push_back(convert_to_32_bit_cost(cost));
     }
 
-    int init_state = 0;
-    vector<int> init_distances = compute_distances(out, costs, {init_state});
+    //int init_state = 0;
+    vector<int> init_distances(num_states, 0); // Don't compute reachability info.
+    // = compute_distances(out, costs, {init_state});
 
     for (int i = 0; i < num_states; ++i) {
         if (debug) {
@@ -396,16 +398,17 @@ bool ShortestPaths::test_distances(
                 cout << "SP: " << t << endl;
             }
             assert(t.is_defined());
+            Transitions out = abstraction.get_outgoing_transitions(i);
             if (debug) {
-                cout << "Outgoing transitions: " << out[i] << endl;
+                cout << "Outgoing transitions: " << out << endl;
             }
-            assert(count(out[i].begin(), out[i].end(), t) == 1);
+            assert(count(out.begin(), out.end(), t) == 1);
             assert(goal_distances[i] ==
                    add_costs(operator_costs[t.op_id], goal_distances[t.target_id]));
         }
     }
 
-    vector<int> goal_distances_32_bit = compute_distances(in, costs, goals);
+    vector<int> goal_distances_32_bit = compute_goal_distances(abstraction, costs, goals);
     vector<int> goal_distances_32_bit_rounded_down;
     goal_distances_32_bit_rounded_down.reserve(goal_distances_32_bit.size());
     for (Cost dist : goal_distances) {

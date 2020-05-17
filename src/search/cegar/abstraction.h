@@ -23,7 +23,7 @@ class TransitionSystem;
   RefinementHierarchy.
 */
 class Abstraction {
-    const std::unique_ptr<TransitionSystem> transition_system;
+    std::unique_ptr<TransitionSystem> transition_system;
     const State concrete_initial_state;
     const std::vector<FactPair> goal_facts;
 
@@ -57,6 +57,11 @@ public:
     const AbstractState &get_state(int state_id) const;
     const TransitionSystem &get_transition_system() const;
     std::unique_ptr<RefinementHierarchy> extract_refinement_hierarchy();
+
+    int get_num_operators() const;
+    int get_num_transitions() const;
+    Transitions get_incoming_transitions(int state_id) const;
+    Transitions get_outgoing_transitions(int state_id) const;
 
     /* Needed for CEGAR::separate_facts_unreachable_before_goal(). */
     void mark_all_states_as_goals();

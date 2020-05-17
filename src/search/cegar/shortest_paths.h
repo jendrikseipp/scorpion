@@ -10,6 +10,8 @@
 #include <vector>
 
 namespace cegar {
+class Abstraction;
+
 using Cost = uint64_t;
 
 class HeapQueue {
@@ -72,8 +74,7 @@ class ShortestPaths {
     Cost convert_to_64_bit_cost(int cost) const;
 
     void mark_dirty(int state);
-    void mark_orphaned_predecessors(
-        const std::vector<Transitions> &in, int state);
+    void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
 
 public:
     ShortestPaths(const std::vector<int> &costs, bool debug);
@@ -83,15 +84,13 @@ public:
         const Goals &goals);
 
     void dijkstra_from_orphans(
-        const std::vector<Transitions> &in,
-        const std::vector<Transitions> &out,
+        const Abstraction &abstraction,
         int v, int v1, int v2, bool filter_orphans);
     void full_dijkstra(
-        const std::vector<Transitions> &transitions,
+        const Abstraction &abstraction,
         const std::unordered_set<int> &goals);
     bool test_distances(
-        const std::vector<Transitions> &in,
-        const std::vector<Transitions> &out,
+        const Abstraction &abstraction,
         const std::unordered_set<int> &goals);
 };
 }

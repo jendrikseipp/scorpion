@@ -75,8 +75,8 @@ public:
         const Solution &solution, int init_id);
 };
 
-extern std::vector<int> compute_distances(
-    const std::vector<Transitions> &transitions,
+extern std::vector<int> compute_goal_distances(
+    const Abstraction &abstraction,
     const std::vector<int> &costs,
     const std::unordered_set<int> &start_ids);
 }

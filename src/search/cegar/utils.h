@@ -23,6 +23,8 @@ class OptionParser;
 namespace cegar {
 class Abstraction;
 
+extern bool g_hacked_use_cartesian_match_tree;
+
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
 create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);
 

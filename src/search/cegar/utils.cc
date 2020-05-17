@@ -18,6 +18,8 @@
 using namespace std;
 
 namespace cegar {
+bool g_hacked_use_cartesian_match_tree = false;
+
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {
     Options opts;
@@ -120,8 +122,7 @@ void dump_dot_graph(const Abstraction &abstraction) {
     }
     for (int state_id = 0; state_id < num_states; ++state_id) {
         map<int, vector<int>> parallel_transitions;
-        auto transitions = abstraction.get_transition_system().get_outgoing_transitions();
-        for (const Transition &t : transitions[state_id]) {
+        for (const Transition &t : abstraction.get_outgoing_transitions(state_id)) {
             parallel_transitions[t.target_id].push_back(t.op_id);
         }
         for (auto &pair : parallel_transitions) {

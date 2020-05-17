@@ -154,6 +154,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "500",
         Bounds("0", "infinity"));
     parser.add_option<bool>(
+        "use_match_tree",
+        "use Cartesian match tree for computing transitions",
+        "false");
+    parser.add_option<bool>(
         "debug",
         "print debugging output",
         "false");
@@ -163,6 +167,8 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
 
     if (parser.dry_run())
         return nullptr;
+
+    g_hacked_use_cartesian_match_tree = opts.get<bool>("use_match_tree");
 
     return make_shared<AdditiveCartesianHeuristic>(opts);
 }
