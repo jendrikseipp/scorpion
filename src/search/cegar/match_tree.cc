@@ -283,7 +283,7 @@ void MatchTree::print_statistics() const {
     }
     cout << "Match tree incoming operators: " << total_incoming_ops << endl;
     cout << "Match tree outgoing operators: " << total_outgoing_ops << endl;
-    cout << "Match tree capactity: " << total_capacity << endl;
+    cout << "Match tree capacity: " << total_capacity << endl;
 }
 
 void MatchTree::dump() const {
