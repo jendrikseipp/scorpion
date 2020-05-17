@@ -190,7 +190,7 @@ pair<int, int> Abstraction::refine(
     }
 
 #ifndef NDEBUG
-    for (int state_id = 0; state_id < get_num_states(); ++state_id) {
+    for (int state_id : {v1_id, v2_id}) {
         const AbstractState &state = *states[state_id];
         Transitions ts_out = transition_system->get_outgoing_transitions()[state_id];
         Transitions mt_out = match_tree->get_outgoing_transitions(this->cartesian_sets, state);

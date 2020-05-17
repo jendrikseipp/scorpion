@@ -300,7 +300,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
 
         if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
-            assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
+            //assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
         }
         update_h_timer.stop();
 
