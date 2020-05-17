@@ -126,10 +126,14 @@ void MatchTree::add_operators_in_trivial_abstraction() {
     }
 }
 
+static bool contains_all_facts(const CartesianSet &set, const vector<FactPair> &facts) {
+    return all_of(facts.begin(), facts.end(),
+                  [&](const FactPair &fact) {return set.test(fact.var, fact.value);});
+}
+
 void MatchTree::split(
     const CartesianSets &cartesian_sets, const AbstractState &v, int var) {
     int new_num_nodes = cartesian_sets.size();
-    resize_vectors(new_num_nodes);
     resize_vectors(new_num_nodes);
     assert(get_num_nodes() == new_num_nodes);
 
@@ -155,9 +159,13 @@ void MatchTree::split(
                     // TODO: at least one of the children must get the operator.
                     it = out.erase(it);
                     if (cartesian_sets[v_ancestor_id]->test(var, pre)) {
+                        assert(contains_all_facts(*cartesian_sets[v_ancestor_id],
+                                                  preconditions_by_operator[op_id]));
                         outgoing[v_ancestor_id].push_back(op_id);
                     }
                     if (cartesian_sets[other_node_id]->test(var, pre)) {
+                        assert(contains_all_facts(*cartesian_sets[other_node_id],
+                                                  preconditions_by_operator[op_id]));
                         outgoing[other_node_id].push_back(op_id);
                     }
                 }
@@ -174,15 +182,17 @@ void MatchTree::split(
                     // TODO: at least one of the children must get the operator.
                     it = in.erase(it);
                     if (cartesian_sets[v_ancestor_id]->test(var, post)) {
+                        assert(contains_all_facts(*cartesian_sets[v_ancestor_id],
+                                                  postconditions_by_operator[op_id]));
                         incoming[v_ancestor_id].push_back(op_id);
                     }
                     if (cartesian_sets[other_node_id]->test(var, post)) {
+                        assert(contains_all_facts(*cartesian_sets[other_node_id],
+                                                  postconditions_by_operator[op_id]));
                         incoming[other_node_id].push_back(op_id);
                     }
                 }
             }
-
-            node_id = v_ancestor_id;
         });
 }
 
@@ -192,6 +202,8 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
         state, [&](const NodeID &node_id) {
             // TODO: append whole vector at once.
             for (int op_id : incoming[node_id]) {
+                assert(contains_all_facts(state.get_cartesian_set(),
+                                          postconditions_by_operator[op_id]));
                 operators.push_back(op_id);
             }
         });
@@ -204,6 +216,8 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
         state, [&](const NodeID &node_id) {
             // TODO: append whole vector at once.
             for (int op_id : outgoing[node_id]) {
+                assert(contains_all_facts(state.get_cartesian_set(),
+                                          preconditions_by_operator[op_id]));
                 operators.push_back(op_id);
             }
         });
@@ -244,8 +258,8 @@ Transitions MatchTree::get_outgoing_transitions(
         CartesianSet dest = state.get_cartesian_set();
         // Check that the operator is applicable.
         //cout << "Cartesian set " << dest << ", pre: " << preconditions_by_operator[op_id] << endl;
-        assert(all_of(preconditions_by_operator[op_id].begin(), preconditions_by_operator[op_id].end(),
-                      [&](const FactPair &fact) {return state.contains(fact.var, fact.value);}));
+        //assert(all_of(preconditions_by_operator[op_id].begin(), preconditions_by_operator[op_id].end(),
+        //              [&](const FactPair &fact) {return state.contains(fact.var, fact.value);}));
         for (const FactPair &fact : postconditions_by_operator[op_id]) {
             dest.set_single_value(fact.var, fact.value);
         }

@@ -186,7 +186,7 @@ pair<int, int> Abstraction::refine(
     assert(get_initial_state().includes(concrete_initial_state));
 
     if (debug) {
-        refinement_hierarchy->dump();
+        //refinement_hierarchy->dump();
     }
 
 #ifndef NDEBUG
