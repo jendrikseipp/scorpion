@@ -154,27 +154,10 @@ template<typename Callback>
 void RefinementHierarchy::for_each_visited_family(
     const AbstractState &state, const Callback &callback) const {
     NodeID node_id = 0;
-    Node node = nodes[node_id];
-    while (node.is_split()) {
-        // Skip helper nodes.
-        bool follow_right_child = state.contains(node.var, node.value);
-        NodeID helper = node.left_child;
-        while (nodes[helper].right_child == node.right_child) {
-            if (state.contains(nodes[helper].var, nodes[helper].value)) {
-                follow_right_child = true;
-            }
-            helper = nodes[helper].left_child;
-        }
-
-        NodeID state_ancestor_id = helper;
-        NodeID other_node_id = node.right_child;
-        if (follow_right_child) {
-            std::swap(state_ancestor_id, other_node_id);
-        }
-        Family family(node_id, state_ancestor_id, other_node_id);
+    while (nodes[node_id].is_split()) {
+        Family family = get_real_children(node_id, state.get_cartesian_set());
         callback(family);
-        node_id = state_ancestor_id;
-        node = nodes[node_id];
+        node_id = family.correct_child;
     }
 }
 
