@@ -198,7 +198,7 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     refinement_hierarchy.for_each_visited_node(
         state, [&](const NodeID &node_id) {
             assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
-            // TODO: append whole vector at once.
+            operators.reserve(operators.size() + incoming[node_id].size());
             for (int op_id : incoming[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
                                           postconditions_by_operator[op_id]));
@@ -213,7 +213,7 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     refinement_hierarchy.for_each_visited_node(
         state, [&](const NodeID &node_id) {
             assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
-            // TODO: append whole vector at once.
+            operators.reserve(operators.size() + outgoing[node_id].size());
             for (int op_id : outgoing[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
                                           preconditions_by_operator[op_id]));
