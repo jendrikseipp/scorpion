@@ -142,7 +142,27 @@ void RefinementHierarchy::for_each_visited_node(
         if (node_id == state_node_id) {
             break;
         }
-        node_id = nodes[node_id].get_child(state);
+
+        // Skip helper nodes.
+        Node node = nodes[node_id];
+        NodeID helper_id = node.left_child;
+        Node helper = nodes[helper_id];
+        bool follow_right_child = state.contains(node.var, node.value);
+        while (helper.right_child == node.right_child) {
+            if (state.contains(helper.var, helper.value)) {
+                follow_right_child = true;
+            }
+            helper_id = helper.left_child;
+            helper = nodes[helper_id];
+        }
+
+        NodeID state_ancestor_id = helper_id;
+        NodeID other_node_id = node.right_child;
+        if (follow_right_child) {
+            std::swap(state_ancestor_id, other_node_id);
+        }
+
+        node_id = state_ancestor_id;
     }
 }
 
