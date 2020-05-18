@@ -139,7 +139,6 @@ void MatchTree::split(
     resize_vectors(new_num_nodes);
     assert(get_num_nodes() == new_num_nodes);
 
-    // TODO: use shrink_to_fit() after updating the vectors?
     refinement_hierarchy.for_each_visited_family(
         v, [&](const Family &family) {
             NodeID node_id = family.parent;
@@ -190,6 +189,11 @@ void MatchTree::split(
                         incoming[other_node_id].push_back(op_id);
                     }
                 }
+            }
+
+            for (NodeID id : {node_id, v_ancestor_id, other_node_id}) {
+                incoming[id].shrink_to_fit();
+                outgoing[id].shrink_to_fit();
             }
         });
 }
