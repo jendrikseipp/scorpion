@@ -173,16 +173,18 @@ void RefinementHierarchy::for_each_visited_family(
     Node node = nodes[node_id];
     while (node.is_split()) {
         // Skip helper nodes.
+        bool follow_right_child = state.contains(node.var, node.value);
         NodeID helper = node.left_child;
         while (nodes[helper].right_child == node.right_child) {
+            if (state.contains(nodes[helper].var, nodes[helper].value)) {
+                follow_right_child = true;
+            }
             helper = nodes[helper].left_child;
         }
 
         NodeID state_ancestor_id = helper;
         NodeID other_node_id = node.right_child;
-        // We only need to test one value (and none of the helper values), since
-        // the children contain either all or none of the values.
-        if (state.contains(node.var, node.value)) {
+        if (follow_right_child) {
             std::swap(state_ancestor_id, other_node_id);
         }
         Family family(node_id, state_ancestor_id, other_node_id);
