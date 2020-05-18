@@ -168,32 +168,14 @@ void RefinementHierarchy::for_each_leaf(
     // TODO: turn into while-loop.
     Node node = nodes[node_id];
     if (node.is_split()) {
-        bool intersects_with_right_child = cartesian_set.test(node.var, node.value);
-        // Traverse helper nodes.
-        NodeID helper = node.left_child;
-        while (nodes[helper].right_child == node.right_child) {
-            if (!intersects_with_right_child &&
-                cartesian_set.test(nodes[helper].var, nodes[helper].value)) {
-                intersects_with_right_child = true;
-            }
-            helper = nodes[helper].left_child;
-        }
-
-        NodeID real_left_child = helper;
+        Family family = get_real_children(node_id, cartesian_set);
 
         // The Cartesian set must intersect with one or two of the children.
-        bool intersects_with_left_child = !intersects_with_right_child ||
-            cartesian_set.intersects(*all_cartesian_sets[real_left_child], node.var);
-        assert(intersects_with_left_child ==
-               cartesian_set.intersects(*all_cartesian_sets[real_left_child], node.var));
-        if (intersects_with_left_child) {
-            for_each_leaf(all_cartesian_sets, cartesian_set, callback, real_left_child);
-        }
-
-        assert(intersects_with_right_child ==
-               cartesian_set.intersects(*all_cartesian_sets[node.right_child], node.var));
-        if (intersects_with_right_child) {
-            for_each_leaf(all_cartesian_sets, cartesian_set, callback, node.right_child);
+        // We know that it intersects with "correct child".
+        for_each_leaf(all_cartesian_sets, cartesian_set, callback, family.correct_child);
+        // Now test the other child.
+        if (cartesian_set.intersects(*all_cartesian_sets[family.other_child], node.var)) {
+            for_each_leaf(all_cartesian_sets, cartesian_set, callback, family.other_child);
         }
     } else {
         callback(node_id);
