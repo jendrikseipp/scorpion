@@ -222,7 +222,12 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
             for (int op_id : outgoing[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
                                           preconditions[op_id]));
-                operators.push_back(op_id);
+                // Filter self-loops. An operator loops iff state contains all its effects,
+                // since then the resulting Cartesian set is a subset of state.
+                if (any_of(effects[op_id].begin(), effects[op_id].end(),
+                           [&state](const FactPair &fact) {return !state.contains(fact.var, fact.value);})) {
+                    operators.push_back(op_id);
+                }
             }
         });
     return operators;
@@ -265,11 +270,8 @@ Transitions MatchTree::get_outgoing_transitions(
         refinement_hierarchy.for_each_leaf(
             cartesian_sets, tmp_cartesian_set, [&](NodeID leaf_id) {
                 int dest_state_id = get_state_id(leaf_id);
-                // Filter self-loops.
-                // TODO: can we filter self-loops earlier?
-                if (dest_state_id != state.get_id()) {
-                    transitions.emplace_back(op_id, dest_state_id);
-                }
+                assert(dest_state_id != state.get_id());
+                transitions.emplace_back(op_id, dest_state_id);
             });
     }
     return transitions;
