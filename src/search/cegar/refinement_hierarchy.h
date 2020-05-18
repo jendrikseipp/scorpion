@@ -139,15 +139,11 @@ void RefinementHierarchy::for_each_visited_node(
     const AbstractState &state, const Callback &callback) const {
     NodeID state_node_id = state.get_node_id();
     NodeID node_id = 0;
-    while (true) {
+    while (node_id != state_node_id) {
         callback(node_id);
-        if (node_id == state_node_id) {
-            break;
-        }
-
-        Family family = get_real_children(node_id, state.get_cartesian_set());
-        node_id = family.correct_child;
+        node_id = get_real_children(node_id, state.get_cartesian_set()).correct_child;
     }
+    callback(state_node_id);
 }
 
 template<typename Callback>
