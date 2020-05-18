@@ -110,12 +110,12 @@ void Abstraction::mark_all_states_as_goals() {
 }
 
 void Abstraction::initialize_trivial_abstraction(const vector<int> &domain_sizes) {
+    cartesian_sets.push_back(utils::make_unique_ptr<CartesianSet>(domain_sizes));
     unique_ptr<AbstractState> init_state =
-        AbstractState::get_trivial_abstract_state(domain_sizes);
+        AbstractState::get_trivial_abstract_state(*cartesian_sets[0]);
     init_id = init_state->get_id();
     goals.insert(init_state->get_id());
     states.push_back(move(init_state));
-    cartesian_sets.push_back(utils::make_unique_ptr<CartesianSet>(domain_sizes));
 }
 
 pair<int, int> Abstraction::refine(
@@ -141,15 +141,16 @@ pair<int, int> Abstraction::refine(
     pair<CartesianSet, CartesianSet> cartesian_sets =
         state.split_domain(var, wanted);
 
-    // TODO: store Cartesian sets only here and link to them from abstract states.
     this->cartesian_sets.resize(max(node_ids.first, node_ids.second) + 1);
-    this->cartesian_sets[node_ids.first] = utils::make_unique_ptr<CartesianSet>(cartesian_sets.first);
-    this->cartesian_sets[node_ids.second] = utils::make_unique_ptr<CartesianSet>(cartesian_sets.second);
+    this->cartesian_sets[node_ids.first] =
+        utils::make_unique_ptr<CartesianSet>(move(cartesian_sets.first));
+    this->cartesian_sets[node_ids.second] =
+        utils::make_unique_ptr<CartesianSet>(move(cartesian_sets.second));
 
     unique_ptr<AbstractState> v1 = utils::make_unique_ptr<AbstractState>(
-        v1_id, node_ids.first, move(cartesian_sets.first));
+        v1_id, node_ids.first, *this->cartesian_sets[node_ids.first]);
     unique_ptr<AbstractState> v2 = utils::make_unique_ptr<AbstractState>(
-        v2_id, node_ids.second, move(cartesian_sets.second));
+        v2_id, node_ids.second, *this->cartesian_sets[node_ids.second]);
     assert(state.includes(*v1));
     assert(state.includes(*v2));
 
