@@ -17,7 +17,7 @@ class DynamicBitset {
         "Block type must be unsigned");
 
     std::vector<Block> blocks;
-    const std::size_t num_bits;
+    std::size_t num_bits;
 
     static const Block zeros;
     static const Block ones;

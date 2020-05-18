@@ -1,6 +1,7 @@
 #ifndef CEGAR_MATCH_TREE_H
 #define CEGAR_MATCH_TREE_H
 
+#include "cartesian_set.h"
 #include "types.h"
 
 #include <vector>
@@ -24,6 +25,8 @@ class MatchTree {
     // Transitions from and to other abstract states.
     std::vector<Operators> incoming;
     std::vector<Operators> outgoing;
+
+    mutable CartesianSet tmp_cartesian_set;
 
     const bool debug;
 

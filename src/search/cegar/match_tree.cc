@@ -94,6 +94,7 @@ MatchTree::MatchTree(
       postconditions_by_operator(get_postconditions_by_operator(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
+      tmp_cartesian_set(*cartesian_sets[0]), // Pick arbitary Cartesian set.
       debug(debug) {
     add_operators_in_trivial_abstraction();
 }
@@ -228,16 +229,15 @@ Transitions MatchTree::get_incoming_transitions(
     Transitions transitions;
     Operators ops = get_incoming_operators(state);
     for (int op_id : ops) {
-        CartesianSet regression = state.get_cartesian_set();
+        tmp_cartesian_set = state.get_cartesian_set();
         for (const FactPair &fact : effects_by_operator[op_id]) {
-            regression.add_all(fact.var);
+            tmp_cartesian_set.add_all(fact.var);
         }
         for (const FactPair &fact : preconditions_by_operator[op_id]) {
-            regression.set_single_value(fact.var, fact.value);
+            tmp_cartesian_set.set_single_value(fact.var, fact.value);
         }
-        //cout << "  apply " << op_id << " in " << regression << " -> " << state << endl;
         refinement_hierarchy.for_each_leaf(
-            cartesian_sets, regression, [&](NodeID leaf_id) {
+            cartesian_sets, tmp_cartesian_set, [&](NodeID leaf_id) {
                 int src_state_id = get_state_id(leaf_id);
                 // Filter self-loops.
                 // TODO: can we filter self-loops earlier?
@@ -254,17 +254,12 @@ Transitions MatchTree::get_outgoing_transitions(
     Transitions transitions;
     Operators ops = get_outgoing_operators(state);
     for (int op_id : ops) {
-        CartesianSet dest = state.get_cartesian_set();
-        // Check that the operator is applicable.
-        //cout << "Cartesian set " << dest << ", pre: " << preconditions_by_operator[op_id] << endl;
-        //assert(all_of(preconditions_by_operator[op_id].begin(), preconditions_by_operator[op_id].end(),
-        //              [&](const FactPair &fact) {return state.contains(fact.var, fact.value);}));
+        tmp_cartesian_set = state.get_cartesian_set();
         for (const FactPair &fact : postconditions_by_operator[op_id]) {
-            dest.set_single_value(fact.var, fact.value);
+            tmp_cartesian_set.set_single_value(fact.var, fact.value);
         }
-        //cout << "  apply " << op_id << " in " << state << " -> " << dest << endl;
         refinement_hierarchy.for_each_leaf(
-            cartesian_sets, dest, [&](NodeID leaf_id) {
+            cartesian_sets, tmp_cartesian_set, [&](NodeID leaf_id) {
                 int dest_state_id = get_state_id(leaf_id);
                 // Filter self-loops.
                 // TODO: can we filter self-loops earlier?
