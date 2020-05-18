@@ -145,16 +145,14 @@ void MatchTree::split(
             NodeID v_ancestor_id = family.correct_child;
             NodeID other_node_id = family.other_child;
 
-            Operators &out = outgoing[node_id];
-            for (auto it = out.begin(); it != out.end();) {
-                int op_id = *it;
+            Operators old_outgoing;
+            swap(old_outgoing, outgoing[node_id]);
+            for (int op_id : old_outgoing) {
                 int pre = get_precondition_value(op_id, var);
                 if (pre == UNDEFINED) {
-                    ++it;
+                    outgoing[node_id].push_back(op_id);
                 } else {
-                    // TODO: use swap and pop or fill separate vector.
                     // TODO: at least one of the children must get the operator.
-                    it = out.erase(it);
                     if (cartesian_sets[v_ancestor_id]->test(var, pre)) {
                         assert(contains_all_facts(*cartesian_sets[v_ancestor_id],
                                                   preconditions[op_id]));
@@ -168,16 +166,14 @@ void MatchTree::split(
                 }
             }
 
-            Operators &in = incoming[node_id];
-            for (auto it = in.begin(); it != in.end();) {
-                int op_id = *it;
+            Operators old_incoming;
+            swap(old_incoming, incoming[node_id]);
+            for (int op_id : old_incoming) {
                 int post = get_postcondition_value(op_id, var);
                 if (post == UNDEFINED) {
-                    ++it;
+                    incoming[node_id].push_back(op_id);
                 } else {
-                    // TODO: use swap and pop or fill separate vector.
                     // TODO: at least one of the children must get the operator.
-                    it = in.erase(it);
                     if (cartesian_sets[v_ancestor_id]->test(var, post)) {
                         assert(contains_all_facts(*cartesian_sets[v_ancestor_id],
                                                   postconditions[op_id]));
