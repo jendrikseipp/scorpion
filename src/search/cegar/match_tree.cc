@@ -89,9 +89,9 @@ static int lookup_value(const vector<FactPair> &facts, int var) {
 MatchTree::MatchTree(
     const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
     const CartesianSets &cartesian_sets, bool debug)
-    : preconditions_by_operator(get_preconditions_by_operator(ops)),
-      effects_by_operator(get_effects_by_operator(ops)),
-      postconditions_by_operator(get_postconditions_by_operator(ops)),
+    : preconditions(get_preconditions_by_operator(ops)),
+      effects(get_effects_by_operator(ops)),
+      postconditions(get_postconditions_by_operator(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
       tmp_cartesian_set(*cartesian_sets[0]), // Pick arbitary Cartesian set.
@@ -100,11 +100,11 @@ MatchTree::MatchTree(
 }
 
 int MatchTree::get_precondition_value(int op_id, int var) const {
-    return lookup_value(preconditions_by_operator[op_id], var);
+    return lookup_value(preconditions[op_id], var);
 }
 
 int MatchTree::get_postcondition_value(int op_id, int var) const {
-    return lookup_value(postconditions_by_operator[op_id], var);
+    return lookup_value(postconditions[op_id], var);
 }
 
 int MatchTree::get_state_id(NodeID node_id) const {
@@ -157,12 +157,12 @@ void MatchTree::split(
                     it = out.erase(it);
                     if (cartesian_sets[v_ancestor_id]->test(var, pre)) {
                         assert(contains_all_facts(*cartesian_sets[v_ancestor_id],
-                                                  preconditions_by_operator[op_id]));
+                                                  preconditions[op_id]));
                         outgoing[v_ancestor_id].push_back(op_id);
                     }
                     if (cartesian_sets[other_node_id]->test(var, pre)) {
                         assert(contains_all_facts(*cartesian_sets[other_node_id],
-                                                  preconditions_by_operator[op_id]));
+                                                  preconditions[op_id]));
                         outgoing[other_node_id].push_back(op_id);
                     }
                 }
@@ -180,12 +180,12 @@ void MatchTree::split(
                     it = in.erase(it);
                     if (cartesian_sets[v_ancestor_id]->test(var, post)) {
                         assert(contains_all_facts(*cartesian_sets[v_ancestor_id],
-                                                  postconditions_by_operator[op_id]));
+                                                  postconditions[op_id]));
                         incoming[v_ancestor_id].push_back(op_id);
                     }
                     if (cartesian_sets[other_node_id]->test(var, post)) {
                         assert(contains_all_facts(*cartesian_sets[other_node_id],
-                                                  postconditions_by_operator[op_id]));
+                                                  postconditions[op_id]));
                         incoming[other_node_id].push_back(op_id);
                     }
                 }
@@ -206,7 +206,7 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
             operators.reserve(operators.size() + incoming[node_id].size());
             for (int op_id : incoming[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
-                                          postconditions_by_operator[op_id]));
+                                          postconditions[op_id]));
                 operators.push_back(op_id);
             }
         });
@@ -221,7 +221,7 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
             operators.reserve(operators.size() + outgoing[node_id].size());
             for (int op_id : outgoing[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
-                                          preconditions_by_operator[op_id]));
+                                          preconditions[op_id]));
                 operators.push_back(op_id);
             }
         });
@@ -234,10 +234,10 @@ Transitions MatchTree::get_incoming_transitions(
     Operators ops = get_incoming_operators(state);
     for (int op_id : ops) {
         tmp_cartesian_set = state.get_cartesian_set();
-        for (const FactPair &fact : effects_by_operator[op_id]) {
+        for (const FactPair &fact : effects[op_id]) {
             tmp_cartesian_set.add_all(fact.var);
         }
-        for (const FactPair &fact : preconditions_by_operator[op_id]) {
+        for (const FactPair &fact : preconditions[op_id]) {
             tmp_cartesian_set.set_single_value(fact.var, fact.value);
         }
         refinement_hierarchy.for_each_leaf(
@@ -259,7 +259,7 @@ Transitions MatchTree::get_outgoing_transitions(
     Operators ops = get_outgoing_operators(state);
     for (int op_id : ops) {
         tmp_cartesian_set = state.get_cartesian_set();
-        for (const FactPair &fact : postconditions_by_operator[op_id]) {
+        for (const FactPair &fact : postconditions[op_id]) {
             tmp_cartesian_set.set_single_value(fact.var, fact.value);
         }
         refinement_hierarchy.for_each_leaf(
@@ -281,7 +281,7 @@ int MatchTree::get_num_nodes() const {
 }
 
 int MatchTree::get_num_operators() const {
-    return preconditions_by_operator.size();
+    return preconditions.size();
 }
 
 void MatchTree::print_statistics() const {
