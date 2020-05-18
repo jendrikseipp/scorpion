@@ -35,6 +35,14 @@ void CartesianSet::remove_all(int var) {
     domain_subsets[var].reset();
 }
 
+void CartesianSet::set(int var, const Bitset &values) {
+    domain_subsets[var] = values;
+}
+
+const Bitset &CartesianSet::get(int var) const {
+    return domain_subsets[var];
+}
+
 int CartesianSet::count(int var) const {
     return domain_subsets[var].count();
 }
