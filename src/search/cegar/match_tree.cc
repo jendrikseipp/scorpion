@@ -94,7 +94,6 @@ MatchTree::MatchTree(
       postconditions(get_postconditions_by_operator(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
-      tmp_cartesian_set(*cartesian_sets[0]), // Pick arbitary Cartesian set.
       debug(debug) {
     add_operators_in_trivial_abstraction();
 }
@@ -233,7 +232,7 @@ Transitions MatchTree::get_incoming_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
     Operators ops = get_incoming_operators(state);
-    tmp_cartesian_set = state.get_cartesian_set();
+    CartesianSet tmp_cartesian_set = state.get_cartesian_set();
     for (int op_id : ops) {
         for (const FactPair &fact : effects[op_id]) {
             tmp_cartesian_set.add_all(fact.var);
@@ -262,7 +261,7 @@ Transitions MatchTree::get_outgoing_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
     Operators ops = get_outgoing_operators(state);
-    tmp_cartesian_set = state.get_cartesian_set();
+    CartesianSet tmp_cartesian_set = state.get_cartesian_set();
     for (int op_id : ops) {
         for (const FactPair &fact : postconditions[op_id]) {
             tmp_cartesian_set.set_single_value(fact.var, fact.value);
