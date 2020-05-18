@@ -7,6 +7,7 @@
 #include <cassert>
 #include <memory>
 #include <ostream>
+#include <stack>
 #include <utility>
 #include <vector>
 
@@ -161,20 +162,25 @@ template<typename Callback>
 void RefinementHierarchy::for_each_leaf(
     const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set,
     const Callback &callback, NodeID node_id) const {
-    // TODO: turn into while-loop.
-    Node node = nodes[node_id];
-    if (node.is_split()) {
-        Family family = get_real_children(node_id, cartesian_set);
+    std::stack<NodeID> stack;
+    stack.push(node_id);
+    while (!stack.empty()) {
+        NodeID node_id = stack.top();
+        stack.pop();
+        Node node = nodes[node_id];
+        if (node.is_split()) {
+            Family family = get_real_children(node_id, cartesian_set);
 
-        // The Cartesian set must intersect with one or two of the children.
-        // We know that it intersects with "correct child".
-        for_each_leaf(all_cartesian_sets, cartesian_set, callback, family.correct_child);
-        // Now test the other child.
-        if (cartesian_set.intersects(*all_cartesian_sets[family.other_child], node.var)) {
-            for_each_leaf(all_cartesian_sets, cartesian_set, callback, family.other_child);
+            // The Cartesian set must intersect with one or two of the children.
+            // We know that it intersects with "correct child".
+            stack.push(family.correct_child);
+            // Now test the other child.
+            if (cartesian_set.intersects(*all_cartesian_sets[family.other_child], node.var)) {
+                stack.push(family.other_child);
+            }
+        } else {
+            callback(node_id);
         }
-    } else {
-        callback(node_id);
     }
 }
 }
