@@ -29,7 +29,7 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
 
     if (g_hacked_use_cartesian_match_tree) {
         match_tree = utils::make_unique_ptr<MatchTree>(
-            TaskProxy(*task).get_operators(), *refinement_hierarchy, debug);
+            TaskProxy(*task).get_operators(), *refinement_hierarchy, cartesian_sets, debug);
     } else {
         transition_system = utils::make_unique_ptr<TransitionSystem>(
             TaskProxy(*task).get_operators());
@@ -41,7 +41,7 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
     }
     if (!match_tree) {
         match_tree = utils::make_unique_ptr<MatchTree>(
-            TaskProxy(*task).get_operators(), *refinement_hierarchy, debug);
+            TaskProxy(*task).get_operators(), *refinement_hierarchy, cartesian_sets, debug);
     }
 #endif
 }

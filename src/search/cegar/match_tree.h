@@ -19,6 +19,7 @@ class MatchTree {
     const std::vector<std::vector<FactPair>> effects_by_operator;
     const std::vector<std::vector<FactPair>> postconditions_by_operator;
     const RefinementHierarchy &refinement_hierarchy;
+    const CartesianSets &cartesian_sets;
 
     // Transitions from and to other abstract states.
     std::vector<Operators> incoming;
@@ -41,7 +42,7 @@ class MatchTree {
 public:
     MatchTree(
         const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
-        bool debug);
+        const CartesianSets &cartesian_sets, bool debug);
 
     // Update match tree after v has been split for var.
     void split(const CartesianSets &cartesian_sets, const AbstractState &v, int var);

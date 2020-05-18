@@ -45,6 +45,8 @@ class RefinementHierarchy {
     NodeID add_node(int state_id);
     NodeID get_node_id(const State &state) const;
 
+    Family get_real_children(NodeID node_id, const CartesianSet &cartesian_set) const;
+
 public:
     explicit RefinementHierarchy(const std::shared_ptr<AbstractTask> &task);
 
@@ -143,26 +145,8 @@ void RefinementHierarchy::for_each_visited_node(
             break;
         }
 
-        // Skip helper nodes.
-        Node node = nodes[node_id];
-        NodeID helper_id = node.left_child;
-        Node helper = nodes[helper_id];
-        bool follow_right_child = state.contains(node.var, node.value);
-        while (helper.right_child == node.right_child) {
-            if (state.contains(helper.var, helper.value)) {
-                follow_right_child = true;
-            }
-            helper_id = helper.left_child;
-            helper = nodes[helper_id];
-        }
-
-        NodeID state_ancestor_id = helper_id;
-        NodeID other_node_id = node.right_child;
-        if (follow_right_child) {
-            std::swap(state_ancestor_id, other_node_id);
-        }
-
-        node_id = state_ancestor_id;
+        Family family = get_real_children(node_id, state.get_cartesian_set());
+        node_id = family.correct_child;
     }
 }
 

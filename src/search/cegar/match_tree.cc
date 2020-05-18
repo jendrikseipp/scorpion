@@ -88,11 +88,12 @@ static int lookup_value(const vector<FactPair> &facts, int var) {
 
 MatchTree::MatchTree(
     const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
-    bool debug)
+    const CartesianSets &cartesian_sets, bool debug)
     : preconditions_by_operator(get_preconditions_by_operator(ops)),
       effects_by_operator(get_effects_by_operator(ops)),
       postconditions_by_operator(get_postconditions_by_operator(ops)),
       refinement_hierarchy(refinement_hierarchy),
+      cartesian_sets(cartesian_sets),
       debug(debug) {
     add_operators_in_trivial_abstraction();
 }
@@ -200,6 +201,7 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     Operators operators;
     refinement_hierarchy.for_each_visited_node(
         state, [&](const NodeID &node_id) {
+            assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
             // TODO: append whole vector at once.
             for (int op_id : incoming[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
@@ -214,6 +216,7 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     Operators operators;
     refinement_hierarchy.for_each_visited_node(
         state, [&](const NodeID &node_id) {
+            assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
             // TODO: append whole vector at once.
             for (int op_id : outgoing[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
