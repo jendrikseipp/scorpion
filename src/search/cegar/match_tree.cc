@@ -148,12 +148,8 @@ void MatchTree::split(
             Operators &out = outgoing[node_id];
             for (auto it = out.begin(); it != out.end();) {
                 int op_id = *it;
-                // TODO: simplify this and compute lazily.
-                int post = get_postcondition_value(op_id, var);
                 int pre = get_precondition_value(op_id, var);
-                if (post == UNDEFINED) {
-                    ++it;
-                } else if (pre == UNDEFINED) {
+                if (pre == UNDEFINED) {
                     ++it;
                 } else {
                     // TODO: use swap and pop or fill separate vector.
