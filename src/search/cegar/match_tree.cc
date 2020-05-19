@@ -230,9 +230,8 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
 Transitions MatchTree::get_incoming_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
-    Operators ops = get_incoming_operators(state);
     CartesianSet tmp_cartesian_set = state.get_cartesian_set();
-    for (int op_id : ops) {
+    for (int op_id : get_incoming_operators(state)) {
         for (const FactPair &fact : effects[op_id]) {
             tmp_cartesian_set.add_all(fact.var);
         }
@@ -259,9 +258,8 @@ Transitions MatchTree::get_incoming_transitions(
 Transitions MatchTree::get_outgoing_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
-    Operators ops = get_outgoing_operators(state);
     CartesianSet tmp_cartesian_set = state.get_cartesian_set();
-    for (int op_id : ops) {
+    for (int op_id : get_outgoing_operators(state)) {
         for (const FactPair &fact : postconditions[op_id]) {
             tmp_cartesian_set.set_single_value(fact.var, fact.value);
         }
