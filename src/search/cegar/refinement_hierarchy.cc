@@ -88,7 +88,7 @@ int RefinementHierarchy::get_abstract_state_id(NodeID node_id) const {
     return nodes[node_id].get_state_id();
 }
 
-Family RefinementHierarchy::get_real_children(
+Children RefinementHierarchy::get_real_children(
     NodeID node_id, const CartesianSet &cartesian_set) const {
     Node node = nodes[node_id];
     assert(node.is_split());
@@ -105,11 +105,11 @@ Family RefinementHierarchy::get_real_children(
 
     if (follow_right_child) {
         return {
-                   node_id, node.right_child, helper
+                   node.right_child, helper
         };
     } else {
         return {
-                   node_id, helper, node.right_child
+                   helper, node.right_child
         };
     }
 }

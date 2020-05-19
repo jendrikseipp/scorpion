@@ -17,13 +17,12 @@ class State;
 namespace cegar {
 class Node;
 
-struct Family {
-    NodeID parent;
+struct Children {
     NodeID correct_child;
     NodeID other_child;
 
-    Family(NodeID parent, NodeID correct_child, NodeID other_child)
-        : parent(parent), correct_child(correct_child), other_child(other_child) {
+    Children(NodeID correct_child, NodeID other_child)
+        : correct_child(correct_child), other_child(other_child) {
     }
 };
 
@@ -46,7 +45,7 @@ class RefinementHierarchy {
     NodeID add_node(int state_id);
     NodeID get_node_id(const State &state) const;
 
-    Family get_real_children(NodeID node_id, const CartesianSet &cartesian_set) const;
+    Children get_real_children(NodeID node_id, const CartesianSet &cartesian_set) const;
 
 public:
     explicit RefinementHierarchy(const std::shared_ptr<AbstractTask> &task);
@@ -153,9 +152,9 @@ void RefinementHierarchy::for_each_visited_family(
     const AbstractState &state, const Callback &callback) const {
     NodeID node_id = 0;
     while (nodes[node_id].is_split()) {
-        Family family = get_real_children(node_id, state.get_cartesian_set());
-        callback(family);
-        node_id = family.correct_child;
+        Children children = get_real_children(node_id, state.get_cartesian_set());
+        callback(node_id, children);
+        node_id = children.correct_child;
     }
 }
 
@@ -170,14 +169,14 @@ void RefinementHierarchy::for_each_leaf(
         stack.pop();
         Node node = nodes[node_id];
         if (node.is_split()) {
-            Family family = get_real_children(node_id, cartesian_set);
+            Children children = get_real_children(node_id, cartesian_set);
 
             // The Cartesian set must intersect with one or two of the children.
             // We know that it intersects with "correct child".
-            stack.push(family.correct_child);
+            stack.push(children.correct_child);
             // Now test the other child.
-            if (cartesian_set.intersects(*all_cartesian_sets[family.other_child], node.var)) {
-                stack.push(family.other_child);
+            if (cartesian_set.intersects(*all_cartesian_sets[children.other_child], node.var)) {
+                stack.push(children.other_child);
             }
         } else {
             callback(node_id);

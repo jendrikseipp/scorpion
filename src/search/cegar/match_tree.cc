@@ -139,10 +139,9 @@ void MatchTree::split(
     assert(get_num_nodes() == new_num_nodes);
 
     refinement_hierarchy.for_each_visited_family(
-        v, [&](const Family &family) {
-            NodeID node_id = family.parent;
-            NodeID v_ancestor_id = family.correct_child;
-            NodeID other_node_id = family.other_child;
+        v, [&](NodeID node_id, Children children) {
+            NodeID v_ancestor_id = children.correct_child;
+            NodeID other_node_id = children.other_child;
 
             Operators old_outgoing;
             swap(old_outgoing, outgoing[node_id]);
