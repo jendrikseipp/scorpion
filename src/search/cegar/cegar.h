@@ -81,6 +81,7 @@ public:
     CEGAR(const CEGAR &) = delete;
 
     std::unique_ptr<Abstraction> extract_abstraction();
+    std::vector<int> get_goal_distances() const;
 };
 }
 

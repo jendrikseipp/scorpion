@@ -212,10 +212,7 @@ void CostSaturation::build_abstractions(
             abstraction->get_transition_system().get_outgoing_transitions(),
             costs,
             {abstraction->get_initial_state().get_id()}); */
-        vector<int> goal_distances = compute_goal_distances(
-            *abstraction,
-            costs,
-            abstraction->get_goals());
+        vector<int> goal_distances = cegar.get_goal_distances();
         /*vector<int> saturated_costs = compute_saturated_costs(
             *abstraction,
             init_distances,

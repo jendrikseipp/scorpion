@@ -102,6 +102,15 @@ unique_ptr<Solution> ShortestPaths::extract_solution_from_shortest_path_tree(
     return solution;
 }
 
+vector<int> ShortestPaths::get_goal_distances() const {
+    vector<int> distances;
+    distances.reserve(goal_distances.size());
+    for (Cost d : goal_distances) {
+        distances.push_back(convert_to_32_bit_cost(d));
+    }
+    return distances;
+}
+
 void ShortestPaths::mark_dirty(int state) {
     if (debug) {
         cout << "Mark " << state << " as dirty" << endl;
@@ -409,11 +418,7 @@ bool ShortestPaths::test_distances(
     }
 
     vector<int> goal_distances_32_bit = compute_goal_distances(abstraction, costs, goals);
-    vector<int> goal_distances_32_bit_rounded_down;
-    goal_distances_32_bit_rounded_down.reserve(goal_distances_32_bit.size());
-    for (Cost dist : goal_distances) {
-        goal_distances_32_bit_rounded_down.push_back(convert_to_32_bit_cost(dist));
-    }
+    vector<int> goal_distances_32_bit_rounded_down = get_goal_distances();
 
     for (int i = 0; i < num_states; ++i) {
         if (goal_distances_32_bit_rounded_down[i] != goal_distances_32_bit[i] &&

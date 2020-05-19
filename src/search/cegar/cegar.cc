@@ -132,6 +132,11 @@ unique_ptr<Abstraction> CEGAR::extract_abstraction() {
     return move(abstraction);
 }
 
+std::vector<int> CEGAR::get_goal_distances() const {
+    assert(shortest_paths);
+    return shortest_paths->get_goal_distances();
+}
+
 int CEGAR::separate_facts_unreachable_before_goal() {
     assert(abstraction->get_goals().size() == 1);
     assert(abstraction->get_num_states() == 1);
