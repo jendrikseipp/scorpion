@@ -289,6 +289,11 @@ int MatchTree::get_num_operators() const {
     return preconditions.size();
 }
 
+template<typename T>
+uint64_t estimate_memory_usage_in_bytes(const vector<T> &vec) {
+    return sizeof(vec) + vec.capacity() * sizeof(*vec.begin());
+}
+
 void MatchTree::print_statistics() const {
     int total_incoming_ops = 0;
     int total_outgoing_ops = 0;
@@ -301,6 +306,20 @@ void MatchTree::print_statistics() const {
     cout << "Match tree incoming operators: " << total_incoming_ops << endl;
     cout << "Match tree outgoing operators: " << total_outgoing_ops << endl;
     cout << "Match tree capacity: " << total_capacity << endl;
+    uint64_t mem_usage = 0;
+    for (auto &vec : {incoming, outgoing}) {
+        mem_usage += estimate_memory_usage_in_bytes(vec);
+        for (auto &ops : vec) {
+            mem_usage += ops.capacity() * sizeof(*ops.begin());
+        }
+    }
+    cout << "Match tree estimated memory usage: " << mem_usage / 1024 << " KB" << endl;
+    uint64_t static_mem_usage = 0;
+    for (auto &vec : {preconditions, effects, postconditions}) {
+        static_mem_usage += estimate_memory_usage_in_bytes(vec);
+    }
+    cout << "Match tree estimated memory usage for operator info: "
+         << static_mem_usage / 1024 << " KB" << endl;
 }
 
 void MatchTree::dump() const {
