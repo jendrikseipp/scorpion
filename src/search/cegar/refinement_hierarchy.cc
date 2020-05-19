@@ -103,13 +103,15 @@ Family RefinementHierarchy::get_real_children(
         helper = nodes[helper].left_child;
     }
 
-    NodeID state_ancestor_id = helper;
-    NodeID other_node_id = node.right_child;
     if (follow_right_child) {
-        std::swap(state_ancestor_id, other_node_id);
+        return {
+                   node_id, node.right_child, helper
+        };
+    } else {
+        return {
+                   node_id, helper, node.right_child
+        };
     }
-
-    return Family(node_id, state_ancestor_id, other_node_id);
 }
 
 void RefinementHierarchy::print_statistics() const {
