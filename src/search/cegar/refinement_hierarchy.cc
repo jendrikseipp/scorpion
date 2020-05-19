@@ -1,5 +1,7 @@
 #include "refinement_hierarchy.h"
 
+#include "utils.h"
+
 #include "../task_proxy.h"
 
 using namespace std;
@@ -86,7 +88,7 @@ int RefinementHierarchy::get_abstract_state_id(NodeID node_id) const {
     return nodes[node_id].get_state_id();
 }
 
-Family cegar::RefinementHierarchy::get_real_children(
+Family RefinementHierarchy::get_real_children(
     NodeID node_id, const CartesianSet &cartesian_set) const {
     Node node = nodes[node_id];
     assert(node.is_split());
@@ -108,6 +110,12 @@ Family cegar::RefinementHierarchy::get_real_children(
     }
 
     return Family(node_id, state_ancestor_id, other_node_id);
+}
+
+void RefinementHierarchy::print_statistics() const {
+    cout << "Refinement hierarchy nodes: " << nodes.size() << endl;
+    cout << "Refinement hierarchy estimated memory usage: "
+         << estimate_memory_usage_in_bytes(nodes) / 1024 << " KB" << endl;
 }
 
 void cegar::RefinementHierarchy::dump(int level, NodeID id) const {

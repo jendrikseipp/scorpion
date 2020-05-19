@@ -75,6 +75,7 @@ public:
         const CartesianSets &all_cartesian_sets,
         const CartesianSet &cartesian_set, const Callback &callback, NodeID node_id = 0) const;
 
+    void print_statistics() const;
     void dump(int level = 0, NodeID id = 0) const;
 };
 

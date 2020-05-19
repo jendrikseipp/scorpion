@@ -289,11 +289,6 @@ int MatchTree::get_num_operators() const {
     return preconditions.size();
 }
 
-template<typename T>
-uint64_t estimate_memory_usage_in_bytes(const vector<T> &vec) {
-    return sizeof(vec) + vec.capacity() * sizeof(*vec.begin());
-}
-
 void MatchTree::print_statistics() const {
     int total_incoming_ops = 0;
     int total_outgoing_ops = 0;
