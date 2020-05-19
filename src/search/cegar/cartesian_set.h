@@ -36,6 +36,8 @@ public:
     bool intersects(const CartesianSet &other, int var) const;
     bool is_superset_of(const CartesianSet &other) const;
 
+    uint64_t estimate_size_in_bytes() const;
+
     friend std::ostream &operator<<(
         std::ostream &os, const CartesianSet &cartesian_set);
 };

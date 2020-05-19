@@ -2,6 +2,7 @@
 #define ALGORITHMS_DYNAMIC_BITSET_H
 
 #include <cassert>
+#include <cstdint>
 #include <limits>
 #include <vector>
 
@@ -122,6 +123,10 @@ public:
                 return false;
         }
         return true;
+    }
+
+    uint64_t estimate_size_in_bytes() const {
+        return sizeof(*this) + blocks.capacity() * sizeof(Block);
     }
 };
 

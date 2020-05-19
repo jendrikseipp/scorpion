@@ -60,6 +60,16 @@ bool CartesianSet::is_superset_of(const CartesianSet &other) const {
     return true;
 }
 
+uint64_t CartesianSet::estimate_size_in_bytes() const {
+    uint64_t bytes = 0;
+    assert(domain_subsets.size() == domain_subsets.capacity());
+    bytes += sizeof(domain_subsets);
+    for (auto &subset : domain_subsets) {
+        bytes += subset.estimate_size_in_bytes();
+    }
+    return bytes;
+}
+
 ostream &operator<<(ostream &os, const CartesianSet &cartesian_set) {
     int num_vars = cartesian_set.domain_subsets.size();
     string var_sep;
