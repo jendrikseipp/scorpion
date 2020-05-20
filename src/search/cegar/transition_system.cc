@@ -352,6 +352,12 @@ void TransitionSystem::print_statistics() const {
     assert(get_num_non_loops() == total_outgoing_transitions);
     cout << "Looping transitions: " << total_loops << endl;
     cout << "Non-looping transitions: " << total_outgoing_transitions << endl;
+    uint64_t bytes = 0;
+    bytes += estimate_vector_of_vector_bytes(incoming);
+    bytes += estimate_vector_of_vector_bytes(outgoing);
+    bytes += estimate_vector_of_vector_bytes(loops);
+    cout << "Transition system estimated memory usage: "
+         << bytes / 1024 << " KB" << endl;
 }
 
 void TransitionSystem::dump() const {

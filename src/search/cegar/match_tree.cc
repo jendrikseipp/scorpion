@@ -300,10 +300,7 @@ void MatchTree::print_statistics() const {
     cout << "Match tree capacity: " << total_capacity << endl;
     uint64_t mem_usage = 0;
     for (auto &vec : {incoming, outgoing}) {
-        mem_usage += estimate_memory_usage_in_bytes(vec);
-        for (auto &ops : vec) {
-            mem_usage += ops.capacity() * sizeof(*ops.begin());
-        }
+        mem_usage += estimate_vector_of_vector_bytes(vec);
     }
     cout << "Match tree estimated memory usage: " << mem_usage / 1024 << " KB" << endl;
     uint64_t static_mem_usage = 0;

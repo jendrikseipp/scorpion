@@ -50,6 +50,16 @@ uint64_t estimate_memory_usage_in_bytes(const std::vector<T> &vec) {
     return size;
 }
 
+template<typename T>
+uint64_t estimate_vector_of_vector_bytes(const std::vector<std::vector<T>> &vec) {
+    uint64_t size = estimate_memory_usage_in_bytes(vec);
+    for (auto &inner : vec) {
+        size += estimate_memory_usage_in_bytes(inner);
+    }
+    size -= vec.capacity() * sizeof(T);  // Subtract doubly-counted bytes.
+    return size;
+}
+
 extern void dump_dot_graph(const Abstraction &abstraction);
 }
 
