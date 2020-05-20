@@ -72,7 +72,7 @@ public:
     template<typename Callback>
     void for_each_leaf(
         const CartesianSets &all_cartesian_sets,
-        const CartesianSet &cartesian_set, const Callback &callback, NodeID node_id = 0) const;
+        const CartesianSet &cartesian_set, const Callback &callback) const;
 
     void print_statistics() const;
     void dump(int level = 0, NodeID id = 0) const;
@@ -161,21 +161,21 @@ void RefinementHierarchy::for_each_visited_family(
 template<typename Callback>
 void RefinementHierarchy::for_each_leaf(
     const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set,
-    const Callback &callback, NodeID node_id) const {
+    const Callback &callback) const {
     std::stack<NodeID> stack;
-    stack.push(node_id);
+    stack.push(0);
     while (!stack.empty()) {
         NodeID node_id = stack.top();
         stack.pop();
-        Node node = nodes[node_id];
-        if (node.is_split()) {
+        if (nodes[node_id].is_split()) {
             Children children = get_real_children(node_id, cartesian_set);
 
             // The Cartesian set must intersect with one or two of the children.
             // We know that it intersects with "correct child".
             stack.push(children.correct_child);
             // Now test the other child.
-            if (cartesian_set.intersects(*all_cartesian_sets[children.other_child], node.var)) {
+            if (cartesian_set.intersects(
+                    *all_cartesian_sets[children.other_child], nodes[node_id].var)) {
                 stack.push(children.other_child);
             }
         } else {

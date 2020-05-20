@@ -90,7 +90,7 @@ int RefinementHierarchy::get_abstract_state_id(NodeID node_id) const {
 
 Children RefinementHierarchy::get_real_children(
     NodeID node_id, const CartesianSet &cartesian_set) const {
-    Node node = nodes[node_id];
+    const Node &node = nodes[node_id];
     assert(node.is_split());
     bool follow_right_child = cartesian_set.test(node.var, node.value);
     // Traverse helper nodes.
