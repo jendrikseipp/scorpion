@@ -40,9 +40,14 @@ extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
 extern void add_h_update_option(options::OptionParser &parser);
 
+// Adapted from utils::estimate_vector_bytes().
 template<typename T>
 uint64_t estimate_memory_usage_in_bytes(const std::vector<T> &vec) {
-    return sizeof(vec) + vec.capacity() * sizeof(*vec.begin());
+    uint64_t size = 0;
+    size += 2 * sizeof(void *);         // overhead for dynamic memory management
+    size += sizeof(vec);                // size of empty vector
+    size += vec.capacity() * sizeof(T); // size of actual entries
+    return size;
 }
 
 extern void dump_dot_graph(const Abstraction &abstraction);
