@@ -16,9 +16,9 @@ class RefinementHierarchy;
   Rewire transitions after each split.
 */
 class MatchTree {
-    const std::vector<std::vector<FactPair>> preconditions;
-    const std::vector<std::vector<FactPair>> effects;
-    const std::vector<std::vector<FactPair>> postconditions;
+    const std::vector<Facts> preconditions;
+    const std::vector<Facts> effects;
+    const std::vector<Facts> postconditions;
     const RefinementHierarchy &refinement_hierarchy;
     const CartesianSets &cartesian_sets;
 

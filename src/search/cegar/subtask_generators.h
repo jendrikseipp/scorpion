@@ -1,6 +1,8 @@
 #ifndef CEGAR_SUBTASK_GENERATORS_H
 #define CEGAR_SUBTASK_GENERATORS_H
 
+#include "types.h"
+
 #include <memory>
 #include <vector>
 
@@ -20,7 +22,6 @@ class RandomNumberGenerator;
 }
 
 namespace cegar {
-using Facts = std::vector<FactPair>;
 using SharedTasks = std::vector<std::shared_ptr<AbstractTask>>;
 
 enum class FactOrder {

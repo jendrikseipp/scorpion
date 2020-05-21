@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <vector>
 
+struct FactPair;
+
 namespace cegar {
 class Abstraction;
 class AbstractState;
@@ -20,6 +22,7 @@ enum class HUpdateStrategy {
 
 using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
 using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;
+using Facts = std::vector<FactPair>;
 // TODO: Store goals IDs in vector once we no longer use A* search.
 using Goals = std::unordered_set<int>;
 using Loops = std::vector<int>;
