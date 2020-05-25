@@ -265,11 +265,10 @@ void ShortestPaths::dijkstra_from_orphans(
             }
             if (!reconnected) {
                 mark_dirty(state);
-                for (const Transition &t : abstraction.get_incoming_transitions(state)) {
+                for (const Transition &t : children[state]) {
                     int prev = t.target_id;
-                    if (!dirty_candidate[prev] &&
-                        goal_distances[prev] != DIRTY &&
-                        shortest_path[prev].target_id == state) {
+                    assert(shortest_path[prev].target_id == state);
+                    if (!dirty_candidate[prev] && goal_distances[prev] != DIRTY) {
                         if (debug) {
                             cout << "Add " << prev << " to candidate queue" << endl;
                         }
