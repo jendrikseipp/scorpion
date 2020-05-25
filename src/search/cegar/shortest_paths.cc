@@ -111,13 +111,17 @@ vector<int> ShortestPaths::get_goal_distances() const {
     return distances;
 }
 
+void ShortestPaths::set_shortest_path(int state, const Transition &transition) {
+    shortest_path[state] = transition;
+}
+
 void ShortestPaths::mark_dirty(int state) {
     if (debug) {
         cout << "Mark " << state << " as dirty" << endl;
     }
     goal_distances[state] = DIRTY;
     // Previous shortest path is invalid now.
-    shortest_path[state] = Transition();
+    set_shortest_path(state, Transition());
     assert(!count(dirty_states.begin(), dirty_states.end(), state));
     dirty_states.push_back(state);
 }
@@ -181,7 +185,7 @@ void ShortestPaths::dijkstra_from_orphans(
     /* Due to the way we select splits, the old shortest path from v1 is
        invalid now, but the path from v2 is still valid. We don't explicitly
        invalidate shortest_path[v1] since v and v1 are the same ID. */
-    shortest_path[v2] = shortest_path[v];
+    set_shortest_path(v2, shortest_path[v]);
 
     /* Update shortest path transitions to split state. The SPT transition to v1
        will be updated again if v1 is dirty. We therefore prefer reconnecting
@@ -190,10 +194,10 @@ void ShortestPaths::dijkstra_from_orphans(
         for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
             int u = incoming.target_id;
             int op = incoming.op_id;
-            Transition &sp = shortest_path[u];
+            const Transition &sp = shortest_path[u];
             if (sp.target_id == v &&
                 operator_costs[op] == operator_costs[sp.op_id]) {
-                sp = Transition(op, state);
+                set_shortest_path(u, Transition(op, state));
             }
         }
     }
@@ -239,7 +243,7 @@ void ShortestPaths::dijkstra_from_orphans(
                     if (debug) {
                         cout << "Reconnect " << state << " to " << succ << " via " << op_id << endl;
                     }
-                    shortest_path[state] = Transition(op_id, succ);
+                    set_shortest_path(state, Transition(op_id, succ));
                     reconnected = true;
                     break;
                 }
@@ -308,7 +312,7 @@ void ShortestPaths::dijkstra_from_orphans(
                 Cost new_dist = add_costs(cost, succ_dist);
                 if (new_dist < min_dist) {
                     min_dist = new_dist;
-                    shortest_path[state] = Transition(op_id, succ);
+                    set_shortest_path(state, Transition(op_id, succ));
                 }
             }
         }
@@ -335,7 +339,7 @@ void ShortestPaths::dijkstra_from_orphans(
 
             if (goal_distances[succ] == DIRTY || succ_g < goal_distances[succ]) {
                 goal_distances[succ] = succ_g;
-                shortest_path[succ] = Transition(op_id, state);
+                set_shortest_path(succ, Transition(op_id, state));
                 open_queue.push(succ_g, succ);
             }
         }
@@ -351,7 +355,7 @@ void ShortestPaths::full_dijkstra(
     for (int goal : goals) {
         Cost dist = 0;
         goal_distances[goal] = dist;
-        shortest_path[goal] = Transition();
+        set_shortest_path(goal, Transition());
         open_queue.push(dist, goal);
     }
     while (!open_queue.empty()) {
@@ -371,7 +375,7 @@ void ShortestPaths::full_dijkstra(
             Cost succ_g = add_costs(g, op_cost);
             if (succ_g < goal_distances[succ_id]) {
                 goal_distances[succ_id] = succ_g;
-                shortest_path[succ_id] = Transition(op_id, state_id);
+                set_shortest_path(succ_id, Transition(op_id, state_id));
                 open_queue.push(succ_g, succ_id);
             }
         }
@@ -402,7 +406,7 @@ bool ShortestPaths::test_distances(
         if (goal_distances[i] != INF_COSTS &&
             init_distances[i] != INF &&
             !goals.count(i)) {
-            Transition t = shortest_path[i];
+            const Transition &t = shortest_path[i];
             if (debug) {
                 cout << "SP: " << t << endl;
             }

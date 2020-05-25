@@ -73,6 +73,7 @@ class ShortestPaths {
     int convert_to_32_bit_cost(Cost cost) const;
     Cost convert_to_64_bit_cost(int cost) const;
 
+    void set_shortest_path(int state, const Transition &transition);
     void mark_dirty(int state);
     void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
 
