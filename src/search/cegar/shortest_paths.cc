@@ -120,8 +120,7 @@ void ShortestPaths::set_shortest_path(int state, const Transition &new_parent) {
             Children &old_children = children[old_parent.target_id];
             auto it = find(old_children.begin(), old_children.end(), old_child);
             assert(it != old_children.end());
-            // TODO: use swap and pop.
-            old_children.erase(it);
+            utils::swap_and_pop_from_vector(old_children, it - old_children.begin());
         }
         shortest_path[state] = new_parent;
         if (new_parent.is_defined()) {
