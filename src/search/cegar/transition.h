@@ -28,6 +28,10 @@ struct Transition {
         return op_id == other.op_id && target_id == other.target_id;
     }
 
+    bool operator!=(const Transition &other) const {
+        return !(*this == other);
+    }
+
     bool operator<(const Transition &other) const {
         return std::make_pair(op_id, target_id)
                < std::make_pair(other.op_id, other.target_id);

@@ -111,8 +111,23 @@ vector<int> ShortestPaths::get_goal_distances() const {
     return distances;
 }
 
-void ShortestPaths::set_shortest_path(int state, const Transition &transition) {
-    shortest_path[state] = transition;
+void ShortestPaths::set_shortest_path(int state, const Transition &new_parent) {
+    int op_id = new_parent.op_id;
+    if (shortest_path[state] != new_parent) {
+        Transition old_parent = shortest_path[state];
+        if (old_parent.is_defined()) {
+            Transition old_child(old_parent.op_id, state);
+            Children &old_children = children[old_parent.target_id];
+            auto it = find(old_children.begin(), old_children.end(), old_child);
+            assert(it != old_children.end());
+            // TODO: use swap and pop.
+            old_children.erase(it);
+        }
+        shortest_path[state] = new_parent;
+        if (new_parent.is_defined()) {
+            children[new_parent.target_id].emplace_back(op_id, state);
+        }
+    }
 }
 
 void ShortestPaths::mark_dirty(int state) {
@@ -154,6 +169,7 @@ void ShortestPaths::dijkstra_from_orphans(
     */
     int num_states = abstraction.get_num_states();
     shortest_path.resize(num_states);
+    children.resize(num_states);
     goal_distances.resize(num_states, 0);
     dirty_states.clear();
 
@@ -350,8 +366,10 @@ void ShortestPaths::full_dijkstra(
     const Abstraction &abstraction,
     const unordered_set<int> &goals) {
     open_queue.clear();
-    shortest_path.resize(abstraction.get_num_states());
-    goal_distances = vector<Cost>(abstraction.get_num_states(), INF_COSTS);
+    int num_states = abstraction.get_num_states();
+    shortest_path.resize(num_states);
+    children.resize(num_states);
+    goal_distances = vector<Cost>(num_states, INF_COSTS);
     for (int goal : goals) {
         Cost dist = 0;
         goal_distances[goal] = dist;

@@ -68,12 +68,14 @@ class ShortestPaths {
     std::vector<int> dirty_states;
     using ShortestPathTree = std::vector<Transition>;
     ShortestPathTree shortest_path;
+    using Children = std::vector<Transition>;
+    std::vector<Children> children;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
     Cost convert_to_64_bit_cost(int cost) const;
 
-    void set_shortest_path(int state, const Transition &transition);
+    void set_shortest_path(int state, const Transition &new_parent);
     void mark_dirty(int state);
     void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
 
