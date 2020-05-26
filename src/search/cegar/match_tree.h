@@ -16,9 +16,11 @@ class RefinementHierarchy;
   Rewire transitions after each split.
 */
 class MatchTree {
+    // TODO: group this info in new Operator class?
     const std::vector<Facts> preconditions;
     const std::vector<Facts> effects;
     const std::vector<Facts> postconditions;
+    const std::vector<int> operator_costs;
     const RefinementHierarchy &refinement_hierarchy;
     const CartesianSets &cartesian_sets;
 

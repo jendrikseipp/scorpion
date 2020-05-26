@@ -85,6 +85,14 @@ static int lookup_value(const vector<FactPair> &facts, int var) {
     return UNDEFINED;
 }
 
+static vector<int> get_operator_costs(const OperatorsProxy &operators) {
+    vector<int> costs;
+    costs.reserve(operators.size());
+    for (OperatorProxy op : operators)
+        costs.push_back(op.get_cost());
+    return costs;
+}
+
 
 MatchTree::MatchTree(
     const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
@@ -92,6 +100,7 @@ MatchTree::MatchTree(
     : preconditions(get_preconditions_by_operator(ops)),
       effects(get_effects_by_operator(ops)),
       postconditions(get_postconditions_by_operator(ops)),
+      operator_costs(get_operator_costs(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
       debug(debug) {
