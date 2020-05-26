@@ -74,6 +74,8 @@ public:
         const CartesianSets &all_cartesian_sets,
         const CartesianSet &cartesian_set, const Callback &callback) const;
 
+    TaskProxy get_task_proxy() const;
+
     void print_statistics() const;
     void dump(int level = 0, NodeID id = 0) const;
 };

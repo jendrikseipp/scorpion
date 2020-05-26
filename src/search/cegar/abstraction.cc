@@ -88,11 +88,21 @@ int Abstraction::get_num_transitions() const {
     return transition_system->get_num_non_loops();
 }
 
-Transitions Abstraction::get_incoming_transitions(int state_id) const {
+Transitions Abstraction::get_incoming_transitions(int state_id, int cost) const {
     if (match_tree) {
-        return match_tree->get_incoming_transitions(cartesian_sets, *states[state_id]);
+        return match_tree->get_incoming_transitions(cartesian_sets, *states[state_id], cost);
+    } else if (cost == -1) {
+        return transition_system->get_incoming_transitions()[state_id];
+    } else {
+        OperatorsProxy operators = refinement_hierarchy->get_task_proxy().get_operators();
+        Transitions filtered_transitions;
+        for (const Transition &t : transition_system->get_incoming_transitions()[state_id]) {
+            if (operators[t.op_id].get_cost() == cost) {
+                filtered_transitions.push_back(t);
+            }
+        }
+        return filtered_transitions;
     }
-    return transition_system->get_incoming_transitions()[state_id];
 }
 
 Transitions Abstraction::get_outgoing_transitions(int state_id) const {

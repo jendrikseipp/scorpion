@@ -39,7 +39,7 @@ class MatchTree {
 
     int get_state_id(NodeID node_id) const;
 
-    Operators get_incoming_operators(const AbstractState &state) const;
+    Operators get_incoming_operators(const AbstractState &state, int cost) const;
     Operators get_outgoing_operators(const AbstractState &state) const;
 
 public:
@@ -51,7 +51,7 @@ public:
     void split(const CartesianSets &cartesian_sets, const AbstractState &v, int var);
 
     Transitions get_incoming_transitions(
-        const CartesianSets &cartesian_sets, const AbstractState &state) const;
+        const CartesianSets &cartesian_sets, const AbstractState &state, int cost = -1) const;
     Transitions get_outgoing_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
 

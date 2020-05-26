@@ -114,6 +114,11 @@ Children RefinementHierarchy::get_real_children(
     }
 }
 
+
+TaskProxy RefinementHierarchy::get_task_proxy() const {
+    return TaskProxy(*task);
+}
+
 void RefinementHierarchy::print_statistics() const {
     cout << "Refinement hierarchy nodes: " << nodes.size() << endl;
     cout << "Refinement hierarchy estimated memory usage: "
