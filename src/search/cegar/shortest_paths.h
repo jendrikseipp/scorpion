@@ -89,8 +89,7 @@ public:
     std::vector<int> get_goal_distances() const;
 
     void dijkstra_from_orphans(
-        const Abstraction &abstraction,
-        int v, int v1, int v2, bool filter_orphans);
+        const Abstraction &abstraction, int v, int v1, int v2);
     void full_dijkstra(
         const Abstraction &abstraction,
         const std::unordered_set<int> &goals);

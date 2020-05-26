@@ -298,8 +298,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 state_id, new_state_ids.first, new_state_ids.second);
         } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
             shortest_paths->dijkstra_from_orphans(
-                *abstraction,
-                state_id, new_state_ids.first, new_state_ids.second, true);
+                *abstraction, state_id, new_state_ids.first, new_state_ids.second);
         } else {
             ABORT("Unknown h-update strategy");
         }

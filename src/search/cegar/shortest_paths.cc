@@ -140,23 +140,8 @@ void ShortestPaths::mark_dirty(int state) {
     dirty_states.push_back(state);
 }
 
-void ShortestPaths::mark_orphaned_predecessors(
-    const Abstraction &abstraction, int state) {
-    mark_dirty(state);
-    for (const Transition &t : abstraction.get_incoming_transitions(state)) {
-        int prev = t.target_id;
-        assert(prev != state);
-        assert(prev != UNDEFINED);
-        if (goal_distances[prev] != DIRTY &&
-            shortest_path[prev].target_id == state) {
-            mark_orphaned_predecessors(abstraction, prev);
-        }
-    }
-}
-
 void ShortestPaths::dijkstra_from_orphans(
-    const Abstraction &abstraction,
-    int v, int v1, int v2, bool filter_orphans) {
+    const Abstraction &abstraction, int v, int v1, int v2) {
     /*
       Assumption: all h-values correspond to the perfect heuristic for the
       state space before the split.
@@ -222,66 +207,61 @@ void ShortestPaths::dijkstra_from_orphans(
         cout << "Shortest paths: " << shortest_path << endl;
     }
 
-    if (filter_orphans) {
-        /*
-          Instead of just recursively inserting all orphans, we first push them
-          into a candidate queue that is sorted by (old, possibly too low)
-          h-values. Then, we try to reconnect them to a non-orphaned state at
-          no additional cost. Only if that fails, we flag the candidate as
-          orphaned and push its SPT-children (who have strictly larger h-values
-          due to no 0-cost operators) into the candidate queue.
-        */
-        assert(candidate_queue.empty());
-        assert(!count(dirty_candidate.begin(), dirty_candidate.end(), true));
+    /*
+      Instead of just recursively inserting all orphans, we first push them
+      into a candidate queue that is sorted by (old, possibly too low)
+      h-values. Then, we try to reconnect them to a non-orphaned state at
+      no additional cost. Only if that fails, we flag the candidate as
+      orphaned and push its SPT-children (who have strictly larger h-values
+      due to no 0-cost operators) into the candidate queue.
+    */
+    assert(candidate_queue.empty());
+    assert(!count(dirty_candidate.begin(), dirty_candidate.end(), true));
 
-        dirty_candidate.resize(num_states, false);
-        dirty_candidate[v1] = true;
-        candidate_queue.push(goal_distances[v1], v1);
+    dirty_candidate.resize(num_states, false);
+    dirty_candidate[v1] = true;
+    candidate_queue.push(goal_distances[v1], v1);
 
-        while (!candidate_queue.empty()) {
-            int state = candidate_queue.pop().second;
-            if (debug) {
-                cout << "Try to reconnect " << state
-                     << " with h=" << goal_distances[state] << endl;
-            }
-            assert(dirty_candidate[state]);
-            assert(goal_distances[state] != INF_COSTS);
-            assert(goal_distances[state] != DIRTY);
-            bool reconnected = false;
-            // Try to reconnect to settled, solvable state.
-            for (const Transition &t : abstraction.get_outgoing_transitions(state)) {
-                int succ = t.target_id;
-                int op_id = t.op_id;
-                if (goal_distances[succ] != DIRTY &&
-                    add_costs(goal_distances[succ], operator_costs[op_id])
-                    == goal_distances[state]) {
-                    if (debug) {
-                        cout << "Reconnect " << state << " to " << succ << " via " << op_id << endl;
-                    }
-                    set_shortest_path(state, Transition(op_id, succ));
-                    reconnected = true;
-                    break;
-                }
-            }
-            if (!reconnected) {
-                mark_dirty(state);
-                for (const Transition &t : children[state]) {
-                    int prev = t.target_id;
-                    assert(shortest_path[prev].target_id == state);
-                    if (!dirty_candidate[prev] && goal_distances[prev] != DIRTY) {
-                        if (debug) {
-                            cout << "Add " << prev << " to candidate queue" << endl;
-                        }
-                        dirty_candidate[prev] = true;
-                        candidate_queue.push(goal_distances[prev], prev);
-                    }
-                }
-            }
-            dirty_candidate[state] = false;
+    while (!candidate_queue.empty()) {
+        int state = candidate_queue.pop().second;
+        if (debug) {
+            cout << "Try to reconnect " << state
+                 << " with h=" << goal_distances[state] << endl;
         }
-    } else {
-        // v1 and all its predecessors are orphaned.
-        mark_orphaned_predecessors(abstraction, v1);
+        assert(dirty_candidate[state]);
+        assert(goal_distances[state] != INF_COSTS);
+        assert(goal_distances[state] != DIRTY);
+        bool reconnected = false;
+        // Try to reconnect to settled, solvable state.
+        for (const Transition &t : abstraction.get_outgoing_transitions(state)) {
+            int succ = t.target_id;
+            int op_id = t.op_id;
+            if (goal_distances[succ] != DIRTY &&
+                add_costs(goal_distances[succ], operator_costs[op_id])
+                == goal_distances[state]) {
+                if (debug) {
+                    cout << "Reconnect " << state << " to " << succ << " via " << op_id << endl;
+                }
+                set_shortest_path(state, Transition(op_id, succ));
+                reconnected = true;
+                break;
+            }
+        }
+        if (!reconnected) {
+            mark_dirty(state);
+            for (const Transition &t : children[state]) {
+                int prev = t.target_id;
+                assert(shortest_path[prev].target_id == state);
+                if (!dirty_candidate[prev] && goal_distances[prev] != DIRTY) {
+                    if (debug) {
+                        cout << "Add " << prev << " to candidate queue" << endl;
+                    }
+                    dirty_candidate[prev] = true;
+                    candidate_queue.push(goal_distances[prev], prev);
+                }
+            }
+        }
+        dirty_candidate[state] = false;
     }
 
     if (debug) {
