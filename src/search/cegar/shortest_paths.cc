@@ -190,10 +190,16 @@ void ShortestPaths::dijkstra_from_orphans(
     /* Update shortest path transitions to split state. The SPT transition to v1
        will be updated again if v1 is dirty. We therefore prefer reconnecting
        states to v2 instead of v1, which is why we test v2 after v1. */
-    // TODO: pass lower and upper bound.
-    int cost = (children[v].size() == 1) ? convert_to_32_bit_cost(operator_costs[children[v][0].op_id]) : -1;
+    int min_cost = INF;
+    int max_cost = -INF;
+    for (const Transition &child : children[v]) {
+        int cost = operator_costs[child.op_id];
+        min_cost = min(min_cost, cost);
+        max_cost = max(max_cost, cost);
+    }
     for (int state : {v1, v2}) {
-        for (const Transition &incoming : abstraction.get_incoming_transitions(state, cost)) {
+        for (const Transition &incoming :
+             abstraction.get_incoming_transitions(state, min_cost, max_cost)) {
             int u = incoming.target_id;
             int op = incoming.op_id;
             const Transition &sp = shortest_path[u];

@@ -88,16 +88,19 @@ int Abstraction::get_num_transitions() const {
     return transition_system->get_num_non_loops();
 }
 
-Transitions Abstraction::get_incoming_transitions(int state_id, int cost) const {
+Transitions Abstraction::get_incoming_transitions(
+    int state_id, int min_cost, int max_cost) const {
     if (match_tree) {
-        return match_tree->get_incoming_transitions(cartesian_sets, *states[state_id], cost);
-    } else if (cost == -1) {
+        return match_tree->get_incoming_transitions(
+            cartesian_sets, *states[state_id], min_cost, max_cost);
+    } else if (min_cost == -INF && max_cost == INF) {
         return transition_system->get_incoming_transitions()[state_id];
     } else {
         OperatorsProxy operators = refinement_hierarchy->get_task_proxy().get_operators();
         Transitions filtered_transitions;
         for (const Transition &t : transition_system->get_incoming_transitions()[state_id]) {
-            if (operators[t.op_id].get_cost() == cost) {
+            int cost = operators[t.op_id].get_cost();
+            if (cost >= min_cost && cost <= max_cost) {
                 filtered_transitions.push_back(t);
             }
         }
@@ -215,7 +218,7 @@ pair<int, int> Abstraction::refine(
         assert(ts_out == mt_out);
 
         Transitions ts_in = transition_system->get_incoming_transitions()[state_id];
-        Transitions mt_in = match_tree->get_incoming_transitions(this->cartesian_sets, state);
+        Transitions mt_in = match_tree->get_incoming_transitions(this->cartesian_sets, state, -INF, INF);
         sort(ts_in.begin(), ts_in.end());
         sort(mt_in.begin(), mt_in.end());
         if (ts_in != mt_in) {
