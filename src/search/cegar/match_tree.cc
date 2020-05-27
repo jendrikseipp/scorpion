@@ -210,6 +210,7 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state, int min_
             for (int op_id : incoming[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
                                           postconditions[op_id]));
+                // TODO: ignore operators with infinite cost.
                 if (operator_costs[op_id] >= min_cost && operator_costs[op_id] <= max_cost) {
                     operators.push_back(op_id);
                 }
@@ -229,6 +230,7 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
                                           preconditions[op_id]));
                 // Filter self-loops. An operator loops iff state contains all its effects,
                 // since then the resulting Cartesian set is a subset of state.
+                // TODO: ignore operators with infinite cost.
                 if (any_of(effects[op_id].begin(), effects[op_id].end(),
                            [&state](const FactPair &fact) {return !state.contains(fact.var, fact.value);})) {
                     operators.push_back(op_id);
