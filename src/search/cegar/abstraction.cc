@@ -115,6 +115,19 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
     return transition_system->get_outgoing_transitions()[state_id];
 }
 
+int Abstraction::get_operator_between_states(int src, int dest, int cost) const {
+    if (match_tree) {
+        return match_tree->get_operator_between_states(*states[src], *states[dest], cost);
+    }
+    OperatorsProxy operators = refinement_hierarchy->get_task_proxy().get_operators();
+    for (const Transition &t : transition_system->get_outgoing_transitions()[src]) {
+        if (t.target_id == dest && operators[t.op_id].get_cost() == cost) {
+            return t.op_id;
+        }
+    }
+    return UNDEFINED;
+}
+
 void Abstraction::mark_all_states_as_goals() {
     goals.clear();
     for (auto &state : states) {

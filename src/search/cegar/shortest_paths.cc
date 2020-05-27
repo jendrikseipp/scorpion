@@ -185,29 +185,22 @@ void ShortestPaths::dijkstra_from_orphans(
     /* Due to the way we select splits, the old shortest path from v1 is
        invalid now, but the path from v2 is still valid. We don't explicitly
        invalidate shortest_path[v1] since v and v1 are the same ID. */
+    // TODO: set SP for v1 explicitly? Or at least assert that v==v1?
     set_shortest_path(v2, shortest_path[v]);
 
     /* Update shortest path transitions to split state. The SPT transition to v1
        will be updated again if v1 is dirty. We therefore prefer reconnecting
-       states to v2 instead of v1, which is why we test v2 after v1. */
-    int min_cost = INF;
-    int max_cost = -INF;
-    for (const Transition &child : children[v]) {
-        int cost = operator_costs[child.op_id];
-        min_cost = min(min_cost, cost);
-        max_cost = max(max_cost, cost);
-    }
-    for (int state : {v1, v2}) {
-        for (const Transition &incoming :
-             abstraction.get_incoming_transitions(state, min_cost, max_cost)) {
-            int u = incoming.target_id;
-            int op = incoming.op_id;
-            const Transition &sp = shortest_path[u];
-            if (sp.target_id == v &&
-                operator_costs[op] == operator_costs[sp.op_id]) {
-                set_shortest_path(u, Transition(op, state));
-            }
-        }
+       states to v2 instead of v1. */
+    // We need to copy the vector since we reuse the index v.
+    Children old_children = children[v];
+    for (const Transition &old_child : old_children) {
+        int u = old_child.target_id;
+        int old_cost = convert_to_32_bit_cost(operator_costs[old_child.op_id]);
+        int op_id = abstraction.get_operator_between_states(u, v2, old_cost);
+        Transition new_parent = (op_id == UNDEFINED)
+            ? Transition(old_child.op_id, v1)
+            : Transition(op_id, v2);
+        set_shortest_path(u, new_parent);
     }
 
     if (debug) {

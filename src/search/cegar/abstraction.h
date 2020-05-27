@@ -63,6 +63,7 @@ public:
     Transitions get_incoming_transitions(
         int state_id, int min_cost = -INF, int max_cost = INF) const;
     Transitions get_outgoing_transitions(int state_id) const;
+    int get_operator_between_states(int src, int dest, int cost) const;
 
     /* Needed for CEGAR::separate_facts_unreachable_before_goal(). */
     void mark_all_states_as_goals();

@@ -288,6 +288,32 @@ Transitions MatchTree::get_outgoing_transitions(
     return transitions;
 }
 
+bool MatchTree::has_transition(const AbstractState &src, int op_id, const AbstractState &dest) const {
+    int num_vars = src.get_cartesian_set().get_num_variables();
+    vector<int> values(num_vars, -1);
+    for (const FactPair &fact : postconditions[op_id]) {
+        values[fact.var] = fact.value;
+    }
+    for (int var = 0; var < num_vars; ++var) {
+        int value = values[var];
+        if ((value == -1 && !src.domain_subsets_intersect(dest.get_cartesian_set(), var)) ||
+            (value != -1 && !dest.contains(var, value))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+int MatchTree::get_operator_between_states(
+    const AbstractState &src, const AbstractState &dest, int cost) const {
+    for (int op_id : get_outgoing_operators(src)) {
+        if (operator_costs[op_id] == cost && has_transition(src, op_id, dest)) {
+            return op_id;
+        }
+    }
+    return UNDEFINED;
+}
+
 int MatchTree::get_num_nodes() const {
     assert(incoming.size() == outgoing.size());
     return outgoing.size();

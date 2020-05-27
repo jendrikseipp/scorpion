@@ -38,6 +38,10 @@ public:
 
     uint64_t estimate_size_in_bytes() const;
 
+    int get_num_variables() const {
+        return domain_subsets.size();
+    }
+
     friend std::ostream &operator<<(
         std::ostream &os, const CartesianSet &cartesian_set);
 };
