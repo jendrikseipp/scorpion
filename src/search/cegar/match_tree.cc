@@ -201,7 +201,7 @@ void MatchTree::split(
         });
 }
 
-Operators MatchTree::get_incoming_operators(const AbstractState &state, int min_cost, int max_cost) const {
+Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     Operators operators;
     refinement_hierarchy.for_each_visited_node(
         state, [&](const NodeID &node_id) {
@@ -210,8 +210,8 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state, int min_
             for (int op_id : incoming[node_id]) {
                 assert(contains_all_facts(state.get_cartesian_set(),
                                           postconditions[op_id]));
-                // TODO: ignore operators with infinite cost.
-                if (operator_costs[op_id] >= min_cost && operator_costs[op_id] <= max_cost) {
+                // Ignore operators with infinite cost.
+                if (operator_costs[op_id] != INF) {
                     operators.push_back(op_id);
                 }
             }
@@ -241,10 +241,10 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
 }
 
 Transitions MatchTree::get_incoming_transitions(
-    const CartesianSets &cartesian_sets, const AbstractState &state, int min_cost, int max_cost) const {
+    const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
     CartesianSet tmp_cartesian_set = state.get_cartesian_set();
-    for (int op_id : get_incoming_operators(state, min_cost, max_cost)) {
+    for (int op_id : get_incoming_operators(state)) {
         for (const FactPair &fact : effects[op_id]) {
             tmp_cartesian_set.add_all(fact.var);
         }

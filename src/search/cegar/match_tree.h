@@ -39,7 +39,7 @@ class MatchTree {
 
     int get_state_id(NodeID node_id) const;
 
-    Operators get_incoming_operators(const AbstractState &state, int cost, int max_cost) const;
+    Operators get_incoming_operators(const AbstractState &state) const;
     Operators get_outgoing_operators(const AbstractState &state) const;
     bool has_transition(const AbstractState &src, int op_id, const AbstractState &dest) const;
 
@@ -51,9 +51,8 @@ public:
     // Update match tree after v has been split for var.
     void split(const CartesianSets &cartesian_sets, const AbstractState &v, int var);
 
-    // TODO: simplify this method again.
     Transitions get_incoming_transitions(
-        const CartesianSets &cartesian_sets, const AbstractState &state, int min_cost, int max_cost) const;
+        const CartesianSets &cartesian_sets, const AbstractState &state) const;
     Transitions get_outgoing_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
     int get_operator_between_states(const AbstractState &src, const AbstractState &dest, int cost) const;
