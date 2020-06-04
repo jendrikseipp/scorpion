@@ -44,6 +44,10 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
             TaskProxy(*task).get_operators(), *refinement_hierarchy, cartesian_sets, debug);
     }
 #endif
+
+    cout << "Estimated memory usage for single Cartesian state: "
+         << get_initial_state().get_cartesian_set().estimate_size_in_bytes()
+         << " B" << endl;
 }
 
 Abstraction::~Abstraction() {
