@@ -45,8 +45,6 @@ public:
     void remove(int var, int value);
     void add_all(int var);
     void remove_all(int var);
-    void set(int var, const ConstBitsetView &values);
-    ConstBitsetView get(int var) const;
 
     bool test(int var, int value) const {
         return get_view(var).test(value);

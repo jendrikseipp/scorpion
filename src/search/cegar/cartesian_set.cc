@@ -66,20 +66,6 @@ void CartesianSet::remove_all(int var) {
     get_view(var).reset();
 }
 
-void CartesianSet::set(int var, const ConstBitsetView &values) {
-    BitsetView view = get_view(var);
-    view.reset();
-    for (int index = 0; index < values.size(); ++index) {
-        if (values.test(index)) {
-            view.set(index);
-        }
-    }
-}
-
-ConstBitsetView CartesianSet::get(int var) const {
-    return get_view(var);
-}
-
 int CartesianSet::count(int var) const {
     return get_view(var).count();
 }

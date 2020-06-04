@@ -243,8 +243,8 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
 Transitions MatchTree::get_incoming_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
-    CartesianSet tmp_cartesian_set = state.get_cartesian_set();
     for (int op_id : get_incoming_operators(state)) {
+        CartesianSet tmp_cartesian_set = state.get_cartesian_set();
         for (const FactPair &fact : effects[op_id]) {
             tmp_cartesian_set.add_all(fact.var);
         }
@@ -260,10 +260,6 @@ Transitions MatchTree::get_incoming_transitions(
                     transitions.emplace_back(op_id, src_state_id);
                 }
             });
-        // Restore Cartesian state.
-        for (const FactPair &fact : postconditions[op_id]) {
-            tmp_cartesian_set.set(fact.var, state.get_cartesian_set().get(fact.var));
-        }
     }
     return transitions;
 }
@@ -271,8 +267,8 @@ Transitions MatchTree::get_incoming_transitions(
 Transitions MatchTree::get_outgoing_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
-    CartesianSet tmp_cartesian_set = state.get_cartesian_set();
     for (int op_id : get_outgoing_operators(state)) {
+        CartesianSet tmp_cartesian_set = state.get_cartesian_set();
         for (const FactPair &fact : postconditions[op_id]) {
             tmp_cartesian_set.set_single_value(fact.var, fact.value);
         }
@@ -282,10 +278,6 @@ Transitions MatchTree::get_outgoing_transitions(
                 assert(dest_state_id != state.get_id());
                 transitions.emplace_back(op_id, dest_state_id);
             });
-        // Restore Cartesian state.
-        for (const FactPair &fact : postconditions[op_id]) {
-            tmp_cartesian_set.set(fact.var, state.get_cartesian_set().get(fact.var));
-        }
     }
     return transitions;
 }
