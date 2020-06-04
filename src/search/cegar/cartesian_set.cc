@@ -14,7 +14,7 @@ BitsetView CartesianSet::get_view(int var) {
     return {
                ArrayView<BitsetMath::Block>(
                    domains.data() + var_infos[var].block_index,
-                   var_infos[var].get_num_blocks()),
+                   var_infos[var].num_blocks),
                var_infos[var].domain_size
     };
 }
@@ -23,7 +23,7 @@ ConstBitsetView CartesianSet::get_view(int var) const {
     return {
                ConstArrayView<BitsetMath::Block>(
                    domains.data() + var_infos[var].block_index,
-                   var_infos[var].get_num_blocks()),
+                   var_infos[var].num_blocks),
                var_infos[var].domain_size
     };
 }

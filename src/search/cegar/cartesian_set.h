@@ -9,14 +9,13 @@
 namespace cegar {
 struct VariableInfo {
     int domain_size;
+    int num_blocks;
     int block_index;
 
     VariableInfo(int domain_size, int block_index)
-        : domain_size(domain_size), block_index(block_index) {
-    }
-
-    int get_num_blocks() const {
-        return BitsetMath::compute_num_blocks(domain_size);
+        : domain_size(domain_size),
+          num_blocks(BitsetMath::compute_num_blocks(domain_size)),
+          block_index(block_index) {
     }
 };
 
