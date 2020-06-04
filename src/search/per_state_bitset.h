@@ -8,7 +8,7 @@
 
 class BitsetMath {
 public:
-    using Block = unsigned short;
+    using Block = unsigned char;
     static_assert(
         !std::numeric_limits<Block>::is_signed,
         "Block type must be unsigned");
