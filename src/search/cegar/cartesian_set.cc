@@ -5,6 +5,9 @@
 using namespace std;
 
 namespace cegar {
+std::vector<VariableInfo> CartesianSet::var_infos;
+int CartesianSet::total_num_blocks;
+
 BitsetView CartesianSet::get_view(int var) {
     return {
                ArrayView<BitsetMath::Block>(
@@ -40,16 +43,19 @@ CartesianSet::CartesianSet(const vector<int> &domain_sizes) {
         domain_subsets.push_back(move(domain));
     }
 
+    domains.resize(total_num_blocks, 0);
+    for (size_t var = 0; var < domain_sizes.size(); ++var) {
+        add_all(var);
+    }
+}
+
+void CartesianSet::initialize_static_members(const vector<int> &domain_sizes) {
     var_infos.reserve(domain_sizes.size());
-    int total_num_blocks = 0;
+    total_num_blocks = 0;
     for (int domain_size : domain_sizes) {
         int num_blocks = BitsetMath::compute_num_blocks(domain_size);
         var_infos.emplace_back(domain_size, total_num_blocks);
         total_num_blocks += num_blocks;
-    }
-    domains.resize(total_num_blocks, 0);
-    for (size_t var = 0; var < domain_sizes.size(); ++var) {
-        add_all(var);
     }
 }
 

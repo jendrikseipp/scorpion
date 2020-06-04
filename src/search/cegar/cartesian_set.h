@@ -33,8 +33,9 @@ struct VariableInfo {
 class CartesianSet {
     std::vector<Bitset> domain_subsets;
     std::vector<BitsetMath::Block> domains;
-    // TODO: store as static member.
-    std::vector<VariableInfo> var_infos;
+
+    static std::vector<VariableInfo> var_infos;
+    static int total_num_blocks;
 
     BitsetView get_view(int var);
     ConstBitsetView get_view(int var) const;
@@ -43,6 +44,8 @@ class CartesianSet {
 
 public:
     explicit CartesianSet(const std::vector<int> &domain_sizes);
+
+    static void initialize_static_members(const std::vector<int> &domain_sizes);
 
     void add(int var, int value);
     void set_single_value(int var, int value);
