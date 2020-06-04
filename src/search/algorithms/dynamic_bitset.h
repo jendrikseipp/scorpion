@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstdint>
 #include <limits>
+#include <ostream>
 #include <vector>
 
 /*
@@ -127,6 +128,13 @@ public:
 
     uint64_t estimate_size_in_bytes() const {
         return sizeof(*this) + blocks.capacity() * sizeof(Block);
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, const DynamicBitset &bitset) {
+        for (size_t index = 0; index < bitset.num_bits; ++index) {
+            os << bitset.test(index);
+        }
+        return os;
     }
 };
 

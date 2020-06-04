@@ -1,6 +1,8 @@
 #ifndef CEGAR_CARTESIAN_SET_H
 #define CEGAR_CARTESIAN_SET_H
 
+#include "../per_state_bitset.h"
+
 #include "../algorithms/dynamic_bitset.h"
 
 #include <ostream>
@@ -9,6 +11,20 @@
 namespace cegar {
 using Bitset = dynamic_bitset::DynamicBitset<unsigned short>;
 
+struct VariableInfo {
+    int domain_size;
+    int block_index;
+
+    VariableInfo(int domain_size, int block_index)
+        : domain_size(domain_size), block_index(block_index) {
+    }
+
+    int get_num_blocks() const {
+        return BitsetMath::compute_num_blocks(domain_size);
+    }
+};
+
+
 /*
   For each variable store a subset of its domain.
 
@@ -16,6 +32,14 @@ using Bitset = dynamic_bitset::DynamicBitset<unsigned short>;
 */
 class CartesianSet {
     std::vector<Bitset> domain_subsets;
+    std::vector<BitsetMath::Block> domains;
+    // TODO: store as static member.
+    std::vector<VariableInfo> var_infos;
+
+    BitsetView get_view(int var);
+    ConstBitsetView get_view(int var) const;
+
+    bool is_consistent(int var) const;
 
 public:
     explicit CartesianSet(const std::vector<int> &domain_sizes);

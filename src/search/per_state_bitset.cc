@@ -30,6 +30,12 @@ void BitsetView::set(int index) {
     data[block_index] |= BitsetMath::bit_mask(index);
 }
 
+void BitsetView::set() {
+    for (int index = 0; index < num_bits; ++index) {
+        set(index);
+    }
+}
+
 void BitsetView::reset(int index) {
     assert(index >= 0 && index < num_bits);
     int block_index = BitsetMath::block_index(index);
@@ -55,7 +61,60 @@ void BitsetView::intersect(const BitsetView &other) {
     }
 }
 
+bool BitsetView::intersects(const BitsetView &other) const {
+    assert(num_bits == other.num_bits);
+    for (int i = 0; i < data.size(); ++i) {
+        if (data[i] & other.data[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int BitsetView::size() const {
+    return num_bits;
+}
+
+
+ConstBitsetView::ConstBitsetView(ConstArrayView<BitsetMath::Block> data, int num_bits) :
+    data(data), num_bits(num_bits) {}
+
+
+bool ConstBitsetView::test(int index) const {
+    assert(index >= 0 && index < num_bits);
+    int block_index = BitsetMath::block_index(index);
+    return (data[block_index] & BitsetMath::bit_mask(index)) != 0;
+}
+
+int ConstBitsetView::count() const {
+    int result = 0;
+    for (int index = 0; index < num_bits; ++index) {
+        result += test(index);
+    }
+    return result;
+}
+
+bool ConstBitsetView::intersects(const ConstBitsetView &other) const {
+    assert(num_bits == other.num_bits);
+    for (int i = 0; i < data.size(); ++i) {
+        if (data[i] & other.data[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ConstBitsetView::is_subset_of(const ConstBitsetView &other) const {
+    assert(num_bits == other.num_bits);
+    for (int i = 0; i < data.size(); ++i) {
+        if (data[i] & ~other.data[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+int ConstBitsetView::size() const {
     return num_bits;
 }
 

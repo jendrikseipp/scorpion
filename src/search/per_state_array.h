@@ -34,6 +34,28 @@ public:
     }
 };
 
+
+template<class T>
+class ConstArrayView {
+    const T *p;
+    int size_;
+public:
+    ConstArrayView(const T *p, int size) : p(p), size_(size) {}
+    ConstArrayView(const ConstArrayView<T> &other) = default;
+
+    ConstArrayView<T> &operator=(const ConstArrayView<T> &other) = default;
+
+    const T &operator[](int index) const {
+        assert(index >= 0 && index < size_);
+        return p[index];
+    }
+
+    int size() const {
+        return size_;
+    }
+};
+
+
 /*
   PerStateArray is used to associate array-like information with states.
   PerStateArray<Entry> logically behaves somewhat like an unordered map
