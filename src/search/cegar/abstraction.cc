@@ -249,8 +249,12 @@ void Abstraction::print_statistics() const {
     if (match_tree) {
         match_tree->print_statistics();
     }
+    int num_helper_nodes = count(cartesian_sets.begin(), cartesian_sets.end(), nullptr);
+    int num_cartesian_sets = cartesian_sets.size() - num_helper_nodes;
+    cout << "Cartesian helper nodes: " << num_helper_nodes << endl;
+    cout << "Cartesian sets: " << num_cartesian_sets << endl;
     cout << "Estimated memory usage for Cartesian states: "
-         << get_num_states() * get_initial_state().get_cartesian_set().estimate_size_in_bytes() / 1024
+         << num_cartesian_sets * get_initial_state().get_cartesian_set().estimate_size_in_bytes() / 1024
          << " KB" << endl;
     refinement_hierarchy->print_statistics();
 }
