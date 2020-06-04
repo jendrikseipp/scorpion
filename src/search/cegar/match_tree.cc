@@ -331,14 +331,13 @@ void MatchTree::print_statistics() const {
     cout << "Match tree outgoing operators: " << total_outgoing_ops << endl;
     cout << "Match tree capacity: " << total_capacity << endl;
     uint64_t mem_usage = 0;
-    for (auto &vec : {incoming, outgoing}) {
-        mem_usage += estimate_vector_of_vector_bytes(vec);
-    }
+    mem_usage += estimate_vector_of_vector_bytes(incoming);
+    mem_usage += estimate_vector_of_vector_bytes(outgoing);
     cout << "Match tree estimated memory usage: " << mem_usage / 1024 << " KB" << endl;
     uint64_t static_mem_usage = 0;
-    for (auto &vec : {preconditions, effects, postconditions}) {
-        static_mem_usage += estimate_memory_usage_in_bytes(vec);
-    }
+    static_mem_usage += estimate_memory_usage_in_bytes(preconditions);
+    static_mem_usage += estimate_memory_usage_in_bytes(effects);
+    static_mem_usage += estimate_memory_usage_in_bytes(postconditions);
     cout << "Match tree estimated memory usage for operator info: "
          << static_mem_usage / 1024 << " KB" << endl;
 }
