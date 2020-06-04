@@ -3,14 +3,10 @@
 
 #include "../per_state_bitset.h"
 
-#include "../algorithms/dynamic_bitset.h"
-
 #include <ostream>
 #include <vector>
 
 namespace cegar {
-using Bitset = dynamic_bitset::DynamicBitset<unsigned short>;
-
 struct VariableInfo {
     int domain_size;
     int block_index;
@@ -31,7 +27,6 @@ struct VariableInfo {
   The underlying data structure is a vector of bitsets.
 */
 class CartesianSet {
-    std::vector<Bitset> domain_subsets;
     std::vector<BitsetMath::Block> domains;
 
     static std::vector<VariableInfo> var_infos;
@@ -39,8 +34,6 @@ class CartesianSet {
 
     BitsetView get_view(int var);
     ConstBitsetView get_view(int var) const;
-
-    bool is_consistent(int var) const;
 
 public:
     explicit CartesianSet(const std::vector<int> &domain_sizes);
@@ -52,11 +45,11 @@ public:
     void remove(int var, int value);
     void add_all(int var);
     void remove_all(int var);
-    void set(int var, const Bitset &values);
-    const Bitset &get(int var) const;
+    void set(int var, const ConstBitsetView &values);
+    ConstBitsetView get(int var) const;
 
     bool test(int var, int value) const {
-        return domain_subsets[var][value];
+        return get_view(var).test(value);
     }
 
     int count(int var) const;
@@ -66,7 +59,7 @@ public:
     uint64_t estimate_size_in_bytes() const;
 
     int get_num_variables() const {
-        return domain_subsets.size();
+        return var_infos.size();
     }
 
     friend std::ostream &operator<<(
