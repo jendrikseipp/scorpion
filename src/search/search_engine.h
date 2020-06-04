@@ -90,4 +90,7 @@ extern void collect_preferred_operators(
     EvaluationContext &eval_context, Evaluator *preferred_operator_evaluator,
     ordered_set::OrderedSet<OperatorID> &preferred_operators);
 
+extern successor_generator::SuccessorGenerator &get_successor_generator(
+    const TaskProxy &task_proxy);
+
 #endif

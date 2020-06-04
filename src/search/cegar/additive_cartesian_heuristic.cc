@@ -7,6 +7,7 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../search_engine.h"
 
 #include "../utils/logging.h"
 #include "../utils/markup.h"
@@ -169,6 +170,9 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         return nullptr;
 
     g_hacked_use_cartesian_match_tree = opts.get<bool>("use_match_tree");
+
+    // Compute the successor generator here already to get peak memory info.
+    get_successor_generator(TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")));
 
     return make_shared<AdditiveCartesianHeuristic>(opts);
 }
