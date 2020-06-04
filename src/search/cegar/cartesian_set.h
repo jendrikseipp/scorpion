@@ -31,8 +31,22 @@ class CartesianSet {
     static std::vector<VariableInfo> var_infos;
     static int total_num_blocks;
 
-    BitsetView get_view(int var);
-    ConstBitsetView get_view(int var) const;
+    BitsetView get_view(int var) {
+        return {
+                   ArrayView<BitsetMath::Block>(
+                       domains.data() + var_infos[var].block_index,
+                       var_infos[var].num_blocks),
+                   var_infos[var].domain_size
+        };
+    }
+    ConstBitsetView get_view(int var) const {
+        return {
+                   ConstArrayView<BitsetMath::Block>(
+                       domains.data() + var_infos[var].block_index,
+                       var_infos[var].num_blocks),
+                   var_infos[var].domain_size
+        };
+    }
 
 public:
     explicit CartesianSet(const std::vector<int> &domain_sizes);

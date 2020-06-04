@@ -10,24 +10,6 @@ namespace cegar {
 std::vector<VariableInfo> CartesianSet::var_infos;
 int CartesianSet::total_num_blocks;
 
-BitsetView CartesianSet::get_view(int var) {
-    return {
-               ArrayView<BitsetMath::Block>(
-                   domains.data() + var_infos[var].block_index,
-                   var_infos[var].num_blocks),
-               var_infos[var].domain_size
-    };
-}
-
-ConstBitsetView CartesianSet::get_view(int var) const {
-    return {
-               ConstArrayView<BitsetMath::Block>(
-                   domains.data() + var_infos[var].block_index,
-                   var_infos[var].num_blocks),
-               var_infos[var].domain_size
-    };
-}
-
 CartesianSet::CartesianSet(const vector<int> &domain_sizes) {
     domains.resize(total_num_blocks, 0);
     for (size_t var = 0; var < domain_sizes.size(); ++var) {
