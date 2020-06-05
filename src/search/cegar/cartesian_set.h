@@ -60,7 +60,10 @@ public:
     void remove_all(int var);
 
     bool test(int var, int value) const {
-        return get_view(var).test(value);
+        int block_index = var_infos[var].block_index + BitsetMath::block_index(value);
+        bool result = (domains[block_index] & BitsetMath::bit_mask(value)) != 0;
+        assert(result == get_view(var).test(value));
+        return result;
     }
 
     template<typename Callback>
