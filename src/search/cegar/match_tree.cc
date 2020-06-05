@@ -244,6 +244,10 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
                 }
             });
     }
+#ifndef NDEBUG
+    sort(operators.begin(), operators.end());
+    assert(utils::is_sorted_unique(operators));
+#endif
     return operators;
 }
 
@@ -281,6 +285,10 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
                 }
             });
     }
+#ifndef NDEBUG
+    sort(operators.begin(), operators.end());
+    assert(utils::is_sorted_unique(operators));
+#endif
     return operators;
 }
 
