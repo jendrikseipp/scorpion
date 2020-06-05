@@ -391,6 +391,9 @@ void MatchTree::print_statistics() const {
     static_mem_usage += estimate_memory_usage_in_bytes(postconditions);
     cout << "Match tree estimated memory usage for operator info: "
          << static_mem_usage / 1024 << " KB" << endl;
+    if (debug) {
+        dump();
+    }
 }
 
 void MatchTree::dump() const {
