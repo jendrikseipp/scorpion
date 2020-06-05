@@ -1,54 +1,57 @@
 #include "inverted_task.h"
 
+#include "../task_proxy.h"
+
+#include "../task_utils/task_properties.h"
 #include "../utils/system.h"
+
+#include <map>
 
 using namespace std;
 
 namespace extra_tasks {
-/*
-  If we need the same functionality again in another task, we can move this to
-  actract_task.h. We should then document that this method is only supposed to
-  be used from within AbstractTasks. More high-level users should use
-  has_conditional_effects(TaskProxy) from task_tools.h instead.
-*/
-static bool has_conditional_effects(const AbstractTask &task) {
-    int num_ops = task.get_num_operators();
-    for (int op_index = 0; op_index < num_ops; ++op_index) {
-        int num_effs = task.get_num_operator_effects(op_index, false);
-        for (int eff_index = 0; eff_index < num_effs; ++eff_index) {
-            int num_conditions = task.get_num_operator_effect_conditions(
-                op_index, eff_index, false);
-            if (num_conditions > 0) {
-                return true;
-            }
-        }
+static vector<FactPair> get_postconditions(
+    const OperatorProxy &op) {
+    // Use map to obtain sorted postconditions.
+    map<int, int> var_to_post;
+    for (FactProxy fact : op.get_preconditions()) {
+        var_to_post[fact.get_variable().get_id()] = fact.get_value();
     }
-    return false;
+    for (EffectProxy effect : op.get_effects()) {
+        FactPair fact = effect.get_fact().get_pair();
+        var_to_post[fact.var] = fact.value;
+    }
+    vector<FactPair> postconditions;
+    postconditions.reserve(var_to_post.size());
+    for (const pair<const int, int> &fact : var_to_post) {
+        postconditions.emplace_back(fact.first, fact.second);
+    }
+    return postconditions;
+}
+
+static vector<InvertedOperator> compute_inverted_operators(
+    const OperatorsProxy &operators_proxy) {
+    vector<InvertedOperator> inverted_operators;
+    // Exchange preconditions and postconditions.
+    for (OperatorProxy op : operators_proxy) {
+        vector<FactPair> preconditions = task_properties::get_fact_pairs(op.get_preconditions());
+        sort(preconditions.begin(), preconditions.end());
+        vector<FactPair> postconditions = get_postconditions(op);
+        inverted_operators.emplace_back(move(postconditions), move(preconditions));
+    }
+    return inverted_operators;
 }
 
 InvertedTask::InvertedTask(
-    const shared_ptr<AbstractTask> &parent,
-    vector<InvertedOperator> &&inverted_operators)
+    const shared_ptr<AbstractTask> &parent)
     : DelegatingTask(parent),
-      operators(move(inverted_operators)){
+      operators(compute_inverted_operators(TaskProxy(*parent).get_operators())) {
     if (parent->get_num_axioms() > 0) {
         ABORT("InvertedTask doesn't support axioms.");
     }
-    if (has_conditional_effects(*parent)) {
+    if (task_properties::has_conditional_effects(TaskProxy(*parent))) {
         ABORT("InvertedTask doesn't support conditional effects.");
     }
-}
-
-int InvertedTask::get_operator_cost(int index, bool ) const {
-    return operators[index].cost;
-}
-
-string InvertedTask::get_operator_name(int, bool) const {
-    ABORT("InvertedTask doesn't support retrieving operator names.");
-}
-
-int InvertedTask::get_num_operators() const {
-    return operators.size();
 }
 
 int InvertedTask::get_num_operator_preconditions(int index, bool) const {
@@ -62,16 +65,6 @@ FactPair InvertedTask::get_operator_precondition(
 
 int InvertedTask::get_num_operator_effects(int op_index, bool) const {
     return operators[op_index].effects.size();
-}
-
-int InvertedTask::get_num_operator_effect_conditions(
-    int, int, bool) const {
-    return 0;
-}
-
-FactPair InvertedTask::get_operator_effect_condition(
-    int, int, int, bool) const {
-    ABORT("InvertedTask doesn't support conditional effects.");
 }
 
 FactPair InvertedTask::get_operator_effect(
