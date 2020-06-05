@@ -28,8 +28,6 @@ class MatchTree {
     std::vector<Operators> incoming;
     std::vector<Operators> outgoing;
 
-    mutable CartesianSet tmp_cartesian_set;
-
     const bool debug;
 
     void resize_vectors(int new_size);
