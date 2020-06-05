@@ -10,6 +10,7 @@
 
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
+#include "../tasks/inverted_task.h"
 #include "../utils/logging.h"
 
 #include <algorithm>
@@ -105,8 +106,11 @@ MatchTree::MatchTree(
       operator_costs(get_operator_costs(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
-      successor_generator(
+      inverted_task(make_shared<extra_tasks::InvertedTask>(refinement_hierarchy.get_task())),
+      forward_successor_generator(
           successor_generator::g_successor_generators[refinement_hierarchy.get_task_proxy()]),
+      backward_successor_generator(
+          successor_generator::g_successor_generators[TaskProxy(*inverted_task)]),
       debug(debug) {
     add_operators_in_trivial_abstraction();
 }
@@ -207,19 +211,32 @@ void MatchTree::split(
 
 Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     Operators operators;
-    refinement_hierarchy.for_each_visited_node(
-        state, [&](const NodeID &node_id) {
-            assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
-            operators.reserve(operators.size() + incoming[node_id].size());
-            for (int op_id : incoming[node_id]) {
-                assert(contains_all_facts(state.get_cartesian_set(),
-                                          postconditions[op_id]));
-                // Ignore operators with infinite cost.
-                if (operator_costs[op_id] != INF) {
-                    operators.push_back(op_id);
-                }
+    if (g_hacked_use_successor_generator) {
+        vector<OperatorID> operator_ids;
+        backward_successor_generator.generate_applicable_ops(state, operator_ids);
+        for (OperatorID op_id : operator_ids) {
+            int op = op_id.get_index();
+            assert(contains_all_facts(state.get_cartesian_set(), postconditions[op]));
+            // Ignore operators with infinite cost.
+            if (operator_costs[op] != INF) {
+                operators.push_back(op);
             }
-        });
+        }
+    } else {
+        refinement_hierarchy.for_each_visited_node(
+            state, [&](const NodeID &node_id) {
+                assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
+                operators.reserve(operators.size() + incoming[node_id].size());
+                for (int op_id : incoming[node_id]) {
+                    assert(contains_all_facts(state.get_cartesian_set(),
+                                              postconditions[op_id]));
+                    // Ignore operators with infinite cost.
+                    if (operator_costs[op_id] != INF) {
+                        operators.push_back(op_id);
+                    }
+                }
+            });
+    }
     return operators;
 }
 
@@ -227,7 +244,7 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     Operators operators;
     if (g_hacked_use_successor_generator) {
         vector<OperatorID> operator_ids;
-        successor_generator.generate_applicable_ops(state, operator_ids);
+        forward_successor_generator.generate_applicable_ops(state, operator_ids);
         for (OperatorID op_id : operator_ids) {
             int op = op_id.get_index();
             assert(contains_all_facts(state.get_cartesian_set(), preconditions[op]));

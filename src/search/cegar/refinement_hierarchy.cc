@@ -119,6 +119,10 @@ TaskProxy RefinementHierarchy::get_task_proxy() const {
     return TaskProxy(*task);
 }
 
+shared_ptr<AbstractTask> RefinementHierarchy::get_task() const {
+    return task;
+}
+
 void RefinementHierarchy::print_statistics() const {
     cout << "Refinement hierarchy nodes: " << nodes.size() << endl;
     cout << "Refinement hierarchy estimated memory usage: "

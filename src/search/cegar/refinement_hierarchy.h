@@ -75,6 +75,7 @@ public:
         const CartesianSet &cartesian_set, const Callback &callback) const;
 
     TaskProxy get_task_proxy() const;
+    std::shared_ptr<AbstractTask> get_task() const;
 
     void print_statistics() const;
     void dump(int level = 0, NodeID id = 0) const;

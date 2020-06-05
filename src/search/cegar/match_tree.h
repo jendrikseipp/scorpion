@@ -27,7 +27,9 @@ class MatchTree {
     const std::vector<int> operator_costs;
     const RefinementHierarchy &refinement_hierarchy;
     const CartesianSets &cartesian_sets;
-    const successor_generator::SuccessorGenerator &successor_generator;
+    std::shared_ptr<AbstractTask> inverted_task;
+    const successor_generator::SuccessorGenerator &forward_successor_generator;
+    const successor_generator::SuccessorGenerator &backward_successor_generator;
 
     // Transitions from and to other abstract states.
     std::vector<Operators> incoming;
