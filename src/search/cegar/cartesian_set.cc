@@ -52,17 +52,6 @@ int CartesianSet::count(int var) const {
     return get_view(var).count();
 }
 
-bool CartesianSet::intersects(const CartesianSet &other, int var) const {
-    for (int block = var_infos[var].block_index;
-         block < var_infos[var].block_index + var_infos[var].num_blocks;
-         ++block) {
-        if (domains[block] & other.domains[block]) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool CartesianSet::is_superset_of(const CartesianSet &other) const {
     for (int var = 0; var < get_num_variables(); ++var) {
         bool is_subset = other.get_view(var).is_subset_of(get_view(var));

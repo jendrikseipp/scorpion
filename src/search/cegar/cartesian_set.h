@@ -76,7 +76,18 @@ public:
     }
 
     int count(int var) const;
-    bool intersects(const CartesianSet &other, int var) const;
+
+    bool intersects(const CartesianSet &other, int var) const {
+        for (int block = var_infos[var].block_index;
+             block < var_infos[var].block_index + var_infos[var].num_blocks;
+             ++block) {
+            if (domains[block] & other.domains[block]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool is_superset_of(const CartesianSet &other) const;
 
     uint64_t estimate_size_in_bytes() const;
