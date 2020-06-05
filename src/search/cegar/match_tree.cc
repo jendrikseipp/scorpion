@@ -128,19 +128,23 @@ int MatchTree::get_state_id(NodeID node_id) const {
 }
 
 void MatchTree::resize_vectors(int new_size) {
-    incoming.resize(new_size);
-    outgoing.resize(new_size);
+    if (!g_hacked_use_successor_generator) {
+        incoming.resize(new_size);
+        outgoing.resize(new_size);
+    }
 }
 
 void MatchTree::add_operators_in_trivial_abstraction() {
     assert(get_num_nodes() == 0);
     resize_vectors(1);
-    int init_id = 0;
-    incoming[init_id].reserve(get_num_operators());
-    outgoing[init_id].reserve(get_num_operators());
-    for (int i = 0; i < get_num_operators(); ++i) {
-        incoming[init_id].push_back(i);
-        outgoing[init_id].push_back(i);
+    if (!g_hacked_use_successor_generator) {
+        int init_id = 0;
+        incoming[init_id].reserve(get_num_operators());
+        outgoing[init_id].reserve(get_num_operators());
+        for (int i = 0; i < get_num_operators(); ++i) {
+            incoming[init_id].push_back(i);
+            outgoing[init_id].push_back(i);
+        }
     }
 }
 
@@ -151,6 +155,9 @@ static bool contains_all_facts(const CartesianSet &set, const vector<FactPair> &
 
 void MatchTree::split(
     const CartesianSets &cartesian_sets, const AbstractState &v, int var) {
+    if (g_hacked_use_successor_generator) {
+        return;
+    }
     int new_num_nodes = cartesian_sets.size();
     resize_vectors(new_num_nodes);
     assert(get_num_nodes() == new_num_nodes);
