@@ -549,6 +549,7 @@ fast_downward_plugin(
     SOURCES
         tasks/domain_abstracted_task
         tasks/domain_abstracted_task_factory
+        tasks/inverted_task
         tasks/modified_goals_task
         tasks/modified_operator_costs_task
     DEPENDS TASK_PROPERTIES
