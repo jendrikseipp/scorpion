@@ -11,6 +11,10 @@ class OperatorID;
 class State;
 class TaskProxy;
 
+namespace cegar {
+class AbstractState;
+}
+
 namespace successor_generator {
 class GeneratorBase;
 
@@ -31,6 +35,8 @@ public:
     // Transitional method, used until the search is switched to the new task interface.
     void generate_applicable_ops(
         const GlobalState &state, std::vector<OperatorID> &applicable_ops) const;
+    void generate_applicable_ops(
+        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const;
 };
 
 extern PerTaskInformation<SuccessorGenerator> g_successor_generators;

@@ -5,8 +5,10 @@
 #include "transition.h"
 #include "utils.h"
 
+#include "../operator_id.h"
 #include "../task_proxy.h"
 
+#include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
@@ -103,6 +105,8 @@ MatchTree::MatchTree(
       operator_costs(get_operator_costs(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
+      successor_generator(
+          successor_generator::g_successor_generators[refinement_hierarchy.get_task_proxy()]),
       debug(debug) {
     add_operators_in_trivial_abstraction();
 }
@@ -120,8 +124,8 @@ int MatchTree::get_state_id(NodeID node_id) const {
 }
 
 void MatchTree::resize_vectors(int new_size) {
-    outgoing.resize(new_size);
     incoming.resize(new_size);
+    outgoing.resize(new_size);
 }
 
 void MatchTree::add_operators_in_trivial_abstraction() {
@@ -221,22 +225,38 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
 
 Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     Operators operators;
-    refinement_hierarchy.for_each_visited_node(
-        state, [&](const NodeID &node_id) {
-            assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
-            operators.reserve(operators.size() + outgoing[node_id].size());
-            for (int op_id : outgoing[node_id]) {
-                assert(contains_all_facts(state.get_cartesian_set(),
-                                          preconditions[op_id]));
-                // Filter self-loops. An operator loops iff state contains all its effects,
-                // since then the resulting Cartesian set is a subset of state.
-                // TODO: ignore operators with infinite cost.
-                if (any_of(effects[op_id].begin(), effects[op_id].end(),
-                           [&state](const FactPair &fact) {return !state.contains(fact.var, fact.value);})) {
-                    operators.push_back(op_id);
-                }
+    if (g_hacked_use_successor_generator) {
+        vector<OperatorID> operator_ids;
+        successor_generator.generate_applicable_ops(state, operator_ids);
+        for (OperatorID op_id : operator_ids) {
+            int op = op_id.get_index();
+            assert(contains_all_facts(state.get_cartesian_set(), preconditions[op]));
+            // Filter self-loops. An operator loops iff state contains all its effects,
+            // since then the resulting Cartesian set is a subset of state.
+            // TODO: ignore operators with infinite cost.
+            if (any_of(effects[op].begin(), effects[op].end(),
+                       [&state](const FactPair &fact) {return !state.contains(fact.var, fact.value);})) {
+                operators.push_back(op);
             }
-        });
+        }
+    } else {
+        refinement_hierarchy.for_each_visited_node(
+            state, [&](const NodeID &node_id) {
+                assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
+                operators.reserve(operators.size() + outgoing[node_id].size());
+                for (int op_id : outgoing[node_id]) {
+                    assert(contains_all_facts(state.get_cartesian_set(),
+                                              preconditions[op_id]));
+                    // Filter self-loops. An operator loops iff state contains all its effects,
+                    // since then the resulting Cartesian set is a subset of state.
+                    // TODO: ignore operators with infinite cost.
+                    if (any_of(effects[op_id].begin(), effects[op_id].end(),
+                               [&state](const FactPair &fact) {return !state.contains(fact.var, fact.value);})) {
+                        operators.push_back(op_id);
+                    }
+                }
+            });
+    }
     return operators;
 }
 

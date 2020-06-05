@@ -9,6 +9,10 @@
 struct FactPair;
 class OperatorsProxy;
 
+namespace successor_generator {
+class SuccessorGenerator;
+}
+
 namespace cegar {
 class RefinementHierarchy;
 
@@ -23,6 +27,7 @@ class MatchTree {
     const std::vector<int> operator_costs;
     const RefinementHierarchy &refinement_hierarchy;
     const CartesianSets &cartesian_sets;
+    const successor_generator::SuccessorGenerator &successor_generator;
 
     // Transitions from and to other abstract states.
     std::vector<Operators> incoming;

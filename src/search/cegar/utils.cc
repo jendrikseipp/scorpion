@@ -19,6 +19,7 @@ using namespace std;
 
 namespace cegar {
 bool g_hacked_use_cartesian_match_tree = false;
+bool g_hacked_use_successor_generator = false;
 
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {

@@ -63,6 +63,7 @@ public:
         return get_view(var).test(value);
     }
 
+    std::vector<int> get_values(int var) const;
     int count(int var) const;
     bool intersects(const CartesianSet &other, int var) const;
     bool is_superset_of(const CartesianSet &other) const;

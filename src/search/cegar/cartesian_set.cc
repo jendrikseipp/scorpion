@@ -48,6 +48,17 @@ void CartesianSet::remove_all(int var) {
     get_view(var).reset();
 }
 
+std::vector<int> CartesianSet::get_values(int var) const {
+    vector<int> values;
+    ConstBitsetView view = get_view(var);
+    for (int value = 0; value < view.size(); ++value) {
+        if (view.test(value)) {
+            values.push_back(value);
+        }
+    }
+    return values;
+}
+
 int CartesianSet::count(int var) const {
     return get_view(var).count();
 }

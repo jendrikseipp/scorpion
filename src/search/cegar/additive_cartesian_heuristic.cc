@@ -159,6 +159,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "use Cartesian match tree for computing transitions",
         "false");
     parser.add_option<bool>(
+        "use_successor_generator",
+        "use standard successor generator to compute applicable operators",
+        "false");
+    parser.add_option<bool>(
         "debug",
         "print debugging output",
         "false");
@@ -170,6 +174,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         return nullptr;
 
     g_hacked_use_cartesian_match_tree = opts.get<bool>("use_match_tree");
+    g_hacked_use_successor_generator = opts.get<bool>("use_successor_generator");
 
     // Compute the successor generator here already to get peak memory info.
     get_successor_generator(TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")));
