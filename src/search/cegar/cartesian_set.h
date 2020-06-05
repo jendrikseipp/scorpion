@@ -63,7 +63,16 @@ public:
         return get_view(var).test(value);
     }
 
-    std::vector<int> get_values(int var) const;
+    template<typename Callback>
+    void for_each_value(int var, Callback callback) const {
+        ConstBitsetView view = get_view(var);
+        for (int value = 0; value < view.size(); ++value) {
+            if (view.test(value)) {
+                callback(value);
+            }
+        }
+    }
+
     int count(int var) const;
     bool intersects(const CartesianSet &other, int var) const;
     bool is_superset_of(const CartesianSet &other) const;

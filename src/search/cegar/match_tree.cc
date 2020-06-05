@@ -394,6 +394,7 @@ void MatchTree::print_statistics() const {
     if (debug) {
         dump();
     }
+    basic_string<char> test;
 }
 
 void MatchTree::dump() const {
