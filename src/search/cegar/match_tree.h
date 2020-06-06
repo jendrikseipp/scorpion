@@ -33,6 +33,7 @@ class MatchTree {
     std::shared_ptr<AbstractTask> inverted_task;
     const successor_generator::SuccessorGenerator &forward_successor_generator;
     const successor_generator::SuccessorGenerator &backward_successor_generator;
+    const bool sort_applicable_operators_by_increasing_cost;
 
     // Transitions from and to other abstract states.
     std::vector<Operators> incoming;
@@ -72,7 +73,13 @@ public:
         const CartesianSets &cartesian_sets, const AbstractState &state,
         const Callback &callback) const {
         bool abort = false;
-        for (int op_id : get_outgoing_operators(state)) {
+        std::vector<int> operators = get_outgoing_operators(state);
+        if (sort_applicable_operators_by_increasing_cost) {
+            sort(operators.begin(), operators.end(), [&](int op1, int op2) {
+                     return operator_costs[op1] < operator_costs[op2];
+                 });
+        }
+        for (int op_id : operators) {
             CartesianSet tmp_cartesian_set = state.get_cartesian_set();
             for (const FactPair &fact : postconditions[op_id]) {
                 tmp_cartesian_set.set_single_value(fact.var, fact.value);

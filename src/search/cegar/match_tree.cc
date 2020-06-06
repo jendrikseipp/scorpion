@@ -108,6 +108,8 @@ MatchTree::MatchTree(
           successor_generator::g_successor_generators[refinement_hierarchy.get_task_proxy()]),
       backward_successor_generator(
           successor_generator::g_successor_generators[TaskProxy(*inverted_task)]),
+      sort_applicable_operators_by_increasing_cost(
+          !task_properties::is_unit_cost(refinement_hierarchy.get_task_proxy())),
       debug(debug) {
     add_operators_in_trivial_abstraction();
 }
