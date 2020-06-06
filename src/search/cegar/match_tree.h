@@ -1,7 +1,10 @@
 #ifndef CEGAR_MATCH_TREE_H
 #define CEGAR_MATCH_TREE_H
 
+#include "abstract_state.h"
 #include "cartesian_set.h"
+#include "refinement_hierarchy.h"
+#include "transition.h"
 #include "types.h"
 
 #include <vector>
@@ -63,6 +66,28 @@ public:
     Transitions get_outgoing_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
     int get_operator_between_states(const AbstractState &src, const AbstractState &dest, int cost) const;
+
+    template<typename Callback>
+    void for_each_outgoing_transition(
+        const CartesianSets &cartesian_sets, const AbstractState &state,
+        const Callback &callback) const {
+        bool abort = false;
+        for (int op_id : get_outgoing_operators(state)) {
+            CartesianSet tmp_cartesian_set = state.get_cartesian_set();
+            for (const FactPair &fact : postconditions[op_id]) {
+                tmp_cartesian_set.set_single_value(fact.var, fact.value);
+            }
+            refinement_hierarchy.for_each_leaf(
+                cartesian_sets, tmp_cartesian_set, [&](NodeID leaf_id) {
+                    int dest_state_id = get_state_id(leaf_id);
+                    assert(dest_state_id != state.get_id());
+                    abort = callback(Transition(op_id, dest_state_id));
+                });
+            if (abort) {
+                return;
+            }
+        }
+    }
 
     int get_num_nodes() const;
     int get_num_operators() const;

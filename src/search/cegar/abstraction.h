@@ -1,6 +1,7 @@
 #ifndef CEGAR_ABSTRACTION_H
 #define CEGAR_ABSTRACTION_H
 
+#include "match_tree.h"
 #include "types.h"
 
 #include "../task_proxy.h"
@@ -63,6 +64,21 @@ public:
     Transitions get_incoming_transitions(int state_id) const;
     Transitions get_outgoing_transitions(int state_id) const;
     int get_operator_between_states(int src, int dest, int cost) const;
+
+    template<typename Callback>
+    void for_each_outgoing_transition(int state_id, const Callback &callback) const {
+        if (match_tree) {
+            return match_tree->for_each_outgoing_transition(
+                cartesian_sets, *states[state_id], callback);
+        } else {
+            for (const Transition &t : get_outgoing_transitions(state_id)) {
+                bool abort = callback(t);
+                if (abort) {
+                    return;
+                }
+            }
+        }
+    }
 
     /* Needed for CEGAR::separate_facts_unreachable_before_goal(). */
     void mark_all_states_as_goals();

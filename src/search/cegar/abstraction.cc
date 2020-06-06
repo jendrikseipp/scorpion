@@ -1,7 +1,6 @@
 #include "abstraction.h"
 
 #include "abstract_state.h"
-#include "match_tree.h"
 #include "refinement_hierarchy.h"
 #include "transition.h"
 #include "transition_system.h"

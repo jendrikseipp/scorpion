@@ -1,8 +1,5 @@
 #include "match_tree.h"
 
-#include "abstract_state.h"
-#include "refinement_hierarchy.h"
-#include "transition.h"
 #include "utils.h"
 
 #include "../operator_id.h"

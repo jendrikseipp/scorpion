@@ -234,20 +234,21 @@ void ShortestPaths::dijkstra_from_orphans(
         assert(goal_distances[state] != DIRTY);
         bool reconnected = false;
         // Try to reconnect to settled, solvable state.
-        for (const Transition &t : abstraction.get_outgoing_transitions(state)) {
-            int succ = t.target_id;
-            int op_id = t.op_id;
-            if (goal_distances[succ] != DIRTY &&
-                add_costs(goal_distances[succ], operator_costs[op_id])
-                == goal_distances[state]) {
-                if (debug) {
-                    cout << "Reconnect " << state << " to " << succ << " via " << op_id << endl;
+        abstraction.for_each_outgoing_transition(
+            state, [&](const Transition &t) {
+                int succ = t.target_id;
+                int op_id = t.op_id;
+                if (goal_distances[succ] != DIRTY &&
+                    add_costs(goal_distances[succ], operator_costs[op_id])
+                    == goal_distances[state]) {
+                    if (debug) {
+                        cout << "Reconnect " << state << " to " << succ << " via " << op_id << endl;
+                    }
+                    set_shortest_path(state, Transition(op_id, succ));
+                    reconnected = true;
                 }
-                set_shortest_path(state, Transition(op_id, succ));
-                reconnected = true;
-                break;
-            }
-        }
+                return reconnected;
+            });
         if (!reconnected) {
             mark_dirty(state);
             for (const Transition &t : children[state]) {
