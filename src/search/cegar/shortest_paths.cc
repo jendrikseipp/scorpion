@@ -334,6 +334,7 @@ void ShortestPaths::dijkstra_from_orphans(
             Cost succ_g = add_costs(cost, g);
 
             if (goal_distances[succ] == DIRTY || succ_g < goal_distances[succ]) {
+                assert(count(dirty_states.begin(), dirty_states.end(), succ) == 1);
                 goal_distances[succ] = succ_g;
                 set_shortest_path(succ, Transition(op_id, state));
                 open_queue.push(succ_g, succ);
