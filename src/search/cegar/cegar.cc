@@ -208,7 +208,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
             if (debug) {
-                dump_dot_graph(*abstraction);
+                //dump_dot_graph(*abstraction);
             }
             current = &abstraction->get_state(pair.second);
         }
@@ -218,6 +218,9 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
 
     // Initialize abstract goal distances and shortest path tree.
     if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+        if (debug) {
+            utils::g_log << "Initialize abstract goal distances and shortest path tree." << endl;
+        }
         shortest_paths->full_dijkstra(
             *abstraction,
             abstraction->get_goals());

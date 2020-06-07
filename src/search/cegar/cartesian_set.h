@@ -67,7 +67,7 @@ public:
     }
 
     template<typename Callback>
-    void for_each_value(int var, Callback callback) const {
+    void for_each_value(int var, const Callback &callback) const {
         for (int value = 0; value < var_infos[var].domain_size; ++value) {
             if (test(var, value)) {
                 callback(value);
