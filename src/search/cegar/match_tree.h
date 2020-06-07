@@ -50,6 +50,7 @@ class MatchTree {
 
     int get_state_id(NodeID node_id) const;
 
+    bool incoming_operator_only_loops(const AbstractState &state, int op_id) const;
     Operators get_incoming_operators(const AbstractState &state) const;
     Operators get_outgoing_operators(const AbstractState &state) const;
     bool has_transition(const AbstractState &src, int op_id, const AbstractState &dest) const;

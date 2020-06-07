@@ -76,6 +76,7 @@ public:
     }
 
     int count(int var) const;
+    bool has_full_domain(int var) const;
 
     bool intersects(const CartesianSet &other, int var) const {
         for (int block = var_infos[var].block_index;

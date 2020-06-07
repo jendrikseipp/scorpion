@@ -215,6 +215,27 @@ void MatchTree::split(
         });
 }
 
+bool MatchTree::incoming_operator_only_loops(const AbstractState &state, int op_id) const {
+    // TODO: avoid temporary vector by storing the operator info in a suitable way.
+    int num_vars = state.get_cartesian_set().get_num_variables();
+    vector<int> values(num_vars, -1);
+    for (const FactPair &fact : effects[op_id]) {
+        // Whole domain.
+        values[fact.var] = -2;
+    }
+    for (const FactPair &fact : preconditions[op_id]) {
+        values[fact.var] = fact.value;
+    }
+    for (int var = 0; var < num_vars; ++var) {
+        int value = values[var];
+        if ((value == -2 && !state.get_cartesian_set().has_full_domain(var)) ||
+            (value >= 0 && !state.contains(var, value))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     Operators operators;
     if (g_hacked_use_successor_generator) {
@@ -223,8 +244,8 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
         for (OperatorID op_id : operator_ids) {
             int op = op_id.get_index();
             assert(contains_all_facts(state.get_cartesian_set(), postconditions[op]));
-            // Ignore operators with infinite cost.
-            if (operator_costs[op] != INF) {
+            // Ignore operators with infinite cost and operators that only loop.
+            if (operator_costs[op] != INF && !incoming_operator_only_loops(state, op)) {
                 operators.push_back(op);
             }
         }
@@ -294,6 +315,9 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
 Transitions MatchTree::get_incoming_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
+    if (debug) {
+        cout << "  ops: " << get_incoming_operators(state).size() << endl;
+    }
     for (int op_id : get_incoming_operators(state)) {
         CartesianSet tmp_cartesian_set = state.get_cartesian_set();
         for (const FactPair &fact : effects[op_id]) {
@@ -306,11 +330,13 @@ Transitions MatchTree::get_incoming_transitions(
             cartesian_sets, tmp_cartesian_set, [&](NodeID leaf_id) {
                 int src_state_id = get_state_id(leaf_id);
                 // Filter self-loops.
-                // TODO: can we filter self-loops earlier?
                 if (src_state_id != state.get_id()) {
                     transitions.emplace_back(op_id, src_state_id);
                 }
             });
+    }
+    if (debug) {
+        cout << "  transitions: " << transitions.size() << endl;
     }
     return transitions;
 }
@@ -334,6 +360,7 @@ Transitions MatchTree::get_outgoing_transitions(
 }
 
 bool MatchTree::has_transition(const AbstractState &src, int op_id, const AbstractState &dest) const {
+    // TODO: avoid temporary vector by iterating over (sorted) postconditions.
     int num_vars = src.get_cartesian_set().get_num_variables();
     vector<int> values(num_vars, -1);
     for (const FactPair &fact : postconditions[op_id]) {

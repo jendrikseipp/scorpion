@@ -52,6 +52,11 @@ int CartesianSet::count(int var) const {
     return get_view(var).count();
 }
 
+bool CartesianSet::has_full_domain(int var) const {
+    // TODO: can we speed this up?
+    return count(var) == var_infos[var].domain_size;
+}
+
 bool CartesianSet::is_superset_of(const CartesianSet &other) const {
     for (int var = 0; var < get_num_variables(); ++var) {
         bool is_subset = other.get_view(var).is_subset_of(get_view(var));

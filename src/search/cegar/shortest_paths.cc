@@ -318,15 +318,23 @@ void ShortestPaths::dijkstra_from_orphans(
             ++num_orphans;
         }
     }
+
+    if (debug) {
+        cout << "dirty: " << dirty_states.size() << endl;
+    }
     while (!open_queue.empty()) {
         pair<Cost, int> top_pair = open_queue.pop();
         const Cost g = top_pair.first;
         const int state = top_pair.second;
+        assert(count(dirty_states.begin(), dirty_states.end(), state) == 1);
         assert(goal_distances[state] != DIRTY);
         if (g > goal_distances[state])
             continue;
         assert(g == goal_distances[state]);
         assert(g != INF_COSTS);
+        if (debug) {
+            cout << "  open: " << open_queue.size() << endl;
+        }
         for (const Transition &t : abstraction.get_incoming_transitions(state)) {
             int succ = t.target_id;
             int op_id = t.op_id;

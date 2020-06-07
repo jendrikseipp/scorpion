@@ -47,6 +47,10 @@ public:
         return heap.empty();
     }
 
+    int size() const {
+        return heap.size();
+    }
+
     void clear() {
         heap.c.clear();
     }
