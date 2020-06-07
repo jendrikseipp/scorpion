@@ -192,14 +192,14 @@ void GeneratorSwitchHash::generate_applicable_ops(
 
 void GeneratorSwitchHash::generate_applicable_ops(
     const cegar::AbstractState &state, vector<OperatorID> &applicable_ops) const {
-    state.get_cartesian_set().for_each_value(
-        switch_var_id, [&](int val) {
-            const auto &child = generator_for_value.find(val);
-            if (child != generator_for_value.end()) {
-                const unique_ptr<GeneratorBase> &generator_for_val = child->second;
-                generator_for_val->generate_applicable_ops(state, applicable_ops);
-            }
-        });
+    for (auto &pair : generator_for_value) {
+        int value = pair.first;
+        const unique_ptr<GeneratorBase> &generator_for_val = pair.second;
+        assert(generator_for_val);
+        if (state.contains(switch_var_id, value)) {
+            generator_for_val->generate_applicable_ops(state, applicable_ops);
+        }
+    }
 }
 
 GeneratorSwitchSingle::GeneratorSwitchSingle(
