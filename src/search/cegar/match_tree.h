@@ -54,7 +54,9 @@ class MatchTree {
     bool incoming_operator_only_loops(const AbstractState &state, int op_id) const;
     Operators get_incoming_operators(const AbstractState &state) const;
     Operators get_outgoing_operators(const AbstractState &state) const;
-    bool has_transition(const AbstractState &src, int op_id, const AbstractState &dest) const;
+    bool has_transition(
+        const AbstractState &src, int op_id, const AbstractState &dest,
+        const std::vector<bool> &domains_intersect) const;
 
 public:
     MatchTree(
