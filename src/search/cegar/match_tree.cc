@@ -73,6 +73,34 @@ static vector<vector<FactPair>> get_postconditions_by_operator(
     return postconditions_by_operator;
 }
 
+static vector<int> get_effect_vars_without_preconditions(
+    const OperatorProxy &op) {
+    unordered_set<int> vars_with_precondition;
+    for (FactProxy fact : op.get_preconditions()) {
+        vars_with_precondition.insert(fact.get_variable().get_id());
+    }
+    vector<int> vars;
+    for (EffectProxy effect : op.get_effects()) {
+        int var = effect.get_fact().get_variable().get_id();
+        if (!vars_with_precondition.count(var)) {
+            vars.push_back(var);
+        }
+    }
+    sort(vars.begin(), vars.end());
+    vars.shrink_to_fit();
+    return vars;
+}
+
+static vector<vector<int>> get_effect_vars_without_preconditions_by_operator(
+    const OperatorsProxy &ops) {
+    vector<vector<int>> result;
+    result.reserve(ops.size());
+    for (OperatorProxy op : ops) {
+        result.push_back(get_effect_vars_without_preconditions(op));
+    }
+    return result;
+}
+
 static int lookup_value(const vector<FactPair> &facts, int var) {
     assert(is_sorted(facts.begin(), facts.end()));
     for (const FactPair &fact : facts) {
@@ -100,6 +128,7 @@ MatchTree::MatchTree(
     : preconditions(get_preconditions_by_operator(ops)),
       effects(get_effects_by_operator(ops)),
       postconditions(get_postconditions_by_operator(ops)),
+      effect_vars_without_preconditions(get_effect_vars_without_preconditions_by_operator(ops)),
       operator_costs(get_operator_costs(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
@@ -216,20 +245,13 @@ void MatchTree::split(
 }
 
 bool MatchTree::incoming_operator_only_loops(const AbstractState &state, int op_id) const {
-    // TODO: avoid temporary vector by storing the operator info in a suitable way.
-    int num_vars = state.get_cartesian_set().get_num_variables();
-    vector<int> values(num_vars, -1);
-    for (const FactPair &fact : effects[op_id]) {
-        // Whole domain.
-        values[fact.var] = -2;
-    }
     for (const FactPair &fact : preconditions[op_id]) {
-        values[fact.var] = fact.value;
+        if (!state.contains(fact.var, fact.value)) {
+            return false;
+        }
     }
-    for (int var = 0; var < num_vars; ++var) {
-        int value = values[var];
-        if ((value == -2 && !state.get_cartesian_set().has_full_domain(var)) ||
-            (value >= 0 && !state.contains(var, value))) {
+    for (int var : effect_vars_without_preconditions[op_id]) {
+        if (!state.get_cartesian_set().has_full_domain(var)) {
             return false;
         }
     }
@@ -416,6 +438,7 @@ void MatchTree::print_statistics() const {
     static_mem_usage += estimate_memory_usage_in_bytes(preconditions);
     static_mem_usage += estimate_memory_usage_in_bytes(effects);
     static_mem_usage += estimate_memory_usage_in_bytes(postconditions);
+    static_mem_usage += estimate_memory_usage_in_bytes(effect_vars_without_preconditions);
     cout << "Match tree estimated memory usage for operator info: "
          << static_mem_usage / 1024 << " KB" << endl;
     if (debug) {
