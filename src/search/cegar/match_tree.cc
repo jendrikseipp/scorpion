@@ -359,17 +359,18 @@ Transitions MatchTree::get_outgoing_transitions(
     return transitions;
 }
 
-bool MatchTree::has_transition(const AbstractState &src, int op_id, const AbstractState &dest) const {
-    // TODO: avoid temporary vector by iterating over (sorted) postconditions.
+bool MatchTree::has_transition(
+    const AbstractState &src, int op_id, const AbstractState &dest) const {
+    // Simultaneously loop over variables and postconditions.
     int num_vars = src.get_cartesian_set().get_num_variables();
-    vector<int> values(num_vars, -1);
-    for (const FactPair &fact : postconditions[op_id]) {
-        values[fact.var] = fact.value;
-    }
+    auto it = postconditions[op_id].begin();
     for (int var = 0; var < num_vars; ++var) {
-        int value = values[var];
-        if ((value == -1 && !src.domain_subsets_intersect(dest.get_cartesian_set(), var)) ||
-            (value != -1 && !dest.contains(var, value))) {
+        if (it != postconditions[op_id].end() && it->var == var) {
+            if (!dest.contains(var, it->value)) {
+                return false;
+            }
+            ++it;
+        } else if (!src.domain_subsets_intersect(dest.get_cartesian_set(), var)) {
             return false;
         }
     }
