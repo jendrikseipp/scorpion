@@ -26,6 +26,7 @@ using Facts = std::vector<FactPair>;
 // TODO: Store goals IDs in vector once we no longer use A* search.
 using Goals = std::unordered_set<int>;
 using Loops = std::vector<int>;
+using Matcher = std::vector<int>;
 using NodeID = int;
 using Operators = std::vector<int>;
 using Solution = std::deque<Transition>;

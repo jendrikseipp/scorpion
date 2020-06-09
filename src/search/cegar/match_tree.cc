@@ -125,7 +125,8 @@ static vector<int> get_operator_costs(const OperatorsProxy &operators) {
 MatchTree::MatchTree(
     const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
     const CartesianSets &cartesian_sets, bool debug)
-    : preconditions(get_preconditions_by_operator(ops)),
+    : num_variables(refinement_hierarchy.get_task_proxy().get_variables().size()),
+      preconditions(get_preconditions_by_operator(ops)),
       effects(get_effects_by_operator(ops)),
       postconditions(get_postconditions_by_operator(ops)),
       effect_vars_without_preconditions(get_effect_vars_without_preconditions_by_operator(ops)),
@@ -334,6 +335,25 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     return operators;
 }
 
+Matcher MatchTree::get_incoming_matcher(int op_id) const {
+    vector<int> matcher(num_variables, -1);
+    for (int var : effect_vars_without_preconditions[op_id]) {
+        matcher[var] = -2; // Full domain.
+    }
+    for (const FactPair &fact : preconditions[op_id]) {
+        matcher[fact.var] = fact.value;
+    }
+    return matcher;
+}
+
+Matcher MatchTree::get_outgoing_matcher(int op_id) const {
+    vector<int> matcher(num_variables, -1);
+    for (const FactPair &fact : postconditions[op_id]) {
+        matcher[fact.var] = fact.value;
+    }
+    return matcher;
+}
+
 Transitions MatchTree::get_incoming_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
@@ -349,7 +369,8 @@ Transitions MatchTree::get_incoming_transitions(
             tmp_cartesian_set.set_single_value(fact.var, fact.value);
         }
         refinement_hierarchy.for_each_leaf(
-            cartesian_sets, tmp_cartesian_set, [&](NodeID leaf_id) {
+            cartesian_sets, tmp_cartesian_set, get_incoming_matcher(op_id),
+            [&](NodeID leaf_id) {
                 int src_state_id = get_state_id(leaf_id);
                 // Filter self-loops.
                 if (src_state_id != state.get_id()) {
@@ -372,7 +393,8 @@ Transitions MatchTree::get_outgoing_transitions(
             tmp_cartesian_set.set_single_value(fact.var, fact.value);
         }
         refinement_hierarchy.for_each_leaf(
-            cartesian_sets, tmp_cartesian_set, [&](NodeID leaf_id) {
+            cartesian_sets, tmp_cartesian_set, get_outgoing_matcher(op_id),
+            [&](NodeID leaf_id) {
                 int dest_state_id = get_state_id(leaf_id);
                 assert(dest_state_id != state.get_id());
                 transitions.emplace_back(op_id, dest_state_id);

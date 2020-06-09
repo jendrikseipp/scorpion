@@ -71,8 +71,8 @@ public:
 
     template<typename Callback>
     void for_each_leaf(
-        const CartesianSets &all_cartesian_sets,
-        const CartesianSet &cartesian_set, const Callback &callback) const;
+        const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set,
+        const Matcher &matcher, const Callback &callback) const;
 
     TaskProxy get_task_proxy() const;
     std::shared_ptr<AbstractTask> get_task() const;
@@ -165,7 +165,7 @@ void RefinementHierarchy::for_each_visited_family(
 template<typename Callback>
 void RefinementHierarchy::for_each_leaf(
     const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set,
-    const Callback &callback) const {
+    const Matcher &matcher, const Callback &callback) const {
     std::stack<NodeID> stack;
     stack.push(0);
     while (!stack.empty()) {
@@ -178,8 +178,11 @@ void RefinementHierarchy::for_each_leaf(
             // We know that it intersects with "correct child".
             stack.push(children.correct_child);
             // Now test the other child.
-            if (cartesian_set.intersects(
-                    *all_cartesian_sets[children.other_child], nodes[node_id].var)) {
+            int var = nodes[node_id].var;
+            if (//(matcher[var] != -1) && (
+                matcher[var] == -2 ||
+                cartesian_set.intersects(
+                    *all_cartesian_sets[children.other_child], var)) {
                 stack.push(children.other_child);
             }
         } else {

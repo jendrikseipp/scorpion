@@ -23,6 +23,7 @@ class RefinementHierarchy;
   Rewire transitions after each split.
 */
 class MatchTree {
+    const int num_variables;
     // TODO: group this info in new Operator class?
     const std::vector<Facts> preconditions;
     const std::vector<Facts> effects;
@@ -54,6 +55,8 @@ class MatchTree {
     bool incoming_operator_only_loops(const AbstractState &state, int op_id) const;
     Operators get_incoming_operators(const AbstractState &state) const;
     Operators get_outgoing_operators(const AbstractState &state) const;
+    Matcher get_incoming_matcher(int op_id) const;
+    Matcher get_outgoing_matcher(int op_id) const;
     bool has_transition(
         const AbstractState &src, int op_id, const AbstractState &dest,
         const std::vector<bool> &domains_intersect) const;
@@ -89,7 +92,8 @@ public:
                 tmp_cartesian_set.set_single_value(fact.var, fact.value);
             }
             refinement_hierarchy.for_each_leaf(
-                cartesian_sets, tmp_cartesian_set, [&](NodeID leaf_id) {
+                cartesian_sets, tmp_cartesian_set, get_outgoing_matcher(op_id),
+                [&](NodeID leaf_id) {
                     int dest_state_id = get_state_id(leaf_id);
                     assert(dest_state_id != state.get_id());
                     abort = callback(Transition(op_id, dest_state_id));
