@@ -11,17 +11,16 @@ Node::Node(int state_id)
     : left_child(UNDEFINED),
       right_child(UNDEFINED),
       var(UNDEFINED),
-      value(UNDEFINED),
-      state_id(state_id) {
-    assert(state_id != UNDEFINED);
+      value(state_id) {
     assert(!is_split());
 }
 
 bool Node::information_is_valid() const {
-    return (left_child == UNDEFINED && right_child == UNDEFINED &&
-            var == UNDEFINED && value == UNDEFINED && state_id != UNDEFINED) ||
-           (left_child != UNDEFINED && right_child != UNDEFINED &&
-            var != UNDEFINED && value != UNDEFINED && state_id == UNDEFINED);
+    bool not_split = (left_child == UNDEFINED && right_child == UNDEFINED &&
+                      var == UNDEFINED);
+    bool split = (left_child != UNDEFINED && right_child != UNDEFINED &&
+                  var != UNDEFINED);
+    return (not_split || split) && value != UNDEFINED;
 }
 
 bool Node::is_split() const {
@@ -34,15 +33,13 @@ void Node::split(int var, int value, NodeID left_child, NodeID right_child) {
     this->value = value;
     this->left_child = left_child;
     this->right_child = right_child;
-    state_id = UNDEFINED;
     assert(is_split());
 }
 
 
 ostream &operator<<(ostream &os, const Node &node) {
     return os << "<Node: var=" << node.var << " value=" << node.value
-              << " state=" << node.state_id << " left=" << node.left_child
-              << " right=" << node.right_child << ">";
+              << " left=" << node.left_child << " right=" << node.right_child << ">";
 }
 
 
@@ -92,7 +89,7 @@ Children RefinementHierarchy::get_real_children(
     NodeID node_id, const CartesianSet &cartesian_set) const {
     const Node &node = nodes[node_id];
     assert(node.is_split());
-    bool follow_right_child = cartesian_set.test(node.var, node.value);
+    bool follow_right_child = cartesian_set.test(node.get_var(), node.value);
     // Traverse helper nodes.
     NodeID helper = node.left_child;
     while (nodes[helper].right_child == node.right_child) {

@@ -94,13 +94,10 @@ class Node {
     NodeID left_child;
     NodeID right_child;
 
-    /* Before splitting the corresponding state for var and value, both
-       members hold UNDEFINED. */
+    // Before split: UNDEFINED, after split: split variable.
     int var;
+    // Before split: state ID, after split: split value.
     int value;
-
-    // When splitting the corresponding state, we change this value to UNDEFINED.
-    int state_id;
 
     bool information_is_valid() const;
 
@@ -132,11 +129,14 @@ public:
 
     int get_state_id() const {
         assert(!is_split());
-        return state_id;
+        return value;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Node &node);
 };
+
+static_assert(sizeof(Node) == 16, "Node has unexpected size");
+
 
 // Invoke the callback function on normal *and* helper nodes.
 template<typename Callback>
