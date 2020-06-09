@@ -20,13 +20,20 @@ enum class HUpdateStrategy {
     DIJKSTRA_FROM_UNCONNECTED_ORPHANS,
 };
 
+enum class Variable: char {
+    UNAFFECTED,
+    SINGLE_VALUE,
+    FULL_DOMAIN,
+};
+static_assert(sizeof(Variable) == 1, "Variable has unexpected size");
+
 using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
 using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;
 using Facts = std::vector<FactPair>;
 // TODO: Store goals IDs in vector once we no longer use A* search.
 using Goals = std::unordered_set<int>;
 using Loops = std::vector<int>;
-using Matcher = std::vector<int>;
+using Matcher = std::vector<Variable>;
 using NodeID = int;
 using Operators = std::vector<int>;
 using Solution = std::deque<Transition>;

@@ -336,20 +336,20 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
 }
 
 Matcher MatchTree::get_incoming_matcher(int op_id) const {
-    vector<int> matcher(num_variables, -1);
+    Matcher matcher(num_variables, Variable::UNAFFECTED);
     for (int var : effect_vars_without_preconditions[op_id]) {
-        matcher[var] = -2; // Full domain.
+        matcher[var] = Variable::FULL_DOMAIN;
     }
     for (const FactPair &fact : preconditions[op_id]) {
-        matcher[fact.var] = fact.value;
+        matcher[fact.var] = Variable::SINGLE_VALUE;
     }
     return matcher;
 }
 
 Matcher MatchTree::get_outgoing_matcher(int op_id) const {
-    vector<int> matcher(num_variables, -1);
+    Matcher matcher(num_variables, Variable::UNAFFECTED);
     for (const FactPair &fact : postconditions[op_id]) {
-        matcher[fact.var] = fact.value;
+        matcher[fact.var] = Variable::SINGLE_VALUE;
     }
     return matcher;
 }
