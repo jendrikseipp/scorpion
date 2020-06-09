@@ -131,6 +131,7 @@ public:
     }
 
     int get_state_id() const {
+        assert(!is_split());
         return state_id;
     }
 
