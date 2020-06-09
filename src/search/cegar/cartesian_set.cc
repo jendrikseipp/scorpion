@@ -53,8 +53,12 @@ int CartesianSet::count(int var) const {
 }
 
 bool CartesianSet::has_full_domain(int var) const {
-    // TODO: can we speed this up?
-    return count(var) == var_infos[var].domain_size;
+    for (int value = 0; value < var_infos[var].domain_size; ++value) {
+        if (!test(var, value)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool CartesianSet::is_superset_of(const CartesianSet &other) const {
