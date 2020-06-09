@@ -77,6 +77,8 @@ public:
     TaskProxy get_task_proxy() const;
     std::shared_ptr<AbstractTask> get_task() const;
 
+    void shrink_to_fit();
+
     void print_statistics() const;
     void dump(int level = 0, NodeID id = 0) const;
 };
@@ -116,13 +118,6 @@ public:
     NodeID get_child(int value) const {
         assert(is_split());
         if (value == this->value)
-            return right_child;
-        return left_child;
-    }
-
-    NodeID get_child(const AbstractState &state) const {
-        assert(is_split());
-        if (state.contains(var, value))
             return right_child;
         return left_child;
     }
