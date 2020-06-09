@@ -87,6 +87,8 @@ public:
     std::pair<int, int> refine(
         const AbstractState &state, int var, const std::vector<int> &wanted);
 
+    void switch_from_transition_system_to_successor_generator();
+
     void print_statistics() const;
 };
 }

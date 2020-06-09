@@ -30,7 +30,8 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
         match_tree = utils::make_unique_ptr<MatchTree>(
             TaskProxy(*task).get_operators(), *refinement_hierarchy, cartesian_sets, debug);
     } else {
-        assert(g_hacked_tsr == TransitionRepresentation::TS);
+        assert(g_hacked_tsr == TransitionRepresentation::TS ||
+               g_hacked_tsr == TransitionRepresentation::TS_THEN_SG);
         transition_system = utils::make_unique_ptr<TransitionSystem>(
             TaskProxy(*task).get_operators());
     }
@@ -207,7 +208,7 @@ pair<int, int> Abstraction::refine(
     }
 
 #ifndef NDEBUG
-    if (match_tree) {
+    if (match_tree && transition_system) {
         for (int state_id : {v1_id, v2_id}) {
             const AbstractState &state = *states[state_id];
             Transitions ts_out = transition_system->get_outgoing_transitions()[state_id];
@@ -236,6 +237,16 @@ pair<int, int> Abstraction::refine(
 #endif
 
     return make_pair(v1_id, v2_id);
+}
+
+void Abstraction::switch_from_transition_system_to_successor_generator() {
+    assert(transition_system);
+    assert(!match_tree);
+    transition_system = nullptr;
+    g_hacked_tsr = TransitionRepresentation::SG;
+    match_tree = utils::make_unique_ptr<MatchTree>(
+        refinement_hierarchy->get_task_proxy().get_operators(),
+        *refinement_hierarchy, cartesian_sets, debug);
 }
 
 void Abstraction::print_statistics() const {

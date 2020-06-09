@@ -316,6 +316,12 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                          << abstraction->get_num_transitions() << "/"
                          << max_non_looping_transitions << " transitions" << endl;
         }
+
+        if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
+            abstraction->get_num_transitions() >= max_non_looping_transitions) {
+            cout << "Transition limit reached -> compute transitions on demand" << endl;
+            abstraction->switch_from_transition_system_to_successor_generator();
+        }
     }
     cout << "Time for finding abstract traces: " << find_trace_timer << endl;
     cout << "Time for finding flaws: " << find_flaw_timer << endl;
