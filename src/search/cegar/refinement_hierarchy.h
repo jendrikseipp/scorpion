@@ -179,10 +179,10 @@ void RefinementHierarchy::for_each_leaf(
             stack.push(children.correct_child);
             // Now test the other child.
             int var = nodes[node_id].var;
-            if (//(matcher[var] != -1) && (
-                matcher[var] == -2 ||
-                cartesian_set.intersects(
-                    *all_cartesian_sets[children.other_child], var)) {
+            if ((matcher[var] < 0) && (
+                    matcher[var] == -2 ||
+                    cartesian_set.intersects(
+                        *all_cartesian_sets[children.other_child], var))) {
                 stack.push(children.other_child);
             }
         } else {
