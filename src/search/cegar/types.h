@@ -20,6 +20,13 @@ enum class HUpdateStrategy {
     DIJKSTRA_FROM_UNCONNECTED_ORPHANS,
 };
 
+enum class TransitionRepresentation {
+    TS,
+    MT,
+    SG,
+    TS_THEN_SG,
+};
+
 enum class Variable: char {
     UNAFFECTED,
     SINGLE_VALUE,

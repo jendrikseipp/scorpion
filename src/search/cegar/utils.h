@@ -1,6 +1,8 @@
 #ifndef CEGAR_UTILS_H
 #define CEGAR_UTILS_H
 
+#include "types.h"
+
 #include "../task_proxy.h"
 
 #include "../utils/hash.h"
@@ -23,8 +25,7 @@ class OptionParser;
 namespace cegar {
 class Abstraction;
 
-extern bool g_hacked_use_cartesian_match_tree;
-extern bool g_hacked_use_successor_generator;
+extern TransitionRepresentation g_hacked_tsr;
 
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
 create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);
@@ -40,6 +41,7 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
 extern void add_h_update_option(options::OptionParser &parser);
+extern void add_transition_reprsentation_option(options::OptionParser &parser);
 
 // Adapted from utils::estimate_vector_bytes().
 template<typename T>

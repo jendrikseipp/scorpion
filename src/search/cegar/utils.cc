@@ -18,8 +18,7 @@
 using namespace std;
 
 namespace cegar {
-bool g_hacked_use_cartesian_match_tree = false;
-bool g_hacked_use_successor_generator = false;
+TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
 
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {
@@ -106,6 +105,19 @@ void add_h_update_option(options::OptionParser &parser) {
         h_update,
         "strategy for updating goal distances or distance estimates",
         "DIJKSTRA_FROM_UNCONNECTED_ORPHANS");
+}
+
+void add_transition_reprsentation_option(options::OptionParser &parser) {
+    vector<string> options;
+    options.push_back("TS");
+    options.push_back("MT");
+    options.push_back("SG");
+    options.push_back("TS_THEN_SG");
+    parser.add_enum_option<TransitionRepresentation>(
+        "transition_representation",
+        options,
+        "how to compute transitions between abstract states",
+        "TS");
 }
 
 void dump_dot_graph(const Abstraction &abstraction) {

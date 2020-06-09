@@ -139,6 +139,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_enum_option<PickSplit>(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
     add_h_update_option(parser);
+    add_transition_reprsentation_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",
@@ -155,14 +156,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "500",
         Bounds("0", "infinity"));
     parser.add_option<bool>(
-        "use_match_tree",
-        "use Cartesian match tree for computing transitions",
-        "false");
-    parser.add_option<bool>(
-        "use_successor_generator",
-        "use standard successor generator to compute applicable operators",
-        "false");
-    parser.add_option<bool>(
         "debug",
         "print debugging output",
         "false");
@@ -173,8 +166,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
-    g_hacked_use_cartesian_match_tree = opts.get<bool>("use_match_tree");
-    g_hacked_use_successor_generator = opts.get<bool>("use_successor_generator");
+    g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
 
     // Compute the successor generator here already to get peak memory info.
     get_successor_generator(TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")));

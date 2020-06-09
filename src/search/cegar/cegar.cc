@@ -100,7 +100,7 @@ CEGAR::CEGAR(
       debug(debug) {
     assert(max_states >= 1);
     if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
-        if (g_hacked_use_cartesian_match_tree) {
+        if (g_hacked_tsr != TransitionRepresentation::TS) {
             ABORT("states_on_trace strategy does not support Cartesian match tree");
         }
         abstract_search = utils::make_unique_ptr<AbstractSearch>(

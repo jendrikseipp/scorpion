@@ -157,7 +157,7 @@ int MatchTree::get_state_id(NodeID node_id) const {
 }
 
 void MatchTree::resize_vectors(int new_size) {
-    if (!g_hacked_use_successor_generator) {
+    if (g_hacked_tsr == TransitionRepresentation::MT) {
         incoming.resize(new_size);
         outgoing.resize(new_size);
     }
@@ -166,7 +166,7 @@ void MatchTree::resize_vectors(int new_size) {
 void MatchTree::add_operators_in_trivial_abstraction() {
     assert(get_num_nodes() == 0);
     resize_vectors(1);
-    if (!g_hacked_use_successor_generator) {
+    if (g_hacked_tsr == TransitionRepresentation::MT) {
         int init_id = 0;
         incoming[init_id].reserve(get_num_operators());
         outgoing[init_id].reserve(get_num_operators());
@@ -184,7 +184,7 @@ static bool contains_all_facts(const CartesianSet &set, const vector<FactPair> &
 
 void MatchTree::split(
     const CartesianSets &cartesian_sets, const AbstractState &v, int var) {
-    if (g_hacked_use_successor_generator) {
+    if (g_hacked_tsr != TransitionRepresentation::MT) {
         return;
     }
     int new_num_nodes = cartesian_sets.size();
@@ -261,7 +261,7 @@ bool MatchTree::incoming_operator_only_loops(const AbstractState &state, int op_
 
 Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     Operators operators;
-    if (g_hacked_use_successor_generator) {
+    if (g_hacked_tsr == TransitionRepresentation::SG) {
         vector<OperatorID> operator_ids;
         backward_successor_generator.generate_applicable_ops(state, operator_ids);
         for (OperatorID op_id : operator_ids) {
@@ -273,6 +273,7 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
             }
         }
     } else {
+        assert(g_hacked_tsr == TransitionRepresentation::MT);
         refinement_hierarchy.for_each_visited_node(
             state, [&](const NodeID &node_id) {
                 assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
@@ -296,7 +297,7 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
 
 Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     Operators operators;
-    if (g_hacked_use_successor_generator) {
+    if (g_hacked_tsr == TransitionRepresentation::SG) {
         vector<OperatorID> operator_ids;
         forward_successor_generator.generate_applicable_ops(state, operator_ids);
         for (OperatorID op_id : operator_ids) {
@@ -311,6 +312,7 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
             }
         }
     } else {
+        assert(g_hacked_tsr == TransitionRepresentation::MT);
         refinement_hierarchy.for_each_visited_node(
             state, [&](const NodeID &node_id) {
                 assert(cartesian_sets[node_id]->is_superset_of(state.get_cartesian_set()));
