@@ -60,8 +60,26 @@ public:
     }
 };
 
+
+struct StateInfo {
+    Cost goal_distance;
+    bool dirty_candidate;
+    bool dirty;
+    Transition parent;
+    ShortestPathChildren children;
+
+    StateInfo()
+        : goal_distance(0),
+          dirty_candidate(false),
+          dirty(false) {
+    }
+};
+static_assert(
+    sizeof(StateInfo) == sizeof(Cost) + sizeof(void *) + sizeof(Transition) + sizeof(ShortestPathChildren),
+    "StateInfo has unexpected size");
+
+
 class ShortestPaths {
-    static const Cost DIRTY;
     static const Cost INF_COSTS;
 
     const utils::CountdownTimer &timer;
@@ -72,13 +90,8 @@ class ShortestPaths {
     // Keep data structures around to avoid reallocating them.
     HeapQueue candidate_queue;
     HeapQueue open_queue;
-    std::vector<Cost> goal_distances;
-    std::vector<bool> dirty_candidate;
+    std::vector<StateInfo> states;
     std::vector<int> dirty_states;
-    using ShortestPathTree = std::vector<Transition>;
-    ShortestPathTree shortest_path;
-    using Children = std::vector<Transition>;
-    std::vector<Children> children;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;

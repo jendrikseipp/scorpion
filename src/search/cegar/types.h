@@ -43,6 +43,7 @@ using Loops = std::vector<int>;
 using Matcher = std::vector<Variable>;
 using NodeID = int;
 using Operators = std::vector<int>;
+using ShortestPathChildren = std::vector<Transition>;
 using Solution = std::deque<Transition>;
 using Transitions = std::vector<Transition>;
 
