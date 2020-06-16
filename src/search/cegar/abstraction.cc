@@ -36,7 +36,7 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
             TaskProxy(*task).get_operators());
     }
 #ifndef NDEBUG
-    if (!transition_system) {
+    if (!transition_system && debug) {
         transition_system = utils::make_unique_ptr<TransitionSystem>(
             TaskProxy(*task).get_operators());
     }

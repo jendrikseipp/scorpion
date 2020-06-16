@@ -5,6 +5,7 @@
 #include "transition_system.h"
 #include "utils.h"
 
+#include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
 
@@ -17,8 +18,10 @@ namespace cegar {
 const Cost ShortestPaths::INF_COSTS = numeric_limits<Cost>::max();
 const Cost ShortestPaths::DIRTY = numeric_limits<Cost>::max() - 1;
 
-ShortestPaths::ShortestPaths(const vector<int> &costs, bool debug)
-    : debug(debug),
+ShortestPaths::ShortestPaths(
+    const vector<int> &costs, const utils::CountdownTimer &timer, bool debug)
+    : timer(timer),
+      debug(debug),
       task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})) {
     /*
       The code below requires that all operators have positive cost. Negative
@@ -265,6 +268,11 @@ void ShortestPaths::dijkstra_from_orphans(
             }
         }
         dirty_candidate[state] = false;
+
+        if (timer.is_expired()) {
+            //cout << "Timer expired --> abort incremental search" << endl;
+            //return;
+        }
     }
 
     if (debug) {

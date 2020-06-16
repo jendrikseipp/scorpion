@@ -9,6 +9,10 @@
 #include <queue>
 #include <vector>
 
+namespace utils {
+class CountdownTimer;
+}
+
 namespace cegar {
 class Abstraction;
 
@@ -60,6 +64,7 @@ class ShortestPaths {
     static const Cost DIRTY;
     static const Cost INF_COSTS;
 
+    const utils::CountdownTimer &timer;
     const bool debug;
     const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;
@@ -84,7 +89,8 @@ class ShortestPaths {
     void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
 
 public:
-    ShortestPaths(const std::vector<int> &costs, bool debug);
+    ShortestPaths(
+        const std::vector<int> &costs, const utils::CountdownTimer &timer, bool debug);
 
     std::unique_ptr<Solution> extract_solution_from_shortest_path_tree(
         int init_id,

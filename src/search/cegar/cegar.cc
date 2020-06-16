@@ -107,7 +107,7 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy));
     } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-            task_properties::get_operator_costs(task_proxy), false);
+            task_properties::get_operator_costs(task_proxy), timer, false);
     } else {
         ABORT("Unknown search strategy");
     }
@@ -294,6 +294,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             //dump_dot_graph(*abstraction);
         }
 
+        utils::Duration start = update_h_timer();
         update_h_timer.resume();
         if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
             // Since h-values only increase we can assign the h-value to the children.
@@ -304,6 +305,10 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 *abstraction, state_id, new_state_ids.first, new_state_ids.second);
         } else {
             ABORT("Unknown h-update strategy");
+        }
+        double t = update_h_timer() - start;
+        if (t >= 1) {
+            utils::g_log << "h-update time: " << update_h_timer() - start << endl;
         }
 
         if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
