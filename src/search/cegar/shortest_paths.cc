@@ -450,12 +450,20 @@ bool ShortestPaths::test_distances(
 }
 
 void ShortestPaths::print_statistics() const {
-    map<int, int> children_counts;
-    for (auto &kids : children) {
-        ++children_counts[kids.size()];
+    if (debug) {
+        map<int, int> children_counts;
+        for (auto &kids : children) {
+            ++children_counts[kids.size()];
+        }
+        for (auto &pair : children_counts) {
+            cout << pair.first << " children: " << pair.second << endl;
+        }
     }
-    for (auto &pair : children_counts) {
-        cout << pair.first << " children: " << pair.second << endl;
-    }
+    cout << "Goal distances estimated memory usage: "
+         << estimate_memory_usage_in_bytes(goal_distances) / 1024 << " KB" << endl;
+    cout << "Shortest path tree estimated memory usage: "
+         << estimate_memory_usage_in_bytes(shortest_path) / 1024 << " KB" << endl;
+    cout << "Shortest path children estimated memory usage: "
+         << estimate_vector_of_vector_bytes(children) / 1024 << " KB" << endl;
 }
 }

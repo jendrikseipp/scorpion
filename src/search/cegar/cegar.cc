@@ -385,8 +385,6 @@ unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
 
 void CEGAR::print_statistics() {
     abstraction->print_statistics();
-    if (debug) {
-        shortest_paths->print_statistics();
-    }
+    shortest_paths->print_statistics();
 }
 }
