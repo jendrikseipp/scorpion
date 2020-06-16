@@ -266,6 +266,8 @@ void Abstraction::print_statistics() const {
     cout << "Estimated memory usage for Cartesian states: "
          << num_cartesian_sets * get_initial_state().get_cartesian_set().estimate_size_in_bytes() / 1024
          << " KB" << endl;
+    cout << "Estimated memory usage for abstract states: "
+         << estimate_memory_usage_in_bytes(states) / 1024 << " KB" << endl;
     refinement_hierarchy->print_statistics();
 }
 }
