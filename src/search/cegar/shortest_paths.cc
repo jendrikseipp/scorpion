@@ -9,6 +9,7 @@
 #include "../utils/memory.h"
 
 #include <cassert>
+#include <map>
 
 using namespace std;
 
@@ -446,5 +447,15 @@ bool ShortestPaths::test_distances(
     }
 
     return true;
+}
+
+void ShortestPaths::print_statistics() const {
+    map<int, int> children_counts;
+    for (auto &kids : children) {
+        ++children_counts[kids.size()];
+    }
+    for (auto &pair : children_counts) {
+        cout << pair.first << " children: " << pair.second << endl;
+    }
 }
 }

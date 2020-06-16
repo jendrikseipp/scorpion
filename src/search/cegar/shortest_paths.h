@@ -100,6 +100,8 @@ public:
     bool test_distances(
         const Abstraction &abstraction,
         const std::unordered_set<int> &goals);
+
+    void print_statistics() const;
 };
 }
 
