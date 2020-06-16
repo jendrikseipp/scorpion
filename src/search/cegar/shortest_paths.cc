@@ -258,8 +258,9 @@ void ShortestPaths::dijkstra_from_orphans(
         states[state].dirty_candidate = false;
 
         if (timer.is_expired()) {
-            //cout << "Timer expired --> abort incremental search" << endl;
-            //return;
+            // All goal distances are always lower bounds, so we can abort at any time.
+            cout << "Timer expired --> abort incremental search" << endl;
+            return;
         }
     }
 
