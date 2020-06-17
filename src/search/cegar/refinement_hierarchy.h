@@ -5,11 +5,11 @@
 #include "types.h"
 
 #include <cassert>
+#include <deque>
 #include <memory>
 #include <ostream>
 #include <stack>
 #include <utility>
-#include <vector>
 
 class AbstractTask;
 class State;
@@ -40,7 +40,7 @@ struct Children {
 */
 class RefinementHierarchy {
     std::shared_ptr<AbstractTask> task;
-    std::vector<Node> nodes;
+    std::deque<Node> nodes;
 
     NodeID add_node(int state_id);
     NodeID get_node_id(const State &state) const;
