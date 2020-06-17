@@ -120,10 +120,6 @@ shared_ptr<AbstractTask> RefinementHierarchy::get_task() const {
     return task;
 }
 
-void RefinementHierarchy::shrink_to_fit() {
-    nodes.shrink_to_fit();
-}
-
 void RefinementHierarchy::print_statistics() const {
     cout << "Refinement hierarchy nodes: " << nodes.size() << endl;
     cout << "Refinement hierarchy capacity: " << nodes.capacity() << endl;

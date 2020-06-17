@@ -72,7 +72,6 @@ const TransitionSystem &Abstraction::get_transition_system() const {
 
 unique_ptr<RefinementHierarchy> Abstraction::extract_refinement_hierarchy() {
     assert(refinement_hierarchy);
-    refinement_hierarchy->shrink_to_fit();
     return move(refinement_hierarchy);
 }
 
