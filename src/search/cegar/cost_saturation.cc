@@ -244,8 +244,8 @@ void CostSaturation::print_statistics(utils::Duration init_time) const {
     utils::g_log << "Done initializing additive Cartesian heuristic" << endl;
     cout << "Time for initializing additive Cartesian heuristic: "
          << init_time << endl;
-    cout << "Cartesian abstractions built: " << heuristic_functions.size() << endl;
-    cout << "Cartesian states: " << num_states << endl;
+    cout << "Cartesian abstractions: " << heuristic_functions.size() << endl;
+    cout << "Total number of Cartesian states: " << num_states << endl;
     cout << "Total number of non-looping transitions: "
          << num_non_looping_transitions << endl;
     cout << endl;

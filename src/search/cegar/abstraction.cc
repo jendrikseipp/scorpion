@@ -250,8 +250,8 @@ void Abstraction::switch_from_transition_system_to_successor_generator() {
 }
 
 void Abstraction::print_statistics() const {
-    cout << "States: " << get_num_states() << endl;
-    cout << "Goal states: " << goals.size() << endl;
+    cout << "Cartesian states: " << get_num_states() << endl;
+    cout << "Cartesian goal states: " << goals.size() << endl;
     if (transition_system) {
         transition_system->print_statistics();
     }
