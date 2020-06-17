@@ -34,7 +34,7 @@ enum class Variable: char {
 };
 static_assert(sizeof(Variable) == 1, "Variable has unexpected size");
 
-using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
+using AbstractStates = std::deque<std::unique_ptr<AbstractState>>;
 using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;
 using Facts = std::vector<FactPair>;
 // TODO: Store goals IDs in vector once we no longer use A* search.
