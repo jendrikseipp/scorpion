@@ -90,7 +90,7 @@ class ShortestPaths {
     // Keep data structures around to avoid reallocating them.
     HeapQueue candidate_queue;
     HeapQueue open_queue;
-    std::vector<StateInfo> states;
+    std::deque<StateInfo> states;
     std::vector<int> dirty_states;
 
     static Cost add_costs(Cost a, Cost b);

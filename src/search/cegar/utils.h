@@ -43,6 +43,14 @@ extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 extern void add_h_update_option(options::OptionParser &parser);
 extern void add_transition_reprsentation_option(options::OptionParser &parser);
 
+template<typename T>
+uint64_t estimate_memory_usage_in_bytes(const std::deque<T> &d) {
+    uint64_t size = 0;
+    size += sizeof(d);            // size of empty deque
+    size += d.size() * sizeof(T); // size of actual entries
+    return size;
+}
+
 // Adapted from utils::estimate_vector_bytes().
 template<typename T>
 uint64_t estimate_memory_usage_in_bytes(const std::vector<T> &vec) {
