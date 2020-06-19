@@ -35,6 +35,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<PickSplit>("pick"),
         opts.get<HUpdateStrategy>("h_update"),
         opts.get<int>("memory_padding"),
+        opts.get<bool>("use_max"),
         *rng,
         opts.get<bool>("debug"));
     return cost_saturation.generate_heuristic_functions(
@@ -44,7 +45,8 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
     const options::Options &opts)
     : Heuristic(opts),
-      heuristic_functions(generate_heuristic_functions(opts)) {
+      heuristic_functions(generate_heuristic_functions(opts)),
+      use_max(opts.get<bool>("use_max")) {
 }
 
 int AdditiveCartesianHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -53,16 +55,20 @@ int AdditiveCartesianHeuristic::compute_heuristic(const GlobalState &global_stat
 }
 
 int AdditiveCartesianHeuristic::compute_heuristic(const State &state) {
-    int sum_h = 0;
+    int h = 0;
     for (const CartesianHeuristicFunction &function : heuristic_functions) {
         int value = function.get_value(state);
         assert(value >= 0);
         if (value == INF)
             return DEAD_END;
-        sum_h += value;
+        if (use_max) {
+            h = max(h, value);
+        } else {
+            h += value;
+        }
     }
-    assert(sum_h >= 0);
-    return sum_h;
+    assert(h >= 0);
+    return h;
 }
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
@@ -155,6 +161,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "large amount of memory padding by default.",
         "500",
         Bounds("0", "infinity"));
+    parser.add_option<bool>(
+        "use_max",
+        "compute maximum over heuristic estimates instead of SCP",
+        "false");
     parser.add_option<bool>(
         "debug",
         "print debugging output",

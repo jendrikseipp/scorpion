@@ -82,6 +82,7 @@ CostSaturation::CostSaturation(
     PickSplit pick_split,
     HUpdateStrategy h_update,
     int memory_padding_mb,
+    bool use_max,
     utils::RandomNumberGenerator &rng,
     bool debug)
     : subtask_generators(subtask_generators),
@@ -92,6 +93,7 @@ CostSaturation::CostSaturation(
       pick_split(pick_split),
       h_update(h_update),
       memory_padding_mb(memory_padding_mb),
+      use_max(use_max),
       rng(rng),
       debug(debug),
       num_states(0),
@@ -220,8 +222,9 @@ void CostSaturation::build_abstractions(
             use_general_costs);
 
         reduce_remaining_costs(saturated_costs);*/
-        if (subtasks.size() != 1) {
-            ABORT("SCP is not implemented for match tree");
+
+        if (!use_max) {
+            ABORT("SCP not implemented for CEGAR-SG");
         }
 
         int num_unsolvable_states = count(goal_distances.begin(), goal_distances.end(), INF);

@@ -14,6 +14,7 @@ class CartesianHeuristicFunction;
 */
 class AdditiveCartesianHeuristic : public Heuristic {
     const std::vector<CartesianHeuristicFunction> heuristic_functions;
+    const bool use_max;
 
     int compute_heuristic(const State &state);
 

@@ -33,6 +33,7 @@ class CostSaturation {
     const PickSplit pick_split;
     const HUpdateStrategy h_update;
     const int memory_padding_mb;
+    const bool use_max;
     utils::RandomNumberGenerator &rng;
     const bool debug;
 
@@ -62,6 +63,7 @@ public:
         PickSplit pick_split,
         HUpdateStrategy h_update,
         int memory_padding_mb,
+        bool use_max,
         utils::RandomNumberGenerator &rng,
         bool debug);
 
