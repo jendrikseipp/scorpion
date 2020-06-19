@@ -126,7 +126,7 @@ void Abstraction::mark_all_states_as_goals() {
 }
 
 void Abstraction::initialize_trivial_abstraction(const vector<int> &domain_sizes) {
-    CartesianSet::initialize_static_members(domain_sizes);
+    CartesianSet::set_static_members(domain_sizes);
     cartesian_sets.push_back(utils::make_unique_ptr<CartesianSet>(domain_sizes));
     unique_ptr<AbstractState> init_state =
         AbstractState::get_trivial_abstract_state(*cartesian_sets[0]);

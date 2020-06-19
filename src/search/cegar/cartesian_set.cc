@@ -17,7 +17,8 @@ CartesianSet::CartesianSet(const vector<int> &domain_sizes) {
     }
 }
 
-void CartesianSet::initialize_static_members(const vector<int> &domain_sizes) {
+void CartesianSet::set_static_members(const vector<int> &domain_sizes) {
+    var_infos.clear();
     var_infos.reserve(domain_sizes.size());
     total_num_blocks = 0;
     for (int domain_size : domain_sizes) {

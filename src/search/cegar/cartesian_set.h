@@ -51,7 +51,7 @@ class CartesianSet {
 public:
     explicit CartesianSet(const std::vector<int> &domain_sizes);
 
-    static void initialize_static_members(const std::vector<int> &domain_sizes);
+    static void set_static_members(const std::vector<int> &domain_sizes);
 
     void add(int var, int value);
     void set_single_value(int var, int value);
