@@ -122,6 +122,7 @@ shared_ptr<AbstractTask> RefinementHierarchy::get_task() const {
 
 void RefinementHierarchy::print_statistics() const {
     cout << "Refinement hierarchy nodes: " << nodes.size() << endl;
+    cout << "Refinement hierarchy capacity: " << nodes.capacity() << endl;
     cout << "Refinement hierarchy estimated memory usage: "
          << estimate_memory_usage_in_bytes(nodes) / 1024 << " KB" << endl;
 }
