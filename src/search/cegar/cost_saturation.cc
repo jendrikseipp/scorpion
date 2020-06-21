@@ -223,7 +223,7 @@ void CostSaturation::build_abstractions(
 
         reduce_remaining_costs(saturated_costs);*/
 
-        if (!use_max) {
+        if (subtasks.size() != 1 && !use_max) {
             ABORT("SCP not implemented for CEGAR-SG");
         }
 
