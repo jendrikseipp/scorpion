@@ -3,6 +3,7 @@
 #include "errors.h"
 
 #include <iostream>
+#include <unordered_set>
 #include <tree_util.hh>
 
 
@@ -159,6 +160,7 @@ Options OptionParser::parse() {
     /* Check if there were any arguments with invalid keywords,
        or positional arguments after keyword arguments. */
     string last_key;
+    unordered_set<string> seen_keys;
     for (auto tree_it = first_child_of_root(parse_tree);
          tree_it != end_of_roots_children(parse_tree);
          ++tree_it) {
@@ -167,6 +169,10 @@ Options OptionParser::parse() {
                 error("invalid keyword " + tree_it->key + " for " + get_root_value());
             }
         }
+        if (seen_keys.count(tree_it->key)) {
+            error("duplicate key " + tree_it->key + " for " + get_root_value());
+        }
+        seen_keys.insert(tree_it->key);
         if (tree_it->key.empty() && !last_key.empty()) {
             error("positional argument after keyword argument");
         }
