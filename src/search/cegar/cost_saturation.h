@@ -37,6 +37,7 @@ class CostSaturation {
     utils::RandomNumberGenerator &rng;
     const bool debug;
 
+    void (*standard_new_handler)();
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
     int num_states;

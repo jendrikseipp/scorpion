@@ -96,6 +96,7 @@ CostSaturation::CostSaturation(
       use_max(use_max),
       rng(rng),
       debug(debug),
+      standard_new_handler(nullptr),
       num_states(0),
       num_non_looping_transitions(0) {
 }
@@ -121,7 +122,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
             return num_states >= max_states ||
                    num_non_looping_transitions >= max_non_looping_transitions ||
                    timer.is_expired() ||
-                   !utils::extra_memory_padding_is_reserved() ||
+                   //!utils::extra_memory_padding_is_reserved() ||
                    state_is_dead_end(initial_state);
         };
 
@@ -132,8 +133,11 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
         if (should_abort())
             break;
     }
-    if (utils::extra_memory_padding_is_reserved())
+    if (utils::extra_memory_padding_is_reserved()) {
         utils::release_extra_memory_padding();
+    }
+    // The current new-handler may already be the standard handler or nullptr.
+    set_new_handler(standard_new_handler);
     print_statistics(timer.get_elapsed_time());
 
     vector<CartesianHeuristicFunction> functions;
@@ -191,6 +195,20 @@ void CostSaturation::build_abstractions(
     for (shared_ptr<AbstractTask> subtask : subtasks) {
         subtask = get_remaining_costs_task(subtask);
         assert(num_states < max_states);
+
+        if (!utils::extra_memory_padding_is_reserved()) {
+            utils::g_log << "Reserve extra memory padding for the next abstraction" << endl;
+            // The current new-handler aborts the program if the allocation fails.
+            // If the new-handler is nullptr, it throws std::bad_alloc.
+            standard_new_handler = set_new_handler(nullptr);
+            try {
+                utils::reserve_extra_memory_padding(memory_padding_mb);
+            } catch (const bad_alloc &) {
+                utils::g_log << "Failed to reserve extra memory padding for the next "
+                    "abstraction. --> Stop building new abstractions." << endl;
+                break;
+            }
+        }
 
         CEGAR cegar(
             subtask,
