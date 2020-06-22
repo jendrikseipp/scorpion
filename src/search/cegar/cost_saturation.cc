@@ -96,7 +96,7 @@ CostSaturation::CostSaturation(
       use_max(use_max),
       rng(rng),
       debug(debug),
-      standard_new_handler(nullptr),
+      standard_new_handler(get_new_handler()),
       num_states(0),
       num_non_looping_transitions(0) {
 }
@@ -122,11 +122,9 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
             return num_states >= max_states ||
                    num_non_looping_transitions >= max_non_looping_transitions ||
                    timer.is_expired() ||
-                   //!utils::extra_memory_padding_is_reserved() ||
                    state_is_dead_end(initial_state);
         };
 
-    utils::reserve_extra_memory_padding(memory_padding_mb);
     for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task);
         build_abstractions(subtasks, timer, should_abort);
@@ -200,10 +198,11 @@ void CostSaturation::build_abstractions(
             utils::g_log << "Reserve extra memory padding for the next abstraction" << endl;
             // The current new-handler aborts the program if the allocation fails.
             // If the new-handler is nullptr, it throws std::bad_alloc.
-            standard_new_handler = set_new_handler(nullptr);
+            set_new_handler(nullptr);
             try {
                 utils::reserve_extra_memory_padding(memory_padding_mb);
             } catch (const bad_alloc &) {
+                set_new_handler(standard_new_handler);
                 utils::g_log << "Failed to reserve extra memory padding for the next "
                     "abstraction. --> Stop building new abstractions." << endl;
                 break;
