@@ -58,6 +58,7 @@ public:
     const std::vector<Transitions> &get_incoming_transitions() const;
     const std::vector<Transitions> &get_outgoing_transitions() const;
     const std::vector<Loops> &get_loops() const;
+    std::vector<bool> get_looping_operators() const;
 
     int get_num_states() const;
     int get_num_operators() const;

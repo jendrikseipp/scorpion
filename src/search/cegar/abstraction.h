@@ -64,6 +64,7 @@ public:
     Transitions get_incoming_transitions(int state_id) const;
     Transitions get_outgoing_transitions(int state_id) const;
     int get_operator_between_states(int src, int dest, int cost) const;
+    std::vector<bool> get_looping_operators() const;
 
     template<typename Callback>
     void for_each_outgoing_transition(int state_id, const Callback &callback) const {

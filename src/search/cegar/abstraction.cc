@@ -118,6 +118,20 @@ int Abstraction::get_operator_between_states(int src, int dest, int cost) const 
     return UNDEFINED;
 }
 
+vector<bool> Abstraction::get_looping_operators() const {
+#ifndef NDEBUG
+    if (match_tree && transition_system) {
+        assert(match_tree->get_looping_operators(states) ==
+               transition_system->get_looping_operators());
+    }
+#endif
+    if (match_tree) {
+        return match_tree->get_looping_operators(states);
+    } else {
+        return transition_system->get_looping_operators();
+    }
+}
+
 void Abstraction::mark_all_states_as_goals() {
     goals.clear();
     for (auto &state : states) {

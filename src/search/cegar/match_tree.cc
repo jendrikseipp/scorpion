@@ -439,6 +439,32 @@ int MatchTree::get_operator_between_states(
     return UNDEFINED;
 }
 
+vector<bool> MatchTree::get_looping_operators(const AbstractStates &states) const {
+    vector<bool> looping(preconditions.size(), false);
+    vector<OperatorID> applicable_ops;
+    for (auto &state : states) {
+        applicable_ops.clear();
+        forward_successor_generator.generate_applicable_ops(*state, applicable_ops);
+        for (OperatorID op_id : applicable_ops) {
+            int op = op_id.get_index();
+            if (looping[op]) {
+                continue;
+            }
+            assert(contains_all_facts(state->get_cartesian_set(), preconditions[op]));
+            // An operator loops iff state contains all its effects,
+            // since then the resulting Cartesian set is a subset of state.
+            // TODO: ignore operators with infinite cost.
+            if (all_of(effects[op].begin(), effects[op].end(),
+                       [&state](const FactPair &fact) {
+                           return state->contains(fact.var, fact.value);
+                       })) {
+                looping[op] = true;
+            }
+        }
+    }
+    return looping;
+}
+
 int MatchTree::get_num_nodes() const {
     assert(incoming.size() == outgoing.size());
     return outgoing.size();

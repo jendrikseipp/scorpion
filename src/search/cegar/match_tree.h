@@ -74,6 +74,7 @@ public:
     Transitions get_outgoing_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
     int get_operator_between_states(const AbstractState &src, const AbstractState &dest, int cost) const;
+    std::vector<bool> get_looping_operators(const AbstractStates &states) const;
 
     template<typename Callback>
     void for_each_outgoing_transition(

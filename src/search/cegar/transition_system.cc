@@ -320,6 +320,16 @@ const vector<Loops> &TransitionSystem::get_loops() const {
     return loops;
 }
 
+vector<bool> TransitionSystem::get_looping_operators() const {
+    vector<bool> operator_induces_self_loop(get_num_operators(), false);
+    for (const auto &loops : get_loops()) {
+        for (int op_id : loops) {
+            operator_induces_self_loop[op_id] = true;
+        }
+    }
+    return operator_induces_self_loop;
+}
+
 int TransitionSystem::get_num_states() const {
     assert(incoming.size() == outgoing.size());
     assert(loops.size() == outgoing.size());
