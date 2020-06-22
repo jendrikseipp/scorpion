@@ -208,20 +208,23 @@ void CostSaturation::build_abstractions(
         num_non_looping_transitions += abstraction->get_num_transitions();
         assert(num_states <= max_states);
 
+        /*
         vector<int> costs = task_properties::get_operator_costs(TaskProxy(*subtask));
-        vector<int> init_distances(num_states, 0); // Don't prune unreachable transitions.
-        /* = compute_distances(
+        vector<int> init_distances = compute_distances(
             abstraction->get_transition_system().get_outgoing_transitions(),
             costs,
-            {abstraction->get_initial_state().get_id()}); */
+            {abstraction->get_initial_state().get_id()});
+        */
         vector<int> goal_distances = cegar.get_goal_distances();
-        /*vector<int> saturated_costs = compute_saturated_costs(
+        /*
+        vector<int> saturated_costs = compute_saturated_costs(
             *abstraction,
             init_distances,
             goal_distances,
             use_general_costs);
 
-        reduce_remaining_costs(saturated_costs);*/
+        reduce_remaining_costs(saturated_costs);
+        */
 
         if (subtasks.size() != 1 && !use_max) {
             ABORT("SCP not implemented for CEGAR-SG");
