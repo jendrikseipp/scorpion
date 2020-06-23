@@ -25,15 +25,23 @@ using namespace std;
 namespace cegar {
 static vector<int> compute_saturated_costs(
     const Abstraction &abstraction,
-    const vector<int> &g_values,
     const vector<int> &h_values,
     bool use_general_costs) {
     const int min_cost = use_general_costs ? -INF : 0;
     vector<int> saturated_costs(abstraction.get_num_operators(), min_cost);
-    assert(g_values.size() == h_values.size());
+    if (use_general_costs) {
+        /* To prevent negative cost cycles, all operators inducing
+           self-loops must have non-negative costs. */
+        vector<bool> looping_ops = abstraction.get_looping_operators();
+        for (int op_id = 0; op_id < abstraction.get_num_operators(); ++op_id) {
+            if (looping_ops[op_id]) {
+                saturated_costs[op_id] = 0;
+            }
+        }
+    }
+
     int num_states = h_values.size();
     for (int state_id = 0; state_id < num_states; ++state_id) {
-        int g = g_values[state_id];
         int h = h_values[state_id];
 
         /*
@@ -44,7 +52,7 @@ static vector<int> compute_saturated_costs(
           ignoring dead end states. The "h == INF" test is a speed
           optimization.
         */
-        if (g == INF || h == INF)
+        if (h == INF)
             continue;
 
         for (const Transition &transition:
@@ -58,15 +66,6 @@ static vector<int> compute_saturated_costs(
 
             int needed = h - succ_h;
             saturated_costs[op_id] = max(saturated_costs[op_id], needed);
-        }
-
-        if (use_general_costs) {
-            /* To prevent negative cost cycles, all operators inducing
-               self-loops must have non-negative costs. */
-            ABORT("Computing looping operators is not implemented");
-            /*for (int op_id : transition_system.get_loops()[state_id]) {
-                saturated_costs[op_id] = max(saturated_costs[op_id], 0);
-            }*/
         }
     }
     return saturated_costs;
@@ -242,26 +241,11 @@ void CostSaturation::build_abstractions(
         num_non_looping_transitions += abstraction->get_num_transitions();
         //assert(num_states <= max_states);  // We always separate goal and non-goal states.
 
-        /*
-        vector<int> costs = task_properties::get_operator_costs(TaskProxy(*subtask));
-        vector<int> init_distances = compute_distances(
-            abstraction->get_transition_system().get_outgoing_transitions(),
-            costs,
-            {abstraction->get_initial_state().get_id()});
-        */
         vector<int> goal_distances = cegar.get_goal_distances();
-        /*
-        vector<int> saturated_costs = compute_saturated_costs(
-            *abstraction,
-            init_distances,
-            goal_distances,
-            use_general_costs);
-
-        reduce_remaining_costs(saturated_costs);
-        */
-
-        if (subtasks.size() != 1 && !use_max) {
-            ABORT("SCP not implemented for CEGAR-SG");
+        if (!use_max) {
+            vector<int> saturated_costs = compute_saturated_costs(
+                *abstraction, goal_distances, use_general_costs);
+            reduce_remaining_costs(saturated_costs);
         }
 
         int num_unsolvable_states = count(goal_distances.begin(), goal_distances.end(), INF);
