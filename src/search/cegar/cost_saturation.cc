@@ -232,7 +232,7 @@ void CostSaturation::build_abstractions(
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
         num_states += abstraction->get_num_states();
         num_non_looping_transitions += abstraction->get_num_transitions();
-        assert(num_states <= max_states);
+        //assert(num_states <= max_states);  // We always separate goal and non-goal states.
 
         /*
         vector<int> costs = task_properties::get_operator_costs(TaskProxy(*subtask));
