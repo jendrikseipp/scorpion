@@ -185,6 +185,14 @@ bool CostSaturation::state_is_dead_end(const State &state) const {
     return false;
 }
 
+static int get_subtask_limit(int limit, int used, int remaining_subtasks) {
+    assert(used < limit);
+    if (limit == INF) {
+        return INF;
+    }
+    return max(1, (limit - used) / remaining_subtasks);
+}
+
 void CostSaturation::build_abstractions(
     const vector<shared_ptr<AbstractTask>> &subtasks,
     const utils::CountdownTimer &timer,
@@ -211,8 +219,9 @@ void CostSaturation::build_abstractions(
 
         CEGAR cegar(
             subtask,
-            max(1, (max_states - num_states) / rem_subtasks),
-            max(1, (max_non_looping_transitions - num_non_looping_transitions) /
+            get_subtask_limit(max_states, num_states, rem_subtasks),
+            get_subtask_limit(
+                max_non_looping_transitions, num_non_looping_transitions,
                 rem_subtasks),
             timer.get_remaining_time() / rem_subtasks,
             pick_split,
