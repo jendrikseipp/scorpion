@@ -83,6 +83,7 @@ CostSaturation::CostSaturation(
     HUpdateStrategy h_update,
     int memory_padding_mb,
     bool use_max,
+    bool use_fixed_time_limits,
     utils::RandomNumberGenerator &rng,
     bool debug)
     : subtask_generators(subtask_generators),
@@ -94,11 +95,15 @@ CostSaturation::CostSaturation(
       h_update(h_update),
       memory_padding_mb(memory_padding_mb),
       use_max(use_max),
+      use_fixed_time_limits(use_fixed_time_limits),
       rng(rng),
       debug(debug),
       standard_new_handler(get_new_handler()),
       num_states(0),
       num_non_looping_transitions(0) {
+    if (subtask_generators.size() > 1 && use_fixed_time_limits) {
+        ABORT("Using fixed time limits makes no sense for multiple subtask generators.");
+    }
 }
 
 vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
@@ -217,13 +222,16 @@ void CostSaturation::build_abstractions(
             }
         }
 
+        double time_limit = use_fixed_time_limits
+            ? max_time / subtasks.size()
+            : timer.get_remaining_time() / rem_subtasks;
         CEGAR cegar(
             subtask,
             get_subtask_limit(max_states, num_states, rem_subtasks),
             get_subtask_limit(
                 max_non_looping_transitions, num_non_looping_transitions,
                 rem_subtasks),
-            timer.get_remaining_time() / rem_subtasks,
+            time_limit,
             pick_split,
             h_update,
             rng,

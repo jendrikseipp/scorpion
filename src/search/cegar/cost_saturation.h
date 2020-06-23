@@ -34,6 +34,7 @@ class CostSaturation {
     const HUpdateStrategy h_update;
     const int memory_padding_mb;
     const bool use_max;
+    const bool use_fixed_time_limits;
     utils::RandomNumberGenerator &rng;
     const bool debug;
 
@@ -65,6 +66,7 @@ public:
         HUpdateStrategy h_update,
         int memory_padding_mb,
         bool use_max,
+        bool use_fixed_time_limits,
         utils::RandomNumberGenerator &rng,
         bool debug);
 

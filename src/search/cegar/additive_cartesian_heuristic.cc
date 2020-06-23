@@ -36,6 +36,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<HUpdateStrategy>("h_update"),
         opts.get<int>("memory_padding"),
         opts.get<bool>("use_max"),
+        opts.get<bool>("use_fixed_time_limits"),
         *rng,
         opts.get<bool>("debug"));
     return cost_saturation.generate_heuristic_functions(
@@ -164,6 +165,11 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "use_max",
         "compute maximum over heuristic estimates instead of SCP",
+        "false");
+    parser.add_option<bool>(
+        "use_fixed_time_limits",
+        "limit the build time for each abstraction by max_time/num_abstractions "
+        "(instead of passing unused time to the remaining abstractions)",
         "false");
     parser.add_option<bool>(
         "debug",

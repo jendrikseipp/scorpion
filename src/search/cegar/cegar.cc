@@ -116,6 +116,7 @@ CEGAR::CEGAR(
     cout << "Maximum number of states: " << max_states << endl;
     cout << "Maximum number of transitions: "
          << max_non_looping_transitions << endl;
+    cout << "Maximum time: " << max_time << endl;
 
     refinement_loop(rng);
     utils::g_log << "Done building abstraction." << endl;
