@@ -303,10 +303,13 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
         for (OperatorID op_id : operator_ids) {
             int op = op_id.get_index();
             assert(contains_all_facts(state.get_cartesian_set(), preconditions[op]));
-            // Filter self-loops. An operator loops iff state contains all its effects,
-            // since then the resulting Cartesian set is a subset of state.
-            // TODO: ignore operators with infinite cost.
-            if (any_of(effects[op].begin(), effects[op].end(),
+            /*
+              Ignore operators with infinite cost and filter self-loops. An
+              operator loops iff state contains all its effects, since then the
+              resulting Cartesian set is a subset of state.
+            */
+            if (operator_costs[op] != INF &&
+                any_of(effects[op].begin(), effects[op].end(),
                        [&state](const FactPair &fact) {return !state.contains(fact.var, fact.value);})) {
                 operators.push_back(op);
             }
@@ -320,10 +323,14 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
                 for (int op_id : outgoing[node_id]) {
                     assert(contains_all_facts(state.get_cartesian_set(),
                                               preconditions[op_id]));
-                    // Filter self-loops. An operator loops iff state contains all its effects,
-                    // since then the resulting Cartesian set is a subset of state.
-                    // TODO: ignore operators with infinite cost.
-                    if (any_of(effects[op_id].begin(), effects[op_id].end(),
+                    /*
+                      Ignore operators with infinite cost and filter
+                      self-loops. An operator loops iff state contains all its
+                      effects, since then the resulting Cartesian set is a
+                      subset of state.
+                    */
+                    if (operator_costs[op_id] != INF &&
+                        any_of(effects[op_id].begin(), effects[op_id].end(),
                                [&state](const FactPair &fact) {return !state.contains(fact.var, fact.value);})) {
                         operators.push_back(op_id);
                     }
