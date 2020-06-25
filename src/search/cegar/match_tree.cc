@@ -461,6 +461,7 @@ vector<bool> MatchTree::get_looping_operators(const AbstractStates &states) cons
             // An operator loops iff state contains all its effects,
             // since then the resulting Cartesian set is a subset of state.
             // TODO: ignore operators with infinite cost.
+            // TODO: is it faster to compute the intersection of incoming and outgoing operators?
             if (all_of(effects[op].begin(), effects[op].end(),
                        [&state](const FactPair &fact) {
                            return state->contains(fact.var, fact.value);

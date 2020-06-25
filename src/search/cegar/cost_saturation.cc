@@ -201,6 +201,8 @@ void CostSaturation::build_abstractions(
     const vector<shared_ptr<AbstractTask>> &subtasks,
     const utils::CountdownTimer &timer,
     function<bool()> should_abort) {
+    utils::Timer scf_timer;
+    scf_timer.stop();
     int rem_subtasks = subtasks.size();
     for (shared_ptr<AbstractTask> subtask : subtasks) {
         subtask = get_remaining_costs_task(subtask);
@@ -243,8 +245,10 @@ void CostSaturation::build_abstractions(
 
         vector<int> goal_distances = cegar.get_goal_distances();
         if (!use_max) {
+            scf_timer.resume();
             vector<int> saturated_costs = compute_saturated_costs(
                 *abstraction, goal_distances, use_general_costs);
+            scf_timer.stop();
             reduce_remaining_costs(saturated_costs);
         }
 
@@ -262,6 +266,7 @@ void CostSaturation::build_abstractions(
             break;
         }
     }
+    utils::g_log << "Time for computing saturated cost functions: " << scf_timer << endl;
 }
 
 void CostSaturation::print_statistics(utils::Duration init_time) const {
