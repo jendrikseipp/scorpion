@@ -80,27 +80,33 @@ public:
     void for_each_outgoing_transition(
         const CartesianSets &cartesian_sets, const AbstractState &state,
         const Callback &callback) const {
-        bool abort = false;
         std::vector<int> operators = get_outgoing_operators(state);
-        if (sort_applicable_operators_by_increasing_cost) {
+        if (sort_applicable_operators_by_increasing_cost && false) {
+            // Sorting by operator cost makes the abstractions larger.
             sort(operators.begin(), operators.end(), [&](int op1, int op2) {
                      return operator_costs[op1] < operator_costs[op2];
                  });
         }
+        std::vector<int> target_states;
         for (int op_id : operators) {
             CartesianSet tmp_cartesian_set = state.get_cartesian_set();
             for (const FactPair &fact : postconditions[op_id]) {
                 tmp_cartesian_set.set_single_value(fact.var, fact.value);
             }
+            target_states.clear();
             refinement_hierarchy.for_each_leaf(
                 cartesian_sets, tmp_cartesian_set, get_outgoing_matcher(op_id),
                 [&](NodeID leaf_id) {
                     int dest_state_id = get_state_id(leaf_id);
                     assert(dest_state_id != state.get_id());
-                    abort = callback(Transition(op_id, dest_state_id));
+                    target_states.push_back(dest_state_id);
                 });
-            if (abort) {
-                return;
+            sort(target_states.begin(), target_states.end());
+            for (int target_state : target_states) {
+                bool abort = callback(Transition(op_id, target_state));
+                if (abort) {
+                    return;
+                }
             }
         }
     }

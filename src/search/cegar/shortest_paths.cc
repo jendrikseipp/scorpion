@@ -234,8 +234,14 @@ void ShortestPaths::dijkstra_from_orphans(
                     add_costs(states[succ].goal_distance, operator_costs[op_id])
                     == states[state].goal_distance) {
                     if (debug) {
-                        cout << "Reconnect " << state << " to " << succ << " via " << op_id << endl;
+                        cout << "Reconnect " << state << " to " << succ << " via "
+                             << op_id << " with cost " << operator_costs[op_id]
+                             << " (" << convert_to_32_bit_cost(operator_costs[op_id])
+                             << ")" << endl;
                     }
+                    assert(states[state].goal_distance != INF_COSTS);
+                    assert(states[succ].goal_distance != INF_COSTS);
+                    assert(operator_costs[op_id] != INF_COSTS);
                     set_shortest_path(state, Transition(op_id, succ));
                     reconnected = true;
                 }
@@ -311,9 +317,6 @@ void ShortestPaths::dijkstra_from_orphans(
         }
     }
 
-    if (debug) {
-        cout << "dirty: " << dirty_states.size() << endl;
-    }
     while (!open_queue.empty()) {
         pair<Cost, int> top_pair = open_queue.pop();
         const Cost g = top_pair.first;
@@ -325,9 +328,6 @@ void ShortestPaths::dijkstra_from_orphans(
         assert(g != INF_COSTS);
         assert(states[state].dirty);
         states[state].dirty = false;
-        if (debug) {
-            cout << "  open: " << open_queue.size() << endl;
-        }
         for (const Transition &t : abstraction.get_incoming_transitions(state)) {
             int succ = t.target_id;
             int op_id = t.op_id;
@@ -443,7 +443,7 @@ bool ShortestPaths::test_distances(
 }
 
 void ShortestPaths::print_statistics() const {
-    if (debug) {
+    if (false) {
         map<int, int> children_counts;
         for (const StateInfo &state : states) {
             ++children_counts[state.children.size()];

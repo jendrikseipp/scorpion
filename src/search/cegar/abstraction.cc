@@ -90,19 +90,26 @@ int Abstraction::get_num_transitions() const {
 }
 
 Transitions Abstraction::get_incoming_transitions(int state_id) const {
+    Transitions transitions;
     if (match_tree) {
-        return match_tree->get_incoming_transitions(
+        transitions = match_tree->get_incoming_transitions(
             cartesian_sets, *states[state_id]);
     } else {
-        return transition_system->get_incoming_transitions()[state_id];
+        transitions = transition_system->get_incoming_transitions()[state_id];
     }
+    sort(transitions.begin(), transitions.end());
+    return transitions;
 }
 
 Transitions Abstraction::get_outgoing_transitions(int state_id) const {
+    Transitions transitions;
     if (match_tree) {
-        return match_tree->get_outgoing_transitions(cartesian_sets, *states[state_id]);
+        transitions = match_tree->get_outgoing_transitions(cartesian_sets, *states[state_id]);
+    } else {
+        transitions = transition_system->get_outgoing_transitions()[state_id];
     }
-    return transition_system->get_outgoing_transitions()[state_id];
+    sort(transitions.begin(), transitions.end());
+    return transitions;
 }
 
 int Abstraction::get_operator_between_states(int src, int dest, int cost) const {
@@ -110,7 +117,9 @@ int Abstraction::get_operator_between_states(int src, int dest, int cost) const 
         return match_tree->get_operator_between_states(*states[src], *states[dest], cost);
     }
     OperatorsProxy operators = refinement_hierarchy->get_task_proxy().get_operators();
-    for (const Transition &t : transition_system->get_outgoing_transitions()[src]) {
+    Transitions transitions = transition_system->get_outgoing_transitions()[src];
+    sort(transitions.begin(), transitions.end());
+    for (const Transition &t : transitions) {
         if (t.target_id == dest && operators[t.op_id].get_cost() == cost) {
             return t.op_id;
         }

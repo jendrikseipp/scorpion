@@ -288,10 +288,8 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
                 }
             });
     }
-#ifndef NDEBUG
     sort(operators.begin(), operators.end());
     assert(utils::is_sorted_unique(operators));
-#endif
     return operators;
 }
 
@@ -337,10 +335,8 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
                 }
             });
     }
-#ifndef NDEBUG
     sort(operators.begin(), operators.end());
     assert(utils::is_sorted_unique(operators));
-#endif
     return operators;
 }
 
@@ -366,9 +362,6 @@ Matcher MatchTree::get_outgoing_matcher(int op_id) const {
 Transitions MatchTree::get_incoming_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
     Transitions transitions;
-    if (debug) {
-        cout << "  ops: " << get_incoming_operators(state).size() << endl;
-    }
     for (int op_id : get_incoming_operators(state)) {
         CartesianSet tmp_cartesian_set = state.get_cartesian_set();
         for (const FactPair &fact : effects[op_id]) {
@@ -386,9 +379,6 @@ Transitions MatchTree::get_incoming_transitions(
                     transitions.emplace_back(op_id, src_state_id);
                 }
             });
-    }
-    if (debug) {
-        cout << "  transitions: " << transitions.size() << endl;
     }
     return transitions;
 }
@@ -483,21 +473,23 @@ int MatchTree::get_num_operators() const {
 }
 
 void MatchTree::print_statistics() const {
-    int total_incoming_ops = 0;
-    int total_outgoing_ops = 0;
-    int total_capacity = 0;
-    for (int node_id = 0; node_id < get_num_nodes(); ++node_id) {
-        total_incoming_ops += incoming[node_id].size();
-        total_outgoing_ops += outgoing[node_id].size();
-        total_capacity += incoming[node_id].capacity() + outgoing[node_id].capacity();
+    if (g_hacked_tsr == TransitionRepresentation::MT) {
+        int total_incoming_ops = 0;
+        int total_outgoing_ops = 0;
+        int total_capacity = 0;
+        for (int node_id = 0; node_id < get_num_nodes(); ++node_id) {
+            total_incoming_ops += incoming[node_id].size();
+            total_outgoing_ops += outgoing[node_id].size();
+            total_capacity += incoming[node_id].capacity() + outgoing[node_id].capacity();
+        }
+        cout << "Match tree incoming operators: " << total_incoming_ops << endl;
+        cout << "Match tree outgoing operators: " << total_outgoing_ops << endl;
+        cout << "Match tree capacity: " << total_capacity << endl;
+        uint64_t mem_usage = 0;
+        mem_usage += estimate_vector_of_vector_bytes(incoming);
+        mem_usage += estimate_vector_of_vector_bytes(outgoing);
+        cout << "Match tree estimated memory usage: " << mem_usage / 1024 << " KB" << endl;
     }
-    cout << "Match tree incoming operators: " << total_incoming_ops << endl;
-    cout << "Match tree outgoing operators: " << total_outgoing_ops << endl;
-    cout << "Match tree capacity: " << total_capacity << endl;
-    uint64_t mem_usage = 0;
-    mem_usage += estimate_vector_of_vector_bytes(incoming);
-    mem_usage += estimate_vector_of_vector_bytes(outgoing);
-    cout << "Match tree estimated memory usage: " << mem_usage / 1024 << " KB" << endl;
     uint64_t static_mem_usage = 0;
     static_mem_usage += estimate_memory_usage_in_bytes(preconditions);
     static_mem_usage += estimate_memory_usage_in_bytes(effects);
