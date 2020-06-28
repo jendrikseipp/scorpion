@@ -288,8 +288,11 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
                 }
             });
     }
+#ifndef NDEBUG
     sort(operators.begin(), operators.end());
     assert(utils::is_sorted_unique(operators));
+#endif
+    sort_operators(operators);
     return operators;
 }
 
@@ -335,8 +338,11 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
                 }
             });
     }
+#ifndef NDEBUG
     sort(operators.begin(), operators.end());
     assert(utils::is_sorted_unique(operators));
+#endif
+    sort_operators(operators);
     return operators;
 }
 
@@ -419,6 +425,32 @@ bool MatchTree::has_transition(
         }
     }
     return true;
+}
+
+void MatchTree::sort_operators(std::vector<int> &operators) const {
+    random_shuffle(operators.begin(), operators.end());
+    if (g_hacked_operator_ordering == OperatorOrdering::RANDOM) {
+        return;
+    }
+    std::function<int(int)> key;
+    if (g_hacked_operator_ordering == OperatorOrdering::ID_UP) {
+        key = [](int op) {return op;};
+    } else if (g_hacked_operator_ordering == OperatorOrdering::ID_DOWN) {
+        key = [](int op) {return -op;};
+    } else if (g_hacked_operator_ordering == OperatorOrdering::COST_UP) {
+        key = [&](int op) {return operator_costs[op];};
+    } else if (g_hacked_operator_ordering == OperatorOrdering::COST_DOWN) {
+        key = [&](int op) {return -operator_costs[op];};
+    } else if (g_hacked_operator_ordering == OperatorOrdering::POSTCONDITIONS_UP) {
+        key = [&](int op) {return postconditions[op].size();};
+    } else if (g_hacked_operator_ordering == OperatorOrdering::POSTCONDITIONS_DOWN) {
+        key = [&](int op) {return -postconditions[op].size();};
+    } else {
+        ABORT("Unknown operator ordering");
+    }
+    sort(operators.begin(), operators.end(), [&key](int op1, int op2) {
+             return key(op1) < key(op2);
+         });
 }
 
 int MatchTree::get_operator_between_states(

@@ -75,18 +75,13 @@ public:
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
     int get_operator_between_states(const AbstractState &src, const AbstractState &dest, int cost) const;
     std::vector<bool> get_looping_operators(const AbstractStates &states) const;
+    void sort_operators(std::vector<int> &operators) const;
 
     template<typename Callback>
     void for_each_outgoing_transition(
         const CartesianSets &cartesian_sets, const AbstractState &state,
         const Callback &callback) const {
         std::vector<int> operators = get_outgoing_operators(state);
-        if (sort_applicable_operators_by_increasing_cost && false) {
-            // Sorting by operator cost makes the abstractions larger.
-            sort(operators.begin(), operators.end(), [&](int op1, int op2) {
-                     return operator_costs[op1] < operator_costs[op2];
-                 });
-        }
         std::vector<int> target_states;
         for (int op_id : operators) {
             CartesianSet tmp_cartesian_set = state.get_cartesian_set();

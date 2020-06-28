@@ -146,6 +146,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_enum_option<PickSplit>(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
     add_h_update_option(parser);
+    add_operator_ordering_option(parser);
     add_transition_representation_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
@@ -172,6 +173,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "(instead of passing unused time to the remaining abstractions)",
         "false");
     parser.add_option<bool>(
+        "sort_transitions",
+        "sort transitions",
+        "false");
+    parser.add_option<bool>(
         "debug",
         "print debugging output",
         "false");
@@ -183,6 +188,8 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         return nullptr;
 
     g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
+    g_hacked_operator_ordering = opts.get<OperatorOrdering>("operator_order");
+    g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
 
     // Compute the successor generator here already to get peak memory info.
     get_successor_generator(TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")));

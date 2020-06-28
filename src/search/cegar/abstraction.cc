@@ -97,7 +97,9 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
     } else {
         transitions = transition_system->get_incoming_transitions()[state_id];
     }
-    sort(transitions.begin(), transitions.end());
+    if (g_hacked_sort_transitions) {
+        sort(transitions.begin(), transitions.end());
+    }
     return transitions;
 }
 
@@ -108,7 +110,9 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
     } else {
         transitions = transition_system->get_outgoing_transitions()[state_id];
     }
-    sort(transitions.begin(), transitions.end());
+    if (g_hacked_sort_transitions) {
+        sort(transitions.begin(), transitions.end());
+    }
     return transitions;
 }
 
@@ -118,7 +122,9 @@ int Abstraction::get_operator_between_states(int src, int dest, int cost) const 
     }
     OperatorsProxy operators = refinement_hierarchy->get_task_proxy().get_operators();
     Transitions transitions = transition_system->get_outgoing_transitions()[src];
-    sort(transitions.begin(), transitions.end());
+    if (g_hacked_sort_transitions) {
+        (transitions.begin(), transitions.end());
+    }
     for (const Transition &t : transitions) {
         if (t.target_id == dest && operators[t.op_id].get_cost() == cost) {
             return t.op_id;

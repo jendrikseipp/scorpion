@@ -18,6 +18,8 @@
 using namespace std;
 
 namespace cegar {
+OperatorOrdering g_hacked_operator_ordering = OperatorOrdering::ID_UP;
+bool g_hacked_sort_transitions = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
 
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
@@ -118,6 +120,22 @@ void add_transition_representation_option(options::OptionParser &parser) {
         options,
         "how to compute transitions between abstract states",
         "TS");
+}
+
+void add_operator_ordering_option(options::OptionParser &parser) {
+    vector<string> options;
+    options.push_back("RANDOM");
+    options.push_back("ID_UP");
+    options.push_back("ID_DOWN");
+    options.push_back("COST_UP");
+    options.push_back("COST_DOWN");
+    options.push_back("POSTCONDITIONS_UP");
+    options.push_back("POSTCONDITIONS_DOWN");
+    parser.add_enum_option<OperatorOrdering>(
+        "operator_order",
+        options,
+        "how to order operators",
+        "ID_UP");
 }
 
 void dump_dot_graph(const Abstraction &abstraction) {

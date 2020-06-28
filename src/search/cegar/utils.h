@@ -25,6 +25,8 @@ class OptionParser;
 namespace cegar {
 class Abstraction;
 
+extern OperatorOrdering g_hacked_operator_ordering;
+extern bool g_hacked_sort_transitions;
 extern TransitionRepresentation g_hacked_tsr;
 
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
@@ -41,6 +43,7 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
 extern void add_h_update_option(options::OptionParser &parser);
+extern void add_operator_ordering_option(options::OptionParser &parser);
 extern void add_transition_representation_option(options::OptionParser &parser);
 
 template<typename T>
