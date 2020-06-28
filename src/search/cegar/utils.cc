@@ -107,7 +107,7 @@ void add_h_update_option(options::OptionParser &parser) {
         "DIJKSTRA_FROM_UNCONNECTED_ORPHANS");
 }
 
-void add_transition_reprsentation_option(options::OptionParser &parser) {
+void add_transition_representation_option(options::OptionParser &parser) {
     vector<string> options;
     options.push_back("TS");
     options.push_back("MT");

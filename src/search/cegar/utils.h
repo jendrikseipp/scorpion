@@ -41,7 +41,7 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
 extern void add_h_update_option(options::OptionParser &parser);
-extern void add_transition_reprsentation_option(options::OptionParser &parser);
+extern void add_transition_representation_option(options::OptionParser &parser);
 
 template<typename T>
 uint64_t estimate_memory_usage_in_bytes(const std::deque<T> &d) {

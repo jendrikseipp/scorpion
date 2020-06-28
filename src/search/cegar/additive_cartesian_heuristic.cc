@@ -146,7 +146,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_enum_option<PickSplit>(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
     add_h_update_option(parser);
-    add_transition_reprsentation_option(parser);
+    add_transition_representation_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",
