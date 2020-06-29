@@ -136,9 +136,11 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
             break;
     }
     if (utils::extra_memory_padding_is_reserved()) {
+        utils::g_log << "Done building abstractions --> release extra memory padding." << endl;
         utils::release_extra_memory_padding();
     }
     // The current new-handler may already be the standard handler or nullptr.
+    assert(standard_new_handler);
     set_new_handler(standard_new_handler);
     print_statistics(timer.get_elapsed_time());
 
