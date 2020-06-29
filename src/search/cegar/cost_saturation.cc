@@ -140,7 +140,6 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
         utils::release_extra_memory_padding();
     }
     // The current new-handler may already be the standard handler or nullptr.
-    assert(standard_new_handler);
     set_new_handler(standard_new_handler);
     print_statistics(timer.get_elapsed_time());
 
@@ -239,6 +238,10 @@ void CostSaturation::build_abstractions(
             h_update,
             rng,
             debug);
+        // Reset new-handler if we ran out of memory.
+        if (!utils::extra_memory_padding_is_reserved()) {
+            set_new_handler(standard_new_handler);
+        }
 
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
         num_states += abstraction->get_num_states();
