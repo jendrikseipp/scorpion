@@ -28,7 +28,10 @@ enum class PickSplit {
     MAX_REFINED,
     // Compare the h^add(s_0) values of the facts.
     MIN_HADD,
-    MAX_HADD
+    MAX_HADD,
+    // Fast Downward variable order.
+    MIN_CG,
+    MAX_CG
 };
 
 
