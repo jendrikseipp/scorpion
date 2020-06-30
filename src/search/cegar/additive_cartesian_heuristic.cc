@@ -189,6 +189,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
 
+    g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
     g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
     g_hacked_operator_ordering = opts.get<OperatorOrdering>("operator_order");
     g_hacked_sort_transitions = opts.get<bool>("sort_transitions");

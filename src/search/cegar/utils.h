@@ -25,6 +25,7 @@ class OptionParser;
 namespace cegar {
 class Abstraction;
 
+extern int g_hacked_extra_memory_padding_mb;
 extern OperatorOrdering g_hacked_operator_ordering;
 extern bool g_hacked_sort_transitions;
 extern TransitionRepresentation g_hacked_tsr;

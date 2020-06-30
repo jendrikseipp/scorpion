@@ -324,7 +324,12 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
 
         if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
-            abstraction->get_num_transitions() >= max_non_looping_transitions) {
+            !utils::extra_memory_padding_is_reserved()) {
+            cout << "Memory limit reached -> compute transitions on demand" << endl;
+            abstraction->switch_from_transition_system_to_successor_generator();
+            utils::reserve_extra_memory_padding(g_hacked_extra_memory_padding_mb);
+        } else if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
+                   abstraction->get_num_transitions() >= max_non_looping_transitions) {
             cout << "Transition limit reached -> compute transitions on demand" << endl;
             abstraction->switch_from_transition_system_to_successor_generator();
         }

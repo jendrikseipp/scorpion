@@ -18,6 +18,7 @@
 using namespace std;
 
 namespace cegar {
+int g_hacked_extra_memory_padding_mb = 512;
 OperatorOrdering g_hacked_operator_ordering = OperatorOrdering::ID_UP;
 bool g_hacked_sort_transitions = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
