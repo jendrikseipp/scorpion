@@ -28,6 +28,8 @@ enum class OperatorOrdering {
     COST_DOWN,
     POSTCONDITIONS_UP,
     POSTCONDITIONS_DOWN,
+    LAYER_UP,
+    LAYER_DOWN,
 };
 
 enum class TransitionRepresentation {

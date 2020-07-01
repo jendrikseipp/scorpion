@@ -121,6 +121,58 @@ static vector<int> get_operator_costs(const OperatorsProxy &operators) {
     return costs;
 }
 
+static bool operator_applicable(
+    const OperatorProxy &op, const utils::HashSet<FactProxy> &facts) {
+    for (FactProxy precondition : op.get_preconditions()) {
+        if (!facts.count(precondition))
+            return false;
+    }
+    return true;
+}
+
+static vector<int> compute_relaxed_plan_layer_per_operator(
+    const TaskProxy &task_proxy) {
+    vector<int> layers(task_proxy.get_operators().size(), -1);
+    utils::HashSet<FactProxy> reached_facts;
+
+    // Add facts from initial state.
+    for (FactProxy fact : task_proxy.get_initial_state()) {
+        reached_facts.insert(fact);
+    }
+
+    // Until no more facts can be added:
+    size_t last_num_reached = 0;
+    /*
+      Note: This can be done more efficiently by maintaining the number
+      of unsatisfied preconditions for each operator and a queue of
+      unhandled effects.
+
+      TODO: Find out if this code is time critical, and change it if it is.
+    */
+    int layer = 0;
+    while (last_num_reached != reached_facts.size()) {
+        last_num_reached = reached_facts.size();
+        utils::HashSet<FactProxy> new_reached_facts;
+        for (OperatorProxy op : task_proxy.get_operators()) {
+            // Add all facts that are achieved by an applicable operator.
+            if (layers[op.get_id()] == -1 && operator_applicable(op, reached_facts)) {
+                layers[op.get_id()] = layer;
+                for (EffectProxy effect : op.get_effects()) {
+                    new_reached_facts.insert(effect.get_fact());
+                }
+            }
+        }
+        for (auto &fact : new_reached_facts) {
+            reached_facts.insert(fact);
+        }
+        ++layer;
+    }
+    if (any_of(layers.begin(), layers.end(), [](int l) {return l == -1;})) {
+        cerr << ("Warning: task contains relaxed unreachable fact.") << endl;
+    }
+    return layers;
+}
+
 
 MatchTree::MatchTree(
     const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
@@ -130,6 +182,7 @@ MatchTree::MatchTree(
       effects(get_effects_by_operator(ops)),
       postconditions(get_postconditions_by_operator(ops)),
       effect_vars_without_preconditions(get_effect_vars_without_preconditions_by_operator(ops)),
+      relaxed_task_layer(compute_relaxed_plan_layer_per_operator(refinement_hierarchy.get_task_proxy())),
       operator_costs(get_operator_costs(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
@@ -142,6 +195,7 @@ MatchTree::MatchTree(
           !task_properties::is_unit_cost(refinement_hierarchy.get_task_proxy())),
       debug(debug) {
     add_operators_in_trivial_abstraction();
+    cout << "Relaxed task operator layers: " << relaxed_task_layer << endl;
 }
 
 int MatchTree::get_precondition_value(int op_id, int var) const {
@@ -445,6 +499,10 @@ void MatchTree::sort_operators(std::vector<int> &operators) const {
         key = [&](int op) {return postconditions[op].size();};
     } else if (g_hacked_operator_ordering == OperatorOrdering::POSTCONDITIONS_DOWN) {
         key = [&](int op) {return -postconditions[op].size();};
+    } else if (g_hacked_operator_ordering == OperatorOrdering::LAYER_UP) {
+        key = [&](int op) {return relaxed_task_layer[op];};
+    } else if (g_hacked_operator_ordering == OperatorOrdering::LAYER_DOWN) {
+        key = [&](int op) {return -relaxed_task_layer[op];};
     } else {
         ABORT("Unknown operator ordering");
     }

@@ -135,6 +135,8 @@ void add_operator_ordering_option(options::OptionParser &parser) {
     options.push_back("COST_DOWN");
     options.push_back("POSTCONDITIONS_UP");
     options.push_back("POSTCONDITIONS_DOWN");
+    options.push_back("LAYER_UP");
+    options.push_back("LAYER_DOWN");
     parser.add_enum_option<OperatorOrdering>(
         "operator_order",
         options,
