@@ -76,6 +76,7 @@ uint64_t estimate_vector_of_vector_bytes(const std::vector<std::vector<T>> &vec)
 }
 
 extern void dump_dot_graph(const Abstraction &abstraction);
+extern void write_dot_file_to_disk(const Abstraction &abstraction);
 }
 
 /*

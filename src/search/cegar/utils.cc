@@ -13,7 +13,10 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fstream>
+#include <iomanip>
 #include <map>
+#include <sstream>
 
 using namespace std;
 
@@ -166,5 +169,39 @@ void dump_dot_graph(const Abstraction &abstraction) {
         }
     }
     cout << "}" << endl;
+}
+
+void write_dot_file_to_disk(const Abstraction &abstraction) {
+    ostringstream name;
+    name << internal << setfill('0') << setw(3) << abstraction.get_num_states();
+    ofstream out;
+    out.open("graph-" + name.str() + ".dot");
+    int num_states = abstraction.get_num_states();
+    out << "digraph transition_system";
+    out << " {" << endl;
+    out << "    node [shape = none] start;" << endl;
+    for (int i = 0; i < num_states; ++i) {
+        bool is_init = (i == abstraction.get_initial_state().get_id());
+        bool is_goal = abstraction.get_goals().count(i);
+        out << "    node [shape = " << (is_goal ? "doublecircle" : "circle")
+            << "] " << i << ";" << endl;
+        if (is_init)
+            out << "    start -> " << i << ";" << endl;
+    }
+    for (int state_id = 0; state_id < num_states; ++state_id) {
+        map<int, vector<int>> parallel_transitions;
+        for (const Transition &t : abstraction.get_outgoing_transitions(state_id)) {
+            parallel_transitions[t.target_id].push_back(t.op_id);
+        }
+        for (auto &pair : parallel_transitions) {
+            int target = pair.first;
+            vector<int> &operators = pair.second;
+            sort(operators.begin(), operators.end());
+            out << "    " << state_id << " -> " << target
+                << " [label = \"" << utils::join(operators, "_") << "\"];" << endl;
+        }
+    }
+    out << "}" << endl;
+    out.close();
 }
 }
