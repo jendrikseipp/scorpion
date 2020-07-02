@@ -132,7 +132,8 @@ static bool operator_applicable(
 
 static vector<int> compute_relaxed_plan_layer_per_operator(
     const TaskProxy &task_proxy) {
-    vector<int> layers(task_proxy.get_operators().size(), -1);
+    int unreachable = INF;
+    vector<int> layers(task_proxy.get_operators().size(), unreachable);
     utils::HashSet<FactProxy> reached_facts;
 
     // Add facts from initial state.
@@ -140,8 +141,6 @@ static vector<int> compute_relaxed_plan_layer_per_operator(
         reached_facts.insert(fact);
     }
 
-    // Until no more facts can be added:
-    size_t last_num_reached = 0;
     /*
       Note: This can be done more efficiently by maintaining the number
       of unsatisfied preconditions for each operator and a queue of
@@ -150,13 +149,15 @@ static vector<int> compute_relaxed_plan_layer_per_operator(
       TODO: Find out if this code is time critical, and change it if it is.
     */
     int layer = 0;
-    while (last_num_reached != reached_facts.size()) {
-        last_num_reached = reached_facts.size();
+    bool new_ops_applicable = true;
+    while (new_ops_applicable) {
+        new_ops_applicable = false;
         utils::HashSet<FactProxy> new_reached_facts;
         for (OperatorProxy op : task_proxy.get_operators()) {
             // Add all facts that are achieved by an applicable operator.
-            if (layers[op.get_id()] == -1 && operator_applicable(op, reached_facts)) {
+            if (layers[op.get_id()] == unreachable && operator_applicable(op, reached_facts)) {
                 layers[op.get_id()] = layer;
+                new_ops_applicable = true;
                 for (EffectProxy effect : op.get_effects()) {
                     new_reached_facts.insert(effect.get_fact());
                 }
@@ -167,8 +168,8 @@ static vector<int> compute_relaxed_plan_layer_per_operator(
         }
         ++layer;
     }
-    if (any_of(layers.begin(), layers.end(), [](int l) {return l == -1;})) {
-        cerr << ("Warning: task contains relaxed unreachable fact.") << endl;
+    if (any_of(layers.begin(), layers.end(), [&](int l) {return l == unreachable;})) {
+        cerr << ("Warning: task contains a relaxed unreachable operator.") << endl;
     }
     return layers;
 }
@@ -195,7 +196,17 @@ MatchTree::MatchTree(
           !task_properties::is_unit_cost(refinement_hierarchy.get_task_proxy())),
       debug(debug) {
     add_operators_in_trivial_abstraction();
-    cout << "Relaxed task operator layers: " << relaxed_task_layer << endl;
+    map<int, int> layer_count;
+    for (int layer : relaxed_task_layer) {
+        ++layer_count[layer];
+    }
+    cout << "Relaxed task operator layers: {";
+    string sep = "";
+    for (auto &pair : layer_count) {
+        cout << sep << pair.first << ":" << pair.second;
+        sep = ", ";
+    }
+    cout << "}" << endl;
 }
 
 int MatchTree::get_precondition_value(int op_id, int var) const {
