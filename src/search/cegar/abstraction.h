@@ -68,7 +68,8 @@ public:
 
     template<typename Callback>
     void for_each_outgoing_transition(int state_id, const Callback &callback) const {
-        if (match_tree) {
+        // TODO: use specialized version again (if it's faster).
+        if (match_tree && false) {
             return match_tree->for_each_outgoing_transition(
                 cartesian_sets, *states[state_id], callback);
         } else {
