@@ -131,6 +131,7 @@ void add_transition_representation_option(options::OptionParser &parser) {
 void add_operator_ordering_option(options::OptionParser &parser) {
     vector<string> options;
     options.push_back("RANDOM");
+    options.push_back("FIXED");
     options.push_back("ID_UP");
     options.push_back("ID_DOWN");
     options.push_back("COST_UP");

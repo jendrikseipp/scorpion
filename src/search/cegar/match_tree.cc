@@ -199,6 +199,12 @@ MatchTree::MatchTree(
     relaxed_task_layer = compute_relaxed_plan_layer_per_operator(refinement_hierarchy.get_task_proxy());
     utils::g_log << "Time for computing relaxed task operator layers: " << layer_timer << endl;
 
+    if (g_hacked_operator_ordering == OperatorOrdering::FIXED) {
+        fixed_operator_order.resize(get_num_operators());
+        iota(fixed_operator_order.begin(), fixed_operator_order.end(), 0);
+        g_hacked_rng->shuffle(fixed_operator_order);
+    }
+
     add_operators_in_trivial_abstraction();
     map<int, int> layer_count;
     for (int layer : relaxed_task_layer) {
@@ -502,7 +508,9 @@ void MatchTree::sort_operators(std::vector<int> &operators) const {
         return;
     }
     std::function<int(int)> key;
-    if (g_hacked_operator_ordering == OperatorOrdering::ID_UP) {
+    if (g_hacked_operator_ordering == OperatorOrdering::FIXED) {
+        key = [&](int op) {return fixed_operator_order[op];};
+    } else if (g_hacked_operator_ordering == OperatorOrdering::ID_UP) {
         key = [](int op) {return op;};
     } else if (g_hacked_operator_ordering == OperatorOrdering::ID_DOWN) {
         key = [](int op) {return -op;};

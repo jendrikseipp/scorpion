@@ -22,6 +22,7 @@ enum class HUpdateStrategy {
 
 enum class OperatorOrdering {
     RANDOM,
+    FIXED,
     ID_UP,
     ID_DOWN,
     COST_UP,
