@@ -497,8 +497,8 @@ bool MatchTree::has_transition(
 }
 
 void MatchTree::sort_operators(std::vector<int> &operators) const {
+    g_hacked_rng->shuffle(operators);
     if (g_hacked_operator_ordering == OperatorOrdering::RANDOM) {
-        g_hacked_rng->shuffle(operators);
         return;
     }
     std::function<int(int)> key;
@@ -522,7 +522,7 @@ void MatchTree::sort_operators(std::vector<int> &operators) const {
         ABORT("Unknown operator ordering");
     }
     sort(operators.begin(), operators.end(), [&key](int op1, int op2) {
-             return make_pair(key(op1), op1) < make_pair(key(op2), op2);
+             return key(op1) < key(op2);
          });
 }
 
