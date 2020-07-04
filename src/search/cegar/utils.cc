@@ -23,6 +23,7 @@ using namespace std;
 namespace cegar {
 int g_hacked_extra_memory_padding_mb = 512;
 OperatorOrdering g_hacked_operator_ordering = OperatorOrdering::ID_UP;
+OperatorOrdering g_hacked_operator_tiebreak = OperatorOrdering::ID_UP;
 StateOrdering g_hacked_state_ordering = StateOrdering::STATE_ID_UP;
 bool g_hacked_sort_transitions = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
@@ -128,7 +129,7 @@ void add_transition_representation_option(options::OptionParser &parser) {
         "TS");
 }
 
-void add_operator_ordering_option(options::OptionParser &parser) {
+void add_operator_ordering_option(options::OptionParser &parser, const string &name) {
     vector<string> options;
     options.push_back("RANDOM");
     options.push_back("FIXED");
@@ -141,7 +142,7 @@ void add_operator_ordering_option(options::OptionParser &parser) {
     options.push_back("LAYER_UP");
     options.push_back("LAYER_DOWN");
     parser.add_enum_option<OperatorOrdering>(
-        "operator_order",
+        name,
         options,
         "how to order operators",
         "ID_UP");

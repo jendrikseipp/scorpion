@@ -62,6 +62,7 @@ class MatchTree {
     bool has_transition(
         const AbstractState &src, int op_id, const AbstractState &dest,
         const std::vector<bool> &domains_intersect) const;
+    std::function<int(int)> get_order_key(OperatorOrdering ordering) const;
     void order_operators(std::vector<int> &operators) const;
 
 public:

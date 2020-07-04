@@ -199,7 +199,8 @@ MatchTree::MatchTree(
     relaxed_task_layer = compute_relaxed_plan_layer_per_operator(refinement_hierarchy.get_task_proxy());
     utils::g_log << "Time for computing relaxed task operator layers: " << layer_timer << endl;
 
-    if (g_hacked_operator_ordering == OperatorOrdering::FIXED) {
+    if (g_hacked_operator_ordering == OperatorOrdering::FIXED ||
+        g_hacked_operator_tiebreak == OperatorOrdering::FIXED) {
         fixed_operator_order.resize(get_num_operators());
         iota(fixed_operator_order.begin(), fixed_operator_order.end(), 0);
         g_hacked_rng->shuffle(fixed_operator_order);
@@ -502,35 +503,44 @@ bool MatchTree::has_transition(
     return true;
 }
 
-void MatchTree::order_operators(std::vector<int> &operators) const {
-    g_hacked_rng->shuffle(operators);
-    if (g_hacked_operator_ordering == OperatorOrdering::RANDOM) {
-        return;
-    }
-    std::function<int(int)> key;
-    if (g_hacked_operator_ordering == OperatorOrdering::FIXED) {
+function<int(int)> MatchTree::get_order_key(OperatorOrdering ordering) const {
+    function<int(int)> key;
+    if (ordering == OperatorOrdering::FIXED) {
         key = [&](int op) {return fixed_operator_order[op];};
-    } else if (g_hacked_operator_ordering == OperatorOrdering::ID_UP) {
+    } else if (ordering == OperatorOrdering::ID_UP) {
         key = [](int op) {return op;};
-    } else if (g_hacked_operator_ordering == OperatorOrdering::ID_DOWN) {
+    } else if (ordering == OperatorOrdering::ID_DOWN) {
         key = [](int op) {return -op;};
-    } else if (g_hacked_operator_ordering == OperatorOrdering::COST_UP) {
+    } else if (ordering == OperatorOrdering::COST_UP) {
         key = [&](int op) {return operator_costs[op];};
-    } else if (g_hacked_operator_ordering == OperatorOrdering::COST_DOWN) {
+    } else if (ordering == OperatorOrdering::COST_DOWN) {
         key = [&](int op) {return -operator_costs[op];};
-    } else if (g_hacked_operator_ordering == OperatorOrdering::POSTCONDITIONS_UP) {
+    } else if (ordering == OperatorOrdering::POSTCONDITIONS_UP) {
         key = [&](int op) {return postconditions[op].size();};
-    } else if (g_hacked_operator_ordering == OperatorOrdering::POSTCONDITIONS_DOWN) {
+    } else if (ordering == OperatorOrdering::POSTCONDITIONS_DOWN) {
         key = [&](int op) {return -postconditions[op].size();};
-    } else if (g_hacked_operator_ordering == OperatorOrdering::LAYER_UP) {
+    } else if (ordering == OperatorOrdering::LAYER_UP) {
         key = [&](int op) {return relaxed_task_layer[op];};
-    } else if (g_hacked_operator_ordering == OperatorOrdering::LAYER_DOWN) {
+    } else if (ordering == OperatorOrdering::LAYER_DOWN) {
         key = [&](int op) {return -relaxed_task_layer[op];};
     } else {
         ABORT("Unknown operator ordering");
     }
-    sort(operators.begin(), operators.end(), [&key](int op1, int op2) {
-             return key(op1) < key(op2);
+    return key;
+}
+
+void MatchTree::order_operators(std::vector<int> &operators) const {
+    if (g_hacked_operator_tiebreak == OperatorOrdering::RANDOM) {
+        ABORT("operator order tie-breaking can't be random");
+    }
+    g_hacked_rng->shuffle(operators);
+    if (g_hacked_operator_ordering == OperatorOrdering::RANDOM) {
+        return;
+    }
+    std::function<int(int)> key1 = get_order_key(g_hacked_operator_ordering);
+    std::function<int(int)> key2 = get_order_key(g_hacked_operator_tiebreak);
+    sort(operators.begin(), operators.end(), [&](int op1, int op2) {
+             return make_pair(key1(op1), key2(op1)) < make_pair(key1(op2), key2(op2));
          });
 }
 
