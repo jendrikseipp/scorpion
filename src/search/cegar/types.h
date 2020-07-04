@@ -32,6 +32,16 @@ enum class OperatorOrdering {
     LAYER_DOWN,
 };
 
+enum class StateOrdering {
+    RANDOM,
+    STATE_ID_UP,
+    STATE_ID_DOWN,
+    NODE_ID_UP,
+    NODE_ID_DOWN,
+    SIZE_UP,
+    SIZE_DOWN,
+};
+
 enum class TransitionRepresentation {
     TS,
     MT,

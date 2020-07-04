@@ -10,6 +10,7 @@
 #include "../utils/logging.h"
 #include "../utils/math.h"
 #include "../utils/memory.h"
+#include "../utils/rng.h"
 
 #include <algorithm>
 #include <cassert>
@@ -89,6 +90,38 @@ int Abstraction::get_num_transitions() const {
     return transition_system->get_num_non_loops();
 }
 
+void Abstraction::order_transitions(Transitions &transitions) const {
+    std::function<double(int)> key;
+    // Make sure that the random order is stable.
+    unordered_map<int, double> state_to_random_double;
+    if (g_hacked_state_ordering == StateOrdering::RANDOM) {
+        for (const Transition &t : transitions) {
+            if (!state_to_random_double.count(t.target_id)) {
+                state_to_random_double[t.target_id] = (*g_hacked_rng)();
+            }
+        }
+        key = [&](int state) {return state_to_random_double[state];};
+    } else if (g_hacked_state_ordering == StateOrdering::STATE_ID_UP) {
+        key = [](int state) {return state;};
+    } else if (g_hacked_state_ordering == StateOrdering::STATE_ID_DOWN) {
+        key = [](int state) {return -state;};
+    } else if (g_hacked_state_ordering == StateOrdering::NODE_ID_UP) {
+        key = [&](int state) {return states[state]->get_node_id();};
+    } else if (g_hacked_state_ordering == StateOrdering::NODE_ID_DOWN) {
+        key = [&](int state) {return -states[state]->get_node_id();};
+    } else if (g_hacked_state_ordering == StateOrdering::SIZE_UP) {
+        key = [&](int state) {return states[state]->get_cartesian_set().compute_size();};
+    } else if (g_hacked_state_ordering == StateOrdering::SIZE_DOWN) {
+        key = [&](int state) {return -states[state]->get_cartesian_set().compute_size();};
+    } else {
+        ABORT("Unknown state ordering");
+    }
+    stable_sort(transitions.begin(), transitions.end(),
+                [&key](const Transition &t1, const Transition &t2) {
+                    return key(t1.target_id) < key(t2.target_id);
+                });
+}
+
 Transitions Abstraction::get_incoming_transitions(int state_id) const {
     Transitions transitions;
     if (match_tree) {
@@ -97,6 +130,7 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
     } else {
         transitions = transition_system->get_incoming_transitions()[state_id];
     }
+    order_transitions(transitions);
     if (g_hacked_sort_transitions) {
         sort(transitions.begin(), transitions.end());
     }
@@ -110,6 +144,7 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
     } else {
         transitions = transition_system->get_outgoing_transitions()[state_id];
     }
+    order_transitions(transitions);
     if (g_hacked_sort_transitions) {
         sort(transitions.begin(), transitions.end());
     }
@@ -281,6 +316,13 @@ void Abstraction::switch_from_transition_system_to_successor_generator() {
 void Abstraction::print_statistics() const {
     cout << "Cartesian states: " << get_num_states() << endl;
     cout << "Cartesian goal states: " << goals.size() << endl;
+    if (false) {
+        for (auto &state : states) {
+            cout << "state " << state->get_id() << " has size "
+                 << static_cast<unsigned long int>(state->get_cartesian_set().compute_size())
+                 << endl;
+        }
+    }
     if (transition_system) {
         transition_system->print_statistics();
     }

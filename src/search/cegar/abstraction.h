@@ -45,6 +45,7 @@ class Abstraction {
     const bool debug;
 
     void initialize_trivial_abstraction(const std::vector<int> &domain_sizes);
+    void order_transitions(Transitions &transitions) const;
 
 public:
     Abstraction(const std::shared_ptr<AbstractTask> &task, bool debug);

@@ -31,6 +31,7 @@ class Abstraction;
 
 extern int g_hacked_extra_memory_padding_mb;
 extern OperatorOrdering g_hacked_operator_ordering;
+extern StateOrdering g_hacked_state_ordering;
 extern bool g_hacked_sort_transitions;
 extern TransitionRepresentation g_hacked_tsr;
 extern std::shared_ptr<utils::RandomNumberGenerator> g_hacked_rng;
@@ -50,6 +51,7 @@ extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
 extern void add_h_update_option(options::OptionParser &parser);
 extern void add_operator_ordering_option(options::OptionParser &parser);
+extern void add_state_ordering_option(options::OptionParser &parser);
 extern void add_transition_representation_option(options::OptionParser &parser);
 
 template<typename T>

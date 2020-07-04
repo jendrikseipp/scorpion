@@ -97,6 +97,8 @@ public:
         return var_infos.size();
     }
 
+    double compute_size() const;
+
     friend std::ostream &operator<<(
         std::ostream &os, const CartesianSet &cartesian_set);
 };

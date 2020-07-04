@@ -23,6 +23,7 @@ using namespace std;
 namespace cegar {
 int g_hacked_extra_memory_padding_mb = 512;
 OperatorOrdering g_hacked_operator_ordering = OperatorOrdering::ID_UP;
+StateOrdering g_hacked_state_ordering = StateOrdering::STATE_ID_UP;
 bool g_hacked_sort_transitions = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
 std::shared_ptr<utils::RandomNumberGenerator> g_hacked_rng;
@@ -143,6 +144,22 @@ void add_operator_ordering_option(options::OptionParser &parser) {
         options,
         "how to order operators",
         "ID_UP");
+}
+
+void add_state_ordering_option(options::OptionParser &parser) {
+    vector<string> options;
+    options.push_back("RANDOM");
+    options.push_back("STATE_ID_UP");
+    options.push_back("STATE_ID_DOWN");
+    options.push_back("NODE_ID_UP");
+    options.push_back("NODE_ID_DOWN");
+    options.push_back("SIZE_UP");
+    options.push_back("SIZE_DOWN");
+    parser.add_enum_option<StateOrdering>(
+        "state_order",
+        options,
+        "how to order states",
+        "STATE_ID_UP");
 }
 
 void dump_dot_graph(const Abstraction &abstraction) {
