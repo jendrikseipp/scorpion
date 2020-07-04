@@ -367,7 +367,7 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     sort(operators.begin(), operators.end());
     assert(utils::is_sorted_unique(operators));
 #endif
-    sort_operators(operators);
+    order_operators(operators);
     return operators;
 }
 
@@ -417,7 +417,7 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     sort(operators.begin(), operators.end());
     assert(utils::is_sorted_unique(operators));
 #endif
-    sort_operators(operators);
+    order_operators(operators);
     return operators;
 }
 
@@ -502,7 +502,7 @@ bool MatchTree::has_transition(
     return true;
 }
 
-void MatchTree::sort_operators(std::vector<int> &operators) const {
+void MatchTree::order_operators(std::vector<int> &operators) const {
     g_hacked_rng->shuffle(operators);
     if (g_hacked_operator_ordering == OperatorOrdering::RANDOM) {
         return;
