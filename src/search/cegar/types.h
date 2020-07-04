@@ -33,6 +33,7 @@ enum class OperatorOrdering {
 };
 
 enum class StateOrdering {
+    NONE,
     RANDOM,
     STATE_ID_UP,
     STATE_ID_DOWN,

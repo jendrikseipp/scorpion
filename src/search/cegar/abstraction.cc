@@ -91,6 +91,9 @@ int Abstraction::get_num_transitions() const {
 }
 
 void Abstraction::order_transitions(Transitions &transitions) const {
+    if (g_hacked_state_ordering == StateOrdering::NONE) {
+        return;
+    }
     std::function<double(int)> key;
     // Make sure that the random order is stable.
     unordered_map<int, double> state_to_random_double;
