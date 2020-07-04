@@ -29,7 +29,7 @@ class MatchTree {
     const std::vector<Facts> effects;
     const std::vector<Facts> postconditions;
     const std::vector<std::vector<int>> effect_vars_without_preconditions;
-    const std::vector<int> relaxed_task_layer;
+    std::vector<int> relaxed_task_layer;
     const std::vector<int> operator_costs;
     const RefinementHierarchy &refinement_hierarchy;
     const CartesianSets &cartesian_sets;

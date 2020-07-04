@@ -183,7 +183,6 @@ MatchTree::MatchTree(
       effects(get_effects_by_operator(ops)),
       postconditions(get_postconditions_by_operator(ops)),
       effect_vars_without_preconditions(get_effect_vars_without_preconditions_by_operator(ops)),
-      relaxed_task_layer(compute_relaxed_plan_layer_per_operator(refinement_hierarchy.get_task_proxy())),
       operator_costs(get_operator_costs(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
@@ -195,6 +194,10 @@ MatchTree::MatchTree(
       sort_applicable_operators_by_increasing_cost(
           !task_properties::is_unit_cost(refinement_hierarchy.get_task_proxy())),
       debug(debug) {
+    utils::Timer layer_timer;
+    relaxed_task_layer = compute_relaxed_plan_layer_per_operator(refinement_hierarchy.get_task_proxy());
+    utils::g_log << "Time for computing relaxed task operator layers: " << layer_timer << endl;
+
     add_operators_in_trivial_abstraction();
     map<int, int> layer_count;
     for (int layer : relaxed_task_layer) {
