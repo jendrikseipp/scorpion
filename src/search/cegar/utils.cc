@@ -25,6 +25,7 @@ int g_hacked_extra_memory_padding_mb = 512;
 OperatorOrdering g_hacked_operator_ordering = OperatorOrdering::ID_UP;
 bool g_hacked_sort_transitions = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
+std::shared_ptr<utils::RandomNumberGenerator> g_hacked_rng;
 
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {

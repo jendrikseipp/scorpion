@@ -22,6 +22,10 @@ namespace options {
 class OptionParser;
 }
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace cegar {
 class Abstraction;
 
@@ -29,6 +33,7 @@ extern int g_hacked_extra_memory_padding_mb;
 extern OperatorOrdering g_hacked_operator_ordering;
 extern bool g_hacked_sort_transitions;
 extern TransitionRepresentation g_hacked_tsr;
+extern std::shared_ptr<utils::RandomNumberGenerator> g_hacked_rng;
 
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
 create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);

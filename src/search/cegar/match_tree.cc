@@ -9,6 +9,7 @@
 #include "../task_utils/task_properties.h"
 #include "../tasks/inverted_task.h"
 #include "../utils/logging.h"
+#include "../utils/rng.h"
 
 #include <algorithm>
 #include <map>
@@ -497,7 +498,7 @@ bool MatchTree::has_transition(
 
 void MatchTree::sort_operators(std::vector<int> &operators) const {
     if (g_hacked_operator_ordering == OperatorOrdering::RANDOM) {
-        random_shuffle(operators.begin(), operators.end());
+        g_hacked_rng->shuffle(operators);
         return;
     }
     std::function<int(int)> key;

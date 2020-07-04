@@ -193,6 +193,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
     g_hacked_operator_ordering = opts.get<OperatorOrdering>("operator_order");
     g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
+    g_hacked_rng = utils::parse_rng_from_options(opts);
 
     // Compute the successor generator here already to get peak memory info.
     get_successor_generator(TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")));
