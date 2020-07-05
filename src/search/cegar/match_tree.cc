@@ -8,6 +8,7 @@
 #include "../heuristics/additive_heuristic.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
+#include "../tasks/cost_adapted_task.h"
 #include "../tasks/inverted_task.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
@@ -190,6 +191,27 @@ static void print_count(const vector<int> &vec) {
     cout << "}" << endl;
 }
 
+static vector<int> compute_relaxed_task_operator_costs(
+    const string &name, const shared_ptr<AbstractTask> &task) {
+    auto hadd = create_additive_heuristic(task);
+    hadd->compute_heuristic_for_cegar(TaskProxy(*task).get_initial_state());
+
+    int num_ops = TaskProxy(*task).get_operators().size();
+    vector<int> relaxed_task_costs(num_ops, UNDEFINED);
+    for (auto &unary_op : hadd->get_unary_operators_for_cegar()) {
+        int &cost = relaxed_task_costs[unary_op.operator_no];
+        if (cost == UNDEFINED) {
+            cost = unary_op.cost;
+        } else if (cost != unary_op.cost) {
+            ABORT("Costs for relaxed unary operators differ");
+        }
+    }
+    assert(!count(relaxed_task_costs.begin(), relaxed_task_costs.end(), UNDEFINED));
+    cout << "Relaxed task operator " << name << ": ";
+    print_count(relaxed_task_costs);
+    return relaxed_task_costs;
+}
+
 
 MatchTree::MatchTree(
     const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
@@ -213,6 +235,8 @@ MatchTree::MatchTree(
     utils::Timer layer_timer;
     relaxed_task_layer = compute_relaxed_plan_layer_per_operator(refinement_hierarchy.get_task_proxy());
     utils::g_log << "Time for computing relaxed task operator layers: " << layer_timer << endl;
+    cout << "Relaxed task operator layers: ";
+    print_count(relaxed_task_layer);
 
     if (g_hacked_operator_ordering == OperatorOrdering::FIXED ||
         g_hacked_operator_tiebreak == OperatorOrdering::FIXED) {
@@ -223,24 +247,10 @@ MatchTree::MatchTree(
 
     add_operators_in_trivial_abstraction();
 
-    cout << "Relaxed task operator layers: ";
-    print_count(relaxed_task_layer);
-
-    auto hadd = create_additive_heuristic(refinement_hierarchy.get_task());
-    hadd->compute_heuristic_for_cegar(refinement_hierarchy.get_task_proxy().get_initial_state());
-
-    relaxed_task_costs.resize(get_num_operators(), UNDEFINED);
-    for (auto &unary_op : hadd->get_unary_operators_for_cegar()) {
-        int &cost = relaxed_task_costs[unary_op.operator_no];
-        if (cost == UNDEFINED) {
-            cost = unary_op.cost;
-        } else if (cost != unary_op.cost) {
-            ABORT("Costs for relaxed unary operators differ");
-        }
-    }
-    assert(!count(relaxed_task_costs.begin(), relaxed_task_costs.end(), UNDEFINED));
-    cout << "Relaxed task operator costs: ";
-    print_count(relaxed_task_costs);
+    relaxed_task_costs = compute_relaxed_task_operator_costs(
+        "costs", refinement_hierarchy.get_task());
+    relaxed_task_steps = compute_relaxed_task_operator_costs(
+        "steps", make_shared<tasks::CostAdaptedTask>(refinement_hierarchy.get_task(), OperatorCost::ONE));
 
     if (false) {
         for (int op = 0; op < get_num_operators(); ++op) {
@@ -559,6 +569,10 @@ function<int(int)> MatchTree::get_order_key(OperatorOrdering ordering) const {
         key = [&](int op) {return relaxed_task_costs[op];};
     } else if (ordering == OperatorOrdering::HADD_DOWN) {
         key = [&](int op) {return -relaxed_task_costs[op];};
+    } else if (ordering == OperatorOrdering::STEPS_UP) {
+        key = [&](int op) {return relaxed_task_steps[op];};
+    } else if (ordering == OperatorOrdering::STEPS_DOWN) {
+        key = [&](int op) {return -relaxed_task_steps[op];};
     } else {
         ABORT("Unknown operator ordering");
     }

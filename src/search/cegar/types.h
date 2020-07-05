@@ -33,6 +33,8 @@ enum class OperatorOrdering {
     LAYER_DOWN,
     HADD_UP,
     HADD_DOWN,
+    STEPS_UP,
+    STEPS_DOWN,
 };
 
 enum class StateOrdering {

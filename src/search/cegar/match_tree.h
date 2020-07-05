@@ -31,6 +31,7 @@ class MatchTree {
     const std::vector<std::vector<int>> effect_vars_without_preconditions;
     std::vector<int> relaxed_task_layer;
     std::vector<int> relaxed_task_costs;
+    std::vector<int> relaxed_task_steps;
     std::vector<int> fixed_operator_order;
     const std::vector<int> operator_costs;
     const RefinementHierarchy &refinement_hierarchy;
