@@ -5,6 +5,7 @@
 #include "../operator_id.h"
 #include "../task_proxy.h"
 
+#include "../heuristics/additive_heuristic.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../tasks/inverted_task.h"
@@ -175,6 +176,20 @@ static vector<int> compute_relaxed_plan_layer_per_operator(
     return layers;
 }
 
+static void print_count(const vector<int> &vec) {
+    map<int, int> count;
+    for (int layer : vec) {
+        ++count[layer];
+    }
+    cout << "{";
+    string sep = "";
+    for (auto &pair : count) {
+        cout << sep << pair.first << ":" << pair.second;
+        sep = ", ";
+    }
+    cout << "}" << endl;
+}
+
 
 MatchTree::MatchTree(
     const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
@@ -207,17 +222,34 @@ MatchTree::MatchTree(
     }
 
     add_operators_in_trivial_abstraction();
-    map<int, int> layer_count;
-    for (int layer : relaxed_task_layer) {
-        ++layer_count[layer];
+
+    cout << "Relaxed task operator layers: ";
+    print_count(relaxed_task_layer);
+
+    auto hadd = create_additive_heuristic(refinement_hierarchy.get_task());
+    hadd->compute_heuristic_for_cegar(refinement_hierarchy.get_task_proxy().get_initial_state());
+
+    relaxed_task_costs.resize(get_num_operators(), UNDEFINED);
+    for (auto &unary_op : hadd->get_unary_operators_for_cegar()) {
+        int &cost = relaxed_task_costs[unary_op.operator_no];
+        if (cost == UNDEFINED) {
+            cost = unary_op.cost;
+        } else if (cost != unary_op.cost) {
+            ABORT("Costs for relaxed unary operators differ");
+        }
     }
-    cout << "Relaxed task operator layers: {";
-    string sep = "";
-    for (auto &pair : layer_count) {
-        cout << sep << pair.first << ":" << pair.second;
-        sep = ", ";
+    assert(!count(relaxed_task_costs.begin(), relaxed_task_costs.end(), UNDEFINED));
+    cout << "Relaxed task operator costs: ";
+    print_count(relaxed_task_costs);
+
+    if (false) {
+        for (int op = 0; op < get_num_operators(); ++op) {
+            cout << "op " << op << " "
+                 << refinement_hierarchy.get_task_proxy().get_operators()[op].get_name()
+                 << ": " << relaxed_task_layer[op] << " "
+                 << relaxed_task_costs[op] << endl;
+        }
     }
-    cout << "}" << endl;
 }
 
 int MatchTree::get_precondition_value(int op_id, int var) const {
@@ -523,6 +555,10 @@ function<int(int)> MatchTree::get_order_key(OperatorOrdering ordering) const {
         key = [&](int op) {return relaxed_task_layer[op];};
     } else if (ordering == OperatorOrdering::LAYER_DOWN) {
         key = [&](int op) {return -relaxed_task_layer[op];};
+    } else if (ordering == OperatorOrdering::HADD_UP) {
+        key = [&](int op) {return relaxed_task_costs[op];};
+    } else if (ordering == OperatorOrdering::HADD_DOWN) {
+        key = [&](int op) {return -relaxed_task_costs[op];};
     } else {
         ABORT("Unknown operator ordering");
     }
@@ -530,12 +566,12 @@ function<int(int)> MatchTree::get_order_key(OperatorOrdering ordering) const {
 }
 
 void MatchTree::order_operators(std::vector<int> &operators) const {
-    if (g_hacked_operator_tiebreak == OperatorOrdering::RANDOM) {
-        ABORT("operator order tie-breaking can't be random");
-    }
     g_hacked_rng->shuffle(operators);
     if (g_hacked_operator_ordering == OperatorOrdering::RANDOM) {
         return;
+    }
+    if (g_hacked_operator_tiebreak == OperatorOrdering::RANDOM) {
+        ABORT("operator order tie-breaking can't be random");
     }
     std::function<int(int)> key1 = get_order_key(g_hacked_operator_ordering);
     std::function<int(int)> key2 = get_order_key(g_hacked_operator_tiebreak);

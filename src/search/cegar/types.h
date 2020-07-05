@@ -31,6 +31,8 @@ enum class OperatorOrdering {
     POSTCONDITIONS_DOWN,
     LAYER_UP,
     LAYER_DOWN,
+    HADD_UP,
+    HADD_DOWN,
 };
 
 enum class StateOrdering {
