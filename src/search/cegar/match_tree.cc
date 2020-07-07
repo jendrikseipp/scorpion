@@ -172,7 +172,7 @@ static vector<int> compute_relaxed_plan_layer_per_operator(
         ++layer;
     }
     if (any_of(layers.begin(), layers.end(), [&](int l) {return l == unreachable;})) {
-        cerr << ("Warning: task contains a relaxed unreachable operator.") << endl;
+        cout << "Warning: task contains a relaxed unreachable operator." << endl;
     }
     return layers;
 }
