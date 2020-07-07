@@ -91,6 +91,7 @@ int Abstraction::get_num_transitions() const {
 }
 
 void Abstraction::order_transitions(Transitions &transitions) const {
+    return;  // Sort by operators first.
     if (g_hacked_state_ordering == StateOrdering::NONE) {
         return;
     }
