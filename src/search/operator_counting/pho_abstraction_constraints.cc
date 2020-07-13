@@ -42,9 +42,7 @@ void PhOAbstractionConstraints::initialize_constraints(
             vector<int> saturated_costs = abstraction->compute_saturated_costs(
                 h_values);
             for (size_t op_id = 0; op_id < saturated_costs.size(); ++op_id) {
-                if (saturated_costs[op_id] > 0) {
-                    constraint.insert(op_id, saturated_costs[op_id]);
-                }
+                constraint.insert(op_id, saturated_costs[op_id]);
             }
             h_values_by_abstraction.push_back(move(h_values));
         }
