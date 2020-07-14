@@ -20,7 +20,8 @@ PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
     : abstraction_generators(
           opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
               "abstractions")),
-      saturated(opts.get<bool>("saturated")) {
+      saturated(opts.get<bool>("saturated")),
+      forbid_useless_operators(opts.get<bool>("forbid_useless_operators")) {
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
@@ -34,6 +35,7 @@ void PhOAbstractionConstraints::initialize_constraints(
     constraint_offset = constraints.size();
     // TODO: Remove code duplication.
     if (saturated) {
+        vector<bool> useless_operators(operator_costs.size(), false);
         for (auto &abstraction : abstractions) {
             constraints.emplace_back(0, infinity);
             lp::LPConstraint &constraint = constraints.back();
@@ -42,12 +44,25 @@ void PhOAbstractionConstraints::initialize_constraints(
             vector<int> saturated_costs = abstraction->compute_saturated_costs(
                 h_values);
             for (size_t op_id = 0; op_id < saturated_costs.size(); ++op_id) {
-                if (saturated_costs[op_id] != 0 &&
-                    saturated_costs[op_id] != -cost_saturation::INF) {
-                    constraint.insert(op_id, saturated_costs[op_id]);
+                if (saturated_costs[op_id] != 0) {
+                    if (saturated_costs[op_id] == -cost_saturation::INF) {
+                        useless_operators[op_id] = true;
+                    } else {
+                        constraint.insert(op_id, saturated_costs[op_id]);
+                    }
                 }
             }
             h_values_by_abstraction.push_back(move(h_values));
+        }
+        if (forbid_useless_operators) {
+            // Force operator count of operators o with scf(o)=-\infty to be 0.
+            for (size_t op_id = 0; op_id < useless_operators.size(); ++op_id) {
+                if (useless_operators[op_id]) {
+                    lp::LPConstraint constraint(0.0, 0.0);
+                    constraint.insert(op_id, 1.0);
+                    constraints.push_back(move(constraint));
+                }
+            }
         }
     } else {
         for (auto &abstraction : abstractions) {
@@ -100,6 +115,10 @@ static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "saturated",
         "use saturated instead of full operator costs in constraints",
+        "false");
+    parser.add_option<bool>(
+        "forbid_useless_operators",
+        "force operator count of operators o with scf(o)=-\\infty to be zero",
         "false");
 
     Options opts = parser.parse();
