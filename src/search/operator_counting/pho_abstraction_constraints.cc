@@ -119,7 +119,7 @@ static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "forbid_useless_operators",
         "force operator count of operators o with scf(o)=-\\infty to be zero",
-        "false");
+        "true");
 
     Options opts = parser.parse();
     if (parser.dry_run())
