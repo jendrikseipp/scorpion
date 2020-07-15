@@ -30,6 +30,8 @@ void PhOAbstractionConstraints::initialize_constraints(
     double infinity) {
     cost_saturation::Abstractions abstractions =
         cost_saturation::generate_abstractions(task, abstraction_generators);
+    abstraction_functions.reserve(abstractions.size());
+    h_values_by_abstraction.reserve(abstractions.size());
 
     vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     constraint_offset = constraints.size();
