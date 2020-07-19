@@ -210,6 +210,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
             if (debug) {
                 //dump_dot_graph(*abstraction);
+                //write_dot_file_to_disk(*abstraction);
             }
             current = &abstraction->get_state(pair.second);
         }
@@ -226,6 +227,12 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             *abstraction,
             abstraction->get_goals());
         assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
+    }
+
+    if (debug) {
+        for (OperatorProxy op : task_proxy.get_operators()) {
+            cout << op.get_id() << ": " << op.get_name() << endl;
+        }
     }
 
     if (debug) {
@@ -293,6 +300,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
 
         if (debug) {
             //dump_dot_graph(*abstraction);
+            //write_dot_file_to_disk(*abstraction);
         }
 
         utils::Duration start = update_h_timer();
