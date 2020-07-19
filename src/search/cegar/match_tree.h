@@ -66,7 +66,6 @@ class MatchTree {
         const std::vector<bool> &domains_intersect) const;
     std::function<int(int)> get_order_key(OperatorOrdering ordering) const;
     void order_operators(std::vector<int> &operators) const;
-    void order_states(std::vector<int> &states) const;
 
 public:
     MatchTree(
