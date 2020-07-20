@@ -64,9 +64,8 @@ void PhOAbstractionConstraints::initialize_constraints(
             // Force operator count of operators o with scf(o)=-\infty to be 0.
             for (size_t op_id = 0; op_id < useless_operators.size(); ++op_id) {
                 if (useless_operators[op_id]) {
-                    lp::LPConstraint constraint(0.0, 0.0);
-                    constraint.insert(op_id, 1.0);
-                    constraints.push_back(move(constraint));
+                    variables[op_id].lower_bound = 0.0;
+                    variables[op_id].upper_bound = 0.0;
                 }
             }
         }
