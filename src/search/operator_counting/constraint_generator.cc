@@ -6,7 +6,8 @@ using namespace std;
 
 namespace operator_counting {
 void ConstraintGenerator::initialize_constraints(
-    const shared_ptr<AbstractTask> &, vector<lp::LPConstraint> &, double) {
+    const shared_ptr<AbstractTask> &, vector<lp::LPVariable> &,
+    vector<lp::LPConstraint> &, double) {
 }
 
 static PluginTypePlugin<ConstraintGenerator> _type_plugin(
