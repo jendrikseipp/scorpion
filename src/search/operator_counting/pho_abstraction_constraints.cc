@@ -21,6 +21,8 @@ PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
           opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
               "abstractions")),
       saturated(opts.get<bool>("saturated")),
+      consider_finite_negative_saturated_costs(
+          opts.get<bool>("consider_finite_negative_saturated_costs")),
       forbid_useless_operators(opts.get<bool>("forbid_useless_operators")) {
 }
 
@@ -49,7 +51,8 @@ void PhOAbstractionConstraints::initialize_constraints(
                 if (saturated_costs[op_id] != 0) {
                     if (saturated_costs[op_id] == -cost_saturation::INF) {
                         useless_operators[op_id] = true;
-                    } else {
+                    } else if (consider_finite_negative_saturated_costs ||
+                               saturated_costs[op_id] > 0) {
                         constraint.insert(op_id, saturated_costs[op_id]);
                     }
                 }
@@ -118,6 +121,10 @@ static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
         "saturated",
         "use saturated instead of full operator costs in constraints",
         "false");
+    parser.add_option<bool>(
+        "consider_finite_negative_saturated_costs",
+        "if false, ignore operators with finite negative saturated costs in constraints",
+        "true");
     parser.add_option<bool>(
         "forbid_useless_operators",
         "force operator count of operators o with scf(o)=-\\infty to be zero",
