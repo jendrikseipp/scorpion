@@ -197,6 +197,12 @@ void ShortestPaths::dijkstra_from_orphans(
             ? Transition(old_child.op_id, v1)
             : Transition(op_id, v2);
         set_shortest_path(u, new_parent);
+
+        if (timer.is_expired()) {
+            // All goal distances are always lower bounds, so we can abort at any time.
+            cout << "Timer expired --> abort incremental search" << endl;
+            return;
+        }
     }
 
     /*
@@ -315,6 +321,12 @@ void ShortestPaths::dijkstra_from_orphans(
             open_queue.push(min_dist, state);
             ++num_orphans;
         }
+
+        if (timer.is_expired()) {
+            // All goal distances are always lower bounds, so we can abort at any time.
+            cout << "Timer expired --> abort incremental search" << endl;
+            return;
+        }
     }
 
     while (!open_queue.empty()) {
@@ -340,6 +352,12 @@ void ShortestPaths::dijkstra_from_orphans(
                 set_shortest_path(succ, Transition(op_id, state));
                 open_queue.push(succ_g, succ);
             }
+        }
+
+        if (timer.is_expired()) {
+            // All goal distances are always lower bounds, so we can abort at any time.
+            cout << "Timer expired --> abort incremental search" << endl;
+            return;
         }
     }
 }
