@@ -40,6 +40,66 @@ void PhOAbstractionConstraints::initialize_constraints(
     vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     int num_ops = operator_costs.size();
     constraint_offset = constraints.size();
+    // TODO: Remove code duplication.
+    if (saturated) {
+        vector<bool> useless_operators(operator_costs.size(), false);
+        int abstraction_id = 0;
+        for (auto &abstraction : abstractions) {
+            // Add constraint \sum_{o} Y_o * scf_h(o) >= 0.
+            constraints.emplace_back(0, infinity);
+            lp::LPConstraint &constraint = constraints.back();
+            vector<int> h_values = abstraction->compute_goal_distances(
+                operator_costs);
+            vector<int> saturated_costs = abstraction->compute_saturated_costs(
+                h_values);
+            for (size_t op_id = 0; op_id < saturated_costs.size(); ++op_id) {
+                if (saturated_costs[op_id] != 0) {
+                    if (saturated_costs[op_id] == -cost_saturation::INF) {
+                        useless_operators[op_id] = true;
+                    } else if (consider_finite_negative_saturated_costs ||
+                               saturated_costs[op_id] > 0) {
+                        int counting_var = op_id; // Y_o
+                        if (counting) {
+                            // Get ID of Y_{h,o}.
+                            counting_var = num_ops + abstraction_id * num_ops + op_id;
+                        }
+                        constraint.insert(counting_var, saturated_costs[op_id]);
+                    }
+                }
+            }
+            h_values_by_abstraction.push_back(move(h_values));
+            ++abstraction_id;
+        }
+        if (forbid_useless_operators) {
+            // Force operator count of operators o with scf(o)=-\infty to be 0.
+            for (size_t op_id = 0; op_id < useless_operators.size(); ++op_id) {
+                if (useless_operators[op_id]) {
+                    variables[op_id].lower_bound = 0.0;
+                    variables[op_id].upper_bound = 0.0;
+                }
+            }
+        }
+    } else {
+        int abstraction_id = 0;
+        for (auto &abstraction : abstractions) {
+            constraints.emplace_back(0, infinity);
+            lp::LPConstraint &constraint = constraints.back();
+            for (size_t op_id = 0; op_id < operator_costs.size(); ++op_id) {
+                if (abstraction->operator_is_active(op_id)) {
+                    int counting_var = op_id; // Y_o
+                    if (counting) {
+                        // Get ID of Y_{h,o}.
+                        counting_var = num_ops + abstraction_id * num_ops + op_id;
+                    }
+                    constraint.insert(counting_var, operator_costs[op_id]);
+                }
+            }
+            h_values_by_abstraction.push_back(
+                abstraction->compute_goal_distances(operator_costs));
+            ++abstraction_id;
+        }
+    }
+
     if (counting) {
         for (auto &abstraction : abstractions) {
             vector<int> transition_counts = abstraction->get_transition_counts();
@@ -54,51 +114,6 @@ void PhOAbstractionConstraints::initialize_constraints(
                 constraint.insert(local_count_var_id, -1.0);
                 constraints.push_back(move(constraint));
             }
-        }
-    }
-    // TODO: Remove code duplication.
-    if (saturated) {
-        vector<bool> useless_operators(operator_costs.size(), false);
-        for (auto &abstraction : abstractions) {
-            constraints.emplace_back(0, infinity);
-            lp::LPConstraint &constraint = constraints.back();
-            vector<int> h_values = abstraction->compute_goal_distances(
-                operator_costs);
-            vector<int> saturated_costs = abstraction->compute_saturated_costs(
-                h_values);
-            for (size_t op_id = 0; op_id < saturated_costs.size(); ++op_id) {
-                if (saturated_costs[op_id] != 0) {
-                    if (saturated_costs[op_id] == -cost_saturation::INF) {
-                        useless_operators[op_id] = true;
-                    } else if (consider_finite_negative_saturated_costs ||
-                               saturated_costs[op_id] > 0) {
-                        constraint.insert(op_id, saturated_costs[op_id]);
-                    }
-                }
-            }
-            h_values_by_abstraction.push_back(move(h_values));
-        }
-        if (forbid_useless_operators) {
-            // Force operator count of operators o with scf(o)=-\infty to be 0.
-            for (size_t op_id = 0; op_id < useless_operators.size(); ++op_id) {
-                if (useless_operators[op_id]) {
-                    variables[op_id].lower_bound = 0.0;
-                    variables[op_id].upper_bound = 0.0;
-                }
-            }
-        }
-    } else {
-        for (auto &abstraction : abstractions) {
-            constraints.emplace_back(0, infinity);
-            lp::LPConstraint &constraint = constraints.back();
-            for (size_t op_id = 0; op_id < operator_costs.size(); ++op_id) {
-                if (abstraction->operator_is_active(op_id)) {
-                    assert(utils::in_bounds(op_id, operator_costs));
-                    constraint.insert(op_id, operator_costs[op_id]);
-                }
-            }
-            h_values_by_abstraction.push_back(
-                abstraction->compute_goal_distances(operator_costs));
         }
     }
 
