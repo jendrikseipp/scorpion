@@ -5,6 +5,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../utils/logging.h"
 #include "../utils/markup.h"
 
 #include <cmath>
@@ -27,6 +28,20 @@ OperatorCountingHeuristic::OperatorCountingHeuristic(const Options &opts)
     for (const auto &generator : constraint_generators) {
         generator->initialize_constraints(task, variables, constraints, infinity);
     }
+#ifndef NDEBUG
+    for (size_t var_id = 0; var_id < variables.size(); ++var_id) {
+        const lp::LPVariable &var = variables[var_id];
+        cout << "var " << var_id << ": " << var.lower_bound << " "
+             << var.upper_bound << " " << var.objective_coefficient << endl;
+    }
+    for (size_t id = 0; id < constraints.size(); ++id) {
+        const lp::LPConstraint &constraint = constraints[id];
+        cout << "constraint " << id << ": " << constraint.get_lower_bound() << " "
+             << constraint.get_upper_bound() << " "
+             << constraint.get_variables() << " "
+             << constraint.get_coefficients() << endl;
+    }
+#endif
     lp_solver.load_problem(lp::LPObjectiveSense::MINIMIZE, variables, constraints);
 }
 
