@@ -19,6 +19,7 @@ namespace operator_counting {
 class PhOAbstractionConstraints : public ConstraintGenerator {
     const std::vector<std::shared_ptr<cost_saturation::AbstractionGenerator>> abstraction_generators;
     const bool saturated;
+    const bool counting;
     const bool consider_finite_negative_saturated_costs;
     const bool forbid_useless_operators;
 

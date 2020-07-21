@@ -21,6 +21,7 @@ PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
           opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
               "abstractions")),
       saturated(opts.get<bool>("saturated")),
+      counting(opts.get<bool>("counting")),
       consider_finite_negative_saturated_costs(
           opts.get<bool>("consider_finite_negative_saturated_costs")),
       forbid_useless_operators(opts.get<bool>("forbid_useless_operators")) {
@@ -37,7 +38,24 @@ void PhOAbstractionConstraints::initialize_constraints(
     h_values_by_abstraction.reserve(abstractions.size());
 
     vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
+    int num_ops = operator_costs.size();
     constraint_offset = constraints.size();
+    if (counting) {
+        for (auto &abstraction : abstractions) {
+            vector<int> transition_counts = abstraction->get_transition_counts();
+            for (int op = 0; op < num_ops; ++op) {
+                // Add Y_{h,o} variable with 0 <= Y_{h,o} <= c_{h,o}.
+                lp::LPVariable local_count(0.0, transition_counts[op], 0.0);
+                int local_count_var_id = variables.size();
+                variables.push_back(move(local_count));
+                // Add constraint Y_{h,o} <= Y_{o} <=> 0 <= Y_{o} - Y_{o,h}.
+                lp::LPConstraint constraint(0.0, infinity);
+                constraint.insert(op, 1.0);
+                constraint.insert(local_count_var_id, -1.0);
+                constraints.push_back(move(constraint));
+            }
+        }
+    }
     // TODO: Remove code duplication.
     if (saturated) {
         vector<bool> useless_operators(operator_costs.size(), false);
@@ -120,6 +138,10 @@ static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "saturated",
         "use saturated instead of full operator costs in constraints",
+        "false");
+    parser.add_option<bool>(
+        "counting",
+        "add helper variables that limit the number of operator counts per abstraction",
         "false");
     parser.add_option<bool>(
         "consider_finite_negative_saturated_costs",
