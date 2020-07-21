@@ -74,6 +74,7 @@ public:
 
     // Call a function for each state-changing transition.
     virtual void for_each_transition(const TransitionCallback &callback) const = 0;
+    virtual std::vector<int> get_transition_counts() const = 0;
 
     virtual int get_num_states() const = 0;
     virtual const std::vector<int> &get_goal_states() const = 0;

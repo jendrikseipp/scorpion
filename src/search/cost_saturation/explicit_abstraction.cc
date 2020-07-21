@@ -159,6 +159,16 @@ void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback
     }
 }
 
+vector<int> ExplicitAbstraction::get_transition_counts() const {
+    vector<int> transition_counts(get_num_operators(), 0);
+    for (const vector<Successor> &transitions : backward_graph) {
+        for (const Successor &transition : transitions) {
+            ++transition_counts[transition.op];
+        }
+    }
+    return transition_counts;
+}
+
 const vector<int> &ExplicitAbstraction::get_goal_states() const {
     return goal_states;
 }

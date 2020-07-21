@@ -483,6 +483,13 @@ void Projection::for_each_transition(const TransitionCallback &callback) const {
     return for_each_transition_impl(callback);
 }
 
+vector<int> Projection::get_transition_counts() const {
+    vector<int> transition_counts(get_num_operators(), 0);
+    // TODO: we could use only transitions between solvable states instead.
+    for_each_transition_impl([&](const Transition &t) {++transition_counts[t.op];});
+    return transition_counts;
+}
+
 const vector<int> &Projection::get_goal_states() const {
     return goal_states;
 }
