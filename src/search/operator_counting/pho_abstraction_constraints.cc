@@ -42,8 +42,9 @@ void PhOAbstractionConstraints::initialize_constraints(
     int num_ops = operator_costs.size();
     constraint_offset = constraints.size();
 
-    vector<vector<int>> local_vars(abstractions.size(), vector<int>(num_ops, -1));
+    vector<vector<int>> local_vars;
     if (counting) {
+        local_vars.resize(abstractions.size(), vector<int>(num_ops, -1));
         int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
             vector<int> transition_counts =
@@ -127,7 +128,7 @@ void PhOAbstractionConstraints::initialize_constraints(
         for (size_t abstraction_id = 0; abstraction_id < abstractions.size(); ++abstraction_id) {
             for (int op = 0; op < num_ops; ++op) {
                 int local_count_var_id = local_vars[abstraction_id][op];
-                if (local_count_var_id >= 0) {
+                if (local_count_var_id != -1) {
                     // Add constraint Y_{h,o} <= Y_{o} <=> Y_{o} - Y_{h,o} >= 0.
                     lp::LPConstraint constraint(0.0, infinity);
                     constraint.insert(op, 1.0);
