@@ -49,7 +49,7 @@ void PhOAbstractionConstraints::initialize_constraints(
         for (auto &abstraction : abstractions) {
             vector<int> transition_counts =
                 abstraction->get_transition_counts(
-                    consider_finite_negative_saturated_costs || ignore_goal_out_operators);
+                    consider_finite_negative_saturated_costs || !ignore_goal_out_operators);
             for (int op = 0; op < num_ops; ++op) {
                 if (transition_counts[op] > 0) {
                     // Add Y_{h,o} variable with 0 <= Y_{h,o} <= c_{h,o}.
