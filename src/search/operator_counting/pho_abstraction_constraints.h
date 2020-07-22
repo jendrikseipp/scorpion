@@ -22,6 +22,7 @@ class PhOAbstractionConstraints : public ConstraintGenerator {
     const bool counting;
     const bool consider_finite_negative_saturated_costs;
     const bool forbid_useless_operators;
+    const bool ignore_goal_out_operators;
 
     cost_saturation::AbstractionFunctions abstraction_functions;
     std::vector<std::vector<int>> h_values_by_abstraction;

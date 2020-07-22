@@ -24,7 +24,8 @@ PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
       counting(opts.get<bool>("counting")),
       consider_finite_negative_saturated_costs(
           opts.get<bool>("consider_finite_negative_saturated_costs")),
-      forbid_useless_operators(opts.get<bool>("forbid_useless_operators")) {
+      forbid_useless_operators(opts.get<bool>("forbid_useless_operators")),
+      ignore_goal_out_operators(opts.get<bool>("ignore_goal_out_operators")) {
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
@@ -46,7 +47,8 @@ void PhOAbstractionConstraints::initialize_constraints(
         int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
             vector<int> transition_counts =
-                abstraction->get_transition_counts();
+                abstraction->get_transition_counts(
+                    consider_finite_negative_saturated_costs || ignore_goal_out_operators);
             for (int op = 0; op < num_ops; ++op) {
                 if (transition_counts[op] > 0) {
                     // Add Y_{h,o} variable with 0 <= Y_{h,o} <= c_{h,o}.
@@ -184,6 +186,11 @@ static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "forbid_useless_operators",
         "force operator count of operators o with scf(o)=-\\infty to be zero",
+        "true");
+
+    parser.add_option<bool>(
+        "ignore_goal_out_operators",
+        "ignore operators that start in a goal state if counting is true and negative cost is not considered",
         "true");
 
     Options opts = parser.parse();

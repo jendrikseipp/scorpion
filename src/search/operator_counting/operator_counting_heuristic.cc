@@ -42,6 +42,8 @@ OperatorCountingHeuristic::OperatorCountingHeuristic(const Options &opts)
              << constraint.get_coefficients() << endl;
     }
 #endif
+    cout << "Num LP variables: " << variables.size() << endl;
+    cout << "Num LP constraints: " << constraints.size() << endl;
     lp_solver.load_problem(lp::LPObjectiveSense::MINIMIZE, variables, constraints);
 }
 
