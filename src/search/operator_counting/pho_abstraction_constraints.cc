@@ -40,6 +40,25 @@ void PhOAbstractionConstraints::initialize_constraints(
     vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     int num_ops = operator_costs.size();
     constraint_offset = constraints.size();
+
+    vector<vector<int>> local_vars(abstractions.size(), vector<int>(num_ops, -1));
+    if (counting) {
+        int abstraction_id = 0;
+        for (auto &abstraction : abstractions) {
+            vector<int> transition_counts =
+                abstraction->get_transition_counts();
+            for (int op = 0; op < num_ops; ++op) {
+                if (transition_counts[op] > 0) {
+                    // Add Y_{h,o} variable with 0 <= Y_{h,o} <= c_{h,o}.
+                    local_vars[abstraction_id][op] = variables.size();
+                    lp::LPVariable local_count(0.0, transition_counts[op], 0.0);
+                    variables.push_back(move(local_count));
+                }
+            }
+            ++abstraction_id;
+        }
+    }
+
     // TODO: Remove code duplication.
     if (saturated) {
         vector<bool> useless_operators(operator_costs.size(), false);
@@ -61,7 +80,8 @@ void PhOAbstractionConstraints::initialize_constraints(
                         int counting_var = op_id; // Y_o
                         if (counting) {
                             // Get ID of Y_{h,o}.
-                            counting_var = num_ops + abstraction_id * num_ops + op_id;
+                            counting_var = local_vars[abstraction_id][op_id];
+                            assert(counting_var >= 0);
                         }
                         constraint.insert(counting_var, saturated_costs[op_id]);
                     }
@@ -89,8 +109,9 @@ void PhOAbstractionConstraints::initialize_constraints(
                     int counting_var = op_id; // Y_o
                     if (counting) {
                         // Get ID of Y_{h,o}.
-                        counting_var = num_ops + abstraction_id * num_ops + op_id;
+                        counting_var = local_vars[abstraction_id][op_id];
                     }
+                    assert(counting_var >= 0);
                     constraint.insert(counting_var, operator_costs[op_id]);
                 }
             }
@@ -101,18 +122,16 @@ void PhOAbstractionConstraints::initialize_constraints(
     }
 
     if (counting) {
-        for (auto &abstraction : abstractions) {
-            vector<int> transition_counts = abstraction->get_transition_counts();
+        for (size_t abstraction_id = 0; abstraction_id < abstractions.size(); ++abstraction_id) {
             for (int op = 0; op < num_ops; ++op) {
-                // Add Y_{h,o} variable with 0 <= Y_{h,o} <= c_{h,o}.
-                lp::LPVariable local_count(0.0, transition_counts[op], 0.0);
-                int local_count_var_id = variables.size();
-                variables.push_back(move(local_count));
-                // Add constraint Y_{h,o} <= Y_{o} <=> 0 <= Y_{o} - Y_{o,h}.
-                lp::LPConstraint constraint(0.0, infinity);
-                constraint.insert(op, 1.0);
-                constraint.insert(local_count_var_id, -1.0);
-                constraints.push_back(move(constraint));
+                int local_count_var_id = local_vars[abstraction_id][op];
+                if (local_count_var_id >= 0) {
+                    // Add constraint Y_{h,o} <= Y_{o} <=> Y_{o} - Y_{h,o} >= 0.
+                    lp::LPConstraint constraint(0.0, infinity);
+                    constraint.insert(op, 1.0);
+                    constraint.insert(local_count_var_id, -1.0);
+                    constraints.push_back(move(constraint));
+                }
             }
         }
     }
