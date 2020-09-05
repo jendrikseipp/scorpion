@@ -7,6 +7,7 @@
 
 #include "../heuristic.h"
 
+#include <deque>
 #include <memory>
 #include <vector>
 
@@ -15,7 +16,26 @@ class Timer;
 }
 
 namespace cost_saturation {
+class Diversifier;
 class OrderGenerator;
+
+struct Sample {
+    std::vector<int> abstract_state_ids;
+    int max_h;
+
+    Sample(std::vector<int> &&abstract_state_ids, int max_h)
+        : abstract_state_ids(move(abstract_state_ids)),
+          max_h(max_h) {
+    }
+};
+
+class OnlineDiversifier {
+    utils::HashMap<StateID, Sample> samples;
+public:
+    bool add_cp_if_diverse(const CostPartitioningHeuristic &cp_heuristic);
+    void add_sample(StateID state_id, std::vector<int> &&abstract_state_ids, int max_h);
+    void remove_sample(StateID state_id);
+};
 
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> order_generator;
@@ -28,7 +48,10 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const int interval;
     const double max_time;
     const int max_size_kb;
-    const bool store_diverse_orders;
+    const bool use_offline_samples;
+    const int num_samples;
+    const bool sample_from_generated_states;
+    const bool use_evaluated_state_as_sample;
 
     const std::vector<int> costs;
 
@@ -38,7 +61,10 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::vector<bool> seen_facts;
     std::vector<std::vector<bool>> seen_fact_pairs;
 
-    std::unique_ptr<utils::Timer> timer;
+    std::unique_ptr<Diversifier> diversifier;
+    std::unique_ptr<OnlineDiversifier> online_diversifier;
+
+    std::unique_ptr<utils::Timer> improve_heuristic_timer;
     int size_kb;
     int num_evaluated_states;
     int num_scps_computed;
@@ -48,6 +74,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
 
     void print_diversification_statistics() const;
     void print_statistics() const;
+    void setup_diversifier(utils::RandomNumberGenerator &rng);
     int get_fact_id(int var, int value) const;
     bool visit_fact_pair(int fact_id1, int fact_id2);
     bool is_novel(OperatorID op_id, const GlobalState &state);
