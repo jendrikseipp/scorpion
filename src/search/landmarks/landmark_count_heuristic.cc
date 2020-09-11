@@ -9,6 +9,7 @@
 #include "../per_state_bitset.h"
 #include "../plugin.h"
 
+#include "../cost_saturation/greedy_order_utils.h"
 #include "../lp/lp_solver.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
@@ -17,6 +18,7 @@
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/memory.h"
+#include "../utils/rng_options.h"
 #include "../utils/system.h"
 
 #include <cmath>
@@ -27,6 +29,13 @@ using namespace std;
 using utils::ExitCode;
 
 namespace landmarks {
+enum class CostPartitioningAlgorithm {
+    OPTIMAL,
+    SUBOPTIMAL,
+    CANONICAL,
+    PHO
+};
+
 LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
     : Heuristic(opts),
       use_preferred_operators(opts.get<bool>("pref")),
@@ -70,15 +79,30 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
             cerr << "conditional effects not supported by the landmark generation method" << endl;
             utils::exit_with(ExitCode::SEARCH_UNSUPPORTED);
         }
-        if (opts.get<bool>("optimal")) {
+        vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
+        CostPartitioningAlgorithm cp_type = opts.get<CostPartitioningAlgorithm>("cost_partitioning");
+        if (cp_type == CostPartitioningAlgorithm::OPTIMAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkEfficientOptimalSharedCostAssignment>(
-                task_properties::get_operator_costs(task_proxy),
+                operator_costs, *lgraph, opts.get<lp::LPSolverType>("lpsolver"));
+        } else if (cp_type == CostPartitioningAlgorithm::SUBOPTIMAL) {
+            lm_cost_assignment = utils::make_unique_ptr<LandmarkUniformSharedCostAssignment>(
+                operator_costs,
+                *lgraph,
+                opts.get<bool>("alm"),
+                opts.get<bool>("reuse_costs"),
+                opts.get<bool>("greedy"),
+                opts.get<cost_saturation::ScoringFunction>("scoring_function"),
+                utils::parse_rng_from_options(opts));
+        } else if (cp_type == CostPartitioningAlgorithm::CANONICAL) {
+            lm_cost_assignment = utils::make_unique_ptr<LandmarkCanonicalHeuristic>(
+                operator_costs, *lgraph);
+        } else if (cp_type == CostPartitioningAlgorithm::PHO) {
+            lm_cost_assignment = utils::make_unique_ptr<LandmarkPhO>(
+                operator_costs,
                 *lgraph,
                 opts.get<lp::LPSolverType>("lpsolver"));
         } else {
-            lm_cost_assignment = utils::make_unique_ptr<LandmarkUniformSharedCostAssignment>(
-                task_properties::get_operator_costs(task_proxy),
-                *lgraph, opts.get<bool>("alm"));
+            ABORT("unknown cost partitioning type");
         }
     } else {
         lm_cost_assignment = nullptr;
@@ -347,14 +371,26 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "The set of landmarks can be specified here, "
         "or predefined (see LandmarkFactory).");
     parser.add_option<bool>("admissible", "get admissible estimate", "false");
-    parser.add_option<bool>(
-        "optimal",
-        "use optimal (LP-based) cost sharing "
-        "(only makes sense with ``admissible=true``)", "false");
+    vector<string> cp_types;
+    vector<string> cp_types_doc;
+    cp_types.push_back("OPTIMAL");
+    cp_types_doc.push_back("optimal cost partitioning (only makes sense with ``admissible=true``)");
+    cp_types.push_back("SUBOPTIMAL");
+    cp_types_doc.push_back("UCP, OUCP, GZOCP or SCP (select with options greedy and reuse_costs)");
+    cp_types.push_back("CANONICAL");
+    cp_types_doc.push_back("Canonical heuristic for landmarks");
+    cp_types.push_back("PHO");
+    cp_types_doc.push_back("post-hoc optimization");
+    parser.add_enum_option<CostPartitioningAlgorithm>(
+        "cost_partitioning", cp_types, "cost partitioning method", "SUBOPTIMAL");
     parser.add_option<bool>("pref", "identify preferred operators "
                             "(see OptionCaveats#Using_preferred_operators_"
                             "with_the_lmcount_heuristic)", "false");
     parser.add_option<bool>("alm", "use action landmarks", "true");
+    parser.add_option<bool>("reuse_costs", "reuse unused costs", "false");
+    parser.add_option<bool>("greedy", "assign costs greedily", "false");
+    cost_saturation::add_scoring_function_to_parser(parser);
+    utils::add_rng_options(parser);
     lp::add_lp_solver_option_to_parser(parser);
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();

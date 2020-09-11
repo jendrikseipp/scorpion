@@ -631,6 +631,40 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME COST_SATURATION
+    HELP "Saturated cost partitioning"
+    SOURCES
+        cost_saturation/abstraction
+        cost_saturation/abstraction_generator
+        cost_saturation/canonical_heuristic
+        cost_saturation/cartesian_abstraction_generator
+        cost_saturation/cost_partitioning_heuristic
+        cost_saturation/cost_partitioning_heuristic_collection_generator
+        cost_saturation/diversifier
+        cost_saturation/explicit_abstraction
+        cost_saturation/explicit_projection_factory
+        cost_saturation/greedy_order_utils
+        cost_saturation/max_cost_partitioning_heuristic
+        cost_saturation/max_heuristic
+        cost_saturation/optimal_cost_partitioning_heuristic
+        cost_saturation/order_generator
+        cost_saturation/order_generator_dynamic_greedy
+        cost_saturation/order_generator_greedy
+        cost_saturation/order_generator_random
+        cost_saturation/order_optimizer
+        cost_saturation/projection
+        cost_saturation/projection_generator
+        cost_saturation/saturated_cost_partitioning_heuristic
+        cost_saturation/saturated_cost_partitioning_online_heuristic
+        cost_saturation/types
+        cost_saturation/uniform_cost_partitioning_heuristic
+        cost_saturation/unsolvability_heuristic
+        cost_saturation/utils
+        cost_saturation/zero_one_cost_partitioning_heuristic
+    DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
+)
+
+fast_downward_plugin(
     NAME MAS_HEURISTIC
     HELP "The Merge-and-Shrink heuristic"
     SOURCES
@@ -700,6 +734,7 @@ fast_downward_plugin(
         operator_counting/constraint_generator
         operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
+        operator_counting/pho_abstraction_constraints
         operator_counting/pho_constraints
         operator_counting/state_equation_constraints
     DEPENDS LP_SOLVER LANDMARK_CUT_HEURISTIC PDBS TASK_PROPERTIES
