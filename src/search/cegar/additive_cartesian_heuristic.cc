@@ -32,7 +32,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
         opts.get<PickSplit>("pick"),
-        static_cast<HUpdateStrategy>(opts.get<int>("h_update")),
+        opts.get<HUpdateStrategy>("h_update"),
         opts.get<int>("memory_padding"),
         *rng,
         opts.get<bool>("debug"));
