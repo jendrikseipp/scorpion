@@ -74,7 +74,7 @@ void Abstraction::initialize_trivial_abstraction(const vector<int> &domain_sizes
 pair<int, int> Abstraction::refine(
     const AbstractState &state, int var, const vector<int> &wanted) {
     if (debug)
-        cout << "Refine " << state << " for " << var << "=" << wanted << endl;
+        utils::g_log << "Refine " << state << " for " << var << "=" << wanted << endl;
 
     int v_id = state.get_id();
     // Reuse state ID from obsolete parent to obtain consecutive IDs.
@@ -110,7 +110,7 @@ pair<int, int> Abstraction::refine(
             goals.insert(v2_id);
         }
         if (debug) {
-            cout << "Number of goal states: " << goals.size() << endl;
+            utils::g_log << "Number of goal states: " << goals.size() << endl;
         }
     }
 
@@ -127,8 +127,8 @@ pair<int, int> Abstraction::refine(
 }
 
 void Abstraction::print_statistics() const {
-    cout << "States: " << get_num_states() << endl;
-    cout << "Goal states: " << goals.size() << endl;
+    utils::g_log << "States: " << get_num_states() << endl;
+    utils::g_log << "Goal states: " << goals.size() << endl;
     transition_system->print_statistics();
 }
 }

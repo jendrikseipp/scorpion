@@ -5,21 +5,70 @@ timed release model was not adopted until 2019. This file documents
 the changes since the first timed release, Fast Downward 19.06.
 
 For more details, check the repository history
-(<http://hg.fast-downward.org>) and the issue tracker
+(<https://github.com/aibasel/downward>) and the issue tracker
 (<http://issues.fast-downward.org>). Repository branches are named
 after the corresponding tracker issues.
 
-## Changes since the last release
+## Fast Downward 20.06
 
-- integrate code for saturated cost partitioning over abstraction heuristics
-  <http://issues.fast-downward.org/issue780>
-  See http://www.fast-downward.org/Doc/Evaluator#Saturated_cost_partitioning
-  for usage instructions.
-- Fix `--show-aliases` parameter.
+Released on July 26, 2020.
 
-- OptionParser: make OptionParser::add_enum_option templated and remove Options::get_enum
+Highlights:
+
+- The Singularity and Docker distributions of the planner now include
+  LP support using the SoPlex solver out of the box. Thank you to ZIB
+  for their solver and for giving permission to include it in the
+  release.
+
+- The Vagrant distribution of the planner now includes LP support
+  using the SoPlex and/or CPLEX solvers out of the box if they are
+  made available when the virtual machine is first provisioned. See
+  <http://www.fast-downward.org/QuickStart> for more information.
+
+- A long-standing bug in the computation of derived predicates has
+  been fixed. Thanks to everyone who provided bug reports for their
+  help and for their patience!
+
+- A new and much faster method for computing stubborn sets has been
+  added to the planner.
+
+- The deprecated merge strategy aliases `merge_linear` and `merge_dfp`
+  have been removed.
+
+Details:
+
+- Fix crash of `--show-aliases` option of fast-downward.py.
+
+- Fix incorrect computation of derived predicates.
+  <http://issues.fast-downward.org/issue453>
+  Derived predicates that were only needed in negated form and
+  cyclically depended on other derived predicates could be computed
+  incorrectly.
+
+- Integrate new pruning method `atom_centric_stubborn_sets`
+  <http://issues.fast-downward.org/issue781>
+  We merged the code for the SoCS 2020 paper "An Atom-Centric Perspective
+  on Stubborn Sets" (<https://ai.dmi.unibas.ch/papers/roeger-et-al-socs2020.pdf>).
+  See <http://www.fast-downward.org/Doc/PruningMethod>.
+
+- Remove deprecated merge strategy aliases `merge_linear` and `merge_dfp`.
+  The deprecated merge strategy aliases `merge_linear` for linear
+  merge strategies and `merge_dfp` for the DFP merge strategy are no longer
+  available. See http://www.fast-downward.org/Doc/MergeStrategy for equivalent
+  command line options to use these merge strategies.
+
+- For developers: use global logging mechanism for all output
+  <http://issues.fast-downward.org/issue963>
+  All output of the planner is now handled by a global logging mechanism, which
+  prefaces printed lines with time and memory information. For developers, this
+  means that output show no longer be passed to cout but to
+  utils::g_log. Further changes to logging are in the works.
+
+- For developers: store enum options as enums (not ints) in Options objects.
   <http://issues.fast-downward.org/issue962>
-  We now store enum options as enums instead of as ints in Options objects.
+
+- For developers: allow creating Timers in stopped state.
+  <http://issues.fast-downward.org/issue965>
 
 ## Fast Downward 19.12
 
@@ -85,7 +134,7 @@ Details:
   <http://issues.fast-downward.org/issue934>
 
 - scripts: move Stone Soup generator scripts to separate repository at
-  https://bitbucket.org/aibasel/stonesoup.
+  https://github.com/aibasel/stonesoup.
   <http://issues.fast-downward.org/issue932>
 
 ## Fast Downward 19.06

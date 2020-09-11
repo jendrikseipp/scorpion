@@ -1,13 +1,17 @@
-Fast Downward is a domain-independent planning system.
+# Fast Downward
 
-Copyright 2003-2019 Fast Downward contributors (see below).
+Fast Downward is a domain-independent classical planning system.
 
-For documentation and contact information see
-<http://www.fast-downward.org>.
+Copyright 2003-2020 Fast Downward contributors (see below).
+
+For further information:
+- Fast Downward website: <http://www.fast-downward.org>
+- Report a bug or file an issue: <http://issues.fast-downward.org>
+- Fast Downward mailing list: <https://groups.google.com/forum/#!forum/fast-downward>
+- Fast Downward main repository: <https://github.com/aibasel/downward>
 
 
-Contributors
-============
+## Contributors
 
 The following list includes all people that actively contributed to
 Fast Downward, i.e. all people that appear in some commits in Fast
@@ -17,17 +21,17 @@ Currently, this list is sorted by the last year the person has been
 active, and in case of ties, by the earliest year the person started
 contributing, and finally by last name.
 
-- 2003-2019 Malte Helmert
-- 2008-2016, 2018-2019 Gabriele Roeger
-- 2010-2019 Jendrik Seipp
-- 2010-2011, 2013-2019 Silvan Sievers
-- 2012-2019 Florian Pommerening
-- 2013, 2015-2019 Salome Eriksson
+- 2003-2020 Malte Helmert
+- 2008-2016, 2018-2020 Gabriele Roeger
+- 2010-2020 Jendrik Seipp
+- 2010-2011, 2013-2020 Silvan Sievers
+- 2012-2020 Florian Pommerening
+- 2013, 2015-2020 Salome Eriksson
+- 2016-2020 Cedric Geissmann
+- 2017-2020 Guillem Francès
+- 2018-2020 Augusto B. Corrêa
+- 2018-2020 Patrick Ferber
 - 2015-2019 Manuel Heusner
-- 2016-2019 Cedric Geissmann
-- 2017-2019 Guillem Francès
-- 2018-2019 Augusto B. Corrêa
-- 2018-2019 Patrick Ferber
 - 2017 Daniel Killenberger
 - 2016 Yusra Alkhazraji
 - 2016 Martin Wehrle
@@ -49,8 +53,7 @@ contributing, and finally by last name.
 - 2009 Christian Muise
 
 
-History
-=======
+## History
 
 The current version of Fast Downward is the merger of three different
 projects:
@@ -68,8 +71,7 @@ developed for various research papers. The main contributors to these
 branches are Malte Helmert, Gabi Röger and Silvia Richter.
 
 
-License
-=======
+## License
 
 The following directory is not part of Fast Downward as covered by
 this license:

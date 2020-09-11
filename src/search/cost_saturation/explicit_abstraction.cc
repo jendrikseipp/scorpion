@@ -180,7 +180,6 @@ void ExplicitAbstraction::dump() const {
 
     cout << "digraph transition_system";
     cout << " {" << endl;
-    cout << "    node [shape = none] start;" << endl;
     for (int i = 0; i < num_states; ++i) {
         cout << "    node [shape = " << (is_goal[i] ? "doublecircle" : "circle")
              << "] " << i << ";" << endl;
