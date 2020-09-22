@@ -62,6 +62,8 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::vector<bool> seen_facts;
     std::vector<std::vector<bool>> seen_fact_pairs;
 
+    bool should_compute_scp_for_bellman;
+
     std::unique_ptr<Diversifier> diversifier;
     std::unique_ptr<OnlineDiversifier> online_diversifier;
 
@@ -105,6 +107,16 @@ public:
         const GlobalState &global_state) override;
 
     virtual bool is_cached_estimate_dirty(const GlobalState &state) const override;
+
+    void compute_scp_and_store_if_diverse(const GlobalState &state);
+
+    int get_interval() const {
+        return interval;
+    }
+
+    bool is_improve_mode_on() const {
+        return improve_heuristic;
+    }
 };
 }
 

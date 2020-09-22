@@ -120,6 +120,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
       lowest_non_dirty_state_id(-1),
+      should_compute_scp_for_bellman(false),
       size_kb(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
@@ -239,7 +240,7 @@ bool SaturatedCostPartitioningOnlineHeuristic::is_novel(
 
 void SaturatedCostPartitioningOnlineHeuristic::notify_initial_state(
     const GlobalState &initial_state) {
-    if (interval >= 1) {
+    if (interval >= 0) {
         return;
     }
 
@@ -279,7 +280,7 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
         }
     }
 
-    if (interval >= 1) {
+    if (interval >= 0) {
         return;
     }
 
@@ -303,6 +304,8 @@ int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(int var, int value) co
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalState &global_state) {
     if (interval > 0) {
         return num_evaluated_states % interval == 0;
+    } else if (interval == 0) {
+        return should_compute_scp_for_bellman;
     } else if (interval == -1 || interval == -2) {
         return heuristic_cache[global_state].h == IS_NOVEL;
     } else {
@@ -406,6 +409,13 @@ bool SaturatedCostPartitioningOnlineHeuristic::is_cached_estimate_dirty(
     const GlobalState &state) const {
     assert(is_estimate_cached(state));
     return state.get_id().hash() < lowest_non_dirty_state_id;
+}
+
+void SaturatedCostPartitioningOnlineHeuristic::compute_scp_and_store_if_diverse(
+    const GlobalState &state) {
+    should_compute_scp_for_bellman = true;
+    compute_heuristic(state);
+    should_compute_scp_for_bellman = false;
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics() const {
