@@ -371,6 +371,14 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
         int h = cost_partitioning.compute_heuristic(abstract_state_ids);
 
+        // TODO: if we only diversify for the current state, this is only needed
+        //       if the CP is diverse.
+        if (saturator == Saturator::PERIMSTAR) {
+            cost_partitioning.add(
+                compute_saturated_cost_partitioning(
+                    abstractions, order, remaining_costs, abstract_state_ids));
+        }
+
         bool is_diverse =
             (use_evaluated_state_as_sample && h > max_h) ||
             (online_diversifier &&
@@ -378,11 +386,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             (diversifier &&
              diversifier->is_diverse(cost_partitioning));
         if (is_diverse) {
-            if (saturator == Saturator::PERIMSTAR) {
-                cost_partitioning.add(
-                    compute_saturated_cost_partitioning(
-                        abstractions, order, remaining_costs, abstract_state_ids));
-            }
             size_kb += cost_partitioning.estimate_size_in_kb();
             cp_heuristics.push_back(move(cost_partitioning));
             utils::Log() << "Stored SCPs in " << *improve_heuristic_timer << ": "
