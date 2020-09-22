@@ -109,6 +109,11 @@ int Heuristic::get_cached_estimate(const GlobalState &state) const {
     return heuristic_cache[state].h;
 }
 
+bool Heuristic::is_cached_estimate_dirty(const GlobalState &state) const {
+    assert(is_estimate_cached(state));
+    return heuristic_cache[state].dirty;
+}
+
 void Heuristic::remove_cached_estimate(const GlobalState &state) {
     assert(is_estimate_cached(state));
     heuristic_cache[state] = HEntry(NO_VALUE, true);

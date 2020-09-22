@@ -68,6 +68,10 @@ int Evaluator::get_cached_estimate(const GlobalState &) const {
     ABORT("Called get_cached_estimate when estimate is not cached.");
 }
 
+bool Evaluator::is_cached_estimate_dirty(const GlobalState &) const {
+    ABORT("Called is_cached_estimate_dirty when estimate is not cached.");
+}
+
 void Evaluator::remove_cached_estimate(const GlobalState &) {
     ABORT("Called remove_cached_estimate when estimate is not cached.");
 }
