@@ -56,6 +56,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::vector<int> costs;
 
     bool improve_heuristic;
+    int lowest_non_dirty_state_id;
 
     std::vector<int> fact_id_offsets;
     std::vector<bool> seen_facts;
@@ -102,6 +103,8 @@ public:
         const GlobalState &,
         OperatorID op_id,
         const GlobalState &global_state) override;
+
+    virtual bool is_cached_estimate_dirty(const GlobalState &state) const override;
 };
 }
 

@@ -119,6 +119,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       use_evaluated_state_as_sample(opts.get<bool>("use_evaluated_state_as_sample")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
+      lowest_non_dirty_state_id(-1),
       size_kb(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
@@ -386,6 +387,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             cp_heuristics.push_back(move(cost_partitioning));
             utils::Log() << "Stored SCPs in " << *improve_heuristic_timer << ": "
                          << cp_heuristics.size() << endl;
+            lowest_non_dirty_state_id = global_state.get_id().hash();
         }
         max_h = max(max_h, h);
     }
@@ -395,6 +397,12 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     ++num_evaluated_states;
     return max_h;
+}
+
+bool SaturatedCostPartitioningOnlineHeuristic::is_cached_estimate_dirty(
+    const GlobalState &state) const {
+    assert(is_estimate_cached(state));
+    return state.get_id().hash() < lowest_non_dirty_state_id;
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics() const {
