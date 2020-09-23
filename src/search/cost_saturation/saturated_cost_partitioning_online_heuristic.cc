@@ -21,9 +21,6 @@
 using namespace std;
 
 namespace cost_saturation {
-static const int IS_NOVEL = -3;
-static const int IS_NOT_NOVEL = -4;
-
 static vector<vector<int>> sample_states_and_return_abstract_state_ids(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
@@ -100,16 +97,15 @@ void OnlineDiversifier::remove_sample(StateID state_id) {
 
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
-    Abstractions &&abstractions,
-    CPHeuristics &&cp_heuristics,
-    UnsolvabilityHeuristic &&unsolvability_heuristic)
+    Abstractions &&abstractions_,
+    CPHeuristics &&cp_heuristics_)
     : Heuristic(opts),
       order_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
-      saturator(static_cast<Saturator>(opts.get_enum("saturator"))),
+      saturator(opts.get<Saturator>("saturator")),
       cp_function(get_cp_function_from_options(opts)),
-      abstractions(move(abstractions)),
-      cp_heuristics(move(cp_heuristics)),
-      unsolvability_heuristic(move(unsolvability_heuristic)),
+      abstractions(move(abstractions_)),
+      cp_heuristics(move(cp_heuristics_)),
+      unsolvability_heuristic(abstractions, cp_heuristics),
       interval(opts.get<int>("interval")),
       max_time(opts.get<double>("max_time")),
       max_size_kb(opts.get<int>("max_size")),
@@ -244,7 +240,7 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_initial_state(
         return;
     }
 
-    heuristic_cache[initial_state].h = IS_NOVEL;
+    heuristic_cache[initial_state].novel = true;
     int num_vars = fact_id_offsets.size();
     if (interval == -1) {
         for (int var = 0; var < num_vars; ++var) {
@@ -287,11 +283,8 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
     // We only need to compute novelty for new states.
     if (heuristic_cache[global_state].h == NO_VALUE) {
         improve_heuristic_timer->resume();
-        if (is_novel(op_id, global_state)) {
-            heuristic_cache[global_state].h = IS_NOVEL;
-        } else {
-            heuristic_cache[global_state].h = IS_NOT_NOVEL;
-        }
+        assert(!heuristic_cache[global_state].novel);
+        heuristic_cache[global_state].novel = is_novel(op_id, global_state);
         assert(heuristic_cache[global_state].dirty);
         improve_heuristic_timer->stop();
     }
@@ -307,7 +300,9 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalSt
     } else if (interval == 0) {
         return should_compute_scp_for_bellman;
     } else if (interval == -1 || interval == -2) {
-        return heuristic_cache[global_state].h == IS_NOVEL;
+        bool novel = heuristic_cache[global_state].novel;
+        heuristic_cache[global_state].novel = false;
+        return novel;
     } else {
         ABORT("invalid value for interval");
     }
@@ -338,6 +333,12 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
+    if (max_h == INF) {
+        if (improve_heuristic) {
+            improve_heuristic_timer->stop();
+        }
+        return DEAD_END;
+    }
 
     if (improve_heuristic &&
         ((*improve_heuristic_timer)() >= max_time || size_kb >= max_size_kb)) {
@@ -491,12 +492,11 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-    UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
     CPHeuristics cp_heuristics = {};
     if (opts.get<bool>("diversify_offline")) {
         cp_heuristics =
             get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-                task_proxy, abstractions, costs, get_cp_function_from_options(opts), unsolvability_heuristic);
+                task_proxy, abstractions, costs, get_cp_function_from_options(opts));
     } else {
         shared_ptr<OrderGenerator> order_generator = opts.get<shared_ptr<OrderGenerator>>("orders");
         order_generator->initialize(abstractions, costs);
@@ -505,8 +505,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts,
         move(abstractions),
-        move(cp_heuristics),
-        move(unsolvability_heuristic));
+        move(cp_heuristics));
 }
 
 static Plugin<Evaluator> _plugin("scp_online", _parse);

@@ -22,11 +22,12 @@ class Heuristic : public Evaluator {
     struct HEntry {
         /* dirty is conceptually a bool, but Visual C++ does not support
            packing ints and bools together in a bitfield. */
-        int h : 31;
+        int h : 30;
         unsigned int dirty : 1;
+        unsigned int novel : 1;
 
         HEntry(int h, bool dirty)
-            : h(h), dirty(dirty) {
+            : h(h), dirty(dirty), novel(false) {
         }
     };
     static_assert(sizeof(HEntry) == 4, "HEntry has unexpected size.");

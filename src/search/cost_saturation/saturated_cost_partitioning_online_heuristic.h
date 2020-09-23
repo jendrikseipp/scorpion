@@ -44,6 +44,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     Abstractions abstractions;
     AbstractionFunctions abstraction_functions;
     CPHeuristics cp_heuristics;
+    // TODO: update unsolvability heuristic with new CP heuristics found online.
     UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
     const double max_time;
@@ -90,8 +91,7 @@ public:
     SaturatedCostPartitioningOnlineHeuristic(
         const options::Options &opts,
         Abstractions &&abstractions,
-        CPHeuristics &&cp_heuristics,
-        UnsolvabilityHeuristic &&unsolvability_heuristic);
+        CPHeuristics &&cp_heuristics);
     virtual ~SaturatedCostPartitioningOnlineHeuristic() override;
 
     virtual void get_path_dependent_evaluators(

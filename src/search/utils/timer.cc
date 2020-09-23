@@ -55,9 +55,9 @@ Timer::Timer(bool start) {
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start_ticks);
 #endif
-    last_start_clock = current_clock();
     collected_time = 0;
     stopped = !start;
+    last_start_clock = start ? current_clock() : 0.;
 }
 
 double Timer::current_clock() const {

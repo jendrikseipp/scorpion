@@ -104,7 +104,7 @@ void add_saturator_option(OptionParser &parser) {
     saturators.push_back("ALL");
     saturators.push_back("PERIM");
     saturators.push_back("PERIMSTAR");
-    parser.add_enum_option(
+    parser.add_enum_option<Saturator>(
         "saturator",
         saturators,
         "saturator",
@@ -112,7 +112,7 @@ void add_saturator_option(OptionParser &parser) {
 }
 
 CPFunction get_cp_function_from_options(const Options &opts) {
-    Saturator saturator_type = static_cast<Saturator>(opts.get_enum("saturator"));
+    Saturator saturator_type = opts.get<Saturator>("saturator");
     CPFunction cp_function = nullptr;
     if (saturator_type == Saturator::ALL) {
         cp_function = compute_saturated_cost_partitioning;
@@ -130,8 +130,7 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Saturated cost partitioning",
         "Compute the maximum over multiple saturated cost partitioning "
-        "heuristics using different orders. Depending on the options, orders "
-        "may be greedy, optimized and/or diverse. We describe saturated cost "
+        "heuristics using different orders. We describe saturated cost "
         "partitioning in the paper" +
         utils::format_journal_reference(
             {"Jendrik Seipp", "Malte Helmert"},
@@ -193,16 +192,14 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-    UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
     CPFunction cp_function = get_cp_function_from_options(opts);
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, cp_function, unsolvability_heuristic);
+            task_proxy, abstractions, costs, cp_function);
     return make_shared<MaxCostPartitioningHeuristic>(
         opts,
         move(abstractions),
-        move(cp_heuristics),
-        move(unsolvability_heuristic));
+        move(cp_heuristics));
 }
 
 static Plugin<Evaluator> _plugin("scp", _parse);

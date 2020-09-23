@@ -119,10 +119,8 @@ static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning
 }
 
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
-    const Options &opts, Abstractions &&abstractions, CPHeuristics &&cp_heuristics,
-    UnsolvabilityHeuristic &&unsolvability_heuristic)
-    : MaxCostPartitioningHeuristic(
-          opts, move(abstractions), move(cp_heuristics), move(unsolvability_heuristic)) {
+    const Options &opts, Abstractions &&abstractions, CPHeuristics &&cp_heuristics)
+    : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics)) {
 }
 
 int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -158,7 +156,6 @@ static CostPartitioningHeuristic get_ucp_heuristic(
 static CPHeuristics get_oucp_heuristics(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
-    const UnsolvabilityHeuristic &unsolvability_heuristic,
     const CostPartitioningHeuristicCollectionGenerator &cps_generator,
     bool debug) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
@@ -170,8 +167,7 @@ static CPHeuristics get_oucp_heuristics(
             const vector<int> &costs) {
             return compute_opportunistic_uniform_cost_partitioning(
                 abstractions, order, costs, debug);
-        },
-        unsolvability_heuristic);
+        });
 }
 
 
@@ -205,7 +201,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     Abstractions abstractions = generate_abstractions(
         scaled_costs_task,
         opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-    UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
 
     TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
     bool debug = opts.get<bool>("debug");
@@ -215,7 +210,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         cp_heuristics = get_oucp_heuristics(
             scaled_costs_task_proxy,
             abstractions,
-            unsolvability_heuristic,
             get_cp_heuristic_collection_generator_from_options(opts),
             debug);
     } else {
@@ -224,7 +218,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     }
 
     return make_shared<UniformCostPartitioningHeuristic>(
-        opts, move(abstractions), move(cp_heuristics), move(unsolvability_heuristic));
+        opts, move(abstractions), move(cp_heuristics));
 }
 
 static Plugin<Evaluator> _plugin("uniform_cost_partitioning", _parse);

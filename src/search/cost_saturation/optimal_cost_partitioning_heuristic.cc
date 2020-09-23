@@ -21,7 +21,7 @@ namespace cost_saturation {
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
     const options::Options &opts)
     : Heuristic(opts),
-      lp_solver(lp::LPSolverType(opts.get_enum("lpsolver"))),
+      lp_solver(opts.get<lp::LPSolverType>("lpsolver")),
       allow_negative_costs(opts.get<bool>("allow_negative_costs")) {
     utils::Timer timer;
 
@@ -126,7 +126,7 @@ void OptimalCostPartitioningHeuristic::generate_lp(const Abstractions &abstracti
          information is already contained in the constraints)
        * (Only) the bounds for distance[A][s'] depend on the current state s
          and will be changed for every evaluation:
-         * distance[A][s'] <= 0       if the abstraction of s in A is s'
+         * distance[A][s'] <= 0       if A maps s to s'
          * distance[A][s'] <= \infty  otherwise
     */
     vector<lp::LPVariable> lp_variables;
@@ -211,10 +211,10 @@ void OptimalCostPartitioningHeuristic::add_operator_cost_constraints(
     vector<lp::LPConstraint> &lp_constraints) {
     /*
       For o in operators add constraint
-      0 <= sum_{A in abstractions} operator_cost[A][o] <= cost(o)
+      sum_{A in abstractions} operator_cost[A][o] <= cost(o)
     */
     for (OperatorProxy op : task_proxy.get_operators()) {
-        lp_constraints.emplace_back(0., op.get_cost());
+        lp_constraints.emplace_back(-lp_solver.get_infinity(), op.get_cost());
         lp::LPConstraint &constraint = lp_constraints.back();
         for (size_t id = 0; id < operator_cost_variables.size(); ++id) {
             int abstraction_col = operator_cost_variables[id][op.get_id()];

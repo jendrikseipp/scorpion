@@ -82,7 +82,6 @@ vector<int> compute_all_surplus_costs(
 
 double compute_score(int h, int used_costs, ScoringFunction scoring_function) {
     assert(h >= 0);
-    assert(h != INF);
     assert(used_costs != INF);
     assert(used_costs != -INF);
     if (scoring_function == ScoringFunction::MAX_HEURISTIC) {
@@ -101,7 +100,7 @@ void add_scoring_function_to_parser(OptionParser &parser) {
     scoring_functions.push_back("MAX_HEURISTIC");
     scoring_functions.push_back("MIN_STOLEN_COSTS");
     scoring_functions.push_back("MAX_HEURISTIC_PER_STOLEN_COSTS");
-    parser.add_enum_option(
+    parser.add_enum_option<ScoringFunction>(
         "scoring_function",
         scoring_functions,
         "scoring function",
