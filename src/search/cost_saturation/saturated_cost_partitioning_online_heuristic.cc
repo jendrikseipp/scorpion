@@ -21,9 +21,6 @@
 using namespace std;
 
 namespace cost_saturation {
-static const int IS_NOVEL = -3;
-static const int IS_NOT_NOVEL = -4;
-
 static vector<vector<int>> sample_states_and_return_abstract_state_ids(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
@@ -243,7 +240,7 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_initial_state(
         return;
     }
 
-    heuristic_cache[initial_state].h = IS_NOVEL;
+    heuristic_cache[initial_state].novel = true;
     int num_vars = fact_id_offsets.size();
     if (interval == -1) {
         for (int var = 0; var < num_vars; ++var) {
@@ -286,11 +283,8 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
     // We only need to compute novelty for new states.
     if (heuristic_cache[global_state].h == NO_VALUE) {
         improve_heuristic_timer->resume();
-        if (is_novel(op_id, global_state)) {
-            heuristic_cache[global_state].h = IS_NOVEL;
-        } else {
-            heuristic_cache[global_state].h = IS_NOT_NOVEL;
-        }
+        assert(!heuristic_cache[global_state].novel);
+        heuristic_cache[global_state].novel = is_novel(op_id, global_state);
         assert(heuristic_cache[global_state].dirty);
         improve_heuristic_timer->stop();
     }
@@ -304,7 +298,9 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalSt
     if (interval > 0) {
         return num_evaluated_states % interval == 0;
     } else if (interval == -1 || interval == -2) {
-        return heuristic_cache[global_state].h == IS_NOVEL;
+        bool novel = heuristic_cache[global_state].novel;
+        heuristic_cache[global_state].novel = false;
+        return novel;
     } else {
         ABORT("invalid value for interval");
     }
