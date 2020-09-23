@@ -48,14 +48,12 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
 // TODO: avoid code duplication
 static void extract_useful_abstraction_functions(
     const vector<CostPartitioningHeuristic> &cp_heuristics,
-    const UnsolvabilityHeuristic &unsolvability_heuristic,
     Abstractions &abstractions,
     AbstractionFunctions &abstraction_functions) {
     int num_abstractions = abstractions.size();
 
     // Collect IDs of useful abstractions.
     vector<bool> useful_abstractions(num_abstractions, false);
-    unsolvability_heuristic.mark_useful_abstractions(useful_abstractions);
     for (const auto &cp_heuristic : cp_heuristics) {
         cp_heuristic.mark_useful_abstractions(useful_abstractions);
     }
@@ -105,7 +103,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       cp_function(get_cp_function_from_options(opts)),
       abstractions(move(abstractions_)),
       cp_heuristics(move(cp_heuristics_)),
-      unsolvability_heuristic(abstractions, cp_heuristics),
       interval(opts.get<int>("interval")),
       max_time(opts.get<double>("max_time")),
       max_size_kb(opts.get<int>("max_size")),
@@ -162,12 +159,6 @@ SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuris
 
 void SaturatedCostPartitioningOnlineHeuristic::setup_diversifier(
     utils::RandomNumberGenerator &rng) {
-    DeadEndDetector is_dead_end =
-        [this](const State &state) {
-            return unsolvability_heuristic.is_unsolvable(
-                get_abstract_state_ids(abstractions, state));
-        };
-
     State initial_state = task_proxy.get_initial_state();
 
     // Compute h(s_0) using a greedy order for s_0.
@@ -180,6 +171,11 @@ void SaturatedCostPartitioningOnlineHeuristic::setup_diversifier(
     int init_h = cp_for_init.compute_heuristic(abstract_state_ids_for_init);
 
     sampling::RandomWalkSampler sampler(task_proxy, rng);
+    DeadEndDetector is_dead_end =
+        [this, &cp_for_init](const State &state) {
+            return cp_for_init.compute_heuristic(
+                get_abstract_state_ids(abstractions, state)) == INF;
+        };
 
     double max_sampling_time = max_time / 2;
     diversifier = utils::make_unique_ptr<Diversifier>(
@@ -267,7 +263,8 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
     if (online_diversifier) {
         State state = convert_global_state(global_state);
         vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
-        bool is_unsolvable = unsolvability_heuristic.is_unsolvable(abstract_state_ids);
+        ABORT("detecting unsolvable states not implemented");
+        bool is_unsolvable = false;
         if (!is_unsolvable) {
             int max_h = compute_max_h_with_statistics(
                 cp_heuristics, abstract_state_ids, num_best_order);
@@ -321,13 +318,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         abstract_state_ids = get_abstract_state_ids(abstraction_functions, state);
     }
 
-    if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
-        if (improve_heuristic) {
-            improve_heuristic_timer->stop();
-        }
-        return DEAD_END;
-    }
-
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
     if (max_h == INF) {
@@ -347,7 +337,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         utils::release_vector_memory(seen_facts);
         utils::release_vector_memory(seen_fact_pairs);
         extract_useful_abstraction_functions(
-            cp_heuristics, unsolvability_heuristic, abstractions, abstraction_functions);
+            cp_heuristics, abstractions, abstraction_functions);
         utils::release_vector_memory(abstractions);
         print_diversification_statistics();
     }

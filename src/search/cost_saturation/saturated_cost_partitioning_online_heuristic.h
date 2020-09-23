@@ -3,7 +3,6 @@
 
 #include "saturated_cost_partitioning_heuristic.h"
 #include "types.h"
-#include "unsolvability_heuristic.h"
 
 #include "../heuristic.h"
 
@@ -44,8 +43,6 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     Abstractions abstractions;
     AbstractionFunctions abstraction_functions;
     CPHeuristics cp_heuristics;
-    // TODO: update unsolvability heuristic with new CP heuristics found online.
-    UnsolvabilityHeuristic unsolvability_heuristic;
     const int interval;
     const double max_time;
     const int max_size_kb;
