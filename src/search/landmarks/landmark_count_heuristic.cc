@@ -15,6 +15,7 @@
 #include "../task_utils/task_properties.h"
 #include "../tasks/cost_adapted_task.h"
 #include "../tasks/root_task.h"
+#include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/memory.h"
 #include "../utils/rng_options.h"
@@ -46,7 +47,7 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
           (!task_properties::has_axioms(task_proxy) &&
            (!task_properties::has_conditional_effects(task_proxy) || conditional_effects_supported))),
       successor_generator(nullptr) {
-    cout << "Initializing landmarks count heuristic..." << endl;
+    utils::g_log << "Initializing landmarks count heuristic..." << endl;
 
     /*
       Actually, we should like to test if this is the root task or a
@@ -79,13 +80,10 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
             utils::exit_with(ExitCode::SEARCH_UNSUPPORTED);
         }
         vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
-        CostPartitioningAlgorithm cp_type = static_cast<CostPartitioningAlgorithm>(
-            opts.get_enum("cost_partitioning"));
+        CostPartitioningAlgorithm cp_type = opts.get<CostPartitioningAlgorithm>("cost_partitioning");
         if (cp_type == CostPartitioningAlgorithm::OPTIMAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkEfficientOptimalSharedCostAssignment>(
-                operator_costs,
-                *lgraph,
-                static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
+                operator_costs, *lgraph, opts.get<lp::LPSolverType>("lpsolver"));
         } else if (cp_type == CostPartitioningAlgorithm::SUBOPTIMAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkUniformSharedCostAssignment>(
                 operator_costs,
@@ -93,7 +91,7 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
                 opts.get<bool>("alm"),
                 opts.get<bool>("reuse_costs"),
                 opts.get<bool>("greedy"),
-                static_cast<cost_saturation::ScoringFunction>(opts.get_enum("scoring_function")),
+                opts.get<cost_saturation::ScoringFunction>("scoring_function"),
                 utils::parse_rng_from_options(opts));
         } else if (cp_type == CostPartitioningAlgorithm::CANONICAL) {
             lm_cost_assignment = utils::make_unique_ptr<LandmarkCanonicalHeuristic>(
@@ -102,7 +100,7 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
             lm_cost_assignment = utils::make_unique_ptr<LandmarkPhO>(
                 operator_costs,
                 *lgraph,
-                static_cast<lp::LPSolverType>(opts.get_enum("lpsolver")));
+                opts.get<lp::LPSolverType>("lpsolver"));
         } else {
             ABORT("unknown cost partitioning type");
         }
@@ -383,7 +381,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     cp_types_doc.push_back("Canonical heuristic for landmarks");
     cp_types.push_back("PHO");
     cp_types_doc.push_back("post-hoc optimization");
-    parser.add_enum_option(
+    parser.add_enum_option<CostPartitioningAlgorithm>(
         "cost_partitioning", cp_types, "cost partitioning method", "SUBOPTIMAL");
     parser.add_option<bool>("pref", "identify preferred operators "
                             "(see OptionCaveats#Using_preferred_operators_"

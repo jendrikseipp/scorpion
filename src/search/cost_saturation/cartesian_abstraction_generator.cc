@@ -36,21 +36,6 @@ public:
 };
 
 
-CartesianAbstractionGenerator::CartesianAbstractionGenerator(
-    const options::Options &opts)
-    : subtask_generators(
-          opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
-      max_states(opts.get<int>("max_states")),
-      max_transitions(opts.get<int>("max_transitions")),
-      max_time(opts.get<double>("max_time")),
-      extra_memory_padding_mb(opts.get<int>("memory_padding")),
-      prune_unreachable_transitions(opts.get<bool>("prune_unreachable_transitions")),
-      rng(utils::parse_rng_from_options(opts)),
-      debug(opts.get<bool>("debug")),
-      num_states(0),
-      num_transitions(0) {
-}
-
 static vector<bool> get_looping_operators(const cegar::TransitionSystem &ts) {
     int num_operators = ts.get_num_operators();
     vector<bool> operator_induces_self_loop(num_operators, false);
@@ -65,37 +50,30 @@ static vector<bool> get_looping_operators(const cegar::TransitionSystem &ts) {
 
 static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
     cegar::Abstraction &cartesian_abstraction,
-    const vector<int> &operator_costs,
-    bool prune_unreachable_transitions) {
-    // Compute g and h values.
+    const vector<int> &operator_costs) {
+    // Compute h values.
     const cegar::TransitionSystem &ts =
         cartesian_abstraction.get_transition_system();
     int initial_state_id = cartesian_abstraction.get_initial_state().get_id();
-    vector<int> g_values = cegar::compute_distances(
-        ts.get_outgoing_transitions(), operator_costs, {initial_state_id});
     vector<int> h_values = cegar::compute_distances(
         ts.get_incoming_transitions(), operator_costs, cartesian_abstraction.get_goals());
 
     // Retrieve non-looping transitions.
     vector<vector<Successor>> backward_graph(cartesian_abstraction.get_num_states());
-    for (int state_id = 0; state_id < cartesian_abstraction.get_num_states(); ++state_id) {
-        // Prune transitions from unsolvable or unreachable states.
-        if (h_values[state_id] == INF ||
-            (prune_unreachable_transitions && g_values[state_id] == INF)) {
+    for (int target = 0; target < cartesian_abstraction.get_num_states(); ++target) {
+        // Prune transitions *to* unsolvable states.
+        if (h_values[target] == INF) {
             continue;
         }
-        for (const cegar::Transition &transition : ts.get_outgoing_transitions()[state_id]) {
-            /* Prune transitions to unsolvable states (no need to check unreachability:
-               either the state and thus the target is reachable or
-               prune_unreachable_transitions is false). */
-            if (h_values[transition.target_id] == INF) {
+        for (const cegar::Transition &transition : ts.get_incoming_transitions()[target]) {
+            int src = transition.target_id;
+            // Prune transitions *from* unsolvable states.
+            if (h_values[src] == INF) {
                 continue;
             }
-            backward_graph[transition.target_id].emplace_back(transition.op_id, state_id);
+            backward_graph[target].emplace_back(transition.op_id, src);
         }
-    }
-    for (vector<Successor> &succesors : backward_graph) {
-        succesors.shrink_to_fit();
+        backward_graph[target].shrink_to_fit();
     }
 
     vector<bool> looping_operators = get_looping_operators(ts);
@@ -113,6 +91,21 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
                    move(looping_operators),
                    move(goal_states))
     };
+}
+
+
+CartesianAbstractionGenerator::CartesianAbstractionGenerator(
+    const options::Options &opts)
+    : subtask_generators(
+          opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
+      max_states(opts.get<int>("max_states")),
+      max_transitions(opts.get<int>("max_transitions")),
+      max_time(opts.get<double>("max_time")),
+      extra_memory_padding_mb(opts.get<int>("memory_padding")),
+      rng(utils::parse_rng_from_options(opts)),
+      debug(opts.get<bool>("debug")),
+      num_states(0),
+      num_transitions(0) {
 }
 
 unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_for_subtask(
@@ -140,10 +133,9 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         unique_ptr<cegar::Abstraction> cartesian_abstraction =
             build_abstraction_for_subtask(subtask, remaining_subtasks, timer);
 
-        /* If we already have an abstraction A and run out of memory while
-           building another abstraction B, we discard B to avoid running out of
-           memory during the conversion. */
-        if (!abstractions.empty() && !utils::extra_memory_padding_is_reserved()) {
+        /* If we run out of memory while building an abstraction, we discard it
+           to avoid running out of memory during the abstraction conversion. */
+        if (!utils::extra_memory_padding_is_reserved()) {
             break;
         }
 
@@ -151,8 +143,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         num_transitions += cartesian_abstraction->get_transition_system().get_num_non_loops();
 
         vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*subtask));
-        auto result = convert_abstraction(
-            *cartesian_abstraction, operator_costs, prune_unreachable_transitions);
+        auto result = convert_abstraction(*cartesian_abstraction, operator_costs);
         bool unsolvable = result.first;
         abstractions.push_back(move(result.second));
 
@@ -214,12 +205,12 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "max_states",
         "maximum sum of abstract states over all abstractions",
         "infinity",
-        Bounds("0", "infinity"));
+        Bounds("1", "infinity"));
     parser.add_option<int>(
         "max_transitions",
         "maximum sum of state-changing transitions (excluding self-loops) over "
         "all abstractions",
-        "1000000",
+        "1M",
         Bounds("0", "infinity"));
     parser.add_option<double>(
         "max_time",
@@ -237,10 +228,6 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "large amount of memory padding by default.",
         "500",
         Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "prune_unreachable_transitions",
-        "remove transitions from and to unreachable Cartesian states",
-        "false");
     parser.add_option<bool>(
         "debug",
         "print debugging info",
