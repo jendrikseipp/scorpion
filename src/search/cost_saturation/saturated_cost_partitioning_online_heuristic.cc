@@ -302,6 +302,23 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalSt
     }
 }
 
+static int compute_max_h_over_suffix(
+    const CPHeuristics &cp_heuristics,
+    const vector<int> &abstract_state_ids,
+    int suffix_start) {
+    int max_h = 0;
+    for (size_t i = suffix_start; i < cp_heuristics.size(); ++i) {
+        const CostPartitioningHeuristic &cp_heuristic = cp_heuristics[i];
+        int sum_h = cp_heuristic.compute_heuristic(abstract_state_ids);
+        if (sum_h == INF) {
+            return INF;
+        }
+        max_h = max(max_h, sum_h);
+    }
+    assert(max_h >= 0);
+    return max_h;
+}
+
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     const GlobalState &global_state) {
     if (improve_heuristic) {
@@ -318,8 +335,16 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         abstract_state_ids = get_abstract_state_ids(abstraction_functions, state);
     }
 
-    int max_h = compute_max_h_with_statistics(
-        cp_heuristics, abstract_state_ids, num_best_order);
+    // Retrieve cached estimate if it exists and only compute max over new orders.
+    int old_h = 0;
+    if (heuristic_cache[global_state].h != NO_VALUE) {
+        assert(heuristic_cache[global_state].h != DEAD_END);
+        old_h = heuristic_cache[global_state].h;
+    }
+    int new_h = compute_max_h_over_suffix(
+        cp_heuristics, abstract_state_ids, num_orders_used_for_state[global_state]);
+    int max_h = max(old_h, new_h);
+
     if (debug) {
         utils::g_log << "compute_heuristic for " << global_state.get_id() << " max_h:" << max_h << endl;
         utils::g_log << "num orders for state: " << num_orders_used_for_state[global_state] << endl;
