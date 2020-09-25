@@ -109,6 +109,7 @@ void EagerSearch::print_statistics() const {
 }
 
 SearchStatus EagerSearch::step() {
+    bool debug = false;
     tl::optional<SearchNode> node;
     while (true) {
         if (open_list->empty()) {
@@ -122,6 +123,10 @@ SearchStatus EagerSearch::step() {
         //      instead of StateIDs
         GlobalState s = state_registry.lookup_state(id);
         node.emplace(search_space.get_node(s));
+
+        if (debug) {
+            utils::g_log << "Expand " << s.get_id() << endl;
+        }
 
         if (node->is_closed())
             continue;
@@ -153,7 +158,13 @@ SearchStatus EagerSearch::step() {
             if (lazy_evaluator->is_estimate_cached(s) && lazy_evaluator->is_cached_estimate_dirty(s)) {
                 int old_h = lazy_evaluator->get_cached_estimate(s);
                 lazy_evaluator->remove_cached_estimate(s);
+                if (debug) {
+                    utils::g_log << "Reevaluate " << s.get_id() << " old:" << old_h << endl;
+                }
                 int new_h = eval_context.get_evaluator_value_or_infinity(lazy_evaluator.get());
+                if (debug) {
+                    utils::g_log << "new:" << new_h << endl;
+                }
                 if (open_list->is_dead_end(eval_context)) {
                     node->mark_as_dead_end();
                     statistics.inc_dead_ends();

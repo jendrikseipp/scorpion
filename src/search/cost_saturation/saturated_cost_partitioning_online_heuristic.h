@@ -50,11 +50,12 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const int num_samples;
     const bool sample_from_generated_states;
     const bool use_evaluated_state_as_sample;
+    const bool debug;
 
     const std::vector<int> costs;
 
     bool improve_heuristic;
-    int lowest_non_dirty_state_id;
+    PerStateInformation<int> num_orders_used_for_state;
 
     std::vector<int> fact_id_offsets;
     std::vector<bool> seen_facts;

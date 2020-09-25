@@ -110,9 +110,9 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       num_samples(opts.get<int>("samples")),
       sample_from_generated_states(opts.get<bool>("sample_from_generated_states")),
       use_evaluated_state_as_sample(opts.get<bool>("use_evaluated_state_as_sample")),
+      debug(opts.get<bool>("debug")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
-      lowest_non_dirty_state_id(-1),
       size_kb(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
@@ -320,7 +320,11 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     int max_h = compute_max_h_with_statistics(
         cp_heuristics, abstract_state_ids, num_best_order);
+    if (debug) {
+        utils::g_log << "compute_heuristic for " << global_state.get_id() << " max_h:" << max_h << endl;
+    }
     if (max_h == INF) {
+        num_orders_used_for_state[global_state] = cp_heuristics.size();
         if (improve_heuristic) {
             improve_heuristic_timer->stop();
         }
@@ -345,6 +349,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         online_diversifier->remove_sample(global_state.get_id());
     }
     if (improve_heuristic && should_compute_scp(global_state)) {
+        if (debug) {
+            utils::g_log << "Compute SCP for " << global_state.get_id() << endl;
+        }
         Order order = order_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
 
@@ -378,10 +385,11 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             cp_heuristics.push_back(move(cost_partitioning));
             utils::Log() << "Stored SCPs in " << *improve_heuristic_timer << ": "
                          << cp_heuristics.size() << endl;
-            lowest_non_dirty_state_id = global_state.get_id().hash();
         }
         max_h = max(max_h, h);
     }
+    num_orders_used_for_state[global_state] = cp_heuristics.size();
+
     if (improve_heuristic) {
         improve_heuristic_timer->stop();
     }
@@ -393,7 +401,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 bool SaturatedCostPartitioningOnlineHeuristic::is_cached_estimate_dirty(
     const GlobalState &state) const {
     assert(is_estimate_cached(state));
-    return state.get_id().hash() < lowest_non_dirty_state_id;
+    return num_orders_used_for_state[state] < static_cast<int>(cp_heuristics.size());
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics() const {
@@ -413,14 +421,14 @@ void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics(
 
     utils::Log() << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
     utils::Log() << "Estimated heuristic size: " << size_kb << " KiB" << endl;
+    utils::Log() << "Computed SCPs: " << num_scps_computed << endl;
+    utils::Log() << "Stored SCPs: " << cp_heuristics.size() << endl;
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
     if (improve_heuristic) {
         print_diversification_statistics();
     }
-    cout << "Computed SCPs: " << num_scps_computed << endl;
-    cout << "Stored SCPs: " << cp_heuristics.size() << endl;
 }
 
 
@@ -455,6 +463,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "diversify_offline",
         "add diverse SCP heuristics found offline",
+        "false");
+    parser.add_option<bool>(
+        "debug",
+        "print debug output",
         "false");
 
     Options opts = parser.parse();
