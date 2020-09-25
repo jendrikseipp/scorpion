@@ -18,24 +18,6 @@ namespace cost_saturation {
 class Diversifier;
 class OrderGenerator;
 
-struct Sample {
-    std::vector<int> abstract_state_ids;
-    int max_h;
-
-    Sample(std::vector<int> &&abstract_state_ids, int max_h)
-        : abstract_state_ids(move(abstract_state_ids)),
-          max_h(max_h) {
-    }
-};
-
-class OnlineDiversifier {
-    utils::HashMap<StateID, Sample> samples;
-public:
-    bool add_cp_if_diverse(const CostPartitioningHeuristic &cp_heuristic);
-    void add_sample(StateID state_id, std::vector<int> &&abstract_state_ids, int max_h);
-    void remove_sample(StateID state_id);
-};
-
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const std::shared_ptr<OrderGenerator> order_generator;
     const Saturator saturator;
@@ -48,7 +30,6 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const int max_size_kb;
     const bool use_offline_samples;
     const int num_samples;
-    const bool sample_from_generated_states;
     const bool use_evaluated_state_as_sample;
     const bool debug;
 
@@ -64,7 +45,6 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     bool should_compute_scp_for_bellman;
 
     std::unique_ptr<Diversifier> diversifier;
-    std::unique_ptr<OnlineDiversifier> online_diversifier;
 
     std::unique_ptr<utils::Timer> improve_heuristic_timer;
     int size_kb;

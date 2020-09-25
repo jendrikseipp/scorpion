@@ -70,29 +70,6 @@ static void extract_useful_abstraction_functions(
 }
 
 
-bool OnlineDiversifier::add_cp_if_diverse(const CostPartitioningHeuristic &cp_heuristic) {
-    bool cp_improves_portfolio = false;
-    for (auto &pair : samples) {
-        Sample &sample = pair.second;
-        int cp_h_value = cp_heuristic.compute_heuristic(sample.abstract_state_ids);
-        int &portfolio_h_value = sample.max_h;
-        if (cp_h_value > portfolio_h_value) {
-            cp_improves_portfolio = true;
-            portfolio_h_value = cp_h_value;
-        }
-    }
-    return cp_improves_portfolio;
-}
-
-void OnlineDiversifier::add_sample(StateID state_id, std::vector<int> &&abstract_state_ids, int max_h) {
-    samples.emplace(state_id, Sample(move(abstract_state_ids), max_h));
-}
-
-void OnlineDiversifier::remove_sample(StateID state_id) {
-    samples.erase(state_id);
-}
-
-
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
     Abstractions &&abstractions_,
@@ -108,7 +85,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       max_size_kb(opts.get<int>("max_size")),
       use_offline_samples(opts.get<bool>("use_offline_samples")),
       num_samples(opts.get<int>("samples")),
-      sample_from_generated_states(opts.get<bool>("sample_from_generated_states")),
       use_evaluated_state_as_sample(opts.get<bool>("use_evaluated_state_as_sample")),
       debug(opts.get<bool>("debug")),
       costs(task_properties::get_operator_costs(task_proxy)),
@@ -144,9 +120,6 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
         }
     }
 
-    if (sample_from_generated_states) {
-        online_diversifier = utils::make_unique_ptr<OnlineDiversifier>();
-    }
     if (use_offline_samples) {
         setup_diversifier(*utils::parse_rng_from_options(opts));
     }
@@ -261,18 +234,6 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
         return;
     }
 
-    if (online_diversifier) {
-        State state = convert_global_state(global_state);
-        vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
-        ABORT("detecting unsolvable states not implemented");
-        bool is_unsolvable = false;
-        if (!is_unsolvable) {
-            int max_h = compute_max_h_with_statistics(
-                cp_heuristics, abstract_state_ids, num_best_order);
-            online_diversifier->add_sample(global_state.get_id(), move(abstract_state_ids), max_h);
-        }
-    }
-
     if (interval >= 0) {
         return;
     }
@@ -367,7 +328,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         ((*improve_heuristic_timer)() >= max_time || size_kb >= max_size_kb)) {
         utils::Log() << "Stop heuristic improvement phase." << endl;
         improve_heuristic = false;
-        online_diversifier = nullptr;
         diversifier = nullptr;
         utils::release_vector_memory(fact_id_offsets);
         utils::release_vector_memory(seen_facts);
@@ -376,9 +336,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             cp_heuristics, abstractions, abstraction_functions);
         utils::release_vector_memory(abstractions);
         print_diversification_statistics();
-    }
-    if (online_diversifier) {
-        online_diversifier->remove_sample(global_state.get_id());
     }
     if (improve_heuristic && should_compute_scp(global_state)) {
         if (debug) {
@@ -411,8 +368,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
         bool is_diverse =
             (use_evaluated_state_as_sample && h > max_h) ||
-            (online_diversifier &&
-             online_diversifier->add_cp_if_diverse(cost_partitioning)) ||
             (diversifier &&
              diversifier->is_diverse(cost_partitioning));
         if (is_diverse) {
@@ -494,10 +449,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "use_offline_samples",
         "use offline samples",
-        "false");
-    parser.add_option<bool>(
-        "sample_from_generated_states",
-        "use generated but not yet evaluated states for diversification",
         "false");
     parser.add_option<bool>(
         "use_evaluated_state_as_sample",
