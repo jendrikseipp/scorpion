@@ -291,12 +291,14 @@ int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(int var, int value) co
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalState &global_state) {
+    if (num_orders_used_for_state[global_state] != 0) {
+        // We are reevaluating this state, so we might already have computed a SCP for it.
+        return false;
+    }
     if (interval > 0) {
         return num_evaluated_states % interval == 0;
     } else if (interval == -1 || interval == -2) {
-        bool novel = heuristic_cache[global_state].novel;
-        heuristic_cache[global_state].novel = false;
-        return novel;
+        return heuristic_cache[global_state].novel;
     } else {
         ABORT("invalid value for interval");
     }
@@ -322,6 +324,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         cp_heuristics, abstract_state_ids, num_best_order);
     if (debug) {
         utils::g_log << "compute_heuristic for " << global_state.get_id() << " max_h:" << max_h << endl;
+        utils::g_log << "num orders for state: " << num_orders_used_for_state[global_state] << endl;
     }
     if (max_h == INF) {
         num_orders_used_for_state[global_state] = cp_heuristics.size();
