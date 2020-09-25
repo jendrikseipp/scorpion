@@ -93,7 +93,6 @@ public:
     virtual bool is_estimate_cached(const GlobalState &state) const override;
     virtual int get_cached_estimate(const GlobalState &state) const override;
     virtual bool is_cached_estimate_dirty(const GlobalState &state) const override;
-    virtual void remove_cached_estimate(const GlobalState &state) override;
 };
 
 #endif

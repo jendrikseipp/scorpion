@@ -92,7 +92,6 @@ public:
     */
     virtual int get_cached_estimate(const GlobalState &state) const;
     virtual bool is_cached_estimate_dirty(const GlobalState &state) const;
-    virtual void remove_cached_estimate(const GlobalState &state);
 };
 
 #endif
