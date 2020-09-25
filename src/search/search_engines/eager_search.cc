@@ -7,6 +7,7 @@
 #include "../pruning_method.h"
 
 #include "../algorithms/ordered_set.h"
+#include "../cost_saturation/saturated_cost_partitioning_online_heuristic.h"
 #include "../task_utils/successor_generator.h"
 
 #include "../utils/logging.h"
@@ -291,6 +292,41 @@ SearchStatus EagerSearch::step() {
                 // the g-value and the actual path that is traced back.
                 succ_node.update_parent(*node, op, get_adjusted_cost(op));
             }
+        }
+    }
+
+    // Bellman
+    if (!lazy_evaluator) {
+        ABORT("we need a lazy evaluator");
+    }
+    cost_saturation::SaturatedCostPartitioningOnlineHeuristic *scp_heuristic =
+        dynamic_cast<cost_saturation::SaturatedCostPartitioningOnlineHeuristic *>(
+            lazy_evaluator.get());
+    if (!scp_heuristic) {
+        ABORT("lazy evaluator must be a SCP heuristic");
+    }
+    if (scp_heuristic->get_interval() == 0
+        && scp_heuristic->is_improve_mode_on()
+        && !eval_context.is_evaluator_value_infinite(scp_heuristic)) {
+        int parent_h = eval_context.get_evaluator_value(scp_heuristic);
+        int min_cost_via_children = numeric_limits<int>::max();
+        for (OperatorID op_id : applicable_ops) {
+            OperatorProxy op = task_proxy.get_operators()[op_id];
+            GlobalState succ_state = state_registry.get_successor_state(s, op);
+            int succ_g = node->get_g() + get_adjusted_cost(op);
+            EvaluationContext succ_eval_context(succ_state, succ_g, false, nullptr);
+            int cost_via_child;
+            if (succ_eval_context.is_evaluator_value_infinite(scp_heuristic)) {
+                cost_via_child = numeric_limits<int>::max();
+            } else {
+                int child_h = succ_eval_context.get_evaluator_value(scp_heuristic);
+                cost_via_child = op.get_cost() + child_h;
+            }
+            min_cost_via_children = min(min_cost_via_children, cost_via_child);
+        }
+        if (parent_h < min_cost_via_children) {
+            //cout << "h too low: " << parent_h << " < " << min_cost_via_children << endl;
+            scp_heuristic->compute_scp_and_store_if_diverse(s);
         }
     }
 

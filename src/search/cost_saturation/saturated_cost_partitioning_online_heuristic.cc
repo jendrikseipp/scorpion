@@ -113,6 +113,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       debug(opts.get<bool>("debug")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
+      should_compute_scp_for_bellman(false),
       size_kb(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
@@ -231,7 +232,7 @@ bool SaturatedCostPartitioningOnlineHeuristic::is_novel(
 
 void SaturatedCostPartitioningOnlineHeuristic::notify_initial_state(
     const GlobalState &initial_state) {
-    if (interval >= 1) {
+    if (interval >= 0) {
         return;
     }
 
@@ -272,7 +273,7 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
         }
     }
 
-    if (interval >= 1) {
+    if (interval >= 0) {
         return;
     }
 
@@ -289,12 +290,17 @@ int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(int var, int value) co
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalState &global_state) {
-    if (num_orders_used_for_state[global_state] != 0) {
+    // This check needs to come first because the Bellman tests already fills the cache.
+    if (should_compute_scp_for_bellman) {
+        assert(interval == 0);
+        return true;
+    } else if (num_orders_used_for_state[global_state] != 0) {
         // We are reevaluating this state, so we might already have computed a SCP for it.
         return false;
-    }
-    if (interval > 0) {
+    } else if (interval > 0) {
         return num_evaluated_states % interval == 0;
+    } else if (interval == 0) {
+        return should_compute_scp_for_bellman;
     } else if (interval == -1 || interval == -2) {
         return heuristic_cache[global_state].novel;
     } else {
@@ -395,6 +401,14 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
         int h = cost_partitioning.compute_heuristic(abstract_state_ids);
 
+        // TODO: if we only diversify for the current state, this is only needed
+        //       if the CP is diverse.
+        if (saturator == Saturator::PERIMSTAR) {
+            cost_partitioning.add(
+                compute_saturated_cost_partitioning(
+                    abstractions, order, remaining_costs, abstract_state_ids));
+        }
+
         bool is_diverse =
             (use_evaluated_state_as_sample && h > max_h) ||
             (online_diversifier &&
@@ -402,11 +416,6 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             (diversifier &&
              diversifier->is_diverse(cost_partitioning));
         if (is_diverse) {
-            if (saturator == Saturator::PERIMSTAR) {
-                cost_partitioning.add(
-                    compute_saturated_cost_partitioning(
-                        abstractions, order, remaining_costs, abstract_state_ids));
-            }
             size_kb += cost_partitioning.estimate_size_in_kb();
             cp_heuristics.push_back(move(cost_partitioning));
             utils::Log() << "Stored SCPs in " << *improve_heuristic_timer << ": "
@@ -429,6 +438,14 @@ bool SaturatedCostPartitioningOnlineHeuristic::is_cached_estimate_dirty(
     assert(is_estimate_cached(state));
     return num_orders_used_for_state[state] < static_cast<int>(cp_heuristics.size());
 }
+
+void SaturatedCostPartitioningOnlineHeuristic::compute_scp_and_store_if_diverse(
+    const GlobalState &state) {
+    should_compute_scp_for_bellman = true;
+    compute_heuristic(state);
+    should_compute_scp_for_bellman = false;
+}
+
 
 void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics() const {
     // Print the number of stored lookup tables.
