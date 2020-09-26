@@ -10,6 +10,10 @@
 class Evaluator;
 class PruningMethod;
 
+namespace cost_saturation {
+class SaturatedCostPartitioningOnlineHeuristic;
+}
+
 namespace options {
 class OptionParser;
 class Options;
@@ -25,6 +29,7 @@ class EagerSearch : public SearchEngine {
     std::vector<Evaluator *> path_dependent_evaluators;
     std::vector<std::shared_ptr<Evaluator>> preferred_operator_evaluators;
     std::shared_ptr<Evaluator> lazy_evaluator;
+    cost_saturation::SaturatedCostPartitioningOnlineHeuristic *scp_heuristic;
 
     std::shared_ptr<PruningMethod> pruning_method;
 

@@ -34,6 +34,9 @@ EagerSearch::EagerSearch(const Options &opts)
         cerr << "lazy_evaluator must cache its estimates" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
+    scp_heuristic = dynamic_cast<cost_saturation::SaturatedCostPartitioningOnlineHeuristic *>(
+        opts.get<shared_ptr<Evaluator>>("eval").get());
+    cout << "SCP heuristic: " << scp_heuristic << endl;
 }
 
 void EagerSearch::initialize() {
@@ -295,17 +298,9 @@ SearchStatus EagerSearch::step() {
         }
     }
 
-    // Bellman
-    if (!lazy_evaluator) {
-        ABORT("we need a lazy evaluator");
-    }
-    cost_saturation::SaturatedCostPartitioningOnlineHeuristic *scp_heuristic =
-        dynamic_cast<cost_saturation::SaturatedCostPartitioningOnlineHeuristic *>(
-            lazy_evaluator.get());
-    if (!scp_heuristic) {
-        ABORT("lazy evaluator must be a SCP heuristic");
-    }
-    if (scp_heuristic->get_interval() == 0
+    // Test Bellman equality and select state for online SCP if it's violated.
+    if (scp_heuristic
+        && scp_heuristic->get_interval() == 0
         && scp_heuristic->is_improve_mode_on()
         && !eval_context.is_evaluator_value_infinite(scp_heuristic)) {
         int parent_h = eval_context.get_evaluator_value(scp_heuristic);
