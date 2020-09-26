@@ -1,12 +1,10 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 
-#include "saturated_cost_partitioning_heuristic.h"
 #include "types.h"
 
 #include "../heuristic.h"
 
-#include <deque>
 #include <memory>
 #include <vector>
 
@@ -48,11 +46,8 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
 
     std::unique_ptr<utils::Timer> improve_heuristic_timer;
     int size_kb;
-    int num_evaluated_states;
+    int num_evaluations;
     int num_scps_computed;
-
-    // For statistics.
-    mutable std::vector<int> num_best_order;
 
     void print_diversification_statistics() const;
     void print_statistics() const;

@@ -157,7 +157,8 @@ get_cp_heuristic_collection_generator_from_options(const options::Options &opts)
         utils::parse_rng_from_options(opts));
 }
 
-void prepare_parser_for_cost_partitioning_heuristic(options::OptionParser &parser) {
+void prepare_parser_for_cost_partitioning_heuristic(
+    options::OptionParser &parser, bool consistent) {
     parser.document_language_support("action costs", "supported");
     parser.document_language_support(
         "conditional effects",
@@ -168,7 +169,7 @@ void prepare_parser_for_cost_partitioning_heuristic(options::OptionParser &parse
         "not supported (the heuristic supports them in theory, but none of "
         "the currently implemented abstraction generators do)");
     parser.document_property("admissible", "yes");
-    parser.document_property("consistent", "yes");
+    parser.document_property("consistent", consistent ? "yes" : "no");
     parser.document_property("safe", "yes");
     parser.document_property("preferred operators", "no");
 

@@ -13,12 +13,6 @@ class Options;
 namespace cost_saturation {
 class CostPartitioningHeuristic;
 
-enum class Saturator {
-    ALL,
-    PERIM,
-    PERIMSTAR,
-};
-
 extern CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const std::vector<int> &order,

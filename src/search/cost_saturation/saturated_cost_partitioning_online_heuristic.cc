@@ -4,8 +4,8 @@
 #include "cost_partitioning_heuristic.h"
 #include "cost_partitioning_heuristic_collection_generator.h"
 #include "diversifier.h"
-#include "max_cost_partitioning_heuristic.h"
 #include "order_generator.h"
+#include "saturated_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -31,7 +31,7 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
     double max_sampling_time) {
     assert(num_samples >= 1);
     utils::CountdownTimer sampling_timer(max_sampling_time);
-    utils::Log() << "Start sampling" << endl;
+    utils::g_log << "Start sampling" << endl;
     vector<vector<int>> abstract_state_ids_by_sample;
     abstract_state_ids_by_sample.push_back(
         get_abstract_state_ids(abstractions, task_proxy.get_initial_state()));
@@ -40,8 +40,8 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
         abstract_state_ids_by_sample.push_back(
             get_abstract_state_ids(abstractions, sampler.sample_state(init_h, is_dead_end)));
     }
-    utils::Log() << "Samples: " << abstract_state_ids_by_sample.size() << endl;
-    utils::Log() << "Sampling time: " << sampling_timer.get_elapsed_time() << endl;
+    utils::g_log << "Samples: " << abstract_state_ids_by_sample.size() << endl;
+    utils::g_log << "Sampling time: " << sampling_timer.get_elapsed_time() << endl;
     return abstract_state_ids_by_sample;
 }
 
@@ -91,14 +91,8 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       improve_heuristic(true),
       should_compute_scp_for_bellman(false),
       size_kb(0),
-      num_evaluated_states(0),
+      num_evaluations(0),
       num_scps_computed(0) {
-    if (opts.get<double>("max_optimization_time") != 0.0) {
-        ABORT("Order optimization is not implemented for online SCP.");
-    }
-    if (opts.get<int>("max_orders") != INF) {
-        ABORT("Limiting the number of orders is not implemented for online SCP.");
-    }
     for (auto &cp : cp_heuristics) {
         size_kb += cp.estimate_size_in_kb();
     }
@@ -230,11 +224,7 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_initial_state(
 
 void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
     const GlobalState &, OperatorID op_id, const GlobalState &global_state) {
-    if (!improve_heuristic) {
-        return;
-    }
-
-    if (interval >= 0) {
+    if (!improve_heuristic || interval >= 0) {
         return;
     }
 
@@ -259,7 +249,7 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalSt
         // We are reevaluating this state, so we might already have computed a SCP for it.
         return false;
     } else if (interval > 0) {
-        return num_evaluated_states % interval == 0;
+        return num_evaluations % interval == 0;
     } else if (interval == 0) {
         return should_compute_scp_for_bellman;
     } else if (interval == -1 || interval == -2) {
@@ -313,7 +303,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
     int max_h = max(old_h, new_h);
 
     if (debug) {
-        utils::g_log << "compute_heuristic for " << global_state.get_id() << " max_h:" << max_h << endl;
+        utils::g_log << "compute_heuristic for " << global_state.get_id() << endl;
         utils::g_log << "num orders for state: " << num_orders_used_for_state[global_state] << endl;
     }
     if (max_h == INF) {
@@ -326,7 +316,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     if (improve_heuristic &&
         ((*improve_heuristic_timer)() >= max_time || size_kb >= max_size_kb)) {
-        utils::Log() << "Stop heuristic improvement phase." << endl;
+        utils::g_log << "Stop heuristic improvement phase." << endl;
         improve_heuristic = false;
         diversifier = nullptr;
         utils::release_vector_memory(fact_id_offsets);
@@ -342,12 +332,12 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             utils::g_log << "Compute SCP for " << global_state.get_id() << endl;
         }
         Order order = order_generator->compute_order_for_state(
-            abstract_state_ids, num_evaluated_states == 0);
+            abstract_state_ids, num_evaluations == 0);
 
         CostPartitioningHeuristic cost_partitioning;
         vector<int> remaining_costs;
         if (saturator == Saturator::PERIMSTAR) {
-            // Compute only the first SCP here, and the second below if h > max_h.
+            // Compute only the first SCP here, and the second below if necessary.
             remaining_costs = costs;
             cost_partitioning = compute_perim_saturated_cost_partitioning_change_costs(
                 abstractions, order, remaining_costs, abstract_state_ids);
@@ -375,7 +365,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         if (is_diverse_for_state || is_diverse_for_samples) {
             size_kb += cost_partitioning.estimate_size_in_kb();
             cp_heuristics.push_back(move(cost_partitioning));
-            utils::Log() << "Stored SCPs in " << *improve_heuristic_timer << ": "
+            utils::g_log << "Stored SCPs in " << *improve_heuristic_timer << ": "
                          << cp_heuristics.size() << endl;
         }
         max_h = max(max_h, h);
@@ -386,7 +376,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         improve_heuristic_timer->stop();
     }
 
-    ++num_evaluated_states;
+    ++num_evaluations;
     return max_h;
 }
 
@@ -410,19 +400,19 @@ void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics(
     for (const auto &cp_heuristic: cp_heuristics) {
         num_stored_lookup_tables += cp_heuristic.get_num_lookup_tables();
     }
-    utils::Log() << "Stored lookup tables: " << num_stored_lookup_tables << endl;
+    utils::g_log << "Stored lookup tables: " << num_stored_lookup_tables << endl;
 
     // Print the number of stored values.
     int num_stored_values = 0;
     for (const auto &cp_heuristic : cp_heuristics) {
         num_stored_values += cp_heuristic.get_num_heuristic_values();
     }
-    utils::Log() << "Stored values: " << num_stored_values << endl;
+    utils::g_log << "Stored values: " << num_stored_values << endl;
 
-    utils::Log() << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
-    utils::Log() << "Estimated heuristic size: " << size_kb << " KiB" << endl;
-    utils::Log() << "Computed SCPs: " << num_scps_computed << endl;
-    utils::Log() << "Stored SCPs: " << cp_heuristics.size() << endl;
+    utils::g_log << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
+    utils::g_log << "Estimated heuristic size: " << size_kb << " KiB" << endl;
+    utils::g_log << "Computed SCPs: " << num_scps_computed << endl;
+    utils::g_log << "Stored SCPs: " << cp_heuristics.size() << endl;
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
@@ -434,36 +424,59 @@ void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Saturated cost partitioning online heuristic",
-        "");
+        "Online saturated cost partitioning heuristic",
+        "Maximum over multiple saturated cost partitioning heuristics "
+        "diversified during the search");
 
-    // TODO: document that online version is not consistent.
-    prepare_parser_for_cost_partitioning_heuristic(parser);
+    // The online version is not consistent.
+    bool consistent = false;
+    prepare_parser_for_cost_partitioning_heuristic(parser, consistent);
     add_saturator_option(parser);
-    add_order_options_to_parser(parser);
 
+    parser.add_option<shared_ptr<OrderGenerator>>(
+        "orders",
+        "order generator",
+        "greedy_orders()");
     parser.add_option<int>(
-        "interval",
-        "select every i-th state for diversification. values -1 and -2 select "
-        "states with novelty 1 and 2",
-        "-2",
-        Bounds("-2", "infinity"));
+        "max_size",
+        "maximum heuristic size in KiB",
+        "infinity",
+        Bounds("0", "infinity"));
+    parser.add_option<double>(
+        "max_time",
+        "maximum time in seconds for finding orders",
+        "200",
+        Bounds("0", "infinity"));
     parser.add_option<bool>(
-        "use_offline_samples",
-        "use offline samples",
+        "diversify_offline",
+        "compute diverse orders offline (in addition to online orders)",
         "false");
     parser.add_option<bool>(
         "use_evaluated_state_as_sample",
         "keep SCP heuristic if it improves the estimate of the evaluated state",
         "true");
     parser.add_option<bool>(
-        "diversify_offline",
-        "add diverse SCP heuristics found offline",
+        "use_offline_samples",
+        "sample states offline and keep orders computed online that are diverse "
+        "for the offline samples",
         "false");
+    parser.add_option<int>(
+        "samples",
+        "number of states sampled offline when use_offline_samples=true",
+        "1000",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "interval",
+        "select every i-th state for online diversification. values -1 and -2 "
+        "select states with novelty 1 and 2. value 0 selects states that "
+        "violate the Bellman equation",
+        "-2",
+        Bounds("-2", "infinity"));
     parser.add_option<bool>(
         "debug",
         "print debug output",
         "false");
+    utils::add_rng_options(parser);
 
     Options opts = parser.parse();
     if (parser.help_mode())
@@ -488,9 +501,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     }
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
-        opts,
-        move(abstractions),
-        move(cp_heuristics));
+        opts, move(abstractions), move(cp_heuristics));
 }
 
 static Plugin<Evaluator> _plugin("scp_online", _parse);

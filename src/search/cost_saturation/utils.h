@@ -58,7 +58,8 @@ extern void reduce_costs(
 
 
 extern void add_order_options_to_parser(options::OptionParser &parser);
-extern void prepare_parser_for_cost_partitioning_heuristic(options::OptionParser &parser);
+extern void prepare_parser_for_cost_partitioning_heuristic(
+    options::OptionParser &parser, bool consistent = true);
 extern std::shared_ptr<Evaluator> get_max_cp_heuristic(
     options::OptionParser &parser, CPFunction cp_function);
 extern CostPartitioningHeuristicCollectionGenerator
