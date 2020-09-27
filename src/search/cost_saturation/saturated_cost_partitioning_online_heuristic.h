@@ -40,6 +40,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::vector<bool> seen_facts;
     std::vector<std::vector<bool>> seen_fact_pairs;
 
+    bool reevaluate_states;
     bool should_compute_scp_for_bellman;
 
     std::unique_ptr<Diversifier> diversifier;
@@ -90,6 +91,10 @@ public:
 
     bool is_improve_mode_on() const {
         return improve_heuristic;
+    }
+
+    void activate_state_reevaluations() {
+        reevaluate_states = true;
     }
 };
 }

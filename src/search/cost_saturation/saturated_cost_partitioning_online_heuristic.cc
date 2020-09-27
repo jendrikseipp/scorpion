@@ -89,6 +89,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       debug(opts.get<bool>("debug")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
+      reevaluate_states(false),
       should_compute_scp_for_bellman(false),
       size_kb(0),
       num_evaluated_states(0),
@@ -392,7 +393,11 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 bool SaturatedCostPartitioningOnlineHeuristic::is_cached_estimate_dirty(
     const GlobalState &state) const {
     assert(is_estimate_cached(state));
-    return num_orders_used_for_state[state] < static_cast<int>(cp_heuristics.size());
+    if (reevaluate_states) {
+        return num_orders_used_for_state[state] < static_cast<int>(cp_heuristics.size());
+    } else {
+        return false;
+    }
 }
 
 void SaturatedCostPartitioningOnlineHeuristic::compute_scp_and_store_if_diverse(

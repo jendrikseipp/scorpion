@@ -37,6 +37,10 @@ EagerSearch::EagerSearch(const Options &opts)
     scp_heuristic = dynamic_cast<cost_saturation::SaturatedCostPartitioningOnlineHeuristic *>(
         opts.get<shared_ptr<Evaluator>>("eval").get());
     cout << "SCP heuristic: " << scp_heuristic << endl;
+    if (lazy_evaluator && lazy_evaluator.get() == scp_heuristic) {
+        cout << "Using lazy online SCP heuristic" << endl;
+        scp_heuristic->activate_state_reevaluations();
+    }
 }
 
 void EagerSearch::initialize() {
