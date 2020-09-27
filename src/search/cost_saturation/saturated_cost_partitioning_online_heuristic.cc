@@ -92,6 +92,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       should_compute_scp_for_bellman(false),
       size_kb(0),
       num_evaluated_states(0),
+      num_reevaluated_states(0),
       num_scps_computed(0) {
     if (!does_cache_estimates()) {
         ABORT("Online SCP needs cache_estimates=true");
@@ -380,7 +381,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         improve_heuristic_timer->stop();
     }
 
-    if (!reevaluation) {
+    if (reevaluation) {
+        ++num_reevaluated_states;
+    } else {
         ++num_evaluated_states;
     }
     return max_h;
@@ -416,6 +419,7 @@ void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics(
     utils::g_log << "Stored values: " << num_stored_values << endl;
 
     utils::g_log << "Evaluated states: " << num_evaluated_states << endl;
+    utils::g_log << "Reevaluated states: " << num_reevaluated_states << endl;
     utils::g_log << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
     utils::g_log << "Estimated heuristic size: " << size_kb << " KiB" << endl;
     utils::g_log << "Computed SCPs: " << num_scps_computed << endl;
