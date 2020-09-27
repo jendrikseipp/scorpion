@@ -91,8 +91,11 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       improve_heuristic(true),
       should_compute_scp_for_bellman(false),
       size_kb(0),
-      num_evaluations(0),
+      num_evaluated_states(0),
       num_scps_computed(0) {
+    if (!does_cache_estimates()) {
+        ABORT("Online SCP needs cache_estimates=true");
+    }
     for (auto &cp : cp_heuristics) {
         size_kb += cp.estimate_size_in_kb();
     }
@@ -249,7 +252,7 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalSt
         // We are reevaluating this state, so we might already have computed a SCP for it.
         return false;
     } else if (interval > 0) {
-        return num_evaluations % interval == 0;
+        return num_evaluated_states % interval == 0;
     } else if (interval == 0) {
         return should_compute_scp_for_bellman;
     } else if (interval == -1 || interval == -2) {
@@ -294,7 +297,8 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     // Retrieve cached estimate if it exists and only compute max over new orders.
     int old_h = 0;
-    if (heuristic_cache[global_state].h != NO_VALUE) {
+    bool reevaluation = is_estimate_cached(global_state);
+    if (reevaluation) {
         assert(heuristic_cache[global_state].h != DEAD_END);
         old_h = heuristic_cache[global_state].h;
     }
@@ -332,7 +336,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             utils::g_log << "Compute SCP for " << global_state.get_id() << endl;
         }
         Order order = order_generator->compute_order_for_state(
-            abstract_state_ids, num_evaluations == 0);
+            abstract_state_ids, num_evaluated_states == 0);
 
         CostPartitioningHeuristic cost_partitioning;
         vector<int> remaining_costs;
@@ -376,7 +380,9 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         improve_heuristic_timer->stop();
     }
 
-    ++num_evaluations;
+    if (!reevaluation) {
+        ++num_evaluated_states;
+    }
     return max_h;
 }
 
@@ -409,6 +415,7 @@ void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics(
     }
     utils::g_log << "Stored values: " << num_stored_values << endl;
 
+    utils::g_log << "Evaluated states: " << num_evaluated_states << endl;
     utils::g_log << "Time for improving heuristic: " << *improve_heuristic_timer << endl;
     utils::g_log << "Estimated heuristic size: " << size_kb << " KiB" << endl;
     utils::g_log << "Computed SCPs: " << num_scps_computed << endl;
