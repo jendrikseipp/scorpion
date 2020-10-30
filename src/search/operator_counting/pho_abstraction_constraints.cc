@@ -142,6 +142,14 @@ void PhOAbstractionConstraints::initialize_constraints(
     for (auto &abstraction : abstractions) {
         abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
+
+    int num_empty_constraints = 0;
+    for (auto &constraint : constraints) {
+        if (constraint.empty()) {
+            ++num_empty_constraints;
+        }
+    }
+    cout << "Empty constraints: " << num_empty_constraints << "/" << constraints.size() << endl;
 }
 
 bool PhOAbstractionConstraints::update_constraints(
