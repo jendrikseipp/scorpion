@@ -37,10 +37,10 @@ void PhOAbstractionConstraints::initialize_constraints(
         cost_saturation::generate_abstractions(task, abstraction_generators);
     abstraction_functions.reserve(abstractions.size());
     h_values_by_abstraction.reserve(abstractions.size());
+    constraint_ids_by_abstraction.reserve(abstractions.size());
 
     vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     int num_ops = operator_costs.size();
-    constraint_offset = constraints.size();
 
     vector<vector<int>> local_vars;
     if (counting) {
@@ -62,14 +62,15 @@ void PhOAbstractionConstraints::initialize_constraints(
         }
     }
 
+    int num_empty_constraints = 0;
+
     // TODO: Remove code duplication.
     if (saturated) {
         vector<bool> useless_operators(operator_costs.size(), false);
         int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
             // Add constraint \sum_{o} Y_o * scf_h(o) >= 0.
-            constraints.emplace_back(0, infinity);
-            lp::LPConstraint &constraint = constraints.back();
+            lp::LPConstraint constraint(0, infinity);
             vector<int> h_values = abstraction->compute_goal_distances(
                 operator_costs);
             vector<int> saturated_costs = abstraction->compute_saturated_costs(
@@ -90,6 +91,13 @@ void PhOAbstractionConstraints::initialize_constraints(
                     }
                 }
             }
+            if (constraint.empty()) {
+                constraint_ids_by_abstraction.push_back(-1);
+                ++num_empty_constraints;
+            } else {
+                constraint_ids_by_abstraction.push_back(constraints.size());
+                constraints.push_back(move(constraint));
+            }
             h_values_by_abstraction.push_back(move(h_values));
             ++abstraction_id;
         }
@@ -105,8 +113,7 @@ void PhOAbstractionConstraints::initialize_constraints(
     } else {
         int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
-            constraints.emplace_back(0, infinity);
-            lp::LPConstraint &constraint = constraints.back();
+            lp::LPConstraint constraint(0, infinity);
             for (size_t op_id = 0; op_id < operator_costs.size(); ++op_id) {
                 if (abstraction->operator_is_active(op_id)) {
                     int counting_var = op_id; // Y_o
@@ -117,6 +124,13 @@ void PhOAbstractionConstraints::initialize_constraints(
                     assert(counting_var >= 0);
                     constraint.insert(counting_var, operator_costs[op_id]);
                 }
+            }
+            if (constraint.empty()) {
+                ++num_empty_constraints;
+                constraint_ids_by_abstraction.push_back(-1);
+            } else {
+                constraint_ids_by_abstraction.push_back(constraints.size());
+                constraints.push_back(move(constraint));
             }
             h_values_by_abstraction.push_back(
                 abstraction->compute_goal_distances(operator_costs));
@@ -143,19 +157,13 @@ void PhOAbstractionConstraints::initialize_constraints(
         abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
 
-    int num_empty_constraints = 0;
-    for (auto &constraint : constraints) {
-        if (constraint.empty()) {
-            ++num_empty_constraints;
-        }
-    }
-    cout << "Empty constraints: " << num_empty_constraints << "/" << constraints.size() << endl;
+    cout << "Empty constraints: " << num_empty_constraints << endl;
+    cout << "Filled constraints: " << constraints.size() << endl;
 }
 
 bool PhOAbstractionConstraints::update_constraints(
     const State &state, lp::LPSolver &lp_solver) {
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
-        int constraint_id = constraint_offset + i;
         int state_id = abstraction_functions[i]->get_abstract_state_id(state);
         assert(utils::in_bounds(i, h_values_by_abstraction));
         const vector<int> &h_values = h_values_by_abstraction[i];
@@ -164,7 +172,7 @@ bool PhOAbstractionConstraints::update_constraints(
         if (h == cost_saturation::INF) {
             return true;
         }
-        lp_solver.set_constraint_lower_bound(constraint_id, h);
+        lp_solver.set_constraint_lower_bound(constraint_ids_by_abstraction[i], h);
     }
     return false;
 }

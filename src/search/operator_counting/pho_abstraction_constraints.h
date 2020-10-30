@@ -26,7 +26,7 @@ class PhOAbstractionConstraints : public ConstraintGenerator {
 
     cost_saturation::AbstractionFunctions abstraction_functions;
     std::vector<std::vector<int>> h_values_by_abstraction;
-    int constraint_offset;
+    std::vector<int> constraint_ids_by_abstraction;
 public:
     explicit PhOAbstractionConstraints(const options::Options &opts);
 
