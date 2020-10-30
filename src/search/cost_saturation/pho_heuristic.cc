@@ -80,8 +80,13 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
 
     if (!lp_solver.has_optimal_solution()) {
         // State is unsolvable.
-        ABORT("PhO called for unsolvable state");
-        return CostPartitioningHeuristic();
+        vector<int> zero_costs(num_operators, 0);
+        CostPartitioningHeuristic cp_heuristic;
+        for (int i = 0; i < num_abstractions; ++i) {
+            vector<int> h_values = abstractions[i]->compute_goal_distances(zero_costs);
+            cp_heuristic.add_h_values(i, move(h_values));
+        }
+        return cp_heuristic;
     }
 
     double epsilon = 0.01;
