@@ -126,6 +126,7 @@ public:
     LP_METHOD(void set_variable_upper_bound(int index, double bound))
 
     LP_METHOD(void solve())
+    LP_METHOD(void write_lp(const std::string &filename) const)
 
     /*
       Return true if the solving the LP showed that it is bounded feasible and

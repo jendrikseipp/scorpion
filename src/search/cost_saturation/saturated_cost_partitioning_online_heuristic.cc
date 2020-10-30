@@ -75,7 +75,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         Order order = cp_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);
         CostPartitioningHeuristic cost_partitioning =
-            compute_saturated_cost_partitioning(abstractions, order, costs);
+            compute_saturated_cost_partitioning(abstractions, order, costs, abstract_state_ids);
         ++num_scps_computed;
         int single_h = cost_partitioning.compute_heuristic(abstract_state_ids);
         if (store_cost_partitionings && single_h > max_h) {

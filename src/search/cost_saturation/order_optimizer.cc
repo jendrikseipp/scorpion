@@ -32,7 +32,7 @@ static bool search_improving_successor(
             swap(incumbent_order[i], incumbent_order[j]);
 
             CostPartitioningHeuristic neighbor_cp =
-                cp_function(abstractions, incumbent_order, costs);
+                cp_function(abstractions, incumbent_order, costs, abstract_state_ids);
 
             int h = neighbor_cp.compute_heuristic(abstract_state_ids);
             if (h > incumbent_h_value) {
