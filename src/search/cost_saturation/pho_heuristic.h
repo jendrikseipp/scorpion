@@ -19,6 +19,7 @@ public:
         const Abstractions &abstractions,
         const std::vector<int> &costs,
         lp::LPSolverType solver_type,
+        bool saturated,
         bool debug = false);
 
     CostPartitioningHeuristic compute_cost_partitioning(

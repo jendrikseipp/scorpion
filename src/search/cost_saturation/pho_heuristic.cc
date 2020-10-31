@@ -21,6 +21,7 @@ PhO::PhO(
     const Abstractions &abstractions,
     const vector<int> &costs,
     lp::LPSolverType solver_type,
+    bool saturated,
     bool debug)
     : lp_solver(solver_type),
       debug(debug) {
@@ -51,13 +52,17 @@ PhO::PhO(
     for (int op_id = 0; op_id < num_operators; ++op_id) {
         lp::LPConstraint constraint(-infinity, costs[op_id]);
         for (int i = 0; i < num_abstractions; ++i) {
-            int scf_h = saturated_costs_by_abstraction[i][op_id];
-            if (scf_h == -INF) {
-                // The constraint is always satisfied and we can ignore it.
-                continue;
-            }
-            if (scf_h != 0) {
-                constraint.insert(i, scf_h);
+            if (saturated) {
+                int scf_h = saturated_costs_by_abstraction[i][op_id];
+                if (scf_h == -INF) {
+                    // The constraint is always satisfied and we can ignore it.
+                    continue;
+                }
+                if (scf_h != 0) {
+                    constraint.insert(i, scf_h);
+                }
+            } else if (abstractions[i]->operator_is_active(op_id) && costs[op_id] != 0) {
+                constraint.insert(i, costs[op_id]);
             }
         }
         if (!constraint.empty()) {
@@ -123,6 +128,7 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
         "Compute the maximum over multiple PhO heuristics.");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
+    parser.add_option<bool>("saturated", "saturate costs", "true");
     add_order_options_to_parser(parser);
     lp::add_lp_solver_option_to_parser(parser);
     utils::add_verbosity_option_to_parser(parser);
@@ -138,6 +144,7 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     PhO pho(abstractions, costs, opts.get<lp::LPSolverType>("lpsolver"),
+            opts.get<bool>("saturated"),
             opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG);
     CPFunction cp_function = [&pho](const Abstractions &abstractions,
                                     const vector<int> &order,
