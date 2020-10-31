@@ -49,10 +49,14 @@ PhO::PhO(
     vector<lp::LPConstraint> constraints;
     constraints.reserve(num_operators);
     for (int op_id = 0; op_id < num_operators; ++op_id) {
-        lp::LPConstraint constraint(0, costs[op_id]);
+        lp::LPConstraint constraint(-infinity, costs[op_id]);
         for (int i = 0; i < num_abstractions; ++i) {
             int scf_h = saturated_costs_by_abstraction[i][op_id];
-            if (scf_h != -INF && scf_h != 0) {
+            if (scf_h == -INF) {
+                // The constraint is always satisfied and we can ignore it.
+                continue;
+            }
+            if (scf_h != 0) {
                 constraint.insert(i, scf_h);
             }
         }
@@ -106,6 +110,9 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
         }
         vector<int> h_values = abstractions[i]->compute_goal_distances(weighted_costs);
         cp_heuristic.add_h_values(i, move(h_values));
+    }
+    if (debug) {
+        cout << "CP value: " << cp_heuristic.compute_heuristic(abstract_state_ids) << endl;
     }
     return cp_heuristic;
 }
