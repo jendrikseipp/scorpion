@@ -29,7 +29,6 @@ PhO::PhO(
     int num_abstractions = abstractions.size();
     int num_operators = costs.size();
 
-    vector<vector<int>> saturated_costs_by_abstraction;
     saturated_costs_by_abstraction.reserve(num_abstractions);
     h_values_by_abstraction.reserve(num_abstractions);
     for (int i = 0; i < num_abstractions; ++i) {
@@ -109,12 +108,12 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
     for (int i = 0; i < num_abstractions; ++i) {
         vector<int> weighted_costs;
         weighted_costs.reserve(num_operators);
-
-        for (int j = 0; j < num_operators; ++j) {
-            weighted_costs.push_back(solution[i] * costs[j]);
+        for (int op_id = 0; op_id < num_operators; ++op_id) {
+            int cost = solution[i] * saturated_costs_by_abstraction[i][op_id];
+            weighted_costs.push_back(cost);
             if (debug && false) {
-                cout << "Weighted cost: " << solution[i] << " * " << costs[j]
-                     << " = " << solution[i] * costs[j] << " -> " << weighted_costs.back() << endl;
+                cout << "Weighted cost: " << solution[i] << " * " << costs[op_id]
+                     << " = " << solution[i] * costs[op_id] << " -> " << cost << endl;
             }
         }
         vector<int> h_values = abstractions[i]->compute_goal_distances(weighted_costs);
