@@ -172,7 +172,9 @@ bool PhOAbstractionConstraints::update_constraints(
         if (h == cost_saturation::INF) {
             return true;
         }
-        lp_solver.set_constraint_lower_bound(constraint_ids_by_abstraction[i], h);
+        if (constraint_ids_by_abstraction[i] != -1) {
+            lp_solver.set_constraint_lower_bound(constraint_ids_by_abstraction[i], h);
+        }
     }
     return false;
 }
