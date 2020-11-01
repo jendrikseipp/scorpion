@@ -20,6 +20,12 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningHeuristicCollectionGenerator;
 
+// Multiply all costs by this factor to avoid using real-valued costs.
+static const int COST_FACTOR = 1000;
+
+extern std::shared_ptr<AbstractTask> get_scaled_costs_task(
+    const std::shared_ptr<AbstractTask> &task, int factor);
+
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
     const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators);

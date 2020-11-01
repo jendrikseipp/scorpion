@@ -111,7 +111,11 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
         weighted_costs.reserve(num_operators);
 
         for (int j = 0; j < num_operators; ++j) {
-            weighted_costs.push_back(ceil(solution[i] * costs[j] - epsilon));
+            weighted_costs.push_back(solution[i] * costs[j]);
+            if (debug && false) {
+                cout << "Weighted cost: " << solution[i] << " * " << costs[j]
+                     << " = " << solution[i] * costs[j] << " -> " << weighted_costs.back() << endl;
+            }
         }
         vector<int> h_values = abstractions[i]->compute_goal_distances(weighted_costs);
         cp_heuristic.add_h_values(i, move(h_values));
@@ -138,7 +142,10 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
         return nullptr;
     }
 
-    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
+    shared_ptr<AbstractTask> task = get_scaled_costs_task(
+        opts.get<shared_ptr<AbstractTask>>("transform"), COST_FACTOR);
+    opts.set<shared_ptr<AbstractTask>>("transform", task);
+
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
