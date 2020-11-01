@@ -24,6 +24,7 @@ PhO::PhO(
     bool saturated,
     bool debug)
     : lp_solver(solver_type),
+      saturated(saturated),
       debug(debug) {
     double infinity = lp_solver.get_infinity();
     int num_abstractions = abstractions.size();
@@ -109,7 +110,16 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
         vector<int> weighted_costs;
         weighted_costs.reserve(num_operators);
         for (int op_id = 0; op_id < num_operators; ++op_id) {
-            int cost = solution[i] * saturated_costs_by_abstraction[i][op_id];
+            int cost;
+            if (saturated) {
+                cost = solution[i] * saturated_costs_by_abstraction[i][op_id];
+            } else {
+                if (abstractions[i]->operator_is_active(op_id)) {
+                    cost = solution[i] * costs[op_id];
+                } else {
+                    cost = 0;
+                }
+            }
             weighted_costs.push_back(cost);
             if (debug && false) {
                 cout << "Weighted cost: " << solution[i] << " * " << costs[op_id]
