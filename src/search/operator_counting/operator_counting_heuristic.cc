@@ -5,6 +5,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../cost_saturation/utils.h"
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 
@@ -70,6 +71,8 @@ int OperatorCountingHeuristic::compute_heuristic(const State &state) {
         double epsilon = 0.01;
         double objective_value = lp_solver.get_objective_value();
         result = ceil(objective_value - epsilon);
+        // Scale down costs again.
+        result = ceil((result / static_cast<double>(cost_saturation::COST_FACTOR)) - epsilon);
     } else {
         result = DEAD_END;
     }
@@ -128,6 +131,11 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "constraint_generators");
     if (parser.dry_run())
         return nullptr;
+
+    shared_ptr<AbstractTask> task = cost_saturation::get_scaled_costs_task(
+        opts.get<shared_ptr<AbstractTask>>("transform"), cost_saturation::COST_FACTOR);
+    opts.set<shared_ptr<AbstractTask>>("transform", task);
+
     return make_shared<OperatorCountingHeuristic>(opts);
 }
 
