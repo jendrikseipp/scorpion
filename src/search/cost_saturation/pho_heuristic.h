@@ -13,7 +13,6 @@ class PhO {
     lp::LPSolver lp_solver;
     std::vector<std::vector<int>> saturated_costs_by_abstraction;
     std::vector<std::vector<int>> h_values_by_abstraction;
-    bool saturated;
     bool debug;
 
 public:

@@ -24,7 +24,6 @@ PhO::PhO(
     bool saturated,
     bool debug)
     : lp_solver(solver_type),
-      saturated(saturated),
       debug(debug) {
     double infinity = lp_solver.get_infinity();
     int num_abstractions = abstractions.size();
@@ -101,33 +100,25 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
     double epsilon = 0.01;
     double objective_value = lp_solver.get_objective_value();
     int result = ceil(objective_value - epsilon);
+    vector<double> solution = lp_solver.extract_solution();
     if (debug) {
         cout << "Objective value: " << objective_value << " -> " << result << endl;
+        cout << "Solution: " << solution << endl;
     }
-    vector<double> solution = lp_solver.extract_solution();
     CostPartitioningHeuristic cp_heuristic;
     for (int i = 0; i < num_abstractions; ++i) {
-        vector<int> weighted_costs;
-        weighted_costs.reserve(num_operators);
-        for (int op_id = 0; op_id < num_operators; ++op_id) {
-            int cost;
-            if (saturated) {
-                cost = solution[i] * saturated_costs_by_abstraction[i][op_id];
-            } else {
-                if (abstractions[i]->operator_is_active(op_id)) {
-                    cost = solution[i] * costs[op_id];
-                } else {
-                    cost = 0;
-                }
-            }
-            weighted_costs.push_back(cost);
-            if (debug && false) {
-                cout << "Weighted cost: " << solution[i] << " * " << costs[op_id]
-                     << " = " << solution[i] * costs[op_id] << " -> " << cost << endl;
-            }
+        double weight = solution[i];
+        if (weight == 0.0) {
+            // This abstraction is assigned a weight of zero, so we can skip it.
+            continue;
         }
-        vector<int> h_values = abstractions[i]->compute_goal_distances(weighted_costs);
-        cp_heuristic.add_h_values(i, move(h_values));
+        vector<int> weighted_h_values;
+        weighted_h_values.reserve(h_values_by_abstraction[i].size());
+        for (int h : h_values_by_abstraction[i]) {
+            assert(weight > 0);
+            weighted_h_values.push_back(h == INF ? INF : weight * h);
+        }
+        cp_heuristic.add_h_values(i, move(weighted_h_values));
     }
     if (debug) {
         cout << "CP value: " << cp_heuristic.compute_heuristic(abstract_state_ids) << endl;
