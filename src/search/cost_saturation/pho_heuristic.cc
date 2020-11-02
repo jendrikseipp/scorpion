@@ -17,6 +17,12 @@
 using namespace std;
 
 namespace cost_saturation {
+/*
+  The implementation currently computes weighted lookup tables for PhO and
+  holds them in memory. A more efficient implementation would only store the
+  weights and compute the weighted heuristic values on the fly when evaluating
+  a state.
+*/
 PhO::PhO(
     const Abstractions &abstractions,
     const vector<int> &costs,
