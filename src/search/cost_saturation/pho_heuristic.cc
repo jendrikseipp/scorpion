@@ -97,12 +97,9 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
         return cp_heuristic;
     }
 
-    double epsilon = 0.01;
-    double objective_value = lp_solver.get_objective_value();
-    int result = ceil(objective_value - epsilon);
     vector<double> solution = lp_solver.extract_solution();
     if (debug) {
-        cout << "Objective value: " << objective_value << " -> " << result << endl;
+        cout << "Objective value: " << lp_solver.get_objective_value() << endl;
         cout << "Solution: " << solution << endl;
     }
     CostPartitioningHeuristic cp_heuristic;
