@@ -35,6 +35,7 @@ PhO::PhO(
     int num_abstractions = abstractions.size();
     int num_operators = costs.size();
 
+    vector<vector<int>> saturated_costs_by_abstraction;
     saturated_costs_by_abstraction.reserve(num_abstractions);
     h_values_by_abstraction.reserve(num_abstractions);
     for (int i = 0; i < num_abstractions; ++i) {
