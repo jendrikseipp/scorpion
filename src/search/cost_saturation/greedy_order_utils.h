@@ -18,7 +18,8 @@ namespace cost_saturation {
 enum class ScoringFunction {
     MAX_HEURISTIC,
     MIN_STOLEN_COSTS,
-    MAX_HEURISTIC_PER_STOLEN_COSTS
+    MAX_HEURISTIC_PER_STOLEN_COSTS,
+    SENTINEL
 };
 
 extern int compute_stolen_costs(int wanted_by_abs, int surplus_cost);

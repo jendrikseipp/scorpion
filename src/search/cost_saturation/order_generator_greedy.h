@@ -10,7 +10,8 @@ class Options;
 
 namespace cost_saturation {
 class OrderGeneratorGreedy : public OrderGenerator {
-    const ScoringFunction scoring_function;
+    mutable ScoringFunction scoring_function;
+    bool round_robin;
 
     // Goal distances under the original cost function by abstraction.
     std::vector<std::vector<int>> h_values_by_abstraction;
