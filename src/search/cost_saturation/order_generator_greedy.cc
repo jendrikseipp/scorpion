@@ -76,19 +76,24 @@ Order OrderGeneratorGreedy::compute_order_for_state(
     Order order = get_default_order(num_abstractions);
     // Shuffle order to break ties randomly.
     rng->shuffle(order);
-    vector<double> scores;
-    scores.reserve(num_abstractions);
-    for (int abs = 0; abs < num_abstractions; ++abs) {
-        scores.push_back(rate_abstraction(abstract_state_ids, abs));
+    if (scoring_function != ScoringFunction::RANDOM) {
+        vector<double> scores;
+        scores.reserve(num_abstractions);
+        for (int abs = 0; abs < num_abstractions; ++abs) {
+            scores.push_back(rate_abstraction(abstract_state_ids, abs));
+        }
+        sort(order.begin(), order.end(), [&](int abs1, int abs2) {
+                 return scores[abs1] > scores[abs2];
+             });
+
+        if (verbose) {
+            cout << "Static greedy scores: " << scores << endl;
+            unordered_set<double> unique_scores(scores.begin(), scores.end());
+            cout << "Static greedy unique scores: " << unique_scores.size() << endl;
+        }
     }
-    sort(order.begin(), order.end(), [&](int abs1, int abs2) {
-             return scores[abs1] > scores[abs2];
-         });
 
     if (verbose) {
-        cout << "Static greedy scores: " << scores << endl;
-        unordered_set<double> unique_scores(scores.begin(), scores.end());
-        cout << "Static greedy unique scores: " << unique_scores.size() << endl;
         cout << "Static greedy order: " << order << endl;
         cout << "Time for computing greedy order: " << greedy_timer << endl;
     }

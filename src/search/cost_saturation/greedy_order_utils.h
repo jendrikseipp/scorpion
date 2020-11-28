@@ -19,6 +19,7 @@ enum class ScoringFunction {
     MAX_HEURISTIC,
     MIN_STOLEN_COSTS,
     MAX_HEURISTIC_PER_STOLEN_COSTS,
+    RANDOM,
     SENTINEL
 };
 
