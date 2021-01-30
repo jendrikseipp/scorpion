@@ -33,6 +33,8 @@ class EagerSearch : public SearchEngine {
 
     std::shared_ptr<PruningMethod> pruning_method;
 
+    utils::Timer bellman_timer;
+
     void start_f_value_statistics(EvaluationContext &eval_context);
     void update_f_value_statistics(EvaluationContext &eval_context);
     void reward_progress();

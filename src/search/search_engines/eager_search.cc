@@ -29,7 +29,8 @@ EagerSearch::EagerSearch(const Options &opts)
       f_evaluator(opts.get<shared_ptr<Evaluator>>("f_eval", nullptr)),
       preferred_operator_evaluators(opts.get_list<shared_ptr<Evaluator>>("preferred")),
       lazy_evaluator(opts.get<shared_ptr<Evaluator>>("lazy_evaluator", nullptr)),
-      pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")) {
+      pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")),
+      bellman_timer(false) {
     if (lazy_evaluator && !lazy_evaluator->does_cache_estimates()) {
         cerr << "lazy_evaluator must cache its estimates" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
@@ -114,6 +115,7 @@ void EagerSearch::print_statistics() const {
     statistics.print_detailed_statistics();
     search_space.print_statistics();
     pruning_method->print_statistics();
+    utils::g_log << "Time for Bellman checks: " << bellman_timer << endl;
 }
 
 SearchStatus EagerSearch::step() {
@@ -307,6 +309,7 @@ SearchStatus EagerSearch::step() {
         && scp_heuristic->get_interval() == 0
         && scp_heuristic->is_improve_mode_on()
         && !eval_context.is_evaluator_value_infinite(scp_heuristic)) {
+        bellman_timer.resume();
         int parent_h = eval_context.get_evaluator_value(scp_heuristic);
         int min_cost_via_children = numeric_limits<int>::max();
         for (OperatorID op_id : applicable_ops) {
@@ -327,6 +330,7 @@ SearchStatus EagerSearch::step() {
             //cout << "h too low: " << parent_h << " < " << min_cost_via_children << endl;
             scp_heuristic->compute_scp_and_store_if_diverse(s);
         }
+        bellman_timer.stop();
     }
 
     return IN_PROGRESS;
