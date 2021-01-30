@@ -371,8 +371,11 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         if (is_diverse_for_state || is_diverse_for_samples) {
             size_kb += cost_partitioning.estimate_size_in_kb();
             cp_heuristics.push_back(move(cost_partitioning));
-            utils::g_log << "Stored SCPs in " << *improve_heuristic_timer << ": "
-                         << cp_heuristics.size() << endl;
+            utils::g_log << "Evaluated states: " << num_evaluated_states + 1
+                         << ", selected states: " << num_scps_computed
+                         << ", stored SCPs: " << cp_heuristics.size()
+                         << ", diversification time: " << *improve_heuristic_timer
+                         << endl;
         }
         max_h = max(max_h, h);
     }
