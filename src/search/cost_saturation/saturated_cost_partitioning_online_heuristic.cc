@@ -86,6 +86,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       use_offline_samples(opts.get<bool>("use_offline_samples")),
       num_samples(opts.get<int>("samples")),
       use_evaluated_state_as_sample(opts.get<bool>("use_evaluated_state_as_sample")),
+      prune_abstractions_after_diversification(opts.get<bool>("prune_abstractions_after_diversification")),
       debug(opts.get<bool>("debug")),
       costs(task_properties::get_operator_costs(task_proxy)),
       improve_heuristic(true),
@@ -292,7 +293,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
 
     State state = convert_global_state(global_state);
     vector<int> abstract_state_ids;
-    if (improve_heuristic) {
+    if (improve_heuristic || !prune_abstractions_after_diversification) {
         assert(!abstractions.empty() && abstraction_functions.empty());
         abstract_state_ids = get_abstract_state_ids(abstractions, state);
     } else {
@@ -331,9 +332,11 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         utils::release_vector_memory(fact_id_offsets);
         utils::release_vector_memory(seen_facts);
         utils::release_vector_memory(seen_fact_pairs);
-        extract_useful_abstraction_functions(
-            cp_heuristics, abstractions, abstraction_functions);
-        utils::release_vector_memory(abstractions);
+        if (prune_abstractions_after_diversification) {
+            extract_useful_abstraction_functions(
+                cp_heuristics, abstractions, abstraction_functions);
+            utils::release_vector_memory(abstractions);
+        }
         print_intermediate_statistics();
         print_final_statistics();
     }
@@ -506,6 +509,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "violate the Bellman equation",
         "-2",
         Bounds("-2", "infinity"));
+    parser.add_option<bool>(
+        "prune_abstractions_after_diversification",
+        "only keep abstraction functions for useful abstractions",
+        "true");
     parser.add_option<bool>(
         "debug",
         "print debug output",

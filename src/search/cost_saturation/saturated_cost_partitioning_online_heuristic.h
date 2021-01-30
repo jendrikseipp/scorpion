@@ -29,6 +29,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const bool use_offline_samples;
     const int num_samples;
     const bool use_evaluated_state_as_sample;
+    const bool prune_abstractions_after_diversification;
     const bool debug;
 
     const std::vector<int> costs;
