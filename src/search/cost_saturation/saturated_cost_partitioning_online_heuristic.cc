@@ -124,6 +124,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     }
 
     improve_heuristic_timer = utils::make_unique_ptr<utils::Timer>(false);
+    select_state_timer = utils::make_unique_ptr<utils::Timer>(false);
 }
 
 SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuristic() {
@@ -236,8 +237,10 @@ void SaturatedCostPartitioningOnlineHeuristic::notify_state_transition(
     // We only need to compute novelty for new states.
     if (heuristic_cache[global_state].h == NO_VALUE) {
         improve_heuristic_timer->resume();
+        select_state_timer->resume();
         heuristic_cache[global_state].novel = is_novel(op_id, global_state);
         improve_heuristic_timer->stop();
+        select_state_timer->stop();
     }
 }
 
@@ -246,7 +249,7 @@ int SaturatedCostPartitioningOnlineHeuristic::get_fact_id(int var, int value) co
 }
 
 bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const GlobalState &global_state) {
-    // This check needs to come first because the Bellman tests already fills the cache.
+    // This check needs to come first because the Bellman test already fills the cache.
     if (should_compute_scp_for_bellman) {
         assert(interval == 0);
         return true;
@@ -374,6 +377,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
             utils::g_log << "Evaluated states: " << num_evaluated_states + 1
                          << ", selected states: " << num_scps_computed
                          << ", stored SCPs: " << cp_heuristics.size()
+                         << ", selection time: " << *select_state_timer
                          << ", diversification time: " << *improve_heuristic_timer
                          << endl;
         }

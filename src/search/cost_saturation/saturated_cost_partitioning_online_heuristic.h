@@ -46,6 +46,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     std::unique_ptr<Diversifier> diversifier;
 
     std::unique_ptr<utils::Timer> improve_heuristic_timer;
+    std::unique_ptr<utils::Timer> select_state_timer;
     int size_kb;
     int num_evaluated_states;
     int num_reevaluated_states;
