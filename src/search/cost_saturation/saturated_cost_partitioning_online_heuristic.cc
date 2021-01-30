@@ -334,8 +334,10 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         extract_useful_abstraction_functions(
             cp_heuristics, abstractions, abstraction_functions);
         utils::release_vector_memory(abstractions);
-        print_diversification_statistics();
+        print_intermediate_statistics();
+        print_final_statistics();
     }
+    bool stored_scp = false;
     if (improve_heuristic && should_compute_scp(global_state)) {
         if (debug) {
             utils::g_log << "Compute SCP for " << global_state.get_id() << endl;
@@ -374,12 +376,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         if (is_diverse_for_state || is_diverse_for_samples) {
             size_kb += cost_partitioning.estimate_size_in_kb();
             cp_heuristics.push_back(move(cost_partitioning));
-            utils::g_log << "Evaluated states: " << num_evaluated_states + 1
-                         << ", selected states: " << num_scps_computed
-                         << ", stored SCPs: " << cp_heuristics.size()
-                         << ", selection time: " << *select_state_timer
-                         << ", diversification time: " << *improve_heuristic_timer
-                         << endl;
+            stored_scp = true;
         }
         max_h = max(max_h, h);
     }
@@ -393,6 +390,10 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
         ++num_reevaluated_states;
     } else {
         ++num_evaluated_states;
+    }
+
+    if (stored_scp) {
+        print_intermediate_statistics();
     }
     return max_h;
 }
@@ -414,8 +415,17 @@ void SaturatedCostPartitioningOnlineHeuristic::compute_scp_and_store_if_diverse(
     should_compute_scp_for_bellman = false;
 }
 
+void SaturatedCostPartitioningOnlineHeuristic::print_intermediate_statistics() const {
+    utils::g_log << "Evaluated states: " << num_evaluated_states
+                 << ", selected states: " << num_scps_computed
+                 << ", stored SCPs: " << cp_heuristics.size()
+                 << ", selection time: " << *select_state_timer
+                 << ", diversification time: " << *improve_heuristic_timer
+                 << endl;
+}
 
-void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics() const {
+
+void SaturatedCostPartitioningOnlineHeuristic::print_final_statistics() const {
     // Print the number of stored lookup tables.
     int num_stored_lookup_tables = 0;
     for (const auto &cp_heuristic: cp_heuristics) {
@@ -440,7 +450,8 @@ void SaturatedCostPartitioningOnlineHeuristic::print_diversification_statistics(
 
 void SaturatedCostPartitioningOnlineHeuristic::print_statistics() const {
     if (improve_heuristic) {
-        print_diversification_statistics();
+        print_intermediate_statistics();
+        print_final_statistics();
     }
 }
 

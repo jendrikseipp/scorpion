@@ -52,7 +52,8 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     int num_reevaluated_states;
     int num_scps_computed;
 
-    void print_diversification_statistics() const;
+    void print_intermediate_statistics() const;
+    void print_final_statistics() const;
     void print_statistics() const;
     void setup_diversifier(utils::RandomNumberGenerator &rng);
     int get_fact_id(int var, int value) const;
