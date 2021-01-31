@@ -326,11 +326,11 @@ SearchStatus EagerSearch::step() {
             }
             min_cost_via_children = min(min_cost_via_children, cost_via_child);
         }
+        bellman_timer.stop();
         if (parent_h < min_cost_via_children) {
             //cout << "h too low: " << parent_h << " < " << min_cost_via_children << endl;
             scp_heuristic->compute_scp_and_store_if_diverse(s);
         }
-        bellman_timer.stop();
     }
 
     return IN_PROGRESS;
