@@ -1,3 +1,60 @@
+# Scorpion
+
+Scorpion is an optimal classical planner based on saturated cost
+partitioning. It is based on version 20.06 of the Fast Downward planning
+system (https://github.com/aibasel/downward), which is described below.
+
+Please use the following reference when citing Scorpion:
+
+Jendrik Seipp, Thomas Keller and Malte Helmert. [Saturated Cost
+Partitioning for Optimal Classical
+Planning](https://www.jair.org/index.php/jair/article/view/11673). Journal
+of Artificial Intelligence Research 67, pp. 129-167. 2020.
+
+The code for saturated cost partitioning (SCP) can be found in the
+`src/search/cost_saturation` directory. Please see
+http://www.fast-downward.org for instructions on how to compile the
+planner.
+
+The following configuration uses the strongest heuristic
+(h<sup>SCP</sup>-div) from the journal article, i.e., it maximizes over
+multiple diverse SCP heuristics:
+
+```
+--search "astar(scp([
+    projections(hillclimbing(max_generated_patterns=200, random_seed=0)),
+    projections(systematic(2)),
+    cartesian()],
+    max_orders=infinity, max_time=1000, max_optimization_time=100, diversify=true,
+    orders=greedy_orders(random_seed=0), random_seed=0))"
+```
+
+The version of Scorpion that participated in the IPC 2018 is slightly
+different: it uses different timeouts for hill climbing, diversification
+and optimization, prunes irrelevant operators in a preprocessing step and
+uses partial order reduction during the A* search:
+
+```
+--search "astar(scp([
+    projections(hillclimbing(max_time=100, random_seed=0)),
+    projections(systematic(2)),
+    cartesian()],
+    max_orders=infinity, max_time=200, max_optimization_time=2, diversify=true,
+    orders=greedy_orders(random_seed=0), random_seed=0),
+    pruning=stubborn_sets_simple(min_required_pruning_ratio=0.2))"
+```
+
+Note that for operator pruning you need to make the [h^2
+preprocessor](https://people.cs.aau.dk/~alto/software.html#section1)
+available on your `PATH` (e.g., using the name "h2-mutexes") and then pass
+`--transform-task h2-mutexes` to the `fast-downward.py` script (in
+Downward Lab you can use the `driver_options` argument of `add_algorithm`
+for this).
+
+We recommend using the h<sup>SCP</sup>-div configuration when evaluating
+changes to Scorpion itself and the Scorpion IPC 2018 configuration when
+comparing different planners.
+
 # Fast Downward
 
 Fast Downward is a domain-independent classical planning system.
