@@ -6,7 +6,7 @@
 namespace cost_saturation {
 class UniformCostPartitioningHeuristic : public MaxCostPartitioningHeuristic {
 protected:
-    virtual int compute_heuristic(const GlobalState &global_state) override;
+    virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
     UniformCostPartitioningHeuristic(

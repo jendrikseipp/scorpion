@@ -9,6 +9,69 @@ For more details, check the repository history
 (<http://issues.fast-downward.org>). Repository branches are named
 after the corresponding tracker issues.
 
+## Changes since the last release
+
+- Add debugging methods to LP solver interface.
+  <http://issues.fast-downward.org/issue960>
+  You can now assign names to LP variables and constraints for easier
+  debugging. Since this incurs a slight runtime penalty, we recommend
+  against using this feature when running experiments.
+
+- Support integer variables in linear programs.
+  <http://issues.fast-downward.org/issue891>
+  You can now use the LP solver interface to solve mixed integer programs.
+  In particular, the operator-counting heuristics now have an option
+  `use_integer_operator_counts` that improves the heuristic value by
+  forcing operator counts to take integer values. Solving a MIP is NP-hard
+  and usually takes much longer than solving the corresponding LP.
+
+- For developers: move functionality used during search away from
+  LandmarkGraph, making it constant after creation.
+  <http://issues.fast-downward.org/issue988>
+  <http://issues.fast-downward.org/issue1000>
+
+- For developers: new state class
+  <http://issues.fast-downward.org/issue348>
+  We unified the classes GlobalState and State into a new class also called
+  State. This removed a lot of code duplication and hacks from the code.
+  A description of the new class can be found in the wiki:
+  <http://www.fast-downward.org/ForDevelopers/Blog/A%20Deeper%20Look%20at%20States>
+
+- For developers: introduce class for delete-relaxation based landmark
+  factories and move usage of exploration object to subclasses of
+  (abstract) landmark factory class.
+  <http://issues.fast-downward.org/issue990>
+
+- For developers: add support for Github actions
+  <http://issues.fast-downward.org/issue940>
+
+- For developers: We cleaned up the code of LandmarkGraph. Some of the public
+  methods were renamed. This class will undergo further changes in the future.
+  <http://issues.fast-downward.org/issue989>
+
+- Debug builds with LP solvers vs. the _GLIBCXX_DEBUG flag
+  <http://issues.fast-downward.org/issue982>
+  Previously, we used the flag _GLIBCXX_DEBUG in debug builds for additional
+  checks. This makes the binary incompatible with external libraries such as
+  LP solvers. The flag is now disabled by default. If no LP solvers are present
+  or LP solvers are disabled, it can be enabled by setting the CMake option
+  USE_GLIBCXX_DEBUG. The build configurations debugnolp and releasenolp have
+  been removed, and the build configuration glibcxx_debug has been added.
+
+- For developers: decide on rules regarding software support and
+  improve Github actions accordingly
+  <http://issues.fast-downward.org/issue1003>
+  
+- For developers: add CPLEX support to our GitHub Actions for Windows
+  <http://issues.fast-downward.org/issue1005>
+
+- Fix a bug in the computation of RHW landmarks
+  <http://issues.fast-downward.org/issue1004>
+  
+- Only build configurations defined in `build_configs.py` are loaded in the
+  `build.py` script.
+  <http://issues.fast-downward.org/issue1016>
+  
 ## Fast Downward 20.06
 
 Released on July 26, 2020.
@@ -45,24 +108,26 @@ Details:
   cyclically depended on other derived predicates could be computed
   incorrectly.
 
-- Integrate new pruning method `atom_centric_stubborn_sets`
+- Integrate new pruning method `atom_centric_stubborn_sets`.
   <http://issues.fast-downward.org/issue781>
-  We merged the code for the SoCS 2020 paper "An Atom-Centric Perspective
-  on Stubborn Sets" (<https://ai.dmi.unibas.ch/papers/roeger-et-al-socs2020.pdf>).
-  See <http://www.fast-downward.org/Doc/PruningMethod>.
+  We merged the code for the SoCS 2020 paper "An Atom-Centric
+  Perspective on Stubborn Sets"
+  (<https://ai.dmi.unibas.ch/papers/roeger-et-al-socs2020.pdf>). See
+  <http://www.fast-downward.org/Doc/PruningMethod>.
 
 - Remove deprecated merge strategy aliases `merge_linear` and `merge_dfp`.
   The deprecated merge strategy aliases `merge_linear` for linear
-  merge strategies and `merge_dfp` for the DFP merge strategy are no longer
-  available. See http://www.fast-downward.org/Doc/MergeStrategy for equivalent
-  command line options to use these merge strategies.
+  merge strategies and `merge_dfp` for the DFP merge strategy are no
+  longer available. See http://www.fast-downward.org/Doc/MergeStrategy
+  for equivalent command line options to use these merge strategies.
 
-- For developers: use global logging mechanism for all output
+- For developers: use global logging mechanism for all output.
   <http://issues.fast-downward.org/issue963>
-  All output of the planner is now handled by a global logging mechanism, which
-  prefaces printed lines with time and memory information. For developers, this
-  means that output show no longer be passed to cout but to
-  utils::g_log. Further changes to logging are in the works.
+  All output of the planner is now handled by a global logging
+  mechanism, which prefaces printed lines with time and memory
+  information. For developers, this means that output should no longer
+  be passed to `cout` but to `utils::g_log`. Further changes to
+  logging are in the works.
 
 - For developers: store enum options as enums (not ints) in Options objects.
   <http://issues.fast-downward.org/issue962>

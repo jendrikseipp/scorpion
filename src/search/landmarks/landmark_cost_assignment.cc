@@ -1,6 +1,7 @@
 #include "landmark_cost_assignment.h"
 
 #include "landmark_graph.h"
+#include "landmark_status_manager.h"
 #include "util.h"
 
 #include "../algorithms/max_cliques.h"
@@ -21,8 +22,8 @@ using namespace std;
 using cost_saturation::ScoringFunction;
 
 namespace landmarks {
-LandmarkCostAssignment::LandmarkCostAssignment(const vector<int> &operator_costs,
-                                               const LandmarkGraph &graph)
+LandmarkCostAssignment::LandmarkCostAssignment(
+    const vector<int> &operator_costs, const LandmarkGraph &graph)
     : empty(), lm_graph(graph), operator_costs(operator_costs) {
 }
 
@@ -121,7 +122,8 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
     return order;
 }
 
-double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
+double LandmarkUniformSharedCostAssignment::cost_sharing_h_value(
+    const LandmarkStatusManager &lm_status_manager) {
     vector<int> achieved_lms_by_op(operator_costs.size(), 0);
     vector<bool> action_landmarks(operator_costs.size(), false);
 
@@ -133,7 +135,8 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
        compute which op achieves how many landmarks. Along the way,
        mark action landmarks and add their cost to h. */
     for (auto &node : nodes) {
-        int lmn_status = node->get_status();
+        int lmn_status =
+            lm_status_manager.get_landmark_status(node->get_id());
         if (lmn_status != lm_reached) {
             const set<int> &achievers = get_achievers(lmn_status, *node);
             assert(!achievers.empty());
@@ -161,7 +164,8 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
        an action landmark; decrease the counters accordingly
        so that no unnecessary cost is assigned to these landmarks. */
     for (auto &node : nodes) {
-        int lmn_status = node->get_status();
+        int lmn_status =
+            lm_status_manager.get_landmark_status(node->get_id());
         if (lmn_status != lm_reached) {
             const set<int> &achievers = get_achievers(lmn_status, *node);
             bool covered_by_action_lm = false;
@@ -191,7 +195,8 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
         vector<vector<int>> achievers_by_lm;
         achievers_by_lm.reserve(relevant_lms.size());
         for (const LandmarkNode *node : relevant_lms) {
-            int lmn_status = node->get_status();
+            int lmn_status =
+                lm_status_manager.get_landmark_status(node->get_id());
             const set<int> &achievers = get_achievers(lmn_status, *node);
             achievers_by_lm.emplace_back(achievers.begin(), achievers.end());
         }
@@ -224,7 +229,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value() {
     } else {
         // UCP
         for (const LandmarkNode *node : relevant_lms) {
-            int lmn_status = node->get_status();
+            int lmn_status = lm_status_manager.get_landmark_status(node->get_id());
             const set<int> &achievers = get_achievers(lmn_status, *node);
             double min_cost = numeric_limits<double>::max();
             for (int op_id : achievers) {
@@ -264,6 +269,7 @@ static bool empty_intersection(const set<int> &x, const set<int> &y) {
 }
 
 vector<vector<int>> LandmarkCanonicalHeuristic::compute_max_additive_subsets(
+    const LandmarkStatusManager &lm_status_manager,
     const vector<const LandmarkNode *> &relevant_landmarks) {
     int num_landmarks = relevant_landmarks.size();
 
@@ -273,10 +279,12 @@ vector<vector<int>> LandmarkCanonicalHeuristic::compute_max_additive_subsets(
 
     for (int i = 0; i < num_landmarks; ++i) {
         const LandmarkNode *lm1 = relevant_landmarks[i];
-        const set<int> &achievers1 = get_achievers(lm1->get_status(), *lm1);
+        int lm1_status = lm_status_manager.get_landmark_status(lm1->get_id());
+        const set<int> &achievers1 = get_achievers(lm1_status, *lm1);
         for (int j = i + 1; j < num_landmarks; ++j) {
             const LandmarkNode *lm2 = relevant_landmarks[j];
-            const set<int> &achievers2 = get_achievers(lm2->get_status(), *lm2);
+            int lm2_status = lm_status_manager.get_landmark_status(lm2->get_id());
+            const set<int> &achievers2 = get_achievers(lm2_status, *lm2);
             if (empty_intersection(achievers1, achievers2)) {
                 /* If the two landmarks are additive, there is an edge in the
                    compatibility graph. */
@@ -291,8 +299,8 @@ vector<vector<int>> LandmarkCanonicalHeuristic::compute_max_additive_subsets(
     return max_cliques;
 }
 
-int LandmarkCanonicalHeuristic::compute_minimum_landmark_cost(const LandmarkNode &lm) const {
-    int lm_status = lm.get_status();
+int LandmarkCanonicalHeuristic::compute_minimum_landmark_cost(
+    const LandmarkNode &lm, int lm_status) const {
     const set<int> &achievers = get_achievers(lm_status, lm);
     assert(!achievers.empty());
     int min_cost = numeric_limits<int>::max();
@@ -303,21 +311,24 @@ int LandmarkCanonicalHeuristic::compute_minimum_landmark_cost(const LandmarkNode
     return min_cost;
 }
 
-double LandmarkCanonicalHeuristic::cost_sharing_h_value() {
+double LandmarkCanonicalHeuristic::cost_sharing_h_value(
+    const LandmarkStatusManager &lm_status_manager) {
     // Ignore reached landmarks.
     vector<const LandmarkNode *> relevant_landmarks;
     for (auto &node : lm_graph.get_nodes()) {
-        if (node->get_status() != lm_reached) {
+        if (lm_status_manager.get_landmark_status(node->get_id()) != lm_reached) {
             relevant_landmarks.push_back(node.get());
         }
     }
 
-    vector<vector<int>> max_additive_subsets = compute_max_additive_subsets(relevant_landmarks);
+    vector<vector<int>> max_additive_subsets = compute_max_additive_subsets(
+        lm_status_manager, relevant_landmarks);
 
     vector<int> minimum_landmark_costs;
     minimum_landmark_costs.reserve(relevant_landmarks.size());
     for (const LandmarkNode *node : relevant_landmarks) {
-        minimum_landmark_costs.push_back(compute_minimum_landmark_cost(*node));
+        int lm_status = lm_status_manager.get_landmark_status(node->get_id());
+        minimum_landmark_costs.push_back(compute_minimum_landmark_cost(*node, lm_status));
     }
 
     int max_h = 0;
@@ -341,19 +352,25 @@ LandmarkPhO::LandmarkPhO(
     const LandmarkGraph &graph,
     lp::LPSolverType solver_type)
     : LandmarkCostAssignment(operator_costs, graph),
-      lp_solver(solver_type) {
+      lp_solver(solver_type),
+      lp(build_initial_lp()) {
+}
+
+lp::LinearProgram LandmarkPhO::build_initial_lp() {
     /* The LP has one variable (column) per landmark and one
        inequality (row) per operator. */
-    int num_cols = lm_graph.number_of_landmarks();
+    int num_cols = lm_graph.get_num_landmarks();
     int num_rows = operator_costs.size();
+
+    named_vector::NamedVector<lp::LPVariable> lp_variables;
 
     /* We want to maximize \sum_i w_i * cost(lm_i) * [lm_i not achieved],
        where cost(lm_i) is the cost of the cheapest operator achieving lm_i.
        We adapt the variable bounds in each state to ignore achieved landmarks
        and initialize the range to [0.0, 0.0]. */
     for (int lm_id = 0; lm_id < num_cols; ++lm_id) {
-        const LandmarkNode *lm = lm_graph.get_lm_for_index(lm_id);
-        int min_cost = compute_minimum_landmark_cost(*lm);
+        const LandmarkNode *lm = lm_graph.get_landmark(lm_id);
+        int min_cost = compute_minimum_landmark_cost(*lm, lm_not_reached);
         lp_variables.emplace_back(0.0, 0.0, min_cost);
     }
 
@@ -368,10 +385,16 @@ LandmarkPhO::LandmarkPhO(
         lp_constraints[op_id].set_lower_bound(-lp_solver.get_infinity());
         lp_constraints[op_id].set_upper_bound(1);
     }
+
+    /* Coefficients of constraints will be updated and recreated in each state.
+       We ignore them for the initial LP. */
+    return lp::LinearProgram(
+        lp::LPObjectiveSense::MAXIMIZE,
+        move(lp_variables),
+        named_vector::NamedVector<lp::LPConstraint>());
 }
 
-int LandmarkPhO::compute_minimum_landmark_cost(const LandmarkNode &lm) const {
-    int lm_status = lm.get_status();
+int LandmarkPhO::compute_minimum_landmark_cost(const LandmarkNode &lm, int lm_status) const {
     const set<int> &achievers = get_achievers(lm_status, lm);
     assert(!achievers.empty());
     int min_cost = numeric_limits<int>::max();
@@ -382,7 +405,8 @@ int LandmarkPhO::compute_minimum_landmark_cost(const LandmarkNode &lm) const {
     return min_cost;
 }
 
-double LandmarkPhO::cost_sharing_h_value() {
+double LandmarkPhO::cost_sharing_h_value(
+    const LandmarkStatusManager &lm_status_manager) {
     /* TODO: We could also do the same thing with action landmarks we
              do in the uniform cost partitioning case. */
 
@@ -392,13 +416,13 @@ double LandmarkPhO::cost_sharing_h_value() {
       reached; otherwise it is [0, infinity].
       The lower bounds are set to 0 in the constructor and never change.
     */
-    int num_cols = lm_graph.number_of_landmarks();
+    int num_cols = lm_graph.get_num_landmarks();
     for (int lm_id = 0; lm_id < num_cols; ++lm_id) {
-        const LandmarkNode *lm = lm_graph.get_lm_for_index(lm_id);
-        if (lm->get_status() == lm_reached) {
-            lp_variables[lm_id].upper_bound = 0;
+        int lm_status = lm_status_manager.get_landmark_status(lm_id);
+        if (lm_status == lm_reached) {
+            lp.get_variables()[lm_id].upper_bound = 0;
         } else {
-            lp_variables[lm_id].upper_bound = lp_solver.get_infinity();
+            lp.get_variables()[lm_id].upper_bound = lp_solver.get_infinity();
         }
     }
 
@@ -415,8 +439,8 @@ double LandmarkPhO::cost_sharing_h_value() {
         constraint.clear();
     }
     for (int lm_id = 0; lm_id < num_cols; ++lm_id) {
-        const LandmarkNode *lm = lm_graph.get_lm_for_index(lm_id);
-        int lm_status = lm->get_status();
+        const LandmarkNode *lm = lm_graph.get_landmark(lm_id);
+        int lm_status = lm_status_manager.get_landmark_status(lm_id);
         if (lm_status != lm_reached) {
             const set<int> &achievers = get_achievers(lm_status, *lm);
             assert(!achievers.empty());
@@ -428,16 +452,16 @@ double LandmarkPhO::cost_sharing_h_value() {
     }
 
     /* Copy non-empty constraints and use those in the LP.
-       This significantly speeds up the heuristic calculation. See comment for OCP. */
-    non_empty_lp_constraints.clear();
+       This significantly speeds up the heuristic calculation. See issue443. */
+    // TODO: do not copy the data here.
+    lp.get_constraints().clear();
     for (const lp::LPConstraint &constraint : lp_constraints) {
         if (!constraint.empty())
-            non_empty_lp_constraints.push_back(constraint);
+            lp.get_constraints().push_back(constraint);
     }
 
     // Load the problem into the LP solver.
-    lp_solver.load_problem(
-        lp::LPObjectiveSense::MAXIMIZE, lp_variables, non_empty_lp_constraints);
+    lp_solver.load_problem(lp);
 
     // Solve the linear program.
     lp_solver.solve();
@@ -449,15 +473,20 @@ double LandmarkPhO::cost_sharing_h_value() {
 }
 
 LandmarkEfficientOptimalSharedCostAssignment::LandmarkEfficientOptimalSharedCostAssignment(
-    const vector<int> &operator_costs,
-    const LandmarkGraph &graph,
+    const vector<int> &operator_costs, const LandmarkGraph &graph,
     lp::LPSolverType solver_type)
     : LandmarkCostAssignment(operator_costs, graph),
-      lp_solver(solver_type) {
+      lp_solver(solver_type),
+      lp(build_initial_lp()) {
+}
+
+lp::LinearProgram LandmarkEfficientOptimalSharedCostAssignment::build_initial_lp() {
     /* The LP has one variable (column) per landmark and one
        inequality (row) per operator. */
-    int num_cols = lm_graph.number_of_landmarks();
+    int num_cols = lm_graph.get_num_landmarks();
     int num_rows = operator_costs.size();
+
+    named_vector::NamedVector<lp::LPVariable> lp_variables;
 
     /* We want to maximize 1 * cost(lm_1) + ... + 1 * cost(lm_n),
        so the coefficients are all 1.
@@ -472,10 +501,13 @@ LandmarkEfficientOptimalSharedCostAssignment::LandmarkEfficientOptimalSharedCost
         lp_constraints[op_id].set_lower_bound(0);
         lp_constraints[op_id].set_upper_bound(operator_costs[op_id]);
     }
+
+    // Coefficients of constraints will be updated and recreated in each state. We ignore them for the initial LP.
+    return lp::LinearProgram(lp::LPObjectiveSense::MAXIMIZE, move(lp_variables), named_vector::NamedVector<lp::LPConstraint>());
 }
 
-
-double LandmarkEfficientOptimalSharedCostAssignment::cost_sharing_h_value() {
+double LandmarkEfficientOptimalSharedCostAssignment::cost_sharing_h_value(
+    const LandmarkStatusManager &lm_status_manager) {
     /* TODO: We could also do the same thing with action landmarks we
              do in the uniform cost partitioning case. */
 
@@ -485,13 +517,12 @@ double LandmarkEfficientOptimalSharedCostAssignment::cost_sharing_h_value() {
       reached; otherwise it is [0, infinity].
       The lower bounds are set to 0 in the constructor and never change.
     */
-    int num_cols = lm_graph.number_of_landmarks();
+    int num_cols = lm_graph.get_num_landmarks();
     for (int lm_id = 0; lm_id < num_cols; ++lm_id) {
-        const LandmarkNode *lm = lm_graph.get_lm_for_index(lm_id);
-        if (lm->get_status() == lm_reached) {
-            lp_variables[lm_id].upper_bound = 0;
+        if (lm_status_manager.get_landmark_status(lm_id) == lm_reached) {
+            lp.get_variables()[lm_id].upper_bound = 0;
         } else {
-            lp_variables[lm_id].upper_bound = lp_solver.get_infinity();
+            lp.get_variables()[lm_id].upper_bound = lp_solver.get_infinity();
         }
     }
 
@@ -508,8 +539,8 @@ double LandmarkEfficientOptimalSharedCostAssignment::cost_sharing_h_value() {
         constraint.clear();
     }
     for (int lm_id = 0; lm_id < num_cols; ++lm_id) {
-        const LandmarkNode *lm = lm_graph.get_lm_for_index(lm_id);
-        int lm_status = lm->get_status();
+        const LandmarkNode *lm = lm_graph.get_landmark(lm_id);
+        int lm_status = lm_status_manager.get_landmark_status(lm_id);
         if (lm_status != lm_reached) {
             const set<int> &achievers = get_achievers(lm_status, *lm);
             assert(!achievers.empty());
@@ -523,15 +554,14 @@ double LandmarkEfficientOptimalSharedCostAssignment::cost_sharing_h_value() {
     /* Copy non-empty constraints and use those in the LP.
        This significantly speeds up the heuristic calculation. See issue443. */
     // TODO: do not copy the data here.
-    non_empty_lp_constraints.clear();
+    lp.get_constraints().clear();
     for (const lp::LPConstraint &constraint : lp_constraints) {
         if (!constraint.empty())
-            non_empty_lp_constraints.push_back(constraint);
+            lp.get_constraints().push_back(constraint);
     }
 
     // Load the problem into the LP solver.
-    lp_solver.load_problem(lp::LPObjectiveSense::MAXIMIZE,
-                           lp_variables, non_empty_lp_constraints);
+    lp_solver.load_problem(lp);
 
     // Solve the linear program.
     lp_solver.solve();

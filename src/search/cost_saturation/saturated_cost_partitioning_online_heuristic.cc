@@ -59,9 +59,8 @@ bool SaturatedCostPartitioningOnlineHeuristic::should_compute_scp(const State &s
     }
 }
 
-int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(
-    const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
+int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     ++num_evaluated_states;
     vector<int> abstract_state_ids = get_abstract_state_ids(abstractions, state);
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
