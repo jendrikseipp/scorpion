@@ -55,7 +55,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
 
     if (dominance_pruning) {
         shared_ptr<PDBCollection> pdbs = pattern_collection_info.get_pdbs();
-        shared_ptr<std::vector<PatternClique>> pattern_cliques =
+        shared_ptr<vector<PatternClique>> pattern_cliques =
             pattern_collection_info.get_pattern_cliques();
         prune_dominated_cliques(
             *patterns,
