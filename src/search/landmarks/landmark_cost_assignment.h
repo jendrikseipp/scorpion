@@ -88,7 +88,7 @@ class LandmarkPhO : public LandmarkCostAssignment {
 
     lp::LinearProgram build_initial_lp();
 
-    int compute_minimum_landmark_cost(const LandmarkNode &lm, int lm_status) const;
+    double compute_landmark_cost(const LandmarkNode &lm) const;
 public:
     LandmarkPhO(
         const std::vector<int> &operator_costs,

@@ -370,7 +370,7 @@ lp::LinearProgram LandmarkPhO::build_initial_lp() {
        and initialize the range to [0.0, 0.0]. */
     for (int lm_id = 0; lm_id < num_cols; ++lm_id) {
         const LandmarkNode *lm = lm_graph.get_landmark(lm_id);
-        int min_cost = compute_minimum_landmark_cost(*lm, lm_not_reached);
+        double min_cost = compute_landmark_cost(*lm);
         lp_variables.emplace_back(0.0, 0.0, min_cost);
     }
 
@@ -380,11 +380,7 @@ lp::LinearProgram LandmarkPhO::build_initial_lp() {
       where w_1, w_5, ..., w_k are the weights for the landmarks for which o is
       a relevant achiever.
     */
-    lp_constraints.resize(num_rows, lp::LPConstraint(0.0, 0.0));
-    for (size_t op_id = 0; op_id < operator_costs.size(); ++op_id) {
-        lp_constraints[op_id].set_lower_bound(-lp_solver.get_infinity());
-        lp_constraints[op_id].set_upper_bound(1);
-    }
+    lp_constraints.resize(num_rows, lp::LPConstraint(-lp_solver.get_infinity(), 1.0));
 
     /* Coefficients of constraints will be updated and recreated in each state.
        We ignore them for the initial LP. */
@@ -394,36 +390,32 @@ lp::LinearProgram LandmarkPhO::build_initial_lp() {
         named_vector::NamedVector<lp::LPConstraint>());
 }
 
-int LandmarkPhO::compute_minimum_landmark_cost(const LandmarkNode &lm, int lm_status) const {
-    const set<int> &achievers = get_achievers(lm_status, lm);
-    assert(!achievers.empty());
-    int min_cost = numeric_limits<int>::max();
+double LandmarkPhO::compute_landmark_cost(const LandmarkNode &lm) const {
+    /* Note that there are landmarks without achievers. Example: not-served(p)
+       in miconic:s1-0.pddl. The fact is true in the initial state, and no
+       operator achieves it. For such facts, the (infimum) cost is infinity. */
+    const set<int> &achievers = get_achievers(lm_not_reached, lm);
+    double min_cost = lp_solver.get_infinity();
     for (int op_id : achievers) {
         assert(utils::in_bounds(op_id, operator_costs));
-        min_cost = min(min_cost, operator_costs[op_id]);
+        min_cost = min(min_cost, static_cast<double>(operator_costs[op_id]));
     }
     return min_cost;
 }
 
 double LandmarkPhO::cost_sharing_h_value(
     const LandmarkStatusManager &lm_status_manager) {
-    /* TODO: We could also do the same thing with action landmarks we
-             do in the uniform cost partitioning case. */
-
     /*
       Set up LP variable bounds for the landmarks.
       The range of w_i is {0} if the corresponding landmark is already
       reached; otherwise it is [0, infinity].
-      The lower bounds are set to 0 in the constructor and never change.
+      The lower bounds are set to 0 initially and never change.
     */
     int num_cols = lm_graph.get_num_landmarks();
     for (int lm_id = 0; lm_id < num_cols; ++lm_id) {
         int lm_status = lm_status_manager.get_landmark_status(lm_id);
-        if (lm_status == lm_reached) {
-            lp.get_variables()[lm_id].upper_bound = 0;
-        } else {
-            lp.get_variables()[lm_id].upper_bound = lp_solver.get_infinity();
-        }
+        double upper_bound = (lm_status == lm_reached) ? 0.0 : lp_solver.get_infinity();
+        lp.get_variables()[lm_id].upper_bound = upper_bound;
     }
 
     /*
@@ -471,6 +463,7 @@ double LandmarkPhO::cost_sharing_h_value(
 
     return h;
 }
+
 
 LandmarkEfficientOptimalSharedCostAssignment::LandmarkEfficientOptimalSharedCostAssignment(
     const vector<int> &operator_costs, const LandmarkGraph &graph,
