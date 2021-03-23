@@ -17,6 +17,7 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <numeric>
 
 using namespace std;
 using cost_saturation::ScoringFunction;
