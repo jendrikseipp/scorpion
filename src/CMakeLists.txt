@@ -30,6 +30,15 @@
 # Version 2.8.3 introduces CMakeParseArguments.
 cmake_minimum_required(VERSION 2.8.3)
 
+# If it's available, use ccache to cache compilation results. The two ccache options
+# allow sharing compilation results between different build directories.
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    message("Using ccache")
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE
+        "CCACHE_BASEDIR=${CMAKE_CURRENT_SOURCE_DIR} CCACHE_NOHASHDIR=true ccache")
+endif(CCACHE_FOUND)
+
 # Respect the PATH environment variable when searching for compilers.
 find_program(CMAKE_C_COMPILER NAMES $ENV{CC} gcc PATHS ENV PATH NO_DEFAULT_PATH)
 find_program(CMAKE_CXX_COMPILER NAMES $ENV{CXX} g++ PATHS ENV PATH NO_DEFAULT_PATH)

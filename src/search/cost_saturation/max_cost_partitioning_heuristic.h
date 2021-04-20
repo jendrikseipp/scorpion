@@ -29,10 +29,9 @@ class MaxCostPartitioningHeuristic : public Heuristic {
     mutable std::vector<int> num_best_order;
 
     void print_statistics() const;
-    int compute_heuristic(const State &state) const;
 
 protected:
-    virtual int compute_heuristic(const GlobalState &global_state) override;
+    virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
     MaxCostPartitioningHeuristic(

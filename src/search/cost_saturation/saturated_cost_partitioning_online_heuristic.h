@@ -32,7 +32,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     bool should_compute_scp(const State &state);
 
 protected:
-    virtual int compute_heuristic(const GlobalState &state) override;
+    virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
     SaturatedCostPartitioningOnlineHeuristic(

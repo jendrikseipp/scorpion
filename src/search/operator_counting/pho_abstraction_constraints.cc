@@ -25,7 +25,7 @@ PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
 
 void PhOAbstractionConstraints::initialize_constraints(
     const shared_ptr<AbstractTask> &task,
-    vector<lp::LPConstraint> &constraints,
+    named_vector::NamedVector<lp::LPConstraint> &constraints,
     double infinity) {
     cost_saturation::Abstractions abstractions =
         cost_saturation::generate_abstractions(task, abstraction_generators);
