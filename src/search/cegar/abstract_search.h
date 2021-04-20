@@ -18,8 +18,7 @@ class AbstractSearch {
         int g;
         Transition incoming_transition;
 public:
-        AbstractSearchInfo()
-            : incoming_transition() {
+        AbstractSearchInfo() {
             reset();
         }
 
