@@ -94,15 +94,12 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
     return domain_sizes;
 }
 
-void add_h_update_option(options::OptionParser &parser) {
-    vector<string> h_update;
-    h_update.push_back("STATES_ON_TRACE");
-    h_update.push_back("DIJKSTRA_FROM_UNCONNECTED_ORPHANS");
-    parser.add_enum_option<HUpdateStrategy>(
-        "h_update",
-        h_update,
-        "strategy for updating goal distances or distance estimates",
-        "DIJKSTRA_FROM_UNCONNECTED_ORPHANS");
+void add_search_strategy_option(options::OptionParser &parser) {
+    parser.add_enum_option<SearchStrategy>(
+        "search_strategy",
+        {"ASTAR", "INCREMENTAL"},
+        "strategy for computing abstract plans",
+        "INCREMENTAL");
 }
 
 void dump_dot_graph(const Abstraction &abstraction) {

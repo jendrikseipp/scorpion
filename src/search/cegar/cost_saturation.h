@@ -31,7 +31,7 @@ class CostSaturation {
     const double max_time;
     const bool use_general_costs;
     const PickSplit pick_split;
-    const HUpdateStrategy h_update;
+    const SearchStrategy search_strategy;
     const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
     const bool debug;
@@ -60,7 +60,7 @@ public:
         double max_time,
         bool use_general_costs,
         PickSplit pick_split,
-        HUpdateStrategy h_update,
+        SearchStrategy search_strategy,
         int memory_padding_mb,
         utils::RandomNumberGenerator &rng,
         bool debug);

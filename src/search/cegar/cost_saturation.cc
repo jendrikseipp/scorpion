@@ -79,7 +79,7 @@ CostSaturation::CostSaturation(
     double max_time,
     bool use_general_costs,
     PickSplit pick_split,
-    HUpdateStrategy h_update,
+    SearchStrategy search_strategy,
     int memory_padding_mb,
     utils::RandomNumberGenerator &rng,
     bool debug)
@@ -89,7 +89,7 @@ CostSaturation::CostSaturation(
       max_time(max_time),
       use_general_costs(use_general_costs),
       pick_split(pick_split),
-      h_update(h_update),
+      search_strategy(search_strategy),
       memory_padding_mb(memory_padding_mb),
       rng(rng),
       debug(debug),
@@ -196,7 +196,7 @@ void CostSaturation::build_abstractions(
                 rem_subtasks),
             timer.get_remaining_time() / rem_subtasks,
             pick_split,
-            h_update,
+            search_strategy,
             rng,
             debug);
 

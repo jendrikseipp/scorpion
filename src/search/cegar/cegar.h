@@ -34,7 +34,7 @@ class CEGAR {
     const int max_states;
     const int max_non_looping_transitions;
     const SplitSelector split_selector;
-    const HUpdateStrategy h_update;
+    const SearchStrategy search_strategy;
 
     std::unique_ptr<Abstraction> abstraction;
     std::unique_ptr<AbstractSearch> abstract_search;
@@ -73,7 +73,7 @@ public:
         int max_non_looping_transitions,
         double max_time,
         PickSplit pick,
-        HUpdateStrategy h_update,
+        SearchStrategy search_strategy,
         utils::RandomNumberGenerator &rng,
         bool debug);
     ~CEGAR();

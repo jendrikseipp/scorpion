@@ -86,7 +86,7 @@ CEGAR::CEGAR(
     int max_non_looping_transitions,
     double max_time,
     PickSplit pick,
-    HUpdateStrategy h_update,
+    SearchStrategy search_strategy,
     utils::RandomNumberGenerator &rng,
     bool debug)
     : task_proxy(*task),
@@ -94,15 +94,15 @@ CEGAR::CEGAR(
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       split_selector(task, pick),
-      h_update(h_update),
+      search_strategy(search_strategy),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
       debug(debug) {
     assert(max_states >= 1);
-    if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+    if (search_strategy == SearchStrategy::ASTAR) {
         abstract_search = utils::make_unique_ptr<AbstractSearch>(
             task_properties::get_operator_costs(task_proxy));
-    } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+    } else if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
             task_properties::get_operator_costs(task_proxy), debug);
     } else {
@@ -231,7 +231,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     }
 
     // Initialize abstract goal distances and shortest path tree.
-    if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+    if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths->full_dijkstra(
             abstraction->get_transition_system().get_incoming_transitions(),
             abstraction->get_goals());
@@ -253,7 +253,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     while (may_keep_refining()) {
         find_trace_timer.resume();
         unique_ptr<Solution> solution;
-        if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+        if (search_strategy == SearchStrategy::ASTAR) {
             solution = abstract_search->find_solution(
                 abstraction->get_transition_system().get_outgoing_transitions(),
                 abstraction->get_initial_state().get_id(),
@@ -265,7 +265,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         find_trace_timer.stop();
         if (solution) {
             update_h_timer.resume();
-            if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+            if (search_strategy == SearchStrategy::ASTAR) {
                 abstract_search->update_goal_distances_of_states_on_trace(
                     *solution, abstraction->get_initial_state().get_id());
             }
@@ -306,20 +306,20 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
 
         update_h_timer.resume();
-        if (h_update == HUpdateStrategy::STATES_ON_TRACE) {
+        if (search_strategy == SearchStrategy::ASTAR) {
             // Since h-values only increase we can assign the h-value to the children.
             abstract_search->copy_h_value_to_children(
                 state_id, new_state_ids.first, new_state_ids.second);
-        } else if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+        } else if (search_strategy == SearchStrategy::INCREMENTAL) {
             shortest_paths->dijkstra_from_orphans(
                 abstraction->get_transition_system().get_incoming_transitions(),
                 abstraction->get_transition_system().get_outgoing_transitions(),
                 state_id, new_state_ids.first, new_state_ids.second, true);
         } else {
-            ABORT("Unknown h-update strategy");
+            ABORT("Unknown search strategy");
         }
 
-        if (h_update == HUpdateStrategy::DIJKSTRA_FROM_UNCONNECTED_ORPHANS) {
+        if (search_strategy == SearchStrategy::INCREMENTAL) {
             assert(shortest_paths->test_distances(
                        abstraction->get_transition_system().get_incoming_transitions(),
                        abstraction->get_transition_system().get_outgoing_transitions(),

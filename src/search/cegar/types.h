@@ -11,9 +11,9 @@ namespace cegar {
 class AbstractState;
 struct Transition;
 
-enum class HUpdateStrategy {
-    STATES_ON_TRACE,
-    DIJKSTRA_FROM_UNCONNECTED_ORPHANS,
+enum class SearchStrategy {
+    ASTAR,
+    INCREMENTAL,
 };
 
 using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
