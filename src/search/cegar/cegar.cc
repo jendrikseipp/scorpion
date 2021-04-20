@@ -129,7 +129,7 @@ unique_ptr<Abstraction> CEGAR::extract_abstraction() {
     return move(abstraction);
 }
 
-int CEGAR::separate_facts_unreachable_before_goal() {
+void CEGAR::separate_facts_unreachable_before_goal() {
     assert(abstraction->get_goals().size() == 1);
     assert(abstraction->get_num_states() == 1);
     assert(task_proxy.get_goals().size() == 1);
@@ -156,9 +156,8 @@ int CEGAR::separate_facts_unreachable_before_goal() {
       state is the only non-goal state and no goal state will have to be split
       later.
     */
-    auto state_ids = abstraction->refine(
+    abstraction->refine(
         abstraction->get_initial_state(), goal.get_variable().get_id(), {goal.get_value()});
-    return state_ids.second;
 }
 
 bool CEGAR::may_keep_refining() const {
@@ -190,9 +189,8 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
       to simplify the implementation. This way, we don't have to split
       goal states later.
     */
-    int goal_in_possibly_before_set;
     if (task_proxy.get_goals().size() == 1) {
-        goal_in_possibly_before_set = separate_facts_unreachable_before_goal();
+        separate_facts_unreachable_before_goal();
 
         // Find a cheapest goal state. It will always remain a cheapest goal state.
         AbstractSearch astar_search(task_properties::get_operator_costs(task_proxy));
@@ -203,10 +201,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         if (!solution) {
             cout << "Abstract task is unsolvable." << endl;
             return;
-        } else if (solution->empty()) {
-            goal_in_possibly_before_set = abstraction->get_initial_state().get_id();
-        } else {
-            goal_in_possibly_before_set = solution->back().target_id;
         }
     } else {
         // Iteratively split off the next goal fact from the current goal state.
@@ -222,12 +216,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
         assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
         assert(static_cast<int>(abstraction->get_goals().size()) == 1);
-        goal_in_possibly_before_set = current->get_id();
-    }
-    assert(abstraction->get_goals().count(goal_in_possibly_before_set));
-
-    if (debug) {
-        cout << "Goal state in possibly before set: " << goal_in_possibly_before_set << endl;
     }
 
     // Initialize abstract goal distances and shortest path tree.
@@ -298,7 +286,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         vector<Split> splits = flaw->get_possible_splits();
         const Split &split = split_selector.pick_split(abstract_state, splits, rng);
         auto new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
-        assert(abstraction->get_goals().count(goal_in_possibly_before_set));
         refine_timer.stop();
 
         if (debug) {
