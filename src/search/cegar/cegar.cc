@@ -191,17 +191,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     */
     if (task_proxy.get_goals().size() == 1) {
         separate_facts_unreachable_before_goal();
-
-        // Find a cheapest goal state. It will always remain a cheapest goal state.
-        AbstractSearch astar_search(task_properties::get_operator_costs(task_proxy));
-        unique_ptr<Solution> solution = astar_search.find_solution(
-            abstraction->get_transition_system().get_outgoing_transitions(),
-            abstraction->get_initial_state().get_id(),
-            abstraction->get_goals());
-        if (!solution) {
-            cout << "Abstract task is unsolvable." << endl;
-            return;
-        }
     } else {
         // Iteratively split off the next goal fact from the current goal state.
         assert(abstraction->get_num_states() == 1);
