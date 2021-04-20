@@ -134,21 +134,11 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_enum_option<PickSplit>(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
     add_search_strategy_option(parser);
+    add_memory_padding_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",
         "true");
-    parser.add_option<int>(
-        "memory_padding",
-        "amount of extra memory in MB to reserve for recovering from "
-        "out-of-memory situations gracefully. When the memory runs out, we "
-        "stop refining and start the search. Due to memory fragmentation, "
-        "the memory used for building the abstraction (states, transitions, "
-        "etc.) often can't be reused for things that require big continuous "
-        "blocks of memory. It is for this reason that we require a rather "
-        "large amount of memory padding by default.",
-        "500",
-        Bounds("0", "infinity"));
     parser.add_option<bool>(
         "debug",
         "print debugging output",
