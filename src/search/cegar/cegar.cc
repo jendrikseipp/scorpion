@@ -209,7 +209,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
 
     // Initialize abstract goal distances and shortest path tree.
     if (search_strategy == SearchStrategy::INCREMENTAL) {
-        shortest_paths->full_dijkstra(
+        shortest_paths->recompute(
             abstraction->get_transition_system().get_incoming_transitions(),
             abstraction->get_goals());
         assert(shortest_paths->test_distances(
@@ -236,7 +236,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 abstraction->get_initial_state().get_id(),
                 abstraction->get_goals());
         } else {
-            solution = shortest_paths->extract_solution_from_shortest_path_tree(
+            solution = shortest_paths->extract_solution(
                 abstraction->get_initial_state().get_id(), abstraction->get_goals());
         }
         find_trace_timer.stop();
@@ -289,7 +289,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             abstract_search->copy_h_value_to_children(
                 state_id, new_state_ids.first, new_state_ids.second);
         } else {
-            shortest_paths->dijkstra_from_orphans(
+            shortest_paths->update_incrementally(
                 abstraction->get_transition_system().get_incoming_transitions(),
                 abstraction->get_transition_system().get_outgoing_transitions(),
                 state_id, new_state_ids.first, new_state_ids.second);

@@ -10,6 +10,28 @@
 #include <vector>
 
 namespace cegar {
+/*
+  The code below requires that all operators have positive cost. Negative
+  operators are of course tricky, but 0-cost operators are somewhat tricky,
+  too. In particular, given perfect g and h values, we want to know which
+  operators make progress towards the goal, and this is easy to do if all
+  operator costs are positive (then *all* operators that lead to a state with
+  the same f value as the current one make progress towards the goal, in the
+  sense that following those operators will necessarily take us to the goal on
+  a path with strictly decreasing h values), but not if they may be 0 (consider
+  the case where all operators cost 0: then the f* values of all alive states
+  are 0, so they give us no guidance towards the goal).
+
+  If the assumption of no 0-cost operators is violated, the easiest way to
+  address this is to replace all 0-cost operators with operators of cost
+  epsilon, where epsilon > 0 is small enough that "rounding down" epsilons
+  along a shortest path always results in the correct original cost. With
+  original integer costs, picking epsilon <= 1/N for a state space with N
+  states is sufficient for this. In our actual implementation, we do not want
+  to use floating-point numbers, and if we stick with 32-bit integers for path
+  costs, we could run into range issues. Therefore, we use 64-bit integers,
+  scale all original operator costs by 2^32 and use epsilon = 1.
+*/
 using Cost = uint64_t;
 
 class HeapQueue {
@@ -71,23 +93,24 @@ class ShortestPaths {
     Cost convert_to_64_bit_cost(int cost) const;
 
     void mark_dirty(int state);
-    void mark_orphaned_predecessors(
-        const std::vector<Transitions> &in, int state);
-
 public:
     ShortestPaths(const std::vector<int> &costs, bool debug);
 
-    std::unique_ptr<Solution> extract_solution_from_shortest_path_tree(
-        int init_id,
-        const Goals &goals);
-
-    void dijkstra_from_orphans(
+    // Use Dijkstra's algorithm to compute the shortest path tree from scratch.
+    void recompute(
+        const std::vector<Transitions> &transitions,
+        const std::unordered_set<int> &goals);
+    // Reflect the split of v into v1 and v2.
+    void update_incrementally(
         const std::vector<Transitions> &in,
         const std::vector<Transitions> &out,
         int v, int v1, int v2);
-    void full_dijkstra(
-        const std::vector<Transitions> &transitions,
-        const std::unordered_set<int> &goals);
+    // Extract solution from shortest path tree.
+    std::unique_ptr<Solution> extract_solution(
+        int init_id,
+        const Goals &goals);
+
+    // For debugging.
     bool test_distances(
         const std::vector<Transitions> &in,
         const std::vector<Transitions> &out,

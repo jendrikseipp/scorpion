@@ -1,13 +1,10 @@
 #include "shortest_paths.h"
 
-#include "abstract_search.h"
-#include "transition_system.h"
+#include "abstract_search.h"  // For test_distances().
 #include "utils.h"
 
 #include "../utils/logging.h"
 #include "../utils/memory.h"
-
-#include <cassert>
 
 using namespace std;
 
@@ -18,30 +15,6 @@ const Cost ShortestPaths::DIRTY = numeric_limits<Cost>::max() - 1;
 ShortestPaths::ShortestPaths(const vector<int> &costs, bool debug)
     : debug(debug),
       task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})) {
-    /*
-      The code below requires that all operators have positive cost. Negative
-      operators are of course tricky, but 0-cost operators are somewhat tricky,
-      too. In particular, given perfect g and h values, we want to know which
-      operators make progress towards the goal, and this is easy to do if all
-      operator costs are positive (then *all* operators that lead to a state
-      with the same f value as the current one make progress towards the goal,
-      in the sense that following those operators will necessarily take us to
-      the goal on a path with strictly decreasing h values), but not if they
-      may be 0 (consider the case where all operators cost 0: then the f*
-      values of all alive states are 0, so they give us no guidance towards the
-      goal).
-
-      If the assumption of no 0-cost operators is violated, the easiest way to
-      address this is to replace all 0-cost operators with operators of cost
-      epsilon, where epsilon > 0 is small enough that "rounding down" epsilons
-      along a shortest path always results in the correct original cost. With
-      original integer costs, picking epsilon <= 1/N for a state space with N
-      states is sufficient for this. In our actual implementation, we should
-      not use floating-point numbers, and if we stick with 32-bit integers for
-      path costs, we can run into range issues. The most obvious solution is to
-      use 64-bit integers, scaling all original operator costs by 2^32 and
-      using epsilon = 1.
-    */
     operator_costs.reserve(costs.size());
     for (int cost : costs) {
         operator_costs.push_back(convert_to_64_bit_cost(cost));
@@ -79,26 +52,41 @@ Cost ShortestPaths::convert_to_64_bit_cost(int cost) const {
     }
 }
 
-unique_ptr<Solution> ShortestPaths::extract_solution_from_shortest_path_tree(
-    int init_id, const Goals &goals) {
-    // h* = \infty iff goal is unreachable from this state.
-    if (goal_distances[init_id] == INF_COSTS)
-        return nullptr;
-
-    int current_state = init_id;
-    unique_ptr<Solution> solution = utils::make_unique_ptr<Solution>();
-    assert(!goals.count(current_state));
-    while (!goals.count(current_state)) {
-        assert(utils::in_bounds(current_state, shortest_path));
-        const Transition &t = shortest_path[current_state];
-        assert(t.op_id != UNDEFINED);
-        assert(t.target_id != UNDEFINED);
-        assert(t.target_id != current_state);
-        assert(goal_distances[t.target_id] <= goal_distances[current_state]);
-        solution->push_back(t);
-        current_state = t.target_id;
+void ShortestPaths::recompute(
+    const vector<Transitions> &in,
+    const unordered_set<int> &goals) {
+    open_queue.clear();
+    shortest_path = Transitions(in.size());
+    goal_distances = vector<Cost>(in.size(), INF_COSTS);
+    for (int goal : goals) {
+        Cost dist = 0;
+        goal_distances[goal] = dist;
+        shortest_path[goal] = Transition();
+        open_queue.push(dist, goal);
     }
-    return solution;
+    while (!open_queue.empty()) {
+        pair<Cost, int> top_pair = open_queue.pop();
+        Cost old_g = top_pair.first;
+        int state_id = top_pair.second;
+
+        Cost g = goal_distances[state_id];
+        assert(g < INF_COSTS);
+        assert(g <= old_g);
+        if (g < old_g)
+            continue;
+        assert(utils::in_bounds(state_id, in));
+        for (const Transition &t : in[state_id]) {
+            int succ_id = t.target_id;
+            int op_id = t.op_id;
+            Cost op_cost = operator_costs[op_id];
+            Cost succ_g = add_costs(g, op_cost);
+            if (succ_g < goal_distances[succ_id]) {
+                goal_distances[succ_id] = succ_g;
+                shortest_path[succ_id] = Transition(op_id, state_id);
+                open_queue.push(succ_g, succ_id);
+            }
+        }
+    }
 }
 
 void ShortestPaths::mark_dirty(int state) {
@@ -112,23 +100,9 @@ void ShortestPaths::mark_dirty(int state) {
     dirty_states.push_back(state);
 }
 
-void ShortestPaths::mark_orphaned_predecessors(
-    const vector<Transitions> &in, int state) {
-    mark_dirty(state);
-    for (const Transition &t : in[state]) {
-        int prev = t.target_id;
-        assert(prev != state);
-        assert(prev != UNDEFINED);
-        if (goal_distances[prev] != DIRTY &&
-            shortest_path[prev].target_id == state) {
-            mark_orphaned_predecessors(in, prev);
-        }
-    }
-}
-
-void ShortestPaths::dijkstra_from_orphans(const vector<Transitions> &in,
-                                          const vector<Transitions> &out,
-                                          int v, int v1, int v2) {
+void ShortestPaths::update_incrementally(const vector<Transitions> &in,
+                                         const vector<Transitions> &out,
+                                         int v, int v1, int v2) {
     /*
       Assumption: all h-values correspond to the perfect heuristic for the
       state space before the split.
@@ -325,41 +299,26 @@ void ShortestPaths::dijkstra_from_orphans(const vector<Transitions> &in,
     }
 }
 
-void ShortestPaths::full_dijkstra(
-    const vector<Transitions> &in,
-    const unordered_set<int> &goals) {
-    open_queue.clear();
-    shortest_path.resize(in.size());
-    goal_distances = vector<Cost>(in.size(), INF_COSTS);
-    for (int goal : goals) {
-        Cost dist = 0;
-        goal_distances[goal] = dist;
-        shortest_path[goal] = Transition();
-        open_queue.push(dist, goal);
-    }
-    while (!open_queue.empty()) {
-        pair<Cost, int> top_pair = open_queue.pop();
-        Cost old_g = top_pair.first;
-        int state_id = top_pair.second;
+unique_ptr<Solution> ShortestPaths::extract_solution(
+    int init_id, const Goals &goals) {
+    // h* = \infty iff goal is unreachable from this state.
+    if (goal_distances[init_id] == INF_COSTS)
+        return nullptr;
 
-        Cost g = goal_distances[state_id];
-        assert(g < INF_COSTS);
-        assert(g <= old_g);
-        if (g < old_g)
-            continue;
-        assert(utils::in_bounds(state_id, in));
-        for (const Transition &t : in[state_id]) {
-            int succ_id = t.target_id;
-            int op_id = t.op_id;
-            Cost op_cost = operator_costs[op_id];
-            Cost succ_g = add_costs(g, op_cost);
-            if (succ_g < goal_distances[succ_id]) {
-                goal_distances[succ_id] = succ_g;
-                shortest_path[succ_id] = Transition(op_id, state_id);
-                open_queue.push(succ_g, succ_id);
-            }
-        }
+    int current_state = init_id;
+    unique_ptr<Solution> solution = utils::make_unique_ptr<Solution>();
+    assert(!goals.count(current_state));
+    while (!goals.count(current_state)) {
+        assert(utils::in_bounds(current_state, shortest_path));
+        const Transition &t = shortest_path[current_state];
+        assert(t.op_id != UNDEFINED);
+        assert(t.target_id != UNDEFINED);
+        assert(t.target_id != current_state);
+        assert(goal_distances[t.target_id] <= goal_distances[current_state]);
+        solution->push_back(t);
+        current_state = t.target_id;
     }
+    return solution;
 }
 
 bool ShortestPaths::test_distances(
