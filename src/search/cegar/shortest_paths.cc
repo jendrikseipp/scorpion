@@ -66,24 +66,24 @@ void ShortestPaths::recompute(
     }
     while (!open_queue.empty()) {
         pair<Cost, int> top_pair = open_queue.pop();
-        Cost old_g = top_pair.first;
+        Cost old_dist = top_pair.first;
         int state_id = top_pair.second;
 
-        Cost g = goal_distances[state_id];
-        assert(g < INF_COSTS);
-        assert(g <= old_g);
-        if (g < old_g)
+        Cost dist = goal_distances[state_id];
+        assert(dist < INF_COSTS);
+        assert(dist <= old_dist);
+        if (dist < old_dist)
             continue;
         assert(utils::in_bounds(state_id, in));
         for (const Transition &t : in[state_id]) {
             int succ_id = t.target_id;
             int op_id = t.op_id;
             Cost op_cost = operator_costs[op_id];
-            Cost succ_g = add_costs(g, op_cost);
-            if (succ_g < goal_distances[succ_id]) {
-                goal_distances[succ_id] = succ_g;
+            Cost succ_dist = add_costs(dist, op_cost);
+            if (succ_dist < goal_distances[succ_id]) {
+                goal_distances[succ_id] = succ_dist;
                 shortest_path[succ_id] = Transition(op_id, state_id);
-                open_queue.push(succ_g, succ_id);
+                open_queue.push(succ_dist, succ_id);
             }
         }
     }
@@ -100,18 +100,10 @@ void ShortestPaths::mark_dirty(int state) {
     dirty_states.push_back(state);
 }
 
-void ShortestPaths::update_incrementally(const vector<Transitions> &in,
-                                         const vector<Transitions> &out,
-                                         int v, int v1, int v2) {
-    /*
-      Assumption: all h-values correspond to the perfect heuristic for the
-      state space before the split.
-
-      orphans holds the newly computed reverse g-values (i.e., h-values) for
-      orphaned states, and SETTLED for settled states. A state is orphaned if
-      at least one of its possible shortest-path successors is orphaned,
-      starting with s_1. We start by assuming g=\infty for all orphaned states.
-    */
+void ShortestPaths::update_incrementally(
+    const vector<Transitions> &in,
+    const vector<Transitions> &out,
+    int v, int v1, int v2) {
     assert(in.size() == out.size());
     int num_states = in.size();
     shortest_path.resize(num_states);
@@ -119,7 +111,7 @@ void ShortestPaths::update_incrementally(const vector<Transitions> &in,
     dirty_states.clear();
 
     if (debug) {
-        cout << "Split " << v << " into " << v1 << " and " << v2 << endl;
+        cout << "Reflect splitting " << v << " into " << v1 << " and " << v2 << endl;
         cout << "Goal distances: " << goal_distances << endl;
         cout << "Shortest paths: " << shortest_path << endl;
     }
@@ -138,7 +130,7 @@ void ShortestPaths::update_incrementally(const vector<Transitions> &in,
     assert(v2_settled); // Implementation detail which we use below.
 #endif
 
-    // Copy h value from split state. h(v1) will be updated if necessary.
+    // Copy distance from split state. Distance for v1 will be updated if necessary.
     goal_distances[v1] = goal_distances[v2] = goal_distances[v];
 
     /* Due to the way we select splits, the old shortest path from v1 is
@@ -146,9 +138,10 @@ void ShortestPaths::update_incrementally(const vector<Transitions> &in,
        invalidate shortest_path[v1] since v and v1 are the same ID. */
     shortest_path[v2] = shortest_path[v];
 
-    /* Update shortest path transitions to split state. The SPT transition to v1
-       will be updated again if v1 is dirty. We therefore prefer reconnecting
-       states to v2 instead of v1, which is why we test v2 after v1. */
+    /* Update shortest path tree (SPT) transitions to split state. The SPT
+       transition to v1 will be updated again if v1 is dirty. We therefore
+       prefer reconnecting states to v2 instead of v1, which is why we test v2
+       after v1. */
     for (int state : {v1, v2}) {
         for (const Transition &incoming : in[state]) {
             int u = incoming.target_id;
@@ -199,7 +192,8 @@ void ShortestPaths::update_incrementally(const vector<Transitions> &in,
                 add_costs(goal_distances[succ], operator_costs[op_id])
                 == goal_distances[state]) {
                 if (debug) {
-                    cout << "Reconnect " << state << " to " << succ << " via " << op_id << endl;
+                    cout << "Reconnect " << state << " to " << succ << " via "
+                         << op_id << endl;
                 }
                 shortest_path[state] = Transition(op_id, succ);
                 reconnected = true;
@@ -230,14 +224,21 @@ void ShortestPaths::update_incrementally(const vector<Transitions> &in,
         cout << "Dirty states: " << dirty_states << endl;
     }
 
-    assert(dirty_states.size() < in.size()); // Goal states must never be dirty.
-
 #ifndef NDEBUG
-    for (int i = 0; i < num_states; ++i) {
-        if (goal_distances[i] == DIRTY) {
-            assert(count(dirty_states.begin(), dirty_states.end(), i) == 1);
+    /* We use dirty_states to efficiently loop over dirty states. Check that
+       its data is consistent with the data in goal_distances. */
+    vector<bool> dirty1(num_states, false);
+    for (int state : dirty_states) {
+        dirty1[state] = true;
+    }
+
+    vector<bool> dirty2(num_states, false);
+    for (int state = 0; state < num_states; ++state) {
+        if (goal_distances[state] == DIRTY) {
+            dirty2[state] = true;
         }
     }
+    assert(dirty1 == dirty2);
 #endif
 
     /*
@@ -302,8 +303,9 @@ void ShortestPaths::update_incrementally(const vector<Transitions> &in,
 unique_ptr<Solution> ShortestPaths::extract_solution(
     int init_id, const Goals &goals) {
     // h* = \infty iff goal is unreachable from this state.
-    if (goal_distances[init_id] == INF_COSTS)
+    if (goal_distances[init_id] == INF_COSTS) {
         return nullptr;
+    }
 
     int current_state = init_id;
     unique_ptr<Solution> solution = utils::make_unique_ptr<Solution>();
@@ -347,7 +349,7 @@ bool ShortestPaths::test_distances(
             !goals.count(i)) {
             Transition t = shortest_path[i];
             if (debug) {
-                cout << "SP: " << t << endl;
+                cout << "Shortest path: " << t << endl;
             }
             assert(t.is_defined());
             if (debug) {
