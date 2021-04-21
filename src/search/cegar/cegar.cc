@@ -292,7 +292,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             shortest_paths->dijkstra_from_orphans(
                 abstraction->get_transition_system().get_incoming_transitions(),
                 abstraction->get_transition_system().get_outgoing_transitions(),
-                state_id, new_state_ids.first, new_state_ids.second, true);
+                state_id, new_state_ids.first, new_state_ids.second);
             assert(shortest_paths->test_distances(
                        abstraction->get_transition_system().get_incoming_transitions(),
                        abstraction->get_transition_system().get_outgoing_transitions(),

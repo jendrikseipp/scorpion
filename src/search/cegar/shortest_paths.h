@@ -21,10 +21,9 @@ class HeapQueue {
         }
     };
 
+    // We inherit to gain access to the protected underlying container c.
     class Heap
         : public std::priority_queue<Entry, std::vector<Entry>, compare_func> {
-        // We inherit since our need access to the underlying container c which
-        // is a protected member.
         friend class HeapQueue;
     };
 
@@ -50,6 +49,7 @@ public:
     }
 };
 
+
 class ShortestPaths {
     static const Cost DIRTY;
     static const Cost INF_COSTS;
@@ -64,8 +64,7 @@ class ShortestPaths {
     std::vector<Cost> goal_distances;
     std::vector<bool> dirty_candidate;
     std::vector<int> dirty_states;
-    using ShortestPathTree = std::vector<Transition>;
-    ShortestPathTree shortest_path;
+    Transitions shortest_path;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
@@ -85,7 +84,7 @@ public:
     void dijkstra_from_orphans(
         const std::vector<Transitions> &in,
         const std::vector<Transitions> &out,
-        int v, int v1, int v2, bool filter_orphans);
+        int v, int v1, int v2);
     void full_dijkstra(
         const std::vector<Transitions> &transitions,
         const std::unordered_set<int> &goals);
