@@ -55,6 +55,11 @@ We recommend using the h<sup>SCP</sup>-div configuration when evaluating
 changes to Scorpion itself and the Scorpion IPC 2018 configuration when
 comparing different planners.
 
+If you want to run exactly the same Scorpion version as in IPC 2018, we
+recommend using the Scorpion IPC repo at
+https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/ to
+build and run the Scorpion IPC 2018 Singularity image.
+
 # Fast Downward
 
 Fast Downward is a domain-independent classical planning system.
