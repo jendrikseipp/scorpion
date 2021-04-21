@@ -57,6 +57,9 @@ unique_ptr<RefinementHierarchy> Abstraction::extract_refinement_hierarchy() {
 }
 
 void Abstraction::mark_all_states_as_goals() {
+    if (debug) {
+        cout << "Mark all states as goals." << endl;
+    }
     goals.clear();
     for (auto &state : states) {
         goals.insert(state->get_id());
@@ -81,6 +84,12 @@ pair<int, int> Abstraction::refine(
     int v1_id = v_id;
     int v2_id = get_num_states();
 
+    // Ensure that the initial state always has state ID 0.
+    if (v_id == init_id &&
+        count(wanted.begin(), wanted.end(), concrete_initial_state[var].get_value())) {
+        swap(v1_id, v2_id);
+    }
+
     // Update refinement hierarchy.
     pair<NodeID, NodeID> node_ids = refinement_hierarchy->split(
         state.get_node_id(), var, wanted, v1_id, v2_id);
@@ -95,23 +104,6 @@ pair<int, int> Abstraction::refine(
     assert(state.includes(*v1));
     assert(state.includes(*v2));
 
-    /*
-      Due to the way we split the state into v1 and v2, v2 is never the new
-      initial state and v1 is never a goal state.
-    */
-    if (state.get_id() == init_id) {
-        if (v1->includes(concrete_initial_state)) {
-            assert(!v2->includes(concrete_initial_state));
-            init_id = v1_id;
-        } else {
-            assert(v2->includes(concrete_initial_state));
-            init_id = v2_id;
-        }
-        if (debug) {
-            utils::g_log << "New init state #" << init_id << ": " << get_state(init_id)
-                         << endl;
-        }
-    }
     if (goals.count(v_id)) {
         goals.erase(v_id);
         if (v1->includes(goal_facts)) {
@@ -121,19 +113,20 @@ pair<int, int> Abstraction::refine(
             goals.insert(v2_id);
         }
         if (debug) {
-            utils::g_log << "Goal states: " << goals.size() << endl;
+            utils::g_log << "Number of goal states: " << goals.size() << endl;
         }
     }
 
     transition_system->rewire(states, v_id, *v1, *v2, var);
 
+    states.emplace_back();
     states[v1_id] = move(v1);
-    assert(static_cast<int>(states.size()) == v2_id);
-    states.push_back(move(v2));
+    states[v2_id] = move(v2);
 
-    return {
-               v1_id, v2_id
-    };
+    assert(init_id == 0);
+    assert(get_initial_state().includes(concrete_initial_state));
+
+    return make_pair(v1_id, v2_id);
 }
 
 void Abstraction::print_statistics() const {

@@ -32,6 +32,8 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
         opts.get<PickSplit>("pick"),
+        opts.get<SearchStrategy>("search_strategy"),
+        opts.get<int>("memory_padding"),
         *rng,
         opts.get<bool>("debug"));
     return cost_saturation.generate_heuristic_functions(
@@ -131,6 +133,8 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     pick_strategies.push_back("MAX_HADD");
     parser.add_enum_option<PickSplit>(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
+    add_search_strategy_option(parser);
+    add_memory_padding_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",

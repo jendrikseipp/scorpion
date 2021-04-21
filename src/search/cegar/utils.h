@@ -16,7 +16,13 @@ namespace additive_heuristic {
 class AdditiveHeuristic;
 }
 
+namespace options {
+class OptionParser;
+}
+
 namespace cegar {
+class Abstraction;
+
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
 create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);
 
@@ -29,6 +35,11 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
     const TaskProxy &task, const FactProxy &fact);
 
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
+
+extern void add_search_strategy_option(options::OptionParser &parser);
+extern void add_memory_padding_option(options::OptionParser &parser);
+
+extern void dump_dot_graph(const Abstraction &abstraction);
 }
 
 /*

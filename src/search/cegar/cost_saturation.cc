@@ -1,11 +1,13 @@
 #include "cost_saturation.h"
 
+#include "abstract_search.h"
 #include "abstract_state.h"
 #include "abstraction.h"
 #include "cartesian_heuristic_function.h"
 #include "cegar.h"
 #include "refinement_hierarchy.h"
 #include "subtask_generators.h"
+#include "transition.h"
 #include "transition_system.h"
 #include "utils.h"
 
@@ -21,17 +23,6 @@
 using namespace std;
 
 namespace cegar {
-/*
-  We reserve some memory to be able to recover from out-of-memory
-  situations gracefully. When the memory runs out, we stop refining and
-  start the next refinement or the search. Due to memory fragmentation
-  the memory used for building the abstraction (states, transitions,
-  etc.) often can't be reused for things that require big continuous
-  blocks of memory. It is for this reason that we require such a large
-  amount of memory padding.
-*/
-static const int memory_padding_in_mb = 75;
-
 static vector<int> compute_saturated_costs(
     const TransitionSystem &transition_system,
     const vector<int> &g_values,
@@ -88,6 +79,8 @@ CostSaturation::CostSaturation(
     double max_time,
     bool use_general_costs,
     PickSplit pick_split,
+    SearchStrategy search_strategy,
+    int memory_padding_mb,
     utils::RandomNumberGenerator &rng,
     bool debug)
     : subtask_generators(subtask_generators),
@@ -96,9 +89,10 @@ CostSaturation::CostSaturation(
       max_time(max_time),
       use_general_costs(use_general_costs),
       pick_split(pick_split),
+      search_strategy(search_strategy),
+      memory_padding_mb(memory_padding_mb),
       rng(rng),
       debug(debug),
-      num_abstractions(0),
       num_states(0),
       num_non_looping_transitions(0) {
 }
@@ -128,7 +122,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
                    state_is_dead_end(initial_state);
         };
 
-    utils::reserve_extra_memory_padding(memory_padding_in_mb);
+    utils::reserve_extra_memory_padding(memory_padding_mb);
     for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task);
         build_abstractions(subtasks, timer, should_abort);
@@ -147,7 +141,6 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
 
 void CostSaturation::reset(const TaskProxy &task_proxy) {
     remaining_costs = task_properties::get_operator_costs(task_proxy);
-    num_abstractions = 0;
     num_states = 0;
 }
 
@@ -194,8 +187,8 @@ void CostSaturation::build_abstractions(
     int rem_subtasks = subtasks.size();
     for (shared_ptr<AbstractTask> subtask : subtasks) {
         subtask = get_remaining_costs_task(subtask);
-
         assert(num_states < max_states);
+
         CEGAR cegar(
             subtask,
             max(1, (max_states - num_states) / rem_subtasks),
@@ -203,11 +196,11 @@ void CostSaturation::build_abstractions(
                 rem_subtasks),
             timer.get_remaining_time() / rem_subtasks,
             pick_split,
+            search_strategy,
             rng,
             debug);
 
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
-        ++num_abstractions;
         num_states += abstraction->get_num_states();
         num_non_looping_transitions += abstraction->get_transition_system().get_num_non_loops();
         assert(num_states <= max_states);
@@ -227,16 +220,22 @@ void CostSaturation::build_abstractions(
             goal_distances,
             use_general_costs);
 
+        reduce_remaining_costs(saturated_costs);
+
+        int num_unsolvable_states = count(goal_distances.begin(), goal_distances.end(), INF);
+        utils::g_log << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
+        utils::g_log << "Initial h value: "
+                     << goal_distances[abstraction->get_initial_state().get_id()]
+                     << endl << endl;
+
         heuristic_functions.emplace_back(
             abstraction->extract_refinement_hierarchy(),
             move(goal_distances));
-
-        reduce_remaining_costs(saturated_costs);
-
-        if (should_abort())
-            break;
-
         --rem_subtasks;
+
+        if (should_abort()) {
+            break;
+        }
     }
 }
 
@@ -244,7 +243,7 @@ void CostSaturation::print_statistics(utils::Duration init_time) const {
     utils::g_log << "Done initializing additive Cartesian heuristic" << endl;
     utils::g_log << "Time for initializing additive Cartesian heuristic: "
                  << init_time << endl;
-    utils::g_log << "Cartesian abstractions built: " << num_abstractions << endl;
+    utils::g_log << "Cartesian abstractions built: " << heuristic_functions.size() << endl;
     utils::g_log << "Cartesian states: " << num_states << endl;
     utils::g_log << "Total number of non-looping transitions: "
                  << num_non_looping_transitions << endl;

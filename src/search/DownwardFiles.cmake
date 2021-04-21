@@ -627,6 +627,7 @@ fast_downward_plugin(
         cegar/cegar
         cegar/cost_saturation
         cegar/refinement_hierarchy
+        cegar/shortest_paths
         cegar/split_selector
         cegar/subtask_generators
         cegar/transition
