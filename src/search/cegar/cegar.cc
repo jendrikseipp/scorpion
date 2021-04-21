@@ -204,7 +204,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             current = &abstraction->get_state(pair.second);
         }
         assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
-        assert(static_cast<int>(abstraction->get_goals().size()) == 1);
+        assert(abstraction->get_goals().size() == 1);
     }
 
     // Initialize abstract goal distances and shortest path tree.
@@ -225,7 +225,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     utils::Timer find_trace_timer(false);
     utils::Timer find_flaw_timer(false);
     utils::Timer refine_timer(false);
-    utils::Timer update_h_timer(false);
+    utils::Timer update_goal_distances_timer(false);
 
     while (may_keep_refining()) {
         find_trace_timer.resume();
@@ -241,12 +241,12 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
         find_trace_timer.stop();
         if (solution) {
-            update_h_timer.resume();
+            update_goal_distances_timer.resume();
             if (search_strategy == SearchStrategy::ASTAR) {
                 abstract_search->update_goal_distances_of_states_on_trace(
                     *solution, abstraction->get_initial_state().get_id());
             }
-            update_h_timer.stop();
+            update_goal_distances_timer.stop();
 
             if (debug) {
                 cout << "Found abstract solution:" << endl;
@@ -281,7 +281,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             dump_dot_graph(*abstraction);
         }
 
-        update_h_timer.resume();
+        update_goal_distances_timer.resume();
         if (search_strategy == SearchStrategy::ASTAR) {
             // Since h-values only increase we can assign the h-value to the children.
             abstract_search->copy_h_value_to_children(
@@ -294,14 +294,13 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         } else {
             ABORT("Unknown search strategy");
         }
-
         if (search_strategy == SearchStrategy::INCREMENTAL) {
             assert(shortest_paths->test_distances(
                        abstraction->get_transition_system().get_incoming_transitions(),
                        abstraction->get_transition_system().get_outgoing_transitions(),
                        abstraction->get_goals()));
         }
-        update_h_timer.stop();
+        update_goal_distances_timer.stop();
 
         if (abstraction->get_num_states() % 1000 == 0) {
             utils::g_log << abstraction->get_num_states() << "/" << max_states << " states, "
@@ -312,7 +311,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     utils::g_log << "Time for finding abstract traces: " << find_trace_timer << endl;
     utils::g_log << "Time for finding flaws: " << find_flaw_timer << endl;
     utils::g_log << "Time for splitting states: " << refine_timer << endl;
-    utils::g_log << "Time for updating h values: " << update_h_timer << endl;
+    utils::g_log << "Time for updating h values: " << update_goal_distances_timer << endl;
 }
 
 unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
