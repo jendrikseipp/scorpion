@@ -223,9 +223,10 @@ void CostSaturation::build_abstractions(
         reduce_remaining_costs(saturated_costs);
 
         int num_unsolvable_states = count(goal_distances.begin(), goal_distances.end(), INF);
-        cout << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
-        cout << "Initial h value: " << goal_distances[abstraction->get_initial_state().get_id()] << endl;
-        cout << endl;
+        utils::g_log << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
+        utils::g_log << "Initial h value: "
+                     << goal_distances[abstraction->get_initial_state().get_id()]
+                     << endl << endl;
 
         heuristic_functions.emplace_back(
             abstraction->extract_refinement_hierarchy(),

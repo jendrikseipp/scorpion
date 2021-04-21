@@ -149,7 +149,6 @@ void CEGAR::separate_facts_unreachable_before_goal() {
         if (!unreachable_values.empty())
             abstraction->refine(abstraction->get_initial_state(), var_id, unreachable_values);
     }
-    cout << "Mark all states as goals." << endl;
     abstraction->mark_all_states_as_goals();
     /*
       Split off the goal fact from the initial state. Then the new initial

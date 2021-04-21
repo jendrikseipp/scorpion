@@ -57,6 +57,9 @@ unique_ptr<RefinementHierarchy> Abstraction::extract_refinement_hierarchy() {
 }
 
 void Abstraction::mark_all_states_as_goals() {
+    if (debug) {
+        cout << "Mark all states as goals." << endl;
+    }
     goals.clear();
     for (auto &state : states) {
         goals.insert(state->get_id());
