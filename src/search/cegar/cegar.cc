@@ -240,6 +240,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 abstraction->get_initial_state().get_id(), abstraction->get_goals());
         }
         find_trace_timer.stop();
+
         if (solution) {
             update_goal_distances_timer.resume();
             if (search_strategy == SearchStrategy::ASTAR) {
@@ -263,6 +264,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         find_flaw_timer.resume();
         unique_ptr<Flaw> flaw = find_flaw(*solution);
         find_flaw_timer.stop();
+
         if (!flaw) {
             utils::g_log << "Found concrete solution during refinement." << endl;
             break;
@@ -286,15 +288,11 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             // Since h-values only increase we can assign the h-value to the children.
             abstract_search->copy_h_value_to_children(
                 state_id, new_state_ids.first, new_state_ids.second);
-        } else if (search_strategy == SearchStrategy::INCREMENTAL) {
+        } else {
             shortest_paths->dijkstra_from_orphans(
                 abstraction->get_transition_system().get_incoming_transitions(),
                 abstraction->get_transition_system().get_outgoing_transitions(),
                 state_id, new_state_ids.first, new_state_ids.second, true);
-        } else {
-            ABORT("Unknown search strategy");
-        }
-        if (search_strategy == SearchStrategy::INCREMENTAL) {
             assert(shortest_paths->test_distances(
                        abstraction->get_transition_system().get_incoming_transitions(),
                        abstraction->get_transition_system().get_outgoing_transitions(),
@@ -311,7 +309,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     utils::g_log << "Time for finding abstract traces: " << find_trace_timer << endl;
     utils::g_log << "Time for finding flaws: " << find_flaw_timer << endl;
     utils::g_log << "Time for splitting states: " << refine_timer << endl;
-    utils::g_log << "Time for updating h values: " << update_goal_distances_timer << endl;
+    utils::g_log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
 }
 
 unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
