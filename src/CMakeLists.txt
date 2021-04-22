@@ -75,4 +75,5 @@ add_custom_command(TARGET translate POST_BUILD
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/translate
     COMMENT "Copying translator module into output directory")
 
+add_subdirectory(preprocess_h2)
 add_subdirectory(search)
