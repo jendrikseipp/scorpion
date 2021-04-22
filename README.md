@@ -1,8 +1,9 @@
 # Scorpion
 
-Scorpion is an optimal classical planner based on saturated cost
-partitioning. It is based on version 20.06 of the Fast Downward planning
-system (https://github.com/aibasel/downward), which is described below.
+Scorpion is an optimal classical planner that uses saturated cost
+partitioning. It is based on the Fast Downward planning system
+(https://github.com/aibasel/downward), which is described below. We
+regularly port the latest changes from Fast Downward to Scorpion.
 
 Please use the following reference when citing Scorpion:
 
@@ -12,53 +13,50 @@ Planning](https://www.jair.org/index.php/jair/article/view/11673). Journal
 of Artificial Intelligence Research 67, pp. 129-167. 2020.
 
 The code for saturated cost partitioning (SCP) can be found in the
-`src/search/cost_saturation` directory. Please see
-http://www.fast-downward.org for instructions on how to compile the
-planner.
+`src/search/cost_saturation` directory.
 
-The following configuration uses the strongest heuristic
-(h<sup>SCP</sup>-div) from the journal article, i.e., it maximizes over
-multiple diverse SCP heuristics:
+
+## Instructions
+
+After installing the requirements (see below), compile the planner with
+
+    ./build.py
+
+and see the available options with
+
+    ./fast-downward.py --help
+
+For more details (including build instructions for Windows), see the
+documentation about
+[compiling](http://www.fast-downward.org/ObtainingAndRunningFastDownward)
+and [running](http://www.fast-downward.org/PlannerUsage) the planner.
+
+### Recommended Configuration
+
+We recommend the following configuration, which is similar to one Scorpion
+used in the IPC 2018. It prunes irrelevant operators in a preprocessing
+step, uses partial order reduction, and maximizes over multiple diverse
+SCP heuristics computed for projections and Cartesian abstractions:
 
 ```
---search "astar(scp([
+./fast-downward.py --transform-task builds/release/bin/preprocess-h2
+  ../benchmarks/gripper/prob01.pddl
+  --search "astar(scp([
     projections(hillclimbing(max_generated_patterns=200, random_seed=0)),
-    projections(systematic(2)),
-    cartesian()],
-    max_orders=infinity, max_time=1000, max_optimization_time=100, diversify=true,
-    orders=greedy_orders(random_seed=0), random_seed=0))"
-```
-
-The version of Scorpion that participated in the IPC 2018 is slightly
-different: it uses different timeouts for hill climbing, diversification
-and optimization, prunes irrelevant operators in a preprocessing step and
-uses partial order reduction during the A* search:
-
-```
---search "astar(scp([
-    projections(hillclimbing(max_time=100, random_seed=0)),
     projections(systematic(2)),
     cartesian()],
     max_orders=infinity, max_time=200, max_optimization_time=2, diversify=true,
     orders=greedy_orders(random_seed=0), random_seed=0),
-    pruning=stubborn_sets_simple(min_required_pruning_ratio=0.2))"
+    pruning=atom_centric_stubborn_sets(min_required_pruning_ratio=0.2))"
 ```
 
-Note that for operator pruning you need to make the [h^2
-preprocessor](https://people.cs.aau.dk/~alto/software.html#section1)
-available on your `PATH` (e.g., using the name "h2-mutexes") and then pass
-`--transform-task h2-mutexes` to the `fast-downward.py` script (in
-Downward Lab you can use the `driver_options` argument of `add_algorithm`
-for this).
-
-We recommend using the h<sup>SCP</sup>-div configuration when evaluating
-changes to Scorpion itself and the Scorpion IPC 2018 configuration when
-comparing different planners.
+(In Downward Lab you can use the `driver_options` argument of
+`add_algorithm` to specify the `--transform-task` argument.)
 
 If you want to run exactly the same Scorpion version as in IPC 2018, we
-recommend using the Scorpion IPC repo at
-https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/ to
-build and run the Scorpion IPC 2018 Singularity image.
+recommend using the [Scorpion IPC
+repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
+It also includes a Singularity image.
 
 # Fast Downward
 
@@ -85,7 +83,7 @@ This version of Fast Downward has been tested with the following software versio
 | Windows 10   | 3.6    | Visual Studio Enterprise 2017 (MSVC 19.16) and 2019 (MSVC 19.28) | 3.19  |
 
 We test LP support with CPLEX 12.9, SoPlex 3.1.1 and Osi 0.107.9.
-On Ubuntu, we test both CPLEX and SoPlex. On Windows, we currently 
+On Ubuntu, we test both CPLEX and SoPlex. On Windows, we currently
 only test CPLEX, and on macOS, we do not test LP solvers (yet).
 
 
