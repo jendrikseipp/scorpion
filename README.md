@@ -44,7 +44,7 @@ abstractions:
 ./fast-downward.py --transform-task preprocess-h2
   ../benchmarks/gripper/prob01.pddl
   --search "astar(scp([
-    projections(hillclimbing(max_generated_patterns=200, random_seed=0)),
+    projections(hillclimbing(max_time=100, random_seed=0)),
     projections(systematic(2)),
     cartesian()],
     max_orders=infinity, max_time=200, max_optimization_time=2, diversify=true,
