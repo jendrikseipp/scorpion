@@ -1,6 +1,7 @@
 import errno
 import logging
 import os.path
+import shutil
 import signal
 import subprocess
 import sys
@@ -104,6 +105,16 @@ def transform_task(args):
         for i, option in enumerate(options):
             if i % 2 == 0:
                 options[i] = "--" + option
+
+
+
+    if not shutil.which(args.transform_task):
+        preprocessor_name = "preprocess-h2"
+        if args.transform_task != preprocessor_name:
+            sys.exit(f"Error: {args.transform_task} not found. Is it on the PATH?")
+        # Check if executable exists in the "bin" directory.
+        args.transform_task = get_executable(args.build, preprocessor_name)
+
     try:
         call.check_call(
             "transform-task",
@@ -114,16 +125,7 @@ def transform_task(args):
     except subprocess.CalledProcessError as err:
         if err.returncode != -signal.SIGXCPU:
             returncodes.print_stderr(
-                "Task transformation returned exit status {}".format(err.returncode))
-    except IOError as err:
-        if err.errno == errno.ENOENT:
-            print("Translator output file missing. Skipping task transformation.")
-        else:
-            raise
-    except OSError as err:
-        if err.errno == errno.ENOENT:
-            sys.exit("Error: {} not found. Is it on the PATH?".format(
-                args.transform_task))
+                f"Task transformation returned exit status {err.returncode}")
 
 
 def run_search(args):
