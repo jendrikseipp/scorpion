@@ -55,7 +55,6 @@ fast_downward_plugin(
         evaluation_result
         evaluator
         evaluator_cache
-        global_state
         heuristic
         open_list
         open_list_factory
@@ -174,6 +173,14 @@ fast_downward_plugin(
     HELP "Poor man's version of boost::dynamic_bitset"
     SOURCES
         algorithms/dynamic_bitset
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME NAMED_VECTOR
+    HELP "Generic vector with associated name for each element"
+    SOURCES
+        algorithms/named_vector
     DEPENDENCY_ONLY
 )
 
@@ -322,6 +329,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME STUBBORN_SETS_ATOM_CENTRIC
+    HELP "Atom-centric stubborn sets"
+    SOURCES
+        pruning/stubborn_sets_atom_centric
+    DEPENDS STUBBORN_SETS
+)
+
+fast_downward_plugin(
     NAME STUBBORN_SETS_SIMPLE
     HELP "Stubborn sets simple"
     SOURCES
@@ -441,7 +456,7 @@ fast_downward_plugin(
     SOURCES
         lp/lp_internals
         lp/lp_solver
-    DEPENDENCY_ONLY
+    DEPENDS NAMED_VECTOR
 )
 
 fast_downward_plugin(
@@ -612,6 +627,7 @@ fast_downward_plugin(
         cegar/cegar
         cegar/cost_saturation
         cegar/refinement_hierarchy
+        cegar/shortest_paths
         cegar/split_selector
         cegar/subtask_generators
         cegar/transition
@@ -620,6 +636,40 @@ fast_downward_plugin(
         cegar/utils
         cegar/utils_landmarks
     DEPENDS ADDITIVE_HEURISTIC DYNAMIC_BITSET EXTRA_TASKS LANDMARKS PRIORITY_QUEUES TASK_PROPERTIES
+)
+
+fast_downward_plugin(
+    NAME COST_SATURATION
+    HELP "Saturated cost partitioning"
+    SOURCES
+        cost_saturation/abstraction
+        cost_saturation/abstraction_generator
+        cost_saturation/canonical_heuristic
+        cost_saturation/cartesian_abstraction_generator
+        cost_saturation/cost_partitioning_heuristic
+        cost_saturation/cost_partitioning_heuristic_collection_generator
+        cost_saturation/diversifier
+        cost_saturation/explicit_abstraction
+        cost_saturation/explicit_projection_factory
+        cost_saturation/greedy_order_utils
+        cost_saturation/max_cost_partitioning_heuristic
+        cost_saturation/max_heuristic
+        cost_saturation/optimal_cost_partitioning_heuristic
+        cost_saturation/order_generator
+        cost_saturation/order_generator_dynamic_greedy
+        cost_saturation/order_generator_greedy
+        cost_saturation/order_generator_random
+        cost_saturation/order_optimizer
+        cost_saturation/projection
+        cost_saturation/projection_generator
+        cost_saturation/saturated_cost_partitioning_heuristic
+        cost_saturation/saturated_cost_partitioning_online_heuristic
+        cost_saturation/types
+        cost_saturation/uniform_cost_partitioning_heuristic
+        cost_saturation/unsolvability_heuristic
+        cost_saturation/utils
+        cost_saturation/zero_one_cost_partitioning_heuristic
+    DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
 )
 
 fast_downward_plugin(
@@ -645,7 +695,6 @@ fast_downward_plugin(
         merge_and_shrink/merge_selector
         merge_and_shrink/merge_selector_score_based_filtering
         merge_and_shrink/merge_strategy
-        merge_and_shrink/merge_strategy_aliases
         merge_and_shrink/merge_strategy_factory
         merge_and_shrink/merge_strategy_factory_precomputed
         merge_and_shrink/merge_strategy_factory_sccs
@@ -677,6 +726,7 @@ fast_downward_plugin(
         landmarks/landmark_factory
         landmarks/landmark_factory_h_m
         landmarks/landmark_factory_merged
+        landmarks/landmark_factory_relaxation
         landmarks/landmark_factory_rpg_exhaust
         landmarks/landmark_factory_rpg_sasp
         landmarks/landmark_factory_zhu_givan
@@ -693,6 +743,7 @@ fast_downward_plugin(
         operator_counting/constraint_generator
         operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
+        operator_counting/pho_abstraction_constraints
         operator_counting/pho_constraints
         operator_counting/state_equation_constraints
     DEPENDS LP_SOLVER LANDMARK_CUT_HEURISTIC PDBS TASK_PROPERTIES

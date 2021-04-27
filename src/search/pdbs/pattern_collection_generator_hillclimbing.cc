@@ -35,6 +35,8 @@ namespace pdbs {
    utils::Exception. */
 class HillClimbingTimeout {
 };
+class HillClimbingMaxPDBsGenerated {
+};
 
 static vector<int> get_goal_variables(const TaskProxy &task_proxy) {
     vector<int> goal_vars;
@@ -118,6 +120,7 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       num_samples(opts.get<int>("num_samples")),
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
+      max_generated_patterns(opts.get<int>("max_generated_patterns")),
       rng(utils::parse_rng_from_options(opts)),
       num_rejected(0),
       hill_climbing_timer(0) {
@@ -144,6 +147,9 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
             back_inserter(relevant_vars));
 
         for (int rel_var_id : relevant_vars) {
+            if (hill_climbing_timer->is_expired())
+                throw HillClimbingTimeout();
+
             VariableProxy rel_var = task_proxy.get_variables()[rel_var_id];
             int rel_var_size = rel_var.get_domain_size();
             if (utils::is_product_within_limit(pdb_size, rel_var_size,
@@ -162,6 +168,8 @@ int PatternCollectionGeneratorHillclimbing::generate_candidate_pdbs(
                         make_shared<PatternDatabase>(task_proxy, new_pattern));
                     max_pdb_size = max(max_pdb_size,
                                        candidate_pdbs.back()->get_size());
+                    if (static_cast<int>(generated_patterns.size()) >= max_generated_patterns)
+                        throw HillClimbingMaxPDBsGenerated();
                 }
             } else {
                 ++num_rejected;
@@ -253,8 +261,8 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
             best_pdb_index = i;
         }
         if (count > 0) {
-            cout << "pattern: " << candidate_pdbs[i]->get_pattern()
-                 << " - improvement: " << count << endl;
+            utils::g_log << "pattern: " << candidate_pdbs[i]->get_pattern()
+                         << " - improvement: " << count << endl;
         }
     }
 
@@ -264,8 +272,9 @@ pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_pdb(
 bool PatternCollectionGeneratorHillclimbing::is_heuristic_improved(
     const PatternDatabase &pdb, const State &sample, int h_collection,
     const PDBCollection &pdbs, const vector<PatternClique> &pattern_cliques) {
+    const vector<int> &sample_data = sample.get_unpacked_values();
     // h_pattern: h-value of the new pattern
-    int h_pattern = pdb.get_value(sample);
+    int h_pattern = pdb.get_value(sample_data);
 
     if (h_pattern == numeric_limits<int>::max()) {
         return true;
@@ -278,7 +287,7 @@ bool PatternCollectionGeneratorHillclimbing::is_heuristic_improved(
     vector<int> h_values;
     h_values.reserve(pdbs.size());
     for (const shared_ptr<PatternDatabase> &p : pdbs) {
-        int h = p->get_value(sample);
+        int h = p->get_value(sample_data);
         if (h == numeric_limits<int>::max())
             return false;
         h_values.push_back(h);
@@ -303,8 +312,8 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     const TaskProxy &task_proxy) {
     hill_climbing_timer = new utils::CountdownTimer(max_time);
 
-    cout << "Average operator cost: "
-         << task_properties::get_average_operator_cost(task_proxy) << endl;
+    utils::g_log << "Average operator cost: "
+                 << task_properties::get_average_operator_cost(task_proxy) << endl;
 
     const vector<vector<int>> relevant_neighbours =
         compute_relevant_neighbours(task_proxy);
@@ -316,39 +325,40 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
     PDBCollection candidate_pdbs;
     // The maximum size over all PDBs in candidate_pdbs.
     int max_pdb_size = 0;
-    for (const shared_ptr<PatternDatabase> &current_pdb :
-         *(current_pdbs->get_pattern_databases())) {
-        int new_max_pdb_size = generate_candidate_pdbs(
-            task_proxy, relevant_neighbours, *current_pdb, generated_patterns,
-            candidate_pdbs);
-        max_pdb_size = max(max_pdb_size, new_max_pdb_size);
-    }
-    /*
-      NOTE: The initial set of candidate patterns (in generated_patterns) is
-      guaranteed to be "normalized" in the sense that there are no duplicates
-      and patterns are sorted.
-    */
-    cout << "Done calculating initial candidate PDBs" << endl;
-
     int num_iterations = 0;
-    State initial_state = task_proxy.get_initial_state();
-
-    sampling::RandomWalkSampler sampler(task_proxy, *rng);
-    vector<State> samples;
-    vector<int> samples_h_values;
 
     try {
+        for (const shared_ptr<PatternDatabase> &current_pdb :
+             *(current_pdbs->get_pattern_databases())) {
+            int new_max_pdb_size = generate_candidate_pdbs(
+                task_proxy, relevant_neighbours, *current_pdb, generated_patterns,
+                candidate_pdbs);
+            max_pdb_size = max(max_pdb_size, new_max_pdb_size);
+        }
+        /*
+          NOTE: The initial set of candidate patterns (in generated_patterns) is
+          guaranteed to be "normalized" in the sense that there are no duplicates
+          and patterns are sorted.
+        */
+        utils::g_log << "Done calculating initial candidate PDBs" << endl;
+
+        State initial_state = task_proxy.get_initial_state();
+
+        sampling::RandomWalkSampler sampler(task_proxy, *rng);
+        vector<State> samples;
+        vector<int> samples_h_values;
+
         while (true) {
             ++num_iterations;
             int init_h = current_pdbs->get_value(initial_state);
-            cout << "current collection size is "
-                 << current_pdbs->get_size() << endl;
-            cout << "current initial h value: ";
+            utils::g_log << "current collection size is "
+                         << current_pdbs->get_size() << endl;
+            utils::g_log << "current initial h value: ";
             if (current_pdbs->is_dead_end(initial_state)) {
-                cout << "infinite => stopping hill climbing" << endl;
+                utils::g_log << "infinite => stopping hill climbing" << endl;
                 break;
             } else {
-                cout << init_h << endl;
+                utils::g_log << init_h << endl;
             }
 
             samples.clear();
@@ -364,8 +374,8 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             int best_pdb_index = improvement_and_index.second;
 
             if (improvement < min_improvement) {
-                cout << "Improvement below threshold. Stop hill climbing."
-                     << endl;
+                utils::g_log << "Improvement below threshold. Stop hill climbing."
+                             << endl;
                 break;
             }
 
@@ -374,9 +384,9 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             const shared_ptr<PatternDatabase> &best_pdb =
                 candidate_pdbs[best_pdb_index];
             const Pattern &best_pattern = best_pdb->get_pattern();
-            cout << "found a better pattern with improvement " << improvement
-                 << endl;
-            cout << "pattern: " << best_pattern << endl;
+            utils::g_log << "found a better pattern with improvement " << improvement
+                         << endl;
+            utils::g_log << "pattern: " << best_pattern << endl;
             current_pdbs->add_pdb(best_pdb);
 
             // Generate candidate patterns and PDBs for next iteration.
@@ -388,20 +398,22 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
             // Remove the added PDB from candidate_pdbs.
             candidate_pdbs[best_pdb_index] = nullptr;
 
-            cout << "Hill climbing time so far: "
-                 << hill_climbing_timer->get_elapsed_time()
-                 << endl;
+            utils::g_log << "Hill climbing time so far: "
+                         << hill_climbing_timer->get_elapsed_time()
+                         << endl;
         }
     } catch (HillClimbingTimeout &) {
-        cout << "Time limit reached. Abort hill climbing." << endl;
+        utils::g_log << "Time limit reached. Abort hill climbing." << endl;
+    } catch (HillClimbingMaxPDBsGenerated &) {
+        utils::g_log << "Maximum number of PDBs generated. Abort hill climbing." << endl;
     }
 
-    cout << "Hill climbing iterations: " << num_iterations << endl;
-    cout << "Hill climbing generated patterns: " << generated_patterns.size() << endl;
-    cout << "Hill climbing rejected patterns: " << num_rejected << endl;
-    cout << "Hill climbing maximum PDB size: " << max_pdb_size << endl;
-    cout << "Hill climbing time: "
-         << hill_climbing_timer->get_elapsed_time() << endl;
+    utils::g_log << "Hill climbing iterations: " << num_iterations << endl;
+    utils::g_log << "Hill climbing generated patterns: " << generated_patterns.size() << endl;
+    utils::g_log << "Hill climbing rejected patterns: " << num_rejected << endl;
+    utils::g_log << "Hill climbing maximum PDB size: " << max_pdb_size << endl;
+    utils::g_log << "Hill climbing time: "
+                 << hill_climbing_timer->get_elapsed_time() << endl;
 
     delete hill_climbing_timer;
     hill_climbing_timer = nullptr;
@@ -411,7 +423,7 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
     const shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
     utils::Timer timer;
-    cout << "Generating patterns using the hill climbing generator..." << endl;
+    utils::g_log << "Generating patterns using the hill climbing generator..." << endl;
 
     // Generate initial collection: a pattern for each goal variable.
     PatternCollection initial_pattern_collection;
@@ -421,7 +433,7 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(
     }
     current_pdbs = utils::make_unique_ptr<IncrementalCanonicalPDBs>(
         task_proxy, initial_pattern_collection);
-    cout << "Done calculating initial pattern collection: " << timer << endl;
+    utils::g_log << "Done calculating initial pattern collection: " << timer << endl;
 
     State initial_state = task_proxy.get_initial_state();
     if (!current_pdbs->is_dead_end(initial_state) && max_time > 0) {
@@ -467,6 +479,11 @@ void add_hillclimbing_options(OptionParser &parser) {
         "spent for pruning dominated patterns.",
         "infinity",
         Bounds("0.0", "infinity"));
+    parser.add_option<int>(
+        "max_generated_patterns",
+        "maximum number of generated patterns",
+        "infinity",
+        Bounds("0", "infinity"));
     utils::add_rng_options(parser);
 }
 

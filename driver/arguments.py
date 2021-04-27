@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import argparse
 import os.path
 import re
@@ -54,25 +52,25 @@ EXAMPLE_PORTFOLIO = os.path.relpath(
 
 EXAMPLES = [
     ("Translate and find a plan with A* + LM-Cut:",
-     ["./fast-downward.py", "misc/tests/benchmarks/gripper/prob01.pddl",
+     ["misc/tests/benchmarks/gripper/prob01.pddl",
       "--search", '"astar(lmcut())"']),
     ("Translate and run no search:",
-     ["./fast-downward.py", "--translate",
+     ["--translate",
       "misc/tests/benchmarks/gripper/prob01.pddl"]),
     ("Run predefined configuration (LAMA-2011) on translated task:",
-     ["./fast-downward.py", "--alias", "seq-sat-lama-2011", "output.sas"]),
+     ["--alias", "seq-sat-lama-2011", "output.sas"]),
     ("Run a portfolio on a translated task:",
-     ["./fast-downward.py", "--portfolio", EXAMPLE_PORTFOLIO,
+     ["--portfolio", EXAMPLE_PORTFOLIO,
       "--search-time-limit", "30m", "output.sas"]),
     ("Run the search component in debug mode (with assertions enabled) "
      "and validate the resulting plan:",
-     ["./fast-downward.py", "--debug", "output.sas", "--search", '"astar(ipdb())"']),
+     ["--debug", "output.sas", "--search", '"astar(ipdb())"']),
     ("Pass options to translator and search components:",
-     ["./fast-downward.py", "misc/tests/benchmarks/gripper/prob01.pddl",
+     ["misc/tests/benchmarks/gripper/prob01.pddl",
       "--translate-options", "--full-encoding",
       "--search-options", "--search", '"astar(lmcut())"']),
     ("Find a plan and validate it:",
-     ["./fast-downward.py", "--validate",
+     ["--validate",
       "misc/tests/benchmarks/gripper/prob01.pddl",
       "--search", '"astar(cegar())"']),
 ]
@@ -86,7 +84,7 @@ EPILOG = """component options:
 Examples:
 
 %s
-""" % "\n\n".join("%s\n%s" % (desc, " ".join(cmd)) for desc, cmd in EXAMPLES)
+""" % "\n\n".join("%s\n%s" % (desc, " ".join([os.path.basename(sys.argv[0])] + parameters)) for desc, parameters in EXAMPLES)
 
 COMPONENTS_PLUS_OVERALL = ["translate", "search", "validate", "overall"]
 DEFAULT_SAS_FILE = "output.sas"
@@ -342,6 +340,9 @@ def parse_args():
         action="help", default=argparse.SUPPRESS,
         help="show this help message and exit")
     help_options.add_argument(
+        "-v", "--version", action="store_true",
+        help="print version number and exit")
+    help_options.add_argument(
         "--show-aliases", action="store_true",
         help="show the known aliases (see --alias) and exit")
 
@@ -422,7 +423,6 @@ def parse_args():
         "--cleanup", action="store_true",
         help="clean up temporary files (translator output and plan files) and exit")
 
-
     parser.add_argument(
         "planner_args", nargs=argparse.REMAINDER,
         help="file names and options passed on to planner components")
@@ -477,9 +477,9 @@ def parse_args():
             parser, "--portfolio-bound must not be negative.")
     if args.portfolio_single_plan and not args.portfolio:
         print_usage_and_exit_with_driver_input_error(
-            parser, "--portfolio-single_plan may only be used for portfolios.")
+            parser, "--portfolio-single-plan may only be used for portfolios.")
 
-    if not args.show_aliases and not args.cleanup:
+    if not args.version and not args.show_aliases and not args.cleanup:
         _set_components_and_inputs(parser, args)
         if "translate" not in args.components or "search" not in args.components:
             args.keep_sas_file = True

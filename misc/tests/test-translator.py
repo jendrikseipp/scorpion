@@ -1,31 +1,26 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
-from __future__ import print_function
 
 HELP = """\
 Check that translator is deterministic.
-
-Run the translator on two different Python versions and test that the
-log and the output file are the same. Obviously, there might be false
-negatives, i.e., different Python versions might lead to the same
-nondeterministic results.
+Run the translator multiple times to test that the log and the output file are
+the same for every run. Obviously, there might be false negatives, i.e.,
+different runs might lead to the same nondeterministic results.
 """
 
 import argparse
 from collections import defaultdict
-from distutils.spawn import find_executable
 import itertools
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 
 
-VERSIONS = ["2.7", "3"]
-
-DIR = os.path.dirname(os.path.abspath(__file__))
-REPO = os.path.dirname(os.path.dirname(DIR))
-DRIVER = os.path.join(REPO, "fast-downward.py")
+DIR = Path(__file__).resolve().parent
+REPO = DIR.parents[1]
+DRIVER = REPO / "fast-downward.py"
 
 
 def parse_args():
@@ -38,32 +33,31 @@ def parse_args():
         help='Use "all" to test all benchmarks, '
              '"first" to test the first task of each domain (default), '
              'or "<domain>:<problem>" to test individual tasks')
+    parser.add_argument(
+        "--runs-per-task",
+        help="translate each task this many times and compare the outputs",
+        type=int, default=3)
     args = parser.parse_args()
-    args.benchmarks_dir = os.path.abspath(args.benchmarks_dir)
+    args.benchmarks_dir = Path(args.benchmarks_dir).resolve()
     return args
 
 
 def get_task_name(path):
-    return "-".join(path.split("/")[-2:])
+    return "-".join(str(path).split("/")[-2:])
 
 
-def translate_task(python, python_version, task_file):
-    print("Translate {} with {} ({})".format(
-        get_task_name(task_file), python, python_version))
+def translate_task(task_file):
+    print(f"Translate {get_task_name(task_file)}", flush=True)
     sys.stdout.flush()
-    cmd = [python, DRIVER, "--translate", task_file]
-    env = os.environ.copy()
-    env["PYTHONHASHSEED"] = "random"
+    cmd = [sys.executable, str(DRIVER), "--translate", str(task_file)]
     try:
-        output = subprocess.check_output(cmd, env=env)
+        output = subprocess.check_output(cmd, encoding=sys.getfilesystemencoding())
     except OSError as err:
-        sys.exit("Call failed: {}\n{}".format(" ".join(cmd), err))
-    output = str(output)
+        sys.exit(f"Call failed: {' '.join(cmd)}\n{err}")
     # Remove information that may differ between calls.
     for pattern in [
             r"\[.+s CPU, .+s wall-clock\]",
-            r"\d+ KB",
-            r".* command line string: .*/python\d(.\d)?"]:
+            r"\d+ KB"]:
         output = re.sub(pattern, "", output)
     return output
 
@@ -75,22 +69,23 @@ def _get_all_tasks_by_domain(benchmarks_dir):
     # seems to be detrimental on some other domains.
     blacklisted_domains = [
         "agricola-sat18-strips",
-        "citycar-opt14-adl", # cf. issue875
-        "citycar-sat14-adl", # cf. issue875
+        "citycar-opt14-adl",  # cf. issue879
+        "citycar-sat14-adl",  # cf. issue879
         "organic-synthesis-sat18-strips",
         "organic-synthesis-split-opt18-strips",
         "organic-synthesis-split-sat18-strips"]
+    benchmarks_dir = Path(benchmarks_dir)
     tasks = defaultdict(list)
     domains = [
-        name for name in os.listdir(benchmarks_dir)
-        if os.path.isdir(os.path.join(benchmarks_dir, name)) and
-        not name.startswith((".", "_")) and
-        not name in blacklisted_domains]
+        domain_dir for domain_dir in benchmarks_dir.iterdir()
+        if domain_dir.is_dir() and
+        not str(domain_dir.name).startswith((".", "_", "unofficial")) and
+        str(domain_dir.name) not in blacklisted_domains]
     for domain in domains:
-        path = os.path.join(benchmarks_dir, domain)
+        path = benchmarks_dir / domain
         tasks[domain] = [
-            os.path.join(benchmarks_dir, domain, f)
-            for f in sorted(os.listdir(path)) if "domain" not in f]
+            benchmarks_dir / domain / f
+            for f in sorted(path.iterdir()) if "domain" not in str(f)]
     return sorted(tasks.values())
 
 
@@ -107,62 +102,40 @@ def get_tasks(args):
         else:
             # Add task from command line.
             task = task.replace(":", "/")
-            suite.append(os.path.join(args.benchmarks_dir, task))
+            suite.append(args.benchmarks_dir / task)
     return sorted(set(suite))
 
 
 def cleanup():
-    # We can't use the driver's cleanup function since the files are renamed.
-    for f in os.listdir("."):
-        if f.endswith(".sas"):
-            os.remove(f)
+    for f in Path(".").glob("translator-output-*.txt"):
+        f.unlink()
 
 
-def get_abs_interpreter_path(python_name):
-    # For some reason, the driver cannot find the Python executable
-    # (sys.executable returns the empty string) if we don't use the
-    # absolute path here.
-    abs_python = find_executable(python_name)
-    if not abs_python:
-        sys.exit("Error: {} couldn't be found.".format(python_name))
-    return abs_python
-
-
-def get_python_version_info(python):
-    output = subprocess.check_output(
-        [python, '-V'],
-        stderr=subprocess.STDOUT,
-        universal_newlines=True).strip()
-    assert output.startswith("Python "), output
-    return output[len("Python "):]
+def write_combined_output(output_file, task):
+    log = translate_task(task)
+    with open(output_file, "w") as combined_output:
+        combined_output.write(log)
+        with open("output.sas") as output_sas:
+            combined_output.write(output_sas.read())
 
 
 def main():
     args = parse_args()
     os.chdir(DIR)
     cleanup()
-    subprocess.check_call(["./build.py", "translate"], cwd=REPO)
-    interpreter_paths = [get_abs_interpreter_path("python{}".format(version)) for version in VERSIONS]
-    interpreter_versions = [get_python_version_info(path) for path in interpreter_paths]
     for task in get_tasks(args):
-        for python, python_version in zip(interpreter_paths, interpreter_versions):
-            log = translate_task(python, python_version, task)
-            with open(python_version + ".sas", "w") as combined_output:
-                combined_output.write(log)
-                with open("output.sas") as output_sas:
-                    combined_output.write(output_sas.read())
-        print("Compare translator output")
-        sys.stdout.flush()
-        assert len(interpreter_versions) == 2, "Code only tests difference between 2 versions"
-        files = [version + ".sas" for version in interpreter_versions]
-        try:
-            subprocess.check_call(["diff", "-q"] + files)
-        except subprocess.CalledProcessError:
-            sys.exit(
-                "Error: Translator is nondeterministic for {task}.".format(**locals()))
-        print()
-        sys.stdout.flush()
-    cleanup()
+        base_file = "translator-output-0.txt"
+        write_combined_output(base_file, task)
+        for i in range(1, args.runs_per_task):
+            compared_file = f"translator-output-{i}.txt"
+            write_combined_output(compared_file, task)
+            files = [base_file, compared_file]
+            try:
+                subprocess.check_call(["diff", "-q"] + files)
+            except subprocess.CalledProcessError:
+                sys.exit(f"Error: Translator is nondeterministic for {task}.")
+        print("Outputs match\n", flush=True)
+        cleanup()
 
 
 if __name__ == "__main__":
