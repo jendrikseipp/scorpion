@@ -386,6 +386,9 @@ def parse_args():
         "--transform-task",
         help='path to or name of external program that transforms output.sas (e.g. h2-mutexes)')
     driver_other.add_argument(
+        "--transform-task-options",
+        help='comma-separated list of key-value option pairs for task transformation (e.g. h2_time_limit,10)')
+    driver_other.add_argument(
         "--validate", action="store_true",
         help='validate plans (implied by --debug); needs "validate" (VAL) on PATH')
     driver_other.add_argument(

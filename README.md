@@ -41,7 +41,7 @@ multiple diverse SCP heuristics computed for projections and Cartesian
 abstractions:
 
 ```
-./fast-downward.py --transform-task builds/release/bin/preprocess-h2
+./fast-downward.py --transform-task preprocess-h2
   ../benchmarks/gripper/prob01.pddl
   --search "astar(scp([
     projections(hillclimbing(max_generated_patterns=200, random_seed=0)),
