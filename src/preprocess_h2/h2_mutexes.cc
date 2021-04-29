@@ -5,6 +5,7 @@
 //#include "utilities.h"
 
 #include <algorithm>
+#include <iterator>
 #include <vector>
 #include <set>
 
@@ -86,7 +87,7 @@ bool compute_h2_mutexes(const vector <Variable *> &variables,
             else
                 total_mutexes_fw += mutexes_detected;
 
-	    
+
             int res_unreachable = h2.detect_unreachable_fluents(variables, initial_state, goals);
 	    if(res_unreachable == UNSOLVABLE) return false;
 	    bool unreachable_detected = res_unreachable != 0;
@@ -97,15 +98,15 @@ bool compute_h2_mutexes(const vector <Variable *> &variables,
             update_regression |= spurious_detected || unreachable_detected || (!regression && mutexes_detected);
         }
         regression = !regression;
-  } while (update_progression || update_regression);  
+  } while (update_progression || update_regression);
 
     cout << "Total mutex and disambiguation time: " << (double)(clock() - start_t) / CLOCKS_PER_SEC << " iterations: " << num_iterations << endl;
     return true;
 }
 
 
-int H2Mutexes::detect_unreachable_fluents(const vector <Variable *> &variables, 
-					   const State &initial_state, 
+int H2Mutexes::detect_unreachable_fluents(const vector <Variable *> &variables,
+					   const State &initial_state,
 					   const vector<pair<Variable *, int>> &goals ) {
     bool new_unreachable;
     int num_discovered = 0;
@@ -161,13 +162,13 @@ int H2Mutexes::detect_unreachable_fluents(const vector <Variable *> &variables,
 
 
 
-bool  H2Mutexes::set_unreachable(int var, int val, const vector <Variable *> &variables, 
-				 const State &initial_state, 
-				 const vector<pair<Variable *, int>> &goals) { 
+bool  H2Mutexes::set_unreachable(int var, int val, const vector <Variable *> &variables,
+				 const State &initial_state,
+				 const vector<pair<Variable *, int>> &goals) {
 
     if (initial_state [variables[var]] == val) return false;
-    for (auto & g : goals) 
-	if (g.first == variables[var] && g.second == val) 
+    for (auto & g : goals)
+	if (g.first == variables[var] && g.second == val)
 	    return false;
 
 
@@ -363,7 +364,7 @@ bool H2Mutexes::check_goal_state_is_unreachable(const vector<pair<Variable *, in
     for (unsigned g = 0; g < goal.size(); g++) {
         int var1 = goal[g].first->get_level();
 	unsigned fluent1 = p_index[var1][goal[g].second];
-      
+
 	for (unsigned g2 = 0; g2 < goal.size(); g2++) {
 	    int var2 = goal[g2].first->get_level();
 	    unsigned fluent2 = p_index[var2][goal[g2].second];
@@ -381,7 +382,7 @@ bool H2Mutexes::check_goal_state_is_unreachable(const vector<pair<Variable *, in
 
 bool H2Mutexes::init_values_regression(const vector<pair<Variable *, int>> &goal) {
     cout << "Init values regression" << endl;
-    
+
     if(check_goal_state_is_unreachable(goal)) return false;
 
     for (unsigned i = 0; i < m_values.size(); i++) {
@@ -477,10 +478,10 @@ int H2Mutexes::compute(const vector <Variable *> &variables,
     do {
         // if (time_exceeded())
         //     return TIMEOUT;
-	
+
         updated = false;
         for (unsigned op_i = 0; op_i < m_ops.size(); op_i++) {
-	    if (op_i % 10000 == 0 && time_exceeded()) return TIMEOUT; 
+	    if (op_i % 10000 == 0 && time_exceeded()) return TIMEOUT;
 
             // disregard spurious operators
             if (m_ops[op_i].triggered == SPURIOUS)
@@ -570,7 +571,7 @@ int H2Mutexes::compute(const vector <Variable *> &variables,
             if (a == b) {
 		if(!is_unreachable(a.first, a.second)) {
 	      countUnreachable ++;
-		    if(!set_unreachable(a.first, a.second, variables, initial_state, goal)){ 
+		    if(!set_unreachable(a.first, a.second, variables, initial_state, goal)){
 			return UNSOLVABLE;
 		    }
 		}
@@ -861,7 +862,7 @@ void Op_h2::instantiate_operator_backward(const Operator &op,
             set<pair<int, int>> intersect;
             set_intersection(potential_deletes[pvar].begin(), potential_deletes[pvar].end(),
                              potential_deletes_aux.begin(), potential_deletes_aux.end(),
-                             std::inserter(intersect, intersect.begin()));
+                             inserter(intersect, intersect.begin()));
             potential_deletes[pvar].swap(intersect);
         } else {
             potential_deletes[pvar].swap(potential_deletes_aux);

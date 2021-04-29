@@ -106,8 +106,6 @@ def transform_task(args):
             if i % 2 == 0:
                 options[i] = "--" + option
 
-
-
     if not shutil.which(args.transform_task):
         preprocessor_name = "preprocess-h2"
         if args.transform_task != preprocessor_name:

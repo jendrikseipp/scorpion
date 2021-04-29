@@ -45,7 +45,7 @@ void DomainTransitionGraph::addTransition(int from, int to, const Operator &op,
         }
     }
     // Collect effect conditions for this effect.
-    for (const Operator::EffCond eff_cond : pre_post.effect_conds) {
+    for (const Operator::EffCond &eff_cond : pre_post.effect_conds) {
         if (eff_cond.var->get_level() == level) {
             if (eff_cond.cond != from) {
                 // This is a conditional effect that cannot trigger a transition
