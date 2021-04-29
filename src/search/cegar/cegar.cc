@@ -265,7 +265,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         find_flaw_timer.stop();
 
         if (!flaw) {
-            utils::g_log << "Found concrete solution during refinement." << endl;
+            utils::g_log << "Found concrete solution for subtask." << endl;
             break;
         }
 
