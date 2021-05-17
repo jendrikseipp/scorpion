@@ -27,8 +27,8 @@
 #   -DCMAKE_BUILD_TYPE=type
 # to the cmake call.
 
-# Version 2.8.3 introduces CMakeParseArguments.
-cmake_minimum_required(VERSION 2.8.3)
+# Compatibility with CMake < 2.8.12 will be removed from a future version of CMake.
+cmake_minimum_required(VERSION 2.8.12)
 
 # If it's available, use ccache to cache compilation results. The two ccache options
 # allow sharing compilation results between different build directories.
