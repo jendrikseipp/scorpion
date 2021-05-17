@@ -28,6 +28,7 @@
 # to the cmake call.
 
 # Compatibility with CMake < 2.8.12 will be removed from a future version of CMake.
+# For Windows we actually require CMake >= 3.12.
 cmake_minimum_required(VERSION 2.8.12)
 
 # If it's available, use ccache to cache compilation results. The two ccache options
