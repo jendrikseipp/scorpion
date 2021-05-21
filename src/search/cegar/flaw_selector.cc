@@ -75,7 +75,7 @@ FlawSelector::~FlawSelector() {}
 
 unique_ptr<Flaw>
 FlawSelector::find_first_flaw(const Abstraction &abstraction,
-                              const std::vector<int> &domain_sizes,
+                              const vector<int> &domain_sizes,
                               const Solution &solution) const {
     if (debug)
         utils::g_log << "Check solution:" << endl;
@@ -130,9 +130,9 @@ FlawSelector::find_first_flaw(const Abstraction &abstraction,
     }
 }
 
-std::unique_ptr<Flaw>
+unique_ptr<Flaw>
 FlawSelector::find_greedy_wildcard_flaw(const Abstraction &abstraction,
-                                        const std::vector<int> &domain_sizes,
+                                        const vector<int> &domain_sizes,
                                         const Solution &solution) const {
     if (debug)
         utils::g_log << "Check solution:" << endl;
@@ -221,7 +221,7 @@ bool FlawSelector::are_wildcard_tr(const Transition &tr1,
 }
 
 unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
-                                         const std::vector<int> &domain_sizes,
+                                         const vector<int> &domain_sizes,
                                          const Solution &solution) const {
     unique_ptr<Flaw> flaw;
     switch (flaw_strategy) {
