@@ -10,6 +10,7 @@
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
+#include "../utils/rng.h"
 
 #include <cassert>
 
@@ -76,7 +77,7 @@ FlawSelector::~FlawSelector() {}
 unique_ptr<Flaw>
 FlawSelector::find_flaw_original(const Abstraction &abstraction,
                                  const vector<int> &domain_sizes,
-                                 const Solution &solution) const {
+                                 const Solution &solution, bool rnd_choice, utils::RandomNumberGenerator &rng) const {
     depth = 0;
     if (debug)
         utils::g_log << "Check solution:" << endl;
@@ -88,11 +89,26 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
     if (debug)
         utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
 
-    for (const Transition &step : solution) {
+    for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
         if (!utils::extra_memory_padding_is_reserved())
             break;
 
         depth++;
+
+        // Determine wildcard transitions and pick one
+        vector<Transition> wildcard_transitions;
+        if (rnd_choice) {
+            for (const Transition &wildcard_tr :
+                 abstraction.get_transition_system().get_outgoing_transitions().at(
+                     abstract_state->get_id())) {
+                if (are_wildcard_tr(solution.at(step_id), wildcard_tr)) {
+                    wildcard_transitions.push_back(wildcard_tr);
+                }
+            }
+        }
+
+        const Transition &step = rnd_choice ? *rng.choose(wildcard_transitions) : solution.at(step_id);
+
         OperatorProxy op = task_proxy.get_operators()[step.op_id];
         const AbstractState *next_abstract_state =
             &abstraction.get_state(step.target_id);
@@ -134,7 +150,7 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
 unique_ptr<Flaw>
 FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
                                    const vector<int> &domain_sizes,
-                                   const Solution &solution) const {
+                                   const Solution &solution, utils::RandomNumberGenerator &rng) const {
     depth = 0;
     if (debug)
         utils::g_log << "Check solution:" << endl;
@@ -146,7 +162,8 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
     if (debug)
         utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
 
-    for (const Transition &step : solution) {
+    for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
+        const Transition &step = solution.at(step_id);
         if (!utils::extra_memory_padding_is_reserved())
             break;
 
@@ -173,8 +190,7 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
 
         // No wildcard transition is applicable
         if (applicable_wildcard_transitions.empty()) {
-            // TODO(speckd): select random
-            const Transition &tr = wildcard_transitions.at(0);
+            const Transition &tr = *rng.choose(wildcard_transitions);
             OperatorProxy op = task_proxy.get_operators()[tr.op_id];
             const AbstractState *next_abstract_state =
                 &abstraction.get_state(step.target_id);
@@ -198,8 +214,7 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
 
         // No wildcard transition without deviation
         if (valid_wildcard_transitions.empty()) {
-            // TODO(speckd): select random
-            const Transition &tr = applicable_wildcard_transitions.at(0);
+            const Transition &tr = *rng.choose(applicable_wildcard_transitions);
             OperatorProxy op = task_proxy.get_operators()[tr.op_id];
             const AbstractState *next_abstract_state =
                 &abstraction.get_state(tr.target_id);
@@ -209,107 +224,44 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
         }
 
         // We have a valid wildcard transition
-        // TODO(speckd): select random
-        const Transition &tr = valid_wildcard_transitions.at(0);
-        OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-        const AbstractState *next_abstract_state =
-            &abstraction.get_state(tr.target_id);
-        State next_concrete_state = concrete_state.get_unregistered_successor(op);
-        abstract_state = next_abstract_state;
-        concrete_state = move(next_concrete_state);
-    }
-
-    assert(abstraction.get_goals().count(abstract_state->get_id()));
-    if (task_properties::is_goal_state(task_proxy, concrete_state)) {
-        // We found a concrete solution.
-        return nullptr;
-    } else {
-        if (debug)
-            utils::g_log << "  Goal test failed." << endl;
-        return utils::make_unique_ptr<Flaw>(
-            move(concrete_state), *abstract_state,
-            get_cartesian_set(domain_sizes, task_proxy.get_goals()));
-    }
-}
-
-unique_ptr<Flaw>
-FlawSelector::find_flaw_optimistic_lazy(const Abstraction &abstraction,
-                                        const vector<int> &domain_sizes,
-                                        const Solution &solution) const {
-    depth = 0;
-    if (debug)
-        utils::g_log << "Check solution:" << endl;
-
-    const AbstractState *abstract_state = &abstraction.get_initial_state();
-    State concrete_state = task_proxy.get_initial_state();
-    assert(abstract_state->includes(concrete_state));
-
-    if (debug)
-        utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
-
-    for (const Transition &step : solution) {
-        if (!utils::extra_memory_padding_is_reserved())
-            break;
-
-        depth++;
-        const AbstractState *next_abstract_state =
-            &abstraction.get_state(step.target_id);
-
-        bool applicable = false;
-        bool deviation = true;
-        OperatorProxy flaw_op = task_proxy.get_operators()[step.op_id];
-        const AbstractState *flaw_abstract_state = abstract_state;
-
-        for (const Transition &wildcard_tr :
-             abstraction.get_transition_system().get_outgoing_transitions().at(
-                 abstract_state->get_id())) {
-            if (!are_wildcard_tr(step, wildcard_tr)) {
-                continue;
-            }
-
-            OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
-
-            if (task_properties::is_applicable(op, concrete_state)) {
-                applicable = true;
-                State next_concrete_state =
-                    concrete_state.get_unregistered_successor(op);
-                if (next_abstract_state->includes(next_concrete_state)) {
-                    deviation = false;
-                    abstract_state = next_abstract_state;
-                    concrete_state = move(next_concrete_state);
-                    break;
-                } else {
-                    applicable = true;
-                    flaw_op = op;
-                    flaw_abstract_state = next_abstract_state;
+        if (step_id < solution.size() - 1) {
+            const Transition &tr = *rng.choose(valid_wildcard_transitions);
+            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+            const AbstractState *next_abstract_state =
+                &abstraction.get_state(tr.target_id);
+            State next_concrete_state = concrete_state.get_unregistered_successor(op);
+            abstract_state = next_abstract_state;
+            concrete_state = move(next_concrete_state);
+        } else {
+            // Last step check for goal
+            vector<Transition> goal_wildcard_transitions;
+            for (const Transition &wildcard_tr : valid_wildcard_transitions) {
+                OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
+                State next_concrete_state = concrete_state.get_unregistered_successor(op);
+                if (task_properties::is_goal_state(task_proxy, next_concrete_state)) {
+                    goal_wildcard_transitions.push_back(wildcard_tr);
                 }
             }
-        }
 
-        if (!applicable) {
-            return utils::make_unique_ptr<Flaw>(
-                move(concrete_state), *flaw_abstract_state,
-                get_cartesian_set(domain_sizes, flaw_op.get_preconditions()));
-        }
-        if (deviation) {
-            return utils::make_unique_ptr<Flaw>(
-                move(concrete_state), *abstract_state,
-                flaw_abstract_state->regress(flaw_op));
+            // Return any flaw induced by a valid wildcard transition
+            // otherwise we found a concrete solution
+            if (goal_wildcard_transitions.empty()) {
+                const Transition &tr = *rng.choose(valid_wildcard_transitions);
+                OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+                const AbstractState *next_abstract_state =
+                    &abstraction.get_state(tr.target_id);
+                State next_concrete_state = concrete_state.get_unregistered_successor(op);
+                abstract_state = next_abstract_state;
+                concrete_state = move(next_concrete_state);
+                return utils::make_unique_ptr<Flaw>(
+                    move(concrete_state), *abstract_state,
+                    get_cartesian_set(domain_sizes, task_proxy.get_goals()));
+            }
         }
     }
 
-    // TODO(speckd): select a wildcard tr that may lead to concreat goal state
-    assert(abstraction.get_goals().count(abstract_state->get_id()));
-    if (task_properties::is_goal_state(task_proxy, concrete_state)) {
-        // We found a concrete solution.
-        return nullptr;
-    } else {
-        if (debug)
-            utils::g_log << "  Goal test failed." << endl;
-        return utils::make_unique_ptr<Flaw>(
-            move(concrete_state), *abstract_state,
-            get_cartesian_set(domain_sizes, task_proxy.get_goals()));
-    }
+    // Concrete solution
+    return nullptr;
 }
 
 /* Skip if
@@ -325,14 +277,17 @@ bool FlawSelector::are_wildcard_tr(const Transition &tr1,
 
 unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
                                          const vector<int> &domain_sizes,
-                                         const Solution &solution) const {
+                                         const Solution &solution, utils::RandomNumberGenerator &rng) const {
     unique_ptr<Flaw> flaw;
     switch (flaw_strategy) {
     case FlawStrategy::ORIGINAL:
-        flaw = find_flaw_original(abstraction, domain_sizes, solution);
+        flaw = find_flaw_original(abstraction, domain_sizes, solution, false, rng);
         break;
     case FlawStrategy::OPTIMISTIC:
-        flaw = find_flaw_optimistic(abstraction, domain_sizes, solution);
+        flaw = find_flaw_optimistic(abstraction, domain_sizes, solution, rng);
+        break;
+    case FlawStrategy::RANDOM:
+        flaw = find_flaw_original(abstraction, domain_sizes, solution, true, rng);
         break;
     default:
         utils::g_log << "Invalid flaw strategy: " << static_cast<int>(flaw_strategy)

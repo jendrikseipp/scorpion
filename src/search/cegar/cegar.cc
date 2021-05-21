@@ -205,7 +205,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
 
         find_flaw_timer.resume();
-        unique_ptr<Flaw> flaw = flaw_selector.find_flaw(*abstraction, domain_sizes, *solution);
+        unique_ptr<Flaw> flaw = flaw_selector.find_flaw(*abstraction, domain_sizes, *solution, rng);
         find_flaw_timer.stop();
 
         if (!flaw) {
