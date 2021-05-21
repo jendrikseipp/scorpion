@@ -22,64 +22,6 @@
 using namespace std;
 
 namespace cegar {
-// Create the Cartesian set that corresponds to the given preconditions or goals.
-static CartesianSet get_cartesian_set(
-    const vector<int> &domain_sizes, const ConditionsProxy &conditions) {
-    CartesianSet cartesian_set(domain_sizes);
-    for (FactProxy condition : conditions) {
-        cartesian_set.set_single_value(
-            condition.get_variable().get_id(), condition.get_value());
-    }
-    return cartesian_set;
-}
-
-struct Flaw {
-    // Last concrete and abstract state reached while tracing solution.
-    State concrete_state;
-    const AbstractState &current_abstract_state;
-    // Hypothetical Cartesian set we would have liked to reach.
-    CartesianSet desired_cartesian_set;
-
-    Flaw(
-        State &&concrete_state,
-        const AbstractState &current_abstract_state,
-        CartesianSet &&desired_cartesian_set)
-        : concrete_state(move(concrete_state)),
-          current_abstract_state(current_abstract_state),
-          desired_cartesian_set(move(desired_cartesian_set)) {
-        assert(current_abstract_state.includes(this->concrete_state));
-    }
-
-    vector<Split> get_possible_splits() const {
-        vector<Split> splits;
-        /*
-          For each fact in the concrete state that is not contained in the
-          desired abstract state, loop over all values in the domain of the
-          corresponding variable. The values that are in both the current and
-          the desired abstract state are the "wanted" ones, i.e., the ones that
-          we want to split off.
-        */
-        for (FactProxy wanted_fact_proxy : concrete_state) {
-            FactPair fact = wanted_fact_proxy.get_pair();
-            if (!desired_cartesian_set.test(fact.var, fact.value)) {
-                VariableProxy var = wanted_fact_proxy.get_variable();
-                int var_id = var.get_id();
-                vector<int> wanted;
-                for (int value = 0; value < var.get_domain_size(); ++value) {
-                    if (current_abstract_state.contains(var_id, value) &&
-                        desired_cartesian_set.test(var_id, value)) {
-                        wanted.push_back(value);
-                    }
-                }
-                assert(!wanted.empty());
-                splits.emplace_back(var_id, move(wanted));
-            }
-        }
-        assert(!splits.empty());
-        return splits;
-    }
-};
-
 CEGAR::CEGAR(
     const shared_ptr<AbstractTask> &task,
     int max_states,
@@ -87,6 +29,7 @@ CEGAR::CEGAR(
     double max_time,
     PickSplit pick,
     SearchStrategy search_strategy,
+    FlawStrategy flaw_strategy,
     utils::RandomNumberGenerator &rng,
     bool debug)
     : task_proxy(*task),
@@ -95,6 +38,7 @@ CEGAR::CEGAR(
       max_non_looping_transitions(max_non_looping_transitions),
       split_selector(task, pick),
       search_strategy(search_strategy),
+      flaw_selector(task, flaw_strategy, debug),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
       debug(debug) {
@@ -261,7 +205,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
 
         find_flaw_timer.resume();
-        unique_ptr<Flaw> flaw = find_flaw(*solution);
+        unique_ptr<Flaw> flaw = flaw_selector.find_flaw(*abstraction, domain_sizes, *solution);
         find_flaw_timer.stop();
 
         if (!flaw) {
@@ -311,61 +255,8 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     utils::g_log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
 }
 
-unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
-    if (debug)
-        utils::g_log << "Check solution:" << endl;
-
-    const AbstractState *abstract_state = &abstraction->get_initial_state();
-    State concrete_state = task_proxy.get_initial_state();
-    assert(abstract_state->includes(concrete_state));
-
-    if (debug)
-        utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
-
-    for (const Transition &step : solution) {
-        if (!utils::extra_memory_padding_is_reserved())
-            break;
-        OperatorProxy op = task_proxy.get_operators()[step.op_id];
-        const AbstractState *next_abstract_state = &abstraction->get_state(step.target_id);
-        if (task_properties::is_applicable(op, concrete_state)) {
-            if (debug)
-                utils::g_log << "  Move to " << *next_abstract_state << " with "
-                             << op.get_name() << endl;
-            State next_concrete_state = concrete_state.get_unregistered_successor(op);
-            if (!next_abstract_state->includes(next_concrete_state)) {
-                if (debug)
-                    utils::g_log << "  Paths deviate." << endl;
-                return utils::make_unique_ptr<Flaw>(
-                    move(concrete_state),
-                    *abstract_state,
-                    next_abstract_state->regress(op));
-            }
-            abstract_state = next_abstract_state;
-            concrete_state = move(next_concrete_state);
-        } else {
-            if (debug)
-                utils::g_log << "  Operator not applicable: " << op.get_name() << endl;
-            return utils::make_unique_ptr<Flaw>(
-                move(concrete_state),
-                *abstract_state,
-                get_cartesian_set(domain_sizes, op.get_preconditions()));
-        }
-    }
-    assert(abstraction->get_goals().count(abstract_state->get_id()));
-    if (task_properties::is_goal_state(task_proxy, concrete_state)) {
-        // We found a concrete solution.
-        return nullptr;
-    } else {
-        if (debug)
-            utils::g_log << "  Goal test failed." << endl;
-        return utils::make_unique_ptr<Flaw>(
-            move(concrete_state),
-            *abstract_state,
-            get_cartesian_set(domain_sizes, task_proxy.get_goals()));
-    }
-}
-
 void CEGAR::print_statistics() {
     abstraction->print_statistics();
+    flaw_selector.print_statistics();
 }
 }

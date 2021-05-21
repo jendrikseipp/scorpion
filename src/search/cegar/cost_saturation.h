@@ -3,6 +3,7 @@
 
 #include "refinement_hierarchy.h"
 #include "split_selector.h"
+#include "flaw_selector.h"
 
 #include <memory>
 #include <vector>
@@ -32,6 +33,7 @@ class CostSaturation {
     const bool use_general_costs;
     const PickSplit pick_split;
     const SearchStrategy search_strategy;
+    const FlawStrategy flaw_strategy;
     const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
     const bool debug;
@@ -61,6 +63,7 @@ public:
         bool use_general_costs,
         PickSplit pick_split,
         SearchStrategy search_strategy,
+        FlawStrategy flaw_strategy,
         int memory_padding_mb,
         utils::RandomNumberGenerator &rng,
         bool debug);

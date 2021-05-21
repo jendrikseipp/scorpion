@@ -80,6 +80,7 @@ CostSaturation::CostSaturation(
     bool use_general_costs,
     PickSplit pick_split,
     SearchStrategy search_strategy,
+    FlawStrategy flaw_strategy,
     int memory_padding_mb,
     utils::RandomNumberGenerator &rng,
     bool debug)
@@ -90,6 +91,7 @@ CostSaturation::CostSaturation(
       use_general_costs(use_general_costs),
       pick_split(pick_split),
       search_strategy(search_strategy),
+      flaw_strategy(flaw_strategy),
       memory_padding_mb(memory_padding_mb),
       rng(rng),
       debug(debug),
@@ -197,6 +199,7 @@ void CostSaturation::build_abstractions(
             timer.get_remaining_time() / rem_subtasks,
             pick_split,
             search_strategy,
+            flaw_strategy,
             rng,
             debug);
 

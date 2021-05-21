@@ -2,6 +2,7 @@
 
 #include "cartesian_heuristic_function.h"
 #include "cost_saturation.h"
+#include "flaw_selector.h"
 #include "types.h"
 #include "utils.h"
 
@@ -33,6 +34,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<bool>("use_general_costs"),
         opts.get<PickSplit>("pick"),
         opts.get<SearchStrategy>("search_strategy"),
+        opts.get<FlawStrategy>("flaw_strategy"),
         opts.get<int>("memory_padding"),
         *rng,
         opts.get<bool>("debug"));
@@ -135,6 +137,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
     add_search_strategy_option(parser);
     add_memory_padding_option(parser);
+    add_flaw_strategy_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",

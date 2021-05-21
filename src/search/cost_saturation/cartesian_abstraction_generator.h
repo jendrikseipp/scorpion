@@ -12,6 +12,7 @@ class Options;
 
 namespace cegar {
 class Abstraction;
+enum class FlawStrategy;
 enum class SearchStrategy;
 class SubtaskGenerator;
 }
@@ -29,6 +30,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const double max_time;
     const cegar::SearchStrategy search_strategy;
     const int extra_memory_padding_mb;
+    const cegar::FlawStrategy flaw_strategy;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
 

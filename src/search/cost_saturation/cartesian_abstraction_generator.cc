@@ -11,6 +11,7 @@
 #include "../cegar/abstract_state.h"
 #include "../cegar/cegar.h"
 #include "../cegar/cost_saturation.h"
+#include "../cegar/flaw_selector.h"
 #include "../cegar/refinement_hierarchy.h"
 #include "../cegar/split_selector.h"
 #include "../cegar/subtask_generators.h"
@@ -105,6 +106,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_time(opts.get<double>("max_time")),
       search_strategy(opts.get<cegar::SearchStrategy>("search_strategy")),
       extra_memory_padding_mb(opts.get<int>("memory_padding")),
+      flaw_strategy(opts.get<cegar::FlawStrategy>("flaw_strategy")),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")),
       num_states(0),
@@ -122,6 +124,7 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         timer.get_remaining_time() / remaining_subtasks,
         cegar::PickSplit::MAX_REFINED,
         search_strategy,
+        flaw_strategy,
         *rng,
         debug);
     cout << endl;
@@ -223,6 +226,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         Bounds("0.0", "infinity"));
     cegar::add_search_strategy_option(parser);
     cegar::add_memory_padding_option(parser);
+    cegar::add_flaw_strategy_option(parser);
     parser.add_option<bool>(
         "debug",
         "print debugging info",

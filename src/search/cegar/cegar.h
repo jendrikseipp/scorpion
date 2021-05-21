@@ -1,6 +1,7 @@
 #ifndef CEGAR_CEGAR_H
 #define CEGAR_CEGAR_H
 
+#include "flaw_selector.h"
 #include "split_selector.h"
 #include "types.h"
 
@@ -35,6 +36,7 @@ class CEGAR {
     const int max_non_looping_transitions;
     const SplitSelector split_selector;
     const SearchStrategy search_strategy;
+    const FlawSelector flaw_selector;
 
     std::unique_ptr<Abstraction> abstraction;
     std::unique_ptr<AbstractSearch> abstract_search;
@@ -57,10 +59,6 @@ class CEGAR {
     */
     void separate_facts_unreachable_before_goal();
 
-    /* Try to convert the abstract solution into a concrete trace. Return the
-       first encountered flaw or nullptr if there is no flaw. */
-    std::unique_ptr<Flaw> find_flaw(const Solution &solution);
-
     // Build abstraction.
     void refinement_loop(utils::RandomNumberGenerator &rng);
 
@@ -74,6 +72,7 @@ public:
         double max_time,
         PickSplit pick,
         SearchStrategy search_strategy,
+        FlawStrategy flaw_strategy,
         utils::RandomNumberGenerator &rng,
         bool debug);
     ~CEGAR();
