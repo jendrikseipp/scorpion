@@ -68,15 +68,16 @@ vector<Split> Flaw::get_possible_splits() const {
 FlawSelector::FlawSelector(const shared_ptr<AbstractTask> &task,
                            FlawStrategy flaw_strategy, bool debug)
     : task(task), task_proxy(*task), flaw_strategy(flaw_strategy), debug(debug),
-      depth(0), num_runs(0) {}
+      depth(0) {}
 
 // Define here to avoid include in header.
 FlawSelector::~FlawSelector() {}
 
 unique_ptr<Flaw>
-FlawSelector::find_first_flaw(const Abstraction &abstraction,
-                              const vector<int> &domain_sizes,
-                              const Solution &solution) const {
+FlawSelector::find_flaw_original(const Abstraction &abstraction,
+                                 const vector<int> &domain_sizes,
+                                 const Solution &solution) const {
+    depth = 0;
     if (debug)
         utils::g_log << "Check solution:" << endl;
 
@@ -131,9 +132,111 @@ FlawSelector::find_first_flaw(const Abstraction &abstraction,
 }
 
 unique_ptr<Flaw>
-FlawSelector::find_greedy_wildcard_flaw(const Abstraction &abstraction,
+FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
+                                   const vector<int> &domain_sizes,
+                                   const Solution &solution) const {
+    depth = 0;
+    if (debug)
+        utils::g_log << "Check solution:" << endl;
+
+    const AbstractState *abstract_state = &abstraction.get_initial_state();
+    State concrete_state = task_proxy.get_initial_state();
+    assert(abstract_state->includes(concrete_state));
+
+    if (debug)
+        utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
+
+    for (const Transition &step : solution) {
+        if (!utils::extra_memory_padding_is_reserved())
+            break;
+
+        depth++;
+
+        // Determine wildcard transitions
+        vector<Transition> wildcard_transitions;
+        for (const Transition &wildcard_tr :
+             abstraction.get_transition_system().get_outgoing_transitions().at(
+                 abstract_state->get_id())) {
+            if (are_wildcard_tr(step, wildcard_tr)) {
+                wildcard_transitions.push_back(wildcard_tr);
+            }
+        }
+
+        // Determine applicable wildcard transitions
+        vector<Transition> applicable_wildcard_transitions;
+        for (const Transition &wildcard_tr : wildcard_transitions) {
+            OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
+            if (task_properties::is_applicable(op, concrete_state)) {
+                applicable_wildcard_transitions.push_back(wildcard_tr);
+            }
+        }
+
+        // No wildcard transition is applicable
+        if (applicable_wildcard_transitions.empty()) {
+            // TODO(speckd): select random
+            const Transition &tr = wildcard_transitions.at(0);
+            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+            const AbstractState *next_abstract_state =
+                &abstraction.get_state(step.target_id);
+            return utils::make_unique_ptr<Flaw>(move(concrete_state),
+                                                *abstract_state,
+                                                next_abstract_state->regress(op));
+        }
+
+        // Determine wildcard transition without deviation
+        vector<Transition> valid_wildcard_transitions;
+        for (const Transition &wildcard_tr : applicable_wildcard_transitions) {
+            OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
+            const AbstractState *next_abstract_state =
+                &abstraction.get_state(wildcard_tr.target_id);
+            State next_concrete_state = concrete_state.get_unregistered_successor(op);
+
+            if (next_abstract_state->includes(next_concrete_state)) {
+                valid_wildcard_transitions.push_back(wildcard_tr);
+            }
+        }
+
+        // No wildcard transition without deviation
+        if (valid_wildcard_transitions.empty()) {
+            // TODO(speckd): select random
+            const Transition &tr = applicable_wildcard_transitions.at(0);
+            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+            const AbstractState *next_abstract_state =
+                &abstraction.get_state(tr.target_id);
+            return utils::make_unique_ptr<Flaw>(move(concrete_state),
+                                                *abstract_state,
+                                                next_abstract_state->regress(op));
+        }
+
+        // We have a valid wildcard transition
+        // TODO(speckd): select random
+        const Transition &tr = valid_wildcard_transitions.at(0);
+        OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+        const AbstractState *next_abstract_state =
+            &abstraction.get_state(tr.target_id);
+        State next_concrete_state = concrete_state.get_unregistered_successor(op);
+        abstract_state = next_abstract_state;
+        concrete_state = move(next_concrete_state);
+    }
+
+    assert(abstraction.get_goals().count(abstract_state->get_id()));
+    if (task_properties::is_goal_state(task_proxy, concrete_state)) {
+        // We found a concrete solution.
+        return nullptr;
+    } else {
+        if (debug)
+            utils::g_log << "  Goal test failed." << endl;
+        return utils::make_unique_ptr<Flaw>(
+            move(concrete_state), *abstract_state,
+            get_cartesian_set(domain_sizes, task_proxy.get_goals()));
+    }
+}
+
+unique_ptr<Flaw>
+FlawSelector::find_flaw_optimistic_lazy(const Abstraction &abstraction,
                                         const vector<int> &domain_sizes,
                                         const Solution &solution) const {
+    depth = 0;
     if (debug)
         utils::g_log << "Check solution:" << endl;
 
@@ -226,23 +329,20 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
     unique_ptr<Flaw> flaw;
     switch (flaw_strategy) {
     case FlawStrategy::ORIGINAL:
-        flaw = find_first_flaw(abstraction, domain_sizes, solution);
+        flaw = find_flaw_original(abstraction, domain_sizes, solution);
         break;
     case FlawStrategy::OPTIMISTIC:
-        flaw = find_greedy_wildcard_flaw(abstraction, domain_sizes, solution);
+        flaw = find_flaw_optimistic(abstraction, domain_sizes, solution);
         break;
     default:
         utils::g_log << "Invalid flaw strategy: " << static_cast<int>(flaw_strategy)
                      << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
-    num_runs++;
-    // print_statistics();
     return flaw;
 }
 
 void FlawSelector::print_statistics() const {
-    utils::g_log << "Abstract plan depth: " << depth / num_runs << endl;
-    utils::g_log << "Find flaw calls: " << num_runs << endl;
+    utils::g_log << "Abstract plan depth: " << depth << endl;
 }
 } // namespace cegar

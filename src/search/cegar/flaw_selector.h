@@ -41,14 +41,18 @@ class FlawSelector {
     bool debug;
 
     mutable size_t depth;
-    mutable size_t num_runs;
 
-    std::unique_ptr<Flaw> find_first_flaw(const Abstraction &abstraction,
-                                          const std::vector<int> &domain_sizes,
-                                          const Solution &solution) const;
+    std::unique_ptr<Flaw> find_flaw_original(const Abstraction &abstraction,
+                                             const std::vector<int> &domain_sizes,
+                                             const Solution &solution) const;
 
     std::unique_ptr<Flaw>
-    find_greedy_wildcard_flaw(const Abstraction &abstraction,
+    find_flaw_optimistic(const Abstraction &abstraction,
+                         const std::vector<int> &domain_sizes,
+                         const Solution &solution) const;
+
+    std::unique_ptr<Flaw>
+    find_flaw_optimistic_lazy(const Abstraction &abstraction,
                               const std::vector<int> &domain_sizes,
                               const Solution &solution) const;
 
