@@ -266,9 +266,9 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
     return nullptr;
 }
 
-std::unique_ptr<Flaw>
+unique_ptr<Flaw>
 FlawSelector::find_flaw_pessimistic(const Abstraction &abstraction,
-                                    const std::vector<int> &domain_sizes,
+                                    const vector<int> &domain_sizes,
                                     const Solution &solution,
                                     utils::RandomNumberGenerator &rng) const {
     depth = 0;
