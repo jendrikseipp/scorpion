@@ -48,12 +48,20 @@ class FlawSelector {
 
     std::unique_ptr<Flaw> find_flaw_original(const Abstraction &abstraction,
                                              const std::vector<int> &domain_sizes,
-                                             const Solution &solution, bool rnd_choice, utils::RandomNumberGenerator &rng) const;
+                                             const Solution &solution, bool rnd_choice,
+                                             utils::RandomNumberGenerator &rng) const;
 
     std::unique_ptr<Flaw>
     find_flaw_optimistic(const Abstraction &abstraction,
                          const std::vector<int> &domain_sizes,
-                         const Solution &solution, utils::RandomNumberGenerator &rng) const;
+                         const Solution &solution,
+                         utils::RandomNumberGenerator &rng) const;
+
+    std::unique_ptr<Flaw>
+    find_flaw_pessimistic(const Abstraction &abstraction,
+                          const std::vector<int> &domain_sizes,
+                          const Solution &solution,
+                          utils::RandomNumberGenerator &rng) const;
 
     bool are_wildcard_tr(const Transition &tr1, const Transition &tr2) const;
 
@@ -66,7 +74,8 @@ public:
        encountered flaw or nullptr if there is no flaw. */
     std::unique_ptr<Flaw> find_flaw(const Abstraction &abstraction,
                                     const std::vector<int> &domain_sizes,
-                                    const Solution &solution, utils::RandomNumberGenerator &rng) const;
+                                    const Solution &solution,
+                                    utils::RandomNumberGenerator &rng) const;
 
     void print_statistics() const;
 };
