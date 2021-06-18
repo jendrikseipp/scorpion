@@ -178,12 +178,12 @@ FlawSelector::find_flaw_backtrack_pessimistic(const Abstraction &abstraction,
                     return cur_flaw;
                 }
                 if (cur_flaw->flaw_reason == FlawReason::PATH_DEVIATION) {
-                    result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                    result = utils::make_unique_ptr<Flaw>(*cur_flaw);
                 } else {
                     if (solution.size() == cur_solution.size() &&
                         cur_flaw->flaw_reason == FlawReason::GOAL_TEST &&
                         result->flaw_reason != FlawReason::GOAL_TEST) {
-                        result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                        result = utils::make_unique_ptr<Flaw>(*cur_flaw);
                     }
                 }
             }
@@ -308,7 +308,7 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
 
             if (result == nullptr ||
                 (static_cast<int>(result->flaw_reason) < static_cast<int>(cur_flaw->flaw_reason))) {
-                result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                result = utils::make_unique_ptr<Flaw>(*cur_flaw);
             }
         }
         if (result != nullptr) {
@@ -349,12 +349,12 @@ FlawSelector::find_flaw_pessimistic(const Abstraction &abstraction,
                     return cur_flaw;
                 }
                 if (cur_flaw->flaw_reason == FlawReason::PATH_DEVIATION) {
-                    result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                    result = utils::make_unique_ptr<Flaw>(*cur_flaw);
                 } else {
                     if (solution.size() == cur_solution.size() &&
                         cur_flaw->flaw_reason == FlawReason::GOAL_TEST &&
                         result->flaw_reason != FlawReason::GOAL_TEST) {
-                        result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                        result = utils::make_unique_ptr<Flaw>(*cur_flaw);
                     }
                 }
             }
