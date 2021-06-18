@@ -13,6 +13,8 @@
 #include "../utils/rng.h"
 
 #include <cassert>
+#include <queue>
+#include <stack>
 
 using namespace std;
 
@@ -30,10 +32,11 @@ static CartesianSet get_cartesian_set(const vector<int> &domain_sizes,
 }
 
 Flaw::Flaw(State &&concrete_state, const AbstractState &current_abstract_state,
-           CartesianSet &&desired_cartesian_set)
+           CartesianSet &&desired_cartesian_set, FlawReason flaw_reason)
     : concrete_state(move(concrete_state)),
       current_abstract_state(current_abstract_state),
-      desired_cartesian_set(move(desired_cartesian_set)) {
+      desired_cartesian_set(move(desired_cartesian_set)),
+      flaw_reason(flaw_reason) {
     assert(current_abstract_state.includes(this->concrete_state));
 }
 
@@ -66,20 +69,35 @@ vector<Split> Flaw::get_possible_splits() const {
     return splits;
 }
 
+
 FlawSelector::FlawSelector(const shared_ptr<AbstractTask> &task,
                            FlawStrategy flaw_strategy, bool debug)
-    : task(task), task_proxy(*task), flaw_strategy(flaw_strategy), debug(debug),
-      depth(0) {}
+    : task(task), task_proxy(*task), flaw_strategy(flaw_strategy), debug(debug) {}
 
 // Define here to avoid include in header.
 FlawSelector::~FlawSelector() {}
+
+// Performs breadth-first search to find the first possible flaw
+unique_ptr<Flaw>
+FlawSelector::find_flaw_backtrack_optimistic(const Abstraction &abstraction,
+                                             const vector<int> &domain_sizes,
+                                             const Solution &solution,
+                                             utils::RandomNumberGenerator &rng) const {
+}
+
+// Performs breadth-first search to find the first possible flaw
+unique_ptr<Flaw>
+FlawSelector::find_flaw_backtrack_pessimistic(const Abstraction &abstraction,
+                                              const vector<int> &domain_sizes,
+                                              const Solution &solution,
+                                              utils::RandomNumberGenerator &rng) const {
+}
 
 unique_ptr<Flaw>
 FlawSelector::find_flaw_original(const Abstraction &abstraction,
                                  const vector<int> &domain_sizes,
                                  const Solution &solution, bool rnd_choice,
                                  utils::RandomNumberGenerator &rng) const {
-    depth = 0;
     if (debug)
         utils::g_log << "Check solution:" << endl;
 
@@ -94,18 +112,11 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
         if (!utils::extra_memory_padding_is_reserved())
             break;
 
-        depth++;
-
         // Determine wildcard transitions and pick one
         vector<Transition> wildcard_transitions;
         if (rnd_choice) {
-            for (const Transition &wildcard_tr :
-                 abstraction.get_transition_system().get_outgoing_transitions().at(
-                     abstract_state->get_id())) {
-                if (are_wildcard_tr(solution.at(step_id), wildcard_tr)) {
-                    wildcard_transitions.push_back(wildcard_tr);
-                }
-            }
+            get_wildcard_trs(abstraction, abstract_state, solution.at(step_id),
+                             wildcard_transitions);
         }
 
         const Transition &step = rnd_choice ? *rng.choose(wildcard_transitions) : solution.at(step_id);
@@ -123,7 +134,8 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
                     utils::g_log << "  Paths deviate." << endl;
                 return utils::make_unique_ptr<Flaw>(move(concrete_state),
                                                     *abstract_state,
-                                                    next_abstract_state->regress(op));
+                                                    next_abstract_state->regress(op),
+                                                    FlawReason::PATH_DEVIATION);
             }
             abstract_state = next_abstract_state;
             concrete_state = move(next_concrete_state);
@@ -132,7 +144,8 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
                 utils::g_log << "  Operator not applicable: " << op.get_name() << endl;
             return utils::make_unique_ptr<Flaw>(
                 move(concrete_state), *abstract_state,
-                get_cartesian_set(domain_sizes, op.get_preconditions()));
+                get_cartesian_set(domain_sizes, op.get_preconditions()),
+                FlawReason::NOT_APPLICABLE);
         }
     }
     assert(abstraction.get_goals().count(abstract_state->get_id()));
@@ -144,7 +157,8 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
             utils::g_log << "  Goal test failed." << endl;
         return utils::make_unique_ptr<Flaw>(
             move(concrete_state), *abstract_state,
-            get_cartesian_set(domain_sizes, task_proxy.get_goals()));
+            get_cartesian_set(domain_sizes, task_proxy.get_goals()),
+            FlawReason::GOAL_TEST);
     }
 }
 
@@ -153,116 +167,49 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
                                    const vector<int> &domain_sizes,
                                    const Solution &solution,
                                    utils::RandomNumberGenerator &rng) const {
-    depth = 0;
-    if (debug)
-        utils::g_log << "Check solution:" << endl;
-
     const AbstractState *abstract_state = &abstraction.get_initial_state();
-    State concrete_state = task_proxy.get_initial_state();
-    assert(abstract_state->includes(concrete_state));
 
-    if (debug)
-        utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
-
+    Solution choosen_solution;
     for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
         const Transition &step = solution.at(step_id);
-        if (!utils::extra_memory_padding_is_reserved())
-            break;
 
-        depth++;
-
-        // Determine wildcard transitions
+        // determine wildcard trs
         vector<Transition> wildcard_transitions;
-        for (const Transition &wildcard_tr :
-             abstraction.get_transition_system().get_outgoing_transitions().at(
-                 abstract_state->get_id())) {
-            if (are_wildcard_tr(step, wildcard_tr)) {
-                wildcard_transitions.push_back(wildcard_tr);
-            }
-        }
+        get_wildcard_trs(abstraction, abstract_state, step, wildcard_transitions);
+        rng.shuffle(wildcard_transitions);
 
-        // Determine applicable wildcard transitions
-        vector<Transition> applicable_wildcard_transitions;
+        unique_ptr<Flaw> result = nullptr;
         for (const Transition &wildcard_tr : wildcard_transitions) {
-            OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
-            if (task_properties::is_applicable(op, concrete_state)) {
-                applicable_wildcard_transitions.push_back(wildcard_tr);
-            }
-        }
+            Solution cur_solution = choosen_solution;
+            cur_solution.push_back(wildcard_tr);
+            auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
 
-        // No wildcard transition is applicable
-        if (applicable_wildcard_transitions.empty()) {
-            const Transition &tr = *rng.choose(wildcard_transitions);
-            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-            const AbstractState *next_abstract_state =
-                &abstraction.get_state(step.target_id);
-            return utils::make_unique_ptr<Flaw>(move(concrete_state),
-                                                *abstract_state,
-                                                next_abstract_state->regress(op));
-        }
-
-        // Determine wildcard transition without deviation
-        vector<Transition> valid_wildcard_transitions;
-        for (const Transition &wildcard_tr : applicable_wildcard_transitions) {
-            OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
-            const AbstractState *next_abstract_state =
-                &abstraction.get_state(wildcard_tr.target_id);
-            State next_concrete_state = concrete_state.get_unregistered_successor(op);
-
-            if (next_abstract_state->includes(next_concrete_state)) {
-                valid_wildcard_transitions.push_back(wildcard_tr);
-            }
-        }
-
-        // No wildcard transition without deviation
-        if (valid_wildcard_transitions.empty()) {
-            const Transition &tr = *rng.choose(applicable_wildcard_transitions);
-            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-            const AbstractState *next_abstract_state =
-                &abstraction.get_state(tr.target_id);
-            return utils::make_unique_ptr<Flaw>(move(concrete_state),
-                                                *abstract_state,
-                                                next_abstract_state->regress(op));
-        }
-
-        // We have a valid wildcard transition
-        if (step_id < solution.size() - 1) {
-            const Transition &tr = *rng.choose(valid_wildcard_transitions);
-            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-            const AbstractState *next_abstract_state =
-                &abstraction.get_state(tr.target_id);
-            State next_concrete_state = concrete_state.get_unregistered_successor(op);
-            abstract_state = next_abstract_state;
-            concrete_state = move(next_concrete_state);
-        } else {
-            // Last step check for goal
-            vector<Transition> goal_wildcard_transitions;
-            for (const Transition &wildcard_tr : valid_wildcard_transitions) {
-                OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
-                State next_concrete_state = concrete_state.get_unregistered_successor(op);
-                if (task_properties::is_goal_state(task_proxy, next_concrete_state)) {
-                    goal_wildcard_transitions.push_back(wildcard_tr);
-                }
+            // no flaw
+            if (cur_flaw == nullptr) {
+                choosen_solution.push_back(wildcard_tr);
+                result = nullptr;
+                break;
             }
 
-            // Return any flaw induced by a valid wildcard transition
-            // otherwise we found a concrete solution
-            if (goal_wildcard_transitions.empty()) {
-                const Transition &tr = *rng.choose(valid_wildcard_transitions);
-                OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-                const AbstractState *next_abstract_state =
-                    &abstraction.get_state(tr.target_id);
-                State next_concrete_state = concrete_state.get_unregistered_successor(op);
-                abstract_state = next_abstract_state;
-                concrete_state = move(next_concrete_state);
-                return utils::make_unique_ptr<Flaw>(
-                    move(concrete_state), *abstract_state,
-                    get_cartesian_set(domain_sizes, task_proxy.get_goals()));
+            // no real flaw
+            if (cur_solution.size() < solution.size() &&
+                cur_flaw->flaw_reason == FlawReason::GOAL_TEST) {
+                choosen_solution.push_back(wildcard_tr);
+                result = nullptr;
+                break;
+            }
+
+            if (result == nullptr ||
+                (static_cast<int>(result->flaw_reason) < static_cast<int>(cur_flaw->flaw_reason))) {
+                result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
             }
         }
+        if (result != nullptr) {
+            return result;
+        }
+
+        abstract_state = &abstraction.get_state(step.target_id);
     }
-
-    // Concrete solution
     return nullptr;
 }
 
@@ -271,116 +218,44 @@ FlawSelector::find_flaw_pessimistic(const Abstraction &abstraction,
                                     const vector<int> &domain_sizes,
                                     const Solution &solution,
                                     utils::RandomNumberGenerator &rng) const {
-    depth = 0;
-    if (debug)
-        utils::g_log << "Check solution:" << endl;
-
     const AbstractState *abstract_state = &abstraction.get_initial_state();
-    State concrete_state = task_proxy.get_initial_state();
-    assert(abstract_state->includes(concrete_state));
 
-    if (debug)
-        utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
-
+    Solution choosen_solution;
     for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
         const Transition &step = solution.at(step_id);
-        if (!utils::extra_memory_padding_is_reserved())
-            break;
 
-        depth++;
-
-        // Determine wildcard transitions
+        // determine wildcard trs
         vector<Transition> wildcard_transitions;
-        for (const Transition &wildcard_tr :
-             abstraction.get_transition_system().get_outgoing_transitions().at(
-                 abstract_state->get_id())) {
-            if (are_wildcard_tr(step, wildcard_tr)) {
-                wildcard_transitions.push_back(wildcard_tr);
-            }
-        }
+        get_wildcard_trs(abstraction, abstract_state, step, wildcard_transitions);
+        rng.shuffle(wildcard_transitions);
 
-        // Determine not applicable wildcard transitions
-        vector<Transition> not_applicable_wildcard_transitions;
+        unique_ptr<Flaw> result = nullptr;
         for (const Transition &wildcard_tr : wildcard_transitions) {
-            OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
-            if (!task_properties::is_applicable(op, concrete_state)) {
-                not_applicable_wildcard_transitions.push_back(wildcard_tr);
-            }
-        }
-
-        // A wildcard transition is not applicable
-        if (!not_applicable_wildcard_transitions.empty()) {
-            const Transition &tr = *rng.choose(not_applicable_wildcard_transitions);
-            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-            const AbstractState *next_abstract_state =
-                &abstraction.get_state(step.target_id);
-            return utils::make_unique_ptr<Flaw>(move(concrete_state),
-                                                *abstract_state,
-                                                next_abstract_state->regress(op));
-        }
-
-        // Determine wildcard transition without deviation
-        vector<Transition> not_valid_wildcard_transitions;
-        for (const Transition &wildcard_tr : wildcard_transitions) {
-            OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
-            const AbstractState *next_abstract_state =
-                &abstraction.get_state(wildcard_tr.target_id);
-            State next_concrete_state = concrete_state.get_unregistered_successor(op);
-
-            if (!next_abstract_state->includes(next_concrete_state)) {
-                not_valid_wildcard_transitions.push_back(wildcard_tr);
-            }
-        }
-
-        // A wildcard transition with deviation
-        if (!not_valid_wildcard_transitions.empty()) {
-            const Transition &tr = *rng.choose(not_valid_wildcard_transitions);
-            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-            const AbstractState *next_abstract_state =
-                &abstraction.get_state(tr.target_id);
-            return utils::make_unique_ptr<Flaw>(move(concrete_state),
-                                                *abstract_state,
-                                                next_abstract_state->regress(op));
-        }
-
-        // We have only valid wildcard transition
-        if (step_id < solution.size() - 1) {
-            const Transition &tr = *rng.choose(wildcard_transitions);
-            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-            const AbstractState *next_abstract_state =
-                &abstraction.get_state(tr.target_id);
-            State next_concrete_state = concrete_state.get_unregistered_successor(op);
-            abstract_state = next_abstract_state;
-            concrete_state = move(next_concrete_state);
-        } else {
-            // Last step check for goal
-            vector<Transition> not_goal_wildcard_transitions;
-            for (const Transition &wildcard_tr : wildcard_transitions) {
-                OperatorProxy op = task_proxy.get_operators()[wildcard_tr.op_id];
-                State next_concrete_state = concrete_state.get_unregistered_successor(op);
-                if (!task_properties::is_goal_state(task_proxy, next_concrete_state)) {
-                    not_goal_wildcard_transitions.push_back(wildcard_tr);
+            Solution cur_solution = choosen_solution;
+            cur_solution.push_back(wildcard_tr);
+            auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
+            if (cur_flaw != nullptr) {
+                if (cur_flaw->flaw_reason == FlawReason::NOT_APPLICABLE) {
+                    return cur_flaw;
+                }
+                if (cur_flaw->flaw_reason == FlawReason::PATH_DEVIATION) {
+                    result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                } else {
+                    if (solution.size() == cur_solution.size() &&
+                        cur_flaw->flaw_reason == FlawReason::GOAL_TEST &&
+                        result->flaw_reason != FlawReason::GOAL_TEST) {
+                        result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                    }
                 }
             }
-
-            // Return any flaw induced by a valid wildcard transition
-            // otherwise we found a concrete solution
-            if (!not_goal_wildcard_transitions.empty()) {
-                const Transition &tr = *rng.choose(not_goal_wildcard_transitions);
-                OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-                const AbstractState *next_abstract_state =
-                    &abstraction.get_state(tr.target_id);
-                State next_concrete_state = concrete_state.get_unregistered_successor(op);
-                abstract_state = next_abstract_state;
-                concrete_state = move(next_concrete_state);
-                return utils::make_unique_ptr<Flaw>(
-                    move(concrete_state), *abstract_state,
-                    get_cartesian_set(domain_sizes, task_proxy.get_goals()));
+            cur_flaw.release();
+            if (result != nullptr) {
+                return result;
             }
         }
+        choosen_solution.push_back(*rng.choose(wildcard_transitions));
+        abstract_state = &abstraction.get_state(step.target_id);
     }
-
-    // All wildcard plans are concrete solutions
     return nullptr;
 }
 
@@ -395,11 +270,33 @@ bool FlawSelector::are_wildcard_tr(const Transition &tr1,
            task->get_operator_cost(tr2.op_id, false);
 }
 
+void FlawSelector::get_wildcard_trs(const Abstraction &abstraction,
+                                    const AbstractState *abstract_state,
+                                    const Transition &base_tr,
+                                    vector<Transition> &wildcard_trs) const {
+    assert(wildcard_trs.empty());
+    for (const Transition &wildcard_tr :
+         abstraction.get_transition_system().get_outgoing_transitions().at(
+             abstract_state->get_id())) {
+        if (are_wildcard_tr(base_tr, wildcard_tr)) {
+            wildcard_trs.push_back(wildcard_tr);
+        }
+    }
+}
+
 unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
                                          const vector<int> &domain_sizes,
                                          const Solution &solution, utils::RandomNumberGenerator &rng) const {
+    // Solution is empty plan
+    if (solution.size() == 0) {
+        return find_flaw_original(abstraction, domain_sizes, solution, false, rng);
+    }
+
     unique_ptr<Flaw> flaw;
     switch (flaw_strategy) {
+    case FlawStrategy::BACKTRACK_PESSIMISTIC:
+        flaw = find_flaw_backtrack_pessimistic(abstraction, domain_sizes, solution, rng);
+        break;
     case FlawStrategy::ORIGINAL:
         flaw = find_flaw_original(abstraction, domain_sizes, solution, false, rng);
         break;
@@ -421,6 +318,5 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
 }
 
 void FlawSelector::print_statistics() const {
-    utils::g_log << "Abstract plan depth: " << depth << endl;
 }
 } // namespace cegar

@@ -118,7 +118,7 @@ void add_memory_padding_option(options::OptionParser &parser) {
 void add_flaw_strategy_option(options::OptionParser &parser) {
     parser.add_enum_option<FlawStrategy>(
         "flaw_strategy",
-        {"BACKTRACK", "OPTIMISTIC", "ORIGINAL", "PESSIMISTIC", "RANDOM"},
+        {"BACKTRACK_OPTIMISTIC", "BACKTRACK_PESSIMISTIC", "OPTIMISTIC", "ORIGINAL", "PESSIMISTIC", "RANDOM"},
         "strategy to handle flaws", "ORIGINAL");
 }
 

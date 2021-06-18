@@ -18,11 +18,18 @@ class Abstraction;
 struct Split;
 
 enum class FlawStrategy {
-    BACKTRACK,
+    BACKTRACK_OPTIMISTIC,
+    BACKTRACK_PESSIMISTIC,
     OPTIMISTIC,
     ORIGINAL,
     PESSIMISTIC,
     RANDOM
+};
+
+enum class FlawReason {
+    NOT_APPLICABLE,
+    PATH_DEVIATION,
+    GOAL_TEST
 };
 
 struct Flaw {
@@ -32,8 +39,10 @@ struct Flaw {
     // Hypothetical Cartesian set we would have liked to reach.
     CartesianSet desired_cartesian_set;
 
+    FlawReason flaw_reason;
+
     Flaw(State &&concrete_state, const AbstractState &current_abstract_state,
-         CartesianSet &&desired_cartesian_set);
+         CartesianSet &&desired_cartesian_set, FlawReason reason);
 
     std::vector<Split> get_possible_splits() const;
 };
@@ -44,7 +53,17 @@ class FlawSelector {
     FlawStrategy flaw_strategy;
     bool debug;
 
-    mutable size_t depth;
+    std::unique_ptr<Flaw>
+    find_flaw_backtrack_optimistic(const Abstraction &abstraction,
+                                   const std::vector<int> &domain_sizes,
+                                   const Solution &solution,
+                                   utils::RandomNumberGenerator &rng) const;
+
+    std::unique_ptr<Flaw>
+    find_flaw_backtrack_pessimistic(const Abstraction &abstraction,
+                                    const std::vector<int> &domain_sizes,
+                                    const Solution &solution,
+                                    utils::RandomNumberGenerator &rng) const;
 
     std::unique_ptr<Flaw> find_flaw_original(const Abstraction &abstraction,
                                              const std::vector<int> &domain_sizes,
@@ -64,6 +83,10 @@ class FlawSelector {
                           utils::RandomNumberGenerator &rng) const;
 
     bool are_wildcard_tr(const Transition &tr1, const Transition &tr2) const;
+    void get_wildcard_trs(const Abstraction &abstraction,
+                          const AbstractState *abstract_state,
+                          const Transition &base_tr,
+                          std::vector<Transition> &wildcard_trs) const;
 
 public:
     FlawSelector(const std::shared_ptr<AbstractTask> &task,
