@@ -161,7 +161,7 @@ FlawSelector::find_flaw_backtrack_pessimistic(const Abstraction &abstraction,
 
         vector<Solution> new_all_solutions;
 
-        for (Solution sol : all_solutions) {
+        for (const Solution &sol : all_solutions) {
             for (const Transition &wildcard_tr : wildcard_transitions) {
                 Solution cur = sol;
                 cur.push_back(wildcard_tr);
@@ -397,7 +397,7 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
                                          const vector<int> &domain_sizes,
                                          const Solution &solution, utils::RandomNumberGenerator &rng) const {
     // Solution is empty plan
-    if (solution.size() == 0) {
+    if (solution.empty()) {
         return find_flaw_original(abstraction, domain_sizes, solution, false, rng);
     }
 
