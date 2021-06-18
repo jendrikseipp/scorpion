@@ -77,12 +77,65 @@ FlawSelector::FlawSelector(const shared_ptr<AbstractTask> &task,
 // Define here to avoid include in header.
 FlawSelector::~FlawSelector() {}
 
-// Performs breadth-first search to find the first possible flaw
 unique_ptr<Flaw>
 FlawSelector::find_flaw_backtrack_optimistic(const Abstraction &abstraction,
                                              const vector<int> &domain_sizes,
                                              const Solution &solution,
                                              utils::RandomNumberGenerator &rng) const {
+    const AbstractState *abstract_state = &abstraction.get_initial_state();
+
+    vector<Solution> all_solutions;
+    all_solutions.push_back(Solution());
+    for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
+        if (!utils::extra_memory_padding_is_reserved())
+            break;
+
+        const Transition &step = solution.at(step_id);
+
+        // determine wildcard trs
+        vector<Transition> wildcard_transitions;
+        get_wildcard_trs(abstraction, abstract_state, step, wildcard_transitions);
+        rng.shuffle(wildcard_transitions);
+
+        unique_ptr<Flaw> result = nullptr;
+
+        vector<Solution> no_flaw_sols;
+        vector<Solution> not_app_sols;
+        vector<Solution> path_dev_sols;
+        vector<Solution> goal_test_sols;
+
+        for (const Solution &sol : all_solutions) {
+            for (const Transition &tr : wildcard_transitions) {
+                Solution cur_solution = sol;
+                cur_solution.push_back(tr);
+                auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
+                if (cur_flaw == nullptr || (solution.size() != cur_solution.size() &&
+                                            cur_flaw->flaw_reason == FlawReason::GOAL_TEST)) {
+                    no_flaw_sols.push_back(cur_solution);
+                } else if (cur_flaw->flaw_reason == FlawReason::NOT_APPLICABLE) {
+                    not_app_sols.push_back(cur_solution);
+                } else if (cur_flaw->flaw_reason == FlawReason::PATH_DEVIATION) {
+                    not_app_sols.push_back(cur_solution);
+                } else if (cur_flaw->flaw_reason == FlawReason::GOAL_TEST) {
+                    goal_test_sols.push_back(cur_solution);
+                }
+            }
+        }
+
+        // We have only flaws
+        if (no_flaw_sols.empty()) {
+            if (!goal_test_sols.empty()) {
+                return find_flaw_original(abstraction, domain_sizes, *rng.choose(goal_test_sols), false, rng);
+            }
+            if (!path_dev_sols.empty()) {
+                return find_flaw_original(abstraction, domain_sizes, *rng.choose(path_dev_sols), false, rng);
+            }
+            return find_flaw_original(abstraction, domain_sizes, *rng.choose(not_app_sols), false, rng);
+        }
+        all_solutions = no_flaw_sols;
+        abstract_state = &abstraction.get_state(step.target_id);
+    }
+    return nullptr;
 }
 
 // Performs breadth-first search to find the first possible flaw
@@ -91,6 +144,57 @@ FlawSelector::find_flaw_backtrack_pessimistic(const Abstraction &abstraction,
                                               const vector<int> &domain_sizes,
                                               const Solution &solution,
                                               utils::RandomNumberGenerator &rng) const {
+    const AbstractState *abstract_state = &abstraction.get_initial_state();
+
+    vector<Solution> all_solutions;
+    all_solutions.push_back(Solution());
+    for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
+        if (!utils::extra_memory_padding_is_reserved())
+            break;
+
+        const Transition &step = solution.at(step_id);
+
+        // determine wildcard trs
+        vector<Transition> wildcard_transitions;
+        get_wildcard_trs(abstraction, abstract_state, step, wildcard_transitions);
+        rng.shuffle(wildcard_transitions);
+
+        vector<Solution> new_all_solutions;
+
+        for (Solution sol : all_solutions) {
+            for (const Transition &wildcard_tr : wildcard_transitions) {
+                Solution cur = sol;
+                cur.push_back(wildcard_tr);
+                new_all_solutions.push_back(cur);
+            }
+        }
+        all_solutions = new_all_solutions;
+
+        unique_ptr<Flaw> result = nullptr;
+        for (const Solution &cur_solution : all_solutions) {
+            auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
+            if (cur_flaw != nullptr) {
+                if (cur_flaw->flaw_reason == FlawReason::NOT_APPLICABLE) {
+                    return cur_flaw;
+                }
+                if (cur_flaw->flaw_reason == FlawReason::PATH_DEVIATION) {
+                    result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                } else {
+                    if (solution.size() == cur_solution.size() &&
+                        cur_flaw->flaw_reason == FlawReason::GOAL_TEST &&
+                        result->flaw_reason != FlawReason::GOAL_TEST) {
+                        result = utils::make_unique_ptr<Flaw>(*cur_flaw.release());
+                    }
+                }
+            }
+        }
+        if (result != nullptr) {
+            return result;
+        }
+
+        abstract_state = &abstraction.get_state(step.target_id);
+    }
+    return nullptr;
 }
 
 unique_ptr<Flaw>
@@ -148,7 +252,7 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
                 FlawReason::NOT_APPLICABLE);
         }
     }
-    assert(abstraction.get_goals().count(abstract_state->get_id()));
+    // assert(abstraction.get_goals().count(abstract_state->get_id()));
     if (task_properties::is_goal_state(task_proxy, concrete_state)) {
         // We found a concrete solution.
         return nullptr;
@@ -171,6 +275,9 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
 
     Solution choosen_solution;
     for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
+        if (!utils::extra_memory_padding_is_reserved())
+            break;
+
         const Transition &step = solution.at(step_id);
 
         // determine wildcard trs
@@ -222,6 +329,9 @@ FlawSelector::find_flaw_pessimistic(const Abstraction &abstraction,
 
     Solution choosen_solution;
     for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
+        if (!utils::extra_memory_padding_is_reserved())
+            break;
+
         const Transition &step = solution.at(step_id);
 
         // determine wildcard trs
@@ -248,7 +358,6 @@ FlawSelector::find_flaw_pessimistic(const Abstraction &abstraction,
                     }
                 }
             }
-            cur_flaw.release();
             if (result != nullptr) {
                 return result;
             }
@@ -293,7 +402,11 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
     }
 
     unique_ptr<Flaw> flaw;
+
     switch (flaw_strategy) {
+    case FlawStrategy::BACKTRACK_OPTIMISTIC:
+        flaw = find_flaw_backtrack_optimistic(abstraction, domain_sizes, solution, rng);
+        break;
     case FlawStrategy::BACKTRACK_PESSIMISTIC:
         flaw = find_flaw_backtrack_pessimistic(abstraction, domain_sizes, solution, rng);
         break;
