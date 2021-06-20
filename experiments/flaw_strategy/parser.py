@@ -6,6 +6,11 @@ import sys
 
 from lab.parser import Parser
 
+class CustomParser(Parser):
+    def __init__(self):
+        Parser.__init__(self)
+        #self.add_pattern("cartesian_states", r"^Cartesian states: (\d+)\n", type=int)
+
 def add_found_concret_solution(content, props):
     props["conrete_solution"] = int("Found concrete solution for subtask" in content)
 
@@ -16,13 +21,13 @@ def add_cartesian_states_to_solve(content, props):
         props["cartesian_states_to_solve"] = None
 
 def main():
-    parser = CommonParser()
-    parser.add_pattern("cartesian_states", r"^Cartesian states: (\d+)\n", type=int)
+    parser = CustomParser()
+    parser.add_pattern("cartesian_states", r"\] Cartesian states: (.+)\n", type=int)
     parser.add_function(add_found_concret_solution)
     parser.add_function(add_cartesian_states_to_solve)
-
-
     parser.parse()
+
+
 
 
 if __name__ == "__main__":
