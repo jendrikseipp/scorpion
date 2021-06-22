@@ -6,6 +6,7 @@
 #include "transition.h"
 #include "transition_system.h"
 #include "types.h"
+#include "utils.h"
 
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
@@ -32,11 +33,13 @@ static CartesianSet get_cartesian_set(const vector<int> &domain_sizes,
 }
 
 Flaw::Flaw(State &&concrete_state, const AbstractState &current_abstract_state,
-           CartesianSet &&desired_cartesian_set, FlawReason flaw_reason)
+           CartesianSet &&desired_cartesian_set, FlawReason flaw_reason,
+           const Solution &flawed_solution)
     : concrete_state(move(concrete_state)),
       current_abstract_state(current_abstract_state),
       desired_cartesian_set(move(desired_cartesian_set)),
-      flaw_reason(flaw_reason) {
+      flaw_reason(flaw_reason),
+      flawed_solution(flawed_solution) {
     assert(current_abstract_state.includes(this->concrete_state));
 }
 
@@ -208,6 +211,7 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
     const AbstractState *abstract_state = &abstraction.get_initial_state();
     State concrete_state = task_proxy.get_initial_state();
     assert(abstract_state->includes(concrete_state));
+    Solution choosen_solution;
 
     if (debug)
         utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
@@ -224,6 +228,7 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
         }
 
         const Transition &step = rnd_choice ? *rng.choose(wildcard_transitions) : solution.at(step_id);
+        choosen_solution.push_back(step);
 
         OperatorProxy op = task_proxy.get_operators()[step.op_id];
         const AbstractState *next_abstract_state =
@@ -239,7 +244,8 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
                 return utils::make_unique_ptr<Flaw>(move(concrete_state),
                                                     *abstract_state,
                                                     next_abstract_state->regress(op),
-                                                    FlawReason::PATH_DEVIATION);
+                                                    FlawReason::PATH_DEVIATION,
+                                                    choosen_solution);
             }
             abstract_state = next_abstract_state;
             concrete_state = move(next_concrete_state);
@@ -249,7 +255,7 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
             return utils::make_unique_ptr<Flaw>(
                 move(concrete_state), *abstract_state,
                 get_cartesian_set(domain_sizes, op.get_preconditions()),
-                FlawReason::NOT_APPLICABLE);
+                FlawReason::NOT_APPLICABLE, choosen_solution);
         }
     }
     // assert(abstraction.get_goals().count(abstract_state->get_id()));
@@ -262,7 +268,7 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
         return utils::make_unique_ptr<Flaw>(
             move(concrete_state), *abstract_state,
             get_cartesian_set(domain_sizes, task_proxy.get_goals()),
-            FlawReason::GOAL_TEST);
+            FlawReason::GOAL_TEST, choosen_solution);
     }
 }
 
@@ -427,6 +433,15 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
                      << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
+
+    // Fill flawed solution
+    if (flaw != nullptr) {
+        flaw->flawed_solution.insert(flaw->flawed_solution.end(),
+                                     solution.begin() + flaw->flawed_solution.size(),
+                                     solution.end());
+    }
+    assert(flaw == nullptr || solution.size() == flaw->flawed_solution.size());
+
     return flaw;
 }
 

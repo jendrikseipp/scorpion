@@ -40,9 +40,11 @@ struct Flaw {
     CartesianSet desired_cartesian_set;
 
     FlawReason flaw_reason;
+    Solution flawed_solution;
 
     Flaw(State &&concrete_state, const AbstractState &current_abstract_state,
-         CartesianSet &&desired_cartesian_set, FlawReason reason);
+         CartesianSet &&desired_cartesian_set, FlawReason reason,
+         const Solution &flawed_solution);
 
     std::vector<Split> get_possible_splits() const;
 };

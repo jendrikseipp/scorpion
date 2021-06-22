@@ -212,6 +212,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             utils::g_log << "Found concrete solution for subtask." << endl;
             break;
         }
+        shortest_paths->update_shortest_path(flaw->flawed_solution);
 
         refine_timer.resume();
         const AbstractState &abstract_state = flaw->current_abstract_state;

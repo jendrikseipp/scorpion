@@ -384,4 +384,12 @@ bool ShortestPaths::test_distances(
 
     return true;
 }
+
+void ShortestPaths::update_shortest_path(const Solution &solution) {
+    int v = 0;
+    for (const Transition &tr : solution) {
+        shortest_path[v] = tr;
+        v = tr.target_id;
+    }
+}
 }
