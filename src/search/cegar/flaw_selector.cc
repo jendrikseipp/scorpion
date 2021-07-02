@@ -87,61 +87,47 @@ FlawSelector::find_flaw_backtrack_optimistic(const Abstraction &abstraction,
                                              utils::RandomNumberGenerator &rng) const {
     const AbstractState *abstract_state = &abstraction.get_initial_state();
 
-    vector<Solution> all_solutions;
-    all_solutions.push_back(Solution());
-    for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
-        if (!utils::extra_memory_padding_is_reserved())
-            break;
-
-        const Transition &step = solution.at(step_id);
-
-        // determine wildcard trs
+    // Dermine all wildcard_transitions
+    vector<vector<Transition>> all_wildcard_transitions;
+    for (const Transition &step : solution) {
         vector<Transition> wildcard_transitions;
         get_wildcard_trs(abstraction, abstract_state, step, wildcard_transitions);
         rng.shuffle(wildcard_transitions);
-
-        unique_ptr<Flaw> result = nullptr;
-
-        vector<Solution> no_flaw_sols;
-        vector<Solution> not_app_sols;
-        vector<Solution> path_dev_sols;
-        vector<Solution> goal_test_sols;
-
-        for (const Solution &sol : all_solutions) {
-            for (const Transition &tr : wildcard_transitions) {
-                Solution cur_solution = sol;
-                cur_solution.push_back(tr);
-                auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
-                if (cur_flaw == nullptr || (solution.size() != cur_solution.size() &&
-                                            cur_flaw->flaw_reason == FlawReason::GOAL_TEST)) {
-                    no_flaw_sols.push_back(cur_solution);
-                } else if (cur_flaw->flaw_reason == FlawReason::NOT_APPLICABLE) {
-                    not_app_sols.push_back(cur_solution);
-                } else if (cur_flaw->flaw_reason == FlawReason::PATH_DEVIATION) {
-                    not_app_sols.push_back(cur_solution);
-                } else if (cur_flaw->flaw_reason == FlawReason::GOAL_TEST) {
-                    goal_test_sols.push_back(cur_solution);
-                }
-            }
-        }
-
-        // We have only flaws
-        if (no_flaw_sols.empty()) {
-            if (!goal_test_sols.empty()) {
-                return find_flaw_original(abstraction, domain_sizes, *rng.choose(goal_test_sols), false, rng);
-            }
-            if (!path_dev_sols.empty()) {
-                return find_flaw_original(abstraction, domain_sizes, *rng.choose(path_dev_sols), false, rng);
-            }
-            return find_flaw_original(abstraction, domain_sizes, *rng.choose(not_app_sols), false, rng);
-        }
-        all_solutions = no_flaw_sols;
+        all_wildcard_transitions.push_back(wildcard_transitions);
         abstract_state = &abstraction.get_state(step.target_id);
     }
-    return nullptr;
+    assert(all_wildcard_transitions.size() == solution.size());
+
+    stack<Solution> stack;
+    unique_ptr<Flaw> best_flaw;
+    stack.push(Solution());
+    while (!stack.empty()) {
+        if (!utils::extra_memory_padding_is_reserved())
+            break;
+
+        Solution base_solution = stack.top();
+        stack.pop();
+        for (const Transition &tr : all_wildcard_transitions[base_solution.size()]) {
+            Solution cur_solution = base_solution;
+            cur_solution.push_back(tr);
+            auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
+
+            if (cur_flaw == nullptr) {
+                return cur_flaw;
+            }
+
+            if (cur_solution.size() < solution.size()
+                && cur_flaw->flaw_reason == FlawReason::GOAL_TEST) {
+                stack.push(cur_solution);
+            } else if (best_flaw == nullptr || is_flaw_better(cur_flaw, best_flaw)) {
+                best_flaw = utils::make_unique_ptr<Flaw>(*cur_flaw);
+            }
+        }
+    }
+
+    return best_flaw;
 }
 
-// Performs breadth-first search to find the first possible flaw
 unique_ptr<Flaw>
 FlawSelector::find_flaw_backtrack_pessimistic(const Abstraction &abstraction,
                                               const vector<int> &domain_sizes,
@@ -149,54 +135,51 @@ FlawSelector::find_flaw_backtrack_pessimistic(const Abstraction &abstraction,
                                               utils::RandomNumberGenerator &rng) const {
     const AbstractState *abstract_state = &abstraction.get_initial_state();
 
-    vector<Solution> all_solutions;
-    all_solutions.push_back(Solution());
-    for (size_t step_id = 0; step_id < solution.size(); ++step_id) {
-        if (!utils::extra_memory_padding_is_reserved())
-            break;
-
-        const Transition &step = solution.at(step_id);
-
-        // determine wildcard trs
+    // Dermine all wildcard_transitions
+    vector<vector<Transition>> all_wildcard_transitions;
+    for (const Transition &step : solution) {
         vector<Transition> wildcard_transitions;
         get_wildcard_trs(abstraction, abstract_state, step, wildcard_transitions);
         rng.shuffle(wildcard_transitions);
-
-        vector<Solution> new_all_solutions;
-
-        for (const Solution &sol : all_solutions) {
-            for (const Transition &wildcard_tr : wildcard_transitions) {
-                Solution cur = sol;
-                cur.push_back(wildcard_tr);
-                new_all_solutions.push_back(cur);
-            }
-        }
-        all_solutions = new_all_solutions;
-
-        unique_ptr<Flaw> result = nullptr;
-        for (const Solution &cur_solution : all_solutions) {
-            auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
-            if (cur_flaw != nullptr) {
-                if (cur_flaw->flaw_reason == FlawReason::NOT_APPLICABLE) {
-                    return cur_flaw;
-                }
-                if (cur_flaw->flaw_reason == FlawReason::PATH_DEVIATION) {
-                    result = utils::make_unique_ptr<Flaw>(*cur_flaw);
-                } else {
-                    if (solution.size() == cur_solution.size() &&
-                        cur_flaw->flaw_reason == FlawReason::GOAL_TEST &&
-                        result->flaw_reason != FlawReason::GOAL_TEST) {
-                        result = utils::make_unique_ptr<Flaw>(*cur_flaw);
-                    }
-                }
-            }
-        }
-        if (result != nullptr) {
-            return result;
-        }
-
+        all_wildcard_transitions.push_back(wildcard_transitions);
         abstract_state = &abstraction.get_state(step.target_id);
     }
+    assert(all_wildcard_transitions.size() == solution.size());
+
+    queue<Solution> queue;
+    unique_ptr<Flaw> worst_flaw;
+    queue.push(Solution());
+    while (!queue.empty()) {
+        if (!utils::extra_memory_padding_is_reserved())
+            break;
+
+        Solution base_solution = queue.front();
+        queue.pop();
+        for (const Transition &tr : all_wildcard_transitions[base_solution.size()]) {
+            Solution cur_solution = base_solution;
+            cur_solution.push_back(tr);
+            auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
+
+            if (cur_flaw == nullptr) {
+                continue;
+            }
+
+            if (cur_flaw->flaw_reason == FlawReason::NOT_APPLICABLE) {
+                return cur_flaw;
+            }
+
+            if (cur_solution.size() < solution.size()
+                && cur_flaw->flaw_reason == FlawReason::GOAL_TEST) {
+                queue.push(cur_solution);
+            } else if (is_flaw_better(worst_flaw, cur_flaw)) {
+                worst_flaw = utils::make_unique_ptr<Flaw>(*cur_flaw);
+            }
+        }
+        if (worst_flaw != nullptr) {
+            return worst_flaw;
+        }
+    }
+
     return nullptr;
 }
 
@@ -291,7 +274,7 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
         get_wildcard_trs(abstraction, abstract_state, step, wildcard_transitions);
         rng.shuffle(wildcard_transitions);
 
-        unique_ptr<Flaw> result = nullptr;
+        unique_ptr<Flaw> best_flaw = nullptr;
         for (const Transition &wildcard_tr : wildcard_transitions) {
             Solution cur_solution = choosen_solution;
             cur_solution.push_back(wildcard_tr);
@@ -300,7 +283,7 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
             // no flaw
             if (cur_flaw == nullptr) {
                 choosen_solution.push_back(wildcard_tr);
-                result = nullptr;
+                best_flaw = nullptr;
                 break;
             }
 
@@ -308,17 +291,17 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
             if (cur_solution.size() < solution.size() &&
                 cur_flaw->flaw_reason == FlawReason::GOAL_TEST) {
                 choosen_solution.push_back(wildcard_tr);
-                result = nullptr;
+                best_flaw = nullptr;
                 break;
             }
 
-            if (result == nullptr ||
-                (static_cast<int>(result->flaw_reason) < static_cast<int>(cur_flaw->flaw_reason))) {
-                result = utils::make_unique_ptr<Flaw>(*cur_flaw);
+            if (best_flaw == nullptr || is_flaw_better(cur_flaw, best_flaw)) {
+                best_flaw = utils::make_unique_ptr<Flaw>(*cur_flaw);
             }
         }
-        if (result != nullptr) {
-            return result;
+
+        if (best_flaw != nullptr) {
+            return best_flaw;
         }
 
         abstract_state = &abstraction.get_state(step.target_id);
@@ -345,7 +328,7 @@ FlawSelector::find_flaw_pessimistic(const Abstraction &abstraction,
         get_wildcard_trs(abstraction, abstract_state, step, wildcard_transitions);
         rng.shuffle(wildcard_transitions);
 
-        unique_ptr<Flaw> result = nullptr;
+        unique_ptr<Flaw> worst_flaw = nullptr;
         for (const Transition &wildcard_tr : wildcard_transitions) {
             Solution cur_solution = choosen_solution;
             cur_solution.push_back(wildcard_tr);
@@ -354,18 +337,19 @@ FlawSelector::find_flaw_pessimistic(const Abstraction &abstraction,
                 if (cur_flaw->flaw_reason == FlawReason::NOT_APPLICABLE) {
                     return cur_flaw;
                 }
-                if (cur_flaw->flaw_reason == FlawReason::PATH_DEVIATION) {
-                    result = utils::make_unique_ptr<Flaw>(*cur_flaw);
-                } else {
-                    if (solution.size() == cur_solution.size() &&
-                        cur_flaw->flaw_reason == FlawReason::GOAL_TEST &&
-                        result->flaw_reason != FlawReason::GOAL_TEST) {
-                        result = utils::make_unique_ptr<Flaw>(*cur_flaw);
-                    }
+
+                // No real flaw
+                if (solution.size() != cur_solution.size() &&
+                    cur_flaw->flaw_reason == FlawReason::GOAL_TEST) {
+                    continue;
+                }
+
+                if (worst_flaw == nullptr || is_flaw_better(worst_flaw, cur_flaw)) {
+                    worst_flaw = utils::make_unique_ptr<Flaw>(*cur_flaw);
                 }
             }
-            if (result != nullptr) {
-                return result;
+            if (worst_flaw != nullptr) {
+                return worst_flaw;
             }
         }
         choosen_solution.push_back(*rng.choose(wildcard_transitions));
@@ -397,6 +381,29 @@ void FlawSelector::get_wildcard_trs(const Abstraction &abstraction,
             wildcard_trs.push_back(wildcard_tr);
         }
     }
+    assert(!wildcard_trs.empty());
+}
+
+// flaw1 > flaw2
+bool FlawSelector::is_flaw_better(const std::unique_ptr<Flaw> &flaw1,
+                                  const std::unique_ptr<Flaw> &flaw2) const {
+    if (flaw1 == nullptr && flaw2 != nullptr) {
+        return true;
+    }
+
+    if (flaw2 == nullptr) {
+        return false;
+    }
+
+    if (flaw1->flawed_solution.size() > flaw2->flawed_solution.size()) {
+        return true;
+    }
+
+    if (flaw1->flawed_solution.size() < flaw2->flawed_solution.size()) {
+        return false;
+    }
+
+    return static_cast<int>(flaw1->flaw_reason) > static_cast<int>(flaw2->flaw_reason);
 }
 
 unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,

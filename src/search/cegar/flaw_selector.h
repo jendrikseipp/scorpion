@@ -90,6 +90,9 @@ class FlawSelector {
                           const Transition &base_tr,
                           std::vector<Transition> &wildcard_trs) const;
 
+    bool is_flaw_better(const std::unique_ptr<Flaw> &flaw1,
+                        const std::unique_ptr<Flaw> &flaw2) const;
+
 public:
     FlawSelector(const std::shared_ptr<AbstractTask> &task,
                  FlawStrategy flaw_strategy, bool debug);
