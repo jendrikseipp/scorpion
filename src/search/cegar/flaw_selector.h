@@ -19,10 +19,14 @@ struct Split;
 
 enum class FlawStrategy {
     BACKTRACK_OPTIMISTIC,
+    BACKTRACK_OPTIMISTIC_SLOW,
     BACKTRACK_PESSIMISTIC,
+    BACKTRACK_PESSIMISTIC_SLOW,
     OPTIMISTIC,
+    OPTIMISTIC_SLOW,
     ORIGINAL,
     PESSIMISTIC,
+    PESSIMISTIC_SLOW,
     RANDOM
 };
 
@@ -62,10 +66,22 @@ class FlawSelector {
                                    utils::RandomNumberGenerator &rng) const;
 
     std::unique_ptr<Flaw>
+    find_flaw_backtrack_optimistic_slow(const Abstraction &abstraction,
+                                        const std::vector<int> &domain_sizes,
+                                        const Solution &solution,
+                                        utils::RandomNumberGenerator &rng) const;
+
+    std::unique_ptr<Flaw>
     find_flaw_backtrack_pessimistic(const Abstraction &abstraction,
                                     const std::vector<int> &domain_sizes,
                                     const Solution &solution,
                                     utils::RandomNumberGenerator &rng) const;
+
+    std::unique_ptr<Flaw>
+    find_flaw_backtrack_pessimistic_slow(const Abstraction &abstraction,
+                                         const std::vector<int> &domain_sizes,
+                                         const Solution &solution,
+                                         utils::RandomNumberGenerator &rng) const;
 
     std::unique_ptr<Flaw> find_flaw_original(const Abstraction &abstraction,
                                              const std::vector<int> &domain_sizes,
@@ -79,10 +95,22 @@ class FlawSelector {
                          utils::RandomNumberGenerator &rng) const;
 
     std::unique_ptr<Flaw>
+    find_flaw_optimistic_slow(const Abstraction &abstraction,
+                              const std::vector<int> &domain_sizes,
+                              const Solution &solution,
+                              utils::RandomNumberGenerator &rng) const;
+
+    std::unique_ptr<Flaw>
     find_flaw_pessimistic(const Abstraction &abstraction,
                           const std::vector<int> &domain_sizes,
                           const Solution &solution,
                           utils::RandomNumberGenerator &rng) const;
+
+    std::unique_ptr<Flaw>
+    find_flaw_pessimistic_slow(const Abstraction &abstraction,
+                               const std::vector<int> &domain_sizes,
+                               const Solution &solution,
+                               utils::RandomNumberGenerator &rng) const;
 
     bool are_wildcard_tr(const Transition &tr1, const Transition &tr2) const;
     void get_wildcard_trs(const Abstraction &abstraction,
@@ -92,6 +120,9 @@ class FlawSelector {
 
     bool is_flaw_better(const std::unique_ptr<Flaw> &flaw1,
                         const std::unique_ptr<Flaw> &flaw2) const;
+
+    CartesianSet get_cartesian_set(const std::vector<int> &domain_sizes,
+                                   const ConditionsProxy &conditions) const;
 
 public:
     FlawSelector(const std::shared_ptr<AbstractTask> &task,
