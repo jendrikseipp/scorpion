@@ -1,0 +1,36 @@
+name: Singularity
+on:
+  push:
+    branches:
+      - scorpion
+
+  # Test the build on all pull requests
+  pull_request: []
+
+jobs:
+  build-test-containers:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        singularity_version:
+          - '3.8.1'
+
+    container:
+      image: quay.io/singularity/singularity:v${{ matrix.singularity_version }}
+      options: --privileged
+
+    name: Check Singularity build
+    steps:
+
+      - name: Check out code for the container builds
+        uses: actions/checkout@v2
+
+      - name: Build container
+        run: |
+          sudo -E singularity build container.sif Singularity
+
+      - name: Login and deploy container
+        if: (github.event_name != 'pull_request')
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | singularity remote login -u ${{ secrets.GHCR_USERNAME }} --password-stdin oras://ghcr.io
+          singularity push container.sif oras://ghcr.io/${GITHUB_REPOSITORY}:latest
