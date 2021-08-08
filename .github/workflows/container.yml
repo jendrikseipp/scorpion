@@ -27,6 +27,7 @@ jobs:
 
       - name: Build container
         run: |
+          echo ${GITHUB_ACTOR}
           sudo -E singularity build container.sif Singularity
 
       - name: Login and deploy container
