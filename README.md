@@ -32,35 +32,38 @@ documentation about
 and [running](http://www.fast-downward.org/PlannerUsage) the planner.
 
 
-### Recommended Configuration
+### Recommended configuration
 
-We recommend the following configuration, which is similar to the one
-Scorpion used in the IPC 2018. It prunes irrelevant operators in a
-preprocessing step, uses partial order reduction, and maximizes over
-multiple diverse SCP heuristics computed for projections and Cartesian
-abstractions:
+For state-of-the-art performance, we recommend the following
+configuration, which is similar to the one Scorpion used in the IPC 2018.
 
 ```
-./fast-downward.py --transform-task preprocess-h2
+./fast-downward.py \
+  --transform-task preprocess-h2 \
+  --alias scorpion \
   ../benchmarks/gripper/prob01.pddl
-  --search "astar(scp([
-    projections(hillclimbing(max_time=100, random_seed=0)),
-    projections(systematic(2)),
-    cartesian()],
-    max_orders=infinity, max_time=200, max_optimization_time=2, diversify=true,
-    orders=greedy_orders(random_seed=0), random_seed=0),
-    pruning=atom_centric_stubborn_sets(min_required_pruning_ratio=0.2))"
 ```
 
-(In [Downward Lab](https://lab.readthedocs.io/) you can use the
-`driver_options` argument of `add_algorithm` to specify the
-`--transform-task` argument.)
+The `preprocess-h2` call prunes irrelevant operators in a preprocessing
+step, and the `scorpion` alias uses partial order reduction and maximizes
+over multiple diverse SCP heuristics computed for hillclimbing PDBs,
+systematic PDBs and Cartesian abstractions (see
+[aliases.py](driver/aliases.py) for the expanded configuration string).
+(In [Downward Lab](https://lab.readthedocs.io/) you can use
+`driver_options=["--transform-task", "preprocess-h2"]` in the call to
+`add_algorithm` to prune irrelevant operators.)
 
-If you want to run exactly the same Scorpion version as in IPC 2018, we
+To build and run this Scorpion configuration with
+[Singularity](https://github.com/hpcng/singularity), call
+
+    sudo singularity build scorpion.sif Singularity
+    ./scorpion.sif domain.pddl problem.pddl sas_plan
+
+### IPC 2018 version
+
+If you prefer to run exactly the same Scorpion version as in IPC 2018, we
 recommend using the [Scorpion IPC
 repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
-It also includes a [Singularity](https://github.com/hpcng/singularity)
-image.
 
 
 ## Differences between Scorpion and Fast Downward
@@ -68,7 +71,7 @@ image.
 - Scorpion comes with the
   [h²-preprocessor](https://ojs.aaai.org/index.php/ICAPS/article/view/13708)
   by Vidal Alcázar and Álvaro Torralba that prunes irrelevant operators.
-  Pass `--transform-task builds/release/bin/preprocess-h2` to use it.
+  Pass `--transform-task preprocess-h2` to use it.
 - The `--transform-task` command allows you to run arbitrary preprocessing
   commands that transform the SAS+ output from the translator before
   passing it to the search.
