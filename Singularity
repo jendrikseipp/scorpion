@@ -14,7 +14,7 @@ From: ubuntu:20.04
 
     ## Build planner.
     cd /planner
-    ./build.py minimal
+    ./build.py
 
     ## Strip binaries.
     strip --strip-all /planner/builds/release/bin/downward /planner/builds/release/bin/preprocess-h2
