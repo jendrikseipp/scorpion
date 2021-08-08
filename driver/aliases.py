@@ -143,6 +143,15 @@ ALIASES["seq-opt-bjolp"] = [
 ALIASES["seq-opt-lmcut"] = [
     "--search", "astar(lmcut())"]
 
+ALIASES["scorpion"] = [
+    "--search", """astar(scp([
+        projections(hillclimbing(max_time=100, random_seed=0)),
+        projections(systematic(2)),
+        cartesian()],
+        max_orders=infinity, max_time=200, max_optimization_time=2, diversify=true,
+        orders=greedy_orders(random_seed=0), random_seed=0),
+        pruning=atom_centric_stubborn_sets(min_required_pruning_ratio=0.2))"""]
+
 
 PORTFOLIOS = {}
 for portfolio in os.listdir(PORTFOLIO_DIR):
