@@ -68,15 +68,21 @@ jobs:
         run: |
           echo "WORKSPACE $env:GITHUB_WORKSPACE"
           mkdir D:\a\downward
+          echo "a dir"
+          dir D:\a
           echo "For information about the CPLEX silent installation consult:"
           echo "https://www.ibm.com/support/knowledgecenter/SSSA5P_12.9.0/ilog.odms.studio.help/Optimization_Studio/topics/td_silent_install.html"
           curl.exe --silent --show-error --output cplex.exe $ENV:CPLEX_URL
+
+          dir "$env:GITHUB_WORKSPACE\.github\workflows\misc\"
 
           echo "Install CPLEX"
           Start-Process -FilePath .\cplex.exe -ArgumentList "-f", "$env:GITHUB_WORKSPACE\.github\workflows\misc\cplex129_windows_installer.properties" -PassThru | Wait-Process
           del .\cplex.exe
 
           echo "Copy the relevant directory to a location which is not magically protected against cmake"
+          dir ..\
+          dir ..\cplex_temp
           Xcopy /E /I ..\cplex_temp\cplex ..\cplex
 
 
