@@ -67,13 +67,16 @@ jobs:
       - name: Install CPLEX
         if: ${{ env.CPLEX_URL != 0 }}
         run: |
+          echo "A %GITHUB_WORKSPACE%"
+          echo "B $GITHUB_WORKSPACE"
+          echo C $GITHUB_WORKSPACE
+          echo D ${{ GITHUB_WORKSPACE }}
           echo "For information about the CPLEX silent installation consult:"
           echo "https://www.ibm.com/support/knowledgecenter/SSSA5P_12.9.0/ilog.odms.studio.help/Optimization_Studio/topics/td_silent_install.html"
-          curl.exe --output cplex.exe $ENV:CPLEX_URL
+          curl.exe --silent --show-error --output cplex.exe $ENV:CPLEX_URL
 
           echo "Install CPLEX"
-          echo "$GITHUB_WORKSPACE"
-          Start-Process -FilePath .\cplex.exe -ArgumentList "-f", "$GITHUB_WORKSPACE\.github\workflows\misc\cplex129_windows_installer.properties" -PassThru | Wait-Process
+          Start-Process -FilePath .\cplex.exe -ArgumentList "-f", "%GITHUB_WORKSPACE%\.github\workflows\misc\cplex129_windows_installer.properties" -PassThru | Wait-Process
           del .\cplex.exe
 
           echo "Copy the relevant directory to a location which is not magically protected against cmake"
