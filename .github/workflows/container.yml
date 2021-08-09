@@ -4,7 +4,7 @@ on:
     branches:
       - scorpion
 
-  # Test the build on all pull requests
+  # Test the build on all pull requests.
   pull_request: []
 
 jobs:
@@ -22,16 +22,17 @@ jobs:
     name: Check Singularity build
     steps:
 
-      - name: Check out code for the container builds
+      - name: Check out code for container builds
         uses: actions/checkout@v2
 
       - name: Build container
         run: |
-          echo ${GITHUB_ACTOR}
           sudo -E singularity build container.sif Singularity
 
       - name: Login and deploy container
-        #if: (github.event_name != 'pull_request')
+        if: (github.event_name != 'pull_request')
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | singularity remote login -u ${GITHUB_ACTOR} --password-stdin oras://ghcr.io
           singularity push container.sif oras://ghcr.io/${GITHUB_REPOSITORY}:latest
+          # Image can now be pulled with "singularity pull oras://ghcr.io/${GITHUB_REPOSITORY}:latest"
+          # Note that the pull fails for Singularity 3.5 but works for 3.8.
