@@ -11,7 +11,6 @@ env:
   DOWNWARD_COIN_ROOT_RELEASE: D:\a\downward\osi_release
   DOWNWARD_COIN_ROOT_DEBUG: D:\a\downward\osi_debug
   DOWNWARD_CPLEX_ROOT: D:\a\downward\cplex
-  ZLIB_ROOT: D:\a\downward\zlib
 
   CPLEX_URL: "${{ secrets.CPLEX129_WINDOWS_URL }}"
   OSI_URL: "https://www.coin-or.org/download/source/Osi/Osi-0.107.9.tgz"
@@ -67,7 +66,8 @@ jobs:
       - name: Install CPLEX
         if: ${{ env.CPLEX_URL != 0 }}
         run: |
-          echo "A $env:GITHUB_WORKSPACE"
+          echo "WORKSPACE $env:GITHUB_WORKSPACE"
+          mkdir D:\a\downward
           echo "For information about the CPLEX silent installation consult:"
           echo "https://www.ibm.com/support/knowledgecenter/SSSA5P_12.9.0/ilog.odms.studio.help/Optimization_Studio/topics/td_silent_install.html"
           curl.exe --silent --show-error --output cplex.exe $ENV:CPLEX_URL
@@ -85,7 +85,7 @@ jobs:
         if: ${{ env.CPLEX_URL != 0 }}
         run: |
           call "${{ matrix.platform.vc }}" %ARCH%
-          set SET_RUNTIME_LIBRARY=python D:\a\downward\downward\.github\workflows\misc\set-visual-studio-static-runtime-libraries.py
+          set SET_RUNTIME_LIBRARY=python $env:GITHUB_WORKSPACE\.github\workflows\misc\set-visual-studio-static-runtime-libraries.py
 
           cd ..
           echo "Download OSI"
