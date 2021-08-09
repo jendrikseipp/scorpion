@@ -53,11 +53,20 @@ systematic PDBs and Cartesian abstractions (see
 `driver_options=["--transform-task", "preprocess-h2"]` in the call to
 `add_algorithm` to prune irrelevant operators.)
 
-To build and run this Scorpion configuration with
-[Singularity](https://github.com/hpcng/singularity), call
+#### Singularity container
+
+To simplify the installation process, we provide the above Scorpion
+configuration as an executable
+[Singularity](https://github.com/hpcng/singularity) container.
+
+Download and run the container (tested with Singularity 3.8):
+
+    singularity pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
+    ./scorpion.sif domain.pddl problem.pddl sas_plan
+
+Build the container yourself:
 
     sudo singularity build scorpion.sif Singularity
-    ./scorpion.sif domain.pddl problem.pddl sas_plan
 
 ### IPC 2018 version
 
