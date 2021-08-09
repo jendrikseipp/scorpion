@@ -8,9 +8,9 @@ env:
   CC: cl
   CXX: cl
 
-  DOWNWARD_COIN_ROOT_RELEASE: D:\a\downward\osi_release
-  DOWNWARD_COIN_ROOT_DEBUG: D:\a\downward\osi_debug
-  DOWNWARD_CPLEX_ROOT: D:\a\downward\cplex
+  DOWNWARD_COIN_ROOT_RELEASE: D:\a\osi_release
+  DOWNWARD_COIN_ROOT_DEBUG: D:\a\osi_debug
+  DOWNWARD_CPLEX_ROOT: D:\a\cplex
 
   CPLEX_URL: "${{ secrets.CPLEX129_WINDOWS_URL }}"
   OSI_URL: "https://www.coin-or.org/download/source/Osi/Osi-0.107.9.tgz"
@@ -44,7 +44,7 @@ jobs:
         run: |
           call "${{ matrix.platform.vc }}" %ARCH%
 
-          cd ..
+          cd D:\a
           curl.exe --output zlib.zip %ZLIB_URL%
           unzip zlib.zip
           del zlib.zip
@@ -67,9 +67,10 @@ jobs:
         if: ${{ env.CPLEX_URL != 0 }}
         run: |
           echo "WORKSPACE $env:GITHUB_WORKSPACE"
-          mkdir D:\a\downward
           echo "a dir"
           dir D:\a
+          dir D:\a\scorpion
+
           echo "For information about the CPLEX silent installation consult:"
           echo "https://www.ibm.com/support/knowledgecenter/SSSA5P_12.9.0/ilog.odms.studio.help/Optimization_Studio/topics/td_silent_install.html"
           curl.exe --silent --show-error --output cplex.exe $ENV:CPLEX_URL
@@ -83,7 +84,7 @@ jobs:
           echo "Copy the relevant directory to a location which is not magically protected against cmake"
           dir ..\
           dir ..\cplex_temp
-          Xcopy /E /I ..\cplex_temp\cplex ..\cplex
+          Xcopy /E /I D:\a\cplex_temp\cplex ..\cplex
 
 
       - name: Install Coin
@@ -93,7 +94,7 @@ jobs:
           call "${{ matrix.platform.vc }}" %ARCH%
           set SET_RUNTIME_LIBRARY=python $env:GITHUB_WORKSPACE\.github\workflows\misc\set-visual-studio-static-runtime-libraries.py
 
-          cd ..
+          cd D:\a
           echo "Download OSI"
           curl.exe --output osi.tgz %OSI_URL%
           tar xf osi.tgz
@@ -168,7 +169,7 @@ jobs:
           rem "downward.exe depends on cplexXYZ.dll. Thus, we have to add it to"
           rem "the PATH. On my local CPLEX installation this is done"
           rem "automatically. For the GitHub Action we have to do it manually:"
-          set PATH=%PATH%;D:\a\downward\cplex_temp\opl\bin\x64_win64/
+          set PATH=%PATH%;D:\a\cplex_temp\opl\bin\x64_win64/
           cd misc/
           tox -e translator,search
 
@@ -177,7 +178,7 @@ jobs:
         if: ${{ env.CPLEX_URL != 0 }}
         run: |
           call "${{ matrix.platform.vc }}" %ARCH%
-          set PATH=%PATH%;D:\a\downward\cplex_temp\opl\bin\x64_win64/
+          set PATH=%PATH%;D:\a\cplex_temp\opl\bin\x64_win64/
           cd misc/
           tox -e cplex
 
