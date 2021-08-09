@@ -72,7 +72,8 @@ jobs:
           curl.exe --output cplex.exe $ENV:CPLEX_URL
 
           echo "Install CPLEX"
-          Start-Process -FilePath .\cplex.exe -ArgumentList "-f", "D:\a\downward\downward\.github\workflows\misc\cplex129_windows_installer.properties" -PassThru | Wait-Process
+          echo "$GITHUB_WORKSPACE"
+          Start-Process -FilePath .\cplex.exe -ArgumentList "-f", "$GITHUB_WORKSPACE\.github\workflows\misc\cplex129_windows_installer.properties" -PassThru | Wait-Process
           del .\cplex.exe
 
           echo "Copy the relevant directory to a location which is not magically protected against cmake"
