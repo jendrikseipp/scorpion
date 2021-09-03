@@ -48,7 +48,8 @@ FlawSelector::find_flaw_backtrack_optimistic_slow(
 
         Solution base_solution = stack.top();
         stack.pop();
-        for (const Transition &tr : all_wildcard_transitions[base_solution.size()]) {
+        for (const Transition &tr :
+             all_wildcard_transitions[base_solution.size()]) {
             Solution cur_solution = base_solution;
             cur_solution.push_back(tr);
             auto cur_flaw = find_flaw_original(abstraction, domain_sizes, cur_solution, false, rng);
@@ -117,9 +118,9 @@ FlawSelector::find_flaw_backtrack_pessimistic_slow(
                 worst_flaw = utils::make_unique_ptr<Flaw>(*cur_flaw);
             }
         }
-        if (worst_flaw != nullptr) {
-            return worst_flaw;
-        }
+    }
+    if (worst_flaw != nullptr) {
+        return worst_flaw;
     }
 
     return nullptr;
@@ -218,9 +219,9 @@ FlawSelector::find_flaw_pessimistic_slow(const Abstraction &abstraction,
                     worst_flaw = utils::make_unique_ptr<Flaw>(*cur_flaw);
                 }
             }
-            if (worst_flaw != nullptr) {
-                return worst_flaw;
-            }
+        }
+        if (worst_flaw != nullptr) {
+            return worst_flaw;
         }
         choosen_solution.push_back(*rng.choose(wildcard_transitions));
         abstract_state = &abstraction.get_state(step.target_id);

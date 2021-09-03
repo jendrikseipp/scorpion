@@ -97,52 +97,142 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
                              wildcard_transitions);
         }
 
-        const Transition &step = rnd_choice ? *rng.choose(wildcard_transitions) : solution.at(step_id);
+        const Transition &step = rnd_choice ?
+            *rng.choose(wildcard_transitions) : solution.at(step_id);
         choosen_solution.push_back(step);
 
         OperatorProxy op = task_proxy.get_operators()[step.op_id];
         const AbstractState *next_abstract_state =
             &abstraction.get_state(step.target_id);
-        if (task_properties::is_applicable(op, concrete_state)) {
-            if (debug)
-                utils::g_log << "  Move to " << *next_abstract_state << " with "
-                             << op.get_name() << endl;
-            State next_concrete_state = concrete_state.get_unregistered_successor(op);
-            if (!next_abstract_state->includes(next_concrete_state)) {
-                if (debug)
-                    utils::g_log << "  Paths deviate." << endl;
-                return utils::make_unique_ptr<Flaw>(move(concrete_state),
-                                                    *abstract_state,
-                                                    next_abstract_state->regress(op),
-                                                    FlawReason::PATH_DEVIATION,
-                                                    choosen_solution);
-            }
-            abstract_state = next_abstract_state;
-            concrete_state = move(next_concrete_state);
-        } else {
-            if (debug)
-                utils::g_log << "  Operator not applicable: " << op.get_name() << endl;
-            return utils::make_unique_ptr<Flaw>(
-                move(concrete_state), *abstract_state,
-                get_cartesian_set(domain_sizes, op.get_preconditions()),
-                FlawReason::NOT_APPLICABLE, choosen_solution);
+
+        // Applicability check
+        auto flaw = get_possible_not_applicable_flaw(concrete_state,
+                                                     abstract_state, op, domain_sizes, choosen_solution);
+
+        if (flaw != nullptr) {
+            return flaw;
         }
+
+        // Path deviation check
+        State next_concrete_state =
+            concrete_state.get_unregistered_successor(op);
+        flaw = get_possible_path_deviation_flaw(concrete_state,
+                                                next_concrete_state,
+                                                abstract_state,
+                                                next_abstract_state,
+                                                op, choosen_solution);
+
+        if (flaw != nullptr) {
+            return flaw;
+        }
+
+        // Updating states
+        abstract_state = next_abstract_state;
+        concrete_state = move(next_concrete_state);
     }
+    // Goal state check
+    return get_possible_goal_state_flaw(concrete_state, abstract_state,
+                                        domain_sizes, choosen_solution);
+}
+
+unique_ptr<Flaw>
+FlawSelector::get_possible_flaw(const Abstraction &abstraction,
+                                const State &concrete_state, const AbstractState *abstract_state, const Transition &tr, const vector<int> &domain_sizes, const Solution &choosen_solution, bool with_goal_check) const {
+    OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+    const AbstractState *next_abstract_state =
+        &abstraction.get_state(tr.target_id);
+
+    // Applicability check
+    auto flaw = get_possible_not_applicable_flaw(concrete_state,
+                                                 abstract_state, op, domain_sizes, choosen_solution);
+
+    if (flaw != nullptr) {
+        return flaw;
+    }
+
+    // Path deviation check
+    State next_concrete_state =
+        concrete_state.get_unregistered_successor(op);
+    flaw = get_possible_path_deviation_flaw(concrete_state,
+                                            next_concrete_state,
+                                            abstract_state,
+                                            next_abstract_state,
+                                            op, choosen_solution);
+
+    if (flaw != nullptr) {
+        return flaw;
+    }
+
+    if (with_goal_check) {
+        return get_possible_goal_state_flaw(next_concrete_state,
+                                            next_abstract_state, domain_sizes, choosen_solution);
+    }
+    return nullptr;
+}
+
+unique_ptr<Flaw>
+FlawSelector::get_possible_not_applicable_flaw(const State &concrete_state,
+                                               const AbstractState *abstract_state,
+                                               OperatorProxy op,
+                                               const vector<int> &domain_sizes,
+                                               const Solution &choosen_solution) const {
+    if (task_properties::is_applicable(op, concrete_state)) {
+        return nullptr;
+    }
+
+    if (debug)
+        utils::g_log << "  Operator not applicable: " << op.get_name() << endl;
+
+    return utils::make_unique_ptr<Flaw>(
+        move(State(concrete_state)), *abstract_state,
+        get_cartesian_set(domain_sizes, op.get_preconditions()),
+        FlawReason::NOT_APPLICABLE, choosen_solution);
+}
+
+unique_ptr<Flaw>
+FlawSelector::get_possible_path_deviation_flaw(const State &concrete_state,
+                                               const State &next_concrete_state,
+                                               const AbstractState *abstract_state,
+                                               const AbstractState *next_abstract_state,
+                                               OperatorProxy op,
+                                               const Solution &choosen_solution) const {
+    if (debug)
+        utils::g_log << "  Move to " << *next_abstract_state << " with "
+                     << op.get_name() << endl;
+
+    if (!next_abstract_state->includes(next_concrete_state)) {
+        if (debug)
+            utils::g_log << "  Paths deviate." << endl;
+
+        return utils::make_unique_ptr<Flaw>(move(State(concrete_state)),
+                                            *abstract_state,
+                                            next_abstract_state->regress(op),
+                                            FlawReason::PATH_DEVIATION,
+                                            choosen_solution);
+    }
+    return nullptr;
+}
+
+unique_ptr<Flaw>
+FlawSelector::get_possible_goal_state_flaw(const State &concrete_state,
+                                           const AbstractState *abstract_state,
+                                           const vector<int> &domain_sizes,
+                                           const Solution &choosen_solution) const {
     // assert(abstraction.get_goals().count(abstract_state->get_id()));
+
     if (task_properties::is_goal_state(task_proxy, concrete_state)) {
         // We found a concrete solution.
         return nullptr;
-    } else {
-        if (debug)
-            utils::g_log << "  Goal test failed." << endl;
-        return utils::make_unique_ptr<Flaw>(
-            move(concrete_state), *abstract_state,
-            get_cartesian_set(domain_sizes, task_proxy.get_goals()),
-            FlawReason::GOAL_TEST, choosen_solution);
     }
+
+    if (debug)
+        utils::g_log << "  Goal test failed." << endl;
+
+    return utils::make_unique_ptr<Flaw>(
+        move(State(concrete_state)), *abstract_state,
+        get_cartesian_set(domain_sizes, task_proxy.get_goals()),
+        FlawReason::GOAL_TEST, choosen_solution);
 }
-
-
 
 /* Skip if
  * (1) not leading to same state or
@@ -202,8 +292,14 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
     case FlawStrategy::ORIGINAL:
         flaw = find_flaw_original(abstraction, domain_sizes, solution, false, rng);
         break;
+    case FlawStrategy::OPTIMISTIC:
+        flaw = find_flaw_optimistic(abstraction, domain_sizes, solution, rng);
+        break;
     case FlawStrategy::OPTIMISTIC_SLOW:
         flaw = find_flaw_optimistic_slow(abstraction, domain_sizes, solution, rng);
+        break;
+    case FlawStrategy::PESSIMISTIC:
+        flaw = find_flaw_pessimistic(abstraction, domain_sizes, solution, rng);
         break;
     case FlawStrategy::PESSIMISTIC_SLOW:
         flaw = find_flaw_pessimistic_slow(abstraction, domain_sizes, solution, rng);

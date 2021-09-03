@@ -142,7 +142,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
             if (debug) {
-                dump_dot_graph(*abstraction);
+                // dump_dot_graph(*abstraction);
             }
             current = &abstraction->get_state(pair.second);
         }
@@ -162,7 +162,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     }
 
     if (debug) {
-        dump_dot_graph(*abstraction);
+        // dump_dot_graph(*abstraction);
     }
 
     utils::Timer find_trace_timer(false);
@@ -224,7 +224,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         refine_timer.stop();
 
         if (debug) {
-            dump_dot_graph(*abstraction);
+            // dump_dot_graph(*abstraction);
         }
 
         update_goal_distances_timer.resume();
