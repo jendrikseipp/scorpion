@@ -208,6 +208,10 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         unique_ptr<Flaw> flaw = flaw_selector.find_flaw(*abstraction, domain_sizes, *solution, rng);
         find_flaw_timer.stop();
 
+        if (!utils::extra_memory_padding_is_reserved()) {
+            break;
+        }
+
         if (!flaw) {
             utils::g_log << "Found concrete solution for subtask." << endl;
             break;
