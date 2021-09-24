@@ -48,7 +48,7 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy));
     } else if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-            task_properties::get_operator_costs(task_proxy), debug);
+            task_properties::get_operator_costs(task_proxy), false);
     } else {
         ABORT("Unknown search strategy");
     }
@@ -193,11 +193,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             update_goal_distances_timer.stop();
 
             if (debug) {
-                cout << "Found abstract solution:" << endl;
-                for (const Transition &t : *solution) {
-                    OperatorProxy op = task_proxy.get_operators()[t.op_id];
-                    cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
-                }
+                utils::g_log << "Found abstract solution." << endl;
             }
         } else {
             utils::g_log << "Abstract task is unsolvable." << endl;
@@ -212,7 +208,13 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             break;
         }
 
-        if (!flaw) {
+        if (flaw) {
+            cout << "Chosen flawed solution:" << endl;
+            for (const Transition &t : flaw->flawed_solution) {
+                OperatorProxy op = task_proxy.get_operators()[t.op_id];
+                cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+            }
+        } else {
             utils::g_log << "Found concrete solution for subtask." << endl;
             break;
         }
