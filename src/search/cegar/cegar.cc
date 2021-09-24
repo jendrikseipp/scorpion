@@ -323,8 +323,6 @@ unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
         utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
 
     for (const Transition &step : solution) {
-        if (!utils::extra_memory_padding_is_reserved())
-            break;
         OperatorProxy op = task_proxy.get_operators()[step.op_id];
         const AbstractState *next_abstract_state = &abstraction->get_state(step.target_id);
         if (task_properties::is_applicable(op, concrete_state)) {
