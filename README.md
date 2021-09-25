@@ -157,7 +157,7 @@ Different cost partitioning algorithms (all need `admissible=true`):
   `lmcount(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=true, scoring_function=max_heuristic_per_stolen_costs)`
 
 
-# Fast Downward
+<img src="misc/images/fast-downward.svg" width="800" alt="Fast Downward">
 
 Fast Downward is a domain-independent classical planning system.
 

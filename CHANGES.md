@@ -42,6 +42,30 @@ after the corresponding tracker issues.
   (abstract) landmark factory class.
   <http://issues.fast-downward.org/issue990>
 
+- For users: We removed options from LandmarkFactories that were not relevant,
+  renamed the option "no_orders" to "use_orders" and changed the
+  reasonable_orders option to a Factory.
+  <http://issues.fast-downward.org/issue995>
+  Removed options:
+  lm_exhaust: disjunctive_landmarks, conjunctive_landmarks, no_orders,
+    reasonable_orders
+  lm_hm: disjunctive_landmarks, only_causal_landmarks, no_orders,
+    reasonable_orders
+  lm_merged: disjunctive_landmarks, conjunctive_landmarks,
+    only_causal_landmarks, no_orders, reasonable_orders
+  lm_rhw: conjunctive_landmarks, no_orders, reasonable_orders
+  lm_zg: disjunctive_landmarks, conjunctive_landmarks, only_causal_landmarks,
+    no_orders, reasonable_orders
+  Added options:
+  lm_hm/lm_rhw/lm_zg: use_orders (negation of removed option "no_orders")
+  New Factory "lm_reasonable_orders_hps": This factory approximates reasonable
+  orders according to Hoffman, Porteus and Sebastia ("Ordered Landmarks in
+  Planning", JAIR 2004) and is equivalent to the removed option
+  "reasonable_orders", i.e. the command line argument
+  --evaluator hlm=lmcount(lm_factory=lm_reasonable_orders_hps(lm_rhw()))
+  is equivalent to the removed command line argument
+  --evaluator hlm=lmcount(lm_factory=lm_rhw(reasonable_orders=true))
+
 - For developers: add support for Github actions
   <http://issues.fast-downward.org/issue940>
 
@@ -61,17 +85,47 @@ after the corresponding tracker issues.
 - For developers: decide on rules regarding software support and
   improve Github actions accordingly
   <http://issues.fast-downward.org/issue1003>
-  
+
 - For developers: add CPLEX support to our GitHub Actions for Windows
   <http://issues.fast-downward.org/issue1005>
 
 - Fix a bug in the computation of RHW landmarks
   <http://issues.fast-downward.org/issue1004>
-  
+
 - Only build configurations defined in `build_configs.py` are loaded in the
   `build.py` script.
   <http://issues.fast-downward.org/issue1016>
-  
+
+- Replace size_t by int for abstract state hashes in PDB-related code
+  <http://issues.fast-downward.org/issue1018>
+
+- Integrate the pattern generation methods based on CEGAR
+  <http://issues.fast-downward.org/issue1007>
+
+- Integrate the random pattern generation methods
+  <http://issues.fast-downward.org/issue1007>
+
+- For developers: change public interface of generation of random ints and
+  doubles in the RandomNumberGenerator class
+  <http://issues.fast-downward.org/issue1026>
+
+- For developers: we separate the functionality of landmarks from the
+  functionality of landmark nodes by introducing a new Landmark class
+  <http://issues.fast-downward.org/issue999>
+
+- For developers: use RandomNumberGenerator class in VariableOrderFinder
+  <http://issues.fast-downward.org/issue1032>
+
+- For users: the driver now finds domain files <taskfile>-domain.<ext>
+  for task files called <taskfile>.<ext>
+  <http://issues.fast-downward.org/issue1033>
+
+- For users: the build system now prefers compilers cc/c++ found on the path
+  over gcc/g++. As before, environment variables CC/CXX can be used to
+  override this choice.
+  <http://issues.fast-downward.org/issue1031>
+
+
 ## Fast Downward 20.06
 
 Released on July 26, 2020.

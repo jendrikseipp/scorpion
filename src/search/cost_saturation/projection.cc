@@ -21,7 +21,7 @@ namespace cost_saturation {
 static vector<int> get_abstract_preconditions(
     const vector<FactPair> &prev_pairs,
     const vector<FactPair> &pre_pairs,
-    const vector<size_t> &hash_multipliers) {
+    const vector<int> &hash_multipliers) {
     vector<int> abstract_preconditions(hash_multipliers.size(), -1);
     for (const FactPair &fact : prev_pairs) {
         int pattern_index = fact.var;
@@ -37,7 +37,7 @@ static vector<int> get_abstract_preconditions(
 static int compute_hash_effect(
     const vector<FactPair> &preconditions,
     const vector<FactPair> &effects,
-    const vector<size_t> &hash_multipliers,
+    const vector<int> &hash_multipliers,
     bool forward) {
     int hash_effect = 0;
     assert(preconditions.size() == effects.size());
@@ -152,7 +152,7 @@ bool TaskInfo::operator_is_active(const pdbs::Pattern &pattern, int op_id) const
 
 
 ProjectionFunction::ProjectionFunction(
-    const pdbs::Pattern &pattern, const vector<size_t> &hash_multipliers) {
+    const pdbs::Pattern &pattern, const vector<int> &hash_multipliers) {
     assert(pattern.size() == hash_multipliers.size());
     variables_and_multipliers.reserve(pattern.size());
     for (size_t i = 0; i < pattern.size(); ++i) {
@@ -220,7 +220,7 @@ Projection::Projection(
                 const vector<FactPair> &preconditions,
                 const vector<FactPair> &effects,
                 int,
-                const vector<size_t> &hash_multipliers,
+                const vector<int> &hash_multipliers,
                 int concrete_operator_id) {
                 int abs_op_id = abstract_backward_operators.size();
                 abstract_backward_operators.emplace_back(
