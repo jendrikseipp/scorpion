@@ -32,9 +32,9 @@ string format_conference_reference(
     const string &year) {
     ostringstream ss;
     ss << "\n\n"
-       << " * " << format_authors(authors) << ".<<BR>>\n"
-       << " [" << t2t_escape(title) << " " << url << "].<<BR>>\n"
-       << " In //" << t2t_escape(conference) << "//";
+       << "- " << format_authors(authors) << ".<<BR>>\n"
+       << "  [" << t2t_escape(title) << " " << url << "].<<BR>>\n"
+       << "  In //" << t2t_escape(conference) << "//";
     if (!pages.empty())
         ss << ", pp. " << t2t_escape(pages);
     ss << ". ";

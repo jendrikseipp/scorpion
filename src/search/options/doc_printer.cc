@@ -131,6 +131,10 @@ void Txt2TagsPrinter::print_arguments(const PluginInfo &info) {
             }
         }
     }
+    if (!info.arg_help.empty()) {
+        // Two blank lines end a txt2tags list.
+        os << endl << endl;
+    }
 }
 
 void Txt2TagsPrinter::print_notes(const PluginInfo &info) {
@@ -151,6 +155,10 @@ void Txt2TagsPrinter::print_language_features(const PluginInfo &info) {
     for (const LanguageSupportInfo &ls : info.support_help) {
         os << "- **" << ls.feature << ":** " << ls.description << endl;
     }
+    if (!info.support_help.empty()) {
+        // Two blank lines end a txt2tags list.
+        os << endl << endl;
+    }
 }
 
 void Txt2TagsPrinter::print_properties(const PluginInfo &info) {
@@ -159,6 +167,10 @@ void Txt2TagsPrinter::print_properties(const PluginInfo &info) {
     }
     for (const PropertyInfo &prop : info.property_help) {
         os << "- **" << prop.property << ":** " << prop.description << endl;
+    }
+    if (!info.property_help.empty()) {
+        // Two blank lines end a txt2tags list.
+        os << endl << endl;
     }
 }
 
