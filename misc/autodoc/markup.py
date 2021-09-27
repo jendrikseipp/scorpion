@@ -80,10 +80,6 @@ class Document:
         return self.text
 
     def render(self, target, options=None):
-        # We always want xhtml
-        if target == 'html':
-            target = 'xhtml'
-
         # Bug in txt2tags: Titles are not escaped
         if target == 'tex':
             self.title = self.title.replace('_', r'\_')

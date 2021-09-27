@@ -18,11 +18,27 @@ TITLE_WHITE_LIST = r"[\w\+-]" # match 'word characters' (including '_'), '+', an
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 REPO_ROOT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 
+TXT2TAGS_OPTIONS = {
+    "toc": True,
+    "preproc": [
+        [r"<<BR>>", "ESCAPED_LINEBREAK"],
+    ],
+    "postproc": [
+        [r"</head>", """
+<link rel="stylesheet" href="normalize.css" type="text/css" />
+<link rel="stylesheet" href="style.css" type="text/css" />
+<link rel="stylesheet" href="learn.css" type="text/css" />
+
+</head>"""],
+        [r"ESCAPED_LINEBREAK", "<br />"],
+    ],
+}
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("outfile")
     parser.add_argument("--build", default="release")
-    parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
 
@@ -57,41 +73,18 @@ def build_planner(build):
     subprocess.check_call([sys.executable, "build.py", build, "downward"], cwd=REPO_ROOT_DIR)
 
 
-def get_pages_from_planner(build):
+def build_docs(build):
     out = subprocess.check_output(
         ["./fast-downward.py", "--build", build, "--search", "--", "--help", "--txt2tags"],
         cwd=REPO_ROOT_DIR).decode("utf-8")
     # Split the output into tuples (title, markup_text).
     pagesplitter = re.compile(r'>>>>CATEGORY: ([\w\s]+?)<<<<(.+?)>>>>CATEGORYEND<<<<', re.DOTALL)
-    pages = dict()
+    document = markup.Document(title="Plugin reference", date="")
     for title, markup_text in pagesplitter.findall(out):
-        document = markup.Document(date='')
-        document.add_text("<<TableOfContents>>")
+        document.add_text(f"= {title} =")
         document.add_text(markup_text)
-        rendered_text = document.render("moin").strip()
-        pages[DOC_PREFIX + title] = rendered_text
-    return pages
-
-
-def get_changed_pages(old_doc_pages, new_doc_pages, all_titles):
-    def add_page(title, text):
-        # Check if this page is new or changed.
-        if old_doc_pages.get(title, '') != text:
-            print(title, "changed")
-            changed_pages.append([title, text])
-        else:
-            print(title, "unchanged")
-
-    changed_pages = []
-    overview_lines = []
-    for title, text in sorted(new_doc_pages.items()):
-        overview_lines.append(" * [[" + title + "]]")
-        text = insert_wiki_links(text, all_titles)
-        add_page(title, text)
-    overview_title = DOC_PREFIX + "Overview"
-    overview_text = "\n".join(overview_lines)
-    add_page(overview_title, overview_text)
-    return changed_pages
+    print(document.text)
+    return document.render("xhtml", options=TXT2TAGS_OPTIONS)
 
 
 if __name__ == '__main__':
@@ -99,11 +92,6 @@ if __name__ == '__main__':
     logging.info("building planner...")
     build_planner(args.build)
     logging.info("getting new pages from planner...")
-    new_doc_pages = get_pages_from_planner(args.build)
-    if args.dry_run:
-        for title, content in sorted(new_doc_pages.items()):
-            print("=" * 25, title, "=" * 25)
-            print(content)
-            print()
-            print()
-        sys.exit()
+    html = build_docs(args.build)
+    with open(args.outfile, "w") as f:
+        f.write(html)

@@ -1,3 +1,5 @@
+/* Slightly adapted from https://raw.githubusercontent.com/matcornic/hugo-theme-learn/master/static/css/theme.css */
+
 @charset "UTF-8";
 
 /* Tags */
@@ -323,7 +325,7 @@ textarea:focus, input[type="email"]:focus, input[type="number"]:focus, input[typ
 }
 #body {
     position: relative;
-    margin-left: 300px;
+    margin-left: 10px;
     min-height: 100%;
 }
 #body img, #body .video-container {
@@ -463,7 +465,7 @@ h2, h3, h4, h5, h6 {
 h1 {
     font-family: "Novacento Sans Wide", "Helvetica", "Tahoma", "Geneva", "Arial", sans-serif;
     text-align: center;
-    text-transform: uppercase;
+    /*text-transform: uppercase;*/
     color: #222;
     font-weight: 200;
 }
