@@ -57,6 +57,7 @@ class FlawSelector {
     const std::shared_ptr<AbstractTask> task;
     const TaskProxy task_proxy;
     FlawStrategy flaw_strategy;
+    mutable std::shared_ptr<Solution> concrete_solution;
     bool debug;
 
     std::unique_ptr<Flaw>
@@ -159,6 +160,8 @@ public:
                                     const std::vector<int> &domain_sizes,
                                     const Solution &solution,
                                     utils::RandomNumberGenerator &rng) const;
+
+    std::shared_ptr<Solution> get_concrete_solution() const;
 
     void print_statistics() const;
 };

@@ -91,6 +91,7 @@ FlawSelector::find_flaw_optimistic(const Abstraction &abstraction,
             &abstraction.get_state(choosen_solution.back().target_id);
         concrete_state = concrete_state.get_unregistered_successor(op);
     }
+    concrete_solution = utils::make_unique_ptr<Solution>(choosen_solution);
     return nullptr;
 }
 
@@ -144,6 +145,7 @@ FlawSelector::find_flaw_pessimistic(const Abstraction &abstraction,
             &abstraction.get_state(choosen_solution.back().target_id);
         concrete_state = concrete_state.get_unregistered_successor(op);
     }
+    concrete_solution = utils::make_unique_ptr<Solution>(choosen_solution);
     return nullptr;
 }
 }

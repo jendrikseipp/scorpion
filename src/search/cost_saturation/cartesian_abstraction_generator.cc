@@ -109,6 +109,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       flaw_strategy(opts.get<cegar::FlawStrategy>("flaw_strategy")),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")),
+      dot_graph_verbosity(opts.get<int>("dot_graph_verbosity")),
       num_states(0),
       num_transitions(0) {
 }
@@ -126,7 +127,8 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         search_strategy,
         flaw_strategy,
         *rng,
-        debug);
+        debug,
+        dot_graph_verbosity);
     cout << endl;
     return cegar.extract_abstraction();
 }
@@ -231,6 +233,12 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "debug",
         "print debugging info",
         "false");
+    parser.add_option<int>(
+        "dot_graph_verbosity",
+        "verbosity of printing/writing dot graphs",
+        "0",
+        Bounds("0", "4")
+    );
     utils::add_rng_options(parser);
 
     Options opts = parser.parse();

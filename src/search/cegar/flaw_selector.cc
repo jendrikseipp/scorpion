@@ -63,7 +63,8 @@ vector<Split> Flaw::get_possible_splits() const {
 
 FlawSelector::FlawSelector(const shared_ptr<AbstractTask> &task,
                            FlawStrategy flaw_strategy, bool debug)
-    : task(task), task_proxy(*task), flaw_strategy(flaw_strategy), debug(debug) {}
+    : task(task), task_proxy(*task), flaw_strategy(flaw_strategy),
+      concrete_solution(nullptr), debug(debug) {}
 
 // Define here to avoid include in header.
 FlawSelector::~FlawSelector() {}
@@ -131,8 +132,12 @@ FlawSelector::find_flaw_original(const Abstraction &abstraction,
         concrete_state = move(next_concrete_state);
     }
     // Goal state check
-    return get_possible_goal_state_flaw(concrete_state, abstract_state,
-                                        domain_sizes, choosen_solution);
+    auto flaw = get_possible_goal_state_flaw(concrete_state, abstract_state,
+                                             domain_sizes, choosen_solution);
+    if (flaw == nullptr) {
+        concrete_solution = make_shared<Solution>(choosen_solution);
+    }
+    return flaw;
 }
 
 unique_ptr<Flaw>
@@ -315,6 +320,7 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
 
     // Fill flawed solution
     if (flaw != nullptr) {
+        assert(concrete_solution == nullptr);
         flaw->flawed_solution.insert(flaw->flawed_solution.end(),
                                      solution.begin() + flaw->flawed_solution.size(),
                                      solution.end());
@@ -322,6 +328,10 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
     assert(flaw == nullptr || solution.size() == flaw->flawed_solution.size());
 
     return flaw;
+}
+
+std::shared_ptr<Solution> FlawSelector::get_concrete_solution() const {
+    return concrete_solution;
 }
 
 void FlawSelector::print_statistics() const {

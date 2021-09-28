@@ -46,6 +46,7 @@ class CEGAR {
     utils::CountdownTimer timer;
 
     const bool debug;
+    const int dot_graph_verbosity;
 
     bool may_keep_refining() const;
 
@@ -74,7 +75,8 @@ public:
         SearchStrategy search_strategy,
         FlawStrategy flaw_strategy,
         utils::RandomNumberGenerator &rng,
-        bool debug);
+        bool debug,
+        int dot_graph_verbosity);
     ~CEGAR();
 
     CEGAR(const CEGAR &) = delete;

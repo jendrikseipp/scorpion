@@ -37,6 +37,7 @@ class CostSaturation {
     const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
     const bool debug;
+    const int dot_graph_verbosity;
 
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
@@ -66,7 +67,8 @@ public:
         FlawStrategy flaw_strategy,
         int memory_padding_mb,
         utils::RandomNumberGenerator &rng,
-        bool debug);
+        bool debug,
+        int dot_graph_verbosity);
 
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
         const std::shared_ptr<AbstractTask> &task);

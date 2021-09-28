@@ -1,6 +1,8 @@
 #ifndef CEGAR_UTILS_H
 #define CEGAR_UTILS_H
 
+#include "types.h"
+
 #include "../task_proxy.h"
 
 #include "../utils/hash.h"
@@ -40,9 +42,21 @@ extern void add_search_strategy_option(options::OptionParser &parser);
 extern void add_memory_padding_option(options::OptionParser &parser);
 extern void add_flaw_strategy_option(options::OptionParser &parser);
 
-extern std::string get_dot_graph(const Abstraction &abstraction);
-extern void dump_dot_graph(const Abstraction &abstraction);
-extern void write_dot_graph(const Abstraction &abstraction, std::string file_name);
+extern std::string get_dot_graph(const Abstraction &abstraction,
+                                 const TaskProxy &task,
+                                 const Solution &solution);
+extern void dump_dot_graph(const Abstraction &abstraction,
+                           const TaskProxy &task,
+                           const Solution &solution);
+extern void write_dot_graph(const Abstraction &abstraction,
+                            const TaskProxy &task,
+                            const Solution &solution,
+                            const std::string &file_name);
+extern void handle_dot_graph(const Abstraction &abstraction,
+                             const Solution &solution,
+                             const TaskProxy &task,
+                             const std::string &file_name,
+                             const int dot_graph_verbosity);
 }
 
 /*

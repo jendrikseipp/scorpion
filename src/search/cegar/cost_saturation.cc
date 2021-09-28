@@ -83,7 +83,8 @@ CostSaturation::CostSaturation(
     FlawStrategy flaw_strategy,
     int memory_padding_mb,
     utils::RandomNumberGenerator &rng,
-    bool debug)
+    bool debug,
+    int dot_graph_verbosity)
     : subtask_generators(subtask_generators),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
@@ -95,6 +96,7 @@ CostSaturation::CostSaturation(
       memory_padding_mb(memory_padding_mb),
       rng(rng),
       debug(debug),
+      dot_graph_verbosity(dot_graph_verbosity),
       num_states(0),
       num_non_looping_transitions(0) {
 }
@@ -201,7 +203,8 @@ void CostSaturation::build_abstractions(
             search_strategy,
             flaw_strategy,
             rng,
-            debug);
+            debug,
+            dot_graph_verbosity);
 
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
         num_states += abstraction->get_num_states();

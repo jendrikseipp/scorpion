@@ -37,7 +37,8 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<FlawStrategy>("flaw_strategy"),
         opts.get<int>("memory_padding"),
         *rng,
-        opts.get<bool>("debug"));
+        opts.get<bool>("debug"),
+        opts.get<int>("dot_graph_verbosity"));
     return cost_saturation.generate_heuristic_functions(
         opts.get<shared_ptr<AbstractTask>>("transform"));
 }
@@ -146,6 +147,12 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "debug",
         "print debugging output",
         "false");
+    parser.add_option<int>(
+        "dot_graph_verbosity",
+        "verbosity of printing/writing dot graphs",
+        "0",
+        Bounds("0", "4")
+        );
     Heuristic::add_options_to_parser(parser);
     utils::add_rng_options(parser);
     Options opts = parser.parse();

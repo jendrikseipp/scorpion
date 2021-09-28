@@ -33,6 +33,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const cegar::FlawStrategy flaw_strategy;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
+    const int dot_graph_verbosity;
 
     int num_states;
     int num_transitions;

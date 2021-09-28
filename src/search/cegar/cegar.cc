@@ -31,7 +31,8 @@ CEGAR::CEGAR(
     SearchStrategy search_strategy,
     FlawStrategy flaw_strategy,
     utils::RandomNumberGenerator &rng,
-    bool debug)
+    bool debug,
+    int dot_graph_verbosity)
     : task_proxy(*task),
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),
@@ -41,7 +42,8 @@ CEGAR::CEGAR(
       flaw_selector(task, flaw_strategy, debug),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
-      debug(debug) {
+      debug(debug),
+      dot_graph_verbosity(dot_graph_verbosity) {
     assert(max_states >= 1);
     if (search_strategy == SearchStrategy::ASTAR) {
         abstract_search = utils::make_unique_ptr<AbstractSearch>(
@@ -141,9 +143,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         for (FactProxy goal : task_proxy.get_goals()) {
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
-            if (debug) {
-                // dump_dot_graph(*abstraction);
-            }
             current = &abstraction->get_state(pair.second);
         }
         assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
@@ -159,10 +158,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                    abstraction->get_transition_system().get_incoming_transitions(),
                    abstraction->get_transition_system().get_outgoing_transitions(),
                    abstraction->get_goals()));
-    }
-
-    if (debug) {
-        // dump_dot_graph(*abstraction);
     }
 
     utils::Timer find_trace_timer(false);
@@ -210,6 +205,13 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             break;
         }
 
+        if (debug) {
+            Solution sol = flaw ? flaw->flawed_solution : *flaw_selector.get_concrete_solution();
+            handle_dot_graph(*abstraction, sol, task_proxy,
+                             "dot_files/graph" + to_string(num_of_refinments) + ".dot",
+                             dot_graph_verbosity);
+        }
+
         if (flaw) {
             cout << "Chosen flawed solution:" << endl;
             for (const Transition &t : flaw->flawed_solution) {
@@ -217,9 +219,16 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
             }
         } else {
+            cout << "Chosen concrete solution:" << endl;
+            for (const Transition &t : *flaw_selector.get_concrete_solution()) {
+                OperatorProxy op = task_proxy.get_operators()[t.op_id];
+                cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+            }
             utils::g_log << "Found concrete solution for subtask." << endl;
             break;
         }
+
+
         shortest_paths->update_shortest_path(flaw->flawed_solution);
 
         refine_timer.resume();
@@ -231,10 +240,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         auto new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
         refine_timer.stop();
 
-        if (debug) {
-            //dump_dot_graph(*abstraction);
-            write_dot_graph(*abstraction, "tmp/graph" + to_string(num_of_refinments) + ".dot");
-        }
 
         update_goal_distances_timer.resume();
         if (search_strategy == SearchStrategy::ASTAR) {

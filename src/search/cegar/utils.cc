@@ -133,7 +133,8 @@ void add_flaw_strategy_option(options::OptionParser &parser) {
         "strategy to handle flaws", "ORIGINAL");
 }
 
-string get_dot_graph(const Abstraction &abstraction) {
+string get_dot_graph(const Abstraction &abstraction, const Solution &solution,
+                     const TaskProxy &task) {
     std::ostringstream oss;
     int num_states = abstraction.get_num_states();
     oss << "digraph transition_system";
@@ -158,24 +159,50 @@ string get_dot_graph(const Abstraction &abstraction) {
             int target = pair.first;
             vector<int> &operators = pair.second;
             sort(operators.begin(), operators.end());
-            operators = vector<int>();
             oss << "    " << state_id << " -> " << target << " [label = \""
                 << utils::join(operators, "_") << "\"];" << endl;
         }
+    }
+
+    // print solution
+    int cur_state_id = abstraction.get_initial_state().get_id();
+    for (const Transition &t : solution) {
+        oss << "    " << cur_state_id << " -> " << t.target_id
+            << " [color=red,fontcolor=red,label = \""
+            << task.get_operators()[t.op_id].get_name() << " (" << t.op_id
+            << ")\"];" << endl;
+        cur_state_id = t.target_id;
     }
     oss << "}" << endl;
     return oss.str();
 }
 
-void dump_dot_graph(const Abstraction &abstraction) {
-    cout << get_dot_graph(abstraction) << endl;
+void dump_dot_graph(const Abstraction &abstraction, const Solution &solution,
+                    const TaskProxy &task) {
+    cout << get_dot_graph(abstraction, solution, task) << endl;
 }
 
-void write_dot_graph(const Abstraction &abstraction, std::string file_name) {
+void write_dot_graph(const Abstraction &abstraction,
+                     const Solution &solution,
+                     const TaskProxy &task,
+                     const std::string &file_name) {
     ofstream output_file(file_name);
     if (output_file.is_open()) {
-        output_file << get_dot_graph(abstraction);
+        output_file << get_dot_graph(abstraction, solution, task);
     }
     output_file.close();
+}
+
+extern void handle_dot_graph(const Abstraction &abstraction,
+                             const Solution &solution,
+                             const TaskProxy &task,
+                             const std::string &file_name,
+                             const int dot_graph_verbosity) {
+    if (dot_graph_verbosity == 1 || dot_graph_verbosity == 3) {
+        dump_dot_graph(abstraction, solution, task);
+    }
+    if (dot_graph_verbosity > 1) {
+        write_dot_graph(abstraction, solution, task, file_name);
+    }
 }
 } // namespace cegar
