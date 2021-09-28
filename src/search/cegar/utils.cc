@@ -135,7 +135,7 @@ void add_flaw_strategy_option(options::OptionParser &parser) {
 
 string get_dot_graph(const Abstraction &abstraction, const Solution &solution,
                      const TaskProxy &task) {
-    std::ostringstream oss;
+    ostringstream oss;
     int num_states = abstraction.get_num_states();
     oss << "digraph transition_system";
     oss << " {" << endl;
@@ -185,7 +185,7 @@ void dump_dot_graph(const Abstraction &abstraction, const Solution &solution,
 void write_dot_graph(const Abstraction &abstraction,
                      const Solution &solution,
                      const TaskProxy &task,
-                     const std::string &file_name) {
+                     const string &file_name) {
     ofstream output_file(file_name);
     if (output_file.is_open()) {
         output_file << get_dot_graph(abstraction, solution, task);
@@ -196,7 +196,7 @@ void write_dot_graph(const Abstraction &abstraction,
 extern void handle_dot_graph(const Abstraction &abstraction,
                              const Solution &solution,
                              const TaskProxy &task,
-                             const std::string &file_name,
+                             const string &file_name,
                              const int dot_graph_verbosity) {
     if (dot_graph_verbosity == 1 || dot_graph_verbosity == 3) {
         dump_dot_graph(abstraction, solution, task);

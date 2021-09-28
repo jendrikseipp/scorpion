@@ -238,7 +238,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "verbosity of printing/writing dot graphs",
         "0",
         Bounds("0", "4")
-    );
+        );
     utils::add_rng_options(parser);
 
     Options opts = parser.parse();

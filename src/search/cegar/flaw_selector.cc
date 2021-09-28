@@ -330,7 +330,7 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
     return flaw;
 }
 
-std::shared_ptr<Solution> FlawSelector::get_concrete_solution() const {
+shared_ptr<Solution> FlawSelector::get_concrete_solution() const {
     return concrete_solution;
 }
 
