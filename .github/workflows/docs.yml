@@ -9,7 +9,7 @@ on:
 jobs:
   autodoc:
     name: Build docs
-    #if: github.repository == 'jendrikseipp/scorpion'
+    if: github.repository == 'jendrikseipp/scorpion'
     timeout-minutes: 60
     runs-on: ubuntu-20.04
     steps:
