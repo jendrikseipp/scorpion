@@ -114,8 +114,9 @@ void Txt2TagsPrinter::print_usage(const string &name, const PluginInfo &info) {
 }
 
 void Txt2TagsPrinter::print_arguments(const PluginInfo &info) {
+    // txt2tags generates broken Markdown for nested lists. Use asterisks directly.
     for (const ArgumentInfo &arg : info.arg_help) {
-        os << "- //" << arg.key << "// (" << arg.type_name;
+        os << "* //" << arg.key << "// (" << arg.type_name;
         if (arg.bounds.has_bound())
             os << " \"\"" << arg.bounds << "\"\"";
         os << "): " << arg.help << endl;
@@ -125,7 +126,7 @@ void Txt2TagsPrinter::print_arguments(const PluginInfo &info) {
                     os << endl << "```" << endl << explanation.first << endl
                        << "```" << endl << " " << explanation.second << endl;
                 } else {
-                    os << " - ``" << explanation.first << "``: "
+                    os << "    * ``" << explanation.first << "``: "
                        << explanation.second << endl;
                 }
             }
