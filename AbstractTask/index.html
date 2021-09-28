@@ -61,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#cost-adapted-task" class="md-skip">
+        <a href="#cost-adapted_task" class="md-skip">
           Skip to content
         </a>
       
@@ -224,7 +224,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cost-adapted-task" class="md-nav__link">
+  <a href="#cost-adapted_task" class="md-nav__link">
     Cost-adapted task
   </a>
   
@@ -524,7 +524,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cost-adapted-task" class="md-nav__link">
+  <a href="#cost-adapted_task" class="md-nav__link">
     Cost-adapted task
   </a>
   
@@ -552,17 +552,19 @@
                 
                   <h1>AbstractTask</h1>
                 
-                <h2 id="cost-adapted-task">Cost-adapted task</h2>
+                <h2 id="cost-adapted_task">Cost-adapted task<a class="headerlink" href="#cost-adapted_task" title="Permanent link">#</a></h2>
 <p>A cost-adapting transformation of the root task.</p>
 <pre><code>adapt_costs(cost_type=NORMAL)
 </code></pre>
 <ul>
-<li><em>cost_type</em> ({NORMAL, ONE, PLUSONE}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({NORMAL, ONE, PLUSONE}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>NORMAL</code>: all actions are accounted for with their real cost</li>
 <li><code>ONE</code>: all actions are accounted for as unit cost</li>
 <li><code>PLUSONE</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search engines, but is supported for both.</li>
 </ul>
-<h2 id="no_transform">no_transform</h2>
+</li>
+</ul>
+<h2 id="no_transform">no_transform<a class="headerlink" href="#no_transform" title="Permanent link">#</a></h2>
 <pre><code>no_transform()
 </code></pre>
                 

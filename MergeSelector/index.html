@@ -61,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#score-based-filtering-merge-selector" class="md-skip">
+        <a href="#score_based_filtering_merge_selector" class="md-skip">
           Skip to content
         </a>
       
@@ -329,7 +329,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#score-based-filtering-merge-selector" class="md-nav__link">
+  <a href="#score_based_filtering_merge_selector" class="md-nav__link">
     Score based filtering merge selector
   </a>
   
@@ -517,7 +517,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#score-based-filtering-merge-selector" class="md-nav__link">
+  <a href="#score_based_filtering_merge_selector" class="md-nav__link">
     Score based filtering merge selector
   </a>
   
@@ -539,12 +539,12 @@
                   <h1>MergeSelector</h1>
                 
                 <p>This page describes the available merge selectors. They are used to compute the next merge purely based on the state of the given factored transition system. They are used in the merge strategy of type 'stateless', but they can also easily be used in different 'combined' merged strategies.</p>
-<h2 id="score-based-filtering-merge-selector">Score based filtering merge selector</h2>
+<h2 id="score_based_filtering_merge_selector">Score based filtering merge selector<a class="headerlink" href="#score_based_filtering_merge_selector" title="Permanent link">#</a></h2>
 <p>This merge selector has a list of scoring functions, which are used iteratively to compute scores for merge candidates, keeping the best ones (with minimal scores) until only one is left.</p>
 <pre><code>score_based_filtering(scoring_functions)
 </code></pre>
 <ul>
-<li><em>scoring_functions</em> (list of MergeScoringFunction): The list of scoring functions used to compute scores for candidates.</li>
+<li><em>scoring_functions</em> (list of <a href="../MergeScoringFunction/">MergeScoringFunction</a>): The list of scoring functions used to compute scores for candidates.</li>
 </ul>
                 
               

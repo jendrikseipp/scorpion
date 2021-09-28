@@ -61,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#exhaustive-landmarks" class="md-skip">
+        <a href="#exhaustive_landmarks" class="md-skip">
           Skip to content
         </a>
       
@@ -299,42 +299,42 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#exhaustive-landmarks" class="md-nav__link">
+  <a href="#exhaustive_landmarks" class="md-nav__link">
     Exhaustive Landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#hm-landmarks" class="md-nav__link">
+  <a href="#hm_landmarks" class="md-nav__link">
     h^m Landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#merged-landmarks" class="md-nav__link">
+  <a href="#merged_landmarks" class="md-nav__link">
     Merged Landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#hps-orders" class="md-nav__link">
+  <a href="#hps_orders" class="md-nav__link">
     HPS Orders
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#rhw-landmarks" class="md-nav__link">
+  <a href="#rhw_landmarks" class="md-nav__link">
     RHW Landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#zhugivan-landmarks" class="md-nav__link">
+  <a href="#zhugivan_landmarks" class="md-nav__link">
     Zhu/Givan Landmarks
   </a>
   
@@ -552,42 +552,42 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#exhaustive-landmarks" class="md-nav__link">
+  <a href="#exhaustive_landmarks" class="md-nav__link">
     Exhaustive Landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#hm-landmarks" class="md-nav__link">
+  <a href="#hm_landmarks" class="md-nav__link">
     h^m Landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#merged-landmarks" class="md-nav__link">
+  <a href="#merged_landmarks" class="md-nav__link">
     Merged Landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#hps-orders" class="md-nav__link">
+  <a href="#hps_orders" class="md-nav__link">
     HPS Orders
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#rhw-landmarks" class="md-nav__link">
+  <a href="#rhw_landmarks" class="md-nav__link">
     RHW Landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#zhugivan-landmarks" class="md-nav__link">
+  <a href="#zhugivan_landmarks" class="md-nav__link">
     Zhu/Givan Landmarks
   </a>
   
@@ -610,7 +610,7 @@
                 
                 <p>A landmark factory specification is either a newly created instance or a landmark factory that has been defined previously. This page describes how one can specify a new landmark factory instance. For re-using landmark factories, see OptionSyntax#Landmark_Predefinitions.</p>
 <p>This plugin type can be predefined using <code>--landmarks</code>.</p>
-<h2 id="exhaustive-landmarks">Exhaustive Landmarks</h2>
+<h2 id="exhaustive_landmarks">Exhaustive Landmarks<a class="headerlink" href="#exhaustive_landmarks" title="Permanent link">#</a></h2>
 <p>Exhaustively checks for each fact if it is a landmark.This check is done using relaxed planning.</p>
 <pre><code>lm_exhaust(only_causal_landmarks=false)
 </code></pre>
@@ -621,7 +621,7 @@
 <ul>
 <li><strong>conditional_effects:</strong> ignored, i.e. not supported</li>
 </ul>
-<h2 id="hm-landmarks">h^m Landmarks</h2>
+<h2 id="hm_landmarks">h^m Landmarks<a class="headerlink" href="#hm_landmarks" title="Permanent link">#</a></h2>
 <p>The landmark generation method introduced by Keyder, Richter &amp; Helmert (ECAI 2010).</p>
 <pre><code>lm_hm(m=2, conjunctive_landmarks=true, use_orders=true)
 </code></pre>
@@ -630,12 +630,12 @@
 <li><em>conjunctive_landmarks</em> (bool): keep conjunctive landmarks</li>
 <li><em>use_orders</em> (bool): use orders between landmarks</li>
 </ul>
-<h2 id="merged-landmarks">Merged Landmarks</h2>
+<h2 id="merged_landmarks">Merged Landmarks<a class="headerlink" href="#merged_landmarks" title="Permanent link">#</a></h2>
 <p>Merges the landmarks and orderings from the parameter landmarks</p>
 <pre><code>lm_merged(lm_factories)
 </code></pre>
 <ul>
-<li><em>lm_factories</em> (list of LandmarkFactory): </li>
+<li><em>lm_factories</em> (list of <a href="./">LandmarkFactory</a>): </li>
 </ul>
 <p><strong>Precedence:</strong> Fact landmarks take precedence over disjunctive landmarks, orderings take precedence in the usual manner (gn &gt; nat &gt; reas &gt; o_reas). </p>
 <p><strong>Note:</strong> Does not currently support conjunctive landmarks</p>
@@ -643,24 +643,21 @@
 <ul>
 <li><strong>conditional_effects:</strong> supported if all components support them</li>
 </ul>
-<h2 id="hps-orders">HPS Orders</h2>
+<h2 id="hps_orders">HPS Orders<a class="headerlink" href="#hps_orders" title="Permanent link">#</a></h2>
 <p>Adds reasonable orders and obedient reasonable orders described in the following paper</p>
-<ul>
-<li>
 <p>Jörg Hoffman, JuliePorteous and LauraSebastia.<br />
  <a href="https://jair.org/index.php/jair/article/view/10390/24882">Ordered Landmarks in Planning</a>.<br />
  <em>Journal of Artificial Intelligence Research</em> 22:215-278. 2004.</p>
-<p>lm_reasonable_orders_hps(lm_factory)</p>
-</li>
-<li>
-<p><em>lm_factory</em> (LandmarkFactory): </p>
-</li>
+<pre><code>lm_reasonable_orders_hps(lm_factory)
+</code></pre>
+<ul>
+<li><em>lm_factory</em> (<a href="./">LandmarkFactory</a>): </li>
 </ul>
 <p>Language features supported:</p>
 <ul>
 <li><strong>conditional_effects:</strong> supported if subcomponent supports them</li>
 </ul>
-<h2 id="rhw-landmarks">RHW Landmarks</h2>
+<h2 id="rhw_landmarks">RHW Landmarks<a class="headerlink" href="#rhw_landmarks" title="Permanent link">#</a></h2>
 <p>The landmark generation method introduced by Richter, Helmert and Westphal (AAAI 2008).</p>
 <pre><code>lm_rhw(disjunctive_landmarks=true, use_orders=true, only_causal_landmarks=false)
 </code></pre>
@@ -673,7 +670,7 @@
 <ul>
 <li><strong>conditional_effects:</strong> supported</li>
 </ul>
-<h2 id="zhugivan-landmarks">Zhu/Givan Landmarks</h2>
+<h2 id="zhugivan_landmarks">Zhu/Givan Landmarks<a class="headerlink" href="#zhugivan_landmarks" title="Permanent link">#</a></h2>
 <p>The landmark generation method introduced by Zhu &amp; Givan (ICAPS 2003 Doctoral Consortium).</p>
 <pre><code>lm_zg(use_orders=true)
 </code></pre>

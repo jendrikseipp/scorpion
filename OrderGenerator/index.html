@@ -396,14 +396,14 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#greedy-orders" class="md-nav__link">
+  <a href="#greedy_orders" class="md-nav__link">
     Greedy orders
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#random-orders" class="md-nav__link">
+  <a href="#random_orders" class="md-nav__link">
     Random orders
   </a>
   
@@ -538,14 +538,14 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#greedy-orders" class="md-nav__link">
+  <a href="#greedy_orders" class="md-nav__link">
     Greedy orders
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#random-orders" class="md-nav__link">
+  <a href="#random_orders" class="md-nav__link">
     Random orders
   </a>
   
@@ -567,14 +567,14 @@
                   <h1>OrderGenerator</h1>
                 
                 <p>Order abstractions for saturated cost partitioning.</p>
-<h2 id="dynamic_greedy_orders">dynamic_greedy_orders</h2>
+<h2 id="dynamic_greedy_orders">dynamic_greedy_orders<a class="headerlink" href="#dynamic_greedy_orders" title="Permanent link">#</a></h2>
 <pre><code>dynamic_greedy_orders(scoring_function=MAX_HEURISTIC_PER_STOLEN_COSTS, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>scoring_function</em> ({MAX_HEURISTIC, MIN_STOLEN_COSTS, MAX_HEURISTIC_PER_STOLEN_COSTS}): scoring function</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<h2 id="greedy-orders">Greedy orders</h2>
+<h2 id="greedy_orders">Greedy orders<a class="headerlink" href="#greedy_orders" title="Permanent link">#</a></h2>
 <p>Order abstractions greedily by a given scoring function.</p>
 <pre><code>greedy_orders(scoring_function=MAX_HEURISTIC_PER_STOLEN_COSTS, random_seed=-1)
 </code></pre>
@@ -582,7 +582,7 @@
 <li><em>scoring_function</em> ({MAX_HEURISTIC, MIN_STOLEN_COSTS, MAX_HEURISTIC_PER_STOLEN_COSTS}): scoring function</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<h2 id="random-orders">Random orders</h2>
+<h2 id="random_orders">Random orders<a class="headerlink" href="#random_orders" title="Permanent link">#</a></h2>
 <p>Shuffle abstractions randomly.</p>
 <pre><code>random_orders(random_seed=-1)
 </code></pre>

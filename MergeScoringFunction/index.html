@@ -61,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dfp-scoring" class="md-skip">
+        <a href="#dfp_scoring" class="md-skip">
           Skip to content
         </a>
       
@@ -314,21 +314,35 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#dfp-scoring" class="md-nav__link">
+  <a href="#dfp_scoring" class="md-nav__link">
     DFP scoring
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#single-random" class="md-nav__link">
+  <a href="#goal_relevance_scoring" class="md-nav__link">
+    Goal relevance scoring
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miasm" class="md-nav__link">
+    MIASM
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#single_random" class="md-nav__link">
     Single random
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#total-order" class="md-nav__link">
+  <a href="#total_order" class="md-nav__link">
     Total order
   </a>
   
@@ -531,21 +545,35 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#dfp-scoring" class="md-nav__link">
+  <a href="#dfp_scoring" class="md-nav__link">
     DFP scoring
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#single-random" class="md-nav__link">
+  <a href="#goal_relevance_scoring" class="md-nav__link">
+    Goal relevance scoring
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miasm" class="md-nav__link">
+    MIASM
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#single_random" class="md-nav__link">
     Single random
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#total-order" class="md-nav__link">
+  <a href="#total_order" class="md-nav__link">
     Total order
   </a>
   
@@ -567,67 +595,65 @@
                   <h1>MergeScoringFunction</h1>
                 
                 <p>This page describes various merge scoring functions. A scoring function, given a list of merge candidates and a factored transition system, computes a score for each candidate based on this information and potentially some chosen options. Minimal scores are considered best. Scoring functions are currently only used within the score based filtering merge selector.</p>
-<h2 id="dfp-scoring">DFP scoring</h2>
+<h2 id="dfp_scoring">DFP scoring<a class="headerlink" href="#dfp_scoring" title="Permanent link">#</a></h2>
 <p>This scoring function computes the 'DFP' score as descrdibed in the paper "Directed model checking with distance-preserving abstractions" by Draeger, Finkbeiner and Podelski (SPIN 2006), adapted to planning in the following paper:</p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
-  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-aaai2014.pdf">Generalized Label Reduction for Merge-and-Shrink Heuristics</a>.<br />
-  In <em>Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2358-2366. AAAI Press, 2014.</p>
+ <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-aaai2014.pdf">Generalized Label Reduction for Merge-and-Shrink Heuristics</a>.<br />
+ In <em>Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2358-2366. AAAI Press, 2014.</p>
 <pre><code>dfp()
 </code></pre>
-<p><strong>Note:</strong> To obtain the configurations called DFP-B-50K described in the paper, use the following configuration of the merge-and-shrink heuristic and adapt the tie-breaking criteria of <code>total_order</code> as desired:
- ```
-merge_and_shrink(merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=true)])),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1)</p>
-<pre><code>
-## Goal relevance scoring 
-
-This scoring function assigns a merge candidate a value of 0 iff at least one of the two transition systems of the merge candidate is goal relevant in the sense that there is an abstract non-goal state. All other candidates get a score of positive infinity.
-
-    goal_relevance()
-
-## MIASM 
-
-This scoring function favors merging transition systems such that in their product, there are many dead states, which can then be pruned without sacrificing information. In particular, the score it assigns to a product is the ratio of alive states to the total number of states. To compute this score, this class thus computes the product of all pairs of transition systems, potentially copying and shrinking the transition systems before if otherwise their product would exceed the specified size limits. A stateless merge strategy using this scoring function is called dyn-MIASM (nowadays also called sbMIASM for score-based MIASM) and is described in the following paper:
-
-Silvan Sievers, Martin Wehrle and Malte Helmert.&lt;br /&gt;
-  [An Analysis of Merge Strategies for Merge-and-Shrink Heuristics](https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf).&lt;br /&gt;
-  In *Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)*, pp. 2358-2366. AAAI Press, 2016.
-
-    sf_miasm(shrink_strategy, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1)
-
- * *shrink_strategy* (ShrinkStrategy): We recommend setting this to match the shrink strategy configuration given to ```merge_and_shrink```, see note below.
- * *max_states* (int [-1, infinity]): maximum transition system size allowed at any time point.
- * *max_states_before_merge* (int [-1, infinity]): maximum transition system size allowed for two transition systems before being merged to form the synchronized product.
- * *threshold_before_merge* (int [-1, infinity]): If a transition system, before being merged, surpasses this soft transition system size limit, the shrink strategy is called to possibly shrink the transition system.
-
-**Note:** To obtain the configurations called dyn-MIASM described in the paper, use the following configuration of the merge-and-shrink heuristic and adapt the tie-breaking criteria of ```total_order``` as desired:
- ```
-merge_and_shrink(merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=50000,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=true)])),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1)
+<p><strong>Note:</strong> To obtain the configurations called DFP-B-50K described in the paper, use the following configuration of the merge-and-shrink heuristic and adapt the tie-breaking criteria of <code>total_order</code> as desired:</p>
+<pre><code>merge_and_shrink(merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=true)])),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1)
+</code></pre>
+<h2 id="goal_relevance_scoring">Goal relevance scoring<a class="headerlink" href="#goal_relevance_scoring" title="Permanent link">#</a></h2>
+<p>This scoring function assigns a merge candidate a value of 0 iff at least one of the two transition systems of the merge candidate is goal relevant in the sense that there is an abstract non-goal state. All other candidates get a score of positive infinity.</p>
+<pre><code>goal_relevance()
+</code></pre>
+<h2 id="miasm">MIASM<a class="headerlink" href="#miasm" title="Permanent link">#</a></h2>
+<p>This scoring function favors merging transition systems such that in their product, there are many dead states, which can then be pruned without sacrificing information. In particular, the score it assigns to a product is the ratio of alive states to the total number of states. To compute this score, this class thus computes the product of all pairs of transition systems, potentially copying and shrinking the transition systems before if otherwise their product would exceed the specified size limits. A stateless merge strategy using this scoring function is called dyn-MIASM (nowadays also called sbMIASM for score-based MIASM) and is described in the following paper:</p>
+<p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
+ In <em>Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)</em>, pp. 2358-2366. AAAI Press, 2016.</p>
+<pre><code>sf_miasm(shrink_strategy, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1)
+</code></pre>
+<ul>
+<li><em>shrink_strategy</em> (<a href="../ShrinkStrategy/">ShrinkStrategy</a>): We recommend setting this to match the shrink strategy configuration given to <code>merge_and_shrink</code>, see note below.</li>
+<li><em>max_states</em> (int [-1, infinity]): maximum transition system size allowed at any time point.</li>
+<li><em>max_states_before_merge</em> (int [-1, infinity]): maximum transition system size allowed for two transition systems before being merged to form the synchronized product.</li>
+<li><em>threshold_before_merge</em> (int [-1, infinity]): If a transition system, before being merged, surpasses this soft transition system size limit, the shrink strategy is called to possibly shrink the transition system.</li>
+</ul>
+<p><strong>Note:</strong> To obtain the configurations called dyn-MIASM described in the paper, use the following configuration of the merge-and-shrink heuristic and adapt the tie-breaking criteria of <code>total_order</code> as desired:</p>
+<pre><code>merge_and_shrink(merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=50000,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=true)])),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1)
 </code></pre>
 <p><strong>Note:</strong> Unless you know what you are doing, we recommend using the same options related to shrinking for <code>sf_miasm</code> as for <code>merge_and_shrink</code>, i.e. the options <code>shrink_strategy</code>, <code>max_states</code>, and <code>threshold_before_merge</code> should be set identically. Furthermore, as this scoring function maximizes the amount of possible pruning, merge-and-shrink should be configured to use full pruning, i.e. <code>prune_unreachable_states=true</code> and <code>prune_irrelevant_states=true</code> (the default).</p>
-<h2 id="single-random">Single random</h2>
+<h2 id="single_random">Single random<a class="headerlink" href="#single_random" title="Permanent link">#</a></h2>
 <p>This scoring function assigns exactly one merge candidate a score of 0, chosen randomly, and infinity to all others.</p>
 <pre><code>single_random(random_seed=-1)
 </code></pre>
 <ul>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<h2 id="total-order">Total order</h2>
+<h2 id="total_order">Total order<a class="headerlink" href="#total_order" title="Permanent link">#</a></h2>
 <p>This scoring function computes a total order on the merge candidates, based on the specified options. The score for each merge candidate correponds to its position in the order. This scoring function is mainly intended as tie-breaking, and has been introduced in the following paper:</p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
-  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
-  In <em>Proceedings of the 26th International Conference on Automated Planning and Scheduling (ICAPS 2016)</em>, pp. 294-298. AAAI Press, 2016.</p>
+ <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
+ In <em>Proceedings of the 26th International Conference on Automated Planning and Scheduling (ICAPS 2016)</em>, pp. 294-298. AAAI Press, 2016.</p>
 <p>Furthermore, using the atomic_ts_order option, this scoring function, if used alone in a score based filtering merge selector, can be used to emulate the corresponding (precomputed) linear merge strategies reverse level/level (independently of the other options).</p>
 <pre><code>total_order(atomic_ts_order=reverse_level, product_ts_order=new_to_old, atomic_before_product=false, random_seed=-1)
 </code></pre>
 <ul>
-<li><em>atomic_ts_order</em> ({reverse_level, level, random}): The order in which atomic transition systems are considered when considering pairs of potential merges.</li>
+<li><em>atomic_ts_order</em> ({reverse_level, level, random}): The order in which atomic transition systems are considered when considering pairs of potential merges.<ul>
 <li><code>reverse_level</code>: the variable order of Fast Downward</li>
 <li><code>level</code>: opposite of reverse_level</li>
 <li><code>random</code>: a randomized order</li>
-<li><em>product_ts_order</em> ({old_to_new, new_to_old, random}): The order in which product transition systems are considered when considering pairs of potential merges.</li>
+</ul>
+</li>
+<li><em>product_ts_order</em> ({old_to_new, new_to_old, random}): The order in which product transition systems are considered when considering pairs of potential merges.<ul>
 <li><code>old_to_new</code>: consider composite transition systems from most recent to oldest, that is in decreasing index order</li>
 <li><code>new_to_old</code>: opposite of old_to_new</li>
 <li><code>random</code>: a randomized order</li>
+</ul>
+</li>
 <li><em>atomic_before_product</em> (bool): Consider atomic transition systems before composite ones iff true.</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>

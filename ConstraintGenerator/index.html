@@ -61,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#lm-cut-landmark-constraints" class="md-skip">
+        <a href="#lm-cut_landmark_constraints" class="md-skip">
           Skip to content
         </a>
       
@@ -254,28 +254,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#lm-cut-landmark-constraints" class="md-nav__link">
+  <a href="#lm-cut_landmark_constraints" class="md-nav__link">
     LM-cut landmark constraints
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#posthoc-optimization-constraints-for-abstractions" class="md-nav__link">
+  <a href="#posthoc_optimization_constraints_for_abstractions" class="md-nav__link">
     Posthoc optimization constraints for abstractions
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#posthoc-optimization-constraints" class="md-nav__link">
+  <a href="#posthoc_optimization_constraints" class="md-nav__link">
     Posthoc optimization constraints
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#state-equation-constraints" class="md-nav__link">
+  <a href="#state_equation_constraints" class="md-nav__link">
     State equation constraints
   </a>
   
@@ -538,28 +538,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#lm-cut-landmark-constraints" class="md-nav__link">
+  <a href="#lm-cut_landmark_constraints" class="md-nav__link">
     LM-cut landmark constraints
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#posthoc-optimization-constraints-for-abstractions" class="md-nav__link">
+  <a href="#posthoc_optimization_constraints_for_abstractions" class="md-nav__link">
     Posthoc optimization constraints for abstractions
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#posthoc-optimization-constraints" class="md-nav__link">
+  <a href="#posthoc_optimization_constraints" class="md-nav__link">
     Posthoc optimization constraints
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#state-equation-constraints" class="md-nav__link">
+  <a href="#state_equation_constraints" class="md-nav__link">
     State equation constraints
   </a>
   
@@ -580,45 +580,45 @@
                 
                   <h1>ConstraintGenerator</h1>
                 
-                <h2 id="lm-cut-landmark-constraints">LM-cut landmark constraints</h2>
+                <h2 id="lm-cut_landmark_constraints">LM-cut landmark constraints<a class="headerlink" href="#lm-cut_landmark_constraints" title="Permanent link">#</a></h2>
 <p>Computes a set of landmarks in each state using the LM-cut method. For each landmark L the constraint sum_{o in L} Count_o &gt;= 1 is added to the operator counting LP temporarily. After the heuristic value for the state is computed, all temporary constraints are removed again. For details, see</p>
 <p>Florian Pommerening, Gabriele Roeger, Malte Helmert and Blai Bonet.<br />
-  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
-  In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
+ <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
+ In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
 <p>Blai Bonet.<br />
-  <a href="http://ijcai.org/papers13/Papers/IJCAI13-335.pdf">An admissible heuristic for SAS+ planning obtained from the state equation</a>.<br />
-  In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2268-2274. AAAI Press, 2013.</p>
+ <a href="http://ijcai.org/papers13/Papers/IJCAI13-335.pdf">An admissible heuristic for SAS+ planning obtained from the state equation</a>.<br />
+ In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2268-2274. AAAI Press, 2013.</p>
 <pre><code>lmcut_constraints()
 </code></pre>
-<h2 id="posthoc-optimization-constraints-for-abstractions">Posthoc optimization constraints for abstractions</h2>
+<h2 id="posthoc_optimization_constraints_for_abstractions">Posthoc optimization constraints for abstractions<a class="headerlink" href="#posthoc_optimization_constraints_for_abstractions" title="Permanent link">#</a></h2>
 <p>For each abstraction heuristic h the generator will add the constraint h(s) &lt;= sum_{o in relevant(h)} Count_o.</p>
 <pre><code>pho_abstraction_constraints(abstractions=[cartesian()], saturated=false)
 </code></pre>
 <ul>
-<li><em>abstractions</em> (list of AbstractionGenerator): abstraction generation methods</li>
+<li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generation methods</li>
 <li><em>saturated</em> (bool): use saturated instead of full operator costs in constraints</li>
 </ul>
-<h2 id="posthoc-optimization-constraints">Posthoc optimization constraints</h2>
+<h2 id="posthoc_optimization_constraints">Posthoc optimization constraints<a class="headerlink" href="#posthoc_optimization_constraints" title="Permanent link">#</a></h2>
 <p>The generator will compute a PDB for each pattern and add the constraint h(s) &lt;= sum_{o in relevant(h)} Count_o. For details, see</p>
 <p>Florian Pommerening, Gabriele Roeger and Malte Helmert.<br />
-  <a href="http://ijcai.org/papers13/Papers/IJCAI13-347.pdf">Getting the Most Out of Pattern Databases for Classical Planning</a>.<br />
-  In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2357-2364. AAAI Press, 2013.</p>
+ <a href="http://ijcai.org/papers13/Papers/IJCAI13-347.pdf">Getting the Most Out of Pattern Databases for Classical Planning</a>.<br />
+ In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2357-2364. AAAI Press, 2013.</p>
 <pre><code>pho_constraints(patterns=systematic(2))
 </code></pre>
 <ul>
-<li><em>patterns</em> (PatternCollectionGenerator): pattern generation method</li>
+<li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
 </ul>
-<h2 id="state-equation-constraints">State equation constraints</h2>
+<h2 id="state_equation_constraints">State equation constraints<a class="headerlink" href="#state_equation_constraints" title="Permanent link">#</a></h2>
 <p>For each fact, a permanent constraint is added that considers the net change of the fact, i.e., the total number of times the fact is added minus the total number of times is removed. The bounds of each constraint depend on the current state and the goal state and are updated in each state. For details, see</p>
 <p>Menkes van den Briel, J. Benton, Subbarao Kambhampati and Thomas Vossen.<br />
-  <a href="http://link.springer.com/chapter/10.1007/978-3-540-74970-7_46">An LP-based heuristic for optimal planning</a>.<br />
-  In <em>Proceedings of the Thirteenth International Conference on Principles and Practice of Constraint Programming (CP 2007)</em>, pp. 651-665. Springer-Verlag, 2007.</p>
+ <a href="http://link.springer.com/chapter/10.1007/978-3-540-74970-7_46">An LP-based heuristic for optimal planning</a>.<br />
+ In <em>Proceedings of the Thirteenth International Conference on Principles and Practice of Constraint Programming (CP 2007)</em>, pp. 651-665. Springer-Verlag, 2007.</p>
 <p>Blai Bonet.<br />
-  <a href="http://ijcai.org/papers13/Papers/IJCAI13-335.pdf">An admissible heuristic for SAS+ planning obtained from the state equation</a>.<br />
-  In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2268-2274. AAAI Press, 2013.</p>
+ <a href="http://ijcai.org/papers13/Papers/IJCAI13-335.pdf">An admissible heuristic for SAS+ planning obtained from the state equation</a>.<br />
+ In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2268-2274. AAAI Press, 2013.</p>
 <p>Florian Pommerening, Gabriele Roeger, Malte Helmert and Blai Bonet.<br />
-  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
-  In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
+ <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
+ In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
 <pre><code>state_equation_constraints()
 </code></pre>
                 

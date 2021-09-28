@@ -61,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#cartesian-abstraction-generator" class="md-skip">
+        <a href="#cartesian_abstraction_generator" class="md-skip">
           Skip to content
         </a>
       
@@ -239,14 +239,14 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cartesian-abstraction-generator" class="md-nav__link">
+  <a href="#cartesian_abstraction_generator" class="md-nav__link">
     Cartesian abstraction generator
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#projection-generator" class="md-nav__link">
+  <a href="#projection_generator" class="md-nav__link">
     Projection generator
   </a>
   
@@ -524,14 +524,14 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cartesian-abstraction-generator" class="md-nav__link">
+  <a href="#cartesian_abstraction_generator" class="md-nav__link">
     Cartesian abstraction generator
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#projection-generator" class="md-nav__link">
+  <a href="#projection_generator" class="md-nav__link">
     Projection generator
   </a>
   
@@ -552,11 +552,11 @@
                 
                   <h1>AbstractionGenerator</h1>
                 
-                <h2 id="cartesian-abstraction-generator">Cartesian abstraction generator</h2>
+                <h2 id="cartesian_abstraction_generator">Cartesian abstraction generator<a class="headerlink" href="#cartesian_abstraction_generator" title="Permanent link">#</a></h2>
 <pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, search_strategy=INCREMENTAL, memory_padding=500, debug=false, random_seed=-1)
 </code></pre>
 <ul>
-<li><em>subtasks</em> (list of SubtaskGenerator): subtask generators</li>
+<li><em>subtasks</em> (list of <a href="../SubtaskGenerator/">SubtaskGenerator</a>): subtask generators</li>
 <li><em>max_states</em> (int [1, infinity]): maximum sum of abstract states over all abstractions</li>
 <li><em>max_transitions</em> (int [0, infinity]): maximum sum of state-changing transitions (excluding self-loops) over all abstractions</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time for computing abstractions</li>
@@ -565,11 +565,11 @@
 <li><em>debug</em> (bool): print debugging info</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<h2 id="projection-generator">Projection generator</h2>
+<h2 id="projection_generator">Projection generator<a class="headerlink" href="#projection_generator" title="Permanent link">#</a></h2>
 <pre><code>projections(patterns=&lt;none&gt;, dominance_pruning=false, create_complete_transition_system=false, use_add_after_delete_semantics=false, debug=false)
 </code></pre>
 <ul>
-<li><em>patterns</em> (PatternCollectionGenerator): pattern generation method</li>
+<li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
 <li><em>dominance_pruning</em> (bool): prune dominated patterns</li>
 <li><em>create_complete_transition_system</em> (bool): create complete transition system</li>
 <li><em>use_add_after_delete_semantics</em> (bool): skip transitions that are invalid according to add-after-delete semantics</li>
