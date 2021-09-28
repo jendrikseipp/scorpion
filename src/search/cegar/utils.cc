@@ -14,6 +14,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fstream>
+#include <iostream>
 #include <map>
 
 using namespace std;
@@ -131,18 +133,19 @@ void add_flaw_strategy_option(options::OptionParser &parser) {
         "strategy to handle flaws", "ORIGINAL");
 }
 
-void dump_dot_graph(const Abstraction &abstraction) {
+string get_dot_graph(const Abstraction &abstraction) {
+    std::ostringstream oss;
     int num_states = abstraction.get_num_states();
-    cout << "digraph transition_system";
-    cout << " {" << endl;
-    cout << "    node [shape = none] start;" << endl;
+    oss << "digraph transition_system";
+    oss << " {" << endl;
+    oss << "    node [shape = none] start;" << endl;
     for (int i = 0; i < num_states; ++i) {
         bool is_init = (i == abstraction.get_initial_state().get_id());
         bool is_goal = abstraction.get_goals().count(i);
-        cout << "    node [shape = " << (is_goal ? "doublecircle" : "circle")
-             << "] " << i << ";" << endl;
+        oss << "    node [shape = " << (is_goal ? "doublecircle" : "circle")
+            << "] " << i << ";" << endl;
         if (is_init)
-            cout << "    start -> " << i << ";" << endl;
+            oss << "    start -> " << i << ";" << endl;
     }
     for (int state_id = 0; state_id < num_states; ++state_id) {
         map<int, vector<int>> parallel_transitions;
@@ -155,10 +158,24 @@ void dump_dot_graph(const Abstraction &abstraction) {
             int target = pair.first;
             vector<int> &operators = pair.second;
             sort(operators.begin(), operators.end());
-            cout << "    " << state_id << " -> " << target << " [label = \""
-                 << utils::join(operators, "_") << "\"];" << endl;
+            operators = vector<int>();
+            oss << "    " << state_id << " -> " << target << " [label = \""
+                << utils::join(operators, "_") << "\"];" << endl;
         }
     }
-    cout << "}" << endl;
+    oss << "}" << endl;
+    return oss.str();
+}
+
+void dump_dot_graph(const Abstraction &abstraction) {
+    cout << get_dot_graph(abstraction) << endl;
+}
+
+void write_dot_graph(const Abstraction &abstraction, std::string file_name) {
+    ofstream output_file(file_name);
+    if (output_file.is_open()) {
+        output_file << get_dot_graph(abstraction);
+    }
+    output_file.close();
 }
 } // namespace cegar

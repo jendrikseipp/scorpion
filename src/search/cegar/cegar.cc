@@ -169,8 +169,10 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     utils::Timer find_flaw_timer(false);
     utils::Timer refine_timer(false);
     utils::Timer update_goal_distances_timer(false);
+    int num_of_refinments = 0;
 
     while (may_keep_refining()) {
+        ++num_of_refinments;
         find_trace_timer.resume();
         unique_ptr<Solution> solution;
         if (search_strategy == SearchStrategy::ASTAR) {
@@ -228,7 +230,8 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         refine_timer.stop();
 
         if (debug) {
-            // dump_dot_graph(*abstraction);
+            //dump_dot_graph(*abstraction);
+            write_dot_graph(*abstraction, "tmp/graph" + to_string(num_of_refinments) + ".dot");
         }
 
         update_goal_distances_timer.resume();
@@ -258,6 +261,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     utils::g_log << "Time for finding flaws: " << find_flaw_timer << endl;
     utils::g_log << "Time for splitting states: " << refine_timer << endl;
     utils::g_log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
+    utils::g_log << "Number of refinments: " << num_of_refinments << endl;
 }
 
 void CEGAR::print_statistics() {
