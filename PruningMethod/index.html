@@ -1,0 +1,712 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.3.0">
+    
+    
+      
+        <title>PruningMethod - Plugins</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.8b42a75e.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL("..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#atom-centric-stubborn-sets" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Plugins" class="md-header__button md-logo" aria-label="Plugins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Plugins
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              PruningMethod
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Plugins" class="md-nav__button md-logo" aria-label="Plugins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Plugins
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AbstractTask/" class="md-nav__link">
+        AbstractTask
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AbstractionGenerator/" class="md-nav__link">
+        AbstractionGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConstraintGenerator/" class="md-nav__link">
+        ConstraintGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Evaluator/" class="md-nav__link">
+        Evaluator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LabelReduction/" class="md-nav__link">
+        LabelReduction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LandmarkFactory/" class="md-nav__link">
+        LandmarkFactory
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeScoringFunction/" class="md-nav__link">
+        MergeScoringFunction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeSelector/" class="md-nav__link">
+        MergeSelector
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeStrategy/" class="md-nav__link">
+        MergeStrategy
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeTree/" class="md-nav__link">
+        MergeTree
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OpenList/" class="md-nav__link">
+        OpenList
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OrderGenerator/" class="md-nav__link">
+        OrderGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PatternCollectionGenerator/" class="md-nav__link">
+        PatternCollectionGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PatternGenerator/" class="md-nav__link">
+        PatternGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          PruningMethod
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        PruningMethod
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#atom-centric-stubborn-sets" class="md-nav__link">
+    Atom-centric stubborn sets
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#no-pruning" class="md-nav__link">
+    No pruning
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stubbornsetsec" class="md-nav__link">
+    StubbornSetsEC
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stubborn-sets-simple" class="md-nav__link">
+    Stubborn sets simple
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SearchEngine/" class="md-nav__link">
+        SearchEngine
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ShrinkStrategy/" class="md-nav__link">
+        ShrinkStrategy
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SubtaskGenerator/" class="md-nav__link">
+        SubtaskGenerator
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#atom-centric-stubborn-sets" class="md-nav__link">
+    Atom-centric stubborn sets
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#no-pruning" class="md-nav__link">
+    No pruning
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stubbornsetsec" class="md-nav__link">
+    StubbornSetsEC
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stubborn-sets-simple" class="md-nav__link">
+    Stubborn sets simple
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  <h1>PruningMethod</h1>
+                
+                <p>Prune or reorder applicable operators.</p>
+<h2 id="atom-centric-stubborn-sets">Atom-centric stubborn sets</h2>
+<p>Stubborn sets are a state pruning method which computes a subset of applicable actions in each state such that completeness and optimality of the overall search is preserved. Previous stubborn set implementations mainly track information about actions. In contrast, this implementation focuses on atomic propositions (atoms), which often speeds up the computation on IPC benchmarks. For details, see</p>
+<p>Gabriele Roeger, Malte Helmert, Jendrik Seipp and Silvan Sievers.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/roeger-et-al-socs2020.pdf">An Atom-Centric Perspective on Stubborn Sets</a>.<br />
+  In <em>Proceedings of the 13th Annual Symposium on Combinatorial Search (SoCS 2020)</em>, pp. 57-65. AAAI Press, 2020.</p>
+<pre><code>atom_centric_stubborn_sets(use_sibling_shortcut=true, atom_selection_strategy=quick_skip, min_required_pruning_ratio=0.0, expansions_before_checking_pruning_ratio=1000)
+</code></pre>
+<ul>
+<li><em>use_sibling_shortcut</em> (bool): use variable-based marking in addition to atom-based marking</li>
+<li><em>atom_selection_strategy</em> ({fast_downward, quick_skip, static_small, dynamic_small}): Strategy for selecting unsatisfied atoms from action preconditions or the goal atoms. All strategies use the fast_downward strategy for breaking ties.</li>
+<li><code>fast_downward</code>: select the atom (v, d) with the variable v that comes first in the Fast Downward variable ordering (which is based on the causal graph)</li>
+<li><code>quick_skip</code>: if possible, select an unsatisfied atom whose producers are already marked</li>
+<li><code>static_small</code>: select the atom achieved by the fewest number of actions</li>
+<li><code>dynamic_small</code>: select the atom achieved by the fewest number of actions that are not yet part of the stubborn set</li>
+<li><em>min_required_pruning_ratio</em> (double [0.0, 1.0]): disable pruning if the pruning ratio is lower than this value after 'expansions_before_checking_pruning_ratio' expansions</li>
+<li><em>expansions_before_checking_pruning_ratio</em> (int [0, infinity]): number of expansions before deciding whether to disable pruning</li>
+</ul>
+<p><strong>Automatically disable pruning:</strong> Using stubborn sets to prune operators often reduces the required number of expansions but computing the prunable operators has a non-negligible runtime overhead. Whether the decrease in expansions outweighs the increased computational costs depends on the task at hand. Using the options 'min_required_pruning_ratio' (M) and 'expansions_before_checking_pruning_ratio' (E) it is possible to automatically disable pruning after E expansions if the ratio of pruned vs. non-pruned operators is lower than M. In detail, let B and A be the total number of operators before and after pruning summed over all previous expansions. We call 1-(A/B) the pruning ratio R. If R is lower than M after E expansions, we disable pruning for all subsequent expansions, i.e., consider all applicable operators when generating successor states. By default, pruning is never disabled (min_required_pruning_ratio = 0.0). In experiments on IPC benchmarks, stronger results have been observed with automatic disabling (min_required_pruning_ratio = 0.2, expansions_before_checking_pruning_ratio=1000).</p>
+<h2 id="no-pruning">No pruning</h2>
+<p>This is a skeleton method that does not perform any pruning, i.e., all applicable operators are applied in all expanded states. </p>
+<pre><code>null()
+</code></pre>
+<h2 id="stubbornsetsec">StubbornSetsEC</h2>
+<p>Stubborn sets represent a state pruning method which computes a subset of applicable operators in each state such that completeness and optimality of the overall search is preserved. As stubborn sets rely on several design choices, there are different variants thereof. The variant 'StubbornSetsEC' resolves the design choices such that the resulting pruning method is guaranteed to strictly dominate the Expansion Core pruning method. For details, see</p>
+<p>Martin Wehrle, Malte Helmert, Yusra Alkhazraji and Robert Mattmueller.<br />
+  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS13/paper/view/6053/6185">The Relative Pruning Power of Strong Stubborn Sets and Expansion Core</a>.<br />
+  In <em>Proceedings of the 23rd International Conference on Automated Planning and Scheduling (ICAPS 2013)</em>, pp. 251-259. AAAI Press, 2013.</p>
+<pre><code>stubborn_sets_ec(min_required_pruning_ratio=0.0, expansions_before_checking_pruning_ratio=1000)
+</code></pre>
+<ul>
+<li><em>min_required_pruning_ratio</em> (double [0.0, 1.0]): disable pruning if the pruning ratio is lower than this value after 'expansions_before_checking_pruning_ratio' expansions</li>
+<li><em>expansions_before_checking_pruning_ratio</em> (int [0, infinity]): number of expansions before deciding whether to disable pruning</li>
+</ul>
+<p><strong>Automatically disable pruning:</strong> Using stubborn sets to prune operators often reduces the required number of expansions but computing the prunable operators has a non-negligible runtime overhead. Whether the decrease in expansions outweighs the increased computational costs depends on the task at hand. Using the options 'min_required_pruning_ratio' (M) and 'expansions_before_checking_pruning_ratio' (E) it is possible to automatically disable pruning after E expansions if the ratio of pruned vs. non-pruned operators is lower than M. In detail, let B and A be the total number of operators before and after pruning summed over all previous expansions. We call 1-(A/B) the pruning ratio R. If R is lower than M after E expansions, we disable pruning for all subsequent expansions, i.e., consider all applicable operators when generating successor states. By default, pruning is never disabled (min_required_pruning_ratio = 0.0). In experiments on IPC benchmarks, stronger results have been observed with automatic disabling (min_required_pruning_ratio = 0.2, expansions_before_checking_pruning_ratio=1000).</p>
+<h2 id="stubborn-sets-simple">Stubborn sets simple</h2>
+<p>Stubborn sets represent a state pruning method which computes a subset of applicable operators in each state such that completeness and optimality of the overall search is preserved. As stubborn sets rely on several design choices, there are different variants thereof. The variant 'StubbornSetsSimple' resolves the design choices in a straight-forward way. For details, see the following papers: </p>
+<p>Yusra Alkhazraji, Martin Wehrle, Robert Mattmueller and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/alkhazraji-et-al-ecai2012.pdf">A Stubborn Set Algorithm for Optimal Planning</a>.<br />
+  In <em>Proceedings of the 20th European Conference on Artificial Intelligence (ECAI 2012)</em>, pp. 891-892. IOS Press, 2012.</p>
+<p>Martin Wehrle and Malte Helmert.<br />
+  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7922/8042">Efficient Stubborn Sets: Generalized Algorithms and Selection Strategies</a>.<br />
+  In <em>Proceedings of the 24th International Conference on Automated Planning  and Scheduling (ICAPS 2014)</em>, pp. 323-331. AAAI Press, 2014.</p>
+<pre><code>stubborn_sets_simple(min_required_pruning_ratio=0.0, expansions_before_checking_pruning_ratio=1000)
+</code></pre>
+<ul>
+<li><em>min_required_pruning_ratio</em> (double [0.0, 1.0]): disable pruning if the pruning ratio is lower than this value after 'expansions_before_checking_pruning_ratio' expansions</li>
+<li><em>expansions_before_checking_pruning_ratio</em> (int [0, infinity]): number of expansions before deciding whether to disable pruning</li>
+</ul>
+<p><strong>Automatically disable pruning:</strong> Using stubborn sets to prune operators often reduces the required number of expansions but computing the prunable operators has a non-negligible runtime overhead. Whether the decrease in expansions outweighs the increased computational costs depends on the task at hand. Using the options 'min_required_pruning_ratio' (M) and 'expansions_before_checking_pruning_ratio' (E) it is possible to automatically disable pruning after E expansions if the ratio of pruned vs. non-pruned operators is lower than M. In detail, let B and A be the total number of operators before and after pruning summed over all previous expansions. We call 1-(A/B) the pruning ratio R. If R is lower than M after E expansions, we disable pruning for all subsequent expansions, i.e., consider all applicable operators when generating successor states. By default, pruning is never disabled (min_required_pruning_ratio = 0.0). In experiments on IPC benchmarks, stronger results have been observed with automatic disabling (min_required_pruning_ratio = 0.2, expansions_before_checking_pruning_ratio=1000).</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../PatternGenerator/" class="md-footer__link md-footer__link--prev" aria-label="Previous: PatternGenerator" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              PatternGenerator
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../SearchEngine/" class="md-footer__link md-footer__link--next" aria-label="Next: SearchEngine" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              SearchEngine
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        
+          Made with
+          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+            Material for MkDocs
+          </a>
+        
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.f8263e09.min.js", "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.4fc53ad4.min.js"></script>
+      
+    
+  </body>
+</html>

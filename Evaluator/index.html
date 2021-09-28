@@ -1,0 +1,2063 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.3.0">
+    
+    
+      
+        <title>Evaluator - Plugins</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.8b42a75e.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL("..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#additive-heuristic" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Plugins" class="md-header__button md-logo" aria-label="Plugins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Plugins
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Evaluator
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Plugins" class="md-nav__button md-logo" aria-label="Plugins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Plugins
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AbstractTask/" class="md-nav__link">
+        AbstractTask
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AbstractionGenerator/" class="md-nav__link">
+        AbstractionGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConstraintGenerator/" class="md-nav__link">
+        ConstraintGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Evaluator
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Evaluator
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#additive-heuristic" class="md-nav__link">
+    Additive heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#blind-heuristic" class="md-nav__link">
+    Blind heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canonical-heuristic-for-abstraction-heuristics" class="md-nav__link">
+    Canonical heuristic for abstraction heuristics
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#context-enhanced-additive-heuristic" class="md-nav__link">
+    Context-enhanced additive heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additive-cegar-heuristic" class="md-nav__link">
+    Additive CEGAR heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#causal-graph-heuristic" class="md-nav__link">
+    Causal graph heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ff-heuristic" class="md-nav__link">
+    FF heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goal-count-heuristic" class="md-nav__link">
+    Goal count heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hm-heuristic" class="md-nav__link">
+    h^m heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#max-heuristic" class="md-nav__link">
+    Max heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#landmark-count-heuristic" class="md-nav__link">
+    Landmark-count heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#landmark-cut-heuristic" class="md-nav__link">
+    Landmark-cut heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#max-heuristic_1" class="md-nav__link">
+    Max heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#merge-and-shrink-heuristic" class="md-nav__link">
+    Merge-and-shrink heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operator-counting-heuristic" class="md-nav__link">
+    Operator counting heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optimal-cost-partitioning-heuristic" class="md-nav__link">
+    Optimal cost partitioning heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saturated-cost-partitioning" class="md-nav__link">
+    Saturated cost partitioning
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saturated-cost-partitioning-online-heuristic" class="md-nav__link">
+    Saturated cost partitioning online heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opportunistic-uniform-cost-partitioning-heuristic" class="md-nav__link">
+    (Opportunistic) uniform cost partitioning heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zero-one-cost-partitioning-heuristic" class="md-nav__link">
+    Zero-one cost partitioning heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-evaluators" class="md-nav__link">
+    Basic Evaluators
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Evaluators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constant-evaluator" class="md-nav__link">
+    Constant evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#g-value-evaluator" class="md-nav__link">
+    g-value evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max-evaluator" class="md-nav__link">
+    Max evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preference-evaluator" class="md-nav__link">
+    Preference evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sum-evaluator" class="md-nav__link">
+    Sum evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weighted-evaluator" class="md-nav__link">
+    Weighted evaluator
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-database-heuristics" class="md-nav__link">
+    Pattern Database Heuristics
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern Database Heuristics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#canonical-pdb" class="md-nav__link">
+    Canonical PDB
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ipdb" class="md-nav__link">
+    iPDB
+  </a>
+  
+    <nav class="md-nav" aria-label="iPDB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation-notes" class="md-nav__link">
+    Implementation Notes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-database-heuristic" class="md-nav__link">
+    Pattern database heuristic
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zero-one-pdb" class="md-nav__link">
+    Zero-One PDB
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#potential-heuristics" class="md-nav__link">
+    Potential Heuristics
+  </a>
+  
+    <nav class="md-nav" aria-label="Potential Heuristics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#potential-heuristic-optimized-for-all-states" class="md-nav__link">
+    Potential heuristic optimized for all states
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diverse-potential-heuristics" class="md-nav__link">
+    Diverse potential heuristics
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#potential-heuristic-optimized-for-initial-state" class="md-nav__link">
+    Potential heuristic optimized for initial state
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sample-based-potential-heuristics" class="md-nav__link">
+    Sample-based potential heuristics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LabelReduction/" class="md-nav__link">
+        LabelReduction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LandmarkFactory/" class="md-nav__link">
+        LandmarkFactory
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeScoringFunction/" class="md-nav__link">
+        MergeScoringFunction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeSelector/" class="md-nav__link">
+        MergeSelector
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeStrategy/" class="md-nav__link">
+        MergeStrategy
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeTree/" class="md-nav__link">
+        MergeTree
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OpenList/" class="md-nav__link">
+        OpenList
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OrderGenerator/" class="md-nav__link">
+        OrderGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PatternCollectionGenerator/" class="md-nav__link">
+        PatternCollectionGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PatternGenerator/" class="md-nav__link">
+        PatternGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PruningMethod/" class="md-nav__link">
+        PruningMethod
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SearchEngine/" class="md-nav__link">
+        SearchEngine
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ShrinkStrategy/" class="md-nav__link">
+        ShrinkStrategy
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SubtaskGenerator/" class="md-nav__link">
+        SubtaskGenerator
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#additive-heuristic" class="md-nav__link">
+    Additive heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#blind-heuristic" class="md-nav__link">
+    Blind heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canonical-heuristic-for-abstraction-heuristics" class="md-nav__link">
+    Canonical heuristic for abstraction heuristics
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#context-enhanced-additive-heuristic" class="md-nav__link">
+    Context-enhanced additive heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additive-cegar-heuristic" class="md-nav__link">
+    Additive CEGAR heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#causal-graph-heuristic" class="md-nav__link">
+    Causal graph heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ff-heuristic" class="md-nav__link">
+    FF heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goal-count-heuristic" class="md-nav__link">
+    Goal count heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hm-heuristic" class="md-nav__link">
+    h^m heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#max-heuristic" class="md-nav__link">
+    Max heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#landmark-count-heuristic" class="md-nav__link">
+    Landmark-count heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#landmark-cut-heuristic" class="md-nav__link">
+    Landmark-cut heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#max-heuristic_1" class="md-nav__link">
+    Max heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#merge-and-shrink-heuristic" class="md-nav__link">
+    Merge-and-shrink heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operator-counting-heuristic" class="md-nav__link">
+    Operator counting heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optimal-cost-partitioning-heuristic" class="md-nav__link">
+    Optimal cost partitioning heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saturated-cost-partitioning" class="md-nav__link">
+    Saturated cost partitioning
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saturated-cost-partitioning-online-heuristic" class="md-nav__link">
+    Saturated cost partitioning online heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opportunistic-uniform-cost-partitioning-heuristic" class="md-nav__link">
+    (Opportunistic) uniform cost partitioning heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zero-one-cost-partitioning-heuristic" class="md-nav__link">
+    Zero-one cost partitioning heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-evaluators" class="md-nav__link">
+    Basic Evaluators
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Evaluators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constant-evaluator" class="md-nav__link">
+    Constant evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#g-value-evaluator" class="md-nav__link">
+    g-value evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max-evaluator" class="md-nav__link">
+    Max evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preference-evaluator" class="md-nav__link">
+    Preference evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sum-evaluator" class="md-nav__link">
+    Sum evaluator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weighted-evaluator" class="md-nav__link">
+    Weighted evaluator
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-database-heuristics" class="md-nav__link">
+    Pattern Database Heuristics
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern Database Heuristics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#canonical-pdb" class="md-nav__link">
+    Canonical PDB
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ipdb" class="md-nav__link">
+    iPDB
+  </a>
+  
+    <nav class="md-nav" aria-label="iPDB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation-notes" class="md-nav__link">
+    Implementation Notes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-database-heuristic" class="md-nav__link">
+    Pattern database heuristic
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zero-one-pdb" class="md-nav__link">
+    Zero-One PDB
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#potential-heuristics" class="md-nav__link">
+    Potential Heuristics
+  </a>
+  
+    <nav class="md-nav" aria-label="Potential Heuristics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#potential-heuristic-optimized-for-all-states" class="md-nav__link">
+    Potential heuristic optimized for all states
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diverse-potential-heuristics" class="md-nav__link">
+    Diverse potential heuristics
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#potential-heuristic-optimized-for-initial-state" class="md-nav__link">
+    Potential heuristic optimized for initial state
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sample-based-potential-heuristics" class="md-nav__link">
+    Sample-based potential heuristics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <p>An evaluator specification is either a newly created evaluator instance or an evaluator that has been defined previously. This page describes how one can specify a new evaluator instance. For re-using evaluators, see OptionSyntax#Evaluator_Predefinitions.</p>
+<p>If the evaluator is a heuristic, definitions of <em>properties</em> in the descriptions below:</p>
+<ul>
+<li><strong>admissible:</strong> h(s) &lt;= h*(s) for all states s</li>
+<li><strong>consistent:</strong> h(s) &lt;= c(s, s') + h(s') for all states s connected to states s' by an action with cost c(s, s')</li>
+<li><strong>safe:</strong> h(s) = infinity is only true for states with h*(s) = infinity</li>
+<li><strong>preferred operators:</strong> this heuristic identifies preferred operators </li>
+</ul>
+<p>This plugin type can be predefined using <code>--evaluator</code>.
+The old predefinition key <code>--heuristic</code> is still supported but deprecated.</p>
+<h2 id="additive-heuristic">Additive heuristic</h2>
+<pre><code>add(transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> supported</li>
+<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> no</li>
+<li><strong>consistent:</strong> no</li>
+<li><strong>safe:</strong> yes for tasks without axioms</li>
+<li><strong>preferred operators:</strong> yes</li>
+</ul>
+<h2 id="blind-heuristic">Blind heuristic</h2>
+<p>Returns cost of cheapest action for non-goal states, 0 for goal states</p>
+<pre><code>blind(transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> supported</li>
+<li><strong>axioms:</strong> supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="canonical-heuristic-for-abstraction-heuristics">Canonical heuristic for abstraction heuristics</h2>
+<pre><code>canonical_heuristic(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>abstractions</em> (list of AbstractionGenerator): abstraction generators</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="context-enhanced-additive-heuristic">Context-enhanced additive heuristic</h2>
+<pre><code>cea(transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> supported</li>
+<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> no</li>
+<li><strong>consistent:</strong> no</li>
+<li><strong>safe:</strong> no</li>
+<li><strong>preferred operators:</strong> yes</li>
+</ul>
+<h2 id="additive-cegar-heuristic">Additive CEGAR heuristic</h2>
+<p>See the paper introducing Counterexample-guided Abstraction Refinement (CEGAR) for classical planning:</p>
+<p>Jendrik Seipp and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2013.pdf">Counterexample-guided Cartesian Abstraction Refinement</a>.<br />
+  In <em>Proceedings of the 23rd International Conference on Automated Planning and Scheduling (ICAPS 2013)</em>, pp. 347-351. AAAI Press, 2013.</p>
+<p>and the paper showing how to make the abstractions additive:</p>
+<p>Jendrik Seipp and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2014.pdf">Diverse and Additive Cartesian Abstraction Heuristics</a>.<br />
+  In <em>Proceedings of the 24th International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 289-297. AAAI Press, 2014.</p>
+<p>For more details on Cartesian CEGAR and saturated cost partitioning, see the journal paper</p>
+<ul>
+<li>
+<p>Jendrik Seipp and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf">Counterexample-Guided Cartesian Abstraction Refinement for Classical Planning</a>.<br />
+ <em>Journal of Artificial Intelligence Research</em> 62:535-577. 2018.</p>
+<p>cegar(subtasks=[landmarks(),goals()], max_states=infinity, max_transitions=1M, max_time=infinity, pick=MAX_REFINED, search_strategy=INCREMENTAL, memory_padding=500, use_general_costs=true, debug=false, transform=no_transform(), cache_estimates=true, random_seed=-1)</p>
+</li>
+<li>
+<p><em>subtasks</em> (list of SubtaskGenerator): subtask generators</p>
+</li>
+<li><em>max_states</em> (int [1, infinity]): maximum sum of abstract states over all abstractions</li>
+<li><em>max_transitions</em> (int [0, infinity]): maximum sum of real transitions (excluding self-loops) over  all abstractions</li>
+<li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for building abstractions</li>
+<li><em>pick</em> ({RANDOM, MIN_UNWANTED, MAX_UNWANTED, MIN_REFINED, MAX_REFINED, MIN_HADD, MAX_HADD}): split-selection strategy</li>
+<li><em>search_strategy</em> ({ASTAR, INCREMENTAL}): strategy for computing abstract plans</li>
+<li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
+<li><em>use_general_costs</em> (bool): allow negative costs in cost partitioning</li>
+<li><em>debug</em> (bool): print debugging output</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="causal-graph-heuristic">Causal graph heuristic</h2>
+<pre><code>cg(max_cache_size=1000000, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>max_cache_size</em> (int [0, infinity]): maximum number of cached entries per variable (set to 0 to disable cache)</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> supported</li>
+<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> no</li>
+<li><strong>consistent:</strong> no</li>
+<li><strong>safe:</strong> no</li>
+<li><strong>preferred operators:</strong> yes</li>
+</ul>
+<h2 id="ff-heuristic">FF heuristic</h2>
+<pre><code>ff(transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> supported</li>
+<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> no</li>
+<li><strong>consistent:</strong> no</li>
+<li><strong>safe:</strong> yes for tasks without axioms</li>
+<li><strong>preferred operators:</strong> yes</li>
+</ul>
+<h2 id="goal-count-heuristic">Goal count heuristic</h2>
+<pre><code>goalcount(transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> ignored by design</li>
+<li><strong>conditional effects:</strong> supported</li>
+<li><strong>axioms:</strong> supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> no</li>
+<li><strong>consistent:</strong> no</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="hm-heuristic">h^m heuristic</h2>
+<pre><code>hm(m=2, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>m</em> (int [1, infinity]): subset size</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> ignored</li>
+<li><strong>axioms:</strong> ignored</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes for tasks without conditional effects or axioms</li>
+<li><strong>consistent:</strong> yes for tasks without conditional effects or axioms</li>
+<li><strong>safe:</strong> yes for tasks without conditional effects or axioms</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="max-heuristic">Max heuristic</h2>
+<pre><code>hmax(transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> supported</li>
+<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes for tasks without axioms</li>
+<li><strong>consistent:</strong> yes for tasks without axioms</li>
+<li><strong>safe:</strong> yes for tasks without axioms</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="landmark-count-heuristic">Landmark-count heuristic</h2>
+<p>For the inadmissible variant see the papers</p>
+<p>Silvia Richter, Malte Helmert and Matthias Westphal.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/richter-et-al-aaai2008.pdf">Landmarks Revisited</a>.<br />
+  In <em>Proceedings of the 23rd AAAI Conference on Artificial Intelligence (AAAI 2008)</em>, pp. 975-982. AAAI Press, 2008.</p>
+<p>and</p>
+<ul>
+<li>Silvia Richter and Matthias Westphal.<br />
+ <a href="http://www.aaai.org/Papers/JAIR/Vol39/JAIR-3903.pdf">The LAMA Planner: Guiding Cost-Based Anytime Planning with Landmarks</a>.<br />
+ <em>Journal of Artificial Intelligence Research</em> 39:127-177. 2010.</li>
+</ul>
+<p>For the admissible variant see the papers</p>
+<p>Erez Karpas and Carmel Domshlak.<br />
+  <a href="https://www.ijcai.org/Proceedings/09/Papers/288.pdf">Cost-Optimal Planning with Landmarks</a>.<br />
+  In <em>Proceedings of the 21st International Joint Conference on Artificial Intelligence (IJCAI 2009)</em>, pp. 1728-1733. AAAI Press, 2009.</p>
+<p>and</p>
+<p>Emil Keyder and Silvia Richter and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/keyder-et-al-ecai2010.pdf">Sound and Complete Landmarks for And/Or Graphs</a>.<br />
+  In <em>Proceedings of the 19th European Conference on Artificial Intelligence (ECAI 2010)</em>, pp. 335-340. IOS Press, 2010.</p>
+<pre><code>lmcount(lm_factory, admissible=false, cost_partitioning=SUBOPTIMAL, pref=false, alm=true, reuse_costs=false, greedy=false, scoring_function=MAX_HEURISTIC_PER_STOLEN_COSTS, random_seed=-1, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>lm_factory</em> (LandmarkFactory): the set of landmarks to use for this heuristic. The set of landmarks can be specified here, or predefined (see LandmarkFactory).</li>
+<li><em>admissible</em> (bool): get admissible estimate</li>
+<li><em>cost_partitioning</em> ({OPTIMAL, SUBOPTIMAL, CANONICAL, PHO}): cost partitioning method</li>
+<li><em>pref</em> (bool): identify preferred operators (see OptionCaveats#Using_preferred_operators_with_the_lmcount_heuristic)</li>
+<li><em>alm</em> (bool): use action landmarks</li>
+<li><em>reuse_costs</em> (bool): reuse unused costs</li>
+<li><em>greedy</em> (bool): assign costs greedily</li>
+<li><em>scoring_function</em> ({MAX_HEURISTIC, MIN_STOLEN_COSTS, MAX_HEURISTIC_PER_STOLEN_COSTS}): scoring function</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs</li>
+<li><code>CLP</code>: default LP solver shipped with the COIN library</li>
+<li><code>CPLEX</code>: commercial solver by IBM</li>
+<li><code>GUROBI</code>: commercial solver</li>
+<li><code>SOPLEX</code>: open source solver by ZIB</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p><strong>Optimal search:</strong> When using landmarks for optimal search (<code>admissible=true</code>), you probably also want to add this heuristic as a lazy_evaluator in the A* algorithm to improve heuristic estimates.</p>
+<p><strong>Note:</strong> To use <code>optimal=true</code>, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Differences to the literature:</strong> This heuristic differs from the description in the literature (see references above) in the set of preferred operators computed. The original implementation described in the literature computes two kinds of preferred operators:</p>
+<ol>
+<li>If there is an applicable operator that reaches a landmark, all such operators are preferred.</li>
+<li>If no such operators exist, perform an FF-style relaxed exploration towards the nearest landmarks (according to the landmark orderings) and use the preferred operators of this exploration.</li>
+</ol>
+<p>Our implementation of the heuristic only considers preferred operators of the first type and does not include the second type. The rationale for this change is that it reduces code complexity and helps more cleanly separate landmark-based and FF-based computations in LAMA-like planner configurations. In our experiments, only considering preferred operators of the first type reduces performance when using the heuristic and its preferred operators in isolation but improves performance when using this heuristic in conjunction with the FF heuristic, as in LAMA-like planner configurations.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional_effects:</strong> supported if the LandmarkFactory supports them; otherwise ignored with <code>admissible=false</code> and not allowed with <code>admissible=true</code></li>
+<li><strong>axioms:</strong> ignored with <code>admissible=false</code>; not allowed with <code>admissible=true</code></li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes if <code>admissible=true</code></li>
+<li><strong>consistent:</strong> complicated; needs further thought</li>
+<li><strong>safe:</strong> yes except on tasks with axioms or on tasks with conditional effects when using a LandmarkFactory not supporting them</li>
+<li><strong>preferred operators:</strong> yes (if enabled; see <code>pref</code> option)</li>
+</ul>
+<h2 id="landmark-cut-heuristic">Landmark-cut heuristic</h2>
+<pre><code>lmcut(transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> no</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="max-heuristic_1">Max heuristic</h2>
+<p>Maximize over a set of abstraction heuristics</p>
+<pre><code>maximize(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>abstractions</em> (list of AbstractionGenerator): abstraction generators</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="merge-and-shrink-heuristic">Merge-and-shrink heuristic</h2>
+<p>This heuristic implements the algorithm described in the following paper:</p>
+<p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-aaai2014.pdf">Generalized Label Reduction for Merge-and-Shrink Heuristics</a>.<br />
+  In <em>Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2358-2366. AAAI Press, 2014.</p>
+<p>For a more exhaustive description of merge-and-shrink, see the journal paper</p>
+<ul>
+<li>Malte Helmert, Patrik Haslum, Joerg Hoffmann and Raz Nissim.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/helmert-et-al-jacm2014.pdf">Merge-and-Shrink Abstraction: A Method for Generating Lower Bounds in Factored State Spaces</a>.<br />
+ <em>Journal of the ACM</em> 61 (3):16:1-63. 2014.</li>
+</ul>
+<p>Please note that the journal paper describes the "old" theory of label reduction, which has been superseded by the above conference paper and is no longer implemented in Fast Downward.</p>
+<p>The following paper describes how to improve the DFP merge strategy with tie-breaking, and presents two new merge strategies (dyn-MIASM and SCC-DFP):</p>
+<p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
+  In <em>Proceedings of the 26th International Conference on Automated Planning and Scheduling (ICAPS 2016)</em>, pp. 294-298. AAAI Press, 2016.</p>
+<p>Details of the algorithms and the implementation are described in the paper</p>
+<p>Silvan Sievers.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/sievers-socs2018.pdf">Merge-and-Shrink Heuristics for Classical Planning: Efficient Implementation and Partial Abstractions</a>.<br />
+  In <em>Proceedings of the 11th Annual Symposium on Combinatorial Search (SoCS 2018)</em>, pp. 90-98. AAAI Press, 2018.</p>
+<pre><code>merge_and_shrink(transform=no_transform(), cache_estimates=true, merge_strategy, shrink_strategy, label_reduction=&lt;none&gt;, prune_unreachable_states=true, prune_irrelevant_states=true, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1, verbosity=normal, main_loop_max_time=infinity)
+</code></pre>
+<ul>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>merge_strategy</em> (MergeStrategy): See detailed documentation for merge strategies. We currently recommend SCC-DFP, which can be achieved using <code>merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order]))</code></li>
+<li><em>shrink_strategy</em> (ShrinkStrategy): See detailed documentation for shrink strategies. We currently recommend non-greedy shrink_bisimulation, which can be achieved using <code>shrink_strategy=shrink_bisimulation(greedy=false)</code></li>
+<li><em>label_reduction</em> (LabelReduction): See detailed documentation for labels. There is currently only one 'option' to use label_reduction, which is <code>label_reduction=exact</code> Also note the interaction with shrink strategies.</li>
+<li><em>prune_unreachable_states</em> (bool): If true, prune abstract states unreachable from the initial state.</li>
+<li><em>prune_irrelevant_states</em> (bool): If true, prune abstract states from which no goal state can be reached.</li>
+<li><em>max_states</em> (int [-1, infinity]): maximum transition system size allowed at any time point.</li>
+<li><em>max_states_before_merge</em> (int [-1, infinity]): maximum transition system size allowed for two transition systems before being merged to form the synchronized product.</li>
+<li><em>threshold_before_merge</em> (int [-1, infinity]): If a transition system, before being merged, surpasses this soft transition system size limit, the shrink strategy is called to possibly shrink the transition system.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like full with additional debug output</li>
+<li><em>main_loop_max_time</em> (double [0.0, infinity]): A limit in seconds on the runtime of the main loop of the algorithm. If the limit is exceeded, the algorithm terminates, potentially returning a factored transition system with several factors. Also note that the time limit is only checked between transformations of the main loop, but not during, so it can be exceeded if a transformation is runtime-intense.</li>
+</ul>
+<p><strong>Note:</strong> Conditional effects are supported directly. Note, however, that for tasks that are not factored (in the sense of the JACM 2014 merge-and-shrink paper), the atomic transition systems on which merge-and-shrink heuristics are based are nondeterministic, which can lead to poor heuristics even when only perfect shrinking is performed.</p>
+<p><strong>Note:</strong> When pruning unreachable states, admissibility and consistency is only guaranteed for reachable states and transitions between reachable states. While this does not impact regular A* search which will never encounter any unreachable state, it impacts techniques like symmetry-based pruning: a reachable state which is mapped to an unreachable symmetric state (which hence is pruned) would falsely be considered a dead-end and also be pruned, thus violating optimality of the search.</p>
+<p><strong>Note:</strong> When using a time limit on the main loop of the merge-and-shrink algorithm, the heuristic will compute the maximum over all heuristics induced by the remaining factors if terminating the merge-and-shrink algorithm early. Exception: if there is an unsolvable factor, it will be used as the exclusive heuristic since the problem is unsolvable.</p>
+<p><strong>Note:</strong> A currently recommended good configuration uses bisimulation based shrinking, the merge strategy SCC-DFP, and the appropriate label reduction setting (max_states has been altered to be between 10k and 200k in the literature):</p>
+<pre><code>merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order])),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50k,threshold_before_merge=1)
+</code></pre>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> supported (but see note)</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes (but see note)</li>
+<li><strong>consistent:</strong> yes (but see note)</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="operator-counting-heuristic">Operator counting heuristic</h2>
+<p>An operator counting heuristic computes a linear program (LP) in each state. The LP has one variable Count_o for each operator o that represents how often the operator is used in a plan. Operator counting constraints are linear constraints over these varaibles that are guaranteed to have a solution with Count_o = occurrences(o, pi) for every plan pi. Minimizing the total cost of operators subject to some operator counting constraints is an admissible heuristic. For details, see</p>
+<p>Florian Pommerening, Gabriele Roeger, Malte Helmert and Blai Bonet.<br />
+  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
+  In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
+<pre><code>operatorcounting(constraint_generators, use_integer_operator_counts=false, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>constraint_generators</em> (list of ConstraintGenerator): methods that generate constraints over operator counting variables</li>
+<li><em>use_integer_operator_counts</em> (bool): restrict operator counting variables to integer values. Computing the heuristic with integer variables can produce higher values but requires solving a MIP instead of an LP which is generally more computationally expensive. Turning this option on can thus drastically increase the runtime.</li>
+<li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs</li>
+<li><code>CLP</code>: default LP solver shipped with the COIN library</li>
+<li><code>CPLEX</code>: commercial solver by IBM</li>
+<li><code>GUROBI</code>: commercial solver</li>
+<li><code>SOPLEX</code>: open source solver by ZIB</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented constraint generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented constraint generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes, if all constraint generators represent consistent heuristics</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="optimal-cost-partitioning-heuristic">Optimal cost partitioning heuristic</h2>
+<pre><code>optimal_cost_partitioning(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, lpsolver=CPLEX, allow_negative_costs=true)
+</code></pre>
+<ul>
+<li><em>abstractions</em> (list of AbstractionGenerator): abstraction generators</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs</li>
+<li><code>CLP</code>: default LP solver shipped with the COIN library</li>
+<li><code>CPLEX</code>: commercial solver by IBM</li>
+<li><code>GUROBI</code>: commercial solver</li>
+<li><code>SOPLEX</code>: open source solver by ZIB</li>
+<li><em>allow_negative_costs</em> (bool): use general instead of non-negative cost partitioning</li>
+</ul>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="saturated-cost-partitioning">Saturated cost partitioning</h2>
+<p>Compute the maximum over multiple saturated cost partitioning heuristics using different orders. We describe saturated cost partitioning in the paper</p>
+<ul>
+<li>Jendrik Seipp and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf">Counterexample-Guided Cartesian Abstraction Refinement for Classical Planning</a>.<br />
+ <em>Journal of Artificial Intelligence Research</em> 62:535-577. 2018.</li>
+</ul>
+<p>and show how to compute saturated cost partitioning heuristics for multiple (diverse) orders in</p>
+<p>Jendrik Seipp, Thomas Keller and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-aaai2017.pdf">Narrowing the Gap Between Saturated and Optimal Cost Partitioning for Classical Planning</a>.<br />
+  In <em>Proceedings of the 31st AAAI Conference on Artificial Intelligence (AAAI 2017)</em>, pp. 3651-3657. AAAI Press, 2017.</p>
+<p>Greedy orders for saturated cost partitioning are introduced in</p>
+<p>Jendrik Seipp.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/seipp-socs2017.pdf">Better Orders for Saturated Cost Partitioning in Optimal Classical Planning</a>.<br />
+  In <em>Proceedings of the 10th Annual Symposium on Combinatorial Search (SoCS 2017)</em>, pp. 149-153. AAAI Press, 2017.</p>
+<pre><code>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>abstractions</em> (list of AbstractionGenerator): abstraction generators</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>orders</em> (OrderGenerator): order generator</li>
+<li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
+<li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
+<li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
+<li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p><strong>Difference to cegar():</strong> The cegar() plugin computes a single saturated cost partitioning over Cartesian abstraction heuristics. In contrast, saturated_cost_partitioning() supports computing the maximum over multiple saturated cost partitionings using different heuristic orders, and it supports both Cartesian abstraction heuristics and pattern database heuristics. While cegar() interleaves abstraction computation with cost partitioning, saturated_cost_partitioning() computes all abstractions using the original costs.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="saturated-cost-partitioning-online-heuristic">Saturated cost partitioning online heuristic</h2>
+<pre><code>scp_online(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, interval=&lt;none&gt;, store_cost_partitionings=&lt;none&gt;)
+</code></pre>
+<ul>
+<li><em>abstractions</em> (list of AbstractionGenerator): abstraction generators</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>orders</em> (OrderGenerator): order generator</li>
+<li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
+<li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
+<li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
+<li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>interval</em> (int [-1, infinity]): compute SCP for every interval-th state</li>
+<li><em>store_cost_partitionings</em> (bool): store saturated cost partitionings if diverse</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="opportunistic-uniform-cost-partitioning-heuristic">(Opportunistic) uniform cost partitioning heuristic</h2>
+<pre><code>uniform_cost_partitioning(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, opportunistic=false, debug=false)
+</code></pre>
+<ul>
+<li><em>abstractions</em> (list of AbstractionGenerator): abstraction generators</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>orders</em> (OrderGenerator): order generator</li>
+<li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
+<li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
+<li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
+<li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>opportunistic</em> (bool): recalculate uniform cost partitioning after each considered abstraction</li>
+<li><em>debug</em> (bool): print debugging messages</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="zero-one-cost-partitioning-heuristic">Zero-one cost partitioning heuristic</h2>
+<pre><code>zero_one_cost_partitioning(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>abstractions</em> (list of AbstractionGenerator): abstraction generators</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>orders</em> (OrderGenerator): order generator</li>
+<li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
+<li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
+<li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
+<li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h1 id="basic-evaluators">Basic Evaluators</h1>
+<h2 id="constant-evaluator">Constant evaluator</h2>
+<p>Returns a constant value.</p>
+<pre><code>const(value=1)
+</code></pre>
+<ul>
+<li><em>value</em> (int [0, infinity]): the constant value</li>
+</ul>
+<h2 id="g-value-evaluator">g-value evaluator</h2>
+<p>Returns the g-value (path cost) of the search node.</p>
+<pre><code>g()
+</code></pre>
+<h2 id="max-evaluator">Max evaluator</h2>
+<p>Calculates the maximum of the sub-evaluators.</p>
+<pre><code>max(evals)
+</code></pre>
+<ul>
+<li><em>evals</em> (list of Evaluator): at least one evaluator</li>
+</ul>
+<h2 id="preference-evaluator">Preference evaluator</h2>
+<p>Returns 0 if preferred is true and 1 otherwise.</p>
+<pre><code>pref()
+</code></pre>
+<h2 id="sum-evaluator">Sum evaluator</h2>
+<p>Calculates the sum of the sub-evaluators.</p>
+<pre><code>sum(evals)
+</code></pre>
+<ul>
+<li><em>evals</em> (list of Evaluator): at least one evaluator</li>
+</ul>
+<h2 id="weighted-evaluator">Weighted evaluator</h2>
+<p>Multiplies the value of the evaluator with the given weight.</p>
+<pre><code>weight(eval, weight)
+</code></pre>
+<ul>
+<li><em>eval</em> (Evaluator): evaluator</li>
+<li><em>weight</em> (int): weight</li>
+</ul>
+<h1 id="pattern-database-heuristics">Pattern Database Heuristics</h1>
+<h2 id="canonical-pdb">Canonical PDB</h2>
+<p>The canonical pattern database heuristic is calculated as follows. For a given pattern collection C, the value of the canonical heuristic function is the maximum over all maximal additive subsets A in C, where the value for one subset S in A is the sum of the heuristic values for all patterns in S for a given state.</p>
+<pre><code>cpdbs(patterns=systematic(1), max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>patterns</em> (PatternCollectionGenerator): pattern generation method</li>
+<li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="ipdb">iPDB</h2>
+<p>This approach is a combination of using the Evaluator#Canonical_PDB heuristic over patterns computed with the PatternCollectionGenerator#hillclimbing algorithm for pattern generation. It is a short-hand for the command-line option <code>cpdbs(hillclimbing())</code>. Both the heuristic and the pattern generation algorithm are described in the following paper:</p>
+<p>Patrik Haslum, Adi Botea, Malte Helmert, Blai Bonet and Sven Koenig.<br />
+  <a href="http://www.informatik.uni-freiburg.de/~ki/papers/haslum-etal-aaai07.pdf">Domain-Independent Construction of Pattern Database Heuristics for Cost-Optimal Planning</a>.<br />
+  In <em>Proceedings of the 22nd AAAI Conference on Artificial Intelligence (AAAI 2007)</em>, pp. 1007-1012. AAAI Press, 2007.</p>
+<p>For implementation notes, see:</p>
+<p>Silvan Sievers, Manuela Ortlieb and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-socs2012.pdf">Efficient Implementation of Pattern Database Heuristics for Classical Planning</a>.<br />
+  In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</p>
+<p>See also Evaluator#Canonical_PDB and PatternCollectionGenerator#Hill_climbing for more details.</p>
+<pre><code>ipdb(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>pdb_max_size</em> (int [1, infinity]): maximal number of states per pattern database </li>
+<li><em>collection_max_size</em> (int [1, infinity]): maximal number of states in the pattern collection</li>
+<li><em>num_samples</em> (int [1, infinity]): number of samples (random states) on which to evaluate each candidate pattern collection</li>
+<li><em>min_improvement</em> (int [1, infinity]): minimum number of samples on which a candidate pattern collection must improve on the current one to be considered as the next pattern collection </li>
+<li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for improving the initial pattern collection via hill climbing. If set to 0, no hill climbing is performed at all. Note that this limit only affects hill climbing. Use max_time_dominance_pruning to limit the time spent for pruning dominated patterns.</li>
+<li><em>max_generated_patterns</em> (int [0, infinity]): maximum number of generated patterns</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p><strong>Note:</strong> The pattern collection created by the algorithm will always contain all patterns consisting of a single goal variable, even if this violates the pdb_max_size or collection_max_size limits.</p>
+<p><strong>Note:</strong> This pattern generation method generates patterns optimized for use with the canonical pattern database heuristic.</p>
+<h3 id="implementation-notes">Implementation Notes</h3>
+<p>The following will very briefly describe the algorithm and explain the differences between the original implementation from 2007 and the new one in Fast Downward.</p>
+<p>The aim of the algorithm is to output a pattern collection for which the Evaluator#Canonical_PDB yields the best heuristic estimates.</p>
+<p>The algorithm is basically a local search (hill climbing) which searches the "pattern neighbourhood" (starting initially with a pattern for each goal variable) for improving the pattern collection. This is done as described in the section "pattern construction as search" in the paper, except for the corrected search neighbourhood discussed below. For evaluating the neighbourhood, the "counting approximation" as introduced in the paper was implemented. An important difference however consists in the fact that this implementation computes all pattern databases for each candidate pattern rather than using A* search to compute the heuristic values only for the sample states for each pattern.</p>
+<p>Also the logic for sampling the search space differs a bit from the original implementation. The original implementation uses a random walk of a length which is binomially distributed with the mean at the estimated solution depth (estimation is done with the current pattern collection heuristic). In the Fast Downward implementation, also a random walk is used, where the length is the estimation of the number of solution steps, which is calculated by dividing the current heuristic estimate for the initial state by the average operator costs of the planning task (calculated only once and not updated during sampling!) to take non-unit cost problems into account. This yields a random walk of an expected lenght of np = 2 * estimated number of solution steps. If the random walk gets stuck, it is being restarted from the initial state, exactly as described in the original paper.</p>
+<p>The section "avoiding redundant evaluations" describes how the search neighbourhood of patterns can be restricted to variables that are relevant to the variables already included in the pattern by analyzing causal graphs. There is a mistake in the paper that leads to some relevant neighbouring patterns being ignored. See the <a href="https://ai.dmi.unibas.ch/research/publications.html">errata</a> for details. This mistake has been addressed in this implementation. The second approach described in the paper (statistical confidence interval) is not applicable to this implementation, as it doesn't use A* search but constructs the entire pattern databases for all candidate patterns anyway.
+The search is ended if there is no more improvement (or the improvement is smaller than the minimal improvement which can be set as an option), however there is no limit of iterations of the local search. This is similar to the techniques used in the original implementation as described in the paper.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="pattern-database-heuristic">Pattern database heuristic</h2>
+<p>TODO</p>
+<pre><code>pdb(pattern=greedy(), transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>pattern</em> (PatternGenerator): pattern generation method</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="zero-one-pdb">Zero-One PDB</h2>
+<p>The zero/one pattern database heuristic is simply the sum of the heuristic values of all patterns in the pattern collection. In contrast to the canonical pattern database heuristic, there is no need to check for additive subsets, because the additivity of the patterns is guaranteed by action cost partitioning. This heuristic uses the most simple form of action cost partitioning, i.e. if an operator affects more than one pattern in the collection, its costs are entirely taken into account for one pattern (the first one which it affects) and set to zero for all other affected patterns.</p>
+<pre><code>zopdbs(patterns=systematic(1), transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>patterns</em> (PatternCollectionGenerator): pattern generation method</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h1 id="potential-heuristics">Potential Heuristics</h1>
+<h2 id="potential-heuristic-optimized-for-all-states">Potential heuristic optimized for all states</h2>
+<p>The algorithm is based on</p>
+<p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
+  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
+<pre><code>all_states_potential(max_potential=1e8, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
+<li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs</li>
+<li><code>CLP</code>: default LP solver shipped with the COIN library</li>
+<li><code>CPLEX</code>: commercial solver by IBM</li>
+<li><code>GUROBI</code>: commercial solver</li>
+<li><code>SOPLEX</code>: open source solver by ZIB</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="diverse-potential-heuristics">Diverse potential heuristics</h2>
+<p>The algorithm is based on</p>
+<p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
+  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
+<pre><code>diverse_potentials(num_samples=1000, max_num_heuristics=infinity, max_potential=1e8, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true, random_seed=-1)
+</code></pre>
+<ul>
+<li><em>num_samples</em> (int [0, infinity]): Number of states to sample</li>
+<li><em>max_num_heuristics</em> (int [0, infinity]): maximum number of potential heuristics</li>
+<li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
+<li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs</li>
+<li><code>CLP</code>: default LP solver shipped with the COIN library</li>
+<li><code>CPLEX</code>: commercial solver by IBM</li>
+<li><code>GUROBI</code>: commercial solver</li>
+<li><code>SOPLEX</code>: open source solver by ZIB</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+</ul>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="potential-heuristic-optimized-for-initial-state">Potential heuristic optimized for initial state</h2>
+<p>The algorithm is based on</p>
+<p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
+  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
+<pre><code>initial_state_potential(max_potential=1e8, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
+<li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs</li>
+<li><code>CLP</code>: default LP solver shipped with the COIN library</li>
+<li><code>CPLEX</code>: commercial solver by IBM</li>
+<li><code>GUROBI</code>: commercial solver</li>
+<li><code>SOPLEX</code>: open source solver by ZIB</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="sample-based-potential-heuristics">Sample-based potential heuristics</h2>
+<p>Maximum over multiple potential heuristics optimized for samples. The algorithm is based on</p>
+<p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
+  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
+  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
+<pre><code>sample_based_potentials(num_heuristics=1, num_samples=1000, max_potential=1e8, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true, random_seed=-1)
+</code></pre>
+<ul>
+<li><em>num_heuristics</em> (int [0, infinity]): number of potential heuristics</li>
+<li><em>num_samples</em> (int [0, infinity]): Number of states to sample</li>
+<li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
+<li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs</li>
+<li><code>CLP</code>: default LP solver shipped with the COIN library</li>
+<li><code>CPLEX</code>: commercial solver by IBM</li>
+<li><code>GUROBI</code>: commercial solver</li>
+<li><code>SOPLEX</code>: open source solver by ZIB</li>
+<li><em>transform</em> (AbstractTask): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+</ul>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported</li>
+<li><strong>axioms:</strong> not supported</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../ConstraintGenerator/" class="md-footer__link md-footer__link--prev" aria-label="Previous: ConstraintGenerator" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              ConstraintGenerator
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../LabelReduction/" class="md-footer__link md-footer__link--next" aria-label="Next: LabelReduction" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              LabelReduction
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        
+          Made with
+          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+            Material for MkDocs
+          </a>
+        
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.f8263e09.min.js", "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.4fc53ad4.min.js"></script>
+      
+    
+  </body>
+</html>

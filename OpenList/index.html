@@ -1,0 +1,749 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.3.0">
+    
+    
+      
+        <title>OpenList - Plugins</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.8b42a75e.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL("..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#alternation-open-list" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Plugins" class="md-header__button md-logo" aria-label="Plugins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Plugins
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              OpenList
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Plugins" class="md-nav__button md-logo" aria-label="Plugins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Plugins
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AbstractTask/" class="md-nav__link">
+        AbstractTask
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AbstractionGenerator/" class="md-nav__link">
+        AbstractionGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConstraintGenerator/" class="md-nav__link">
+        ConstraintGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Evaluator/" class="md-nav__link">
+        Evaluator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LabelReduction/" class="md-nav__link">
+        LabelReduction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LandmarkFactory/" class="md-nav__link">
+        LandmarkFactory
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeScoringFunction/" class="md-nav__link">
+        MergeScoringFunction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeSelector/" class="md-nav__link">
+        MergeSelector
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeStrategy/" class="md-nav__link">
+        MergeStrategy
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MergeTree/" class="md-nav__link">
+        MergeTree
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          OpenList
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        OpenList
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#alternation-open-list" class="md-nav__link">
+    Alternation open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#epsilon-greedy-open-list" class="md-nav__link">
+    Epsilon-greedy open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pareto-open-list" class="md-nav__link">
+    Pareto open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-first-open-list" class="md-nav__link">
+    Best-first open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tie-breaking-open-list" class="md-nav__link">
+    Tie-breaking open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-based-open-list" class="md-nav__link">
+    Type-based open list
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OrderGenerator/" class="md-nav__link">
+        OrderGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PatternCollectionGenerator/" class="md-nav__link">
+        PatternCollectionGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PatternGenerator/" class="md-nav__link">
+        PatternGenerator
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PruningMethod/" class="md-nav__link">
+        PruningMethod
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SearchEngine/" class="md-nav__link">
+        SearchEngine
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ShrinkStrategy/" class="md-nav__link">
+        ShrinkStrategy
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SubtaskGenerator/" class="md-nav__link">
+        SubtaskGenerator
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#alternation-open-list" class="md-nav__link">
+    Alternation open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#epsilon-greedy-open-list" class="md-nav__link">
+    Epsilon-greedy open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pareto-open-list" class="md-nav__link">
+    Pareto open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-first-open-list" class="md-nav__link">
+    Best-first open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tie-breaking-open-list" class="md-nav__link">
+    Tie-breaking open list
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-based-open-list" class="md-nav__link">
+    Type-based open list
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  <h1>OpenList</h1>
+                
+                <h2 id="alternation-open-list">Alternation open list</h2>
+<p>alternates between several open lists.</p>
+<pre><code>alt(sublists, boost=0)
+</code></pre>
+<ul>
+<li><em>sublists</em> (list of OpenList): open lists between which this one alternates</li>
+<li><em>boost</em> (int): boost value for contained open lists that are restricted to preferred successors</li>
+</ul>
+<h2 id="epsilon-greedy-open-list">Epsilon-greedy open list</h2>
+<p>Chooses an entry uniformly randomly with probability 'epsilon', otherwise it returns the minimum entry. The algorithm is based on</p>
+<p>Richard Valenzano, Nathan R. Sturtevant, Jonathan Schaeffer and Fan Xie.<br />
+  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7943/8066">A Comparison of Knowledge-Based GBFS Enhancements and Knowledge-Free Exploration</a>.<br />
+  In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 375-379. AAAI Press, 2014.</p>
+<pre><code>epsilon_greedy(eval, pref_only=false, epsilon=0.2, random_seed=-1)
+</code></pre>
+<ul>
+<li><em>eval</em> (Evaluator): evaluator</li>
+<li><em>pref_only</em> (bool): insert only nodes generated by preferred operators</li>
+<li><em>epsilon</em> (double [0.0, 1.0]): probability for choosing the next entry randomly</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+</ul>
+<h2 id="pareto-open-list">Pareto open list</h2>
+<p>Selects one of the Pareto-optimal (regarding the sub-evaluators) entries for removal.</p>
+<pre><code>pareto(evals, pref_only=false, state_uniform_selection=false, random_seed=-1)
+</code></pre>
+<ul>
+<li><em>evals</em> (list of Evaluator): evaluators</li>
+<li><em>pref_only</em> (bool): insert only nodes generated by preferred operators</li>
+<li><em>state_uniform_selection</em> (bool): When removing an entry, we select a non-dominated bucket and return its oldest entry. If this option is false, we select uniformly from the non-dominated buckets; if the option is true, we weight the buckets with the number of entries.</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+</ul>
+<h2 id="best-first-open-list">Best-first open list</h2>
+<p>Open list that uses a single evaluator and FIFO tiebreaking.</p>
+<pre><code>single(eval, pref_only=false)
+</code></pre>
+<ul>
+<li><em>eval</em> (Evaluator): evaluator</li>
+<li><em>pref_only</em> (bool): insert only nodes generated by preferred operators</li>
+</ul>
+<p><strong>Implementation Notes:</strong> Elements with the same evaluator value are stored in double-ended queues, called "buckets". The open list stores a map from evaluator values to buckets. Pushing and popping from a bucket runs in constant time. Therefore, inserting and removing an entry from the open list takes time O(log(n)), where n is the number of buckets.</p>
+<h2 id="tie-breaking-open-list">Tie-breaking open list</h2>
+<pre><code>tiebreaking(evals, pref_only=false, unsafe_pruning=true)
+</code></pre>
+<ul>
+<li><em>evals</em> (list of Evaluator): evaluators</li>
+<li><em>pref_only</em> (bool): insert only nodes generated by preferred operators</li>
+<li><em>unsafe_pruning</em> (bool): allow unsafe pruning when the main evaluator regards a state a dead end</li>
+</ul>
+<h2 id="type-based-open-list">Type-based open list</h2>
+<p>Uses multiple evaluators to assign entries to buckets. All entries in a bucket have the same evaluator values. When retrieving an entry, a bucket is chosen uniformly at random and one of the contained entries is selected uniformly randomly. The algorithm is based on</p>
+<p>Fan Xie, Martin Mueller, Robert Holte and Tatsuya Imai.<br />
+  <a href="http://www.aaai.org/ocs/index.php/AAAI/AAAI14/paper/view/8472/8705">Type-Based Exploration with Multiple Search Queues for Satisficing Planning</a>.<br />
+  In <em>Proceedings of the Twenty-Eigth AAAI Conference Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2395-2401. AAAI Press, 2014.</p>
+<pre><code>type_based(evaluators, random_seed=-1)
+</code></pre>
+<ul>
+<li><em>evaluators</em> (list of Evaluator): Evaluators used to determine the bucket for each entry.</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+</ul>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../MergeTree/" class="md-footer__link md-footer__link--prev" aria-label="Previous: MergeTree" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              MergeTree
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../OrderGenerator/" class="md-footer__link md-footer__link--next" aria-label="Next: OrderGenerator" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              OrderGenerator
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        
+          Made with
+          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+            Material for MkDocs
+          </a>
+        
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.f8263e09.min.js", "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.4fc53ad4.min.js"></script>
+      
+    
+  </body>
+</html>
