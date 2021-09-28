@@ -33,8 +33,8 @@ string format_conference_reference(
     ostringstream ss;
     ss << "\n\n"
        << format_authors(authors) << ".<<BR>>\n"
-       << "  [" << t2t_escape(title) << " " << url << "].<<BR>>\n"
-       << "  In //" << t2t_escape(conference) << "//";
+       << " [" << t2t_escape(title) << " " << url << "].<<BR>>\n"
+       << " In //" << t2t_escape(conference) << "//";
     if (!pages.empty())
         ss << ", pp. " << t2t_escape(pages);
     ss << ". ";
