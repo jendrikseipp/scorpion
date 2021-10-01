@@ -64,7 +64,7 @@ vector<Split> Flaw::get_possible_splits() const {
 FlawSelector::FlawSelector(const shared_ptr<AbstractTask> &task,
                            FlawStrategy flaw_strategy, bool debug)
     : task(task), task_proxy(*task), flaw_strategy(flaw_strategy),
-      concrete_solution(nullptr), debug(debug) {}
+      concrete_solution(nullptr), overall_num_wildcard_plans(0), debug(debug) {}
 
 // Define here to avoid include in header.
 FlawSelector::~FlawSelector() {}
@@ -280,6 +280,19 @@ CartesianSet FlawSelector::get_cartesian_set(const vector<int> &domain_sizes,
 unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
                                          const vector<int> &domain_sizes,
                                          const Solution &solution, utils::RandomNumberGenerator &rng) const {
+    if (debug) {
+        const AbstractState *abstract_state = &abstraction.get_initial_state();
+        size_t cur_num_wildcard_plans = 1;
+        for (const Transition& tr : solution) {
+            vector<Transition> wildcard_trs;
+            get_wildcard_trs(abstraction, abstract_state, tr, wildcard_trs);
+            cur_num_wildcard_plans *= wildcard_trs.size();
+            abstract_state = &abstraction.get_state(tr.target_id);
+        }
+        overall_num_wildcard_plans += cur_num_wildcard_plans;
+        utils::g_log << "Number of wildcard plans: " << cur_num_wildcard_plans << endl;
+    }
+
     // Solution is empty plan
     if (solution.empty()) {
         return find_flaw_original(abstraction, domain_sizes, solution, false, rng);
@@ -335,5 +348,8 @@ shared_ptr<Solution> FlawSelector::get_concrete_solution() const {
 }
 
 void FlawSelector::print_statistics() const {
+    if (debug) {
+        utils::g_log << "Numer overall wildcard plans: " << overall_num_wildcard_plans << endl;
+    }
 }
 } // namespace cegar

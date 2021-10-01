@@ -58,6 +58,7 @@ class FlawSelector {
     const TaskProxy task_proxy;
     FlawStrategy flaw_strategy;
     mutable std::shared_ptr<Solution> concrete_solution;
+    mutable size_t overall_num_wildcard_plans;
     bool debug;
 
     std::unique_ptr<Flaw>
