@@ -65,7 +65,7 @@ configuration as an executable
 Download and run the container (tested with Singularity 3.8):
 
     singularity pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
-    ./scorpion.sif domain.pddl problem.pddl sas_plan
+    ./scorpion.sif [domain_file] problem_file
 
 Build the container yourself:
 

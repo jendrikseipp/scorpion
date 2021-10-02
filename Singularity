@@ -31,20 +31,25 @@ From: ubuntu:20.04
     mv /compiled-planner /planner
 
 %runscript
-    ## The runscript is called whenever the container is used to solve
-    ## an instance.
+    #!/bin/bash
 
-    DOMAINFILE="$1"
-    PROBLEMFILE="$2"
-    PLANFILE="$3"
+    PLANFILE="sas_plan"
+
+    if [ $# -eq 0 ] || [ $# -gt 3 ]; then
+        echo "usage: $(basename "$0") [domain_file] problem_file [plan_file]" 1>&2
+        exit 2
+    elif [ $# -eq 3 ]; then
+        PLANFILE="$3"
+        # Pop last argument.
+        set -- "${@:1:$(($#-1))}"
+    fi
 
     ## Call planner.
     /planner/fast-downward.py \
         --plan-file "$PLANFILE" \
         --transform-task preprocess-h2 \
         --alias scorpion \
-        "$DOMAINFILE" \
-        "$PROBLEMFILE"
+        "$@"
 
 %labels
     Name        Scorpion
