@@ -28,8 +28,11 @@ and see the available options with
 
 For more details (including build instructions for Windows), see the
 documentation about
-[compiling](http://www.fast-downward.org/ObtainingAndRunningFastDownward)
-and [running](http://www.fast-downward.org/PlannerUsage) the planner.
+[compiling](https://www.fast-downward.org/ObtainingAndRunningFastDownward)
+and [running](https://www.fast-downward.org/PlannerUsage) the planner. The
+[plugin documentation](https://jendrikseipp.github.io/scorpion) shows
+which plugins are available (heuristics, search algorithms, etc.) and how
+to use them.
 
 
 ### Recommended configuration
@@ -84,8 +87,8 @@ repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
 - The `--transform-task` command allows you to run arbitrary preprocessing
   commands that transform the SAS+ output from the translator before
   passing it to the search.
-- If [ccache](https://ccache.dev/) is installed, Scorpion uses it to cache
-  compilation files.
+- If [ccache](https://ccache.dev/) is installed (recommended), Scorpion
+  uses it to cache compilation files.
 
 
 ### New plugin options
