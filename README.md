@@ -62,9 +62,9 @@ To simplify the installation process, we provide the above Scorpion
 configuration as an executable
 [Singularity](https://github.com/hpcng/singularity) container.
 
-Download and run the container (tested with Singularity 3.8):
+Download and run the container (tested with Singularity 3.5):
 
-    singularity pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
+    singularity pull scorpion.sif library://jendrikseipp/default/scorpion:latest
     ./scorpion.sif [domain_file] problem_file
 
 Build the container yourself:
