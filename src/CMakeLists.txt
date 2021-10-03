@@ -46,15 +46,6 @@ endif(CCACHE_FOUND)
 find_program(CMAKE_C_COMPILER NAMES $ENV{CC} cc gcc PATHS ENV PATH NO_DEFAULT_PATH)
 find_program(CMAKE_CXX_COMPILER NAMES $ENV{CXX} c++ g++ PATHS ENV PATH NO_DEFAULT_PATH)
 
-# If it's available, use ccache to cache compilation results. The two ccache options
-# allow sharing compilation results between different build directories.
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-    message("Using ccache")
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE
-        "CCACHE_BASEDIR=${CMAKE_CURRENT_SOURCE_DIR} CCACHE_NOHASHDIR=true ccache")
-endif(CCACHE_FOUND)
-
 # Path containing custom CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 include(FastDownwardMacros)
