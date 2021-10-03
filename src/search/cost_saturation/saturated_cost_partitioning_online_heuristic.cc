@@ -13,6 +13,7 @@
 #include "../task_utils/task_properties.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
+#include "../utils/markup.h"
 #include "../utils/rng_options.h"
 #include "../utils/timer.h"
 
@@ -190,8 +191,16 @@ void SaturatedCostPartitioningOnlineHeuristic::print_final_statistics() const {
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Online saturated cost partitioning heuristic",
-        "Maximum over multiple saturated cost partitioning heuristics "
-        "diversified during the search");
+        "Compute the maximum over multiple saturated cost partitioning heuristics "
+        "diversified during the search. See " + utils::format_conference_reference(
+            {"Jendrik Seipp"},
+            "Online Saturated Cost Partitioning for Classical Planning",
+            "https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf",
+            "Proceedings of the 31st International Conference on Automated "
+            "Planning and Scheduling (ICAPS 2021) ",
+            "317-321",
+            "AAAI Press",
+            "2021"));
 
     // The online version is not consistent.
     bool consistent = false;

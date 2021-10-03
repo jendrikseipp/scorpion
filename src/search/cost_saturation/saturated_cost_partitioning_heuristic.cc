@@ -74,15 +74,14 @@ static CostPartitioningHeuristic compute_perimstar_saturated_cost_partitioning(
 }
 
 void add_saturator_option(OptionParser &parser) {
-    vector<string> saturators;
-    saturators.push_back("ALL");
-    saturators.push_back("PERIM");
-    saturators.push_back("PERIMSTAR");
     parser.add_enum_option<Saturator>(
         "saturator",
-        saturators,
-        "saturator",
-        "ALL");
+        {"all", "perim", "perimstar"},
+        "function that computes saturated cost functions",
+        "all",
+        {"preserve estimates of all states",
+         "preserve estimates of states in perimeter around goal",
+         "compute 'perim' first and then 'all' with remaining costs"});
 }
 
 CPFunction get_cp_function_from_options(const Options &opts) {
