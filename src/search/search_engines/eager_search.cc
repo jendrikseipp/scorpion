@@ -7,7 +7,6 @@
 #include "../pruning_method.h"
 
 #include "../algorithms/ordered_set.h"
-#include "../cost_saturation/saturated_cost_partitioning_online_heuristic.h"
 #include "../task_utils/successor_generator.h"
 
 #include "../utils/logging.h"
@@ -29,18 +28,10 @@ EagerSearch::EagerSearch(const Options &opts)
       f_evaluator(opts.get<shared_ptr<Evaluator>>("f_eval", nullptr)),
       preferred_operator_evaluators(opts.get_list<shared_ptr<Evaluator>>("preferred")),
       lazy_evaluator(opts.get<shared_ptr<Evaluator>>("lazy_evaluator", nullptr)),
-      pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")),
-      bellman_timer(false) {
+      pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")) {
     if (lazy_evaluator && !lazy_evaluator->does_cache_estimates()) {
         cerr << "lazy_evaluator must cache its estimates" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-    }
-    scp_heuristic = dynamic_cast<cost_saturation::SaturatedCostPartitioningOnlineHeuristic *>(
-        opts.get<shared_ptr<Evaluator>>("eval").get());
-    cout << "SCP heuristic: " << scp_heuristic << endl;
-    if (lazy_evaluator && lazy_evaluator.get() == scp_heuristic) {
-        cout << "Using lazy online SCP heuristic" << endl;
-        scp_heuristic->activate_state_reevaluations();
     }
 }
 
@@ -115,11 +106,9 @@ void EagerSearch::print_statistics() const {
     statistics.print_detailed_statistics();
     search_space.print_statistics();
     pruning_method->print_statistics();
-    utils::g_log << "Time for Bellman checks: " << bellman_timer << endl;
 }
 
 SearchStatus EagerSearch::step() {
-    bool debug = false;
     tl::optional<SearchNode> node;
     while (true) {
         if (open_list->empty()) {
@@ -133,10 +122,6 @@ SearchStatus EagerSearch::step() {
         //      instead of StateIDs
         GlobalState s = state_registry.lookup_state(id);
         node.emplace(search_space.get_node(s));
-
-        if (debug) {
-            utils::g_log << "Expand " << s.get_id() << endl;
-        }
 
         if (node->is_closed())
             continue;
@@ -167,13 +152,7 @@ SearchStatus EagerSearch::step() {
 
             if (lazy_evaluator->is_estimate_cached(s)) {
                 int old_h = lazy_evaluator->get_cached_estimate(s);
-                if (debug) {
-                    utils::g_log << "Reevaluate " << s.get_id() << " old:" << old_h << endl;
-                }
                 int new_h = eval_context.get_evaluator_value_or_infinity(lazy_evaluator.get());
-                if (debug) {
-                    utils::g_log << "new:" << new_h << endl;
-                }
                 if (open_list->is_dead_end(eval_context)) {
                     node->mark_as_dead_end();
                     statistics.inc_dead_ends();
@@ -301,35 +280,6 @@ SearchStatus EagerSearch::step() {
                 // the g-value and the actual path that is traced back.
                 succ_node.update_parent(*node, op, get_adjusted_cost(op));
             }
-        }
-    }
-
-    // Test Bellman equality and select state for online SCP if it's violated.
-    if (scp_heuristic
-        && scp_heuristic->get_interval() == 0
-        && scp_heuristic->is_improve_mode_on()
-        && !eval_context.is_evaluator_value_infinite(scp_heuristic)) {
-        bellman_timer.resume();
-        int parent_h = eval_context.get_evaluator_value(scp_heuristic);
-        int min_cost_via_children = numeric_limits<int>::max();
-        for (OperatorID op_id : applicable_ops) {
-            OperatorProxy op = task_proxy.get_operators()[op_id];
-            GlobalState succ_state = state_registry.get_successor_state(s, op);
-            int succ_g = node->get_g() + get_adjusted_cost(op);
-            EvaluationContext succ_eval_context(succ_state, succ_g, false, nullptr);
-            int cost_via_child;
-            if (succ_eval_context.is_evaluator_value_infinite(scp_heuristic)) {
-                cost_via_child = numeric_limits<int>::max();
-            } else {
-                int child_h = succ_eval_context.get_evaluator_value(scp_heuristic);
-                cost_via_child = op.get_cost() + child_h;
-            }
-            min_cost_via_children = min(min_cost_via_children, cost_via_child);
-        }
-        bellman_timer.stop();
-        if (parent_h < min_cost_via_children) {
-            //cout << "h too low: " << parent_h << " < " << min_cost_via_children << endl;
-            scp_heuristic->compute_scp_and_store_if_diverse(s);
         }
     }
 

@@ -87,11 +87,10 @@ public:
     virtual bool does_cache_estimates() const;
     virtual bool is_estimate_cached(const GlobalState &state) const;
     /*
-      Calling {get,remove}_cached_estimate is only allowed if an estimate for
+      Calling get_cached_estimate is only allowed if an estimate for
       the given state is cached, i.e., is_estimate_cached returns true.
     */
     virtual int get_cached_estimate(const GlobalState &state) const;
-    virtual bool is_cached_estimate_dirty(const GlobalState &state) const;
 };
 
 #endif

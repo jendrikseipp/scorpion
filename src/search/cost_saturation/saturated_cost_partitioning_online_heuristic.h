@@ -13,7 +13,6 @@ class Timer;
 }
 
 namespace cost_saturation {
-class Diversifier;
 class OrderGenerator;
 
 class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
@@ -26,79 +25,28 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const int interval;
     const double max_time;
     const int max_size_kb;
-    const bool use_offline_samples;
-    const int num_samples;
-    const bool use_evaluated_state_as_sample;
-    const bool prune_abstractions_after_diversification;
     const bool debug;
 
     const std::vector<int> costs;
-
     bool improve_heuristic;
-    PerStateInformation<int> num_orders_used_for_state;
-
-    std::vector<int> fact_id_offsets;
-    std::vector<bool> seen_facts;
-    std::vector<std::vector<bool>> seen_fact_pairs;
-
-    bool reevaluate_states;
-    bool should_compute_scp_for_bellman;
-
-    std::unique_ptr<Diversifier> diversifier;
-
     std::unique_ptr<utils::Timer> improve_heuristic_timer;
     std::unique_ptr<utils::Timer> select_state_timer;
     int size_kb;
     int num_evaluated_states;
-    int num_reevaluated_states;
     int num_scps_computed;
+    std::vector<int> num_best_order;
 
     void print_intermediate_statistics() const;
     void print_final_statistics() const;
-    void print_statistics() const;
-    void setup_diversifier(utils::RandomNumberGenerator &rng);
-    int get_fact_id(int var, int value) const;
-    bool visit_fact_pair(int fact_id1, int fact_id2);
-    bool is_novel(OperatorID op_id, const GlobalState &state);
-    bool should_compute_scp(const GlobalState &global_state);
 
 protected:
-    virtual int compute_heuristic(const GlobalState &state) override;
+    virtual int compute_heuristic(const GlobalState &global_state) override;
 
 public:
     SaturatedCostPartitioningOnlineHeuristic(
         const options::Options &opts,
-        Abstractions &&abstractions,
-        CPHeuristics &&cp_heuristics);
+        Abstractions &&abstractions);
     virtual ~SaturatedCostPartitioningOnlineHeuristic() override;
-
-    virtual void get_path_dependent_evaluators(
-        std::set<Evaluator *> &evals) override {
-        evals.insert(this);
-    }
-
-    virtual void notify_initial_state(const GlobalState &initial_state) override;
-
-    virtual void notify_state_transition(
-        const GlobalState &,
-        OperatorID op_id,
-        const GlobalState &global_state) override;
-
-    virtual bool is_cached_estimate_dirty(const GlobalState &state) const override;
-
-    void compute_scp_and_store_if_diverse(const GlobalState &state);
-
-    int get_interval() const {
-        return interval;
-    }
-
-    bool is_improve_mode_on() const {
-        return improve_heuristic;
-    }
-
-    void activate_state_reevaluations() {
-        reevaluate_states = true;
-    }
 };
 }
 

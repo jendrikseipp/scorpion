@@ -1,8 +1,6 @@
 #ifndef STATE_ID_H
 #define STATE_ID_H
 
-#include "utils/hash.h"
-
 #include <iostream>
 
 // For documentation on classes relevant to storing and working with registered
@@ -37,16 +35,7 @@ public:
     bool operator!=(const StateID &other) const {
         return !(*this == other);
     }
-
-    int hash() const {
-        return value;
-    }
 };
 
-namespace utils {
-inline void feed(HashState &hash_state, StateID id) {
-    feed(hash_state, id.hash());
-}
-}
 
 #endif
