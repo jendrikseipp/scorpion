@@ -37,8 +37,7 @@ to use them.
 
 ### Recommended configuration
 
-For state-of-the-art performance, we recommend the following
-configuration, which is similar to the one Scorpion used in the IPC 2018.
+We recommend using
 
 ```
 ./fast-downward.py \
@@ -49,10 +48,11 @@ configuration, which is similar to the one Scorpion used in the IPC 2018.
 
 The `preprocess-h2` call prunes irrelevant operators in a preprocessing
 step, and the `scorpion` alias uses partial order reduction and maximizes
-over multiple diverse SCP heuristics computed for hillclimbing PDBs,
-systematic PDBs and Cartesian abstractions (see
-[aliases.py](driver/aliases.py) for the expanded configuration string).
-(In [Downward Lab](https://lab.readthedocs.io/) you can use
+over multiple diverse SCP heuristics computed *online* during the search.
+The underlying abstractions are the same as the ones Scorpion used in the
+IPC 2018: hill-climbing PDBs, systematic PDBs and Cartesian abstractions.
+(See [aliases.py](driver/aliases.py) for the expanded configuration
+string.) (In [Downward Lab](https://lab.readthedocs.io/) you can use
 `driver_options=["--transform-task", "preprocess-h2"]` in the call to
 `add_algorithm` to prune irrelevant operators.)
 
