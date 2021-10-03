@@ -61,10 +61,10 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       size_kb(0),
       num_evaluated_states(0),
       num_scps_computed(0) {
+    order_generator->initialize(abstractions, costs);
     for (auto &cp : cp_heuristics) {
         size_kb += cp.estimate_size_in_kb();
     }
-
     improve_heuristic_timer = utils::make_unique_ptr<utils::Timer>(false);
     select_state_timer = utils::make_unique_ptr<utils::Timer>(false);
 }
@@ -231,14 +231,8 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         return nullptr;
 
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
-    TaskProxy task_proxy(*task);
-    vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-    CPHeuristics cp_heuristics = {};
-
-    shared_ptr<OrderGenerator> order_generator = opts.get<shared_ptr<OrderGenerator>>("orders");
-    order_generator->initialize(abstractions, costs);
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
         opts, move(abstractions));
