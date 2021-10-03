@@ -26,10 +26,15 @@ extern Abstractions generate_abstractions(
 
 extern Order get_default_order(int num_abstractions);
 
-extern int compute_max_h_with_statistics(
+extern bool is_sum_within_range(int a, int b);
+
+// The sum of mixed infinities evaluates to the left infinite value.
+extern int left_addition(int a, int b);
+
+extern int compute_max_h(
     const CPHeuristics &cp_heuristics,
     const std::vector<int> &abstract_state_ids,
-    std::vector<int> &num_best_order);
+    std::vector<int> *num_best_order = nullptr);
 
 template<typename AbstractionsOrFunctions>
 std::vector<int> get_abstract_state_ids(
@@ -53,7 +58,8 @@ extern void reduce_costs(
 
 
 extern void add_order_options_to_parser(options::OptionParser &parser);
-extern void prepare_parser_for_cost_partitioning_heuristic(options::OptionParser &parser);
+extern void prepare_parser_for_cost_partitioning_heuristic(
+    options::OptionParser &parser, bool consistent = true);
 extern std::shared_ptr<Evaluator> get_max_cp_heuristic(
     options::OptionParser &parser, CPFunction cp_function);
 extern CostPartitioningHeuristicCollectionGenerator

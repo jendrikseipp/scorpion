@@ -81,11 +81,10 @@ static CostPartitioningHeuristic compute_uniform_cost_partitioning(
 static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,
-    const vector<int> &costs,
+    vector<int> &remaining_costs,
     bool debug) {
     assert(abstractions.size() == order.size());
 
-    vector<int> remaining_costs = costs;
     if (debug) {
         cout << "remaining costs: ";
         print_indexed_vector(remaining_costs);
@@ -164,9 +163,10 @@ static CPHeuristics get_oucp_heuristics(
         [debug](
             const Abstractions &abstractions,
             const vector<int> &order,
-            const vector<int> &costs) {
+            vector<int> &remaining_costs,
+            const vector<int> &) {
             return compute_opportunistic_uniform_cost_partitioning(
-                abstractions, order, costs, debug);
+                abstractions, order, remaining_costs, debug);
         });
 }
 

@@ -163,8 +163,7 @@ def configs_optimal_extended():
             "--search",
             """astar(scp_online([
                 projections(systematic(2))],
-                diversify=false, max_orders=1,
-                interval=1000, store_cost_partitionings=true))"""],
+                interval=10))"""],
         "max_over_abstractions": [
             "--search",
             """astar(maximize([
