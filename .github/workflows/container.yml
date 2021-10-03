@@ -9,6 +9,8 @@ on:
 
 jobs:
   build-test-containers:
+    name: Check Singularity build
+    if: github.repository == 'jendrikseipp/scorpion'
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -19,7 +21,6 @@ jobs:
       image: quay.io/singularity/singularity:v${{ matrix.singularity_version }}
       options: --privileged
 
-    name: Check Singularity build
     steps:
 
       - name: Check out code for container builds
