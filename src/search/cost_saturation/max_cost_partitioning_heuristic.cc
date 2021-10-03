@@ -104,7 +104,7 @@ int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) const {
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
         return DEAD_END;
     }
-    return compute_max_h_with_statistics(cp_heuristics, abstract_state_ids, num_best_order);
+    return compute_max_h(cp_heuristics, abstract_state_ids, &num_best_order);
 }
 
 void MaxCostPartitioningHeuristic::print_statistics() const {

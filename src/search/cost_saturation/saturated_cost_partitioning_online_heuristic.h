@@ -34,7 +34,6 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     int size_kb;
     int num_evaluated_states;
     int num_scps_computed;
-    std::vector<int> num_best_order;
 
     void print_intermediate_statistics() const;
     void print_final_statistics() const;

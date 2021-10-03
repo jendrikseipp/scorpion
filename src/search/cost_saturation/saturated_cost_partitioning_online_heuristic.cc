@@ -91,7 +91,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const GlobalStat
         abstract_state_ids = get_abstract_state_ids(abstraction_functions, state);
     }
 
-    int max_h = compute_max_h_with_statistics(cp_heuristics, abstract_state_ids, num_best_order);
+    int max_h = compute_max_h(cp_heuristics, abstract_state_ids);
     if (max_h == INF) {
         if (improve_heuristic) {
             improve_heuristic_timer->stop();

@@ -59,10 +59,10 @@ int left_addition(int a, int b) {
     }
 }
 
-int compute_max_h_with_statistics(
+int compute_max_h(
     const CPHeuristics &cp_heuristics,
     const vector<int> &abstract_state_ids,
-    vector<int> &num_best_order) {
+    vector<int> *num_best_order) {
     int max_h = 0;
     int best_id = -1;
     int current_id = 0;
@@ -79,9 +79,11 @@ int compute_max_h_with_statistics(
     }
     assert(max_h >= 0);
 
-    num_best_order.resize(cp_heuristics.size(), 0);
-    if (best_id != -1) {
-        ++num_best_order[best_id];
+    if (num_best_order) {
+        num_best_order->resize(cp_heuristics.size(), 0);
+        if (best_id != -1) {
+            ++(*num_best_order)[best_id];
+        }
     }
 
     return max_h;
