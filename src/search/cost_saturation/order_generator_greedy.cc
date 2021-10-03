@@ -17,8 +17,7 @@ using namespace std;
 namespace cost_saturation {
 OrderGeneratorGreedy::OrderGeneratorGreedy(const Options &opts)
     : OrderGenerator(opts),
-      scoring_function(opts.get<ScoringFunction>("scoring_function")),
-      round_robin(opts.get<bool>("round_robin")) {
+      scoring_function(opts.get<ScoringFunction>("scoring_function")) {
 }
 
 double OrderGeneratorGreedy::rate_abstraction(
@@ -76,32 +75,21 @@ Order OrderGeneratorGreedy::compute_order_for_state(
     Order order = get_default_order(num_abstractions);
     // Shuffle order to break ties randomly.
     rng->shuffle(order);
-    if (scoring_function != ScoringFunction::RANDOM) {
-        vector<double> scores;
-        scores.reserve(num_abstractions);
-        for (int abs = 0; abs < num_abstractions; ++abs) {
-            scores.push_back(rate_abstraction(abstract_state_ids, abs));
-        }
-        sort(order.begin(), order.end(), [&](int abs1, int abs2) {
-                 return scores[abs1] > scores[abs2];
-             });
-
-        if (verbose) {
-            cout << "Static greedy scores: " << scores << endl;
-            unordered_set<double> unique_scores(scores.begin(), scores.end());
-            cout << "Static greedy unique scores: " << unique_scores.size() << endl;
-        }
+    vector<double> scores;
+    scores.reserve(num_abstractions);
+    for (int abs = 0; abs < num_abstractions; ++abs) {
+        scores.push_back(rate_abstraction(abstract_state_ids, abs));
     }
+    sort(order.begin(), order.end(), [&](int abs1, int abs2) {
+             return scores[abs1] > scores[abs2];
+         });
 
     if (verbose) {
+        cout << "Static greedy scores: " << scores << endl;
+        unordered_set<double> unique_scores(scores.begin(), scores.end());
+        cout << "Static greedy unique scores: " << unique_scores.size() << endl;
         cout << "Static greedy order: " << order << endl;
         cout << "Time for computing greedy order: " << greedy_timer << endl;
-    }
-
-    if (round_robin) {
-        int n = static_cast<int>(ScoringFunction::SENTINEL);
-        int i = static_cast<int>(scoring_function);
-        scoring_function = static_cast<ScoringFunction>((i + 1) % n);
     }
 
     assert(order.size() == abstract_state_ids.size());
@@ -114,10 +102,6 @@ static shared_ptr<OrderGenerator> _parse_greedy(OptionParser &parser) {
         "Greedy orders",
         "Order abstractions greedily by a given scoring function.");
     add_scoring_function_to_parser(parser);
-    parser.add_option<bool>(
-        "round_robin",
-        "switch between scoring functions in round-robin fashion",
-        "false");
     add_common_order_generator_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
