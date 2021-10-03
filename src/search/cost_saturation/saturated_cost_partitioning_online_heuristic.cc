@@ -76,12 +76,12 @@ SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuris
     }
 }
 
-int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const GlobalState &global_state) {
+int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &ancestor_state) {
     if (improve_heuristic) {
         improve_heuristic_timer->resume();
     }
 
-    State state = convert_global_state(global_state);
+    State state = convert_ancestor_state(ancestor_state);
     vector<int> abstract_state_ids;
     if (improve_heuristic) {
         assert(!abstractions.empty() && abstraction_functions.empty());
@@ -112,7 +112,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const GlobalStat
     bool stored_scp = false;
     if (improve_heuristic && (num_evaluated_states % interval == 0)) {
         if (debug) {
-            utils::g_log << "Compute SCP for " << global_state.get_id() << endl;
+            utils::g_log << "Compute SCP for " << ancestor_state.get_id() << endl;
         }
         Order order = order_generator->compute_order_for_state(
             abstract_state_ids, num_evaluated_states == 0);

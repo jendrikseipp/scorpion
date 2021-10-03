@@ -124,7 +124,7 @@ void TransitionSystem::add_loop(int state_id, int op_id) {
 }
 
 void TransitionSystem::rewire_incoming_transitions(
-    const Transitions &old_incoming, const AbstractStates &states,
+    const Transitions &old_incoming, const AbstractStates &states, int v_id,
     const AbstractState &v1, const AbstractState &v2, int var) {
     /* State v has been split into v1 and v2. Now for all transitions
        u->v we need to add transitions u->v1, u->v2, or both. */
@@ -136,7 +136,7 @@ void TransitionSystem::rewire_incoming_transitions(
         int u_id = transition.target_id;
         bool is_new_state = updated_states.insert(u_id).second;
         if (is_new_state) {
-            remove_transitions_with_given_target(outgoing[u_id], v1_id);
+            remove_transitions_with_given_target(outgoing[u_id], v_id);
         }
     }
     num_non_loops -= old_incoming.size();
@@ -169,7 +169,7 @@ void TransitionSystem::rewire_incoming_transitions(
 }
 
 void TransitionSystem::rewire_outgoing_transitions(
-    const Transitions &old_outgoing, const AbstractStates &states,
+    const Transitions &old_outgoing, const AbstractStates &states, int v_id,
     const AbstractState &v1, const AbstractState &v2, int var) {
     /* State v has been split into v1 and v2. Now for all transitions
        v->w we need to add transitions v1->w, v2->w, or both. */
@@ -181,7 +181,7 @@ void TransitionSystem::rewire_outgoing_transitions(
         int w_id = transition.target_id;
         bool is_new_state = updated_states.insert(w_id).second;
         if (is_new_state) {
-            remove_transitions_with_given_target(incoming[w_id], v1_id);
+            remove_transitions_with_given_target(incoming[w_id], v_id);
         }
     }
     num_non_loops -= old_outgoing.size();
@@ -289,8 +289,8 @@ void TransitionSystem::rewire(
     assert(incoming[v2_id].empty() && outgoing[v2_id].empty() && loops[v2_id].empty());
 
     // Remove old transitions and add new transitions.
-    rewire_incoming_transitions(old_incoming, states, v1, v2, var);
-    rewire_outgoing_transitions(old_outgoing, states, v1, v2, var);
+    rewire_incoming_transitions(old_incoming, states, v_id, v1, v2, var);
+    rewire_outgoing_transitions(old_outgoing, states, v_id, v1, v2, var);
     rewire_loops(old_loops, v1, v2, var);
 }
 
@@ -338,5 +338,14 @@ void TransitionSystem::print_statistics() const {
     assert(get_num_non_loops() == total_outgoing_transitions);
     utils::g_log << "Looping transitions: " << total_loops << endl;
     utils::g_log << "Non-looping transitions: " << total_outgoing_transitions << endl;
+}
+
+void TransitionSystem::dump() const {
+    for (int i = 0; i < get_num_states(); ++i) {
+        cout << "State " << i << endl;
+        cout << "  in: " << incoming[i] << endl;
+        cout << "  out: " << outgoing[i] << endl;
+        cout << "  loops: " << loops[i] << endl;
+    }
 }
 }

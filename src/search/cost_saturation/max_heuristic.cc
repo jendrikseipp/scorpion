@@ -21,8 +21,8 @@ MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions abstractions)
     }
 }
 
-int MaxHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
+int MaxHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     int max_h = 0;
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
         int local_state_id = abstraction_functions[i]->get_abstract_state_id(state);

@@ -122,8 +122,8 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
     : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics)) {
 }
 
-int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    int result = MaxCostPartitioningHeuristic::compute_heuristic(global_state);
+int UniformCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
+    int result = MaxCostPartitioningHeuristic::compute_heuristic(ancestor_state);
     if (result == DEAD_END) {
         return DEAD_END;
     }

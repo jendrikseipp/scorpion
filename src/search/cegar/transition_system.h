@@ -39,10 +39,10 @@ class TransitionSystem {
 
     void rewire_incoming_transitions(
         const Transitions &old_incoming, const AbstractStates &states,
-        const AbstractState &v1, const AbstractState &v2, int var);
+        int v_id, const AbstractState &v1, const AbstractState &v2, int var);
     void rewire_outgoing_transitions(
         const Transitions &old_outgoing, const AbstractStates &states,
-        const AbstractState &v1, const AbstractState &v2, int var);
+        int v_id, const AbstractState &v1, const AbstractState &v2, int var);
     void rewire_loops(
         const Loops &old_loops,
         const AbstractState &v1, const AbstractState &v2, int var);
@@ -65,6 +65,7 @@ public:
     int get_num_loops() const;
 
     void print_statistics() const;
+    void dump() const;
 };
 }
 

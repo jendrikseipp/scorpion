@@ -108,13 +108,13 @@ def configs_satisficing_core():
         # LAMA first
         "lama-first": [
             "--evaluator",
-            "hlm=lmcount(lm_factory=lm_rhw(reasonable_orders=true),transform=adapt_costs(one),pref=false)",
+            "hlm=lmcount(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
             "--evaluator", "hff=ff(transform=adapt_costs(one))",
             "--search", """lazy_greedy([hff,hlm],preferred=[hff,hlm],
                                        cost_type=one,reopen_closed=false)"""],
         "lama-first-typed": [
             "--evaluator",
-            "hlm=lmcount(lm_factory=lm_rhw(reasonable_orders=true),transform=adapt_costs(one),pref=false)",
+            "hlm=lmcount(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
             "--evaluator", "hff=ff(transform=adapt_costs(one))",
             "--search",
                 "lazy(alt([single(hff), single(hff, pref_only=true),"
@@ -124,13 +124,17 @@ def configs_satisficing_core():
     }
 
 
+def _get_landmark_config(**kwargs):
+    options = ", ".join(f"{key}={value}" for key, value in sorted(kwargs.items()))
+    return [
+        "--evaluator",
+        f"lmc=lmcount(lm_merged([lm_rhw(),lm_hm(m=1)]), admissible=true, {options})",
+        "--search",
+        "astar(lmc,lazy_evaluator=lmc)"]
+
+
 def configs_optimal_extended():
     return {
-        "astar_lmcount_lm_merged_rhw_hm_no_order": [
-            "--evaluator",
-            "lmc=lmcount(lm_merged([lm_rhw(),lm_hm(m=1)]),admissible=true)",
-            "--search",
-            "astar(lmc,lazy_evaluator=lmc)"],
         "astar_cegar": [
             "--search",
             "astar(cegar())"],
@@ -142,7 +146,51 @@ def configs_optimal_extended():
             """astar(scp([
                 projections(systematic(2)), projections(hillclimbing(max_time=100)), cartesian()],
                 max_time=infinity, max_optimization_time=1, max_orders=1,
-                diversify=false, orders=greedy_orders()))"""]
+                diversify=false, orders=greedy_orders()))"""],
+        "scp_dynamic_order": [
+            "--search",
+            """astar(scp([
+                projections(systematic(2))],
+                max_time=infinity, max_optimization_time=0, max_orders=1,
+                diversify=false, orders=dynamic_greedy_orders()))"""],
+        "scp_random_order": [
+            "--search",
+            """astar(scp([
+                projections(systematic(2))],
+                max_time=infinity, max_optimization_time=0, max_orders=1,
+                diversify=false, orders=random_orders()))"""],
+        "scp_online": [
+            "--search",
+            """astar(scp_online([
+                projections(systematic(2))],
+                interval=10))"""],
+        "max_over_abstractions": [
+            "--search",
+            """astar(maximize([
+                projections(systematic(2))]))"""],
+        "canonical_heuristic_over_abstractions": [
+            "--search",
+            """astar(canonical_heuristic([projections(systematic(2))]))"""],
+        "ucp": [
+            "--search",
+            """astar(uniform_cost_partitioning([projections(systematic(2))]))"""],
+        "oucp": [
+            "--search",
+            """astar(uniform_cost_partitioning(
+                [projections(systematic(2))], opportunistic=true, max_orders=1))"""],
+        "gzocp": [
+            "--search",
+            """astar(zero_one_cost_partitioning(
+                [projections(systematic(2))], max_orders=1))"""],
+        "lm_ucp":
+            _get_landmark_config(cost_partitioning="suboptimal", greedy=False, reuse_costs=False),
+        "lm_can": _get_landmark_config(cost_partitioning="canonical"),
+        "lm_oucp":
+            _get_landmark_config(cost_partitioning="suboptimal", greedy=False, reuse_costs=True, scoring_function="min_stolen_costs"),
+        "lm_gzocp":
+            _get_landmark_config(cost_partitioning="suboptimal", greedy=True, reuse_costs=False, scoring_function="max_heuristic"),
+        "lm_scp":
+            _get_landmark_config(cost_partitioning="suboptimal", greedy=True, reuse_costs=True, scoring_function="max_heuristic_per_stolen_costs"),
     }
 
 
@@ -208,10 +256,23 @@ def configs_satisficing_extended():
     }
 
 
-def configs_optimal_lp():
+def configs_optimal_lp(lp_solver="CPLEX"):
     return {
-        "divpot": ["--search", "astar(diverse_potentials())"],
-        "seq+lmcut": ["--search", "astar(operatorcounting([state_equation_constraints(), lmcut_constraints()]))"],
+        "divpot": ["--search", f"astar(diverse_potentials(lpsolver={lp_solver}))"],
+        "seq+lmcut": ["--search", f"astar(operatorcounting([state_equation_constraints(), lmcut_constraints()], lpsolver={lp_solver}))"],
+        "ocp": [
+            "--search",
+            f"""astar(optimal_cost_partitioning([projections(systematic(2))], lpsolver={lp_solver}))"""],
+        "pho": [
+            "--search",
+            f"""astar(operatorcounting([pho_abstraction_constraints(
+                [projections(systematic(2))], saturated=false)], lpsolver={lp_solver}))"""],
+        "spho": [
+            "--search",
+            f"""astar(operatorcounting([pho_abstraction_constraints(
+                [projections(systematic(2))], saturated=true)], lpsolver={lp_solver}))"""],
+        "lm_ocp": _get_landmark_config(cost_partitioning="optimal", lpsolver=lp_solver),
+        "lm_pho": _get_landmark_config(cost_partitioning="pho", lpsolver=lp_solver),
     }
 
 

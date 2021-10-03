@@ -1,6 +1,8 @@
 #ifndef CEGAR_TRANSITION_H
 #define CEGAR_TRANSITION_H
 
+#include "types.h"
+
 #include <iostream>
 
 namespace cegar {
@@ -8,9 +10,18 @@ struct Transition {
     int op_id;
     int target_id;
 
+    Transition()
+        : op_id(UNDEFINED),
+          target_id(UNDEFINED) {
+    }
+
     Transition(int op_id, int target_id)
         : op_id(op_id),
           target_id(target_id) {
+    }
+
+    bool is_defined() const {
+        return op_id != UNDEFINED && target_id != UNDEFINED;
     }
 
     bool operator==(const Transition &other) const {

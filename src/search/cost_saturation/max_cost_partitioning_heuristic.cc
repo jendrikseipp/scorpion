@@ -93,12 +93,8 @@ MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {
     print_statistics();
 }
 
-int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) const {
+int MaxCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     vector<int> abstract_state_ids = get_abstract_state_ids(
         abstraction_functions, state);
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {

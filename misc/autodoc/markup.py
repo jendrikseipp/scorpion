@@ -1,6 +1,9 @@
 import logging
 
-from external import txt2tags
+try:
+    import txt2tags
+except ImportError:
+    from external import txt2tags
 
 
 def _get_config(target):

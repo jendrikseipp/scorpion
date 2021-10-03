@@ -39,7 +39,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     void print_final_statistics() const;
 
 protected:
-    virtual int compute_heuristic(const GlobalState &global_state) override;
+    virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
     SaturatedCostPartitioningOnlineHeuristic(
