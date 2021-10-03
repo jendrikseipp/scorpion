@@ -44,8 +44,6 @@ def test_commandline_args():
 
 def test_aliases():
     for alias, config in ALIASES.items():
-        if alias == "scorpion":
-            continue
         parameters = ["--alias", alias, "output.sas"]
         run_driver(parameters)
 
