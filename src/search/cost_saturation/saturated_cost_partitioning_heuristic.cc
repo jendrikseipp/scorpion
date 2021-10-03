@@ -19,11 +19,10 @@ namespace cost_saturation {
 CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,
-    const vector<int> &costs,
+    vector<int> &remaining_costs,
     const vector<int> &) {
     assert(abstractions.size() == order.size());
     CostPartitioningHeuristic cp_heuristic;
-    vector<int> remaining_costs = costs;
     for (int pos : order) {
         const Abstraction &abstraction = *abstractions[pos];
         vector<int> h_values = abstraction.compute_goal_distances(remaining_costs);
@@ -46,12 +45,10 @@ static void cap_h_values(int h_cap, vector<int> &h_values) {
 CostPartitioningHeuristic compute_perim_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,
-    const vector<int> &costs,
+    vector<int> &remaining_costs,
     const vector<int> &abstract_state_ids) {
     assert(abstractions.size() == order.size());
-    assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     CostPartitioningHeuristic cp_heuristic;
-    vector<int> remaining_costs = costs;
     for (int pos : order) {
         const Abstraction &abstraction = *abstractions[pos];
         vector<int> h_values = abstraction.compute_goal_distances(remaining_costs);
@@ -64,35 +61,12 @@ CostPartitioningHeuristic compute_perim_saturated_cost_partitioning(
     return cp_heuristic;
 }
 
-CostPartitioningHeuristic compute_perim_saturated_cost_partitioning_change_costs(
+static CostPartitioningHeuristic compute_perimstar_saturated_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,
     vector<int> &remaining_costs,
     const vector<int> &abstract_state_ids) {
-    assert(abstractions.size() == order.size());
-    assert(all_of(remaining_costs.begin(), remaining_costs.end(), [](int c) {
-                      return c >= 0 && c != INF;
-                  }));
-    CostPartitioningHeuristic cp_heuristic;
-    for (int pos : order) {
-        const Abstraction &abstraction = *abstractions[pos];
-        vector<int> h_values = abstraction.compute_goal_distances(remaining_costs);
-        int h_cap = h_values[abstract_state_ids[pos]];
-        cap_h_values(h_cap, h_values);
-        vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
-        cp_heuristic.add_h_values(pos, move(h_values));
-        reduce_costs(remaining_costs, saturated_costs);
-    }
-    return cp_heuristic;
-}
-
-CostPartitioningHeuristic compute_perimstar_saturated_cost_partitioning(
-    const Abstractions &abstractions,
-    const vector<int> &order,
-    const vector<int> &costs,
-    const vector<int> &abstract_state_ids) {
-    vector<int> remaining_costs = costs;
-    CostPartitioningHeuristic cp = compute_perim_saturated_cost_partitioning_change_costs(
+    CostPartitioningHeuristic cp = compute_perim_saturated_cost_partitioning(
         abstractions, order, remaining_costs, abstract_state_ids);
     cp.add(compute_saturated_cost_partitioning(
                abstractions, order, remaining_costs, abstract_state_ids));

@@ -118,14 +118,13 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const GlobalStat
             abstract_state_ids, num_evaluated_states == 0);
 
         CostPartitioningHeuristic cost_partitioning;
-        vector<int> remaining_costs;
+        vector<int> remaining_costs = costs;
         if (saturator == Saturator::PERIMSTAR) {
             // Compute only the first SCP here, and the second below if necessary.
-            remaining_costs = costs;
-            cost_partitioning = compute_perim_saturated_cost_partitioning_change_costs(
+            cost_partitioning = compute_perim_saturated_cost_partitioning(
                 abstractions, order, remaining_costs, abstract_state_ids);
         } else {
-            cost_partitioning = cp_function(abstractions, order, costs, abstract_state_ids);
+            cost_partitioning = cp_function(abstractions, order, remaining_costs, abstract_state_ids);
         }
         ++num_scps_computed;
 
