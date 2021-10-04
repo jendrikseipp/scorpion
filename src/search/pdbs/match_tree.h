@@ -48,9 +48,11 @@ public:
     */
     void get_applicable_operator_ids(
         int state_index, std::vector<int> &operator_ids) const;
+
     const std::vector<int> &get_hash_multipliers() const {
         return hash_multipliers;
     }
+
     void dump() const;
 };
 }
