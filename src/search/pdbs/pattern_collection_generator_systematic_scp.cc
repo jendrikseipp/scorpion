@@ -183,7 +183,7 @@ class SequentialPatternGenerator {
     bool only_interesting_patterns;
     PatternOrder order_type;
     utils::RandomNumberGenerator &rng;
-    vector<array_pool::ArrayPool<int>> patterns;
+    vector<array_pool_template::ArrayPool<int>> patterns;
     int cached_pattern_size;
     int max_generated_pattern_size; // Only count layers that actually have patterns.
     int num_generated_patterns;
@@ -218,7 +218,7 @@ public:
             int start_id = 0;
             int end_id = -1;
             for (size_t i = 0; i < patterns.size(); ++i) {
-                const array_pool::ArrayPool<int> &pattern_layer = patterns[i];
+                const auto &pattern_layer = patterns[i];
                 end_id += pattern_layer.size();
                 if (pattern_id >= start_id && pattern_id <= end_id) {
                     internal_id = pattern_id - start_id;
@@ -228,7 +228,7 @@ public:
                 start_id += pattern_layer.size();
             }
             assert(internal_id != -1);
-            array_pool::ArrayPoolSlice<int> slice = patterns[bucket_id].get_slice(internal_id);
+            auto slice = patterns[bucket_id].get_slice(internal_id);
             return {
                        slice.begin(), slice.end()
             };

@@ -23,7 +23,7 @@ Proposition::Proposition()
 
 
 UnaryOperator::UnaryOperator(
-    int num_preconditions, array_pool_int::ArrayPoolIndex preconditions,
+    int num_preconditions, array_pool::ArrayPoolIndex preconditions,
     PropID effect, int operator_no, int base_cost)
     : effect(effect),
       base_cost(base_cost),
@@ -134,7 +134,7 @@ void RelaxationHeuristic::build_unary_operators(const OperatorProxy &op) {
         // The sort-unique can eventually go away. See issue497.
         vector<PropID> preconditions_copy(precondition_props);
         utils::sort_unique(preconditions_copy);
-        array_pool_int::ArrayPoolIndex precond_index =
+        array_pool::ArrayPoolIndex precond_index =
             preconditions_pool.append(preconditions_copy);
         unary_operators.emplace_back(
             preconditions_copy.size(), precond_index, effect_prop,

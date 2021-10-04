@@ -16,7 +16,7 @@
   (currently, ValueType = int is hardcoded) and moved to the algorithms
   directory.
 */
-namespace array_pool_int {
+namespace array_pool {
 const int INVALID_INDEX = -1;
 
 using Value = int;

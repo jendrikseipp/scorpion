@@ -8,15 +8,10 @@
   ArrayPool is intended as a compact representation of a large collection of
   arrays that are allocated individually but deallocated together.
 
-  Each array may have a different size, but ArrayPool does not keep track of
-  the array sizes; its user must maintain this information themselves. See the
-  relaxation heuristics for usage examples.
-
-  If the class turns out to be more generally useful, it could be templatized
-  (currently, ValueType = int is hardcoded) and moved to the algorithms
-  directory.
+  The code below is a templatized version of the ArrayPool variant in the 
+  heuristics directory.
 */
-namespace array_pool {
+namespace array_pool_template {
 template<typename Value>
 class ArrayPool;
 

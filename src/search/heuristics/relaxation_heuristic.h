@@ -33,14 +33,14 @@ struct Proposition {
     unsigned int is_goal : 1;
     unsigned int marked : 1; // used for preferred operators of h^add and h^FF
     int num_precondition_occurences;
-    array_pool_int::ArrayPoolIndex precondition_of;
+    array_pool::ArrayPoolIndex precondition_of;
 };
 
 static_assert(sizeof(Proposition) == 16, "Proposition has wrong size");
 
 struct UnaryOperator {
     UnaryOperator(int num_preconditions,
-                  array_pool_int::ArrayPoolIndex preconditions,
+                  array_pool::ArrayPoolIndex preconditions,
                   PropID effect,
                   int operator_no, int base_cost);
     int cost; // Used for h^max cost or h^add cost;
@@ -49,7 +49,7 @@ struct UnaryOperator {
     PropID effect;
     int base_cost;
     int num_preconditions;
-    array_pool_int::ArrayPoolIndex preconditions;
+    array_pool::ArrayPoolIndex preconditions;
     int operator_no; // -1 for axioms; index into the task's operators otherwise
 };
 
@@ -66,10 +66,10 @@ protected:
     std::vector<Proposition> propositions;
     std::vector<PropID> goal_propositions;
 
-    array_pool_int::ArrayPool preconditions_pool;
-    array_pool_int::ArrayPool precondition_of_pool;
+    array_pool::ArrayPool preconditions_pool;
+    array_pool::ArrayPool precondition_of_pool;
 
-    array_pool_int::ArrayPoolSlice get_preconditions(OpID op_id) const {
+    array_pool::ArrayPoolSlice get_preconditions(OpID op_id) const {
         const UnaryOperator &op = unary_operators[op_id];
         return preconditions_pool.get_slice(op.preconditions, op.num_preconditions);
     }
