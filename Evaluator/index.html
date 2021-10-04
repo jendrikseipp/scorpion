@@ -388,8 +388,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#saturated_cost_partitioning_online_heuristic" class="md-nav__link">
-    Saturated cost partitioning online heuristic
+  <a href="#online_saturated_cost_partitioning_heuristic" class="md-nav__link">
+    Online saturated cost partitioning heuristic
   </a>
   
 </li>
@@ -919,8 +919,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#saturated_cost_partitioning_online_heuristic" class="md-nav__link">
-    Saturated cost partitioning online heuristic
+  <a href="#online_saturated_cost_partitioning_heuristic" class="md-nav__link">
+    Online saturated cost partitioning heuristic
   </a>
   
 </li>
@@ -1577,14 +1577,21 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Jendrik Seipp.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-socs2017.pdf">Better Orders for Saturated Cost Partitioning in Optimal Classical Planning</a>.<br />
  In <em>Proceedings of the 10th Annual Symposium on Combinatorial Search (SoCS 2017)</em>, pp. 149-153. AAAI Press, 2017.</p>
-<pre><code>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, transform=no_transform(), cache_estimates=true)
+<pre><code>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions<ul>
+<li><code>all</code>: preserve estimates of all states</li>
+<li><code>perim</code>: preserve estimates of states in perimeter around goal</li>
+<li><code>perimstar</code>: compute 'perim' first and then 'all' with remaining costs</li>
+</ul>
+</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
 <li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_size</em> (int [0, infinity]): maximum heuristic size in KiB</li>
 <li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
 <li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
 <li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
@@ -1607,22 +1614,29 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> no</li>
 </ul>
-<h2 id="saturated_cost_partitioning_online_heuristic">Saturated cost partitioning online heuristic<a class="headerlink" href="#saturated_cost_partitioning_online_heuristic" title="Permanent link">#</a></h2>
-<pre><code>scp_online(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, interval=&lt;none&gt;, store_cost_partitionings=&lt;none&gt;)
+<h2 id="online_saturated_cost_partitioning_heuristic">Online saturated cost partitioning heuristic<a class="headerlink" href="#online_saturated_cost_partitioning_heuristic" title="Permanent link">#</a></h2>
+<p>Compute the maximum over multiple saturated cost partitioning heuristics diversified during the search. See </p>
+<p>Jendrik Seipp.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf">Online Saturated Cost Partitioning for Classical Planning</a>.<br />
+ In //Proceedings of the 31st International Conference on Automated Planning and Scheduling (ICAPS 2021) ""//, pp. ""317-321. AAAI Press, 2021.</p>
+<pre><code>scp_online(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_size=infinity, max_time=200, interval=10K, debug=false, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions<ul>
+<li><code>all</code>: preserve estimates of all states</li>
+<li><code>perim</code>: preserve estimates of states in perimeter around goal</li>
+<li><code>perimstar</code>: compute 'perim' first and then 'all' with remaining costs</li>
+</ul>
+</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
-<li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_size</em> (int [0, infinity]): maximum (estimated) heuristic size in KiB</li>
 <li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
-<li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
-<li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
-<li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
+<li><em>interval</em> (int [1, infinity]): select every i-th evaluated state for online diversification</li>
+<li><em>debug</em> (bool): print debug output</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>interval</em> (int [-1, infinity]): compute SCP for every interval-th state</li>
-<li><em>store_cost_partitionings</em> (bool): store saturated cost partitionings if diverse</li>
 </ul>
 <p>Language features supported:</p>
 <ul>
@@ -1633,12 +1647,12 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Properties:</p>
 <ul>
 <li><strong>admissible:</strong> yes</li>
-<li><strong>consistent:</strong> yes</li>
+<li><strong>consistent:</strong> no</li>
 <li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="opportunistic_uniform_cost_partitioning_heuristic">(Opportunistic) uniform cost partitioning heuristic<a class="headerlink" href="#opportunistic_uniform_cost_partitioning_heuristic" title="Permanent link">#</a></h2>
-<pre><code>uniform_cost_partitioning(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, opportunistic=false, debug=false)
+<pre><code>uniform_cost_partitioning(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, opportunistic=false, debug=false)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
@@ -1646,6 +1660,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
 <li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_size</em> (int [0, infinity]): maximum heuristic size in KiB</li>
 <li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
 <li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
 <li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
@@ -1668,7 +1683,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="zero-one_cost_partitioning_heuristic">Zero-one cost partitioning heuristic<a class="headerlink" href="#zero-one_cost_partitioning_heuristic" title="Permanent link">#</a></h2>
-<pre><code>zero_one_cost_partitioning(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, transform=no_transform(), cache_estimates=true)
+<pre><code>zero_one_cost_partitioning(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
@@ -1676,6 +1691,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
 <li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_size</em> (int [0, infinity]): maximum heuristic size in KiB</li>
 <li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
 <li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
 <li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
