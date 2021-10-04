@@ -114,8 +114,8 @@ static unique_ptr<PatternCollection> get_patterns(
     PatternCollection &patterns = *patterns_ptr;
     generator.generate(
         task, [pattern_size, &patterns, &timer](
-            const Pattern &pattern, bool handle) {
-            if (handle && static_cast<int>(pattern.size()) == pattern_size) {
+            const Pattern &pattern) {
+            if (static_cast<int>(pattern.size()) == pattern_size) {
                 patterns.push_back(pattern);
             }
             return timer.is_expired();

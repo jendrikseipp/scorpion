@@ -5,12 +5,16 @@
 #include "pattern_information.h"
 #include "types.h"
 
+#include <functional>
 #include <memory>
 
 class AbstractTask;
 
 namespace pdbs {
+using PatternHandler = std::function<bool (const Pattern &)>;
 class PatternCollectionGenerator {
+protected:
+    PatternHandler handle_pattern;
 public:
     virtual ~PatternCollectionGenerator() = default;
 

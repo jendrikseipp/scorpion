@@ -28,8 +28,6 @@ class CountdownTimer;
 namespace pdbs {
 class CanonicalPDBsHeuristic;
 
-using PatternHandler = std::function<bool (const Pattern &, bool)>;
-
 // Invariant: patterns are always sorted.
 class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
     using PatternSet = utils::HashSet<Pattern>;
@@ -39,10 +37,7 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
     std::shared_ptr<PatternCollection> patterns;
     PatternSet pattern_set;  // Cleared after pattern computation.
 
-    void enqueue_pattern_if_new(
-        const Pattern &pattern,
-        const PatternHandler &handle_pattern,
-        bool handle = true);
+    void enqueue_pattern_if_new(const Pattern &pattern);
     void compute_eff_pre_neighbors(const causal_graph::CausalGraph &cg,
                                    const Pattern &pattern,
                                    std::vector<int> &result) const;
@@ -52,15 +47,12 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
 
     void build_sga_patterns(
         const TaskProxy &task_proxy,
-        const causal_graph::CausalGraph &cg,
-        const PatternHandler &handle_pattern);
+        const causal_graph::CausalGraph &cg);
     void build_patterns(
         const TaskProxy &task_proxy,
-        const PatternHandler &handle_pattern = nullptr,
         const utils::CountdownTimer *timer = nullptr);
     void build_patterns_naive(
         const TaskProxy &task_proxy,
-        const PatternHandler &handle_pattern = nullptr,
         const utils::CountdownTimer *timer = nullptr);
 public:
     explicit PatternCollectionGeneratorSystematic(const options::Options &opts);
