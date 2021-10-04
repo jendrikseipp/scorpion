@@ -21,7 +21,7 @@ static const int INF = numeric_limits<int>::max();
 static int compute_hash_effect(
     const vector<FactPair> &preconditions,
     const vector<FactPair> &effects,
-    const vector<size_t> &hash_multipliers,
+    const vector<int> &hash_multipliers,
     bool forward) {
     int hash_effect = 0;
     assert(preconditions.size() == effects.size());
@@ -133,7 +133,7 @@ PatternEvaluator::PatternEvaluator(
     : task_info(task_info) {
     assert(utils::is_sorted_unique(pattern));
 
-    vector<size_t> hash_multipliers;
+    vector<int> hash_multipliers;
     hash_multipliers.reserve(pattern.size());
     num_states = 1;
     for (int var : pattern) {
@@ -201,7 +201,7 @@ PatternEvaluator::~PatternEvaluator() {
 }
 
 vector<int> PatternEvaluator::compute_goal_states(
-    const vector<size_t> &hash_multipliers,
+    const vector<int> &hash_multipliers,
     const vector<int> &pattern_domain_sizes,
     const vector<int> &variable_to_pattern_index) const {
     vector<int> goal_states;
@@ -225,7 +225,7 @@ vector<int> PatternEvaluator::compute_goal_states(
 }
 
 void PatternEvaluator::multiply_out(
-    const vector<size_t> &hash_multipliers,
+    const vector<int> &hash_multipliers,
     int pos,
     int conc_op_id,
     vector<FactPair> &prevails,
@@ -272,7 +272,7 @@ void PatternEvaluator::multiply_out(
 }
 
 void PatternEvaluator::build_abstract_operators(
-    const vector<size_t> &hash_multipliers,
+    const vector<int> &hash_multipliers,
     const OperatorInfo &op,
     const vector<int> &variable_to_index,
     const vector<int> &pattern_domain_sizes) {
@@ -329,9 +329,9 @@ void PatternEvaluator::build_abstract_operators(
 }
 
 bool PatternEvaluator::is_consistent(
-    const vector<size_t> &hash_multipliers,
+    const vector<int> &hash_multipliers,
     const vector<int> &pattern_domain_sizes,
-    size_t state_index,
+    int state_index,
     const vector<FactPair> &abstract_facts) const {
     for (const FactPair &abstract_goal : abstract_facts) {
         int pattern_var_id = abstract_goal.var;
@@ -348,7 +348,7 @@ void PatternEvaluator::store_new_dead_ends(
     const Pattern &pattern,
     const vector<int> &distances,
     PartialStateTree &dead_ends) const {
-    const vector<size_t> &hash_multipliers = match_tree_backward->get_hash_multipliers();
+    const vector<int> &hash_multipliers = match_tree_backward->get_hash_multipliers();
     int pattern_size = hash_multipliers.size();
     for (size_t index = 0; index < distances.size(); ++index) {
         if (distances[index] == INF) {
@@ -372,7 +372,7 @@ void PatternEvaluator::store_new_dead_ends(
 
 bool PatternEvaluator::is_useful(
     const Pattern &pattern,
-    priority_queues::AdaptiveQueue<size_t> &pq,
+    priority_queues::AdaptiveQueue<int> &pq,
     PartialStateTree *dead_ends,
     const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
@@ -393,9 +393,9 @@ bool PatternEvaluator::is_useful(
 
     // Run Dijkstra loop.
     while (!pq.empty()) {
-        pair<int, size_t> node = pq.pop();
+        pair<int, int> node = pq.pop();
         int distance = node.first;
-        size_t state_index = node.second;
+        int state_index = node.second;
         assert(utils::in_bounds(state_index, distances));
         assert(distance != INF);
         if (distance > distances[state_index]) {
@@ -412,7 +412,7 @@ bool PatternEvaluator::is_useful(
         match_tree_backward->get_applicable_operator_ids(state_index, applicable_operators);
         for (int abs_op_id : applicable_operators) {
             const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
-            size_t predecessor = state_index + op.hash_effect;
+            int predecessor = state_index + op.hash_effect;
             int conc_op_id = op.concrete_operator_id;
             assert(utils::in_bounds(conc_op_id, costs));
             int alternative_cost = (costs[conc_op_id] == INF) ?

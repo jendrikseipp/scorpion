@@ -153,7 +153,7 @@ void PartialStateTree::add(
     ++num_partial_states;
 }
 
-bool PartialStateTree::subsumes(const std::vector<FactPair> &partial_state) const {
+bool PartialStateTree::subsumes(const vector<FactPair> &partial_state) const {
     return root.contains(partial_state);
 }
 

@@ -8,7 +8,7 @@
   ArrayPool is intended as a compact representation of a large collection of
   arrays that are allocated individually but deallocated together.
 
-  The code below is a templatized version of the ArrayPool variant in the 
+  The code below is a templatized version of the ArrayPool variant in the
   heuristics directory.
 */
 namespace array_pool_template {

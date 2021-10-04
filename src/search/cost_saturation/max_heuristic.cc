@@ -21,8 +21,8 @@ MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions abstractions)
     }
 }
 
-int MaxHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
+int MaxHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     int max_h = 0;
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
         int local_state_id = abstraction_functions[i]->get_abstract_state_id(state);
@@ -53,7 +53,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
 
     Abstractions abstractions = generate_abstractions(
         opts.get<shared_ptr<AbstractTask>>("transform"),
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
     return make_shared<MaxHeuristic>(opts, move(abstractions));
 }

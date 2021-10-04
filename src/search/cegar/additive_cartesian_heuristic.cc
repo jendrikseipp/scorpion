@@ -31,7 +31,9 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
-        static_cast<PickSplit>(opts.get<int>("pick")),
+        opts.get<PickSplit>("pick"),
+        opts.get<SearchStrategy>("search_strategy"),
+        opts.get<int>("memory_padding"),
         *rng,
         opts.get<bool>("debug"));
     return cost_saturation.generate_heuristic_functions(
@@ -44,12 +46,8 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
       heuristic_functions(generate_heuristic_functions(opts)) {
 }
 
-int AdditiveCartesianHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int AdditiveCartesianHeuristic::compute_heuristic(const State &state) {
+int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     int sum_h = 0;
     for (const CartesianHeuristicFunction &function : heuristic_functions) {
         int value = function.get_value(state);
@@ -118,7 +116,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "max_transitions",
         "maximum sum of real transitions (excluding self-loops) over "
         " all abstractions",
-        "1000000",
+        "1M",
         Bounds("0", "infinity"));
     parser.add_option<double>(
         "max_time",
@@ -133,8 +131,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     pick_strategies.push_back("MAX_REFINED");
     pick_strategies.push_back("MIN_HADD");
     pick_strategies.push_back("MAX_HADD");
-    parser.add_enum_option(
+    parser.add_enum_option<PickSplit>(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
+    add_search_strategy_option(parser);
+    add_memory_padding_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",

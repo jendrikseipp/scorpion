@@ -3,7 +3,6 @@
 
 #include "../evaluation_context.h"
 #include "../evaluator.h"
-#include "../global_state.h"
 #include "../open_list.h"
 #include "../operator_id.h"
 #include "../search_engine.h"
@@ -33,7 +32,7 @@ protected:
     std::vector<Evaluator *> path_dependent_evaluators;
     std::vector<std::shared_ptr<Evaluator>> preferred_operator_evaluators;
 
-    GlobalState current_state;
+    State current_state;
     StateID current_predecessor_id;
     OperatorID current_operator_id;
     int current_g;
@@ -50,9 +49,6 @@ protected:
 
     std::vector<OperatorID> get_successor_operators(
         const ordered_set::OrderedSet<OperatorID> &preferred_operators) const;
-
-    // TODO: Move into SearchEngine?
-    void print_checkpoint_line(int g) const;
 
 public:
     explicit LazySearch(const options::Options &opts);

@@ -89,7 +89,7 @@ class ProjectionFunction : public AbstractionFunction {
 
 public:
     ProjectionFunction(
-        const pdbs::Pattern &pattern, const std::vector<std::size_t> &hash_multipliers);
+        const pdbs::Pattern &pattern, const std::vector<int> &hash_multipliers);
 
     virtual int get_abstract_state_id(const State &concrete_state) const override;
 };
@@ -98,7 +98,7 @@ public:
 class Projection : public Abstraction {
     using Facts = std::vector<FactPair>;
     using OperatorCallback =
-        std::function<void (Facts &, Facts &, Facts &, int, const std::vector<size_t> &, int)>;
+        std::function<void (Facts &, Facts &, Facts &, int, const std::vector<int> &, int)>;
 
     std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
@@ -114,7 +114,7 @@ class Projection : public Abstraction {
     int num_states;
 
     // Multipliers for each variable for perfect hash function.
-    std::vector<std::size_t> hash_multipliers;
+    std::vector<int> hash_multipliers;
 
     // Domain size of each variable in the pattern.
     std::vector<int> pattern_domain_sizes;
@@ -198,7 +198,7 @@ class Projection : public Abstraction {
       Return true iff all abstract facts hold in the given state.
     */
     bool is_consistent(
-        std::size_t state_index,
+        int state_index,
         const std::vector<FactPair> &abstract_facts) const;
 
 public:

@@ -11,6 +11,7 @@
 #include "../options/options.h"
 #include "../options/plugin.h"
 
+#include "../utils/logging.h"
 #include "../utils/markup.h"
 
 using namespace std;
@@ -45,7 +46,7 @@ vector<double> MergeScoringFunctionMIASM::compute_scores(
         unique_ptr<Distances> distances = utils::make_unique_ptr<Distances>(*product);
         const bool compute_init_distances = true;
         const bool compute_goal_distances = true;
-        const Verbosity verbosity = Verbosity::SILENT;
+        const utils::Verbosity verbosity = utils::Verbosity::SILENT;
         distances->compute_distances(compute_init_distances, compute_goal_distances, verbosity);
         int num_states = product->get_size();
         int alive_states_count = 0;
@@ -98,7 +99,7 @@ static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
         "Note",
         "To obtain the configurations called dyn-MIASM described in the paper, "
         "use the following configuration of the merge-and-shrink heuristic "
-        "and adapt the tie-breaking criteria of {{{total_order}}} as desired:\n "
+        "and adapt the tie-breaking criteria of {{{total_order}}} as desired:\n"
         "{{{\nmerge_and_shrink(merge_strategy=merge_stateless(merge_selector="
         "score_based_filtering(scoring_functions=[sf_miasm(shrink_strategy="
         "shrink_bisimulation(greedy=false),max_states=50000,"

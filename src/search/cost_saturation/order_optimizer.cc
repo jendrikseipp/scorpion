@@ -31,8 +31,9 @@ static bool search_improving_successor(
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
 
+            vector<int> remaining_costs = costs;
             CostPartitioningHeuristic neighbor_cp =
-                cp_function(abstractions, incumbent_order, costs);
+                cp_function(abstractions, incumbent_order, remaining_costs, abstract_state_ids);
 
             int h = neighbor_cp.compute_heuristic(abstract_state_ids);
             if (h > incumbent_h_value) {

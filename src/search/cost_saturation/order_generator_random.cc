@@ -23,8 +23,6 @@ void OrderGeneratorRandom::initialize(
 }
 
 Order OrderGeneratorRandom::compute_order_for_state(
-    const Abstractions &,
-    const vector<int> &,
     const vector<int> &,
     bool) {
     rng->shuffle(random_order);
@@ -32,7 +30,10 @@ Order OrderGeneratorRandom::compute_order_for_state(
 }
 
 
-static shared_ptr<OrderGenerator> _parse_greedy(OptionParser &parser) {
+static shared_ptr<OrderGenerator> _parse(OptionParser &parser) {
+    parser.document_synopsis(
+        "Random orders",
+        "Shuffle abstractions randomly.");
     add_common_order_generator_options(parser);
     Options opts = parser.parse();
     if (parser.dry_run())
@@ -41,5 +42,5 @@ static shared_ptr<OrderGenerator> _parse_greedy(OptionParser &parser) {
         return make_shared<OrderGeneratorRandom>(opts);
 }
 
-static Plugin<OrderGenerator> _plugin_greedy("random_orders", _parse_greedy);
+static Plugin<OrderGenerator> _plugin("random_orders", _parse);
 }

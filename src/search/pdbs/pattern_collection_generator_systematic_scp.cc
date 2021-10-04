@@ -286,7 +286,7 @@ PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_orders(opts.get<bool>("store_orders")),
       store_dead_ends(opts.get<bool>("store_dead_ends")),
-      pattern_order(static_cast<PatternOrder>(opts.get_enum("order"))),
+      pattern_order(opts.get<PatternOrder>("order")),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")) {
 }
@@ -297,7 +297,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
     const TaskInfo &evaluator_task_info,
     SequentialPatternGenerator &pattern_generator,
     PartialStateTree *dead_ends,
-    priority_queues::AdaptiveQueue<size_t> &pq,
+    priority_queues::AdaptiveQueue<int> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
     PatternSet &patterns_checked_for_dead_ends,
@@ -438,7 +438,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
     SequentialPatternGenerator pattern_generator(
         task, evaluator_task_info, max_pattern_size,
         only_interesting_patterns, pattern_order, *rng);
-    priority_queues::AdaptiveQueue<size_t> pq;
+    priority_queues::AdaptiveQueue<int> pq;
     if (store_dead_ends) {
         cost_saturation::dead_ends_hacked = utils::make_unique_ptr<PartialStateTree>();
     }
@@ -581,7 +581,7 @@ static void add_options(OptionParser &parser) {
     pattern_orders.push_back("OPS_DOWN");
     pattern_orders.push_back("CG_UP");
     pattern_orders.push_back("CG_DOWN");
-    parser.add_enum_option(
+    parser.add_enum_option<PatternOrder>(
         "order",
         pattern_orders,
         "order in which to consider patterns of the same size",

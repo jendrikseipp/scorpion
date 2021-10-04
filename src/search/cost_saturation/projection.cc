@@ -21,7 +21,7 @@ namespace cost_saturation {
 static vector<int> get_abstract_preconditions(
     const vector<FactPair> &prev_pairs,
     const vector<FactPair> &pre_pairs,
-    const vector<size_t> &hash_multipliers) {
+    const vector<int> &hash_multipliers) {
     vector<int> abstract_preconditions(hash_multipliers.size(), -1);
     for (const FactPair &fact : prev_pairs) {
         int pattern_index = fact.var;
@@ -37,7 +37,7 @@ static vector<int> get_abstract_preconditions(
 static int compute_hash_effect(
     const vector<FactPair> &preconditions,
     const vector<FactPair> &effects,
-    const vector<size_t> &hash_multipliers,
+    const vector<int> &hash_multipliers,
     bool forward) {
     int hash_effect = 0;
     assert(preconditions.size() == effects.size());
@@ -152,7 +152,7 @@ bool TaskInfo::operator_is_active(const pdbs::Pattern &pattern, int op_id) const
 
 
 ProjectionFunction::ProjectionFunction(
-    const pdbs::Pattern &pattern, const vector<size_t> &hash_multipliers) {
+    const pdbs::Pattern &pattern, const vector<int> &hash_multipliers) {
     assert(pattern.size() == hash_multipliers.size());
     variables_and_multipliers.reserve(pattern.size());
     for (size_t i = 0; i < pattern.size(); ++i) {
@@ -161,7 +161,7 @@ ProjectionFunction::ProjectionFunction(
 }
 
 int ProjectionFunction::get_abstract_state_id(const State &concrete_state) const {
-    size_t index = 0;
+    int index = 0;
     for (const VariableAndMultiplier &pair : variables_and_multipliers) {
         index += pair.hash_multiplier * concrete_state[pair.pattern_var].get_value();
     }
@@ -220,7 +220,7 @@ Projection::Projection(
                 const vector<FactPair> &preconditions,
                 const vector<FactPair> &effects,
                 int,
-                const vector<size_t> &hash_multipliers,
+                const vector<int> &hash_multipliers,
                 int concrete_operator_id) {
                 int abs_op_id = abstract_backward_operators.size();
                 abstract_backward_operators.emplace_back(
@@ -340,7 +340,7 @@ void Projection::build_abstract_operators(
     // All variable value pairs that are a precondition (value = -1)
     vector<FactPair> effects_without_pre;
 
-    size_t num_vars = variables.size();
+    int num_vars = variables.size();
     vector<bool> has_precond_and_effect_on_var(num_vars, false);
     vector<bool> has_precondition_on_var(num_vars, false);
 
@@ -377,7 +377,7 @@ void Projection::build_abstract_operators(
 }
 
 bool Projection::is_consistent(
-    size_t state_index,
+    int state_index,
     const vector<FactPair> &abstract_facts) const {
     for (const FactPair &abstract_goal : abstract_facts) {
         int pattern_var_id = abstract_goal.var;
@@ -427,7 +427,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
-    priority_queues::AdaptiveQueue<size_t> pq;
+    priority_queues::AdaptiveQueue<int> pq;
     for (int goal : goal_states) {
         pq.push(0, goal);
         distances[goal] = 0;
@@ -440,7 +440,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
         int distance = node.first;
-        size_t state_index = node.second;
+        int state_index = node.second;
         assert(utils::in_bounds(state_index, distances));
         if (distance > distances[state_index]) {
             continue;
@@ -452,7 +452,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
             state_index, applicable_operator_ids);
         for (int abs_op_id : applicable_operator_ids) {
             const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
-            size_t predecessor = state_index + op.hash_effect;
+            int predecessor = state_index + op.hash_effect;
             int conc_op_id = op.concrete_operator_id;
             assert(utils::in_bounds(conc_op_id, costs));
             int alternative_cost = (costs[conc_op_id] == INF) ?

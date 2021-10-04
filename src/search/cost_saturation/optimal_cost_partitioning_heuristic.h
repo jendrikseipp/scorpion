@@ -5,9 +5,12 @@
 
 #include "../heuristic.h"
 
+#include "../algorithms/named_vector.h"
 #include "../lp/lp_solver.h"
 
 namespace cost_saturation {
+using LPConstraints = named_vector::NamedVector<lp::LPConstraint>;
+using LPVariables = named_vector::NamedVector<lp::LPVariable>;
 /*
   Compute an optimal cost partitioning over abstraction heuristics.
 */
@@ -51,17 +54,17 @@ class OptimalCostPartitioningHeuristic : public Heuristic {
     void add_abstraction_variables(
         const Abstraction &abstraction,
         int abstraction_id,
-        std::vector<lp::LPVariable> &lp_variables);
+        LPVariables &lp_variables);
     void add_abstraction_constraints(
         const Abstraction &abstraction,
         int abstraction_id,
-        std::vector<lp::LPConstraint> &lp_constraints);
+        LPConstraints &lp_constraints);
     void add_operator_cost_constraints(
-        std::vector<lp::LPConstraint> &lp_constraints);
+        LPConstraints &lp_constraints);
     void release_memory();
 
 protected:
-    virtual int compute_heuristic(const GlobalState &global_state) override;
+    virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
     explicit OptimalCostPartitioningHeuristic(const options::Options &opts);

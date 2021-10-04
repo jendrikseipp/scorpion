@@ -59,7 +59,7 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
 
     Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
     utils::Log() << "Compute abstract goal distances" << endl;
     for (const auto &abstraction : abstractions) {
@@ -75,12 +75,8 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     }
 }
 
-int CanonicalHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int CanonicalHeuristic::compute_heuristic(const State &state) {
+int CanonicalHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     vector<int> h_values_for_state;
     h_values_for_state.reserve(abstraction_functions.size());
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {

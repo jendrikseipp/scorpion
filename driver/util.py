@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
-
 import os
-import re
 
 from . import returncodes
 
@@ -29,10 +24,11 @@ def find_domain_filename(task_filename):
     Find domain filename for the given task using automatic naming rules.
     """
     dirname, basename = os.path.split(task_filename)
+    basename_root, ext = os.path.splitext(basename)
 
     domain_basenames = [
         "domain.pddl",
-        basename[:3] + "-domain.pddl",
+        basename_root + "-domain" + ext,
         "domain_" + basename,
         "domain-" + basename,
     ]
@@ -44,17 +40,3 @@ def find_domain_filename(task_filename):
 
     returncodes.exit_with_driver_input_error(
         "Error: Could not find domain file using automatic naming rules.")
-
-# Shell-escaping code taken from Python's shlex.quote (missing in Python < 3.3).
-_find_unsafe = re.compile(r'[^\w@%+=:,./-]').search
-
-def shell_escape(s):
-    """Return a shell-escaped version of the string *s*."""
-    if not s:
-        return "''"
-    if _find_unsafe(s) is None:
-        return s
-
-    # Use single quotes, and put single quotes into double quotes.
-    # The string $'b is then quoted as '$'"'"'b'.
-    return "'" + s.replace("'", "'\"'\"'") + "'"

@@ -19,13 +19,13 @@ namespace operator_counting {
 PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
     : abstraction_generators(
           opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
-              "abstraction_generators")),
+              "abstractions")),
       saturated(opts.get<bool>("saturated")) {
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
     const shared_ptr<AbstractTask> &task,
-    vector<lp::LPConstraint> &constraints,
+    named_vector::NamedVector<lp::LPConstraint> &constraints,
     double infinity) {
     cost_saturation::Abstractions abstractions =
         cost_saturation::generate_abstractions(task, abstraction_generators);
@@ -92,7 +92,7 @@ static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
         " constraint h(s) <= sum_{o in relevant(h)} Count_o.");
 
     parser.add_list_option<shared_ptr<cost_saturation::AbstractionGenerator>>(
-        "abstraction_generators",
+        "abstractions",
         "abstraction generation methods",
         "[cartesian()]");
 

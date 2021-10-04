@@ -78,12 +78,12 @@ class PatternEvaluator {
     std::vector<int> goal_states;
 
     std::vector<int> compute_goal_states(
-        const std::vector<std::size_t> &hash_multipliers,
+        const std::vector<int> &hash_multipliers,
         const std::vector<int> &pattern_domain_sizes,
         const std::vector<int> &variable_to_pattern_index) const;
 
     void multiply_out(
-        const std::vector<size_t> &hash_multipliers,
+        const std::vector<int> &hash_multipliers,
         int pos,
         int conc_op_id,
         std::vector<FactPair> &prev_pairs,
@@ -93,7 +93,7 @@ class PatternEvaluator {
         const std::vector<int> &pattern_domain_sizes);
 
     void build_abstract_operators(
-        const std::vector<std::size_t> &hash_multipliers,
+        const std::vector<int> &hash_multipliers,
         const OperatorInfo &op,
         const std::vector<int> &variable_to_pattern_index,
         const std::vector<int> &pattern_domain_sizes);
@@ -102,9 +102,9 @@ class PatternEvaluator {
       Return true iff all abstract facts hold in the given state.
     */
     bool is_consistent(
-        const std::vector<size_t> &hash_multipliers,
+        const std::vector<int> &hash_multipliers,
         const std::vector<int> &pattern_domain_sizes,
-        std::size_t state_index,
+        int state_index,
         const std::vector<FactPair> &abstract_facts) const;
 
     void store_new_dead_ends(
@@ -122,7 +122,7 @@ public:
 
     bool is_useful(
         const Pattern &pattern,
-        priority_queues::AdaptiveQueue<size_t> &pq,
+        priority_queues::AdaptiveQueue<int> &pq,
         PartialStateTree *dead_ends,
         const std::vector<int> &costs) const;
 };

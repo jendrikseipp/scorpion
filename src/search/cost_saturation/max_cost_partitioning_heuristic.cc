@@ -2,14 +2,9 @@
 
 #include "abstraction.h"
 #include "cost_partitioning_heuristic.h"
-#include "cost_partitioning_heuristic_collection_generator.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-
-#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
-#include "../utils/rng_options.h"
 
 using namespace std;
 
@@ -74,11 +69,10 @@ static AbstractionFunctions extract_abstraction_functions_from_useful_abstractio
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     const options::Options &opts,
     Abstractions abstractions,
-    vector<CostPartitioningHeuristic> &&cp_heuristics_,
-    UnsolvabilityHeuristic &&unsolvability_heuristic_)
+    vector<CostPartitioningHeuristic> &&cp_heuristics_)
     : Heuristic(opts),
       cp_heuristics(move(cp_heuristics_)),
-      unsolvability_heuristic(move(unsolvability_heuristic_)) {
+      unsolvability_heuristic(abstractions, cp_heuristics) {
     log_info_about_stored_lookup_tables(abstractions, cp_heuristics);
 
     // We only need abstraction functions during search and no transition systems.
@@ -86,7 +80,9 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
         cp_heuristics, unsolvability_heuristic, abstractions);
 
     int num_abstractions = abstractions.size();
-    int num_useful_abstractions = abstraction_functions.size();
+    int num_useless_abstractions = count(
+        abstraction_functions.begin(), abstraction_functions.end(), nullptr);
+    int num_useful_abstractions = num_abstractions - num_useless_abstractions;
     utils::Log() << "Useful abstractions: " << num_useful_abstractions << "/"
                  << num_abstractions << " = "
                  << static_cast<double>(num_useful_abstractions) / num_abstractions
@@ -97,12 +93,8 @@ MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {
     print_statistics();
 }
 
-int MaxCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) const {
+int MaxCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     if (dead_ends_hacked && dead_ends_hacked->subsumes(state)) {
         return DEAD_END;
     }
@@ -111,7 +103,7 @@ int MaxCostPartitioningHeuristic::compute_heuristic(const State &state) const {
     if (unsolvability_heuristic.is_unsolvable(abstract_state_ids)) {
         return DEAD_END;
     }
-    return compute_max_h_with_statistics(cp_heuristics, abstract_state_ids, num_best_order);
+    return compute_max_h(cp_heuristics, abstract_state_ids, &num_best_order);
 }
 
 void MaxCostPartitioningHeuristic::print_statistics() const {
@@ -122,112 +114,5 @@ void MaxCostPartitioningHeuristic::print_statistics() const {
          << num_best_order << endl;
     cout << "Probably useful orders: " << num_probably_useful << "/" << num_orders
          << " = " << 100. * num_probably_useful / num_orders << "%" << endl;
-}
-
-void prepare_parser_for_cost_partitioning_heuristic(options::OptionParser &parser) {
-    parser.document_language_support("action costs", "supported");
-    parser.document_language_support(
-        "conditional effects",
-        "not supported (the heuristic supports them in theory, but none of "
-        "the currently implemented abstraction generators do)");
-    parser.document_language_support(
-        "axioms",
-        "not supported (the heuristic supports them in theory, but none of "
-        "the currently implemented abstraction generators do)");
-    parser.document_property("admissible", "yes");
-    parser.document_property("consistent", "yes");
-    parser.document_property("safe", "yes");
-    parser.document_property("preferred operators", "no");
-
-    parser.add_list_option<shared_ptr<AbstractionGenerator>>(
-        "abstraction_generators",
-        "available generators are cartesian() and projections()",
-        "[projections(hillclimbing(max_time=60, random_seed=0)),"
-        " projections(systematic(2)), cartesian()]");
-    Heuristic::add_options_to_parser(parser);
-}
-
-shared_ptr<Heuristic> get_max_cp_heuristic(
-    options::OptionParser &parser, CPFunction cp_function) {
-    prepare_parser_for_cost_partitioning_heuristic(parser);
-    add_order_options_to_parser(parser);
-
-    options::Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    g_store_unsolvable_states_once_hacked = opts.get<bool>("store_unsolvable_states_once");
-
-    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
-    TaskProxy task_proxy(*task);
-    vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstraction_generators"));
-    UnsolvabilityHeuristic unsolvability_heuristic(abstractions);
-    vector<CostPartitioningHeuristic> cp_heuristics =
-        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
-            task_proxy, abstractions, costs, cp_function, unsolvability_heuristic);
-    return make_shared<MaxCostPartitioningHeuristic>(
-        opts,
-        move(abstractions),
-        move(cp_heuristics),
-        move(unsolvability_heuristic));
-}
-
-void add_order_options_to_parser(OptionParser &parser) {
-    parser.add_option<shared_ptr<OrderGenerator>>(
-        "orders",
-        "order generator",
-        "greedy_orders()");
-    parser.add_option<int>(
-        "max_orders",
-        "maximum number of orders",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time for finding orders",
-        "200.0",
-        Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "diversify",
-        "only keep orders that have a higher heuristic value than all previous"
-        " orders for any of the samples",
-        "true");
-    parser.add_option<int>(
-        "samples",
-        "number of samples for diversification",
-        "1000",
-        Bounds("1", "infinity"));
-    parser.add_option<double>(
-        "max_optimization_time",
-        "maximum time for optimizing each order with hill climbing",
-        "2.0",
-        Bounds("0.0", "infinity"));
-    parser.add_option<bool>(
-        "store_unsolvable_states_once",
-        "store unsolvable states once per abstraction, instead of once per order. "
-        "If store_unsolvable_states_once=true, we store unsolvable states in "
-        "UnsolvabilityHeuristic. If store_unsolvable_states_once=false, we "
-        "additionally store them in the lookup tables. In any case, we use "
-        "UnsolvabilityHeuristic to detect unsolvable states. "
-        "(this option only affects the saturated_cost_partitioning() plugin)",
-        "true");
-    utils::add_rng_options(parser);
-}
-
-CostPartitioningHeuristicCollectionGenerator get_cp_heuristic_collection_generator_from_options(
-    const options::Options &opts) {
-    return CostPartitioningHeuristicCollectionGenerator(
-        opts.get<shared_ptr<OrderGenerator>>("orders"),
-        opts.get<int>("max_orders"),
-        opts.get<double>("max_time"),
-        opts.get<bool>("diversify"),
-        opts.get<int>("samples"),
-        opts.get<double>("max_optimization_time"),
-        utils::parse_rng_from_options(opts));
 }
 }

@@ -71,7 +71,7 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
         const TaskInfo &evaluator_task_info,
         SequentialPatternGenerator &pattern_generator,
         PartialStateTree *dead_ends,
-        priority_queues::AdaptiveQueue<size_t> &pq,
+        priority_queues::AdaptiveQueue<int> &pq,
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,
         PatternSet &patterns_checked_for_dead_ends,

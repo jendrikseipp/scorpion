@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
-
 """ Module for running planner portfolios.
 
 Memory limits: We apply the same memory limit that is given to the
@@ -19,8 +15,8 @@ the process is started.
 
 __all__ = ["run"]
 
-import os
 import subprocess
+import sys
 
 from . import call
 from . import limits
@@ -189,7 +185,7 @@ def can_change_cost_type(args):
 
 def get_portfolio_attributes(portfolio):
     attributes = {}
-    with open(portfolio) as portfolio_file:
+    with open(portfolio, "rb") as portfolio_file:
         content = portfolio_file.read()
         try:
             exec(content, attributes)
@@ -223,8 +219,8 @@ def run(portfolio, executable, sas_file, plan_manager, time, memory):
             "Please pass a time limit to fast-downward.py.")
 
     if time is None:
-        if os.name == "nt":
-            returncodes.exit_with_driver_unsupported_error(limits.RESOURCE_MODULE_MISSING_MSG)
+        if sys.platform == "win32":
+            returncodes.exit_with_driver_unsupported_error(limits.CANNOT_LIMIT_TIME_MSG)
         else:
             returncodes.exit_with_driver_input_error(
                 "Portfolios need a time limit. Please pass --search-time-limit "
@@ -239,4 +235,4 @@ def run(portfolio, executable, sas_file, plan_manager, time, memory):
         exitcodes = run_sat(
             configs, executable, sas_file, plan_manager, final_config,
             final_config_builder, timeout, memory)
-    return returncodes.generate_portfolio_exitcode(exitcodes)
+    return returncodes.generate_portfolio_exitcode(list(exitcodes))

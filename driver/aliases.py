@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import os
 
 from .util import DRIVER_DIR
@@ -97,7 +94,7 @@ def _get_lama(**kwargs):
     return [
         "--if-unit-cost",
         "--evaluator",
-        "hlm=lmcount(lm_rhw(reasonable_orders=true),pref={pref})".format(**kwargs),
+        "hlm=lmcount(lm_reasonable_orders_hps(lm_rhw()),pref={pref})".format(**kwargs),
         "--evaluator", "hff=ff()",
         "--search", """iterated([
                          lazy_greedy([hff,hlm],preferred=[hff,hlm]),
@@ -108,10 +105,10 @@ def _get_lama(**kwargs):
                          ],repeat_last=true,continue_on_fail=true)""",
         "--if-non-unit-cost",
         "--evaluator",
-        "hlm1=lmcount(lm_rhw(reasonable_orders=true),transform=adapt_costs(one),pref={pref})".format(**kwargs),
+        "hlm1=lmcount(lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref={pref})".format(**kwargs),
         "--evaluator", "hff1=ff(transform=adapt_costs(one))",
         "--evaluator",
-        "hlm2=lmcount(lm_rhw(reasonable_orders=true),transform=adapt_costs(plusone),pref={pref})".format(**kwargs),
+        "hlm2=lmcount(lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(plusone),pref={pref})".format(**kwargs),
         "--evaluator", "hff2=ff(transform=adapt_costs(plusone))",
         "--search", """iterated([
                          lazy_greedy([hff1,hlm1],preferred=[hff1,hlm1],
@@ -123,16 +120,16 @@ def _get_lama(**kwargs):
                          lazy_wastar([hff2,hlm2],preferred=[hff2,hlm2],w=2),
                          lazy_wastar([hff2,hlm2],preferred=[hff2,hlm2],w=1)
                          ],repeat_last=true,continue_on_fail=true)""",
-        "--always"]
         # Append --always to be on the safe side if we want to append
         # additional options later.
+        "--always"]
 
 ALIASES["seq-sat-lama-2011"] = _get_lama(pref="true")
 ALIASES["lama"] = _get_lama(pref="false")
 
 ALIASES["lama-first"] = [
     "--evaluator",
-    "hlm=lmcount(lm_factory=lm_rhw(reasonable_orders=true),transform=adapt_costs(one),pref=false)",
+    "hlm=lmcount(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
     "--evaluator", "hff=ff(transform=adapt_costs(one))",
     "--search", """lazy_greedy([hff,hlm],preferred=[hff,hlm],
                                cost_type=one,reopen_closed=false)"""]
@@ -146,14 +143,14 @@ ALIASES["seq-opt-bjolp"] = [
 ALIASES["seq-opt-lmcut"] = [
     "--search", "astar(lmcut())"]
 
-# Note: The IPC 2018 version of Scorpion used h^2 mutexes to prune operators
-# between the translation and the search phase.
 ALIASES["scorpion"] = [
-    "--search",
-    """astar(saturated_cost_partitioning([
-        projections(systematic(2)), projections(hillclimbing(max_time=100)), cartesian()],
-        max_time=200, max_optimization_time=2, diversify=true, orders=greedy_orders()),
-        pruning=stubborn_sets_simple(min_required_pruning_ratio=0.2))"""]
+    "--search", """astar(scp_online([
+        projections(hillclimbing(max_time=100, random_seed=0)),
+        projections(systematic(2)),
+        cartesian()],
+        max_time=1000, interval=10K,
+        orders=greedy_orders(random_seed=0), random_seed=0),
+        pruning=atom_centric_stubborn_sets(min_required_pruning_ratio=0.2))"""]
 
 
 PORTFOLIOS = {}
@@ -164,7 +161,7 @@ for portfolio in os.listdir(PORTFOLIO_DIR):
 
 
 def show_aliases():
-    for alias in sorted(ALIASES.keys() + PORTFOLIOS.keys()):
+    for alias in sorted(list(ALIASES) + list(PORTFOLIOS)):
         print(alias)
 
 

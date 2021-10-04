@@ -17,8 +17,9 @@ using namespace std;
 namespace cost_saturation {
 OrderGeneratorDynamicGreedy::OrderGeneratorDynamicGreedy(const Options &opts)
     : OrderGenerator(opts),
-      scoring_function(
-          static_cast<ScoringFunction>(opts.get_enum("scoring_function"))) {
+      scoring_function(opts.get<ScoringFunction>("scoring_function")),
+      abstractions(nullptr),
+      costs(nullptr) {
 }
 
 Order OrderGeneratorDynamicGreedy::compute_dynamic_greedy_order_for_sample(
@@ -77,26 +78,27 @@ Order OrderGeneratorDynamicGreedy::compute_dynamic_greedy_order_for_sample(
 }
 
 void OrderGeneratorDynamicGreedy::initialize(
-    const Abstractions &,
-    const vector<int> &) {
+    const Abstractions &abstractions,
+    const vector<int> &costs) {
     utils::Log() << "Initialize dynamic greedy order generator" << endl;
+    this->abstractions = &abstractions;
+    this->costs = &costs;
 }
 
 Order OrderGeneratorDynamicGreedy::compute_order_for_state(
-    const Abstractions &abstractions,
-    const vector<int> &costs,
     const vector<int> &abstract_state_ids,
     bool verbose) {
+    assert(abstractions && costs);
     utils::Timer greedy_timer;
     vector<int> order = compute_dynamic_greedy_order_for_sample(
-        abstractions, abstract_state_ids, costs);
+        *abstractions, abstract_state_ids, *costs);
 
     if (verbose) {
         utils::Log() << "Time for computing dynamic greedy order: "
                      << greedy_timer << endl;
     }
 
-    assert(order.size() == abstractions.size());
+    assert(order.size() == abstractions->size());
     return order;
 }
 

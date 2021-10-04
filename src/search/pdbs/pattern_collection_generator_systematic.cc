@@ -306,7 +306,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
 }
 
 void PatternCollectionGeneratorSystematic::generate(
-    const std::shared_ptr<AbstractTask> &task,
+    const shared_ptr<AbstractTask> &task,
     const PatternHandler &handle_pattern,
     const utils::CountdownTimer &timer) {
     this->handle_pattern = handle_pattern;

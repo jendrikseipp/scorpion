@@ -31,12 +31,13 @@ class CostSaturation {
     const double max_time;
     const bool use_general_costs;
     const PickSplit pick_split;
+    const SearchStrategy search_strategy;
+    const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
     const bool debug;
 
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
-    int num_abstractions;
     int num_states;
     int num_non_looping_transitions;
 
@@ -59,6 +60,8 @@ public:
         double max_time,
         bool use_general_costs,
         PickSplit pick_split,
+        SearchStrategy search_strategy,
+        int memory_padding_mb,
         utils::RandomNumberGenerator &rng,
         bool debug);
 

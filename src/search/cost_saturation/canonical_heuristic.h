@@ -21,10 +21,9 @@ class CanonicalHeuristic : public Heuristic {
     MaxAdditiveSubsets max_additive_subsets;
 
     int compute_max_over_sums(const std::vector<int> &h_values_for_state) const;
-    int compute_heuristic(const State &state);
 
 protected:
-    virtual int compute_heuristic(const GlobalState &global_state) override;
+    virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
     explicit CanonicalHeuristic(const options::Options &opts);

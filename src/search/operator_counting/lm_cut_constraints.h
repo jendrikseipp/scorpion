@@ -1,7 +1,7 @@
 #ifndef OPERATOR_COUNTING_LM_CUT_CONSTRAINTS_H
 #define OPERATOR_COUNTING_LM_CUT_CONSTRAINTS_H
 
-#include  "constraint_generator.h"
+#include "constraint_generator.h"
 
 #include <memory>
 
@@ -15,7 +15,7 @@ class LMCutConstraints : public ConstraintGenerator {
 public:
     virtual void initialize_constraints(
         const std::shared_ptr<AbstractTask> &task,
-        std::vector<lp::LPConstraint> &constraints,
+        named_vector::NamedVector<lp::LPConstraint> &constraints,
         double infinity) override;
     virtual bool update_constraints(const State &state,
                                     lp::LPSolver &lp_solver) override;
