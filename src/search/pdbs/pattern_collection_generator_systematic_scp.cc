@@ -85,18 +85,18 @@ bool contains_positive_finite_value(const vector<int> &values) {
                   [](int v) {return v > 0 && v != numeric_limits<int>::max();});
 }
 
-static bool only_free_operators_affect_pdb(
+static bool operators_with_positive_finite_costs_affect_pdb(
     const Pattern &pattern,
     const vector<int> &costs,
     const vector<vector<int>> &relevant_operators_per_variable) {
     for (int var : pattern) {
         for (int op : relevant_operators_per_variable[var]) {
             if (costs[op] > 0 && costs[op] != numeric_limits<int>::max()) {
-                return false;
+                return true;
             }
         }
     }
-    return true;
+    return false;
 }
 
 static unique_ptr<PatternCollection> get_patterns(
@@ -364,10 +364,14 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             return true;
         }
 
+        /* If there are no state-changing transitions with positive finite costs,
+           there can be no positive finite goal distances. */
         if (ignore_useless_patterns &&
-            only_free_operators_affect_pdb(pattern, costs, relevant_operators_per_variable)) {
-            if (debug)
-                log << "Only free operators affect " << pattern << endl;
+            !operators_with_positive_finite_costs_affect_pdb(
+                pattern, costs, relevant_operators_per_variable)) {
+            if (debug) {
+                log << "Only operators with cost=0 or cost=infty affect " << pattern << endl;
+            }
             continue;
         }
 
@@ -545,7 +549,7 @@ static void add_options(OptionParser &parser) {
         Bounds("0.0", "infinity"));
     parser.add_option<int>(
         "max_evaluations_per_restart",
-        "maximum pattern evaluations in the inner loop",
+        "maximum pattern evaluations per the inner loop",
         "infinity",
         Bounds("0", "infinity"));
     parser.add_option<int>(
@@ -561,9 +565,10 @@ static void add_options(OptionParser &parser) {
         "only_interesting_patterns",
         "only consider interesting patterns instead of all patterns",
         "true");
+    // TODO: find better name for this option.
     parser.add_option<bool>(
         "ignore_useless_patterns",
-        "ignore patterns with only variables that are changed by free operators",
+        "ignore patterns that induce no transitions with positive finite cost",
         "false");
     parser.add_option<bool>(
         "store_orders",
