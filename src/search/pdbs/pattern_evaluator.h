@@ -16,9 +16,6 @@ class AdaptiveQueue;
 
 namespace pdbs {
 class MatchTree;
-class PartialStateTree;
-
-using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PartialStateTree>;
 
 struct AbstractBackwardOperator {
     int concrete_operator_id;
@@ -110,7 +107,7 @@ class PatternEvaluator {
     void store_new_dead_ends(
         const Pattern &pattern,
         const std::vector<int> &distances,
-        PartialStateTree &dead_ends) const;
+        DeadEnds &dead_ends) const;
 
 public:
     PatternEvaluator(
@@ -123,7 +120,7 @@ public:
     bool is_useful(
         const Pattern &pattern,
         priority_queues::AdaptiveQueue<int> &pq,
-        PartialStateTree *dead_ends,
+        DeadEnds *dead_ends,
         const std::vector<int> &costs) const;
 };
 }

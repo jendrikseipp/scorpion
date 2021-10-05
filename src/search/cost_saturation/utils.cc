@@ -20,7 +20,7 @@
 using namespace std;
 
 namespace cost_saturation {
-unique_ptr<pdbs::PartialStateTree> dead_ends_hacked;
+unique_ptr<DeadEnds> dead_ends_hacked;
 
 Abstractions generate_abstractions(
     const shared_ptr<AbstractTask> &task,

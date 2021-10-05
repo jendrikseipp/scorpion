@@ -1,11 +1,11 @@
-#ifndef PDBS_PARTIAL_STATE_TREE_H
-#define PDBS_PARTIAL_STATE_TREE_H
+#ifndef COST_SATURATION_PARTIAL_STATE_TREE_H
+#define COST_SATURATION_PARTIAL_STATE_TREE_H
 
 #include "types.h"
 
 #include "../task_proxy.h"
 
-namespace pdbs {
+namespace cost_saturation {
 class PartialStateTreeNode {
     int var_id;
     std::unique_ptr<std::vector<std::unique_ptr<PartialStateTreeNode>>> value_successors;

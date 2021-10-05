@@ -4,7 +4,7 @@
 
 using namespace std;
 
-namespace pdbs {
+namespace cost_saturation {
 static const int DEAD_END_LEAF = -2;
 static const int REGULAR_LEAF = -1;
 

@@ -295,7 +295,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
     const TaskInfo &evaluator_task_info,
     SequentialPatternGenerator &pattern_generator,
-    PartialStateTree *dead_ends,
+    DeadEnds *dead_ends,
     priority_queues::AdaptiveQueue<int> &pq,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
@@ -382,7 +382,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
         if (saturate) {
             projection_evaluation_timer->resume();
             // Only check each pattern for dead ends once.
-            PartialStateTree *tmp_dead_ends = dead_ends;
+            DeadEnds *tmp_dead_ends = dead_ends;
             if (tmp_dead_ends) {
                 if (patterns_checked_for_dead_ends.count(pattern)) {
                     tmp_dead_ends = nullptr;
@@ -443,7 +443,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
         only_interesting_patterns, pattern_order, *rng);
     priority_queues::AdaptiveQueue<int> pq;
     if (store_dead_ends) {
-        cost_saturation::dead_ends_hacked = utils::make_unique_ptr<PartialStateTree>();
+        cost_saturation::dead_ends_hacked = utils::make_unique_ptr<DeadEnds>();
     }
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;

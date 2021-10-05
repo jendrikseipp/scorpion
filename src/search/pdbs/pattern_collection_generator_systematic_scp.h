@@ -25,7 +25,6 @@ class Timer;
 }
 
 namespace pdbs {
-class PartialStateTree;
 class SequentialPatternGenerator;
 struct TaskInfo;
 
@@ -69,7 +68,7 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
         const std::shared_ptr<cost_saturation::TaskInfo> &task_info,
         const TaskInfo &evaluator_task_info,
         SequentialPatternGenerator &pattern_generator,
-        PartialStateTree *dead_ends,
+        DeadEnds *dead_ends,
         priority_queues::AdaptiveQueue<int> &pq,
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,

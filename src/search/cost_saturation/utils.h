@@ -2,9 +2,8 @@
 #define COST_SATURATION_UTILS_H
 
 #include "abstraction.h"
+#include "partial_state_tree.h"
 #include "types.h"
-
-#include "../pdbs/partial_state_tree.h"
 
 #include <iostream>
 #include <vector>
@@ -22,7 +21,7 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningHeuristicCollectionGenerator;
 
-extern std::unique_ptr<pdbs::PartialStateTree> dead_ends_hacked;
+extern std::unique_ptr<DeadEnds> dead_ends_hacked;
 
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,

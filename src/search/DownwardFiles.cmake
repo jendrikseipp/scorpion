@@ -660,6 +660,7 @@ fast_downward_plugin(
         cost_saturation/order_generator_greedy
         cost_saturation/order_generator_random
         cost_saturation/order_optimizer
+        cost_saturation/partial_state_tree
         cost_saturation/projection
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
@@ -762,7 +763,6 @@ fast_downward_plugin(
         pdbs/incremental_canonical_pdbs
         pdbs/match_tree
         pdbs/max_cliques
-        pdbs/partial_state_tree
         pdbs/pattern_cliques
         pdbs/pattern_collection_information
         pdbs/pattern_collection_generator_combo

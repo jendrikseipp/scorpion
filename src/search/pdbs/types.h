@@ -7,10 +7,12 @@
 #include <vector>
 
 namespace cost_saturation {
+class PartialStateTree;
 class Projection;
 }
 
 namespace pdbs {
+using DeadEnds = cost_saturation::PartialStateTree;
 class PatternDatabase;
 using Pattern = std::vector<int>;
 using PatternCollection = std::vector<Pattern>;

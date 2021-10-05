@@ -1,9 +1,9 @@
 #include "pattern_evaluator.h"
 
 #include "match_tree.h"
-#include "partial_state_tree.h"
 
 #include "../algorithms/priority_queues.h"
+#include "../cost_saturation/partial_state_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -16,6 +16,9 @@
 using namespace std;
 
 namespace pdbs {
+using PreconditionsTree = cost_saturation::PartialStateTree;
+using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PreconditionsTree>;
+
 static const int INF = numeric_limits<int>::max();
 
 static int compute_hash_effect(
@@ -113,7 +116,7 @@ static bool operator_is_subsumed(
         seen_abstract_ops[move(abstract_effects)].add(
             abstract_preconditions, pattern_domain_sizes);
     } else {
-        PartialStateTree &preconditions_collection = it->second;
+        PreconditionsTree &preconditions_collection = it->second;
         if (preconditions_collection.subsumes(abstract_preconditions)) {
             return true;
         } else {
@@ -347,7 +350,7 @@ bool PatternEvaluator::is_consistent(
 void PatternEvaluator::store_new_dead_ends(
     const Pattern &pattern,
     const vector<int> &distances,
-    PartialStateTree &dead_ends) const {
+    DeadEnds &dead_ends) const {
     const vector<int> &hash_multipliers = match_tree_backward->get_hash_multipliers();
     int pattern_size = hash_multipliers.size();
     for (size_t index = 0; index < distances.size(); ++index) {
@@ -373,7 +376,7 @@ void PatternEvaluator::store_new_dead_ends(
 bool PatternEvaluator::is_useful(
     const Pattern &pattern,
     priority_queues::AdaptiveQueue<int> &pq,
-    PartialStateTree *dead_ends,
+    DeadEnds *dead_ends,
     const vector<int> &costs) const {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
     vector<int> distances(num_states, INF);
