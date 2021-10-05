@@ -70,22 +70,23 @@ Abstractions ProjectionGenerator::generate_abstractions(
     shared_ptr<TaskInfo> task_info = make_shared<TaskInfo>(task_proxy);
     Abstractions abstractions;
     for (const pdbs::Pattern &pattern : *patterns) {
+        unique_ptr<Abstraction> projection;
+        if (projections) {
+            // Projections have already been computed by the generator.
+            projection = move((*projections)[abstractions.size()]);
+        } else if (create_complete_transition_system) {
+            projection = ExplicitProjectionFactory(
+                task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction();
+        } else {
+            projection = utils::make_unique_ptr<Projection>(task_proxy, task_info, pattern);
+        }
+
         if (debug) {
             log << "Pattern " << abstractions.size() + 1 << ": "
                 << pattern << endl;
+            projection->dump();
         }
-        if (projections) {
-            abstractions.push_back(move((*projections)[abstractions.size()]));
-        } else {
-            abstractions.push_back(
-                create_complete_transition_system ?
-                ExplicitProjectionFactory(
-                    task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction() :
-                utils::make_unique_ptr<Projection>(task_proxy, task_info, pattern));
-        }
-        if (debug) {
-            abstractions.back()->dump();
-        }
+        abstractions.push_back(move(projection));
     }
 
     int collection_size = 0;
