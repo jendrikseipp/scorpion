@@ -1,11 +1,9 @@
-#ifndef COST_SATURATION_PARTIAL_STATE_TREE_H
-#define COST_SATURATION_PARTIAL_STATE_TREE_H
-
-#include "types.h"
+#ifndef ALGORITHMS_PARTIAL_STATE_TREE_H
+#define ALGORITHMS_PARTIAL_STATE_TREE_H
 
 #include "../task_proxy.h"
 
-namespace cost_saturation {
+namespace partial_state_tree {
 class PartialStateTreeNode {
     int var_id;
     std::unique_ptr<std::vector<std::unique_ptr<PartialStateTreeNode>>> value_successors;

@@ -2,8 +2,8 @@
 
 #include "match_tree.h"
 
+#include "../algorithms/partial_state_tree.h"
 #include "../algorithms/priority_queues.h"
-#include "../cost_saturation/partial_state_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -16,7 +16,7 @@
 using namespace std;
 
 namespace pdbs {
-using PreconditionsTree = cost_saturation::PartialStateTree;
+using PreconditionsTree = partial_state_tree::PartialStateTree;
 using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PreconditionsTree>;
 
 static const int INF = numeric_limits<int>::max();

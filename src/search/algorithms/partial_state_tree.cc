@@ -4,7 +4,7 @@
 
 using namespace std;
 
-namespace cost_saturation {
+namespace partial_state_tree {
 static const int DEAD_END_LEAF = -2;
 static const int REGULAR_LEAF = -1;
 

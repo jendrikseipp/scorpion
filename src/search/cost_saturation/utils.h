@@ -2,8 +2,9 @@
 #define COST_SATURATION_UTILS_H
 
 #include "abstraction.h"
-#include "partial_state_tree.h"
 #include "types.h"
+
+#include "../algorithms/partial_state_tree.h"
 
 #include <iostream>
 #include <vector>

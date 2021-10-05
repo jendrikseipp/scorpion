@@ -6,13 +6,16 @@
 #include <memory>
 #include <vector>
 
-namespace cost_saturation {
+namespace partial_state_tree {
 class PartialStateTree;
+}
+
+namespace cost_saturation {
 class Projection;
 }
 
 namespace pdbs {
-using DeadEnds = cost_saturation::PartialStateTree;
+using DeadEnds = partial_state_tree::PartialStateTree;
 class PatternDatabase;
 using Pattern = std::vector<int>;
 using PatternCollection = std::vector<Pattern>;

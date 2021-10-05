@@ -217,6 +217,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME PARTIAL_STATE_TREE
+    HELP "Compact representation of sets of fact conjunctions"
+    SOURCES
+        algorithms/partial_state_tree
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
     NAME PRIORITY_QUEUES
     HELP "Three implementations of priority queue: HeapQueue, BucketQueue and AdaptiveQueue"
     SOURCES
@@ -660,7 +668,6 @@ fast_downward_plugin(
         cost_saturation/order_generator_greedy
         cost_saturation/order_generator_random
         cost_saturation/order_optimizer
-        cost_saturation/partial_state_tree
         cost_saturation/projection
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
@@ -670,7 +677,7 @@ fast_downward_plugin(
         cost_saturation/unsolvability_heuristic
         cost_saturation/utils
         cost_saturation/zero_one_cost_partitioning_heuristic
-    DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
+    DEPENDS CEGAR LP_SOLVER PDBS PARTIAL_STATE_TREE PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
 )
 
 fast_downward_plugin(
