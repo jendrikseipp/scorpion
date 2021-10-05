@@ -52,6 +52,7 @@ public:
 
 struct AbstractForwardOperator {
     int precondition_hash;
+    // TODO: remove this member and use -AbstractBackwardOperator::hash_effect instead.
     int hash_effect;
 
     AbstractForwardOperator(
