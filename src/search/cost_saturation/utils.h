@@ -4,8 +4,6 @@
 #include "abstraction.h"
 #include "types.h"
 
-#include "../algorithms/partial_state_tree.h"
-
 #include <iostream>
 #include <vector>
 
@@ -22,11 +20,10 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningHeuristicCollectionGenerator;
 
-extern std::unique_ptr<DeadEnds> dead_ends_hacked;
-
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
-    const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators);
+    const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators,
+    DeadEnds *dead_ends = nullptr);
 
 extern Order get_default_order(int num_abstractions);
 

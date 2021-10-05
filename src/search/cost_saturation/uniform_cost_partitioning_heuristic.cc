@@ -8,6 +8,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../algorithms/partial_state_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../tasks/modified_operator_costs_task.h"
 #include "../utils/logging.h"
@@ -118,8 +119,11 @@ static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning
 }
 
 UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
-    const Options &opts, Abstractions &&abstractions, CPHeuristics &&cp_heuristics)
-    : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics)) {
+    const Options &opts,
+    Abstractions &&abstractions,
+    CPHeuristics &&cp_heuristics,
+    unique_ptr<DeadEnds> &&dead_ends)
+    : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics), move(dead_ends)) {
 }
 
 int UniformCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
@@ -198,9 +202,11 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"));
     opts.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
 
+    unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
     Abstractions abstractions = generate_abstractions(
         scaled_costs_task,
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+        dead_ends.get());
 
     TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
     bool debug = opts.get<bool>("debug");
@@ -218,7 +224,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     }
 
     return make_shared<UniformCostPartitioningHeuristic>(
-        opts, move(abstractions), move(cp_heuristics));
+        opts, move(abstractions), move(cp_heuristics), move(dead_ends));
 }
 
 static Plugin<Evaluator> _plugin("uniform_cost_partitioning", _parse);

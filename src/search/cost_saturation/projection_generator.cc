@@ -28,7 +28,8 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
-    const shared_ptr<AbstractTask> &task) {
+    const shared_ptr<AbstractTask> &task,
+    DeadEnds *dead_ends) {
     utils::Timer patterns_timer;
     utils::Log log;
     TaskProxy task_proxy(*task);
@@ -45,6 +46,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
     }
 
     log << "Compute patterns" << endl;
+    pattern_generator->set_dead_ends_store(dead_ends);
     PatternCollectionInformation pattern_collection_info =
         pattern_generator->generate(task);
     shared_ptr<pdbs::PatternCollection> patterns =

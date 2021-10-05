@@ -8,6 +8,7 @@
 #include "../task_proxy.h"
 
 #include "../algorithms/array_pool.h"
+#include "../algorithms/partial_state_tree.h"
 #include "../algorithms/priority_queues.h"
 #include "../cost_saturation/projection.h"
 #include "../cost_saturation/utils.h"
@@ -438,13 +439,13 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
     if (ignore_useless_patterns) {
         relevant_operators_per_variable = get_relevant_operators_per_variable(task_proxy);
     }
+    if (!store_dead_ends) {
+        dead_ends = nullptr;
+    }
     SequentialPatternGenerator pattern_generator(
         task, evaluator_task_info, max_pattern_size,
         only_interesting_patterns, pattern_order, *rng);
     priority_queues::AdaptiveQueue<int> pq;
-    if (store_dead_ends) {
-        cost_saturation::dead_ends_hacked = utils::make_unique_ptr<DeadEnds>();
-    }
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     PatternSet patterns_checked_for_dead_ends;
@@ -455,7 +456,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator,
-            cost_saturation::dead_ends_hacked.get(),
+            dead_ends,
             pq, projections, pattern_set, patterns_checked_for_dead_ends,
             collection_size, timer.get_remaining_time());
         int num_patterns_after = projections->size();
@@ -490,10 +491,10 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
         : static_cast<double>(projections->size()) / num_generated_patterns;
     log << "Selected ordered systematic patterns: " << projections->size()
         << "/" << num_generated_patterns << " = " << percent_selected << endl;
-    if (store_dead_ends) {
-        log << "Systematic dead ends: " << cost_saturation::dead_ends_hacked->size() << endl;
-        log << "Systematic dead end tree nodes: "
-            << cost_saturation::dead_ends_hacked->get_num_nodes() << endl;
+    if (dead_ends) {
+        log << "Systematic dead ends: " << dead_ends->size() << endl;
+        log << "Systematic dead end tree nodes: " << dead_ends->get_num_nodes()
+            << endl;
     }
 
     shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();

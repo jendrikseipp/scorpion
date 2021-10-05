@@ -10,6 +10,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../algorithms/partial_state_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/markup.h"
 
@@ -163,8 +164,9 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
+    unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
     Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"), dead_ends.get());
     CPFunction cp_function = get_cp_function_from_options(opts);
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
@@ -172,7 +174,8 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     return make_shared<MaxCostPartitioningHeuristic>(
         opts,
         move(abstractions),
-        move(cp_heuristics));
+        move(cp_heuristics),
+        move(dead_ends));
 }
 
 static Plugin<Evaluator> _plugin("scp", _parse);

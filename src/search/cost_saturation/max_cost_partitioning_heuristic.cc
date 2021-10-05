@@ -4,6 +4,7 @@
 #include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
+#include "../algorithms/partial_state_tree.h"
 #include "../utils/logging.h"
 
 using namespace std;
@@ -69,9 +70,11 @@ static AbstractionFunctions extract_abstraction_functions_from_useful_abstractio
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     const options::Options &opts,
     Abstractions abstractions,
-    vector<CostPartitioningHeuristic> &&cp_heuristics_)
+    vector<CostPartitioningHeuristic> &&cp_heuristics_,
+    unique_ptr<DeadEnds> &&dead_ends_)
     : Heuristic(opts),
       cp_heuristics(move(cp_heuristics_)),
+      dead_ends(move(dead_ends_)),
       unsolvability_heuristic(abstractions, cp_heuristics) {
     log_info_about_stored_lookup_tables(abstractions, cp_heuristics);
 
@@ -95,7 +98,7 @@ MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {
 
 int MaxCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
     State state = convert_ancestor_state(ancestor_state);
-    if (dead_ends_hacked && dead_ends_hacked->subsumes(state)) {
+    if (dead_ends && dead_ends->subsumes(state)) {
         return DEAD_END;
     }
     vector<int> abstract_state_ids = get_abstract_state_ids(

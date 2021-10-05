@@ -161,7 +161,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
 }
 
 Abstractions CartesianAbstractionGenerator::generate_abstractions(
-    const shared_ptr<AbstractTask> &task) {
+    const shared_ptr<AbstractTask> &task,
+    DeadEnds *) {
     utils::CountdownTimer timer(max_time);
     num_states = 0;
     num_transitions = 0;

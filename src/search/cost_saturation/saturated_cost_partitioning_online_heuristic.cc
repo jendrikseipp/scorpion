@@ -10,6 +10,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../algorithms/partial_state_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
@@ -47,12 +48,14 @@ static void extract_useful_abstraction_functions(
 
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const options::Options &opts,
-    Abstractions &&abstractions_)
+    Abstractions &&abstractions_,
+    unique_ptr<DeadEnds> &&dead_ends_)
     : Heuristic(opts),
       order_generator(opts.get<shared_ptr<OrderGenerator>>("orders")),
       saturator(opts.get<Saturator>("saturator")),
       cp_function(get_cp_function_from_options(opts)),
       abstractions(move(abstractions_)),
+      dead_ends(move(dead_ends_)),
       interval(opts.get<int>("interval")),
       max_time(opts.get<double>("max_time")),
       max_size_kb(opts.get<int>("max_size")),
@@ -80,7 +83,7 @@ SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuris
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &ancestor_state) {
     State state = convert_ancestor_state(ancestor_state);
 
-    if (dead_ends_hacked && dead_ends_hacked->subsumes(state)) {
+    if (dead_ends && dead_ends->subsumes(state)) {
         return DEAD_END;
     }
 
@@ -245,11 +248,14 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         return nullptr;
 
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
+    unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
     Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
+        task,
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+        dead_ends.get());
 
     return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
-        opts, move(abstractions));
+        opts, move(abstractions), move(dead_ends));
 }
 
 static Plugin<Evaluator> _plugin("scp_online", _parse);
