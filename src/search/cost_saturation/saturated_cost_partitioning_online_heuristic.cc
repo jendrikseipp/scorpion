@@ -78,11 +78,16 @@ SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuris
 }
 
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
+
+    if (dead_ends_hacked && dead_ends_hacked->subsumes(state)) {
+        return DEAD_END;
+    }
+
     if (improve_heuristic) {
         improve_heuristic_timer->resume();
     }
 
-    State state = convert_ancestor_state(ancestor_state);
     vector<int> abstract_state_ids;
     if (improve_heuristic) {
         assert(!abstractions.empty() && abstraction_functions.empty());
