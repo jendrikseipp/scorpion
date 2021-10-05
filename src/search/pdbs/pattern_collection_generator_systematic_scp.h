@@ -51,7 +51,6 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
     const bool saturate;
     const bool only_interesting_patterns;
     const bool ignore_useless_patterns;
-    const bool store_orders;
     const bool store_dead_ends;
     const PatternOrder pattern_order;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;

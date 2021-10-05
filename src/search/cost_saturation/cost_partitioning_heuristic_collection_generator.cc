@@ -14,7 +14,6 @@
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
-#include "../utils/rng.h"
 
 #include <cassert>
 
@@ -113,44 +112,6 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     vector<CostPartitioningHeuristic> cp_heuristics;
     int evaluated_orders = 0;
     int size_kb = 0;
-
-    /* Loop over systematic projection orders, create full orders and add them
-       if they're diverse or unconditionally, if diversification is off. */
-    for (const Order &sys_order : systematic_generator_orders_hacked) {
-        if (timer.is_expired() && !cp_heuristics.empty()) {
-            break;
-        }
-
-        Order order = sys_order;
-        unordered_set<int> used(order.begin(), order.end());
-        vector<int> abstraction_ids = get_default_order(abstractions.size());
-        rng->shuffle(abstraction_ids);
-        for (int abs_id : abstraction_ids) {
-            if (used.insert(abs_id).second) {
-                order.push_back(abs_id);
-            }
-        }
-        vector<int> remaining_costs = costs;
-        CostPartitioningHeuristic cp_heuristic = cp_function(
-            abstractions, order, remaining_costs, abstract_state_ids_for_init);
-        if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
-            cp_heuristics.push_back(move(cp_heuristic));
-            if (diversifier) {
-                log << "Average finite h value for " << num_samples
-                    << " samples after " << timer.get_elapsed_time()
-                    << " of diversification for systematic sequences: "
-                    << diversifier->compute_avg_finite_sample_h_value()
-                    << endl;
-            }
-        }
-    }
-    int num_projection_orders = systematic_generator_orders_hacked.size();
-    int num_selected_projection_orders = cp_heuristics.size();
-    double selected_percentage = (num_projection_orders == 0) ? 0
-        : num_selected_projection_orders / static_cast<double>(num_projection_orders);
-    log << "Selected projection orders: " << num_selected_projection_orders
-        << "/" << num_projection_orders << " = " << selected_percentage << endl;
-
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
            (!timer.is_expired() || cp_heuristics.empty()) &&
            (size_kb < max_size_kb)) {

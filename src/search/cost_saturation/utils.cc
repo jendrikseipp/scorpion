@@ -20,7 +20,6 @@
 using namespace std;
 
 namespace cost_saturation {
-vector<Order> systematic_generator_orders_hacked;
 unique_ptr<pdbs::PartialStateTree> dead_ends_hacked;
 
 Abstractions generate_abstractions(

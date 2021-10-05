@@ -284,7 +284,6 @@ PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP
       saturate(opts.get<bool>("saturate")),
       only_interesting_patterns(opts.get<bool>("only_interesting_patterns")),
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
-      store_orders(opts.get<bool>("store_orders")),
       store_dead_ends(opts.get<bool>("store_dead_ends")),
       pattern_order(opts.get<PatternOrder>("order")),
       rng(utils::parse_rng_from_options(opts)),
@@ -462,14 +461,6 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "
             << collection_size << endl;
-        if (store_orders && num_patterns_after > num_patterns_before) {
-            cost_saturation::Order order;
-            for (int i = num_patterns_before; i < num_patterns_after; ++i) {
-                order.push_back(i);
-            }
-            cout << "Store order " << order << endl;
-            cost_saturation::systematic_generator_orders_hacked.push_back(order);
-        }
         if (num_patterns_after == num_patterns_before) {
             log << "Restart did not add any pattern." << endl;
             break;
@@ -570,10 +561,6 @@ static void add_options(OptionParser &parser) {
         "ignore_useless_patterns",
         "ignore patterns that induce no transitions with positive finite cost",
         "false");
-    parser.add_option<bool>(
-        "store_orders",
-        "store orders (filtered_systematic() must be the first generator)",
-        "true");
     parser.add_option<bool>(
         "store_dead_ends",
         "store dead ends in dead end database",

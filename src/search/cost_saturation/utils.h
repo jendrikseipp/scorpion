@@ -22,7 +22,6 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningHeuristicCollectionGenerator;
 
-extern std::vector<Order> systematic_generator_orders_hacked;
 extern std::unique_ptr<pdbs::PartialStateTree> dead_ends_hacked;
 
 extern Abstractions generate_abstractions(
