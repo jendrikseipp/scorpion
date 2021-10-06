@@ -573,6 +573,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sys-scp_patterns" class="md-nav__link">
+    Sys-SCP patterns
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -849,6 +856,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sys-scp_patterns" class="md-nav__link">
+    Sys-SCP patterns
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1052,6 +1066,30 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <ul>
 <li><em>pattern_max_size</em> (int [1, infinity]): max number of variables per pattern</li>
 <li><em>only_interesting_patterns</em> (bool): Only consider the union of two disjoint patterns if the union has more information than the individual patterns.</li>
+</ul>
+<h2 id="sys-scp_patterns">Sys-SCP patterns<a class="headerlink" href="#sys-scp_patterns" title="Permanent link">#</a></h2>
+<p>Systematically generate larger (interesting) patterns but only keep a pattern if it's useful under a saturated cost partitioning. For details, see</p>
+<p>Jendrik Seipp.<br />
+ <a href="https://jendrikseipp.com/papers/seipp-ijcai2019.pdf">Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning</a>.<br />
+ In <em>Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI 2019)</em>, pp. 5621-5627. IJCAI, 2019.</p>
+<pre><code>systematic_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, only_interesting_patterns=true, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, debug=false)
+</code></pre>
+<ul>
+<li><em>max_pattern_size</em> (int [1, infinity]): maximum number of variables per pattern</li>
+<li><em>max_pdb_size</em> (int [1, infinity]): maximum number of states in a PDB</li>
+<li><em>max_collection_size</em> (int [1, infinity]): maximum number of states in the pattern collection</li>
+<li><em>max_patterns</em> (int [1, infinity]): maximum number of patterns</li>
+<li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for generating patterns</li>
+<li><em>max_time_per_restart</em> (double [0.0, infinity]): maximum time in seconds for each restart</li>
+<li><em>max_evaluations_per_restart</em> (int [0, infinity]): maximum pattern evaluations per the inner loop</li>
+<li><em>max_total_evaluations</em> (int [0, infinity]): maximum total pattern evaluations</li>
+<li><em>saturate</em> (bool): only select patterns useful in saturated cost partitionings</li>
+<li><em>only_interesting_patterns</em> (bool): only consider interesting patterns instead of all patterns</li>
+<li><em>ignore_useless_patterns</em> (bool): ignore patterns that induce no transitions with positive finite cost</li>
+<li><em>store_dead_ends</em> (bool): store dead ends in dead end tree (used to prune the search later)</li>
+<li><em>order</em> ({RANDOM, STATES_UP, STATES_DOWN, OPS_UP, OPS_DOWN, CG_UP, CG_DOWN}): order in which to consider patterns of the same size (based on states in projection, active operators or position of the pattern variables in the partial ordering of the causal graph)</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>debug</em> (bool): print debugging messages</li>
 </ul>
                 
               
