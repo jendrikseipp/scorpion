@@ -153,10 +153,10 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &anc
         max_h = max(max_h, new_h);
     }
 
+    ++num_evaluated_states;
     if (stored_scp) {
         print_intermediate_statistics();
     }
-    ++num_evaluated_states;
     improve_heuristic_timer->stop();
     return max_h;
 }
