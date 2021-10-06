@@ -203,7 +203,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
             "Online Saturated Cost Partitioning for Classical Planning",
             "https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf",
             "Proceedings of the 31st International Conference on Automated "
-            "Planning and Scheduling (ICAPS 2021) ",
+            "Planning and Scheduling (ICAPS 2021)",
             "317-321",
             "AAAI Press",
             "2021"));
