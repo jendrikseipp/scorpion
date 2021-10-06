@@ -604,5 +604,5 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     return make_shared<PatternCollectionGeneratorSystematicSCP>(opts);
 }
 
-static Plugin<PatternCollectionGenerator> _plugin("systematic_scp", _parse);
+static Plugin<PatternCollectionGenerator> _plugin("sys_scp", _parse);
 }
