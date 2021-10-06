@@ -39,8 +39,8 @@ int MaxHeuristic::compute_heuristic(const State &ancestor_state) {
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Max heuristic",
-        "Maximize over a set of abstraction heuristics");
+        "Maximum over abstractions",
+        "Maximize over a set of abstraction heuristics.");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
 
@@ -58,5 +58,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     return make_shared<MaxHeuristic>(opts, move(abstractions));
 }
 
-static Plugin<Evaluator> _plugin("maximize", _parse);
+static Plugin<Evaluator> _plugin("maximize", _parse, "heuristics_cost_partitioning");
 }

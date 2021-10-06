@@ -196,9 +196,10 @@ void SaturatedCostPartitioningOnlineHeuristic::print_final_statistics() const {
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Online saturated cost partitioning heuristic",
+        "Online saturated cost partitioning",
         "Compute the maximum over multiple saturated cost partitioning heuristics "
-        "diversified during the search. See " + utils::format_conference_reference(
+        "diversified during the search. For details, see " +
+        utils::format_conference_reference(
             {"Jendrik Seipp"},
             "Online Saturated Cost Partitioning for Classical Planning",
             "https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf",
@@ -256,5 +257,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         opts, move(abstractions), move(dead_ends));
 }
 
-static Plugin<Evaluator> _plugin("scp_online", _parse);
+static Plugin<Evaluator> _plugin("scp_online", _parse, "heuristics_cost_partitioning");
 }

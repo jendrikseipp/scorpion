@@ -12,6 +12,7 @@
 #include "../task_utils/task_properties.h"
 #include "../tasks/modified_operator_costs_task.h"
 #include "../utils/logging.h"
+#include "../utils/markup.h"
 #include "../utils/math.h"
 #include "../utils/rng_options.h"
 
@@ -177,8 +178,16 @@ static CPHeuristics get_oucp_heuristics(
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "(Opportunistic) uniform cost partitioning heuristic",
-        "");
+        "(Opportunistic) uniform cost partitioning",
+        utils::format_conference_reference(
+            {"Jendrik Seipp", "Thomas Keller", "Malte Helmert"},
+            "A Comparison of Cost Partitioning Algorithms for Optimal Classical Planning",
+            "https://jendrikseipp.com/papers/seipp-et-al-icaps2017.pdf",
+            "Proceedings of the Twenty-Seventh International Conference on "
+            "Automated Planning and Scheduling (ICAPS 2017)",
+            "259-268",
+            "AAAI Press",
+            "2017"));
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
     add_order_options_to_parser(parser);
@@ -227,5 +236,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         opts, move(abstractions), move(cp_heuristics), move(dead_ends));
 }
 
-static Plugin<Evaluator> _plugin("uniform_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("ucp", _parse, "heuristics_cost_partitioning");
 }

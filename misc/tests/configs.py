@@ -173,14 +173,14 @@ def configs_optimal_extended():
             """astar(canonical_heuristic([projections(systematic(2))]))"""],
         "ucp": [
             "--search",
-            """astar(uniform_cost_partitioning([projections(systematic(2))]))"""],
+            """astar(ucp([projections(systematic(2))]))"""],
         "oucp": [
             "--search",
-            """astar(uniform_cost_partitioning(
+            """astar(ucp(
                 [projections(systematic(2))], opportunistic=true, max_orders=1))"""],
         "gzocp": [
             "--search",
-            """astar(zero_one_cost_partitioning(
+            """astar(gzocp(
                 [projections(systematic(2))], max_orders=1))"""],
         "lm_ucp":
             _get_landmark_config(cost_partitioning="suboptimal", greedy=False, reuse_costs=False),

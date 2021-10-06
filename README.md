@@ -111,23 +111,26 @@ We use Cartesian abstractions in the example configurations below
 also part of vanilla Fast Downward, but only for PDB heuristics.
 
 - Optimal cost partitioning:
-  `optimal_cost_partitioning([cartesian()])`
+  `ocp([cartesian()])`
 - Canonical heuristic:
   `canonical_heuristic([cartesian()])`
 - Post-hoc optimization:
   `operatorcounting([pho_abstraction_constraints([cartesian()], saturated=false)])`
 - Uniform cost partitioning:
-  `uniform_cost_partitioning([cartesian()], opportunistic=false)`
+  `ucp([cartesian()], opportunistic=false)`
 - Opportunistic uniform cost partitioning:
-  `uniform_cost_partitioning([cartesian()], ..., opportunistic=true)`
+  `ucp([cartesian()], ..., opportunistic=true)`
 - Greedy zero-one cost partitioning:
-  `zero_one_cost_partitioning([cartesian()], ...)`
+  `gzocp([cartesian()], ...)`
 - Saturated post-hoc optimization:
   `operatorcounting([pho_abstraction_constraints([cartesian()], saturated=true)])`
 
 You can also compute the maximum over abstraction heuristics:
 
 - `maximize([cartesian()])`
+
+The plugin documentation shows all options for [cost partitioning
+heuristics](https://jendrikseipp.github.io/scorpion/Evaluator/#cost_partitioning_heuristics).
 
 
 ### New cost partitioning algorithms for landmark heuristics

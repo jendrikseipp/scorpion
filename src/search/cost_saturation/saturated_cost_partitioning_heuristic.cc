@@ -104,40 +104,15 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Saturated cost partitioning",
         "Compute the maximum over multiple saturated cost partitioning "
-        "heuristics using different orders. We describe saturated cost "
-        "partitioning in the paper" +
+        "heuristics using different orders. For details, see " +
         utils::format_journal_reference(
-            {"Jendrik Seipp", "Malte Helmert"},
-            "Counterexample-Guided Cartesian Abstraction Refinement for "
-            "Classical Planning",
-            "https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf",
-            "Journal of Artificial Intelligence Research",
-            "62",
-            "535-577",
-            "2018") +
-        "and show how to compute saturated cost partitioning heuristics for "
-        "multiple (diverse) orders in" +
-        utils::format_conference_reference(
             {"Jendrik Seipp", "Thomas Keller", "Malte Helmert"},
-            "Narrowing the Gap Between Saturated and Optimal Cost Partitioning "
-            "for Classical Planning",
-            "https://ai.dmi.unibas.ch/papers/seipp-et-al-aaai2017.pdf",
-            "Proceedings of the 31st AAAI Conference on Artificial Intelligence "
-            "(AAAI 2017)",
-            "3651-3657",
-            "AAAI Press",
-            "2017") +
-        "Greedy orders for saturated cost partitioning are introduced in" +
-        utils::format_conference_reference(
-            {"Jendrik Seipp"},
-            "Better Orders for Saturated Cost Partitioning in Optimal "
-            "Classical Planning",
-            "https://ai.dmi.unibas.ch/papers/seipp-socs2017.pdf",
-            "Proceedings of the 10th Annual Symposium on Combinatorial Search "
-            "(SoCS 2017)",
-            "149-153",
-            "AAAI Press",
-            "2017"));
+            "Saturated Cost Partitioning for Optimal Classical Planning",
+            "https://ai.dmi.unibas.ch/papers/seipp-et-al-jair2020.pdf",
+            "Journal of Artificial Intelligence Research",
+            "67",
+            "129-167",
+            "2020"));
     parser.document_note(
         "Difference to cegar()",
         "The cegar() plugin computes a single saturated cost partitioning over "
@@ -178,5 +153,5 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
         move(dead_ends));
 }
 
-static Plugin<Evaluator> _plugin("scp", _parse);
+static Plugin<Evaluator> _plugin("scp", _parse, "heuristics_cost_partitioning");
 }

@@ -39,10 +39,10 @@ static CostPartitioningHeuristic compute_zero_one_cost_partitioning(
 
 static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Zero-one cost partitioning heuristic",
+        "Greedy zero-one cost partitioning",
         "");
     return get_max_cp_heuristic(parser, compute_zero_one_cost_partitioning);
 }
 
-static Plugin<Evaluator> _plugin("zero_one_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("gzocp", _parse, "heuristics_cost_partitioning");
 }
