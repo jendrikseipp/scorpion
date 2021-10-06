@@ -161,7 +161,7 @@ ProjectionFunction::ProjectionFunction(
 }
 
 int ProjectionFunction::get_abstract_state_id(const State &concrete_state) const {
-    size_t index = 0;
+    int index = 0;
     for (const VariableAndMultiplier &pair : variables_and_multipliers) {
         index += pair.hash_multiplier * concrete_state[pair.pattern_var].get_value();
     }
@@ -340,7 +340,7 @@ void Projection::build_abstract_operators(
     // All variable value pairs that are a precondition (value = -1)
     vector<FactPair> effects_without_pre;
 
-    size_t num_vars = variables.size();
+    int num_vars = variables.size();
     vector<bool> has_precond_and_effect_on_var(num_vars, false);
     vector<bool> has_precondition_on_var(num_vars, false);
 
@@ -377,7 +377,7 @@ void Projection::build_abstract_operators(
 }
 
 bool Projection::is_consistent(
-    size_t state_index,
+    int state_index,
     const vector<FactPair> &abstract_facts) const {
     for (const FactPair &abstract_goal : abstract_facts) {
         int pattern_var_id = abstract_goal.var;
@@ -427,7 +427,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
-    priority_queues::AdaptiveQueue<size_t> pq;
+    priority_queues::AdaptiveQueue<int> pq;
     for (int goal : goal_states) {
         pq.push(0, goal);
         distances[goal] = 0;
@@ -440,7 +440,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
     while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
         int distance = node.first;
-        size_t state_index = node.second;
+        int state_index = node.second;
         assert(utils::in_bounds(state_index, distances));
         if (distance > distances[state_index]) {
             continue;
@@ -452,7 +452,7 @@ vector<int> Projection::compute_goal_distances(const vector<int> &costs) const {
             state_index, applicable_operator_ids);
         for (int abs_op_id : applicable_operator_ids) {
             const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
-            size_t predecessor = state_index + op.hash_effect;
+            int predecessor = state_index + op.hash_effect;
             int conc_op_id = op.concrete_operator_id;
             assert(utils::in_bounds(conc_op_id, costs));
             int alternative_cost = (costs[conc_op_id] == INF) ?
@@ -485,6 +485,10 @@ void Projection::for_each_transition(const TransitionCallback &callback) const {
 
 const vector<int> &Projection::get_goal_states() const {
     return goal_states;
+}
+
+const pdbs::Pattern &Projection::get_pattern() const {
+    return pattern;
 }
 
 void Projection::dump() const {

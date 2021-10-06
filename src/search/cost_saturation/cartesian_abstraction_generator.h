@@ -49,7 +49,8 @@ public:
     explicit CartesianAbstractionGenerator(const options::Options &opts);
 
     Abstractions generate_abstractions(
-        const std::shared_ptr<AbstractTask> &task);
+        const std::shared_ptr<AbstractTask> &task,
+        DeadEnds *dead_ends);
 };
 }
 

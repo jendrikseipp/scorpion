@@ -6,6 +6,10 @@
 #include <memory>
 #include <vector>
 
+namespace partial_state_tree {
+class PartialStateTree;
+}
+
 namespace cost_saturation {
 class Abstraction;
 class AbstractionFunction;
@@ -25,6 +29,7 @@ using AbstractionFunctions = std::vector<std::unique_ptr<AbstractionFunction>>;
 using CPFunction = std::function<CostPartitioningHeuristic(
                                      const Abstractions &, const std::vector<int> &, std::vector<int> &, const std::vector<int> &)>;
 using CPHeuristics = std::vector<CostPartitioningHeuristic>;
+using DeadEnds = partial_state_tree::PartialStateTree;
 using Order = std::vector<int>;
 }
 

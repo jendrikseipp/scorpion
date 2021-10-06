@@ -52,6 +52,7 @@ public:
 
 struct AbstractForwardOperator {
     int precondition_hash;
+    // TODO: remove this member and use -AbstractBackwardOperator::hash_effect instead.
     int hash_effect;
 
     AbstractForwardOperator(
@@ -198,7 +199,7 @@ class Projection : public Abstraction {
       Return true iff all abstract facts hold in the given state.
     */
     bool is_consistent(
-        std::size_t state_index,
+        int state_index,
         const std::vector<FactPair> &abstract_facts) const;
 
 public:
@@ -219,6 +220,7 @@ public:
     virtual int get_num_states() const override;
     virtual const std::vector<int> &get_goal_states() const override;
 
+    const pdbs::Pattern &get_pattern() const;
     virtual void dump() const override;
 };
 }

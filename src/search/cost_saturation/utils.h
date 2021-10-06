@@ -22,7 +22,8 @@ class CostPartitioningHeuristicCollectionGenerator;
 
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
-    const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators);
+    const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators,
+    DeadEnds *dead_ends = nullptr);
 
 extern Order get_default_order(int num_abstractions);
 

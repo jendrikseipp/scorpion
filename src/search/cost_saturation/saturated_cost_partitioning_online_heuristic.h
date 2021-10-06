@@ -21,6 +21,7 @@ class SaturatedCostPartitioningOnlineHeuristic : public Heuristic {
     const CPFunction cp_function;
     Abstractions abstractions;
     AbstractionFunctions abstraction_functions;
+    std::unique_ptr<DeadEnds> dead_ends;
     CPHeuristics cp_heuristics;
     const int interval;
     const double max_time;
@@ -44,7 +45,8 @@ protected:
 public:
     SaturatedCostPartitioningOnlineHeuristic(
         const options::Options &opts,
-        Abstractions &&abstractions);
+        Abstractions &&abstractions,
+        std::unique_ptr<DeadEnds> &&dead_ends);
     virtual ~SaturatedCostPartitioningOnlineHeuristic() override;
 };
 }
