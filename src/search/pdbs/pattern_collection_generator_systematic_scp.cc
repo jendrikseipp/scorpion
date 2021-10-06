@@ -572,7 +572,6 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "only_interesting_patterns",
         "only consider interesting patterns instead of all patterns",
         "true");
-    // TODO: find better name for this option.
     parser.add_option<bool>(
         "ignore_useless_patterns",
         "ignore patterns that induce no transitions with positive finite cost",
@@ -581,18 +580,12 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "store_dead_ends",
         "store dead ends in dead end tree (used to prune the search later)",
         "true");
-    vector<string> pattern_orders;
-    pattern_orders.push_back("RANDOM");
-    pattern_orders.push_back("STATES_UP");
-    pattern_orders.push_back("STATES_DOWN");
-    pattern_orders.push_back("OPS_UP");
-    pattern_orders.push_back("OPS_DOWN");
-    pattern_orders.push_back("CG_UP");
-    pattern_orders.push_back("CG_DOWN");
     parser.add_enum_option<PatternOrder>(
         "order",
-        pattern_orders,
-        "order in which to consider patterns of the same size",
+        {"RANDOM", "STATES_UP", "STATES_DOWN", "OPS_UP", "OPS_DOWN", "CG_UP", "CG_DOWN"},
+        "order in which to consider patterns of the same size (based on states "
+        "in projection, active operators or position of the pattern variables "
+        "in the partial ordering of the causal graph)",
         "CG_DOWN");
     utils::add_rng_options(parser);
     parser.add_option<bool>(
