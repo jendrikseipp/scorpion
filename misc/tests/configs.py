@@ -164,6 +164,11 @@ def configs_optimal_extended():
             """astar(scp_online([
                 projections(systematic(2))],
                 interval=10))"""],
+        "scp_online_sys_scp": [
+            "--search",
+            """astar(scp_online([
+                projections(sys_scp(max_time=0.5))],
+                interval=10))"""],
         "max_over_abstractions": [
             "--search",
             """astar(maximize([
