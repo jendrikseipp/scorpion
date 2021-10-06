@@ -16,6 +16,7 @@
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
+#include "../utils/markup.h"
 #include "../utils/math.h"
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
@@ -508,7 +509,21 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
 }
 
 
-static void add_options(OptionParser &parser) {
+static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
+    parser.document_synopsis(
+        "Sys-SCP patterns",
+        "Systematically generate larger (interesting) patterns but only keep "
+        "a pattern if it's useful under a saturated cost partitioning. "
+        "For details, see" + utils::format_conference_reference(
+            {"Jendrik Seipp"},
+            "Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning",
+            "https://jendrikseipp.com/papers/seipp-ijcai2019.pdf",
+            "Proceedings of the 28th International Joint Conference on "
+            "Artificial Intelligence (IJCAI 2019)",
+            "5621-5627",
+            "IJCAI",
+            "2019"));
+
     parser.add_option<int>(
         "max_pattern_size",
         "maximum number of variables per pattern",
@@ -551,7 +566,7 @@ static void add_options(OptionParser &parser) {
         Bounds("0", "infinity"));
     parser.add_option<bool>(
         "saturate",
-        "compute saturated cost partitionings",
+        "only select patterns useful in saturated cost partitionings",
         "true");
     parser.add_option<bool>(
         "only_interesting_patterns",
@@ -584,10 +599,6 @@ static void add_options(OptionParser &parser) {
         "debug",
         "print debugging messages",
         "false");
-}
-
-static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
-    add_options(parser);
 
     Options opts = parser.parse();
     if (parser.help_mode())

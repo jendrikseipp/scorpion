@@ -17,7 +17,7 @@ using namespace std;
 
 namespace pdbs {
 using PreconditionsTree = partial_state_tree::PartialStateTree;
-using AbstractOperatorSet = utils::HashMap<std::vector<FactPair>, PreconditionsTree>;
+using AbstractOperatorSet = utils::HashMap<vector<FactPair>, PreconditionsTree>;
 
 static const int INF = numeric_limits<int>::max();
 
