@@ -579,7 +579,7 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "false");
     parser.add_option<bool>(
         "store_dead_ends",
-        "store dead ends in dead end database",
+        "store dead ends in dead end tree (used to prune the search later)",
         "true");
     vector<string> pattern_orders;
     pattern_orders.push_back("RANDOM");
