@@ -25,6 +25,7 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <queue>
 
 using namespace std;
