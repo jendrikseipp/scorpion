@@ -532,12 +532,12 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "max_pdb_size",
         "maximum number of states in a PDB",
-        "infinity",
+        "2M",
         Bounds("1", "infinity"));
     parser.add_option<int>(
         "max_collection_size",
         "maximum number of states in the pattern collection",
-        "infinity",
+        "20M",
         Bounds("1", "infinity"));
     parser.add_option<int>(
         "max_patterns",
