@@ -81,14 +81,15 @@ SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuris
 }
 
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &ancestor_state) {
+    if (improve_heuristic) {
+        improve_heuristic_timer->resume();
+    }
+
     State state = convert_ancestor_state(ancestor_state);
 
     if (dead_ends && dead_ends->subsumes(state)) {
+        improve_heuristic_timer->stop();
         return DEAD_END;
-    }
-
-    if (improve_heuristic) {
-        improve_heuristic_timer->resume();
     }
 
     vector<int> abstract_state_ids;
@@ -102,9 +103,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &anc
 
     int max_h = compute_max_h(cp_heuristics, abstract_state_ids);
     if (max_h == INF) {
-        if (improve_heuristic) {
-            improve_heuristic_timer->stop();
-        }
+        improve_heuristic_timer->stop();
         return DEAD_END;
     }
 
@@ -158,9 +157,7 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &anc
         print_intermediate_statistics();
     }
     ++num_evaluated_states;
-    if (improve_heuristic) {
-        improve_heuristic_timer->stop();
-    }
+    improve_heuristic_timer->stop();
     return max_h;
 }
 
