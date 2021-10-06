@@ -267,7 +267,7 @@ def configs_optimal_lp(lp_solver="CPLEX"):
         "seq+lmcut": ["--search", f"astar(operatorcounting([state_equation_constraints(), lmcut_constraints()], lpsolver={lp_solver}))"],
         "ocp": [
             "--search",
-            f"""astar(optimal_cost_partitioning([projections(systematic(2))], lpsolver={lp_solver}))"""],
+            f"""astar(ocp([projections(systematic(2))], lpsolver={lp_solver}))"""],
         "pho": [
             "--search",
             f"""astar(operatorcounting([pho_abstraction_constraints(
