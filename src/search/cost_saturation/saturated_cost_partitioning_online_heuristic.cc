@@ -165,6 +165,7 @@ void SaturatedCostPartitioningOnlineHeuristic::print_intermediate_statistics() c
     utils::g_log << "Evaluated states: " << num_evaluated_states
                  << ", selected states: " << num_scps_computed
                  << ", stored SCPs: " << cp_heuristics.size()
+                 << ", heuristic size: " << size_kb << " KB"
                  << ", selection time: " << *select_state_timer
                  << ", diversification time: " << *improve_heuristic_timer
                  << endl;
