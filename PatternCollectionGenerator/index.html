@@ -567,15 +567,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#systematically_generated_patterns" class="md-nav__link">
-    Systematically generated patterns
+  <a href="#sys-scp_patterns" class="md-nav__link">
+    Sys-SCP patterns
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#sys-scp_patterns" class="md-nav__link">
-    Sys-SCP patterns
+  <a href="#systematically_generated_patterns" class="md-nav__link">
+    Systematically generated patterns
   </a>
   
 </li>
@@ -850,15 +850,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#systematically_generated_patterns" class="md-nav__link">
-    Systematically generated patterns
+  <a href="#sys-scp_patterns" class="md-nav__link">
+    Sys-SCP patterns
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#sys-scp_patterns" class="md-nav__link">
-    Sys-SCP patterns
+  <a href="#systematically_generated_patterns" class="md-nav__link">
+    Systematically generated patterns
   </a>
   
 </li>
@@ -1056,23 +1056,12 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 The algorithm runs until reaching a given time limit. Another parameter allows exiting early if no new patterns are found for a certain time ('stagnation'). Further parameters allow enabling blacklisting for the given pattern computation method after a certain time to force some diversification or to enable said blacklisting when stagnating.</p>
 <h3 id="implementation_note_about_the_multiple_algorithm_framework_1">Implementation note about the 'multiple algorithm framework'<a class="headerlink" href="#implementation_note_about_the_multiple_algorithm_framework_1" title="Permanent link">#</a></h3>
 <p>A difference compared to the original implementation used in the paper is that the original implementation of stagnation in the multiple CEGAR/RCG algorithms started counting the time towards stagnation only after having generated a duplicate pattern. Now, time towards stagnation starts counting from the start and is reset to the current time only when having found a new pattern or when enabling blacklisting.</p>
-<h2 id="systematically_generated_patterns">Systematically generated patterns<a class="headerlink" href="#systematically_generated_patterns" title="Permanent link">#</a></h2>
-<p>Generates all (interesting) patterns with up to pattern_max_size variables. For details, see</p>
-<p>Florian Pommerening, Gabriele Roeger and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/pommerening-et-al-ijcai2013.pdf">Getting the Most Out of Pattern Databases for Classical Planning</a>.<br />
- In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2357-2364. AAAI Press, 2013.</p>
-<pre><code>systematic(pattern_max_size=1, only_interesting_patterns=true)
-</code></pre>
-<ul>
-<li><em>pattern_max_size</em> (int [1, infinity]): max number of variables per pattern</li>
-<li><em>only_interesting_patterns</em> (bool): Only consider the union of two disjoint patterns if the union has more information than the individual patterns.</li>
-</ul>
 <h2 id="sys-scp_patterns">Sys-SCP patterns<a class="headerlink" href="#sys-scp_patterns" title="Permanent link">#</a></h2>
 <p>Systematically generate larger (interesting) patterns but only keep a pattern if it's useful under a saturated cost partitioning. For details, see</p>
 <p>Jendrik Seipp.<br />
  <a href="https://jendrikseipp.com/papers/seipp-ijcai2019.pdf">Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning</a>.<br />
  In <em>Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI 2019)</em>, pp. 5621-5627. IJCAI, 2019.</p>
-<pre><code>systematic_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, only_interesting_patterns=true, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, debug=false)
+<pre><code>sys_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, only_interesting_patterns=true, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, debug=false)
 </code></pre>
 <ul>
 <li><em>max_pattern_size</em> (int [1, infinity]): maximum number of variables per pattern</li>
@@ -1090,6 +1079,17 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><em>order</em> ({RANDOM, STATES_UP, STATES_DOWN, OPS_UP, OPS_DOWN, CG_UP, CG_DOWN}): order in which to consider patterns of the same size (based on states in projection, active operators or position of the pattern variables in the partial ordering of the causal graph)</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>debug</em> (bool): print debugging messages</li>
+</ul>
+<h2 id="systematically_generated_patterns">Systematically generated patterns<a class="headerlink" href="#systematically_generated_patterns" title="Permanent link">#</a></h2>
+<p>Generates all (interesting) patterns with up to pattern_max_size variables. For details, see</p>
+<p>Florian Pommerening, Gabriele Roeger and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/pommerening-et-al-ijcai2013.pdf">Getting the Most Out of Pattern Databases for Classical Planning</a>.<br />
+ In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2357-2364. AAAI Press, 2013.</p>
+<pre><code>systematic(pattern_max_size=1, only_interesting_patterns=true)
+</code></pre>
+<ul>
+<li><em>pattern_max_size</em> (int [1, infinity]): max number of variables per pattern</li>
+<li><em>only_interesting_patterns</em> (bool): Only consider the union of two disjoint patterns if the union has more information than the individual patterns.</li>
 </ul>
                 
               
