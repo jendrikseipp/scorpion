@@ -130,6 +130,7 @@ LandmarkDecomposition::LandmarkDecomposition(const Options &opts)
     : fact_order(opts.get<FactOrder>("order")),
       combine_facts(opts.get<bool>("combine_facts")),
       rng(utils::parse_rng_from_options(opts)) {
+    ABORT("Support for landmark subtasks is currently removed.");
 }
 
 shared_ptr<AbstractTask> LandmarkDecomposition::build_domain_abstracted_task(

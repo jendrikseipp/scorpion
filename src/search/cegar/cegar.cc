@@ -134,8 +134,9 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
       to simplify the implementation. This way, we don't have to split
       goal states later.
     */
-    if (task_proxy.get_goals().size() == 1) {
-        separate_facts_unreachable_before_goal();
+    // HACK: temporarily remove support for landmark subtasks.
+    if (false && task_proxy.get_goals().size() == 1) {
+        //separate_facts_unreachable_before_goal();
     } else {
         // Iteratively split off the next goal fact from the current goal state.
         assert(abstraction->get_num_states() == 1);
