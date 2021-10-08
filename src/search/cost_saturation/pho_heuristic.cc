@@ -150,7 +150,7 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     }
 
     shared_ptr<AbstractTask> scaled_costs_task =
-        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"), DEFAULT_COST_FACTOR);
+        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"));
     opts.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
 
     TaskProxy task_proxy(*scaled_costs_task);
@@ -174,8 +174,7 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
         move(abstractions),
         move(cp_heuristics),
         // TODO: extract dead ends.
-        nullptr,
-        DEFAULT_COST_FACTOR);
+        nullptr);
 }
 
 static Plugin<Evaluator> _plugin("pho", _parse, "heuristics_cost_partitioning");

@@ -8,13 +8,12 @@
 class AbstractTask;
 
 namespace cost_saturation {
-extern const double DEFAULT_COST_FACTOR;
-
 /*
   This class allows us to use real-values costs in cost partitionings with
   integers by scaling all costs by a constant factor.
 
-  Users need to ensure that the task in the options is scaled by scaling_factor.
+  Users need to ensure that the task in the options is scaled by passing it to
+  get_scaled_costs_task().
 */
 class ScaledCostPartitioningHeuristic : public MaxCostPartitioningHeuristic {
     double scaling_factor;
@@ -26,13 +25,12 @@ public:
         const options::Options &opts,
         Abstractions &&abstractions,
         CPHeuristics &&cp_heuristics,
-        std::unique_ptr<DeadEnds> &&dead_ends,
-        double scaling_factor);
+        std::unique_ptr<DeadEnds> &&dead_ends);
 };
 
 
 extern std::shared_ptr<AbstractTask> get_scaled_costs_task(
-    const std::shared_ptr<AbstractTask> &task, int factor);
+    const std::shared_ptr<AbstractTask> &task);
 }
 
 #endif

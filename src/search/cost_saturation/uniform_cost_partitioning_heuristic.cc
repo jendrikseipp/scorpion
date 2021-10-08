@@ -19,7 +19,7 @@
 using namespace std;
 
 namespace cost_saturation {
-const double DEFAULT_COST_FACTOR = 1000;
+static const double COST_FACTOR = 1000;
 
 static vector<int> divide_costs_among_remaining_abstractions(
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -123,10 +123,8 @@ ScaledCostPartitioningHeuristic::ScaledCostPartitioningHeuristic(
     const Options &opts,
     Abstractions &&abstractions,
     CPHeuristics &&cp_heuristics,
-    unique_ptr<DeadEnds> &&dead_ends,
-    double scaling_factor)
-    : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics), move(dead_ends)),
-      scaling_factor(scaling_factor) {
+    unique_ptr<DeadEnds> &&dead_ends)
+    : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics), move(dead_ends)) {
 }
 
 int ScaledCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
@@ -135,19 +133,18 @@ int ScaledCostPartitioningHeuristic::compute_heuristic(const State &ancestor_sta
         return DEAD_END;
     }
     double epsilon = 0.01;
-    return static_cast<int>(ceil((result / scaling_factor) - epsilon));
+    return static_cast<int>(ceil((result / COST_FACTOR) - epsilon));
 }
 
 
-shared_ptr<AbstractTask> get_scaled_costs_task(
-    const shared_ptr<AbstractTask> &task, int factor) {
+shared_ptr<AbstractTask> get_scaled_costs_task(const shared_ptr<AbstractTask> &task) {
     vector<int> costs = task_properties::get_operator_costs(TaskProxy(*task));
     for (int &cost : costs) {
-        if (!utils::is_product_within_limit(cost, factor, INF)) {
+        if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
             cerr << "Overflowing cost : " << cost << endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
-        cost *= factor;
+        cost *= COST_FACTOR;
     }
     return make_shared<extra_tasks::ModifiedOperatorCostsTask>(task, move(costs));
 }
@@ -210,7 +207,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         return nullptr;
 
     shared_ptr<AbstractTask> scaled_costs_task =
-        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"), DEFAULT_COST_FACTOR);
+        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"));
     opts.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
 
     unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
@@ -235,7 +232,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     }
 
     return make_shared<ScaledCostPartitioningHeuristic>(
-        opts, move(abstractions), move(cp_heuristics), move(dead_ends), DEFAULT_COST_FACTOR);
+        opts, move(abstractions), move(cp_heuristics), move(dead_ends));
 }
 
 static Plugin<Evaluator> _plugin("ucp", _parse, "heuristics_cost_partitioning");
