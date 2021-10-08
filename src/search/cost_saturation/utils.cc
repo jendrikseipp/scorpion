@@ -10,10 +10,8 @@
 
 #include "../algorithms/partial_state_tree.h"
 #include "../task_utils/task_properties.h"
-#include "../tasks/modified_operator_costs_task.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
-#include "../utils/math.h"
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
 
@@ -23,19 +21,6 @@
 using namespace std;
 
 namespace cost_saturation {
-shared_ptr<AbstractTask> get_scaled_costs_task(
-    const shared_ptr<AbstractTask> &task, int factor) {
-    vector<int> costs = task_properties::get_operator_costs(TaskProxy(*task));
-    for (int &cost : costs) {
-        if (!utils::is_product_within_limit(cost, factor, INF)) {
-            cerr << "Overflowing cost : " << cost << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
-        }
-        cost *= factor;
-    }
-    return make_shared<extra_tasks::ModifiedOperatorCostsTask>(task, move(costs));
-}
-
 Abstractions generate_abstractions(
     const shared_ptr<AbstractTask> &task,
     const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
