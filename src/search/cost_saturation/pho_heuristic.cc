@@ -4,6 +4,7 @@
 #include "cost_partitioning_heuristic_collection_generator.h"
 #include "cost_partitioning_heuristic.h"
 #include "max_cost_partitioning_heuristic.h"
+#include "uniform_cost_partitioning_heuristic.h"
 #include "utils.h"
 
 #include "../option_parser.h"
@@ -148,12 +149,14 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
         return nullptr;
     }
 
-    ABORT("Need to scale costs for PhO.");
-    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
-    TaskProxy task_proxy(*task);
+    shared_ptr<AbstractTask> scaled_costs_task =
+        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"), DEFAULT_COST_FACTOR);
+    opts.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
+
+    TaskProxy task_proxy(*scaled_costs_task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
+        scaled_costs_task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     PhO pho(abstractions, costs, opts.get<lp::LPSolverType>("lpsolver"),
             opts.get<bool>("saturated"),
             opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG);
@@ -166,12 +169,13 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
             task_proxy, abstractions, costs, cp_function);
-    return make_shared<MaxCostPartitioningHeuristic>(
+    return make_shared<ScaledCostPartitioningHeuristic>(
         opts,
         move(abstractions),
         move(cp_heuristics),
         // TODO: extract dead ends.
-        nullptr);
+        nullptr,
+        DEFAULT_COST_FACTOR);
 }
 
 static Plugin<Evaluator> _plugin("pho", _parse, "heuristics_cost_partitioning");

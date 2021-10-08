@@ -8,6 +8,8 @@
 class AbstractTask;
 
 namespace cost_saturation {
+extern const double DEFAULT_COST_FACTOR;
+
 /*
   This class allows us to use real-values costs in cost partitionings with
   integers by scaling all costs by a constant factor.

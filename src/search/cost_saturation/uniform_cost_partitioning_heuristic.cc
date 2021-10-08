@@ -19,8 +19,7 @@
 using namespace std;
 
 namespace cost_saturation {
-// Multiply all costs by this factor to avoid using real-valued costs.
-static const double COST_FACTOR = 1000;
+const double DEFAULT_COST_FACTOR = 1000;
 
 static vector<int> divide_costs_among_remaining_abstractions(
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -211,7 +210,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         return nullptr;
 
     shared_ptr<AbstractTask> scaled_costs_task =
-        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"), COST_FACTOR);
+        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"), DEFAULT_COST_FACTOR);
     opts.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
 
     unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
@@ -236,7 +235,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     }
 
     return make_shared<ScaledCostPartitioningHeuristic>(
-        opts, move(abstractions), move(cp_heuristics), move(dead_ends), COST_FACTOR);
+        opts, move(abstractions), move(cp_heuristics), move(dead_ends), DEFAULT_COST_FACTOR);
 }
 
 static Plugin<Evaluator> _plugin("ucp", _parse, "heuristics_cost_partitioning");
