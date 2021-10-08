@@ -174,5 +174,5 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
         nullptr);
 }
 
-static Plugin<Evaluator> _plugin("pho", _parse);
+static Plugin<Evaluator> _plugin("pho", _parse, "heuristics_cost_partitioning");
 }
