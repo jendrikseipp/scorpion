@@ -159,22 +159,6 @@ void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback
     }
 }
 
-vector<int> ExplicitAbstraction::get_transition_counts(bool include_goal) const {
-    vector<bool> is_goal_state(get_num_states(), false);
-    for (int goal : get_goal_states()) {
-        is_goal_state[goal] = true;
-    }
-    vector<int> transition_counts(get_num_operators(), 0);
-    for (const vector<Successor> &transitions : backward_graph) {
-        for (const Successor &transition : transitions) {
-            if (include_goal || !is_goal_state[transition.state]) {
-                ++transition_counts[transition.op];
-            }
-        }
-    }
-    return transition_counts;
-}
-
 const vector<int> &ExplicitAbstraction::get_goal_states() const {
     return goal_states;
 }

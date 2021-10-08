@@ -483,50 +483,6 @@ void Projection::for_each_transition(const TransitionCallback &callback) const {
     return for_each_transition_impl(callback);
 }
 
-vector<int> Projection::get_transition_counts(bool include_goal) const {
-    vector<int> transition_counts(get_num_operators(), 0);
-
-    deque<int> open;
-    vector<bool> closed(get_num_states(), false);
-    vector<bool> is_goal_state(get_num_states(), false);
-
-    for (int goal : goal_states) {
-        open.push_back(goal);
-        is_goal_state[goal] = true;
-        closed[goal] = true;
-    }
-
-    // Reuse vector to save allocations.
-    vector<int> applicable_operator_ids;
-
-    // Run Dijkstra loop.
-    while (!open.empty()) {
-        int state = open.front();
-        open.pop_front();
-        assert(closed[state]);
-
-        // Regress abstract state.
-        applicable_operator_ids.clear();
-        match_tree_backward->get_applicable_operator_ids(
-            state, applicable_operator_ids);
-        for (int abs_op_id : applicable_operator_ids) {
-            const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
-            size_t predecessor = state + op.hash_effect;
-            if (!include_goal && is_goal_state[predecessor]) {
-                // Ignore transitions that start in a goal state
-                continue;
-            }
-            int conc_op_id = op.concrete_operator_id;
-            ++transition_counts[conc_op_id];
-            if (!closed[predecessor]) {
-                open.push_back(predecessor);
-                closed[predecessor] = true;
-            }
-        }
-    }
-    return transition_counts;
-}
-
 const vector<int> &Projection::get_goal_states() const {
     return goal_states;
 }
