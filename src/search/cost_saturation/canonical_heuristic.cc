@@ -75,12 +75,8 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     }
 }
 
-int CanonicalHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int CanonicalHeuristic::compute_heuristic(const State &state) {
+int CanonicalHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     vector<int> h_values_for_state;
     h_values_for_state.reserve(abstraction_functions.size());
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
@@ -113,7 +109,7 @@ int CanonicalHeuristic::compute_max_over_sums(
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Canonical heuristic for abstraction heuristics",
+        "Canonical heuristic over abstractions",
         "");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
@@ -128,5 +124,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     return make_shared<CanonicalHeuristic>(opts);
 }
 
-static Plugin<Evaluator> _plugin("canonical_heuristic", _parse);
+static Plugin<Evaluator> _plugin(
+    "canonical_heuristic", _parse, "heuristics_cost_partitioning");
 }

@@ -4,13 +4,14 @@
 #include <memory>
 #include <vector>
 
+#include "../algorithms/named_vector.h"
+
 class AbstractTask;
 class State;
 
 namespace lp {
 class LPConstraint;
 class LPSolver;
-struct LPVariable;
 }
 
 namespace operator_counting {
@@ -40,8 +41,7 @@ public:
     */
     virtual void initialize_constraints(
         const std::shared_ptr<AbstractTask> &task,
-        std::vector<lp::LPVariable> &variables,
-        std::vector<lp::LPConstraint> &constraints,
+        named_vector::NamedVector<lp::LPConstraint> &constraints,
         double infinity);
 
     /*

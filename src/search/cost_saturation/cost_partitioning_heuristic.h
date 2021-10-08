@@ -35,8 +35,13 @@ class CostPartitioningHeuristic {
 
     std::vector<LookupTable> lookup_tables;
 
+    int get_lookup_table_index(int abstraction_id) const;
+    void merge_h_values(int abstraction_id, std::vector<int> &&h_values);
+
 public:
     void add_h_values(int abstraction_id, std::vector<int> &&h_values);
+
+    void add(CostPartitioningHeuristic &&other);
 
     /*
       Compute cost-partitioned heuristic value for a concrete state s. Callers
@@ -51,6 +56,8 @@ public:
 
     // Return the total number of stored heuristic values.
     int get_num_heuristic_values() const;
+
+    int estimate_size_in_kb() const;
 
     // See class documentation.
     void mark_useful_abstractions(std::vector<bool> &useful_abstractions) const;

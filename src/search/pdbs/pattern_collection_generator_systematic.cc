@@ -8,6 +8,7 @@
 #include "../task_proxy.h"
 
 #include "../task_utils/causal_graph.h"
+#include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/timer.h"
@@ -19,6 +20,8 @@
 using namespace std;
 
 namespace pdbs {
+struct Timeout : public exception {};
+
 static bool patterns_are_disjoint(
     const Pattern &pattern1, const Pattern &pattern2) {
     size_t i = 0;
@@ -117,12 +120,20 @@ void PatternCollectionGeneratorSystematic::compute_connection_points(
 
 void PatternCollectionGeneratorSystematic::enqueue_pattern_if_new(
     const Pattern &pattern) {
-    if (pattern_set.insert(pattern).second)
+    if (pattern_set.insert(pattern).second) {
+        if (handle_pattern) {
+            bool done = handle_pattern(pattern);
+            if (done) {
+                throw Timeout();
+            }
+        }
         patterns->push_back(pattern);
+    }
 }
 
 void PatternCollectionGeneratorSystematic::build_sga_patterns(
-    const TaskProxy &task_proxy, const causal_graph::CausalGraph &cg) {
+    const TaskProxy &task_proxy,
+    const causal_graph::CausalGraph &cg) {
     assert(max_pattern_size >= 1);
     assert(pattern_set.empty());
     assert(patterns && patterns->empty());
@@ -166,7 +177,6 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
             Pattern new_pattern(pattern);
             new_pattern.push_back(neighbor_var_id);
             sort(new_pattern.begin(), new_pattern.end());
-
             enqueue_pattern_if_new(new_pattern);
         }
     }
@@ -175,7 +185,8 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
 }
 
 void PatternCollectionGeneratorSystematic::build_patterns(
-    const TaskProxy &task_proxy) {
+    const TaskProxy &task_proxy,
+    const utils::CountdownTimer *timer) {
     int num_variables = task_proxy.get_variables().size();
     const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
 
@@ -200,11 +211,13 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     }
 
     // Enqueue the SGA patterns.
-    for (const Pattern &pattern : sga_patterns)
-        enqueue_pattern_if_new(pattern);
+    for (const Pattern &pattern : sga_patterns) {
+        pattern_set.insert(pattern);
+        patterns->push_back(pattern);
+    }
+    assert(pattern_set.size() == patterns->size());
 
-
-    cout << "Found " << sga_patterns.size() << " SGA patterns." << endl;
+    utils::g_log << "Found " << sga_patterns.size() << " SGA patterns." << endl;
 
     /*
       Combine patterns in the queue with SGA patterns until all
@@ -212,6 +225,9 @@ void PatternCollectionGeneratorSystematic::build_patterns(
       during the computation.
     */
     for (size_t pattern_no = 0; pattern_no < patterns->size(); ++pattern_no) {
+        if (timer && timer->is_expired())
+            break;
+
         // We must copy the pattern because references to patterns can be invalidated.
         Pattern pattern1 = (*patterns)[pattern_no];
 
@@ -234,15 +250,17 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     }
 
     pattern_set.clear();
-    cout << "Found " << patterns->size() << " interesting patterns." << endl;
+    utils::g_log << "Found " << patterns->size() << " interesting patterns." << endl;
 }
 
 void PatternCollectionGeneratorSystematic::build_patterns_naive(
-    const TaskProxy &task_proxy) {
+    const TaskProxy &task_proxy,
+    const utils::CountdownTimer *) {
     int num_variables = task_proxy.get_variables().size();
     PatternCollection current_patterns(1);
     PatternCollection next_patterns;
     for (size_t i = 0; i < max_pattern_size; ++i) {
+        cout << "Generating patterns of size " << i + 1 << endl;
         for (const Pattern &current_pattern : current_patterns) {
             int max_var = -1;
             if (i > 0)
@@ -251,6 +269,12 @@ void PatternCollectionGeneratorSystematic::build_patterns_naive(
                 Pattern pattern = current_pattern;
                 pattern.push_back(var);
                 next_patterns.push_back(pattern);
+                if (handle_pattern) {
+                    bool done = handle_pattern(pattern);
+                    if (done) {
+                        throw Timeout();
+                    }
+                }
                 patterns->push_back(pattern);
             }
         }
@@ -258,13 +282,13 @@ void PatternCollectionGeneratorSystematic::build_patterns_naive(
         next_patterns.clear();
     }
 
-    cout << "Found " << patterns->size() << " patterns." << endl;
+    utils::g_log << "Found " << patterns->size() << " patterns." << endl;
 }
 
 PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
     const shared_ptr<AbstractTask> &task) {
     utils::Timer timer;
-    cout << "Generating patterns using the systematic generator..." << endl;
+    utils::g_log << "Generating patterns using the systematic generator..." << endl;
     TaskProxy task_proxy(*task);
     patterns = make_shared<PatternCollection>();
     pattern_set.clear();
@@ -277,8 +301,30 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
     /* Do not dump the collection since it can be very large for
        pattern_max_size >= 3. */
     dump_pattern_collection_generation_statistics(
-        "Systematic generator", timer(), pci, false);
+        "Systematic generator", timer(), pci);
     return pci;
+}
+
+void PatternCollectionGeneratorSystematic::generate(
+    const shared_ptr<AbstractTask> &task,
+    const PatternHandler &handle_pattern,
+    const utils::CountdownTimer &timer) {
+    this->handle_pattern = handle_pattern;
+    TaskProxy task_proxy(*task);
+    patterns = make_shared<PatternCollection>();
+    pattern_set.clear();
+    try {
+        if (only_interesting_patterns) {
+            build_patterns(task_proxy, &timer);
+        } else {
+            build_patterns_naive(task_proxy, &timer);
+        }
+    } catch (const Timeout &) {
+        cout << "Reached time limit while generating systematic patterns." << endl;
+    }
+    // Release memory.
+    PatternSet().swap(pattern_set);
+    patterns = nullptr;
 }
 
 static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {

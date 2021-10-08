@@ -1,10 +1,10 @@
 #include "additive_heuristic.h"
 
-#include "../global_state.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 
 #include "../task_utils/task_properties.h"
+#include "../utils/logging.h"
 
 #include <cassert>
 #include <vector>
@@ -12,19 +12,21 @@
 using namespace std;
 
 namespace additive_heuristic {
+const int AdditiveHeuristic::MAX_COST_VALUE;
+
 // construction and destruction
 AdditiveHeuristic::AdditiveHeuristic(const Options &opts)
     : RelaxationHeuristic(opts),
       did_write_overflow_warning(false) {
-    cout << "Initializing additive heuristic..." << endl;
+    utils::g_log << "Initializing additive heuristic..." << endl;
 }
 
 void AdditiveHeuristic::write_overflow_warning() {
     if (!did_write_overflow_warning) {
         // TODO: Should have a planner-wide warning mechanism to handle
         // things like this.
-        cout << "WARNING: overflow on h^add! Costs clamped to "
-             << MAX_COST_VALUE << endl;
+        utils::g_log << "WARNING: overflow on h^add! Costs clamped to "
+                     << MAX_COST_VALUE << endl;
         cerr << "WARNING: overflow on h^add! Costs clamped to "
              << MAX_COST_VALUE << endl;
         did_write_overflow_warning = true;
@@ -126,17 +128,14 @@ int AdditiveHeuristic::compute_add_and_ff(const State &state) {
     return total_cost;
 }
 
-int AdditiveHeuristic::compute_heuristic(const State &state) {
+int AdditiveHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     int h = compute_add_and_ff(state);
     if (h != DEAD_END) {
         for (PropID goal_id : goal_propositions)
             mark_preferred_operators(state, goal_id);
     }
     return h;
-}
-
-int AdditiveHeuristic::compute_heuristic(const GlobalState &global_state) {
-    return compute_heuristic(convert_global_state(global_state));
 }
 
 void AdditiveHeuristic::compute_heuristic_for_cegar(const State &state) {

@@ -55,7 +55,6 @@ fast_downward_plugin(
         evaluation_result
         evaluator
         evaluator_cache
-        global_state
         heuristic
         open_list
         open_list_factory
@@ -178,6 +177,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME NAMED_VECTOR
+    HELP "Generic vector with associated name for each element"
+    SOURCES
+        algorithms/named_vector
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
     NAME EQUIVALENCE_RELATION
     HELP "Equivalence relation over [1, ..., n] that can be iteratively refined"
     SOURCES
@@ -206,6 +213,14 @@ fast_downward_plugin(
     HELP "Implementation of the Max Cliques algorithm by Tomita et al."
     SOURCES
         algorithms/max_cliques
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME PARTIAL_STATE_TREE
+    HELP "Compact representation of sets of fact conjunctions"
+    SOURCES
+        algorithms/partial_state_tree
     DEPENDENCY_ONLY
 )
 
@@ -319,6 +334,14 @@ fast_downward_plugin(
         pruning/stubborn_sets
     DEPENDS TASK_PROPERTIES
     DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME STUBBORN_SETS_ATOM_CENTRIC
+    HELP "Atom-centric stubborn sets"
+    SOURCES
+        pruning/stubborn_sets_atom_centric
+    DEPENDS STUBBORN_SETS
 )
 
 fast_downward_plugin(
@@ -441,7 +464,7 @@ fast_downward_plugin(
     SOURCES
         lp/lp_internals
         lp/lp_solver
-    DEPENDENCY_ONLY
+    DEPENDS NAMED_VECTOR
 )
 
 fast_downward_plugin(
@@ -612,6 +635,7 @@ fast_downward_plugin(
         cegar/cegar
         cegar/cost_saturation
         cegar/refinement_hierarchy
+        cegar/shortest_paths
         cegar/split_selector
         cegar/subtask_generators
         cegar/transition
@@ -645,16 +669,17 @@ fast_downward_plugin(
         cost_saturation/order_generator_random
         cost_saturation/order_optimizer
         cost_saturation/pho_heuristic
+        cost_saturation/plugin_group
         cost_saturation/projection
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
         cost_saturation/saturated_cost_partitioning_online_heuristic
         cost_saturation/types
-        #cost_saturation/uniform_cost_partitioning_heuristic
+        cost_saturation/uniform_cost_partitioning_heuristic
         cost_saturation/unsolvability_heuristic
         cost_saturation/utils
-        #cost_saturation/zero_one_cost_partitioning_heuristic
-    DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
+        cost_saturation/zero_one_cost_partitioning_heuristic
+    DEPENDS CEGAR LP_SOLVER PDBS PARTIAL_STATE_TREE PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
 )
 
 fast_downward_plugin(
@@ -680,7 +705,6 @@ fast_downward_plugin(
         merge_and_shrink/merge_selector
         merge_and_shrink/merge_selector_score_based_filtering
         merge_and_shrink/merge_strategy
-        merge_and_shrink/merge_strategy_aliases
         merge_and_shrink/merge_strategy_factory
         merge_and_shrink/merge_strategy_factory_precomputed
         merge_and_shrink/merge_strategy_factory_sccs
@@ -707,11 +731,14 @@ fast_downward_plugin(
     HELP "Plugin containing the code to reason with landmarks"
     SOURCES
         landmarks/exploration
+        landmarks/landmark
         landmarks/landmark_cost_assignment
         landmarks/landmark_count_heuristic
         landmarks/landmark_factory
         landmarks/landmark_factory_h_m
+        landmarks/landmark_factory_reasonable_orders_hps
         landmarks/landmark_factory_merged
+        landmarks/landmark_factory_relaxation
         landmarks/landmark_factory_rpg_exhaust
         landmarks/landmark_factory_rpg_sasp
         landmarks/landmark_factory_zhu_givan
@@ -726,11 +753,11 @@ fast_downward_plugin(
     HELP "Plugin containing the code for operator counting heuristics"
     SOURCES
         operator_counting/constraint_generator
-        #operator_counting/lm_cut_constraints
+        operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
         operator_counting/pho_abstraction_constraints
-        #operator_counting/pho_constraints
-        #operator_counting/state_equation_constraints
+        operator_counting/pho_constraints
+        operator_counting/state_equation_constraints
     DEPENDS LP_SOLVER LANDMARK_CUT_HEURISTIC PDBS TASK_PROPERTIES
 )
 
@@ -740,6 +767,7 @@ fast_downward_plugin(
     SOURCES
         pdbs/canonical_pdbs
         pdbs/canonical_pdbs_heuristic
+        pdbs/cegar
         pdbs/dominance_pruning
         pdbs/incremental_canonical_pdbs
         pdbs/match_tree
@@ -747,17 +775,26 @@ fast_downward_plugin(
         pdbs/pattern_cliques
         pdbs/pattern_collection_information
         pdbs/pattern_collection_generator_combo
+        pdbs/pattern_collection_generator_disjoint_cegar
         pdbs/pattern_collection_generator_genetic
         pdbs/pattern_collection_generator_hillclimbing
         pdbs/pattern_collection_generator_manual
+        pdbs/pattern_collection_generator_multiple_cegar
+        pdbs/pattern_collection_generator_multiple_random
+        pdbs/pattern_collection_generator_multiple
         pdbs/pattern_collection_generator_systematic
+        pdbs/pattern_collection_generator_systematic_scp
         pdbs/pattern_database
+        pdbs/pattern_evaluator
+        pdbs/pattern_generator_cegar
         pdbs/pattern_generator_greedy
         pdbs/pattern_generator_manual
+        pdbs/pattern_generator_random
         pdbs/pattern_generator
         pdbs/pattern_information
         pdbs/pdb_heuristic
         pdbs/plugin_group
+        pdbs/random_pattern
         pdbs/types
         pdbs/utils
         pdbs/validation

@@ -9,6 +9,7 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../algorithms/partial_state_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
@@ -46,14 +47,14 @@ PhO::PhO(
         saturated_costs_by_abstraction.push_back(move(saturated_costs));
     }
 
-    vector<lp::LPVariable> variables;
+    named_vector::NamedVector<lp::LPVariable> variables;
     variables.reserve(num_abstractions);
     for (int i = 0; i < num_abstractions; ++i) {
         // Objective coefficients are set below.
         variables.emplace_back(0, infinity, 0);
     }
 
-    vector<lp::LPConstraint> constraints;
+    named_vector::NamedVector<lp::LPConstraint> constraints;
     constraints.reserve(num_operators);
     for (int op_id = 0; op_id < num_operators; ++op_id) {
         lp::LPConstraint constraint(-infinity, costs[op_id]);
@@ -76,7 +77,8 @@ PhO::PhO(
         }
     }
 
-    lp_solver.load_problem(lp::LPObjectiveSense::MAXIMIZE, variables, constraints);
+    lp::LinearProgram lp(lp::LPObjectiveSense::MAXIMIZE, move(variables), move(constraints));
+    lp_solver.load_problem(lp);
 }
 
 CostPartitioningHeuristic PhO::compute_cost_partitioning(
@@ -146,10 +148,8 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
         return nullptr;
     }
 
-    shared_ptr<AbstractTask> task = get_scaled_costs_task(
-        opts.get<shared_ptr<AbstractTask>>("transform"), COST_FACTOR);
-    opts.set<shared_ptr<AbstractTask>>("transform", task);
-
+    ABORT("Need to scale costs for PhO.");
+    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
@@ -169,7 +169,9 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     return make_shared<MaxCostPartitioningHeuristic>(
         opts,
         move(abstractions),
-        move(cp_heuristics));
+        move(cp_heuristics),
+        // TODO: extract dead ends.
+        nullptr);
 }
 
 static Plugin<Evaluator> _plugin("pho", _parse);

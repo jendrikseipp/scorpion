@@ -12,6 +12,7 @@ class Options;
 
 namespace cegar {
 class Abstraction;
+enum class SearchStrategy;
 class SubtaskGenerator;
 }
 
@@ -26,6 +27,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_states;
     const int max_transitions;
     const double max_time;
+    const cegar::SearchStrategy search_strategy;
     const int extra_memory_padding_mb;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;
@@ -47,7 +49,8 @@ public:
     explicit CartesianAbstractionGenerator(const options::Options &opts);
 
     Abstractions generate_abstractions(
-        const std::shared_ptr<AbstractTask> &task);
+        const std::shared_ptr<AbstractTask> &task,
+        DeadEnds *dead_ends);
 };
 }
 

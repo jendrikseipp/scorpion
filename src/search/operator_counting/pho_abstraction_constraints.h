@@ -19,13 +19,13 @@ class PhOAbstractionConstraints : public ConstraintGenerator {
     cost_saturation::AbstractionFunctions abstraction_functions;
     std::vector<std::vector<int>> h_values_by_abstraction;
     std::vector<int> constraint_ids_by_abstraction;
+    std::vector<bool> useless_operators;
 public:
     explicit PhOAbstractionConstraints(const options::Options &opts);
 
     virtual void initialize_constraints(
         const std::shared_ptr<AbstractTask> &task,
-        std::vector<lp::LPVariable> &variables,
-        std::vector<lp::LPConstraint> &constraints,
+        named_vector::NamedVector<lp::LPConstraint> &constraints,
         double infinity) override;
     virtual bool update_constraints(
         const State &state, lp::LPSolver &lp_solver) override;

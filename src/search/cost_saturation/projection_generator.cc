@@ -28,21 +28,31 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
-    const shared_ptr<AbstractTask> &task) {
+    const shared_ptr<AbstractTask> &task,
+    DeadEnds *dead_ends) {
     utils::Timer patterns_timer;
     utils::Log log;
     TaskProxy task_proxy(*task);
 
     task_properties::verify_no_axioms(task_proxy);
     if (!create_complete_transition_system) {
-        task_properties::verify_no_conditional_effects(task_proxy);
+        if (task_properties::has_conditional_effects(task_proxy)) {
+            cerr << "Error: configuration doesn't support conditional effects. "
+                "Use projections(..., create_complete_transition_system=true) "
+                "to build projections that support conditional effects."
+                 << endl;
+            utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
+        }
     }
 
     log << "Compute patterns" << endl;
+    pattern_generator->set_dead_ends_store(dead_ends);
     PatternCollectionInformation pattern_collection_info =
         pattern_generator->generate(task);
     shared_ptr<pdbs::PatternCollection> patterns =
         pattern_collection_info.get_patterns();
+    shared_ptr<pdbs::ProjectionCollection> projections =
+        pattern_collection_info.get_projections();
 
     int max_pattern_size = 0;
     for (const pdbs::Pattern &pattern : *patterns) {
@@ -55,7 +65,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
 
     if (dominance_pruning) {
         shared_ptr<PDBCollection> pdbs = pattern_collection_info.get_pdbs();
-        shared_ptr<std::vector<PatternClique>> pattern_cliques =
+        shared_ptr<vector<PatternClique>> pattern_cliques =
             pattern_collection_info.get_pattern_cliques();
         prune_dominated_cliques(
             *patterns,
@@ -68,18 +78,23 @@ Abstractions ProjectionGenerator::generate_abstractions(
     shared_ptr<TaskInfo> task_info = make_shared<TaskInfo>(task_proxy);
     Abstractions abstractions;
     for (const pdbs::Pattern &pattern : *patterns) {
+        unique_ptr<Abstraction> projection;
+        if (projections) {
+            // Projections have already been computed by the generator.
+            projection = move((*projections)[abstractions.size()]);
+        } else if (create_complete_transition_system) {
+            projection = ExplicitProjectionFactory(
+                task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction();
+        } else {
+            projection = utils::make_unique_ptr<Projection>(task_proxy, task_info, pattern);
+        }
+
         if (debug) {
             log << "Pattern " << abstractions.size() + 1 << ": "
                 << pattern << endl;
+            projection->dump();
         }
-        abstractions.push_back(
-            create_complete_transition_system ?
-            ExplicitProjectionFactory(
-                task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction() :
-            utils::make_unique_ptr<Projection>(task_proxy, task_info, pattern));
-        if (debug) {
-            abstractions.back()->dump();
-        }
+        abstractions.push_back(move(projection));
     }
 
     int collection_size = 0;

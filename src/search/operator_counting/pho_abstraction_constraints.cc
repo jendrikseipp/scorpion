@@ -25,8 +25,7 @@ PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
 
 void PhOAbstractionConstraints::initialize_constraints(
     const shared_ptr<AbstractTask> &task,
-    vector<lp::LPVariable> &variables,
-    vector<lp::LPConstraint> &constraints,
+    named_vector::NamedVector<lp::LPConstraint> &constraints,
     double infinity) {
     cost_saturation::Abstractions abstractions =
         cost_saturation::generate_abstractions(task, abstraction_generators);
@@ -39,7 +38,7 @@ void PhOAbstractionConstraints::initialize_constraints(
     int num_empty_constraints = 0;
 
     if (saturated) {
-        vector<bool> useless_operators(num_ops, false);
+        useless_operators.resize(num_ops, false);
         int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
             // Add constraint \sum_{o} Y_o * scf_h(o) >= 0.
@@ -66,13 +65,6 @@ void PhOAbstractionConstraints::initialize_constraints(
             }
             h_values_by_abstraction.push_back(move(h_values));
             ++abstraction_id;
-        }
-        // Force operator count of operators o with scf(o)=-\infty to be 0.
-        for (int op_id = 0; op_id < num_ops; ++op_id) {
-            if (useless_operators[op_id]) {
-                variables[op_id].lower_bound = 0.0;
-                variables[op_id].upper_bound = 0.0;
-            }
         }
     } else {
         int abstraction_id = 0;
@@ -106,6 +98,18 @@ void PhOAbstractionConstraints::initialize_constraints(
 
 bool PhOAbstractionConstraints::update_constraints(
     const State &state, lp::LPSolver &lp_solver) {
+    if (!useless_operators.empty()) {
+        int num_ops = useless_operators.size();
+        // Force operator count of operators o with scf(o)=-\infty to be 0.
+        for (int op_id = 0; op_id < num_ops; ++op_id) {
+            if (useless_operators[op_id]) {
+                lp_solver.set_variable_lower_bound(op_id, 0.0);
+                lp_solver.set_variable_upper_bound(op_id, 0.0);
+            }
+        }
+        // Only set variable bounds once.
+        utils::release_vector_memory(useless_operators);
+    }
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
         int state_id = abstraction_functions[i]->get_abstract_state_id(state);
         assert(utils::in_bounds(i, h_values_by_abstraction));
