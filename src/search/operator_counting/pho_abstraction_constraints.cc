@@ -36,7 +36,6 @@ void PhOAbstractionConstraints::initialize_constraints(
 
     vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
     int num_ops = operator_costs.size();
-    vector<vector<int>> local_vars;
     int num_empty_constraints = 0;
 
     if (saturated) {
