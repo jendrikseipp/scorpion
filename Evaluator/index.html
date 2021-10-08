@@ -451,6 +451,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#post-hoc_optimization_heuristic" class="md-nav__link">
+    Post-hoc optimization heuristic
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#saturated_cost_partitioning" class="md-nav__link">
     Saturated cost partitioning
   </a>
@@ -990,6 +997,13 @@
           <li class="md-nav__item">
   <a href="#optimal_cost_partitioning_heuristic" class="md-nav__link">
     Optimal cost partitioning heuristic
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-hoc_optimization_heuristic" class="md-nav__link">
+    Post-hoc optimization heuristic
   </a>
   
 </li>
@@ -1645,6 +1659,52 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 </ul>
 </li>
 <li><em>allow_negative_costs</em> (bool): use general instead of non-negative cost partitioning</li>
+</ul>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p>Language features supported:</p>
+<ul>
+<li><strong>action costs:</strong> supported</li>
+<li><strong>conditional effects:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+<li><strong>axioms:</strong> not supported (the heuristic supports them in theory, but none of the currently implemented abstraction generators do)</li>
+</ul>
+<p>Properties:</p>
+<ul>
+<li><strong>admissible:</strong> yes</li>
+<li><strong>consistent:</strong> yes</li>
+<li><strong>safe:</strong> yes</li>
+<li><strong>preferred operators:</strong> no</li>
+</ul>
+<h2 id="post-hoc_optimization_heuristic">Post-hoc optimization heuristic<a class="headerlink" href="#post-hoc_optimization_heuristic" title="Permanent link">#</a></h2>
+<p>Compute the maximum over multiple PhO heuristics precomputed offline.</p>
+<pre><code>pho(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, saturated=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, lpsolver=CPLEX, verbosity=normal)
+</code></pre>
+<ul>
+<li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>saturated</em> (bool): saturate costs</li>
+<li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
+<li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
+<li><em>max_size</em> (int [0, infinity]): maximum heuristic size in KiB</li>
+<li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
+<li><em>diversify</em> (bool): only keep orders that have a higher heuristic value than all previous orders for any of the samples</li>
+<li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
+<li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs<ul>
+<li><code>CLP</code>: default LP solver shipped with the COIN library</li>
+<li><code>CPLEX</code>: commercial solver by IBM</li>
+<li><code>GUROBI</code>: commercial solver</li>
+<li><code>SOPLEX</code>: open source solver by ZIB</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like full with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
 <p>Language features supported:</p>

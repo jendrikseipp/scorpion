@@ -261,8 +261,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#posthoc_optimization_constraints_for_abstractions" class="md-nav__link">
-    Posthoc optimization constraints for abstractions
+  <a href="#saturated_posthoc_optimization_constraints_for_abstractions" class="md-nav__link">
+    (Saturated) posthoc optimization constraints for abstractions
   </a>
   
 </li>
@@ -545,8 +545,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#posthoc_optimization_constraints_for_abstractions" class="md-nav__link">
-    Posthoc optimization constraints for abstractions
+  <a href="#saturated_posthoc_optimization_constraints_for_abstractions" class="md-nav__link">
+    (Saturated) posthoc optimization constraints for abstractions
   </a>
   
 </li>
@@ -590,9 +590,8 @@
  In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2268-2274. AAAI Press, 2013.</p>
 <pre><code>lmcut_constraints()
 </code></pre>
-<h2 id="posthoc_optimization_constraints_for_abstractions">Posthoc optimization constraints for abstractions<a class="headerlink" href="#posthoc_optimization_constraints_for_abstractions" title="Permanent link">#</a></h2>
-<p>For each abstraction heuristic h the generator will add the constraint h(s) &lt;= sum_{o in relevant(h)} Count_o.</p>
-<pre><code>pho_abstraction_constraints(abstractions=[cartesian()], saturated=false)
+<h2 id="saturated_posthoc_optimization_constraints_for_abstractions">(Saturated) posthoc optimization constraints for abstractions<a class="headerlink" href="#saturated_posthoc_optimization_constraints_for_abstractions" title="Permanent link">#</a></h2>
+<pre><code>pho_abstraction_constraints(abstractions=&lt;none&gt;, saturated=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generation methods</li>
