@@ -19,8 +19,7 @@
 using namespace std;
 
 namespace cost_saturation {
-// Multiply all costs by this factor to avoid using real-valued costs.
-static const int COST_FACTOR = 1000;
+static const double COST_FACTOR = 1000;
 
 static vector<int> divide_costs_among_remaining_abstractions(
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -119,7 +118,8 @@ static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning
     return cp_heuristic;
 }
 
-UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
+
+ScaledCostPartitioningHeuristic::ScaledCostPartitioningHeuristic(
     const Options &opts,
     Abstractions &&abstractions,
     CPHeuristics &&cp_heuristics,
@@ -127,18 +127,17 @@ UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
     : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics), move(dead_ends)) {
 }
 
-int UniformCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
+int ScaledCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
     int result = MaxCostPartitioningHeuristic::compute_heuristic(ancestor_state);
     if (result == DEAD_END) {
         return DEAD_END;
     }
     double epsilon = 0.01;
-    return static_cast<int>(ceil((result / static_cast<double>(COST_FACTOR)) - epsilon));
+    return static_cast<int>(ceil((result / COST_FACTOR) - epsilon));
 }
 
 
-static shared_ptr<AbstractTask> get_scaled_costs_task(
-    const shared_ptr<AbstractTask> &task) {
+shared_ptr<AbstractTask> get_scaled_costs_task(const shared_ptr<AbstractTask> &task) {
     vector<int> costs = task_properties::get_operator_costs(TaskProxy(*task));
     for (int &cost : costs) {
         if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
@@ -232,7 +231,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
             get_ucp_heuristic(scaled_costs_task_proxy, abstractions, debug));
     }
 
-    return make_shared<UniformCostPartitioningHeuristic>(
+    return make_shared<ScaledCostPartitioningHeuristic>(
         opts, move(abstractions), move(cp_heuristics), move(dead_ends));
 }
 

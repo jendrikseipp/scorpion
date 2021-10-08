@@ -668,6 +668,7 @@ fast_downward_plugin(
         cost_saturation/order_generator_greedy
         cost_saturation/order_generator_random
         cost_saturation/order_optimizer
+        cost_saturation/pho_heuristic
         cost_saturation/plugin_group
         cost_saturation/projection
         cost_saturation/projection_generator
