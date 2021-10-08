@@ -184,10 +184,7 @@ shared_ptr<Evaluator> get_max_cp_heuristic(options::OptionParser &parser, CPFunc
     if (parser.dry_run())
         return nullptr;
 
-    shared_ptr<AbstractTask> task = get_scaled_costs_task(
-        opts.get<shared_ptr<AbstractTask>>("transform"), COST_FACTOR);
-    opts.set<shared_ptr<AbstractTask>>("transform", task);
-
+    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     Abstractions abstractions = generate_abstractions(
