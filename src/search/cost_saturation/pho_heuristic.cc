@@ -136,7 +136,7 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
 static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Post-hoc optimization heuristic",
-        "Compute the maximum over multiple PhO heuristics.");
+        "Compute the maximum over multiple PhO heuristics precomputed offline.");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
     parser.add_option<bool>("saturated", "saturate costs", "true");
