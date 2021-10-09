@@ -166,9 +166,9 @@ void generate_cpp_input(bool /*solvable_in_poly_time*/,
                         const vector<pair<Variable *, int>> &goals,
                         const vector<Operator> &operators,
                         const vector<Axiom> &axioms,
-                        const SuccessorGenerator &sg,
-                        const vector<DomainTransitionGraph> transition_graphs,
-                        const CausalGraph &cg) {
+                        const SuccessorGenerator &,
+                        const vector<DomainTransitionGraph>,
+                        const CausalGraph &) {
     /* NOTE: solvable_in_poly_time flag is no longer included in output,
        since the planner doesn't handle it specially any more anyway. */
 
@@ -218,20 +218,6 @@ void generate_cpp_input(bool /*solvable_in_poly_time*/,
     for (const Axiom &axiom : axioms)
         axiom.generate_cpp_input(outfile);
 
-    outfile << "begin_SG" << endl;
-    sg.generate_cpp_input(outfile);
-    outfile << "end_SG" << endl;
-
-    for (const auto &dtg : transition_graphs) {
-        outfile << "begin_DTG" << endl;
-        dtg.generate_cpp_input(outfile);
-        outfile << "end_DTG" << endl;
-    }
-
-    outfile << "begin_CG" << endl;
-    cg.generate_cpp_input(outfile, ordered_vars);
-    outfile << "end_CG" << endl;
-
     outfile.close();
 }
 void generate_unsolvable_cpp_input() {
@@ -264,15 +250,6 @@ void generate_unsolvable_cpp_input() {
 
     //Axioms
     outfile << "0" << endl;
-
-    outfile << "begin_SG" << endl;
-    outfile << "check 0" << endl;
-    outfile << "end_SG" << endl;
-
-    outfile << "begin_DTG" << endl << "0" << endl << "0" << endl
-            << "end_DTG" << endl;
-
-    outfile << "begin_CG" << endl << "0" << endl << "end_CG" << endl;
 
     outfile.close();
 }
