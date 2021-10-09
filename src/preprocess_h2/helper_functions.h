@@ -3,7 +3,6 @@
 
 #include "state.h"
 #include "variable.h"
-#include "causal_graph.h"
 
 #include <string>
 #include <vector>
@@ -15,7 +14,6 @@ class State;
 class MutexGroup;
 class Operator;
 class Axiom;
-class DomainTransitionGraph;
 
 //void read_everything
 void read_preprocessed_problem_description(istream & in,
@@ -35,19 +33,14 @@ void dump_preprocessed_problem_description(const vector<Variable *> &variables,
                                            const vector<Operator> &operators,
                                            const vector<Axiom> &axioms);
 
-void dump_DTGs(const vector<Variable *> &ordering,
-               vector<DomainTransitionGraph> &transition_graphs);
 void generate_unsolvable_cpp_input();
-void generate_cpp_input(bool causal_graph_acyclic,
-                        const vector<Variable *> &ordered_var,
+void generate_cpp_input(const vector<Variable *> &ordered_var,
                         const bool &metric,
                         const vector<MutexGroup> &mutexes,
                         const State &initial_state,
                         const vector<pair<Variable *, int>> &goals,
                         const vector<Operator> &operators,
-                        const vector<Axiom> &axioms,
-                        const vector<DomainTransitionGraph> transition_graphs,
-                        const CausalGraph &cg);
+                        const vector<Axiom> &axioms);
 void check_magic(istream & in, string magic);
 
 #endif

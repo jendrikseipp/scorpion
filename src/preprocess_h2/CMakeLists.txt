@@ -14,7 +14,6 @@ set(PREPROCESS_SOURCES
     planner.cc
     axiom.cc
     causal_graph.cc
-    domain_transition_graph.cc
     h2_mutexes.cc
     helper_functions.cc
     max_dag.cc

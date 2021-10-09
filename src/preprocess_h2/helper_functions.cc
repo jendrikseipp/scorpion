@@ -12,7 +12,6 @@
 #include "operator.h"
 #include "axiom.h"
 #include "variable.h"
-#include "domain_transition_graph.h"
 
 using namespace std;
 
@@ -148,28 +147,13 @@ void dump_preprocessed_problem_description(const vector<Variable *> &variables,
         axiom.dump();
 }
 
-void dump_DTGs(const vector<Variable *> &ordering,
-               vector<DomainTransitionGraph> &transition_graphs) {
-    int num_graphs = transition_graphs.size();
-    for (int i = 0; i < num_graphs; i++) {
-        cout << "Domain transition graph for " << ordering[i]->get_name() << ":" << endl;
-        transition_graphs[i].dump();
-    }
-}
-
-void generate_cpp_input(bool /*solvable_in_poly_time*/,
-                        const vector<Variable *> &ordered_vars,
+void generate_cpp_input(const vector<Variable *> &ordered_vars,
                         const bool &metric,
                         const vector<MutexGroup> &mutexes,
                         const State &initial_state,
                         const vector<pair<Variable *, int>> &goals,
                         const vector<Operator> &operators,
-                        const vector<Axiom> &axioms,
-                        const vector<DomainTransitionGraph>,
-                        const CausalGraph &) {
-    /* NOTE: solvable_in_poly_time flag is no longer included in output,
-       since the planner doesn't handle it specially any more anyway. */
-
+                        const vector<Axiom> &axioms) {
     ofstream outfile;
     outfile.open("output.sas", ios::out);
 
