@@ -1,13 +1,11 @@
 /* Main file, keeps all important variables.
  * Calls functions from "helper_functions" to read in input (variables, operators,
  * goals, initial state),
- * then calls functions to build causal graph, domain_transition_graphs and
- * successor generator
+ * then calls functions to build causal graph and domain_transition_graphs
  * finally prints output to file "output.sas"
  */
 
 #include "helper_functions.h"
-#include "successor_generator.h"
 #include "causal_graph.h"
 #include "domain_transition_graph.h"
 #include "state.h"
@@ -183,9 +181,6 @@ int main(int argc, const char **argv) {
     //TODO: genauer machen? (highest level var muss nicht scc sein...gemacht)
     //nur Werte, die wichtig sind fuer drunterliegende vars muessen in scc sein
     cout << "solveable in poly time " << solveable_in_poly_time << endl;
-    cout << "Building successor generator..." << endl;
-    SuccessorGenerator successor_generator(ordering, operators);
-    //successor_generator.dump();
 
     // Output some task statistics
     int facts = 0;
@@ -274,7 +269,7 @@ int main(int argc, const char **argv) {
         generate_cpp_input(
             solveable_in_poly_time, ordering, metric,
             mutexes, initial_state, goals,
-            operators, axioms, successor_generator,
+            operators, axioms,
             transition_graphs, causal_graph);
     }
     cout << "done" << endl;

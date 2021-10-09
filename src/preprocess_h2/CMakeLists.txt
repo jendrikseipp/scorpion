@@ -22,7 +22,6 @@ set(PREPROCESS_SOURCES
     operator.cc
     scc.cc
     state.cc
-    successor_generator.cc
     variable.cc
 )
 

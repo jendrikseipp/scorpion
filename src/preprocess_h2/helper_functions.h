@@ -3,7 +3,6 @@
 
 #include "state.h"
 #include "variable.h"
-#include "successor_generator.h"
 #include "causal_graph.h"
 
 #include <string>
@@ -19,12 +18,12 @@ class Axiom;
 class DomainTransitionGraph;
 
 //void read_everything
-void read_preprocessed_problem_description(istream &in,
+void read_preprocessed_problem_description(istream & in,
                                            bool &metric,
                                            vector<Variable> &internal_variables,
                                            vector<Variable *> &variables,
                                            vector<MutexGroup> &mutexes,
-                                           State &initial_state,
+                                           State & initial_state,
                                            vector<pair<Variable *, int>> &goals,
                                            vector<Operator> &operators,
                                            vector<Axiom> &axioms);
@@ -47,9 +46,8 @@ void generate_cpp_input(bool causal_graph_acyclic,
                         const vector<pair<Variable *, int>> &goals,
                         const vector<Operator> &operators,
                         const vector<Axiom> &axioms,
-                        const SuccessorGenerator &sg,
                         const vector<DomainTransitionGraph> transition_graphs,
                         const CausalGraph &cg);
-void check_magic(istream &in, string magic);
+void check_magic(istream & in, string magic);
 
 #endif
