@@ -16,7 +16,6 @@ namespace cost_saturation {
   get_scaled_costs_task().
 */
 class ScaledCostPartitioningHeuristic : public MaxCostPartitioningHeuristic {
-    double scaling_factor;
 protected:
     virtual int compute_heuristic(const State &ancestor_state) override;
 
