@@ -37,44 +37,57 @@ to use them.
 
 ### Recommended configuration
 
-We recommend using
+We recommend using the following configuration:
 
 ```
 ./fast-downward.py \
   --transform-task preprocess-h2 \
-  --alias scorpion \
-  ../benchmarks/gripper/prob01.pddl
+  ../benchmarks/gripper/prob01.pddl \
+  --search "astar(scp_online([
+        projections(sys_scp(max_time=100, max_time_per_restart=10)),
+        cartesian()],
+        saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
+        pruning=atom_centric_stubborn_sets(min_required_pruning_ratio=0.2))"
 ```
 
 The `preprocess-h2` call prunes irrelevant operators in a preprocessing
-step, and the `scorpion` alias uses partial order reduction and maximizes
-over multiple diverse SCP heuristics computed *online* during the search.
-The underlying abstractions are the same as the ones Scorpion used in the
-IPC 2018: hill-climbing PDBs, systematic PDBs and Cartesian abstractions.
-(See [aliases.py](driver/aliases.py) for the expanded configuration
-string.) (In [Downward Lab](https://lab.readthedocs.io/) you can use
-`driver_options=["--transform-task", "preprocess-h2"]` in the call to
-`add_algorithm` to prune irrelevant operators.)
+step. The search configuration uses [partial order
+reduction](https://ojs.aaai.org/index.php/SOCS/article/view/18535) and
+maximizes over
+[diverse](https://www.jair.org/index.php/jair/article/view/11673),
+[subset-saturated](https://ojs.aaai.org/index.php/ICAPS/article/view/3503)
+cost partitioning heuristics computed
+[online](https://ojs.aaai.org/index.php/ICAPS/article/view/15976/) during
+the search. The underlying abstractions are [Sys-SCP pattern
+databases](https://www.ijcai.org/proceedings/2019/780) and [Cartesian
+abstractions](https://jair.org/index.php/jair/article/view/11217).
+
+(In [Downward Lab](https://lab.readthedocs.io/) you can use
+`add_algorithm(name="scorpion", repo="path/to/repo", rev="scorpion",
+component_options=[], driver_options=["--transform-task", "preprocess-h2",
+"--alias", "scorpion"]` to run the recommended Scorpion configuration.)
 
 #### Singularity container
 
-To simplify the installation process, we provide the above Scorpion
-configuration as an executable
-[Singularity](https://github.com/hpcng/singularity) container.
+To simplify the installation process, we provide an executable
+[Singularity](https://github.com/hpcng/singularity) container for
+Scorpion. It accepts the same arguments as the `fast-downward.py` script
+(see above).
 
-Download and run the container (tested with Singularity 3.5):
-
+    # Download the container (tested with Singularity 3.5),
     singularity pull scorpion.sif library://jendrikseipp/default/scorpion:latest
-    ./scorpion.sif [domain_file] problem_file
 
-Build the container yourself:
-
+    # or build the container yourself.
     sudo singularity build scorpion.sif Singularity
+
+    # Then run recommended configuration (available via "scorpion" alias).
+    ./scorpion.sif --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
 
 ### IPC 2018 version
 
-If you prefer to run exactly the same Scorpion version as in IPC 2018, we
-recommend using the [Scorpion IPC
+If you prefer to run the Scorpion version from IPC 2018 (which uses an
+older Fast Downward version and different abstractions), we recommend
+using the [Scorpion IPC
 repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
 
 
@@ -107,23 +120,24 @@ repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
 We use Cartesian abstractions in the example configurations below
 (`[cartesian()]`). You can also use pattern database heuristics, e.g.,
 `[projections(systematic(2))]`, or mix abstractions, e.g.,
-`[projections(systematic(3)), cartesian()]`. Some of the algorithms are
-also part of vanilla Fast Downward, but only for PDB heuristics.
+`[projections(systematic(3)), cartesian()]`. Some of the algorithms below
+are also part of vanilla Fast Downward, but are only implemented for PDB
+heuristics.
 
 - Optimal cost partitioning:
   `ocp([cartesian()])`
 - Canonical heuristic:
   `canonical_heuristic([cartesian()])`
-- Post-hoc optimization:
-  `operatorcounting([pho_abstraction_constraints([cartesian()], saturated=false)])`
 - Uniform cost partitioning:
   `ucp([cartesian()], opportunistic=false)`
 - Opportunistic uniform cost partitioning:
   `ucp([cartesian()], ..., opportunistic=true)`
 - Greedy zero-one cost partitioning:
   `gzocp([cartesian()], ...)`
-- Saturated post-hoc optimization:
-  `operatorcounting([pho_abstraction_constraints([cartesian()], saturated=true)])`
+- Saturated cost partitioning:
+  `scp([cartesian()], ...)` (offline), `scp_online([cartesian()], ...)` (online)
+- (Saturated) post-hoc optimization:
+  `pho([cartesian()], ..., saturated={false,true})` (offline), `operatorcounting([pho_abstraction_constraints([cartesian()], saturated={false,true})])` (online)
 
 You can also compute the maximum over abstraction heuristics:
 
@@ -131,6 +145,14 @@ You can also compute the maximum over abstraction heuristics:
 
 The plugin documentation shows all options for [cost partitioning
 heuristics](https://jendrikseipp.github.io/scorpion/Evaluator/#cost_partitioning_heuristics).
+
+## New pattern collection generators
+
+- Systematic patterns with size limits:
+  `sys_scp(max_pattern_size=X, max_pdb_size=Y, max_collection_size=Z, ..., saturate=false)`
+- Sys-SCP patterns:
+  `sys_scp(...)`
+
 
 
 ### New cost partitioning algorithms for landmark heuristics
