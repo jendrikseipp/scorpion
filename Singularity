@@ -33,23 +33,7 @@ From: ubuntu:20.04
 %runscript
     #!/bin/bash
 
-    PLANFILE="sas_plan"
-
-    if [ $# -eq 0 ] || [ $# -gt 3 ]; then
-        echo "usage: $(basename "$0") [domain_file] problem_file [plan_file]" 1>&2
-        exit 2
-    elif [ $# -eq 3 ]; then
-        PLANFILE="$3"
-        # Pop last argument.
-        set -- "${@:1:$(($#-1))}"
-    fi
-
-    ## Call planner.
-    /planner/fast-downward.py \
-        --plan-file "$PLANFILE" \
-        --transform-task preprocess-h2 \
-        --alias scorpion \
-        "$@"
+    /planner/fast-downward.py "$@"
 
 %labels
     Name        Scorpion
