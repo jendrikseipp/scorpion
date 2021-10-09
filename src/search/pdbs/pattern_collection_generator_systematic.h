@@ -19,6 +19,7 @@ class CausalGraph;
 
 namespace options {
 class Options;
+class OptionParser;
 }
 
 namespace utils {
@@ -87,6 +88,8 @@ public:
         const PatternHandler &handle_pattern,
         const utils::CountdownTimer &timer);
 };
+
+extern void add_pattern_type_option(options::OptionParser &parser);
 }
 
 #endif

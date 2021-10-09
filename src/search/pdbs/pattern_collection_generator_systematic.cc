@@ -365,6 +365,26 @@ void PatternCollectionGeneratorSystematic::generate(
     patterns = nullptr;
 }
 
+void add_pattern_type_option(OptionParser &parser) {
+    vector<string> pattern_types;
+    pattern_types.push_back("naive");
+    pattern_types.push_back("interesting_general");
+    pattern_types.push_back("interesting_non_negative");
+    vector<string> pattern_types_doc;
+    pattern_types_doc.push_back("all patterns up to the given size");
+    pattern_types_doc.push_back(
+        "only consider the union of two disjoint patterns if the union has "
+        "more information than the individual patterns under a general cost "
+        "partitioning");
+    pattern_types_doc.push_back(
+        "like interesting_general, but considering non-negative cost partitioning");
+    parser.add_enum_option<PatternType>(
+        "pattern_type",
+        pattern_types,
+        "type of pattern",
+        "interesting_non_negative");
+}
+
 static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Systematically generated patterns",
@@ -396,23 +416,7 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "max number of variables per pattern",
         "1",
         Bounds("1", "infinity"));
-    vector<string> pattern_types;
-    pattern_types.push_back("naive");
-    pattern_types.push_back("interesting_general");
-    pattern_types.push_back("interesting_non_negative");
-    vector<string> pattern_types_doc;
-    pattern_types_doc.push_back("all patterns up to the given size");
-    pattern_types_doc.push_back(
-        "only consider the union of two disjoint patterns if the union has "
-        "more information than the individual patterns under a general cost "
-        "partitioning");
-    pattern_types_doc.push_back(
-        "like interesting_general, but considering non-negative cost partitioning");
-    parser.add_enum_option<PatternType>(
-        "pattern_type",
-        pattern_types,
-        "type of pattern",
-        "interesting_non_negative");
+    add_pattern_type_option(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())
