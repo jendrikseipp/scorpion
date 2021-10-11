@@ -1061,7 +1061,7 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <p>Jendrik Seipp.<br />
  <a href="https://jendrikseipp.com/papers/seipp-ijcai2019.pdf">Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning</a>.<br />
  In <em>Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI 2019)</em>, pp. 5621-5627. IJCAI, 2019.</p>
-<pre><code>sys_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, only_interesting_patterns=true, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, debug=false)
+<pre><code>sys_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, pattern_type=interesting_non_negative, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, debug=false)
 </code></pre>
 <ul>
 <li><em>max_pattern_size</em> (int [1, infinity]): maximum number of variables per pattern</li>
@@ -1073,7 +1073,7 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><em>max_evaluations_per_restart</em> (int [0, infinity]): maximum pattern evaluations per the inner loop</li>
 <li><em>max_total_evaluations</em> (int [0, infinity]): maximum total pattern evaluations</li>
 <li><em>saturate</em> (bool): only select patterns useful in saturated cost partitionings</li>
-<li><em>only_interesting_patterns</em> (bool): only consider interesting patterns instead of all patterns</li>
+<li><em>pattern_type</em> ({naive, interesting_general, interesting_non_negative}): type of pattern</li>
 <li><em>ignore_useless_patterns</em> (bool): ignore patterns that induce no transitions with positive finite cost</li>
 <li><em>store_dead_ends</em> (bool): store dead ends in dead end tree (used to prune the search later)</li>
 <li><em>order</em> ({RANDOM, STATES_UP, STATES_DOWN, OPS_UP, OPS_DOWN, CG_UP, CG_DOWN}): order in which to consider patterns of the same size (based on states in projection, active operators or position of the pattern variables in the partial ordering of the causal graph)</li>
@@ -1085,11 +1085,15 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <p>Florian Pommerening, Gabriele Roeger and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/pommerening-et-al-ijcai2013.pdf">Getting the Most Out of Pattern Databases for Classical Planning</a>.<br />
  In <em>Proceedings of the Twenty-Third International Joint Conference on Artificial Intelligence (IJCAI 2013)</em>, pp. 2357-2364. AAAI Press, 2013.</p>
-<pre><code>systematic(pattern_max_size=1, only_interesting_patterns=true)
+<p>The pattern_type=interesting_general setting was introduced in</p>
+<p>Florian Pommerening, Thomas Keller, Valentina Halasi, Jendrik Seipp, Silvan Sievers and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/pommerening-et-al-icaps2021.pdf">Dantzig-Wolfe Decomposition for Cost Partitioning</a>.<br />
+ In <em>Proceedings of the 31st International Conference on Automated Planning and Scheduling (ICAPS 2021)</em>, pp. 271-280. AAAI Press, 2021.</p>
+<pre><code>systematic(pattern_max_size=1, pattern_type=interesting_non_negative)
 </code></pre>
 <ul>
 <li><em>pattern_max_size</em> (int [1, infinity]): max number of variables per pattern</li>
-<li><em>only_interesting_patterns</em> (bool): Only consider the union of two disjoint patterns if the union has more information than the individual patterns.</li>
+<li><em>pattern_type</em> ({naive, interesting_general, interesting_non_negative}): type of pattern</li>
 </ul>
                 
               
