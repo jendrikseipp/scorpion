@@ -1,6 +1,7 @@
 #ifndef PDBS_PATTERN_COLLECTION_GENERATOR_SYSTEMATIC_SCP_H
 #define PDBS_PATTERN_COLLECTION_GENERATOR_SYSTEMATIC_SCP_H
 
+#include "pattern_collection_generator_systematic.h"
 #include "pattern_generator.h"
 #include "types.h"
 
@@ -48,7 +49,7 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
     const int max_evaluations_per_restart;
     const int max_total_evaluations;
     const bool saturate;
-    const bool only_interesting_patterns;
+    const PatternType pattern_type;
     const bool ignore_useless_patterns;
     const bool store_dead_ends;
     const PatternOrder pattern_order;
