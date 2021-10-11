@@ -379,6 +379,15 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME EXHAUSTIVE_SEARCH
+    HELP "Exhaustive search for testing"
+    SOURCES
+        search_engines/exhaustive_search
+    DEPENDS NULL_PRUNING_METHOD ORDERED_SET SUCCESSOR_GENERATOR
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
     NAME PLUGIN_ASTAR
     HELP "A* search"
     SOURCES
@@ -408,6 +417,14 @@ fast_downward_plugin(
     SOURCES
         search_engines/plugin_eager_wastar
     DEPENDS EAGER_SEARCH SEARCH_COMMON
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_EXHAUSTIVE
+    HELP "exhaustive search"
+    SOURCES
+        search_engines/plugin_exhaustive
+    DEPENDS EXHAUSTIVE_SEARCH SEARCH_COMMON
 )
 
 fast_downward_plugin(
