@@ -13,7 +13,9 @@ using namespace std;
 
 namespace comparison_evaluator {
 ComparisonEvaluator::ComparisonEvaluator(const Options &opts)
-    :evaluators(opts.get_list<shared_ptr<Evaluator>>("evals")),handling(opts.get<UnequalityHandling>("uneq_handling")) {
+    :evaluators(opts.get_list<shared_ptr<Evaluator>>("evals")),
+    handling(opts.get<UnequalityHandling>("uneq_handling")),
+    c_options(opts.get<CombineOptions>("combine")) {
 
     }
 
@@ -56,13 +58,17 @@ EvaluationResult ComparisonEvaluator::compute_result(EvaluationContext &eval_con
         eval_context.get_state().unpack();
         if (handling == UnequalityHandling::PRINT) {
             cout << "Unequality: " << values << " in state: " << eval_context.get_state().get_unpacked_values() << endl;
-        } else {
+        } else if (handling == UnequalityHandling::EXCEPTION) {
             cerr << "Unequality: " << values << " in state: " << eval_context.get_state().get_unpacked_values() << endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
     }
 
-    result.set_evaluator_value(1);
+    if (c_options == CombineOptions::MAX) {
+        result.set_evaluator_value(*max_element(values.begin(),values.end()));
+    } else if (c_options == CombineOptions::MIN) {
+        result.set_evaluator_value(*min_element(values.begin(),values.end()));
+    }
 
     return result;
 }
@@ -80,6 +86,11 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.add_list_option<shared_ptr<Evaluator>>(
         "evals",
         "at least one evaluator");
+    parser.add_enum_option<CombineOptions>(
+        "combine",
+        {"MAX","MIN"},
+        "how to combine the evaluator values",
+        "MIN");
     parser.add_enum_option<UnequalityHandling>(
         "uneq_handling",
         {"PRINT","EXCEPTION"},

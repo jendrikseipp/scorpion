@@ -18,12 +18,18 @@ enum class UnequalityHandling {
     EXCEPTION
 };
 
+enum class CombineOptions {
+    MAX,
+    MIN
+};
+
 namespace comparison_evaluator {
 
 class ComparisonEvaluator : public Evaluator {
     private:
         std::vector<std::shared_ptr<Evaluator>> evaluators;
         const UnequalityHandling handling;
+        const CombineOptions c_options;
     
 public:
     explicit ComparisonEvaluator(const options::Options &opts);
