@@ -288,6 +288,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME COMPARISON_EVALUATOR
+    HELP "The comparison evaluator"
+    SOURCES
+        evaluators/comparison_evaluator
+    DEPENDENS EVALUATORS_PLUGIN_GROUP
+)
+
+fast_downward_plugin(
     NAME MAX_EVALUATOR
     HELP "The max evaluator"
     SOURCES
