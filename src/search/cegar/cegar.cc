@@ -4,6 +4,7 @@
 #include "abstract_search.h"
 #include "abstract_state.h"
 #include "cartesian_set.h"
+#include "flaw_search.h"
 #include "shortest_paths.h"
 #include "transition_system.h"
 #include "utils.h"
@@ -40,6 +41,7 @@ CEGAR::CEGAR(
       split_selector(task, pick),
       search_strategy(search_strategy),
       flaw_selector(task, flaw_strategy, debug),
+      flaw_search(task),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
       debug(debug),
@@ -198,6 +200,8 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             break;
         }
 
+        // flaw_search.search_for_flaws(abstract_search.get());
+
         find_flaw_timer.resume();
         unique_ptr<Flaw> flaw = flaw_selector.find_flaw(*abstraction, domain_sizes, *solution, rng);
         find_flaw_timer.stop();
@@ -214,18 +218,22 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
 
         if (flaw) {
-            cout << "Chosen flawed solution:" << endl;
-            for (const Transition &t : flaw->flawed_solution) {
-                OperatorProxy op = task_proxy.get_operators()[t.op_id];
-                cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+            if (debug) {
+                cout << "Chosen flawed solution:" << endl;
+                for (const Transition &t : flaw->flawed_solution) {
+                    OperatorProxy op = task_proxy.get_operators()[t.op_id];
+                    cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+                }
             }
         } else {
-            cout << "Chosen concrete solution:" << endl;
-            for (const Transition &t : *flaw_selector.get_concrete_solution()) {
-                OperatorProxy op = task_proxy.get_operators()[t.op_id];
-                cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+            if (debug) {
+                cout << "Chosen concrete solution:" << endl;
+                for (const Transition &t : *flaw_selector.get_concrete_solution()) {
+                    OperatorProxy op = task_proxy.get_operators()[t.op_id];
+                    cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+                }
+                utils::g_log << "Found concrete solution for subtask." << endl;
             }
-            utils::g_log << "Found concrete solution for subtask." << endl;
             break;
         }
 

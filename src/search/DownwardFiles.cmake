@@ -629,6 +629,7 @@ fast_downward_plugin(
         cegar/flaw_selector
         cegar/flaw_selector_fast
         cegar/flaw_selector_slow
+        cegar/flaw_search
         cegar/refinement_hierarchy
         cegar/shortest_paths
         cegar/split_selector

@@ -1,6 +1,7 @@
 #ifndef CEGAR_CEGAR_H
 #define CEGAR_CEGAR_H
 
+#include "flaw_search.h"
 #include "flaw_selector.h"
 #include "split_selector.h"
 #include "types.h"
@@ -37,6 +38,7 @@ class CEGAR {
     const SplitSelector split_selector;
     const SearchStrategy search_strategy;
     const FlawSelector flaw_selector;
+    FlawSearch flaw_search;
 
     std::unique_ptr<Abstraction> abstraction;
     std::unique_ptr<AbstractSearch> abstract_search;

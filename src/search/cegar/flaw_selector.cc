@@ -283,7 +283,7 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
     if (debug) {
         const AbstractState *abstract_state = &abstraction.get_initial_state();
         size_t cur_num_wildcard_plans = 1;
-        for (const Transition& tr : solution) {
+        for (const Transition &tr : solution) {
             vector<Transition> wildcard_trs;
             get_wildcard_trs(abstraction, abstract_state, tr, wildcard_trs);
             cur_num_wildcard_plans *= wildcard_trs.size();
