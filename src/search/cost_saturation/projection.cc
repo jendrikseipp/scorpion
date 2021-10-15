@@ -93,9 +93,22 @@ static vector<bool> compute_looping_operators(
     return loops;
 }
 
-using OperatorIDsByPreEff = utils::HashMap<pair<vector<FactPair>, vector<FactPair>>, vector<int>>;
-static OperatorIDsByPreEff group_equivalent_operators(const TaskProxy &task_proxy, const vector<int> &variable_to_pattern_index) {
-    OperatorIDsByPreEff grouped_operator_ids;
+struct OperatorGroup {
+    vector<FactPair> preconditions;
+    vector<FactPair> effects;
+    vector<int> operator_ids;
+
+    bool operator<(const OperatorGroup &other) const {
+        return operator_ids < other.operator_ids;
+    }
+};
+
+using OperatorIDsByPreEffMap = utils::HashMap<pair<vector<FactPair>, vector<FactPair>>, vector<int>>;
+using OperatorGroups = std::vector<OperatorGroup>;
+
+static OperatorGroups group_equivalent_operators(
+    const TaskProxy &task_proxy, const vector<int> &variable_to_pattern_index) {
+    OperatorIDsByPreEffMap grouped_operator_ids;
     for (OperatorProxy op : task_proxy.get_operators()) {
         vector<FactPair> preconditions;
         for (FactProxy fact : op.get_preconditions()) {
@@ -114,7 +127,18 @@ static OperatorIDsByPreEff group_equivalent_operators(const TaskProxy &task_prox
         sort(effects.begin(), effects.end());
         grouped_operator_ids[make_pair(preconditions, effects)].push_back(op.get_id());
     }
-    return grouped_operator_ids;
+    OperatorGroups groups;
+    for (const auto &entry : grouped_operator_ids) {
+        const auto &pre_eff = entry.first;
+        OperatorGroup group;
+        group.preconditions = move(pre_eff.first);
+        group.effects = move(pre_eff.second);
+        group.operator_ids = move(entry.second);
+        groups.push_back(move(group));
+    }
+    // Sort by first operator ID for better cache locality.
+    sort(groups.begin(), groups.end());
+    return groups;
 }
 
 
@@ -232,15 +256,13 @@ Projection::Projection(
     match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
         task_proxy, pattern, hash_multipliers);
 
-    OperatorIDsByPreEff grouped_operator_ids =
+    OperatorGroups operator_groups =
         group_equivalent_operators(task_proxy, variable_to_pattern_index);
-    // TODO: sort by first operator ID for better cache locality.
-    label_to_operators.reserve(grouped_operator_ids.size());
-    for (const auto &entry : grouped_operator_ids) {
-        const auto &pre_eff = entry.first;
-        const vector<FactPair> &preconditions = pre_eff.first;
-        const vector<FactPair> &effects = pre_eff.second;
-        const vector<int> &operator_ids = entry.second;
+    label_to_operators.reserve(operator_groups.size());
+    for (const OperatorGroup &group : operator_groups) {
+        const vector<FactPair> &preconditions = group.preconditions;
+        const vector<FactPair> &effects = group.effects;
+        const vector<int> &operator_ids = group.operator_ids;
         assert(!operator_ids.empty());
 
         /*
