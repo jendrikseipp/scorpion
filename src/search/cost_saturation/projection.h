@@ -190,7 +190,7 @@ public:
         const TaskProxy &task_proxy,
         const std::shared_ptr<TaskInfo> &task_info,
         const pdbs::Pattern &pattern,
-        bool combine_labels);
+        bool combine_labels = true);
     virtual ~Projection() override;
 
     virtual std::vector<int> compute_goal_distances(

@@ -395,9 +395,8 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             select_pattern = pattern_evaluator.is_useful(pattern, pq, tmp_dead_ends, costs);
             projection_evaluation_timer->stop();
 #ifndef NDEBUG
-            bool combine_labels = true;
             vector<int> goal_distances = cost_saturation::Projection(
-                task_proxy, task_info, pattern, combine_labels).compute_goal_distances(costs);
+                task_proxy, task_info, pattern).compute_goal_distances(costs);
             assert(select_pattern == contains_positive_finite_value(goal_distances));
 #endif
         }
@@ -408,10 +407,9 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             if (saturate) {
                 log << "Add pattern " << pattern << endl;
             }
-            bool combine_labels = true;
             unique_ptr<cost_saturation::Projection> projection =
                 utils::make_unique_ptr<cost_saturation::Projection>(
-                    task_proxy, task_info, pattern, combine_labels);
+                    task_proxy, task_info, pattern);
             if (saturate) {
                 vector<int> goal_distances = projection->compute_goal_distances(costs);
                 vector<int> saturated_costs = projection->compute_saturated_costs(
