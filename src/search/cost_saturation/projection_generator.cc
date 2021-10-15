@@ -23,6 +23,7 @@ ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
       dominance_pruning(opts.get<bool>("dominance_pruning")),
       combine_labels(opts.get<bool>("combine_labels")),
+      use_match_tree_for_scf(opts.get<bool>("use_match_tree_for_scf")),
       create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
       use_add_after_delete_semantics(opts.get<bool>("use_add_after_delete_semantics")),
       debug(opts.get<bool>("debug")) {
@@ -88,7 +89,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
                 task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction();
         } else {
             projection = utils::make_unique_ptr<Projection>(
-                task_proxy, task_info, pattern, combine_labels);
+                task_proxy, task_info, pattern, combine_labels, use_match_tree_for_scf);
         }
 
         if (debug) {
@@ -126,6 +127,10 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "combine_labels",
         "group labels that only induce parallel transitions",
+        "false");
+    parser.add_option<bool>(
+        "use_match_tree_for_scf",
+        "compute saturated cost function using a match tree",
         "false");
     parser.add_option<bool>(
         "create_complete_transition_system",

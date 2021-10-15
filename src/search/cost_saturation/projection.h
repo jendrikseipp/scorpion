@@ -5,8 +5,10 @@
 
 #include "../abstract_task.h"
 
+#include "../pdbs/match_tree.h"
 #include "../pdbs/types.h"
 
+#include <deque>
 #include <functional>
 #include <vector>
 
@@ -92,6 +94,7 @@ class Projection : public Abstraction {
     std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
     bool combine_labels;
+    bool use_match_tree_for_scf;
     std::vector<std::vector<int>> label_to_operators;
 
     std::vector<bool> looping_operators;
@@ -119,6 +122,32 @@ class Projection : public Abstraction {
     */
     bool increment_to_next_state(std::vector<FactPair> &facts) const;
 
+    template<class Callback>
+    void for_each_solvable_label_transition(const Callback &callback) const {
+        std::vector<bool> closed(get_num_states(), false);
+        // Use BFS for better cache locality.
+        std::deque<int> open(goal_states.begin(), goal_states.end());
+        for (int goal_state : goal_states) {
+            closed[goal_state] = true;
+        }
+
+        std::vector<int> applicable_operators;
+        while (!open.empty()) {
+            int current_state = open.front();
+            open.pop_front();
+            applicable_operators.clear();
+            match_tree_backward->get_applicable_operator_ids(current_state, applicable_operators);
+            for (int ranked_op_id : applicable_operators) {
+                const RankedOperator &op = ranked_operators[ranked_op_id];
+                int predecessor = current_state - op.hash_effect;
+                callback(Transition(predecessor, op.label, current_state));
+                if (!closed[predecessor]) {
+                    closed[predecessor] = true;
+                    open.push_back(predecessor);
+                }
+            }
+        }
+    }
     template<class Callback>
     void for_each_label_transition(const Callback &callback) const {
         // Reuse vector to save allocations.
@@ -190,7 +219,8 @@ public:
         const TaskProxy &task_proxy,
         const std::shared_ptr<TaskInfo> &task_info,
         const pdbs::Pattern &pattern,
-        bool combine_labels = true);
+        bool combine_labels = true,
+        bool use_match_tree_for_scf = false);
     virtual ~Projection() override;
 
     virtual std::vector<int> compute_goal_distances(
