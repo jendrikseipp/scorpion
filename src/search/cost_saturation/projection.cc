@@ -535,7 +535,12 @@ bool Projection::operator_induces_self_loop(int op_id) const {
 }
 
 void Projection::for_each_transition(const TransitionCallback &callback) const {
-    return for_each_transition_impl(callback);
+    return for_each_label_transition(
+        [this, &callback](const Transition &t) {
+            for (int op_id : label_to_operators[t.op]) {
+                callback(Transition(t.src, op_id, t.target));
+            }
+        });
 }
 
 const vector<int> &Projection::get_goal_states() const {

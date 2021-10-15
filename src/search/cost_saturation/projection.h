@@ -150,42 +150,6 @@ class Projection : public Abstraction {
     }
 
     /*
-      Apply a function to all transitions in the projection (including
-      irrelevant transitions).
-    */
-    template<class Callback>
-    void for_each_transition_impl(const Callback &callback) const {
-        // Reuse vector to save allocations.
-        std::vector<FactPair> abstract_facts;
-
-        for (const RankedOperator &ranked_operator : ranked_operators) {
-            // Choose any operator covered by the label. // TODO: use label directly?
-            int concrete_op_id = label_to_operators[ranked_operator.label][0];
-            abstract_facts.clear();
-            for (size_t i = 0; i < pattern.size(); ++i) {
-                int var = pattern[i];
-                if (!task_info->operator_mentions_variable(concrete_op_id, var)) {
-                    abstract_facts.emplace_back(i, 0);
-                }
-            }
-
-            bool has_next_match = true;
-            while (has_next_match) {
-                int state = ranked_operator.precondition_hash;
-                for (const FactPair &fact : abstract_facts) {
-                    state += hash_multipliers[fact.var] * fact.value;
-                }
-                for (int operator_id : label_to_operators[ranked_operator.label]) {
-                    callback(Transition(state,
-                                        operator_id,
-                                        state + ranked_operator.hash_effect));
-                }
-                has_next_match = increment_to_next_state(abstract_facts);
-            }
-        }
-    }
-
-    /*
       Recursive method; called by build_abstract_operators. In the case
       of a precondition with value = -1 in the concrete operator, all
       multiplied-out abstract operators are computed, i.e., for all
