@@ -141,6 +141,23 @@ static OperatorGroups group_equivalent_operators(
     return groups;
 }
 
+static OperatorGroups get_singleton_operator_groups(const TaskProxy &task_proxy) {
+    OperatorGroups groups;
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        OperatorGroup group;
+        group.preconditions = task_properties::get_fact_pairs(op.get_preconditions());
+        sort(group.preconditions.begin(), group.preconditions.end());
+        group.effects.reserve(op.get_effects().size());
+        for (EffectProxy eff : op.get_effects()) {
+            group.effects.push_back(eff.get_fact().get_pair());
+        }
+        sort(group.effects.begin(), group.effects.end());
+        group.operator_ids = {op.get_id()};
+        groups.push_back(move(group));
+    }
+    return groups;
+}
+
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     num_variables = task_proxy.get_variables().size();
@@ -256,8 +273,12 @@ Projection::Projection(
     match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
         task_proxy, pattern, hash_multipliers);
 
-    OperatorGroups operator_groups =
-        group_equivalent_operators(task_proxy, variable_to_pattern_index);
+    OperatorGroups operator_groups;
+    if (combine_labels) {
+        operator_groups = group_equivalent_operators(task_proxy, variable_to_pattern_index);
+    } else {
+        operator_groups = get_singleton_operator_groups(task_proxy);
+    }
     label_to_operators.reserve(operator_groups.size());
     for (const OperatorGroup &group : operator_groups) {
         const vector<FactPair> &preconditions = group.preconditions;
