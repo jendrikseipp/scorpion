@@ -244,15 +244,10 @@ Projection::Projection(
         assert(!operator_ids.empty());
 
         /*
-          We ignore all irrelevant operators. They always have a self-loop
-          on the initial state, so unless no goal state is reachable, such
-          operators cannot have a negative cost in this transition system.
-          It also does not help to assign a positive cost to them because
-          they only induce self-loops. The classes that use this transition
-          system assume that all operators not covered by a label have a
-          cost of 0.
+          Skip operators that only induce self-loops. They can be queried
+          with operator_induces_self_loop().
         */
-        if ((preconditions.empty() && effects.empty())) {
+        if (effects.empty()) {
             continue;
         }
 
