@@ -431,29 +431,6 @@ bool Projection::is_consistent(
 vector<int> Projection::compute_saturated_costs(
     const vector<int> &h_values) const {
     int num_operators = get_num_operators();
-    vector<int> saturated_costs_old(num_operators, -INF);
-
-    /* To prevent negative cost cycles, we ensure that all operators inducing
-       self-loops (among possibly other transitions) have non-negative costs. */
-    for (int op_id = 0; op_id < num_operators; ++op_id) {
-        if (operator_induces_self_loop(op_id)) {
-            saturated_costs_old[op_id] = 0;
-        }
-    }
-
-    for_each_transition_impl(
-        [&saturated_costs_old, &h_values](const Transition &t) {
-            assert(utils::in_bounds(t.src, h_values));
-            assert(utils::in_bounds(t.target, h_values));
-            int src_h = h_values[t.src];
-            int target_h = h_values[t.target];
-            if (src_h == INF || target_h == INF) {
-                return;
-            }
-            int &needed_costs = saturated_costs_old[t.op];
-            needed_costs = max(needed_costs, src_h - target_h);
-        });
-
 
     int num_labels = label_to_operators.size();
     vector<int> saturated_label_costs(num_labels, -INF);
@@ -487,8 +464,7 @@ vector<int> Projection::compute_saturated_costs(
         }
     }
 
-    assert(saturated_costs == saturated_costs_old);
-    return saturated_costs_old;
+    return saturated_costs;
 }
 
 int Projection::get_num_operators() const {
