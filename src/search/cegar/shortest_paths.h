@@ -110,6 +110,8 @@ public:
         int init_id,
         const Goals &goals);
 
+    Cost get_goal_distance(int abstract_state_id) const;
+
     // For debugging.
     bool test_distances(
         const std::vector<Transitions> &in,

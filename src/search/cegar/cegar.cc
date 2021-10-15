@@ -167,10 +167,10 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     utils::Timer find_flaw_timer(false);
     utils::Timer refine_timer(false);
     utils::Timer update_goal_distances_timer(false);
-    int num_of_refinments = 0;
+    int num_of_refinements = 0;
 
     while (may_keep_refining()) {
-        ++num_of_refinments;
+        ++num_of_refinements;
         find_trace_timer.resume();
         unique_ptr<Solution> solution;
         if (search_strategy == SearchStrategy::ASTAR) {
@@ -200,7 +200,8 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             break;
         }
 
-        // flaw_search.search_for_flaws(abstract_search.get());
+        // flaw_search.search_for_flaws(abstraction.get(), shortest_paths.get());
+        // exit(0);
 
         find_flaw_timer.resume();
         unique_ptr<Flaw> flaw = flaw_selector.find_flaw(*abstraction, domain_sizes, *solution, rng);
@@ -213,7 +214,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         if (debug) {
             Solution sol = flaw ? flaw->flawed_solution : *flaw_selector.get_concrete_solution();
             handle_dot_graph(*abstraction, sol, task_proxy,
-                             "dot_files/graph" + to_string(num_of_refinments) + ".dot",
+                             "dot_files/graph" + to_string(num_of_refinements) + ".dot",
                              dot_graph_verbosity);
         }
 
@@ -277,7 +278,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     utils::g_log << "Time for finding flaws: " << find_flaw_timer << endl;
     utils::g_log << "Time for splitting states: " << refine_timer << endl;
     utils::g_log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
-    utils::g_log << "Number of refinments: " << num_of_refinments << endl;
+    utils::g_log << "Number of refinements: " << num_of_refinements << endl;
 }
 
 void CEGAR::print_statistics() {

@@ -323,6 +323,10 @@ unique_ptr<Solution> ShortestPaths::extract_solution(
     return solution;
 }
 
+Cost ShortestPaths::get_goal_distance(int abstract_state_id) const {
+    return goal_distances.at(abstract_state_id);
+}
+
 bool ShortestPaths::test_distances(
     const vector<Transitions> &in,
     const vector<Transitions> &out,
