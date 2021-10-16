@@ -84,14 +84,11 @@ public:
     }
 
     ArrayPoolSlice<Value> get_slice(int index) const {
-        int size = (index == static_cast<int>(positions.size() - 1))
-            ? data.size() - positions[index]
-            : positions[index + 1] - positions[index];
-        assert(positions[index] >= 0 &&
-               size >= 0 &&
-               positions[index] + size <= static_cast<int>(data.size()));
-        return ArrayPoolSlice<Value>(
-            data.begin() + positions[index], data.begin() + positions[index] + size);
+        typename ArrayPoolSlice<Value>::Iterator first = data.begin() + positions[index];
+        typename ArrayPoolSlice<Value>::Iterator last = (index == size() - 1)
+            ? data.end()
+            : data.begin() + positions[index + 1];
+        return ArrayPoolSlice<Value>(first, last);
     }
 
     void reserve(int num_vectors, int total_num_entries) {
