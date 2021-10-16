@@ -94,6 +94,11 @@ public:
             data.begin() + positions[index], data.begin() + positions[index] + size);
     }
 
+    void reserve(int num_vectors, int total_num_entries) {
+        data.reserve(total_num_entries);
+        positions.reserve(num_vectors);
+    }
+
     int size() const {
         return positions.size();
     }

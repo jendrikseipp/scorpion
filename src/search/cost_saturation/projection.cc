@@ -280,7 +280,11 @@ Projection::Projection(
     } else {
         operator_groups = get_singleton_operator_groups(task_proxy);
     }
-    label_to_operators.reserve(operator_groups.size());
+    int num_ops_covered_by_labels = 0;
+    for (const auto &group : operator_groups) {
+        num_ops_covered_by_labels += group.operator_ids.size();
+    }
+    label_to_operators.reserve(operator_groups.size(), num_ops_covered_by_labels);
     for (const OperatorGroup &group : operator_groups) {
         const vector<FactPair> &preconditions = group.preconditions;
         const vector<FactPair> &effects = group.effects;
@@ -296,7 +300,7 @@ Projection::Projection(
         }
 
         int label_id = label_to_operators.size();
-        label_to_operators.push_back(operator_ids);
+        label_to_operators.append(move(operator_ids));
 
         build_ranked_operators(
             preconditions, effects, variable_to_pattern_index, variables,
@@ -511,7 +515,7 @@ vector<int> Projection::compute_saturated_costs(
 
     for (int label_id = 0; label_id < num_labels; ++label_id) {
         int saturated_label_cost = saturated_label_costs[label_id];
-        for (int op_id : label_to_operators[label_id]) {
+        for (int op_id : label_to_operators.get_slice(label_id)) {
             saturated_costs[op_id] = max(saturated_costs[op_id], saturated_label_cost);
         }
     }
@@ -527,11 +531,12 @@ vector<int> Projection::compute_goal_distances(const vector<int> &operator_costs
     assert(all_of(operator_costs.begin(), operator_costs.end(), [](int c) {return c >= 0;}));
 
     // Assign each label the cost of cheapest operator that the label covers.
+    int num_labels = label_to_operators.size();
     vector<int> label_costs;
-    label_costs.reserve(label_to_operators.size());
-    for (const vector<int> &operator_ids : label_to_operators) {
+    label_costs.reserve(num_labels);
+    for (int label_id = 0; label_id < num_labels; ++label_id) {
         int min_cost = INF;
-        for (int op_id : operator_ids) {
+        for (int op_id : label_to_operators.get_slice(label_id)) {
             min_cost = min(min_cost, operator_costs[op_id]);
         }
         label_costs.push_back(min_cost);
@@ -594,7 +599,7 @@ bool Projection::operator_induces_self_loop(int op_id) const {
 void Projection::for_each_transition(const TransitionCallback &callback) const {
     return for_each_label_transition(
         [this, &callback](const Transition &t) {
-            for (int op_id : label_to_operators[t.op]) {
+            for (int op_id : label_to_operators.get_slice(t.op)) {
                 callback(Transition(t.src, op_id, t.target));
             }
         });

@@ -5,6 +5,7 @@
 
 #include "../abstract_task.h"
 
+#include "../algorithms/array_pool.h"
 #include "../pdbs/match_tree.h"
 #include "../pdbs/types.h"
 
@@ -95,7 +96,7 @@ class Projection : public Abstraction {
     pdbs::Pattern pattern;
     bool combine_labels;
     bool use_match_tree_for_scf;
-    std::vector<std::vector<int>> label_to_operators;
+    array_pool_template::ArrayPool<int> label_to_operators;
 
     std::vector<bool> looping_operators;
 
@@ -155,7 +156,7 @@ class Projection : public Abstraction {
 
         for (const RankedOperator &ranked_operator : ranked_operators) {
             // Choose any operator covered by the label. // TODO: use label directly?
-            int concrete_op_id = label_to_operators[ranked_operator.label][0];
+            int concrete_op_id = *label_to_operators.get_slice(ranked_operator.label).begin();
             abstract_facts.clear();
             for (size_t i = 0; i < pattern.size(); ++i) {
                 int var = pattern[i];
