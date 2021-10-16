@@ -15,21 +15,6 @@ namespace array_pool_template {
 template<typename Value>
 class ArrayPool;
 
-const int INVALID_INDEX = -1;
-
-template<typename Value>
-class ArrayPoolIndex {
-    friend class ArrayPool<Value>;
-    int position;
-    ArrayPoolIndex(int position)
-        : position(position) {
-    }
-public:
-    ArrayPoolIndex()
-        : position(INVALID_INDEX) {
-    }
-};
-
 template<typename Value>
 class ArrayPoolSlice {
 public:
@@ -58,29 +43,12 @@ class ArrayPool {
     std::vector<Value> data;
     std::vector<int> positions;
 public:
-    ArrayPoolIndex<Value> append(std::vector<Value> &&vec) {
-        ArrayPoolIndex<Value> index(data.size());
+    void push_back(std::vector<Value> &&vec) {
         positions.push_back(data.size());
         data.insert(
             data.end(),
             std::make_move_iterator(vec.begin()),
             std::make_move_iterator(vec.end()));
-        return index;
-    }
-
-    ArrayPoolIndex<Value> append(const std::vector<Value> &vec) {
-        ArrayPoolIndex<Value> index(data.size());
-        positions.push_back(data.size());
-        data.insert(data.end(), vec.begin(), vec.end());
-        return index;
-    }
-
-    ArrayPoolSlice<Value> get_slice(ArrayPoolIndex<Value> index, int size) const {
-        assert(index.position >= 0 &&
-               size >= 0 &&
-               index.position + size <= static_cast<int>(data.size()));
-        return ArrayPoolSlice<Value>(
-            data.begin() + index.position, data.begin() + index.position + size);
     }
 
     ArrayPoolSlice<Value> get_slice(int index) const {

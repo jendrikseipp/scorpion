@@ -292,14 +292,12 @@ Projection::Projection(
         num_ops_covered_by_labels += group.operator_ids.size();
     }
     label_to_operators.reserve(operator_groups.size(), num_ops_covered_by_labels);
-    for (const OperatorGroup &group : operator_groups) {
+    for (OperatorGroup &group : operator_groups) {
         const vector<FactPair> &preconditions = group.preconditions;
         const vector<FactPair> &effects = group.effects;
-        const vector<int> &operator_ids = group.operator_ids;
-        assert(!operator_ids.empty());
 
         int label_id = label_to_operators.size();
-        label_to_operators.append(move(operator_ids));
+        label_to_operators.push_back(move(group.operator_ids));
 
         build_ranked_operators(
             preconditions, effects, variable_to_pattern_index, variables,
