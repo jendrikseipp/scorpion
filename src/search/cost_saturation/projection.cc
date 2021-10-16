@@ -109,13 +109,6 @@ static OperatorGroups group_equivalent_operators(
     const TaskProxy &task_proxy, const vector<int> &variable_to_pattern_index) {
     OperatorIDsByPreEffMap grouped_operator_ids;
     for (OperatorProxy op : task_proxy.get_operators()) {
-        vector<FactPair> preconditions;
-        for (FactProxy fact : op.get_preconditions()) {
-            if (variable_to_pattern_index[fact.get_pair().var] != -1) {
-                preconditions.push_back(fact.get_pair());
-            }
-        }
-        sort(preconditions.begin(), preconditions.end());
         vector<FactPair> effects;
         effects.reserve(op.get_effects().size());
         for (EffectProxy eff : op.get_effects()) {
@@ -123,7 +116,21 @@ static OperatorGroups group_equivalent_operators(
                 effects.push_back(eff.get_fact().get_pair());
             }
         }
+        /* Skip operators that only induce self-loops. They can be queried
+           with operator_induces_self_loop(). */
+        if (effects.empty()) {
+            continue;
+        }
         sort(effects.begin(), effects.end());
+
+        vector<FactPair> preconditions;
+        for (FactProxy fact : op.get_preconditions()) {
+            if (variable_to_pattern_index[fact.get_pair().var] != -1) {
+                preconditions.push_back(fact.get_pair());
+            }
+        }
+        sort(preconditions.begin(), preconditions.end());
+
         grouped_operator_ids[make_pair(preconditions, effects)].push_back(op.get_id());
     }
     OperatorGroups groups;
@@ -290,14 +297,6 @@ Projection::Projection(
         const vector<FactPair> &effects = group.effects;
         const vector<int> &operator_ids = group.operator_ids;
         assert(!operator_ids.empty());
-
-        /*
-          Skip operators that only induce self-loops. They can be queried
-          with operator_induces_self_loop().
-        */
-        if (effects.empty()) {
-            continue;
-        }
 
         int label_id = label_to_operators.size();
         label_to_operators.append(move(operator_ids));
