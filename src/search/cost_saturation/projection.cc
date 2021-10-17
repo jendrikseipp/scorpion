@@ -108,9 +108,11 @@ using OperatorGroups = std::vector<OperatorGroup>;
 static OperatorGroups group_equivalent_operators(
     const TaskProxy &task_proxy, const vector<int> &variable_to_pattern_index) {
     OperatorIDsByPreEffMap grouped_operator_ids;
+    // Reuse vectors to save allocations.
+    vector<FactPair> preconditions;
+    vector<FactPair> effects;
     for (OperatorProxy op : task_proxy.get_operators()) {
-        vector<FactPair> effects;
-        effects.reserve(op.get_effects().size());
+        effects.clear();
         for (EffectProxy eff : op.get_effects()) {
             if (variable_to_pattern_index[eff.get_fact().get_pair().var] != -1) {
                 effects.push_back(eff.get_fact().get_pair());
@@ -123,7 +125,7 @@ static OperatorGroups group_equivalent_operators(
         }
         sort(effects.begin(), effects.end());
 
-        vector<FactPair> preconditions;
+        preconditions.clear();
         for (FactProxy fact : op.get_preconditions()) {
             if (variable_to_pattern_index[fact.get_pair().var] != -1) {
                 preconditions.push_back(fact.get_pair());
@@ -131,11 +133,11 @@ static OperatorGroups group_equivalent_operators(
         }
         sort(preconditions.begin(), preconditions.end());
 
-        grouped_operator_ids[make_pair(preconditions, effects)].push_back(op.get_id());
+        grouped_operator_ids[make_pair(move(preconditions), move(effects))].push_back(op.get_id());
     }
     OperatorGroups groups;
-    for (const auto &entry : grouped_operator_ids) {
-        const auto &pre_eff = entry.first;
+    for (auto &entry : grouped_operator_ids) {
+        auto &pre_eff = entry.first;
         OperatorGroup group;
         group.preconditions = move(pre_eff.first);
         group.effects = move(pre_eff.second);
