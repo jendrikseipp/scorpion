@@ -120,13 +120,17 @@ class Projection : public Abstraction {
     */
     bool increment_to_next_state(std::vector<FactPair> &facts) const;
 
+    /*
+      Apply a function to all state-changing transitions in the projection
+      (including unreachable and unsolvable transitions).
+    */
     template<class Callback>
     void for_each_label_transition(const Callback &callback) const {
         // Reuse vector to save allocations.
         std::vector<FactPair> abstract_facts;
 
         for (const RankedOperator &ranked_operator : ranked_operators) {
-            // Choose any operator covered by the label. // TODO: use label directly?
+            // Choose any operator covered by the label.
             int concrete_op_id = *label_to_operators.get_slice(ranked_operator.label).begin();
             abstract_facts.clear();
             for (size_t i = 0; i < pattern.size(); ++i) {
