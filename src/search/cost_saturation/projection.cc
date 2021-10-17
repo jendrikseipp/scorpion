@@ -5,6 +5,7 @@
 #include "../task_proxy.h"
 
 #include "../algorithms/priority_queues.h"
+#include "../pdbs/match_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -242,13 +243,11 @@ Projection::Projection(
     const TaskProxy &task_proxy,
     const shared_ptr<TaskInfo> &task_info,
     const pdbs::Pattern &pattern,
-    bool combine_labels,
-    bool use_match_tree_for_scf)
+    bool combine_labels)
     : Abstraction(nullptr),
       task_info(task_info),
       pattern(pattern),
       combine_labels(combine_labels),
-      use_match_tree_for_scf(use_match_tree_for_scf),
       looping_operators(compute_looping_operators(*task_info, pattern)) {
     assert(utils::is_sorted_unique(pattern));
 
@@ -477,31 +476,18 @@ vector<int> Projection::compute_saturated_costs(
     int num_labels = label_to_operators.size();
     vector<int> saturated_label_costs(num_labels, -INF);
 
-    if (use_match_tree_for_scf) {
-        for_each_solvable_label_transition(
-            [&saturated_label_costs, &h_values](const Transition &t) {
-                assert(utils::in_bounds(t.src, h_values));
-                assert(utils::in_bounds(t.target, h_values));
-                int src_h = h_values[t.src];
-                int target_h = h_values[t.target];
-                assert(src_h != INF && target_h != INF);
-                int &needed_costs = saturated_label_costs[t.op];
-                needed_costs = max(needed_costs, src_h - target_h);
-            });
-    } else {
-        for_each_label_transition(
-            [&saturated_label_costs, &h_values](const Transition &t) {
-                assert(utils::in_bounds(t.src, h_values));
-                assert(utils::in_bounds(t.target, h_values));
-                int src_h = h_values[t.src];
-                int target_h = h_values[t.target];
-                if (src_h == INF || target_h == INF) {
-                    return;
-                }
-                int &needed_costs = saturated_label_costs[t.op];
-                needed_costs = max(needed_costs, src_h - target_h);
-            });
-    }
+    for_each_label_transition(
+        [&saturated_label_costs, &h_values](const Transition &t) {
+            assert(utils::in_bounds(t.src, h_values));
+            assert(utils::in_bounds(t.target, h_values));
+            int src_h = h_values[t.src];
+            int target_h = h_values[t.target];
+            if (src_h == INF || target_h == INF) {
+                return;
+            }
+            int &needed_costs = saturated_label_costs[t.op];
+            needed_costs = max(needed_costs, src_h - target_h);
+        });
 
     vector<int> saturated_costs(num_operators, -INF);
     /* To prevent negative cost cycles, we ensure that all operators inducing

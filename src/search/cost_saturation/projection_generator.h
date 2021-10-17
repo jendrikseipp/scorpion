@@ -16,7 +16,6 @@ class ProjectionGenerator : public AbstractionGenerator {
     const std::shared_ptr<pdbs::PatternCollectionGenerator> pattern_generator;
     const bool dominance_pruning;
     const bool combine_labels;
-    const bool use_match_tree_for_scf;
     const bool create_complete_transition_system;
     const bool use_add_after_delete_semantics;
     const bool debug;
