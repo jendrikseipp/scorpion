@@ -104,7 +104,7 @@ struct OperatorGroup {
 };
 
 using OperatorIDsByPreEffMap = utils::HashMap<pair<vector<FactPair>, vector<FactPair>>, vector<int>>;
-using OperatorGroups = std::vector<OperatorGroup>;
+using OperatorGroups = vector<OperatorGroup>;
 
 static OperatorGroups group_equivalent_operators(
     const TaskProxy &task_proxy, const vector<int> &variable_to_pattern_index) {
