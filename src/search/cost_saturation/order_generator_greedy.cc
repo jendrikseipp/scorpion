@@ -85,10 +85,8 @@ Order OrderGeneratorGreedy::compute_order_for_state(
          });
 
     if (verbose) {
-        cout << "Static greedy scores: " << scores << endl;
         unordered_set<double> unique_scores(scores.begin(), scores.end());
         cout << "Static greedy unique scores: " << unique_scores.size() << endl;
-        cout << "Static greedy order: " << order << endl;
         cout << "Time for computing greedy order: " << greedy_timer << endl;
     }
 
