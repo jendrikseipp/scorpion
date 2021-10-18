@@ -56,6 +56,10 @@ public:
     void trace_path(const State &goal_state,
                     std::vector<OperatorID> &path) const;
 
+    void generate_solution_trace(const State &state,
+                                 std::vector<State> &path,
+                                 std::vector<OperatorID> &plan) const;
+
     void dump(const TaskProxy &task_proxy) const;
     void print_statistics() const;
 };

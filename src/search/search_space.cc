@@ -140,6 +140,29 @@ void SearchSpace::trace_path(const State &goal_state,
     reverse(path.begin(), path.end());
 }
 
+void SearchSpace::generate_solution_trace(const State &state,
+                                          vector<State> &path,
+                                          vector<OperatorID> &plan) const {
+    State current_state = state;
+    assert(current_state.get_registry() == &state_registry);
+    assert(path.empty());
+    assert(plan.empty());
+    for (;;) {
+        const SearchNodeInfo &info = search_node_infos[current_state];
+        if (info.creating_operator == OperatorID::no_operator) {
+            assert(info.parent_state_id == StateID::no_state);
+            break;
+        }
+        path.push_back(current_state);
+        plan.push_back(info.creating_operator);
+        current_state = state_registry.lookup_state(info.parent_state_id);
+    }
+    path.push_back(state_registry.get_initial_state());
+    reverse(path.begin(), path.end());
+    reverse(plan.begin(), plan.end());
+    assert(plan.size() + 1 == path.size());
+}
+
 void SearchSpace::dump(const TaskProxy &task_proxy) const {
     OperatorsProxy operators = task_proxy.get_operators();
     for (StateID id : state_registry) {

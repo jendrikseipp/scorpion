@@ -110,7 +110,7 @@ public:
         int init_id,
         const Goals &goals);
 
-    Cost get_goal_distance(int abstract_state_id) const;
+    int get_goal_distance(int abstract_state_id) const;
 
     // For debugging.
     bool test_distances(
@@ -119,6 +119,8 @@ public:
         const std::unordered_set<int> &goals);
 
     void update_shortest_path(const Solution &solution);
+
+    Solution get_shortest_path(int start_abstract_state_id) const;
 };
 }
 
