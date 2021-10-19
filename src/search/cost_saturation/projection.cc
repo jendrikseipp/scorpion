@@ -143,6 +143,7 @@ static OperatorGroups group_equivalent_operators(
         group.preconditions = move(pre_eff.first);
         group.effects = move(pre_eff.second);
         group.operator_ids = move(entry.second);
+        assert(utils::is_sorted_unique(group.operator_ids));
         groups.push_back(move(group));
     }
     // Sort by first operator ID for better cache locality.
