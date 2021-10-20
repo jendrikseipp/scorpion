@@ -248,7 +248,6 @@ Projection::Projection(
     : Abstraction(nullptr),
       task_info(task_info),
       pattern(pattern),
-      combine_labels(combine_labels),
       looping_operators(compute_looping_operators(*task_info, pattern)) {
     assert(utils::is_sorted_unique(pattern));
 

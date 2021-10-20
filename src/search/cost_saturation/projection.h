@@ -92,7 +92,6 @@ class Projection : public Abstraction {
 
     std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
-    bool combine_labels;
     array_pool_template::ArrayPool<int> label_to_operators;
 
     std::vector<bool> looping_operators;
