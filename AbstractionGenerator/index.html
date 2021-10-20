@@ -566,11 +566,12 @@
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <h2 id="projection_generator">Projection generator<a class="headerlink" href="#projection_generator" title="Permanent link">#</a></h2>
-<pre><code>projections(patterns=&lt;none&gt;, dominance_pruning=false, create_complete_transition_system=false, use_add_after_delete_semantics=false, debug=false)
+<pre><code>projections(patterns=&lt;none&gt;, dominance_pruning=false, combine_labels=true, create_complete_transition_system=false, use_add_after_delete_semantics=false, debug=false)
 </code></pre>
 <ul>
 <li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
 <li><em>dominance_pruning</em> (bool): prune dominated patterns</li>
+<li><em>combine_labels</em> (bool): group labels that only induce parallel transitions</li>
 <li><em>create_complete_transition_system</em> (bool): create complete transition system</li>
 <li><em>use_add_after_delete_semantics</em> (bool): skip transitions that are invalid according to add-after-delete semantics</li>
 <li><em>debug</em> (bool): print debugging info</li>
