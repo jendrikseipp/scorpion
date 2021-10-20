@@ -5,6 +5,7 @@
 
 #include "../abstract_task.h"
 
+#include "../algorithms/array_pool.h"
 #include "../pdbs/types.h"
 
 #include <functional>
@@ -50,27 +51,15 @@ public:
     bool operator_is_active(const pdbs::Pattern &pattern, int op_id) const;
 };
 
-struct AbstractForwardOperator {
+// We distinguish between concrete operators, ranked operators and labels.
+struct RankedOperator {
+    int label;
     int precondition_hash;
-    // TODO: remove this member and use -AbstractBackwardOperator::hash_effect instead.
     int hash_effect;
 
-    AbstractForwardOperator(
-        int precondition_hash,
-        int hash_effect)
-        : precondition_hash(precondition_hash),
-          hash_effect(hash_effect) {
-    }
-};
-
-struct AbstractBackwardOperator {
-    int concrete_operator_id;
-    int hash_effect;
-
-    AbstractBackwardOperator(
-        int concrete_operator_id,
-        int hash_effect)
-        : concrete_operator_id(concrete_operator_id),
+    RankedOperator(int label, int precondition_hash, int hash_effect)
+        : label(label),
+          precondition_hash(precondition_hash),
           hash_effect(hash_effect) {
     }
 };
@@ -99,16 +88,16 @@ public:
 class Projection : public Abstraction {
     using Facts = std::vector<FactPair>;
     using OperatorCallback =
-        std::function<void (Facts &, Facts &, Facts &, int, const std::vector<int> &, int)>;
+        std::function<void (Facts &, Facts &, Facts &, const std::vector<int> &)>;
 
     std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
+    bool combine_labels;
+    array_pool_template::ArrayPool<int> label_to_operators;
 
     std::vector<bool> looping_operators;
 
-    std::vector<AbstractForwardOperator> abstract_forward_operators;
-
-    std::vector<AbstractBackwardOperator> abstract_backward_operators;
+    std::vector<RankedOperator> ranked_operators;
     std::unique_ptr<pdbs::MatchTree> match_tree_backward;
 
     // Number of abstract states in the projection.
@@ -132,18 +121,17 @@ class Projection : public Abstraction {
     bool increment_to_next_state(std::vector<FactPair> &facts) const;
 
     /*
-      Apply a function to all transitions in the projection (including
-      irrelevant transitions).
+      Apply a function to all state-changing transitions in the projection
+      (including unreachable and unsolvable transitions).
     */
     template<class Callback>
-    void for_each_transition_impl(const Callback &callback) const {
+    void for_each_label_transition(const Callback &callback) const {
         // Reuse vector to save allocations.
         std::vector<FactPair> abstract_facts;
 
-        int num_abstract_operators = abstract_forward_operators.size();
-        for (int op_id = 0; op_id < num_abstract_operators; ++op_id) {
-            const AbstractForwardOperator &op = abstract_forward_operators[op_id];
-            int concrete_op_id = abstract_backward_operators[op_id].concrete_operator_id;
+        for (const RankedOperator &ranked_operator : ranked_operators) {
+            // Choose any operator covered by the label.
+            int concrete_op_id = *label_to_operators.get_slice(ranked_operator.label).begin();
             abstract_facts.clear();
             for (size_t i = 0; i < pattern.size(); ++i) {
                 int var = pattern[i];
@@ -154,13 +142,13 @@ class Projection : public Abstraction {
 
             bool has_next_match = true;
             while (has_next_match) {
-                int state = op.precondition_hash;
+                int state = ranked_operator.precondition_hash;
                 for (const FactPair &fact : abstract_facts) {
                     state += hash_multipliers[fact.var] * fact.value;
                 }
                 callback(Transition(state,
-                                    concrete_op_id,
-                                    state + op.hash_effect));
+                                    ranked_operator.label,
+                                    state + ranked_operator.hash_effect));
                 has_next_match = increment_to_next_state(abstract_facts);
             }
         }
@@ -174,7 +162,7 @@ class Projection : public Abstraction {
       abstract operator with a concrete value (!= -1) is computed.
     */
     void multiply_out(
-        int pos, int cost, int op_id,
+        int pos,
         std::vector<FactPair> &prev_pairs,
         std::vector<FactPair> &pre_pairs,
         std::vector<FactPair> &eff_pairs,
@@ -188,9 +176,9 @@ class Projection : public Abstraction {
       variable_to_index maps variables in the task to their index in the
       pattern or -1.
     */
-    void build_abstract_operators(
-        const OperatorProxy &op,
-        int cost,
+    void build_ranked_operators(
+        const std::vector<FactPair> &preconditions,
+        const std::vector<FactPair> &effects,
         const std::vector<int> &variable_to_pattern_index,
         const VariablesProxy &variables,
         const OperatorCallback &callback) const;
@@ -206,11 +194,12 @@ public:
     Projection(
         const TaskProxy &task_proxy,
         const std::shared_ptr<TaskInfo> &task_info,
-        const pdbs::Pattern &pattern);
+        const pdbs::Pattern &pattern,
+        bool combine_labels = true);
     virtual ~Projection() override;
 
     virtual std::vector<int> compute_goal_distances(
-        const std::vector<int> &costs) const override;
+        const std::vector<int> &operator_costs) const override;
     virtual std::vector<int> compute_saturated_costs(
         const std::vector<int> &h_values) const override;
     virtual int get_num_operators() const override;

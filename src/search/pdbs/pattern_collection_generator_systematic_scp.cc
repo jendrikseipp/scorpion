@@ -252,7 +252,7 @@ public:
                         *current_patterns, order_type, task_info, rng);
                     patterns.emplace_back();
                     for (Pattern &pattern : *current_patterns) {
-                        patterns.back().append(move(pattern));
+                        patterns.back().push_back(move(pattern));
                     }
                     utils::Log() << "Finished storing patterns of size "
                                  << cached_pattern_size << endl;
