@@ -126,7 +126,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_option<bool>(
         "combine_labels",
         "group labels that only induce parallel transitions",
-        "false");
+        "true");
     parser.add_option<bool>(
         "create_complete_transition_system",
         "create complete transition system",
