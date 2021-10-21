@@ -25,7 +25,8 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task, bool debug) :
     abstraction(nullptr),
     shortest_paths(nullptr),
     domain_sizes(nullptr),
-    successor_generator(successor_generator::g_successor_generators[task_proxy]),
+    successor_generator(
+        successor_generator::g_successor_generators[task_proxy]),
     g_bound(0),
     f_bound(0),
     debug(debug) {
@@ -43,8 +44,7 @@ void FlawSearch::initialize(const std::vector<int> *domain_sizes,
     g_bound = 0;
     int new_f_bound = shortest_paths->get_goal_distance(abstraction->get_initial_state().get_id());
     assert(new_f_bound >= f_bound);
-    if (new_f_bound > f_bound)
-    {
+    if (new_f_bound > f_bound) {
         utils::g_log << "New abstract bound: " << new_f_bound << endl;
     }
     f_bound = new_f_bound;
@@ -326,7 +326,7 @@ Solution FlawSearch::get_abstract_solution(
 
     // shortest path to goal state (siffix_solution)
     Solution suffix_sol = shortest_paths->get_shortest_path(
-        flawed_abstract_state.get_id());
+            flawed_abstract_state.get_id());
     sol.insert(sol.end(), suffix_sol.begin(), suffix_sol.end());
     return sol;
 }

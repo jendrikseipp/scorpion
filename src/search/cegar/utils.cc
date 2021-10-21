@@ -129,7 +129,8 @@ void add_flaw_strategy_option(options::OptionParser &parser) {
          "ORIGINAL",
          "PESSIMISTIC",
          "PESSIMISTIC_SLOW",
-         "RANDOM"},
+         "RANDOM",
+         "SEARCH"},
         "strategy to handle flaws", "ORIGINAL");
 }
 

@@ -2,6 +2,7 @@
 #define CEGAR_FLAW_SELECTOR_H
 
 #include "cartesian_set.h"
+#include "shortest_paths.h"
 #include "types.h"
 
 #include "../task_proxy.h"
@@ -15,6 +16,7 @@ class RandomNumberGenerator;
 namespace cegar {
 class AbstractState;
 class Abstraction;
+class FlawSearch;
 struct Split;
 
 enum class FlawStrategy {
@@ -27,7 +29,8 @@ enum class FlawStrategy {
     ORIGINAL,
     PESSIMISTIC,
     PESSIMISTIC_SLOW,
-    RANDOM
+    RANDOM,
+    SEARCH
 };
 
 enum class FlawReason {
@@ -56,10 +59,12 @@ struct Flaw {
 class FlawSelector {
     const std::shared_ptr<AbstractTask> task;
     const TaskProxy task_proxy;
-    FlawStrategy flaw_strategy;
+    mutable FlawStrategy flaw_strategy;
     mutable std::shared_ptr<Solution> concrete_solution;
     mutable size_t overall_num_wildcard_plans;
     bool debug;
+
+    std::unique_ptr<FlawSearch> flaw_search;
 
     std::unique_ptr<Flaw>
     find_flaw_backtrack_optimistic(const Abstraction &abstraction,
@@ -159,7 +164,7 @@ public:
        encountered flaw or nullptr if there is no flaw. */
     std::unique_ptr<Flaw> find_flaw(const Abstraction &abstraction,
                                     const std::vector<int> &domain_sizes,
-                                    const Solution &solution,
+                                    const ShortestPaths &shortest_paths,
                                     utils::RandomNumberGenerator &rng) const;
 
     std::shared_ptr<Solution> get_concrete_solution() const;

@@ -2,6 +2,7 @@
 
 #include "abstract_state.h"
 #include "abstraction.h"
+#include "flaw_search.h"
 #include "split_selector.h"
 #include "transition.h"
 #include "transition_system.h"
@@ -63,8 +64,14 @@ vector<Split> Flaw::get_possible_splits() const {
 
 FlawSelector::FlawSelector(const shared_ptr<AbstractTask> &task,
                            FlawStrategy flaw_strategy, bool debug)
-    : task(task), task_proxy(*task), flaw_strategy(flaw_strategy),
-      concrete_solution(nullptr), overall_num_wildcard_plans(0), debug(debug) {}
+    : task(task),
+      task_proxy(*task),
+      flaw_strategy(flaw_strategy),
+      concrete_solution(nullptr),
+      overall_num_wildcard_plans(0),
+      debug(debug),
+      flaw_search(utils::make_unique_ptr<FlawSearch>(task, debug))
+{}
 
 // Define here to avoid include in header.
 FlawSelector::~FlawSelector() {}
@@ -279,7 +286,9 @@ CartesianSet FlawSelector::get_cartesian_set(const vector<int> &domain_sizes,
 
 unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
                                          const vector<int> &domain_sizes,
-                                         const Solution &solution, utils::RandomNumberGenerator &rng) const {
+                                         const ShortestPaths &shortest_paths, utils::RandomNumberGenerator &rng) const {
+    const Solution &solution = shortest_paths.get_shortest_path(
+            abstraction.get_initial_state().get_id());
     if (debug) {
         const AbstractState *abstract_state = &abstraction.get_initial_state();
         size_t cur_num_wildcard_plans = 1;
@@ -324,6 +333,10 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
         break;
     case FlawStrategy::RANDOM:
         flaw = find_flaw_original(abstraction, domain_sizes, solution, true, rng);
+        break;
+    case FlawStrategy::SEARCH:
+        flaw = flaw_search->search_for_flaws(&domain_sizes, &abstraction,
+                                             &shortest_paths);
         break;
     default:
         utils::g_log << "Invalid flaw strategy: " << static_cast<int>(flaw_strategy)

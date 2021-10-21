@@ -4,7 +4,6 @@
 #include "abstract_search.h"
 #include "abstract_state.h"
 #include "cartesian_set.h"
-#include "flaw_search.h"
 #include "shortest_paths.h"
 #include "transition_system.h"
 #include "utils.h"
@@ -41,7 +40,6 @@ CEGAR::CEGAR(
       split_selector(task, pick),
       search_strategy(search_strategy),
       flaw_selector(task, flaw_strategy, debug),
-      flaw_search(task, debug),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
       debug(debug),
@@ -49,10 +47,10 @@ CEGAR::CEGAR(
     assert(max_states >= 1);
     if (search_strategy == SearchStrategy::ASTAR) {
         abstract_search = utils::make_unique_ptr<AbstractSearch>(
-            task_properties::get_operator_costs(task_proxy));
+                task_properties::get_operator_costs(task_proxy));
     } else if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-            task_properties::get_operator_costs(task_proxy), false);
+                task_properties::get_operator_costs(task_proxy), false);
     } else {
         ABORT("Unknown search strategy");
     }
@@ -83,7 +81,7 @@ void CEGAR::separate_facts_unreachable_before_goal() {
     assert(task_proxy.get_goals().size() == 1);
     FactProxy goal = task_proxy.get_goals()[0];
     utils::HashSet<FactProxy> reachable_facts = get_relaxed_possible_before(
-        task_proxy, goal);
+            task_proxy, goal);
     for (VariableProxy var : task_proxy.get_variables()) {
         if (!may_keep_refining())
             break;
@@ -175,12 +173,12 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         unique_ptr<Solution> solution;
         if (search_strategy == SearchStrategy::ASTAR) {
             solution = abstract_search->find_solution(
-                abstraction->get_transition_system().get_outgoing_transitions(),
-                abstraction->get_initial_state().get_id(),
-                abstraction->get_goals());
+                    abstraction->get_transition_system().get_outgoing_transitions(),
+                    abstraction->get_initial_state().get_id(),
+                    abstraction->get_goals());
         } else {
             solution = shortest_paths->extract_solution(
-                abstraction->get_initial_state().get_id(), abstraction->get_goals());
+                    abstraction->get_initial_state().get_id(), abstraction->get_goals());
         }
         find_trace_timer.stop();
 
@@ -201,16 +199,10 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
 
         find_flaw_timer.resume();
-        if (debug) {
-            // Solution sol = flaw ? flaw->flawed_solution : *flaw_selector.get_concrete_solution();
-            handle_dot_graph(*abstraction, Solution(), task_proxy,
-                             "dot_files/graph" + to_string(num_of_refinements) + ".dot",
-                             dot_graph_verbosity);
-        }
 
         if (debug) {
             int cost = 0;
-            cout << "Chosen flawed solution:" << endl;
+            cout << "Chosen flawed solution by shortest path:" << endl;
             for (const Transition &t : *solution) {
                 OperatorProxy op = task_proxy.get_operators()[t.op_id];
                 cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ") ID: "
@@ -218,10 +210,15 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 cost += op.get_cost();
             }
             assert(cost == shortest_paths->get_goal_distance(
-                               abstraction->get_initial_state().get_id()));
+                       abstraction->get_initial_state().get_id()));
+            handle_dot_graph(*abstraction, Solution(), task_proxy,
+                             "dot_files/graph" + to_string(num_of_refinements) + ".dot",
+                             dot_graph_verbosity);
         }
 
-        unique_ptr<Flaw> flaw = flaw_search.search_for_flaws(&domain_sizes, abstraction.get(), shortest_paths.get());
+        unique_ptr<Flaw> flaw = flaw_selector.find_flaw(
+                *abstraction, domain_sizes, *shortest_paths, rng);
+
         if (flaw) {
             shortest_paths->update_shortest_path(flaw->flawed_solution);
         }
