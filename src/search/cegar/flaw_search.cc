@@ -248,7 +248,14 @@ void FlawSearch::create_applicability_flaws(
             get_cartesian_set(task_proxy.get_operators()[tr.op_id].get_preconditions()),
             FlawReason::NOT_APPLICABLE,
             get_abstract_solution(state, abstraction->get_state(tr.target_id), tr));
-        utils::g_log << "Inapplicable flaw: #" << abstract_state_id << applicability_flaws[g_bound].back().desired_cartesian_set << endl;
+        if (debug) {
+            utils::g_log << "Inapplicable flaw: #" << abstract_state_id << applicability_flaws[g_bound].back().desired_cartesian_set << " with plan " << endl;
+            for (const Transition &t :
+                 applicability_flaws[g_bound].back().flawed_solution) {
+                OperatorProxy op = task_proxy.get_operators()[t.op_id];
+                utils::g_log << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+            }
+        }
     }
 }
 
@@ -281,7 +288,14 @@ bool FlawSearch::create_deviation_flaws(
                 deviated_abstact_state->regress(task_proxy.get_operators()[op_id]),
                 FlawReason::PATH_DEVIATION,
                 get_abstract_solution(state, *deviated_abstact_state, tr));
-            utils::g_log << "Deviation flaw: #" << abstract_state_id << deviation_flaws[g_bound].back().desired_cartesian_set << endl;
+            if (debug) {
+                utils::g_log << "Deviation flaw: #" << abstract_state_id << deviation_flaws[g_bound].back().desired_cartesian_set << " with plan " << endl;
+                for (const Transition &t :
+                     deviation_flaws[g_bound].back().flawed_solution) {
+                    OperatorProxy op = task_proxy.get_operators()[t.op_id];
+                    utils::g_log << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
+                }
+            }
         } else {
             valid_transition = true;
         }

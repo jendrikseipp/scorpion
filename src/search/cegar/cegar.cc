@@ -225,10 +225,9 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         if (debug && flaw) {
             int cost = 0;
             cout << "Chosen flawed solution by search:" << endl;
-            for (const Transition &t :flaw->flawed_solution) {
+            for (const Transition &t : flaw->flawed_solution) {
                 OperatorProxy op = task_proxy.get_operators()[t.op_id];
-                cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ") ID: "
-                     << op.get_id() << endl;
+                cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
                 cost += op.get_cost();
             }
             assert(cost == shortest_paths->get_goal_distance(
