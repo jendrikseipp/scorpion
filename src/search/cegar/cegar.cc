@@ -47,10 +47,10 @@ CEGAR::CEGAR(
     assert(max_states >= 1);
     if (search_strategy == SearchStrategy::ASTAR) {
         abstract_search = utils::make_unique_ptr<AbstractSearch>(
-                task_properties::get_operator_costs(task_proxy));
+            task_properties::get_operator_costs(task_proxy));
     } else if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-                task_properties::get_operator_costs(task_proxy), false);
+            task_properties::get_operator_costs(task_proxy), false);
     } else {
         ABORT("Unknown search strategy");
     }
@@ -81,7 +81,7 @@ void CEGAR::separate_facts_unreachable_before_goal() {
     assert(task_proxy.get_goals().size() == 1);
     FactProxy goal = task_proxy.get_goals()[0];
     utils::HashSet<FactProxy> reachable_facts = get_relaxed_possible_before(
-            task_proxy, goal);
+        task_proxy, goal);
     for (VariableProxy var : task_proxy.get_variables()) {
         if (!may_keep_refining())
             break;
@@ -173,12 +173,12 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         unique_ptr<Solution> solution;
         if (search_strategy == SearchStrategy::ASTAR) {
             solution = abstract_search->find_solution(
-                    abstraction->get_transition_system().get_outgoing_transitions(),
-                    abstraction->get_initial_state().get_id(),
-                    abstraction->get_goals());
+                abstraction->get_transition_system().get_outgoing_transitions(),
+                abstraction->get_initial_state().get_id(),
+                abstraction->get_goals());
         } else {
             solution = shortest_paths->extract_solution(
-                    abstraction->get_initial_state().get_id(), abstraction->get_goals());
+                abstraction->get_initial_state().get_id(), abstraction->get_goals());
         }
         find_trace_timer.stop();
 
@@ -217,11 +217,8 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
 
         unique_ptr<Flaw> flaw = flaw_selector.find_flaw(
-                *abstraction, domain_sizes, *shortest_paths, rng);
+            *abstraction, domain_sizes, *shortest_paths, rng);
 
-        if (flaw) {
-            shortest_paths->update_shortest_path(flaw->flawed_solution);
-        }
         if (debug && flaw) {
             int cost = 0;
             cout << "Chosen flawed solution by search:" << endl;
