@@ -15,7 +15,14 @@
 
 using namespace std;
 
+
 namespace cegar {
+bool compare_flaws(std::shared_ptr<Flaw> &a, std::shared_ptr<Flaw> &b) {
+    assert(a && b);
+    return a->h_value > b->h_value
+           || (a->h_value == b->h_value && static_cast<int>(a->flaw_reason) < static_cast<int>(b->flaw_reason));
+}
+
 FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task, bool debug) :
     task_proxy(*task),
     open_list(nullptr),
@@ -48,8 +55,6 @@ void FlawSearch::initialize(const vector<int> *domain_sizes,
         utils::g_log << "New abstract bound: " << new_f_bound << endl;
     }
     f_bound = new_f_bound;
-    applicability_flaws = map<int, vector<Flaw>>();
-    deviation_flaws = map<int, vector<Flaw>>();
     this->domain_sizes = domain_sizes;
     this->abstraction = abstraction;
     this->shortest_paths = shortest_paths;
@@ -57,6 +62,10 @@ void FlawSearch::initialize(const vector<int> *domain_sizes,
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
     statistics = utils::make_unique_ptr<SearchStatistics>(utils::Verbosity::DEBUG);
+
+    flaws = priority_queue<shared_ptr<Flaw>,
+                           vector<shared_ptr<Flaw>>,
+                           decltype( &compare_flaws)>(compare_flaws);
 
     State initial_state = state_registry->get_initial_state();
     EvaluationContext eval_context(initial_state, 0, false, statistics.get());
@@ -237,21 +246,21 @@ void FlawSearch::create_applicability_flaws(
     const AbstractState *abstract_state =
         &abstraction->get_state(abstract_state_id);
 
-    if (applicability_flaws.find(g_bound) == applicability_flaws.end()) {
-        applicability_flaws[g_bound] = vector<Flaw>();
-    }
+    int h_value = shortest_paths->get_goal_distance(abstract_state_id);
 
     for (const Transition &tr : invalid_trs) {
-        applicability_flaws[g_bound].emplace_back(
-            move(State(state)),
-            *abstract_state,
-            get_cartesian_set(task_proxy.get_operators()[tr.op_id].get_preconditions()),
-            FlawReason::NOT_APPLICABLE,
-            get_abstract_solution(state, abstraction->get_state(tr.target_id), tr));
+        Flaw flaw(move(State(state)),
+                  *abstract_state,
+                  get_cartesian_set(task_proxy.get_operators()[tr.op_id].get_preconditions()),
+                  FlawReason::NOT_APPLICABLE,
+                  Solution(), h_value);
+        flaws.push(make_shared<Flaw>(flaw));
         if (debug) {
-            utils::g_log << "Inapplicable flaw: #" << abstract_state_id << applicability_flaws[g_bound].back().desired_cartesian_set << " with plan " << endl;
-            for (const Transition &t :
-                 applicability_flaws[g_bound].back().flawed_solution) {
+            Solution sol = get_abstract_solution(
+                    state, abstraction->get_state(tr.target_id), tr);
+            utils::g_log << "Inapplicable flaw: #" << abstract_state_id <<
+                flaw.desired_cartesian_set << " with plan " << endl;
+            for (const Transition &t : sol) {
                 OperatorProxy op = task_proxy.get_operators()[t.op_id];
                 utils::g_log << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
             }
@@ -270,28 +279,30 @@ bool FlawSearch::create_deviation_flaws(
     const AbstractState *abstract_state =
         &abstraction->get_state(abstract_state_id);
 
+    int h_value = shortest_paths->get_goal_distance(abstract_state_id);
+
     for (const Transition &tr : valid_trs) {
         if (tr.op_id != op_id.get_index()) {
             continue;
         }
 
         if (tr.target_id != next_abstract_state_id) {
-            if (deviation_flaws.find(g_bound) == deviation_flaws.end()) {
-                deviation_flaws[g_bound] = vector<Flaw>();
-            }
             const AbstractState *deviated_abstact_state =
                 &abstraction->get_state(tr.target_id);
 
-            deviation_flaws[g_bound].emplace_back(
-                move(State(state)),
-                *abstract_state,
-                deviated_abstact_state->regress(task_proxy.get_operators()[op_id]),
-                FlawReason::PATH_DEVIATION,
-                get_abstract_solution(state, *deviated_abstact_state, tr));
+            Flaw flaw(move(State(state)),
+                      *abstract_state,
+                      deviated_abstact_state->regress(task_proxy.get_operators()[op_id]),
+                      FlawReason::PATH_DEVIATION,
+                      Solution(), h_value);
+
+            flaws.push(make_shared<Flaw>(flaw));
+            //flaws.push(deviation_flaws[h_value].back());
             if (debug) {
-                utils::g_log << "Deviation flaw: #" << abstract_state_id << deviation_flaws[g_bound].back().desired_cartesian_set << " with plan " << endl;
-                for (const Transition &t :
-                     deviation_flaws[g_bound].back().flawed_solution) {
+                Solution sol = get_abstract_solution(
+                        state, *deviated_abstact_state, tr);
+                utils::g_log << "Deviation flaw: #" << abstract_state_id << flaw.desired_cartesian_set << " with plan " << endl;
+                for (const Transition &t : sol) {
                     OperatorProxy op = task_proxy.get_operators()[t.op_id];
                     utils::g_log << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
                 }
@@ -356,42 +367,44 @@ FlawSearch::search_for_flaws(const vector<int> *domain_sizes,
     while (search_status == IN_PROGRESS) {
         search_status = step();
     }
-    // search_space->dump(task_proxy);
 
     if (debug) {
-        utils::g_log << "Apply-flaws:" << endl;
-        for (auto pair : applicability_flaws) {
-            utils::g_log << "\t" << pair.first << ": " << pair.second.size() << endl;
-        }
-        utils::g_log << "Dev-flaws:" << endl;
-        for (auto pair : deviation_flaws) {
-            utils::g_log << "\t" << pair.first << ": " << pair.second.size() << endl;
-        }
+        utils::g_log << "Found " << flaws.size() << " flaws!" << endl;
     }
 
-
     if (search_status == FAILED) {
-        assert(!applicability_flaws.empty() || !deviation_flaws.empty());
-
-        int max_g_applicability_flaw = -1;
-        if (!applicability_flaws.empty()) {
-            max_g_applicability_flaw = applicability_flaws.rbegin()->first;
-        }
-        int max_g_deviation_flaw = -1;
-        if (!deviation_flaws.empty()) {
-            max_g_deviation_flaw = deviation_flaws.rbegin()->first;
-        }
-
-        Flaw result =
-            max_g_deviation_flaw >= max_g_applicability_flaw ?
-            deviation_flaws.rbegin()->second.at(0) :
-            applicability_flaws.rbegin()->second.at(0);
-
-        return utils::make_unique_ptr<Flaw>(result);
+        // This is an ugly conversion we want to avoid!
+        return utils::make_unique_ptr<Flaw>(*flaws.top());
     }
     return nullptr;
 
+    // search_space->dump(task_proxy);
     //statistics->print_detailed_statistics();
     // search_space->print_statistics();
+}
+
+unique_ptr<Flaw>
+FlawSearch::get_next_flaw(const vector<int> *domain_sizes,
+                          const Abstraction *abstraction,
+                          const ShortestPaths *shortest_paths) {
+    while (!flaws.empty()) {
+        auto flaw = flaws.top();
+        flaws.pop();
+        int new_abstract_state_id =
+            abstraction->get_abstract_state_id(flaw->concrete_state);
+        int new_h_value =
+            shortest_paths->get_goal_distance(new_abstract_state_id);
+
+        // Path was not affected (TODO: something goes wrong here)
+        if (flaw->current_abstract_state.get_id() == new_abstract_state_id &&
+            flaw->h_value == new_h_value) {
+            // This is an ugly conversion we want to avoid!
+            return utils::make_unique_ptr<Flaw>(*flaw);
+        }
+    }
+
+    // Search for new flaws
+    auto flaw = search_for_flaws(domain_sizes, abstraction, shortest_paths);
+    return flaw;
 }
 }

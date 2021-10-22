@@ -30,7 +30,8 @@ enum class FlawStrategy {
     PESSIMISTIC,
     PESSIMISTIC_SLOW,
     RANDOM,
-    SEARCH
+    SEARCH,
+    SEARCH_MULTIPLE_FLAWS
 };
 
 enum class FlawReason {
@@ -48,10 +49,11 @@ struct Flaw {
 
     FlawReason flaw_reason;
     Solution flawed_solution;
+    int h_value; // h_value of abstract state
 
     Flaw(State &&concrete_state, const AbstractState &current_abstract_state,
          CartesianSet &&desired_cartesian_set, FlawReason reason,
-         const Solution &flawed_solution);
+         const Solution &flawed_solution, int h_value = -1);
 
     std::vector<Split> get_possible_splits() const;
 };

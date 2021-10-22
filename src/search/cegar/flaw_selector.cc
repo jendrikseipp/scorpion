@@ -23,12 +23,13 @@ using namespace std;
 namespace cegar {
 Flaw::Flaw(State &&concrete_state, const AbstractState &current_abstract_state,
            CartesianSet &&desired_cartesian_set, FlawReason flaw_reason,
-           const Solution &flawed_solution)
+           const Solution &flawed_solution, int h_value)
     : concrete_state(move(concrete_state)),
       current_abstract_state(current_abstract_state),
       desired_cartesian_set(move(desired_cartesian_set)),
       flaw_reason(flaw_reason),
-      flawed_solution(flawed_solution) {
+      flawed_solution(flawed_solution),
+      h_value(h_value) {
     assert(current_abstract_state.includes(this->concrete_state));
 }
 
@@ -337,6 +338,10 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
     case FlawStrategy::SEARCH:
         flaw = flaw_search->search_for_flaws(&domain_sizes, &abstraction,
                                              &shortest_paths);
+        break;
+    case FlawStrategy::SEARCH_MULTIPLE_FLAWS:
+        flaw = flaw_search->get_next_flaw(&domain_sizes, &abstraction,
+                                          &shortest_paths);
         break;
     default:
         utils::g_log << "Invalid flaw strategy: " << static_cast<int>(flaw_strategy)

@@ -16,10 +16,11 @@ namespace cegar {
 class Abstraction;
 class ShortestPaths;
 
+bool compare_flaws(std::shared_ptr<Flaw> &a, std::shared_ptr<Flaw> &b);
+
 class FlawSearch {
     const TaskProxy task_proxy;
-    mutable std::map<int, std::vector<Flaw>> applicability_flaws;
-    mutable std::map<int, std::vector<Flaw>> deviation_flaws;
+    // sorted by goal distance!
     std::unique_ptr<StateOpenList> open_list;
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
@@ -32,6 +33,9 @@ class FlawSearch {
     int g_bound;
     int f_bound;
     bool debug;
+
+    mutable std::priority_queue<std::shared_ptr<Flaw>, std::vector<std::shared_ptr<Flaw>>, decltype(&compare_flaws)> flaws;
+
 
 protected:
     void initialize(const std::vector<int> *domain_sizes,
@@ -73,9 +77,15 @@ protected:
 public:
     FlawSearch(const std::shared_ptr<AbstractTask> &task, bool debug);
 
+    void get_flaws(std::map<int, std::vector<Flaw>> &flaw_map);
+
     std::unique_ptr<Flaw> search_for_flaws(const std::vector<int> *domain_sizes,
                                            const Abstraction *abstraction,
                                            const ShortestPaths *shortest_paths);
+
+    std::unique_ptr<Flaw> get_next_flaw(const std::vector<int> *domain_sizes,
+                                        const Abstraction *abstraction,
+                                        const ShortestPaths *shortest_paths);
 };
 }
 
