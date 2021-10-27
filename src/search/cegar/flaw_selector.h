@@ -49,11 +49,12 @@ struct Flaw {
 
     FlawReason flaw_reason;
     Solution flawed_solution;
+    int abstract_state_id;
     int h_value; // h_value of abstract state
 
     Flaw(State &&concrete_state, const AbstractState &current_abstract_state,
          CartesianSet &&desired_cartesian_set, FlawReason reason,
-         const Solution &flawed_solution, int h_value = -1);
+         const Solution &flawed_solution, int abstract_state_id = -1, int h_value = -1);
 
     std::vector<Split> get_possible_splits() const;
 };

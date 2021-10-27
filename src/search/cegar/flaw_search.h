@@ -34,8 +34,12 @@ class FlawSearch {
     int f_bound;
     bool debug;
 
-    mutable std::priority_queue<std::shared_ptr<Flaw>, std::vector<std::shared_ptr<Flaw>>, decltype(&compare_flaws)> flaws;
-
+    mutable std::priority_queue<std::shared_ptr<Flaw>, std::vector<std::shared_ptr<Flaw>>, decltype( &compare_flaws)> flaws;
+    mutable std::set<int> refined_abstract_states;
+    mutable size_t num_searches;
+    mutable size_t num_overall_found_flaws;
+    mutable size_t num_overall_refined_flaws;
+    mutable int min_flaw_h_value;
 
 protected:
     void initialize(const std::vector<int> *domain_sizes,
@@ -86,6 +90,8 @@ public:
     std::unique_ptr<Flaw> get_next_flaw(const std::vector<int> *domain_sizes,
                                         const Abstraction *abstraction,
                                         const ShortestPaths *shortest_paths);
+
+    void print_statistics() const;
 };
 }
 

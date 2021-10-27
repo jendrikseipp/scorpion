@@ -49,6 +49,8 @@ class CEGAR {
     const bool debug;
     const int dot_graph_verbosity;
 
+    int cur_abstract_solution_cost;
+
     bool may_keep_refining() const;
 
     /*

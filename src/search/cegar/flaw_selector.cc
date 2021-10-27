@@ -23,12 +23,13 @@ using namespace std;
 namespace cegar {
 Flaw::Flaw(State &&concrete_state, const AbstractState &current_abstract_state,
            CartesianSet &&desired_cartesian_set, FlawReason flaw_reason,
-           const Solution &flawed_solution, int h_value)
+           const Solution &flawed_solution, int abstract_state_id, int h_value)
     : concrete_state(move(concrete_state)),
       current_abstract_state(current_abstract_state),
       desired_cartesian_set(move(desired_cartesian_set)),
       flaw_reason(flaw_reason),
       flawed_solution(flawed_solution),
+      abstract_state_id(abstract_state_id),
       h_value(h_value) {
     assert(current_abstract_state.includes(this->concrete_state));
 }
@@ -289,7 +290,7 @@ unique_ptr<Flaw> FlawSelector::find_flaw(const Abstraction &abstraction,
                                          const vector<int> &domain_sizes,
                                          const ShortestPaths &shortest_paths, utils::RandomNumberGenerator &rng) const {
     const Solution &solution = shortest_paths.get_shortest_path(
-            abstraction.get_initial_state().get_id());
+        abstraction.get_initial_state().get_id());
     if (debug) {
         const AbstractState *abstract_state = &abstraction.get_initial_state();
         size_t cur_num_wildcard_plans = 1;
@@ -366,7 +367,11 @@ shared_ptr<Solution> FlawSelector::get_concrete_solution() const {
 }
 
 void FlawSelector::print_statistics() const {
-    if (debug) {
+    cout << endl;
+    if (flaw_strategy == FlawStrategy::SEARCH
+        || flaw_strategy == FlawStrategy::SEARCH_MULTIPLE_FLAWS) {
+        flaw_search->print_statistics();
+    } else {
         utils::g_log << "Numer overall wildcard plans: " << overall_num_wildcard_plans << endl;
     }
 }
