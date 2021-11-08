@@ -2,6 +2,7 @@
 #define CEGAR_TRANSITION_H
 
 #include "types.h"
+#include "../utils/hash.h"
 
 #include <iostream>
 
@@ -28,10 +29,22 @@ struct Transition {
         return op_id == other.op_id && target_id == other.target_id;
     }
 
+    bool operator<(const Transition &other) const {
+        return op_id < other.op_id ||
+               (op_id == other.op_id && target_id < other.target_id);
+    }
+
     friend std::ostream &operator<<(std::ostream &os, const Transition &t) {
         return os << "[" << t.op_id << "," << t.target_id << "]";
     }
 };
+}
+
+namespace utils {
+inline void feed(HashState &hash_state, const cegar::Transition &tr) {
+    feed(hash_state, tr.op_id);
+    feed(hash_state, tr.target_id);
+}
 }
 
 #endif

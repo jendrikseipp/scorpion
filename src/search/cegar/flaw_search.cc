@@ -48,6 +48,8 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task, bool debug) :
     options.set("pref_only", false);
 
     open_list = make_shared<standard_scalar_open_list::BestFirstOpenListFactory>(options)->create_state_open_list();
+    timer.stop();
+    timer.reset();
 }
 
 void FlawSearch::initialize(const vector<int> *domain_sizes,
@@ -131,22 +133,24 @@ SearchStatus FlawSearch::step() {
     vector<OperatorID> applicable_ops;
     successor_generator.generate_applicable_ops(s, applicable_ops);
 
-    vector<OperatorID> abstraction_ops;
-    vector<Transition> abstraction_trs;
+    utils::HashSet<OperatorID> abstraction_ops;
+    utils::HashSet<Transition> abstraction_trs;
     generate_abstraction_operators(s, abstraction_ops, abstraction_trs);
 
-    vector<OperatorID> valid_ops;
-    vector<Transition> valid_trs;
-    vector<Transition> invalid_trs;
+    utils::HashSet<OperatorID> valid_ops;
+    utils::HashSet<Transition> valid_trs;
+    utils::HashSet<Transition> invalid_trs;
     prune_operators(applicable_ops, abstraction_ops, abstraction_trs,
                     valid_ops, valid_trs, invalid_trs);
 
-    if (false && debug) {
+    
+
+    if (debug) {
         utils::g_log << "STATE " <<
             get_abstract_state_id(s) << ":" << endl;
-        utils::g_log << "All trs: " << abstraction_trs << endl;
-        utils::g_log << "Applicable trs: " << valid_trs << endl;
-        utils::g_log << "Inapplicable trs: " << invalid_trs << endl;
+        utils::g_log << "All trs: " << vector<Transition>(abstraction_trs.begin(), abstraction_trs.end()) << endl;
+        utils::g_log << "Applicable trs: " << vector<Transition>(valid_trs.begin(), valid_trs.end()) << endl;
+        utils::g_log << "Inapplicable trs: " << vector<Transition>(invalid_trs.begin(), invalid_trs.end()) << endl;
     }
 
     if (!invalid_trs.empty()) {
@@ -204,58 +208,51 @@ int FlawSearch::get_abstract_state_id(const State &state) const {
 
 void FlawSearch::generate_abstraction_operators(
     const State &state,
-    vector<OperatorID> &abstraction_ops,
-    vector<Transition> &abstraction_trs) const {
+    utils::HashSet<OperatorID> &abstraction_ops,
+    utils::HashSet<Transition> &abstraction_trs) const {
     int abstract_state_id = get_abstract_state_id(state);
     int h_value = shortest_paths->get_goal_distance(abstract_state_id);
 
-    set<OperatorID> abstraction_ops_set;
     for (const Transition &tr :
          abstraction->get_transition_system().get_outgoing_transitions().at(abstract_state_id)) {
         int target_h_value = shortest_paths->get_goal_distance(tr.target_id);
         int h_value_decrease = h_value - target_h_value;
         int op_cost = task_proxy.get_operators()[tr.op_id].get_cost();
         if (h_value_decrease == op_cost && (h_value - op_cost == target_h_value)) {
-            abstraction_ops_set.insert(OperatorID(tr.op_id));
-            if (find(abstraction_trs.begin(), abstraction_trs.end(), tr)
-                == abstraction_trs.end()) {
-                abstraction_trs.push_back(tr);
-            }
+            abstraction_ops.insert(OperatorID(tr.op_id));
+            abstraction_trs.insert(tr);
         }
     }
-
-    copy(abstraction_ops_set.begin(), abstraction_ops_set.end(),
-         back_inserter(abstraction_ops));
 }
 
 void FlawSearch::prune_operators(
     const vector<OperatorID> &applicable_ops,
-    const vector<OperatorID> &abstraction_ops,
-    const vector<Transition> &abstraction_trs,
-    vector<OperatorID> &valid_ops,
-    vector<Transition> &valid_trs,
-    vector<Transition> &invalid_trs) const {
-    set<OperatorID> applicable_ops_set(
-        applicable_ops.begin(), applicable_ops.end());
-    set<OperatorID> abstraction_ops_set(
-        abstraction_ops.begin(), abstraction_ops.end());
-    set_intersection(applicable_ops_set.begin(), applicable_ops_set.end(),
-                     abstraction_ops_set.begin(), abstraction_ops_set.end(),
-                     back_inserter(valid_ops));
+    const utils::HashSet<OperatorID> &abstraction_ops,
+    const utils::HashSet<Transition> &abstraction_trs,
+    utils::HashSet<OperatorID> &valid_ops,
+    utils::HashSet<Transition> &valid_trs,
+    utils::HashSet<Transition> &invalid_trs) const {
+
+    // intersection of unordered maps
+    for (const OperatorID& elem : applicable_ops) {
+        if (abstraction_ops.count(elem)) {
+            valid_ops.insert(elem);
+        }
+    }
 
     for (const Transition &tr : abstraction_trs) {
         if (find(valid_ops.begin(), valid_ops.end(), OperatorID(tr.op_id))
             != valid_ops.end()) {
-            valid_trs.push_back(tr);
+            valid_trs.insert(tr);
         } else {
-            invalid_trs.push_back(tr);
+            invalid_trs.insert(tr);
         }
     }
 }
 
 void FlawSearch::create_applicability_flaws(
     const State &state,
-    const vector<Transition> &invalid_trs) const {
+    const utils::HashSet<Transition> &invalid_trs) const {
     int abstract_state_id = get_abstract_state_id(state);
     const AbstractState *abstract_state =
         &abstraction->get_state(abstract_state_id);
@@ -269,7 +266,7 @@ void FlawSearch::create_applicability_flaws(
                   FlawReason::NOT_APPLICABLE,
                   Solution(), abstract_state_id, h_value);
         flaws.push(make_shared<Flaw>(flaw));
-        if (false && debug) {
+        if (debug) {
             Solution sol = get_abstract_solution(
                 state, abstraction->get_state(tr.target_id), tr);
             utils::g_log << "Inapplicable flaw: #" << abstract_state_id <<
@@ -286,7 +283,7 @@ bool FlawSearch::create_deviation_flaws(
     const State &state,
     const State &next_state,
     const OperatorID &op_id,
-    const vector<Transition> &valid_trs) const {
+    const utils::HashSet<Transition> &valid_trs) const {
     bool valid_transition = false;
     int abstract_state_id = get_abstract_state_id(state);
     int next_abstract_state_id = get_abstract_state_id(next_state);
@@ -311,8 +308,8 @@ bool FlawSearch::create_deviation_flaws(
                       Solution(), abstract_state_id, h_value);
 
             flaws.push(make_shared<Flaw>(flaw));
-            //flaws.push(deviation_flaws[h_value].back());
-            if (false && debug) {
+
+            if (debug) {
                 Solution sol = get_abstract_solution(
                     state, *deviated_abstact_state, tr);
                 utils::g_log << "Deviation flaw: #" << abstract_state_id << flaw.desired_cartesian_set << " with plan " << endl;
@@ -328,6 +325,7 @@ bool FlawSearch::create_deviation_flaws(
     return valid_transition;
 }
 
+// Only used for debuging
 Solution FlawSearch::get_abstract_solution(
     const State &concrete_state,
     const AbstractState &flawed_abstract_state,
@@ -376,6 +374,7 @@ unique_ptr<Flaw>
 FlawSearch::search_for_flaws(const vector<int> *domain_sizes,
                              const Abstraction *abstraction,
                              const ShortestPaths *shortest_paths) {
+    timer.resume();
     initialize(domain_sizes, abstraction, shortest_paths);
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
@@ -411,10 +410,6 @@ FlawSearch::get_next_flaw(const vector<int> *domain_sizes,
         auto flaw = flaws.top();
         flaws.pop();
 
-        // if (flaw->h_value > min_flaw_h_value) {
-        //     break;
-        // }
-
         if (debug && flaw) {
             if (flaw->flaw_reason == FlawReason::NOT_APPLICABLE) {
                 utils::g_log << "Applicability flaw: #" << flaw->abstract_state_id << flaw->desired_cartesian_set << endl;
@@ -437,17 +432,14 @@ FlawSearch::get_next_flaw(const vector<int> *domain_sizes,
 
 
 
-        // Path was not affected (TODO: something goes wrong here)
-        if (flaw->h_value == new_h_value
-            // &&flaw->abstract_state_id == new_abstract_state_id
-            ) {
+        // Path was not affected
+        if (flaw->h_value == new_h_value) {
             if (debug) {
                 utils::g_log << "Flaw accepted!" << endl;
             }
-            // This is an ugly conversion we want to avoid!
             refined_abstract_states.insert(flaw->abstract_state_id);
             ++num_overall_refined_flaws;
-            // min_flaw_h_value = flaw->h_value;
+            timer.stop();
             return utils::make_unique_ptr<Flaw>(*flaw);
         } else {
             if (debug) {
@@ -471,14 +463,17 @@ FlawSearch::get_next_flaw(const vector<int> *domain_sizes,
             utils::g_log << "New deviation flaw: #" << flaw->abstract_state_id << flaw->desired_cartesian_set << endl;
         }
     }
+    timer.stop();
     return flaw;
 }
 
 void FlawSearch::print_statistics() const {
     utils::g_log << "#Flaw searches: " << num_searches << endl;
     utils::g_log << "#Expanded concrete states: " << num_overall_expanded_concrete_states << endl;
+    utils::g_log << "Flaw search time: " << timer << endl;
     utils::g_log << "Avg flaws found: " << num_overall_found_flaws / (float)num_searches << endl;
     utils::g_log << "Avg flaws refined: " << num_overall_refined_flaws / (float)num_searches << endl;
     utils::g_log << "Avg expanded concrete states: " << num_overall_expanded_concrete_states / (float)num_searches << endl;
+    utils::g_log << "Avg Flaw search time: " << timer() / (float)num_searches << endl;
 }
 }

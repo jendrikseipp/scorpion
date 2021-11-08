@@ -5,6 +5,8 @@
 
 #include "../open_list.h"
 #include "../search_engine.h"
+#include "../utils/timer.h"
+#include "../utils/hash.h"
 
 #include <map>
 
@@ -35,13 +37,14 @@ class FlawSearch {
     bool debug;
 
     mutable std::priority_queue<std::shared_ptr<Flaw>, std::vector<std::shared_ptr<Flaw>>, decltype( &compare_flaws)> flaws;
-    mutable std::set<int> refined_abstract_states;
+    mutable std::unordered_set<int> refined_abstract_states;
     mutable size_t num_searches;
     mutable size_t num_overall_found_flaws;
     mutable size_t num_overall_refined_flaws;
     mutable size_t num_overall_expanded_concrete_states;
     mutable int min_flaw_h_value;
     mutable std::unordered_map<int, int> concrete_state_to_abstract_state;
+    mutable utils::Timer timer;
 
 protected:
     void initialize(const std::vector<int> *domain_sizes,
@@ -54,26 +57,26 @@ protected:
 
     void generate_abstraction_operators(
         const State &state,
-        std::vector<OperatorID> &abstraction_ops,
-        std::vector<Transition> &abstraction_trs) const;
+        utils::HashSet<OperatorID> &abstraction_ops,
+        utils::HashSet<Transition> &abstraction_trs) const;
 
     void prune_operators(
         const std::vector<OperatorID> &applicable_ops,
-        const std::vector<OperatorID> &abstraction_ops,
-        const std::vector<Transition> &abstraction_trs,
-        std::vector<OperatorID> &valid_ops,
-        std::vector<Transition> &valid_trs,
-        std::vector<Transition> &invalid_trs) const;
+        const utils::HashSet<OperatorID> &abstraction_ops,
+        const utils::HashSet<Transition> &abstraction_trs,
+        utils::HashSet<OperatorID> &valid_ops,
+        utils::HashSet<Transition> &valid_trs,
+        utils::HashSet<Transition> &invalid_trs) const;
 
     void create_applicability_flaws(
         const State &state,
-        const std::vector<Transition> &valid_trs) const;
+        const utils::HashSet<Transition> &valid_trs) const;
 
     bool create_deviation_flaws(
         const State &state,
         const State &next_state,
         const OperatorID &op_id,
-        const std::vector<Transition> &invalid_trs) const;
+        const utils::HashSet<Transition> &invalid_trs) const;
 
     Solution get_abstract_solution(
         const State &concrete_state,
