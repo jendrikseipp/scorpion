@@ -40,6 +40,7 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task, bool debug) :
     num_searches(0),
     num_overall_found_flaws(0),
     num_overall_refined_flaws(0),
+    num_overall_expanded_concrete_states(0),
     min_flaw_h_value(INF) {
     shared_ptr<Evaluator> g_evaluator = make_shared<g_evaluator::GEvaluator>();
     Options options;
@@ -69,6 +70,7 @@ void FlawSearch::initialize(const vector<int> *domain_sizes,
     flaws = priority_queue<shared_ptr<Flaw>,
                            vector<shared_ptr<Flaw>>,
                            decltype( &compare_flaws)>(compare_flaws);
+    concrete_state_to_abstract_state.clear();
 
     State initial_state = state_registry->get_initial_state();
     EvaluationContext eval_context(initial_state, 0, false, statistics.get());
@@ -101,7 +103,7 @@ SearchStatus FlawSearch::step() {
         }
 
         int abstract_goal_distance =
-            shortest_paths->get_goal_distance(abstraction->get_abstract_state_id(s));
+            shortest_paths->get_goal_distance(get_abstract_state_id(s));
 
         if (node->get_real_g() + abstract_goal_distance > f_bound) {
             continue;
@@ -113,6 +115,7 @@ SearchStatus FlawSearch::step() {
         statistics->inc_expanded();
         break;
     }
+    ++num_overall_expanded_concrete_states;
     g_bound = max(g_bound, node->get_real_g());
 
     const State &s = node->get_state();
@@ -140,7 +143,7 @@ SearchStatus FlawSearch::step() {
 
     if (false && debug) {
         utils::g_log << "STATE " <<
-            abstraction->get_abstract_state_id(s) << ":" << endl;
+            get_abstract_state_id(s) << ":" << endl;
         utils::g_log << "All trs: " << abstraction_trs << endl;
         utils::g_log << "Applicable trs: " << valid_trs << endl;
         utils::g_log << "Inapplicable trs: " << invalid_trs << endl;
@@ -191,11 +194,19 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
+int FlawSearch::get_abstract_state_id(const State &state) const {
+    int state_id = state.get_id().get_value();
+    if (concrete_state_to_abstract_state.find(state_id) == concrete_state_to_abstract_state.end()) {
+        concrete_state_to_abstract_state[state_id] = abstraction->get_abstract_state_id(state);
+    }
+    return concrete_state_to_abstract_state[state_id];
+}
+
 void FlawSearch::generate_abstraction_operators(
     const State &state,
     vector<OperatorID> &abstraction_ops,
     vector<Transition> &abstraction_trs) const {
-    int abstract_state_id = abstraction->get_abstract_state_id(state);
+    int abstract_state_id = get_abstract_state_id(state);
     int h_value = shortest_paths->get_goal_distance(abstract_state_id);
 
     set<OperatorID> abstraction_ops_set;
@@ -245,7 +256,7 @@ void FlawSearch::prune_operators(
 void FlawSearch::create_applicability_flaws(
     const State &state,
     const vector<Transition> &invalid_trs) const {
-    int abstract_state_id = abstraction->get_abstract_state_id(state);
+    int abstract_state_id = get_abstract_state_id(state);
     const AbstractState *abstract_state =
         &abstraction->get_state(abstract_state_id);
 
@@ -277,8 +288,8 @@ bool FlawSearch::create_deviation_flaws(
     const OperatorID &op_id,
     const vector<Transition> &valid_trs) const {
     bool valid_transition = false;
-    int abstract_state_id = abstraction->get_abstract_state_id(state);
-    int next_abstract_state_id = abstraction->get_abstract_state_id(next_state);
+    int abstract_state_id = get_abstract_state_id(state);
+    int next_abstract_state_id = get_abstract_state_id(next_state);
     const AbstractState *abstract_state =
         &abstraction->get_state(abstract_state_id);
 
@@ -330,7 +341,7 @@ Solution FlawSearch::get_abstract_solution(
     // construct path to flawed_abstract_state based on partial plan
     for (size_t i = 0; i < plan.size(); ++i) {
         const OperatorID &op_id = plan.at(i);
-        int next_abstract_state_id = abstraction->get_abstract_state_id(path.at(i + 1));
+        int next_abstract_state_id = get_abstract_state_id(path.at(i + 1));
         for (const Transition &tr :
              abstraction->get_transition_system().get_outgoing_transitions().at(cur_abstract_state_id)) {
             if (tr.op_id == op_id.get_index() && tr.target_id == next_abstract_state_id) {
@@ -366,6 +377,7 @@ FlawSearch::search_for_flaws(const vector<int> *domain_sizes,
                              const Abstraction *abstraction,
                              const ShortestPaths *shortest_paths) {
     initialize(domain_sizes, abstraction, shortest_paths);
+    size_t cur_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
     while (search_status == IN_PROGRESS) {
         search_status = step();
@@ -373,6 +385,9 @@ FlawSearch::search_for_flaws(const vector<int> *domain_sizes,
 
     if (debug) {
         utils::g_log << "Found " << flaws.size() << " flaws!" << endl;
+        utils::g_log << "Expanded "
+                     << num_overall_expanded_concrete_states - cur_expanded_states
+                     << " states!" << endl;
     }
 
     if (search_status == FAILED) {
@@ -416,7 +431,7 @@ FlawSearch::get_next_flaw(const vector<int> *domain_sizes,
         }
 
         int new_abstract_state_id =
-            abstraction->get_abstract_state_id(flaw->concrete_state);
+            get_abstract_state_id(flaw->concrete_state);
         int new_h_value =
             shortest_paths->get_goal_distance(new_abstract_state_id);
 
@@ -461,7 +476,9 @@ FlawSearch::get_next_flaw(const vector<int> *domain_sizes,
 
 void FlawSearch::print_statistics() const {
     utils::g_log << "#Flaw searches: " << num_searches << endl;
+    utils::g_log << "#Expanded concrete states: " << num_overall_expanded_concrete_states << endl;
     utils::g_log << "Avg flaws found: " << num_overall_found_flaws / (float)num_searches << endl;
     utils::g_log << "Avg flaws refined: " << num_overall_refined_flaws / (float)num_searches << endl;
+    utils::g_log << "Avg expanded concrete states: " << num_overall_expanded_concrete_states / (float)num_searches << endl;
 }
 }

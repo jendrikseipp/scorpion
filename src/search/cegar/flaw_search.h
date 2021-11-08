@@ -39,7 +39,9 @@ class FlawSearch {
     mutable size_t num_searches;
     mutable size_t num_overall_found_flaws;
     mutable size_t num_overall_refined_flaws;
+    mutable size_t num_overall_expanded_concrete_states;
     mutable int min_flaw_h_value;
+    mutable std::unordered_map<int, int> concrete_state_to_abstract_state;
 
 protected:
     void initialize(const std::vector<int> *domain_sizes,
@@ -47,6 +49,8 @@ protected:
                     const ShortestPaths *shortest_paths);
 
     SearchStatus step();
+
+    int get_abstract_state_id(const State &state) const;
 
     void generate_abstraction_operators(
         const State &state,
