@@ -2,7 +2,6 @@
 
 #include "abstract_state.h"
 #include "abstraction.h"
-#include "flaw_selector.h"
 #include "transition.h"
 #include "transition_system.h"
 
@@ -115,24 +114,6 @@ void add_memory_padding_option(options::OptionParser &parser) {
         "blocks of memory. It is for this reason that we require a rather "
         "large amount of memory padding by default.",
         "500", Bounds("0", "infinity"));
-}
-
-void add_flaw_strategy_option(options::OptionParser &parser) {
-    parser.add_enum_option<FlawStrategy>(
-        "flaw_strategy",
-        {"BACKTRACK_OPTIMISTIC",
-         "BACKTRACK_OPTIMISTIC_SLOW",
-         "BACKTRACK_PESSIMISTIC",
-         "BACKTRACK_PESSIMISTIC_SLOW",
-         "OPTIMISTIC",
-         "OPTIMISTIC_SLOW",
-         "ORIGINAL",
-         "PESSIMISTIC",
-         "PESSIMISTIC_SLOW",
-         "RANDOM",
-         "SEARCH",
-         "SEARCH_MULTIPLE_FLAWS"},
-        "strategy to handle flaws", "ORIGINAL");
 }
 
 string get_dot_graph(const Abstraction &abstraction, const Solution &solution,

@@ -52,6 +52,15 @@ bool CartesianSet::is_superset_of(const CartesianSet &other) const {
     return true;
 }
 
+bool CartesianSet::operator==(const CartesianSet &other) const {
+    // TODO: we could directly use the bitsets maybe with an xor operation
+    stringstream this_stream;
+    this_stream << *this;
+    stringstream other_stream;
+    other_stream << other;
+    return this_stream.str() == other_stream.str();
+}
+
 ostream &operator<<(ostream &os, const CartesianSet &cartesian_set) {
     int num_vars = cartesian_set.domain_subsets.size();
     string var_sep;

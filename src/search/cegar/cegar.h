@@ -2,7 +2,6 @@
 #define CEGAR_CEGAR_H
 
 #include "flaw_search.h"
-#include "flaw_selector.h"
 #include "split_selector.h"
 #include "types.h"
 
@@ -37,11 +36,11 @@ class CEGAR {
     const int max_non_looping_transitions;
     const SplitSelector split_selector;
     const SearchStrategy search_strategy;
-    const FlawSelector flaw_selector;
 
     std::unique_ptr<Abstraction> abstraction;
     std::unique_ptr<AbstractSearch> abstract_search;
     std::unique_ptr<ShortestPaths> shortest_paths;
+    std::unique_ptr<FlawSearch> flaw_search;
 
     // Limit the time for building the abstraction.
     utils::CountdownTimer timer;
@@ -76,7 +75,6 @@ public:
         double max_time,
         PickSplit pick,
         SearchStrategy search_strategy,
-        FlawStrategy flaw_strategy,
         utils::RandomNumberGenerator &rng,
         bool debug,
         int dot_graph_verbosity);

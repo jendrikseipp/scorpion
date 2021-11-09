@@ -29,7 +29,6 @@ CEGAR::CEGAR(
     double max_time,
     PickSplit pick,
     SearchStrategy search_strategy,
-    FlawStrategy flaw_strategy,
     utils::RandomNumberGenerator &rng,
     bool debug,
     int dot_graph_verbosity)
@@ -39,7 +38,6 @@ CEGAR::CEGAR(
       max_non_looping_transitions(max_non_looping_transitions),
       split_selector(task, pick),
       search_strategy(search_strategy),
-      flaw_selector(task, flaw_strategy, debug),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
       debug(debug),
@@ -52,6 +50,8 @@ CEGAR::CEGAR(
     } else if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
             task_properties::get_operator_costs(task_proxy), false);
+        flaw_search = utils::make_unique_ptr<FlawSearch>(
+            task, domain_sizes, *abstraction, *shortest_paths, debug);
     } else {
         ABORT("Unknown search strategy");
     }
@@ -198,9 +198,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 utils::g_log << "Abstract solution cost: " << cur_abstract_solution_cost << endl;
             }
 
-            if (debug) {
-                utils::g_log << "Found abstract solution." << endl;
-            }
+
         } else {
             utils::g_log << "Abstract task is unsolvable." << endl;
             break;
@@ -209,52 +207,25 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         find_flaw_timer.resume();
 
         if (debug) {
-            int cost = 0;
-            // cout << "Chosen flawed solution by shortest path:" << endl;
-            for (const Transition &t : *solution) {
-                OperatorProxy op = task_proxy.get_operators()[t.op_id];
-                //cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ") ID: "
-                //     << op.get_id() << endl;
-                cost += op.get_cost();
-            }
-            assert(cost == shortest_paths->get_goal_distance(
-                       abstraction->get_initial_state().get_id()));
             handle_dot_graph(*abstraction, Solution(), task_proxy,
                              "dot_files/graph" + to_string(num_of_refinements) + ".dot",
                              dot_graph_verbosity);
         }
 
-        unique_ptr<Flaw> flaw = flaw_selector.find_flaw(
-            *abstraction, domain_sizes, *shortest_paths, rng);
+        unique_ptr<Flaw> flaw = flaw_search->search_for_flaws();
+        //unique_ptr<Flaw> flaw = flaw_search->get_next_flaw();
 
-        if (debug && flaw) {
-            int cost = 0;
-            cout << "Chosen flawed solution by search:" << endl;
-            for (const Transition &t : flaw->flawed_solution) {
-                OperatorProxy op = task_proxy.get_operators()[t.op_id];
-                cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
-                cost += op.get_cost();
-            }
-            assert(cost == shortest_paths->get_goal_distance(
-                       abstraction->get_initial_state().get_id()));
-        }
         find_flaw_timer.stop();
 
-        if (!utils::extra_memory_padding_is_reserved()) {
+        if (!utils::extra_memory_padding_is_reserved() || !flaw) {
             break;
         }
-
-        if (!flaw) {
-            break;
-        }
-
-        // shortest_paths->update_shortest_path(flaw->flawed_solution);
 
         refine_timer.resume();
-        const AbstractState &abstract_state = flaw->current_abstract_state;
-        int state_id = abstract_state.get_id();
+        int state_id = flaw->abstract_state_id;
+        const AbstractState &abstract_state = abstraction->get_state(state_id);
         assert(!abstraction->get_goals().count(state_id));
-        vector<Split> splits = flaw->get_possible_splits();
+        vector<Split> splits = flaw->get_possible_splits(*abstraction);
         const Split &split = split_selector.pick_split(abstract_state, splits, rng);
         auto new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
         refine_timer.stop();
@@ -291,6 +262,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
 
 void CEGAR::print_statistics() {
     abstraction->print_statistics();
-    flaw_selector.print_statistics();
+    flaw_search->print_statistics();
 }
 }

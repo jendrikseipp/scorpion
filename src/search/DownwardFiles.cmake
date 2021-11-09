@@ -626,9 +626,7 @@ fast_downward_plugin(
         cegar/cartesian_set
         cegar/cegar
         cegar/cost_saturation
-        cegar/flaw_selector
-        cegar/flaw_selector_fast
-        cegar/flaw_selector_slow
+        cegar/flaw
         cegar/flaw_search
         cegar/refinement_hierarchy
         cegar/shortest_paths

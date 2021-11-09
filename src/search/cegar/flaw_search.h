@@ -1,7 +1,8 @@
 #ifndef CEGAR_FLAW_SEARCH
 #define CEGAR_FLAW_SEARCH
 
-#include "flaw_selector.h"
+#include "flaw.h"
+#include "types.h"
 
 #include "../open_list.h"
 #include "../search_engine.h"
@@ -9,6 +10,7 @@
 #include "../utils/hash.h"
 
 #include <map>
+#include <queue>
 
 namespace successor_generator {
 class SuccessorGenerator;
@@ -17,8 +19,8 @@ class SuccessorGenerator;
 namespace cegar {
 class Abstraction;
 class ShortestPaths;
-
-bool compare_flaws(std::shared_ptr<Flaw> &a, std::shared_ptr<Flaw> &b);
+class AbstractState;
+struct Split;
 
 class FlawSearch {
     const TaskProxy task_proxy;
@@ -27,29 +29,30 @@ class FlawSearch {
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
     std::unique_ptr<SearchStatistics> statistics;
-    const Abstraction *abstraction;
-    const ShortestPaths *shortest_paths;
-    const std::vector<int> *domain_sizes;
+    const std::vector<int> &domain_sizes;
+    const Abstraction &abstraction;
+    const ShortestPaths &shortest_paths;
     const successor_generator::SuccessorGenerator &successor_generator;
 
     int g_bound;
     int f_bound;
     bool debug;
 
-    mutable std::priority_queue<std::shared_ptr<Flaw>, std::vector<std::shared_ptr<Flaw>>, decltype( &compare_flaws)> flaws;
-    mutable std::unordered_set<int> refined_abstract_states;
-    mutable size_t num_searches;
-    mutable size_t num_overall_found_flaws;
-    mutable size_t num_overall_refined_flaws;
-    mutable size_t num_overall_expanded_concrete_states;
-    mutable int min_flaw_h_value;
+    // Mapping from h-values to abstract_state_id to List of Flaws
+    std::map<int, utils::HashMap<int, std::vector<Flaw>>> flaw_map;
+
+    std::unordered_set<int>
+    refined_abstract_states;
+    size_t num_searches;
+    size_t num_overall_found_flaws;
+    size_t num_overall_refined_flaws;
+    size_t num_overall_expanded_concrete_states;
+    utils::Timer timer;
+
     mutable std::unordered_map<int, int> concrete_state_to_abstract_state;
-    mutable utils::Timer timer;
 
 protected:
-    void initialize(const std::vector<int> *domain_sizes,
-                    const Abstraction *abstraction,
-                    const ShortestPaths *shortest_paths);
+    void initialize();
 
     SearchStatus step();
 
@@ -70,33 +73,28 @@ protected:
 
     void create_applicability_flaws(
         const State &state,
-        const utils::HashSet<Transition> &valid_trs) const;
+        const utils::HashSet<Transition> &valid_trs);
 
     bool create_deviation_flaws(
         const State &state,
         const State &next_state,
         const OperatorID &op_id,
-        const utils::HashSet<Transition> &invalid_trs) const;
+        const utils::HashSet<Transition> &invalid_trs);
 
-    Solution get_abstract_solution(
-        const State &concrete_state,
-        const AbstractState &flawed_abstract_state,
-        const Transition &flawed_tr) const;
+    void add_to_flaw_map(const Flaw &flaw);
 
     CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
 
 public:
-    FlawSearch(const std::shared_ptr<AbstractTask> &task, bool debug);
+    FlawSearch(const std::shared_ptr<AbstractTask> &task,
+               const std::vector<int> &domain_sizes,
+               const Abstraction &abstraction,
+               const ShortestPaths &shortest_paths,
+               bool debug);
 
     void get_flaws(std::map<int, std::vector<Flaw>> &flaw_map);
 
-    std::unique_ptr<Flaw> search_for_flaws(const std::vector<int> *domain_sizes,
-                                           const Abstraction *abstraction,
-                                           const ShortestPaths *shortest_paths);
-
-    std::unique_ptr<Flaw> get_next_flaw(const std::vector<int> *domain_sizes,
-                                        const Abstraction *abstraction,
-                                        const ShortestPaths *shortest_paths);
+    std::unique_ptr<Flaw> search_for_flaws();
 
     void print_statistics() const;
 };
