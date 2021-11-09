@@ -120,7 +120,6 @@ int AbstractSearch::get_h_value(int state_id) const {
 }
 
 int AbstractSearch::get_f_value(int state_id) const {
-    cout << "HERHERH" << endl;
     cout << search_info.size() << endl;
     return get_g_value(state_id) + get_h_value(state_id);
 }

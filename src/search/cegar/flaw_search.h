@@ -39,7 +39,7 @@ class FlawSearch {
     bool debug;
 
     // Mapping from h-values to abstract_state_id to List of Flaws
-    std::map<int, utils::HashMap<int, std::vector<Flaw>>> flaw_map;
+    std::map<int, utils::HashMap<int, std::deque<Flaw>>> flaw_map;
 
     std::unordered_set<int>
     refined_abstract_states;

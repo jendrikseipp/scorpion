@@ -40,7 +40,6 @@ extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
 extern void add_search_strategy_option(options::OptionParser &parser);
 extern void add_memory_padding_option(options::OptionParser &parser);
-extern void add_flaw_strategy_option(options::OptionParser &parser);
 
 extern std::string get_dot_graph(const Abstraction &abstraction);
 extern void dump_dot_graph(const Abstraction &abstraction);

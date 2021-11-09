@@ -292,16 +292,23 @@ bool FlawSearch::create_deviation_flaws(
 
 void FlawSearch::add_to_flaw_map(const Flaw &flaw) {
     if (flaw_map.count(flaw.h_value) == 0) {
-        flaw_map[flaw.h_value][flaw.abstract_state_id] = vector<Flaw>();
+        flaw_map[flaw.h_value][flaw.abstract_state_id] = deque<Flaw>();
     } else {
         if (flaw_map[flaw.h_value].count(flaw.abstract_state_id) == 0) {
-            flaw_map[flaw.h_value][flaw.abstract_state_id] = vector<Flaw>();
+            flaw_map[flaw.h_value][flaw.abstract_state_id] = deque<Flaw>();
         }
     }
     assert(find(flaw_map[flaw.h_value][flaw.abstract_state_id].begin(),
                 flaw_map[flaw.h_value][flaw.abstract_state_id].end(),
                 flaw) == flaw_map[flaw.h_value][flaw.abstract_state_id].end());
-    flaw_map[flaw.h_value][flaw.abstract_state_id].push_back(flaw);
+
+    // Hack to sort by flaw reason. Probably not the best to insert in front
+    // Maybe use deque or necessary at all?
+    if (flaw.flaw_reason == FlawReason::NOT_APPLICABLE) {
+        flaw_map[flaw.h_value][flaw.abstract_state_id].push_front(flaw);
+    } else {
+        flaw_map[flaw.h_value][flaw.abstract_state_id].push_back(flaw);
+    }
     ++num_overall_found_flaws;
 }
 
@@ -329,7 +336,8 @@ FlawSearch::search_for_flaws() {
         for (auto const &triple : flaw_map) {
             for (auto const &pair : triple.second) {
                 utils::g_log << "h=" << triple.first << ": "
-                             << pair.second << endl;
+                             << vector<Flaw>(pair.second.begin(),
+                                pair.second.end()) << endl;
                 //utils::g_log << "ID:" << pair.first << " (h="
                 //             << triple.first << "): " << pair.second.size()
                 //             << " flaws" << endl;
@@ -344,7 +352,7 @@ FlawSearch::search_for_flaws() {
     if (search_status == FAILED) {
         // This is an ugly conversion we want to avoid!
         ++num_overall_refined_flaws;
-        Flaw flaw = flaw_map.rbegin()->second.begin()->second.at(0);
+        Flaw flaw = flaw_map.rbegin()->second.begin()->second.front();
         return utils::make_unique_ptr<Flaw>(flaw);
     }
     return nullptr;
