@@ -197,8 +197,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 cur_abstract_solution_cost = new_abstract_solution_cost;
                 utils::g_log << "Abstract solution cost: " << cur_abstract_solution_cost << endl;
             }
-
-
         } else {
             utils::g_log << "Abstract task is unsolvable." << endl;
             break;
@@ -207,13 +205,13 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         find_flaw_timer.resume();
 
         if (debug) {
-            handle_dot_graph(*abstraction, Solution(), task_proxy,
-                             "dot_files/graph" + to_string(num_of_refinements) + ".dot",
+            handle_dot_graph(*abstraction,
+                             "dot_files/graph" +
+                             to_string(num_of_refinements) + ".dot",
                              dot_graph_verbosity);
         }
 
         unique_ptr<Flaw> flaw = flaw_search->search_for_flaws();
-        //unique_ptr<Flaw> flaw = flaw_search->get_next_flaw();
 
         find_flaw_timer.stop();
 

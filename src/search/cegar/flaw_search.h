@@ -1,5 +1,5 @@
-#ifndef CEGAR_FLAW_SEARCH
-#define CEGAR_FLAW_SEARCH
+#ifndef CEGAR_FLAW_SEARCH_H
+#define CEGAR_FLAW_SEARCH_H
 
 #include "flaw.h"
 #include "types.h"

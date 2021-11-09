@@ -17,7 +17,6 @@ using namespace std;
 
 
 namespace cegar {
-
 FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
                        const vector<int> &domain_sizes,
                        const Abstraction &abstraction,

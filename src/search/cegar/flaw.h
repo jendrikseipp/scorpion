@@ -1,5 +1,5 @@
-#ifndef CEGAR_FLAW
-#define CEGAR_FLAW
+#ifndef CEGAR_FLAW_H
+#define CEGAR_FLAW_H
 
 #include "cartesian_set.h"
 #include "../task_proxy.h"

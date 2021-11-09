@@ -116,8 +116,7 @@ void add_memory_padding_option(options::OptionParser &parser) {
         "500", Bounds("0", "infinity"));
 }
 
-string get_dot_graph(const Abstraction &abstraction, const Solution &solution,
-                     const TaskProxy &task) {
+string get_dot_graph(const Abstraction &abstraction) {
     ostringstream oss;
     int num_states = abstraction.get_num_states();
     oss << "digraph transition_system";
@@ -146,46 +145,30 @@ string get_dot_graph(const Abstraction &abstraction, const Solution &solution,
                 << utils::join(operators, "_") << "\"];" << endl;
         }
     }
-
-    // print solution
-    int cur_state_id = abstraction.get_initial_state().get_id();
-    for (const Transition &t : solution) {
-        oss << "    " << cur_state_id << " -> " << t.target_id
-            << " [color=red,fontcolor=red,label = \""
-            << task.get_operators()[t.op_id].get_name() << " (" << t.op_id
-            << ")\"];" << endl;
-        cur_state_id = t.target_id;
-    }
     oss << "}" << endl;
     return oss.str();
 }
 
-void dump_dot_graph(const Abstraction &abstraction, const Solution &solution,
-                    const TaskProxy &task) {
-    cout << get_dot_graph(abstraction, solution, task) << endl;
+void dump_dot_graph(const Abstraction &abstraction) {
+    cout << get_dot_graph(abstraction) << endl;
 }
 
-void write_dot_graph(const Abstraction &abstraction,
-                     const Solution &solution,
-                     const TaskProxy &task,
-                     const string &file_name) {
+void write_dot_graph(const Abstraction &abstraction, const string &file_name) {
     ofstream output_file(file_name);
     if (output_file.is_open()) {
-        output_file << get_dot_graph(abstraction, solution, task);
+        output_file << get_dot_graph(abstraction);
     }
     output_file.close();
 }
 
 extern void handle_dot_graph(const Abstraction &abstraction,
-                             const Solution &solution,
-                             const TaskProxy &task,
                              const string &file_name,
-                             const int dot_graph_verbosity) {
+                             int dot_graph_verbosity) {
     if (dot_graph_verbosity == 1 || dot_graph_verbosity == 3) {
-        dump_dot_graph(abstraction, solution, task);
+        dump_dot_graph(abstraction);
     }
     if (dot_graph_verbosity > 1) {
-        write_dot_graph(abstraction, solution, task, file_name);
+        write_dot_graph(abstraction, file_name);
     }
 }
 } // namespace cegar
