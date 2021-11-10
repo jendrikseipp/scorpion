@@ -109,19 +109,9 @@ int AbstractSearch::astar_search(
     return UNDEFINED;
 }
 
-int AbstractSearch::get_g_value(int state_id) const {
-    assert(utils::in_bounds(state_id, search_info));
-    return search_info[state_id].get_g_value();
-}
-
 int AbstractSearch::get_h_value(int state_id) const {
     assert(utils::in_bounds(state_id, goal_distances));
     return goal_distances[state_id];
-}
-
-int AbstractSearch::get_f_value(int state_id) const {
-    cout << search_info.size() << endl;
-    return get_g_value(state_id) + get_h_value(state_id);
 }
 
 void AbstractSearch::set_h_value(int state_id, int h) {

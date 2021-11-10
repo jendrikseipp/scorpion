@@ -376,14 +376,4 @@ bool ShortestPaths::test_distances(
 
     return true;
 }
-
-Solution ShortestPaths::get_shortest_path(int start_abstract_state_id) const {
-    Solution sol;
-    Transition tr = shortest_path[start_abstract_state_id];
-    while (tr.is_defined()) {
-        sol.push_back(tr);
-        tr = shortest_path.at(tr.target_id);
-    }
-    return sol;
-}
 }

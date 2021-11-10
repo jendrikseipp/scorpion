@@ -55,6 +55,7 @@ public:
     std::vector<AbstractSearchInfo> search_info;
 
     void reset(int num_states);
+    int get_h_value(int state_id) const;
     void set_h_value(int state_id, int h);
     std::unique_ptr<Solution> extract_solution(int init_id, int goal_id) const;
     int astar_search(
@@ -62,10 +63,6 @@ public:
         const Goals &goals);
 public:
     explicit AbstractSearch(const std::vector<int> &costs);
-
-    int get_g_value(int state_id) const;
-    int get_h_value(int state_id) const;
-    int get_f_value(int state_id) const;
 
     std::unique_ptr<Solution> find_solution(
         const std::vector<Transitions> &transitions,

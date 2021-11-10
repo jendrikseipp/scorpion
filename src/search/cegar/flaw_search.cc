@@ -307,14 +307,11 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
             if (find(applicable_ops.begin(), applicable_ops.end(),
                      op_id) == applicable_ops.end()) {
                 int h_value = get_h_value(abstract_state_id);
-                auto cartesian_set =
+                return utils::make_unique_ptr<Flaw>(
+                    move(State(state)),
                     get_cartesian_set(task_proxy.get_operators()
-                                      [tr.op_id].get_preconditions());
-                return utils::make_unique_ptr<Flaw>(move(State(state)),
-                                                    cartesian_set,
-                                                    FlawReason::NOT_APPLICABLE,
-                                                    abstract_state_id,
-                                                    h_value);
+                                      [tr.op_id].get_preconditions()),
+                    FlawReason::NOT_APPLICABLE, abstract_state_id, h_value);
             }
             OperatorProxy op = task_proxy.get_operators()[op_id];
             State succ_state = state_registry->get_successor_state(state, op);
@@ -323,13 +320,13 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
                 const AbstractState *deviated_abstact_state =
                     &abstraction.get_state(tr.target_id);
                 int h_value = get_h_value(abstract_state_id);
-                auto cartesian_set = deviated_abstact_state->regress(
-                    task_proxy.get_operators()[op_id]);
-                return utils::make_unique_ptr<Flaw>(move(State(state)),
-                                                    cartesian_set,
-                                                    FlawReason::PATH_DEVIATION,
-                                                    abstract_state_id,
-                                                    h_value);
+                return utils::make_unique_ptr<Flaw>(
+                    move(State(state)),
+                    deviated_abstact_state->regress(
+                        task_proxy.get_operators()[op_id]),
+                    FlawReason::PATH_DEVIATION,
+                    abstract_state_id,
+                    h_value);
             }
         }
     }

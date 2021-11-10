@@ -117,8 +117,6 @@ public:
         const std::vector<Transitions> &in,
         const std::vector<Transitions> &out,
         const std::unordered_set<int> &goals);
-
-    Solution get_shortest_path(int start_abstract_state_id) const;
 };
 }
 
