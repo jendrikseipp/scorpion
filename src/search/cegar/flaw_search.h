@@ -38,13 +38,10 @@ class FlawSearch {
     int f_bound;
     bool debug;
 
-    // Mapping from h-values to abstract_state_id to List of Flaws
-    std::map<int, utils::HashMap<int, std::deque<Flaw>>> flaw_map;
+    int min_flaw_h;
+    utils::HashMap<int, utils::HashSet<State>> flawed_states;
 
-    std::unordered_set<int>
-    refined_abstract_states;
     size_t num_searches;
-    size_t num_overall_found_flaws;
     size_t num_overall_refined_flaws;
     size_t num_overall_expanded_concrete_states;
     utils::Timer timer;
@@ -52,11 +49,22 @@ class FlawSearch {
     mutable std::unordered_map<int, int> concrete_state_to_abstract_state;
 
 protected:
+    int get_abstract_state_id(const State &state) const;
+
+    int get_h_value(int abstract_state_id) const;
+
+    int get_h_value(const State &state) const;
+
+    void add_flaw(const State &state);
+
+    bool is_f_optimal_transition(int abstract_state_id,
+                                 const Transition &tr) const;
+
+    const std::vector<Transition> &get_transitions(int abstract_state_id) const;
+
     void initialize();
 
     SearchStatus step();
-
-    int get_abstract_state_id(const State &state) const;
 
     void generate_abstraction_operators(
         const State &state,
@@ -71,15 +79,8 @@ protected:
         utils::HashSet<Transition> &valid_trs,
         utils::HashSet<Transition> &invalid_trs) const;
 
-    void create_applicability_flaws(
-        const State &state,
-        const utils::HashSet<Transition> &valid_trs);
-
-    bool create_deviation_flaws(
-        const State &state,
-        const State &next_state,
-        const OperatorID &op_id,
-        const utils::HashSet<Transition> &invalid_trs);
+    std::unique_ptr<Flaw>
+    create_flaw(const State &state, int abstract_state_id);
 
     void add_to_flaw_map(const Flaw &flaw);
 
@@ -94,7 +95,7 @@ public:
 
     void get_flaws(std::map<int, std::vector<Flaw>> &flaw_map);
 
-    std::unique_ptr<Flaw> search_for_flaws(const std::pair<int,int>& new_state_ids);
+    std::unique_ptr<Flaw> search_for_flaws(const std::pair<int, int> &new_state_ids);
 
     void print_statistics() const;
 };

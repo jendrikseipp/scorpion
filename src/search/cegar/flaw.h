@@ -47,7 +47,8 @@ struct Flaw {
             f.flaw_reason == FlawReason::NOT_APPLICABLE ? "a" : "d";
         return os << "[" << f.abstract_state_id << ","
                   << f.concrete_state.get_id() << ","
-                  << flaw_reason << "," << f.desired_cartesian_set << "]";
+                  << flaw_reason << "," << f.desired_cartesian_set
+                  << ",h=" << f.h_value << "]";
     }
 };
 }

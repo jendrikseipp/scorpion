@@ -35,8 +35,8 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     g_bound(0),
     f_bound(0),
     debug(debug),
+    min_flaw_h(INF),
     num_searches(0),
-    num_overall_found_flaws(0),
     num_overall_refined_flaws(0),
     num_overall_expanded_concrete_states(0) {
     shared_ptr<Evaluator> g_evaluator = make_shared<g_evaluator::GEvaluator>();
@@ -44,21 +44,70 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     options.set("eval", g_evaluator);
     options.set("pref_only", false);
 
-    open_list = make_shared<standard_scalar_open_list::BestFirstOpenListFactory>(options)->create_state_open_list();
+    open_list =
+        make_shared<standard_scalar_open_list::BestFirstOpenListFactory>
+            (options)->create_state_open_list();
     timer.stop();
     timer.reset();
+}
+
+int FlawSearch::get_abstract_state_id(const State &state) const {
+    int state_id = state.get_id().get_value();
+    if (concrete_state_to_abstract_state.find(state_id)
+        == concrete_state_to_abstract_state.end()) {
+        concrete_state_to_abstract_state[state_id] =
+            abstraction.get_abstract_state_id(state);
+    }
+    return concrete_state_to_abstract_state[state_id];
+}
+
+int FlawSearch::get_h_value(int abstract_state_id) const {
+    return shortest_paths.get_goal_distance(abstract_state_id);
+}
+
+int FlawSearch::get_h_value(const State &state) const {
+    return get_h_value(get_abstract_state_id(state));
+}
+
+bool FlawSearch::is_f_optimal_transition(int abstract_state_id,
+                                         const Transition &tr) const {
+    int source_h_value = get_h_value(abstract_state_id);
+    int target_h_value = get_h_value(tr.target_id);
+    int op_cost = task_proxy.get_operators()[tr.op_id].get_cost();
+    return source_h_value - op_cost == target_h_value;
+}
+
+const vector<Transition> &FlawSearch::get_transitions(
+    int abstract_state_id) const {
+    return abstraction.get_transition_system().
+           get_outgoing_transitions().at(abstract_state_id);
+}
+
+void FlawSearch::add_flaw(const State &state) {
+    if (min_flaw_h > get_h_value(state)) {
+        flawed_states.clear();
+    }
+    if (min_flaw_h >= get_h_value(state)) {
+        min_flaw_h = get_h_value(state);
+        if (flawed_states.count(get_abstract_state_id(state)) == 0) {
+            flawed_states[get_abstract_state_id(state)] =
+                utils::HashSet<State>();
+        }
+        flawed_states[get_abstract_state_id(state)].insert(state);
+    }
 }
 
 void FlawSearch::initialize() {
     ++num_searches;
     g_bound = 0;
-    f_bound = shortest_paths.get_goal_distance(abstraction.get_initial_state().get_id());
+    f_bound = get_h_value(abstraction.get_initial_state().get_id());
+    min_flaw_h = INF;
     open_list->clear();
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
     statistics = utils::make_unique_ptr<SearchStatistics>(utils::Verbosity::SILENT);
 
     concrete_state_to_abstract_state.clear();
-    flaw_map.clear();
+    flawed_states.clear();
 
     State initial_state = state_registry->get_initial_state();
     EvaluationContext eval_context(initial_state, 0, false, statistics.get());
@@ -89,10 +138,7 @@ SearchStatus FlawSearch::step() {
             continue;
         }
 
-        int abstract_goal_distance =
-            shortest_paths.get_goal_distance(get_abstract_state_id(s));
-
-        if (node->get_real_g() + abstract_goal_distance > f_bound) {
+        if (node->get_real_g() + get_h_value(s) > f_bound) {
             continue;
         }
 
@@ -131,7 +177,7 @@ SearchStatus FlawSearch::step() {
     prune_operators(applicable_ops, abstraction_ops, abstraction_trs,
                     valid_ops, valid_trs, invalid_trs);
 
-    if (debug) {
+    if (debug && false) {
         utils::g_log << "STATE " << get_abstract_state_id(s) << ":" << endl;
         utils::g_log << "All trs: "
                      << vector<Transition>(abstraction_trs.begin(),
@@ -145,7 +191,16 @@ SearchStatus FlawSearch::step() {
     }
 
     if (!invalid_trs.empty()) {
-        create_applicability_flaws(s, invalid_trs);
+        add_flaw(s);
+    }
+
+    // Lookup table from op_ids to successor states in abstraction
+    utils::HashMap<int, utils::HashSet<int>> abstract_successor_states;
+    for (const Transition &tr : valid_trs) {
+        if (abstract_successor_states.count(tr.op_id) == 0) {
+            abstract_successor_states[tr.op_id] = utils::HashSet<int>();
+        }
+        abstract_successor_states[tr.op_id].insert(tr.target_id);
     }
 
     for (const OperatorID &op_id : valid_ops) {
@@ -154,8 +209,18 @@ SearchStatus FlawSearch::step() {
         statistics->inc_generated();
         SearchNode succ_node = search_space->get_node(succ_state);
 
-        bool valid_succ_state = create_deviation_flaws(s, succ_state, op_id, valid_trs);
-        if (!valid_succ_state) {
+        // check for path deviation and if a valid tr exists
+        int successor_ab_id = get_abstract_state_id(succ_state);
+        bool valid_tr = false;
+        for (int as_id : abstract_successor_states[op_id.get_index()]) {
+            if (as_id != successor_ab_id) {
+                add_flaw(s);
+            } else {
+                valid_tr = true;
+            }
+        }
+
+        if (!valid_tr) {
             continue;
         }
 
@@ -189,29 +254,15 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
-int FlawSearch::get_abstract_state_id(const State &state) const {
-    int state_id = state.get_id().get_value();
-    if (concrete_state_to_abstract_state.find(state_id) == concrete_state_to_abstract_state.end()) {
-        concrete_state_to_abstract_state[state_id] = abstraction.get_abstract_state_id(state);
-    }
-    return concrete_state_to_abstract_state[state_id];
-}
 
 void FlawSearch::generate_abstraction_operators(
     const State &state,
     utils::HashSet<OperatorID> &abstraction_ops,
     utils::HashSet<Transition> &abstraction_trs) const {
     int abstract_state_id = get_abstract_state_id(state);
-    int h_value = shortest_paths.get_goal_distance(abstract_state_id);
 
-    for (const Transition &tr :
-         abstraction.get_transition_system().
-         get_outgoing_transitions().at(abstract_state_id)) {
-        int target_h_value = shortest_paths.get_goal_distance(tr.target_id);
-        int h_value_decrease = h_value - target_h_value;
-        int op_cost = task_proxy.get_operators()[tr.op_id].get_cost();
-        if (h_value_decrease == op_cost
-            && (h_value - op_cost == target_h_value)) {
+    for (const Transition &tr : get_transitions(abstract_state_id)) {
+        if (is_f_optimal_transition(abstract_state_id, tr)) {
             abstraction_ops.insert(OperatorID(tr.op_id));
             abstraction_trs.insert(tr);
         }
@@ -242,74 +293,48 @@ void FlawSearch::prune_operators(
     }
 }
 
-void FlawSearch::create_applicability_flaws(
-    const State &state,
-    const utils::HashSet<Transition> &invalid_trs) {
-    int abstract_state_id = get_abstract_state_id(state);
-    int h_value = shortest_paths.get_goal_distance(abstract_state_id);
+std::unique_ptr<Flaw>
+FlawSearch::create_flaw(const State &state, int abstract_state_id) {
+    assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
+    vector<OperatorID> applicable_ops;
+    successor_generator.generate_applicable_ops(state, applicable_ops);
+    for (const Transition &tr : get_transitions(abstract_state_id)) {
+        // same f-layer
+        if (is_f_optimal_transition(abstract_state_id, tr)) {
+            OperatorID op_id(tr.op_id);
 
-    for (const Transition &tr : invalid_trs) {
-        Flaw flaw(move(State(state)),
-                  get_cartesian_set(
-                      task_proxy.get_operators()[tr.op_id].get_preconditions()),
-                  FlawReason::NOT_APPLICABLE, abstract_state_id, h_value);
-        add_to_flaw_map(flaw);
-    }
-}
-
-bool FlawSearch::create_deviation_flaws(
-    const State &state,
-    const State &next_state,
-    const OperatorID &op_id,
-    const utils::HashSet<Transition> &valid_trs) {
-    bool valid_transition = false;
-    int abstract_state_id = get_abstract_state_id(state);
-    int next_abstract_state_id = get_abstract_state_id(next_state);
-    int h_value = shortest_paths.get_goal_distance(abstract_state_id);
-
-    for (const Transition &tr : valid_trs) {
-        if (tr.op_id != op_id.get_index()) {
-            continue;
-        }
-
-        if (tr.target_id != next_abstract_state_id) {
-            const AbstractState *deviated_abstact_state =
-                &abstraction.get_state(tr.target_id);
-
-            Flaw flaw(move(State(state)),
-                      deviated_abstact_state->regress(
-                          task_proxy.get_operators()[op_id]),
-                      FlawReason::PATH_DEVIATION,
-                      abstract_state_id,
-                      h_value);
-            add_to_flaw_map(flaw);
-        } else {
-            valid_transition = true;
+            // Applicability flaw
+            if (find(applicable_ops.begin(), applicable_ops.end(),
+                     op_id) == applicable_ops.end()) {
+                int h_value = get_h_value(abstract_state_id);
+                auto cartesian_set =
+                    get_cartesian_set(task_proxy.get_operators()
+                                      [tr.op_id].get_preconditions());
+                return utils::make_unique_ptr<Flaw>(move(State(state)),
+                                                    cartesian_set,
+                                                    FlawReason::NOT_APPLICABLE,
+                                                    abstract_state_id,
+                                                    h_value);
+            }
+            OperatorProxy op = task_proxy.get_operators()[op_id];
+            State succ_state = state_registry->get_successor_state(state, op);
+            int successor_ab_id = get_abstract_state_id(succ_state);
+            if (tr.target_id != successor_ab_id) {
+                const AbstractState *deviated_abstact_state =
+                    &abstraction.get_state(tr.target_id);
+                int h_value = get_h_value(abstract_state_id);
+                auto cartesian_set = deviated_abstact_state->regress(
+                    task_proxy.get_operators()[op_id]);
+                return utils::make_unique_ptr<Flaw>(move(State(state)),
+                                                    cartesian_set,
+                                                    FlawReason::PATH_DEVIATION,
+                                                    abstract_state_id,
+                                                    h_value);
+            }
         }
     }
-    return valid_transition;
-}
-
-void FlawSearch::add_to_flaw_map(const Flaw &flaw) {
-    if (flaw_map.count(flaw.h_value) == 0) {
-        flaw_map[flaw.h_value][flaw.abstract_state_id] = deque<Flaw>();
-    } else {
-        if (flaw_map[flaw.h_value].count(flaw.abstract_state_id) == 0) {
-            flaw_map[flaw.h_value][flaw.abstract_state_id] = deque<Flaw>();
-        }
-    }
-    assert(find(flaw_map[flaw.h_value][flaw.abstract_state_id].begin(),
-                flaw_map[flaw.h_value][flaw.abstract_state_id].end(),
-                flaw) == flaw_map[flaw.h_value][flaw.abstract_state_id].end());
-
-    // Hack to sort by flaw reason. Probably not the best to insert in front
-    // Maybe use deque or necessary at all?
-    if (flaw.flaw_reason == FlawReason::NOT_APPLICABLE) {
-        flaw_map[flaw.h_value][flaw.abstract_state_id].push_front(flaw);
-    } else {
-        flaw_map[flaw.h_value][flaw.abstract_state_id].push_back(flaw);
-    }
-    ++num_overall_found_flaws;
+    utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
+    return nullptr;
 }
 
 CartesianSet FlawSearch::get_cartesian_set(const ConditionsProxy &conditions) const {
@@ -322,7 +347,7 @@ CartesianSet FlawSearch::get_cartesian_set(const ConditionsProxy &conditions) co
 }
 
 unique_ptr<Flaw>
-FlawSearch::search_for_flaws(const pair<int, int> &/*new_state_ids*/) {
+FlawSearch::search_for_flaws(const pair<int, int> & /*new_state_ids*/) {
     timer.resume();
     initialize();
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
@@ -332,27 +357,28 @@ FlawSearch::search_for_flaws(const pair<int, int> &/*new_state_ids*/) {
     }
 
     if (debug) {
-        utils::g_log << "FLAWS:" << endl;
-        for (auto const &triple : flaw_map) {
-            for (auto const &pair : triple.second) {
-                utils::g_log << "h=" << triple.first << ": "
-                             << vector<Flaw>(pair.second.begin(),
-                                pair.second.end()) << endl;
-                //utils::g_log << "ID:" << pair.first << " (h="
-                //             << triple.first << "): " << pair.second.size()
-                //             << " flaws" << endl;
-            }
-        }
+        cout << endl;
         utils::g_log << "Expanded "
                      << num_overall_expanded_concrete_states - cur_expanded_states
                      << " states!" << endl;
+        utils::g_log << "Flawed States: " << endl;
+        if (search_status == FAILED) {
+            for (auto const &pair : flawed_states) {
+                for (const State &s : pair.second) {
+                    utils::g_log << "<" << pair.first << "," << s.get_id()
+                                 << ">: " << *create_flaw(s, pair.first)
+                                 << endl;
+                }
+            }
+        }
     }
-
 
     if (search_status == FAILED) {
         ++num_overall_refined_flaws;
-        Flaw flaw = flaw_map.begin()->second.begin()->second.back();
-        return utils::make_unique_ptr<Flaw>(flaw);
+        int flaw_abstract_state_id = flawed_states.begin()->first;
+        const State &flaw_concrete_state =
+            *flawed_states.begin()->second.begin();
+        return create_flaw(flaw_concrete_state, flaw_abstract_state_id);
     }
     return nullptr;
 }
@@ -360,12 +386,16 @@ FlawSearch::search_for_flaws(const pair<int, int> &/*new_state_ids*/) {
 void FlawSearch::print_statistics() const {
     utils::g_log << endl;
     utils::g_log << "#Flaw searches: " << num_searches << endl;
-    utils::g_log << "#Expanded concrete states: " << num_overall_expanded_concrete_states << endl;
+    utils::g_log << "#Expanded concrete states: "
+                 << num_overall_expanded_concrete_states << endl;
     utils::g_log << "Flaw search time: " << timer << endl;
-    utils::g_log << "Avg flaws found: " << num_overall_found_flaws / (float)num_searches << endl;
-    utils::g_log << "Avg flaws refined: " << num_overall_refined_flaws / (float)num_searches << endl;
-    utils::g_log << "Avg expanded concrete states: " << num_overall_expanded_concrete_states / (float)num_searches << endl;
-    utils::g_log << "Avg Flaw search time: " << timer() / (float)num_searches << endl;
+    utils::g_log << "Avg flaws refined: "
+                 << num_overall_refined_flaws / (float)num_searches << endl;
+    utils::g_log << "Avg expanded concrete states: "
+                 << num_overall_expanded_concrete_states / (float)num_searches
+                 << endl;
+    utils::g_log << "Avg Flaw search time: "
+                 << timer() / (float)num_searches << endl;
     utils::g_log << endl;
 }
 }
