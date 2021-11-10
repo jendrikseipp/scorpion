@@ -322,7 +322,7 @@ CartesianSet FlawSearch::get_cartesian_set(const ConditionsProxy &conditions) co
 }
 
 unique_ptr<Flaw>
-FlawSearch::search_for_flaws() {
+FlawSearch::search_for_flaws(const pair<int, int> &/*new_state_ids*/) {
     timer.resume();
     initialize();
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
@@ -350,9 +350,8 @@ FlawSearch::search_for_flaws() {
 
 
     if (search_status == FAILED) {
-        // This is an ugly conversion we want to avoid!
         ++num_overall_refined_flaws;
-        Flaw flaw = flaw_map.rbegin()->second.begin()->second.front();
+        Flaw flaw = flaw_map.begin()->second.begin()->second.back();
         return utils::make_unique_ptr<Flaw>(flaw);
     }
     return nullptr;

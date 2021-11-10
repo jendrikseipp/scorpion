@@ -94,7 +94,7 @@ public:
 
     void get_flaws(std::map<int, std::vector<Flaw>> &flaw_map);
 
-    std::unique_ptr<Flaw> search_for_flaws();
+    std::unique_ptr<Flaw> search_for_flaws(const std::pair<int,int>& new_state_ids);
 
     void print_statistics() const;
 };
