@@ -371,8 +371,7 @@ FlawSearch::search_for_flaws() {
     return search_status;
 }
 
-std::unique_ptr<Flaw> FlawSearch::get_flaw(
-    const std::pair<int, int> &new_state_ids) {
+unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
     if (debug && new_state_ids.first != -1) {
         utils::g_log << "New abstract states: <" << new_state_ids.first << ",h="
                      << get_h_value(new_state_ids.first)
