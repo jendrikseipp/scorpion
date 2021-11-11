@@ -1,6 +1,7 @@
 #ifndef CEGAR_REFINEMENT_HIERARCHY_H
 #define CEGAR_REFINEMENT_HIERARCHY_H
 
+#include "abstraction.h"
 #include "types.h"
 
 #include <cassert>
@@ -48,6 +49,7 @@ public:
         int left_state_id, int right_state_id);
 
     int get_abstract_state_id(const State &state) const;
+    friend int Abstraction::get_abstract_state_id(const State &state) const;
 };
 
 
