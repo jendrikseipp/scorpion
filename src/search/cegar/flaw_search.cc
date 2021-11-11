@@ -293,7 +293,7 @@ void FlawSearch::prune_operators(
     }
 }
 
-std::unique_ptr<Flaw>
+unique_ptr<Flaw>
 FlawSearch::create_flaw(const State &state, int abstract_state_id) {
     assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
     vector<OperatorID> applicable_ops;
