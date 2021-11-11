@@ -82,8 +82,6 @@ protected:
     std::unique_ptr<Flaw>
     create_flaw(const State &state, int abstract_state_id);
 
-    void add_to_flaw_map(const Flaw &flaw);
-
     CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
 
 public:
@@ -93,9 +91,9 @@ public:
                const ShortestPaths &shortest_paths,
                bool debug);
 
-    void get_flaws(std::map<int, std::vector<Flaw>> &flaw_map);
+    SearchStatus search_for_flaws();
 
-    std::unique_ptr<Flaw> search_for_flaws(const std::pair<int, int> &new_state_ids);
+    std::unique_ptr<Flaw> get_flaw(const std::pair<int, int> &new_state_ids);
 
     void print_statistics() const;
 };

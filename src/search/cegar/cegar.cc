@@ -212,7 +212,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                              dot_graph_verbosity);
         }
 
-        unique_ptr<Flaw> flaw = flaw_search->search_for_flaws(new_state_ids);
+        unique_ptr<Flaw> flaw = flaw_search->get_flaw(new_state_ids);
 
         find_flaw_timer.stop();
 
