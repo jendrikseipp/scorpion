@@ -218,6 +218,11 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
 
         find_flaw_timer.stop();
 
+        if (!flaw) {
+            cout << endl;
+            utils::g_log << "Found concrete solution." << endl;
+        }
+
         if (!utils::extra_memory_padding_is_reserved() || !flaw) {
             break;
         }

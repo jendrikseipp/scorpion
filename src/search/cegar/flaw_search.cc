@@ -132,9 +132,9 @@ SearchStatus FlawSearch::step() {
     if (task_properties::is_goal_state(task_proxy, s)) {
         Plan plan;
         search_space->trace_path(s, plan);
-        PlanManager plan_mgr;
-        cout << "FOUND CONCRETE SOLUTION: " << endl;
-        plan_mgr.save_plan(plan, task_proxy, true);
+        //PlanManager plan_mgr;
+        //cout << "FOUND CONCRETE SOLUTION: " << endl;
+        //plan_mgr.save_plan(plan, task_proxy, true);
         return SOLVED;
     }
 
