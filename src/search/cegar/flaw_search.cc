@@ -4,51 +4,30 @@
 #include "abstract_state.h"
 #include "transition_system.h"
 #include "shortest_paths.h"
+
+#include "../option_parser.h"
+#include "../plugin.h"
+
 #include "../evaluators/g_evaluator.h"
 #include "../open_lists/best_first_open_list.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
+#include "../utils/rng.h"
 
 #include <iterator>
 #include <optional.hh>
 
 using namespace std;
 
-
 namespace cegar {
-FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
-                       const vector<int> &domain_sizes,
-                       const Abstraction &abstraction,
-                       const ShortestPaths &shortest_paths,
-                       bool debug) :
-    task_proxy(*task),
-    open_list(nullptr),
-    state_registry(utils::make_unique_ptr<StateRegistry>(task_proxy)),
-    search_space(nullptr),
-    statistics(nullptr),
-    domain_sizes(domain_sizes),
-    abstraction(abstraction),
-    shortest_paths(shortest_paths),
-    successor_generator(
-        successor_generator::g_successor_generators[task_proxy]),
-    g_bound(0),
-    f_bound(0),
-    debug(debug),
-    min_flaw_h(INF),
-    num_searches(0),
-    num_overall_refined_flaws(0),
-    num_overall_expanded_concrete_states(0) {
-    shared_ptr<Evaluator> g_evaluator = make_shared<g_evaluator::GEvaluator>();
-    Options options;
-    options.set("eval", g_evaluator);
-    options.set("pref_only", false);
-
-    open_list =
-        make_shared<standard_scalar_open_list::BestFirstOpenListFactory>
-            (options)->create_state_open_list();
-    timer.stop();
-    timer.reset();
+CartesianSet FlawSearch::get_cartesian_set(const ConditionsProxy &conditions) const {
+    CartesianSet cartesian_set(domain_sizes);
+    for (FactProxy condition : conditions) {
+        cartesian_set.set_single_value(condition.get_variable().get_id(),
+                                       condition.get_value());
+    }
+    return cartesian_set;
 }
 
 int FlawSearch::get_abstract_state_id(const State &state) const {
@@ -84,7 +63,7 @@ const vector<Transition> &FlawSearch::get_transitions(
 }
 
 void FlawSearch::add_flaw(const State &state) {
-    if (min_flaw_h > get_h_value(state)) {
+    if (pick != PickFlaw::RANDOM_SINGLE && min_flaw_h > get_h_value(state)) {
         flawed_states.clear();
     }
     if (min_flaw_h >= get_h_value(state)) {
@@ -99,7 +78,6 @@ void FlawSearch::add_flaw(const State &state) {
 
 void FlawSearch::initialize() {
     ++num_searches;
-    g_bound = 0;
     f_bound = get_h_value(abstraction.get_initial_state().get_id());
     min_flaw_h = INF;
     open_list->clear();
@@ -149,7 +127,6 @@ SearchStatus FlawSearch::step() {
         statistics->inc_expanded();
         break;
     }
-    g_bound = max(g_bound, node->get_real_g());
 
     const State &s = node->get_state();
     if (task_properties::is_goal_state(task_proxy, s)) {
@@ -254,7 +231,6 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
-
 void FlawSearch::generate_abstraction_operators(
     const State &state,
     utils::HashSet<OperatorID> &abstraction_ops,
@@ -334,17 +310,7 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
     return nullptr;
 }
 
-CartesianSet FlawSearch::get_cartesian_set(const ConditionsProxy &conditions) const {
-    CartesianSet cartesian_set(domain_sizes);
-    for (FactProxy condition : conditions) {
-        cartesian_set.set_single_value(condition.get_variable().get_id(),
-                                       condition.get_value());
-    }
-    return cartesian_set;
-}
-
-SearchStatus
-FlawSearch::search_for_flaws() {
+SearchStatus FlawSearch::search_for_flaws() {
     initialize();
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
@@ -371,6 +337,121 @@ FlawSearch::search_for_flaws() {
     return search_status;
 }
 
+unique_ptr<Flaw> FlawSearch::get_random_single_flaw() {
+    auto search_status = search_for_flaws();
+
+    if (search_status == FAILED) {
+        assert(!flawed_states.empty());
+
+        ++num_overall_refined_flaws;
+
+        int rng_abstract_state_id =
+            next(flawed_states.begin(), rng(flawed_states.size()))->first;
+        auto rng_state =
+            *next(flawed_states.at(
+                      rng_abstract_state_id).begin(),
+                  rng(flawed_states.at(rng_abstract_state_id).size()));
+
+        auto flaw = create_flaw(rng_state, rng_abstract_state_id);
+        return flaw;
+    }
+    assert(search_status == SOLVED);
+    return nullptr;
+}
+
+unique_ptr<Flaw> FlawSearch::get_min_h_single_flaw() {
+    auto search_status = search_for_flaws();
+
+    if (search_status == FAILED) {
+        assert(!flawed_states.empty());
+
+        ++num_overall_refined_flaws;
+        auto flaw = create_flaw(
+            *flawed_states.begin()->second.begin(),
+            flawed_states.begin()->first);
+        return flaw;
+    }
+    assert(search_status == SOLVED);
+    return nullptr;
+}
+
+unique_ptr<Flaw>
+FlawSearch::get_min_h_batch_flaw(const pair<int, int> &new_state_ids) {
+    // Handle flaws of refined abstract state
+    if (new_state_ids.first != -1) {
+        auto flaws_to_handle = flawed_states.begin();
+        flawed_states.erase(flawed_states.begin());
+        for (const State &s : flaws_to_handle->second) {
+            if (task_properties::is_goal_state(task_proxy, s)) {
+                return nullptr;
+            }
+            if (get_h_value(s) == min_flaw_h) {
+                // TODO: we probably do not need to call the
+                // refinement hierarchy
+                add_flaw(s);
+            }
+        }
+    }
+
+    auto search_status = SearchStatus::FAILED;
+    if (flawed_states.empty()) {
+        search_status = search_for_flaws();
+    }
+
+    // Flaws to refine are present
+    if (search_status == FAILED) {
+        assert(!flawed_states.empty());
+
+        ++num_overall_refined_flaws;
+        auto flaw = create_flaw(
+            *flawed_states.begin()->second.begin(),
+            flawed_states.begin()->first);
+        // Remove flawed concrete state from list
+        flawed_states.begin()->second.erase(flawed_states.begin()->second.begin());
+        return flaw;
+    }
+
+    assert(search_status == SOLVED);
+    return nullptr;
+}
+
+FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
+                       const vector<int> &domain_sizes,
+                       const Abstraction &abstraction,
+                       const ShortestPaths &shortest_paths,
+                       utils::RandomNumberGenerator &rng,
+                       PickFlaw pick,
+                       bool debug) :
+    task_proxy(*task),
+    domain_sizes(domain_sizes),
+    abstraction(abstraction),
+    shortest_paths(shortest_paths),
+    rng(rng),
+    pick(pick),
+    debug(debug),
+    f_bound(0),
+    open_list(nullptr),
+    state_registry(utils::make_unique_ptr<StateRegistry>(task_proxy)),
+    search_space(nullptr),
+    statistics(nullptr),
+    successor_generator(
+        successor_generator::g_successor_generators[task_proxy]),
+    min_flaw_h(INF),
+    num_searches(0),
+    num_overall_refined_flaws(0),
+    num_overall_expanded_concrete_states(0) {
+    shared_ptr<Evaluator> g_evaluator = make_shared<g_evaluator::GEvaluator>();
+    Options options;
+    options.set("eval", g_evaluator);
+    options.set("pref_only", false);
+
+    open_list =
+        make_shared<standard_scalar_open_list::BestFirstOpenListFactory>
+            (options)->create_state_open_list();
+    timer.stop();
+    timer.reset();
+}
+
 unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
     if (debug && new_state_ids.first != -1) {
         utils::g_log << "New abstract states: <" << new_state_ids.first << ",h="
@@ -385,45 +466,27 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
     assert(new_state_ids.second == -1
            || get_h_value(new_state_ids.second) >= min_flaw_h);
 
-    // Fast reuse of flaws
-    bool fast = true;
-
     timer.resume();
-    if (fast && new_state_ids.first != -1 && new_state_ids.second != -1) {
-        auto to_process = flawed_states.begin();
-        flawed_states.erase(flawed_states.begin());
-        for (const State &s : to_process->second) {
-            if (task_properties::is_goal_state(task_proxy, s)) {
-                return nullptr;
-            }
-            if (get_h_value(s) == min_flaw_h) {
-                // TODO: we probably do not need to call the
-                // refinement hierarchy
-                add_flaw(s);
-            }
-        }
+    unique_ptr<Flaw> flaw = nullptr;
+
+    switch (pick) {
+    case PickFlaw::RANDOM_SINGLE:
+        flaw = get_random_single_flaw();
+        break;
+    case PickFlaw::MIN_H_SINGLE:
+        flaw = get_min_h_single_flaw();
+        break;
+    case PickFlaw::MIN_H_BATCH:
+        flaw = get_min_h_batch_flaw(new_state_ids);
+        break;
+    default:
+        utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick)
+                     << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 
-    // New search if necessary
-    auto search_status = SearchStatus::FAILED;
-    if (!fast || flawed_states.empty()) {
-        search_status = search_for_flaws();
-    }
-
-    // Flaws to refine are present
-    if (search_status == FAILED) {
-        assert(!flawed_states.empty());
-
-        ++num_overall_refined_flaws;
-        auto flaw = create_flaw(
-            *flawed_states.begin()->second.begin(),
-            flawed_states.begin()->first);
-        flawed_states.begin()->second.erase(flawed_states.begin()->second.begin());
-        return flaw;
-    }
-
-    assert(search_status == SOLVED);
-    return nullptr;
+    timer.stop();
+    return flaw;
 }
 
 void FlawSearch::print_statistics() const {

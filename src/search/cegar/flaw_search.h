@@ -12,6 +12,10 @@
 #include <map>
 #include <queue>
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace successor_generator {
 class SuccessorGenerator;
 }
@@ -22,33 +26,45 @@ class ShortestPaths;
 class AbstractState;
 struct Split;
 
+enum class PickFlaw {
+    RANDOM_SINGLE,
+    MIN_H_SINGLE,
+    MAX_H_SINGLE,
+    MIN_H_BATCH
+};
+
 class FlawSearch {
     const TaskProxy task_proxy;
-    // sorted by goal distance!
+    const std::vector<int> &domain_sizes;
+    const Abstraction &abstraction;
+    const ShortestPaths &shortest_paths;
+    utils::RandomNumberGenerator &rng;
+    PickFlaw pick;
+    bool debug;
+
+    // Search data
+    int f_bound;
     std::unique_ptr<StateOpenList> open_list;
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
     std::unique_ptr<SearchStatistics> statistics;
-    const std::vector<int> &domain_sizes;
-    const Abstraction &abstraction;
-    const ShortestPaths &shortest_paths;
     const successor_generator::SuccessorGenerator &successor_generator;
+    mutable std::unordered_map<int, int> concrete_state_to_abstract_state;
 
-    int g_bound;
-    int f_bound;
-    bool debug;
-
+    // Flaw data
     int min_flaw_h;
     utils::HashMap<int, utils::HashSet<State>> flawed_states;
 
+    // Statistics
     size_t num_searches;
     size_t num_overall_refined_flaws;
     size_t num_overall_expanded_concrete_states;
     utils::Timer timer;
 
-    mutable std::unordered_map<int, int> concrete_state_to_abstract_state;
 
 protected:
+    CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
+
     int get_abstract_state_id(const State &state) const;
 
     int get_h_value(int abstract_state_id) const;
@@ -79,19 +95,26 @@ protected:
         utils::HashSet<Transition> &valid_trs,
         utils::HashSet<Transition> &invalid_trs) const;
 
+    SearchStatus search_for_flaws();
+
     std::unique_ptr<Flaw>
     create_flaw(const State &state, int abstract_state_id);
 
-    CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
+    std::unique_ptr<Flaw> get_random_single_flaw();
+
+    std::unique_ptr<Flaw> get_min_h_single_flaw();
+
+    std::unique_ptr<Flaw>
+    get_min_h_batch_flaw(const std::pair<int, int> &new_state_ids);
 
 public:
     FlawSearch(const std::shared_ptr<AbstractTask> &task,
                const std::vector<int> &domain_sizes,
                const Abstraction &abstraction,
                const ShortestPaths &shortest_paths,
+               utils::RandomNumberGenerator &rng,
+               PickFlaw pick,
                bool debug);
-
-    SearchStatus search_for_flaws();
 
     std::unique_ptr<Flaw> get_flaw(const std::pair<int, int> &new_state_ids);
 

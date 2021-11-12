@@ -31,7 +31,8 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
-        opts.get<PickSplit>("pick"),
+        opts.get<PickSplit>("pick_split"),
+        opts.get<PickFlaw>("pick_flaw"),
         opts.get<SearchStrategy>("search_strategy"),
         opts.get<int>("memory_padding"),
         *rng,
@@ -124,16 +125,29 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "maximum time in seconds for building abstractions",
         "infinity",
         Bounds("0.0", "infinity"));
-    vector<string> pick_strategies;
-    pick_strategies.push_back("RANDOM");
-    pick_strategies.push_back("MIN_UNWANTED");
-    pick_strategies.push_back("MAX_UNWANTED");
-    pick_strategies.push_back("MIN_REFINED");
-    pick_strategies.push_back("MAX_REFINED");
-    pick_strategies.push_back("MIN_HADD");
-    pick_strategies.push_back("MAX_HADD");
+    vector<string> pick_split_strategies;
+    pick_split_strategies.push_back("RANDOM");
+    pick_split_strategies.push_back("MIN_UNWANTED");
+    pick_split_strategies.push_back("MAX_UNWANTED");
+    pick_split_strategies.push_back("MIN_REFINED");
+    pick_split_strategies.push_back("MAX_REFINED");
+    pick_split_strategies.push_back("MIN_HADD");
+    pick_split_strategies.push_back("MAX_HADD");
     parser.add_enum_option<PickSplit>(
-        "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
+        "pick_split",
+        pick_split_strategies,
+        "split-selection strategy",
+        "MAX_REFINED");
+    vector<string> pick_flaw_strategies;
+    pick_flaw_strategies.push_back("RANDOM_SINGLE");
+    pick_flaw_strategies.push_back("MIN_H_SINGLE");
+    pick_flaw_strategies.push_back("MAX_H_SINGLE");
+    pick_flaw_strategies.push_back("MIN_H_BATCH");
+    parser.add_enum_option<PickFlaw>(
+        "pick_flaw",
+        pick_flaw_strategies,
+        "flaw-selection strategy",
+        "MIN_H_BATCH");
     add_search_strategy_option(parser);
     add_memory_padding_option(parser);
     parser.add_option<bool>(
