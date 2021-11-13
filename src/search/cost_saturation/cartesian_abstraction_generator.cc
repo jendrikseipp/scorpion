@@ -38,12 +38,18 @@ public:
 };
 
 
-static vector<bool> get_looping_operators(const cegar::TransitionSystem &ts) {
+static vector<bool> get_looping_operators(
+    const cegar::TransitionSystem &ts, const vector<int> &h_values) {
+    assert(ts.get_loops().size() == h_values.size());
+    int num_states = h_values.size();
     int num_operators = ts.get_num_operators();
     vector<bool> operator_induces_self_loop(num_operators, false);
-    for (const auto &loops : ts.get_loops()) {
-        for (int op_id : loops) {
-            operator_induces_self_loop[op_id] = true;
+    for (int state = 0; state < num_states; ++state) {
+        // Ignore self-loops at unsolvable states.
+        if (h_values[state] != INF) {
+            for (int op_id : ts.get_loops()[state]) {
+                operator_induces_self_loop[op_id] = true;
+            }
         }
     }
     return operator_induces_self_loop;
@@ -78,7 +84,7 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
         backward_graph[target].shrink_to_fit();
     }
 
-    vector<bool> looping_operators = get_looping_operators(ts);
+    vector<bool> looping_operators = get_looping_operators(ts, h_values);
     vector<int> goal_states(
         cartesian_abstraction.get_goals().begin(),
         cartesian_abstraction.get_goals().end());
