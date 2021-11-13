@@ -37,7 +37,7 @@ protected:
 public:
     MaxCostPartitioningHeuristic(
         const options::Options &opts,
-        Abstractions abstractions,
+        Abstractions &&abstractions,
         std::vector<CostPartitioningHeuristic> &&cp_heuristics,
         std::unique_ptr<DeadEnds> &&dead_ends);
     virtual ~MaxCostPartitioningHeuristic() override;
