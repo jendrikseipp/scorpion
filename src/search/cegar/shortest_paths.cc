@@ -116,32 +116,11 @@ void ShortestPaths::update_incrementally(
         cout << "Shortest paths: " << shortest_path << endl;
     }
 
-#ifndef NDEBUG
-    Transition old_arc = shortest_path[v];
-    bool v1_settled = any_of(out[v1].begin(), out[v1].end(),
-                             [&old_arc](const Transition &t) {
-                                 return t == old_arc;
-                             });
-    bool v2_settled = any_of(out[v2].begin(), out[v2].end(),
-                             [&old_arc](const Transition &t) {
-                                 return t == old_arc;
-                             });
-    assert(v1_settled ^ v2_settled); // Otherwise, there would be no progress.
-    assert(v2_settled); // Implementation detail which we use below.
-#endif
-
-    // Copy distance from split state. Distance for v1 will be updated if necessary.
+    // Copy distance from split state. Distances will be updated if necessary.
     goal_distances[v1] = goal_distances[v2] = goal_distances[v];
 
-    /* Due to the way we select splits, the old shortest path from v1 is
-       invalid now, but the path from v2 is still valid. We don't explicitly
-       invalidate shortest_path[v1] since v and v1 are the same ID. */
-    shortest_path[v2] = shortest_path[v];
-
-    /* Update shortest path tree (SPT) transitions to split state. The SPT
-       transition to v1 will be updated again if v1 is dirty. We therefore
-       prefer reconnecting states to v2 instead of v1, which is why we test v2
-       after v1. */
+    /* Update shortest path tree (SPT) transitions to v. The SPT transitions
+       will be updated again if v1 or v2 are dirty. */
     for (int state : {v1, v2}) {
         for (const Transition &incoming : in[state]) {
             int u = incoming.target_id;
@@ -170,9 +149,18 @@ void ShortestPaths::update_incrementally(
     assert(candidate_queue.empty());
     assert(!count(dirty_candidate.begin(), dirty_candidate.end(), true));
 
+    /*
+      If we split a state that's an ancestor of the initial state in the SPT,
+      we know that exactly one of v1 or v2 is still settled. This allows us to
+      push only one of them into the candidate queue. With splits that don't
+      consider the SPT, we cannot make this optimization anymore and need to
+      add both states to the candidate queue.
+    */
     dirty_candidate.resize(num_states, false);
     dirty_candidate[v1] = true;
+    dirty_candidate[v2] = true;
     candidate_queue.push(goal_distances[v1], v1);
+    candidate_queue.push(goal_distances[v2], v2);
 
     while (!candidate_queue.empty()) {
         int state = candidate_queue.pop().second;
