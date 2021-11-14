@@ -48,6 +48,10 @@ public:
         int left_state_id, int right_state_id);
 
     int get_abstract_state_id(const State &state) const;
+
+    int get_num_nodes() const {
+        return nodes.size();
+    }
 };
 
 

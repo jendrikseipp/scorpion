@@ -133,5 +133,7 @@ void Abstraction::print_statistics() const {
     utils::g_log << "States: " << get_num_states() << endl;
     utils::g_log << "Goal states: " << goals.size() << endl;
     transition_system->print_statistics();
+    utils::g_log << "Nodes in refinement hierarchy: "
+                 << refinement_hierarchy->get_num_nodes() << endl;
 }
 }
