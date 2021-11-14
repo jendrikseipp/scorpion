@@ -84,18 +84,18 @@ pair<int, int> Abstraction::refine(
     int v1_id = v_id;
     int v2_id = get_num_states();
 
+    pair<CartesianSet, CartesianSet> cartesian_sets =
+        state.split_domain(var, wanted);
+
     // Ensure that the initial state always has state ID 0.
-    if (v_id == init_id &&
-        count(wanted.begin(), wanted.end(), concrete_initial_state[var].get_value())) {
+    if (v1_id == init_id &&
+        cartesian_sets.second.test(var, concrete_initial_state[var].get_value())) {
         swap(v1_id, v2_id);
     }
 
     // Update refinement hierarchy.
     pair<NodeID, NodeID> node_ids = refinement_hierarchy->split(
         state.get_node_id(), var, wanted, v1_id, v2_id);
-
-    pair<CartesianSet, CartesianSet> cartesian_sets =
-        state.split_domain(var, wanted);
 
     unique_ptr<AbstractState> v1 = utils::make_unique_ptr<AbstractState>(
         v1_id, node_ids.first, move(cartesian_sets.first));
