@@ -39,6 +39,17 @@ int CartesianSet::count(int var) const {
     return domain_subsets[var].count();
 }
 
+std::vector<int> CartesianSet::get_values(int var) const {
+    vector<int> values;
+    int domain_size = domain_subsets[var].size();
+    for (int value = 0; value < domain_size; ++value) {
+        if (test(var, value)) {
+            values.push_back(value);
+        }
+    }
+    return values;
+}
+
 bool CartesianSet::intersects(const CartesianSet &other, int var) const {
     return domain_subsets[var].intersects(other.domain_subsets[var]);
 }
