@@ -11,12 +11,10 @@ using namespace std;
 namespace cegar {
 Flaw::Flaw(State &&concrete_state,
            CartesianSet &&desired_cartesian_set,
-           FlawReason flaw_reason,
            int abstract_state_id,
            int h_value)
     : concrete_state(move(concrete_state)),
       desired_cartesian_set(move(desired_cartesian_set)),
-      flaw_reason(flaw_reason),
       abstract_state_id(abstract_state_id),
       h_value(h_value) {
 }
