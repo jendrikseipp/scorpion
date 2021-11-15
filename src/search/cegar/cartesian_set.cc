@@ -39,7 +39,7 @@ int CartesianSet::count(int var) const {
     return domain_subsets[var].count();
 }
 
-std::vector<int> CartesianSet::get_values(int var) const {
+vector<int> CartesianSet::get_values(int var) const {
     vector<int> values;
     int domain_size = domain_subsets[var].size();
     for (int value = 0; value < domain_size; ++value) {
