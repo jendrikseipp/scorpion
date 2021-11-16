@@ -44,7 +44,6 @@ class FlawSearch {
     bool debug;
 
     // Search data
-    int f_bound;
     std::unique_ptr<StateOpenList> open_list;
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
@@ -82,19 +81,6 @@ protected:
     void initialize();
 
     SearchStatus step();
-
-    void generate_abstraction_operators(
-        const State &state,
-        utils::HashSet<OperatorID> &abstraction_ops,
-        utils::HashSet<Transition> &abstraction_trs) const;
-
-    void prune_operators(
-        const std::vector<OperatorID> &applicable_ops,
-        const utils::HashSet<OperatorID> &abstraction_ops,
-        const utils::HashSet<Transition> &abstraction_trs,
-        utils::HashSet<OperatorID> &valid_ops,
-        utils::HashSet<Transition> &valid_trs,
-        utils::HashSet<Transition> &invalid_trs) const;
 
     SearchStatus search_for_flaws();
 

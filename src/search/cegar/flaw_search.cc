@@ -71,10 +71,6 @@ void FlawSearch::add_flaw(const State &state) {
         }
         if (best_flaw_h >= get_h_value(state)) {
             best_flaw_h = get_h_value(state);
-            if (flawed_states.count(get_abstract_state_id(state)) == 0) {
-                flawed_states[get_abstract_state_id(state)] =
-                    utils::HashSet<State>();
-            }
             flawed_states[get_abstract_state_id(state)].insert(state);
         }
     } else if (pick == PickFlaw::MAX_H_SINGLE) {
@@ -83,25 +79,16 @@ void FlawSearch::add_flaw(const State &state) {
         }
         if (best_flaw_h <= get_h_value(state)) {
             best_flaw_h = get_h_value(state);
-            if (flawed_states.count(get_abstract_state_id(state)) == 0) {
-                flawed_states[get_abstract_state_id(state)] =
-                    utils::HashSet<State>();
-            }
             flawed_states[get_abstract_state_id(state)].insert(state);
         }
     } else {
         // RANDOM SINGLE
-        if (flawed_states.count(get_abstract_state_id(state)) == 0) {
-            flawed_states[get_abstract_state_id(state)] =
-                utils::HashSet<State>();
-        }
         flawed_states[get_abstract_state_id(state)].insert(state);
     }
 }
 
 void FlawSearch::initialize() {
     ++num_searches;
-    f_bound = get_h_value(abstraction.get_initial_state().get_id());
     best_flaw_h = pick == PickFlaw::MAX_H_SINGLE ? -INF : INF;
     open_list->clear();
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
@@ -127,32 +114,23 @@ void FlawSearch::initialize() {
 SearchStatus FlawSearch::step() {
     tl::optional<SearchNode> node;
     // Get non close node. Do we need this loop?
-    while (true) {
-        if (open_list->empty()) {
-            /// Completely explored state space
-            return FAILED;
-        }
-        StateID id = open_list->remove_min();
-        State s = state_registry->lookup_state(id);
-        node.emplace(search_space->get_node(s));
-
-        if (node->is_closed()) {
-            continue;
-        }
-
-        if (node->get_real_g() + get_h_value(s) > f_bound) {
-            continue;
-        }
-
-        EvaluationContext eval_context(s, node->get_g(), false, statistics.get());
-        node->close();
-        assert(!node->is_dead_end());
-        ++num_overall_expanded_concrete_states;
-        statistics->inc_expanded();
-        break;
+    if (open_list->empty()) {
+        /// Completely explored state space
+        return FAILED;
     }
+    StateID id = open_list->remove_min();
+    State s = state_registry->lookup_state(id);
+    node.emplace(search_space->get_node(s));
 
-    const State &s = node->get_state();
+    assert(!node->is_closed());
+    assert(node->get_real_g() + get_h_value(s)
+           <= get_h_value(abstraction.get_initial_state().get_id()));
+
+    node->close();
+    assert(!node->is_dead_end());
+    ++num_overall_expanded_concrete_states;
+    statistics->inc_expanded();
+
     if (task_properties::is_goal_state(task_proxy, s)) {
         Plan plan;
         search_space->trace_path(s, plan);
@@ -165,132 +143,57 @@ SearchStatus FlawSearch::step() {
     vector<OperatorID> applicable_ops;
     successor_generator.generate_applicable_ops(s, applicable_ops);
 
-    // Transition and operators that are outgoing of the current concrete state
-    // and stay in the same f-layer
-    utils::HashSet<OperatorID> abstraction_ops;
-    utils::HashSet<Transition> abstraction_trs;
-    generate_abstraction_operators(s, abstraction_ops, abstraction_trs);
+    // Check for each tr if the op is applicable or if there is a deviation
+    for (const Transition &tr : get_transitions(get_abstract_state_id(s))) {
+        // same f-layer
+        if (is_f_optimal_transition(get_abstract_state_id(s), tr)) {
+            OperatorID op_id(tr.op_id);
 
-    // Transitions and operators which are (in)applicable
-    utils::HashSet<Transition> valid_trs;
-    utils::HashSet<Transition> invalid_trs;
-    utils::HashSet<OperatorID> valid_ops;
-    prune_operators(applicable_ops, abstraction_ops, abstraction_trs,
-                    valid_ops, valid_trs, invalid_trs);
-
-    if (debug && false) {
-        utils::g_log << "STATE " << get_abstract_state_id(s) << ":" << endl;
-        utils::g_log << "All trs: "
-                     << vector<Transition>(abstraction_trs.begin(),
-                              abstraction_trs.end()) << endl;
-        utils::g_log << "Applicable trs: "
-                     << vector<Transition>(valid_trs.begin(),
-                              valid_trs.end()) << endl;
-        utils::g_log << "Inapplicable trs: "
-                     << vector<Transition>(invalid_trs.begin(),
-                              invalid_trs.end()) << endl;
-    }
-
-    if (!invalid_trs.empty()) {
-        add_flaw(s);
-    }
-
-    // Lookup table from op_ids to successor states in abstraction
-    utils::HashMap<int, utils::HashSet<int>> abstract_successor_states;
-    for (const Transition &tr : valid_trs) {
-        if (abstract_successor_states.count(tr.op_id) == 0) {
-            abstract_successor_states[tr.op_id] = utils::HashSet<int>();
-        }
-        abstract_successor_states[tr.op_id].insert(tr.target_id);
-    }
-
-    for (const OperatorID &op_id : valid_ops) {
-        OperatorProxy op = task_proxy.get_operators()[op_id];
-        State succ_state = state_registry->get_successor_state(s, op);
-        statistics->inc_generated();
-        SearchNode succ_node = search_space->get_node(succ_state);
-
-        // check for path deviation and if a valid tr exists
-        int successor_ab_id = get_abstract_state_id(succ_state);
-        bool valid_tr = false;
-        for (int as_id : abstract_successor_states[op_id.get_index()]) {
-            if (as_id != successor_ab_id) {
+            // Applicability flaw
+            if (find(applicable_ops.begin(), applicable_ops.end(),
+                     op_id) == applicable_ops.end()) {
                 add_flaw(s);
-            } else {
-                valid_tr = true;
-            }
-        }
-
-        if (!valid_tr) {
-            continue;
-        }
-
-        // Previously encountered dead end. Don't re-evaluate.
-        if (succ_node.is_dead_end())
-            continue;
-
-        if (succ_node.is_new()) {
-            // We have not seen this state before.
-            // Evaluate and create a new node.
-
-            // Careful: succ_node.get_g() is not available here yet,
-            // hence the stupid computation of succ_g.
-            // TODO: Make this less fragile.
-            int succ_g = node->get_g() + op.get_cost();
-
-            EvaluationContext succ_eval_context(
-                succ_state, succ_g, false, statistics.get());
-            statistics->inc_evaluated_states();
-
-            if (open_list->is_dead_end(succ_eval_context)) {
-                succ_node.mark_as_dead_end();
-                statistics->inc_dead_ends();
                 continue;
             }
-            succ_node.open(*node, op, op.get_cost());
+            OperatorProxy op = task_proxy.get_operators()[op_id];
+            State succ_state = state_registry->get_successor_state(s, op);
+            int successor_ab_id = get_abstract_state_id(succ_state);
+            // Deviation flaw
+            if (tr.target_id != successor_ab_id) {
+                add_flaw(s);
+                continue;
+            }
+            // No flaw found
+            statistics->inc_generated();
+            SearchNode succ_node = search_space->get_node(succ_state);
 
-            open_list->insert(succ_eval_context, succ_state.get_id());
+            assert(!succ_node.is_dead_end());
+
+            if (succ_node.is_new()) {
+                // We have not seen this state before.
+                // Evaluate and create a new node.
+
+                // Careful: succ_node.get_g() is not available here yet,
+                // hence the stupid computation of succ_g.
+                // TODO: Make this less fragile.
+                int succ_g = node->get_g() + op.get_cost();
+
+                EvaluationContext succ_eval_context(
+                    succ_state, succ_g, false, statistics.get());
+                statistics->inc_evaluated_states();
+
+                if (open_list->is_dead_end(succ_eval_context)) {
+                    succ_node.mark_as_dead_end();
+                    statistics->inc_dead_ends();
+                    continue;
+                }
+                succ_node.open(*node, op, op.get_cost());
+
+                open_list->insert(succ_eval_context, succ_state.get_id());
+            }
         }
     }
     return IN_PROGRESS;
-}
-
-void FlawSearch::generate_abstraction_operators(
-    const State &state,
-    utils::HashSet<OperatorID> &abstraction_ops,
-    utils::HashSet<Transition> &abstraction_trs) const {
-    int abstract_state_id = get_abstract_state_id(state);
-
-    for (const Transition &tr : get_transitions(abstract_state_id)) {
-        if (is_f_optimal_transition(abstract_state_id, tr)) {
-            abstraction_ops.insert(OperatorID(tr.op_id));
-            abstraction_trs.insert(tr);
-        }
-    }
-}
-
-void FlawSearch::prune_operators(
-    const vector<OperatorID> &applicable_ops,
-    const utils::HashSet<OperatorID> &abstraction_ops,
-    const utils::HashSet<Transition> &abstraction_trs,
-    utils::HashSet<OperatorID> &valid_ops,
-    utils::HashSet<Transition> &valid_trs,
-    utils::HashSet<Transition> &invalid_trs) const {
-    // Intersection of unordered maps
-    // TODO: Maybe we should use std::set to use the std::intersection method
-    for (const OperatorID &elem : applicable_ops) {
-        if (abstraction_ops.count(elem)) {
-            valid_ops.insert(elem);
-        }
-    }
-
-    for (const Transition &tr : abstraction_trs) {
-        if (valid_ops.count(OperatorID(tr.op_id)) == 0) {
-            invalid_trs.insert(tr);
-        } else {
-            valid_trs.insert(tr);
-        }
-    }
 }
 
 unique_ptr<Flaw>
@@ -547,7 +450,6 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     rng(rng),
     pick(pick),
     debug(debug),
-    f_bound(0),
     open_list(nullptr),
     state_registry(utils::make_unique_ptr<StateRegistry>(task_proxy)),
     search_space(nullptr),
