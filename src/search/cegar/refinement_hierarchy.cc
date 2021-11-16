@@ -79,7 +79,11 @@ pair<NodeID, NodeID> RefinementHierarchy::split(
 
 int RefinementHierarchy::get_abstract_state_id(const State &state) const {
     TaskProxy subtask_proxy(*task);
-    State subtask_state = subtask_proxy.convert_ancestor_state(state);
-    return nodes[get_node_id(subtask_state)].get_state_id();
+    if (subtask_proxy.needs_to_convert_ancestor_state(state)) {
+        State subtask_state = subtask_proxy.convert_ancestor_state(state);
+        return nodes[get_node_id(subtask_state)].get_state_id();
+    } else {
+        return nodes[get_node_id(state)].get_state_id();
+    }
 }
 }
