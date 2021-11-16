@@ -52,6 +52,7 @@ class FlawSearch {
     mutable std::unordered_map<int, int> concrete_state_to_abstract_state;
 
     // Flaw data
+    int last_refined_abstract_state_id;
     int best_flaw_h;
     utils::HashMap<int, utils::HashSet<State>> flawed_states;
 

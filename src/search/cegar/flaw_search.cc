@@ -89,6 +89,7 @@ void FlawSearch::add_flaw(const State &state) {
 
 void FlawSearch::initialize() {
     ++num_searches;
+    last_refined_abstract_state_id = -1;
     best_flaw_h = pick == PickFlaw::MAX_H_SINGLE ? -INF : INF;
     open_list->clear();
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
@@ -112,22 +113,20 @@ void FlawSearch::initialize() {
 }
 
 SearchStatus FlawSearch::step() {
-    tl::optional<SearchNode> node;
-    // Get non close node. Do we need this loop?
     if (open_list->empty()) {
         /// Completely explored state space
         return FAILED;
     }
     StateID id = open_list->remove_min();
     State s = state_registry->lookup_state(id);
-    node.emplace(search_space->get_node(s));
+    SearchNode node = search_space->get_node(s);
 
-    assert(!node->is_closed());
-    assert(node->get_real_g() + get_h_value(s)
+    assert(!node.is_closed());
+    assert(node.get_real_g() + get_h_value(s)
            <= get_h_value(abstraction.get_initial_state().get_id()));
 
-    node->close();
-    assert(!node->is_dead_end());
+    node.close();
+    assert(!node.is_dead_end());
     ++num_overall_expanded_concrete_states;
     statistics->inc_expanded();
 
@@ -176,18 +175,13 @@ SearchStatus FlawSearch::step() {
                 // Careful: succ_node.get_g() is not available here yet,
                 // hence the stupid computation of succ_g.
                 // TODO: Make this less fragile.
-                int succ_g = node->get_g() + op.get_cost();
+                int succ_g = node.get_g() + op.get_cost();
 
                 EvaluationContext succ_eval_context(
                     succ_state, succ_g, false, statistics.get());
                 statistics->inc_evaluated_states();
 
-                if (open_list->is_dead_end(succ_eval_context)) {
-                    succ_node.mark_as_dead_end();
-                    statistics->inc_dead_ends();
-                    continue;
-                }
-                succ_node.open(*node, op, op.get_cost());
+                succ_node.open(node, op, op.get_cost());
 
                 open_list->insert(succ_eval_context, succ_state.get_id());
             }
@@ -211,7 +205,7 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
                      op_id) == applicable_ops.end()) {
                 int h_value = get_h_value(abstract_state_id);
                 return utils::make_unique_ptr<Flaw>(
-                    move(State(state)),
+                    State(state),
                     get_cartesian_set(task_proxy.get_operators()
                                       [tr.op_id].get_preconditions()),
                     abstract_state_id, h_value);
@@ -224,12 +218,14 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
                     &abstraction.get_state(tr.target_id);
                 int h_value = get_h_value(abstract_state_id);
                 return utils::make_unique_ptr<Flaw>(
-                    move(State(state)),
+                    State(state),
                     deviated_abstact_state->regress(
                         task_proxy.get_operators()[op_id]),
                     abstract_state_id,
                     h_value);
             }
+            // For each f-optimal transition we should find a flaw
+            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
     }
     utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
@@ -256,7 +252,7 @@ void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
                          op_id) == applicable_ops.end()) {
                     int h_value = get_h_value(abstract_state_id);
                     flaws.emplace_back(
-                        move(State(state)),
+                        State(state),
                         get_cartesian_set(task_proxy.get_operators()
                                           [tr.op_id].get_preconditions()),
                         abstract_state_id, h_value);
@@ -270,11 +266,14 @@ void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
                             &abstraction.get_state(tr.target_id);
                         int h_value = get_h_value(abstract_state_id);
                         flaws.emplace_back(
-                            move(State(state)),
+                            State(state),
                             deviated_abstact_state->regress(
                                 task_proxy.get_operators()[op_id]),
                             abstract_state_id,
                             h_value);
+                    } else {
+                        // For each f-optimal transition we should find a flaw
+                        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
                     }
                 }
             }
@@ -394,9 +393,10 @@ unique_ptr<Flaw> FlawSearch::get_min_h_batch_max_cover_flaw(
     const pair<int, int> &new_state_ids) {
     // Handle flaws of refined abstract state
     if (new_state_ids.first != -1) {
-        auto flaws_to_handle = flawed_states.begin();
-        flawed_states.erase(flawed_states.begin());
-        for (const State &s : flaws_to_handle->second) {
+        utils::HashSet<State> states_to_handle =
+            flawed_states[last_refined_abstract_state_id];
+        flawed_states.erase(last_refined_abstract_state_id);
+        for (const State &s : states_to_handle) {
             if (task_properties::is_goal_state(task_proxy, s)) {
                 return nullptr;
             }
@@ -428,7 +428,7 @@ unique_ptr<Flaw> FlawSearch::get_min_h_batch_max_cover_flaw(
             *flawed_states.begin()->second.begin(),
             flawed_states.begin()->first);
         // Remove flawed concrete state from list
-        flawed_states.begin()->second.erase(flawed_states.begin()->second.begin());
+        flawed_states[flaw->abstract_state_id].erase(flaw->concrete_state);
         return flaw;
     }
 
@@ -456,6 +456,7 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     statistics(nullptr),
     successor_generator(
         successor_generator::g_successor_generators[task_proxy]),
+    last_refined_abstract_state_id(-1),
     best_flaw_h(pick == PickFlaw::MAX_H_SINGLE ? -INF : INF),
     num_searches(0),
     num_overall_refined_flaws(0),
@@ -511,6 +512,9 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 
+    if (flaw != nullptr) {
+        last_refined_abstract_state_id = flaw->abstract_state_id;
+    }
     timer.stop();
     return flaw;
 }
