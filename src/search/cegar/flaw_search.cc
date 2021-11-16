@@ -104,10 +104,11 @@ void FlawSearch::initialize() {
     f_bound = get_h_value(abstraction.get_initial_state().get_id());
     best_flaw_h = pick == PickFlaw::MAX_H_SINGLE ? -INF : INF;
     open_list->clear();
+    state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
     statistics = utils::make_unique_ptr<SearchStatistics>(utils::Verbosity::SILENT);
 
-    // concrete_state_to_abstract_state.clear();
+    concrete_state_to_abstract_state.clear();
     flawed_states.clear();
 
     State initial_state = state_registry->get_initial_state();
@@ -295,12 +296,12 @@ void FlawSearch::prune_operators(
 unique_ptr<Flaw>
 FlawSearch::create_flaw(const State &state, int abstract_state_id) {
     assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
+    vector<OperatorID> applicable_ops;
+    successor_generator.generate_applicable_ops(state, applicable_ops);
     for (const Transition &tr : get_transitions(abstract_state_id)) {
         // same f-layer
         if (is_f_optimal_transition(abstract_state_id, tr)) {
             OperatorID op_id(tr.op_id);
-            vector<OperatorID> applicable_ops;
-            successor_generator.generate_applicable_ops(state, applicable_ops);
 
             // Applicability flaw
             if (find(applicable_ops.begin(), applicable_ops.end(),
@@ -337,15 +338,15 @@ void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
                                   int abstract_state_id,
                                   vector<Flaw> &flaws) {
     assert(flaws.empty());
-    for (const Transition &tr : get_transitions(abstract_state_id)) {
-        for (const State &state : states) {
+    for (const State &state : states) {
+        vector<OperatorID> applicable_ops;
+        successor_generator.generate_applicable_ops(state,
+                                                    applicable_ops);
+        for (const Transition &tr : get_transitions(abstract_state_id)) {
             assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
             // same f-layer
             if (is_f_optimal_transition(abstract_state_id, tr)) {
                 OperatorID op_id(tr.op_id);
-                vector<OperatorID> applicable_ops;
-                successor_generator.generate_applicable_ops(state,
-                                                            applicable_ops);
 
                 // Applicability flaw
                 if (find(applicable_ops.begin(), applicable_ops.end(),
@@ -607,19 +608,6 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
                      << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
-
-    // Remove entries
-    if (flaw != nullptr) {
-        for (auto it = concrete_state_to_abstract_state.begin();
-             it != concrete_state_to_abstract_state.end();) {
-            if (it->second == flaw->abstract_state_id) {
-                concrete_state_to_abstract_state.erase(it++);
-            } else {
-                ++it;
-            }
-        }
-    }
-
 
     timer.stop();
     return flaw;
