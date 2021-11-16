@@ -88,4 +88,9 @@ void DomainAbstractedTask::convert_state_values_from_parent(
         values[var] = new_value;
     }
 }
+
+bool DomainAbstractedTask::does_convert_ancestor_state_values(
+    const AbstractTask *) const {
+    return true;
+}
 }

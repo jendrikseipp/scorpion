@@ -108,4 +108,12 @@ void DelegatingTask::convert_ancestor_state_values(
     parent->convert_ancestor_state_values(values, ancestor_task);
     convert_state_values_from_parent(values);
 }
+
+bool DelegatingTask::does_convert_ancestor_state_values(
+    const AbstractTask *ancestor_task) const {
+    if (this == ancestor_task) {
+        return false;
+    }
+    return parent->does_convert_ancestor_state_values(ancestor_task);
+}
 }

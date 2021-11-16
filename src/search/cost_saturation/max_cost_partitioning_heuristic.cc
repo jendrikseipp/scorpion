@@ -97,6 +97,7 @@ MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {
 }
 
 int MaxCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
+    assert(!task_proxy.needs_to_convert_ancestor_state(ancestor_state));
     State state = convert_ancestor_state(ancestor_state);
     if (dead_ends && dead_ends->subsumes(state)) {
         return DEAD_END;

@@ -105,6 +105,8 @@ public:
     virtual void convert_ancestor_state_values(
         std::vector<int> &values,
         const AbstractTask *ancestor_task) const = 0;
+    virtual bool does_convert_ancestor_state_values(
+        const AbstractTask *ancestor_task) const = 0;
 };
 
 #endif

@@ -724,6 +724,11 @@ public:
         return create_state(std::move(state_values));
     }
 
+    bool needs_to_convert_ancestor_state(const State &ancestor_state) const {
+        TaskProxy ancestor_task_proxy = ancestor_state.get_task();
+        return task->does_convert_ancestor_state_values(ancestor_task_proxy.task);
+    }
+
     const causal_graph::CausalGraph &get_causal_graph() const;
 };
 
