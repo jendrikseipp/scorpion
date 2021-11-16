@@ -57,9 +57,10 @@ NodeID RefinementHierarchy::add_node(int state_id) {
 }
 
 NodeID RefinementHierarchy::get_node_id(const State &state) const {
+    const vector<int> &values = state.get_unpacked_values();
     NodeID id = 0;
     while (nodes[id].is_split()) {
-        id = nodes[id].get_child(state[nodes[id].get_var()].get_value());
+        id = nodes[id].get_child(values[nodes[id].get_var()]);
     }
     return id;
 }
