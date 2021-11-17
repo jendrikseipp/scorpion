@@ -65,13 +65,11 @@ class Node {
     NodeID left_child;
     NodeID right_child;
 
-    /* Before splitting the corresponding state for var and value, both
-       members hold UNDEFINED. */
+    // This is the split variable for inner nodes and UNDEFINED for leaf nodes.
     int var;
-    int value;
 
-    // When splitting the corresponding state, we change this value to UNDEFINED.
-    int state_id;
+    // This is the split value for inner nodes and the state ID for leaf nodes.
+    int value;
 
     bool information_is_valid() const;
 
@@ -96,7 +94,7 @@ public:
 
     int get_state_id() const {
         assert(!is_split());
-        return state_id;
+        return value;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Node &node);
