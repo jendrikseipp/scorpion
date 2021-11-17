@@ -224,8 +224,8 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
                     abstract_state_id,
                     h_value);
             }
-            // For each f-optimal transition we should find a flaw
-            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
+            assert(pick == PickFlaw::MAX_H_SINGLE
+                   || pick == PickFlaw::RANDOM_H_SINGLE);
         }
     }
     utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
@@ -237,6 +237,8 @@ void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
                                   int abstract_state_id,
                                   vector<Flaw> &flaws) {
     assert(flaws.empty());
+    assert(pick == PickFlaw::MIN_H_BATCH
+           || pick == PickFlaw::MIN_H_BATCH_MAX_COVER);
     for (const State &state : states) {
         vector<OperatorID> applicable_ops;
         successor_generator.generate_applicable_ops(state,
@@ -280,8 +282,6 @@ void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
         }
     }
     assert(!flaws.empty());
-    // The same flaw can occur multiple time induced by different transitions/ops
-    //assert(set<Flaw>(flaws.begin(), flaws.end()).size() == flaws.size());
 }
 
 SearchStatus FlawSearch::search_for_flaws() {
@@ -327,6 +327,7 @@ unique_ptr<Flaw> FlawSearch::get_random_single_flaw() {
                   rng(flawed_states.at(rng_abstract_state_id).size()));
 
         auto flaw = create_flaw(rng_state, rng_abstract_state_id);
+        best_flaw_h = flaw->h_value;
         return flaw;
     }
     assert(search_status == SOLVED);
@@ -491,7 +492,7 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
     unique_ptr<Flaw> flaw = nullptr;
 
     switch (pick) {
-    case PickFlaw::RANDOM_SINGLE:
+    case PickFlaw::RANDOM_H_SINGLE:
         flaw = get_random_single_flaw();
         break;
     case PickFlaw::MIN_H_SINGLE:

@@ -27,7 +27,7 @@ class AbstractState;
 struct Split;
 
 enum class PickFlaw {
-    RANDOM_SINGLE,
+    RANDOM_H_SINGLE,
     MIN_H_SINGLE,
     MAX_H_SINGLE,
     MIN_H_BATCH,
