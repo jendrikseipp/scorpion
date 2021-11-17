@@ -141,7 +141,7 @@ void SplitSelector::get_possible_splits(
     assert(!splits.empty());
 }
 
-std::unique_ptr<Split> SplitSelector::pick_split(
+unique_ptr<Split> SplitSelector::pick_split(
     const State &concrete_state,
     const AbstractState &abstract_state,
     const CartesianSet &desired_cartesian_set,
