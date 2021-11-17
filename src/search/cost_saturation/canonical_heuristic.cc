@@ -77,6 +77,7 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
 
 int CanonicalHeuristic::compute_heuristic(const State &state) {
     assert(!task_proxy.needs_to_convert_ancestor_state(state));
+    state.unpack();
     vector<int> h_values_for_state;
     h_values_for_state.reserve(abstraction_functions.size());
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {

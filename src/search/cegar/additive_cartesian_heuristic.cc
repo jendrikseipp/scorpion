@@ -48,6 +48,7 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
 
 int AdditiveCartesianHeuristic::compute_heuristic(const State &state) {
     assert(!task_proxy.needs_to_convert_ancestor_state(state));
+    state.unpack();
     int sum_h = 0;
     for (const CartesianHeuristicFunction &function : heuristic_functions) {
         int value = function.get_value(state);
