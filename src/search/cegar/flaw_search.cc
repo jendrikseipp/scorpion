@@ -4,6 +4,7 @@
 #include "abstract_state.h"
 #include "transition_system.h"
 #include "shortest_paths.h"
+#include "split_selector.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -63,9 +64,9 @@ const vector<Transition> &FlawSearch::get_transitions(
 }
 
 void FlawSearch::add_flaw(const State &state) {
-    if (pick == PickFlaw::MIN_H_SINGLE
-        || pick == PickFlaw::MIN_H_BATCH
-        || pick == PickFlaw::MIN_H_BATCH_MAX_COVER) {
+    if (pick_flaw == PickFlaw::MIN_H_SINGLE
+        || pick_flaw == PickFlaw::MIN_H_BATCH
+        || pick_flaw == PickFlaw::MIN_H_BATCH_MAX_COVER) {
         if (best_flaw_h > get_h_value(state)) {
             flawed_states.clear();
         }
@@ -73,7 +74,7 @@ void FlawSearch::add_flaw(const State &state) {
             best_flaw_h = get_h_value(state);
             flawed_states[get_abstract_state_id(state)].insert(state);
         }
-    } else if (pick == PickFlaw::MAX_H_SINGLE) {
+    } else if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
         if (best_flaw_h < get_h_value(state)) {
             flawed_states.clear();
         }
@@ -90,7 +91,7 @@ void FlawSearch::add_flaw(const State &state) {
 void FlawSearch::initialize() {
     ++num_searches;
     last_refined_abstract_state_id = -1;
-    best_flaw_h = pick == PickFlaw::MAX_H_SINGLE ? -INF : INF;
+    best_flaw_h = pick_flaw == PickFlaw::MAX_H_SINGLE ? -INF : INF;
     open_list->clear();
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
@@ -203,29 +204,36 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
             // Applicability flaw
             if (find(applicable_ops.begin(), applicable_ops.end(),
                      op_id) == applicable_ops.end()) {
-                int h_value = get_h_value(abstract_state_id);
+                const AbstractState &abstract_state =
+                    abstraction.get_state(abstract_state_id);
+                unique_ptr<Split> split =
+                    split_selector.pick_split(
+                        state, abstract_state,
+                        get_cartesian_set(task_proxy.get_operators()
+                                          [tr.op_id].get_preconditions()),
+                        rng);
                 return utils::make_unique_ptr<Flaw>(
-                    State(state),
-                    get_cartesian_set(task_proxy.get_operators()
-                                      [tr.op_id].get_preconditions()),
-                    abstract_state_id, h_value);
+                    State(state), abstract_state_id, move(*split));
             }
             OperatorProxy op = task_proxy.get_operators()[op_id];
             State succ_state = state_registry->get_successor_state(state, op);
-            int successor_ab_id = get_abstract_state_id(succ_state);
-            if (tr.target_id != successor_ab_id) {
+
+            if (tr.target_id != get_abstract_state_id(succ_state)) {
+                const AbstractState &abstract_state =
+                    abstraction.get_state(abstract_state_id);
                 const AbstractState *deviated_abstact_state =
                     &abstraction.get_state(tr.target_id);
-                int h_value = get_h_value(abstract_state_id);
-                return utils::make_unique_ptr<Flaw>(
-                    State(state),
+                unique_ptr<Split> split = split_selector.pick_split(
+                    state, abstract_state,
                     deviated_abstact_state->regress(
                         task_proxy.get_operators()[op_id]),
-                    abstract_state_id,
-                    h_value);
+                    rng);
+                return utils::make_unique_ptr<Flaw>(State(state),
+                                                    abstract_state_id,
+                                                    move(*split));
             }
-            assert(pick == PickFlaw::MAX_H_SINGLE
-                   || pick == PickFlaw::RANDOM_H_SINGLE);
+            assert(pick_flaw == PickFlaw::MAX_H_SINGLE
+                   || pick_flaw == PickFlaw::RANDOM_H_SINGLE);
         }
     }
     utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
@@ -237,8 +245,8 @@ void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
                                   int abstract_state_id,
                                   vector<Flaw> &flaws) {
     assert(flaws.empty());
-    assert(pick == PickFlaw::MIN_H_BATCH
-           || pick == PickFlaw::MIN_H_BATCH_MAX_COVER);
+    assert(pick_flaw == PickFlaw::MIN_H_BATCH
+           || pick_flaw == PickFlaw::MIN_H_BATCH_MAX_COVER);
     for (const State &state : states) {
         vector<OperatorID> applicable_ops;
         successor_generator.generate_applicable_ops(state,
@@ -252,31 +260,34 @@ void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
                 // Applicability flaw
                 if (find(applicable_ops.begin(), applicable_ops.end(),
                          op_id) == applicable_ops.end()) {
-                    int h_value = get_h_value(abstract_state_id);
+                    const AbstractState &abstract_state =
+                        abstraction.get_state(abstract_state_id);
+                    unique_ptr<Split> split =
+                        split_selector.pick_split(
+                            state, abstract_state,
+                            get_cartesian_set(task_proxy.get_operators()
+                                              [tr.op_id].get_preconditions()),
+                            rng);
                     flaws.emplace_back(
-                        State(state),
-                        get_cartesian_set(task_proxy.get_operators()
-                                          [tr.op_id].get_preconditions()),
-                        abstract_state_id, h_value);
+                        State(state), abstract_state_id, move(*split));
                 } else {
                     // Deviation Flaw
                     OperatorProxy op = task_proxy.get_operators()[op_id];
                     State succ_state = state_registry->get_successor_state(state, op);
-                    int successor_ab_id = get_abstract_state_id(succ_state);
-                    if (tr.target_id != successor_ab_id) {
-                        const AbstractState *deviated_abstact_state =
-                            &abstraction.get_state(tr.target_id);
-                        int h_value = get_h_value(abstract_state_id);
-                        flaws.emplace_back(
-                            State(state),
-                            deviated_abstact_state->regress(
-                                task_proxy.get_operators()[op_id]),
-                            abstract_state_id,
-                            h_value);
-                    } else {
-                        // For each f-optimal transition we should find a flaw
-                        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
-                    }
+
+                    assert(tr.target_id != get_abstract_state_id(succ_state));
+                    const AbstractState &abstract_state =
+                        abstraction.get_state(abstract_state_id);
+                    const AbstractState *deviated_abstact_state =
+                        &abstraction.get_state(tr.target_id);
+                    unique_ptr<Split> split = split_selector.pick_split(
+                        state, abstract_state,
+                        deviated_abstact_state->regress(
+                            task_proxy.get_operators()[op_id]),
+                        rng);
+                    flaws.emplace_back(State(state),
+                                       abstract_state_id,
+                                       move(*split));
                 }
             }
         }
@@ -327,7 +338,7 @@ unique_ptr<Flaw> FlawSearch::get_random_single_flaw() {
                   rng(flawed_states.at(rng_abstract_state_id).size()));
 
         auto flaw = create_flaw(rng_state, rng_abstract_state_id);
-        best_flaw_h = flaw->h_value;
+        best_flaw_h = get_h_value(flaw->abstract_state_id);
         return flaw;
     }
     assert(search_status == SOLVED);
@@ -442,14 +453,16 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
                        const Abstraction &abstraction,
                        const ShortestPaths &shortest_paths,
                        utils::RandomNumberGenerator &rng,
-                       PickFlaw pick,
+                       PickFlaw pick_flaw,
+                       PickSplit pick_split,
                        bool debug) :
     task_proxy(*task),
     domain_sizes(domain_sizes),
     abstraction(abstraction),
     shortest_paths(shortest_paths),
+    split_selector(task, pick_split),
     rng(rng),
-    pick(pick),
+    pick_flaw(pick_flaw),
     debug(debug),
     open_list(nullptr),
     state_registry(utils::make_unique_ptr<StateRegistry>(task_proxy)),
@@ -458,7 +471,7 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     successor_generator(
         successor_generator::g_successor_generators[task_proxy]),
     last_refined_abstract_state_id(-1),
-    best_flaw_h(pick == PickFlaw::MAX_H_SINGLE ? -INF : INF),
+    best_flaw_h(pick_flaw == PickFlaw::MAX_H_SINGLE ? -INF : INF),
     num_searches(0),
     num_overall_refined_flaws(0),
     num_overall_expanded_concrete_states(0) {
@@ -491,7 +504,7 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
     timer.resume();
     unique_ptr<Flaw> flaw = nullptr;
 
-    switch (pick) {
+    switch (pick_flaw) {
     case PickFlaw::RANDOM_H_SINGLE:
         flaw = get_random_single_flaw();
         break;
@@ -508,7 +521,7 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
         flaw = get_min_h_batch_max_cover_flaw(new_state_ids);
         break;
     default:
-        utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick)
+        utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick_flaw)
                      << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }

@@ -1,6 +1,9 @@
 #ifndef CEGAR_SPLIT_SELECTOR_H
 #define CEGAR_SPLIT_SELECTOR_H
 
+#include "abstraction.h"
+#include "cartesian_set.h"
+
 #include "../task_proxy.h"
 
 #include <memory>
@@ -39,6 +42,10 @@ struct Split {
     Split(int var_id, std::vector<int> &&values)
         : var_id(var_id), values(move(values)) {
     }
+
+    bool operator==(const Split &other) const {
+        return var_id == other.var_id && values == other.values;
+    }
 };
 
 
@@ -60,14 +67,25 @@ class SplitSelector {
 
     double rate_split(const AbstractState &state, const Split &split) const;
 
-public:
-    SplitSelector(const std::shared_ptr<AbstractTask> &task, PickSplit pick);
-    ~SplitSelector();
-
-    const Split &pick_split(
-        const AbstractState &state,
+    std::unique_ptr<Split> pick_split(
+        const AbstractState &abstract_state,
         const std::vector<Split> &splits,
         utils::RandomNumberGenerator &rng) const;
+
+public:
+    SplitSelector(const std::shared_ptr<AbstractTask> &task,
+                  PickSplit pick);
+    ~SplitSelector();
+
+    void get_possible_splits(const State &concrete_state,
+                             const AbstractState &abstract_state,
+                             const CartesianSet &desired_cartesian_set,
+                             std::vector<Split> &splits) const;
+
+    std::unique_ptr<Split> pick_split(const State &concrete_state,
+                                      const AbstractState &abstract_state,
+                                      const CartesianSet &desired_cartesian_set,
+                                      utils::RandomNumberGenerator &rng) const;
 };
 }
 

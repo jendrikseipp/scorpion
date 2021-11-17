@@ -5,6 +5,7 @@
 
 #include "../heuristics/additive_heuristic.h"
 
+#include "../utils/memory.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
 
@@ -108,29 +109,66 @@ double SplitSelector::rate_split(const AbstractState &state, const Split &split)
     return rating;
 }
 
-const Split &SplitSelector::pick_split(const AbstractState &state,
-                                       const vector<Split> &splits,
-                                       utils::RandomNumberGenerator &rng) const {
+void SplitSelector::get_possible_splits(
+    const State &concrete_state,
+    const AbstractState &abstract_state,
+    const CartesianSet &desired_cartesian_set,
+    vector<Split> &splits) const {
+    assert(splits.empty());
+    /*
+      For each fact in the concrete state that is not contained in the
+      desired abstract state, loop over all values in the domain of the
+      corresponding variable. The values that are in both the current and
+      the desired abstract state are the "wanted" ones, i.e., the ones that
+      we want to split off.
+    */
+    for (FactProxy wanted_fact_proxy : concrete_state) {
+        FactPair fact = wanted_fact_proxy.get_pair();
+        if (!desired_cartesian_set.test(fact.var, fact.value)) {
+            VariableProxy var = wanted_fact_proxy.get_variable();
+            int var_id = var.get_id();
+            vector<int> wanted;
+            for (int value = 0; value < var.get_domain_size(); ++value) {
+                if (abstract_state.contains(var_id, value) &&
+                    desired_cartesian_set.test(var_id, value)) {
+                    wanted.push_back(value);
+                }
+            }
+            assert(!wanted.empty());
+            splits.emplace_back(var_id, move(wanted));
+        }
+    }
+    assert(!splits.empty());
+}
+
+std::unique_ptr<Split> SplitSelector::pick_split(
+    const State &concrete_state,
+    const AbstractState &abstract_state,
+    const CartesianSet &desired_cartesian_set,
+    utils::RandomNumberGenerator &rng) const {
+    vector<Split> splits;
+    get_possible_splits(concrete_state, abstract_state,
+                        desired_cartesian_set, splits);
     assert(!splits.empty());
 
     if (splits.size() == 1) {
-        return splits[0];
+        return utils::make_unique_ptr<Split>(splits[0]);
     }
 
     if (pick == PickSplit::RANDOM) {
-        return *rng.choose(splits);
+        return utils::make_unique_ptr<Split>(*rng.choose(splits));
     }
 
     double max_rating = numeric_limits<double>::lowest();
     const Split *selected_split = nullptr;
     for (const Split &split : splits) {
-        double rating = rate_split(state, split);
+        double rating = rate_split(abstract_state, split);
         if (rating > max_rating) {
             selected_split = &split;
             max_rating = rating;
         }
     }
     assert(selected_split);
-    return *selected_split;
+    return utils::make_unique_ptr<Split>(*selected_split);
 }
 }

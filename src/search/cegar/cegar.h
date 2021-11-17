@@ -34,7 +34,6 @@ class CEGAR {
     const std::vector<int> domain_sizes;
     const int max_states;
     const int max_non_looping_transitions;
-    const SplitSelector split_selector;
     const SearchStrategy search_strategy;
 
     std::unique_ptr<Abstraction> abstraction;
@@ -63,7 +62,7 @@ class CEGAR {
     void separate_facts_unreachable_before_goal();
 
     // Build abstraction.
-    void refinement_loop(utils::RandomNumberGenerator &rng);
+    void refinement_loop();
 
     void print_statistics();
 

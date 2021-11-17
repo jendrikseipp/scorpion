@@ -3,6 +3,7 @@
 
 #include "flaw.h"
 #include "types.h"
+#include "split_selector.h"
 
 #include "../open_list.h"
 #include "../search_engine.h"
@@ -24,7 +25,6 @@ namespace cegar {
 class Abstraction;
 class ShortestPaths;
 class AbstractState;
-struct Split;
 
 enum class PickFlaw {
     RANDOM_H_SINGLE,
@@ -39,8 +39,9 @@ class FlawSearch {
     const std::vector<int> &domain_sizes;
     const Abstraction &abstraction;
     const ShortestPaths &shortest_paths;
+    const SplitSelector split_selector;
     utils::RandomNumberGenerator &rng;
-    PickFlaw pick;
+    PickFlaw pick_flaw;
     bool debug;
 
     // Search data
@@ -108,7 +109,8 @@ public:
                const Abstraction &abstraction,
                const ShortestPaths &shortest_paths,
                utils::RandomNumberGenerator &rng,
-               PickFlaw pick,
+               PickFlaw pick_flaw,
+               PickSplit pick_split,
                bool debug);
 
     std::unique_ptr<Flaw> get_flaw(const std::pair<int, int> &new_state_ids);

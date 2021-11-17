@@ -37,7 +37,6 @@ CEGAR::CEGAR(
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
-      split_selector(task, pick_split),
       search_strategy(search_strategy),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
@@ -53,7 +52,7 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy), false);
         flaw_search = utils::make_unique_ptr<FlawSearch>(
             task, domain_sizes, *abstraction, *shortest_paths, rng,
-            pick_flaw, debug);
+            pick_flaw, pick_split, debug);
     } else {
         ABORT("Unknown search strategy");
     }
@@ -63,7 +62,7 @@ CEGAR::CEGAR(
     utils::g_log << "Maximum number of transitions: "
                  << max_non_looping_transitions << endl;
 
-    refinement_loop(rng);
+    refinement_loop();
     utils::g_log << "Done building abstraction." << endl;
     utils::g_log << "Time for building abstraction: " << timer.get_elapsed_time() << endl;
 
@@ -125,7 +124,7 @@ bool CEGAR::may_keep_refining() const {
     return true;
 }
 
-void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
+void CEGAR::refinement_loop() {
     /*
       For landmark tasks we have to map all states in which the
       landmark might have been achieved to arbitrary abstract goal
@@ -231,9 +230,10 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         int state_id = flaw->abstract_state_id;
         const AbstractState &abstract_state = abstraction->get_state(state_id);
         assert(!abstraction->get_goals().count(state_id));
-        vector<Split> splits = flaw->get_possible_splits(*abstraction);
-        const Split &split = split_selector.pick_split(abstract_state, splits, rng);
-        new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
+
+        new_state_ids = abstraction->refine(
+            abstract_state, flaw->desired_split.var_id,
+            flaw->desired_split.values);
         refine_timer.stop();
 
         update_goal_distances_timer.resume();

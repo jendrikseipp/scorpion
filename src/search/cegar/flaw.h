@@ -2,43 +2,44 @@
 #define CEGAR_FLAW_H
 
 #include "cartesian_set.h"
-#include "../task_proxy.h"
+#include "split_selector.h"
 #include "types.h"
+
+#include "../task_proxy.h"
 
 namespace cegar {
 class Abstraction;
 class AbstractState;
-struct Split;
 
 struct Flaw {
     // Last concrete and abstract state reached while tracing solution.
     State concrete_state;
-    // Hypothetical Cartesian set we would have liked to reach.
-    CartesianSet desired_cartesian_set;
-
     int abstract_state_id;
-    int h_value; // h_value of abstract state
+    Split desired_split;
 
     Flaw(State &&concrete_state,
-         CartesianSet &&desired_cartesian_set,
-         int abstract_state_id = -1,
-         int h_value = -1);
-
-    std::vector<Split> get_possible_splits(
-        const Abstraction &abstraction) const;
+         int abstract_state_id,
+         Split&& desired_split);
 
     bool operator==(const Flaw &other) const {
         return concrete_state == other.concrete_state
                && abstract_state_id == other.abstract_state_id
-               && h_value == other.h_value
-               && desired_cartesian_set == other.desired_cartesian_set;
+               && desired_split == other.desired_split;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Flaw &f) {
-        return os << "[" << f.abstract_state_id << ","
-                  << f.concrete_state.get_id() << ","
-                  << f.desired_cartesian_set
-                  << ",h=" << f.h_value << "]";
+        std::string split_values = "[";
+        for (size_t i = 0; i < f.desired_split.values.size(); ++i)
+        {
+            if (i != 0)
+                split_values += ", ";
+            split_values += f.desired_split.values[i];
+    }
+    split_values += "]";
+    return os << "[" << f.abstract_state_id << ","
+              << f.concrete_state.get_id() << ","
+              << "<" << f.desired_split.var_id << ","
+              << split_values << ">]";
     }
 };
 }
