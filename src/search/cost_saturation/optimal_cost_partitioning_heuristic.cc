@@ -59,12 +59,12 @@ void OptimalCostPartitioningHeuristic::release_memory() {
     utils::release_vector_memory(operator_cost_variables);
 }
 
-int OptimalCostPartitioningHeuristic::compute_heuristic(const State &state) {
-    assert(!task_proxy.needs_to_convert_ancestor_state(state));
+int OptimalCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
+    State concrete_state = convert_ancestor_state(ancestor_state);
     // Set upper bound for distance of current abstract states to 0 and for all other
     // abstract states to infinity.
     for (int id = 0; id < static_cast<int>(abstraction_functions.size()); ++id) {
-        int new_state_id = abstraction_functions[id]->get_abstract_state_id(state);
+        int new_state_id = abstraction_functions[id]->get_abstract_state_id(concrete_state);
         if (new_state_id == -1 || h_values[id][new_state_id] == INF) {
             return DEAD_END;
         }
