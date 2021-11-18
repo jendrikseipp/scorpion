@@ -72,7 +72,6 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
     : task_proxy(task_proxy),
       use_add_after_delete_semantics(use_add_after_delete_semantics),
       pattern(pattern),
-      pattern_size(pattern.size()),
       relevant_preconditions(
           get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)),
       looping_operators(task_proxy.get_operators().size(), false) {
@@ -132,7 +131,7 @@ vector<int> ExplicitProjectionFactory::compute_goal_states() const {
 
 int ExplicitProjectionFactory::rank(const UnrankedState &state) const {
     int index = 0;
-    for (int i = 0; i < pattern_size; ++i) {
+    for (size_t i = 0; i < pattern.size(); ++i) {
         index += hash_multipliers[i] * state[i];
     }
     return index;
@@ -146,8 +145,8 @@ int ExplicitProjectionFactory::unrank(int rank, int pattern_index) const {
 ExplicitProjectionFactory::UnrankedState ExplicitProjectionFactory::unrank(int rank) const {
     UnrankedState values;
     values.reserve(pattern.size());
-    for (int pattern_index = 0; pattern_index < pattern_size; ++pattern_index) {
-        values.push_back(unrank(rank, pattern_index));
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        values.push_back(unrank(rank, i));
     }
     return values;
 }

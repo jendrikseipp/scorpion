@@ -15,10 +15,9 @@ struct ProjectedEffect;
 class ExplicitProjectionFactory {
     using UnrankedState = std::vector<int>;
 
-    const TaskProxy task_proxy;
+    TaskProxy task_proxy;
     const bool use_add_after_delete_semantics;
     const pdbs::Pattern pattern;
-    const int pattern_size;
     const std::vector<std::vector<FactPair>> relevant_preconditions;
     std::vector<int> variable_to_pattern_index;
     std::vector<int> domain_sizes;
