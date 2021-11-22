@@ -30,8 +30,7 @@ enum class PickFlaw {
     RANDOM_H_SINGLE,
     MIN_H_SINGLE,
     MAX_H_SINGLE,
-    MIN_H_BATCH,
-    MIN_H_BATCH_MAX_COVER,
+    MIN_H_BATCH
 };
 
 class FlawSearch {
@@ -89,9 +88,9 @@ protected:
     std::unique_ptr<Flaw>
     create_flaw(const State &state, int abstract_state_id);
 
-    void create_all_flaws(const utils::HashSet<State> &states,
-                          int abstract_state_id,
-                          std::vector<Flaw> &flaws);
+    std::unique_ptr<Flaw> create_max_cover_flaw(
+        const utils::HashSet<State> &states,
+        int abstract_state_id);
 
     std::unique_ptr<Flaw> get_random_single_flaw();
 
@@ -99,9 +98,6 @@ protected:
 
     std::unique_ptr<Flaw>
     get_min_h_batch_flaw(const std::pair<int, int> &new_state_ids);
-
-    std::unique_ptr<Flaw>
-    get_min_h_batch_max_cover_flaw(const std::pair<int, int> &new_state_ids);
 
 public:
     FlawSearch(const std::shared_ptr<AbstractTask> &task,

@@ -2,6 +2,7 @@
 
 #include "abstract_state.h"
 #include "utils.h"
+#include "flaw.h"
 
 #include "../heuristics/additive_heuristic.h"
 
@@ -79,39 +80,9 @@ int SplitSelector::get_max_hadd_value(int var_id, const vector<int> &values) con
     return max_hadd;
 }
 
-double SplitSelector::rate_split(const AbstractState &state, const Split &split) const {
-    int var_id = split.var_id;
-    const vector<int> &values = split.values;
-    double rating;
-    switch (pick) {
-    case PickSplit::MIN_UNWANTED:
-        rating = -get_num_unwanted_values(state, split);
-        break;
-    case PickSplit::MAX_UNWANTED:
-        rating = get_num_unwanted_values(state, split);
-        break;
-    case PickSplit::MIN_REFINED:
-        rating = -get_refinedness(state, var_id);
-        break;
-    case PickSplit::MAX_REFINED:
-        rating = get_refinedness(state, var_id);
-        break;
-    case PickSplit::MIN_HADD:
-        rating = -get_min_hadd_value(var_id, values);
-        break;
-    case PickSplit::MAX_HADD:
-        rating = get_max_hadd_value(var_id, values);
-        break;
-    default:
-        utils::g_log << "Invalid pick strategy: " << static_cast<int>(pick) << endl;
-        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-    }
-    return rating;
-}
-
 void SplitSelector::get_possible_splits(
-    const State &concrete_state,
     const AbstractState &abstract_state,
+    const State &concrete_state,
     const CartesianSet &desired_cartesian_set,
     vector<Split> &splits) const {
     assert(splits.empty());
@@ -141,34 +112,168 @@ void SplitSelector::get_possible_splits(
     assert(!splits.empty());
 }
 
-unique_ptr<Split> SplitSelector::pick_split(
-    const State &concrete_state,
+double SplitSelector::rate_split(const AbstractState &state, const Split &split) const {
+    int var_id = split.var_id;
+    const vector<int> &values = split.values;
+    double rating;
+    switch (pick) {
+    case PickSplit::MIN_UNWANTED:
+        rating = -get_num_unwanted_values(state, split);
+        break;
+    case PickSplit::MAX_UNWANTED:
+        rating = get_num_unwanted_values(state, split);
+        break;
+    case PickSplit::MIN_REFINED:
+        rating = -get_refinedness(state, var_id);
+        break;
+    case PickSplit::MAX_REFINED:
+        rating = get_refinedness(state, var_id);
+        break;
+    case PickSplit::MIN_HADD:
+        rating = -get_min_hadd_value(var_id, values);
+        break;
+    case PickSplit::MAX_HADD:
+        rating = get_max_hadd_value(var_id, values);
+        break;
+    case PickSplit::MAX_COVER:
+        rating = get_refinedness(state, var_id);
+        break;
+    default:
+        utils::g_log << "Invalid pick strategy: " << static_cast<int>(pick) << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
+    }
+    return rating;
+}
+
+unique_ptr<Flaw> SplitSelector::pick_split(
     const AbstractState &abstract_state,
+    const State &concrete_state,
     const CartesianSet &desired_cartesian_set,
     utils::RandomNumberGenerator &rng) const {
     vector<Split> splits;
-    get_possible_splits(concrete_state, abstract_state,
+    get_possible_splits(abstract_state, concrete_state,
                         desired_cartesian_set, splits);
     assert(!splits.empty());
 
     if (splits.size() == 1) {
-        return utils::make_unique_ptr<Split>(splits[0]);
+        return utils::make_unique_ptr<Flaw>(
+            abstract_state.get_id(), move(splits[0]));
     }
 
     if (pick == PickSplit::RANDOM) {
-        return utils::make_unique_ptr<Split>(*rng.choose(splits));
+        return utils::make_unique_ptr<Flaw>(
+            abstract_state.get_id(),
+            move(*rng.choose(splits)));
     }
 
     double max_rating = numeric_limits<double>::lowest();
-    const Split *selected_split = nullptr;
-    for (const Split &split : splits) {
+    Split *selected_split = nullptr;
+    for (Split &split : splits) {
         double rating = rate_split(abstract_state, split);
         if (rating > max_rating) {
             selected_split = &split;
             max_rating = rating;
         }
     }
+    // utils::g_log << "SELECTED: " << *selected_split << endl;
     assert(selected_split);
-    return utils::make_unique_ptr<Split>(*selected_split);
+    return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(*selected_split));
+}
+
+std::unique_ptr<Flaw> SplitSelector::pick_split(
+    const AbstractState &abstract_state,
+    const vector<State> &concrete_states,
+    const vector<CartesianSet> &desired_cartesian_sets) const {
+    assert(pick == PickSplit::MAX_COVER);
+    assert(concrete_states.size() == desired_cartesian_sets.size());
+
+    vector<int> domain_sizes = get_domain_sizes(task_proxy);
+
+    vector<vector<pair<int, set<int>>>> splits(
+        task_proxy.get_variables().size());
+    for (size_t i = 0; i < concrete_states.size(); ++i) {
+        vector<Split> cur_splits;
+        get_possible_splits(abstract_state, concrete_states.at(i),
+                            desired_cartesian_sets.at(i), cur_splits);
+
+        for (const Split &split : cur_splits) {
+            int var = split.var_id;
+            int concrete_value =
+                concrete_states.at(i)[split.var_id].get_value();
+            set<int> values;
+
+            for (int val : split.values) {
+                if (abstract_state.contains(var, val)
+                    && val != concrete_value)
+                    values.insert(val);
+            }
+
+            splits[split.var_id].emplace_back(concrete_value, values);
+        }
+    }
+
+    // Sort by size of desired cartesian sets
+    for (size_t var = 0; var < splits.size(); ++var) {
+        sort(splits[var].begin(), splits[var].end(),
+             [](const pair<int, set<int>> &a,
+                const pair<int, set<int>> &b) -> bool
+             {
+                 return a.second.size() > b.second.size();
+             });
+    }
+
+    // Compute prio for each split
+    // TODO(speckd): change to map loop_up
+    vector<vector<int>> split_prio(task_proxy.get_variables().size());
+    for (size_t var = 0; var < split_prio.size(); ++var) {
+        split_prio[var] = vector<int>(splits[var].size());
+        for (size_t i = 0; i < splits[var].size(); ++i) {
+            for (size_t j = i + 1; j < splits[var].size(); ++j) {
+                // int i_value = splits[var][i].first;
+                const set<int> &i_set = splits[var][i].second;
+                int j_value = splits[var][j].first;
+                const set<int> &j_set = splits[var][j].second;
+
+                // is subset of and value not contained
+                if (includes(i_set.begin(), i_set.end(),
+                             j_set.begin(), j_set.end())
+                    && i_set.count(j_value) == 0) {
+                    ++split_prio[var][i];
+                }
+            }
+        }
+    }
+
+    /*for (size_t var = 0; var < split_prio.size(); ++var) {
+        utils::g_log << var << ": [";
+        for (size_t i = 0; i < splits[var].size(); ++i) {
+            int value = splits[var][i].first;
+            vector<int> c_set = vector<int>(splits[var][i].second.begin(),
+                                            splits[var][i].second.end());
+            int prio = split_prio[var][i];
+            cout << "<val=" << value << "," << c_set << ",prio=" << prio << ">,";
+        }
+        utils::g_log << "]" << endl;
+    }*/
+
+
+    int best_var_id = -1;
+    int best_split_id = -1;
+    int best_prio = -1;
+    for (size_t var = 0; var < split_prio.size(); ++var) {
+        for (size_t split_id = 0; split_id < split_prio[var].size(); ++split_id)
+        {
+            if (split_prio[var][split_id] > best_prio) {
+                best_var_id = var;
+                best_split_id = split_id;
+                best_prio = split_prio[var][split_id];
+            }
+        }
+    }
+
+    Split split(best_var_id,
+                vector<int>(splits[best_var_id][best_split_id].second.begin(),
+                            splits[best_var_id][best_split_id].second.end()));
+    return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(split));
 }
 }

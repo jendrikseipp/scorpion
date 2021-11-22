@@ -65,8 +65,7 @@ const vector<Transition> &FlawSearch::get_transitions(
 
 void FlawSearch::add_flaw(const State &state) {
     if (pick_flaw == PickFlaw::MIN_H_SINGLE
-        || pick_flaw == PickFlaw::MIN_H_BATCH
-        || pick_flaw == PickFlaw::MIN_H_BATCH_MAX_COVER) {
+        || pick_flaw == PickFlaw::MIN_H_BATCH) {
         if (best_flaw_h > get_h_value(state)) {
             flawed_states.clear();
         }
@@ -206,14 +205,11 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
                      op_id) == applicable_ops.end()) {
                 const AbstractState &abstract_state =
                     abstraction.get_state(abstract_state_id);
-                unique_ptr<Split> split =
-                    split_selector.pick_split(
-                        state, abstract_state,
-                        get_cartesian_set(task_proxy.get_operators()
-                                          [tr.op_id].get_preconditions()),
-                        rng);
-                return utils::make_unique_ptr<Flaw>(
-                    State(state), abstract_state_id, move(*split));
+                return split_selector.pick_split(
+                    abstract_state, state,
+                    get_cartesian_set(task_proxy.get_operators()
+                                      [tr.op_id].get_preconditions()),
+                    rng);
             }
             OperatorProxy op = task_proxy.get_operators()[op_id];
             State succ_state = state_registry->get_successor_state(state, op);
@@ -223,14 +219,9 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
                     abstraction.get_state(abstract_state_id);
                 const AbstractState *deviated_abstact_state =
                     &abstraction.get_state(tr.target_id);
-                unique_ptr<Split> split = split_selector.pick_split(
-                    state, abstract_state,
-                    deviated_abstact_state->regress(
-                        task_proxy.get_operators()[op_id]),
-                    rng);
-                return utils::make_unique_ptr<Flaw>(State(state),
-                                                    abstract_state_id,
-                                                    move(*split));
+                return split_selector.pick_split(
+                    abstract_state, state,
+                    deviated_abstact_state->regress(op), rng);
             }
             assert(pick_flaw == PickFlaw::MAX_H_SINGLE
                    || pick_flaw == PickFlaw::RANDOM_H_SINGLE);
@@ -241,12 +232,13 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
 }
 
 // Quite similar to create_flaw. Maybe we want to refactor it at some point
-void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
-                                  int abstract_state_id,
-                                  vector<Flaw> &flaws) {
-    assert(flaws.empty());
-    assert(pick_flaw == PickFlaw::MIN_H_BATCH
-           || pick_flaw == PickFlaw::MIN_H_BATCH_MAX_COVER);
+unique_ptr<Flaw> FlawSearch::create_max_cover_flaw(
+    const utils::HashSet<State> &states, int abstract_state_id) {
+    assert(pick_flaw == PickFlaw::MIN_H_BATCH);
+
+    vector<State> flawed_states;
+    vector<CartesianSet> flawed_cartesian_sets;
+
     for (const State &state : states) {
         vector<OperatorID> applicable_ops;
         successor_generator.generate_applicable_ops(state,
@@ -260,39 +252,31 @@ void FlawSearch::create_all_flaws(const utils::HashSet<State> &states,
                 // Applicability flaw
                 if (find(applicable_ops.begin(), applicable_ops.end(),
                          op_id) == applicable_ops.end()) {
-                    const AbstractState &abstract_state =
-                        abstraction.get_state(abstract_state_id);
-                    unique_ptr<Split> split =
-                        split_selector.pick_split(
-                            state, abstract_state,
-                            get_cartesian_set(task_proxy.get_operators()
-                                              [tr.op_id].get_preconditions()),
-                            rng);
-                    flaws.emplace_back(
-                        State(state), abstract_state_id, move(*split));
+                    flawed_states.push_back(state);
+                    flawed_cartesian_sets.push_back(
+                        get_cartesian_set(task_proxy.get_operators()
+                                          [tr.op_id]
+                                          .get_preconditions()));
                 } else {
                     // Deviation Flaw
                     OperatorProxy op = task_proxy.get_operators()[op_id];
-                    State succ_state = state_registry->get_successor_state(state, op);
+                    assert(tr.target_id != get_abstract_state_id(
+                               state_registry->get_successor_state(state, op)));
 
-                    assert(tr.target_id != get_abstract_state_id(succ_state));
-                    const AbstractState &abstract_state =
-                        abstraction.get_state(abstract_state_id);
                     const AbstractState *deviated_abstact_state =
                         &abstraction.get_state(tr.target_id);
-                    unique_ptr<Split> split = split_selector.pick_split(
-                        state, abstract_state,
-                        deviated_abstact_state->regress(
-                            task_proxy.get_operators()[op_id]),
-                        rng);
-                    flaws.emplace_back(State(state),
-                                       abstract_state_id,
-                                       move(*split));
+
+                    flawed_states.push_back(state);
+                    flawed_cartesian_sets.push_back(
+                        deviated_abstact_state->regress(op));
                 }
             }
         }
     }
-    assert(!flaws.empty());
+
+    return split_selector.pick_split(
+        abstraction.get_state(abstract_state_id),
+        flawed_states, flawed_cartesian_sets);
 }
 
 SearchStatus FlawSearch::search_for_flaws() {
@@ -333,8 +317,7 @@ unique_ptr<Flaw> FlawSearch::get_random_single_flaw() {
         int rng_abstract_state_id =
             next(flawed_states.begin(), rng(flawed_states.size()))->first;
         auto rng_state =
-            *next(flawed_states.at(
-                      rng_abstract_state_id).begin(),
+            *next(flawed_states.at(rng_abstract_state_id).begin(),
                   rng(flawed_states.at(rng_abstract_state_id).size()));
 
         auto flaw = create_flaw(rng_state, rng_abstract_state_id);
@@ -365,48 +348,8 @@ unique_ptr<Flaw>
 FlawSearch::get_min_h_batch_flaw(const pair<int, int> &new_state_ids) {
     // Handle flaws of refined abstract state
     if (new_state_ids.first != -1) {
-        auto flaws_to_handle = flawed_states.begin();
-        flawed_states.erase(flawed_states.begin());
-        for (const State &s : flaws_to_handle->second) {
-            if (task_properties::is_goal_state(task_proxy, s)) {
-                return nullptr;
-            }
-            if (get_h_value(s) == best_flaw_h) {
-                // TODO: we probably do not need to call the
-                // refinement hierarchy
-                add_flaw(s);
-            }
-        }
-    }
-
-    auto search_status = SearchStatus::FAILED;
-    if (flawed_states.empty()) {
-        search_status = search_for_flaws();
-    }
-
-    // Flaws to refine are present
-    if (search_status == FAILED) {
-        assert(!flawed_states.empty());
-
-        ++num_overall_refined_flaws;
-        auto flaw = create_flaw(
-            *flawed_states.begin()->second.begin(),
-            flawed_states.begin()->first);
-        // Remove flawed concrete state from list
-        flawed_states.begin()->second.erase(flawed_states.begin()->second.begin());
-        return flaw;
-    }
-
-    assert(search_status == SOLVED);
-    return nullptr;
-}
-
-unique_ptr<Flaw> FlawSearch::get_min_h_batch_max_cover_flaw(
-    const pair<int, int> &new_state_ids) {
-    // Handle flaws of refined abstract state
-    if (new_state_ids.first != -1) {
         utils::HashSet<State> states_to_handle =
-            flawed_states[last_refined_abstract_state_id];
+            flawed_states.at(last_refined_abstract_state_id);
         flawed_states.erase(last_refined_abstract_state_id);
         for (const State &s : states_to_handle) {
             if (task_properties::is_goal_state(task_proxy, s)) {
@@ -429,18 +372,21 @@ unique_ptr<Flaw> FlawSearch::get_min_h_batch_max_cover_flaw(
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
-        for (auto const &pair : flawed_states) {
-            vector<Flaw> cur_flaws;
-            create_all_flaws(pair.second, pair.first, cur_flaws);
-            utils::g_log << "#" << pair.first << ": " << cur_flaws << endl;
+        ++num_overall_refined_flaws;
+        unique_ptr<Flaw> flaw;
+
+        int abstract_state_id = flawed_states.begin()->first;
+        const State &state = *flawed_states[abstract_state_id].begin();
+
+        if (split_selector.get_pick_split_strategy() == PickSplit::MAX_COVER) {
+            flaw = create_max_cover_flaw(flawed_states.begin()->second,
+                                         abstract_state_id);
+        } else {
+            flaw = create_flaw(state, abstract_state_id);
         }
 
-        ++num_overall_refined_flaws;
-        auto flaw = create_flaw(
-            *flawed_states.begin()->second.begin(),
-            flawed_states.begin()->first);
         // Remove flawed concrete state from list
-        flawed_states[flaw->abstract_state_id].erase(flaw->concrete_state);
+        flawed_states[abstract_state_id].erase(state);
         return flaw;
     }
 
@@ -517,9 +463,6 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
     case PickFlaw::MIN_H_BATCH:
         flaw = get_min_h_batch_flaw(new_state_ids);
         break;
-    case PickFlaw::MIN_H_BATCH_MAX_COVER:
-        flaw = get_min_h_batch_max_cover_flaw(new_state_ids);
-        break;
     default:
         utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick_flaw)
                      << endl;
@@ -528,6 +471,8 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
 
     if (flaw != nullptr) {
         last_refined_abstract_state_id = flaw->abstract_state_id;
+        concrete_state_to_abstract_state.clear();
+        // utils::g_log << "Selected flaw: " << *flaw << endl;
     }
     timer.stop();
     return flaw;

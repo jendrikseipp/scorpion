@@ -1,6 +1,7 @@
 #include "cartesian_set.h"
 
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 

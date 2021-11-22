@@ -19,6 +19,7 @@ class RandomNumberGenerator;
 
 namespace cegar {
 class AbstractState;
+class Flaw;
 
 // Strategies for selecting a split in case there are multiple possibilities.
 enum class PickSplit {
@@ -31,7 +32,9 @@ enum class PickSplit {
     MAX_REFINED,
     // Compare the h^add(s_0) values of the facts.
     MIN_HADD,
-    MAX_HADD
+    MAX_HADD,
+    // Max Cover rating multiple different concrete states
+    MAX_COVER
 };
 
 
@@ -45,6 +48,17 @@ struct Split {
 
     bool operator==(const Split &other) const {
         return var_id == other.var_id && values == other.values;
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, const Split &s) {
+        std::string split_values = "{";
+        for (size_t i = 0; i < s.values.size(); ++i) {
+            if (i != 0)
+                split_values += ", ";
+            split_values += std::to_string(s.values[i]);
+        }
+        split_values += "}";
+        return os << "<" << s.var_id << "," << split_values << ">";
     }
 };
 
@@ -65,27 +79,31 @@ class SplitSelector {
     int get_min_hadd_value(int var_id, const std::vector<int> &values) const;
     int get_max_hadd_value(int var_id, const std::vector<int> &values) const;
 
-    double rate_split(const AbstractState &state, const Split &split) const;
+    void get_possible_splits(const AbstractState &abstract_state,
+                             const State &concrete_state,
+                             const CartesianSet &desired_cartesian_set,
+                             std::vector<Split> &splits) const;
 
-    std::unique_ptr<Split> pick_split(
-        const AbstractState &abstract_state,
-        const std::vector<Split> &splits,
-        utils::RandomNumberGenerator &rng) const;
+    double rate_split(const AbstractState &state, const Split &split) const;
 
 public:
     SplitSelector(const std::shared_ptr<AbstractTask> &task,
                   PickSplit pick);
     ~SplitSelector();
 
-    void get_possible_splits(const State &concrete_state,
-                             const AbstractState &abstract_state,
-                             const CartesianSet &desired_cartesian_set,
-                             std::vector<Split> &splits) const;
+    PickSplit get_pick_split_strategy() const {
+        return pick;
+    }
 
-    std::unique_ptr<Split> pick_split(const State &concrete_state,
-                                      const AbstractState &abstract_state,
-                                      const CartesianSet &desired_cartesian_set,
-                                      utils::RandomNumberGenerator &rng) const;
+    std::unique_ptr<Flaw> pick_split(const AbstractState &abstract_state,
+                                     const State &concrete_state,
+                                     const CartesianSet &desired_cartesian_set,
+                                     utils::RandomNumberGenerator &rng) const;
+
+    std::unique_ptr<Flaw> pick_split(
+        const AbstractState &abstract_state,
+        const std::vector<State> &concrete_states,
+        const std::vector<CartesianSet> &desired_cartesian_sets) const;
 };
 }
 
