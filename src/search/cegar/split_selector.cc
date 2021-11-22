@@ -180,7 +180,7 @@ unique_ptr<Flaw> SplitSelector::pick_split(
     return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(*selected_split));
 }
 
-std::unique_ptr<Flaw> SplitSelector::pick_split(
+unique_ptr<Flaw> SplitSelector::pick_split(
     const AbstractState &abstract_state,
     const vector<State> &concrete_states,
     const vector<CartesianSet> &desired_cartesian_sets) const {
@@ -261,8 +261,7 @@ std::unique_ptr<Flaw> SplitSelector::pick_split(
     int best_split_id = -1;
     int best_prio = -1;
     for (size_t var = 0; var < split_prio.size(); ++var) {
-        for (size_t split_id = 0; split_id < split_prio[var].size(); ++split_id)
-        {
+        for (size_t split_id = 0; split_id < split_prio[var].size(); ++split_id) {
             if (split_prio[var][split_id] > best_prio) {
                 best_var_id = var;
                 best_split_id = split_id;
