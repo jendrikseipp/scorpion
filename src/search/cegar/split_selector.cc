@@ -85,7 +85,6 @@ void SplitSelector::get_possible_splits(
     const State &concrete_state,
     const CartesianSet &desired_cartesian_set,
     vector<Split> &splits) const {
-    assert(splits.empty());
     /*
       For each fact in the concrete state that is not contained in the
       desired abstract state, loop over all values in the domain of the
@@ -183,7 +182,39 @@ unique_ptr<Flaw> SplitSelector::pick_split(
 unique_ptr<Flaw> SplitSelector::pick_split(
     const AbstractState &abstract_state,
     const vector<State> &concrete_states,
-    const vector<CartesianSet> &desired_cartesian_sets) const {
+    const vector<CartesianSet> &desired_cartesian_sets,
+    utils::RandomNumberGenerator &rng) const {
+    if (pick != PickSplit::MAX_COVER) {
+        vector<Split> splits;
+        for (size_t i = 0; i < concrete_states.size(); ++i) {
+            get_possible_splits(abstract_state, concrete_states.at(i),
+                                desired_cartesian_sets.at(i), splits);
+        }
+        if (splits.size() == 1) {
+            return utils::make_unique_ptr<Flaw>(
+                abstract_state.get_id(), move(splits[0]));
+        }
+
+        if (pick == PickSplit::RANDOM) {
+            return utils::make_unique_ptr<Flaw>(
+                abstract_state.get_id(),
+                move(*rng.choose(splits)));
+        }
+
+        double max_rating = numeric_limits<double>::lowest();
+        Split *selected_split = nullptr;
+        for (Split &split : splits) {
+            double rating = rate_split(abstract_state, split);
+            if (rating > max_rating) {
+                selected_split = &split;
+                max_rating = rating;
+            }
+        }
+        // utils::g_log << "SELECTED: " << *selected_split << endl;
+        assert(selected_split);
+        return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(*selected_split));
+    }
+
     assert(pick == PickSplit::MAX_COVER);
     assert(concrete_states.size() == desired_cartesian_sets.size());
 
@@ -254,7 +285,9 @@ unique_ptr<Flaw> SplitSelector::pick_split(
             cout << "<val=" << value << "," << c_set << ",prio=" << prio << ">,";
         }
         utils::g_log << "]" << endl;
-    }*/
+    }
+    cout << endl;
+    */
 
 
     int best_var_id = -1;

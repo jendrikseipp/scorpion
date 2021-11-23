@@ -103,7 +103,8 @@ public:
     std::unique_ptr<Flaw> pick_split(
         const AbstractState &abstract_state,
         const std::vector<State> &concrete_states,
-        const std::vector<CartesianSet> &desired_cartesian_sets) const;
+        const std::vector<CartesianSet> &desired_cartesian_sets,
+        utils::RandomNumberGenerator &rng) const;
 };
 }
 

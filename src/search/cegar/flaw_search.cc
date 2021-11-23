@@ -144,6 +144,9 @@ SearchStatus FlawSearch::step() {
 
     // Check for each tr if the op is applicable or if there is a deviation
     for (const Transition &tr : get_transitions(get_abstract_state_id(s))) {
+        if (!utils::extra_memory_padding_is_reserved())
+            return TIMEOUT;
+
         // same f-layer
         if (is_f_optimal_transition(get_abstract_state_id(s), tr)) {
             OperatorID op_id(tr.op_id);
@@ -276,7 +279,7 @@ unique_ptr<Flaw> FlawSearch::create_max_cover_flaw(
 
     return split_selector.pick_split(
         abstraction.get_state(abstract_state_id),
-        flawed_states, flawed_cartesian_sets);
+        flawed_states, flawed_cartesian_sets, rng);
 }
 
 SearchStatus FlawSearch::search_for_flaws() {
@@ -331,6 +334,10 @@ unique_ptr<Flaw> FlawSearch::get_random_single_flaw() {
 unique_ptr<Flaw> FlawSearch::get_single_flaw() {
     auto search_status = search_for_flaws();
 
+    // Memory padding
+    if (search_status == TIMEOUT)
+        return nullptr;
+
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
@@ -367,6 +374,10 @@ FlawSearch::get_min_h_batch_flaw(const pair<int, int> &new_state_ids) {
     if (flawed_states.empty()) {
         search_status = search_for_flaws();
     }
+
+    // Memory padding
+    if (search_status == TIMEOUT)
+        return nullptr;
 
     // Flaws to refine are present
     if (search_status == FAILED) {

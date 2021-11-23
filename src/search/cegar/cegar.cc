@@ -217,12 +217,13 @@ void CEGAR::refinement_loop() {
 
         find_flaw_timer.stop();
 
+        if (!utils::extra_memory_padding_is_reserved()) {
+            break;
+        }
+
         if (!flaw) {
             cout << endl;
             utils::g_log << "Found concrete solution." << endl;
-        }
-
-        if (!utils::extra_memory_padding_is_reserved() || !flaw) {
             break;
         }
 
