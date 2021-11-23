@@ -90,7 +90,7 @@ void FlawSearch::add_flaw(const State &state) {
 void FlawSearch::initialize() {
     ++num_searches;
     last_refined_abstract_state_id = -1;
-    best_flaw_h = pick_flaw == PickFlaw::MAX_H_SINGLE ? -INF : INF;
+    best_flaw_h = (pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF;
     open_list->clear();
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
@@ -210,8 +210,8 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
                     abstraction.get_state(abstract_state_id);
                 return split_selector.pick_split(
                     abstract_state, state,
-                    get_cartesian_set(task_proxy.get_operators()
-                                      [tr.op_id].get_preconditions()),
+                    get_cartesian_set(
+                        task_proxy.get_operators()[tr.op_id].get_preconditions()),
                     rng);
             }
             OperatorProxy op = task_proxy.get_operators()[op_id];
@@ -257,9 +257,8 @@ unique_ptr<Flaw> FlawSearch::create_max_cover_flaw(
                          op_id) == applicable_ops.end()) {
                     flawed_states.push_back(state);
                     flawed_cartesian_sets.push_back(
-                        get_cartesian_set(task_proxy.get_operators()
-                                          [tr.op_id]
-                                          .get_preconditions()));
+                        get_cartesian_set(
+                            task_proxy.get_operators()[tr.op_id].get_preconditions()));
                 } else {
                     // Deviation Flaw
                     OperatorProxy op = task_proxy.get_operators()[op_id];
@@ -428,7 +427,7 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     successor_generator(
         successor_generator::g_successor_generators[task_proxy]),
     last_refined_abstract_state_id(-1),
-    best_flaw_h(pick_flaw == PickFlaw::MAX_H_SINGLE ? -INF : INF),
+    best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),
     num_overall_refined_flaws(0),
     num_overall_expanded_concrete_states(0) {
