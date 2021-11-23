@@ -155,6 +155,9 @@ SearchStatus FlawSearch::step() {
             if (find(applicable_ops.begin(), applicable_ops.end(),
                      op_id) == applicable_ops.end()) {
                 add_flaw(s);
+                if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
+                    return FAILED;
+                }
                 continue;
             }
             OperatorProxy op = task_proxy.get_operators()[op_id];
@@ -163,6 +166,9 @@ SearchStatus FlawSearch::step() {
             // Deviation flaw
             if (tr.target_id != successor_ab_id) {
                 add_flaw(s);
+                if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
+                    return FAILED;
+                }
                 continue;
             }
             // No flaw found
