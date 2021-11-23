@@ -161,9 +161,9 @@ void write_dot_graph(const Abstraction &abstraction, const string &file_name) {
     output_file.close();
 }
 
-extern void handle_dot_graph(const Abstraction &abstraction,
-                             const string &file_name,
-                             int dot_graph_verbosity) {
+void handle_dot_graph(const Abstraction &abstraction,
+                      const string &file_name,
+                      int dot_graph_verbosity) {
     if (dot_graph_verbosity == 1 || dot_graph_verbosity == 3) {
         dump_dot_graph(abstraction);
     }
