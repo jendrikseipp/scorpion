@@ -131,11 +131,6 @@ SearchStatus FlawSearch::step() {
     statistics->inc_expanded();
 
     if (task_properties::is_goal_state(task_proxy, s)) {
-        Plan plan;
-        search_space->trace_path(s, plan);
-        //PlanManager plan_mgr;
-        //cout << "FOUND CONCRETE SOLUTION: " << endl;
-        //plan_mgr.save_plan(plan, task_proxy, true);
         return SOLVED;
     }
 
@@ -208,22 +203,31 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
         // same f-layer
         if (is_f_optimal_transition(abstract_state_id, tr)) {
             OperatorID op_id(tr.op_id);
+            OperatorProxy op = task_proxy.get_operators()[op_id];
 
             // Applicability flaw
             if (find(applicable_ops.begin(), applicable_ops.end(),
                      op_id) == applicable_ops.end()) {
+                if (debug) {
+                    utils::g_log << "Operator " << op_id << " is not applicable: "
+                                 << op.get_name() << endl;
+                }
                 const AbstractState &abstract_state =
                     abstraction.get_state(abstract_state_id);
                 return split_selector.pick_split(
                     abstract_state, state,
-                    get_cartesian_set(
-                        task_proxy.get_operators()[tr.op_id].get_preconditions()),
+                    get_cartesian_set(op.get_preconditions()),
                     rng);
             }
-            OperatorProxy op = task_proxy.get_operators()[op_id];
+
             State succ_state = state_registry->get_successor_state(state, op);
 
+            // Deviation flaw
             if (tr.target_id != get_abstract_state_id(succ_state)) {
+                if (debug) {
+                    utils::g_log << "Operator " << op_id << " deviates: "
+                                 << op.get_name() << endl;
+                }
                 const AbstractState &abstract_state =
                     abstraction.get_state(abstract_state_id);
                 const AbstractState *deviated_abstact_state =
@@ -347,9 +351,19 @@ unique_ptr<Flaw> FlawSearch::get_single_flaw() {
         assert(!flawed_states.empty());
 
         ++num_overall_refined_flaws;
-        auto flaw = create_flaw(
-            *flawed_states.begin()->second.begin(),
-            flawed_states.begin()->first);
+        int abs_state_id = flawed_states.begin()->first;
+        const State &state = *flawed_states.begin()->second.begin();
+        if (debug) {
+            vector<OperatorID> trace;
+            search_space->trace_path(state, trace);
+            vector<string> operator_names;
+            operator_names.reserve(trace.size());
+            for (OperatorID op_id : trace) {
+                operator_names.push_back(task_proxy.get_operators()[op_id].get_name());
+            }
+            utils::g_log << "Path (without last operator): " << operator_names << endl;
+        }
+        auto flaw = create_flaw(state, abs_state_id);
         return flaw;
     }
     assert(search_status == SOLVED);
