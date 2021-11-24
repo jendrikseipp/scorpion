@@ -144,6 +144,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     pick_flaw_strategies.push_back("MIN_H_SINGLE");
     pick_flaw_strategies.push_back("MAX_H_SINGLE");
     pick_flaw_strategies.push_back("MIN_H_BATCH");
+    pick_flaw_strategies.push_back("MIN_H_BATCH_MULTI_SPLIT");
     parser.add_enum_option<PickFlaw>(
         "pick_flaw",
         pick_flaw_strategies,

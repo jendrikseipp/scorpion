@@ -65,7 +65,8 @@ const vector<Transition> &FlawSearch::get_transitions(
 
 void FlawSearch::add_flaw(const State &state) {
     if (pick_flaw == PickFlaw::MIN_H_SINGLE
-        || pick_flaw == PickFlaw::MIN_H_BATCH) {
+        || pick_flaw == PickFlaw::MIN_H_BATCH
+        || pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
         if (best_flaw_h > get_h_value(state)) {
             flawed_states.clear();
         }
@@ -235,9 +236,10 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
 }
 
 // Quite similar to create_flaw. Maybe we want to refactor it at some point
-unique_ptr<Flaw> FlawSearch::create_max_cover_flaw(
+unique_ptr<Flaw> FlawSearch::create_best_flaw(
     const utils::HashSet<State> &states, int abstract_state_id) {
-    assert(pick_flaw == PickFlaw::MIN_H_BATCH);
+    assert(pick_flaw == PickFlaw::MIN_H_BATCH
+           || pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
 
     vector<State> flawed_states;
     vector<CartesianSet> flawed_cartesian_sets;
@@ -388,8 +390,8 @@ FlawSearch::get_min_h_batch_flaw(const pair<int, int> &new_state_ids) {
         int abstract_state_id = flawed_states.begin()->first;
         const State &state = *flawed_states[abstract_state_id].begin();
 
-        if (split_selector.get_pick_split_strategy() == PickSplit::MAX_COVER) {
-            flaw = create_max_cover_flaw(flawed_states.begin()->second,
+        if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
+            flaw = create_best_flaw(flawed_states.begin()->second,
                                          abstract_state_id);
         } else {
             flaw = create_flaw(state, abstract_state_id);
@@ -471,6 +473,9 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
         flaw = get_single_flaw();
         break;
     case PickFlaw::MIN_H_BATCH:
+        flaw = get_min_h_batch_flaw(new_state_ids);
+        break;
+    case PickFlaw::MIN_H_BATCH_MULTI_SPLIT:
         flaw = get_min_h_batch_flaw(new_state_ids);
         break;
     default:

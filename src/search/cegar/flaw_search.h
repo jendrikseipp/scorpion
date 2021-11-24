@@ -30,7 +30,8 @@ enum class PickFlaw {
     RANDOM_H_SINGLE,
     MIN_H_SINGLE,
     MAX_H_SINGLE,
-    MIN_H_BATCH
+    MIN_H_BATCH,
+    MIN_H_BATCH_MULTI_SPLIT
 };
 
 class FlawSearch {
@@ -88,7 +89,7 @@ protected:
     std::unique_ptr<Flaw>
     create_flaw(const State &state, int abstract_state_id);
 
-    std::unique_ptr<Flaw> create_max_cover_flaw(
+    std::unique_ptr<Flaw> create_best_flaw(
         const utils::HashSet<State> &states,
         int abstract_state_id);
 
