@@ -6,6 +6,8 @@
 
 #include "../task_proxy.h"
 
+#include "../utils/logging.h"
+
 #include <memory>
 #include <vector>
 
@@ -40,25 +42,20 @@ enum class PickSplit {
 
 struct Split {
     const int var_id;
+    const int value;
     const std::vector<int> values;
 
-    Split(int var_id, std::vector<int> &&values)
-        : var_id(var_id), values(move(values)) {
+    Split(int var_id, int value, std::vector<int> &&values)
+        : var_id(var_id), value(value), values(move(values)) {
     }
 
     bool operator==(const Split &other) const {
-        return var_id == other.var_id && values == other.values;
+        // TODO: Check if values is singleton and then compare against value.
+        return var_id == other.var_id && value == other.value && values == other.values;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Split &s) {
-        std::string split_values = "{";
-        for (size_t i = 0; i < s.values.size(); ++i) {
-            if (i != 0)
-                split_values += ", ";
-            split_values += std::to_string(s.values[i]);
-        }
-        split_values += "}";
-        return os << "<" << s.var_id << "," << split_values << ">";
+        return os << "<" << s.var_id << "=" << s.value << "|" << s.values << ">";
     }
 };
 

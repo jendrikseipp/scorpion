@@ -107,7 +107,7 @@ void SplitSelector::get_possible_splits(
                 }
             }
             assert(!wanted.empty());
-            splits.emplace_back(var_id, move(wanted));
+            splits.emplace_back(var_id, fact.value, move(wanted));
         }
     }
     assert(!splits.empty());
@@ -306,6 +306,7 @@ unique_ptr<Flaw> SplitSelector::pick_split(
     }
 
     Split split(best_var_id,
+                -1, // TODO: pass correct value.
                 vector<int>(splits[best_var_id][best_split_id].second.begin(),
                             splits[best_var_id][best_split_id].second.end()));
     return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(split));
