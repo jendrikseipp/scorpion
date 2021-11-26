@@ -222,93 +222,55 @@ unique_ptr<Flaw> SplitSelector::pick_split(
 
     vector<int> domain_sizes = get_domain_sizes(task_proxy);
 
-    vector<vector<pair<int, set<int>>>> splits(
-        task_proxy.get_variables().size());
+    vector<Split> all_splits;
     for (size_t i = 0; i < concrete_states.size(); ++i) {
-        vector<Split> cur_splits;
         get_possible_splits(abstract_state, concrete_states.at(i),
-                            desired_cartesian_sets.at(i), cur_splits);
+                            desired_cartesian_sets.at(i), all_splits);
+    }
 
-        for (const Split &split : cur_splits) {
-            int var = split.var_id;
-            int concrete_value =
-                concrete_states.at(i)[split.var_id].get_value();
-            set<int> values;
-
-            for (int val : split.values) {
-                if (abstract_state.contains(var, val)
-                    && val != concrete_value)
-                    values.insert(val);
+    vector<vector<pair<Split, int>>> unique_splits_by_var(task_proxy.get_variables().size());
+    for (const Split &split : all_splits) {
+        vector<pair<Split, int>> &split_counts = unique_splits_by_var[split.var_id];
+        bool is_duplicate = false;
+        for (auto &pair : split_counts) {
+            if (pair.first == split) {
+                is_duplicate = true;
+                ++pair.second;
             }
-
-            splits[split.var_id].emplace_back(concrete_value, values);
         }
-    }
-
-    // Sort by size of desired cartesian sets
-    for (size_t var = 0; var < splits.size(); ++var) {
-        sort(splits[var].begin(), splits[var].end(),
-             [](const pair<int, set<int>> &a,
-                const pair<int, set<int>> &b) -> bool
-             {
-                 return a.second.size() > b.second.size();
-             });
-    }
-
-    // Compute prio for each split
-    // TODO(speckd): change to map lookup
-    vector<vector<int>> split_prio(task_proxy.get_variables().size());
-    for (size_t var = 0; var < split_prio.size(); ++var) {
-        split_prio[var].resize(splits[var].size(), 0);
-        for (size_t i = 0; i < splits[var].size(); ++i) {
-            for (size_t j = i + 1; j < splits[var].size(); ++j) {
-                // int i_value = splits[var][i].first;
-                const set<int> &i_set = splits[var][i].second;
-                int j_value = splits[var][j].first;
-                const set<int> &j_set = splits[var][j].second;
-
-                // is subset of and value not contained
-                if (includes(i_set.begin(), i_set.end(),
-                             j_set.begin(), j_set.end())
-                    && i_set.count(j_value) == 0) {
-                    ++split_prio[var][i];
-                }
-            }
+        if (!is_duplicate) {
+            split_counts.emplace_back(move(split), 1);
         }
     }
 
     if (debug) {
-        for (size_t var = 0; var < split_prio.size(); ++var) {
-            utils::g_log << var << ": [";
-            for (size_t i = 0; i < splits[var].size(); ++i) {
-                int value = splits[var][i].first;
-                vector<int> c_set = vector<int>(splits[var][i].second.begin(),
-                                                splits[var][i].second.end());
-                int prio = split_prio[var][i];
-                cout << "<val=" << value << "," << c_set << ",prio=" << prio << ">, ";
+        for (auto &split_counts : unique_splits_by_var) {
+            utils::g_log << "[";
+            for (auto &pair : split_counts) {
+                const Split &split = pair.first;
+                int count = pair.second;
+                cout << split << ": " << count << ", ";
             }
-            utils::g_log << "]" << endl;
+            cout << "]" << endl;
         }
+    }
+
+    Split *best_split = nullptr;
+    int max_count = -1;
+    for (auto &split_counts : unique_splits_by_var) {
+        for (auto &pair : split_counts) {
+            int count = pair.second;
+            if (count > max_count) {
+                max_count = count;
+                best_split = &pair.first;
+            }
+        }
+    }
+    assert(best_split);
+    if (debug) {
+        utils::g_log << "Best split: " << *best_split << endl;
         cout << endl;
     }
-
-    int best_var_id = -1;
-    int best_split_id = -1;
-    int best_prio = -1;
-    for (size_t var = 0; var < split_prio.size(); ++var) {
-        for (size_t split_id = 0; split_id < split_prio[var].size(); ++split_id) {
-            if (split_prio[var][split_id] > best_prio) {
-                best_var_id = var;
-                best_split_id = split_id;
-                best_prio = split_prio[var][split_id];
-            }
-        }
-    }
-
-    Split split(best_var_id,
-                -1, // TODO: pass correct value.
-                vector<int>(splits[best_var_id][best_split_id].second.begin(),
-                            splits[best_var_id][best_split_id].second.end()));
-    return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(split));
+    return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(*best_split));
 }
 }
