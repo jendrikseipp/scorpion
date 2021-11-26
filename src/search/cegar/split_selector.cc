@@ -259,7 +259,7 @@ unique_ptr<Flaw> SplitSelector::pick_split(
     // TODO(speckd): change to map lookup
     vector<vector<int>> split_prio(task_proxy.get_variables().size());
     for (size_t var = 0; var < split_prio.size(); ++var) {
-        split_prio[var] = vector<int>(splits[var].size());
+        split_prio[var].resize(splits[var].size(), 0);
         for (size_t i = 0; i < splits[var].size(); ++i) {
             for (size_t j = i + 1; j < splits[var].size(); ++j) {
                 // int i_value = splits[var][i].first;
@@ -285,7 +285,7 @@ unique_ptr<Flaw> SplitSelector::pick_split(
                 vector<int> c_set = vector<int>(splits[var][i].second.begin(),
                                                 splits[var][i].second.end());
                 int prio = split_prio[var][i];
-                cout << "<val=" << value << "," << c_set << ",prio=" << prio << ">,";
+                cout << "<val=" << value << "," << c_set << ",prio=" << prio << ">, ";
             }
             utils::g_log << "]" << endl;
         }

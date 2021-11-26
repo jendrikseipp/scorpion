@@ -231,11 +231,9 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
                 }
                 const AbstractState &abstract_state =
                     abstraction.get_state(abstract_state_id);
-                const AbstractState *deviated_abstact_state =
-                    &abstraction.get_state(tr.target_id);
                 return split_selector.pick_split(
                     abstract_state, state,
-                    deviated_abstact_state->regress(op), rng);
+                    abstraction.get_state(tr.target_id).regress(op), rng);
             }
             assert(pick_flaw == PickFlaw::MAX_H_SINGLE
                    || pick_flaw == PickFlaw::RANDOM_H_SINGLE);
@@ -275,12 +273,9 @@ unique_ptr<Flaw> FlawSearch::create_best_flaw(
                     assert(tr.target_id != get_abstract_state_id(
                                state_registry->get_successor_state(state, op)));
 
-                    const AbstractState *deviated_abstact_state =
-                        &abstraction.get_state(tr.target_id);
-
                     concrete_states.push_back(state);
                     desired_cartesian_sets.push_back(
-                        deviated_abstact_state->regress(op));
+                        abstraction.get_state(tr.target_id).regress(op));
                 }
             }
         }
