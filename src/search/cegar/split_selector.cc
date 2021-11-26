@@ -17,6 +17,40 @@
 using namespace std;
 
 namespace cegar {
+bool Split::combine_with(Split &&other) {
+    assert(var_id == other.var_id);
+    if (*this == other) {
+        return true;
+    }
+    // Try to switch the order to enable merging the splits.
+    if (values.size() == 1 && values[0] == other.value) {
+        swap(value, values[0]);
+        assert(value == other.value);
+    } else if (other.values.size() == 1 && value == other.values[0]) {
+        swap(other.value, other.values[0]);
+        assert(value == other.value);
+    } else if (values.size() == 1 && other.values.size() == 1 && values[0] == other.values[0]) {
+        swap(value, values[0]);
+        swap(other.value, other.values[0]);
+        assert(value == other.value);
+    }
+
+    if (value == other.value) {
+        assert(utils::is_sorted_unique(values));
+        assert(utils::is_sorted_unique(other.values));
+        vector<int> combined_values;
+        set_union(values.begin(), values.end(),
+                  other.values.begin(), other.values.end(),
+                  back_inserter(combined_values));
+        swap(values, combined_values);
+        return true;
+    } else {
+        // TODO: Combine splits that have no common singleton value.
+        return false;
+    }
+}
+
+
 SplitSelector::SplitSelector(
     const shared_ptr<AbstractTask> &task,
     PickSplit pick,
@@ -244,8 +278,49 @@ unique_ptr<Flaw> SplitSelector::pick_split(
     }
 
     if (debug) {
+        cout << "Unsorted splits: " << endl;
         for (auto &split_counts : unique_splits_by_var) {
-            utils::g_log << "[";
+            utils::g_log << " [";
+            for (auto &pair : split_counts) {
+                const Split &split = pair.first;
+                int count = pair.second;
+                cout << split << ": " << count << ", ";
+            }
+            cout << "]" << endl;
+        }
+    }
+
+
+    for (auto &split_counts : unique_splits_by_var) {
+        if (split_counts.size() <= 1) {
+            continue;
+        }
+        // Sort splits by the number of covered flaws.
+        sort(split_counts.begin(), split_counts.end(),
+             [](const pair<Split, int> &pair1, const pair<Split, int> &pair2) {
+                 return pair1.second > pair2.second;
+             });
+        // Try to merge each split into first split.
+        Split &best_split_for_var = split_counts[0].first;
+        for (size_t i = 1; i < split_counts.size(); ++i) {
+            if (debug) {
+                cout << "Combine " << best_split_for_var << " with " << split_counts[i].first;
+            }
+            bool combined = best_split_for_var.combine_with(move(split_counts[i].first));
+            if (debug) {
+                cout << " --> " << combined << endl;
+            }
+            if (combined) {
+                split_counts[0].second += split_counts[i].second;
+            }
+        }
+        split_counts.erase(split_counts.begin() + 1, split_counts.end());
+    }
+
+    if (debug) {
+        cout << "Sorted and combined splits: " << endl;
+        for (auto &split_counts : unique_splits_by_var) {
+            utils::g_log << " [";
             for (auto &pair : split_counts) {
                 const Split &split = pair.first;
                 int count = pair.second;
@@ -258,11 +333,12 @@ unique_ptr<Flaw> SplitSelector::pick_split(
     Split *best_split = nullptr;
     int max_count = -1;
     for (auto &split_counts : unique_splits_by_var) {
-        for (auto &pair : split_counts) {
-            int count = pair.second;
+        if (!split_counts.empty()) {
+            Split &best_split_for_var = split_counts[0].first;
+            int count = split_counts[0].second;
             if (count > max_count) {
                 max_count = count;
-                best_split = &pair.first;
+                best_split = &best_split_for_var;
             }
         }
     }

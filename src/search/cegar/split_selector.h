@@ -50,6 +50,8 @@ struct Split {
         : var_id(var_id), value(value), values(move(values)) {
     }
 
+    bool combine_with(Split &&other);
+
     bool operator==(const Split &other) const {
         assert(var_id == other.var_id);
         if (value == other.value) {
