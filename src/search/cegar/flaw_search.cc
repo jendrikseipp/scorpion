@@ -248,16 +248,14 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
 // Quite similar to create_flaw. Maybe we want to refactor it at some point
 unique_ptr<Flaw> FlawSearch::create_best_flaw(
     const utils::HashSet<State> &states, int abstract_state_id) {
-    assert(pick_flaw == PickFlaw::MIN_H_BATCH
-           || pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
+    assert(pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
 
-    vector<State> flawed_states;
-    vector<CartesianSet> flawed_cartesian_sets;
+    vector<State> concrete_states;
+    vector<CartesianSet> desired_cartesian_sets;
 
     for (const State &state : states) {
         vector<OperatorID> applicable_ops;
-        successor_generator.generate_applicable_ops(state,
-                                                    applicable_ops);
+        successor_generator.generate_applicable_ops(state, applicable_ops);
         for (const Transition &tr : get_transitions(abstract_state_id)) {
             assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
             // same f-layer
@@ -267,12 +265,12 @@ unique_ptr<Flaw> FlawSearch::create_best_flaw(
                 // Applicability flaw
                 if (find(applicable_ops.begin(), applicable_ops.end(),
                          op_id) == applicable_ops.end()) {
-                    flawed_states.push_back(state);
-                    flawed_cartesian_sets.push_back(
+                    concrete_states.push_back(state);
+                    desired_cartesian_sets.push_back(
                         get_cartesian_set(
                             task_proxy.get_operators()[tr.op_id].get_preconditions()));
                 } else {
-                    // Deviation Flaw
+                    // Deviation flaw
                     OperatorProxy op = task_proxy.get_operators()[op_id];
                     assert(tr.target_id != get_abstract_state_id(
                                state_registry->get_successor_state(state, op)));
@@ -280,8 +278,8 @@ unique_ptr<Flaw> FlawSearch::create_best_flaw(
                     const AbstractState *deviated_abstact_state =
                         &abstraction.get_state(tr.target_id);
 
-                    flawed_states.push_back(state);
-                    flawed_cartesian_sets.push_back(
+                    concrete_states.push_back(state);
+                    desired_cartesian_sets.push_back(
                         deviated_abstact_state->regress(op));
                 }
             }
@@ -290,7 +288,7 @@ unique_ptr<Flaw> FlawSearch::create_best_flaw(
 
     return split_selector.pick_split(
         abstraction.get_state(abstract_state_id),
-        flawed_states, flawed_cartesian_sets, rng);
+        concrete_states, desired_cartesian_sets, rng);
 }
 
 SearchStatus FlawSearch::search_for_flaws() {
@@ -412,7 +410,7 @@ FlawSearch::get_min_h_batch_flaw(const pair<int, int> &new_state_ids) {
 
         if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
             flaw = create_best_flaw(flawed_states.begin()->second,
-                                         abstract_state_id);
+                                    abstract_state_id);
         } else {
             flaw = create_flaw(state, abstract_state_id);
         }

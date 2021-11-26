@@ -95,10 +95,11 @@ public:
         return pick;
     }
 
-    std::unique_ptr<Flaw> pick_split(const AbstractState &abstract_state,
-                                     const State &concrete_state,
-                                     const CartesianSet &desired_cartesian_set,
-                                     utils::RandomNumberGenerator &rng) const;
+    std::unique_ptr<Flaw> pick_split(
+        const AbstractState &abstract_state,
+        const State &concrete_state,
+        const CartesianSet &desired_cartesian_set,
+        utils::RandomNumberGenerator &rng) const;
 
     std::unique_ptr<Flaw> pick_split(
         const AbstractState &abstract_state,

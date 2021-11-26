@@ -254,7 +254,7 @@ unique_ptr<Flaw> SplitSelector::pick_split(
     }
 
     // Compute prio for each split
-    // TODO(speckd): change to map loop_up
+    // TODO(speckd): change to map lookup
     vector<vector<int>> split_prio(task_proxy.get_variables().size());
     for (size_t var = 0; var < split_prio.size(); ++var) {
         split_prio[var] = vector<int>(splits[var].size());
@@ -275,20 +275,20 @@ unique_ptr<Flaw> SplitSelector::pick_split(
         }
     }
 
-    /*for (size_t var = 0; var < split_prio.size(); ++var) {
-        utils::g_log << var << ": [";
-        for (size_t i = 0; i < splits[var].size(); ++i) {
-            int value = splits[var][i].first;
-            vector<int> c_set = vector<int>(splits[var][i].second.begin(),
-                                            splits[var][i].second.end());
-            int prio = split_prio[var][i];
-            cout << "<val=" << value << "," << c_set << ",prio=" << prio << ">,";
+    if (false) {
+        for (size_t var = 0; var < split_prio.size(); ++var) {
+            utils::g_log << var << ": [";
+            for (size_t i = 0; i < splits[var].size(); ++i) {
+                int value = splits[var][i].first;
+                vector<int> c_set = vector<int>(splits[var][i].second.begin(),
+                                                splits[var][i].second.end());
+                int prio = split_prio[var][i];
+                cout << "<val=" << value << ", " << c_set << ", prio=" << prio << ">,";
+            }
+            utils::g_log << "]" << endl;
         }
-        utils::g_log << "]" << endl;
+        cout << endl;
     }
-    cout << endl;
-    */
-
 
     int best_var_id = -1;
     int best_split_id = -1;
