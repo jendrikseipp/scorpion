@@ -51,8 +51,15 @@ struct Split {
     }
 
     bool operator==(const Split &other) const {
-        // TODO: Check if values is singleton and then compare against value.
-        return var_id == other.var_id && value == other.value && values == other.values;
+        assert(var_id == other.var_id);
+        if (value == other.value) {
+            return values == other.values;
+        } else if (values.size() == 1 && other.values.size() == 1) {
+            // If we need to separate exactly two values, their order doesn't matter.
+            return value == other.values[0] && other.value == values[0];
+        } else {
+            return false;
+        }
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Split &s) {
