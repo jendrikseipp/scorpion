@@ -69,6 +69,7 @@ struct Split {
 class SplitSelector {
     const std::shared_ptr<AbstractTask> task;
     const TaskProxy task_proxy;
+    const bool debug;
     std::unique_ptr<additive_heuristic::AdditiveHeuristic> additive_heuristic;
 
     const PickSplit pick;
@@ -87,8 +88,10 @@ class SplitSelector {
     double rate_split(const AbstractState &state, const Split &split) const;
 
 public:
-    SplitSelector(const std::shared_ptr<AbstractTask> &task,
-                  PickSplit pick);
+    SplitSelector(
+        const std::shared_ptr<AbstractTask> &task,
+        PickSplit pick,
+        bool debug);
     ~SplitSelector();
 
     PickSplit get_pick_split_strategy() const {

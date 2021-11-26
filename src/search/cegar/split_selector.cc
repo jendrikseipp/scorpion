@@ -19,9 +19,11 @@ using namespace std;
 namespace cegar {
 SplitSelector::SplitSelector(
     const shared_ptr<AbstractTask> &task,
-    PickSplit pick)
+    PickSplit pick,
+    bool debug)
     : task(task),
       task_proxy(*task),
+      debug(debug),
       pick(pick) {
     if (pick == PickSplit::MIN_HADD || pick == PickSplit::MAX_HADD) {
         additive_heuristic = create_additive_heuristic(task);
@@ -275,7 +277,7 @@ unique_ptr<Flaw> SplitSelector::pick_split(
         }
     }
 
-    if (false) {
+    if (debug) {
         for (size_t var = 0; var < split_prio.size(); ++var) {
             utils::g_log << var << ": [";
             for (size_t i = 0; i < splits[var].size(); ++i) {
@@ -283,7 +285,7 @@ unique_ptr<Flaw> SplitSelector::pick_split(
                 vector<int> c_set = vector<int>(splits[var][i].second.begin(),
                                                 splits[var][i].second.end());
                 int prio = split_prio[var][i];
-                cout << "<val=" << value << ", " << c_set << ", prio=" << prio << ">,";
+                cout << "<val=" << value << "," << c_set << ",prio=" << prio << ">,";
             }
             utils::g_log << "]" << endl;
         }
