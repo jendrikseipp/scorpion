@@ -207,9 +207,10 @@ void CEGAR::refinement_loop() {
         find_flaw_timer.resume();
 
         if (debug) {
-            handle_dot_graph(*abstraction,
+            handle_dot_graph(task_proxy,
+                             *abstraction,
                              "dot_files/graph" +
-                             to_string(num_of_refinements) + ".dot",
+                             to_string(abstraction->get_num_states()) + ".dot",
                              dot_graph_verbosity);
         }
 
