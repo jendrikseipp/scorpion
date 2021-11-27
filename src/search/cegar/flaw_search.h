@@ -68,9 +68,7 @@ class FlawSearch {
 
     int get_h_value(int abstract_state_id) const;
 
-    int get_h_value(const State &state) const;
-
-    void add_flaw(const State &state);
+    void add_flaw(int abs_id, const State &state);
 
     bool is_f_optimal_transition(int abstract_state_id,
                                  const Transition &tr) const;

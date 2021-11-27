@@ -46,10 +46,6 @@ int FlawSearch::get_h_value(int abstract_state_id) const {
     return shortest_paths.get_goal_distance(abstract_state_id);
 }
 
-int FlawSearch::get_h_value(const State &state) const {
-    return get_h_value(get_abstract_state_id(state));
-}
-
 bool FlawSearch::is_f_optimal_transition(int abstract_state_id,
                                          const Transition &tr) const {
     int source_h_value = get_h_value(abstract_state_id);
@@ -64,27 +60,27 @@ const vector<Transition> &FlawSearch::get_transitions(
            get_outgoing_transitions().at(abstract_state_id);
 }
 
-void FlawSearch::add_flaw(const State &state) {
-    int abs_id = get_abstract_state_id(state);
+void FlawSearch::add_flaw(int abs_id, const State &state) {
     // Using a reference to flawed_states[abs_id] doesn't work since it creates a temporary.
     assert(find(flawed_states[abs_id].begin(), flawed_states[abs_id].end(), state) ==
            flawed_states[abs_id].end());
+    int h = get_h_value(abs_id);
     if (pick_flaw == PickFlaw::MIN_H_SINGLE
         || pick_flaw == PickFlaw::MIN_H_BATCH
         || pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
-        if (best_flaw_h > get_h_value(state)) {
+        if (best_flaw_h > h) {
             flawed_states.clear();
         }
-        if (best_flaw_h >= get_h_value(state)) {
-            best_flaw_h = get_h_value(state);
+        if (best_flaw_h >= h) {
+            best_flaw_h = h;
             flawed_states[abs_id].push_back(state);
         }
     } else if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
-        if (best_flaw_h < get_h_value(state)) {
+        if (best_flaw_h < h) {
             flawed_states.clear();
         }
-        if (best_flaw_h <= get_h_value(state)) {
-            best_flaw_h = get_h_value(state);
+        if (best_flaw_h <= h) {
+            best_flaw_h = h;
             flawed_states[abs_id].push_back(state);
         }
     } else {
@@ -128,7 +124,7 @@ SearchStatus FlawSearch::step() {
     SearchNode node = search_space->get_node(s);
 
     assert(!node.is_closed());
-    assert(node.get_real_g() + get_h_value(s)
+    assert(node.get_real_g() + get_h_value(get_abstract_state_id(s))
            <= get_h_value(abstraction.get_initial_state().get_id()));
 
     node.close();
@@ -144,21 +140,22 @@ SearchStatus FlawSearch::step() {
     successor_generator.generate_applicable_ops(s, applicable_ops);
 
     bool found_flaw = false;
+    int abs_id = get_abstract_state_id(s);
 
     // Check for each tr if the op is applicable or if there is a deviation
-    for (const Transition &tr : get_transitions(get_abstract_state_id(s))) {
+    for (const Transition &tr : get_transitions(abs_id)) {
         if (!utils::extra_memory_padding_is_reserved())
             return TIMEOUT;
 
         // same f-layer
-        if (is_f_optimal_transition(get_abstract_state_id(s), tr)) {
+        if (is_f_optimal_transition(abs_id, tr)) {
             OperatorID op_id(tr.op_id);
 
             // Applicability flaw
             if (find(applicable_ops.begin(), applicable_ops.end(),
                      op_id) == applicable_ops.end()) {
                 if (!found_flaw) {
-                    add_flaw(s);
+                    add_flaw(abs_id, s);
                     found_flaw = true;
                 }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
@@ -168,11 +165,10 @@ SearchStatus FlawSearch::step() {
             }
             OperatorProxy op = task_proxy.get_operators()[op_id];
             State succ_state = state_registry->get_successor_state(s, op);
-            int successor_ab_id = get_abstract_state_id(succ_state);
             // Deviation flaw
-            if (tr.target_id != successor_ab_id) {
+            if (!abstraction.get_state(tr.target_id).includes(succ_state)) {
                 if (!found_flaw) {
-                    add_flaw(s);
+                    add_flaw(abs_id, s);
                     found_flaw = true;
                 }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
@@ -347,10 +343,9 @@ FlawSearch::get_min_h_batch_split(const pair<int, int> &new_state_ids) {
             if (task_properties::is_goal_state(task_proxy, s)) {
                 return nullptr;
             }
-            if (get_h_value(s) == best_flaw_h) {
-                // TODO: we probably do not need to call the
-                // refinement hierarchy
-                add_flaw(s);
+            int abs_id = get_abstract_state_id(s);
+            if (get_h_value(abs_id) == best_flaw_h) {
+                add_flaw(abs_id, s);
             }
         }
     }
