@@ -21,7 +21,7 @@ class RandomNumberGenerator;
 
 namespace cegar {
 class AbstractState;
-class Flaw;
+class Split;
 
 // Strategies for selecting a split in case there are multiple possibilities.
 enum class PickSplit {
@@ -106,13 +106,13 @@ public:
         return pick;
     }
 
-    std::unique_ptr<Flaw> pick_split(
+    std::unique_ptr<Split> pick_split(
         const AbstractState &abstract_state,
         const State &concrete_state,
         const CartesianSet &desired_cartesian_set,
         utils::RandomNumberGenerator &rng) const;
 
-    std::unique_ptr<Flaw> pick_split(
+    std::unique_ptr<Split> pick_split(
         const AbstractState &abstract_state,
         const std::vector<State> &concrete_states,
         const std::vector<CartesianSet> &desired_cartesian_sets,

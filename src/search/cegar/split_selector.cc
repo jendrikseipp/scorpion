@@ -2,7 +2,6 @@
 
 #include "abstract_state.h"
 #include "utils.h"
-#include "flaw.h"
 
 #include "../heuristics/additive_heuristic.h"
 
@@ -180,7 +179,7 @@ double SplitSelector::rate_split(const AbstractState &state, const Split &split)
     return rating;
 }
 
-unique_ptr<Flaw> SplitSelector::pick_split(
+unique_ptr<Split> SplitSelector::pick_split(
     const AbstractState &abstract_state,
     const State &concrete_state,
     const CartesianSet &desired_cartesian_set,
@@ -191,14 +190,11 @@ unique_ptr<Flaw> SplitSelector::pick_split(
     assert(!splits.empty());
 
     if (splits.size() == 1) {
-        return utils::make_unique_ptr<Flaw>(
-            abstract_state.get_id(), move(splits[0]));
+        return utils::make_unique_ptr<Split>(move(splits[0]));
     }
 
     if (pick == PickSplit::RANDOM) {
-        return utils::make_unique_ptr<Flaw>(
-            abstract_state.get_id(),
-            move(*rng.choose(splits)));
+        return utils::make_unique_ptr<Split>(move(*rng.choose(splits)));
     }
 
     double max_rating = numeric_limits<double>::lowest();
@@ -210,12 +206,11 @@ unique_ptr<Flaw> SplitSelector::pick_split(
             max_rating = rating;
         }
     }
-    // utils::g_log << "SELECTED: " << *selected_split << endl;
     assert(selected_split);
-    return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(*selected_split));
+    return utils::make_unique_ptr<Split>(move(*selected_split));
 }
 
-unique_ptr<Flaw> SplitSelector::pick_split(
+unique_ptr<Split> SplitSelector::pick_split(
     const AbstractState &abstract_state,
     const vector<State> &concrete_states,
     const vector<CartesianSet> &desired_cartesian_sets,
@@ -227,14 +222,11 @@ unique_ptr<Flaw> SplitSelector::pick_split(
                                 desired_cartesian_sets.at(i), splits);
         }
         if (splits.size() == 1) {
-            return utils::make_unique_ptr<Flaw>(
-                abstract_state.get_id(), move(splits[0]));
+            return utils::make_unique_ptr<Split>(move(splits[0]));
         }
 
         if (pick == PickSplit::RANDOM) {
-            return utils::make_unique_ptr<Flaw>(
-                abstract_state.get_id(),
-                move(*rng.choose(splits)));
+            return utils::make_unique_ptr<Split>(move(*rng.choose(splits)));
         }
 
         double max_rating = numeric_limits<double>::lowest();
@@ -248,7 +240,7 @@ unique_ptr<Flaw> SplitSelector::pick_split(
         }
         // utils::g_log << "SELECTED: " << *selected_split << endl;
         assert(selected_split);
-        return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(*selected_split));
+        return utils::make_unique_ptr<Split>(move(*selected_split));
     }
 
     assert(pick == PickSplit::MAX_COVER);
@@ -347,6 +339,6 @@ unique_ptr<Flaw> SplitSelector::pick_split(
         utils::g_log << "Best split: " << *best_split << endl;
         cout << endl;
     }
-    return utils::make_unique_ptr<Flaw>(abstract_state.get_id(), move(*best_split));
+    return utils::make_unique_ptr<Split>(move(*best_split));
 }
 }

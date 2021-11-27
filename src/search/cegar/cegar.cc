@@ -214,7 +214,7 @@ void CEGAR::refinement_loop() {
                              dot_graph_verbosity);
         }
 
-        unique_ptr<Flaw> flaw = flaw_search->get_flaw(new_state_ids);
+        unique_ptr<Split> split = flaw_search->get_split(new_state_ids);
 
         find_flaw_timer.stop();
 
@@ -222,20 +222,19 @@ void CEGAR::refinement_loop() {
             break;
         }
 
-        if (!flaw) {
+        if (!split) {
             cout << endl;
             utils::g_log << "Found concrete solution." << endl;
             break;
         }
 
         refine_timer.resume();
-        int state_id = flaw->abstract_state_id;
+        int state_id = split->abstract_state_id;
         const AbstractState &abstract_state = abstraction->get_state(state_id);
         assert(!abstraction->get_goals().count(state_id));
 
         new_state_ids = abstraction->refine(
-            abstract_state, flaw->desired_split.var_id,
-            flaw->desired_split.values);
+            abstract_state, split->var_id, split->values);
         refine_timer.stop();
 
         update_goal_distances_timer.resume();

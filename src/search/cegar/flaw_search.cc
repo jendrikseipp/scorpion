@@ -195,8 +195,8 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
-unique_ptr<Flaw>
-FlawSearch::create_flaw(const State &state, int abstract_state_id) {
+unique_ptr<Split>
+FlawSearch::create_split(const State &state, int abstract_state_id) {
     assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
     vector<OperatorID> applicable_ops;
     successor_generator.generate_applicable_ops(state, applicable_ops);
@@ -244,7 +244,7 @@ FlawSearch::create_flaw(const State &state, int abstract_state_id) {
 }
 
 // Quite similar to create_flaw. Maybe we want to refactor it at some point
-unique_ptr<Flaw> FlawSearch::create_best_flaw(
+unique_ptr<Split> FlawSearch::create_best_split(
     const utils::HashSet<State> &states, int abstract_state_id) {
     assert(pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
 
@@ -304,7 +304,7 @@ SearchStatus FlawSearch::search_for_flaws() {
             for (auto const &pair : flawed_states) {
                 for (const State &s : pair.second) {
                     utils::g_log << "  <" << pair.first << "," << s.get_id()
-                                 << ">: " << *create_flaw(s, pair.first)
+                                 << ">: " << *create_split(s, pair.first)
                                  << endl;
                 }
             }
@@ -313,7 +313,7 @@ SearchStatus FlawSearch::search_for_flaws() {
     return search_status;
 }
 
-unique_ptr<Flaw> FlawSearch::get_random_single_flaw() {
+unique_ptr<Split> FlawSearch::get_random_single_split() {
     auto search_status = search_for_flaws();
 
     if (search_status == FAILED) {
@@ -327,15 +327,15 @@ unique_ptr<Flaw> FlawSearch::get_random_single_flaw() {
             *next(flawed_states.at(rng_abstract_state_id).begin(),
                   rng(flawed_states.at(rng_abstract_state_id).size()));
 
-        auto flaw = create_flaw(rng_state, rng_abstract_state_id);
-        best_flaw_h = get_h_value(flaw->abstract_state_id);
-        return flaw;
+        auto split = create_split(rng_state, rng_abstract_state_id);
+        best_flaw_h = get_h_value(split->abstract_state_id);
+        return split;
     }
     assert(search_status == SOLVED);
     return nullptr;
 }
 
-unique_ptr<Flaw> FlawSearch::get_single_flaw() {
+unique_ptr<Split> FlawSearch::get_single_split() {
     auto search_status = search_for_flaws();
 
     // Memory padding
@@ -358,15 +358,14 @@ unique_ptr<Flaw> FlawSearch::get_single_flaw() {
             }
             utils::g_log << "Path (without last operator): " << operator_names << endl;
         }
-        auto flaw = create_flaw(state, abs_state_id);
-        return flaw;
+        return create_split(state, abs_state_id);
     }
     assert(search_status == SOLVED);
     return nullptr;
 }
 
-unique_ptr<Flaw>
-FlawSearch::get_min_h_batch_flaw(const pair<int, int> &new_state_ids) {
+unique_ptr<Split>
+FlawSearch::get_min_h_batch_split(const pair<int, int> &new_state_ids) {
     // Handle flaws of refined abstract state
     if (new_state_ids.first != -1) {
         utils::HashSet<State> states_to_handle =
@@ -398,21 +397,21 @@ FlawSearch::get_min_h_batch_flaw(const pair<int, int> &new_state_ids) {
         assert(!flawed_states.empty());
 
         ++num_overall_refined_flaws;
-        unique_ptr<Flaw> flaw;
+        unique_ptr<Split> split;
 
         int abstract_state_id = flawed_states.begin()->first;
         const State &state = *flawed_states[abstract_state_id].begin();
 
         if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
-            flaw = create_best_flaw(flawed_states.begin()->second,
-                                    abstract_state_id);
+            split = create_best_split(flawed_states.begin()->second,
+                                      abstract_state_id);
         } else {
-            flaw = create_flaw(state, abstract_state_id);
+            split = create_split(state, abstract_state_id);
         }
 
         // Remove flawed concrete state from list
         flawed_states[abstract_state_id].erase(state);
-        return flaw;
+        return split;
     }
 
     assert(search_status == SOLVED);
@@ -458,7 +457,7 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     timer.reset();
 }
 
-unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
+unique_ptr<Split> FlawSearch::get_split(const pair<int, int> &new_state_ids) {
     if (debug && new_state_ids.first != -1) {
         utils::g_log << "New abstract states: <" << new_state_ids.first << ",h="
                      << get_h_value(new_state_ids.first)
@@ -473,23 +472,23 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
            || get_h_value(new_state_ids.second) >= best_flaw_h);
 
     timer.resume();
-    unique_ptr<Flaw> flaw = nullptr;
+    unique_ptr<Split> split = nullptr;
 
     switch (pick_flaw) {
     case PickFlaw::RANDOM_H_SINGLE:
-        flaw = get_random_single_flaw();
+        split = get_random_single_split();
         break;
     case PickFlaw::MIN_H_SINGLE:
-        flaw = get_single_flaw();
+        split = get_single_split();
         break;
     case PickFlaw::MAX_H_SINGLE:
-        flaw = get_single_flaw();
+        split = get_single_split();
         break;
     case PickFlaw::MIN_H_BATCH:
-        flaw = get_min_h_batch_flaw(new_state_ids);
+        split = get_min_h_batch_split(new_state_ids);
         break;
     case PickFlaw::MIN_H_BATCH_MULTI_SPLIT:
-        flaw = get_min_h_batch_flaw(new_state_ids);
+        split = get_min_h_batch_split(new_state_ids);
         break;
     default:
         utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick_flaw)
@@ -497,13 +496,12 @@ unique_ptr<Flaw> FlawSearch::get_flaw(const pair<int, int> &new_state_ids) {
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 
-    if (flaw != nullptr) {
-        last_refined_abstract_state_id = flaw->abstract_state_id;
+    if (split != nullptr) {
+        last_refined_abstract_state_id = split->abstract_state_id;
         concrete_state_to_abstract_state.clear();
-        // utils::g_log << "Selected flaw: " << *flaw << endl;
     }
     timer.stop();
-    return flaw;
+    return split;
 }
 
 void FlawSearch::print_statistics() const {

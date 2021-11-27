@@ -1,16 +1,14 @@
 #ifndef CEGAR_FLAW_SEARCH_H
 #define CEGAR_FLAW_SEARCH_H
 
-#include "flaw.h"
-#include "types.h"
 #include "split_selector.h"
+#include "types.h"
 
 #include "../open_list.h"
 #include "../search_engine.h"
 #include "../utils/timer.h"
 #include "../utils/hash.h"
 
-#include <map>
 #include <queue>
 
 namespace utils {
@@ -86,19 +84,19 @@ protected:
 
     SearchStatus search_for_flaws();
 
-    std::unique_ptr<Flaw>
-    create_flaw(const State &state, int abstract_state_id);
+    std::unique_ptr<Split>
+    create_split(const State &state, int abstract_state_id);
 
-    std::unique_ptr<Flaw> create_best_flaw(
+    std::unique_ptr<Split> create_best_split(
         const utils::HashSet<State> &states,
         int abstract_state_id);
 
-    std::unique_ptr<Flaw> get_random_single_flaw();
+    std::unique_ptr<Split> get_random_single_split();
 
-    std::unique_ptr<Flaw> get_single_flaw();
+    std::unique_ptr<Split> get_single_split();
 
-    std::unique_ptr<Flaw>
-    get_min_h_batch_flaw(const std::pair<int, int> &new_state_ids);
+    std::unique_ptr<Split>
+    get_min_h_batch_split(const std::pair<int, int> &new_state_ids);
 
 public:
     FlawSearch(const std::shared_ptr<AbstractTask> &task,
@@ -110,7 +108,7 @@ public:
                PickSplit pick_split,
                bool debug);
 
-    std::unique_ptr<Flaw> get_flaw(const std::pair<int, int> &new_state_ids);
+    std::unique_ptr<Split> get_split(const std::pair<int, int> &new_state_ids);
 
     void print_statistics() const;
 };

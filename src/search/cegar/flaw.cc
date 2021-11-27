@@ -1,11 +1,5 @@
 #include "flaw.h"
 
-#include "abstraction.h"
-#include "abstract_state.h"
-#include "split_selector.h"
-#include "transition.h"
-
-
 using namespace std;
 
 namespace cegar {
