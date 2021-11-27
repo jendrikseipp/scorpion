@@ -2,6 +2,7 @@
 
 #include "abstraction.h"
 #include "abstract_state.h"
+#include "flaw.h"
 #include "transition_system.h"
 #include "shortest_paths.h"
 #include "split_selector.h"
@@ -216,9 +217,8 @@ FlawSearch::create_split(const State &state, int abstract_state_id) {
                 const AbstractState &abstract_state =
                     abstraction.get_state(abstract_state_id);
                 return split_selector.pick_split(
-                    abstract_state, state,
-                    get_cartesian_set(op.get_preconditions()),
-                    rng);
+                    Flaw(abstract_state, state,
+                         get_cartesian_set(op.get_preconditions())), rng);
             }
 
             State succ_state = state_registry->get_successor_state(state, op);
@@ -229,11 +229,11 @@ FlawSearch::create_split(const State &state, int abstract_state_id) {
                     utils::g_log << "Operator " << op_id << " deviates: "
                                  << op.get_name() << endl;
                 }
-                const AbstractState &abstract_state =
-                    abstraction.get_state(abstract_state_id);
-                return split_selector.pick_split(
-                    abstract_state, state,
-                    abstraction.get_state(tr.target_id).regress(op), rng);
+                Flaw flaw(
+                    abstraction.get_state(abstract_state_id),
+                    state,
+                    abstraction.get_state(tr.target_id).regress(op));
+                return split_selector.pick_split(flaw, rng);
             }
             assert(pick_flaw == PickFlaw::MAX_H_SINGLE
                    || pick_flaw == PickFlaw::RANDOM_H_SINGLE);
@@ -247,10 +247,9 @@ FlawSearch::create_split(const State &state, int abstract_state_id) {
 unique_ptr<Split> FlawSearch::create_best_split(
     const utils::HashSet<State> &states, int abstract_state_id) {
     assert(pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
+    const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
-    vector<State> concrete_states;
-    vector<CartesianSet> desired_cartesian_sets;
-
+    vector<Flaw> flaws;
     for (const State &state : states) {
         vector<OperatorID> applicable_ops;
         successor_generator.generate_applicable_ops(state, applicable_ops);
@@ -263,27 +262,22 @@ unique_ptr<Split> FlawSearch::create_best_split(
                 // Applicability flaw
                 if (find(applicable_ops.begin(), applicable_ops.end(),
                          op_id) == applicable_ops.end()) {
-                    concrete_states.push_back(state);
-                    desired_cartesian_sets.push_back(
-                        get_cartesian_set(
+                    flaws.emplace_back(
+                        abstract_state, state, get_cartesian_set(
                             task_proxy.get_operators()[tr.op_id].get_preconditions()));
                 } else {
                     // Deviation flaw
                     OperatorProxy op = task_proxy.get_operators()[op_id];
                     assert(tr.target_id != get_abstract_state_id(
                                state_registry->get_successor_state(state, op)));
-
-                    concrete_states.push_back(state);
-                    desired_cartesian_sets.push_back(
-                        abstraction.get_state(tr.target_id).regress(op));
+                    flaws.emplace_back(
+                        abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
                 }
             }
         }
     }
 
-    return split_selector.pick_split(
-        abstraction.get_state(abstract_state_id),
-        concrete_states, desired_cartesian_sets, rng);
+    return split_selector.pick_split(flaws, rng);
 }
 
 SearchStatus FlawSearch::search_for_flaws() {

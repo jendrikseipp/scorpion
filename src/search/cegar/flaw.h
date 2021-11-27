@@ -1,24 +1,26 @@
 #ifndef CEGAR_FLAW_H
 #define CEGAR_FLAW_H
 
-#include "split_selector.h"
-#include "types.h"
+#include "cartesian_set.h"
+
+#include <utility>
+
+class State;
 
 namespace cegar {
+class AbstractState;
+
 struct Flaw {
-    int abstract_state_id;
-    Split desired_split;
+    const AbstractState &abstract_state;
+    const State &concrete_state;
+    CartesianSet desired_cartesian_set;
 
-    Flaw(int abstract_state_id, Split &&desired_split);
-
-    bool operator==(const Flaw &other) const {
-        return abstract_state_id == other.abstract_state_id
-               && desired_split == other.desired_split;
-    }
-
-    friend std::ostream &operator<<(std::ostream &os, const Flaw &f) {
-        return os << "[" << f.abstract_state_id << ","
-                  << f.desired_split << "]";
+    Flaw(const AbstractState &abstract_state,
+         const State &concrete_state,
+         CartesianSet &&desired_cartesian_set)
+        : abstract_state(abstract_state),
+          concrete_state(concrete_state),
+          desired_cartesian_set(std::move(desired_cartesian_set)) {
     }
 };
 }

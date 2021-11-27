@@ -1,6 +1,7 @@
 #ifndef CEGAR_FLAW_SEARCH_H
 #define CEGAR_FLAW_SEARCH_H
 
+#include "cartesian_set.h"
 #include "split_selector.h"
 #include "types.h"
 

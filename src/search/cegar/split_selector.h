@@ -1,9 +1,6 @@
 #ifndef CEGAR_SPLIT_SELECTOR_H
 #define CEGAR_SPLIT_SELECTOR_H
 
-#include "abstraction.h"
-#include "cartesian_set.h"
-
 #include "../task_proxy.h"
 
 #include "../utils/logging.h"
@@ -21,7 +18,8 @@ class RandomNumberGenerator;
 
 namespace cegar {
 class AbstractState;
-class Split;
+struct Flaw;
+struct Split;
 
 // Strategies for selecting a split in case there are multiple possibilities.
 enum class PickSplit {
@@ -88,10 +86,7 @@ class SplitSelector {
     int get_min_hadd_value(int var_id, const std::vector<int> &values) const;
     int get_max_hadd_value(int var_id, const std::vector<int> &values) const;
 
-    void get_possible_splits(const AbstractState &abstract_state,
-                             const State &concrete_state,
-                             const CartesianSet &desired_cartesian_set,
-                             std::vector<Split> &splits) const;
+    void get_possible_splits(const Flaw &flaw, std::vector<Split> &splits) const;
 
     double rate_split(const AbstractState &state, const Split &split) const;
 
@@ -107,15 +102,11 @@ public:
     }
 
     std::unique_ptr<Split> pick_split(
-        const AbstractState &abstract_state,
-        const State &concrete_state,
-        const CartesianSet &desired_cartesian_set,
+        const Flaw &flaw,
         utils::RandomNumberGenerator &rng) const;
 
     std::unique_ptr<Split> pick_split(
-        const AbstractState &abstract_state,
-        const std::vector<State> &concrete_states,
-        const std::vector<CartesianSet> &desired_cartesian_sets,
+        const std::vector<Flaw> &flaws,
         utils::RandomNumberGenerator &rng) const;
 };
 }
