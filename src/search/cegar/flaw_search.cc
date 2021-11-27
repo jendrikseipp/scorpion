@@ -129,9 +129,6 @@ SearchStatus FlawSearch::step() {
         return SOLVED;
     }
 
-    vector<OperatorID> applicable_ops;
-    successor_generator.generate_applicable_ops(s, applicable_ops);
-
     bool found_flaw = false;
     int abs_id = get_abstract_state_id(s);
 
@@ -143,10 +140,10 @@ SearchStatus FlawSearch::step() {
         // same f-layer
         if (is_f_optimal_transition(abs_id, tr)) {
             OperatorID op_id(tr.op_id);
+            OperatorProxy op = task_proxy.get_operators()[op_id];
 
             // Applicability flaw
-            if (find(applicable_ops.begin(), applicable_ops.end(),
-                     op_id) == applicable_ops.end()) {
+            if (!task_properties::is_applicable(op, s)) {
                 if (!found_flaw) {
                     add_flaw(abs_id, s);
                     found_flaw = true;
@@ -156,7 +153,6 @@ SearchStatus FlawSearch::step() {
                 }
                 continue;
             }
-            OperatorProxy op = task_proxy.get_operators()[op_id];
             State succ_state = state_registry->get_successor_state(s, op);
             // Deviation flaw
             if (!abstraction.get_state(tr.target_id).includes(succ_state)) {
@@ -218,8 +214,6 @@ static void get_possible_splits(
 void FlawSearch::compute_splits(
     const AbstractState &abstract_state, const State &state, vector<Split> &splits) const {
     int abstract_state_id = abstract_state.get_id();
-    vector<OperatorID> applicable_ops;
-    successor_generator.generate_applicable_ops(state, applicable_ops);
     for (const Transition &tr : get_transitions(abstract_state_id)) {
         assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
         // same f-layer
@@ -228,8 +222,7 @@ void FlawSearch::compute_splits(
             OperatorProxy op = task_proxy.get_operators()[op_id];
 
             // Applicability flaw
-            if (find(applicable_ops.begin(), applicable_ops.end(),
-                     op_id) == applicable_ops.end()) {
+            if (!task_properties::is_applicable(op, state)) {
                 get_possible_splits(abstract_state, state, op.get_preconditions(), splits);
             } else {
                 // Deviation flaw
@@ -413,8 +406,6 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     state_registry(utils::make_unique_ptr<StateRegistry>(task_proxy)),
     search_space(nullptr),
     statistics(nullptr),
-    successor_generator(
-        successor_generator::g_successor_generators[task_proxy]),
     last_refined_abstract_state_id(-1),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),

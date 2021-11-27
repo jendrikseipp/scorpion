@@ -48,7 +48,6 @@ class FlawSearch {
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
     std::unique_ptr<SearchStatistics> statistics;
-    const successor_generator::SuccessorGenerator &successor_generator;
 
     // Flaw data
     int last_refined_abstract_state_id;
