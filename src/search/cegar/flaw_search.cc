@@ -298,12 +298,12 @@ SearchStatus FlawSearch::search_for_flaws() {
         cout << endl;
         utils::g_log << "Expanded "
                      << num_overall_expanded_concrete_states - cur_expanded_states
-                     << " states!" << endl;
+                     << " states." << endl;
         utils::g_log << "Flawed States: " << endl;
         if (search_status == FAILED) {
             for (auto const &pair : flawed_states) {
                 for (const State &s : pair.second) {
-                    utils::g_log << "<" << pair.first << "," << s.get_id()
+                    utils::g_log << "  <" << pair.first << "," << s.get_id()
                                  << ">: " << *create_flaw(s, pair.first)
                                  << endl;
                 }
