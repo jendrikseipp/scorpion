@@ -40,8 +40,8 @@ class FlawSearch {
     const ShortestPaths &shortest_paths;
     const SplitSelector split_selector;
     utils::RandomNumberGenerator &rng;
-    PickFlaw pick_flaw;
-    bool debug;
+    const PickFlaw pick_flaw;
+    const bool debug;
 
     // Search data
     std::unique_ptr<StateOpenList> open_list;
@@ -49,7 +49,6 @@ class FlawSearch {
     std::unique_ptr<SearchSpace> search_space;
     std::unique_ptr<SearchStatistics> statistics;
     const successor_generator::SuccessorGenerator &successor_generator;
-    mutable std::unordered_map<int, int> concrete_state_to_abstract_state;
 
     // Flaw data
     int last_refined_abstract_state_id;

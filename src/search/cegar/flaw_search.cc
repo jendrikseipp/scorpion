@@ -33,13 +33,7 @@ CartesianSet FlawSearch::get_cartesian_set(const ConditionsProxy &conditions) co
 }
 
 int FlawSearch::get_abstract_state_id(const State &state) const {
-    int state_id = state.get_id().get_value();
-    if (concrete_state_to_abstract_state.find(state_id)
-        == concrete_state_to_abstract_state.end()) {
-        concrete_state_to_abstract_state[state_id] =
-            abstraction.get_abstract_state_id(state);
-    }
-    return concrete_state_to_abstract_state[state_id];
+    return abstraction.get_abstract_state_id(state);
 }
 
 int FlawSearch::get_h_value(int abstract_state_id) const {
@@ -99,7 +93,6 @@ void FlawSearch::initialize() {
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
     statistics = utils::make_unique_ptr<SearchStatistics>(utils::Verbosity::SILENT);
 
-    concrete_state_to_abstract_state.clear();
     flawed_states.clear();
 
     State initial_state = state_registry->get_initial_state();
@@ -461,9 +454,8 @@ unique_ptr<Split> FlawSearch::get_split(const pair<int, int> &new_state_ids) {
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 
-    if (split != nullptr) {
+    if (split) {
         last_refined_abstract_state_id = split->abstract_state_id;
-        concrete_state_to_abstract_state.clear();
     }
     timer.stop();
     return split;
