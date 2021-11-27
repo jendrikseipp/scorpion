@@ -197,6 +197,24 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
+static void get_possible_splits(
+    const AbstractState &abs_state,
+    const State &conc_state,
+    const ConditionsProxy &preconditions,
+    vector<Split> &splits) {
+    for (FactProxy precondition_proxy : preconditions) {
+        FactPair fact = precondition_proxy.get_pair();
+        assert(abs_state.contains(fact.var, fact.value));
+        int value = conc_state[fact.var].get_value();
+        if (value != fact.value) {
+            vector<int> wanted = {fact.value};
+            splits.emplace_back(abs_state.get_id(), fact.var, value, move(wanted));
+        }
+    }
+    assert(!splits.empty());
+}
+
+
 void FlawSearch::compute_splits(
     const AbstractState &abstract_state, const State &state, vector<Split> &splits) const {
     int abstract_state_id = abstract_state.get_id();
@@ -212,8 +230,7 @@ void FlawSearch::compute_splits(
             // Applicability flaw
             if (find(applicable_ops.begin(), applicable_ops.end(),
                      op_id) == applicable_ops.end()) {
-                Flaw flaw(abstract_state, state, get_cartesian_set(op.get_preconditions()));
-                get_possible_splits(flaw, splits);
+                get_possible_splits(abstract_state, state, op.get_preconditions(), splits);
             } else {
                 // Deviation flaw
                 assert(tr.target_id != get_abstract_state_id(
