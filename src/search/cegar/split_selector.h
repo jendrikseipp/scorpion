@@ -102,10 +102,6 @@ public:
     }
 
     std::unique_ptr<Split> pick_split(
-        const Flaw &flaw,
-        utils::RandomNumberGenerator &rng) const;
-
-    std::unique_ptr<Split> pick_split(
         const std::vector<Flaw> &flaws,
         utils::RandomNumberGenerator &rng) const;
 };

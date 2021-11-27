@@ -178,33 +178,6 @@ double SplitSelector::rate_split(const AbstractState &state, const Split &split)
 }
 
 unique_ptr<Split> SplitSelector::pick_split(
-    const Flaw &flaw, utils::RandomNumberGenerator &rng) const {
-    vector<Split> splits;
-    get_possible_splits(flaw, splits);
-    assert(!splits.empty());
-
-    if (splits.size() == 1) {
-        return utils::make_unique_ptr<Split>(move(splits[0]));
-    }
-
-    if (pick == PickSplit::RANDOM) {
-        return utils::make_unique_ptr<Split>(move(*rng.choose(splits)));
-    }
-
-    double max_rating = numeric_limits<double>::lowest();
-    Split *selected_split = nullptr;
-    for (Split &split : splits) {
-        double rating = rate_split(flaw.abstract_state, split);
-        if (rating > max_rating) {
-            selected_split = &split;
-            max_rating = rating;
-        }
-    }
-    assert(selected_split);
-    return utils::make_unique_ptr<Split>(move(*selected_split));
-}
-
-unique_ptr<Split> SplitSelector::pick_split(
     const vector<Flaw> &flaws, utils::RandomNumberGenerator &rng) const {
     assert(!flaws.empty());
     if (pick != PickSplit::MAX_COVER) {
