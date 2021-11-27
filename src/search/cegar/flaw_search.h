@@ -62,8 +62,6 @@ class FlawSearch {
     size_t num_overall_expanded_concrete_states;
     utils::Timer timer;
 
-
-protected:
     CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
 
     int get_abstract_state_id(const State &state) const;
@@ -84,6 +82,9 @@ protected:
     SearchStatus step();
 
     SearchStatus search_for_flaws();
+
+    void compute_flaws(
+        const AbstractState &abstract_state, const State &state, std::vector<Flaw> &flaws) const;
 
     std::unique_ptr<Split>
     create_split(const State &state, int abstract_state_id);

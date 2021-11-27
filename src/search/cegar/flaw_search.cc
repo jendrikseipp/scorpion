@@ -196,6 +196,34 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
+void FlawSearch::compute_flaws(
+    const AbstractState &abstract_state, const State &state, vector<Flaw> &flaws) const {
+    int abstract_state_id = abstract_state.get_id();
+    vector<OperatorID> applicable_ops;
+    successor_generator.generate_applicable_ops(state, applicable_ops);
+    for (const Transition &tr : get_transitions(abstract_state_id)) {
+        assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
+        // same f-layer
+        if (is_f_optimal_transition(abstract_state_id, tr)) {
+            OperatorID op_id(tr.op_id);
+            OperatorProxy op = task_proxy.get_operators()[op_id];
+
+            // Applicability flaw
+            if (find(applicable_ops.begin(), applicable_ops.end(),
+                     op_id) == applicable_ops.end()) {
+                flaws.emplace_back(
+                    abstract_state, state, get_cartesian_set(op.get_preconditions()));
+            } else {
+                // Deviation flaw
+                assert(tr.target_id != get_abstract_state_id(
+                           state_registry->get_successor_state(state, op)));
+                flaws.emplace_back(
+                    abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
+            }
+        }
+    }
+}
+
 unique_ptr<Split>
 FlawSearch::create_split(const State &state, int abstract_state_id) {
     assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
@@ -243,7 +271,6 @@ FlawSearch::create_split(const State &state, int abstract_state_id) {
     return nullptr;
 }
 
-// Quite similar to create_flaw. Maybe we want to refactor it at some point
 unique_ptr<Split> FlawSearch::create_best_split(
     const utils::HashSet<State> &states, int abstract_state_id) {
     assert(pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
@@ -251,30 +278,7 @@ unique_ptr<Split> FlawSearch::create_best_split(
 
     vector<Flaw> flaws;
     for (const State &state : states) {
-        vector<OperatorID> applicable_ops;
-        successor_generator.generate_applicable_ops(state, applicable_ops);
-        for (const Transition &tr : get_transitions(abstract_state_id)) {
-            assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
-            // same f-layer
-            if (is_f_optimal_transition(abstract_state_id, tr)) {
-                OperatorID op_id(tr.op_id);
-
-                // Applicability flaw
-                if (find(applicable_ops.begin(), applicable_ops.end(),
-                         op_id) == applicable_ops.end()) {
-                    flaws.emplace_back(
-                        abstract_state, state, get_cartesian_set(
-                            task_proxy.get_operators()[tr.op_id].get_preconditions()));
-                } else {
-                    // Deviation flaw
-                    OperatorProxy op = task_proxy.get_operators()[op_id];
-                    assert(tr.target_id != get_abstract_state_id(
-                               state_registry->get_successor_state(state, op)));
-                    flaws.emplace_back(
-                        abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
-                }
-            }
-        }
+        compute_flaws(abstract_state, state, flaws);
     }
 
     return split_selector.pick_split(flaws, rng);
