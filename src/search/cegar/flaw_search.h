@@ -72,8 +72,8 @@ class FlawSearch {
     SearchStatus step();
     SearchStatus search_for_flaws();
 
-    void compute_flaws(
-        const AbstractState &abstract_state, const State &state, std::vector<Flaw> &flaws) const;
+    void compute_splits(
+        const AbstractState &abstract_state, const State &state, std::vector<Split> &splits) const;
 
     std::unique_ptr<Split> create_split(const State &state, int abstract_state_id);
     std::unique_ptr<Split> create_best_split(

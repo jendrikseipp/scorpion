@@ -116,8 +116,7 @@ int SplitSelector::get_max_hadd_value(int var_id, const vector<int> &values) con
     return max_hadd;
 }
 
-void SplitSelector::get_possible_splits(
-    const Flaw &flaw, vector<Split> &splits) const {
+void get_possible_splits(const Flaw &flaw, vector<Split> &splits) {
     /*
       For each fact in the concrete state that is not contained in the
       desired abstract state, loop over all values in the domain of the
@@ -178,13 +177,11 @@ double SplitSelector::rate_split(const AbstractState &state, const Split &split)
 }
 
 unique_ptr<Split> SplitSelector::pick_split(
-    const vector<Flaw> &flaws, utils::RandomNumberGenerator &rng) const {
-    assert(!flaws.empty());
+    const AbstractState &abstract_state,
+    vector<Split> &&splits,
+    utils::RandomNumberGenerator &rng) const {
+    assert(!splits.empty());
     if (pick != PickSplit::MAX_COVER) {
-        vector<Split> splits;
-        for (const Flaw &flaw : flaws) {
-            get_possible_splits(flaw, splits);
-        }
         if (splits.size() == 1) {
             return utils::make_unique_ptr<Split>(move(splits[0]));
         }
@@ -196,7 +193,7 @@ unique_ptr<Split> SplitSelector::pick_split(
         double max_rating = numeric_limits<double>::lowest();
         Split *selected_split = nullptr;
         for (Split &split : splits) {
-            double rating = rate_split(flaws[0].abstract_state, split);
+            double rating = rate_split(abstract_state, split);
             if (rating > max_rating) {
                 selected_split = &split;
                 max_rating = rating;
@@ -210,13 +207,8 @@ unique_ptr<Split> SplitSelector::pick_split(
 
     vector<int> domain_sizes = get_domain_sizes(task_proxy);
 
-    vector<Split> all_splits;
-    for (const Flaw &flaw : flaws) {
-        get_possible_splits(flaw, all_splits);
-    }
-
     vector<vector<pair<Split, int>>> unique_splits_by_var(task_proxy.get_variables().size());
-    for (const Split &split : all_splits) {
+    for (const Split &split : splits) {
         vector<pair<Split, int>> &split_counts = unique_splits_by_var[split.var_id];
         bool is_duplicate = false;
         for (auto &pair : split_counts) {

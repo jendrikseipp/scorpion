@@ -86,8 +86,6 @@ class SplitSelector {
     int get_min_hadd_value(int var_id, const std::vector<int> &values) const;
     int get_max_hadd_value(int var_id, const std::vector<int> &values) const;
 
-    void get_possible_splits(const Flaw &flaw, std::vector<Split> &splits) const;
-
     double rate_split(const AbstractState &state, const Split &split) const;
 
 public:
@@ -102,9 +100,12 @@ public:
     }
 
     std::unique_ptr<Split> pick_split(
-        const std::vector<Flaw> &flaws,
+        const AbstractState &abstract_state,
+        std::vector<Split> &&splits,
         utils::RandomNumberGenerator &rng) const;
 };
+
+extern void get_possible_splits(const Flaw &flaw, std::vector<Split> &splits);
 }
 
 #endif

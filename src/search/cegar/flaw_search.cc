@@ -197,8 +197,8 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
-void FlawSearch::compute_flaws(
-    const AbstractState &abstract_state, const State &state, vector<Flaw> &flaws) const {
+void FlawSearch::compute_splits(
+    const AbstractState &abstract_state, const State &state, vector<Split> &splits) const {
     int abstract_state_id = abstract_state.get_id();
     vector<OperatorID> applicable_ops;
     successor_generator.generate_applicable_ops(state, applicable_ops);
@@ -212,14 +212,14 @@ void FlawSearch::compute_flaws(
             // Applicability flaw
             if (find(applicable_ops.begin(), applicable_ops.end(),
                      op_id) == applicable_ops.end()) {
-                flaws.emplace_back(
-                    abstract_state, state, get_cartesian_set(op.get_preconditions()));
+                Flaw flaw(abstract_state, state, get_cartesian_set(op.get_preconditions()));
+                get_possible_splits(flaw, splits);
             } else {
                 // Deviation flaw
                 assert(tr.target_id != get_abstract_state_id(
                            state_registry->get_successor_state(state, op)));
-                flaws.emplace_back(
-                    abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
+                Flaw flaw(abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
+                get_possible_splits(flaw, splits);
             }
         }
     }
@@ -229,9 +229,9 @@ unique_ptr<Split>
 FlawSearch::create_split(const State &state, int abstract_state_id) {
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
     assert(abstract_state.get_id() == abstract_state_id);
-    vector<Flaw> flaws;
-    compute_flaws(abstract_state, state, flaws);
-    return split_selector.pick_split(flaws, rng);
+    vector<Split> splits;
+    compute_splits(abstract_state, state, splits);
+    return split_selector.pick_split(abstract_state, move(splits), rng);
 }
 
 unique_ptr<Split> FlawSearch::create_best_split(
@@ -239,12 +239,12 @@ unique_ptr<Split> FlawSearch::create_best_split(
     assert(pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
-    vector<Flaw> flaws;
+    vector<Split> splits;
     for (const State &state : states) {
-        compute_flaws(abstract_state, state, flaws);
+        compute_splits(abstract_state, state, splits);
     }
 
-    return split_selector.pick_split(flaws, rng);
+    return split_selector.pick_split(abstract_state, move(splits), rng);
 }
 
 SearchStatus FlawSearch::search_for_flaws() {
