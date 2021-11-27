@@ -226,49 +226,11 @@ void FlawSearch::compute_flaws(
 
 unique_ptr<Split>
 FlawSearch::create_split(const State &state, int abstract_state_id) {
-    assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
-    vector<OperatorID> applicable_ops;
-    successor_generator.generate_applicable_ops(state, applicable_ops);
-    for (const Transition &tr : get_transitions(abstract_state_id)) {
-        // same f-layer
-        if (is_f_optimal_transition(abstract_state_id, tr)) {
-            OperatorID op_id(tr.op_id);
-            OperatorProxy op = task_proxy.get_operators()[op_id];
-
-            // Applicability flaw
-            if (find(applicable_ops.begin(), applicable_ops.end(),
-                     op_id) == applicable_ops.end()) {
-                if (debug) {
-                    utils::g_log << "Operator " << op_id << " is not applicable: "
-                                 << op.get_name() << endl;
-                }
-                const AbstractState &abstract_state =
-                    abstraction.get_state(abstract_state_id);
-                return split_selector.pick_split(
-                    Flaw(abstract_state, state,
-                         get_cartesian_set(op.get_preconditions())), rng);
-            }
-
-            State succ_state = state_registry->get_successor_state(state, op);
-
-            // Deviation flaw
-            if (tr.target_id != get_abstract_state_id(succ_state)) {
-                if (debug) {
-                    utils::g_log << "Operator " << op_id << " deviates: "
-                                 << op.get_name() << endl;
-                }
-                Flaw flaw(
-                    abstraction.get_state(abstract_state_id),
-                    state,
-                    abstraction.get_state(tr.target_id).regress(op));
-                return split_selector.pick_split(flaw, rng);
-            }
-            assert(pick_flaw == PickFlaw::MAX_H_SINGLE
-                   || pick_flaw == PickFlaw::RANDOM_H_SINGLE);
-        }
-    }
-    utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
-    return nullptr;
+    const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
+    assert(abstract_state.get_id() == abstract_state_id);
+    vector<Flaw> flaws;
+    compute_flaws(abstract_state, state, flaws);
+    return split_selector.pick_split(flaws, rng);
 }
 
 unique_ptr<Split> FlawSearch::create_best_split(
