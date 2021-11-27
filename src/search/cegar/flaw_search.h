@@ -54,7 +54,7 @@ class FlawSearch {
     // Flaw data
     int last_refined_abstract_state_id;
     int best_flaw_h;
-    utils::HashMap<int, utils::HashSet<State>> flawed_states;
+    utils::HashMap<int, std::vector<State>> flawed_states;
 
     // Statistics
     size_t num_searches;
@@ -90,8 +90,7 @@ class FlawSearch {
     create_split(const State &state, int abstract_state_id);
 
     std::unique_ptr<Split> create_best_split(
-        const utils::HashSet<State> &states,
-        int abstract_state_id);
+        const std::vector<State> &states, int abstract_state_id);
 
     std::unique_ptr<Split> get_random_single_split();
 

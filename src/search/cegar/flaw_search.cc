@@ -65,6 +65,10 @@ const vector<Transition> &FlawSearch::get_transitions(
 }
 
 void FlawSearch::add_flaw(const State &state) {
+    int abs_id = get_abstract_state_id(state);
+    // Using a reference to flawed_states[abs_id] doesn't work since it creates a temporary.
+    assert(find(flawed_states[abs_id].begin(), flawed_states[abs_id].end(), state) ==
+           flawed_states[abs_id].end());
     if (pick_flaw == PickFlaw::MIN_H_SINGLE
         || pick_flaw == PickFlaw::MIN_H_BATCH
         || pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
@@ -73,7 +77,7 @@ void FlawSearch::add_flaw(const State &state) {
         }
         if (best_flaw_h >= get_h_value(state)) {
             best_flaw_h = get_h_value(state);
-            flawed_states[get_abstract_state_id(state)].insert(state);
+            flawed_states[abs_id].push_back(state);
         }
     } else if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
         if (best_flaw_h < get_h_value(state)) {
@@ -81,12 +85,13 @@ void FlawSearch::add_flaw(const State &state) {
         }
         if (best_flaw_h <= get_h_value(state)) {
             best_flaw_h = get_h_value(state);
-            flawed_states[get_abstract_state_id(state)].insert(state);
+            flawed_states[abs_id].push_back(state);
         }
     } else {
-        // RANDOM SINGLE
-        flawed_states[get_abstract_state_id(state)].insert(state);
+        assert(pick_flaw == PickFlaw::RANDOM_H_SINGLE);
+        flawed_states[abs_id].push_back(state);
     }
+    assert(!flawed_states.empty());
 }
 
 void FlawSearch::initialize() {
@@ -109,7 +114,6 @@ void FlawSearch::initialize() {
     } else {
         SearchNode node = search_space->get_node(initial_state);
         node.open_initial();
-
         open_list->insert(eval_context, initial_state.get_id());
     }
 }
@@ -139,6 +143,8 @@ SearchStatus FlawSearch::step() {
     vector<OperatorID> applicable_ops;
     successor_generator.generate_applicable_ops(s, applicable_ops);
 
+    bool found_flaw = false;
+
     // Check for each tr if the op is applicable or if there is a deviation
     for (const Transition &tr : get_transitions(get_abstract_state_id(s))) {
         if (!utils::extra_memory_padding_is_reserved())
@@ -151,7 +157,10 @@ SearchStatus FlawSearch::step() {
             // Applicability flaw
             if (find(applicable_ops.begin(), applicable_ops.end(),
                      op_id) == applicable_ops.end()) {
-                add_flaw(s);
+                if (!found_flaw) {
+                    add_flaw(s);
+                    found_flaw = true;
+                }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
                     return FAILED;
                 }
@@ -162,13 +171,16 @@ SearchStatus FlawSearch::step() {
             int successor_ab_id = get_abstract_state_id(succ_state);
             // Deviation flaw
             if (tr.target_id != successor_ab_id) {
-                add_flaw(s);
+                if (!found_flaw) {
+                    add_flaw(s);
+                    found_flaw = true;
+                }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
                     return FAILED;
                 }
                 continue;
             }
-            // No flaw found
+
             statistics->inc_generated();
             SearchNode succ_node = search_space->get_node(succ_state);
 
@@ -234,7 +246,7 @@ FlawSearch::create_split(const State &state, int abstract_state_id) {
 }
 
 unique_ptr<Split> FlawSearch::create_best_split(
-    const utils::HashSet<State> &states, int abstract_state_id) {
+    const vector<State> &states, int abstract_state_id) {
     assert(pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
@@ -328,8 +340,8 @@ unique_ptr<Split>
 FlawSearch::get_min_h_batch_split(const pair<int, int> &new_state_ids) {
     // Handle flaws of refined abstract state
     if (new_state_ids.first != -1) {
-        utils::HashSet<State> states_to_handle =
-            flawed_states.at(last_refined_abstract_state_id);
+        vector<State> states_to_handle =
+            move(flawed_states.at(last_refined_abstract_state_id));
         flawed_states.erase(last_refined_abstract_state_id);
         for (const State &s : states_to_handle) {
             if (task_properties::is_goal_state(task_proxy, s)) {
@@ -369,8 +381,6 @@ FlawSearch::get_min_h_batch_split(const pair<int, int> &new_state_ids) {
             split = create_split(state, abstract_state_id);
         }
 
-        // Remove flawed concrete state from list
-        flawed_states[abstract_state_id].erase(state);
         return split;
     }
 
