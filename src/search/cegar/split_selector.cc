@@ -141,7 +141,7 @@ void SplitSelector::get_possible_splits(
                 }
             }
             assert(!wanted.empty());
-            splits.emplace_back(var_id, fact.value, move(wanted));
+            splits.emplace_back(abstract_state.get_id(), var_id, fact.value, move(wanted));
         }
     }
     assert(!splits.empty());

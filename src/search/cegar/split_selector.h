@@ -42,12 +42,13 @@ enum class PickSplit {
 
 struct Split {
     // Members are logically const but declaring them as such prevents moving them.
+    int abstract_state_id;
     int var_id;
     int value;
     std::vector<int> values;
 
-    Split(int var_id, int value, std::vector<int> &&values)
-        : var_id(var_id), value(value), values(move(values)) {
+    Split(int abstract_state_id, int var_id, int value, std::vector<int> &&values)
+        : abstract_state_id(abstract_state_id), var_id(var_id), value(value), values(move(values)) {
     }
 
     bool combine_with(Split &&other);
