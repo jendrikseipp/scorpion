@@ -326,9 +326,9 @@ unique_ptr<Split> FlawSearch::get_single_split() {
 }
 
 unique_ptr<Split>
-FlawSearch::get_min_h_batch_split(const pair<int, int> &new_state_ids) {
+FlawSearch::get_min_h_batch_split() {
     // Handle flaws of refined abstract state
-    if (new_state_ids.first != -1) {
+    if (last_refined_abstract_state_id != -1) {
         vector<State> states_to_handle =
             move(flawed_states.at(last_refined_abstract_state_id));
         flawed_states.erase(last_refined_abstract_state_id);
@@ -415,20 +415,7 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     timer.reset();
 }
 
-unique_ptr<Split> FlawSearch::get_split(const pair<int, int> &new_state_ids) {
-    if (debug && new_state_ids.first != -1) {
-        utils::g_log << "New abstract states: <" << new_state_ids.first << ",h="
-                     << get_h_value(new_state_ids.first)
-                     << "> and <" << new_state_ids.second << ",h="
-                     << get_h_value(new_state_ids.second) << ">"
-                     << " old-h="
-                     << best_flaw_h << endl;
-    }
-    assert(new_state_ids.first == -1
-           || get_h_value(new_state_ids.first) >= best_flaw_h);
-    assert(new_state_ids.second == -1
-           || get_h_value(new_state_ids.second) >= best_flaw_h);
-
+unique_ptr<Split> FlawSearch::get_split() {
     timer.resume();
     unique_ptr<Split> split = nullptr;
 
@@ -443,10 +430,10 @@ unique_ptr<Split> FlawSearch::get_split(const pair<int, int> &new_state_ids) {
         split = get_single_split();
         break;
     case PickFlaw::MIN_H_BATCH:
-        split = get_min_h_batch_split(new_state_ids);
+        split = get_min_h_batch_split();
         break;
     case PickFlaw::MIN_H_BATCH_MULTI_SPLIT:
-        split = get_min_h_batch_split(new_state_ids);
+        split = get_min_h_batch_split();
         break;
     default:
         utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick_flaw)

@@ -62,39 +62,26 @@ class FlawSearch {
     utils::Timer timer;
 
     CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
-
     int get_abstract_state_id(const State &state) const;
-
     int get_h_value(int abstract_state_id) const;
-
     void add_flaw(int abs_id, const State &state);
-
-    bool is_f_optimal_transition(int abstract_state_id,
-                                 const Transition &tr) const;
-
+    bool is_f_optimal_transition(int abstract_state_id, const Transition &tr) const;
     const std::vector<Transition> &get_transitions(int abstract_state_id) const;
 
     void initialize();
-
     SearchStatus step();
-
     SearchStatus search_for_flaws();
 
     void compute_flaws(
         const AbstractState &abstract_state, const State &state, std::vector<Flaw> &flaws) const;
 
-    std::unique_ptr<Split>
-    create_split(const State &state, int abstract_state_id);
-
+    std::unique_ptr<Split> create_split(const State &state, int abstract_state_id);
     std::unique_ptr<Split> create_best_split(
         const std::vector<State> &states, int abstract_state_id);
 
     std::unique_ptr<Split> get_random_single_split();
-
     std::unique_ptr<Split> get_single_split();
-
-    std::unique_ptr<Split>
-    get_min_h_batch_split(const std::pair<int, int> &new_state_ids);
+    std::unique_ptr<Split> get_min_h_batch_split();
 
 public:
     FlawSearch(const std::shared_ptr<AbstractTask> &task,
@@ -106,7 +93,7 @@ public:
                PickSplit pick_split,
                bool debug);
 
-    std::unique_ptr<Split> get_split(const std::pair<int, int> &new_state_ids);
+    std::unique_ptr<Split> get_split();
 
     void print_statistics() const;
 };

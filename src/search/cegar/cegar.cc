@@ -168,7 +168,6 @@ void CEGAR::refinement_loop() {
     utils::Timer refine_timer(false);
     utils::Timer update_goal_distances_timer(false);
     int num_of_refinements = 0;
-    pair<int, int> new_state_ids(-1, -1);
 
     while (may_keep_refining()) {
         ++num_of_refinements;
@@ -214,7 +213,7 @@ void CEGAR::refinement_loop() {
                              dot_graph_verbosity);
         }
 
-        unique_ptr<Split> split = flaw_search->get_split(new_state_ids);
+        unique_ptr<Split> split = flaw_search->get_split();
 
         find_flaw_timer.stop();
 
@@ -233,7 +232,7 @@ void CEGAR::refinement_loop() {
         const AbstractState &abstract_state = abstraction->get_state(state_id);
         assert(!abstraction->get_goals().count(state_id));
 
-        new_state_ids = abstraction->refine(
+        pair<int, int> new_state_ids = abstraction->refine(
             abstract_state, split->var_id, split->values);
         refine_timer.stop();
 
