@@ -74,8 +74,7 @@ class FlawSearch {
     void compute_splits(
         const AbstractState &abstract_state, const State &state, std::vector<Split> &splits) const;
 
-    std::unique_ptr<Split> create_split(const State &state, int abstract_state_id);
-    std::unique_ptr<Split> create_best_split(
+    std::unique_ptr<Split> create_split(
         const std::vector<State> &states, int abstract_state_id);
 
     std::unique_ptr<Split> get_random_single_split();

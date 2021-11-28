@@ -235,18 +235,8 @@ void FlawSearch::compute_splits(
     }
 }
 
-unique_ptr<Split>
-FlawSearch::create_split(const State &state, int abstract_state_id) {
-    const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
-    assert(abstract_state.get_id() == abstract_state_id);
-    vector<Split> splits;
-    compute_splits(abstract_state, state, splits);
-    return split_selector.pick_split(abstract_state, move(splits), rng);
-}
-
-unique_ptr<Split> FlawSearch::create_best_split(
+unique_ptr<Split> FlawSearch::create_split(
     const vector<State> &states, int abstract_state_id) {
-    assert(pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     vector<Split> splits;
@@ -275,7 +265,7 @@ SearchStatus FlawSearch::search_for_flaws() {
             for (auto const &pair : flawed_states) {
                 for (const State &s : pair.second) {
                     utils::g_log << "  <" << pair.first << "," << s.get_id()
-                                 << ">: " << *create_split(s, pair.first)
+                                 << ">: " << *create_split({s}, pair.first)
                                  << endl;
                 }
             }
@@ -298,7 +288,7 @@ unique_ptr<Split> FlawSearch::get_random_single_split() {
             *next(flawed_states.at(rng_abstract_state_id).begin(),
                   rng(flawed_states.at(rng_abstract_state_id).size()));
 
-        auto split = create_split(rng_state, rng_abstract_state_id);
+        auto split = create_split({rng_state}, rng_abstract_state_id);
         best_flaw_h = get_h_value(split->abstract_state_id);
         return split;
     }
@@ -329,7 +319,7 @@ unique_ptr<Split> FlawSearch::get_single_split() {
             }
             utils::g_log << "Path (without last operator): " << operator_names << endl;
         }
-        return create_split(state, abs_state_id);
+        return create_split({state}, abs_state_id);
     }
     assert(search_status == SOLVED);
     return nullptr;
@@ -367,16 +357,16 @@ FlawSearch::get_min_h_batch_split() {
         assert(!flawed_states.empty());
 
         ++num_overall_refined_flaws;
-        unique_ptr<Split> split;
 
         int abstract_state_id = flawed_states.begin()->first;
-        const State &state = *flawed_states[abstract_state_id].begin();
 
+        unique_ptr<Split> split;
         if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
-            split = create_best_split(flawed_states.begin()->second,
-                                      abstract_state_id);
+            split = create_split(flawed_states.begin()->second,
+                                 abstract_state_id);
         } else {
-            split = create_split(state, abstract_state_id);
+            const State &state = *flawed_states[abstract_state_id].begin();
+            split = create_split({state}, abstract_state_id);
         }
 
         return split;
