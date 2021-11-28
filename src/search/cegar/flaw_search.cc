@@ -263,24 +263,6 @@ SearchStatus FlawSearch::search_for_flaws() {
     return search_status;
 }
 
-unique_ptr<Split> FlawSearch::get_random_single_split() {
-    auto search_status = search_for_flaws();
-
-    if (search_status == FAILED) {
-        assert(!flawed_states.empty());
-
-        int rng_abstract_state_id =
-            next(flawed_states.begin(), rng(flawed_states.size()))->first;
-        auto rng_state =
-            *next(flawed_states.at(rng_abstract_state_id).begin(),
-                  rng(flawed_states.at(rng_abstract_state_id).size()));
-
-        return create_split({rng_state}, rng_abstract_state_id);
-    }
-    assert(search_status == SOLVED);
-    return nullptr;
-}
-
 unique_ptr<Split> FlawSearch::get_single_split() {
     auto search_status = search_for_flaws();
 
@@ -291,8 +273,9 @@ unique_ptr<Split> FlawSearch::get_single_split() {
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
-        int abs_state_id = flawed_states.begin()->first;
-        const State &state = *flawed_states.begin()->second.begin();
+        auto random_bucket = next(flawed_states.begin(), rng(flawed_states.size()));
+        int abstract_state_id = random_bucket->first;
+        const State &state = *rng.choose(random_bucket->second);
 
         if (debug) {
             vector<OperatorID> trace;
@@ -305,7 +288,7 @@ unique_ptr<Split> FlawSearch::get_single_split() {
             utils::g_log << "Path (without last operator): " << operator_names << endl;
         }
 
-        return create_split({state}, abs_state_id);
+        return create_split({state}, abstract_state_id);
     }
     assert(search_status == SOLVED);
     return nullptr;
@@ -398,17 +381,11 @@ unique_ptr<Split> FlawSearch::get_split() {
 
     switch (pick_flaw) {
     case PickFlaw::RANDOM_H_SINGLE:
-        split = get_random_single_split();
-        break;
     case PickFlaw::MIN_H_SINGLE:
-        split = get_single_split();
-        break;
     case PickFlaw::MAX_H_SINGLE:
         split = get_single_split();
         break;
     case PickFlaw::MIN_H_BATCH:
-        split = get_min_h_batch_split();
-        break;
     case PickFlaw::MIN_H_BATCH_MULTI_SPLIT:
         split = get_min_h_batch_split();
         break;
