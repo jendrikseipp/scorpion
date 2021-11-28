@@ -210,38 +210,31 @@ static void get_possible_splits(
     assert(!splits.empty());
 }
 
-
-void FlawSearch::compute_splits(
-    const AbstractState &abstract_state, const State &state, vector<Split> &splits) const {
-    int abstract_state_id = abstract_state.get_id();
-    for (const Transition &tr : get_transitions(abstract_state_id)) {
-        assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
-        // same f-layer
-        if (is_f_optimal_transition(abstract_state_id, tr)) {
-            OperatorID op_id(tr.op_id);
-            OperatorProxy op = task_proxy.get_operators()[op_id];
-
-            // Applicability flaw
-            if (!task_properties::is_applicable(op, state)) {
-                get_possible_splits(abstract_state, state, op.get_preconditions(), splits);
-            } else {
-                // Deviation flaw
-                assert(tr.target_id != get_abstract_state_id(
-                           state_registry->get_successor_state(state, op)));
-                Flaw flaw(abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
-                get_possible_splits(flaw, splits);
-            }
-        }
-    }
-}
-
 unique_ptr<Split> FlawSearch::create_split(
     const vector<State> &states, int abstract_state_id) {
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     vector<Split> splits;
     for (const State &state : states) {
-        compute_splits(abstract_state, state, splits);
+        for (const Transition &tr : get_transitions(abstract_state_id)) {
+            assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
+            // same f-layer
+            if (is_f_optimal_transition(abstract_state_id, tr)) {
+                OperatorID op_id(tr.op_id);
+                OperatorProxy op = task_proxy.get_operators()[op_id];
+
+                // Applicability flaw
+                if (!task_properties::is_applicable(op, state)) {
+                    get_possible_splits(abstract_state, state, op.get_preconditions(), splits);
+                } else {
+                    // Deviation flaw
+                    assert(tr.target_id != get_abstract_state_id(
+                               state_registry->get_successor_state(state, op)));
+                    Flaw flaw(abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
+                    get_possible_splits(flaw, splits);
+                }
+            }
+        }
     }
 
     return split_selector.pick_split(abstract_state, move(splits), rng);
