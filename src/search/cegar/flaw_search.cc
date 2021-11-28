@@ -225,7 +225,7 @@ static vector<bool> get_affected_variables(
 static void get_deviation_splits(
     const AbstractState &abs_state,
     const State &conc_state,
-    const OperatorProxy &op,
+    const vector<bool> &affected_variables,
     const AbstractState &target_abs_state,
     const vector<int> &domain_sizes,
     vector<Split> &splits) {
@@ -237,9 +237,7 @@ static void get_deviation_splits(
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin target[v]: wanted = intersect(a[v], b[v]).
     */
-    int num_vars = conc_state.size();
-    vector<bool> affected_variables = get_affected_variables(op, num_vars);
-
+    int num_vars = domain_sizes.size();
     for (int var = 0; var < num_vars; ++var) {
         if (!affected_variables[var]) {
             int state_value = conc_state[var].get_value();
@@ -266,6 +264,8 @@ unique_ptr<Split> FlawSearch::create_split(
     for (const Transition &tr : get_transitions(abstract_state_id)) {
         if (is_f_optimal_transition(abstract_state_id, tr)) {
             OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+            int num_vars = domain_sizes.size();
+            vector<bool> affected_variables = get_affected_variables(op, num_vars);
 
             for (const State &state : states) {
                 // Applicability flaw
@@ -279,7 +279,8 @@ unique_ptr<Split> FlawSearch::create_split(
                     const AbstractState &target_abstract_state =
                         abstraction.get_state(tr.target_id);
                     get_deviation_splits(
-                        abstract_state, state, op, target_abstract_state, domain_sizes, splits);
+                        abstract_state, state, affected_variables,
+                        target_abstract_state, domain_sizes, splits);
                 }
             }
         }
