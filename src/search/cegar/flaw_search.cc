@@ -95,16 +95,11 @@ void FlawSearch::initialize() {
 
     flawed_states.clear();
 
-    State initial_state = state_registry->get_initial_state();
+    const State &initial_state = state_registry->get_initial_state();
     EvaluationContext eval_context(initial_state, 0, false, statistics.get());
-
-    if (open_list->is_dead_end(eval_context)) {
-        utils::g_log << "Initial state is a dead end." << endl;
-    } else {
-        SearchNode node = search_space->get_node(initial_state);
-        node.open_initial();
-        open_list->insert(eval_context, initial_state.get_id());
-    }
+    SearchNode node = search_space->get_node(initial_state);
+    node.open_initial();
+    open_list->insert(eval_context, initial_state.get_id());
 }
 
 SearchStatus FlawSearch::step() {
