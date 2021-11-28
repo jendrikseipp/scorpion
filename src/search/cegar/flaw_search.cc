@@ -139,8 +139,7 @@ SearchStatus FlawSearch::step() {
 
         // same f-layer
         if (is_f_optimal_transition(abs_id, tr)) {
-            OperatorID op_id(tr.op_id);
-            OperatorProxy op = task_proxy.get_operators()[op_id];
+            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
 
             // Applicability flaw
             if (!task_properties::is_applicable(op, s)) {
@@ -215,14 +214,11 @@ unique_ptr<Split> FlawSearch::create_split(
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     vector<Split> splits;
-    for (const State &state : states) {
-        for (const Transition &tr : get_transitions(abstract_state_id)) {
-            assert(abstraction.get_abstract_state_id(state) == abstract_state_id);
-            // same f-layer
-            if (is_f_optimal_transition(abstract_state_id, tr)) {
-                OperatorID op_id(tr.op_id);
-                OperatorProxy op = task_proxy.get_operators()[op_id];
+    for (const Transition &tr : get_transitions(abstract_state_id)) {
+        if (is_f_optimal_transition(abstract_state_id, tr)) {
+            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
 
+            for (const State &state : states) {
                 // Applicability flaw
                 if (!task_properties::is_applicable(op, state)) {
                     get_possible_splits(abstract_state, state, op.get_preconditions(), splits);
