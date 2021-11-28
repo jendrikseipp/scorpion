@@ -277,6 +277,14 @@ unique_ptr<Split> FlawSearch::create_split(
                     get_precondition_splits(
                         abstract_state, state, op.get_preconditions(), splits);
                 } else {
+                    // Flaws are only guaranteed to exist for fringe states.
+                    if ((pick_flaw == PickFlaw::MAX_H_SINGLE
+                         || pick_flaw == PickFlaw::RANDOM_H_SINGLE)
+                        && abstraction.get_state(tr.target_id).includes(
+                            state_registry->get_successor_state(state, op))) {
+                        continue;
+                    }
+
                     // Deviation flaw
                     assert(tr.target_id != get_abstract_state_id(
                                state_registry->get_successor_state(state, op)));
