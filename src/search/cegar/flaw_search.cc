@@ -208,24 +208,31 @@ static void get_precondition_splits(
     }
 }
 
-static vector<bool> get_affected_variables(
+static vector<int> get_unaffected_variables(
     const OperatorProxy &op, int num_variables) {
-    vector<bool> affected_variables(num_variables);
+    vector<bool> affected(num_variables);
     for (EffectProxy effect : op.get_effects()) {
         FactPair fact = effect.get_fact().get_pair();
-        affected_variables[fact.var] = true;
+        affected[fact.var] = true;
     }
     for (FactProxy precondition : op.get_preconditions()) {
         FactPair fact = precondition.get_pair();
-        affected_variables[fact.var] = true;
+        affected[fact.var] = true;
     }
-    return affected_variables;
+    vector<int> unaffected_vars;
+    unaffected_vars.reserve(num_variables);
+    for (int var = 0; var < num_variables; ++var) {
+        if (!affected[var]) {
+            unaffected_vars.push_back(var);
+        }
+    }
+    return unaffected_vars;
 }
 
 static void get_deviation_splits(
     const AbstractState &abs_state,
     const State &conc_state,
-    const vector<bool> &affected_variables,
+    const vector<int> &unaffected_variables,
     const AbstractState &target_abs_state,
     const vector<int> &domain_sizes,
     vector<Split> &splits) {
@@ -237,21 +244,18 @@ static void get_deviation_splits(
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin target[v]: wanted = intersect(a[v], b[v]).
     */
-    int num_vars = domain_sizes.size();
-    for (int var = 0; var < num_vars; ++var) {
-        if (!affected_variables[var]) {
-            int state_value = conc_state[var].get_value();
-            if (!target_abs_state.contains(var, state_value)) {
-                vector<int> wanted;
-                for (int value = 0; value < domain_sizes[var]; ++value) {
-                    if (abs_state.contains(var, value) &&
-                        target_abs_state.contains(var, value)) {
-                        wanted.push_back(value);
-                    }
+    for (int var : unaffected_variables) {
+        int state_value = conc_state[var].get_value();
+        if (!target_abs_state.contains(var, state_value)) {
+            vector<int> wanted;
+            for (int value = 0; value < domain_sizes[var]; ++value) {
+                if (abs_state.contains(var, value) &&
+                    target_abs_state.contains(var, value)) {
+                    wanted.push_back(value);
                 }
-                assert(!wanted.empty());
-                splits.emplace_back(abs_state.get_id(), var, state_value, move(wanted));
             }
+            assert(!wanted.empty());
+            splits.emplace_back(abs_state.get_id(), var, state_value, move(wanted));
         }
     }
 }
@@ -265,7 +269,7 @@ unique_ptr<Split> FlawSearch::create_split(
         if (is_f_optimal_transition(abstract_state_id, tr)) {
             OperatorProxy op = task_proxy.get_operators()[tr.op_id];
             int num_vars = domain_sizes.size();
-            vector<bool> affected_variables = get_affected_variables(op, num_vars);
+            vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
 
             for (const State &state : states) {
                 // Applicability flaw
@@ -279,7 +283,7 @@ unique_ptr<Split> FlawSearch::create_split(
                     const AbstractState &target_abstract_state =
                         abstraction.get_state(tr.target_id);
                     get_deviation_splits(
-                        abstract_state, state, affected_variables,
+                        abstract_state, state, unaffected_variables,
                         target_abstract_state, domain_sizes, splits);
                 }
             }
