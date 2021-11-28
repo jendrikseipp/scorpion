@@ -10,15 +10,12 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
-#include "../evaluators/g_evaluator.h"
-#include "../open_lists/best_first_open_list.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
 
 #include <iterator>
-#include <optional.hh>
 
 using namespace std;
 
@@ -88,7 +85,7 @@ void FlawSearch::initialize() {
     ++num_searches;
     last_refined_abstract_state_id = -1;
     best_flaw_h = (pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF;
-    assert(open_list->empty());
+    assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
     statistics = utils::make_unique_ptr<SearchStatistics>(utils::Verbosity::SILENT);
@@ -96,18 +93,18 @@ void FlawSearch::initialize() {
     flawed_states.clear();
 
     const State &initial_state = state_registry->get_initial_state();
-    EvaluationContext eval_context(initial_state, 0, false, statistics.get());
     SearchNode node = search_space->get_node(initial_state);
     node.open_initial();
-    open_list->insert(eval_context, initial_state.get_id());
+    open_list.push(initial_state.get_id());
 }
 
 SearchStatus FlawSearch::step() {
-    if (open_list->empty()) {
-        /// Completely explored state space
+    if (open_list.empty()) {
+        // Completely explored f-optimal state space.
         return FAILED;
     }
-    StateID id = open_list->remove_min();
+    StateID id = open_list.front();
+    open_list.pop();
     State s = state_registry->lookup_state(id);
     SearchNode node = search_space->get_node(s);
 
@@ -132,7 +129,6 @@ SearchStatus FlawSearch::step() {
         if (!utils::extra_memory_padding_is_reserved())
             return TIMEOUT;
 
-        // same f-layer
         if (is_f_optimal_transition(abs_id, tr)) {
             OperatorProxy op = task_proxy.get_operators()[tr.op_id];
 
@@ -162,25 +158,12 @@ SearchStatus FlawSearch::step() {
 
             statistics->inc_generated();
             SearchNode succ_node = search_space->get_node(succ_state);
-
             assert(!succ_node.is_dead_end());
 
             if (succ_node.is_new()) {
-                // We have not seen this state before.
-                // Evaluate and create a new node.
-
-                // Careful: succ_node.get_g() is not available here yet,
-                // hence the stupid computation of succ_g.
-                // TODO: Make this less fragile.
-                int succ_g = node.get_g() + op.get_cost();
-
-                EvaluationContext succ_eval_context(
-                    succ_state, succ_g, false, statistics.get());
-                statistics->inc_evaluated_states();
-
                 succ_node.open(node, op, op.get_cost());
-
-                open_list->insert(succ_eval_context, succ_state.get_id());
+                statistics->inc_evaluated_states();
+                open_list.push(succ_state.get_id());
             }
         }
     }
@@ -404,14 +387,6 @@ FlawSearch::get_min_h_batch_split() {
     return nullptr;
 }
 
-static unique_ptr<StateOpenList> make_open_list() {
-    shared_ptr<Evaluator> g_evaluator = make_shared<g_evaluator::GEvaluator>();
-    Options options;
-    options.set("eval", g_evaluator);
-    options.set("pref_only", false);
-    return standard_scalar_open_list::BestFirstOpenListFactory(options).create_state_open_list();
-}
-
 FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
                        const vector<int> &domain_sizes,
                        const Abstraction &abstraction,
@@ -428,7 +403,6 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     rng(rng),
     pick_flaw(pick_flaw),
     debug(debug),
-    open_list(make_open_list()),
     last_refined_abstract_state_id(-1),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),

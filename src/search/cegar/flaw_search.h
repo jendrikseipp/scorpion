@@ -44,7 +44,7 @@ class FlawSearch {
     const bool debug;
 
     // Search data
-    std::unique_ptr<StateOpenList> open_list;
+    std::queue<StateID> open_list;
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
     std::unique_ptr<SearchStatistics> statistics;
