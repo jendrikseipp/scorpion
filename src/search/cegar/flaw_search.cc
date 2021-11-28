@@ -88,7 +88,6 @@ void FlawSearch::initialize() {
     assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
-    statistics = utils::make_unique_ptr<SearchStatistics>(utils::Verbosity::SILENT);
 
     flawed_states.clear();
 
@@ -115,7 +114,6 @@ SearchStatus FlawSearch::step() {
     node.close();
     assert(!node.is_dead_end());
     ++num_overall_expanded_concrete_states;
-    statistics->inc_expanded();
 
     if (task_properties::is_goal_state(task_proxy, s)) {
         return SOLVED;
@@ -156,13 +154,11 @@ SearchStatus FlawSearch::step() {
                 continue;
             }
 
-            statistics->inc_generated();
             SearchNode succ_node = search_space->get_node(succ_state);
             assert(!succ_node.is_dead_end());
 
             if (succ_node.is_new()) {
                 succ_node.open(node, op, op.get_cost());
-                statistics->inc_evaluated_states();
                 open_list.push(succ_state.get_id());
             }
         }

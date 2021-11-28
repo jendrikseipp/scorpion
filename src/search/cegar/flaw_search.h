@@ -47,7 +47,6 @@ class FlawSearch {
     std::queue<StateID> open_list;
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
-    std::unique_ptr<SearchStatistics> statistics;
 
     // Flaw data
     int last_refined_abstract_state_id;
