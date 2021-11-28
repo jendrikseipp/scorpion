@@ -207,82 +207,69 @@ unique_ptr<Split> SplitSelector::pick_split(
 
     vector<int> domain_sizes = get_domain_sizes(task_proxy);
 
-    vector<vector<pair<Split, int>>> unique_splits_by_var(task_proxy.get_variables().size());
-    for (const Split &split : splits) {
-        vector<pair<Split, int>> &split_counts = unique_splits_by_var[split.var_id];
+    vector<vector<Split>> unique_splits_by_var(task_proxy.get_variables().size());
+    for (Split &new_split : splits) {
+        vector<Split> &var_splits = unique_splits_by_var[new_split.var_id];
         bool is_duplicate = false;
-        for (auto &pair : split_counts) {
-            if (pair.first == split) {
+        for (auto &old_split : var_splits) {
+            if (old_split == new_split) {
                 is_duplicate = true;
-                ++pair.second;
+                ++old_split.count;
             }
         }
         if (!is_duplicate) {
-            split_counts.emplace_back(move(split), 1);
+            var_splits.push_back(move(new_split));
         }
     }
 
     if (debug) {
         cout << "Unsorted splits: " << endl;
-        for (auto &split_counts : unique_splits_by_var) {
-            utils::g_log << " [";
-            for (auto &pair : split_counts) {
-                const Split &split = pair.first;
-                int count = pair.second;
-                cout << split << ": " << count << ", ";
-            }
-            cout << "]" << endl;
+        for (auto &var_splits : unique_splits_by_var) {
+            utils::g_log << " " << var_splits << endl;
         }
     }
 
 
-    for (auto &split_counts : unique_splits_by_var) {
-        if (split_counts.size() <= 1) {
+    for (auto &var_splits : unique_splits_by_var) {
+        if (var_splits.size() <= 1) {
             continue;
         }
         // Sort splits by the number of covered flaws.
-        sort(split_counts.begin(), split_counts.end(),
-             [](const pair<Split, int> &pair1, const pair<Split, int> &pair2) {
-                 return pair1.second > pair2.second;
+        sort(var_splits.begin(), var_splits.end(),
+             [](const Split &split1, const Split &split2) {
+                 return split1.count > split2.count;
              });
         // Try to merge each split into first split.
-        Split &best_split_for_var = split_counts[0].first;
-        for (size_t i = 1; i < split_counts.size(); ++i) {
+        Split &best_split_for_var = var_splits[0];
+        for (size_t i = 1; i < var_splits.size(); ++i) {
             if (debug) {
-                cout << "Combine " << best_split_for_var << " with " << split_counts[i].first;
+                cout << "Combine " << best_split_for_var << " with " << var_splits[i];
             }
-            bool combined = best_split_for_var.combine_with(move(split_counts[i].first));
+            bool combined = best_split_for_var.combine_with(move(var_splits[i]));
             if (debug) {
                 cout << " --> " << combined << endl;
             }
             if (combined) {
-                split_counts[0].second += split_counts[i].second;
+                var_splits[0].count += var_splits[i].count;
             }
         }
-        split_counts.erase(split_counts.begin() + 1, split_counts.end());
+        var_splits.erase(var_splits.begin() + 1, var_splits.end());
     }
 
     if (debug) {
         cout << "Sorted and combined splits: " << endl;
-        for (auto &split_counts : unique_splits_by_var) {
-            utils::g_log << " [";
-            for (auto &pair : split_counts) {
-                const Split &split = pair.first;
-                int count = pair.second;
-                cout << split << ": " << count << ", ";
-            }
-            cout << "]" << endl;
+        for (auto &var_splits : unique_splits_by_var) {
+            utils::g_log << " " << var_splits << endl;
         }
     }
 
     Split *best_split = nullptr;
     int max_count = -1;
-    for (auto &split_counts : unique_splits_by_var) {
-        if (!split_counts.empty()) {
-            Split &best_split_for_var = split_counts[0].first;
-            int count = split_counts[0].second;
-            if (count > max_count) {
-                max_count = count;
+    for (auto &var_splits : unique_splits_by_var) {
+        if (!var_splits.empty()) {
+            Split &best_split_for_var = var_splits[0];
+            if (best_split_for_var.count > max_count) {
+                max_count = best_split_for_var.count;
                 best_split = &best_split_for_var;
             }
         }
