@@ -200,10 +200,10 @@ static void get_precondition_splits(
     for (FactProxy precondition_proxy : preconditions) {
         FactPair fact = precondition_proxy.get_pair();
         assert(abs_state.contains(fact.var, fact.value));
-        int value = conc_state[fact.var].get_value();
-        if (value != fact.value) {
+        int state_value = conc_state[fact.var].get_value();
+        if (state_value != fact.value) {
             vector<int> wanted = {fact.value};
-            splits.emplace_back(abs_state.get_id(), fact.var, value, move(wanted));
+            splits.emplace_back(abs_state.get_id(), fact.var, state_value, move(wanted));
         }
     }
 }
@@ -242,7 +242,7 @@ static void get_deviation_splits(
 
       pre(o)[v] defined: no split possible since o is applicable in s.
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
-      pre(o)[v] and eff(o)[v] undefined: if s[v] \notin target[v]: wanted = intersect(a[v], b[v]).
+      pre(o)[v] and eff(o)[v] undefined: if s[v] \notin target[v], wanted = intersect(a[v], b[v]).
     */
     for (int var : unaffected_variables) {
         int state_value = conc_state[var].get_value();
@@ -278,8 +278,8 @@ unique_ptr<Split> FlawSearch::create_split(
                         abstract_state, state, op.get_preconditions(), splits);
                 } else {
                     // Flaws are only guaranteed to exist for fringe states.
-                    if ((pick_flaw == PickFlaw::MAX_H_SINGLE
-                         || pick_flaw == PickFlaw::RANDOM_H_SINGLE)
+                    if ((pick_flaw == PickFlaw::MAX_H_SINGLE ||
+                         pick_flaw == PickFlaw::RANDOM_H_SINGLE)
                         && abstraction.get_state(tr.target_id).includes(
                             state_registry->get_successor_state(state, op))) {
                         continue;
