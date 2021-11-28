@@ -88,7 +88,7 @@ void FlawSearch::initialize() {
     ++num_searches;
     last_refined_abstract_state_id = -1;
     best_flaw_h = (pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF;
-    open_list->clear();
+    assert(open_list->empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
     statistics = utils::make_unique_ptr<SearchStatistics>(utils::Verbosity::SILENT);
@@ -359,6 +359,14 @@ FlawSearch::get_min_h_batch_split() {
     return nullptr;
 }
 
+static unique_ptr<StateOpenList> make_open_list() {
+    shared_ptr<Evaluator> g_evaluator = make_shared<g_evaluator::GEvaluator>();
+    Options options;
+    options.set("eval", g_evaluator);
+    options.set("pref_only", false);
+    return standard_scalar_open_list::BestFirstOpenListFactory(options).create_state_open_list();
+}
+
 FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
                        const vector<int> &domain_sizes,
                        const Abstraction &abstraction,
@@ -375,22 +383,11 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     rng(rng),
     pick_flaw(pick_flaw),
     debug(debug),
-    open_list(nullptr),
-    state_registry(utils::make_unique_ptr<StateRegistry>(task_proxy)),
-    search_space(nullptr),
-    statistics(nullptr),
+    open_list(make_open_list()),
     last_refined_abstract_state_id(-1),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),
     num_overall_expanded_concrete_states(0) {
-    shared_ptr<Evaluator> g_evaluator = make_shared<g_evaluator::GEvaluator>();
-    Options options;
-    options.set("eval", g_evaluator);
-    options.set("pref_only", false);
-
-    open_list =
-        make_shared<standard_scalar_open_list::BestFirstOpenListFactory>
-            (options)->create_state_open_list();
     timer.stop();
     timer.reset();
 }
