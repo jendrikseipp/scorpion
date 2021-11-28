@@ -275,9 +275,7 @@ unique_ptr<Split> FlawSearch::get_random_single_split() {
             *next(flawed_states.at(rng_abstract_state_id).begin(),
                   rng(flawed_states.at(rng_abstract_state_id).size()));
 
-        auto split = create_split({rng_state}, rng_abstract_state_id);
-        best_flaw_h = get_h_value(split->abstract_state_id);
-        return split;
+        return create_split({rng_state}, rng_abstract_state_id);
     }
     assert(search_status == SOLVED);
     return nullptr;
@@ -295,6 +293,7 @@ unique_ptr<Split> FlawSearch::get_single_split() {
 
         int abs_state_id = flawed_states.begin()->first;
         const State &state = *flawed_states.begin()->second.begin();
+
         if (debug) {
             vector<OperatorID> trace;
             search_space->trace_path(state, trace);
@@ -305,6 +304,7 @@ unique_ptr<Split> FlawSearch::get_single_split() {
             }
             utils::g_log << "Path (without last operator): " << operator_names << endl;
         }
+
         return create_split({state}, abs_state_id);
     }
     assert(search_status == SOLVED);
@@ -420,6 +420,8 @@ unique_ptr<Split> FlawSearch::get_split() {
 
     if (split) {
         last_refined_abstract_state_id = split->abstract_state_id;
+        assert(pick_flaw == PickFlaw::RANDOM_H_SINGLE
+               || best_flaw_h == get_h_value(split->abstract_state_id));
     }
     timer.stop();
     return split;
