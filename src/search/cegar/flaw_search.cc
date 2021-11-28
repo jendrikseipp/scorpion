@@ -322,9 +322,8 @@ FlawSearch::get_min_h_batch_split() {
             move(flawed_states.at(last_refined_abstract_state_id));
         flawed_states.erase(last_refined_abstract_state_id);
         for (const State &s : states_to_handle) {
-            if (task_properties::is_goal_state(task_proxy, s)) {
-                return nullptr;
-            }
+            // We only add non-goal states to flawed_states.
+            assert(!task_properties::is_goal_state(task_proxy, s));
             int abs_id = get_abstract_state_id(s);
             if (get_h_value(abs_id) == best_flaw_h) {
                 add_flaw(abs_id, s);
