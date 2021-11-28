@@ -208,6 +208,20 @@ static void get_precondition_splits(
     }
 }
 
+static vector<bool> get_affected_variables(
+    const OperatorProxy &op, int num_variables) {
+    vector<bool> affected_variables(num_variables);
+    for (EffectProxy effect : op.get_effects()) {
+        FactPair fact = effect.get_fact().get_pair();
+        affected_variables[fact.var] = true;
+    }
+    for (FactProxy precondition : op.get_preconditions()) {
+        FactPair fact = precondition.get_pair();
+        affected_variables[fact.var] = true;
+    }
+    return affected_variables;
+}
+
 static void get_deviation_splits(
     const AbstractState &abs_state,
     const State &conc_state,
@@ -224,16 +238,7 @@ static void get_deviation_splits(
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin target[v]: wanted = intersect(a[v], b[v]).
     */
     int num_vars = conc_state.size();
-    vector<bool> affected_variables(num_vars);
-    for (EffectProxy effect : op.get_effects()) {
-        FactPair fact = effect.get_fact().get_pair();
-        affected_variables[fact.var] = true;
-    }
-    for (FactProxy precondition : op.get_preconditions()) {
-        FactPair fact = precondition.get_pair();
-        affected_variables[fact.var] = true;
-        assert(conc_state[fact.var].get_value() == fact.value);
-    }
+    vector<bool> affected_variables = get_affected_variables(op, num_vars);
 
     for (int var = 0; var < num_vars; ++var) {
         if (!affected_variables[var]) {
