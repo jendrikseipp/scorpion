@@ -76,14 +76,15 @@ class FlawSearch {
     std::unique_ptr<Split> get_min_h_batch_split();
 
 public:
-    FlawSearch(const std::shared_ptr<AbstractTask> &task,
-               const std::vector<int> &domain_sizes,
-               const Abstraction &abstraction,
-               const ShortestPaths &shortest_paths,
-               utils::RandomNumberGenerator &rng,
-               PickFlaw pick_flaw,
-               PickSplit pick_split,
-               bool debug);
+    FlawSearch(
+        const std::shared_ptr<AbstractTask> &task,
+        const std::vector<int> &domain_sizes,
+        const Abstraction &abstraction,
+        const ShortestPaths &shortest_paths,
+        utils::RandomNumberGenerator &rng,
+        PickFlaw pick_flaw,
+        PickSplit pick_split,
+        bool debug);
 
     std::unique_ptr<Split> get_split();
 

@@ -211,12 +211,19 @@ static void get_deviation_splits(
     const vector<int> &domain_sizes,
     vector<Split> &splits) {
     /*
-      Let the abstract transition be (a, o, b). We distinguish three cases for
-      each variable v:
+      For each fact in the concrete state that is not contained in the
+      target abstract state, loop over all values in the domain of the
+      corresponding variable. The values that are in both the current and
+      the target abstract state are the "wanted" ones, i.e., the ones that
+      we want to split off. This test can be specialized for precondition and
+      deviation flaws.
+
+      Let the desired abstract transition be (a, o, t) and the deviation (a, o,
+      b). We distinguish three cases for each variable v:
 
       pre(o)[v] defined: no split possible since o is applicable in s.
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
-      pre(o)[v] and eff(o)[v] undefined: if s[v] \notin target[v], wanted = intersect(a[v], b[v]).
+      pre(o)[v] and eff(o)[v] undefined: if s[v] \notin t[v], wanted = intersect(a[v], b[v]).
     */
     for (int var : unaffected_variables) {
         int state_value = conc_state[var].get_value();

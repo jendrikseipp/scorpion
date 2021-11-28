@@ -6,8 +6,8 @@
 
 #include "../heuristics/additive_heuristic.h"
 
-#include "../utils/memory.h"
 #include "../utils/logging.h"
+#include "../utils/memory.h"
 #include "../utils/rng.h"
 
 #include <cassert>
@@ -114,33 +114,6 @@ int SplitSelector::get_max_hadd_value(int var_id, const vector<int> &values) con
         }
     }
     return max_hadd;
-}
-
-void get_possible_splits(const Flaw &flaw, vector<Split> &splits) {
-    /*
-      For each fact in the concrete state that is not contained in the
-      desired abstract state, loop over all values in the domain of the
-      corresponding variable. The values that are in both the current and
-      the desired abstract state are the "wanted" ones, i.e., the ones that
-      we want to split off.
-    */
-    for (FactProxy wanted_fact_proxy : flaw.concrete_state) {
-        FactPair fact = wanted_fact_proxy.get_pair();
-        if (!flaw.desired_cartesian_set.test(fact.var, fact.value)) {
-            VariableProxy var = wanted_fact_proxy.get_variable();
-            int var_id = var.get_id();
-            vector<int> wanted;
-            for (int value = 0; value < var.get_domain_size(); ++value) {
-                if (flaw.abstract_state.contains(var_id, value) &&
-                    flaw.desired_cartesian_set.test(var_id, value)) {
-                    wanted.push_back(value);
-                }
-            }
-            assert(!wanted.empty());
-            splits.emplace_back(flaw.abstract_state.get_id(), var_id, fact.value, move(wanted));
-        }
-    }
-    assert(!splits.empty());
 }
 
 double SplitSelector::rate_split(const AbstractState &state, const Split &split) const {

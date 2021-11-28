@@ -33,7 +33,7 @@ enum class PickSplit {
     // Compare the h^add(s_0) values of the facts.
     MIN_HADD,
     MAX_HADD,
-    // Max Cover rating multiple different concrete states
+    // Compute split that covers the maximum number of flaws for several concrete states.
     MAX_COVER
 };
 
@@ -109,8 +109,6 @@ public:
         std::vector<Split> &&splits,
         utils::RandomNumberGenerator &rng) const;
 };
-
-extern void get_possible_splits(const Flaw &flaw, std::vector<Split> &splits);
 }
 
 #endif
