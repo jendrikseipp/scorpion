@@ -320,18 +320,20 @@ FlawSearch::get_min_h_batch_split() {
     if (search_status == TIMEOUT)
         return nullptr;
 
-    // Flaws to refine are present
+    // There are flaws to refine.
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
-        int abstract_state_id = flawed_states.begin()->first;
+        /* It doesn't matter in which order we consider the abstract states with
+           minimal h value since we'll refine all of them anyway. */
+        auto first_bucket = flawed_states.begin();
+        int abstract_state_id = first_bucket->first;
 
         unique_ptr<Split> split;
         if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
-            split = create_split(flawed_states.begin()->second,
-                                 abstract_state_id);
+            split = create_split(first_bucket->second, abstract_state_id);
         } else {
-            const State &state = *flawed_states[abstract_state_id].begin();
+            const State &state = *rng.choose(first_bucket->second);
             split = create_split({state}, abstract_state_id);
         }
 
