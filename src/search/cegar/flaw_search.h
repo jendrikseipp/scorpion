@@ -56,7 +56,6 @@ class FlawSearch {
 
     // Statistics
     size_t num_searches;
-    size_t num_overall_refined_flaws;
     size_t num_overall_expanded_concrete_states;
     utils::Timer timer;
 

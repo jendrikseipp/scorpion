@@ -269,8 +269,6 @@ unique_ptr<Split> FlawSearch::get_random_single_split() {
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
-        ++num_overall_refined_flaws;
-
         int rng_abstract_state_id =
             next(flawed_states.begin(), rng(flawed_states.size()))->first;
         auto rng_state =
@@ -295,7 +293,6 @@ unique_ptr<Split> FlawSearch::get_single_split() {
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
-        ++num_overall_refined_flaws;
         int abs_state_id = flawed_states.begin()->first;
         const State &state = *flawed_states.begin()->second.begin();
         if (debug) {
@@ -344,8 +341,6 @@ FlawSearch::get_min_h_batch_split() {
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
-        ++num_overall_refined_flaws;
-
         int abstract_state_id = flawed_states.begin()->first;
 
         unique_ptr<Split> split;
@@ -387,7 +382,6 @@ FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
     last_refined_abstract_state_id(-1),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),
-    num_overall_refined_flaws(0),
     num_overall_expanded_concrete_states(0) {
     shared_ptr<Evaluator> g_evaluator = make_shared<g_evaluator::GEvaluator>();
     Options options;
@@ -435,19 +429,20 @@ unique_ptr<Split> FlawSearch::get_split() {
 }
 
 void FlawSearch::print_statistics() const {
+    // Avoid division by zero for corner cases.
+    float num_overall_refined_flaws = max(1, abstraction.get_num_states() - 1);
+    float searches = static_cast<float>(max(1ul, num_searches));
     utils::g_log << endl;
-    utils::g_log << "#Flaw searches: " << num_searches << endl;
+    utils::g_log << "#Flaw searches: " << searches << endl;
     utils::g_log << "#Flaws refined: " << num_overall_refined_flaws << endl;
     utils::g_log << "#Expanded concrete states: "
                  << num_overall_expanded_concrete_states << endl;
     utils::g_log << "Flaw search time: " << timer << endl;
     utils::g_log << "Avg flaws refined: "
-                 << num_overall_refined_flaws / (float)num_searches << endl;
+                 << num_overall_refined_flaws / searches << endl;
     utils::g_log << "Avg expanded concrete states: "
-                 << num_overall_expanded_concrete_states / (float)num_searches
-                 << endl;
-    utils::g_log << "Avg Flaw search time: "
-                 << timer() / (float)num_searches << endl;
+                 << num_overall_expanded_concrete_states / searches << endl;
+    utils::g_log << "Avg Flaw search time: " << timer() / searches << endl;
     utils::g_log << endl;
 }
 }
