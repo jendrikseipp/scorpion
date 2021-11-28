@@ -265,20 +265,16 @@ unique_ptr<Split> FlawSearch::create_split(
             for (const State &state : states) {
                 // Applicability flaw
                 if (!task_properties::is_applicable(op, state)) {
-                    get_precondition_splits(abstract_state, state, op.get_preconditions(), splits);
+                    get_precondition_splits(
+                        abstract_state, state, op.get_preconditions(), splits);
                 } else {
                     // Deviation flaw
                     assert(tr.target_id != get_abstract_state_id(
                                state_registry->get_successor_state(state, op)));
-                    Flaw flaw(abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
-                    vector<Split> old_splits;
-                    vector<Split> new_splits;
-                    get_possible_splits(flaw, old_splits);
-                    const AbstractState &target_abstract_state = abstraction.get_state(tr.target_id);
-                    get_deviation_splits(abstract_state, state, op, target_abstract_state, domain_sizes, new_splits);
-                    assert(new_splits == old_splits);
-
-                    get_deviation_splits(abstract_state, state, op, target_abstract_state, domain_sizes, splits);
+                    const AbstractState &target_abstract_state =
+                        abstraction.get_state(tr.target_id);
+                    get_deviation_splits(
+                        abstract_state, state, op, target_abstract_state, domain_sizes, splits);
                 }
             }
         }
