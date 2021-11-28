@@ -192,7 +192,7 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
-static void get_possible_splits(
+static void get_precondition_splits(
     const AbstractState &abs_state,
     const State &conc_state,
     const ConditionsProxy &preconditions,
@@ -206,7 +206,51 @@ static void get_possible_splits(
             splits.emplace_back(abs_state.get_id(), fact.var, value, move(wanted));
         }
     }
-    assert(!splits.empty());
+}
+
+static void get_deviation_splits(
+    const AbstractState &abs_state,
+    const State &conc_state,
+    const OperatorProxy &op,
+    const AbstractState &target_abs_state,
+    const vector<int> &domain_sizes,
+    vector<Split> &splits) {
+    /*
+      Let the abstract transition be (a, o, b). We distinguish three cases for
+      each variable v:
+
+      pre(o)[v] defined: no split possible since o is applicable in s.
+      pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
+      pre(o)[v] and eff(o)[v] undefined: if s[v] \notin target[v]: wanted = intersect(a[v], b[v]).
+    */
+    int num_vars = conc_state.size();
+    vector<bool> affected_variables(num_vars);
+    for (EffectProxy effect : op.get_effects()) {
+        FactPair fact = effect.get_fact().get_pair();
+        affected_variables[fact.var] = true;
+    }
+    for (FactProxy precondition : op.get_preconditions()) {
+        FactPair fact = precondition.get_pair();
+        affected_variables[fact.var] = true;
+        assert(conc_state[fact.var].get_value() == fact.value);
+    }
+
+    for (int var = 0; var < num_vars; ++var) {
+        if (!affected_variables[var]) {
+            int state_value = conc_state[var].get_value();
+            if (!target_abs_state.contains(var, state_value)) {
+                vector<int> wanted;
+                for (int value = 0; value < domain_sizes[var]; ++value) {
+                    if (abs_state.contains(var, value) &&
+                        target_abs_state.contains(var, value)) {
+                        wanted.push_back(value);
+                    }
+                }
+                assert(!wanted.empty());
+                splits.emplace_back(abs_state.get_id(), var, state_value, move(wanted));
+            }
+        }
+    }
 }
 
 unique_ptr<Split> FlawSearch::create_split(
@@ -221,13 +265,20 @@ unique_ptr<Split> FlawSearch::create_split(
             for (const State &state : states) {
                 // Applicability flaw
                 if (!task_properties::is_applicable(op, state)) {
-                    get_possible_splits(abstract_state, state, op.get_preconditions(), splits);
+                    get_precondition_splits(abstract_state, state, op.get_preconditions(), splits);
                 } else {
                     // Deviation flaw
                     assert(tr.target_id != get_abstract_state_id(
                                state_registry->get_successor_state(state, op)));
                     Flaw flaw(abstract_state, state, abstraction.get_state(tr.target_id).regress(op));
-                    get_possible_splits(flaw, splits);
+                    vector<Split> old_splits;
+                    vector<Split> new_splits;
+                    get_possible_splits(flaw, old_splits);
+                    const AbstractState &target_abstract_state = abstraction.get_state(tr.target_id);
+                    get_deviation_splits(abstract_state, state, op, target_abstract_state, domain_sizes, new_splits);
+                    assert(new_splits == old_splits);
+
+                    get_deviation_splits(abstract_state, state, op, target_abstract_state, domain_sizes, splits);
                 }
             }
         }
