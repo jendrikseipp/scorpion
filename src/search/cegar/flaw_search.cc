@@ -137,6 +137,9 @@ SearchStatus FlawSearch::step() {
                     found_flaw = true;
                 }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
+                    // Clear open list
+                    queue<StateID> empty;
+                    swap(open_list, empty);
                     return FAILED;
                 }
                 continue;
@@ -149,6 +152,9 @@ SearchStatus FlawSearch::step() {
                     found_flaw = true;
                 }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
+                    // Clear open list
+                    queue<StateID> empty;
+                    swap(open_list, empty);
                     return FAILED;
                 }
                 continue;
