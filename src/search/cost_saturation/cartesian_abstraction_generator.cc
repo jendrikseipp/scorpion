@@ -122,7 +122,7 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         max(1, (max_transitions - num_transitions) / remaining_subtasks),
         timer.get_remaining_time() / remaining_subtasks,
         cegar::PickSplit::MAX_REFINED,
-        cegar::PickSplit::RANDOM,
+        cegar::PickSplit::MIN_CG,
         cegar::PickFlaw::MIN_H_BATCH,
         search_strategy,
         *rng,
