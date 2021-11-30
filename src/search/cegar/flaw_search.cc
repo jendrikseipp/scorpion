@@ -96,10 +96,12 @@ void FlawSearch::initialize() {
     assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
+    abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
 
     flawed_states.clear();
 
     const State &initial_state = state_registry->get_initial_state();
+    (*abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
     SearchNode node = search_space->get_node(initial_state);
     node.open_initial();
     open_list.push(initial_state.get_id());
@@ -128,7 +130,8 @@ SearchStatus FlawSearch::step() {
     }
 
     bool found_flaw = false;
-    int abs_id = get_abstract_state_id(s);
+    int abs_id = (*abstract_state_ids)[s];
+    assert(abs_id == get_abstract_state_id(s));
 
     // Check for each tr if the op is applicable or if there is a deviation
     for (const Transition &tr : get_transitions(abs_id)) {
@@ -172,6 +175,7 @@ SearchStatus FlawSearch::step() {
             assert(!succ_node.is_dead_end());
 
             if (succ_node.is_new()) {
+                (*abstract_state_ids)[succ_state] = tr.target_id;
                 succ_node.open(node, op, op.get_cost());
                 open_list.push(succ_state.get_id());
             }

@@ -43,10 +43,13 @@ class FlawSearch {
     const PickFlaw pick_flaw;
     const bool debug;
 
+    static const int MISSING = -1;
+
     // Search data
     std::queue<StateID> open_list;
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
+    std::unique_ptr<PerStateInformation<int>> abstract_state_ids;
 
     // Flaw data
     int last_refined_abstract_state_id;
