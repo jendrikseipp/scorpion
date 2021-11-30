@@ -33,6 +33,9 @@ enum class PickSplit {
     // Compare the h^add(s_0) values of the facts.
     MIN_HADD,
     MAX_HADD,
+    // Position in partial ordering of causal graph.
+    MIN_CG,
+    MAX_CG,
     // Compute split that covers the maximum number of flaws for several concrete states.
     MAX_COVER
 };

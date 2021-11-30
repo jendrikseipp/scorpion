@@ -134,6 +134,8 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     pick_split_strategies.push_back("MAX_REFINED");
     pick_split_strategies.push_back("MIN_HADD");
     pick_split_strategies.push_back("MAX_HADD");
+    pick_split_strategies.push_back("MIN_CG");
+    pick_split_strategies.push_back("MAX_CG");
     pick_split_strategies.push_back("MAX_COVER");
     parser.add_enum_option<PickSplit>(
         "pick_split",

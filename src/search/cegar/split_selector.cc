@@ -142,6 +142,12 @@ double SplitSelector::rate_split(
     case PickSplit::MAX_HADD:
         rating = get_max_hadd_value(var_id, split.values);
         break;
+    case PickSplit::MIN_CG:
+        rating = -var_id;
+        break;
+    case PickSplit::MAX_CG:
+        rating = var_id;
+        break;
     default:
         utils::g_log << "Invalid pick strategy for rate_split(): "
                      << static_cast<int>(pick) << endl;
