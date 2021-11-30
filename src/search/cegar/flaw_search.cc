@@ -264,6 +264,7 @@ unique_ptr<Split> FlawSearch::create_split(
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     if (debug) {
+        cout << endl;
         cout << "Create split for abstract state " << abstract_state_id << " and "
              << states.size() << " concrete states." << endl;
     }

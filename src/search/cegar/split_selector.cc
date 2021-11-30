@@ -140,7 +140,7 @@ double SplitSelector::rate_split(const AbstractState &state, const Split &split)
         rating = get_max_hadd_value(var_id, values);
         break;
     case PickSplit::MAX_COVER:
-        rating = get_refinedness(state, var_id);
+        ABORT("max_cover should not use rate_split()");
         break;
     default:
         utils::g_log << "Invalid pick strategy: " << static_cast<int>(pick) << endl;
@@ -196,13 +196,11 @@ unique_ptr<Split> SplitSelector::pick_split(
     }
 
     if (debug) {
-        cout << endl;
         cout << "Unsorted splits: " << endl;
         for (auto &var_splits : unique_splits_by_var) {
             utils::g_log << " " << var_splits << endl;
         }
     }
-
 
     for (auto &var_splits : unique_splits_by_var) {
         if (var_splits.size() <= 1) {
@@ -239,11 +237,16 @@ unique_ptr<Split> SplitSelector::pick_split(
 
     Split *best_split = nullptr;
     int max_count = -1;
+    double max_refinedness = numeric_limits<double>::lowest();
     for (auto &var_splits : unique_splits_by_var) {
         if (!var_splits.empty()) {
             Split &best_split_for_var = var_splits[0];
-            if (best_split_for_var.count > max_count) {
+            // Break ties with max_refined.
+            double refinedness = get_refinedness(abstract_state, best_split_for_var.var_id);
+            if (best_split_for_var.count > max_count
+                || (best_split_for_var.count == max_count && refinedness > max_refinedness)) {
                 max_count = best_split_for_var.count;
+                max_refinedness = refinedness;
                 best_split = &best_split_for_var;
             }
         }
