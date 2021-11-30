@@ -196,6 +196,7 @@ unique_ptr<Split> SplitSelector::pick_split(
     }
 
     if (debug) {
+        cout << endl;
         cout << "Unsorted splits: " << endl;
         for (auto &var_splits : unique_splits_by_var) {
             utils::g_log << " " << var_splits << endl;
@@ -250,7 +251,6 @@ unique_ptr<Split> SplitSelector::pick_split(
     assert(best_split);
     if (debug) {
         utils::g_log << "Best split: " << *best_split << endl;
-        cout << endl;
     }
     return utils::make_unique_ptr<Split>(move(*best_split));
 }

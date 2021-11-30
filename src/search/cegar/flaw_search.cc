@@ -297,20 +297,9 @@ SearchStatus FlawSearch::search_for_flaws() {
     }
 
     if (debug) {
-        cout << endl;
-        utils::g_log << "Expanded "
+        utils::g_log << "Flaw search expanded "
                      << num_overall_expanded_concrete_states - cur_expanded_states
-                     << " states." << endl;
-        utils::g_log << "Flawed States: " << endl;
-        if (search_status == FAILED) {
-            for (auto const &pair : flawed_states) {
-                for (const State &s : pair.second) {
-                    utils::g_log << "  <" << pair.first << "," << s.get_id()
-                                 << ">: " << *create_split({s}, pair.first)
-                                 << endl;
-                }
-            }
-        }
+                     << " states" << endl;
     }
     return search_status;
 }
