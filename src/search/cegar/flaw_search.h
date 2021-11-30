@@ -87,6 +87,7 @@ public:
         utils::RandomNumberGenerator &rng,
         PickFlaw pick_flaw,
         PickSplit pick_split,
+        PickSplit tiebreak_split,
         bool debug);
 
     std::unique_ptr<Split> get_split();

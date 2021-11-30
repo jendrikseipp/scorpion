@@ -404,19 +404,21 @@ FlawSearch::get_min_h_batch_split() {
     return nullptr;
 }
 
-FlawSearch::FlawSearch(const shared_ptr<AbstractTask> &task,
-                       const vector<int> &domain_sizes,
-                       const Abstraction &abstraction,
-                       const ShortestPaths &shortest_paths,
-                       utils::RandomNumberGenerator &rng,
-                       PickFlaw pick_flaw,
-                       PickSplit pick_split,
-                       bool debug) :
+FlawSearch::FlawSearch(
+    const shared_ptr<AbstractTask> &task,
+    const vector<int> &domain_sizes,
+    const Abstraction &abstraction,
+    const ShortestPaths &shortest_paths,
+    utils::RandomNumberGenerator &rng,
+    PickFlaw pick_flaw,
+    PickSplit pick_split,
+    PickSplit tiebreak_split,
+    bool debug) :
     task_proxy(*task),
     domain_sizes(domain_sizes),
     abstraction(abstraction),
     shortest_paths(shortest_paths),
-    split_selector(task, pick_split, debug),
+    split_selector(task, pick_split, tiebreak_split, debug),
     rng(rng),
     pick_flaw(pick_flaw),
     debug(debug),

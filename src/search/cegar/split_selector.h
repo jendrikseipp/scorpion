@@ -106,6 +106,7 @@ public:
     SplitSelector(
         const std::shared_ptr<AbstractTask> &task,
         PickSplit pick,
+        PickSplit tiebreak_pick,
         bool debug);
     ~SplitSelector();
 

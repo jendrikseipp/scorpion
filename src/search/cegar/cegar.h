@@ -72,6 +72,7 @@ public:
         int max_non_looping_transitions,
         double max_time,
         PickSplit pick_split,
+        PickSplit tiebreak_split,
         PickFlaw pick_flaw,
         SearchStrategy search_strategy,
         utils::RandomNumberGenerator &rng,

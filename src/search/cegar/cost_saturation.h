@@ -32,6 +32,7 @@ class CostSaturation {
     const double max_time;
     const bool use_general_costs;
     const PickSplit pick_split;
+    const PickSplit tiebreak_split;
     const PickFlaw pick_flaw;
     const SearchStrategy search_strategy;
     const int memory_padding_mb;
@@ -63,6 +64,7 @@ public:
         double max_time,
         bool use_general_costs,
         PickSplit pick_split,
+        PickSplit tiebreak_split,
         PickFlaw pick_flaw,
         SearchStrategy search_strategy,
         int memory_padding_mb,

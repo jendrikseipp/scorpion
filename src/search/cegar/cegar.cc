@@ -28,6 +28,7 @@ CEGAR::CEGAR(
     int max_non_looping_transitions,
     double max_time,
     PickSplit pick_split,
+    PickSplit tiebreak_split,
     PickFlaw pick_flaw,
     SearchStrategy search_strategy,
     utils::RandomNumberGenerator &rng,
@@ -52,7 +53,7 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy), false);
         flaw_search = utils::make_unique_ptr<FlawSearch>(
             task, domain_sizes, *abstraction, *shortest_paths, rng,
-            pick_flaw, pick_split, debug);
+            pick_flaw, pick_split, tiebreak_split, debug);
     } else {
         ABORT("Unknown search strategy");
     }
