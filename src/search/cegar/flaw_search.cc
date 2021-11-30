@@ -52,9 +52,11 @@ const vector<Transition> &FlawSearch::get_transitions(
 }
 
 void FlawSearch::add_flaw(int abs_id, const State &state) {
+    // Be careful not to add an entry while testing that the state is not already present.
     // Using a reference to flawed_states[abs_id] doesn't work since it creates a temporary.
-    assert(find(flawed_states[abs_id].begin(), flawed_states[abs_id].end(), state) ==
-           flawed_states[abs_id].end());
+    assert(flawed_states.count(abs_id) == 0 ||
+           find(flawed_states.at(abs_id).begin(), flawed_states.at(abs_id).end(), state) ==
+           flawed_states.at(abs_id).end());
     int h = get_h_value(abs_id);
     if (pick_flaw == PickFlaw::MIN_H_SINGLE
         || pick_flaw == PickFlaw::MIN_H_BATCH
@@ -78,7 +80,13 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
         assert(pick_flaw == PickFlaw::RANDOM_H_SINGLE);
         flawed_states[abs_id].push_back(state);
     }
+
+    // Assert that there is at least one bucket and that no bucket is empty.
     assert(!flawed_states.empty());
+    assert(none_of(flawed_states.begin(), flawed_states.end(),
+                   [](const pair<const int, vector<State>> &pair) {
+                       return pair.second.empty();
+                   }));
 }
 
 void FlawSearch::initialize() {
@@ -250,6 +258,11 @@ static void get_deviation_splits(
 unique_ptr<Split> FlawSearch::create_split(
     const vector<State> &states, int abstract_state_id) {
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
+
+    if (debug) {
+        cout << "Create split for abstract state " << abstract_state_id << " and "
+             << states.size() << " concrete states." << endl;
+    }
 
     vector<Split> splits;
     for (const Transition &tr : get_transitions(abstract_state_id)) {
