@@ -58,8 +58,10 @@ SplitSelector::SplitSelector(
     : task(task),
       task_proxy(*task),
       debug(debug),
-      pick(pick) {
-    if (pick == PickSplit::MIN_HADD || pick == PickSplit::MAX_HADD) {
+      first_pick(pick),
+      tiebreak_pick(PickSplit::RANDOM) {
+    if (first_pick == PickSplit::MIN_HADD || first_pick == PickSplit::MAX_HADD ||
+        tiebreak_pick == PickSplit::MIN_HADD || tiebreak_pick == PickSplit::MAX_HADD) {
         additive_heuristic = create_additive_heuristic(task);
         additive_heuristic->compute_heuristic_for_cegar(
             task_proxy.get_initial_state());
@@ -116,9 +118,9 @@ int SplitSelector::get_max_hadd_value(int var_id, const vector<int> &values) con
     return max_hadd;
 }
 
-double SplitSelector::rate_split(const AbstractState &state, const Split &split) const {
+double SplitSelector::rate_split(
+    const AbstractState &state, const Split &split, PickSplit pick) const {
     int var_id = split.var_id;
-    const vector<int> &values = split.values;
     double rating;
     switch (pick) {
     case PickSplit::MIN_UNWANTED:
@@ -134,50 +136,21 @@ double SplitSelector::rate_split(const AbstractState &state, const Split &split)
         rating = get_refinedness(state, var_id);
         break;
     case PickSplit::MIN_HADD:
-        rating = -get_min_hadd_value(var_id, values);
+        rating = -get_min_hadd_value(var_id, split.values);
         break;
     case PickSplit::MAX_HADD:
-        rating = get_max_hadd_value(var_id, values);
-        break;
-    case PickSplit::MAX_COVER:
-        ABORT("max_cover should not use rate_split()");
+        rating = get_max_hadd_value(var_id, split.values);
         break;
     default:
-        utils::g_log << "Invalid pick strategy: " << static_cast<int>(pick) << endl;
+        utils::g_log << "Invalid pick strategy for rate_split(): "
+                     << static_cast<int>(pick) << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
     return rating;
 }
 
-unique_ptr<Split> SplitSelector::pick_split(
-    const AbstractState &abstract_state,
-    vector<Split> &&splits,
-    utils::RandomNumberGenerator &rng) const {
-    assert(!splits.empty());
-    if (pick != PickSplit::MAX_COVER) {
-        if (splits.size() == 1) {
-            return utils::make_unique_ptr<Split>(move(splits[0]));
-        }
-
-        if (pick == PickSplit::RANDOM) {
-            return utils::make_unique_ptr<Split>(move(*rng.choose(splits)));
-        }
-
-        double max_rating = numeric_limits<double>::lowest();
-        Split *selected_split = nullptr;
-        for (Split &split : splits) {
-            double rating = rate_split(abstract_state, split);
-            if (rating > max_rating) {
-                selected_split = &split;
-                max_rating = rating;
-            }
-        }
-        assert(selected_split);
-        return utils::make_unique_ptr<Split>(move(*selected_split));
-    }
-
-    assert(pick == PickSplit::MAX_COVER);
-
+vector<Split> SplitSelector::compute_max_cover_splits(
+    vector<Split> &&splits) const {
     vector<int> domain_sizes = get_domain_sizes(task_proxy);
 
     vector<vector<Split>> unique_splits_by_var(task_proxy.get_variables().size());
@@ -235,26 +208,89 @@ unique_ptr<Split> SplitSelector::pick_split(
         }
     }
 
-    Split *best_split = nullptr;
+    vector<Split> best_splits;
     int max_count = -1;
-    double max_refinedness = numeric_limits<double>::lowest();
     for (auto &var_splits : unique_splits_by_var) {
         if (!var_splits.empty()) {
             Split &best_split_for_var = var_splits[0];
-            // Break ties with max_refined.
-            double refinedness = get_refinedness(abstract_state, best_split_for_var.var_id);
-            if (best_split_for_var.count > max_count
-                || (best_split_for_var.count == max_count && refinedness > max_refinedness)) {
+            if (best_split_for_var.count > max_count) {
+                best_splits.clear();
+                best_splits.push_back(move(best_split_for_var));
                 max_count = best_split_for_var.count;
-                max_refinedness = refinedness;
-                best_split = &best_split_for_var;
+            } else if (best_split_for_var.count == max_count) {
+                best_splits.push_back(move(best_split_for_var));
             }
         }
     }
-    assert(best_split);
-    if (debug) {
-        utils::g_log << "Best split: " << *best_split << endl;
+    return best_splits;
+}
+
+vector<Split> SplitSelector::reduce_to_best_splits(
+    const AbstractState &abstract_state,
+    vector<Split> &&splits) const {
+    assert(!splits.empty());
+    if (splits.size() == 1) {
+        return move(splits);
+    } else if (first_pick == PickSplit::MAX_COVER) {
+        return compute_max_cover_splits(move(splits));
     }
-    return utils::make_unique_ptr<Split>(move(*best_split));
+
+    vector<Split> best_splits;
+    double max_rating = numeric_limits<double>::lowest();
+    for (Split &split : splits) {
+        double rating = rate_split(abstract_state, split, first_pick);
+        if (rating > max_rating) {
+            best_splits.clear();
+            best_splits.push_back(move(split));
+            max_rating = rating;
+        } else if (rating == max_rating) {
+            best_splits.push_back(move(split));
+        }
+    }
+    assert(!best_splits.empty());
+    return best_splits;
+}
+
+Split SplitSelector::select_from_best_splits(
+    const AbstractState &abstract_state,
+    vector<Split> &&splits,
+    utils::RandomNumberGenerator &rng) const {
+    assert(!splits.empty());
+    if (splits.size() == 1) {
+        return move(splits[0]);
+    } else if (tiebreak_pick == PickSplit::RANDOM) {
+        return move(*rng.choose(splits));
+    }
+    double max_rating = numeric_limits<double>::lowest();
+    Split *selected_split = nullptr;
+    for (Split &split : splits) {
+        double rating = rate_split(abstract_state, split, tiebreak_pick);
+        if (rating > max_rating) {
+            selected_split = &split;
+            max_rating = rating;
+        }
+    }
+    assert(selected_split);
+    return move(*selected_split);
+}
+
+Split SplitSelector::pick_split(
+    const AbstractState &abstract_state,
+    vector<Split> &&splits,
+    utils::RandomNumberGenerator &rng) const {
+    if (first_pick == PickSplit::RANDOM) {
+        return move(*rng.choose(splits));
+    }
+
+    vector<Split> best_splits = reduce_to_best_splits(abstract_state, move(splits));
+    assert(!best_splits.empty());
+    if (debug) {
+        utils::g_log << "Best splits: " << best_splits << endl;
+    }
+    Split selected_split = select_from_best_splits(abstract_state, move(best_splits), rng);
+    if (debug) {
+        utils::g_log << "Selected split: " << selected_split << endl;
+    }
+    return selected_split;
 }
 }

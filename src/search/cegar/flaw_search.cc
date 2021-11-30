@@ -303,7 +303,8 @@ unique_ptr<Split> FlawSearch::create_split(
         }
     }
 
-    return split_selector.pick_split(abstract_state, move(splits), rng);
+    return utils::make_unique_ptr<Split>(
+        split_selector.pick_split(abstract_state, move(splits), rng));
 }
 
 SearchStatus FlawSearch::search_for_flaws() {

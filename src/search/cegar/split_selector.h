@@ -83,7 +83,8 @@ class SplitSelector {
     const bool debug;
     std::unique_ptr<additive_heuristic::AdditiveHeuristic> additive_heuristic;
 
-    const PickSplit pick;
+    const PickSplit first_pick;
+    const PickSplit tiebreak_pick;
 
     int get_num_unwanted_values(const AbstractState &state, const Split &split) const;
     double get_refinedness(const AbstractState &state, int var_id) const;
@@ -91,7 +92,15 @@ class SplitSelector {
     int get_min_hadd_value(int var_id, const std::vector<int> &values) const;
     int get_max_hadd_value(int var_id, const std::vector<int> &values) const;
 
-    double rate_split(const AbstractState &state, const Split &split) const;
+    double rate_split(const AbstractState &state, const Split &split, PickSplit pick) const;
+    std::vector<Split> compute_max_cover_splits(std::vector<Split> &&splits) const;
+    Split select_from_best_splits(
+        const AbstractState &abstract_state,
+        std::vector<Split> &&splits,
+        utils::RandomNumberGenerator &rng) const;
+    std::vector<Split> reduce_to_best_splits(
+        const AbstractState &abstract_state,
+        std::vector<Split> &&splits) const;
 
 public:
     SplitSelector(
@@ -100,11 +109,7 @@ public:
         bool debug);
     ~SplitSelector();
 
-    PickSplit get_pick_split_strategy() const {
-        return pick;
-    }
-
-    std::unique_ptr<Split> pick_split(
+    Split pick_split(
         const AbstractState &abstract_state,
         std::vector<Split> &&splits,
         utils::RandomNumberGenerator &rng) const;
