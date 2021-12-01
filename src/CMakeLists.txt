@@ -40,9 +40,11 @@ if(CCACHE_FOUND)
         "CCACHE_BASEDIR=${CMAKE_CURRENT_SOURCE_DIR} CCACHE_NOHASHDIR=true ccache")
 endif(CCACHE_FOUND)
 
-# Respect the PATH environment variable when searching for compilers.
-find_program(CMAKE_C_COMPILER NAMES $ENV{CC} gcc PATHS ENV PATH NO_DEFAULT_PATH)
-find_program(CMAKE_CXX_COMPILER NAMES $ENV{CXX} g++ PATHS ENV PATH NO_DEFAULT_PATH)
+# Select a default compiler because CMake does not respect the PATH environment variable for some generators,
+# e.g. used by existing compute servers in Basel.
+# See https://stackoverflow.com/a/45934279 and http://issues.fast-downward.org/issue1031 for details.
+find_program(CMAKE_C_COMPILER NAMES $ENV{CC} cc gcc PATHS ENV PATH NO_DEFAULT_PATH)
+find_program(CMAKE_CXX_COMPILER NAMES $ENV{CXX} c++ g++ PATHS ENV PATH NO_DEFAULT_PATH)
 
 # Path containing custom CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)

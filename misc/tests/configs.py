@@ -108,13 +108,13 @@ def configs_satisficing_core():
         # LAMA first
         "lama-first": [
             "--evaluator",
-            "hlm=lmcount(lm_factory=lm_rhw(reasonable_orders=true),transform=adapt_costs(one),pref=false)",
+            "hlm=lmcount(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
             "--evaluator", "hff=ff(transform=adapt_costs(one))",
             "--search", """lazy_greedy([hff,hlm],preferred=[hff,hlm],
                                        cost_type=one,reopen_closed=false)"""],
         "lama-first-typed": [
             "--evaluator",
-            "hlm=lmcount(lm_factory=lm_rhw(reasonable_orders=true),transform=adapt_costs(one),pref=false)",
+            "hlm=lmcount(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
             "--evaluator", "hff=ff(transform=adapt_costs(one))",
             "--search",
                 "lazy(alt([single(hff), single(hff, pref_only=true),"
@@ -163,8 +163,12 @@ def configs_optimal_extended():
             "--search",
             """astar(scp_online([
                 projections(systematic(2))],
-                diversify=false, max_orders=1,
-                interval=1000, store_cost_partitionings=true))"""],
+                interval=10))"""],
+        "scp_online_sys_scp": [
+            "--search",
+            """astar(scp_online([
+                projections(sys_scp(max_time=0.5))],
+                interval=10))"""],
         "max_over_abstractions": [
             "--search",
             """astar(maximize([
@@ -174,14 +178,14 @@ def configs_optimal_extended():
             """astar(canonical_heuristic([projections(systematic(2))]))"""],
         "ucp": [
             "--search",
-            """astar(uniform_cost_partitioning([projections(systematic(2))]))"""],
+            """astar(ucp([projections(systematic(2))]))"""],
         "oucp": [
             "--search",
-            """astar(uniform_cost_partitioning(
+            """astar(ucp(
                 [projections(systematic(2))], opportunistic=true, max_orders=1))"""],
         "gzocp": [
             "--search",
-            """astar(zero_one_cost_partitioning(
+            """astar(gzocp(
                 [projections(systematic(2))], max_orders=1))"""],
         "lm_ucp":
             _get_landmark_config(cost_partitioning="suboptimal", greedy=False, reuse_costs=False),
@@ -263,7 +267,7 @@ def configs_optimal_lp(lp_solver="CPLEX"):
         "seq+lmcut": ["--search", f"astar(operatorcounting([state_equation_constraints(), lmcut_constraints()], lpsolver={lp_solver}))"],
         "ocp": [
             "--search",
-            f"""astar(optimal_cost_partitioning([projections(systematic(2))], lpsolver={lp_solver}))"""],
+            f"""astar(ocp([projections(systematic(2))], lpsolver={lp_solver}))"""],
         "pho": [
             "--search",
             f"""astar(operatorcounting([pho_abstraction_constraints(
@@ -272,6 +276,9 @@ def configs_optimal_lp(lp_solver="CPLEX"):
             "--search",
             f"""astar(operatorcounting([pho_abstraction_constraints(
                 [projections(systematic(2))], saturated=true)], lpsolver={lp_solver}))"""],
+        "spho_offline": [
+            "--search",
+            """astar(pho([projections(systematic(2))], saturated=true, max_orders=1))"""],
         "lm_ocp": _get_landmark_config(cost_partitioning="optimal", lpsolver=lp_solver),
         "lm_pho": _get_landmark_config(cost_partitioning="pho", lpsolver=lp_solver),
     }

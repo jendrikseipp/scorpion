@@ -217,6 +217,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME PARTIAL_STATE_TREE
+    HELP "Compact representation of sets of fact conjunctions"
+    SOURCES
+        algorithms/partial_state_tree
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
     NAME PRIORITY_QUEUES
     HELP "Three implementations of priority queue: HeapQueue, BucketQueue and AdaptiveQueue"
     SOURCES
@@ -662,6 +670,8 @@ fast_downward_plugin(
         cost_saturation/order_generator_greedy
         cost_saturation/order_generator_random
         cost_saturation/order_optimizer
+        cost_saturation/pho_heuristic
+        cost_saturation/plugin_group
         cost_saturation/projection
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
@@ -671,7 +681,7 @@ fast_downward_plugin(
         cost_saturation/unsolvability_heuristic
         cost_saturation/utils
         cost_saturation/zero_one_cost_partitioning_heuristic
-    DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
+    DEPENDS CEGAR LP_SOLVER PDBS PARTIAL_STATE_TREE PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
 )
 
 fast_downward_plugin(
@@ -723,10 +733,12 @@ fast_downward_plugin(
     HELP "Plugin containing the code to reason with landmarks"
     SOURCES
         landmarks/exploration
+        landmarks/landmark
         landmarks/landmark_cost_assignment
         landmarks/landmark_count_heuristic
         landmarks/landmark_factory
         landmarks/landmark_factory_h_m
+        landmarks/landmark_factory_reasonable_orders_hps
         landmarks/landmark_factory_merged
         landmarks/landmark_factory_relaxation
         landmarks/landmark_factory_rpg_exhaust
@@ -757,6 +769,7 @@ fast_downward_plugin(
     SOURCES
         pdbs/canonical_pdbs
         pdbs/canonical_pdbs_heuristic
+        pdbs/cegar
         pdbs/dominance_pruning
         pdbs/incremental_canonical_pdbs
         pdbs/match_tree
@@ -764,17 +777,26 @@ fast_downward_plugin(
         pdbs/pattern_cliques
         pdbs/pattern_collection_information
         pdbs/pattern_collection_generator_combo
+        pdbs/pattern_collection_generator_disjoint_cegar
         pdbs/pattern_collection_generator_genetic
         pdbs/pattern_collection_generator_hillclimbing
         pdbs/pattern_collection_generator_manual
+        pdbs/pattern_collection_generator_multiple_cegar
+        pdbs/pattern_collection_generator_multiple_random
+        pdbs/pattern_collection_generator_multiple
         pdbs/pattern_collection_generator_systematic
+        pdbs/pattern_collection_generator_systematic_scp
         pdbs/pattern_database
+        pdbs/pattern_evaluator
+        pdbs/pattern_generator_cegar
         pdbs/pattern_generator_greedy
         pdbs/pattern_generator_manual
+        pdbs/pattern_generator_random
         pdbs/pattern_generator
         pdbs/pattern_information
         pdbs/pdb_heuristic
         pdbs/plugin_group
+        pdbs/random_pattern
         pdbs/types
         pdbs/utils
         pdbs/validation

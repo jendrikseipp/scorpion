@@ -246,5 +246,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     return make_shared<OptimalCostPartitioningHeuristic>(opts);
 }
 
-static Plugin<Evaluator> _plugin("optimal_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("ocp", _parse, "heuristics_cost_partitioning");
 }

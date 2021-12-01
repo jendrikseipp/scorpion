@@ -342,7 +342,7 @@ unique_ptr<Split> FlawSearch::get_single_split() {
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
-        auto random_bucket = next(flawed_states.begin(), rng(flawed_states.size()));
+        auto random_bucket = next(flawed_states.begin(), rng.random(flawed_states.size()));
         int abstract_state_id = random_bucket->first;
         const State &state = *rng.choose(random_bucket->second);
 

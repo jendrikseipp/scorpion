@@ -1,6 +1,7 @@
 #include "explicit_projection_factory.h"
 
 #include "explicit_abstraction.h"
+#include "projection.h"
 #include "types.h"
 
 #include "../pdbs/match_tree.h"
@@ -52,26 +53,6 @@ struct ProjectedEffect {
 };
 
 
-class ExplicitProjectionFunction : public AbstractionFunction {
-    pdbs::Pattern pattern;
-    vector<int> hash_multipliers;
-public:
-    ExplicitProjectionFunction(const pdbs::Pattern &pattern, vector<int> &&hash_multipliers_)
-        : pattern(pattern),
-          hash_multipliers(move(hash_multipliers_)) {
-        assert(pattern.size() == hash_multipliers.size());
-    }
-
-    virtual int get_abstract_state_id(const State &concrete_state) const {
-        int index = 0;
-        for (size_t i = 0; i < pattern.size(); ++i) {
-            index += hash_multipliers[i] * concrete_state[pattern[i]].get_value();
-        }
-        return index;
-    }
-};
-
-
 static vector<vector<FactPair>> get_relevant_preconditions_by_operator(
     const OperatorsProxy &ops, const pdbs::Pattern &pattern) {
     vector<vector<FactPair>> preconditions_by_operator;
@@ -91,7 +72,6 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
     : task_proxy(task_proxy),
       use_add_after_delete_semantics(use_add_after_delete_semantics),
       pattern(pattern),
-      pattern_size(pattern.size()),
       relevant_preconditions(
           get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)),
       looping_operators(task_proxy.get_operators().size(), false) {
@@ -151,7 +131,7 @@ vector<int> ExplicitProjectionFactory::compute_goal_states() const {
 
 int ExplicitProjectionFactory::rank(const UnrankedState &state) const {
     int index = 0;
-    for (int i = 0; i < pattern_size; ++i) {
+    for (size_t i = 0; i < pattern.size(); ++i) {
         index += hash_multipliers[i] * state[i];
     }
     return index;
@@ -165,8 +145,8 @@ int ExplicitProjectionFactory::unrank(int rank, int pattern_index) const {
 ExplicitProjectionFactory::UnrankedState ExplicitProjectionFactory::unrank(int rank) const {
     UnrankedState values;
     values.reserve(pattern.size());
-    for (int pattern_index = 0; pattern_index < pattern_size; ++pattern_index) {
-        values.push_back(unrank(rank, pattern_index));
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        values.push_back(unrank(rank, i));
     }
     return values;
 }
@@ -313,7 +293,7 @@ bool ExplicitProjectionFactory::is_goal_state(
 
 unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {
     return utils::make_unique_ptr<ExplicitAbstraction>(
-        utils::make_unique_ptr<ExplicitProjectionFunction>(pattern, move(hash_multipliers)),
+        utils::make_unique_ptr<ProjectionFunction>(pattern, move(hash_multipliers)),
         move(backward_graph),
         move(looping_operators),
         move(goal_states));

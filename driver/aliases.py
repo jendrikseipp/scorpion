@@ -94,7 +94,7 @@ def _get_lama(**kwargs):
     return [
         "--if-unit-cost",
         "--evaluator",
-        "hlm=lmcount(lm_rhw(reasonable_orders=true),pref={pref})".format(**kwargs),
+        "hlm=lmcount(lm_reasonable_orders_hps(lm_rhw()),pref={pref})".format(**kwargs),
         "--evaluator", "hff=ff()",
         "--search", """iterated([
                          lazy_greedy([hff,hlm],preferred=[hff,hlm]),
@@ -105,10 +105,10 @@ def _get_lama(**kwargs):
                          ],repeat_last=true,continue_on_fail=true)""",
         "--if-non-unit-cost",
         "--evaluator",
-        "hlm1=lmcount(lm_rhw(reasonable_orders=true),transform=adapt_costs(one),pref={pref})".format(**kwargs),
+        "hlm1=lmcount(lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref={pref})".format(**kwargs),
         "--evaluator", "hff1=ff(transform=adapt_costs(one))",
         "--evaluator",
-        "hlm2=lmcount(lm_rhw(reasonable_orders=true),transform=adapt_costs(plusone),pref={pref})".format(**kwargs),
+        "hlm2=lmcount(lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(plusone),pref={pref})".format(**kwargs),
         "--evaluator", "hff2=ff(transform=adapt_costs(plusone))",
         "--search", """iterated([
                          lazy_greedy([hff1,hlm1],preferred=[hff1,hlm1],
@@ -129,7 +129,7 @@ ALIASES["lama"] = _get_lama(pref="false")
 
 ALIASES["lama-first"] = [
     "--evaluator",
-    "hlm=lmcount(lm_factory=lm_rhw(reasonable_orders=true),transform=adapt_costs(one),pref=false)",
+    "hlm=lmcount(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
     "--evaluator", "hff=ff(transform=adapt_costs(one))",
     "--search", """lazy_greedy([hff,hlm],preferred=[hff,hlm],
                                cost_type=one,reopen_closed=false)"""]
@@ -142,6 +142,13 @@ ALIASES["seq-opt-bjolp"] = [
 
 ALIASES["seq-opt-lmcut"] = [
     "--search", "astar(lmcut())"]
+
+ALIASES["scorpion"] = [
+    "--search", """astar(scp_online([
+        projections(sys_scp(max_time=100, max_time_per_restart=10)),
+        cartesian()],
+        saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
+        pruning=atom_centric_stubborn_sets(min_required_pruning_ratio=0.2))"""]
 
 
 PORTFOLIOS = {}

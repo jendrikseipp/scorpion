@@ -103,8 +103,10 @@ public:
     virtual FactPair get_goal_fact(int index) const override;
 
     virtual vector<int> get_initial_state_values() const override;
-    virtual void convert_state_values(
+    virtual void convert_ancestor_state_values(
         vector<int> &values,
+        const AbstractTask *ancestor_task) const override;
+    virtual bool does_convert_ancestor_state_values(
         const AbstractTask *ancestor_task) const override;
 };
 
@@ -486,11 +488,19 @@ vector<int> RootTask::get_initial_state_values() const {
     return initial_state_values;
 }
 
-void RootTask::convert_state_values(
+void RootTask::convert_ancestor_state_values(
     vector<int> &, const AbstractTask *ancestor_task) const {
     if (this != ancestor_task) {
         ABORT("Invalid state conversion");
     }
+}
+
+bool RootTask::does_convert_ancestor_state_values(
+    const AbstractTask *ancestor_task) const {
+    if (this != ancestor_task) {
+        ABORT("Invalid state conversion query");
+    }
+    return false;
 }
 
 void read_root_task(istream &in) {

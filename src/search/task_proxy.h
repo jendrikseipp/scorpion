@@ -719,8 +719,14 @@ public:
         // Create a copy of the state values for the new state.
         ancestor_state.unpack();
         std::vector<int> state_values = ancestor_state.get_unpacked_values();
-        task->convert_state_values(state_values, ancestor_task_proxy.task);
+        task->convert_ancestor_state_values(
+            state_values, ancestor_task_proxy.task);
         return create_state(std::move(state_values));
+    }
+
+    bool needs_to_convert_ancestor_state(const State &ancestor_state) const {
+        TaskProxy ancestor_task_proxy = ancestor_state.get_task();
+        return task->does_convert_ancestor_state_values(ancestor_task_proxy.task);
     }
 
     const causal_graph::CausalGraph &get_causal_graph() const;

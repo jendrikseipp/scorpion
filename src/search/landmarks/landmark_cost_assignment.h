@@ -17,6 +17,7 @@ class RandomNumberGenerator;
 }
 
 namespace landmarks {
+class Landmark;
 class LandmarkGraph;
 class LandmarkNode;
 class LandmarkStatusManager;
@@ -28,7 +29,7 @@ protected:
     const std::vector<int> operator_costs;
 
     const std::set<int> &get_achievers(int lmn_status,
-                                       const LandmarkNode &lmn) const;
+                                       const Landmark &landmark) const;
 public:
     LandmarkCostAssignment(const std::vector<int> &operator_costs,
                            const LandmarkGraph &graph);

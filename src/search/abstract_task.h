@@ -52,7 +52,6 @@ inline void feed(HashState &hash_state, const FactPair &fact) {
 }
 }
 
-
 class AbstractTask : public subscriber::SubscriberService<AbstractTask> {
 public:
     AbstractTask() = default;
@@ -103,8 +102,10 @@ public:
       it should create the new vector in a local variable and then swap it with
       the parameter.
     */
-    virtual void convert_state_values(
+    virtual void convert_ancestor_state_values(
         std::vector<int> &values,
+        const AbstractTask *ancestor_task) const = 0;
+    virtual bool does_convert_ancestor_state_values(
         const AbstractTask *ancestor_task) const = 0;
 };
 
