@@ -148,6 +148,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "split-selection strategy for breaking ties",
         "MIN_CG");
     vector<string> pick_flaw_strategies;
+    pick_flaw_strategies.push_back("SINGLE_PATH");
     pick_flaw_strategies.push_back("RANDOM_H_SINGLE");
     pick_flaw_strategies.push_back("MIN_H_SINGLE");
     pick_flaw_strategies.push_back("MAX_H_SINGLE");

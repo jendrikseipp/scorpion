@@ -77,7 +77,8 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
             flawed_states[abs_id].push_back(state);
         }
     } else {
-        assert(pick_flaw == PickFlaw::RANDOM_H_SINGLE);
+        assert(pick_flaw == PickFlaw::RANDOM_H_SINGLE
+               || pick_flaw == PickFlaw::SINGLE_PATH);
         flawed_states[abs_id].push_back(state);
     }
 
@@ -147,7 +148,8 @@ SearchStatus FlawSearch::step() {
                     add_flaw(abs_id, s);
                     found_flaw = true;
                 }
-                if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
+                if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
+                    pick_flaw == PickFlaw::SINGLE_PATH) {
                     // Clear open list
                     queue<StateID> empty;
                     swap(open_list, empty);
@@ -162,7 +164,8 @@ SearchStatus FlawSearch::step() {
                     add_flaw(abs_id, s);
                     found_flaw = true;
                 }
-                if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
+                if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
+                    pick_flaw == PickFlaw::SINGLE_PATH) {
                     // Clear open list
                     queue<StateID> empty;
                     swap(open_list, empty);
@@ -178,6 +181,11 @@ SearchStatus FlawSearch::step() {
                 (*abstract_state_ids)[succ_state] = tr.target_id;
                 succ_node.open(node, op, op.get_cost());
                 open_list.push(succ_state.get_id());
+
+                if (pick_flaw == PickFlaw::SINGLE_PATH) {
+                    // Only consider one successor.
+                    break;
+                }
             }
         }
     }
@@ -283,7 +291,8 @@ unique_ptr<Split> FlawSearch::create_split(
                         abstract_state, state, op.get_preconditions(), splits);
                 } else {
                     // Flaws are only guaranteed to exist for fringe states.
-                    if ((pick_flaw == PickFlaw::MAX_H_SINGLE ||
+                    if ((pick_flaw == PickFlaw::SINGLE_PATH ||
+                         pick_flaw == PickFlaw::MAX_H_SINGLE ||
                          pick_flaw == PickFlaw::RANDOM_H_SINGLE)
                         && abstraction.get_state(tr.target_id).includes(
                             state_registry->get_successor_state(state, op))) {
@@ -435,6 +444,7 @@ unique_ptr<Split> FlawSearch::get_split() {
     unique_ptr<Split> split = nullptr;
 
     switch (pick_flaw) {
+    case PickFlaw::SINGLE_PATH:
     case PickFlaw::RANDOM_H_SINGLE:
     case PickFlaw::MIN_H_SINGLE:
     case PickFlaw::MAX_H_SINGLE:
@@ -452,7 +462,8 @@ unique_ptr<Split> FlawSearch::get_split() {
 
     if (split) {
         last_refined_abstract_state_id = split->abstract_state_id;
-        assert(pick_flaw == PickFlaw::RANDOM_H_SINGLE
+        assert(pick_flaw == PickFlaw::SINGLE_PATH
+               || pick_flaw == PickFlaw::RANDOM_H_SINGLE
                || best_flaw_h == get_h_value(split->abstract_state_id));
     }
     timer.stop();

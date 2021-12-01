@@ -26,6 +26,7 @@ class ShortestPaths;
 class AbstractState;
 
 enum class PickFlaw {
+    SINGLE_PATH,
     RANDOM_H_SINGLE,
     MIN_H_SINGLE,
     MAX_H_SINGLE,
