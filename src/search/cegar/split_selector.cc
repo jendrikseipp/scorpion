@@ -157,32 +157,17 @@ double SplitSelector::rate_split(
 }
 
 vector<Split> SplitSelector::compute_max_cover_splits(
-    vector<Split> &&splits) const {
+    vector<vector<Split>> &&splits) const {
     vector<int> domain_sizes = get_domain_sizes(task_proxy);
-
-    vector<vector<Split>> unique_splits_by_var(task_proxy.get_variables().size());
-    for (Split &new_split : splits) {
-        vector<Split> &var_splits = unique_splits_by_var[new_split.var_id];
-        bool is_duplicate = false;
-        for (auto &old_split : var_splits) {
-            if (old_split == new_split) {
-                is_duplicate = true;
-                ++old_split.count;
-            }
-        }
-        if (!is_duplicate) {
-            var_splits.push_back(move(new_split));
-        }
-    }
 
     if (debug) {
         cout << "Unsorted splits: " << endl;
-        for (auto &var_splits : unique_splits_by_var) {
+        for (auto &var_splits : splits) {
             utils::g_log << " " << var_splits << endl;
         }
     }
 
-    for (auto &var_splits : unique_splits_by_var) {
+    for (auto &var_splits : splits) {
         if (var_splits.size() <= 1) {
             continue;
         }
@@ -210,14 +195,14 @@ vector<Split> SplitSelector::compute_max_cover_splits(
 
     if (debug) {
         cout << "Sorted and combined splits: " << endl;
-        for (auto &var_splits : unique_splits_by_var) {
+        for (auto &var_splits : splits) {
             utils::g_log << " " << var_splits << endl;
         }
     }
 
     vector<Split> best_splits;
     int max_count = -1;
-    for (auto &var_splits : unique_splits_by_var) {
+    for (auto &var_splits : splits) {
         if (!var_splits.empty()) {
             Split &best_split_for_var = var_splits[0];
             if (best_split_for_var.count > max_count) {
@@ -234,24 +219,25 @@ vector<Split> SplitSelector::compute_max_cover_splits(
 
 vector<Split> SplitSelector::reduce_to_best_splits(
     const AbstractState &abstract_state,
-    vector<Split> &&splits) const {
-    assert(!splits.empty());
-    if (splits.size() == 1) {
-        return move(splits);
-    } else if (first_pick == PickSplit::MAX_COVER) {
+    vector<vector<Split>> &&splits) const {
+    if (first_pick == PickSplit::MAX_COVER) {
         return compute_max_cover_splits(move(splits));
     }
 
     vector<Split> best_splits;
     double max_rating = numeric_limits<double>::lowest();
-    for (Split &split : splits) {
-        double rating = rate_split(abstract_state, split, first_pick);
-        if (rating > max_rating) {
-            best_splits.clear();
-            best_splits.push_back(move(split));
-            max_rating = rating;
-        } else if (rating == max_rating) {
-            best_splits.push_back(move(split));
+    for (auto &var_splits : splits) {
+        if (!var_splits.empty()) {
+            for (Split &split : var_splits) {
+                double rating = rate_split(abstract_state, split, first_pick);
+                if (rating > max_rating) {
+                    best_splits.clear();
+                    best_splits.push_back(move(split));
+                    max_rating = rating;
+                } else if (rating == max_rating) {
+                    best_splits.push_back(move(split));
+                }
+            }
         }
     }
     assert(!best_splits.empty());
@@ -283,10 +269,18 @@ Split SplitSelector::select_from_best_splits(
 
 Split SplitSelector::pick_split(
     const AbstractState &abstract_state,
-    vector<Split> &&splits,
+    vector<vector<Split>> &&splits,
     utils::RandomNumberGenerator &rng) const {
     if (first_pick == PickSplit::RANDOM) {
-        return move(*rng.choose(splits));
+        vector<int> vars_with_splits;
+        for (size_t var = 0; var < splits.size(); ++var) {
+            auto &var_splits = splits[var];
+            if (!var_splits.empty()) {
+                vars_with_splits.push_back(var);
+            }
+        }
+        int random_var = *rng.choose(vars_with_splits);
+        return move(*rng.choose(splits[random_var]));
     }
 
     vector<Split> best_splits = reduce_to_best_splits(abstract_state, move(splits));

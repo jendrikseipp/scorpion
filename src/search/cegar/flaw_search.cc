@@ -192,18 +192,33 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
+static void add_split(vector<vector<Split>> &splits, Split &&new_split) {
+    vector<Split> &var_splits = splits[new_split.var_id];
+    bool is_duplicate = false;
+    for (auto &old_split : var_splits) {
+        if (old_split == new_split) {
+            is_duplicate = true;
+            ++old_split.count;
+        }
+    }
+    if (!is_duplicate) {
+        var_splits.push_back(move(new_split));
+    }
+}
+
 static void get_precondition_splits(
     const AbstractState &abs_state,
     const State &conc_state,
     const ConditionsProxy &preconditions,
-    vector<Split> &splits) {
+    vector<vector<Split>> &splits) {
     for (FactProxy precondition_proxy : preconditions) {
         FactPair fact = precondition_proxy.get_pair();
         assert(abs_state.contains(fact.var, fact.value));
         int state_value = conc_state[fact.var].get_value();
         if (state_value != fact.value) {
             vector<int> wanted = {fact.value};
-            splits.emplace_back(abs_state.get_id(), fact.var, state_value, move(wanted));
+            Split split(abs_state.get_id(), fact.var, state_value, move(wanted));
+            add_split(splits, move(split));
         }
     }
 }
@@ -235,7 +250,7 @@ static void get_deviation_splits(
     const vector<int> &unaffected_variables,
     const AbstractState &target_abs_state,
     const vector<int> &domain_sizes,
-    vector<Split> &splits) {
+    vector<vector<Split>> &splits) {
     /*
       For each fact in the concrete state that is not contained in the
       target abstract state, loop over all values in the domain of the
@@ -262,7 +277,8 @@ static void get_deviation_splits(
                 }
             }
             assert(!wanted.empty());
-            splits.emplace_back(abs_state.get_id(), var, state_value, move(wanted));
+            Split split(abs_state.get_id(), var, state_value, move(wanted));
+            add_split(splits, move(split));
         }
     }
 }
@@ -277,7 +293,7 @@ unique_ptr<Split> FlawSearch::create_split(
              << states.size() << " concrete states." << endl;
     }
 
-    vector<Split> splits;
+    vector<vector<Split>> splits(task_proxy.get_variables().size());
     for (const Transition &tr : get_transitions(abstract_state_id)) {
         if (is_f_optimal_transition(abstract_state_id, tr)) {
             OperatorProxy op = task_proxy.get_operators()[tr.op_id];

@@ -96,14 +96,15 @@ class SplitSelector {
     int get_max_hadd_value(int var_id, const std::vector<int> &values) const;
 
     double rate_split(const AbstractState &state, const Split &split, PickSplit pick) const;
-    std::vector<Split> compute_max_cover_splits(std::vector<Split> &&splits) const;
+    std::vector<Split> compute_max_cover_splits(
+        std::vector<std::vector<Split>> &&splits) const;
     Split select_from_best_splits(
         const AbstractState &abstract_state,
         std::vector<Split> &&splits,
         utils::RandomNumberGenerator &rng) const;
     std::vector<Split> reduce_to_best_splits(
         const AbstractState &abstract_state,
-        std::vector<Split> &&splits) const;
+        std::vector<std::vector<Split>> &&splits) const;
 
 public:
     SplitSelector(
@@ -115,7 +116,7 @@ public:
 
     Split pick_split(
         const AbstractState &abstract_state,
-        std::vector<Split> &&splits,
+        std::vector<std::vector<Split>> &&splits,
         utils::RandomNumberGenerator &rng) const;
 };
 }
