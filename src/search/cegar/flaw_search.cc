@@ -198,7 +198,7 @@ static void add_split(vector<vector<Split>> &splits, Split &&new_split) {
     for (auto &old_split : var_splits) {
         if (old_split == new_split) {
             is_duplicate = true;
-            ++old_split.count;
+            old_split.count += new_split.count;
         }
     }
     if (!is_duplicate) {
@@ -246,7 +246,7 @@ static vector<int> get_unaffected_variables(
 
 static void get_deviation_splits(
     const AbstractState &abs_state,
-    const State &conc_state,
+    const vector<State> &conc_states,
     const vector<int> &unaffected_variables,
     const AbstractState &target_abs_state,
     const vector<int> &domain_sizes,
@@ -266,19 +266,33 @@ static void get_deviation_splits(
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin t[v], wanted = intersect(a[v], b[v]).
     */
-    for (int var : unaffected_variables) {
-        int state_value = conc_state[var].get_value();
-        if (!target_abs_state.contains(var, state_value)) {
-            vector<int> wanted;
-            for (int value = 0; value < domain_sizes[var]; ++value) {
-                if (abs_state.contains(var, value) &&
-                    target_abs_state.contains(var, value)) {
-                    wanted.push_back(value);
+    // Note: it could be faster to use an efficient hash map for this.
+    vector<vector<int>> fact_count(domain_sizes.size());
+    for (size_t var = 0; var < domain_sizes.size(); ++var) {
+        fact_count[var].resize(domain_sizes[var], 0);
+    }
+    for (const State &conc_state : conc_states) {
+        for (int var : unaffected_variables) {
+            int state_value = conc_state[var].get_value();
+            ++fact_count[var][state_value];
+        }
+    }
+    for (size_t var = 0; var < domain_sizes.size(); ++var) {
+        for (int value = 0; value < domain_sizes[var]; ++value) {
+            if (fact_count[var][value] && !target_abs_state.contains(var, value)) {
+                // Note: we could precompute the "wanted" vector, but not the split.
+                vector<int> wanted;
+                for (int value = 0; value < domain_sizes[var]; ++value) {
+                    if (abs_state.contains(var, value) &&
+                        target_abs_state.contains(var, value)) {
+                        wanted.push_back(value);
+                    }
                 }
+                assert(!wanted.empty());
+                Split split(abs_state.get_id(), var, value, move(wanted));
+                split.count = fact_count[var][value];
+                add_split(splits, move(split));
             }
-            assert(!wanted.empty());
-            Split split(abs_state.get_id(), var, state_value, move(wanted));
-            add_split(splits, move(split));
         }
     }
 }
@@ -300,6 +314,7 @@ unique_ptr<Split> FlawSearch::create_split(
             int num_vars = domain_sizes.size();
             vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
 
+            vector<State> deviation_states;
             for (const State &state : states) {
                 // Applicability flaw
                 if (!task_properties::is_applicable(op, state)) {
@@ -318,13 +333,13 @@ unique_ptr<Split> FlawSearch::create_split(
                     // Deviation flaw
                     assert(tr.target_id != get_abstract_state_id(
                                state_registry->get_successor_state(state, op)));
-                    const AbstractState &target_abstract_state =
-                        abstraction.get_state(tr.target_id);
-                    get_deviation_splits(
-                        abstract_state, state, unaffected_variables,
-                        target_abstract_state, domain_sizes, splits);
+                    deviation_states.push_back(state);
                 }
             }
+
+            get_deviation_splits(
+                abstract_state, deviation_states, unaffected_variables,
+                abstraction.get_state(tr.target_id), domain_sizes, splits);
         }
     }
 
