@@ -209,10 +209,9 @@ static void add_split(vector<vector<Split>> &splits, Split &&new_split) {
 static void get_precondition_splits(
     const AbstractState &abs_state,
     const State &conc_state,
-    const ConditionsProxy &preconditions,
+    const vector<FactPair> &preconditions,
     vector<vector<Split>> &splits) {
-    for (FactProxy precondition_proxy : preconditions) {
-        FactPair fact = precondition_proxy.get_pair();
+    for (FactPair fact : preconditions) {
         assert(abs_state.contains(fact.var, fact.value));
         int state_value = conc_state[fact.var].get_value();
         if (state_value != fact.value) {
@@ -307,6 +306,7 @@ unique_ptr<Split> FlawSearch::create_split(
              << states.size() << " concrete states." << endl;
     }
 
+    const TransitionSystem &ts = abstraction.get_transition_system();
     vector<vector<Split>> splits(task_proxy.get_variables().size());
     for (const Transition &tr : get_transitions(abstract_state_id)) {
         if (is_f_optimal_transition(abstract_state_id, tr)) {
@@ -319,7 +319,7 @@ unique_ptr<Split> FlawSearch::create_split(
                 // Applicability flaw
                 if (!task_properties::is_applicable(op, state)) {
                     get_precondition_splits(
-                        abstract_state, state, op.get_preconditions(), splits);
+                        abstract_state, state, ts.get_preconditions(tr.op_id), splits);
                 } else {
                     // Flaws are only guaranteed to exist for fringe states.
                     if ((pick_flaw == PickFlaw::SINGLE_PATH ||

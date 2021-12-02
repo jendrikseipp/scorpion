@@ -306,6 +306,11 @@ const vector<Loops> &TransitionSystem::get_loops() const {
     return loops;
 }
 
+const std::vector<FactPair> &TransitionSystem::get_preconditions(int op_id) const {
+    assert(utils::in_bounds(op_id, preconditions_by_operator));
+    return preconditions_by_operator[op_id];
+}
+
 int TransitionSystem::get_num_states() const {
     assert(incoming.size() == outgoing.size());
     assert(loops.size() == outgoing.size());
