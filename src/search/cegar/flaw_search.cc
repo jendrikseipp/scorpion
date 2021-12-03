@@ -466,12 +466,12 @@ FlawSearch::FlawSearch(
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),
     num_overall_expanded_concrete_states(0) {
-    timer.stop();
-    timer.reset();
+    flaw_search_timer.stop();
+    flaw_search_timer.reset();
 }
 
 unique_ptr<Split> FlawSearch::get_split() {
-    timer.resume();
+    flaw_search_timer.resume();
     unique_ptr<Split> split = nullptr;
 
     switch (pick_flaw) {
@@ -497,7 +497,7 @@ unique_ptr<Split> FlawSearch::get_split() {
                || pick_flaw == PickFlaw::RANDOM_H_SINGLE
                || best_flaw_h == get_h_value(split->abstract_state_id));
     }
-    timer.stop();
+    flaw_search_timer.stop();
     return split;
 }
 
@@ -510,12 +510,12 @@ void FlawSearch::print_statistics() const {
     utils::g_log << "#Flaw searches: " << searches << endl;
     utils::g_log << "#Flaws refined: " << flaws << endl;
     utils::g_log << "#Expanded concrete states: " << expansions << endl;
-    utils::g_log << "Flaw search time: " << timer << endl;
+    utils::g_log << "Flaw search time: " << flaw_search_timer << endl;
     utils::g_log << "Avg flaws refined: "
                  << flaws / static_cast<float>(searches) << endl;
     utils::g_log << "Avg expanded concrete states: "
                  << expansions / static_cast<float>(searches) << endl;
-    utils::g_log << "Avg Flaw search time: " << timer() / searches << endl;
+    utils::g_log << "Avg Flaw search time: " << flaw_search_timer() / searches << endl;
     utils::g_log << endl;
 }
 }
