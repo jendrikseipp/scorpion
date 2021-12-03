@@ -61,6 +61,7 @@ class FlawSearch {
     size_t num_searches;
     size_t num_overall_expanded_concrete_states;
     utils::Timer flaw_search_timer;
+    utils::Timer pick_split_timer;
 
     CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
     int get_abstract_state_id(const State &state) const;

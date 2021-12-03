@@ -298,6 +298,7 @@ static void get_deviation_splits(
 
 unique_ptr<Split> FlawSearch::create_split(
     const vector<State> &states, int abstract_state_id) {
+    pick_split_timer.resume();
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     if (debug) {
@@ -343,11 +344,13 @@ unique_ptr<Split> FlawSearch::create_split(
         }
     }
 
-    return utils::make_unique_ptr<Split>(
-        split_selector.pick_split(abstract_state, move(splits), rng));
+    Split split = split_selector.pick_split(abstract_state, move(splits), rng);
+    pick_split_timer.stop();
+    return utils::make_unique_ptr<Split>(move(split));
 }
 
 SearchStatus FlawSearch::search_for_flaws() {
+    flaw_search_timer.resume();
     initialize();
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
@@ -360,6 +363,7 @@ SearchStatus FlawSearch::search_for_flaws() {
                      << num_overall_expanded_concrete_states - cur_expanded_states
                      << " states" << endl;
     }
+    flaw_search_timer.stop();
     return search_status;
 }
 
@@ -465,14 +469,13 @@ FlawSearch::FlawSearch(
     last_refined_abstract_state_id(-1),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),
-    num_overall_expanded_concrete_states(0) {
-    flaw_search_timer.stop();
-    flaw_search_timer.reset();
+    num_overall_expanded_concrete_states(0),
+    flaw_search_timer(false),
+    pick_split_timer(false) {
 }
 
 unique_ptr<Split> FlawSearch::get_split() {
-    flaw_search_timer.resume();
-    unique_ptr<Split> split = nullptr;
+    unique_ptr<Split> split;
 
     switch (pick_flaw) {
     case PickFlaw::SINGLE_PATH:
@@ -497,7 +500,6 @@ unique_ptr<Split> FlawSearch::get_split() {
                || pick_flaw == PickFlaw::RANDOM_H_SINGLE
                || best_flaw_h == get_h_value(split->abstract_state_id));
     }
-    flaw_search_timer.stop();
     return split;
 }
 
@@ -511,6 +513,7 @@ void FlawSearch::print_statistics() const {
     utils::g_log << "#Flaws refined: " << flaws << endl;
     utils::g_log << "#Expanded concrete states: " << expansions << endl;
     utils::g_log << "Flaw search time: " << flaw_search_timer << endl;
+    utils::g_log << "Time for computing splits: " << pick_split_timer << endl;
     utils::g_log << "Avg flaws refined: "
                  << flaws / static_cast<float>(searches) << endl;
     utils::g_log << "Avg expanded concrete states: "
