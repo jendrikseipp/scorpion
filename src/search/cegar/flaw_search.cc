@@ -12,6 +12,7 @@
 
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
+#include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
 
@@ -150,9 +151,8 @@ SearchStatus FlawSearch::step() {
                 }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
                     pick_flaw == PickFlaw::SINGLE_PATH) {
-                    // Clear open list
-                    queue<StateID> empty;
-                    swap(open_list, empty);
+                    // Clear open list.
+                    queue<StateID>().swap(open_list);
                     return FAILED;
                 }
                 continue;
@@ -166,9 +166,8 @@ SearchStatus FlawSearch::step() {
                 }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
                     pick_flaw == PickFlaw::SINGLE_PATH) {
-                    // Clear open list
-                    queue<StateID> empty;
-                    swap(open_list, empty);
+                    // Clear open list.
+                    queue<StateID>().swap(open_list);
                     return FAILED;
                 }
                 continue;
@@ -349,12 +348,18 @@ unique_ptr<Split> FlawSearch::create_split(
     return utils::make_unique_ptr<Split>(move(split));
 }
 
-SearchStatus FlawSearch::search_for_flaws() {
+SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_timer) {
     flaw_search_timer.resume();
     initialize();
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
     while (search_status == IN_PROGRESS) {
+        if (cegar_timer.is_expired()) {
+            search_status = TIMEOUT;
+            // Clear open list.
+            queue<StateID>().swap(open_list);
+            break;
+        }
         search_status = step();
     }
 
@@ -367,8 +372,8 @@ SearchStatus FlawSearch::search_for_flaws() {
     return search_status;
 }
 
-unique_ptr<Split> FlawSearch::get_single_split() {
-    auto search_status = search_for_flaws();
+unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cegar_timer) {
+    auto search_status = search_for_flaws(cegar_timer);
 
     // Memory padding
     if (search_status == TIMEOUT)
@@ -399,7 +404,7 @@ unique_ptr<Split> FlawSearch::get_single_split() {
 }
 
 unique_ptr<Split>
-FlawSearch::get_min_h_batch_split() {
+FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
     // Handle flaws of refined abstract state
     if (last_refined_abstract_state_id != -1) {
         vector<State> states_to_handle =
@@ -417,7 +422,7 @@ FlawSearch::get_min_h_batch_split() {
 
     auto search_status = SearchStatus::FAILED;
     if (flawed_states.empty()) {
-        search_status = search_for_flaws();
+        search_status = search_for_flaws(cegar_timer);
     }
 
     // Memory padding
@@ -474,7 +479,7 @@ FlawSearch::FlawSearch(
     pick_split_timer(false) {
 }
 
-unique_ptr<Split> FlawSearch::get_split() {
+unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer) {
     unique_ptr<Split> split;
 
     switch (pick_flaw) {
@@ -482,11 +487,11 @@ unique_ptr<Split> FlawSearch::get_split() {
     case PickFlaw::RANDOM_H_SINGLE:
     case PickFlaw::MIN_H_SINGLE:
     case PickFlaw::MAX_H_SINGLE:
-        split = get_single_split();
+        split = get_single_split(cegar_timer);
         break;
     case PickFlaw::MIN_H_BATCH:
     case PickFlaw::MIN_H_BATCH_MULTI_SPLIT:
-        split = get_min_h_batch_split();
+        split = get_min_h_batch_split(cegar_timer);
         break;
     default:
         utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick_flaw)

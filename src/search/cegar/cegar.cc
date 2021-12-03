@@ -212,7 +212,7 @@ void CEGAR::refinement_loop() {
                              dot_graph_verbosity);
         }
 
-        unique_ptr<Split> split = flaw_search->get_split();
+        unique_ptr<Split> split = flaw_search->get_split(timer);
 
         find_flaw_timer.stop();
 
