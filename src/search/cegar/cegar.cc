@@ -259,7 +259,7 @@ void CEGAR::refinement_loop() {
         }
     }
     utils::g_log << "Time for finding abstract traces: " << find_trace_timer << endl;
-    utils::g_log << "Time for finding flaws: " << find_flaw_timer << endl;
+    utils::g_log << "Time for finding flaws and computing splits: " << find_flaw_timer << endl;
     utils::g_log << "Time for splitting states: " << refine_timer << endl;
     utils::g_log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
     utils::g_log << "Number of refinements: " << abstraction->get_num_states() - 1 << endl;
