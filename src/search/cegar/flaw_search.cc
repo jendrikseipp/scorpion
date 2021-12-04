@@ -53,21 +53,15 @@ const vector<Transition> &FlawSearch::get_transitions(
 }
 
 void FlawSearch::add_flaw(int abs_id, const State &state) {
-    // Be careful not to add an entry while testing that the state is not already present.
-    // Using a reference to flawed_states[abs_id] doesn't work since it creates a temporary.
-    assert(flawed_states.count(abs_id) == 0 ||
-           find(flawed_states.at(abs_id).begin(), flawed_states.at(abs_id).end(), state) ==
-           flawed_states.at(abs_id).end());
+    assert(abstraction.get_state(abs_id).includes(state));
     int h = get_h_value(abs_id);
-    if (pick_flaw == PickFlaw::MIN_H_SINGLE
-        || pick_flaw == PickFlaw::MIN_H_BATCH
-        || pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
+    if (pick_flaw == PickFlaw::MIN_H_SINGLE) {
         if (best_flaw_h > h) {
             flawed_states.clear();
         }
         if (best_flaw_h >= h) {
             best_flaw_h = h;
-            flawed_states[abs_id].push_back(state);
+            flawed_states.add_state(abs_id, state, h);
         }
     } else if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
         if (best_flaw_h < h) {
@@ -75,32 +69,27 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
         }
         if (best_flaw_h <= h) {
             best_flaw_h = h;
-            flawed_states[abs_id].push_back(state);
+            flawed_states.add_state(abs_id, state, h);
         }
     } else {
         assert(pick_flaw == PickFlaw::RANDOM_H_SINGLE
-               || pick_flaw == PickFlaw::SINGLE_PATH);
-        flawed_states[abs_id].push_back(state);
+               || pick_flaw == PickFlaw::SINGLE_PATH
+               || pick_flaw == PickFlaw::MIN_H_BATCH
+               || pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
+        flawed_states.add_state(abs_id, state, h);
     }
-
-    // Assert that there is at least one bucket and that no bucket is empty.
-    assert(!flawed_states.empty());
-    assert(none_of(flawed_states.begin(), flawed_states.end(),
-                   [](const pair<const int, vector<State>> &pair) {
-                       return pair.second.empty();
-                   }));
 }
 
 void FlawSearch::initialize() {
     ++num_searches;
-    last_refined_abstract_state_id = -1;
+    last_refined_flawed_state = FlawedState::no_state;
     best_flaw_h = (pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF;
     assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
     abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
 
-    flawed_states.clear();
+    assert(flawed_states.empty());
 
     const State &initial_state = state_registry->get_initial_state();
     (*abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
@@ -316,16 +305,14 @@ unique_ptr<Split> FlawSearch::create_split(
 
             vector<State> deviation_states;
             for (const State &state : states) {
+                assert(abstract_state.includes(state));
                 // Applicability flaw
                 if (!task_properties::is_applicable(op, state)) {
                     get_precondition_splits(
                         abstract_state, state, ts.get_preconditions(tr.op_id), splits);
                 } else {
-                    // Flaws are only guaranteed to exist for fringe states.
-                    if ((pick_flaw == PickFlaw::SINGLE_PATH ||
-                         pick_flaw == PickFlaw::MAX_H_SINGLE ||
-                         pick_flaw == PickFlaw::RANDOM_H_SINGLE)
-                        && abstraction.get_state(tr.target_id).includes(
+                    // No flaw
+                    if (abstraction.get_state(tr.target_id).includes(
                             state_registry->get_successor_state(state, op))) {
                         continue;
                     }
@@ -343,6 +330,17 @@ unique_ptr<Split> FlawSearch::create_split(
         }
     }
 
+    int num_splits = 0;
+    for (auto &var_splits : splits) {
+        num_splits += var_splits.size();
+    }
+    if (debug) {
+        cout << "Unique splits: " << num_splits << endl;
+    }
+    if (num_splits == 0) {
+        return nullptr;
+    }
+
     Split split = split_selector.pick_split(abstract_state, move(splits), rng);
     pick_split_timer.stop();
     return utils::make_unique_ptr<Split>(move(split));
@@ -350,6 +348,9 @@ unique_ptr<Split> FlawSearch::create_split(
 
 SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_timer) {
     flaw_search_timer.resume();
+    if (debug) {
+        cout << "Search for flaws" << endl;
+    }
     initialize();
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
@@ -382,9 +383,8 @@ unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cega
     if (search_status == FAILED) {
         assert(!flawed_states.empty());
 
-        auto random_bucket = next(flawed_states.begin(), rng.random(flawed_states.size()));
-        int abstract_state_id = random_bucket->first;
-        const State &state = *rng.choose(random_bucket->second);
+        FlawedState flawed_state = flawed_states.pop_random_flawed_state_and_clear(rng);
+        const State &state = *rng.choose(flawed_state.concrete_states);
 
         if (debug) {
             vector<OperatorID> trace;
@@ -397,53 +397,88 @@ unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cega
             utils::g_log << "Path (without last operator): " << operator_names << endl;
         }
 
-        return create_split({state}, abstract_state_id);
+        return create_split({state}, flawed_state.abs_id);
     }
     assert(search_status == SOLVED);
     return nullptr;
 }
 
+FlawedState FlawSearch::get_flawed_state_with_min_h() {
+    while (!flawed_states.empty()) {
+        FlawedState flawed_state = flawed_states.pop_flawed_state_with_min_h();
+        int old_h = flawed_state.h;
+        int abs_id = flawed_state.abs_id;
+        assert(get_h_value(abs_id) >= old_h);
+        if (get_h_value(abs_id) == old_h) {
+            if (debug) {
+                cout << "Reuse flawed state: " << abs_id << endl;
+            }
+            return flawed_state;
+        } else {
+            if (debug) {
+                cout << "Ignore flawed state with increased f value: " << abs_id << endl;
+            }
+        }
+    }
+    // The f value increased for all states.
+    return FlawedState::no_state;
+}
+
+
 unique_ptr<Split>
 FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
-    // Handle flaws of refined abstract state
-    if (last_refined_abstract_state_id != -1) {
-        vector<State> states_to_handle =
-            move(flawed_states.at(last_refined_abstract_state_id));
-        flawed_states.erase(last_refined_abstract_state_id);
-        for (const State &s : states_to_handle) {
+    if (debug) {
+        flawed_states.dump();
+    }
+
+    if (last_refined_flawed_state != FlawedState::no_state) {
+        // Handle flaws of the last refined abstract state.
+        int old_h = last_refined_flawed_state.h;
+        for (const State &state : last_refined_flawed_state.concrete_states) {
             // We only add non-goal states to flawed_states.
-            assert(!task_properties::is_goal_state(task_proxy, s));
-            int abs_id = get_abstract_state_id(s);
-            if (get_h_value(abs_id) == best_flaw_h) {
-                add_flaw(abs_id, s);
+            assert(!task_properties::is_goal_state(task_proxy, state));
+            int abs_id = get_abstract_state_id(state);
+            if (get_h_value(abs_id) == old_h) {
+                add_flaw(abs_id, state);
             }
         }
     }
 
+    FlawedState flawed_state = get_flawed_state_with_min_h();
     auto search_status = SearchStatus::FAILED;
-    if (flawed_states.empty()) {
+    if (flawed_state == FlawedState::no_state) {
         search_status = search_for_flaws(cegar_timer);
+        if (search_status == SearchStatus::FAILED) {
+            flawed_state = get_flawed_state_with_min_h();
+        }
+    }
+
+    if (debug) {
+        cout << "Use flawed state: " << flawed_state << endl;
     }
 
     // Memory padding
     if (search_status == TIMEOUT)
         return nullptr;
 
-    // There are flaws to refine.
     if (search_status == FAILED) {
-        assert(!flawed_states.empty());
-
-        /* It doesn't matter in which order we consider the abstract states with
-           minimal h value since we'll refine all of them anyway. */
-        auto first_bucket = flawed_states.begin();
-        int abstract_state_id = first_bucket->first;
+        // There are flaws to refine.
+        assert(flawed_state != FlawedState::no_state);
 
         unique_ptr<Split> split;
         if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
-            split = create_split(first_bucket->second, abstract_state_id);
+            split = create_split(flawed_state.concrete_states, flawed_state.abs_id);
         } else {
-            const State &state = *rng.choose(first_bucket->second);
-            split = create_split({state}, abstract_state_id);
+            const State &state = *rng.choose(flawed_state.concrete_states);
+            split = create_split({state}, flawed_state.abs_id);
+        }
+
+        if (split) {
+            last_refined_flawed_state = move(flawed_state);
+        } else {
+            last_refined_flawed_state = FlawedState::no_state;
+            // We selected an abstract state without any flaws, so we try again.
+            return get_min_h_batch_split(cegar_timer);
         }
 
         return split;
@@ -471,7 +506,7 @@ FlawSearch::FlawSearch(
     rng(rng),
     pick_flaw(pick_flaw),
     debug(debug),
-    last_refined_abstract_state_id(-1),
+    last_refined_flawed_state(FlawedState::no_state),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),
     num_overall_expanded_concrete_states(0),
@@ -500,9 +535,8 @@ unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer
     }
 
     if (split) {
-        last_refined_abstract_state_id = split->abstract_state_id;
-        assert(pick_flaw == PickFlaw::SINGLE_PATH
-               || pick_flaw == PickFlaw::RANDOM_H_SINGLE
+        assert(!(pick_flaw == PickFlaw::MAX_H_SINGLE
+                 || pick_flaw == PickFlaw::MIN_H_SINGLE)
                || best_flaw_h == get_h_value(split->abstract_state_id));
     }
     return split;

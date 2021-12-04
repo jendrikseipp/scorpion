@@ -2,11 +2,13 @@
 #define CEGAR_FLAW_SEARCH_H
 
 #include "cartesian_set.h"
+#include "flaw.h"
 #include "split_selector.h"
 #include "types.h"
 
 #include "../open_list.h"
 #include "../search_engine.h"
+
 #include "../utils/timer.h"
 #include "../utils/hash.h"
 
@@ -54,9 +56,9 @@ class FlawSearch {
     std::unique_ptr<PerStateInformation<int>> abstract_state_ids;
 
     // Flaw data
-    int last_refined_abstract_state_id;
+    FlawedState last_refined_flawed_state;
     int best_flaw_h;
-    utils::HashMap<int, std::vector<State>> flawed_states;
+    FlawedStates flawed_states;
 
     // Statistics
     size_t num_searches;
@@ -78,6 +80,7 @@ class FlawSearch {
     std::unique_ptr<Split> create_split(
         const std::vector<State> &states, int abstract_state_id);
 
+    FlawedState get_flawed_state_with_min_h();
     std::unique_ptr<Split> get_single_split(const utils::CountdownTimer &cegar_timer);
     std::unique_ptr<Split> get_min_h_batch_split(const utils::CountdownTimer &cegar_timer);
 
