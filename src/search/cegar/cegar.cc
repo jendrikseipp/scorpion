@@ -217,6 +217,7 @@ void CEGAR::refinement_loop() {
         find_flaw_timer.stop();
 
         if (!utils::extra_memory_padding_is_reserved()) {
+            utils::g_log << "Reached memory limit." << endl;
             break;
         }
 
