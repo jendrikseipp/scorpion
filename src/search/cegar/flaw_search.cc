@@ -12,6 +12,7 @@
 
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
+#include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
 
@@ -150,9 +151,8 @@ SearchStatus FlawSearch::step() {
                 }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
                     pick_flaw == PickFlaw::SINGLE_PATH) {
-                    // Clear open list
-                    queue<StateID> empty;
-                    swap(open_list, empty);
+                    // Clear open list.
+                    queue<StateID>().swap(open_list);
                     return FAILED;
                 }
                 continue;
@@ -166,9 +166,8 @@ SearchStatus FlawSearch::step() {
                 }
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
                     pick_flaw == PickFlaw::SINGLE_PATH) {
-                    // Clear open list
-                    queue<StateID> empty;
-                    swap(open_list, empty);
+                    // Clear open list.
+                    queue<StateID>().swap(open_list);
                     return FAILED;
                 }
                 continue;
@@ -192,18 +191,32 @@ SearchStatus FlawSearch::step() {
     return IN_PROGRESS;
 }
 
+static void add_split(vector<vector<Split>> &splits, Split &&new_split) {
+    vector<Split> &var_splits = splits[new_split.var_id];
+    bool is_duplicate = false;
+    for (auto &old_split : var_splits) {
+        if (old_split == new_split) {
+            is_duplicate = true;
+            old_split.count += new_split.count;
+        }
+    }
+    if (!is_duplicate) {
+        var_splits.push_back(move(new_split));
+    }
+}
+
 static void get_precondition_splits(
     const AbstractState &abs_state,
     const State &conc_state,
-    const ConditionsProxy &preconditions,
-    vector<Split> &splits) {
-    for (FactProxy precondition_proxy : preconditions) {
-        FactPair fact = precondition_proxy.get_pair();
+    const vector<FactPair> &preconditions,
+    vector<vector<Split>> &splits) {
+    for (FactPair fact : preconditions) {
         assert(abs_state.contains(fact.var, fact.value));
         int state_value = conc_state[fact.var].get_value();
         if (state_value != fact.value) {
             vector<int> wanted = {fact.value};
-            splits.emplace_back(abs_state.get_id(), fact.var, state_value, move(wanted));
+            Split split(abs_state.get_id(), fact.var, state_value, move(wanted));
+            add_split(splits, move(split));
         }
     }
 }
@@ -231,11 +244,11 @@ static vector<int> get_unaffected_variables(
 
 static void get_deviation_splits(
     const AbstractState &abs_state,
-    const State &conc_state,
+    const vector<State> &conc_states,
     const vector<int> &unaffected_variables,
     const AbstractState &target_abs_state,
     const vector<int> &domain_sizes,
-    vector<Split> &splits) {
+    vector<vector<Split>> &splits) {
     /*
       For each fact in the concrete state that is not contained in the
       target abstract state, loop over all values in the domain of the
@@ -251,24 +264,40 @@ static void get_deviation_splits(
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin t[v], wanted = intersect(a[v], b[v]).
     */
-    for (int var : unaffected_variables) {
-        int state_value = conc_state[var].get_value();
-        if (!target_abs_state.contains(var, state_value)) {
-            vector<int> wanted;
-            for (int value = 0; value < domain_sizes[var]; ++value) {
-                if (abs_state.contains(var, value) &&
-                    target_abs_state.contains(var, value)) {
-                    wanted.push_back(value);
+    // Note: it could be faster to use an efficient hash map for this.
+    vector<vector<int>> fact_count(domain_sizes.size());
+    for (size_t var = 0; var < domain_sizes.size(); ++var) {
+        fact_count[var].resize(domain_sizes[var], 0);
+    }
+    for (const State &conc_state : conc_states) {
+        for (int var : unaffected_variables) {
+            int state_value = conc_state[var].get_value();
+            ++fact_count[var][state_value];
+        }
+    }
+    for (size_t var = 0; var < domain_sizes.size(); ++var) {
+        for (int value = 0; value < domain_sizes[var]; ++value) {
+            if (fact_count[var][value] && !target_abs_state.contains(var, value)) {
+                // Note: we could precompute the "wanted" vector, but not the split.
+                vector<int> wanted;
+                for (int value = 0; value < domain_sizes[var]; ++value) {
+                    if (abs_state.contains(var, value) &&
+                        target_abs_state.contains(var, value)) {
+                        wanted.push_back(value);
+                    }
                 }
+                assert(!wanted.empty());
+                Split split(abs_state.get_id(), var, value, move(wanted));
+                split.count = fact_count[var][value];
+                add_split(splits, move(split));
             }
-            assert(!wanted.empty());
-            splits.emplace_back(abs_state.get_id(), var, state_value, move(wanted));
         }
     }
 }
 
 unique_ptr<Split> FlawSearch::create_split(
     const vector<State> &states, int abstract_state_id) {
+    pick_split_timer.resume();
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     if (debug) {
@@ -277,18 +306,20 @@ unique_ptr<Split> FlawSearch::create_split(
              << states.size() << " concrete states." << endl;
     }
 
-    vector<Split> splits;
+    const TransitionSystem &ts = abstraction.get_transition_system();
+    vector<vector<Split>> splits(task_proxy.get_variables().size());
     for (const Transition &tr : get_transitions(abstract_state_id)) {
         if (is_f_optimal_transition(abstract_state_id, tr)) {
             OperatorProxy op = task_proxy.get_operators()[tr.op_id];
             int num_vars = domain_sizes.size();
             vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
 
+            vector<State> deviation_states;
             for (const State &state : states) {
                 // Applicability flaw
                 if (!task_properties::is_applicable(op, state)) {
                     get_precondition_splits(
-                        abstract_state, state, op.get_preconditions(), splits);
+                        abstract_state, state, ts.get_preconditions(tr.op_id), splits);
                 } else {
                     // Flaws are only guaranteed to exist for fringe states.
                     if ((pick_flaw == PickFlaw::SINGLE_PATH ||
@@ -302,25 +333,33 @@ unique_ptr<Split> FlawSearch::create_split(
                     // Deviation flaw
                     assert(tr.target_id != get_abstract_state_id(
                                state_registry->get_successor_state(state, op)));
-                    const AbstractState &target_abstract_state =
-                        abstraction.get_state(tr.target_id);
-                    get_deviation_splits(
-                        abstract_state, state, unaffected_variables,
-                        target_abstract_state, domain_sizes, splits);
+                    deviation_states.push_back(state);
                 }
             }
+
+            get_deviation_splits(
+                abstract_state, deviation_states, unaffected_variables,
+                abstraction.get_state(tr.target_id), domain_sizes, splits);
         }
     }
 
-    return utils::make_unique_ptr<Split>(
-        split_selector.pick_split(abstract_state, move(splits), rng));
+    Split split = split_selector.pick_split(abstract_state, move(splits), rng);
+    pick_split_timer.stop();
+    return utils::make_unique_ptr<Split>(move(split));
 }
 
-SearchStatus FlawSearch::search_for_flaws() {
+SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_timer) {
+    flaw_search_timer.resume();
     initialize();
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
     while (search_status == IN_PROGRESS) {
+        if (cegar_timer.is_expired()) {
+            search_status = TIMEOUT;
+            // Clear open list.
+            queue<StateID>().swap(open_list);
+            break;
+        }
         search_status = step();
     }
 
@@ -329,11 +368,12 @@ SearchStatus FlawSearch::search_for_flaws() {
                      << num_overall_expanded_concrete_states - cur_expanded_states
                      << " states" << endl;
     }
+    flaw_search_timer.stop();
     return search_status;
 }
 
-unique_ptr<Split> FlawSearch::get_single_split() {
-    auto search_status = search_for_flaws();
+unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cegar_timer) {
+    auto search_status = search_for_flaws(cegar_timer);
 
     // Memory padding
     if (search_status == TIMEOUT)
@@ -364,7 +404,7 @@ unique_ptr<Split> FlawSearch::get_single_split() {
 }
 
 unique_ptr<Split>
-FlawSearch::get_min_h_batch_split() {
+FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
     // Handle flaws of refined abstract state
     if (last_refined_abstract_state_id != -1) {
         vector<State> states_to_handle =
@@ -382,7 +422,7 @@ FlawSearch::get_min_h_batch_split() {
 
     auto search_status = SearchStatus::FAILED;
     if (flawed_states.empty()) {
-        search_status = search_for_flaws();
+        search_status = search_for_flaws(cegar_timer);
     }
 
     // Memory padding
@@ -434,25 +474,24 @@ FlawSearch::FlawSearch(
     last_refined_abstract_state_id(-1),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
     num_searches(0),
-    num_overall_expanded_concrete_states(0) {
-    timer.stop();
-    timer.reset();
+    num_overall_expanded_concrete_states(0),
+    flaw_search_timer(false),
+    pick_split_timer(false) {
 }
 
-unique_ptr<Split> FlawSearch::get_split() {
-    timer.resume();
-    unique_ptr<Split> split = nullptr;
+unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer) {
+    unique_ptr<Split> split;
 
     switch (pick_flaw) {
     case PickFlaw::SINGLE_PATH:
     case PickFlaw::RANDOM_H_SINGLE:
     case PickFlaw::MIN_H_SINGLE:
     case PickFlaw::MAX_H_SINGLE:
-        split = get_single_split();
+        split = get_single_split(cegar_timer);
         break;
     case PickFlaw::MIN_H_BATCH:
     case PickFlaw::MIN_H_BATCH_MULTI_SPLIT:
-        split = get_min_h_batch_split();
+        split = get_min_h_batch_split(cegar_timer);
         break;
     default:
         utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick_flaw)
@@ -466,7 +505,6 @@ unique_ptr<Split> FlawSearch::get_split() {
                || pick_flaw == PickFlaw::RANDOM_H_SINGLE
                || best_flaw_h == get_h_value(split->abstract_state_id));
     }
-    timer.stop();
     return split;
 }
 
@@ -479,12 +517,13 @@ void FlawSearch::print_statistics() const {
     utils::g_log << "#Flaw searches: " << searches << endl;
     utils::g_log << "#Flaws refined: " << flaws << endl;
     utils::g_log << "#Expanded concrete states: " << expansions << endl;
-    utils::g_log << "Flaw search time: " << timer << endl;
+    utils::g_log << "Flaw search time: " << flaw_search_timer << endl;
+    utils::g_log << "Time for computing splits: " << pick_split_timer << endl;
     utils::g_log << "Avg flaws refined: "
                  << flaws / static_cast<float>(searches) << endl;
     utils::g_log << "Avg expanded concrete states: "
                  << expansions / static_cast<float>(searches) << endl;
-    utils::g_log << "Avg Flaw search time: " << timer() / searches << endl;
+    utils::g_log << "Avg Flaw search time: " << flaw_search_timer() / searches << endl;
     utils::g_log << endl;
 }
 }

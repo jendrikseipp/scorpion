@@ -13,6 +13,7 @@
 #include <queue>
 
 namespace utils {
+class CountdownTimer;
 class RandomNumberGenerator;
 }
 
@@ -60,7 +61,8 @@ class FlawSearch {
     // Statistics
     size_t num_searches;
     size_t num_overall_expanded_concrete_states;
-    utils::Timer timer;
+    utils::Timer flaw_search_timer;
+    utils::Timer pick_split_timer;
 
     CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
     int get_abstract_state_id(const State &state) const;
@@ -71,13 +73,13 @@ class FlawSearch {
 
     void initialize();
     SearchStatus step();
-    SearchStatus search_for_flaws();
+    SearchStatus search_for_flaws(const utils::CountdownTimer &cegar_timer);
 
     std::unique_ptr<Split> create_split(
         const std::vector<State> &states, int abstract_state_id);
 
-    std::unique_ptr<Split> get_single_split();
-    std::unique_ptr<Split> get_min_h_batch_split();
+    std::unique_ptr<Split> get_single_split(const utils::CountdownTimer &cegar_timer);
+    std::unique_ptr<Split> get_min_h_batch_split(const utils::CountdownTimer &cegar_timer);
 
 public:
     FlawSearch(
@@ -91,7 +93,7 @@ public:
         PickSplit tiebreak_split,
         bool debug);
 
-    std::unique_ptr<Split> get_split();
+    std::unique_ptr<Split> get_split(const utils::CountdownTimer &cegar_timer);
 
     void print_statistics() const;
 };
