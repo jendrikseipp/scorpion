@@ -39,6 +39,7 @@ public:
     virtual void push(int key, const Value &value) = 0;
     virtual Entry pop() = 0;
     virtual bool empty() const = 0;
+    virtual int size() const = 0;
     virtual void clear() = 0;
 
     virtual AbstractQueue<Value> *convert_if_necessary(int /*key*/) {
@@ -111,6 +112,10 @@ public:
 
     virtual bool empty() const {
         return heap.empty();
+    }
+
+    virtual int size() const {
+        return heap.size();
     }
 
     virtual void clear() {
@@ -206,6 +211,10 @@ public:
         return num_entries == 0;
     }
 
+    virtual int size() const {
+        return num_entries;
+    }
+
     virtual void clear() {
         for (int i = current_bucket_no; num_entries != 0; ++i) {
             assert(utils::in_bounds(i, buckets));
@@ -272,6 +281,10 @@ public:
 
     bool empty() const {
         return wrapped_queue->empty();
+    }
+
+    int size() const {
+        return wrapped_queue->size();
     }
 
     void clear() {
