@@ -427,10 +427,6 @@ FlawedState FlawSearch::get_flawed_state_with_min_h() {
 
 unique_ptr<Split>
 FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
-    if (debug) {
-        flawed_states.dump();
-    }
-
     if (last_refined_flawed_state != FlawedState::no_state) {
         // Handle flaws of the last refined abstract state.
         int old_h = last_refined_flawed_state.h;
@@ -448,6 +444,7 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
     auto search_status = SearchStatus::FAILED;
     if (flawed_state == FlawedState::no_state) {
         search_status = search_for_flaws(cegar_timer);
+        flawed_states.dump();
         if (search_status == SearchStatus::FAILED) {
             flawed_state = get_flawed_state_with_min_h();
         }

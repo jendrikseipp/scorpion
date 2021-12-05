@@ -55,7 +55,7 @@ public:
     FlawedState pop_random_flawed_state_and_clear(utils::RandomNumberGenerator &rng);
     void clear();
     bool empty() const;
-    void dump() const;
+    void dump(bool verbose = false) const;
 };
 }
 

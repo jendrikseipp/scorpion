@@ -66,10 +66,17 @@ bool FlawedStates::empty() const {
     return flawed_states.empty();
 }
 
-void FlawedStates::dump() const {
-    cout << "Flawed states:" << endl;
+void FlawedStates::dump(bool verbose) const {
+    int num_concrete_states = 0;
     for (auto pair : flawed_states) {
-        cout << "  abs id: " << pair.first << ", states: " << pair.second.size() << endl;
+        num_concrete_states += pair.second.size();
+    }
+    cout << "Flawed states: " << num_concrete_states << " in "
+         << flawed_states.size() << endl;
+    if (verbose) {
+        for (auto pair : flawed_states) {
+            cout << "  abs id: " << pair.first << ", states: " << pair.second.size() << endl;
+        }
     }
 }
 }

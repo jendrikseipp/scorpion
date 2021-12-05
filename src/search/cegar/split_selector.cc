@@ -163,7 +163,9 @@ vector<Split> SplitSelector::compute_max_cover_splits(
     if (debug) {
         cout << "Unsorted splits: " << endl;
         for (auto &var_splits : splits) {
-            utils::g_log << " " << var_splits << endl;
+            if (!var_splits.empty()) {
+                utils::g_log << " " << var_splits << endl;
+            }
         }
     }
 
@@ -196,7 +198,9 @@ vector<Split> SplitSelector::compute_max_cover_splits(
     if (debug) {
         cout << "Sorted and combined splits: " << endl;
         for (auto &var_splits : splits) {
-            utils::g_log << " " << var_splits << endl;
+            if (!var_splits.empty()) {
+                utils::g_log << " " << var_splits << endl;
+            }
         }
     }
 
