@@ -221,6 +221,11 @@ void CEGAR::refinement_loop() {
             break;
         }
 
+        if (timer.is_expired()) {
+            utils::g_log << "Reached time limit." << endl;
+            break;
+        }
+
         if (!split) {
             cout << endl;
             utils::g_log << "Found concrete solution." << endl;
