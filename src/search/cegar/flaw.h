@@ -7,6 +7,7 @@
 #include <utility>
 
 class State;
+class StateID;
 
 namespace utils {
 class RandomNumberGenerator;
@@ -16,9 +17,9 @@ namespace cegar {
 struct FlawedState {
     int abs_id;
     int h;
-    std::vector<State> concrete_states;
+    std::vector<StateID> concrete_states;
 
-    FlawedState(int abs_id, int h, std::vector<State> &&concrete_states)
+    FlawedState(int abs_id, int h, std::vector<StateID> &&concrete_states)
         : abs_id(abs_id),
           h(h),
           concrete_states(move(concrete_states)) {
@@ -44,7 +45,7 @@ struct FlawedState {
 
 
 class FlawedStates {
-    utils::HashMap<int, std::vector<State>> flawed_states;
+    utils::HashMap<int, std::vector<StateID>> flawed_states;
     priority_queues::AdaptiveQueue<int> flawed_states_queue;
 
     bool is_consistent() const;

@@ -285,14 +285,14 @@ static void get_deviation_splits(
 }
 
 unique_ptr<Split> FlawSearch::create_split(
-    const vector<State> &states, int abstract_state_id) {
+    const vector<StateID> &state_ids, int abstract_state_id) {
     pick_split_timer.resume();
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     if (debug) {
         cout << endl;
         cout << "Create split for abstract state " << abstract_state_id << " and "
-             << states.size() << " concrete states." << endl;
+             << state_ids.size() << " concrete states." << endl;
     }
 
     const TransitionSystem &ts = abstraction.get_transition_system();
@@ -304,7 +304,8 @@ unique_ptr<Split> FlawSearch::create_split(
             vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
 
             vector<State> deviation_states;
-            for (const State &state : states) {
+            for (const StateID &state_id : state_ids) {
+                State state = state_registry->lookup_state(state_id);
                 assert(abstract_state.includes(state));
                 // Applicability flaw
                 if (!task_properties::is_applicable(op, state)) {
@@ -384,11 +385,11 @@ unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cega
         assert(!flawed_states.empty());
 
         FlawedState flawed_state = flawed_states.pop_random_flawed_state_and_clear(rng);
-        const State &state = *rng.choose(flawed_state.concrete_states);
+        StateID state_id = *rng.choose(flawed_state.concrete_states);
 
         if (debug) {
             vector<OperatorID> trace;
-            search_space->trace_path(state, trace);
+            search_space->trace_path(state_registry->lookup_state(state_id), trace);
             vector<string> operator_names;
             operator_names.reserve(trace.size());
             for (OperatorID op_id : trace) {
@@ -397,7 +398,7 @@ unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cega
             utils::g_log << "Path (without last operator): " << operator_names << endl;
         }
 
-        return create_split({state}, flawed_state.abs_id);
+        return create_split({state_id}, flawed_state.abs_id);
     }
     assert(search_status == SOLVED);
     return nullptr;
@@ -430,7 +431,8 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
     if (last_refined_flawed_state != FlawedState::no_state) {
         // Handle flaws of the last refined abstract state.
         int old_h = last_refined_flawed_state.h;
-        for (const State &state : last_refined_flawed_state.concrete_states) {
+        for (const StateID &state_id : last_refined_flawed_state.concrete_states) {
+            State state = state_registry->lookup_state(state_id);
             // We only add non-goal states to flawed_states.
             assert(!task_properties::is_goal_state(task_proxy, state));
             int abs_id = get_abstract_state_id(state);
@@ -466,8 +468,8 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
         if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
             split = create_split(flawed_state.concrete_states, flawed_state.abs_id);
         } else {
-            const State &state = *rng.choose(flawed_state.concrete_states);
-            split = create_split({state}, flawed_state.abs_id);
+            StateID state_id = *rng.choose(flawed_state.concrete_states);
+            split = create_split({state_id}, flawed_state.abs_id);
         }
 
         if (split) {
