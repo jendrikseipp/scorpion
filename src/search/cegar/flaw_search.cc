@@ -286,7 +286,7 @@ static void get_deviation_splits(
 
 unique_ptr<Split> FlawSearch::create_split(
     const vector<StateID> &state_ids, int abstract_state_id) {
-    pick_split_timer.resume();
+    compute_splits_timer.resume();
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     if (debug) {
@@ -338,10 +338,13 @@ unique_ptr<Split> FlawSearch::create_split(
     if (debug) {
         cout << "Unique splits: " << num_splits << endl;
     }
+    compute_splits_timer.stop();
+
     if (num_splits == 0) {
         return nullptr;
     }
 
+    pick_split_timer.resume();
     Split split = split_selector.pick_split(abstract_state, move(splits), rng);
     pick_split_timer.stop();
     return utils::make_unique_ptr<Split>(move(split));
@@ -510,6 +513,7 @@ FlawSearch::FlawSearch(
     num_searches(0),
     num_overall_expanded_concrete_states(0),
     flaw_search_timer(false),
+    compute_splits_timer(false),
     pick_split_timer(false) {
 }
 
@@ -551,7 +555,8 @@ void FlawSearch::print_statistics() const {
     utils::g_log << "#Flaws refined: " << flaws << endl;
     utils::g_log << "#Expanded concrete states: " << expansions << endl;
     utils::g_log << "Flaw search time: " << flaw_search_timer << endl;
-    utils::g_log << "Time for computing splits: " << pick_split_timer << endl;
+    utils::g_log << "Time for computing splits: " << compute_splits_timer << endl;
+    utils::g_log << "Time for selecting splits: " << pick_split_timer << endl;
     utils::g_log << "Avg flaws refined: "
                  << flaws / static_cast<float>(searches) << endl;
     utils::g_log << "Avg expanded concrete states: "
