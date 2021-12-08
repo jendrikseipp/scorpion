@@ -32,6 +32,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext)
 ## == Libraries ==
 
 # Abseil
+set(ABSL_PROPAGATE_CXX_STD ON)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext/abseil-cpp)
 target_link_libraries(downward absl::flat_hash_set)
 
