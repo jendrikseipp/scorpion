@@ -5,11 +5,12 @@
 #include "axioms.h"
 #include "state_id.h"
 
-#include "algorithms/int_hash_set.h"
 #include "algorithms/int_packer.h"
 #include "algorithms/segmented_vector.h"
 #include "algorithms/subscriber.h"
 #include "utils/hash.h"
+
+#include "absl/container/flat_hash_set.h"
 
 #include <set>
 
@@ -123,7 +124,7 @@ class StateRegistry : public subscriber::SubscriberService<StateRegistry> {
               state_size(state_size) {
         }
 
-        int_hash_set::HashType operator()(int id) const {
+        unsigned int operator()(int id) const {
             const PackedStateBin *data = state_data_pool[id];
             utils::HashState hash_state;
             for (int i = 0; i < state_size; ++i) {
@@ -155,7 +156,7 @@ class StateRegistry : public subscriber::SubscriberService<StateRegistry> {
       this registry and find their IDs. States are compared/hashed semantically,
       i.e. the actual state data is compared, not the memory location.
     */
-    using StateIDSet = int_hash_set::IntHashSet<StateIDSemanticHash, StateIDSemanticEqual>;
+    using StateIDSet = absl::flat_hash_set<int, StateIDSemanticHash, StateIDSemanticEqual>;
 
     TaskProxy task_proxy;
     const int_packer::IntPacker &state_packer;
