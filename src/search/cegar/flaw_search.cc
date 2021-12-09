@@ -284,8 +284,6 @@ unique_ptr<Split> FlawSearch::create_split(
     for (const Transition &tr : get_transitions(abstract_state_id)) {
         if (is_f_optimal_transition(abstract_state_id, tr)) {
             OperatorProxy op = task_proxy.get_operators()[tr.op_id];
-            int num_vars = domain_sizes.size();
-            vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
 
             vector<State> states;
             states.reserve(state_ids.size());
@@ -335,9 +333,13 @@ unique_ptr<Split> FlawSearch::create_split(
                 deviation_states.push_back(state);
             }
 
-            get_deviation_splits(
-                abstract_state, deviation_states, unaffected_variables,
-                abstraction.get_state(tr.target_id), domain_sizes, splits);
+            if (!deviation_states.empty()) {
+                int num_vars = domain_sizes.size();
+                get_deviation_splits(
+                    abstract_state, deviation_states,
+                    get_unaffected_variables(op, num_vars),
+                    abstraction.get_state(tr.target_id), domain_sizes, splits);
+            }
         }
     }
 
