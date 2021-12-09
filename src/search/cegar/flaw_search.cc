@@ -331,9 +331,13 @@ unique_ptr<Split> FlawSearch::create_split(
             const State &state = states[i];
             assert(task_properties::is_applicable(op, state));
             State succ_state = state_registry->get_successor_state(state, op);
+            bool target_hit = false;
             for (int target : targets) {
-                // No flaw
-                if (!abstraction.get_state(target).includes(succ_state)) {
+                // At most one of the f-optimal targets can include the successor state.
+                if (!target_hit && abstraction.get_state(target).includes(succ_state)) {
+                    // No flaw
+                    target_hit = true;
+                } else {
                     // Deviation flaw
                     assert(target != get_abstract_state_id(succ_state));
                     deviation_states_by_target[target].push_back(state);
