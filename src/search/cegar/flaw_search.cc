@@ -326,6 +326,9 @@ unique_ptr<Split> FlawSearch::create_split(
             State succ_state = state_registry->get_successor_state(state, op);
             bool target_hit = false;
             for (int target : targets) {
+                if (!utils::extra_memory_padding_is_reserved()) {
+                    return nullptr;
+                }
                 // At most one of the f-optimal targets can include the successor state.
                 if (!target_hit && abstraction.get_state(target).includes(succ_state)) {
                     // No flaw
@@ -493,6 +496,10 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
         } else {
             StateID state_id = *rng.choose(flawed_state.concrete_states);
             split = create_split({state_id}, flawed_state.abs_id);
+        }
+
+        if (!utils::extra_memory_padding_is_reserved()) {
+            return nullptr;
         }
 
         if (split) {
