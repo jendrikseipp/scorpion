@@ -192,7 +192,7 @@ void CEGAR::refinement_loop() {
             update_goal_distances_timer.stop();
 
             int new_abstract_solution_cost =
-                shortest_paths->get_goal_distance(abstraction->get_initial_state().get_id());
+                shortest_paths->get_32bit_goal_distance(abstraction->get_initial_state().get_id());
             if (new_abstract_solution_cost > cur_abstract_solution_cost) {
                 cur_abstract_solution_cost = new_abstract_solution_cost;
                 utils::g_log << "Abstract solution cost: " << cur_abstract_solution_cost << endl;

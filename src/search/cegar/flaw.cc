@@ -16,7 +16,7 @@ bool FlawedStates::is_consistent() const {
     return true;
 }
 
-void FlawedStates::add_state(int abs_id, const State &conc_state, int h) {
+void FlawedStates::add_state(int abs_id, const State &conc_state, Cost h) {
     // Be careful not to add an entry while testing that the state is not already present.
     // Using a reference to flawed_states[abs_id] doesn't work since it creates a temporary.
     assert(flawed_states.count(abs_id) == 0 || find(
@@ -40,7 +40,7 @@ void FlawedStates::add_state(int abs_id, const State &conc_state, int h) {
 FlawedState FlawedStates::pop_flawed_state_with_min_h() {
     assert(!empty());
     auto pair = flawed_states_queue.pop();
-    int old_h = pair.first;
+    Cost old_h = pair.first;
     int abs_id = pair.second;
     vector<StateID> conc_states = move(flawed_states.at(abs_id));
     flawed_states.erase(abs_id);

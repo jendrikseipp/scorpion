@@ -3,8 +3,8 @@
 #include "abstraction.h"
 #include "abstract_state.h"
 #include "flaw.h"
-#include "transition_system.h"
 #include "shortest_paths.h"
+#include "transition_system.h"
 #include "split_selector.h"
 
 #include "../option_parser.h"
@@ -34,18 +34,15 @@ int FlawSearch::get_abstract_state_id(const State &state) const {
     return abstraction.get_abstract_state_id(state);
 }
 
-int FlawSearch::get_h_value(int abstract_state_id) const {
-    return shortest_paths.get_goal_distance(abstract_state_id);
+Cost FlawSearch::get_h_value(int abstract_state_id) const {
+    return shortest_paths.get_64bit_goal_distance(abstract_state_id);
 }
 
 OptimalTransitions FlawSearch::get_f_optimal_transitions(int abstract_state_id) const {
-    int source_h_value = get_h_value(abstract_state_id);
     OptimalTransitions transitions;
     for (const Transition &t :
          abstraction.get_transition_system().get_outgoing_transitions()[abstract_state_id]) {
-        int target_h_value = get_h_value(t.target_id);
-        int op_cost = task_proxy.get_operators()[t.op_id].get_cost();
-        if (source_h_value - op_cost == target_h_value) {
+        if (shortest_paths.is_optimal_transition(abstract_state_id, t.op_id, t.target_id)) {
             transitions[t.op_id].push_back(t.target_id);
         }
     }
@@ -60,7 +57,7 @@ const vector<Transition> &FlawSearch::get_transitions(
 
 void FlawSearch::add_flaw(int abs_id, const State &state) {
     assert(abstraction.get_state(abs_id).includes(state));
-    int h = get_h_value(abs_id);
+    Cost h = get_h_value(abs_id);
     if (pick_flaw == PickFlaw::MIN_H_SINGLE) {
         if (best_flaw_h > h) {
             flawed_states.clear();
@@ -113,11 +110,7 @@ SearchStatus FlawSearch::step() {
     open_list.pop();
     State s = state_registry->lookup_state(id);
     SearchNode node = search_space->get_node(s);
-
     assert(!node.is_closed());
-    assert(node.get_real_g() + get_h_value(get_abstract_state_id(s))
-           <= get_h_value(abstraction.get_initial_state().get_id()));
-
     node.close();
     assert(!node.is_dead_end());
     ++num_overall_expanded_concrete_states;
@@ -437,7 +430,7 @@ unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cega
 FlawedState FlawSearch::get_flawed_state_with_min_h() {
     while (!flawed_states.empty()) {
         FlawedState flawed_state = flawed_states.pop_flawed_state_with_min_h();
-        int old_h = flawed_state.h;
+        Cost old_h = flawed_state.h;
         int abs_id = flawed_state.abs_id;
         assert(get_h_value(abs_id) >= old_h);
         if (get_h_value(abs_id) == old_h) {
@@ -460,7 +453,7 @@ unique_ptr<Split>
 FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
     if (last_refined_flawed_state != FlawedState::no_state) {
         // Handle flaws of the last refined abstract state.
-        int old_h = last_refined_flawed_state.h;
+        Cost old_h = last_refined_flawed_state.h;
         for (const StateID &state_id : last_refined_flawed_state.concrete_states) {
             State state = state_registry->lookup_state(state_id);
             // We only add non-goal states to flawed_states.

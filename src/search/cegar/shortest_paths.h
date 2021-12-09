@@ -32,7 +32,6 @@ namespace cegar {
   costs, we could run into range issues. Therefore, we use 64-bit integers,
   scale all original operator costs by 2^32 and use epsilon = 1.
 */
-using Cost = uint64_t;
 
 class HeapQueue {
     using Entry = std::pair<Cost, int>;
@@ -64,6 +63,10 @@ public:
 
     bool empty() const {
         return heap.empty();
+    }
+
+    int size() const {
+        return heap.size();
     }
 
     void clear() {
@@ -110,7 +113,9 @@ public:
         int init_id,
         const Goals &goals);
 
-    int get_goal_distance(int abstract_state_id) const;
+    Cost get_64bit_goal_distance(int abstract_state_id) const;
+    int get_32bit_goal_distance(int abstract_state_id) const;
+    bool is_optimal_transition(int start_id, int op_id, int target_id) const;
 
     // For debugging.
     bool test_distances(

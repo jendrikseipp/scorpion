@@ -61,7 +61,7 @@ class FlawSearch {
 
     // Flaw data
     FlawedState last_refined_flawed_state;
-    int best_flaw_h;
+    Cost best_flaw_h;
     FlawedStates flawed_states;
 
     // Statistics
@@ -73,7 +73,7 @@ class FlawSearch {
 
     CartesianSet get_cartesian_set(const ConditionsProxy &conditions) const;
     int get_abstract_state_id(const State &state) const;
-    int get_h_value(int abstract_state_id) const;
+    Cost get_h_value(int abstract_state_id) const;
     void add_flaw(int abs_id, const State &state);
     OptimalTransitions get_f_optimal_transitions(int abstract_state_id) const;
     const std::vector<Transition> &get_transitions(int abstract_state_id) const;

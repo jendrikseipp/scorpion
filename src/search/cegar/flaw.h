@@ -1,7 +1,9 @@
 #ifndef CEGAR_FLAW_H
 #define CEGAR_FLAW_H
 
-#include "../algorithms/priority_queues.h"
+#include "shortest_paths.h"
+#include "types.h"
+
 #include "../utils/hash.h"
 
 #include <utility>
@@ -16,10 +18,10 @@ class RandomNumberGenerator;
 namespace cegar {
 struct FlawedState {
     int abs_id;
-    int h;
+    Cost h;
     std::vector<StateID> concrete_states;
 
-    FlawedState(int abs_id, int h, std::vector<StateID> &&concrete_states)
+    FlawedState(int abs_id, Cost h, std::vector<StateID> &&concrete_states)
         : abs_id(abs_id),
           h(h),
           concrete_states(move(concrete_states)) {
@@ -46,12 +48,12 @@ struct FlawedState {
 
 class FlawedStates {
     utils::HashMap<int, std::vector<StateID>> flawed_states;
-    priority_queues::AdaptiveQueue<int> flawed_states_queue;
+    HeapQueue flawed_states_queue;
 
     bool is_consistent() const;
 
 public:
-    void add_state(int abs_id, const State &conc_state, int h);
+    void add_state(int abs_id, const State &conc_state, Cost h);
     FlawedState pop_flawed_state_with_min_h();
     FlawedState pop_random_flawed_state_and_clear(utils::RandomNumberGenerator &rng);
     void clear();
