@@ -124,13 +124,13 @@ class StateRegistry : public subscriber::SubscriberService<StateRegistry> {
               state_size(state_size) {
         }
 
-        unsigned int operator()(int id) const {
+        uint64_t operator()(int id) const {
             const PackedStateBin *data = state_data_pool[id];
             utils::HashState hash_state;
             for (int i = 0; i < state_size; ++i) {
                 hash_state.feed(data[i]);
             }
-            return hash_state.get_hash32();
+            return hash_state.get_hash64();
         }
     };
 
