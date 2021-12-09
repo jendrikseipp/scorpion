@@ -46,6 +46,20 @@ bool FlawSearch::is_f_optimal_transition(int abstract_state_id,
     return source_h_value - op_cost == target_h_value;
 }
 
+OptimalTransitions FlawSearch::get_f_optimal_transitions(int abstract_state_id) const {
+    int source_h_value = get_h_value(abstract_state_id);
+    OptimalTransitions transitions;
+    for (const Transition &t :
+         abstraction.get_transition_system().get_outgoing_transitions()[abstract_state_id]) {
+        int target_h_value = get_h_value(t.target_id);
+        int op_cost = task_proxy.get_operators()[t.op_id].get_cost();
+        if (source_h_value - op_cost == target_h_value) {
+            transitions[t.op_id].push_back(t.target_id);
+        }
+    }
+    return transitions;
+}
+
 const vector<Transition> &FlawSearch::get_transitions(
     int abstract_state_id) const {
     return abstraction.get_transition_system().
@@ -281,64 +295,67 @@ unique_ptr<Split> FlawSearch::create_split(
 
     const TransitionSystem &ts = abstraction.get_transition_system();
     vector<vector<Split>> splits(task_proxy.get_variables().size());
-    for (const Transition &tr : get_transitions(abstract_state_id)) {
-        if (is_f_optimal_transition(abstract_state_id, tr)) {
-            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+    for (auto &pair : get_f_optimal_transitions(abstract_state_id)) {
+        int op_id = pair.first;
+        const vector<int> &targets = pair.second;
+        OperatorProxy op = task_proxy.get_operators()[op_id];
 
-            vector<State> states;
-            states.reserve(state_ids.size());
-            for (const StateID &state_id : state_ids) {
-                states.push_back(state_registry->lookup_state(state_id));
-                assert(abstract_state.includes(states.back()));
-            }
+        vector<State> states;
+        states.reserve(state_ids.size());
+        for (const StateID &state_id : state_ids) {
+            states.push_back(state_registry->lookup_state(state_id));
+            assert(abstract_state.includes(states.back()));
+        }
 
-            vector<bool> applicable(states.size(), true);
-            for (FactPair fact : ts.get_preconditions(tr.op_id)) {
-                vector<int> state_value_count(domain_sizes[fact.var], 0);
-                for (size_t i = 0; i < states.size(); ++i) {
-                    const State &state = states[i];
-                    int state_value = state[fact.var].get_value();
-                    if (state_value != fact.value) {
-                        // Applicability flaw
-                        applicable[i] = false;
-                        ++state_value_count[state_value];
-                    }
-                }
-                for (int value = 0; value < domain_sizes[fact.var]; ++value) {
-                    if (state_value_count[value] > 0) {
-                        assert(value != fact.value);
-                        add_split(splits, Split(
-                                      abstract_state_id, fact.var, value,
-                                      {fact.value}, state_value_count[value]));
-                    }
-                }
-            }
-
-            vector<State> deviation_states;
+        vector<bool> applicable(states.size(), true);
+        for (FactPair fact : ts.get_preconditions(op_id)) {
+            vector<int> state_value_count(domain_sizes[fact.var], 0);
             for (size_t i = 0; i < states.size(); ++i) {
-                if (!applicable[i]) {
-                    continue;
-                }
                 const State &state = states[i];
-                assert(task_properties::is_applicable(op, state));
-                // No flaw
-                if (abstraction.get_state(tr.target_id).includes(
-                        state_registry->get_successor_state(state, op))) {
-                    continue;
+                int state_value = state[fact.var].get_value();
+                if (state_value != fact.value) {
+                    // Applicability flaw
+                    applicable[i] = false;
+                    ++state_value_count[state_value];
                 }
-
-                // Deviation flaw
-                assert(tr.target_id != get_abstract_state_id(
-                           state_registry->get_successor_state(state, op)));
-                deviation_states.push_back(state);
             }
+            for (int value = 0; value < domain_sizes[fact.var]; ++value) {
+                if (state_value_count[value] > 0) {
+                    assert(value != fact.value);
+                    add_split(splits, Split(
+                                  abstract_state_id, fact.var, value,
+                                  {fact.value}, state_value_count[value]));
+                }
+            }
+        }
 
+        absl::flat_hash_map<int, vector<State>> deviation_states_by_target;
+        for (size_t i = 0; i < states.size(); ++i) {
+            if (!applicable[i]) {
+                continue;
+            }
+            const State &state = states[i];
+            assert(task_properties::is_applicable(op, state));
+            State succ_state = state_registry->get_successor_state(state, op);
+            for (int target : targets) {
+                // No flaw
+                if (!abstraction.get_state(target).includes(succ_state)) {
+                    // Deviation flaw
+                    assert(target != get_abstract_state_id(succ_state));
+                    deviation_states_by_target[target].push_back(state);
+                }
+            }
+        }
+
+        for (auto &pair : deviation_states_by_target) {
+            int target = pair.first;
+            const vector<State> &deviation_states = pair.second;
             if (!deviation_states.empty()) {
                 int num_vars = domain_sizes.size();
                 get_deviation_splits(
                     abstract_state, deviation_states,
                     get_unaffected_variables(op, num_vars),
-                    abstraction.get_state(tr.target_id), domain_sizes, splits);
+                    abstraction.get_state(target), domain_sizes, splits);
             }
         }
     }

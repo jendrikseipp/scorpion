@@ -12,6 +12,8 @@
 #include "../utils/timer.h"
 #include "../utils/hash.h"
 
+#include <absl/container/flat_hash_map.h>
+
 #include <queue>
 
 namespace utils {
@@ -36,6 +38,8 @@ enum class PickFlaw {
     MIN_H_BATCH,
     MIN_H_BATCH_MULTI_SPLIT
 };
+
+using OptimalTransitions = absl::flat_hash_map<int, std::vector<int>>;
 
 class FlawSearch {
     const TaskProxy task_proxy;
@@ -72,6 +76,7 @@ class FlawSearch {
     int get_h_value(int abstract_state_id) const;
     void add_flaw(int abs_id, const State &state);
     bool is_f_optimal_transition(int abstract_state_id, const Transition &tr) const;
+    OptimalTransitions get_f_optimal_transitions(int abstract_state_id) const;
     const std::vector<Transition> &get_transitions(int abstract_state_id) const;
 
     void initialize();
