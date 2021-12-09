@@ -77,7 +77,6 @@ public:
 
 class ShortestPaths {
     static const Cost DIRTY;
-    static const Cost INF_COSTS;
 
     const bool debug;
     const bool task_has_zero_costs;

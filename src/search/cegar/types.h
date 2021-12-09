@@ -29,6 +29,7 @@ const int UNDEFINED = -1;
 
 // Positive infinity. The name "INFINITY" is taken by an ISO C99 macro.
 const int INF = std::numeric_limits<int>::max();
+const Cost INF_COSTS = std::numeric_limits<Cost>::max();
 }
 
 #endif

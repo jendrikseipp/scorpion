@@ -86,7 +86,7 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
 void FlawSearch::initialize() {
     ++num_searches;
     last_refined_flawed_state = FlawedState::no_state;
-    best_flaw_h = (pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF;
+    best_flaw_h = (pick_flaw == PickFlaw::MAX_H_SINGLE) ? 0 : INF_COSTS;
     assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
@@ -529,7 +529,7 @@ FlawSearch::FlawSearch(
     pick_flaw(pick_flaw),
     debug(debug),
     last_refined_flawed_state(FlawedState::no_state),
-    best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? -INF : INF),
+    best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? 0 : INF),
     num_searches(0),
     num_overall_expanded_concrete_states(0),
     flaw_search_timer(false),

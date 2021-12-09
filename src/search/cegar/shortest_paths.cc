@@ -9,7 +9,6 @@
 using namespace std;
 
 namespace cegar {
-const Cost ShortestPaths::INF_COSTS = numeric_limits<Cost>::max();
 const Cost ShortestPaths::DIRTY = numeric_limits<Cost>::max() - 1;
 
 ShortestPaths::ShortestPaths(const vector<int> &costs, bool debug)
