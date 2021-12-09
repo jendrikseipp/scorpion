@@ -47,12 +47,13 @@ struct Split {
     int value;
     std::vector<int> values;
 
-    Split(int abstract_state_id, int var_id, int value, std::vector<int> &&values)
-        : count(1),
+    Split(int abstract_state_id, int var_id, int value, std::vector<int> &&values, int count)
+        : count(count),
           abstract_state_id(abstract_state_id),
           var_id(var_id),
           value(value),
           values(move(values)) {
+        assert(count >= 1);
     }
 
     bool combine_with(Split &&other);

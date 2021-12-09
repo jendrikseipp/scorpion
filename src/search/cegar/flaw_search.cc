@@ -194,22 +194,6 @@ static void add_split(vector<vector<Split>> &splits, Split &&new_split) {
     }
 }
 
-static void get_precondition_splits(
-    const AbstractState &abs_state,
-    const State &conc_state,
-    const vector<FactPair> &preconditions,
-    vector<vector<Split>> &splits) {
-    for (FactPair fact : preconditions) {
-        assert(abs_state.contains(fact.var, fact.value));
-        int state_value = conc_state[fact.var].get_value();
-        if (state_value != fact.value) {
-            vector<int> wanted = {fact.value};
-            Split split(abs_state.get_id(), fact.var, state_value, move(wanted));
-            add_split(splits, move(split));
-        }
-    }
-}
-
 static vector<int> get_unaffected_variables(
     const OperatorProxy &op, int num_variables) {
     vector<bool> affected(num_variables);
@@ -276,9 +260,9 @@ static void get_deviation_splits(
                     }
                 }
                 assert(!wanted.empty());
-                Split split(abs_state.get_id(), var, value, move(wanted));
-                split.count = fact_count[var][value];
-                add_split(splits, move(split));
+                add_split(splits, Split(
+                              abs_state.get_id(), var, value, move(wanted),
+                              fact_count[var][value]));
             }
         }
     }
@@ -303,26 +287,52 @@ unique_ptr<Split> FlawSearch::create_split(
             int num_vars = domain_sizes.size();
             vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
 
-            vector<State> deviation_states;
+            vector<State> states;
+            states.reserve(state_ids.size());
             for (const StateID &state_id : state_ids) {
-                State state = state_registry->lookup_state(state_id);
-                assert(abstract_state.includes(state));
-                // Applicability flaw
-                if (!task_properties::is_applicable(op, state)) {
-                    get_precondition_splits(
-                        abstract_state, state, ts.get_preconditions(tr.op_id), splits);
-                } else {
-                    // No flaw
-                    if (abstraction.get_state(tr.target_id).includes(
-                            state_registry->get_successor_state(state, op))) {
-                        continue;
-                    }
+                states.push_back(state_registry->lookup_state(state_id));
+                assert(abstract_state.includes(states.back()));
+            }
 
-                    // Deviation flaw
-                    assert(tr.target_id != get_abstract_state_id(
-                               state_registry->get_successor_state(state, op)));
-                    deviation_states.push_back(state);
+            vector<bool> applicable(states.size(), true);
+            for (FactPair fact : ts.get_preconditions(tr.op_id)) {
+                vector<int> state_value_count(domain_sizes[fact.var], 0);
+                for (size_t i = 0; i < states.size(); ++i) {
+                    const State &state = states[i];
+                    int state_value = state[fact.var].get_value();
+                    if (state_value != fact.value) {
+                        // Applicability flaw
+                        applicable[i] = false;
+                        ++state_value_count[state_value];
+                    }
                 }
+                for (int value = 0; value < domain_sizes[fact.var]; ++value) {
+                    if (state_value_count[value] > 0) {
+                        assert(value != fact.value);
+                        add_split(splits, Split(
+                                      abstract_state_id, fact.var, value,
+                                      {fact.value}, state_value_count[value]));
+                    }
+                }
+            }
+
+            vector<State> deviation_states;
+            for (size_t i = 0; i < states.size(); ++i) {
+                if (!applicable[i]) {
+                    continue;
+                }
+                const State &state = states[i];
+                assert(task_properties::is_applicable(op, state));
+                // No flaw
+                if (abstraction.get_state(tr.target_id).includes(
+                        state_registry->get_successor_state(state, op))) {
+                    continue;
+                }
+
+                // Deviation flaw
+                assert(tr.target_id != get_abstract_state_id(
+                           state_registry->get_successor_state(state, op)));
+                deviation_states.push_back(state);
             }
 
             get_deviation_splits(
