@@ -38,14 +38,6 @@ int FlawSearch::get_h_value(int abstract_state_id) const {
     return shortest_paths.get_goal_distance(abstract_state_id);
 }
 
-bool FlawSearch::is_f_optimal_transition(int abstract_state_id,
-                                         const Transition &tr) const {
-    int source_h_value = get_h_value(abstract_state_id);
-    int target_h_value = get_h_value(tr.target_id);
-    int op_cost = task_proxy.get_operators()[tr.op_id].get_cost();
-    return source_h_value - op_cost == target_h_value;
-}
-
 OptimalTransitions FlawSearch::get_f_optimal_transitions(int abstract_state_id) const {
     int source_h_value = get_h_value(abstract_state_id);
     OptimalTransitions transitions;
@@ -139,15 +131,37 @@ SearchStatus FlawSearch::step() {
     assert(abs_id == get_abstract_state_id(s));
 
     // Check for each tr if the op is applicable or if there is a deviation
-    for (const Transition &tr : get_transitions(abs_id)) {
+    for (auto &pair : get_f_optimal_transitions(abs_id)) {
         if (!utils::extra_memory_padding_is_reserved())
             return TIMEOUT;
 
-        if (is_f_optimal_transition(abs_id, tr)) {
-            OperatorProxy op = task_proxy.get_operators()[tr.op_id];
+        int op_id = pair.first;
+        const vector<int> &targets = pair.second;
 
+        OperatorProxy op = task_proxy.get_operators()[op_id];
+
+        if (!task_properties::is_applicable(op, s)) {
             // Applicability flaw
-            if (!task_properties::is_applicable(op, s)) {
+            if (!found_flaw) {
+                add_flaw(abs_id, s);
+                found_flaw = true;
+            }
+            if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
+                pick_flaw == PickFlaw::SINGLE_PATH) {
+                // Clear open list.
+                queue<StateID>().swap(open_list);
+                return FAILED;
+            }
+            continue;
+        }
+
+        State succ_state = state_registry->get_successor_state(s, op);
+        SearchNode succ_node = search_space->get_node(succ_state);
+        assert(!succ_node.is_dead_end());
+
+        for (int target : targets) {
+            if (!abstraction.get_state(target).includes(succ_state)) {
+                // Deviation flaw
                 if (!found_flaw) {
                     add_flaw(abs_id, s);
                     found_flaw = true;
@@ -158,29 +172,9 @@ SearchStatus FlawSearch::step() {
                     queue<StateID>().swap(open_list);
                     return FAILED;
                 }
-                continue;
-            }
-            State succ_state = state_registry->get_successor_state(s, op);
-            // Deviation flaw
-            if (!abstraction.get_state(tr.target_id).includes(succ_state)) {
-                if (!found_flaw) {
-                    add_flaw(abs_id, s);
-                    found_flaw = true;
-                }
-                if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
-                    pick_flaw == PickFlaw::SINGLE_PATH) {
-                    // Clear open list.
-                    queue<StateID>().swap(open_list);
-                    return FAILED;
-                }
-                continue;
-            }
-
-            SearchNode succ_node = search_space->get_node(succ_state);
-            assert(!succ_node.is_dead_end());
-
-            if (succ_node.is_new()) {
-                (*abstract_state_ids)[succ_state] = tr.target_id;
+            } else if (succ_node.is_new()) {
+                // No flaw
+                (*abstract_state_ids)[succ_state] = target;
                 succ_node.open(node, op, op.get_cost());
                 open_list.push(succ_state.get_id());
 
