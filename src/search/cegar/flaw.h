@@ -56,9 +56,11 @@ public:
     void add_state(int abs_id, const State &conc_state, Cost h);
     FlawedState pop_flawed_state_with_min_h();
     FlawedState pop_random_flawed_state_and_clear(utils::RandomNumberGenerator &rng);
+    int num_concrete_states(int abs_id) const;
     void clear();
     bool empty() const;
     void dump(bool verbose = false) const;
+
 };
 }
 

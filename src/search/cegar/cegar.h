@@ -74,6 +74,7 @@ public:
         PickSplit pick_split,
         PickSplit tiebreak_split,
         PickFlaw pick_flaw,
+        int max_concrete_states_per_abstract_state,
         SearchStrategy search_strategy,
         utils::RandomNumberGenerator &rng,
         bool debug,

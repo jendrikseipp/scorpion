@@ -57,6 +57,13 @@ FlawedState FlawedStates::pop_random_flawed_state_and_clear(utils::RandomNumberG
     return FlawedState(abstract_state_id, -1, move(conc_states));
 }
 
+int FlawedStates::num_concrete_states(int abs_id) const {
+    if (flawed_states.count(abs_id) == 0) {
+        return 0;
+    }
+    return flawed_states.at(abs_id).size();
+}
+
 void FlawedStates::clear() {
     flawed_states.clear();
     flawed_states_queue.clear();
@@ -72,9 +79,10 @@ void FlawedStates::dump(bool verbose) const {
     for (auto pair : flawed_states) {
         num_concrete_states += pair.second.size();
     }
-    cout << "Flawed states: " << num_concrete_states << " in "
-         << flawed_states.size() << endl;
+
     if (verbose) {
+        cout << "Flawed states: " << num_concrete_states << " in "
+             << flawed_states.size() << endl;
         for (auto pair : flawed_states) {
             cout << "  abs id: " << pair.first << ", states: " << pair.second.size() << endl;
         }

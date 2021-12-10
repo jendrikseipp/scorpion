@@ -30,6 +30,7 @@ CEGAR::CEGAR(
     PickSplit pick_split,
     PickSplit tiebreak_split,
     PickFlaw pick_flaw,
+    int max_concrete_states_per_abstract_state,
     SearchStrategy search_strategy,
     utils::RandomNumberGenerator &rng,
     bool debug,
@@ -53,7 +54,8 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy), false);
         flaw_search = utils::make_unique_ptr<FlawSearch>(
             task, domain_sizes, *abstraction, *shortest_paths, rng,
-            pick_flaw, pick_split, tiebreak_split, debug);
+            pick_flaw, pick_split, tiebreak_split,
+            max_concrete_states_per_abstract_state, debug);
     } else {
         ABORT("Unknown search strategy");
     }
@@ -217,12 +219,12 @@ void CEGAR::refinement_loop() {
         find_flaw_timer.stop();
 
         if (!utils::extra_memory_padding_is_reserved()) {
-            utils::g_log << "Reached memory limit." << endl;
+            utils::g_log << "Reached memory limit in flaw search." << endl;
             break;
         }
 
         if (timer.is_expired()) {
-            utils::g_log << "Reached time limit." << endl;
+            utils::g_log << "Reached time limit in flaw search." << endl;
             break;
         }
 

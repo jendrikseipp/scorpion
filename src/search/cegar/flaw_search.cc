@@ -57,6 +57,15 @@ const vector<Transition> &FlawSearch::get_transitions(
 
 void FlawSearch::add_flaw(int abs_id, const State &state) {
     assert(abstraction.get_state(abs_id).includes(state));
+
+    // Limit of concrete states we consider per abstract state.
+    // If new abstract state (with potentially new h-value), 
+    // this if-statement is never true.
+    if (flawed_states.num_concrete_states(abs_id) >=
+        max_concrete_states_per_abstract_state) {
+        return;
+    }
+
     Cost h = get_h_value(abs_id);
     if (pick_flaw == PickFlaw::MIN_H_SINGLE) {
         if (best_flaw_h > h) {
@@ -335,6 +344,7 @@ unique_ptr<Split> FlawSearch::create_split(
                 if (!utils::extra_memory_padding_is_reserved()) {
                     return nullptr;
                 }
+
                 // At most one of the f-optimal targets can include the successor state.
                 if (!target_hit && abstraction.get_state(target).includes(succ_state)) {
                     // No flaw
@@ -344,6 +354,7 @@ unique_ptr<Split> FlawSearch::create_split(
                     assert(target != get_abstract_state_id(succ_state));
                     deviation_states_by_target[target].push_back(state);
                 }
+                cout << "SIZE: " << deviation_states_by_target[target].size() << endl;
             }
         }
 
@@ -532,6 +543,7 @@ FlawSearch::FlawSearch(
     PickFlaw pick_flaw,
     PickSplit pick_split,
     PickSplit tiebreak_split,
+    int max_concrete_states_per_abstract_state,
     bool debug) :
     task_proxy(*task),
     domain_sizes(domain_sizes),
@@ -540,6 +552,7 @@ FlawSearch::FlawSearch(
     split_selector(task, pick_split, tiebreak_split, debug),
     rng(rng),
     pick_flaw(pick_flaw),
+    max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
     debug(debug),
     last_refined_flawed_state(FlawedState::no_state),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? 0 : INF),

@@ -130,6 +130,7 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         cegar::PickSplit::MAX_REFINED,
         cegar::PickSplit::MIN_CG,
         cegar::PickFlaw::MIN_H_BATCH,
+        1000000,
         search_strategy,
         *rng,
         debug,

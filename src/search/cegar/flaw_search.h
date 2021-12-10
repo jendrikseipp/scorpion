@@ -49,6 +49,7 @@ class FlawSearch {
     const SplitSelector split_selector;
     utils::RandomNumberGenerator &rng;
     const PickFlaw pick_flaw;
+    const int max_concrete_states_per_abstract_state;
     const bool debug;
 
     static const int MISSING = -1;
@@ -99,6 +100,7 @@ public:
         PickFlaw pick_flaw,
         PickSplit pick_split,
         PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state,
         bool debug);
 
     std::unique_ptr<Split> get_split(const utils::CountdownTimer &cegar_timer);
