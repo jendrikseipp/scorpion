@@ -177,6 +177,12 @@ SearchStatus FlawSearch::step() {
                 }
             }
         }
+        if (pick_flaw == PickFlaw::SINGLE_PATH) {
+            // The node is necessarily new, since we consider only one successor and
+            // follow f-optimal transitons
+            // Only consider one successor.
+            break;
+        }
     }
     return IN_PROGRESS;
 }
