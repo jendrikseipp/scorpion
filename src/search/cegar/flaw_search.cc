@@ -354,7 +354,6 @@ unique_ptr<Split> FlawSearch::create_split(
                     assert(target != get_abstract_state_id(succ_state));
                     deviation_states_by_target[target].push_back(state);
                 }
-                cout << "SIZE: " << deviation_states_by_target[target].size() << endl;
             }
         }
 
