@@ -59,7 +59,7 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
     assert(abstraction.get_state(abs_id).includes(state));
 
     // Limit of concrete states we consider per abstract state.
-    // If new abstract state (with potentially new h-value), 
+    // If new abstract state (with potentially new h-value),
     // this if-statement is never true.
     if (flawed_states.num_concrete_states(abs_id) >=
         max_concrete_states_per_abstract_state) {
@@ -290,8 +290,8 @@ unique_ptr<Split> FlawSearch::create_split(
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
     if (debug) {
-        cout << endl;
-        cout << "Create split for abstract state " << abstract_state_id << " and "
+        utils::g_log << endl;
+        utils::g_log << "Create split for abstract state " << abstract_state_id << " and "
              << state_ids.size() << " concrete states." << endl;
     }
 
@@ -375,7 +375,7 @@ unique_ptr<Split> FlawSearch::create_split(
         num_splits += var_splits.size();
     }
     if (debug) {
-        cout << "Unique splits: " << num_splits << endl;
+        utils::g_log << "Unique splits: " << num_splits << endl;
     }
     compute_splits_timer.stop();
 
@@ -392,7 +392,7 @@ unique_ptr<Split> FlawSearch::create_split(
 SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_timer) {
     flaw_search_timer.resume();
     if (debug) {
-        cout << "Search for flaws" << endl;
+        utils::g_log << "Search for flaws" << endl;
     }
     initialize();
     size_t cur_expanded_states = num_overall_expanded_concrete_states;
@@ -407,6 +407,9 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
         search_status = step();
     }
 
+    max_expanded_concrete_states = max(max_expanded_concrete_states,
+                                       num_overall_expanded_concrete_states -
+                                       cur_expanded_states);
     if (debug) {
         utils::g_log << "Flaw search expanded "
                      << num_overall_expanded_concrete_states - cur_expanded_states
@@ -454,12 +457,12 @@ FlawedState FlawSearch::get_flawed_state_with_min_h() {
         assert(get_h_value(abs_id) >= old_h);
         if (get_h_value(abs_id) == old_h) {
             if (debug) {
-                cout << "Reuse flawed state: " << abs_id << endl;
+                utils::g_log << "Reuse flawed state: " << abs_id << endl;
             }
             return flawed_state;
         } else {
             if (debug) {
-                cout << "Ignore flawed state with increased f value: " << abs_id << endl;
+                utils::g_log << "Ignore flawed state with increased f value: " << abs_id << endl;
             }
         }
     }
@@ -495,7 +498,7 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
     }
 
     if (debug) {
-        cout << "Use flawed state: " << flawed_state << endl;
+        utils::g_log << "Use flawed state: " << flawed_state << " with h=" << flawed_state.h << endl;
     }
 
     // Memory padding
@@ -557,6 +560,7 @@ FlawSearch::FlawSearch(
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? 0 : INF),
     num_searches(0),
     num_overall_expanded_concrete_states(0),
+    max_expanded_concrete_states(0),
     flaw_search_timer(false),
     compute_splits_timer(false),
     pick_split_timer(false) {
@@ -599,6 +603,8 @@ void FlawSearch::print_statistics() const {
     utils::g_log << "#Flaw searches: " << searches << endl;
     utils::g_log << "#Flaws refined: " << flaws << endl;
     utils::g_log << "#Expanded concrete states: " << expansions << endl;
+    utils::g_log << "#Max expanded concrete states in one flaw search: "
+                 << max_expanded_concrete_states << endl;
     utils::g_log << "Flaw search time: " << flaw_search_timer << endl;
     utils::g_log << "Time for computing splits: " << compute_splits_timer << endl;
     utils::g_log << "Time for selecting splits: " << pick_split_timer << endl;

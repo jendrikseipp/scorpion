@@ -57,6 +57,10 @@ FlawedState FlawedStates::pop_random_flawed_state_and_clear(utils::RandomNumberG
     return FlawedState(abstract_state_id, -1, move(conc_states));
 }
 
+int FlawedStates::num_abstract_states() const {
+    return flawed_states.size();
+}
+
 int FlawedStates::num_concrete_states(int abs_id) const {
     if (flawed_states.count(abs_id) == 0) {
         return 0;
