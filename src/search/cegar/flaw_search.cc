@@ -292,7 +292,7 @@ unique_ptr<Split> FlawSearch::create_split(
     if (debug) {
         utils::g_log << endl;
         utils::g_log << "Create split for abstract state " << abstract_state_id << " and "
-             << state_ids.size() << " concrete states." << endl;
+                     << state_ids.size() << " concrete states." << endl;
     }
 
     const TransitionSystem &ts = abstraction.get_transition_system();
@@ -414,14 +414,11 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
                 utils::release_extra_memory_padding();
                 utils::g_log << "Max expansions reached with no flaw!" << endl;
                 search_status = TIMEOUT;
-                break;
-            }
-            else
-            {
+            } else {
                 utils::g_log << "Max expansions reached with flaws!" << endl;
+                search_status = FAILED;
             }
             stack<StateID>().swap(open_list);
-            search_status = FAILED;
             break;
         }
         search_status = step();
