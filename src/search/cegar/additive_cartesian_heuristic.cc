@@ -35,6 +35,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<PickSplit>("tiebreak_split"),
         opts.get<PickFlaw>("pick_flaw"),
         opts.get<int>("max_concrete_states_per_abstract_state"),
+        opts.get<int>("max_state_expansions"),
         opts.get<SearchStrategy>("search_strategy"),
         opts.get<int>("memory_padding"),
         *rng,
@@ -163,6 +164,11 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "max_concrete_states_per_abstract_state",
         "Max number of states per abstract state we consider in flaw search",
+        "infinity",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_state_expansions",
+        "Max number of state expansion in flaw search",
         "infinity",
         Bounds("1", "infinity"));
     add_search_strategy_option(parser);

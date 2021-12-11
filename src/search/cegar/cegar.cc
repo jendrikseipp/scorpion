@@ -31,6 +31,7 @@ CEGAR::CEGAR(
     PickSplit tiebreak_split,
     PickFlaw pick_flaw,
     int max_concrete_states_per_abstract_state,
+    int max_state_expansions,
     SearchStrategy search_strategy,
     utils::RandomNumberGenerator &rng,
     bool debug,
@@ -55,7 +56,7 @@ CEGAR::CEGAR(
         flaw_search = utils::make_unique_ptr<FlawSearch>(
             task, domain_sizes, *abstraction, *shortest_paths, rng,
             pick_flaw, pick_split, tiebreak_split,
-            max_concrete_states_per_abstract_state, debug);
+            max_concrete_states_per_abstract_state, max_state_expansions, debug);
     } else {
         ABORT("Unknown search strategy");
     }

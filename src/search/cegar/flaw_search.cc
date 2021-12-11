@@ -395,7 +395,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
         utils::g_log << "Search for flaws" << endl;
     }
     initialize();
-    size_t cur_expanded_states = num_overall_expanded_concrete_states;
+    size_t before_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
     while (search_status == IN_PROGRESS) {
         if (cegar_timer.is_expired()) {
@@ -404,15 +404,34 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
             stack<StateID>().swap(open_list);
             break;
         }
+
+        // Max Expansions reached
+        int cur_expanded_states = num_overall_expanded_concrete_states -
+            before_expanded_states;
+        if (cur_expanded_states >= max_state_expansions) {
+            // No flaw found
+            if (flawed_states.num_abstract_states() == 0) {
+                utils::release_extra_memory_padding();
+                utils::g_log << "Max expansions reached with no flaw!" << endl;
+                search_status = TIMEOUT;
+            }
+            else
+            {
+                utils::g_log << "Max expansions reached with flaws!" << endl;
+            }
+            stack<StateID>().swap(open_list);
+            search_status = FAILED;
+            break;
+        }
         search_status = step();
     }
 
     max_expanded_concrete_states = max(max_expanded_concrete_states,
                                        num_overall_expanded_concrete_states -
-                                       cur_expanded_states);
+                                       before_expanded_states);
     if (debug) {
         utils::g_log << "Flaw search expanded "
-                     << num_overall_expanded_concrete_states - cur_expanded_states
+                     << num_overall_expanded_concrete_states - before_expanded_states
                      << " states" << endl;
     }
     flaw_search_timer.stop();
@@ -546,6 +565,7 @@ FlawSearch::FlawSearch(
     PickSplit pick_split,
     PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state,
+    int max_state_expansions,
     bool debug) :
     task_proxy(*task),
     domain_sizes(domain_sizes),
@@ -555,6 +575,7 @@ FlawSearch::FlawSearch(
     rng(rng),
     pick_flaw(pick_flaw),
     max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
+    max_state_expansions(max_state_expansions),
     debug(debug),
     last_refined_flawed_state(FlawedState::no_state),
     best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? 0 : INF),
