@@ -115,7 +115,7 @@ SearchStatus FlawSearch::step() {
         // Completely explored f-optimal state space.
         return FAILED;
     }
-    StateID id = open_list.front();
+    StateID id = open_list.top();
     open_list.pop();
     State s = state_registry->lookup_state(id);
     SearchNode node = search_space->get_node(s);
@@ -151,7 +151,7 @@ SearchStatus FlawSearch::step() {
             if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
                 pick_flaw == PickFlaw::SINGLE_PATH) {
                 // Clear open list.
-                queue<StateID>().swap(open_list);
+                stack<StateID>().swap(open_list);
                 return FAILED;
             }
             continue;
@@ -171,7 +171,7 @@ SearchStatus FlawSearch::step() {
                 if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
                     pick_flaw == PickFlaw::SINGLE_PATH) {
                     // Clear open list.
-                    queue<StateID>().swap(open_list);
+                    stack<StateID>().swap(open_list);
                     return FAILED;
                 }
             } else if (succ_node.is_new()) {
@@ -401,7 +401,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
         if (cegar_timer.is_expired()) {
             search_status = TIMEOUT;
             // Clear open list.
-            queue<StateID>().swap(open_list);
+            stack<StateID>().swap(open_list);
             break;
         }
         search_status = step();

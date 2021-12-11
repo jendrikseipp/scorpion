@@ -14,7 +14,7 @@
 
 #include <absl/container/flat_hash_map.h>
 
-#include <queue>
+#include <stack>
 
 namespace utils {
 class CountdownTimer;
@@ -55,7 +55,7 @@ class FlawSearch {
     static const int MISSING = -1;
 
     // Search data
-    std::queue<StateID> open_list;
+    std::stack<StateID> open_list;
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
     std::unique_ptr<PerStateInformation<int>> abstract_state_ids;
