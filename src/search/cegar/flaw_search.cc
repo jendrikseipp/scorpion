@@ -414,6 +414,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
                 utils::release_extra_memory_padding();
                 utils::g_log << "Max expansions reached with no flaw!" << endl;
                 search_status = TIMEOUT;
+                break;
             }
             else
             {
