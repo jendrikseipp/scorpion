@@ -148,8 +148,7 @@ SearchStatus FlawSearch::step() {
                 add_flaw(abs_id, s);
                 found_flaw = true;
             }
-            if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
-                pick_flaw == PickFlaw::SINGLE_PATH) {
+            if (pick_flaw == PickFlaw::SINGLE_PATH) {
                 // Clear open list.
                 stack<StateID>().swap(open_list);
                 return FAILED;
@@ -168,8 +167,7 @@ SearchStatus FlawSearch::step() {
                     add_flaw(abs_id, s);
                     found_flaw = true;
                 }
-                if (pick_flaw == PickFlaw::MAX_H_SINGLE ||
-                    pick_flaw == PickFlaw::SINGLE_PATH) {
+                if (pick_flaw == PickFlaw::SINGLE_PATH) {
                     // Clear open list.
                     stack<StateID>().swap(open_list);
                     return FAILED;
