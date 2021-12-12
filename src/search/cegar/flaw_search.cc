@@ -124,7 +124,8 @@ SearchStatus FlawSearch::step() {
     assert(!node.is_dead_end());
     ++num_overall_expanded_concrete_states;
 
-    if (task_properties::is_goal_state(task_proxy, s)) {
+    if (task_properties::is_goal_state(task_proxy, s) &&
+        pick_flaw != PickFlaw::MAX_H_SINGLE) {
         return SOLVED;
     }
 
@@ -430,6 +431,13 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
                      << num_overall_expanded_concrete_states - before_expanded_states
                      << " states" << endl;
     }
+
+    // Check if MAX_H_SINGLE did not find a single flaw
+    if (pick_flaw == PickFlaw::MAX_H_SINGLE && search_status == FAILED
+        && flawed_states.num_abstract_states() == 0 && open_list.empty()) {
+        search_status = SOLVED;
+    }
+
     flaw_search_timer.stop();
     return search_status;
 }
