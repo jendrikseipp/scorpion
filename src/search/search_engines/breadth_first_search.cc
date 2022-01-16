@@ -62,6 +62,7 @@ vector<OperatorID> BreadthFirstSearch::trace_path(const State &goal_state) const
 SearchStatus BreadthFirstSearch::step() {
     if (current_state_id == static_cast<int>(state_registry.size())) {
         // We checked all states in the registry without finding a goal state.
+        utils::g_log << "Completely explored state space -- no solution!" << endl;
         return UNSOLVABLE;
     }
 
