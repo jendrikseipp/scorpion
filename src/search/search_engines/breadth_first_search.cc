@@ -17,6 +17,7 @@ using namespace std;
 namespace breadth_first_search {
 BreadthFirstSearch::BreadthFirstSearch(const Options &opts)
     : SearchEngine(opts),
+      write_plan(opts.get<bool>("write_plan")),
       pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")) {
     assert(cost_type == ONE);
 }
@@ -24,21 +25,38 @@ BreadthFirstSearch::BreadthFirstSearch(const Options &opts)
 void BreadthFirstSearch::initialize() {
     utils::g_log << "Conducting breadth-first search" << endl;
     assert(state_registry.size() <= 1);
-    /*
-      Generate the initial state (we don't need the result,
-      but the state has to be created in the registry, if this
-      has not been done before).
-    */
-    state_registry.get_initial_state();
+    State initial_state = state_registry.get_initial_state();
     statistics.inc_generated();
     // The initial state has id 0, so we'll start there.
     current_state_id = 0;
+    if (write_plan) {
+        // THe parent pointer of the initial state is undefined.
+        parents[initial_state] = Parent();
+    }
 }
 
 void BreadthFirstSearch::print_statistics() const {
     statistics.print_detailed_statistics();
     search_space.print_statistics();
     pruning_method->print_statistics();
+}
+
+vector<OperatorID> BreadthFirstSearch::trace_path(const State &goal_state) const {
+    assert(goal_state.get_registry() == &state_registry);
+    StateID current_state_id = goal_state.get_id();
+    vector<OperatorID> path;
+    for (;;) {
+        const Parent &parent = parents[state_registry.lookup_state(current_state_id)];
+        if (parent.op_id == OperatorID::no_operator) {
+            assert(parent.state_id == StateID::no_state);
+            break;
+        }
+        path.push_back(parent.op_id);
+        assert(current_state_id != parent.state_id);
+        current_state_id = parent.state_id;
+    }
+    reverse(path.begin(), path.end());
+    return path;
 }
 
 SearchStatus BreadthFirstSearch::step() {
@@ -54,7 +72,9 @@ SearchStatus BreadthFirstSearch::step() {
     ++current_state_id;
 
     if (task_properties::is_goal_state(task_proxy, s)) {
-        cout << "Solution found!" << endl;
+        utils::g_log << "Solution found!" << endl;
+        vector<OperatorID> plan = trace_path(s);
+        set_plan(plan);
         return SOLVED;
     }
 
@@ -65,10 +85,14 @@ SearchStatus BreadthFirstSearch::step() {
 
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_op_ids) {
-        /* Generate the successor state (we don't need the result,
-           but the state has to be created in the registry). */
-        state_registry.get_successor_state(s, operators[op_id]);
+        int old_num_states = state_registry.size();
+        State succ_state = state_registry.get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
+        int new_num_states = state_registry.size();
+        bool is_new_state = (new_num_states > old_num_states);
+        if (is_new_state && write_plan) {
+            parents[succ_state] = Parent(s.get_id(), op_id);
+        }
     }
     return IN_PROGRESS;
 }
@@ -86,6 +110,12 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Breadth-first search",
         "Breadth-first graph search.");
+
+    parser.add_option<bool>(
+        "write_plan",
+        "Store the necessary information during search for writing the plan once "
+        "it's found. Set to false if the plan is irrelevant.",
+        "true");
 
     add_pruning_option(parser);
 
