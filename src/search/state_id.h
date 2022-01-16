@@ -6,7 +6,12 @@
 // For documentation on classes relevant to storing and working with registered
 // states see the file state_registry.h.
 
+namespace breadth_first_search {
+class BreadthFirstSearch;
+}
+
 class StateID {
+    friend class breadth_first_search::BreadthFirstSearch;
     friend class StateRegistry;
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template<typename>
