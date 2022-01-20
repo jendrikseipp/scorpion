@@ -1,6 +1,5 @@
 #include "depth_first_search.h"
 
-#include "../evaluator.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 
@@ -64,20 +63,14 @@ void DepthFirstSearch::recursive_search(const DFSNode &node) {
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_ops) {
         OperatorProxy op = operators[op_id];
-        // Temporarily add state to registry and remove it again below.
-        int old_registry_size = state_registry.size();
-        State succ_state = state_registry.get_successor_state(node.state, op);
+        State succ_state = node.state.get_unregistered_successor(op);
         statistics.inc_generated();
-        int new_registry_size = state_registry.size();
-        assert(new_registry_size >= old_registry_size);
-        bool path_to_state_has_cycle = (new_registry_size == old_registry_size);
+        auto res = states_on_path.insert(succ_state);
+        bool path_to_state_has_cycle = !res.second;
         if (path_to_state_has_cycle) {
             continue;
         }
-        int hashset_index = state_registry.get_hashset_index_of_last_added_state();
         int succ_g = node.g + get_adjusted_cost(op);
-        statistics.inc_evaluations();
-        statistics.inc_evaluated_states();
         operator_sequence.push_back(op_id);
         int depth = static_cast<int>(operator_sequence.size());
         if (verbosity >= utils::Verbosity::DEBUG && depth > max_depth) {
@@ -90,19 +83,20 @@ void DepthFirstSearch::recursive_search(const DFSNode &node) {
             return;
         }
         operator_sequence.pop_back();
-        state_registry.pop_last_added_state(hashset_index);
+        states_on_path.erase(res.first);
         check_invariants();
     }
 }
 
 bool DepthFirstSearch::check_invariants() const {
-    return operator_sequence.size() + 1 == state_registry.size();
+    return operator_sequence.size() + 1 == states_on_path.size();
 }
 
 SearchStatus DepthFirstSearch::step() {
     utils::g_log << "Starting depth-first search" << endl;
-    State initial_state = state_registry.get_initial_state();
+    State initial_state = task_proxy.get_initial_state();
     statistics.inc_generated();
+    states_on_path.insert(initial_state);
     DFSNode node(initial_state, 0);
     assert(check_invariants());
     recursive_search(node);

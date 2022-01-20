@@ -17,9 +17,6 @@ StateRegistry::StateRegistry(const TaskProxy &task_proxy)
       registered_states(
           StateIDSemanticHash(state_data_pool, get_bins_per_state()),
           StateIDSemanticEqual(state_data_pool, get_bins_per_state())) {
-    // Hack: DFS needs stable indices, so we make sure the hashset never rehashes
-    //       (DFS has a recursion limit of 1000).
-    registered_states.rehash(1024);
 }
 
 StateID StateRegistry::insert_id_or_pop_state() {
@@ -96,15 +93,6 @@ State StateRegistry::get_successor_state(const State &predecessor, const Operato
         StateID id = insert_id_or_pop_state();
         return task_proxy.create_state(*this, id, buffer);
     }
-}
-
-int StateRegistry::get_hashset_index_of_last_added_state() const {
-    return registered_states.extract_index_of_last_added_entry();
-}
-
-void StateRegistry::pop_last_added_state(int hashset_index) {
-    registered_states.remove_entry(hashset_index);
-    state_data_pool.pop_back();
 }
 
 int StateRegistry::get_bins_per_state() const {

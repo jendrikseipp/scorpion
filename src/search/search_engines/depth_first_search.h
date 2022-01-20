@@ -27,6 +27,7 @@ class DepthFirstSearch : public SearchEngine {
     const bool single_plan;
     int max_depth;
 
+    utils::HashSet<State> states_on_path;
     Plan operator_sequence;
     int cheapest_plan_cost;
 
