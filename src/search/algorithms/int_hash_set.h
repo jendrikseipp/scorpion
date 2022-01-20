@@ -108,25 +108,10 @@ class IntHashSet {
     int num_entries;
     int num_resizes;
 
+    mutable int last_added_entry_index;
+
     int capacity() const {
         return buckets.size();
-    }
-
-    void rehash(int new_capacity) {
-        assert(new_capacity >= 1);
-        int num_entries_before = num_entries;
-        std::vector<Bucket> old_buckets = std::move(buckets);
-        assert(buckets.empty());
-        num_entries = 0;
-        buckets.resize(new_capacity);
-        for (const Bucket &bucket : old_buckets) {
-            if (bucket.full()) {
-                insert(bucket.key, bucket.hash);
-            }
-        }
-        utils::unused_variable(num_entries_before);
-        assert(num_entries == num_entries_before);
-        ++num_resizes;
     }
 
     void enlarge() {
@@ -264,6 +249,7 @@ class IntHashSet {
         assert(!buckets[free_index].full());
         buckets[free_index] = Bucket(key, hash);
         ++num_entries;
+        last_added_entry_index = free_index;
         return std::make_pair(key, true);
     }
 
@@ -273,7 +259,8 @@ public:
           equal(equal),
           buckets(1),
           num_entries(0),
-          num_resizes(0) {
+          num_resizes(0),
+          last_added_entry_index(-1) {
     }
 
     int size() const {
@@ -290,6 +277,38 @@ public:
     std::pair<KeyType, bool> insert(KeyType key) {
         assert(key >= 0);
         return insert(key, hasher(key));
+    }
+
+    void rehash(int new_capacity) {
+        assert(new_capacity >= 1);
+        int num_entries_before = num_entries;
+        std::vector<Bucket> old_buckets = std::move(buckets);
+        assert(buckets.empty());
+        num_entries = 0;
+        buckets.resize(new_capacity);
+        for (const Bucket &bucket : old_buckets) {
+            if (bucket.full()) {
+                insert(bucket.key, bucket.hash);
+            }
+        }
+        utils::unused_variable(num_entries_before);
+        assert(num_entries == num_entries_before);
+        ++num_resizes;
+    }
+
+    int extract_index_of_last_added_entry() const {
+        int index = last_added_entry_index;
+        assert(index != -1);
+        assert(buckets[index].full());
+        last_added_entry_index = -1;
+        return index;
+    }
+
+    void remove_entry(int index) {
+        assert(utils::in_bounds(index, buckets));
+        assert(buckets[index].full());
+        buckets[index] = Bucket();
+        --num_entries;
     }
 
     void dump() const {

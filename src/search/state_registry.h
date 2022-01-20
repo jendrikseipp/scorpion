@@ -203,6 +203,9 @@ public:
     */
     State get_successor_state(const State &predecessor, const OperatorProxy &op);
 
+    int get_hashset_index_of_last_added_state() const;
+    void pop_last_added_state(int hashset_index);
+
     /*
       Returns the number of states registered so far.
     */
