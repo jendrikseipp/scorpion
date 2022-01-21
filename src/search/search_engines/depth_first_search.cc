@@ -114,7 +114,9 @@ void DepthFirstSearch::save_plan_if_necessary() {
 static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Depth-first search",
-        "");
+        "This is a depth-first tree search that avoids running in cycles by "
+        "skipping states s that are already visited earlier on the path to s. "
+        "Doing so, the search becomes complete.");
     parser.add_option<bool>(
         "single_plan",
         "stop after finding the first plan",
