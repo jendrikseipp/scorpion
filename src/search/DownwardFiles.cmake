@@ -395,6 +395,13 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME PLUGIN_IDASTAR
+    HELP "IDA* search"
+    SOURCES
+        search_engines/idastar_search
+)
+
+fast_downward_plugin(
     NAME PLUGIN_DFS
     HELP "Depth-first search"
     SOURCES
