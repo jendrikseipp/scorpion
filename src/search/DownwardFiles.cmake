@@ -406,6 +406,7 @@ fast_downward_plugin(
     HELP "Iterative deepening search"
     SOURCES
         search_engines/iterative_deepening_search
+    DEPENDS MARKED_SUCCESSOR_GENERATOR
 )
 
 fast_downward_plugin(
@@ -631,6 +632,15 @@ fast_downward_plugin(
         task_utils/successor_generator
         task_utils/successor_generator_factory
         task_utils/successor_generator_internals
+    DEPENDS TASK_PROPERTIES
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME MARKED_SUCCESSOR_GENERATOR
+    HELP "Marked successor generator"
+    SOURCES
+        task_utils/marked_successor_generator
     DEPENDS TASK_PROPERTIES
     DEPENDENCY_ONLY
 )
