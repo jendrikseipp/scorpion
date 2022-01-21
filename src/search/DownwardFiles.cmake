@@ -402,6 +402,13 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME PLUGIN_ITERATIVE_DEEPENING_SEARCH
+    HELP "Iterative deepening search"
+    SOURCES
+        search_engines/iterative_deepening_search
+)
+
+fast_downward_plugin(
     NAME PLUGIN_DFS
     HELP "Depth-first search"
     SOURCES
