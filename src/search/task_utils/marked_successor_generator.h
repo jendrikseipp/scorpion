@@ -3,6 +3,7 @@
 
 #include "../algorithms/array_pool.h"
 
+#include <unordered_set>
 #include <vector>
 
 struct FactPair;
@@ -12,19 +13,25 @@ class TaskProxy;
 
 namespace marked_successor_generator {
 class MarkedSuccessorGenerator {
+    // These members are logically const.
+    array_pool_template::ArrayPool<FactPair> effects_by_operator;
     std::vector<int> fact_id_offset;
     array_pool_template::ArrayPool<int> operators_by_precondition;
-    std::vector<int> counter;
     std::vector<int> num_preconditions;
     std::vector<int> operators_without_preconditions;
+
+    std::vector<int> counter;
+    std::unordered_set<int> applicable_operators;
 
     int get_fact_id(FactPair fact) const;
 
 public:
     explicit MarkedSuccessorGenerator(const TaskProxy &task_proxy);
 
-    void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops);
+    void reset_to_state(const State &state);
+    void push_transition(const State &state, int op_id);
+    void pop_transition(const State &src, int op_id);
+    const std::unordered_set<int> &get_applicable_operators();
 };
 }
 

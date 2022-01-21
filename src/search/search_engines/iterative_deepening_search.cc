@@ -17,6 +17,7 @@ namespace iterative_deepening_search {
 IterativeDeepeningSearch::IterativeDeepeningSearch(const Options &opts)
     : SearchEngine(opts),
       single_plan(opts.get<bool>("single_plan")),
+      sg(task_proxy),
       last_plan_cost(-1) {
     if (!task_properties::is_unit_cost(task_proxy)) {
         cerr << "Iterative deepening search only supports unit-cost tasks." << endl;
@@ -45,16 +46,26 @@ void IterativeDeepeningSearch::recursive_search(const State &state, int depth_li
 
     if (depth_limit > 0) {
         statistics.inc_expanded();
+        OperatorsProxy operators = task_proxy.get_operators();
+        unordered_set<int> applicable_operators = sg.get_applicable_operators();
+#ifndef NDEBUG
         vector<OperatorID> applicable_ops;
         successor_generator.generate_applicable_ops(state, applicable_ops);
-        OperatorsProxy operators = task_proxy.get_operators();
+        unordered_set<int> old_ops_set;
         for (OperatorID op_id : applicable_ops) {
+            old_ops_set.insert(op_id.get_index());
+        }
+        assert(applicable_operators == old_ops_set);
+#endif
+        for (int op_id : applicable_operators) {
             OperatorProxy op = operators[op_id];
             State succ_state = state.get_unregistered_successor(op);
             statistics.inc_generated();
-            operator_sequence.push_back(op_id);
+            sg.push_transition(state, op.get_id());
+            operator_sequence.emplace_back(op_id);
             recursive_search(succ_state, depth_limit - 1);
             operator_sequence.pop_back();
+            sg.pop_transition(state, op.get_id());
             if (found_solution() && single_plan) {
                 return;
             }
@@ -64,6 +75,7 @@ void IterativeDeepeningSearch::recursive_search(const State &state, int depth_li
 
 SearchStatus IterativeDeepeningSearch::step() {
     State initial_state = task_proxy.get_initial_state();
+    sg.reset_to_state(initial_state);
     for (int depth_limit = 0;
          (!single_plan || !found_solution()) && depth_limit < bound;
          ++depth_limit) {
