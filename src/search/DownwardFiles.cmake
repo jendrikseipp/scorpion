@@ -395,6 +395,28 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME PLUGIN_IDASTAR
+    HELP "IDA* search"
+    SOURCES
+        search_engines/idastar_search
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_ITERATIVE_DEEPENING_SEARCH
+    HELP "Iterative deepening search"
+    SOURCES
+        search_engines/iterative_deepening_search
+    DEPENDS INCREMENTAL_SUCCESSOR_GENERATOR
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_DFS
+    HELP "Depth-first search"
+    SOURCES
+        search_engines/depth_first_search
+)
+
+fast_downward_plugin(
     NAME PLUGIN_EAGER
     HELP "Eager (i.e., normal) best-first search"
     SOURCES
@@ -610,6 +632,15 @@ fast_downward_plugin(
         task_utils/successor_generator
         task_utils/successor_generator_factory
         task_utils/successor_generator_internals
+    DEPENDS TASK_PROPERTIES
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME INCREMENTAL_SUCCESSOR_GENERATOR
+    HELP "Incremental successor generator"
+    SOURCES
+        task_utils/incremental_successor_generator
     DEPENDS TASK_PROPERTIES
     DEPENDENCY_ONLY
 )
