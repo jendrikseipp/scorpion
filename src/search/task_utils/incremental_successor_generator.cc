@@ -133,7 +133,7 @@ void IncrementalSuccessorGenerator::pop_transition(const State &src, int op_id) 
     }
 }
 
-const std::vector<int> &IncrementalSuccessorGenerator::get_applicable_operators() {
+const vector<int> &IncrementalSuccessorGenerator::get_applicable_operators() {
     return applicable_operators;
 }
 
