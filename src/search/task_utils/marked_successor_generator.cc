@@ -59,8 +59,10 @@ MarkedSuccessorGenerator::MarkedSuccessorGenerator(const TaskProxy &task_proxy)
 
 void MarkedSuccessorGenerator::reset_to_state(const State &state) {
     applicable_operators.clear();
+    applicable_operators_position = vector<int>(num_preconditions.size(), -1);
     for (int op_id : operators_without_preconditions) {
-        applicable_operators.insert(op_id);
+        applicable_operators_position[op_id] = applicable_operators.size();
+        applicable_operators.push_back(op_id);
     }
     counter = num_preconditions;
     for (FactProxy fact : state) {
@@ -68,10 +70,34 @@ void MarkedSuccessorGenerator::reset_to_state(const State &state) {
             --counter[op_id];
             assert(counter[op_id] >= 0);
             if (counter[op_id] == 0) {
-                applicable_operators.insert(op_id);
+                applicable_operators_position[op_id] = applicable_operators.size();
+                applicable_operators.push_back(op_id);
             }
         }
     }
+}
+
+void MarkedSuccessorGenerator::insert_op(int op) {
+    assert(applicable_operators_position[op] == -1);
+    assert(find(applicable_operators.begin(), applicable_operators.end(), op)
+           == applicable_operators.end());
+    applicable_operators_position[op] = applicable_operators.size();
+    applicable_operators.push_back(op);
+}
+
+void MarkedSuccessorGenerator::erase_op(int op) {
+    int op_pos = applicable_operators_position[op];
+    assert(op_pos != -1);
+    assert(!applicable_operators.empty());
+    int last_op = applicable_operators.back();
+    int last_op_pos = applicable_operators_position[last_op];
+    assert(last_op_pos != -1);
+    assert(last_op_pos = static_cast<int>(applicable_operators.size() - 1));
+    swap(applicable_operators[op_pos], applicable_operators[last_op_pos]);
+    swap(applicable_operators_position[op], applicable_operators_position[last_op]);
+    assert(applicable_operators.back() == op);
+    applicable_operators.pop_back();
+    applicable_operators_position[op] = -1;
 }
 
 void MarkedSuccessorGenerator::push_transition(const State &state, int op_id) {
@@ -82,14 +108,14 @@ void MarkedSuccessorGenerator::push_transition(const State &state, int op_id) {
         }
         for (int op : operators_by_precondition[get_fact_id(old_fact)]) {
             if (counter[op] == 0) {
-                applicable_operators.erase(op);
+                erase_op(op);
             }
             ++counter[op];
         }
         for (int op : operators_by_precondition[get_fact_id(new_fact)]) {
             --counter[op];
             if (counter[op] == 0) {
-                applicable_operators.insert(op);
+                insert_op(op);
             }
         }
     }
@@ -103,20 +129,20 @@ void MarkedSuccessorGenerator::pop_transition(const State &src, int op_id) {
         }
         for (int op : operators_by_precondition[get_fact_id(new_fact)]) {
             if (counter[op] == 0) {
-                applicable_operators.erase(op);
+                erase_op(op);
             }
             ++counter[op];
         }
         for (int op : operators_by_precondition[get_fact_id(old_fact)]) {
             --counter[op];
             if (counter[op] == 0) {
-                applicable_operators.insert(op);
+                insert_op(op);
             }
         }
     }
 }
 
-const std::unordered_set<int> &MarkedSuccessorGenerator::get_applicable_operators() {
+const std::vector<int> &MarkedSuccessorGenerator::get_applicable_operators() {
     return applicable_operators;
 }
 

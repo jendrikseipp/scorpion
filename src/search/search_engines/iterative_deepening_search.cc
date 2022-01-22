@@ -47,15 +47,15 @@ void IterativeDeepeningSearch::recursive_search(const State &state, int depth_li
     if (depth_limit > 0) {
         statistics.inc_expanded();
         OperatorsProxy operators = task_proxy.get_operators();
-        unordered_set<int> applicable_operators = sg.get_applicable_operators();
+        const vector<int> &applicable_operators = sg.get_applicable_operators();
 #ifndef NDEBUG
         vector<OperatorID> applicable_ops;
         successor_generator.generate_applicable_ops(state, applicable_ops);
-        unordered_set<int> old_ops_set;
+        unordered_set<int> old_ops;
         for (OperatorID op_id : applicable_ops) {
-            old_ops_set.insert(op_id.get_index());
+            old_ops.insert(op_id.get_index());
         }
-        assert(applicable_operators == old_ops_set);
+        assert(unordered_set<int>(applicable_operators.begin(), applicable_operators.end()) == old_ops);
 #endif
         for (int op_id : applicable_operators) {
             OperatorProxy op = operators[op_id];

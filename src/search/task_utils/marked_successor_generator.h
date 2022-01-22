@@ -21,9 +21,12 @@ class MarkedSuccessorGenerator {
     std::vector<int> operators_without_preconditions;
 
     std::vector<int> counter;
-    std::unordered_set<int> applicable_operators;
+    std::vector<int> applicable_operators_position;
+    std::vector<int> applicable_operators;
 
     int get_fact_id(FactPair fact) const;
+    void insert_op(int op);
+    void erase_op(int op);
 
 public:
     explicit MarkedSuccessorGenerator(const TaskProxy &task_proxy);
@@ -31,7 +34,7 @@ public:
     void reset_to_state(const State &state);
     void push_transition(const State &state, int op_id);
     void pop_transition(const State &src, int op_id);
-    const std::unordered_set<int> &get_applicable_operators();
+    const std::vector<int> &get_applicable_operators();
 };
 }
 
