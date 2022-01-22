@@ -91,8 +91,7 @@ void IncrementalSuccessorGenerator::mark_operator_inapplicable(int op) {
     assert(!applicable_operators.empty());
     int last_op = applicable_operators.back();
     int last_op_pos = applicable_operators_position[last_op];
-    assert(last_op_pos != -1);
-    assert(last_op_pos = static_cast<int>(applicable_operators.size() - 1));
+    assert(last_op_pos == static_cast<int>(applicable_operators.size() - 1));
     swap(applicable_operators[op_pos], applicable_operators[last_op_pos]);
     swap(applicable_operators_position[op], applicable_operators_position[last_op]);
     assert(applicable_operators.back() == op);

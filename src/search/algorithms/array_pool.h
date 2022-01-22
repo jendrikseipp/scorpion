@@ -41,7 +41,7 @@ private:
 
     friend std::ostream &operator<<(std::ostream &os, const ArrayPoolSlice<Value> &slice) {
         os << "[";
-        std::string sep = "";
+        std::string sep;
         Iterator pos = slice.begin();
         while (pos < slice.end()) {
             os << sep << *pos;
