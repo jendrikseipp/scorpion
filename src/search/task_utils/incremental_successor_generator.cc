@@ -37,7 +37,7 @@ IncrementalSuccessorGenerator::IncrementalSuccessorGenerator(const TaskProxy &ta
         num_facts += var.get_domain_size();
     }
 
-    counter.resize(num_operators, 0);
+    num_unsatisfied_preconditions.resize(num_operators, 0);
     num_preconditions.reserve(num_operators);
 
     vector<vector<int>> precondition_of(num_facts);
@@ -64,12 +64,12 @@ void IncrementalSuccessorGenerator::reset_to_state(const State &state) {
         applicable_operators_position[op_id] = applicable_operators.size();
         applicable_operators.push_back(op_id);
     }
-    counter = num_preconditions;
+    num_unsatisfied_preconditions = num_preconditions;
     for (FactProxy fact : state) {
         for (int op_id : operators_by_precondition[get_fact_id(fact.get_pair())]) {
-            --counter[op_id];
-            assert(counter[op_id] >= 0);
-            if (counter[op_id] == 0) {
+            --num_unsatisfied_preconditions[op_id];
+            assert(num_unsatisfied_preconditions[op_id] >= 0);
+            if (num_unsatisfied_preconditions[op_id] == 0) {
                 applicable_operators_position[op_id] = applicable_operators.size();
                 applicable_operators.push_back(op_id);
             }
@@ -77,7 +77,7 @@ void IncrementalSuccessorGenerator::reset_to_state(const State &state) {
     }
 }
 
-void IncrementalSuccessorGenerator::insert_op(int op) {
+void IncrementalSuccessorGenerator::mark_operator_applicable(int op) {
     assert(applicable_operators_position[op] == -1);
     assert(find(applicable_operators.begin(), applicable_operators.end(), op)
            == applicable_operators.end());
@@ -85,7 +85,7 @@ void IncrementalSuccessorGenerator::insert_op(int op) {
     applicable_operators.push_back(op);
 }
 
-void IncrementalSuccessorGenerator::erase_op(int op) {
+void IncrementalSuccessorGenerator::mark_operator_inapplicable(int op) {
     int op_pos = applicable_operators_position[op];
     assert(op_pos != -1);
     assert(!applicable_operators.empty());
@@ -100,45 +100,36 @@ void IncrementalSuccessorGenerator::erase_op(int op) {
     applicable_operators_position[op] = -1;
 }
 
-void IncrementalSuccessorGenerator::push_transition(const State &state, int op_id) {
+void IncrementalSuccessorGenerator::switch_facts(FactPair old_fact, FactPair new_fact) {
+    assert(old_fact.var == new_fact.var);
+    if (new_fact == old_fact) {
+        return;
+    }
+    for (int op : operators_by_precondition[get_fact_id(old_fact)]) {
+        if (num_unsatisfied_preconditions[op] == 0) {
+            mark_operator_inapplicable(op);
+        }
+        ++num_unsatisfied_preconditions[op];
+    }
+    for (int op : operators_by_precondition[get_fact_id(new_fact)]) {
+        --num_unsatisfied_preconditions[op];
+        if (num_unsatisfied_preconditions[op] == 0) {
+            mark_operator_applicable(op);
+        }
+    }
+}
+
+void IncrementalSuccessorGenerator::push_transition(const State &src, int op_id) {
     for (FactPair new_fact : effects_by_operator[op_id]) {
-        FactPair old_fact = state[new_fact.var].get_pair();
-        if (new_fact == old_fact) {
-            continue;
-        }
-        for (int op : operators_by_precondition[get_fact_id(old_fact)]) {
-            if (counter[op] == 0) {
-                erase_op(op);
-            }
-            ++counter[op];
-        }
-        for (int op : operators_by_precondition[get_fact_id(new_fact)]) {
-            --counter[op];
-            if (counter[op] == 0) {
-                insert_op(op);
-            }
-        }
+        FactPair old_fact = src[new_fact.var].get_pair();
+        switch_facts(old_fact, new_fact);
     }
 }
 
 void IncrementalSuccessorGenerator::pop_transition(const State &src, int op_id) {
     for (FactPair new_fact : effects_by_operator[op_id]) {
         FactPair old_fact = src[new_fact.var].get_pair();
-        if (new_fact == old_fact) {
-            continue;
-        }
-        for (int op : operators_by_precondition[get_fact_id(new_fact)]) {
-            if (counter[op] == 0) {
-                erase_op(op);
-            }
-            ++counter[op];
-        }
-        for (int op : operators_by_precondition[get_fact_id(old_fact)]) {
-            --counter[op];
-            if (counter[op] == 0) {
-                insert_op(op);
-            }
-        }
+        switch_facts(new_fact, old_fact);
     }
 }
 

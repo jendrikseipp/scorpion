@@ -3,11 +3,9 @@
 
 #include "../algorithms/array_pool.h"
 
-#include <unordered_set>
 #include <vector>
 
 struct FactPair;
-class OperatorID;
 class State;
 class TaskProxy;
 
@@ -20,19 +18,21 @@ class IncrementalSuccessorGenerator {
     std::vector<int> num_preconditions;
     std::vector<int> operators_without_preconditions;
 
-    std::vector<int> counter;
+    std::vector<int> num_unsatisfied_preconditions;
+    // For each operator store its position (or -1) in applicable_operators vector.
     std::vector<int> applicable_operators_position;
     std::vector<int> applicable_operators;
 
     int get_fact_id(FactPair fact) const;
-    void insert_op(int op);
-    void erase_op(int op);
+    void switch_facts(FactPair old_fact, FactPair new_fact);
+    void mark_operator_applicable(int op);
+    void mark_operator_inapplicable(int op);
 
 public:
     explicit IncrementalSuccessorGenerator(const TaskProxy &task_proxy);
 
     void reset_to_state(const State &state);
-    void push_transition(const State &state, int op_id);
+    void push_transition(const State &src, int op_id);
     void pop_transition(const State &src, int op_id);
     const std::vector<int> &get_applicable_operators();
 };
