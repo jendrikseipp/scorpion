@@ -469,6 +469,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#breadth-first_search" class="md-nav__link">
+    Breadth-first search
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#depth-first_search" class="md-nav__link">
+    Depth-first search
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#eager_best-first_search" class="md-nav__link">
     Eager best-first search
   </a>
@@ -505,6 +519,20 @@
         <li class="md-nav__item">
   <a href="#lazy_enforced_hill-climbing" class="md-nav__link">
     Lazy enforced hill-climbing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ida_search" class="md-nav__link">
+    IDA* search
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iterative_deepening_search" class="md-nav__link">
+    Iterative deepening search
   </a>
   
 </li>
@@ -645,6 +673,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#breadth-first_search" class="md-nav__link">
+    Breadth-first search
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#depth-first_search" class="md-nav__link">
+    Depth-first search
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#eager_best-first_search" class="md-nav__link">
     Eager best-first search
   </a>
@@ -681,6 +723,20 @@
         <li class="md-nav__item">
   <a href="#lazy_enforced_hill-climbing" class="md-nav__link">
     Lazy enforced hill-climbing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ida_search" class="md-nav__link">
+    IDA* search
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iterative_deepening_search" class="md-nav__link">
+    Iterative deepening search
   </a>
   
 </li>
@@ -787,6 +843,37 @@
 --search eager(tiebreaking([sum([g(), h]), h], unsafe_pruning=false),
                reopen_closed=true, f_eval=sum([g(), h]))
 </code></pre>
+<h2 id="breadth-first_search">Breadth-first search<a class="headerlink" href="#breadth-first_search" title="Permanent link">#</a></h2>
+<p>Breadth-first graph search.</p>
+<pre><code>brfs(single_plan=true, write_plan=true, pruning=null())
+</code></pre>
+<ul>
+<li><em>single_plan</em> (bool): Stop search after finding the first (shortest) plan.</li>
+<li><em>write_plan</em> (bool): Store the necessary information during search for writing plans once they're found.</li>
+<li><em>pruning</em> (<a href="../PruningMethod/">PruningMethod</a>): Pruning methods can prune or reorder the set of applicable operators in each state and thereby influence the number and order of successor states that are considered.</li>
+</ul>
+<h2 id="depth-first_search">Depth-first search<a class="headerlink" href="#depth-first_search" title="Permanent link">#</a></h2>
+<p>This is a depth-first tree search that avoids running in cycles by skipping states s that are already visited earlier on the path to s. Doing so, the search becomes complete.</p>
+<pre><code>dfs(single_plan=false, cost_type=NORMAL, bound=infinity, max_time=infinity, verbosity=normal)
+</code></pre>
+<ul>
+<li><em>single_plan</em> (bool): stop after finding the first plan</li>
+<li><em>cost_type</em> ({NORMAL, ONE, PLUSONE}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
+<li><code>NORMAL</code>: all actions are accounted for with their real cost</li>
+<li><code>ONE</code>: all actions are accounted for as unit cost</li>
+<li><code>PLUSONE</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search engines, but is supported for both.</li>
+</ul>
+</li>
+<li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
+<li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like full with additional debug output</li>
+</ul>
+</li>
+</ul>
 <h2 id="eager_best-first_search">Eager best-first search<a class="headerlink" href="#eager_best-first_search" title="Permanent link">#</a></h2>
 <pre><code>eager(open, reopen_closed=false, f_eval=&lt;none&gt;, preferred=[], pruning=null(), cost_type=NORMAL, bound=infinity, max_time=infinity, verbosity=normal)
 </code></pre>
@@ -909,6 +996,52 @@
 <li><em>h</em> (<a href="../Evaluator/">Evaluator</a>): heuristic</li>
 <li><em>preferred_usage</em> ({PRUNE_BY_PREFERRED, RANK_PREFERRED_FIRST}): preferred operator usage</li>
 <li><em>preferred</em> (list of <a href="../Evaluator/">Evaluator</a>): use preferred operators of these evaluators</li>
+<li><em>cost_type</em> ({NORMAL, ONE, PLUSONE}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
+<li><code>NORMAL</code>: all actions are accounted for with their real cost</li>
+<li><code>ONE</code>: all actions are accounted for as unit cost</li>
+<li><code>PLUSONE</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search engines, but is supported for both.</li>
+</ul>
+</li>
+<li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
+<li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like full with additional debug output</li>
+</ul>
+</li>
+</ul>
+<h2 id="ida_search">IDA* search<a class="headerlink" href="#ida_search" title="Permanent link">#</a></h2>
+<p>IDA* search with an optional g-value cache.</p>
+<pre><code>idastar(eval, initial_f_limit=0, cache_size=0, single_plan=true, cost_type=NORMAL, bound=infinity, max_time=infinity, verbosity=normal)
+</code></pre>
+<ul>
+<li><em>eval</em> (<a href="../Evaluator/">Evaluator</a>): evaluator for h-value. Make sure to use cache_estimates=false.</li>
+<li><em>initial_f_limit</em> (int [0, infinity]): initial depth limit</li>
+<li><em>cache_size</em> (int [0, infinity]): maximum number of states to cache. For cache_size=infinity the cache fills up until approaching the memory limit, at which point the current number of states becomes the maximum cache size.</li>
+<li><em>single_plan</em> (bool): stop after finding the first plan</li>
+<li><em>cost_type</em> ({NORMAL, ONE, PLUSONE}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
+<li><code>NORMAL</code>: all actions are accounted for with their real cost</li>
+<li><code>ONE</code>: all actions are accounted for as unit cost</li>
+<li><code>PLUSONE</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search engines, but is supported for both.</li>
+</ul>
+</li>
+<li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
+<li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like full with additional debug output</li>
+</ul>
+</li>
+</ul>
+<h2 id="iterative_deepening_search">Iterative deepening search<a class="headerlink" href="#iterative_deepening_search" title="Permanent link">#</a></h2>
+<pre><code>ids(single_plan=true, cost_type=NORMAL, bound=infinity, max_time=infinity, verbosity=normal)
+</code></pre>
+<ul>
+<li><em>single_plan</em> (bool): stop after finding the first (shortest) plan</li>
 <li><em>cost_type</em> ({NORMAL, ONE, PLUSONE}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>NORMAL</code>: all actions are accounted for with their real cost</li>
 <li><code>ONE</code>: all actions are accounted for as unit cost</li>
