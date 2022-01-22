@@ -1,4 +1,4 @@
-#include "marked_successor_generator.h"
+#include "incremental_successor_generator.h"
 
 #include "task_properties.h"
 
@@ -6,7 +6,7 @@
 
 using namespace std;
 
-namespace marked_successor_generator {
+namespace incremental_successor_generator {
 static array_pool_template::ArrayPool<FactPair> get_effects_by_operator(
     const OperatorsProxy &ops) {
     array_pool_template::ArrayPool<FactPair> effects_by_operator;
@@ -27,7 +27,7 @@ static array_pool_template::ArrayPool<FactPair> get_effects_by_operator(
     return effects_by_operator;
 }
 
-MarkedSuccessorGenerator::MarkedSuccessorGenerator(const TaskProxy &task_proxy)
+IncrementalSuccessorGenerator::IncrementalSuccessorGenerator(const TaskProxy &task_proxy)
     : effects_by_operator(get_effects_by_operator(task_proxy.get_operators())) {
     utils::Timer init_timer;
     int num_operators = task_proxy.get_operators().size();
@@ -57,7 +57,7 @@ MarkedSuccessorGenerator::MarkedSuccessorGenerator(const TaskProxy &task_proxy)
     utils::g_log << "Time for initializing marked successor generator: " << init_timer << endl;
 }
 
-void MarkedSuccessorGenerator::reset_to_state(const State &state) {
+void IncrementalSuccessorGenerator::reset_to_state(const State &state) {
     applicable_operators.clear();
     applicable_operators_position = vector<int>(num_preconditions.size(), -1);
     for (int op_id : operators_without_preconditions) {
@@ -77,7 +77,7 @@ void MarkedSuccessorGenerator::reset_to_state(const State &state) {
     }
 }
 
-void MarkedSuccessorGenerator::insert_op(int op) {
+void IncrementalSuccessorGenerator::insert_op(int op) {
     assert(applicable_operators_position[op] == -1);
     assert(find(applicable_operators.begin(), applicable_operators.end(), op)
            == applicable_operators.end());
@@ -85,7 +85,7 @@ void MarkedSuccessorGenerator::insert_op(int op) {
     applicable_operators.push_back(op);
 }
 
-void MarkedSuccessorGenerator::erase_op(int op) {
+void IncrementalSuccessorGenerator::erase_op(int op) {
     int op_pos = applicable_operators_position[op];
     assert(op_pos != -1);
     assert(!applicable_operators.empty());
@@ -100,7 +100,7 @@ void MarkedSuccessorGenerator::erase_op(int op) {
     applicable_operators_position[op] = -1;
 }
 
-void MarkedSuccessorGenerator::push_transition(const State &state, int op_id) {
+void IncrementalSuccessorGenerator::push_transition(const State &state, int op_id) {
     for (FactPair new_fact : effects_by_operator[op_id]) {
         FactPair old_fact = state[new_fact.var].get_pair();
         if (new_fact == old_fact) {
@@ -121,7 +121,7 @@ void MarkedSuccessorGenerator::push_transition(const State &state, int op_id) {
     }
 }
 
-void MarkedSuccessorGenerator::pop_transition(const State &src, int op_id) {
+void IncrementalSuccessorGenerator::pop_transition(const State &src, int op_id) {
     for (FactPair new_fact : effects_by_operator[op_id]) {
         FactPair old_fact = src[new_fact.var].get_pair();
         if (new_fact == old_fact) {
@@ -142,11 +142,11 @@ void MarkedSuccessorGenerator::pop_transition(const State &src, int op_id) {
     }
 }
 
-const std::vector<int> &MarkedSuccessorGenerator::get_applicable_operators() {
+const std::vector<int> &IncrementalSuccessorGenerator::get_applicable_operators() {
     return applicable_operators;
 }
 
-int MarkedSuccessorGenerator::get_fact_id(FactPair fact) const {
+int IncrementalSuccessorGenerator::get_fact_id(FactPair fact) const {
     return fact_id_offset[fact.var] + fact.value;
 }
 }

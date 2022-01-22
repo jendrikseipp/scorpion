@@ -3,7 +3,7 @@
 
 #include "../search_engine.h"
 
-#include "../task_utils/marked_successor_generator.h"
+#include "../task_utils/incremental_successor_generator.h"
 
 #include <memory>
 #include <vector>
@@ -17,7 +17,7 @@ class Options;
 namespace iterative_deepening_search {
 class IterativeDeepeningSearch : public SearchEngine {
     const bool single_plan;
-    marked_successor_generator::MarkedSuccessorGenerator sg;
+    incremental_successor_generator::IncrementalSuccessorGenerator sg;
 
     Plan operator_sequence;
     int last_plan_cost;
