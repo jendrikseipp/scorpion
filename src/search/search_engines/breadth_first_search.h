@@ -28,13 +28,14 @@ struct Parent {
 };
 
 /* NOTE:
-    Doesn't support reach_state
-    Doesn't support bound
-    Doesn't produce log lines for new g values
-    Doesn't generate a plan file for solvable tasks
+    Doesn't support reach_state.
+    Doesn't support bound.
+    Doesn't produce log lines for new g values.
 */
 class BreadthFirstSearch : public SearchEngine {
+    const bool single_plan;
     const bool write_plan;
+    int last_plan_cost;
     int current_state_id;
     PerStateInformation<Parent> parents;
     std::shared_ptr<PruningMethod> pruning_method;

@@ -17,7 +17,9 @@ using namespace std;
 namespace breadth_first_search {
 BreadthFirstSearch::BreadthFirstSearch(const Options &opts)
     : SearchEngine(opts),
+      single_plan(opts.get<bool>("single_plan")),
       write_plan(opts.get<bool>("write_plan")),
+      last_plan_cost(-1),
       pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")) {
     assert(cost_type == ONE);
 }
@@ -61,9 +63,13 @@ vector<OperatorID> BreadthFirstSearch::trace_path(const State &goal_state) const
 
 SearchStatus BreadthFirstSearch::step() {
     if (current_state_id == static_cast<int>(state_registry.size())) {
-        // We checked all states in the registry without finding a goal state.
-        utils::g_log << "Completely explored state space -- no solution!" << endl;
-        return UNSOLVABLE;
+        if (found_solution()) {
+            utils::g_log << "Completely explored state space -- found solution." << endl;
+            return SOLVED;
+        } else {
+            utils::g_log << "Completely explored state space -- no solution!" << endl;
+            return UNSOLVABLE;
+        }
     }
 
     State s = state_registry.lookup_state(StateID(current_state_id));
@@ -73,10 +79,16 @@ SearchStatus BreadthFirstSearch::step() {
     ++current_state_id;
 
     if (task_properties::is_goal_state(task_proxy, s)) {
-        utils::g_log << "Solution found!" << endl;
         vector<OperatorID> plan = trace_path(s);
-        set_plan(plan);
-        return SOLVED;
+        int plan_cost = calculate_plan_cost(plan, task_proxy);
+        if (plan_cost > last_plan_cost) {
+            plan_manager.save_plan(plan, task_proxy, !single_plan);
+            last_plan_cost = plan_cost;
+            set_plan(plan);
+        }
+        if (single_plan) {
+            return SOLVED;
+        }
     }
 
     vector<OperatorID> applicable_op_ids;
@@ -113,9 +125,13 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
         "Breadth-first graph search.");
 
     parser.add_option<bool>(
+        "single_plan",
+        "Stop search after finding the first (shortest) plan.",
+        "true");
+    parser.add_option<bool>(
         "write_plan",
-        "Store the necessary information during search for writing the plan once "
-        "it's found. Set to false if the plan is irrelevant.",
+        "Store the necessary information during search for writing plans once "
+        "they're found.",
         "true");
 
     add_pruning_option(parser);
