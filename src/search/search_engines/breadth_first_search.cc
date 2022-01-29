@@ -8,6 +8,7 @@
 
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
+#include "../utils/logging.h"
 
 #include <cassert>
 #include <cstdlib>
