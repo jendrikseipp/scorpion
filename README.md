@@ -100,6 +100,10 @@ repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
 - The `--transform-task` command allows you to run arbitrary preprocessing
   commands that transform the SAS+ output from the translator before
   passing it to the search.
+- Scorpion uses a
+  [phmap::flat_hash_set](https://github.com/greg7mdp/parallel-hashmap) to check
+  for duplicate states, which often drastically reduces the peak memory usage,
+  compared to Fast Downward's `IntHashSet`.
 - If [ccache](https://ccache.dev/) is installed (recommended), Scorpion
   uses it to cache compilation files.
 
