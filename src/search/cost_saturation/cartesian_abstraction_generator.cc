@@ -172,7 +172,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     utils::CountdownTimer timer(max_time);
     num_states = 0;
     num_transitions = 0;
-    utils::Log log;
+    utils::Log log(utils::Verbosity::NORMAL);
     log << "Build Cartesian abstractions" << endl;
 
     // The CEGAR code expects that some extra memory is reserved.

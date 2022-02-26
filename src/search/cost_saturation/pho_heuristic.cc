@@ -30,9 +30,9 @@ PhO::PhO(
     const vector<int> &costs,
     lp::LPSolverType solver_type,
     bool saturated,
-    bool debug)
+    utils::LogProxy log)
     : lp_solver(solver_type),
-      debug(debug) {
+      log(log) {
     double infinity = lp_solver.get_infinity();
     int num_abstractions = abstractions.size();
     int num_operators = costs.size();
@@ -78,7 +78,8 @@ PhO::PhO(
         }
     }
 
-    lp::LinearProgram lp(lp::LPObjectiveSense::MAXIMIZE, move(variables), move(constraints));
+    lp::LinearProgram lp(lp::LPObjectiveSense::MAXIMIZE, move(variables), move(constraints),
+                         lp_solver.get_infinity());
     lp_solver.load_problem(lp);
 }
 
@@ -108,9 +109,9 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
     }
 
     vector<double> solution = lp_solver.extract_solution();
-    if (debug) {
-        cout << "Objective value: " << lp_solver.get_objective_value() << endl;
-        cout << "Solution: " << solution << endl;
+    if (log.is_at_least_debug()) {
+        log << "Objective value: " << lp_solver.get_objective_value() << endl;
+        log << "Solution: " << solution << endl;
     }
     CostPartitioningHeuristic cp_heuristic;
     for (int i = 0; i < num_abstractions; ++i) {
@@ -127,8 +128,8 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
         }
         cp_heuristic.add_h_values(i, move(weighted_h_values));
     }
-    if (debug) {
-        cout << "CP value: " << cp_heuristic.compute_heuristic(abstract_state_ids) << endl;
+    if (log.is_at_least_debug()) {
+        log << "CP value: " << cp_heuristic.compute_heuristic(abstract_state_ids) << endl;
     }
     return cp_heuristic;
 }
@@ -142,7 +143,7 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.add_option<bool>("saturated", "saturate costs", "true");
     add_order_options_to_parser(parser);
     lp::add_lp_solver_option_to_parser(parser);
-    utils::add_verbosity_option_to_parser(parser);
+    utils::add_log_options_to_parser(parser);
 
     options::Options opts = parser.parse();
     if (parser.help_mode() || parser.dry_run()) {
@@ -159,7 +160,7 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
         scaled_costs_task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
     PhO pho(abstractions, costs, opts.get<lp::LPSolverType>("lpsolver"),
             opts.get<bool>("saturated"),
-            opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG);
+            utils::get_log_from_options(opts));
     CPFunction cp_function = [&pho](const Abstractions &abstractions,
                                     const vector<int> &order,
                                     const vector<int> &costs,

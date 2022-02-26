@@ -49,6 +49,8 @@ protected:
 public:
     explicit BreadthFirstSearch(const options::Options &opts);
 
+    virtual void save_plan_if_necessary() override;
+
     virtual void print_statistics() const override;
 };
 }

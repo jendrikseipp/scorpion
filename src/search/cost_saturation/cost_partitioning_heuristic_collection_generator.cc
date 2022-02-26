@@ -30,7 +30,7 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
     double max_sampling_time) {
     assert(num_samples >= 1);
     utils::CountdownTimer sampling_timer(max_sampling_time);
-    utils::Log() << "Start sampling" << endl;
+    utils::g_log << "Start sampling" << endl;
     vector<vector<int>> abstract_state_ids_by_sample;
     abstract_state_ids_by_sample.push_back(
         get_abstract_state_ids(abstractions, task_proxy.get_initial_state()));
@@ -39,8 +39,8 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
         abstract_state_ids_by_sample.push_back(
             get_abstract_state_ids(abstractions, sampler.sample_state(init_h, is_dead_end)));
     }
-    utils::Log() << "Samples: " << abstract_state_ids_by_sample.size() << endl;
-    utils::Log() << "Sampling time: " << sampling_timer.get_elapsed_time() << endl;
+    utils::g_log << "Samples: " << abstract_state_ids_by_sample.size() << endl;
+    utils::g_log << "Sampling time: " << sampling_timer.get_elapsed_time() << endl;
     return abstract_state_ids_by_sample;
 }
 
@@ -70,7 +70,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     const Abstractions &abstractions,
     const vector<int> &costs,
     const CPFunction &cp_function) const {
-    utils::Log log;
+    utils::Log log(utils::Verbosity::NORMAL);
     utils::CountdownTimer timer(max_time);
 
     State initial_state = task_proxy.get_initial_state();

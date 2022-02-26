@@ -53,7 +53,8 @@ static void compute_union_pattern(
 
 PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
     const Options &opts)
-    : max_pattern_size(opts.get<int>("pattern_max_size")),
+    : PatternCollectionGenerator(opts),
+      max_pattern_size(opts.get<int>("pattern_max_size")),
       pattern_type(opts.get<PatternType>("pattern_type")) {
 }
 
@@ -215,6 +216,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
             Pattern new_pattern(pattern);
             new_pattern.push_back(neighbor_var_id);
             sort(new_pattern.begin(), new_pattern.end());
+
             enqueue_pattern_if_new(new_pattern);
         }
     }
@@ -255,7 +257,10 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     }
     assert(pattern_set.size() == patterns->size());
 
-    utils::g_log << "Found " << sga_patterns.size() << " SGA patterns." << endl;
+
+    if (log.is_at_least_normal()) {
+        log << "Found " << sga_patterns.size() << " SGA patterns." << endl;
+    }
 
     /*
       Combine patterns in the queue with SGA patterns until all
@@ -288,7 +293,9 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     }
 
     pattern_set.clear();
-    utils::g_log << "Found " << patterns->size() << " interesting patterns." << endl;
+    if (log.is_at_least_normal()) {
+        log << "Found " << patterns->size() << " interesting patterns." << endl;
+    }
 }
 
 void PatternCollectionGeneratorSystematic::build_patterns_naive(
@@ -298,7 +305,9 @@ void PatternCollectionGeneratorSystematic::build_patterns_naive(
     PatternCollection current_patterns(1);
     PatternCollection next_patterns;
     for (size_t i = 0; i < max_pattern_size; ++i) {
-        cout << "Generating patterns of size " << i + 1 << endl;
+        if (log.is_at_least_normal()) {
+            log << "Generating patterns of size " << i + 1 << endl;
+        }
         for (const Pattern &current_pattern : current_patterns) {
             int max_var = -1;
             if (i > 0)
@@ -320,13 +329,17 @@ void PatternCollectionGeneratorSystematic::build_patterns_naive(
         next_patterns.clear();
     }
 
-    utils::g_log << "Found " << patterns->size() << " patterns." << endl;
+    if (log.is_at_least_normal()) {
+        log << "Found " << patterns->size() << " patterns." << endl;
+    }
 }
 
-PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
+string PatternCollectionGeneratorSystematic::name() const {
+    return "systematic pattern collection generator";
+}
+
+PatternCollectionInformation PatternCollectionGeneratorSystematic::compute_patterns(
     const shared_ptr<AbstractTask> &task) {
-    utils::Timer timer;
-    utils::g_log << "Generating patterns using the systematic generator..." << endl;
     TaskProxy task_proxy(*task);
     patterns = make_shared<PatternCollection>();
     pattern_set.clear();
@@ -335,12 +348,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::generate(
     } else {
         build_patterns(task_proxy);
     }
-    PatternCollectionInformation pci(task_proxy, patterns);
-    /* Do not dump the collection since it can be very large for
-       pattern_max_size >= 3. */
-    dump_pattern_collection_generation_statistics(
-        "Systematic generator", timer(), pci);
-    return pci;
+    return PatternCollectionInformation(task_proxy, patterns);
 }
 
 void PatternCollectionGeneratorSystematic::generate(
@@ -417,6 +425,7 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "1",
         Bounds("1", "infinity"));
     add_pattern_type_option(parser);
+    add_generator_options_to_parser(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())

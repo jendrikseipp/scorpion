@@ -140,7 +140,8 @@ void OptimalCostPartitioningHeuristic::generate_lp(const Abstractions &abstracti
     }
     add_operator_cost_constraints(lp_constraints);
     lp::LinearProgram lp(
-        lp::LPObjectiveSense::MAXIMIZE, move(lp_variables), move(lp_constraints));
+        lp::LPObjectiveSense::MAXIMIZE, move(lp_variables), move(lp_constraints),
+        lp_solver.get_infinity());
     lp_solver.load_problem(lp);
 }
 

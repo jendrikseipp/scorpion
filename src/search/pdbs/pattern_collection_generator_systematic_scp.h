@@ -54,7 +54,6 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
     const bool store_dead_ends;
     const PatternOrder pattern_order;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
-    const bool debug;
 
     std::vector<std::vector<int>> relevant_operators_per_variable;
 
@@ -76,11 +75,12 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
         PatternSet &patterns_checked_for_dead_ends,
         int64_t &collection_size,
         double overall_remaining_time);
+
+    virtual std::string name() const override;
+    virtual PatternCollectionInformation compute_patterns(
+        const std::shared_ptr<AbstractTask> &task) override;
 public:
     explicit PatternCollectionGeneratorSystematicSCP(const options::Options &opts);
-
-    virtual PatternCollectionInformation generate(
-        const std::shared_ptr<AbstractTask> &task) override;
 };
 }
 

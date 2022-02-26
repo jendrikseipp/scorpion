@@ -104,9 +104,9 @@ int StateRegistry::get_state_size_in_bytes() const {
     return get_bins_per_state() * sizeof(PackedStateBin);
 }
 
-void StateRegistry::print_statistics() const {
-    utils::g_log << "Number of registered states: " << size() << endl;
-    utils::g_log << "Closed list load factor: " << registered_states.size()
-                 << "/" << registered_states.capacity() << " = "
-                 << registered_states.load_factor() << endl;
+void StateRegistry::print_statistics(utils::LogProxy &log) const {
+    log << "Number of registered states: " << size() << endl;
+    log << "Closed list load factor: " << registered_states.size()
+        << "/" << registered_states.capacity() << " = "
+        << registered_states.load_factor() << endl;
 }

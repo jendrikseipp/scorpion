@@ -110,6 +110,10 @@ namespace int_packer {
 class IntPacker;
 }
 
+namespace utils {
+class LogProxy;
+}
+
 using PackedStateBin = int_packer::IntPacker::Bin;
 
 
@@ -213,7 +217,7 @@ public:
 
     int get_state_size_in_bytes() const;
 
-    void print_statistics() const;
+    void print_statistics(utils::LogProxy &log) const;
 
     class const_iterator : public std::iterator<
                                std::forward_iterator_tag, StateID> {

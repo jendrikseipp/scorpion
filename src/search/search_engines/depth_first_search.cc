@@ -73,7 +73,7 @@ void DepthFirstSearch::recursive_search(const DFSNode &node) {
         int succ_g = node.g + get_adjusted_cost(op);
         operator_sequence.push_back(op_id);
         int depth = static_cast<int>(operator_sequence.size());
-        if (verbosity >= utils::Verbosity::DEBUG && depth > max_depth) {
+        if (log.is_at_least_debug() && depth > max_depth) {
             utils::g_log << "New DFS max depth: " << max_depth << endl;
         }
         max_depth = max(max_depth, depth);

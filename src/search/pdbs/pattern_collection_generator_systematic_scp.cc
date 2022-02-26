@@ -106,10 +106,11 @@ static unique_ptr<PatternCollection> get_patterns(
     int pattern_size,
     PatternType pattern_type,
     const utils::CountdownTimer &timer) {
-    utils::Log() << "Generate patterns for size " << pattern_size << endl;
+    utils::g_log << "Generate patterns for size " << pattern_size << endl;
     options::Options opts;
     opts.set<int>("pattern_max_size", pattern_size);
     opts.set<PatternType>("pattern_type", pattern_type);
+    opts.set<utils::Verbosity>("verbosity", utils::Verbosity::NORMAL);
     PatternCollectionGeneratorSystematic generator(opts);
     unique_ptr<PatternCollection> patterns_ptr =
         utils::make_unique_ptr<PatternCollection>();
@@ -240,10 +241,10 @@ public:
             if (current_patterns) {
                 ++cached_pattern_size;
                 if (current_patterns->empty()) {
-                    utils::Log() << "Found no patterns of size "
+                    utils::g_log << "Found no patterns of size "
                                  << cached_pattern_size << endl;
                 } else {
-                    utils::Log() << "Store " << current_patterns->size()
+                    utils::g_log << "Store " << current_patterns->size()
                                  << " patterns of size "
                                  << cached_pattern_size << endl;
                     max_generated_pattern_size = cached_pattern_size;
@@ -254,7 +255,7 @@ public:
                     for (Pattern &pattern : *current_patterns) {
                         patterns.back().push_back(move(pattern));
                     }
-                    utils::Log() << "Finished storing patterns of size "
+                    utils::g_log << "Finished storing patterns of size "
                                  << cached_pattern_size << endl;
                 }
                 return get_pattern(pattern_id, timer);
@@ -275,7 +276,8 @@ public:
 
 PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP(
     const Options &opts)
-    : max_pattern_size(opts.get<int>("max_pattern_size")),
+    : PatternCollectionGenerator(opts),
+      max_pattern_size(opts.get<int>("max_pattern_size")),
       max_pdb_size(opts.get<int>("max_pdb_size")),
       max_collection_size(opts.get<int>("max_collection_size")),
       max_patterns(opts.get<int>("max_patterns")),
@@ -288,8 +290,7 @@ PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_dead_ends(opts.get<bool>("store_dead_ends")),
       pattern_order(opts.get<PatternOrder>("order")),
-      rng(utils::parse_rng_from_options(opts)),
-      debug(opts.get<bool>("debug")) {
+      rng(utils::parse_rng_from_options(opts)) {
 }
 
 bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
@@ -304,7 +305,6 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
     PatternSet &patterns_checked_for_dead_ends,
     int64_t &collection_size,
     double overall_remaining_time) {
-    utils::Log log;
     utils::CountdownTimer timer(min(overall_remaining_time, max_time_per_restart));
     int remaining_total_evaluations = max_total_evaluations - num_pattern_evaluations;
     assert(remaining_total_evaluations >= 0);
@@ -334,10 +334,10 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             return false;
         }
 
-        if (debug) {
-            cout << "Pattern " << pattern_id << ": " << pattern << " size:"
-                 << get_pdb_size(variable_domains, pattern) << " ops:"
-                 << get_num_active_ops(pattern, evaluator_task_info) << endl;
+        if (log.is_at_least_debug()) {
+            log << "Pattern " << pattern_id << ": " << pattern << " size:"
+                << get_pdb_size(variable_domains, pattern) << " ops:"
+                << get_num_active_ops(pattern, evaluator_task_info) << endl;
         }
 
         if (pattern.empty()) {
@@ -370,7 +370,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
         if (ignore_useless_patterns &&
             !operators_with_positive_finite_costs_affect_pdb(
                 pattern, costs, relevant_operators_per_variable)) {
-            if (debug) {
+            if (log.is_at_least_debug()) {
                 log << "Only operators with cost=0 or cost=infty affect " << pattern << endl;
             }
             continue;
@@ -423,7 +423,11 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
     }
 }
 
-PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
+string PatternCollectionGeneratorSystematicSCP::name() const {
+    return "sys-SCP pattern collection generator";
+}
+
+PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_patterns(
     const shared_ptr<AbstractTask> &task) {
     utils::CountdownTimer timer(max_time);
     pattern_computation_timer = utils::make_unique_ptr<utils::Timer>();
@@ -432,7 +436,6 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::generate(
     projection_computation_timer->stop();
     projection_evaluation_timer = utils::make_unique_ptr<utils::Timer>();
     projection_evaluation_timer->stop();
-    utils::Log log;
     TaskProxy task_proxy(*task);
     shared_ptr<cost_saturation::TaskInfo> task_info =
         make_shared<cost_saturation::TaskInfo>(task_proxy);
@@ -585,10 +588,7 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "in the partial ordering of the causal graph)",
         "CG_DOWN");
     utils::add_rng_options(parser);
-    parser.add_option<bool>(
-        "debug",
-        "print debugging messages",
-        "false");
+    add_generator_options_to_parser(parser);
 
     Options opts = parser.parse();
     if (parser.help_mode())

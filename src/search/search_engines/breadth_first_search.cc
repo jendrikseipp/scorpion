@@ -33,9 +33,10 @@ void BreadthFirstSearch::initialize() {
     // The initial state has id 0, so we'll start there.
     current_state_id = 0;
     if (write_plan) {
-        // THe parent pointer of the initial state is undefined.
+        // The parent pointer of the initial state is undefined.
         parents[initial_state] = Parent();
     }
+    pruning_method->initialize(task);
 }
 
 void BreadthFirstSearch::print_statistics() const {
@@ -111,6 +112,10 @@ SearchStatus BreadthFirstSearch::step() {
     return IN_PROGRESS;
 }
 
+void BreadthFirstSearch::save_plan_if_necessary() {
+    // We don't need to save here, as we automatically save plans when we find them.
+}
+
 static void add_pruning_option(OptionParser &parser) {
     parser.add_option<shared_ptr<PruningMethod>>(
         "pruning",
@@ -136,13 +141,13 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
         "true");
 
     add_pruning_option(parser);
+    utils::add_log_options_to_parser(parser);
 
     Options opts = parser.parse();
 
     opts.set<OperatorCost>("cost_type", ONE);
     opts.set<int>("bound", numeric_limits<int>::max());
     opts.set<double>("max_time", numeric_limits<double>::infinity());
-    opts.set<utils::Verbosity>("verbosity", utils::Verbosity::NORMAL);
 
     if (parser.dry_run()) {
         return nullptr;

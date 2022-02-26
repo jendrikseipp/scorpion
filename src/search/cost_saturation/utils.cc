@@ -34,8 +34,8 @@ Abstractions generate_abstractions(
         }
         abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
     }
-    utils::Log() << "Abstractions: " << abstractions.size() << endl;
-    utils::Log() << "Abstractions per generator: " << abstractions_per_generator << endl;
+    utils::g_log << "Abstractions: " << abstractions.size() << endl;
+    utils::g_log << "Abstractions per generator: " << abstractions_per_generator << endl;
     return abstractions;
 }
 

@@ -4,8 +4,8 @@ Scorpion is an optimal classical planner that uses saturated cost
 partitioning to combine multiple abstraction heuristics. It also contains
 implementations of many other cost partitioning algorithms over
 abstraction and landmark heuristics. Scorpion is based on the [Fast
-Downward planning system](https://github.com/aibasel/downward), which is
-described below. We regularly port the latest changes from Fast Downward
+Downward planning system](https://github.com/aibasel/downward) (version 21.12),
+which is described below. We regularly port the latest changes from Fast Downward
 to Scorpion and also try to port Scorpion features back to Fast Downward.
 
 Please use the following reference when citing Scorpion:
@@ -47,7 +47,7 @@ We recommend using the following configuration:
         projections(sys_scp(max_time=100, max_time_per_restart=10)),
         cartesian()],
         saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
-        pruning=atom_centric_stubborn_sets(min_required_pruning_ratio=0.2))"
+        pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))"
 ```
 
 The `preprocess-h2` call prunes irrelevant operators in a preprocessing
@@ -196,11 +196,11 @@ Different cost partitioning algorithms (all need `admissible=true`):
 
 Fast Downward is a domain-independent classical planning system.
 
-Copyright 2003-2020 Fast Downward contributors (see below).
+Copyright 2003-2022 Fast Downward contributors (see below).
 
 For further information:
-- Fast Downward website: <http://www.fast-downward.org>
-- Report a bug or file an issue: <http://issues.fast-downward.org>
+- Fast Downward website: <https://www.fast-downward.org>
+- Report a bug or file an issue: <https://issues.fast-downward.org>
 - Fast Downward mailing list: <https://groups.google.com/forum/#!forum/fast-downward>
 - Fast Downward main repository: <https://github.com/aibasel/downward>
 
@@ -231,22 +231,26 @@ Currently, this list is sorted by the last year the person has been
 active, and in case of ties, by the earliest year the person started
 contributing, and finally by last name.
 
-- 2003-2020 Malte Helmert
-- 2008-2016, 2018-2020 Gabriele Roeger
-- 2010-2020 Jendrik Seipp
-- 2010-2011, 2013-2020 Silvan Sievers
-- 2012-2020 Florian Pommerening
-- 2013, 2015-2020 Salome Eriksson
+- 2003-2022 Malte Helmert
+- 2008-2016, 2018-2022 Gabriele Roeger
+- 2010-2022 Jendrik Seipp
+- 2010-2011, 2013-2022 Silvan Sievers
+- 2012-2022 Florian Pommerening
+- 2013, 2015-2022 Salomé Eriksson
+- 2018-2022 Patrick Ferber
+- 2021-2022 Clemens Büchner
+- 2021-2022 Dominik Drexler
+- 2022 Remo Christen
+- 2015, 2021 Thomas Keller
 - 2016-2020 Cedric Geissmann
 - 2017-2020 Guillem Francès
 - 2018-2020 Augusto B. Corrêa
-- 2018-2020 Patrick Ferber
+- 2020 Rik de Graaff
 - 2015-2019 Manuel Heusner
 - 2017 Daniel Killenberger
 - 2016 Yusra Alkhazraji
 - 2016 Martin Wehrle
 - 2014-2015 Patrick von Reth
-- 2015 Thomas Keller
 - 2009-2014 Erez Karpas
 - 2014 Robert P. Goldman
 - 2010-2012 Andrew Coles
