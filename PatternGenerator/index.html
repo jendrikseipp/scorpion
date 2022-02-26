@@ -662,7 +662,7 @@
                 
                 <p>Factory for single patterns</p>
 <h2 id="cegar">CEGAR<a class="headerlink" href="#cegar" title="Permanent link">#</a></h2>
-<p>This pattern generator uses the CEGAR algorithm restricted to a random single goal of the task to compute a pattern. See below for a description of the algorithm and some implementation notes. The original algorithm (called single CEGAr) is described in the paper </p>
+<p>This pattern generator uses the CEGAR algorithm restricted to a random single goal of the task to compute a pattern. See below for a description of the algorithm and some implementation notes. The original algorithm (called single CEGAR) is described in the paper </p>
 <p>Alexander Rovner, Silvan Sievers and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/rovner-et-al-icaps2019.pdf">Counterexample-Guided Abstraction Refinement for Pattern Selection in Optimal Classical Planning</a>.<br />
  In <em>Proceedings of the 29th International Conference on Automated Planning and Scheduling (ICAPS 2019)</em>, pp. 362-367. AAAI Press, 2019.</p>
@@ -676,7 +676,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
@@ -691,16 +691,30 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <p>Note that this kind of plan extraction does not consider all successors of a state uniformly at random but rather uses the previously deterministically chosen generating operator to settle on one successor state, which is biased by the number of operators leading to the same successor from the given state. Further note that in the presence of zero-cost operators, this procedure does not guarantee that the computed plan is strongly optimal because it does not minimize the number of used zero-cost operators leading to the state when choosing a generating operator. Experiments have shown (issue1007) that this speeds up the computation significantly while not having a strongly negative effect on heuristic quality due to potentially computing worse plans.</p>
 <p>Two further changes fix bugs of the original implementation to match the description in the paper. The first bug fix is to raise a flaw for all goal variables of the task if the plan for a PDB can be executed on the concrete task but does not lead to a goal state. Previously, such flaws would not have been raised because all goal variables are part of the collection from the start on and therefore not considered. This means that the original implementation accidentally disallowed merging patterns due to goal violation flaws. The second bug fix is to actually randomize the order of parallel operators in wildcard plan steps.</p>
 <h2 id="greedy">greedy<a class="headerlink" href="#greedy" title="Permanent link">#</a></h2>
-<pre><code>greedy(max_states=1000000)
+<pre><code>greedy(max_states=1000000, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>max_states</em> (int [1, infinity]): maximal number of abstract states in the pattern database.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="manual_pattern">manual_pattern<a class="headerlink" href="#manual_pattern" title="Permanent link">#</a></h2>
-<pre><code>manual_pattern(pattern)
+<pre><code>manual_pattern(pattern, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>pattern</em> (list of int): list of variable numbers of the planning task that should be used as pattern.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="random_pattern">Random Pattern<a class="headerlink" href="#random_pattern" title="Permanent link">#</a></h2>
 <p>This pattern generator implements the 'single randomized causal graph' algorithm described in experiments of the the paper</p>
@@ -718,7 +732,7 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>

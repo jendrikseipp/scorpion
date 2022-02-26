@@ -353,8 +353,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#operator_counting_heuristic" class="md-nav__link">
-    Operator counting heuristic
+  <a href="#operator-counting_heuristic" class="md-nav__link">
+    Operator-counting heuristic
   </a>
   
 </li>
@@ -904,8 +904,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#operator_counting_heuristic" class="md-nav__link">
-    Operator counting heuristic
+  <a href="#operator-counting_heuristic" class="md-nav__link">
+    Operator-counting heuristic
   </a>
   
 </li>
@@ -1444,10 +1444,9 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-aaai2014.pdf">Generalized Label Reduction for Merge-and-Shrink Heuristics</a>.<br />
  In <em>Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2358-2366. AAAI Press, 2014.</p>
 <p>For a more exhaustive description of merge-and-shrink, see the journal paper</p>
-<p>Malte Helmert, Patrik Haslum, Joerg Hoffmann and Raz Nissim.<br />
- <a href="https://ai.dmi.unibas.ch/papers/helmert-et-al-jacm2014.pdf">Merge-and-Shrink Abstraction: A Method for Generating Lower Bounds in Factored State Spaces</a>.<br />
- <em>Journal of the ACM</em> 61 (3):16:1-63. 2014.</p>
-<p>Please note that the journal paper describes the "old" theory of label reduction, which has been superseded by the above conference paper and is no longer implemented in Fast Downward.</p>
+<p>Silvan Sievers and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/sievers-helmert-jair2021.pdf">Merge-and-Shrink: A Compositional Theory of Transformations of Factored Transition Systems</a>.<br />
+ <em>Journal of Artificial Intelligence Research</em> 71:781-883. 2021.</p>
 <p>The following paper describes how to improve the DFP merge strategy with tie-breaking, and presents two new merge strategies (dyn-MIASM and SCC-DFP):</p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
@@ -1473,7 +1472,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>main_loop_max_time</em> (double [0.0, infinity]): A limit in seconds on the runtime of the main loop of the algorithm. If the limit is exceeded, the algorithm terminates, potentially returning a factored transition system with several factors. Also note that the time limit is only checked between transformations of the main loop, but not during, so it can be exceeded if a transformation is runtime-intense.</li>
@@ -1497,16 +1496,16 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> no</li>
 </ul>
-<h2 id="operator_counting_heuristic">Operator counting heuristic<a class="headerlink" href="#operator_counting_heuristic" title="Permanent link">#</a></h2>
-<p>An operator counting heuristic computes a linear program (LP) in each state. The LP has one variable Count_o for each operator o that represents how often the operator is used in a plan. Operator counting constraints are linear constraints over these varaibles that are guaranteed to have a solution with Count_o = occurrences(o, pi) for every plan pi. Minimizing the total cost of operators subject to some operator counting constraints is an admissible heuristic. For details, see</p>
+<h2 id="operator-counting_heuristic">Operator-counting heuristic<a class="headerlink" href="#operator-counting_heuristic" title="Permanent link">#</a></h2>
+<p>An operator-counting heuristic computes a linear program (LP) in each state. The LP has one variable Count_o for each operator o that represents how often the operator is used in a plan. Operator-counting constraints are linear constraints over these varaibles that are guaranteed to have a solution with Count_o = occurrences(o, pi) for every plan pi. Minimizing the total cost of operators subject to some operator-counting constraints is an admissible heuristic. For details, see</p>
 <p>Florian Pommerening, Gabriele Roeger, Malte Helmert and Blai Bonet.<br />
  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
  In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
 <pre><code>operatorcounting(constraint_generators, use_integer_operator_counts=false, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
-<li><em>constraint_generators</em> (list of <a href="../ConstraintGenerator/">ConstraintGenerator</a>): methods that generate constraints over operator counting variables</li>
-<li><em>use_integer_operator_counts</em> (bool): restrict operator counting variables to integer values. Computing the heuristic with integer variables can produce higher values but requires solving a MIP instead of an LP which is generally more computationally expensive. Turning this option on can thus drastically increase the runtime.</li>
+<li><em>constraint_generators</em> (list of <a href="../ConstraintGenerator/">ConstraintGenerator</a>): methods that generate constraints over operator-counting variables</li>
+<li><em>use_integer_operator_counts</em> (bool): restrict operator-counting variables to integer values. Computing the heuristic with integer variables can produce higher values but requires solving a MIP instead of an LP which is generally more computationally expensive. Turning this option on can thus drastically increase the runtime.</li>
 <li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs<ul>
 <li><code>CLP</code>: default LP solver shipped with the COIN library</li>
 <li><code>CPLEX</code>: commercial solver by IBM</li>
@@ -1702,7 +1701,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -1867,7 +1866,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-socs2012.pdf">Efficient Implementation of Pattern Database Heuristics for Classical Planning</a>.<br />
  In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</p>
 <p>See also <a href="./#canonical_pdb">Canonical PDB</a> and <a href="../PatternCollectionGenerator/#hill_climbing">Hill climbing</a> for more details.</p>
-<pre><code>ipdb(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true)
+<pre><code>ipdb(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, verbosity=normal, max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>pdb_max_size</em> (int [1, infinity]): maximal number of states per pattern database </li>
@@ -1877,6 +1876,13 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for improving the initial pattern collection via hill climbing. If set to 0, no hill climbing is performed at all. Note that this limit only affects hill climbing. Use max_time_dominance_pruning to limit the time spent for pruning dominated patterns.</li>
 <li><em>max_generated_patterns</em> (int [0, infinity]): maximum number of generated patterns</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>

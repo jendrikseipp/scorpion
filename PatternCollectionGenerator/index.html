@@ -880,13 +880,20 @@
                 
                 <p>Factory for pattern collections</p>
 <h2 id="combo">combo<a class="headerlink" href="#combo" title="Permanent link">#</a></h2>
-<pre><code>combo(max_states=1000000)
+<pre><code>combo(max_states=1000000, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>max_states</em> (int [1, infinity]): maximum abstraction size for combo strategy</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="disjoint_cegar">Disjoint CEGAR<a class="headerlink" href="#disjoint_cegar" title="Permanent link">#</a></h2>
-<p>This pattern collection generator uses the CEGAR algorithm to compute a pattern for the planning task. See below for a description of the algorithm and some implementation notes. The original algorithm (called single CEGAr) is described in the paper </p>
+<p>This pattern collection generator uses the CEGAR algorithm to compute a pattern for the planning task. See below for a description of the algorithm and some implementation notes. The original algorithm (called single CEGAR) is described in the paper </p>
 <p>Alexander Rovner, Silvan Sievers and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/rovner-et-al-icaps2019.pdf">Counterexample-Guided Abstraction Refinement for Pattern Selection in Optimal Classical Planning</a>.<br />
  In <em>Proceedings of the 29th International Conference on Automated Planning and Scheduling (ICAPS 2019)</em>, pp. 362-367. AAAI Press, 2019.</p>
@@ -901,7 +908,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
@@ -920,7 +927,7 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <p>Stefan Edelkamp.<br />
  <a href="http://www.springerlink.com/content/20613345434608x1/">Automated Creation of Pattern Database Search Heuristics</a>.<br />
  In <em>Proceedings of the 4th Workshop on Model Checking and Artificial Intelligence (!MoChArt 2006)</em>, pp. 35-50. AAAI Press, 2007.</p>
-<pre><code>genetic(pdb_max_size=50000, num_collections=5, num_episodes=30, mutation_probability=0.01, disjoint=false, random_seed=-1)
+<pre><code>genetic(pdb_max_size=50000, num_collections=5, num_episodes=30, mutation_probability=0.01, disjoint=false, random_seed=-1, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>pdb_max_size</em> (int [1, infinity]): maximal number of states per pattern database </li>
@@ -929,17 +936,24 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <li><em>mutation_probability</em> (double [0.0, 1.0]): probability for flipping a bit in the genetic algorithm</li>
 <li><em>disjoint</em> (bool): consider a pattern collection invalid (giving it very low fitness) if its patterns are not disjoint</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> This pattern generation method uses the zero/one pattern database heuristic.</p>
 <h3 id="implementation_notes">Implementation Notes<a class="headerlink" href="#implementation_notes" title="Permanent link">#</a></h3>
 <p>The standard genetic algorithm procedure as described in the paper is implemented in Fast Downward. The implementation is close to the paper.</p>
-<ol>
+<ul>
 <li>Initialization<br />In Fast Downward bin-packing with the next-fit strategy is used. A bin corresponds to a pattern which contains variables up to <code>pdb_max_size</code>. With this method each variable occurs exactly in one pattern of a collection. There are <code>num_collections</code> collections created.</li>
 <li>Mutation<br />With probability <code>mutation_probability</code> a bit is flipped meaning that either a variable is added to a pattern or deleted from a pattern.</li>
 <li>Recombination<br />Recombination isn't implemented in Fast Downward. In the paper recombination is described but not used.</li>
 <li>Evaluation<br />For each pattern collection the mean heuristic value is computed. For a single pattern database the mean heuristic value is the sum of all pattern database entries divided through the number of entries. Entries with infinite heuristic values are ignored in this calculation. The sum of these individual mean heuristic values yield the mean heuristic value of the collection.</li>
 <li>Selection<br />The higher the mean heuristic value of a pattern collection is, the more likely this pattern collection should be selected for the next generation. Therefore the mean heuristic values are normalized and converted into probabilities and Roulette Wheel Selection is used.</li>
-</ol>
+</ul>
 <p>Language features supported:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
@@ -955,7 +969,7 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <p>Silvan Sievers, Manuela Ortlieb and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-socs2012.pdf">Efficient Implementation of Pattern Database Heuristics for Classical Planning</a>.<br />
  In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</p>
-<pre><code>hillclimbing(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1)
+<pre><code>hillclimbing(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>pdb_max_size</em> (int [1, infinity]): maximal number of states per pattern database </li>
@@ -965,6 +979,13 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for improving the initial pattern collection via hill climbing. If set to 0, no hill climbing is performed at all. Note that this limit only affects hill climbing. Use max_time_dominance_pruning to limit the time spent for pruning dominated patterns.</li>
 <li><em>max_generated_patterns</em> (int [0, infinity]): maximum number of generated patterns</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> The pattern collection created by the algorithm will always contain all patterns consisting of a single goal variable, even if this violates the pdb_max_size or collection_max_size limits.</p>
 <p><strong>Note:</strong> This pattern generation method generates patterns optimized for use with the canonical pattern database heuristic.</p>
@@ -976,10 +997,17 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <p>The section "avoiding redundant evaluations" describes how the search neighbourhood of patterns can be restricted to variables that are relevant to the variables already included in the pattern by analyzing causal graphs. There is a mistake in the paper that leads to some relevant neighbouring patterns being ignored. See the <a href="https://ai.dmi.unibas.ch/research/publications.html">errata</a> for details. This mistake has been addressed in this implementation. The second approach described in the paper (statistical confidence interval) is not applicable to this implementation, as it doesn't use A* search but constructs the entire pattern databases for all candidate patterns anyway.
 The search is ended if there is no more improvement (or the improvement is smaller than the minimal improvement which can be set as an option), however there is no limit of iterations of the local search. This is similar to the techniques used in the original implementation as described in the paper.</p>
 <h2 id="manual_patterns">manual_patterns<a class="headerlink" href="#manual_patterns" title="Permanent link">#</a></h2>
-<pre><code>manual_patterns(patterns)
+<pre><code>manual_patterns(patterns, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>patterns</em> (list of list of int): list of patterns (which are lists of variable numbers of the planning task).</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="multiple_cegar">Multiple CEGAR<a class="headerlink" href="#multiple_cegar" title="Permanent link">#</a></h2>
 <p>This pattern collection generator implements the multiple CEGAR algorithm described in the paper</p>
@@ -1001,7 +1029,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
@@ -1041,7 +1069,7 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
@@ -1061,7 +1089,7 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <p>Jendrik Seipp.<br />
  <a href="https://jendrikseipp.com/papers/seipp-ijcai2019.pdf">Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning</a>.<br />
  In <em>Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI 2019)</em>, pp. 5621-5627. IJCAI, 2019.</p>
-<pre><code>sys_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, pattern_type=interesting_non_negative, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, debug=false)
+<pre><code>sys_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, pattern_type=interesting_non_negative, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>max_pattern_size</em> (int [1, infinity]): maximum number of variables per pattern</li>
@@ -1078,7 +1106,13 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><em>store_dead_ends</em> (bool): store dead ends in dead end tree (used to prune the search later)</li>
 <li><em>order</em> ({RANDOM, STATES_UP, STATES_DOWN, OPS_UP, OPS_DOWN, CG_UP, CG_DOWN}): order in which to consider patterns of the same size (based on states in projection, active operators or position of the pattern variables in the partial ordering of the causal graph)</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>debug</em> (bool): print debugging messages</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="systematically_generated_patterns">Systematically generated patterns<a class="headerlink" href="#systematically_generated_patterns" title="Permanent link">#</a></h2>
 <p>Generates all (interesting) patterns with up to pattern_max_size variables. For details, see</p>
@@ -1089,11 +1123,18 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <p>Florian Pommerening, Thomas Keller, Valentina Halasi, Jendrik Seipp, Silvan Sievers and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/pommerening-et-al-icaps2021.pdf">Dantzig-Wolfe Decomposition for Cost Partitioning</a>.<br />
  In <em>Proceedings of the 31st International Conference on Automated Planning and Scheduling (ICAPS 2021)</em>, pp. 271-280. AAAI Press, 2021.</p>
-<pre><code>systematic(pattern_max_size=1, pattern_type=interesting_non_negative)
+<pre><code>systematic(pattern_max_size=1, pattern_type=interesting_non_negative, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>pattern_max_size</em> (int [1, infinity]): max number of variables per pattern</li>
 <li><em>pattern_type</em> ({naive, interesting_general, interesting_non_negative}): type of pattern</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
                 
               

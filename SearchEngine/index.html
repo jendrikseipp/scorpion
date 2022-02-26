@@ -830,7 +830,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -845,12 +845,19 @@
 </code></pre>
 <h2 id="breadth-first_search">Breadth-first search<a class="headerlink" href="#breadth-first_search" title="Permanent link">#</a></h2>
 <p>Breadth-first graph search.</p>
-<pre><code>brfs(single_plan=true, write_plan=true, pruning=null())
+<pre><code>brfs(single_plan=true, write_plan=true, pruning=null(), verbosity=normal)
 </code></pre>
 <ul>
 <li><em>single_plan</em> (bool): Stop search after finding the first (shortest) plan.</li>
 <li><em>write_plan</em> (bool): Store the necessary information during search for writing plans once they're found.</li>
 <li><em>pruning</em> (<a href="../PruningMethod/">PruningMethod</a>): Pruning methods can prune or reorder the set of applicable operators in each state and thereby influence the number and order of successor states that are considered.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="depth-first_search">Depth-first search<a class="headerlink" href="#depth-first_search" title="Permanent link">#</a></h2>
 <p>This is a depth-first tree search that avoids running in cycles by skipping states s that are already visited earlier on the path to s. Doing so, the search becomes complete.</p>
@@ -870,7 +877,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -895,7 +902,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -919,7 +926,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -978,7 +985,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -1008,7 +1015,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -1033,7 +1040,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -1054,7 +1061,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -1079,7 +1086,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -1114,7 +1121,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -1142,7 +1149,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
@@ -1204,7 +1211,7 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like full with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 </ul>
