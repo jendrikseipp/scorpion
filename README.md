@@ -161,7 +161,6 @@ heuristics](https://jendrikseipp.github.io/scorpion/Evaluator/#cost_partitioning
   `sys_scp(...)`
 
 
-
 ### New cost partitioning algorithms for landmark heuristics
 
 Example using A* search and saturated cost partitioning over BJOLP
@@ -190,6 +189,18 @@ Different cost partitioning algorithms (all need `admissible=true`):
   `lmcount(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=false, scoring_function=max_heuristic)`
 - Saturated cost partitioning:
   `lmcount(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=true, scoring_function=max_heuristic_per_stolen_costs)`
+
+
+## New search engines
+
+- Breadth-first search (without overhead of the more general `eager()` search):
+  `brfs()`
+- Depth-first search:
+  `dfs()`
+- IDA* search:
+  `idastar(cegar(cache_estimates=false))`
+
+---
 
 
 <img src="misc/images/fast-downward.svg" width="800" alt="Fast Downward">
