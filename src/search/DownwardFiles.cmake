@@ -448,6 +448,13 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME PLUGIN_IW
+    HELP "Iterative width search"
+    SOURCES
+        search_engines/iterative_width_search
+)
+
+fast_downward_plugin(
     NAME PLUGIN_LAZY
     HELP "Best-first search with deferred evaluation (lazy)"
     SOURCES
