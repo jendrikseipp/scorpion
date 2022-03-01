@@ -14,7 +14,7 @@ class Options;
 }
 
 namespace iterative_width_search {
-class NoveltySearch : public SearchEngine {
+class IterativeWidthSearch : public SearchEngine {
     const int width;
     const bool debug;
 
@@ -40,7 +40,7 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit NoveltySearch(const options::Options &opts);
+    explicit IterativeWidthSearch(const options::Options &opts);
 
     virtual void print_statistics() const override;
 

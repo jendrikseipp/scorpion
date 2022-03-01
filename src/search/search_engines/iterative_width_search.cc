@@ -13,7 +13,7 @@
 using namespace std;
 
 namespace iterative_width_search {
-NoveltySearch::NoveltySearch(const Options &opts)
+IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
     : SearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
@@ -42,7 +42,7 @@ NoveltySearch::NoveltySearch(const Options &opts)
     utils::g_log << "Time for setting up iterative width search: " << setup_timer << endl;
 }
 
-void NoveltySearch::initialize() {
+void IterativeWidthSearch::initialize() {
     utils::g_log << "Starting iterative width search." << endl;
     State initial_state = state_registry.get_initial_state();
     statistics.inc_generated();
@@ -55,7 +55,7 @@ void NoveltySearch::initialize() {
     assert(novel);
 }
 
-bool NoveltySearch::visit_fact_pair(int fact_id1, int fact_id2) {
+bool IterativeWidthSearch::visit_fact_pair(int fact_id1, int fact_id2) {
     if (fact_id1 > fact_id2) {
         swap(fact_id1, fact_id2);
     }
@@ -65,7 +65,7 @@ bool NoveltySearch::visit_fact_pair(int fact_id1, int fact_id2) {
     return novel;
 }
 
-bool NoveltySearch::is_novel(const State &state) {
+bool IterativeWidthSearch::is_novel(const State &state) {
     bool novel = false;
     for (FactProxy fact_proxy : state) {
         FactPair fact = fact_proxy.get_pair();
@@ -94,7 +94,7 @@ bool NoveltySearch::is_novel(const State &state) {
     return novel;
 }
 
-bool NoveltySearch::is_novel(OperatorID op_id, const State &succ_state) {
+bool IterativeWidthSearch::is_novel(OperatorID op_id, const State &succ_state) {
     int num_vars = fact_id_offsets.size();
     bool novel = false;
     for (EffectProxy effect : task_proxy.get_operators()[op_id].get_effects()) {
@@ -124,13 +124,13 @@ bool NoveltySearch::is_novel(OperatorID op_id, const State &succ_state) {
     return novel;
 }
 
-void NoveltySearch::print_statistics() const {
+void IterativeWidthSearch::print_statistics() const {
     utils::g_log << "Time for computing novelty: " << compute_novelty_timer << endl;
     statistics.print_detailed_statistics();
     search_space.print_statistics();
 }
 
-SearchStatus NoveltySearch::step() {
+SearchStatus IterativeWidthSearch::step() {
     if (open_list.empty()) {
         utils::g_log << "Completely explored state space -- no solution!" << endl;
         return FAILED;
@@ -175,7 +175,7 @@ SearchStatus NoveltySearch::step() {
     return IN_PROGRESS;
 }
 
-void NoveltySearch::dump_search_space() const {
+void IterativeWidthSearch::dump_search_space() const {
     search_space.dump(task_proxy);
 }
 
@@ -190,7 +190,7 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     if (parser.dry_run()) {
         return nullptr;
     }
-    return make_shared<iterative_width_search::NoveltySearch>(opts);
+    return make_shared<iterative_width_search::IterativeWidthSearch>(opts);
 }
 
 static Plugin<SearchEngine> _plugin("iw", _parse);
