@@ -52,6 +52,7 @@ void IterativeWidthSearch::initialize() {
     compute_novelty_timer.resume();
     bool novel = is_novel(initial_state);
     compute_novelty_timer.stop();
+    utils::unused_variable(novel);
     assert(novel);
 }
 

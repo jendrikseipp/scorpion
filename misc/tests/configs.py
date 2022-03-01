@@ -261,6 +261,7 @@ def configs_satisficing_extended():
             "f_eval=sum([g(), h]))"],
         "brfs": ["--search", "brfs()"],
         "dfs": ["--search", "dfs()"],
+        "iw": ["--search", "iw(2)"],
     }
 
 
