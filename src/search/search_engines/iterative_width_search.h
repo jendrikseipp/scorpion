@@ -33,7 +33,7 @@ class NoveltySearch : public SearchEngine {
 
     bool visit_fact_pair(int fact_id1, int fact_id2);
     bool is_novel(const State &state);
-    bool is_novel(OperatorID op_id, const State &state);
+    bool is_novel(OperatorID op_id, const State &succ_state);
 
 protected:
     virtual void initialize() override;

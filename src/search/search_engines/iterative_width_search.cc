@@ -9,7 +9,6 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <optional.hh>
 
 using namespace std;
 
@@ -95,7 +94,7 @@ bool NoveltySearch::is_novel(const State &state) {
     return novel;
 }
 
-bool NoveltySearch::is_novel(OperatorID op_id, const State &state) {
+bool NoveltySearch::is_novel(OperatorID op_id, const State &succ_state) {
     int num_vars = fact_id_offsets.size();
     bool novel = false;
     for (EffectProxy effect : task_proxy.get_operators()[op_id].get_effects()) {
@@ -114,7 +113,7 @@ bool NoveltySearch::is_novel(OperatorID op_id, const State &state) {
                 if (fact1.var == var2) {
                     continue;
                 }
-                FactPair fact2 = state[var2].get_pair();
+                FactPair fact2 = succ_state[var2].get_pair();
                 int fact_id2 = get_fact_id(fact2);
                 if (visit_fact_pair(fact_id1, fact_id2)) {
                     novel = true;
@@ -132,38 +131,31 @@ void NoveltySearch::print_statistics() const {
 }
 
 SearchStatus NoveltySearch::step() {
-    tl::optional<SearchNode> node;
-    while (true) {
-        if (open_list.empty()) {
-            utils::g_log << "Completely explored state space -- no solution!" << endl;
-            return FAILED;
-        }
-        StateID id = open_list.front();
-        open_list.pop_front();
-        State s = state_registry.lookup_state(id);
-        node.emplace(search_space.get_node(s));
+    if (open_list.empty()) {
+        utils::g_log << "Completely explored state space -- no solution!" << endl;
+        return FAILED;
+    }
+    StateID id = open_list.front();
+    open_list.pop_front();
+    State state = state_registry.lookup_state(id);
+    SearchNode node = search_space.get_node(state);
+    node.close();
+    assert(!node.is_dead_end());
+    statistics.inc_expanded();
 
-        if (node->is_closed())
-            continue;
-
-        node->close();
-        assert(!node->is_dead_end());
-        statistics.inc_expanded();
-        break;
+    if (check_goal_and_set_plan(state)) {
+        return SOLVED;
     }
 
-    State s = node->get_state();
-    if (check_goal_and_set_plan(s))
-        return SOLVED;
-
     vector<OperatorID> applicable_ops;
-    successor_generator.generate_applicable_ops(s, applicable_ops);
+    successor_generator.generate_applicable_ops(state, applicable_ops);
     for (OperatorID op_id : applicable_ops) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
-        if ((node->get_real_g() + op.get_cost()) >= bound)
+        if (node.get_real_g() + op.get_cost() >= bound) {
             continue;
+        }
 
-        State succ_state = state_registry.get_successor_state(s, op);
+        State succ_state = state_registry.get_successor_state(state, op);
         statistics.inc_generated();
 
         compute_novelty_timer.resume();
@@ -176,7 +168,7 @@ SearchStatus NoveltySearch::step() {
 
         SearchNode succ_node = search_space.get_node(succ_state);
         assert(succ_node.is_new());
-        succ_node.open(*node, op, get_adjusted_cost(op));
+        succ_node.open(node, op, get_adjusted_cost(op));
         open_list.push_back(succ_state.get_id());
     }
 
@@ -195,11 +187,9 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     SearchEngine::add_options_to_parser(parser);
 
     Options opts = parser.parse();
-
     if (parser.dry_run()) {
         return nullptr;
     }
-
     return make_shared<iterative_width_search::NoveltySearch>(opts);
 }
 
