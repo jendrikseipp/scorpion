@@ -14,15 +14,10 @@
 #include <vector>
 
 namespace options {
-class OptionParser;
 class Options;
 }
 
-namespace utils {
-class RandomNumberGenerator;
-}
-
-namespace novelty_search {
+namespace iterative_width_search {
 class Conjunction;
 struct ShortFact {
     uint16_t var;
@@ -85,7 +80,6 @@ class NoveltySearch : public SearchEngine {
     const int width;
     const int condition_width;
     const bool debug;
-    const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::deque<StateID> open_list;
 

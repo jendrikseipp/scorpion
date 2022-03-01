@@ -6,8 +6,6 @@
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
-#include "../utils/rng.h"
-#include "../utils/rng_options.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -15,7 +13,7 @@
 
 using namespace std;
 
-namespace novelty_search {
+namespace iterative_width_search {
 ShortFact::ShortFact()
     : var(numeric_limits<uint16_t>::max()),
       value(numeric_limits<uint16_t>::max()) {
@@ -89,7 +87,6 @@ NoveltySearch::NoveltySearch(const Options &opts)
       width(opts.get<int>("width")),
       condition_width(opts.get<int>("condition_width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
-      rng(utils::parse_rng_from_options(opts)),
       compute_novelty_timer(false) {
     if (width > condition_width) {
         cerr << "width must be <= condition_width" << endl;
@@ -433,7 +430,6 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
         "width", "maximum conjunction size", "2", Bounds("1", "8"));
     parser.add_option<int>(
         "condition_width", "maximum size of condition subset", "8", Bounds("1", "8"));
-    utils::add_rng_options(parser);
     SearchEngine::add_options_to_parser(parser);
 
     Options opts = parser.parse();
@@ -442,7 +438,7 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
         return nullptr;
     }
 
-    return make_shared<novelty_search::NoveltySearch>(opts);
+    return make_shared<iterative_width_search::NoveltySearch>(opts);
 }
 
 static Plugin<SearchEngine> _plugin("iw", _parse);
