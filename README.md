@@ -199,6 +199,8 @@ Different cost partitioning algorithms (all need `admissible=true`):
   `dfs()`
 - IDA* search:
   `idastar(cegar(cache_estimates=false))`
+- Iterative width search:
+  `iw(width=2)`
 
 ---
 
