@@ -31,11 +31,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
 ## == Libraries ==
 
-# Abseil
-set(ABSL_PROPAGATE_CXX_STD ON)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext/abseil-cpp)
-target_link_libraries(downward absl::flat_hash_set)
-
 # On Linux, find the rt library for clock_gettime().
 if(UNIX AND NOT APPLE)
     target_link_libraries(downward rt)

@@ -306,7 +306,7 @@ const vector<Loops> &TransitionSystem::get_loops() const {
     return loops;
 }
 
-const std::vector<FactPair> &TransitionSystem::get_preconditions(int op_id) const {
+const vector<FactPair> &TransitionSystem::get_preconditions(int op_id) const {
     assert(utils::in_bounds(op_id, preconditions_by_operator));
     return preconditions_by_operator[op_id];
 }

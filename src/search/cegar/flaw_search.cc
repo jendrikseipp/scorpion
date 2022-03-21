@@ -330,7 +330,8 @@ unique_ptr<Split> FlawSearch::create_split(
             }
         }
 
-        absl::flat_hash_map<int, vector<State>> deviation_states_by_target;
+        // TODO(speckd): use phmap of new scorpion version
+        unordered_map<int, vector<State>> deviation_states_by_target;
         for (size_t i = 0; i < states.size(); ++i) {
             if (!applicable[i]) {
                 continue;

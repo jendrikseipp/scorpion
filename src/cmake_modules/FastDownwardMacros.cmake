@@ -14,8 +14,7 @@ macro(fast_downward_set_compiler_flags)
         endif()
 
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-        # We removed -pedantic and -Wnon-virtual-dtor for Abseil (https://abseil.io/docs/cpp/platforms/compilerflags).
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wnon-virtual-dtor")
 
         ## Configuration-specific flags
         set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fomit-frame-pointer")

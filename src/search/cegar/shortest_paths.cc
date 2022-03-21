@@ -18,7 +18,7 @@ ShortestPaths::ShortestPaths(const vector<int> &costs, bool debug)
     for (int cost : costs) {
         operator_costs.push_back(convert_to_64_bit_cost(cost));
     }
-    utils::g_log << "Task has zero-cost operators: " << std::boolalpha
+    utils::g_log << "Task has zero-cost operators: " << boolalpha
                  << task_has_zero_costs << endl;
 }
 

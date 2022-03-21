@@ -12,8 +12,6 @@
 #include "../utils/timer.h"
 #include "../utils/hash.h"
 
-#include <absl/container/flat_hash_map.h>
-
 #include <stack>
 
 namespace utils {
@@ -39,7 +37,8 @@ enum class PickFlaw {
     MIN_H_BATCH_MULTI_SPLIT
 };
 
-using OptimalTransitions = absl::flat_hash_map<int, std::vector<int>>;
+// TODO(speckd): use phmap of new scorpion version
+using OptimalTransitions = std::unordered_map<int, std::vector<int>>;
 
 class FlawSearch {
     const TaskProxy task_proxy;
