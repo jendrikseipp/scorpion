@@ -98,7 +98,7 @@ void FlawSearch::initialize() {
     best_flaw_h = (pick_flaw == PickFlaw::MAX_H_SINGLE) ? 0 : INF_COSTS;
     assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
-    search_space = utils::make_unique_ptr<SearchSpace>(*state_registry);
+    search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, log);
     abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
 
     assert(flawed_states.empty());
@@ -573,6 +573,7 @@ FlawSearch::FlawSearch(
     int max_state_expansions,
     bool debug) :
     task_proxy(*task),
+    log(utils::get_silent_log()),
     domain_sizes(domain_sizes),
     abstraction(abstraction),
     shortest_paths(shortest_paths),

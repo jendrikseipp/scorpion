@@ -42,6 +42,7 @@ using OptimalTransitions = std::unordered_map<int, std::vector<int>>;
 
 class FlawSearch {
     const TaskProxy task_proxy;
+    mutable utils::LogProxy log;
     const std::vector<int> &domain_sizes;
     const Abstraction &abstraction;
     const ShortestPaths &shortest_paths;
