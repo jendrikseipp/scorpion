@@ -12,6 +12,8 @@
 #include "../utils/timer.h"
 #include "../utils/hash.h"
 
+#include <parallel_hashmap/phmap.h>
+
 #include <stack>
 
 namespace utils {
@@ -38,7 +40,7 @@ enum class PickFlaw {
 };
 
 // TODO(speckd): use phmap of new scorpion version
-using OptimalTransitions = std::unordered_map<int, std::vector<int>>;
+using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
 
 class FlawSearch {
     const TaskProxy task_proxy;
