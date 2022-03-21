@@ -61,7 +61,6 @@ public:
     void clear();
     bool empty() const;
     void dump(bool verbose = false) const;
-
 };
 }
 
