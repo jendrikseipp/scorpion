@@ -61,13 +61,13 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
-    utils::Log() << "Compute abstract goal distances" << endl;
+    utils::g_log << "Compute abstract goal distances" << endl;
     for (const auto &abstraction : abstractions) {
         h_values_by_abstraction.push_back(
             abstraction->compute_goal_distances(costs));
     }
 
-    utils::Log() << "Compute max additive subsets" << endl;
+    utils::g_log << "Compute max additive subsets" << endl;
     max_additive_subsets = compute_max_additive_subsets(abstractions);
 
     for (auto &abstraction : abstractions) {

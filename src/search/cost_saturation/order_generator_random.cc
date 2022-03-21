@@ -18,7 +18,7 @@ OrderGeneratorRandom::OrderGeneratorRandom(const Options &opts) :
 void OrderGeneratorRandom::initialize(
     const Abstractions &abstractions,
     const vector<int> &) {
-    utils::Log() << "Initialize random order generator" << endl;
+    utils::g_log << "Initialize random order generator" << endl;
     random_order = get_default_order(abstractions.size());
 }
 

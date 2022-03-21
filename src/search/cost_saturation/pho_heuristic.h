@@ -5,6 +5,7 @@
 #include "types.h"
 
 #include "../lp/lp_solver.h"
+#include "../utils/logging.h"
 
 #include <vector>
 
@@ -12,7 +13,7 @@ namespace cost_saturation {
 class PhO {
     lp::LPSolver lp_solver;
     std::vector<std::vector<int>> h_values_by_abstraction;
-    bool debug;
+    utils::LogProxy log;
 
 public:
     PhO(
@@ -20,7 +21,7 @@ public:
         const std::vector<int> &costs,
         lp::LPSolverType solver_type,
         bool saturated,
-        bool debug = false);
+        utils::LogProxy log);
 
     CostPartitioningHeuristic compute_cost_partitioning(
         const Abstractions &abstractions,

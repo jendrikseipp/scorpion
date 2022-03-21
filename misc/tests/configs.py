@@ -196,6 +196,7 @@ def configs_optimal_extended():
             _get_landmark_config(cost_partitioning="suboptimal", greedy=True, reuse_costs=False, scoring_function="max_heuristic"),
         "lm_scp":
             _get_landmark_config(cost_partitioning="suboptimal", greedy=True, reuse_costs=True, scoring_function="max_heuristic_per_stolen_costs"),
+        "idastar": ["--search", "idastar(blind(cache_estimates=false))"],
     }
 
 
@@ -258,6 +259,9 @@ def configs_satisficing_extended():
             "--search",
             "eager(pareto([sum([g(), h]), h]), reopen_closed=true,"
             "f_eval=sum([g(), h]))"],
+        "brfs": ["--search", "brfs()"],
+        "dfs": ["--search", "dfs()"],
+        "iw": ["--search", "iw(2)"],
     }
 
 

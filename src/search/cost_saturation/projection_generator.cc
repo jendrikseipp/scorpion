@@ -32,7 +32,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task,
     DeadEnds *dead_ends) {
     utils::Timer patterns_timer;
-    utils::Log log;
+    utils::Log log(utils::Verbosity::NORMAL);
     TaskProxy task_proxy(*task);
 
     task_properties::verify_no_axioms(task_proxy);

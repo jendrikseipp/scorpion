@@ -15,6 +15,7 @@ StateRegistry::StateRegistry(const TaskProxy &task_proxy)
       num_variables(task_proxy.get_variables().size()),
       state_data_pool(get_bins_per_state()),
       registered_states(
+          0,
           StateIDSemanticHash(state_data_pool, get_bins_per_state()),
           StateIDSemanticEqual(state_data_pool, get_bins_per_state())) {
 }
@@ -27,13 +28,13 @@ StateID StateRegistry::insert_id_or_pop_state() {
       state data pool.
     */
     StateID id(state_data_pool.size() - 1);
-    pair<int, bool> result = registered_states.insert(id.value);
+    auto result = registered_states.insert(id.value);
     bool is_new_entry = result.second;
     if (!is_new_entry) {
         state_data_pool.pop_back();
     }
-    assert(registered_states.size() == static_cast<int>(state_data_pool.size()));
-    return StateID(result.first);
+    assert(registered_states.size() == state_data_pool.size());
+    return StateID(*result.first);
 }
 
 State StateRegistry::lookup_state(StateID id) const {
@@ -103,7 +104,9 @@ int StateRegistry::get_state_size_in_bytes() const {
     return get_bins_per_state() * sizeof(PackedStateBin);
 }
 
-void StateRegistry::print_statistics() const {
-    utils::g_log << "Number of registered states: " << size() << endl;
-    registered_states.print_statistics();
+void StateRegistry::print_statistics(utils::LogProxy &log) const {
+    log << "Number of registered states: " << size() << endl;
+    log << "Closed list load factor: " << registered_states.size()
+        << "/" << registered_states.capacity() << " = "
+        << registered_states.load_factor() << endl;
 }

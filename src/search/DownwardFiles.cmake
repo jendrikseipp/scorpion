@@ -1,4 +1,4 @@
-# See http://www.fast-downward.org/ForDevelopers/AddingSourceFiles
+# See https://www.fast-downward.org/ForDevelopers/AddingSourceFiles
 # for general information on adding source files and CMake plugins.
 #
 # All plugins are enabled by default and users can disable them by specifying
@@ -328,6 +328,13 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME LIMITED_PRUNING
+    HELP "Method for limiting another pruning method"
+    SOURCES
+        pruning/limited_pruning
+)
+
+fast_downward_plugin(
     NAME STUBBORN_SETS
     HELP "Base class for all stubborn set partial order reduction methods"
     SOURCES
@@ -370,6 +377,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME BREADTH_FIRST_SEARCH
+    HELP "Breadth-first search"
+    SOURCES
+        search_engines/breadth_first_search
+    DEPENDS SEARCH_COMMON NULL_PRUNING_METHOD
+)
+
+fast_downward_plugin(
     NAME EAGER_SEARCH
     HELP "Eager search algorithm"
     SOURCES
@@ -384,6 +399,28 @@ fast_downward_plugin(
     SOURCES
         search_engines/plugin_astar
     DEPENDS EAGER_SEARCH SEARCH_COMMON
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_IDASTAR
+    HELP "IDA* search"
+    SOURCES
+        search_engines/idastar_search
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_ITERATIVE_DEEPENING_SEARCH
+    HELP "Iterative deepening search"
+    SOURCES
+        search_engines/iterative_deepening_search
+    DEPENDS INCREMENTAL_SUCCESSOR_GENERATOR
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_DFS
+    HELP "Depth-first search"
+    SOURCES
+        search_engines/depth_first_search
 )
 
 fast_downward_plugin(
@@ -408,6 +445,13 @@ fast_downward_plugin(
     SOURCES
         search_engines/plugin_eager_wastar
     DEPENDS EAGER_SEARCH SEARCH_COMMON
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_IW
+    HELP "Iterative width search"
+    SOURCES
+        search_engines/iterative_width_search
 )
 
 fast_downward_plugin(
@@ -465,6 +509,7 @@ fast_downward_plugin(
         lp/lp_internals
         lp/lp_solver
     DEPENDS NAMED_VECTOR
+    DEPENDENCY_ONLY
 )
 
 fast_downward_plugin(
@@ -602,6 +647,15 @@ fast_downward_plugin(
         task_utils/successor_generator
         task_utils/successor_generator_factory
         task_utils/successor_generator_internals
+    DEPENDS TASK_PROPERTIES
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME INCREMENTAL_SUCCESSOR_GENERATOR
+    HELP "Incremental successor generator"
+    SOURCES
+        task_utils/incremental_successor_generator
     DEPENDS TASK_PROPERTIES
     DEPENDENCY_ONLY
 )
@@ -752,9 +806,10 @@ fast_downward_plugin(
 
 fast_downward_plugin(
     NAME OPERATOR_COUNTING
-    HELP "Plugin containing the code for operator counting heuristics"
+    HELP "Plugin containing the code for operator-counting heuristics"
     SOURCES
         operator_counting/constraint_generator
+        operator_counting/delete_relaxation_constraints
         operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
         operator_counting/pho_abstraction_constraints

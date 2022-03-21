@@ -2,6 +2,8 @@
 #define ALGORITHMS_ARRAY_POOL_H
 
 #include <cassert>
+#include <iostream>
+#include <string>
 #include <vector>
 
 /*
@@ -36,6 +38,17 @@ private:
         : first(first),
           last(last) {
     }
+
+    friend std::ostream &operator<<(std::ostream &os, const ArrayPoolSlice<Value> &slice) {
+        os << "[";
+        std::string sep;
+        Iterator pos = slice.begin();
+        while (pos < slice.end()) {
+            os << sep << *pos;
+            sep = ", ";
+        }
+        return os << "]";
+    }
 };
 
 template<typename Value>
@@ -61,6 +74,10 @@ public:
         typename ArrayPoolSlice<Value>::Iterator first = data.begin() + positions[index];
         typename ArrayPoolSlice<Value>::Iterator last = data.begin() + positions[index + 1];
         return ArrayPoolSlice<Value>(first, last);
+    }
+
+    ArrayPoolSlice<Value> operator[](int index) const {
+        return get_slice(index);
     }
 
     void reserve(int num_vectors, int total_num_entries) {

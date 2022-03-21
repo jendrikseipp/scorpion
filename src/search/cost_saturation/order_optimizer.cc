@@ -11,9 +11,9 @@ using namespace std;
 
 namespace cost_saturation {
 static void log_better_order(const vector<int> &order, int h, int i, int j) {
-    utils::Log() << "Switch positions " << i << " and " << j << " (abstractions "
+    utils::g_log << "Switch positions " << i << " and " << j << " (abstractions "
                  << order[j] << ", " << order[i] << "): h=" << h << endl;
-    utils::Log() << "Found improving order with h=" << h << ": " << order << endl;
+    utils::g_log << "Found improving order with h=" << h << ": " << order << endl;
 }
 
 static bool search_improving_successor(
@@ -64,7 +64,7 @@ void optimize_order_with_hill_climbing(
     int incumbent_h_value,
     bool verbose) {
     if (verbose) {
-        utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
+        utils::g_log << "Incumbent h value: " << incumbent_h_value << endl;
     }
     while (!timer.is_expired()) {
         bool success = search_improving_successor(

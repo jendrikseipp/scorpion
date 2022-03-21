@@ -80,7 +80,7 @@ Order OrderGeneratorDynamicGreedy::compute_dynamic_greedy_order_for_sample(
 void OrderGeneratorDynamicGreedy::initialize(
     const Abstractions &abstractions,
     const vector<int> &costs) {
-    utils::Log() << "Initialize dynamic greedy order generator" << endl;
+    utils::g_log << "Initialize dynamic greedy order generator" << endl;
     this->abstractions = &abstractions;
     this->costs = &costs;
 }
@@ -94,7 +94,7 @@ Order OrderGeneratorDynamicGreedy::compute_order_for_state(
         *abstractions, abstract_state_ids, *costs);
 
     if (verbose) {
-        utils::Log() << "Time for computing dynamic greedy order: "
+        utils::g_log << "Time for computing dynamic greedy order: "
                      << greedy_timer << endl;
     }
 

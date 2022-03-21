@@ -62,9 +62,12 @@ int main(int argc, const char **argv) {
     utils::g_log << "Search time: " << search_timer << endl;
     utils::g_log << "Total time: " << utils::g_timer << endl;
 
-    ExitCode exitcode = engine->found_solution()
-        ? ExitCode::SUCCESS
-        : ExitCode::SEARCH_UNSOLVED_INCOMPLETE;
+    ExitCode exitcode = ExitCode::SEARCH_UNSOLVED_INCOMPLETE;
+    if (engine->get_status() == SOLVED) {
+        exitcode = ExitCode::SUCCESS;
+    } else if (engine->get_status() == UNSOLVABLE) {
+        exitcode = ExitCode::SEARCH_UNSOLVABLE;
+    }
     utils::report_exit_code_reentrant(exitcode);
     return static_cast<int>(exitcode);
 }

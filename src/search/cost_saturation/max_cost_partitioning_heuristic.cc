@@ -21,7 +21,7 @@ static void log_info_about_stored_lookup_tables(
     for (const auto &cp_heuristic: cp_heuristics) {
         num_stored_lookup_tables += cp_heuristic.get_num_lookup_tables();
     }
-    utils::Log() << "Stored lookup tables: " << num_stored_lookup_tables << "/"
+    utils::g_log << "Stored lookup tables: " << num_stored_lookup_tables << "/"
                  << num_lookup_tables << " = "
                  << num_stored_lookup_tables / static_cast<double>(num_lookup_tables)
                  << endl;
@@ -36,7 +36,7 @@ static void log_info_about_stored_lookup_tables(
         num_total_values += abstraction->get_num_states();
     }
     num_total_values *= cp_heuristics.size();
-    utils::Log() << "Stored values: " << num_stored_values << "/"
+    utils::g_log << "Stored values: " << num_stored_values << "/"
                  << num_total_values << " = "
                  << num_stored_values / static_cast<double>(num_total_values) << endl;
 }
@@ -86,7 +86,7 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     int num_useless_abstractions = count(
         abstraction_functions.begin(), abstraction_functions.end(), nullptr);
     int num_useful_abstractions = num_abstractions - num_useless_abstractions;
-    utils::Log() << "Useful abstractions: " << num_useful_abstractions << "/"
+    utils::g_log << "Useful abstractions: " << num_useful_abstractions << "/"
                  << num_abstractions << " = "
                  << static_cast<double>(num_useful_abstractions) / num_abstractions
                  << endl;
