@@ -620,10 +620,54 @@ unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer
     return split;
 }
 
+unique_ptr<Split> FlawSearch::get_split_legacy(const Solution &solution) {
+    state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
+    if (debug)
+        utils::g_log << "Check solution:" << endl;
+
+    const AbstractState *abstract_state = &abstraction.get_initial_state();
+    State concrete_state = state_registry->get_initial_state();
+    assert(abstract_state->includes(concrete_state));
+
+    if (debug)
+        utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
+
+    for (const Transition &step : solution) {
+        OperatorProxy op = task_proxy.get_operators()[step.op_id];
+        const AbstractState *next_abstract_state = &abstraction.get_state(step.target_id);
+        if (task_properties::is_applicable(op, concrete_state)) {
+            if (debug)
+                utils::g_log << "  Move to " << *next_abstract_state << " with "
+                             << op.get_name() << endl;
+            State next_concrete_state = state_registry->get_successor_state(concrete_state, op);
+            if (!next_abstract_state->includes(next_concrete_state)) {
+                if (debug)
+                    utils::g_log << "  Paths deviate." << endl;
+                return create_split({concrete_state.get_id()}, abstract_state->get_id());
+            }
+            abstract_state = next_abstract_state;
+            concrete_state = move(next_concrete_state);
+        } else {
+            if (debug)
+                utils::g_log << "  Operator not applicable: " << op.get_name() << endl;
+            return create_split({concrete_state.get_id()}, abstract_state->get_id());
+        }
+    }
+    assert(abstraction.get_goals().count(abstract_state->get_id()));
+    if (task_properties::is_goal_state(task_proxy, concrete_state)) {
+        // We found a concrete solution.
+        return nullptr;
+    } else {
+        if (debug)
+            utils::g_log << "  Goal test failed." << endl;
+        return create_split({concrete_state.get_id()}, abstract_state->get_id());
+    }
+}
+
 void FlawSearch::print_statistics() const {
     // Avoid division by zero for corner cases.
     int flaws = max(1, abstraction.get_num_states() - 1);
-    int searches = max(1ul, num_searches);
+    int searches = max(0ul, num_searches);
     int expansions = num_overall_expanded_concrete_states;
     utils::g_log << endl;
     utils::g_log << "#Flaw searches: " << searches << endl;

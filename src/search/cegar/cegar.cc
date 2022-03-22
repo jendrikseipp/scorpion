@@ -214,7 +214,12 @@ void CEGAR::refinement_loop() {
                              dot_graph_verbosity);
         }
 
-        unique_ptr<Split> split = flaw_search->get_split(timer);
+        unique_ptr<Split> split;
+        if (flaw_search->get_pick_flaw_mode() == PickFlaw::SINGLE_PATH_LEGACY) {
+            split = flaw_search->get_split_legacy(*solution);
+        } else {
+            split = flaw_search->get_split(timer);
+        }
 
         find_flaw_timer.stop();
 

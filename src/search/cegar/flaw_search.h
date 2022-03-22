@@ -32,6 +32,7 @@ class AbstractState;
 
 enum class PickFlaw {
     SINGLE_PATH,
+    SINGLE_PATH_LEGACY,
     RANDOM_H_SINGLE,
     MIN_H_SINGLE,
     MAX_H_SINGLE,
@@ -109,6 +110,11 @@ public:
         bool debug);
 
     std::unique_ptr<Split> get_split(const utils::CountdownTimer &cegar_timer);
+    std::unique_ptr<Split> get_split_legacy(const Solution &solution);
+
+    PickFlaw get_pick_flaw_mode() const {
+        return pick_flaw;
+    }
 
     void print_statistics() const;
 };
