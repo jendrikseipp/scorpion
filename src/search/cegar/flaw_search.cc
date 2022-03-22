@@ -283,6 +283,7 @@ static void get_deviation_splits(
     }
 }
 
+// TODO: Comment about split considering multiple transitions
 unique_ptr<Split> FlawSearch::create_split(
     const vector<StateID> &state_ids, int abstract_state_id) {
     compute_splits_timer.resume();
@@ -536,6 +537,7 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
         if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
             split = create_split(flawed_state.concrete_states, flawed_state.abs_id);
         } else {
+            // REMOVE!
             StateID state_id = *rng.choose(flawed_state.concrete_states);
             split = create_split({state_id}, flawed_state.abs_id);
         }

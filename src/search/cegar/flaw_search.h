@@ -30,17 +30,27 @@ class Abstraction;
 class ShortestPaths;
 class AbstractState;
 
+// RENAME: PickFlawedAbstractState
 enum class PickFlaw {
     SINGLE_PATH,
     SINGLE_PATH_LEGACY,
-    RANDOM_H_SINGLE,
+    RANDOM_H_SINGLE, // RENAME: RANDOM
     MIN_H_SINGLE,
     MAX_H_SINGLE,
     MIN_H_BATCH,
     MIN_H_BATCH_MULTI_SPLIT
 };
 
-// TODO(speckd): use phmap of new scorpion version
+/* first is random in our ICAPS 2022 paper, batch = do refine flaws without new flaw search
+
+FIRST, // RANDOM in ICAPS 2022 paper
+FIRST_ON_SHORTEST_PATH, // LEGACY
+RANDOM,
+MIN_H,
+MAX_H,
+BATCH_MIN_H, // reuse flaws + consider all consider all concrete states
+*/
+
 using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
 
 class FlawSearch {
