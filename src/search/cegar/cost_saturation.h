@@ -31,9 +31,9 @@ class CostSaturation {
     const int max_non_looping_transitions;
     const double max_time;
     const bool use_general_costs;
+    const PickFlaw pick_flaw;
     const PickSplit pick_split;
     const PickSplit tiebreak_split;
-    const PickFlaw pick_flaw;
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
     const SearchStrategy search_strategy;

@@ -12,6 +12,8 @@ class Options;
 
 namespace cegar {
 class Abstraction;
+enum class PickFlaw;
+enum class PickSplit;
 enum class SearchStrategy;
 class SubtaskGenerator;
 }
@@ -28,6 +30,11 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_transitions;
     const double max_time;
     const cegar::SearchStrategy search_strategy;
+    const cegar::PickFlaw pick_flaw;
+    const cegar::PickSplit pick_split;
+    const cegar::PickSplit tiebreak_split;
+    const int max_concrete_states_per_abstract_state;
+    const int max_state_expansions;
     const int extra_memory_padding_mb;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const bool debug;

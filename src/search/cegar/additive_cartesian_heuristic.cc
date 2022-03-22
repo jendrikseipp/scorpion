@@ -128,40 +128,8 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "maximum time in seconds for building abstractions",
         "infinity",
         Bounds("0.0", "infinity"));
-    vector<string> pick_split_strategies;
-    pick_split_strategies.push_back("RANDOM");
-    pick_split_strategies.push_back("MIN_UNWANTED");
-    pick_split_strategies.push_back("MAX_UNWANTED");
-    pick_split_strategies.push_back("MIN_REFINED");
-    pick_split_strategies.push_back("MAX_REFINED");
-    pick_split_strategies.push_back("MIN_HADD");
-    pick_split_strategies.push_back("MAX_HADD");
-    pick_split_strategies.push_back("MIN_CG");
-    pick_split_strategies.push_back("MAX_CG");
-    pick_split_strategies.push_back("MAX_COVER");
-    parser.add_enum_option<PickSplit>(
-        "pick_split",
-        pick_split_strategies,
-        "split-selection strategy",
-        "MAX_REFINED");
-    parser.add_enum_option<PickSplit>(
-        "tiebreak_split",
-        pick_split_strategies,
-        "split-selection strategy for breaking ties",
-        "MIN_CG");
-    vector<string> pick_flaw_strategies;
-    pick_flaw_strategies.push_back("SINGLE_PATH");
-    pick_flaw_strategies.push_back("SINGLE_PATH_LEGACY");
-    pick_flaw_strategies.push_back("RANDOM_H_SINGLE");
-    pick_flaw_strategies.push_back("MIN_H_SINGLE");
-    pick_flaw_strategies.push_back("MAX_H_SINGLE");
-    pick_flaw_strategies.push_back("MIN_H_BATCH");
-    pick_flaw_strategies.push_back("MIN_H_BATCH_MULTI_SPLIT");
-    parser.add_enum_option<PickFlaw>(
-        "pick_flaw",
-        pick_flaw_strategies,
-        "flaw-selection strategy",
-        "MIN_H_BATCH");
+    add_pick_flaw_strategies(parser);
+    add_pick_split_strategies(parser);
     parser.add_option<int>(
         "max_concrete_states_per_abstract_state",
         "Max number of states per abstract state we consider in flaw search",
@@ -170,7 +138,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "max_state_expansions",
         "Max number of state expansion in flaw search",
-        "infinity",
+        "1000000",
         Bounds("1", "infinity"));
     add_search_strategy_option(parser);
     add_memory_padding_option(parser);

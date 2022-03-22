@@ -110,6 +110,12 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_transitions(opts.get<int>("max_transitions")),
       max_time(opts.get<double>("max_time")),
       search_strategy(opts.get<cegar::SearchStrategy>("search_strategy")),
+      pick_flaw(opts.get<cegar::PickFlaw>("pick_flaw")),
+      pick_split(opts.get<cegar::PickSplit>("pick_split")),
+      tiebreak_split(opts.get<cegar::PickSplit>("tiebreak_split")),
+      max_concrete_states_per_abstract_state(
+          opts.get<int>("max_concrete_states_per_abstract_state")),
+      max_state_expansions(opts.get<int>("max_state_expansions")),
       extra_memory_padding_mb(opts.get<int>("memory_padding")),
       rng(utils::parse_rng_from_options(opts)),
       debug(opts.get<bool>("debug")),
@@ -127,11 +133,11 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         max(1, (max_states - num_states) / remaining_subtasks),
         max(1, (max_transitions - num_transitions) / remaining_subtasks),
         timer.get_remaining_time() / remaining_subtasks,
-        cegar::PickSplit::MAX_REFINED,
-        cegar::PickSplit::MIN_CG,
-        cegar::PickFlaw::MIN_H_BATCH,
-        1000000,
-        10000000,
+        pick_flaw,
+        pick_split,
+        tiebreak_split,
+        max_concrete_states_per_abstract_state,
+        max_state_expansions,
         search_strategy,
         *rng,
         debug,
@@ -234,6 +240,18 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "maximum time for computing abstractions",
         "infinity",
         Bounds("0.0", "infinity"));
+    cegar::add_pick_flaw_strategies(parser);
+    cegar::add_pick_split_strategies(parser);
+    parser.add_option<int>(
+        "max_concrete_states_per_abstract_state",
+        "Max number of states per abstract state we consider in flaw search",
+        "infinity",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_state_expansions",
+        "Max number of state expansion in flaw search",
+        "1000000",
+        Bounds("1", "infinity"));
     cegar::add_search_strategy_option(parser);
     cegar::add_memory_padding_option(parser);
     parser.add_option<bool>(

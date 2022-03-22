@@ -2,6 +2,8 @@
 
 #include "abstract_state.h"
 #include "abstraction.h"
+#include "flaw_search.h"
+#include "split_selector.h"
 #include "transition.h"
 #include "transition_system.h"
 
@@ -95,6 +97,46 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
     for (VariableProxy var : task.get_variables())
         domain_sizes.push_back(var.get_domain_size());
     return domain_sizes;
+}
+
+void add_pick_flaw_strategies(options::OptionParser &parser) {
+    vector<string> pick_flaw_strategies;
+    pick_flaw_strategies.push_back("SINGLE_PATH");
+    pick_flaw_strategies.push_back("SINGLE_PATH_LEGACY");
+    pick_flaw_strategies.push_back("RANDOM_H_SINGLE");
+    pick_flaw_strategies.push_back("MIN_H_SINGLE");
+    pick_flaw_strategies.push_back("MAX_H_SINGLE");
+    pick_flaw_strategies.push_back("MIN_H_BATCH");
+    pick_flaw_strategies.push_back("MIN_H_BATCH_MULTI_SPLIT");
+    parser.add_enum_option<cegar::PickFlaw>(
+        "pick_flaw",
+        pick_flaw_strategies,
+        "flaw-selection strategy",
+        "MIN_H_BATCH_MULTI_SPLIT");
+}
+
+void add_pick_split_strategies(options::OptionParser &parser) {
+    vector<string> pick_split_strategies;
+    pick_split_strategies.push_back("RANDOM");
+    pick_split_strategies.push_back("MIN_UNWANTED");
+    pick_split_strategies.push_back("MAX_UNWANTED");
+    pick_split_strategies.push_back("MIN_REFINED");
+    pick_split_strategies.push_back("MAX_REFINED");
+    pick_split_strategies.push_back("MIN_HADD");
+    pick_split_strategies.push_back("MAX_HADD");
+    pick_split_strategies.push_back("MIN_CG");
+    pick_split_strategies.push_back("MAX_CG");
+    pick_split_strategies.push_back("MAX_COVER");
+    parser.add_enum_option<PickSplit>(
+        "pick_split",
+        pick_split_strategies,
+        "split-selection strategy",
+        "MAX_COVER");
+    parser.add_enum_option<PickSplit>(
+        "tiebreak_split",
+        pick_split_strategies,
+        "split-selection strategy for breaking ties",
+        "MAX_REFINED");
 }
 
 void add_search_strategy_option(options::OptionParser &parser) {
