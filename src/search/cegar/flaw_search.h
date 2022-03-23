@@ -30,26 +30,29 @@ class Abstraction;
 class ShortestPaths;
 class AbstractState;
 
-// RENAME: PickFlawedAbstractState
+// ICAPS 2022 configuration (in order): FIRST, MIN_H, MAX_H, MIN_H BATCH_MIN_H
 enum class PickFlaw {
-    SINGLE_PATH,
-    SINGLE_PATH_LEGACY,
-    RANDOM_H_SINGLE, // RENAME: RANDOM
-    MIN_H_SINGLE,
-    MAX_H_SINGLE,
-    MIN_H_BATCH,
-    MIN_H_BATCH_MULTI_SPLIT
+    // FIRST configuration of ICAPS 2022 paper 
+    // Considers first encountered abstract state + a random concrete state
+    // Considers 
+    FIRST, 
+    // Legacy code: following a "random" solution; not using flaw search
+    // Considers first encountered abstract state + a random concrete state
+    FIRST_ON_SHORTEST_PATH, 
+    // Collects all all flawed abstract states
+    // Considers a random abstract state + a random concrete state
+    RANDOM,
+    // Collects all all flawed abstract states
+    // Considers a random abstract state with min h + a random concrete state
+    MIN_H,
+    // Collects all all flawed abstract states
+    // Considers a random abstract state with max h + a random concrete state
+    MAX_H,
+    // Collects all all flawed abstract states and iteratively refines them (increasing h value)
+    // Does only restart if we refined all "possible" flawed abstract states
+    // For each abstract state all concrete states are considered
+    BATCH_MIN_H
 };
-
-/* first is random in our ICAPS 2022 paper, batch = do refine flaws without new flaw search
-
-FIRST, // RANDOM in ICAPS 2022 paper
-FIRST_ON_SHORTEST_PATH, // LEGACY
-RANDOM,
-MIN_H,
-MAX_H,
-BATCH_MIN_H, // reuse flaws + consider all consider all concrete states
-*/
 
 using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
 

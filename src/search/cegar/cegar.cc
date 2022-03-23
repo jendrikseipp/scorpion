@@ -215,7 +215,7 @@ void CEGAR::refinement_loop() {
         }
 
         unique_ptr<Split> split;
-        if (flaw_search->get_pick_flaw_mode() == PickFlaw::SINGLE_PATH_LEGACY) {
+        if (flaw_search->get_pick_flaw_mode() == PickFlaw::FIRST_ON_SHORTEST_PATH) {
             split = flaw_search->get_split_legacy(*solution);
         } else {
             split = flaw_search->get_split(timer);
