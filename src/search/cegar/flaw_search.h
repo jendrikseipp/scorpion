@@ -31,14 +31,13 @@ class ShortestPaths;
 class AbstractState;
 
 // ICAPS 2022 configuration (in order): FIRST, MIN_H, MAX_H, MIN_H BATCH_MIN_H
-enum class PickFlaw {
-    // FIRST configuration of ICAPS 2022 paper 
+enum class PickFlawedAbstractState {
+    // FIRST configuration of ICAPS 2022 paper
     // Considers first encountered abstract state + a random concrete state
-    // Considers 
-    FIRST, 
+    FIRST,
     // Legacy code: following a "random" solution; not using flaw search
     // Considers first encountered abstract state + a random concrete state
-    FIRST_ON_SHORTEST_PATH, 
+    FIRST_ON_SHORTEST_PATH,
     // Collects all all flawed abstract states
     // Considers a random abstract state + a random concrete state
     RANDOM,
@@ -64,7 +63,7 @@ class FlawSearch {
     const ShortestPaths &shortest_paths;
     const SplitSelector split_selector;
     utils::RandomNumberGenerator &rng;
-    const PickFlaw pick_flaw;
+    const PickFlawedAbstractState pick_flawed_abstract_state;
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
     const bool debug;
@@ -115,7 +114,7 @@ public:
         const Abstraction &abstraction,
         const ShortestPaths &shortest_paths,
         utils::RandomNumberGenerator &rng,
-        PickFlaw pick_flaw,
+        PickFlawedAbstractState pick_flawed_abstract_state,
         PickSplit pick_split,
         PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state,
@@ -125,8 +124,8 @@ public:
     std::unique_ptr<Split> get_split(const utils::CountdownTimer &cegar_timer);
     std::unique_ptr<Split> get_split_legacy(const Solution &solution);
 
-    PickFlaw get_pick_flaw_mode() const {
-        return pick_flaw;
+    PickFlawedAbstractState get_pick_flawed_abstract_state_mode() const {
+        return pick_flawed_abstract_state;
     }
 
     void print_statistics() const;

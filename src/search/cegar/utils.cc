@@ -99,17 +99,17 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
     return domain_sizes;
 }
 
-void add_pick_flaw_strategies(options::OptionParser &parser) {
-    vector<string> pick_flaw_strategies;
-    pick_flaw_strategies.push_back("FIRST");
-    pick_flaw_strategies.push_back("FIRST_ON_SHORTEST_PATH");
-    pick_flaw_strategies.push_back("RANDOM");
-    pick_flaw_strategies.push_back("MIN_H");
-    pick_flaw_strategies.push_back("MAX_H");
-    pick_flaw_strategies.push_back("BATCH_MIN_H");
-    parser.add_enum_option<cegar::PickFlaw>(
-        "pick_flaw",
-        pick_flaw_strategies,
+void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
+    vector<string> pick_flawed_abstract_state_strategies;
+    pick_flawed_abstract_state_strategies.push_back("FIRST");
+    pick_flawed_abstract_state_strategies.push_back("FIRST_ON_SHORTEST_PATH");
+    pick_flawed_abstract_state_strategies.push_back("RANDOM");
+    pick_flawed_abstract_state_strategies.push_back("MIN_H");
+    pick_flawed_abstract_state_strategies.push_back("MAX_H");
+    pick_flawed_abstract_state_strategies.push_back("BATCH_MIN_H");
+    parser.add_enum_option<cegar::PickFlawedAbstractState>(
+        "pick_flawed_abstract_state",
+        pick_flawed_abstract_state_strategies,
         "flaw-selection strategy",
         "BATCH_MIN_H");
 }
