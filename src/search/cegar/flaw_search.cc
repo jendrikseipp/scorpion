@@ -67,7 +67,7 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
     }
 
     Cost h = get_h_value(abs_id);
-    if (pick_flaw == PickFlaw::MIN_H_SINGLE) {
+    if (pick_flawed_abstract_state == PickFlawedAbstractState::MIN_H) {
         if (best_flaw_h > h) {
             flawed_states.clear();
         }
@@ -75,7 +75,7 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
             best_flaw_h = h;
             flawed_states.add_state(abs_id, state, h);
         }
-    } else if (pick_flaw == PickFlaw::MAX_H_SINGLE) {
+    } else if (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) {
         if (best_flaw_h < h) {
             flawed_states.clear();
         }
@@ -84,10 +84,9 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
             flawed_states.add_state(abs_id, state, h);
         }
     } else {
-        assert(pick_flaw == PickFlaw::RANDOM_H_SINGLE
-               || pick_flaw == PickFlaw::SINGLE_PATH
-               || pick_flaw == PickFlaw::MIN_H_BATCH
-               || pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT);
+        assert(pick_flawed_abstract_state == PickFlawedAbstractState::RANDOM
+               || pick_flawed_abstract_state == PickFlawedAbstractState::FIRST
+               || pick_flawed_abstract_state == PickFlawedAbstractState::BATCH_MIN_H);
         flawed_states.add_state(abs_id, state, h);
     }
 }
@@ -95,7 +94,7 @@ void FlawSearch::add_flaw(int abs_id, const State &state) {
 void FlawSearch::initialize() {
     ++num_searches;
     last_refined_flawed_state = FlawedState::no_state;
-    best_flaw_h = (pick_flaw == PickFlaw::MAX_H_SINGLE) ? 0 : INF_COSTS;
+    best_flaw_h = (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) ? 0 : INF_COSTS;
     assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, log);
@@ -125,7 +124,7 @@ SearchStatus FlawSearch::step() {
     ++num_overall_expanded_concrete_states;
 
     if (task_properties::is_goal_state(task_proxy, s) &&
-        pick_flaw != PickFlaw::MAX_H_SINGLE) {
+        pick_flawed_abstract_state != PickFlawedAbstractState::MAX_H) {
         return SOLVED;
     }
 
@@ -149,7 +148,7 @@ SearchStatus FlawSearch::step() {
                 add_flaw(abs_id, s);
                 found_flaw = true;
             }
-            if (pick_flaw == PickFlaw::SINGLE_PATH) {
+            if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
                 // Clear open list.
                 stack<StateID>().swap(open_list);
                 return FAILED;
@@ -168,7 +167,7 @@ SearchStatus FlawSearch::step() {
                     add_flaw(abs_id, s);
                     found_flaw = true;
                 }
-                if (pick_flaw == PickFlaw::SINGLE_PATH) {
+                if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
                     // Clear open list.
                     stack<StateID>().swap(open_list);
                     return FAILED;
@@ -179,13 +178,13 @@ SearchStatus FlawSearch::step() {
                 succ_node.open(node, op, op.get_cost());
                 open_list.push(succ_state.get_id());
 
-                if (pick_flaw == PickFlaw::SINGLE_PATH) {
+                if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
                     // Only consider one successor.
                     break;
                 }
             }
         }
-        if (pick_flaw == PickFlaw::SINGLE_PATH) {
+        if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
             // The node is necessarily new, since we consider only one successor and
             // follow f-optimal transitons
             // Only consider one successor.
@@ -434,7 +433,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
     }
 
     // Check if MAX_H_SINGLE did not find a single flaw
-    if (pick_flaw == PickFlaw::MAX_H_SINGLE && search_status == FAILED
+    if (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H && search_status == FAILED
         && flawed_states.num_abstract_states() == 0 && open_list.empty()) {
         search_status = SOLVED;
     }
@@ -497,6 +496,7 @@ FlawedState FlawSearch::get_flawed_state_with_min_h() {
 
 unique_ptr<Split>
 FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
+    assert(pick_flawed_abstract_state == PickFlawedAbstractState::BATCH_MIN_H);
     if (last_refined_flawed_state != FlawedState::no_state) {
         // Handle flaws of the last refined abstract state.
         Cost old_h = last_refined_flawed_state.h;
@@ -534,13 +534,7 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
         assert(flawed_state != FlawedState::no_state);
 
         unique_ptr<Split> split;
-        if (pick_flaw == PickFlaw::MIN_H_BATCH_MULTI_SPLIT) {
-            split = create_split(flawed_state.concrete_states, flawed_state.abs_id);
-        } else {
-            // REMOVE!
-            StateID state_id = *rng.choose(flawed_state.concrete_states);
-            split = create_split({state_id}, flawed_state.abs_id);
-        }
+        split = create_split(flawed_state.concrete_states, flawed_state.abs_id);
 
         if (!utils::extra_memory_padding_is_reserved()) {
             return nullptr;
@@ -567,7 +561,7 @@ FlawSearch::FlawSearch(
     const Abstraction &abstraction,
     const ShortestPaths &shortest_paths,
     utils::RandomNumberGenerator &rng,
-    PickFlaw pick_flaw,
+    PickFlawedAbstractState pick_flawed_abstract_state,
     PickSplit pick_split,
     PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state,
@@ -580,12 +574,12 @@ FlawSearch::FlawSearch(
     shortest_paths(shortest_paths),
     split_selector(task, pick_split, tiebreak_split, debug),
     rng(rng),
-    pick_flaw(pick_flaw),
+    pick_flawed_abstract_state(pick_flawed_abstract_state),
     max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
     max_state_expansions(max_state_expansions),
     debug(debug),
     last_refined_flawed_state(FlawedState::no_state),
-    best_flaw_h((pick_flaw == PickFlaw::MAX_H_SINGLE) ? 0 : INF),
+    best_flaw_h((pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) ? 0 : INF),
     num_searches(0),
     num_overall_expanded_concrete_states(0),
     max_expanded_concrete_states(0),
@@ -597,26 +591,26 @@ FlawSearch::FlawSearch(
 unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer) {
     unique_ptr<Split> split;
 
-    switch (pick_flaw) {
-    case PickFlaw::SINGLE_PATH:
-    case PickFlaw::RANDOM_H_SINGLE:
-    case PickFlaw::MIN_H_SINGLE:
-    case PickFlaw::MAX_H_SINGLE:
+    switch (pick_flawed_abstract_state) {
+    case PickFlawedAbstractState::FIRST:
+    case PickFlawedAbstractState::RANDOM:
+    case PickFlawedAbstractState::MIN_H:
+    case PickFlawedAbstractState::MAX_H:
         split = get_single_split(cegar_timer);
         break;
-    case PickFlaw::MIN_H_BATCH:
-    case PickFlaw::MIN_H_BATCH_MULTI_SPLIT:
+    case PickFlawedAbstractState::BATCH_MIN_H:
         split = get_min_h_batch_split(cegar_timer);
         break;
     default:
-        utils::g_log << "Invalid pick flaw strategy: " << static_cast<int>(pick_flaw)
+        utils::g_log << "Invalid pick flaw strategy: "
+                     << static_cast<int>(pick_flawed_abstract_state)
                      << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 
     if (split) {
-        assert(!(pick_flaw == PickFlaw::MAX_H_SINGLE
-                 || pick_flaw == PickFlaw::MIN_H_SINGLE)
+        assert(!(pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H
+                 || pick_flawed_abstract_state == PickFlawedAbstractState::MIN_H)
                || best_flaw_h == get_h_value(split->abstract_state_id));
     }
     return split;

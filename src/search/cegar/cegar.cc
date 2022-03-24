@@ -27,7 +27,7 @@ CEGAR::CEGAR(
     int max_states,
     int max_non_looping_transitions,
     double max_time,
-    PickFlaw pick_flaw,
+    PickFlawedAbstractState pick_flawed_abstract_state,
     PickSplit pick_split,
     PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state,
@@ -55,7 +55,7 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy), false);
         flaw_search = utils::make_unique_ptr<FlawSearch>(
             task, domain_sizes, *abstraction, *shortest_paths, rng,
-            pick_flaw, pick_split, tiebreak_split,
+            pick_flawed_abstract_state, pick_split, tiebreak_split,
             max_concrete_states_per_abstract_state, max_state_expansions, debug);
     } else {
         ABORT("Unknown search strategy");
@@ -215,7 +215,8 @@ void CEGAR::refinement_loop() {
         }
 
         unique_ptr<Split> split;
-        if (flaw_search->get_pick_flaw_mode() == PickFlaw::SINGLE_PATH_LEGACY) {
+        if (flaw_search->get_pick_flawed_abstract_state_mode() ==
+            PickFlawedAbstractState::FIRST_ON_SHORTEST_PATH) {
             split = flaw_search->get_split_legacy(*solution);
         } else {
             split = flaw_search->get_split(timer);

@@ -31,9 +31,9 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
+        opts.get<PickFlawedAbstractState>("pick_flawed_abstract_state"),
         opts.get<PickSplit>("pick_split"),
         opts.get<PickSplit>("tiebreak_split"),
-        opts.get<PickFlaw>("pick_flaw"),
         opts.get<int>("max_concrete_states_per_abstract_state"),
         opts.get<int>("max_state_expansions"),
         opts.get<SearchStrategy>("search_strategy"),
@@ -128,7 +128,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "maximum time in seconds for building abstractions",
         "infinity",
         Bounds("0.0", "infinity"));
-    add_pick_flaw_strategies(parser);
+    add_pick_flawed_abstract_state_strategies(parser);
     add_pick_split_strategies(parser);
     parser.add_option<int>(
         "max_concrete_states_per_abstract_state",

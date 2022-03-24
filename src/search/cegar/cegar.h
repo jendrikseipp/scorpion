@@ -71,7 +71,7 @@ public:
         int max_states,
         int max_non_looping_transitions,
         double max_time,
-        PickFlaw pick_flaw,
+        PickFlawedAbstractState pick_flawed_abstract_state,
         PickSplit pick_split,
         PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state,

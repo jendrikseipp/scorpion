@@ -110,7 +110,8 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_transitions(opts.get<int>("max_transitions")),
       max_time(opts.get<double>("max_time")),
       search_strategy(opts.get<cegar::SearchStrategy>("search_strategy")),
-      pick_flaw(opts.get<cegar::PickFlaw>("pick_flaw")),
+      pick_flawed_abstract_state(
+          opts.get<cegar::PickFlawedAbstractState>("pick_flawed_abstract_state")),
       pick_split(opts.get<cegar::PickSplit>("pick_split")),
       tiebreak_split(opts.get<cegar::PickSplit>("tiebreak_split")),
       max_concrete_states_per_abstract_state(
@@ -133,7 +134,7 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         max(1, (max_states - num_states) / remaining_subtasks),
         max(1, (max_transitions - num_transitions) / remaining_subtasks),
         timer.get_remaining_time() / remaining_subtasks,
-        pick_flaw,
+        pick_flawed_abstract_state,
         pick_split,
         tiebreak_split,
         max_concrete_states_per_abstract_state,
@@ -240,7 +241,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "maximum time for computing abstractions",
         "infinity",
         Bounds("0.0", "infinity"));
-    cegar::add_pick_flaw_strategies(parser);
+    cegar::add_pick_flawed_abstract_state_strategies(parser);
     cegar::add_pick_split_strategies(parser);
     parser.add_option<int>(
         "max_concrete_states_per_abstract_state",
