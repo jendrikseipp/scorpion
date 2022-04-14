@@ -29,7 +29,7 @@ class SortFactsByIncreasingHaddValues {
     // Can't store as unique_ptr since the class needs copy-constructor.
     shared_ptr<additive_heuristic::AdditiveHeuristic> hadd;
 
-    int get_cost(const FactPair &fact) {
+    int get_cost(const FactPair &fact) const {
         return hadd->get_cost_for_cegar(fact.var, fact.value);
     }
 
@@ -138,9 +138,9 @@ shared_ptr<AbstractTask> LandmarkDecomposition::build_domain_abstracted_task(
     const FactPair &fact) const {
     assert(combine_facts);
     extra_tasks::VarToGroups value_groups;
-    for (auto &pair : get_prev_landmarks(landmark_graph, fact)) {
+    for (const auto &pair : get_prev_landmarks(landmark_graph, fact)) {
         int var = pair.first;
-        vector<int> &group = pair.second;
+        const vector<int> &group = pair.second;
         if (group.size() >= 2)
             value_groups[var].push_back(group);
     }
@@ -180,14 +180,9 @@ static shared_ptr<SubtaskGenerator> _parse_original(OptionParser &parser) {
 }
 
 static void add_fact_order_option(OptionParser &parser) {
-    vector<string> fact_orders;
-    fact_orders.push_back("ORIGINAL");
-    fact_orders.push_back("RANDOM");
-    fact_orders.push_back("HADD_UP");
-    fact_orders.push_back("HADD_DOWN");
     parser.add_enum_option<FactOrder>(
         "order",
-        fact_orders,
+        {"ORIGINAL", "RANDOM", "HADD_UP", "HADD_DOWN"},
         "ordering of goal or landmark facts",
         "HADD_DOWN");
     utils::add_rng_options(parser);

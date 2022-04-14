@@ -23,7 +23,7 @@ namespace cost_saturation {
 static vector<vector<int>> sample_states_and_return_abstract_state_ids(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
-    sampling::RandomWalkSampler &sampler,
+    const sampling::RandomWalkSampler &sampler,
     int num_samples,
     int init_h,
     const DeadEndDetector &is_dead_end,
@@ -130,7 +130,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
                 abstractions, sampler.sample_state(init_h, is_dead_end));
             order = order_generator->compute_order_for_state(
                 abstract_state_ids, false);
-            vector<int> remaining_costs = costs;
+            remaining_costs = costs;
             cp_heuristic = cp_function(abstractions, order, remaining_costs, abstract_state_ids);
         }
 

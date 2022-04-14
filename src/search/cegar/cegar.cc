@@ -129,7 +129,7 @@ unique_ptr<Abstraction> CEGAR::extract_abstraction() {
     return move(abstraction);
 }
 
-void CEGAR::separate_facts_unreachable_before_goal() {
+void CEGAR::separate_facts_unreachable_before_goal() const {
     assert(abstraction->get_goals().size() == 1);
     assert(abstraction->get_num_states() == 1);
     assert(task_proxy.get_goals().size() == 1);
