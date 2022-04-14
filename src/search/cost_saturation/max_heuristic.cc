@@ -12,7 +12,7 @@
 using namespace std;
 
 namespace cost_saturation {
-MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions abstractions)
+MaxHeuristic::MaxHeuristic(const Options &opts, const Abstractions &abstractions)
     : Heuristic(opts) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : abstractions) {

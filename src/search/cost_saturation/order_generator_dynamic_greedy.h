@@ -16,7 +16,6 @@ class OrderGeneratorDynamicGreedy : public OrderGenerator {
     const std::vector<int> *costs;
 
     Order compute_dynamic_greedy_order_for_sample(
-        const Abstractions &abstractions,
         const std::vector<int> &abstract_state_ids,
         std::vector<int> remaining_costs) const;
 

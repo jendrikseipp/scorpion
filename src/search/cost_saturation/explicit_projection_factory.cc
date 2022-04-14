@@ -38,9 +38,9 @@ static vector<FactPair> get_projected_conditions(
 
 
 struct ProjectedEffect {
-    const FactPair fact;
-    const vector<FactPair> conditions;
-    const bool always_triggers;
+    FactPair fact;
+    vector<FactPair> conditions;
+    bool always_triggers;
 
     ProjectedEffect(
         const FactPair &projected_fact,
@@ -107,7 +107,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
 }
 
 vector<int> ExplicitProjectionFactory::compute_goal_states() const {
-    vector<int> goal_states;
+    vector<int> goals;
 
     // compute abstract goal var-val pairs
     vector<FactPair> abstract_goals;
@@ -122,11 +122,11 @@ vector<int> ExplicitProjectionFactory::compute_goal_states() const {
     VariablesProxy variables = task_proxy.get_variables();
     for (int state_index = 0; state_index < num_states; ++state_index) {
         if (is_goal_state(state_index, abstract_goals, variables)) {
-            goal_states.push_back(state_index);
+            goals.push_back(state_index);
         }
     }
 
-    return goal_states;
+    return goals;
 }
 
 int ExplicitProjectionFactory::rank(const UnrankedState &state) const {
@@ -174,15 +174,12 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
 
 bool ExplicitProjectionFactory::conditions_are_satisfied(
     const vector<FactPair> &conditions, const UnrankedState &state_values) const {
-    for (const FactPair &precondition : conditions) {
-        if (state_values[precondition.var] != precondition.value) {
-            return false;
-        }
-    }
-    return true;
+    return all_of(conditions.begin(), conditions.end(), [&state_values](const FactPair &precondition) {
+                      return state_values[precondition.var] == precondition.value;
+                  });
 }
 
-bool ExplicitProjectionFactory::is_applicable(UnrankedState &state_values, int op_id) const {
+bool ExplicitProjectionFactory::is_applicable(const UnrankedState &state_values, int op_id) const {
     return conditions_are_satisfied(relevant_preconditions[op_id], state_values);
 }
 

@@ -161,11 +161,11 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     PhO pho(abstractions, costs, opts.get<lp::LPSolverType>("lpsolver"),
             opts.get<bool>("saturated"),
             utils::get_log_from_options(opts));
-    CPFunction cp_function = [&pho](const Abstractions &abstractions,
-                                    const vector<int> &order,
-                                    const vector<int> &costs,
+    CPFunction cp_function = [&pho](const Abstractions &abstractions_,
+                                    const vector<int> &order_,
+                                    const vector<int> &costs_,
                                     const vector<int> &abstract_state_ids) {
-            return pho.compute_cost_partitioning(abstractions, order, costs, abstract_state_ids);
+            return pho.compute_cost_partitioning(abstractions_, order_, costs_, abstract_state_ids);
         };
     vector<CostPartitioningHeuristic> cp_heuristics =
         get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(

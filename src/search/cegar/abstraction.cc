@@ -61,7 +61,7 @@ void Abstraction::mark_all_states_as_goals() {
         cout << "Mark all states as goals." << endl;
     }
     goals.clear();
-    for (auto &state : states) {
+    for (const auto &state : states) {
         goals.insert(state->get_id());
     }
 }

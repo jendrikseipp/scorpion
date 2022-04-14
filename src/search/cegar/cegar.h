@@ -64,7 +64,7 @@ class CEGAR {
     // Build abstraction.
     void refinement_loop(utils::RandomNumberGenerator &rng);
 
-    void print_statistics();
+    void print_statistics() const;
 
 public:
     CEGAR(

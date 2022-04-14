@@ -85,9 +85,9 @@ public:
         return var;
     }
 
-    NodeID get_child(int value) const {
+    NodeID get_child(int val) const {
         assert(is_split());
-        if (value == this->value)
+        if (val == value)
             return right_child;
         return left_child;
     }

@@ -363,7 +363,7 @@ unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
     }
 }
 
-void CEGAR::print_statistics() {
+void CEGAR::print_statistics() const {
     abstraction->print_statistics();
 }
 }

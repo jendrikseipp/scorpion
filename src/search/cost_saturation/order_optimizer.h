@@ -12,7 +12,7 @@ namespace cost_saturation {
   Optimize the given order in-place via simple hill climbing.
 */
 extern void optimize_order_with_hill_climbing(
-    CPFunction cp_function,
+    const CPFunction &cp_function,
     const utils::CountdownTimer &timer,
     const Abstractions &abstractions,
     const std::vector<int> &costs,

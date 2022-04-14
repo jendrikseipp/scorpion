@@ -36,14 +36,13 @@ Abstractions ProjectionGenerator::generate_abstractions(
     TaskProxy task_proxy(*task);
 
     task_properties::verify_no_axioms(task_proxy);
-    if (!create_complete_transition_system) {
-        if (task_properties::has_conditional_effects(task_proxy)) {
-            cerr << "Error: configuration doesn't support conditional effects. "
-                "Use projections(..., create_complete_transition_system=true) "
-                "to build projections that support conditional effects."
-                 << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
-        }
+    if (!create_complete_transition_system &&
+        task_properties::has_conditional_effects(task_proxy)) {
+        cerr << "Error: configuration doesn't support conditional effects. "
+            "Use projections(..., create_complete_transition_system=true) "
+            "to build projections that support conditional effects."
+             << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
 
     log << "Compute patterns" << endl;

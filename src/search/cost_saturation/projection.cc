@@ -304,30 +304,30 @@ Projection::Projection(
             preconditions, effects, variable_to_pattern_index, variables,
             [this, label_id](
                 const vector<FactPair> &prevail,
-                const vector<FactPair> &preconditions,
-                const vector<FactPair> &effects,
-                const vector<int> &hash_multipliers) {
+                const vector<FactPair> &preconditions_,
+                const vector<FactPair> &effects_,
+                const vector<int> &hash_multipliers_) {
                 vector<FactPair> regression_preconditions = prevail;
                 regression_preconditions.insert(
-                    regression_preconditions.end(), effects.begin(), effects.end());
+                    regression_preconditions.end(), effects_.begin(), effects_.end());
                 sort(regression_preconditions.begin(), regression_preconditions.end());
                 int ranked_op_id = ranked_operators.size();
                 match_tree_backward->insert(ranked_op_id, regression_preconditions);
 
                 vector<int> abstract_preconditions = get_abstract_preconditions(
-                    prevail, preconditions, hash_multipliers);
+                    prevail, preconditions_, hash_multipliers_);
                 int precondition_hash = 0;
-                for (size_t pos = 0; pos < hash_multipliers.size(); ++pos) {
+                for (size_t pos = 0; pos < hash_multipliers_.size(); ++pos) {
                     int pre_val = abstract_preconditions[pos];
                     if (pre_val != -1) {
-                        precondition_hash += hash_multipliers[pos] * pre_val;
+                        precondition_hash += hash_multipliers_[pos] * pre_val;
                     }
                 }
 
                 ranked_operators.emplace_back(
                     label_id,
                     precondition_hash,
-                    compute_hash_effect(preconditions, effects, hash_multipliers));
+                    compute_hash_effect(preconditions_, effects_, hash_multipliers_));
             });
     }
     ranked_operators.shrink_to_fit();
@@ -360,13 +360,13 @@ vector<int> Projection::compute_goal_states(
         }
     }
 
-    vector<int> goal_states;
+    vector<int> goals;
     for (int state_index = 0; state_index < num_states; ++state_index) {
         if (is_consistent(state_index, abstract_goals)) {
-            goal_states.push_back(state_index);
+            goals.push_back(state_index);
         }
     }
-    return goal_states;
+    return goals;
 }
 
 void Projection::multiply_out(int pos,
