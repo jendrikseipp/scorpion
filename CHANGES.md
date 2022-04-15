@@ -11,7 +11,12 @@ after the corresponding tracker issues.
 
 ## Changes since the last release
 
-No changes yet.
+- infrastructure: Upgrade GitHub Actions to Windows Server
+  2019 (Visual Studio Enterprise 2019) and Windows Server 2022 (Visual Studio
+  Enterprise 2022). Remove Windows Server 2016, because GitHub Actions no longer
+  support it.
+  <https://issues.fast-downward.org/issue1054>
+
 
 ## Fast Downward 21.12
 
