@@ -46,7 +46,8 @@ class CEGAR {
     const bool debug;
     const int dot_graph_verbosity;
 
-    int cur_abstract_solution_cost;
+    // Only used for logging progress.
+    int old_abstract_solution_cost = -1;
 
     bool may_keep_refining() const;
 

@@ -132,13 +132,13 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     add_pick_split_strategies(parser);
     parser.add_option<int>(
         "max_concrete_states_per_abstract_state",
-        "Max number of states per abstract state we consider in flaw search",
+        "maximum number of flawed concrete states stored per abstract state",
         "infinity",
         Bounds("1", "infinity"));
     parser.add_option<int>(
         "max_state_expansions",
-        "Max number of state expansion in flaw search",
-        "1000000",
+        "maximum number of state expansions per flaw search",
+        "1M",
         Bounds("1", "infinity"));
     add_search_strategy_option(parser);
     add_memory_padding_option(parser);

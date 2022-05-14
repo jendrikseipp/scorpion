@@ -394,7 +394,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
         utils::g_log << "Search for flaws" << endl;
     }
     initialize();
-    size_t before_expanded_states = num_overall_expanded_concrete_states;
+    int before_expanded_states = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
     while (search_status == IN_PROGRESS) {
         if (cegar_timer.is_expired()) {

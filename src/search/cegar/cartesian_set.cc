@@ -1,7 +1,6 @@
 #include "cartesian_set.h"
 
 #include <sstream>
-#include <iostream>
 
 using namespace std;
 
@@ -62,10 +61,6 @@ bool CartesianSet::is_superset_of(const CartesianSet &other) const {
             return false;
     }
     return true;
-}
-
-bool CartesianSet::operator==(const CartesianSet &other) const {
-    return domain_subsets == other.domain_subsets;
 }
 
 ostream &operator<<(ostream &os, const CartesianSet &cartesian_set) {

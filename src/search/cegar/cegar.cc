@@ -44,8 +44,7 @@ CEGAR::CEGAR(
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
       debug(debug),
-      dot_graph_verbosity(dot_graph_verbosity),
-      cur_abstract_solution_cost(-1) {
+      dot_graph_verbosity(dot_graph_verbosity) {
     assert(max_states >= 1);
     if (search_strategy == SearchStrategy::ASTAR) {
         abstract_search = utils::make_unique_ptr<AbstractSearch>(
@@ -195,9 +194,9 @@ void CEGAR::refinement_loop() {
 
             int new_abstract_solution_cost =
                 shortest_paths->get_32bit_goal_distance(abstraction->get_initial_state().get_id());
-            if (new_abstract_solution_cost > cur_abstract_solution_cost) {
-                cur_abstract_solution_cost = new_abstract_solution_cost;
-                utils::g_log << "Abstract solution cost: " << cur_abstract_solution_cost << endl;
+            if (new_abstract_solution_cost > old_abstract_solution_cost) {
+                old_abstract_solution_cost = new_abstract_solution_cost;
+                utils::g_log << "Abstract solution cost: " << old_abstract_solution_cost << endl;
             }
         } else {
             utils::g_log << "Abstract task is unsolvable." << endl;
@@ -235,7 +234,6 @@ void CEGAR::refinement_loop() {
         }
 
         if (!split) {
-            cout << endl;
             utils::g_log << "Found concrete solution." << endl;
             break;
         }
