@@ -34,6 +34,7 @@ class CEGAR {
     const int max_states;
     const int max_non_looping_transitions;
     const SearchStrategy search_strategy;
+    const PickFlawedAbstractState pick_flawed_abstract_state;
 
     std::unique_ptr<Abstraction> abstraction;
     std::unique_ptr<AbstractSearch> abstract_search;

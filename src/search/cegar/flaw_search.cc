@@ -4,8 +4,9 @@
 #include "abstract_state.h"
 #include "flaw.h"
 #include "shortest_paths.h"
-#include "transition_system.h"
 #include "split_selector.h"
+#include "transition_system.h"
+#include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -21,15 +22,6 @@
 using namespace std;
 
 namespace cegar {
-CartesianSet FlawSearch::get_cartesian_set(const ConditionsProxy &conditions) const {
-    CartesianSet cartesian_set(domain_sizes);
-    for (FactProxy condition : conditions) {
-        cartesian_set.set_single_value(condition.get_variable().get_id(),
-                                       condition.get_value());
-    }
-    return cartesian_set;
-}
-
 int FlawSearch::get_abstract_state_id(const State &state) const {
     return abstraction.get_abstract_state_id(state);
 }
@@ -98,12 +90,12 @@ void FlawSearch::initialize() {
     assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, log);
-    abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
+    cached_abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
 
     assert(flawed_states.empty());
 
     const State &initial_state = state_registry->get_initial_state();
-    (*abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
+    (*cached_abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
     SearchNode node = search_space->get_node(initial_state);
     node.open_initial();
     open_list.push(initial_state.get_id());
@@ -129,7 +121,7 @@ SearchStatus FlawSearch::step() {
     }
 
     bool found_flaw = false;
-    int abs_id = (*abstract_state_ids)[s];
+    int abs_id = (*cached_abstract_state_ids)[s];
     assert(abs_id == get_abstract_state_id(s));
 
     // Check for each tr if the op is applicable or if there is a deviation
@@ -174,7 +166,7 @@ SearchStatus FlawSearch::step() {
                 }
             } else if (succ_node.is_new()) {
                 // No flaw
-                (*abstract_state_ids)[succ_state] = target;
+                (*cached_abstract_state_ids)[succ_state] = target;
                 succ_node.open(node, op, op.get_cost());
                 open_list.push(succ_state.get_id());
 
@@ -557,7 +549,6 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
 
 FlawSearch::FlawSearch(
     const shared_ptr<AbstractTask> &task,
-    const vector<int> &domain_sizes,
     const Abstraction &abstraction,
     const ShortestPaths &shortest_paths,
     utils::RandomNumberGenerator &rng,
@@ -569,7 +560,7 @@ FlawSearch::FlawSearch(
     bool debug) :
     task_proxy(*task),
     log(utils::get_silent_log()),
-    domain_sizes(domain_sizes),
+    domain_sizes(get_domain_sizes(task_proxy)),
     abstraction(abstraction),
     shortest_paths(shortest_paths),
     split_selector(task, pick_split, tiebreak_split, debug),
@@ -663,20 +654,20 @@ unique_ptr<Split> FlawSearch::get_split_legacy(const Solution &solution) {
 void FlawSearch::print_statistics() const {
     // Avoid division by zero for corner cases.
     int flaws = max(1, abstraction.get_num_states() - 1);
-    int searches = max(0ul, num_searches);
+    int searches = max(1ul, num_searches);
     int expansions = num_overall_expanded_concrete_states;
     utils::g_log << endl;
-    utils::g_log << "#Flaw searches: " << searches << endl;
-    utils::g_log << "#Flaws refined: " << flaws << endl;
-    utils::g_log << "#Expanded concrete states: " << expansions << endl;
-    utils::g_log << "#Max expanded concrete states in one flaw search: "
+    utils::g_log << "Flaw searches: " << searches << endl;
+    utils::g_log << "Flaws refined: " << flaws << endl;
+    utils::g_log << "Expanded concrete states: " << expansions << endl;
+    utils::g_log << "Maximum expanded concrete states in single flaw search: "
                  << max_expanded_concrete_states << endl;
     utils::g_log << "Flaw search time: " << flaw_search_timer << endl;
     utils::g_log << "Time for computing splits: " << compute_splits_timer << endl;
     utils::g_log << "Time for selecting splits: " << pick_split_timer << endl;
-    utils::g_log << "Avg flaws refined: "
+    utils::g_log << "Average number of flaws refined: "
                  << flaws / static_cast<float>(searches) << endl;
-    utils::g_log << "Avg expanded concrete states: "
+    utils::g_log << "Average number of expanded concrete states per flaw search: "
                  << expansions / static_cast<float>(searches) << endl;
     utils::g_log << "Avg Flaw search time: " << flaw_search_timer() / searches << endl;
     utils::g_log << endl;

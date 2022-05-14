@@ -41,6 +41,7 @@ CEGAR::CEGAR(
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       search_strategy(search_strategy),
+      pick_flawed_abstract_state(pick_flawed_abstract_state),
       abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
       timer(max_time),
       debug(debug),
@@ -53,7 +54,7 @@ CEGAR::CEGAR(
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
             task_properties::get_operator_costs(task_proxy), false);
         flaw_search = utils::make_unique_ptr<FlawSearch>(
-            task, domain_sizes, *abstraction, *shortest_paths, rng,
+            task, *abstraction, *shortest_paths, rng,
             pick_flawed_abstract_state, pick_split, tiebreak_split,
             max_concrete_states_per_abstract_state, max_state_expansions, debug);
     } else {
@@ -214,7 +215,7 @@ void CEGAR::refinement_loop() {
         }
 
         unique_ptr<Split> split;
-        if (flaw_search->get_pick_flawed_abstract_state_mode() ==
+        if (pick_flawed_abstract_state ==
             PickFlawedAbstractState::FIRST_ON_SHORTEST_PATH) {
             split = flaw_search->get_split_legacy(*solution);
         } else {

@@ -38,8 +38,8 @@ struct FlawedState {
     }
 
     friend std::ostream &operator<<(std::ostream &os, const FlawedState &s) {
-        return os << "abs_id: " << s.abs_id << ", h: " << s.h
-                  << ", states: " << s.concrete_states.size();
+        return os << "Flawed abstract state: id=" << s.abs_id << ", h=" << s.h
+                  << ", states=" << s.concrete_states.size();
     }
 
     static const FlawedState no_state;
@@ -60,7 +60,7 @@ public:
     int num_concrete_states(int abs_id) const;
     void clear();
     bool empty() const;
-    void dump(bool verbose = false) const;
+    void dump() const;
 };
 }
 
