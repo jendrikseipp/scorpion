@@ -124,10 +124,11 @@ SearchStatus FlawSearch::step() {
     int abs_id = (*cached_abstract_state_ids)[s];
     assert(abs_id == get_abstract_state_id(s));
 
-    // Check for each tr if the op is applicable or if there is a deviation
+    // Check for each transition if the operator is applicable or if there is a deviation.
     for (auto &pair : get_f_optimal_transitions(abs_id)) {
-        if (!utils::extra_memory_padding_is_reserved())
+        if (!utils::extra_memory_padding_is_reserved()) {
             return TIMEOUT;
+        }
 
         int op_id = pair.first;
         const vector<int> &targets = pair.second;
@@ -141,8 +142,6 @@ SearchStatus FlawSearch::step() {
                 found_flaw = true;
             }
             if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
-                // Clear open list.
-                stack<StateID>().swap(open_list);
                 return FAILED;
             }
             continue;
@@ -160,8 +159,6 @@ SearchStatus FlawSearch::step() {
                     found_flaw = true;
                 }
                 if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
-                    // Clear open list.
-                    stack<StateID>().swap(open_list);
                     return FAILED;
                 }
             } else if (succ_node.is_new()) {
@@ -391,8 +388,6 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
     while (search_status == IN_PROGRESS) {
         if (cegar_timer.is_expired()) {
             search_status = TIMEOUT;
-            // Clear open list.
-            stack<StateID>().swap(open_list);
             break;
         }
 
@@ -409,11 +404,12 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
                 utils::g_log << "Max expansions reached with flaws!" << endl;
                 search_status = FAILED;
             }
-            stack<StateID>().swap(open_list);
             break;
         }
         search_status = step();
     }
+    // Clear open list.
+    stack<StateID>().swap(open_list);
 
     max_expanded_concrete_states = max(max_expanded_concrete_states,
                                        num_overall_expanded_concrete_states -
@@ -424,7 +420,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
                      << " states" << endl;
     }
 
-    // Check if MAX_H_SINGLE did not find a single flaw
+    // Check if MAX_H did not find a single flaw.
     if (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H && search_status == FAILED
         && flawed_states.num_abstract_states() == 0 && open_list.empty()) {
         search_status = SOLVED;
@@ -658,18 +654,18 @@ void FlawSearch::print_statistics() const {
     int expansions = num_overall_expanded_concrete_states;
     utils::g_log << endl;
     utils::g_log << "Flaw searches: " << searches << endl;
-    utils::g_log << "Flaws refined: " << flaws << endl;
+    utils::g_log << "Refined flaws: " << flaws << endl;
     utils::g_log << "Expanded concrete states: " << expansions << endl;
     utils::g_log << "Maximum expanded concrete states in single flaw search: "
                  << max_expanded_concrete_states << endl;
     utils::g_log << "Flaw search time: " << flaw_search_timer << endl;
     utils::g_log << "Time for computing splits: " << compute_splits_timer << endl;
     utils::g_log << "Time for selecting splits: " << pick_split_timer << endl;
-    utils::g_log << "Average number of flaws refined: "
+    utils::g_log << "Average number of refined flaws: "
                  << flaws / static_cast<float>(searches) << endl;
     utils::g_log << "Average number of expanded concrete states per flaw search: "
                  << expansions / static_cast<float>(searches) << endl;
-    utils::g_log << "Avg Flaw search time: " << flaw_search_timer() / searches << endl;
+    utils::g_log << "Average flaw search time: " << flaw_search_timer() / searches << endl;
     utils::g_log << endl;
 }
 }
