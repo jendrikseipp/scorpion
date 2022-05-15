@@ -99,7 +99,27 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
             "Journal of Artificial Intelligence Research",
             "62",
             "535-577",
-            "2018"));
+            "2018") +
+        "For a description of the incremental search, see the paper" +
+        utils::format_conference_reference(
+            {"Jendrik Seipp", "Samuel von Allmen", "Malte Helmert"},
+            "Incremental Search for Counterexample-Guided Cartesian Abstraction Refinement",
+            "https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf",
+            "Proceedings of the 30th International Conference on "
+            "Automated Planning and Scheduling (ICAPS 2020)",
+            "244-248",
+            "AAAI Press",
+            "2020") +
+        "Finally, we describe advanced flaw selection strategies here:" +
+        utils::format_conference_reference(
+            {"David Speck", "Jendrik Seipp"},
+            "New Refinement Strategies for Cartesian Abstractions",
+            "https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf",
+            "Proceedings of the 32nd International Conference on "
+            "Automated Planning and Scheduling (ICAPS 2022)",
+            "to appear",
+            "AAAI Press",
+            "2022"));
     parser.document_language_support("action costs", "supported");
     parser.document_language_support("conditional effects", "not supported");
     parser.document_language_support("axioms", "not supported");
