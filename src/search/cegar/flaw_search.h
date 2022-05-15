@@ -85,7 +85,6 @@ class FlawSearch {
     Cost get_h_value(int abstract_state_id) const;
     void add_flaw(int abs_id, const State &state);
     OptimalTransitions get_f_optimal_transitions(int abstract_state_id) const;
-    const std::vector<Transition> &get_transitions(int abstract_state_id) const;
 
     void initialize();
     SearchStatus step();

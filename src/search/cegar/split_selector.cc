@@ -45,7 +45,7 @@ bool Split::combine_with(Split &&other) {
         swap(values, combined_values);
         return true;
     } else {
-        // TODO: Combine splits that have no common singleton value.
+        // For now, we only combine splits that have a common singleton value.
         return false;
     }
 }

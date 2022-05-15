@@ -8,9 +8,6 @@
 #include "transition_system.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/countdown_timer.h"
@@ -41,17 +38,11 @@ OptimalTransitions FlawSearch::get_f_optimal_transitions(int abstract_state_id) 
     return transitions;
 }
 
-const vector<Transition> &FlawSearch::get_transitions(
-    int abstract_state_id) const {
-    return abstraction.get_transition_system().
-           get_outgoing_transitions().at(abstract_state_id);
-}
-
 void FlawSearch::add_flaw(int abs_id, const State &state) {
     assert(abstraction.get_state(abs_id).includes(state));
 
-    // Limit of concrete states we consider per abstract state.
-    // If new abstract state (with potentially new h-value),
+    // We limit the number of concrete states we consider per abstract state.
+    // For a new abstract state (with a potentially unseen h-value),
     // this if-statement is never true.
     if (flawed_states.num_concrete_states(abs_id) >=
         max_concrete_states_per_abstract_state) {
@@ -174,9 +165,7 @@ SearchStatus FlawSearch::step() {
             }
         }
         if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
-            // The node is necessarily new, since we consider only one successor and
-            // follow f-optimal transitons
-            // Only consider one successor.
+            // Only consider one successor as in the legacy variant.
             break;
         }
     }
@@ -230,11 +219,11 @@ static void get_deviation_splits(
       target abstract state, loop over all values in the domain of the
       corresponding variable. The values that are in both the current and
       the target abstract state are the "wanted" ones, i.e., the ones that
-      we want to split off. This test can be specialized for precondition and
-      deviation flaws.
+      we want to split off. This test can be specialized for applicability and
+      deviation flaws. Here, we consider deviation flaws.
 
-      Let the desired abstract transition be (a, o, t) and the deviation (a, o,
-      b). We distinguish three cases for each variable v:
+      Let the desired abstract transition be (a, o, t) and the deviation be
+      (a, o, b). We distinguish three cases for each variable v:
 
       pre(o)[v] defined: no split possible since o is applicable in s.
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
@@ -271,7 +260,7 @@ static void get_deviation_splits(
     }
 }
 
-// TODO: Comment about split considering multiple transitions
+// TODO: Add comment about split considering multiple transitions.
 unique_ptr<Split> FlawSearch::create_split(
     const vector<StateID> &state_ids, int abstract_state_id) {
     compute_splits_timer.resume();
@@ -383,7 +372,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
         utils::g_log << "Search for flaws" << endl;
     }
     initialize();
-    int before_expanded_states = num_overall_expanded_concrete_states;
+    int num_expansions_in_prev_searches = num_overall_expanded_concrete_states;
     SearchStatus search_status = IN_PROGRESS;
     while (search_status == IN_PROGRESS) {
         if (cegar_timer.is_expired()) {
@@ -391,17 +380,18 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
             break;
         }
 
-        // Max Expansions reached
-        int cur_expanded_states = num_overall_expanded_concrete_states -
-            before_expanded_states;
-        if (cur_expanded_states >= max_state_expansions) {
-            // No flaw found
+        int current_num_expanded_states = num_overall_expanded_concrete_states -
+            num_expansions_in_prev_searches;
+        if (current_num_expanded_states >= max_state_expansions) {
+            // Expansion limit reached.
             if (flawed_states.num_abstract_states() == 0) {
+                // No flaw found.
+                // TODO: Why release memory padding here?
                 utils::release_extra_memory_padding();
-                utils::g_log << "Max expansions reached with no flaw!" << endl;
+                utils::g_log << "Expansion limit reached with no flaw." << endl;
                 search_status = TIMEOUT;
             } else {
-                utils::g_log << "Max expansions reached with flaws!" << endl;
+                utils::g_log << "Expansion limit reached with flaws." << endl;
                 search_status = FAILED;
             }
             break;
@@ -411,18 +401,19 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
     // Clear open list.
     stack<StateID>().swap(open_list);
 
+    size_t current_num_expanded_states = num_overall_expanded_concrete_states -
+        num_expansions_in_prev_searches;
     max_expanded_concrete_states = max(max_expanded_concrete_states,
-                                       num_overall_expanded_concrete_states -
-                                       before_expanded_states);
+                                       current_num_expanded_states);
     if (debug) {
-        utils::g_log << "Flaw search expanded "
-                     << num_overall_expanded_concrete_states - before_expanded_states
-                     << " states" << endl;
+        utils::g_log << "Flaw search expanded " << current_num_expanded_states
+                     << " states." << endl;
     }
 
-    // Check if MAX_H did not find a single flaw.
-    if (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H && search_status == FAILED
-        && flawed_states.num_abstract_states() == 0 && open_list.empty()) {
+    /* For MAX_H, we don't return SOLVED when hitting a goal state. So if MAX_H
+       fails to find a single flaw, we adapt the search status here. */
+    if (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H
+        && search_status == FAILED && flawed_states.num_abstract_states() == 0) {
         search_status = SOLVED;
     }
 
@@ -481,7 +472,6 @@ FlawedState FlawSearch::get_flawed_state_with_min_h() {
     return FlawedState::no_state;
 }
 
-
 unique_ptr<Split>
 FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
     assert(pick_flawed_abstract_state == PickFlawedAbstractState::BATCH_MIN_H);
@@ -503,7 +493,6 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
     auto search_status = SearchStatus::FAILED;
     if (flawed_state == FlawedState::no_state) {
         search_status = search_for_flaws(cegar_timer);
-        flawed_states.dump();
         if (search_status == SearchStatus::FAILED) {
             flawed_state = get_flawed_state_with_min_h();
         }
