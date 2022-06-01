@@ -12,9 +12,9 @@
 using namespace std;
 
 namespace exhaustive_search {
-static bool is_strips_fact(const std::string &fact_name) {
+static bool is_strips_fact(const string &fact_name) {
     return fact_name != "<none of those>" &&
-           fact_name.rfind("NegatedAtom", 0) == std::string::npos;
+           fact_name.rfind("NegatedAtom", 0) == string::npos;
 }
 
 static vector<vector<int>> construct_and_dump_fact_mapping(
