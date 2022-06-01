@@ -10,8 +10,13 @@ namespace breadth_first_search {
 class BreadthFirstSearch;
 }
 
+namespace exhaustive_search {
+class ExhaustiveSearch;
+}
+
 class StateID {
     friend class breadth_first_search::BreadthFirstSearch;
+    friend class exhaustive_search::ExhaustiveSearch;
     friend class StateRegistry;
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template<typename>
