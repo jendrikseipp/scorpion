@@ -4,22 +4,17 @@
 from collections import defaultdict
 
 import build_model
+import options
 import pddl_to_prolog
 import pddl
 import timers
+
+STATIC_ATOMS_FILE = "static-atoms.txt"
 
 def print_fact(fact, file):
     fact_name = str(fact)
     assert fact_name.startswith("Atom ")
     print(fact_name[len("Atom "):], file=file)
-
-def print_static_information(static_preds, types, model):
-    with open("static-atoms.txt", "w") as f:
-        for fact in model:
-            if fact.predicate in static_preds:
-                print_fact(fact, file=f)
-        for t in types:
-            print_fact(t, file=f)
 
 def add_type_predicates(types):
     result = []
@@ -28,7 +23,7 @@ def add_type_predicates(types):
             result.append("Atom %s(%s)" % (k, obj))
     return result
 
-def get_fluent_facts(task, model):
+def dump_static_atoms(task, model):
     all_predicates = set()
     fluent_predicates = set()
     for action in task.actions:
@@ -45,7 +40,21 @@ def get_fluent_facts(task, model):
         fluent_predicates.add(axiom.name)
     types = get_objects_by_type(task.objects, task.types)
     type_predicates = add_type_predicates(types)
-    print_static_information(all_predicates - fluent_predicates, type_predicates, model)
+    static_predicates = all_predicates - fluent_predicates
+    with open(STATIC_ATOMS_FILE, "w") as f:
+        for fact in model:
+            if fact.predicate in static_predicates:
+                print_fact(fact, file=f)
+        for t in type_predicates:
+            print_fact(t, file=f)
+
+def get_fluent_facts(task, model):
+    fluent_predicates = set()
+    for action in task.actions:
+        for effect in action.effects:
+            fluent_predicates.add(effect.literal.predicate)
+    for axiom in task.axioms:
+        fluent_predicates.add(axiom.name)
     return {fact for fact in model
             if fact.predicate in fluent_predicates}
 
@@ -111,6 +120,8 @@ def instantiate(task, model):
 def explore(task):
     prog = pddl_to_prolog.translate(task)
     model = build_model.compute_model(prog)
+    if options.dump_static_atoms:
+        dump_static_atoms(task, model)
     with timers.timing("Completing instantiation"):
         return instantiate(task, model)
 
