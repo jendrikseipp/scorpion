@@ -197,6 +197,8 @@ Different cost partitioning algorithms (all need `admissible=true`):
   `brfs()`
 - Depth-first search:
   `dfs()`
+- Exhaustive search (useful for dumping the reachable state space of small input tasks):
+  `dump_reachable_search_space()`
 - IDA* search:
   `idastar(cegar(cache_estimates=false))`
 - Iterative width search:
