@@ -18,7 +18,11 @@ ExhaustiveSearch::ExhaustiveSearch(const Options &opts)
 }
 
 void ExhaustiveSearch::initialize() {
-    utils::g_log << "Conducting exhaustive breadth-first search." << endl;
+    utils::g_log << "Dumping the reachable state space..." << endl;
+    cout << "  # G: goal state" << endl;
+    cout << "  # N: non-goal state" << endl;
+    cout << "  # T: transition" << endl;
+    cout << "  # The initial state has ID 0." << endl;
     assert(state_registry.size() <= 1);
     State initial_state = state_registry.get_initial_state();
     statistics.inc_generated();
@@ -39,6 +43,12 @@ SearchStatus ExhaustiveSearch::step() {
 
     State s = state_registry.lookup_state(StateID(current_state_id));
     statistics.inc_expanded();
+    if (task_properties::is_goal_state(task_proxy, s)) {
+        cout << "G " << s.get_id().value << endl;
+    } else {
+        cout << "N " << s.get_id().value << endl;
+    }
+
     /* Next time we'll look at the next state that was created in the registry.
        This results in a breadth-first order. */
     ++current_state_id;
@@ -49,8 +59,9 @@ SearchStatus ExhaustiveSearch::step() {
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_op_ids) {
         // Add successor states to registry.
-        state_registry.get_successor_state(s, operators[op_id]);
+        State succ_state = state_registry.get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
+        cout << "T " << s.get_id().value << " " << succ_state.get_id().value << endl;
     }
     return IN_PROGRESS;
 }
