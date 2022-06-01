@@ -107,6 +107,11 @@ repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
 - If [ccache](https://ccache.dev/) is installed (recommended), Scorpion
   uses it to cache compilation files.
 
+### New translator options
+
+- Use `--dump-predicates` and `--dump-static-atoms` to write files with
+  information that's useful for learning domain control knowledge.
+
 
 ### New plugin options
 
@@ -197,6 +202,8 @@ Different cost partitioning algorithms (all need `admissible=true`):
   `brfs()`
 - Depth-first search:
   `dfs()`
+- Exhaustive search (useful for dumping the reachable state space of small input tasks):
+  `dump_reachable_search_space()`
 - IDA* search:
   `idastar(cegar(cache_estimates=false))`
 - Iterative width search:

@@ -394,6 +394,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME EXHAUSTIVE_SEARCH
+    HELP "Exhaustive search"
+    SOURCES
+        search_engines/exhaustive_search
+    DEPENDS SEARCH_COMMON NULL_PRUNING_METHOD
+)
+
+fast_downward_plugin(
     NAME PLUGIN_ASTAR
     HELP "A* search"
     SOURCES
