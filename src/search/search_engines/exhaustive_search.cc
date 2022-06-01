@@ -19,10 +19,9 @@ ExhaustiveSearch::ExhaustiveSearch(const Options &opts)
 
 void ExhaustiveSearch::initialize() {
     utils::g_log << "Dumping the reachable state space..." << endl;
-    cout << "  # G: goal state" << endl;
-    cout << "  # N: non-goal state" << endl;
-    cout << "  # T: transition" << endl;
-    cout << "  # The initial state has ID 0." << endl;
+    cout << "# G: goal state" << endl;
+    cout << "# T: transition" << endl;
+    cout << "# The initial state has ID 0." << endl;
     assert(state_registry.size() <= 1);
     State initial_state = state_registry.get_initial_state();
     statistics.inc_generated();
@@ -45,8 +44,6 @@ SearchStatus ExhaustiveSearch::step() {
     statistics.inc_expanded();
     if (task_properties::is_goal_state(task_proxy, s)) {
         cout << "G " << s.get_id().value << endl;
-    } else {
-        cout << "N " << s.get_id().value << endl;
     }
 
     /* Next time we'll look at the next state that was created in the registry.
