@@ -8,13 +8,44 @@ import pddl_to_prolog
 import pddl
 import timers
 
+def print_fact(fact, file):
+    fact_name = str(fact)
+    assert fact_name.startswith("Atom ")
+    print(fact_name[len("Atom "):], file=file)
+
+def print_static_information(static_preds, types, model):
+    with open("static-atoms.txt", "w") as f:
+        for fact in model:
+            if fact.predicate in static_preds:
+                print_fact(fact, file=f)
+        for t in types:
+            print_fact(t, file=f)
+
+def add_type_predicates(types):
+    result = []
+    for k, l in types.items():
+        for obj in l:
+            result.append("Atom %s(%s)" % (k, obj))
+    return result
+
 def get_fluent_facts(task, model):
+    all_predicates = set()
     fluent_predicates = set()
     for action in task.actions:
         for effect in action.effects:
             fluent_predicates.add(effect.literal.predicate)
+            all_predicates.add(effect.literal.predicate)
+        if isinstance(action.precondition, pddl.Conjunction):
+            for precond in action.precondition.parts:
+                all_predicates.add(precond.predicate)
+        else:
+            assert isinstance(action.precondition, pddl.Atom)
+            all_predicates.add(action.precondition.predicate)
     for axiom in task.axioms:
         fluent_predicates.add(axiom.name)
+    types = get_objects_by_type(task.objects, task.types)
+    type_predicates = add_type_predicates(types)
+    print_static_information(all_predicates - fluent_predicates, type_predicates, model)
     return {fact for fact in model
             if fact.predicate in fluent_predicates}
 

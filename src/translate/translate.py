@@ -520,6 +520,17 @@ def unsolvable_sas_task(msg):
     print("%s! Generating unsolvable task..." % msg)
     return trivial_task(solvable=False)
 
+def append_static_facts(sas_task, atoms):
+    sas_facts = {
+        atom
+        for values in sas_task.variables.value_names
+        for atom in values
+    }
+    static_facts = {str(x) for x in atoms} - sas_facts
+    with open("static-atoms.txt", "a") as f:
+        for fact in static_facts:
+            instantiate.print_fact(fact, file=f)
+
 def pddl_to_sas(task):
     with timers.timing("Instantiating", block=True):
         (relaxed_reachable, atoms, actions, axioms,
@@ -593,6 +604,7 @@ def pddl_to_sas(task):
                 sas_task, options.reorder_variables,
                 options.filter_unimportant_vars)
 
+    append_static_facts(sas_task, atoms)
     return sas_task
 
 
@@ -679,11 +691,25 @@ def dump_statistics(sas_task):
         print("Translator peak memory: %d KB" % peak_memory)
 
 
+def dump_predicates(task, path):
+    predicates = [
+        (predicate.name, len(predicate.arguments))
+        for predicate in task.predicates
+        if not predicate.name.startswith("=")
+    ]
+    predicates += [(pddl_type.name, 1) for pddl_type in task.types]
+
+    with open(path, "w") as f:
+        f.write("\n".join(f"{name},{arity}"
+                          for name, arity in sorted(predicates)))
+
+
 def main():
     timer = timers.Timer()
     with timers.timing("Parsing", True):
         task = pddl_parser.open(
             domain_filename=options.domain, task_filename=options.task)
+    dump_predicates(task, "predicates.txt")
 
     with timers.timing("Normalizing task"):
         normalize.normalize(task)
