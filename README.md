@@ -107,6 +107,11 @@ repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
 - If [ccache](https://ccache.dev/) is installed (recommended), Scorpion
   uses it to cache compilation files.
 
+### New translator options
+
+- Use `--dump-predicates` and `--dump-static-atoms` to write files with
+  information that's useful for learning domain control knowledge.
+
 
 ### New plugin options
 
