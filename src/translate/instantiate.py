@@ -41,9 +41,11 @@ def dump_static_atoms(task, model):
     types = get_objects_by_type(task.objects, task.types)
     type_predicates = add_type_predicates(types)
     static_predicates = all_predicates - fluent_predicates
+    initial_state_facts = set(task.init)
     with open(STATIC_ATOMS_FILE, "w") as f:
         for fact in model:
             if fact.predicate in static_predicates:
+                assert fact in initial_state_facts, fact
                 print_fact(fact, file=f)
         for t in type_predicates:
             print_fact(t, file=f)

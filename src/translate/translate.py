@@ -520,19 +520,22 @@ def unsolvable_sas_task(msg):
     print("%s! Generating unsolvable task..." % msg)
     return trivial_task(solvable=False)
 
-def append_static_facts(sas_task, atoms):
+def append_static_facts(task, sas_task, atoms):
+    # TODO: Update this comment.
     # It's unclear whether this function is needed. For Blocksworld it adds the
     # facts on(a,a) etc. and for Sokoban it adds the facts clear(x) for cells x
     # that are ouside the wall. For other tested domains the function has no
-    # effect. Thus, we skip this function for now.
-    return
-
+    # effect.
     sas_facts = {
         atom
         for values in sas_task.variables.value_names
         for atom in values
     }
-    static_facts = {atom for atom in atoms if str(atom) not in sas_facts}
+    pddl_initial_state_facts = set(task.init)
+    static_facts = {
+        atom for atom in atoms
+        if str(atom) not in sas_facts
+        and atom in pddl_initial_state_facts}
     with open(instantiate.STATIC_ATOMS_FILE, "a") as f:
         for fact in static_facts:
             instantiate.print_fact(fact, file=f)
@@ -611,7 +614,7 @@ def pddl_to_sas(task):
                 options.filter_unimportant_vars)
 
     if options.dump_static_atoms:
-        append_static_facts(sas_task, atoms)
+        append_static_facts(task, sas_task, atoms)
     return sas_task
 
 
