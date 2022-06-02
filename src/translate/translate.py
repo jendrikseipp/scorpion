@@ -520,25 +520,35 @@ def unsolvable_sas_task(msg):
     print("%s! Generating unsolvable task..." % msg)
     return trivial_task(solvable=False)
 
-def append_static_facts(task, sas_task, atoms):
-    # TODO: Update this comment.
-    # It's unclear whether this function is needed. For Blocksworld it adds the
-    # facts on(a,a) etc. and for Sokoban it adds the facts clear(x) for cells x
-    # that are ouside the wall. For other tested domains the function has no
-    # effect.
-    sas_facts = {
+def append_static_atoms(task, sas_task, atoms):
+    """Dump static atoms belonging to non-static predicates.
+
+    A predicate is static if all its groundings are static. We dump static atoms
+    belonging to static predicates in dump_static_atoms() in instantiate.py.
+    There are also predicates where only a subset of their groundings are static
+    and we dump those static atoms here.
+    Examples for such static atoms:
+      Blocksworld: on(b1,b1), on(b2,b2), etc.
+      Sokoban: clear(x) for cells x that are ouside the wall
+      Spanner: at(nut1, gate), etc.
+      Visitall: visited(x) for start location x
+
+    We do not dump static atoms that are always false, such as the Blocksworld
+    atoms above.
+    """
+    sas_atoms = {
         atom
         for values in sas_task.variables.value_names
         for atom in values
     }
-    pddl_initial_state_facts = set(task.init)
-    static_facts = {
+    pddl_initial_state_atoms = set(task.init)
+    static_atoms = {
         atom for atom in atoms
-        if str(atom) not in sas_facts
-        and atom in pddl_initial_state_facts}
+        if str(atom) not in sas_atoms
+        and atom in pddl_initial_state_atoms}
     with open(instantiate.STATIC_ATOMS_FILE, "a") as f:
-        for fact in static_facts:
-            instantiate.print_fact(fact, file=f)
+        for atom in static_atoms:
+            instantiate.print_atom(atom, file=f)
 
 def pddl_to_sas(task):
     with timers.timing("Instantiating", block=True):
@@ -614,7 +624,7 @@ def pddl_to_sas(task):
                 options.filter_unimportant_vars)
 
     if options.dump_static_atoms:
-        append_static_facts(task, sas_task, atoms)
+        append_static_atoms(task, sas_task, atoms)
     return sas_task
 
 

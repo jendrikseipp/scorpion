@@ -11,10 +11,10 @@ import timers
 
 STATIC_ATOMS_FILE = "static-atoms.txt"
 
-def print_fact(fact, file):
-    fact_name = str(fact)
-    assert fact_name.startswith("Atom ")
-    print(fact_name[len("Atom "):], file=file)
+def print_atom(atom, file):
+    atom_name = str(atom)
+    assert atom_name.startswith("Atom ")
+    print(atom_name[len("Atom "):], file=file)
 
 def add_type_predicates(types):
     result = []
@@ -24,6 +24,12 @@ def add_type_predicates(types):
     return result
 
 def dump_static_atoms(task, model):
+    """Dump all atoms belonging to static predicates.
+
+    A predicate is static if all its groundings are static. There are predicates
+    where only a subset of their groundings are static. We dump static atoms
+    belonging to non-static predicates in append_static_atoms() in translate.py.
+    """
     all_predicates = set()
     fluent_predicates = set()
     for action in task.actions:
@@ -41,14 +47,14 @@ def dump_static_atoms(task, model):
     types = get_objects_by_type(task.objects, task.types)
     type_predicates = add_type_predicates(types)
     static_predicates = all_predicates - fluent_predicates
-    initial_state_facts = set(task.init)
+    initial_state_atoms = set(task.init)
     with open(STATIC_ATOMS_FILE, "w") as f:
-        for fact in model:
-            if fact.predicate in static_predicates:
-                assert fact in initial_state_facts, fact
-                print_fact(fact, file=f)
+        for atom in model:
+            if atom.predicate in static_predicates:
+                assert atom in initial_state_atoms, atom
+                print_atom(atom, file=f)
         for t in type_predicates:
-            print_fact(t, file=f)
+            print_atom(t, file=f)
 
 def get_fluent_facts(task, model):
     fluent_predicates = set()
