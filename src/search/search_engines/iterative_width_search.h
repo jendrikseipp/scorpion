@@ -3,7 +3,7 @@
 
 #include "../search_engine.h"
 
-#include "../utils/timer.h"
+#include "../novelty/novelty_table.h"
 
 #include <deque>
 #include <memory>
@@ -19,21 +19,10 @@ class IterativeWidthSearch : public SearchEngine {
     const bool debug;
 
     std::deque<StateID> open_list;
-    std::vector<int> fact_id_offsets;
-    std::vector<bool> seen_facts;
-    std::vector<std::vector<bool>> seen_fact_pairs;
-    utils::Timer compute_novelty_timer;
+    novelty::NoveltyTable novelty_table;
 
-    int get_fact_id(FactPair fact) const {
-        return fact_id_offsets[fact.var] + fact.value;
-    }
-    int get_fact_id(int var, int value) const {
-        return fact_id_offsets[var] + value;
-    }
-
-    bool visit_fact_pair(int fact_id1, int fact_id2);
     bool is_novel(const State &state);
-    bool is_novel(OperatorID op_id, const State &succ_state);
+    bool is_novel(const OperatorProxy &op, const State &succ_state);
 
 protected:
     virtual void initialize() override;
