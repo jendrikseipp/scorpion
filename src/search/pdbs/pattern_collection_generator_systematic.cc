@@ -348,7 +348,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::compute_patte
     } else {
         build_patterns(task_proxy);
     }
-    return PatternCollectionInformation(task_proxy, patterns);
+    return PatternCollectionInformation(task_proxy, patterns, log);
 }
 
 void PatternCollectionGeneratorSystematic::generate(

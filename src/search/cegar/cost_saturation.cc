@@ -82,7 +82,7 @@ CostSaturation::CostSaturation(
     SearchStrategy search_strategy,
     int memory_padding_mb,
     utils::RandomNumberGenerator &rng,
-    bool debug)
+    utils::LogProxy &log)
     : subtask_generators(subtask_generators),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
@@ -92,7 +92,7 @@ CostSaturation::CostSaturation(
       search_strategy(search_strategy),
       memory_padding_mb(memory_padding_mb),
       rng(rng),
-      debug(debug),
+      log(log),
       num_states(0),
       num_non_looping_transitions(0) {
 }
@@ -124,7 +124,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
 
     utils::reserve_extra_memory_padding(memory_padding_mb);
     for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
-        SharedTasks subtasks = subtask_generator->get_subtasks(task);
+        SharedTasks subtasks = subtask_generator->get_subtasks(task, log);
         build_abstractions(subtasks, timer, should_abort);
         if (should_abort())
             break;
@@ -198,7 +198,7 @@ void CostSaturation::build_abstractions(
             pick_split,
             search_strategy,
             rng,
-            debug);
+            log);
 
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
         num_states += abstraction->get_num_states();
@@ -223,10 +223,10 @@ void CostSaturation::build_abstractions(
         reduce_remaining_costs(saturated_costs);
 
         int num_unsolvable_states = count(goal_distances.begin(), goal_distances.end(), INF);
-        utils::g_log << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
-        utils::g_log << "Initial h value: "
-                     << goal_distances[abstraction->get_initial_state().get_id()]
-                     << endl << endl;
+        log << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
+        log << "Initial h value: "
+            << goal_distances[abstraction->get_initial_state().get_id()]
+            << endl << endl;
 
         heuristic_functions.emplace_back(
             abstraction->extract_refinement_hierarchy(),
@@ -240,13 +240,15 @@ void CostSaturation::build_abstractions(
 }
 
 void CostSaturation::print_statistics(utils::Duration init_time) const {
-    utils::g_log << "Done initializing additive Cartesian heuristic" << endl;
-    utils::g_log << "Time for initializing additive Cartesian heuristic: "
-                 << init_time << endl;
-    utils::g_log << "Cartesian abstractions built: " << heuristic_functions.size() << endl;
-    utils::g_log << "Cartesian states: " << num_states << endl;
-    utils::g_log << "Total number of non-looping transitions: "
-                 << num_non_looping_transitions << endl;
-    utils::g_log << endl;
+    if (log.is_at_least_normal()) {
+        log << "Done initializing additive Cartesian heuristic" << endl;
+        log << "Time for initializing additive Cartesian heuristic: "
+            << init_time << endl;
+        log << "Cartesian abstractions built: " << heuristic_functions.size() << endl;
+        log << "Cartesian states: " << num_states << endl;
+        log << "Total number of non-looping transitions: "
+            << num_non_looping_transitions << endl;
+        log << endl;
+    }
 }
 }

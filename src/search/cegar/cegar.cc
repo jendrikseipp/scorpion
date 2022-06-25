@@ -88,17 +88,18 @@ CEGAR::CEGAR(
     PickSplit pick,
     SearchStrategy search_strategy,
     utils::RandomNumberGenerator &rng,
-    bool debug)
+    utils::LogProxy &log)
     : task_proxy(*task),
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       split_selector(task, pick),
       search_strategy(search_strategy),
-      abstraction(utils::make_unique_ptr<Abstraction>(task, debug)),
+      abstraction(utils::make_unique_ptr<Abstraction>(task, log)),
       timer(max_time),
-      debug(debug) {
+      log(log) {
     assert(max_states >= 1);
+    bool debug = log.is_at_least_debug();
     if (search_strategy == SearchStrategy::ASTAR) {
         abstract_search = utils::make_unique_ptr<AbstractSearch>(
             task_properties::get_operator_costs(task_proxy));
@@ -109,16 +110,19 @@ CEGAR::CEGAR(
         ABORT("Unknown search strategy");
     }
 
-    utils::g_log << "Start building abstraction." << endl;
-    utils::g_log << "Maximum number of states: " << max_states << endl;
-    utils::g_log << "Maximum number of transitions: "
-                 << max_non_looping_transitions << endl;
+    if (log.is_at_least_normal()) {
+        log << "Start building abstraction." << endl;
+        log << "Maximum number of states: " << max_states << endl;
+        log << "Maximum number of transitions: "
+            << max_non_looping_transitions << endl;
+    }
 
     refinement_loop(rng);
-    utils::g_log << "Done building abstraction." << endl;
-    utils::g_log << "Time for building abstraction: " << timer.get_elapsed_time() << endl;
-
-    print_statistics();
+    if (log.is_at_least_normal()) {
+        log << "Done building abstraction." << endl;
+        log << "Time for building abstraction: " << timer.get_elapsed_time() << endl;
+        print_statistics();
+    }
 }
 
 CEGAR::~CEGAR() {
@@ -161,16 +165,24 @@ void CEGAR::separate_facts_unreachable_before_goal() const {
 
 bool CEGAR::may_keep_refining() const {
     if (abstraction->get_num_states() >= max_states) {
-        utils::g_log << "Reached maximum number of states." << endl;
+        if (log.is_at_least_normal()) {
+            log << "Reached maximum number of states." << endl;
+        }
         return false;
     } else if (abstraction->get_transition_system().get_num_non_loops() >= max_non_looping_transitions) {
-        utils::g_log << "Reached maximum number of transitions." << endl;
+        if (log.is_at_least_normal()) {
+            log << "Reached maximum number of transitions." << endl;
+        }
         return false;
     } else if (timer.is_expired()) {
-        utils::g_log << "Reached time limit." << endl;
+        if (log.is_at_least_normal()) {
+            log << "Reached time limit." << endl;
+        }
         return false;
     } else if (!utils::extra_memory_padding_is_reserved()) {
-        utils::g_log << "Reached memory limit." << endl;
+        if (log.is_at_least_normal()) {
+            log << "Reached memory limit." << endl;
+        }
         return false;
     }
     return true;
@@ -197,7 +209,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         for (FactProxy goal : task_proxy.get_goals()) {
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
-            if (debug) {
+            if (log.is_at_least_debug()) {
                 dump_dot_graph(*abstraction);
             }
             current = &abstraction->get_state(pair.second);
@@ -217,7 +229,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                    abstraction->get_goals()));
     }
 
-    if (debug) {
+    if (log.is_at_least_debug()) {
         dump_dot_graph(*abstraction);
     }
 
@@ -248,7 +260,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             }
             update_goal_distances_timer.stop();
 
-            if (debug) {
+            if (log.is_at_least_debug()) {
                 cout << "Found abstract solution:" << endl;
                 for (const Transition &t : *solution) {
                     OperatorProxy op = task_proxy.get_operators()[t.op_id];
@@ -256,7 +268,9 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                 }
             }
         } else {
-            utils::g_log << "Abstract task is unsolvable." << endl;
+            if (log.is_at_least_normal()) {
+                log << "Abstract task is unsolvable." << endl;
+            }
             break;
         }
 
@@ -265,7 +279,9 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         find_flaw_timer.stop();
 
         if (!flaw) {
-            utils::g_log << "Found concrete solution for subtask." << endl;
+            if (log.is_at_least_normal()) {
+                log << "Found concrete solution for subtask." << endl;
+            }
             break;
         }
 
@@ -278,7 +294,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         auto new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
         refine_timer.stop();
 
-        if (debug) {
+        if (log.is_at_least_debug()) {
             dump_dot_graph(*abstraction);
         }
 
@@ -299,40 +315,43 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         }
         update_goal_distances_timer.stop();
 
-        if (abstraction->get_num_states() % 1000 == 0) {
-            utils::g_log << abstraction->get_num_states() << "/" << max_states << " states, "
-                         << abstraction->get_transition_system().get_num_non_loops() << "/"
-                         << max_non_looping_transitions << " transitions" << endl;
+        if (log.is_at_least_verbose() &&
+            abstraction->get_num_states() % 1000 == 0) {
+            log << abstraction->get_num_states() << "/" << max_states << " states, "
+                << abstraction->get_transition_system().get_num_non_loops() << "/"
+                << max_non_looping_transitions << " transitions" << endl;
         }
     }
-    utils::g_log << "Time for finding abstract traces: " << find_trace_timer << endl;
-    utils::g_log << "Time for finding flaws: " << find_flaw_timer << endl;
-    utils::g_log << "Time for splitting states: " << refine_timer << endl;
-    utils::g_log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
+    if (log.is_at_least_normal()) {
+        log << "Time for finding abstract traces: " << find_trace_timer << endl;
+        log << "Time for finding flaws: " << find_flaw_timer << endl;
+        log << "Time for splitting states: " << refine_timer << endl;
+        log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
+    }
 }
 
 unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
-    if (debug)
-        utils::g_log << "Check solution:" << endl;
+    if (log.is_at_least_debug())
+        log << "Check solution:" << endl;
 
     const AbstractState *abstract_state = &abstraction->get_initial_state();
     State concrete_state = task_proxy.get_initial_state();
     assert(abstract_state->includes(concrete_state));
 
-    if (debug)
-        utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
+    if (log.is_at_least_debug())
+        log << "  Initial abstract state: " << *abstract_state << endl;
 
     for (const Transition &step : solution) {
         OperatorProxy op = task_proxy.get_operators()[step.op_id];
         const AbstractState *next_abstract_state = &abstraction->get_state(step.target_id);
         if (task_properties::is_applicable(op, concrete_state)) {
-            if (debug)
-                utils::g_log << "  Move to " << *next_abstract_state << " with "
-                             << op.get_name() << endl;
+            if (log.is_at_least_debug())
+                log << "  Move to " << *next_abstract_state << " with "
+                    << op.get_name() << endl;
             State next_concrete_state = concrete_state.get_unregistered_successor(op);
             if (!next_abstract_state->includes(next_concrete_state)) {
-                if (debug)
-                    utils::g_log << "  Paths deviate." << endl;
+                if (log.is_at_least_debug())
+                    log << "  Paths deviate." << endl;
                 return utils::make_unique_ptr<Flaw>(
                     move(concrete_state),
                     *abstract_state,
@@ -341,8 +360,8 @@ unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
             abstract_state = next_abstract_state;
             concrete_state = move(next_concrete_state);
         } else {
-            if (debug)
-                utils::g_log << "  Operator not applicable: " << op.get_name() << endl;
+            if (log.is_at_least_debug())
+                log << "  Operator not applicable: " << op.get_name() << endl;
             return utils::make_unique_ptr<Flaw>(
                 move(concrete_state),
                 *abstract_state,
@@ -354,8 +373,8 @@ unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
         // We found a concrete solution.
         return nullptr;
     } else {
-        if (debug)
-            utils::g_log << "  Goal test failed." << endl;
+        if (log.is_at_least_debug())
+            log << "  Goal test failed." << endl;
         return utils::make_unique_ptr<Flaw>(
             move(concrete_state),
             *abstract_state,

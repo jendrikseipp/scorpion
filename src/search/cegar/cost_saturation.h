@@ -11,6 +11,7 @@ namespace utils {
 class CountdownTimer;
 class Duration;
 class RandomNumberGenerator;
+class LogProxy;
 }
 
 namespace cegar {
@@ -34,7 +35,7 @@ class CostSaturation {
     const SearchStrategy search_strategy;
     const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
-    const bool debug;
+    utils::LogProxy &log;
 
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
@@ -63,7 +64,7 @@ public:
         SearchStrategy search_strategy,
         int memory_padding_mb,
         utils::RandomNumberGenerator &rng,
-        bool debug);
+        utils::LogProxy &log);
 
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
         const std::shared_ptr<AbstractTask> &task);

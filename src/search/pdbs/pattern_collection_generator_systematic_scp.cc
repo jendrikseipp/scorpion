@@ -506,7 +506,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
     for (auto &projection : *projections) {
         patterns->push_back(projection->get_pattern());
     }
-    PatternCollectionInformation pci(task_proxy, patterns);
+    PatternCollectionInformation pci(task_proxy, patterns, log);
     pci.set_projections(projections);
     return pci;
 }
