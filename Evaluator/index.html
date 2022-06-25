@@ -1153,9 +1153,16 @@
 <p>This plugin type can be predefined using <code>--evaluator</code>.
 The old predefinition key <code>--heuristic</code> is still supported but deprecated.</p>
 <h2 id="additive_heuristic">Additive heuristic<a class="headerlink" href="#additive_heuristic" title="Permanent link">#</a></h2>
-<pre><code>add(transform=no_transform(), cache_estimates=true)
+<pre><code>add(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1174,9 +1181,16 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 </ul>
 <h2 id="blind_heuristic">Blind heuristic<a class="headerlink" href="#blind_heuristic" title="Permanent link">#</a></h2>
 <p>Returns cost of cheapest action for non-goal states, 0 for goal states</p>
-<pre><code>blind(transform=no_transform(), cache_estimates=true)
+<pre><code>blind(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1194,9 +1208,16 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="context-enhanced_additive_heuristic">Context-enhanced additive heuristic<a class="headerlink" href="#context-enhanced_additive_heuristic" title="Permanent link">#</a></h2>
-<pre><code>cea(transform=no_transform(), cache_estimates=true)
+<pre><code>cea(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1226,7 +1247,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Jendrik Seipp and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf">Counterexample-Guided Cartesian Abstraction Refinement for Classical Planning</a>.<br />
  <em>Journal of Artificial Intelligence Research</em> 62:535-577. 2018.</p>
-<pre><code>cegar(subtasks=[landmarks(),goals()], max_states=infinity, max_transitions=1M, max_time=infinity, pick=MAX_REFINED, search_strategy=INCREMENTAL, memory_padding=500, use_general_costs=true, debug=false, transform=no_transform(), cache_estimates=true, random_seed=-1)
+<pre><code>cegar(subtasks=[landmarks(),goals()], max_states=infinity, max_transitions=1M, max_time=infinity, pick=MAX_REFINED, search_strategy=INCREMENTAL, memory_padding=500, use_general_costs=true, verbosity=normal, transform=no_transform(), cache_estimates=true, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>subtasks</em> (list of <a href="../SubtaskGenerator/">SubtaskGenerator</a>): subtask generators</li>
@@ -1237,7 +1258,13 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>search_strategy</em> ({ASTAR, INCREMENTAL}): strategy for computing abstract plans</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
 <li><em>use_general_costs</em> (bool): allow negative costs in cost partitioning</li>
-<li><em>debug</em> (bool): print debugging output</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
@@ -1256,10 +1283,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="causal_graph_heuristic">Causal graph heuristic<a class="headerlink" href="#causal_graph_heuristic" title="Permanent link">#</a></h2>
-<pre><code>cg(max_cache_size=1000000, transform=no_transform(), cache_estimates=true)
+<pre><code>cg(max_cache_size=1000000, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>max_cache_size</em> (int [0, infinity]): maximum number of cached entries per variable (set to 0 to disable cache)</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1277,9 +1311,16 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> yes</li>
 </ul>
 <h2 id="ff_heuristic">FF heuristic<a class="headerlink" href="#ff_heuristic" title="Permanent link">#</a></h2>
-<pre><code>ff(transform=no_transform(), cache_estimates=true)
+<pre><code>ff(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1297,9 +1338,16 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> yes</li>
 </ul>
 <h2 id="goal_count_heuristic">Goal count heuristic<a class="headerlink" href="#goal_count_heuristic" title="Permanent link">#</a></h2>
-<pre><code>goalcount(transform=no_transform(), cache_estimates=true)
+<pre><code>goalcount(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1317,10 +1365,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="hm_heuristic">h^m heuristic<a class="headerlink" href="#hm_heuristic" title="Permanent link">#</a></h2>
-<pre><code>hm(m=2, transform=no_transform(), cache_estimates=true)
+<pre><code>hm(m=2, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>m</em> (int [1, infinity]): subset size</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1338,9 +1393,16 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="max_heuristic">Max heuristic<a class="headerlink" href="#max_heuristic" title="Permanent link">#</a></h2>
-<pre><code>hmax(transform=no_transform(), cache_estimates=true)
+<pre><code>hmax(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1374,7 +1436,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Emil Keyder and Silvia Richter and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/keyder-et-al-ecai2010.pdf">Sound and Complete Landmarks for And/Or Graphs</a>.<br />
  In <em>Proceedings of the 19th European Conference on Artificial Intelligence (ECAI 2010)</em>, pp. 335-340. IOS Press, 2010.</p>
-<pre><code>lmcount(lm_factory, admissible=false, cost_partitioning=SUBOPTIMAL, pref=false, alm=true, reuse_costs=false, greedy=false, scoring_function=MAX_HEURISTIC_PER_STOLEN_COSTS, random_seed=-1, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
+<pre><code>lmcount(lm_factory, admissible=false, cost_partitioning=SUBOPTIMAL, pref=false, alm=true, reuse_costs=false, greedy=false, scoring_function=MAX_HEURISTIC_PER_STOLEN_COSTS, random_seed=-1, lpsolver=CPLEX, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>lm_factory</em> (<a href="../LandmarkFactory/">LandmarkFactory</a>): the set of landmarks to use for this heuristic. The set of landmarks can be specified here, or predefined (see <a href="../LandmarkFactory/">LandmarkFactory</a>).</li>
@@ -1391,6 +1453,13 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><code>CPLEX</code>: commercial solver by IBM</li>
 <li><code>GUROBI</code>: commercial solver</li>
 <li><code>SOPLEX</code>: open source solver by ZIB</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
@@ -1419,9 +1488,16 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> yes (if enabled; see <code>pref</code> option)</li>
 </ul>
 <h2 id="landmark-cut_heuristic">Landmark-cut heuristic<a class="headerlink" href="#landmark-cut_heuristic" title="Permanent link">#</a></h2>
-<pre><code>lmcut(transform=no_transform(), cache_estimates=true)
+<pre><code>lmcut(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1455,9 +1531,16 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Silvan Sievers.<br />
  <a href="https://ai.dmi.unibas.ch/papers/sievers-socs2018.pdf">Merge-and-Shrink Heuristics for Classical Planning: Efficient Implementation and Partial Abstractions</a>.<br />
  In <em>Proceedings of the 11th Annual Symposium on Combinatorial Search (SoCS 2018)</em>, pp. 90-98. AAAI Press, 2018.</p>
-<pre><code>merge_and_shrink(transform=no_transform(), cache_estimates=true, merge_strategy, shrink_strategy, label_reduction=&lt;none&gt;, prune_unreachable_states=true, prune_irrelevant_states=true, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1, verbosity=normal, main_loop_max_time=infinity)
+<pre><code>merge_and_shrink(verbosity=normal, transform=no_transform(), cache_estimates=true, merge_strategy, shrink_strategy, label_reduction=&lt;none&gt;, prune_unreachable_states=true, prune_irrelevant_states=true, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1, main_loop_max_time=infinity)
 </code></pre>
 <ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>merge_strategy</em> (<a href="../MergeStrategy/">MergeStrategy</a>): See detailed documentation for merge strategies. We currently recommend SCC-DFP, which can be achieved using <code>merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order]))</code></li>
@@ -1468,13 +1551,6 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>max_states</em> (int [-1, infinity]): maximum transition system size allowed at any time point.</li>
 <li><em>max_states_before_merge</em> (int [-1, infinity]): maximum transition system size allowed for two transition systems before being merged to form the synchronized product.</li>
 <li><em>threshold_before_merge</em> (int [-1, infinity]): If a transition system, before being merged, surpasses this soft transition system size limit, the shrink strategy is called to possibly shrink the transition system.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
-<li><code>silent</code>: only the most basic output</li>
-<li><code>normal</code>: relevant information to monitor progress</li>
-<li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
-</li>
 <li><em>main_loop_max_time</em> (double [0.0, infinity]): A limit in seconds on the runtime of the main loop of the algorithm. If the limit is exceeded, the algorithm terminates, potentially returning a factored transition system with several factors. Also note that the time limit is only checked between transformations of the main loop, but not during, so it can be exceeded if a transformation is runtime-intense.</li>
 </ul>
 <p><strong>Note:</strong> Conditional effects are supported directly. Note, however, that for tasks that are not factored (in the sense of the JACM 2014 merge-and-shrink paper), the atomic transition systems on which merge-and-shrink heuristics are based are nondeterministic, which can lead to poor heuristics even when only perfect shrinking is performed.</p>
@@ -1501,7 +1577,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Florian Pommerening, Gabriele Roeger, Malte Helmert and Blai Bonet.<br />
  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
  In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
-<pre><code>operatorcounting(constraint_generators, use_integer_operator_counts=false, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
+<pre><code>operatorcounting(constraint_generators, use_integer_operator_counts=false, lpsolver=CPLEX, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>constraint_generators</em> (list of <a href="../ConstraintGenerator/">ConstraintGenerator</a>): methods that generate constraints over operator-counting variables</li>
@@ -1511,6 +1587,13 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><code>CPLEX</code>: commercial solver by IBM</li>
 <li><code>GUROBI</code>: commercial solver</li>
 <li><code>SOPLEX</code>: open source solver by ZIB</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
@@ -1533,47 +1616,100 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <h1 id="basic_evaluators">Basic Evaluators<a class="headerlink" href="#basic_evaluators" title="Permanent link">#</a></h1>
 <h2 id="constant_evaluator">Constant evaluator<a class="headerlink" href="#constant_evaluator" title="Permanent link">#</a></h2>
 <p>Returns a constant value.</p>
-<pre><code>const(value=1)
+<pre><code>const(value=1, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>value</em> (int [0, infinity]): the constant value</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="g-value_evaluator">g-value evaluator<a class="headerlink" href="#g-value_evaluator" title="Permanent link">#</a></h2>
 <p>Returns the g-value (path cost) of the search node.</p>
-<pre><code>g()
+<pre><code>g(verbosity=normal)
 </code></pre>
+<ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
+</ul>
 <h2 id="max_evaluator">Max evaluator<a class="headerlink" href="#max_evaluator" title="Permanent link">#</a></h2>
 <p>Calculates the maximum of the sub-evaluators.</p>
-<pre><code>max(evals)
+<pre><code>max(evals, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="./">Evaluator</a>): at least one evaluator</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="preference_evaluator">Preference evaluator<a class="headerlink" href="#preference_evaluator" title="Permanent link">#</a></h2>
 <p>Returns 0 if preferred is true and 1 otherwise.</p>
-<pre><code>pref()
+<pre><code>pref(verbosity=normal)
 </code></pre>
+<ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
+</ul>
 <h2 id="sum_evaluator">Sum evaluator<a class="headerlink" href="#sum_evaluator" title="Permanent link">#</a></h2>
 <p>Calculates the sum of the sub-evaluators.</p>
-<pre><code>sum(evals)
+<pre><code>sum(evals, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="./">Evaluator</a>): at least one evaluator</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="weighted_evaluator">Weighted evaluator<a class="headerlink" href="#weighted_evaluator" title="Permanent link">#</a></h2>
 <p>Multiplies the value of the evaluator with the given weight.</p>
-<pre><code>weight(eval, weight)
+<pre><code>weight(eval, weight, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>eval</em> (<a href="./">Evaluator</a>): evaluator</li>
 <li><em>weight</em> (int): weight</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h1 id="cost_partitioning_heuristics">Cost Partitioning Heuristics<a class="headerlink" href="#cost_partitioning_heuristics" title="Permanent link">#</a></h1>
 <h2 id="canonical_heuristic_over_abstractions">Canonical heuristic over abstractions<a class="headerlink" href="#canonical_heuristic_over_abstractions" title="Permanent link">#</a></h2>
-<pre><code>canonical_heuristic(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true)
+<pre><code>canonical_heuristic(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1591,10 +1727,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="greedy_zero-one_cost_partitioning">Greedy zero-one cost partitioning<a class="headerlink" href="#greedy_zero-one_cost_partitioning" title="Permanent link">#</a></h2>
-<pre><code>gzocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, transform=no_transform(), cache_estimates=true)
+<pre><code>gzocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
@@ -1605,6 +1748,13 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
 <li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1623,10 +1773,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 </ul>
 <h2 id="maximum_over_abstractions">Maximum over abstractions<a class="headerlink" href="#maximum_over_abstractions" title="Permanent link">#</a></h2>
 <p>Maximize over a set of abstraction heuristics.</p>
-<pre><code>maximize(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true)
+<pre><code>maximize(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1644,10 +1801,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="optimal_cost_partitioning_heuristic">Optimal cost partitioning heuristic<a class="headerlink" href="#optimal_cost_partitioning_heuristic" title="Permanent link">#</a></h2>
-<pre><code>ocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, lpsolver=CPLEX, allow_negative_costs=true)
+<pre><code>ocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, lpsolver=CPLEX, allow_negative_costs=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>lpsolver</em> ({CLP, CPLEX, GUROBI, SOPLEX}): external solver that should be used to solve linear programs<ul>
@@ -1675,10 +1839,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 </ul>
 <h2 id="post-hoc_optimization_heuristic">Post-hoc optimization heuristic<a class="headerlink" href="#post-hoc_optimization_heuristic" title="Permanent link">#</a></h2>
 <p>Compute the maximum over multiple PhO heuristics precomputed offline.</p>
-<pre><code>pho(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, saturated=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, lpsolver=CPLEX, verbosity=normal)
+<pre><code>pho(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturated=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, lpsolver=CPLEX, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>saturated</em> (bool): saturate costs</li>
@@ -1724,10 +1895,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Jendrik Seipp, Thomas Keller and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-jair2020.pdf">Saturated Cost Partitioning for Optimal Classical Planning</a>.<br />
  <em>Journal of Artificial Intelligence Research</em> 67:129-167. 2020.</p>
-<pre><code>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, transform=no_transform(), cache_estimates=true)
+<pre><code>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions<ul>
@@ -1744,6 +1922,13 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
 <li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1766,10 +1951,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Jendrik Seipp.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf">Online Saturated Cost Partitioning for Classical Planning</a>.<br />
  In <em>Proceedings of the 31st International Conference on Automated Planning and Scheduling (ICAPS 2021)</em>, pp. 317-321. AAAI Press, 2021.</p>
-<pre><code>scp_online(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_size=infinity, max_time=200, interval=10K, debug=false, random_seed=-1)
+<pre><code>scp_online(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_size=infinity, max_time=200, interval=10K, debug=false, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions<ul>
@@ -1802,10 +1994,17 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Jendrik Seipp, Thomas Keller and Malte Helmert.<br />
  <a href="https://jendrikseipp.com/papers/seipp-et-al-icaps2017.pdf">A Comparison of Cost Partitioning Algorithms for Optimal Classical Planning</a>.<br />
  In <em>Proceedings of the Twenty-Seventh International Conference on Automated Planning and Scheduling (ICAPS 2017)</em>, pp. 259-268. AAAI Press, 2017.</p>
-<pre><code>ucp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, opportunistic=false, debug=false)
+<pre><code>ucp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, opportunistic=false, debug=false)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
@@ -1835,11 +2034,18 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <h1 id="pattern_database_heuristics">Pattern Database Heuristics<a class="headerlink" href="#pattern_database_heuristics" title="Permanent link">#</a></h1>
 <h2 id="canonical_pdb">Canonical PDB<a class="headerlink" href="#canonical_pdb" title="Permanent link">#</a></h2>
 <p>The canonical pattern database heuristic is calculated as follows. For a given pattern collection C, the value of the canonical heuristic function is the maximum over all maximal additive subsets A in C, where the value for one subset S in A is the sum of the heuristic values for all patterns in S for a given state.</p>
-<pre><code>cpdbs(patterns=systematic(1), max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true)
+<pre><code>cpdbs(patterns=systematic(1), max_time_dominance_pruning=infinity, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
 <li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1866,7 +2072,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-socs2012.pdf">Efficient Implementation of Pattern Database Heuristics for Classical Planning</a>.<br />
  In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</p>
 <p>See also <a href="./#canonical_pdb">Canonical PDB</a> and <a href="../PatternCollectionGenerator/#hill_climbing">Hill climbing</a> for more details.</p>
-<pre><code>ipdb(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, verbosity=normal, max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true)
+<pre><code>ipdb(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, verbosity=normal, max_time_dominance_pruning=infinity, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>pdb_max_size</em> (int [1, infinity]): maximal number of states per pattern database </li>
@@ -1884,6 +2090,13 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 </ul>
 </li>
 <li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1911,10 +2124,17 @@ The search is ended if there is no more improvement (or the improvement is small
 </ul>
 <h2 id="pattern_database_heuristic">Pattern database heuristic<a class="headerlink" href="#pattern_database_heuristic" title="Permanent link">#</a></h2>
 <p>TODO</p>
-<pre><code>pdb(pattern=greedy(), transform=no_transform(), cache_estimates=true)
+<pre><code>pdb(pattern=greedy(), verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>pattern</em> (<a href="../PatternGenerator/">PatternGenerator</a>): pattern generation method</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1933,10 +2153,17 @@ The search is ended if there is no more improvement (or the improvement is small
 </ul>
 <h2 id="zero-one_pdb">Zero-One PDB<a class="headerlink" href="#zero-one_pdb" title="Permanent link">#</a></h2>
 <p>The zero/one pattern database heuristic is simply the sum of the heuristic values of all patterns in the pattern collection. In contrast to the canonical pattern database heuristic, there is no need to check for additive subsets, because the additivity of the patterns is guaranteed by action cost partitioning. This heuristic uses the most simple form of action cost partitioning, i.e. if an operator affects more than one pattern in the collection, its costs are entirely taken into account for one pattern (the first one which it affects) and set to zero for all other affected patterns.</p>
-<pre><code>zopdbs(patterns=systematic(1), transform=no_transform(), cache_estimates=true)
+<pre><code>zopdbs(patterns=systematic(1), verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1959,7 +2186,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
-<pre><code>all_states_potential(max_potential=1e8, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
+<pre><code>all_states_potential(max_potential=1e8, lpsolver=CPLEX, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
@@ -1968,6 +2195,13 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>CPLEX</code>: commercial solver by IBM</li>
 <li><code>GUROBI</code>: commercial solver</li>
 <li><code>SOPLEX</code>: open source solver by ZIB</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
@@ -1992,7 +2226,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
-<pre><code>diverse_potentials(num_samples=1000, max_num_heuristics=infinity, max_potential=1e8, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true, random_seed=-1)
+<pre><code>diverse_potentials(num_samples=1000, max_num_heuristics=infinity, max_potential=1e8, lpsolver=CPLEX, verbosity=normal, transform=no_transform(), cache_estimates=true, random_seed=-1, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>num_samples</em> (int [0, infinity]): Number of states to sample</li>
@@ -2005,9 +2239,23 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>SOPLEX</code>: open source solver by ZIB</li>
 </ul>
 </li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
 <p>Language features supported:</p>
@@ -2028,7 +2276,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
-<pre><code>initial_state_potential(max_potential=1e8, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true)
+<pre><code>initial_state_potential(max_potential=1e8, lpsolver=CPLEX, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
@@ -2037,6 +2285,13 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>CPLEX</code>: commercial solver by IBM</li>
 <li><code>GUROBI</code>: commercial solver</li>
 <li><code>SOPLEX</code>: open source solver by ZIB</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
@@ -2061,7 +2316,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
-<pre><code>sample_based_potentials(num_heuristics=1, num_samples=1000, max_potential=1e8, lpsolver=CPLEX, transform=no_transform(), cache_estimates=true, random_seed=-1)
+<pre><code>sample_based_potentials(num_heuristics=1, num_samples=1000, max_potential=1e8, lpsolver=CPLEX, verbosity=normal, transform=no_transform(), cache_estimates=true, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>num_heuristics</em> (int [0, infinity]): number of potential heuristics</li>
@@ -2072,6 +2327,13 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>CPLEX</code>: commercial solver by IBM</li>
 <li><code>GUROBI</code>: commercial solver</li>
 <li><code>SOPLEX</code>: open source solver by ZIB</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>

@@ -553,7 +553,7 @@
                   <h1>AbstractionGenerator</h1>
                 
                 <h2 id="cartesian_abstraction_generator">Cartesian abstraction generator<a class="headerlink" href="#cartesian_abstraction_generator" title="Permanent link">#</a></h2>
-<pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, search_strategy=INCREMENTAL, memory_padding=500, debug=false, random_seed=-1)
+<pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, search_strategy=INCREMENTAL, memory_padding=500, verbosity=normal, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>subtasks</em> (list of <a href="../SubtaskGenerator/">SubtaskGenerator</a>): subtask generators</li>
@@ -562,11 +562,17 @@
 <li><em>max_time</em> (double [0.0, infinity]): maximum time for computing abstractions</li>
 <li><em>search_strategy</em> ({ASTAR, INCREMENTAL}): strategy for computing abstract plans</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
-<li><em>debug</em> (bool): print debugging info</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <h2 id="projection_generator">Projection generator<a class="headerlink" href="#projection_generator" title="Permanent link">#</a></h2>
-<pre><code>projections(patterns=&lt;none&gt;, dominance_pruning=false, combine_labels=true, create_complete_transition_system=false, use_add_after_delete_semantics=false, debug=false)
+<pre><code>projections(patterns=&lt;none&gt;, dominance_pruning=false, combine_labels=true, create_complete_transition_system=false, use_add_after_delete_semantics=false, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
@@ -574,7 +580,13 @@
 <li><em>combine_labels</em> (bool): group labels that only induce parallel transitions</li>
 <li><em>create_complete_transition_system</em> (bool): create complete transition system</li>
 <li><em>use_add_after_delete_semantics</em> (bool): skip transitions that are invalid according to add-after-delete semantics</li>
-<li><em>debug</em> (bool): print debugging info</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
                 
               
