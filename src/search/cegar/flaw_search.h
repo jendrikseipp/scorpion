@@ -8,6 +8,7 @@
 // Needed for SearchStatus enum.
 #include "../search_engine.h"
 
+#include "../utils/logging.h"
 #include "../utils/timer.h"
 
 #include <parallel_hashmap/phmap.h>
@@ -16,6 +17,7 @@
 
 namespace utils {
 class CountdownTimer;
+class LogProxy;
 class RandomNumberGenerator;
 }
 
@@ -49,7 +51,6 @@ using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
 
 class FlawSearch {
     TaskProxy task_proxy;
-    utils::LogProxy log;
     const std::vector<int> domain_sizes;
     const Abstraction &abstraction;
     const ShortestPaths &shortest_paths;
@@ -58,7 +59,8 @@ class FlawSearch {
     const PickFlawedAbstractState pick_flawed_abstract_state;
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
-    const bool debug;
+    mutable utils::LogProxy log;
+    mutable utils::LogProxy silent_log;  // For concrete search space.
 
     static const int MISSING = -1;
 
@@ -108,7 +110,7 @@ public:
         PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
-        bool debug);
+        const utils::LogProxy &log);
 
     std::unique_ptr<Split> get_split(const utils::CountdownTimer &cegar_timer);
     std::unique_ptr<Split> get_split_legacy(const Solution &solution);

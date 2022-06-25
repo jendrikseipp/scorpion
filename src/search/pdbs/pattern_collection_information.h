@@ -7,6 +7,10 @@
 
 #include <memory>
 
+namespace utils {
+class LogProxy;
+}
+
 namespace pdbs {
 /*
   This class contains everything we know about a pattern collection. It will
@@ -26,6 +30,7 @@ class PatternCollectionInformation {
     std::shared_ptr<PDBCollection> pdbs;
     std::shared_ptr<ProjectionCollection> projections;
     std::shared_ptr<std::vector<PatternClique>> pattern_cliques;
+    utils::LogProxy &log;
 
     void create_pdbs_if_missing();
     void create_pattern_cliques_if_missing();
@@ -34,7 +39,8 @@ class PatternCollectionInformation {
 public:
     PatternCollectionInformation(
         const TaskProxy &task_proxy,
-        const std::shared_ptr<PatternCollection> &patterns);
+        const std::shared_ptr<PatternCollection> &patterns,
+        utils::LogProxy &log);
     ~PatternCollectionInformation() = default;
 
     void set_pdbs(const std::shared_ptr<PDBCollection> &pdbs);

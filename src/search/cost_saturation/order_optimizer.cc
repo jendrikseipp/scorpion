@@ -17,7 +17,7 @@ static void log_better_order(const vector<int> &order, int h, int i, int j) {
 }
 
 static bool search_improving_successor(
-    CPFunction cp_function,
+    CPFunction const &cp_function,
     const utils::CountdownTimer &timer,
     const Abstractions &abstractions,
     const vector<int> &costs,
@@ -54,7 +54,7 @@ static bool search_improving_successor(
 
 
 void optimize_order_with_hill_climbing(
-    CPFunction cp_function,
+    const CPFunction &cp_function,
     const utils::CountdownTimer &timer,
     const Abstractions &abstractions,
     const vector<int> &costs,

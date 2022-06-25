@@ -11,7 +11,6 @@
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/countdown_timer.h"
-#include "../utils/logging.h"
 #include "../utils/rng.h"
 
 #include <iterator>
@@ -80,7 +79,7 @@ void FlawSearch::initialize() {
     best_flaw_h = (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) ? 0 : INF_COSTS;
     assert(open_list.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
-    search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, log);
+    search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, silent_log);
     cached_abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
 
     assert(flawed_states.empty());
@@ -266,10 +265,10 @@ unique_ptr<Split> FlawSearch::create_split(
     compute_splits_timer.resume();
     const AbstractState &abstract_state = abstraction.get_state(abstract_state_id);
 
-    if (debug) {
-        utils::g_log << endl;
-        utils::g_log << "Create split for abstract state " << abstract_state_id << " and "
-                     << state_ids.size() << " concrete states." << endl;
+    if (log.is_at_least_debug()) {
+        log << endl;
+        log << "Create split for abstract state " << abstract_state_id << " and "
+            << state_ids.size() << " concrete states." << endl;
     }
 
     const TransitionSystem &ts = abstraction.get_transition_system();
@@ -351,8 +350,8 @@ unique_ptr<Split> FlawSearch::create_split(
     for (auto &var_splits : splits) {
         num_splits += var_splits.size();
     }
-    if (debug) {
-        utils::g_log << "Unique splits: " << num_splits << endl;
+    if (log.is_at_least_debug()) {
+        log << "Unique splits: " << num_splits << endl;
     }
     compute_splits_timer.stop();
 
@@ -368,8 +367,8 @@ unique_ptr<Split> FlawSearch::create_split(
 
 SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_timer) {
     flaw_search_timer.resume();
-    if (debug) {
-        utils::g_log << "Search for flaws" << endl;
+    if (log.is_at_least_debug()) {
+        log << "Search for flaws" << endl;
     }
     initialize();
     int num_expansions_in_prev_searches = num_overall_expanded_concrete_states;
@@ -388,10 +387,10 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
                 // No flaw found.
                 // TODO: Why release memory padding here?
                 utils::release_extra_memory_padding();
-                utils::g_log << "Expansion limit reached with no flaw." << endl;
+                log << "Expansion limit reached with no flaw." << endl;
                 search_status = TIMEOUT;
             } else {
-                utils::g_log << "Expansion limit reached with flaws." << endl;
+                log << "Expansion limit reached with flaws." << endl;
                 search_status = FAILED;
             }
             break;
@@ -405,9 +404,9 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
         num_expansions_in_prev_searches;
     max_expanded_concrete_states = max(max_expanded_concrete_states,
                                        current_num_expanded_states);
-    if (debug) {
-        utils::g_log << "Flaw search expanded " << current_num_expanded_states
-                     << " states." << endl;
+    if (log.is_at_least_debug()) {
+        log << "Flaw search expanded " << current_num_expanded_states
+            << " states." << endl;
     }
 
     /* For MAX_H, we don't return SOLVED when hitting a goal state. So if MAX_H
@@ -434,7 +433,7 @@ unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cega
         FlawedState flawed_state = flawed_states.pop_random_flawed_state_and_clear(rng);
         StateID state_id = *rng.choose(flawed_state.concrete_states);
 
-        if (debug) {
+        if (log.is_at_least_debug()) {
             vector<OperatorID> trace;
             search_space->trace_path(state_registry->lookup_state(state_id), trace);
             vector<string> operator_names;
@@ -442,7 +441,7 @@ unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cega
             for (OperatorID op_id : trace) {
                 operator_names.push_back(task_proxy.get_operators()[op_id].get_name());
             }
-            utils::g_log << "Path (without last operator): " << operator_names << endl;
+            log << "Path (without last operator): " << operator_names << endl;
         }
 
         return create_split({state_id}, flawed_state.abs_id);
@@ -458,13 +457,13 @@ FlawedState FlawSearch::get_flawed_state_with_min_h() {
         int abs_id = flawed_state.abs_id;
         assert(get_h_value(abs_id) >= old_h);
         if (get_h_value(abs_id) == old_h) {
-            if (debug) {
-                utils::g_log << "Reuse flawed state: " << abs_id << endl;
+            if (log.is_at_least_debug()) {
+                log << "Reuse flawed state: " << abs_id << endl;
             }
             return flawed_state;
         } else {
-            if (debug) {
-                utils::g_log << "Ignore flawed state with increased f value: " << abs_id << endl;
+            if (log.is_at_least_debug()) {
+                log << "Ignore flawed state with increased f value: " << abs_id << endl;
             }
         }
     }
@@ -498,8 +497,8 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
         }
     }
 
-    if (debug) {
-        utils::g_log << "Use flawed state: " << flawed_state << " with h=" << flawed_state.h << endl;
+    if (log.is_at_least_debug()) {
+        log << "Use flawed state: " << flawed_state << " with h=" << flawed_state.h << endl;
     }
 
     // Memory padding
@@ -542,18 +541,18 @@ FlawSearch::FlawSearch(
     PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state,
     int max_state_expansions,
-    bool debug) :
+    const utils::LogProxy &log) :
     task_proxy(*task),
-    log(utils::get_silent_log()),
     domain_sizes(get_domain_sizes(task_proxy)),
     abstraction(abstraction),
     shortest_paths(shortest_paths),
-    split_selector(task, pick_split, tiebreak_split, debug),
+    split_selector(task, pick_split, tiebreak_split, log.is_at_least_debug()),
     rng(rng),
     pick_flawed_abstract_state(pick_flawed_abstract_state),
     max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
     max_state_expansions(max_state_expansions),
-    debug(debug),
+    log(log),
+    silent_log(utils::get_silent_log()),
     last_refined_flawed_state(FlawedState::no_state),
     best_flaw_h((pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) ? 0 : INF),
     num_searches(0),
@@ -578,9 +577,9 @@ unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer
         split = get_min_h_batch_split(cegar_timer);
         break;
     default:
-        utils::g_log << "Invalid pick flaw strategy: "
-                     << static_cast<int>(pick_flawed_abstract_state)
-                     << endl;
+        log << "Invalid pick flaw strategy: "
+            << static_cast<int>(pick_flawed_abstract_state)
+            << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 
@@ -594,34 +593,35 @@ unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer
 
 unique_ptr<Split> FlawSearch::get_split_legacy(const Solution &solution) {
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
+    bool debug = log.is_at_least_debug();
     if (debug)
-        utils::g_log << "Check solution:" << endl;
+        log << "Check solution:" << endl;
 
     const AbstractState *abstract_state = &abstraction.get_initial_state();
     State concrete_state = state_registry->get_initial_state();
     assert(abstract_state->includes(concrete_state));
 
     if (debug)
-        utils::g_log << "  Initial abstract state: " << *abstract_state << endl;
+        log << "  Initial abstract state: " << *abstract_state << endl;
 
     for (const Transition &step : solution) {
         OperatorProxy op = task_proxy.get_operators()[step.op_id];
         const AbstractState *next_abstract_state = &abstraction.get_state(step.target_id);
         if (task_properties::is_applicable(op, concrete_state)) {
             if (debug)
-                utils::g_log << "  Move to " << *next_abstract_state << " with "
-                             << op.get_name() << endl;
+                log << "  Move to " << *next_abstract_state << " with "
+                    << op.get_name() << endl;
             State next_concrete_state = state_registry->get_successor_state(concrete_state, op);
             if (!next_abstract_state->includes(next_concrete_state)) {
                 if (debug)
-                    utils::g_log << "  Paths deviate." << endl;
+                    log << "  Paths deviate." << endl;
                 return create_split({concrete_state.get_id()}, abstract_state->get_id());
             }
             abstract_state = next_abstract_state;
             concrete_state = move(next_concrete_state);
         } else {
             if (debug)
-                utils::g_log << "  Operator not applicable: " << op.get_name() << endl;
+                log << "  Operator not applicable: " << op.get_name() << endl;
             return create_split({concrete_state.get_id()}, abstract_state->get_id());
         }
     }
@@ -631,7 +631,7 @@ unique_ptr<Split> FlawSearch::get_split_legacy(const Solution &solution) {
         return nullptr;
     } else {
         if (debug)
-            utils::g_log << "  Goal test failed." << endl;
+            log << "  Goal test failed." << endl;
         return create_split({concrete_state.get_id()}, abstract_state->get_id());
     }
 }
@@ -641,20 +641,20 @@ void FlawSearch::print_statistics() const {
     int flaws = max(1, abstraction.get_num_states() - 1);
     int searches = max(1ul, num_searches);
     int expansions = num_overall_expanded_concrete_states;
-    utils::g_log << endl;
-    utils::g_log << "Flaw searches: " << searches << endl;
-    utils::g_log << "Refined flaws: " << flaws << endl;
-    utils::g_log << "Expanded concrete states: " << expansions << endl;
-    utils::g_log << "Maximum expanded concrete states in single flaw search: "
-                 << max_expanded_concrete_states << endl;
-    utils::g_log << "Flaw search time: " << flaw_search_timer << endl;
-    utils::g_log << "Time for computing splits: " << compute_splits_timer << endl;
-    utils::g_log << "Time for selecting splits: " << pick_split_timer << endl;
-    utils::g_log << "Average number of refined flaws: "
-                 << flaws / static_cast<float>(searches) << endl;
-    utils::g_log << "Average number of expanded concrete states per flaw search: "
-                 << expansions / static_cast<float>(searches) << endl;
-    utils::g_log << "Average flaw search time: " << flaw_search_timer() / searches << endl;
-    utils::g_log << endl;
+    log << endl;
+    log << "Flaw searches: " << searches << endl;
+    log << "Refined flaws: " << flaws << endl;
+    log << "Expanded concrete states: " << expansions << endl;
+    log << "Maximum expanded concrete states in single flaw search: "
+        << max_expanded_concrete_states << endl;
+    log << "Flaw search time: " << flaw_search_timer << endl;
+    log << "Time for computing splits: " << compute_splits_timer << endl;
+    log << "Time for selecting splits: " << pick_split_timer << endl;
+    log << "Average number of refined flaws: "
+        << flaws / static_cast<float>(searches) << endl;
+    log << "Average number of expanded concrete states per flaw search: "
+        << expansions / static_cast<float>(searches) << endl;
+    log << "Average flaw search time: " << flaw_search_timer() / searches << endl;
+    log << endl;
 }
 }

@@ -4,9 +4,57 @@
 from collections import defaultdict
 
 import build_model
+import options
 import pddl_to_prolog
 import pddl
 import timers
+
+STATIC_ATOMS_FILE = "static-atoms.txt"
+
+def print_atom(atom, file):
+    atom_name = str(atom)
+    assert atom_name.startswith("Atom ")
+    print(atom_name[len("Atom "):], file=file)
+
+def add_type_predicates(types):
+    result = []
+    for k, l in types.items():
+        for obj in l:
+            result.append("Atom %s(%s)" % (k, obj))
+    return result
+
+def dump_static_atoms(task, model):
+    """Dump all atoms belonging to static predicates.
+
+    A predicate is static if all its groundings are static. There are predicates
+    where only a subset of their groundings are static. We dump static atoms
+    belonging to non-static predicates in append_static_atoms() in translate.py.
+    """
+    all_predicates = set()
+    fluent_predicates = set()
+    for action in task.actions:
+        for effect in action.effects:
+            fluent_predicates.add(effect.literal.predicate)
+            all_predicates.add(effect.literal.predicate)
+        if isinstance(action.precondition, pddl.Conjunction):
+            for precond in action.precondition.parts:
+                all_predicates.add(precond.predicate)
+        else:
+            assert isinstance(action.precondition, pddl.Atom)
+            all_predicates.add(action.precondition.predicate)
+    for axiom in task.axioms:
+        fluent_predicates.add(axiom.name)
+    types = get_objects_by_type(task.objects, task.types)
+    type_predicates = add_type_predicates(types)
+    static_predicates = all_predicates - fluent_predicates
+    initial_state_atoms = set(task.init)
+    with open(STATIC_ATOMS_FILE, "w") as f:
+        for atom in model:
+            if atom.predicate in static_predicates:
+                assert atom in initial_state_atoms, atom
+                print_atom(atom, file=f)
+        for t in type_predicates:
+            print_atom(t, file=f)
 
 def get_fluent_facts(task, model):
     fluent_predicates = set()
@@ -27,6 +75,27 @@ def get_objects_by_type(typed_objects, types):
         result[obj.type_name].append(obj.name)
         for type in supertypes[obj.type_name]:
             result[type].append(obj.name)
+    return result
+
+def instantiate_goal(goal, init_facts, fluent_facts):
+    # With the way this module is designed, we need to "instantiate"
+    # the goal to make sure we properly deal with static conditions,
+    # in particular flagging unreachable negative static goals as
+    # impossible. See issue1055.
+    #
+    # This returns None for goals that are impossible due to static
+    # facts.
+
+    # HACK! The implementation of this probably belongs into
+    # pddl.condition or a similar file, not here. The `instantiate`
+    # method of conditions with its slightly weird interface and the
+    # existence of the `Impossible` exceptions should perhaps be
+    # implementation details of `pddl`.
+    result = []
+    try:
+        goal.instantiate({}, init_facts, fluent_facts, result)
+    except pddl.conditions.Impossible:
+        return None
     return result
 
 def instantiate(task, model):
@@ -74,19 +143,26 @@ def instantiate(task, model):
         elif atom.predicate == "@goal-reachable":
             relaxed_reachable = True
 
-    return (relaxed_reachable, fluent_facts, instantiated_actions,
+    instantiated_goal = instantiate_goal(task.goal, init_facts, fluent_facts)
+
+    return (relaxed_reachable, fluent_facts,
+            instantiated_actions, instantiated_goal,
             sorted(instantiated_axioms), reachable_action_parameters)
+
 
 def explore(task):
     prog = pddl_to_prolog.translate(task)
     model = build_model.compute_model(prog)
+    if options.dump_static_atoms:
+        dump_static_atoms(task, model)
     with timers.timing("Completing instantiation"):
         return instantiate(task, model)
+
 
 if __name__ == "__main__":
     import pddl_parser
     task = pddl_parser.open()
-    relaxed_reachable, atoms, actions, axioms, _ = explore(task)
+    relaxed_reachable, atoms, actions, goals, axioms, _ = explore(task)
     print("goal relaxed reachable: %s" % relaxed_reachable)
     print("%d atoms:" % len(atoms))
     for atom in atoms:
@@ -96,8 +172,14 @@ if __name__ == "__main__":
     for action in actions:
         action.dump()
         print()
-    print()
     print("%d axioms:" % len(axioms))
     for axiom in axioms:
         axiom.dump()
         print()
+    print()
+    if goals is None:
+        print("impossible goal")
+    else:
+        print("%d goals:" % len(goals))
+        for literal in goals:
+            literal.dump()

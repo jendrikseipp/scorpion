@@ -37,7 +37,6 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_state_expansions;
     const int extra_memory_padding_mb;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
-    const bool debug;
     const int dot_graph_verbosity;
 
     int num_states;
@@ -58,7 +57,7 @@ public:
 
     Abstractions generate_abstractions(
         const std::shared_ptr<AbstractTask> &task,
-        DeadEnds *dead_ends);
+        DeadEnds *dead_ends) override;
 };
 }
 

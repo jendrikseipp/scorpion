@@ -21,7 +21,7 @@ static CostPartitioningHeuristic compute_zero_one_cost_partitioning(
 
     CostPartitioningHeuristic cp_heuristic;
     for (int pos : order) {
-        Abstraction &abstraction = *abstractions[pos];
+        const Abstraction &abstraction = *abstractions[pos];
         if (debug) {
             cout << "remaining costs: ";
             print_indexed_vector(remaining_costs);

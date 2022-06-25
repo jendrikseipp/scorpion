@@ -39,7 +39,7 @@ class ExplicitProjectionFactory {
     std::vector<ProjectedEffect> get_projected_effects(const OperatorProxy &op) const;
     bool conditions_are_satisfied(
         const std::vector<FactPair> &conditions, const UnrankedState &state_values) const;
-    bool is_applicable(UnrankedState &state_values, int op_id) const;
+    bool is_applicable(const UnrankedState &state_values, int op_id) const;
     void add_transitions(
         const UnrankedState &src_values, int src_rank,
         int op_id, const std::vector<ProjectedEffect> &effects);

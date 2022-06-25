@@ -102,7 +102,7 @@ def translate_strips_conditions_aux(conditions, dictionary, ranges):
             ## and conditions like (not (occupied ?x)) do occur in
             ## preconditions.
             ## However, here we avoid introducing new derived predicates
-            ## by treat the negative precondition as a disjunctive
+            ## by treating the negative precondition as a disjunctive
             ## precondition and expanding it by "multiplying out" the
             ## possibilities.  This can lead to an exponential blow-up so
             ## it would be nice to choose the behaviour as an option.
@@ -358,7 +358,6 @@ def prune_stupid_effect_conditions(var, val, conditions, effects_on_var):
     for condition in conditions:
         # Apply rule 1.
         while dual_fact in condition:
-            # print "*** Removing dual condition"
             simplified = True
             condition.remove(dual_fact)
         # Apply rule 2.
@@ -520,19 +519,46 @@ def unsolvable_sas_task(msg):
     print("%s! Generating unsolvable task..." % msg)
     return trivial_task(solvable=False)
 
+def append_static_atoms(task, sas_task, atoms):
+    """Dump static atoms belonging to non-static predicates.
+
+    A predicate is static if all its groundings are static. We dump static atoms
+    belonging to static predicates in dump_static_atoms() in instantiate.py.
+    There are also predicates where only a subset of their groundings are static
+    and we dump those static atoms here.
+    Examples for such static atoms:
+      Blocksworld: on(b1,b1), on(b2,b2), etc.
+      Sokoban: clear(x) for cells x that are ouside the wall
+      Spanner: at(nut1, gate), etc.
+      Visitall: visited(x) for start location x
+
+    We do not dump static atoms that are always false, such as the Blocksworld
+    atoms above.
+    """
+    sas_atoms = {
+        atom
+        for values in sas_task.variables.value_names
+        for atom in values
+    }
+    pddl_initial_state_atoms = set(task.init)
+    static_atoms = {
+        atom for atom in atoms
+        if str(atom) not in sas_atoms
+        and atom in pddl_initial_state_atoms}
+    with open(instantiate.STATIC_ATOMS_FILE, "a") as f:
+        for atom in static_atoms:
+            instantiate.print_atom(atom, file=f)
+
 def pddl_to_sas(task):
     with timers.timing("Instantiating", block=True):
-        (relaxed_reachable, atoms, actions, axioms,
+        (relaxed_reachable, atoms, actions, goal_list, axioms,
          reachable_action_params) = instantiate.explore(task)
 
     if not relaxed_reachable:
         return unsolvable_sas_task("No relaxed solution")
+    elif goal_list is None:
+        return unsolvable_sas_task("Trivially false goal")
 
-    # HACK! Goals should be treated differently.
-    if isinstance(task.goal, pddl.Conjunction):
-        goal_list = task.goal.parts
-    else:
-        goal_list = [task.goal]
     for item in goal_list:
         assert isinstance(item, pddl.Literal)
 
@@ -593,6 +619,8 @@ def pddl_to_sas(task):
                 sas_task, options.reorder_variables,
                 options.filter_unimportant_vars)
 
+    if options.dump_static_atoms:
+        append_static_atoms(task, sas_task, atoms)
     return sas_task
 
 
@@ -679,11 +707,26 @@ def dump_statistics(sas_task):
         print("Translator peak memory: %d KB" % peak_memory)
 
 
+def dump_predicates(task, path):
+    predicates = [
+        (predicate.name, len(predicate.arguments))
+        for predicate in task.predicates
+        if not predicate.name.startswith("=")
+    ]
+    predicates += [(pddl_type.name, 1) for pddl_type in task.types]
+
+    with open(path, "w") as f:
+        f.write("\n".join(f"{name},{arity}"
+                          for name, arity in sorted(predicates)))
+
+
 def main():
     timer = timers.Timer()
     with timers.timing("Parsing", True):
         task = pddl_parser.open(
             domain_filename=options.domain, task_filename=options.task)
+    if options.dump_predicates:
+        dump_predicates(task, "predicates.txt")
 
     with timers.timing("Normalizing task"):
         normalize.normalize(task)

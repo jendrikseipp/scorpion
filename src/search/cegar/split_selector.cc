@@ -149,8 +149,8 @@ double SplitSelector::rate_split(
         rating = var_id;
         break;
     default:
-        utils::g_log << "Invalid pick strategy for rate_split(): "
-                     << static_cast<int>(pick) << endl;
+        cerr << "Invalid pick strategy for rate_split(): "
+             << static_cast<int>(pick) << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
     return rating;

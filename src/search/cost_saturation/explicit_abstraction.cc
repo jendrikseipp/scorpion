@@ -190,7 +190,7 @@ void ExplicitAbstraction::dump() const {
             int src = succ.state;
             parallel_transitions[src].push_back(succ.op);
         }
-        for (auto &pair : parallel_transitions) {
+        for (const auto &pair : parallel_transitions) {
             int src = pair.first;
             const vector<int> &operators = pair.second;
             cout << "    " << src << " -> " << target

@@ -66,7 +66,7 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
       num_evaluated_states(0),
       num_scps_computed(0) {
     order_generator->initialize(abstractions, costs);
-    for (auto &cp : cp_heuristics) {
+    for (const auto &cp : cp_heuristics) {
         size_kb += cp.estimate_size_in_kb();
     }
     improve_heuristic_timer = utils::make_unique_ptr<utils::Timer>(false);

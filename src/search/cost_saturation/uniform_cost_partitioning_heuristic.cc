@@ -97,7 +97,7 @@ static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning
     CostPartitioningHeuristic cp_heuristic;
     for (size_t pos = 0; pos < order.size(); ++pos) {
         int abstraction_id = order[pos];
-        Abstraction &abstraction = *abstractions[abstraction_id];
+        const Abstraction &abstraction = *abstractions[abstraction_id];
         divided_costs = divide_costs_among_remaining_abstractions(
             abstractions, order, remaining_costs, pos, debug);
         vector<int> h_values = abstraction.compute_goal_distances(divided_costs);
@@ -165,12 +165,12 @@ static CPHeuristics get_oucp_heuristics(
     return cps_generator.generate_cost_partitionings(
         task_proxy, abstractions, costs,
         [debug](
-            const Abstractions &abstractions,
+            const Abstractions &abstractions_,
             const vector<int> &order,
             vector<int> &remaining_costs,
             const vector<int> &) {
             return compute_opportunistic_uniform_cost_partitioning(
-                abstractions, order, remaining_costs, debug);
+                abstractions_, order, remaining_costs, debug);
         });
 }
 

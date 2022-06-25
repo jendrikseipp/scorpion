@@ -30,13 +30,13 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
         opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    for (auto &abstraction : abstractions) {
+    for (const auto &abstraction : abstractions) {
         h_values.push_back(abstraction->compute_goal_distances(costs));
     }
 
     generate_lp(abstractions);
 
-    for (auto &abstraction : abstractions) {
+    for (const auto &abstraction : abstractions) {
         abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
 
@@ -134,7 +134,7 @@ void OptimalCostPartitioningHeuristic::generate_lp(const Abstractions &abstracti
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
         cout << "Add abstraction " << id + 1 << " of " << abstractions.size()
              << " to LP." << endl;
-        Abstraction &abstraction = *abstractions[id];
+        const Abstraction &abstraction = *abstractions[id];
         add_abstraction_variables(abstraction, id, lp_variables);
         add_abstraction_constraints(abstraction, id, lp_constraints);
     }

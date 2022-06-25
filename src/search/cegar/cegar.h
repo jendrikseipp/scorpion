@@ -13,6 +13,7 @@
 
 namespace utils {
 class RandomNumberGenerator;
+class LogProxy;
 }
 
 namespace cegar {
@@ -44,7 +45,7 @@ class CEGAR {
     // Limit the time for building the abstraction.
     utils::CountdownTimer timer;
 
-    const bool debug;
+    utils::LogProxy &log;
     const int dot_graph_verbosity;
 
     // Only used for logging progress.
@@ -60,12 +61,12 @@ class CEGAR {
       for other subtasks with a single goal fact doesn't hurt and
       simplifies the implementation.
     */
-    void separate_facts_unreachable_before_goal();
+    void separate_facts_unreachable_before_goal() const;
 
     // Build abstraction.
     void refinement_loop();
 
-    void print_statistics();
+    void print_statistics() const;
 
 public:
     CEGAR(
@@ -80,7 +81,7 @@ public:
         int max_state_expansions,
         SearchStrategy search_strategy,
         utils::RandomNumberGenerator &rng,
-        bool debug,
+        utils::LogProxy &log,
         int dot_graph_verbosity);
     ~CEGAR();
 

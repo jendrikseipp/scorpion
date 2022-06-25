@@ -10,7 +10,6 @@
 #include "../pdbs/pattern_database.h"
 #include "../pdbs/pattern_generator.h"
 #include "../task_utils/task_properties.h"
-#include "../utils/logging.h"
 
 #include <memory>
 
@@ -19,31 +18,29 @@ using namespace std;
 
 namespace cost_saturation {
 ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
-    : pattern_generator(
+    : AbstractionGenerator(opts),
+      pattern_generator(
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
       dominance_pruning(opts.get<bool>("dominance_pruning")),
       combine_labels(opts.get<bool>("combine_labels")),
       create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
-      use_add_after_delete_semantics(opts.get<bool>("use_add_after_delete_semantics")),
-      debug(opts.get<bool>("debug")) {
+      use_add_after_delete_semantics(opts.get<bool>("use_add_after_delete_semantics")) {
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
     const shared_ptr<AbstractTask> &task,
     DeadEnds *dead_ends) {
     utils::Timer patterns_timer;
-    utils::Log log(utils::Verbosity::NORMAL);
     TaskProxy task_proxy(*task);
 
     task_properties::verify_no_axioms(task_proxy);
-    if (!create_complete_transition_system) {
-        if (task_properties::has_conditional_effects(task_proxy)) {
-            cerr << "Error: configuration doesn't support conditional effects. "
-                "Use projections(..., create_complete_transition_system=true) "
-                "to build projections that support conditional effects."
-                 << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
-        }
+    if (!create_complete_transition_system &&
+        task_properties::has_conditional_effects(task_proxy)) {
+        cerr << "Error: configuration doesn't support conditional effects. "
+            "Use projections(..., create_complete_transition_system=true) "
+            "to build projections that support conditional effects."
+             << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
 
     log << "Compute patterns" << endl;
@@ -70,8 +67,10 @@ Abstractions ProjectionGenerator::generate_abstractions(
             pattern_collection_info.get_pattern_cliques();
         prune_dominated_cliques(
             *patterns,
-            *pdbs, *pattern_cliques, task_proxy.get_variables().size(),
-            numeric_limits<double>::infinity());
+            *pdbs,
+            *pattern_cliques, task_proxy.get_variables().size(),
+            numeric_limits<double>::infinity(),
+            log);
     }
 
     log << "Build projections" << endl;
@@ -91,7 +90,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
                 task_proxy, task_info, pattern, combine_labels);
         }
 
-        if (debug) {
+        if (log.is_at_least_debug()) {
             log << "Pattern " << abstractions.size() + 1 << ": "
                 << pattern << endl;
             projection->dump();
@@ -135,10 +134,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "use_add_after_delete_semantics",
         "skip transitions that are invalid according to add-after-delete semantics",
         "false");
-    parser.add_option<bool>(
-        "debug",
-        "print debugging info",
-        "false");
+    utils::add_log_options_to_parser(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())

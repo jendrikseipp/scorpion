@@ -23,11 +23,10 @@ OrderGeneratorDynamicGreedy::OrderGeneratorDynamicGreedy(const Options &opts)
 }
 
 Order OrderGeneratorDynamicGreedy::compute_dynamic_greedy_order_for_sample(
-    const Abstractions &abstractions,
     const vector<int> &abstract_state_ids,
     vector<int> remaining_costs) const {
-    assert(abstractions.size() == abstract_state_ids.size());
-    vector<int> remaining_abstractions = get_default_order(abstractions.size());
+    assert(abstractions->size() == abstract_state_ids.size());
+    vector<int> remaining_abstractions = get_default_order(abstractions->size());
 
     Order order;
     while (!remaining_abstractions.empty()) {
@@ -43,7 +42,7 @@ Order OrderGeneratorDynamicGreedy::compute_dynamic_greedy_order_for_sample(
         for (int abs_id : remaining_abstractions) {
             assert(utils::in_bounds(abs_id, abstract_state_ids));
             int abstract_state_id = abstract_state_ids[abs_id];
-            Abstraction &abstraction = *abstractions[abs_id];
+            const Abstraction &abstraction = *abstractions->at(abs_id);
             vector<int> h_values = abstraction.compute_goal_distances(
                 remaining_costs);
             vector<int> saturated_costs = abstraction.compute_saturated_costs(
@@ -78,11 +77,11 @@ Order OrderGeneratorDynamicGreedy::compute_dynamic_greedy_order_for_sample(
 }
 
 void OrderGeneratorDynamicGreedy::initialize(
-    const Abstractions &abstractions,
-    const vector<int> &costs) {
+    const Abstractions &abstractions_,
+    const vector<int> &costs_) {
     utils::g_log << "Initialize dynamic greedy order generator" << endl;
-    this->abstractions = &abstractions;
-    this->costs = &costs;
+    abstractions = &abstractions_;
+    costs = &costs_;
 }
 
 Order OrderGeneratorDynamicGreedy::compute_order_for_state(
@@ -91,7 +90,7 @@ Order OrderGeneratorDynamicGreedy::compute_order_for_state(
     assert(abstractions && costs);
     utils::Timer greedy_timer;
     vector<int> order = compute_dynamic_greedy_order_for_sample(
-        *abstractions, abstract_state_ids, *costs);
+        abstract_state_ids, *costs);
 
     if (verbose) {
         utils::g_log << "Time for computing dynamic greedy order: "

@@ -17,7 +17,6 @@
 #include "../cegar/transition_system.h"
 #include "../cegar/utils.h"
 #include "../task_utils/task_properties.h"
-#include "../utils/logging.h"
 #include "../utils/rng_options.h"
 
 using namespace std;
@@ -104,7 +103,8 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
 
 CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     const options::Options &opts)
-    : subtask_generators(
+    : AbstractionGenerator(opts),
+      subtask_generators(
           opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
       max_states(opts.get<int>("max_states")),
       max_transitions(opts.get<int>("max_transitions")),
@@ -119,7 +119,6 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_state_expansions(opts.get<int>("max_state_expansions")),
       extra_memory_padding_mb(opts.get<int>("memory_padding")),
       rng(utils::parse_rng_from_options(opts)),
-      debug(opts.get<bool>("debug")),
       dot_graph_verbosity(opts.get<int>("dot_graph_verbosity")),
       num_states(0),
       num_transitions(0) {
@@ -141,7 +140,7 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         max_state_expansions,
         search_strategy,
         *rng,
-        debug,
+        log,
         dot_graph_verbosity);
     cout << endl;
     return cegar.extract_abstraction();
@@ -185,7 +184,6 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     utils::CountdownTimer timer(max_time);
     num_states = 0;
     num_transitions = 0;
-    utils::Log log(utils::Verbosity::NORMAL);
     log << "Build Cartesian abstractions" << endl;
 
     // The CEGAR code expects that some extra memory is reserved.
@@ -193,7 +191,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
 
     Abstractions abstractions;
     for (const auto &subtask_generator : subtask_generators) {
-        cegar::SharedTasks subtasks = subtask_generator->get_subtasks(task);
+        cegar::SharedTasks subtasks = subtask_generator->get_subtasks(task, log);
         build_abstractions_for_subtasks(subtasks, timer, abstractions);
         if (num_states >= max_states ||
             num_transitions >= max_transitions ||
@@ -255,16 +253,12 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         Bounds("1", "infinity"));
     cegar::add_search_strategy_option(parser);
     cegar::add_memory_padding_option(parser);
-    parser.add_option<bool>(
-        "debug",
-        "print debugging info",
-        "false");
+    utils::add_log_options_to_parser(parser);
     parser.add_option<int>(
         "dot_graph_verbosity",
         "verbosity of printing/writing dot graphs",
         "0",
-        Bounds("0", "4")
-        );
+        Bounds("0", "4"));
     utils::add_rng_options(parser);
 
     Options opts = parser.parse();

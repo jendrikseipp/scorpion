@@ -70,7 +70,7 @@ CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
     utils::g_log << "Compute max additive subsets" << endl;
     max_additive_subsets = compute_max_additive_subsets(abstractions);
 
-    for (auto &abstraction : abstractions) {
+    for (const auto &abstraction : abstractions) {
         abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
 }
