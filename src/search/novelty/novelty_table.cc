@@ -63,7 +63,6 @@ FactIndexer::FactIndexer(const TaskProxy &task_proxy) {
 NoveltyTable::NoveltyTable(
     const TaskProxy &task_proxy, int width, const shared_ptr<FactIndexer> &fact_indexer_)
     : width(width),
-      debug(false),
       fact_indexer(fact_indexer_),
       compute_novelty_timer(false) {
     if (!fact_indexer) {

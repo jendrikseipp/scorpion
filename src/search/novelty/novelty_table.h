@@ -53,7 +53,6 @@ public:
 
 class NoveltyTable {
     const int width;
-    const bool debug;
 
     std::shared_ptr<FactIndexer> fact_indexer;
     std::vector<bool> seen_facts;
