@@ -2,6 +2,7 @@
 #define CEGAR_TRANSITION_H
 
 #include "types.h"
+
 #include "../utils/hash.h"
 
 #include <iostream>
