@@ -119,7 +119,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_state_expansions(opts.get<int>("max_state_expansions")),
       extra_memory_padding_mb(opts.get<int>("memory_padding")),
       rng(utils::parse_rng_from_options(opts)),
-      dot_graph_verbosity(opts.get<int>("dot_graph_verbosity")),
+      dot_graph_verbosity(opts.get<cegar::DotGraphVerbosity>("dot_graph_verbosity")),
       num_states(0),
       num_transitions(0) {
 }

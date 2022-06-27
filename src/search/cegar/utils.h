@@ -25,6 +25,12 @@ class OptionParser;
 namespace cegar {
 class Abstraction;
 
+enum class DotGraphVerbosity {
+    SILENT,
+    WRITE_TO_CONSOLE,
+    WRITE_TO_FILE
+};
+
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
 create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);
 
@@ -43,6 +49,7 @@ extern void add_pick_split_strategies(options::OptionParser &parser);
 
 extern void add_search_strategy_option(options::OptionParser &parser);
 extern void add_memory_padding_option(options::OptionParser &parser);
+extern void add_dot_graph_verbosity(options::OptionParser &parser);
 
 extern std::string get_dot_graph(
     const TaskProxy &task_proxy, const Abstraction &abstraction);
@@ -55,7 +62,7 @@ extern void handle_dot_graph(
     const TaskProxy &task_proxy,
     const Abstraction &abstraction,
     const std::string &file_name,
-    int dot_graph_verbosity);
+    DotGraphVerbosity dot_graph_verbosity);
 }
 
 /*

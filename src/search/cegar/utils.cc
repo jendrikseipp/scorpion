@@ -23,8 +23,8 @@
 using namespace std;
 
 namespace cegar {
-unique_ptr<additive_heuristic::AdditiveHeuristic>
-create_additive_heuristic(const shared_ptr<AbstractTask> &task) {
+unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
+    const shared_ptr<AbstractTask> &task) {
     Options opts;
     opts.set<shared_ptr<AbstractTask>>("transform", task);
     opts.set<bool>("cache_estimates", false);
@@ -32,8 +32,8 @@ create_additive_heuristic(const shared_ptr<AbstractTask> &task) {
     return utils::make_unique_ptr<additive_heuristic::AdditiveHeuristic>(opts);
 }
 
-static bool operator_applicable(const OperatorProxy &op,
-                                const utils::HashSet<FactProxy> &facts) {
+static bool operator_applicable(
+    const OperatorProxy &op, const utils::HashSet<FactProxy> &facts) {
     for (FactProxy precondition : op.get_preconditions()) {
         if (facts.count(precondition) == 0)
             return false;
@@ -41,8 +41,8 @@ static bool operator_applicable(const OperatorProxy &op,
     return true;
 }
 
-static bool operator_achieves_fact(const OperatorProxy &op,
-                                   const FactProxy &fact) {
+static bool operator_achieves_fact(
+    const OperatorProxy &op, const FactProxy &fact) {
     for (EffectProxy effect : op.get_effects()) {
         if (effect.get_fact() == fact)
             return true;
@@ -50,9 +50,8 @@ static bool operator_achieves_fact(const OperatorProxy &op,
     return false;
 }
 
-static utils::HashSet<FactProxy>
-compute_possibly_before_facts(const TaskProxy &task,
-                              const FactProxy &last_fact) {
+static utils::HashSet<FactProxy> compute_possibly_before_facts(
+    const TaskProxy &task, const FactProxy &last_fact) {
     utils::HashSet<FactProxy> pb_facts;
 
     // Add facts from initial state.
@@ -86,8 +85,8 @@ compute_possibly_before_facts(const TaskProxy &task,
     return pb_facts;
 }
 
-utils::HashSet<FactProxy> get_relaxed_possible_before(const TaskProxy &task,
-                                                      const FactProxy &fact) {
+utils::HashSet<FactProxy> get_relaxed_possible_before(
+    const TaskProxy &task, const FactProxy &fact) {
     utils::HashSet<FactProxy> reachable_facts =
         compute_possibly_before_facts(task, fact);
     reachable_facts.insert(fact);
@@ -142,8 +141,10 @@ void add_pick_split_strategies(options::OptionParser &parser) {
 
 void add_search_strategy_option(options::OptionParser &parser) {
     parser.add_enum_option<SearchStrategy>(
-        "search_strategy", {"ASTAR", "INCREMENTAL"},
-        "strategy for computing abstract plans", "INCREMENTAL");
+        "search_strategy",
+        {"ASTAR", "INCREMENTAL"},
+        "strategy for computing abstract plans",
+        "INCREMENTAL");
 }
 
 void add_memory_padding_option(options::OptionParser &parser) {
@@ -156,7 +157,15 @@ void add_memory_padding_option(options::OptionParser &parser) {
         "etc.) often can't be reused for things that require big continuous "
         "blocks of memory. It is for this reason that we require a rather "
         "large amount of memory padding by default.",
-        "500", Bounds("0", "infinity"));
+        "500",
+        Bounds("0", "infinity"));
+}
+
+void add_dot_graph_verbosity(options::OptionParser &parser) {
+    parser.add_enum_option<DotGraphVerbosity>(
+        "dot_graph_verbosity", {"SILENT", "WRITE_TO_CONSOLE", "WRITE_TO_FILE"},
+        "verbosity of printing/writing dot graphs", "SILENT"
+        );
 }
 
 string get_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
@@ -214,12 +223,20 @@ void handle_dot_graph(
     const TaskProxy &task_proxy,
     const Abstraction &abstraction,
     const string &file_name,
-    int dot_graph_verbosity) {
-    if (dot_graph_verbosity == 1 || dot_graph_verbosity == 3) {
+    DotGraphVerbosity dot_graph_verbosity) {
+    switch (dot_graph_verbosity) {
+    case DotGraphVerbosity::SILENT:
+        break;
+    case DotGraphVerbosity::WRITE_TO_CONSOLE:
         dump_dot_graph(task_proxy, abstraction);
-    }
-    if (dot_graph_verbosity > 1) {
+        break;
+    case DotGraphVerbosity::WRITE_TO_FILE:
         write_dot_graph(task_proxy, abstraction, file_name);
+        break;
+    default:
+        utils::g_log << "Invalid dot graph verbosity: " << static_cast<int>(dot_graph_verbosity)
+                     << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 }
-} // namespace cegar
+}

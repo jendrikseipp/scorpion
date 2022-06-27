@@ -19,6 +19,7 @@ class LogProxy;
 namespace cegar {
 class Abstraction;
 class AbstractSearch;
+enum class DotGraphVerbosity;
 class ShortestPaths;
 
 /*
@@ -46,7 +47,7 @@ class CEGAR {
     utils::CountdownTimer timer;
 
     utils::LogProxy &log;
-    const int dot_graph_verbosity;
+    const DotGraphVerbosity dot_graph_verbosity;
 
     // Only used for logging progress.
     int old_abstract_solution_cost = -1;
@@ -82,7 +83,7 @@ public:
         SearchStrategy search_strategy,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,
-        int dot_graph_verbosity);
+        DotGraphVerbosity dot_graph_verbosity);
     ~CEGAR();
 
     CEGAR(const CEGAR &) = delete;

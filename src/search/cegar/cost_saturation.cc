@@ -87,7 +87,7 @@ CostSaturation::CostSaturation(
     int memory_padding_mb,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
-    int dot_graph_verbosity)
+    DotGraphVerbosity dot_graph_verbosity)
     : subtask_generators(subtask_generators),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),

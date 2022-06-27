@@ -42,7 +42,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("memory_padding"),
         *rng,
         log,
-        opts.get<int>("dot_graph_verbosity"));
+        opts.get<DotGraphVerbosity>("dot_graph_verbosity"));
     return cost_saturation.generate_heuristic_functions(
         opts.get<shared_ptr<AbstractTask>>("transform"));
 }
@@ -168,11 +168,7 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "use_general_costs",
         "allow negative costs in cost partitioning",
         "true");
-    parser.add_option<int>(
-        "dot_graph_verbosity",
-        "verbosity of printing/writing dot graphs",
-        "0",
-        Bounds("0", "4"));
+    add_dot_graph_verbosity(parser);
     Heuristic::add_options_to_parser(parser);
     utils::add_rng_options(parser);
 

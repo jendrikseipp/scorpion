@@ -35,7 +35,7 @@ CEGAR::CEGAR(
     SearchStrategy search_strategy,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
-    int dot_graph_verbosity)
+    DotGraphVerbosity dot_graph_verbosity)
     : task_proxy(*task),
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),

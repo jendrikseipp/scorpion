@@ -17,6 +17,7 @@ class LogProxy;
 
 namespace cegar {
 class CartesianHeuristicFunction;
+enum class DotGraphVerbosity;
 class SubtaskGenerator;
 
 /*
@@ -41,7 +42,7 @@ class CostSaturation {
     const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
     utils::LogProxy &log;
-    const int dot_graph_verbosity;
+    const cegar::DotGraphVerbosity dot_graph_verbosity;
 
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
@@ -75,7 +76,7 @@ public:
         int memory_padding_mb,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,
-        int dot_graph_verbosity);
+        DotGraphVerbosity dot_graph_verbosity);
 
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
         const std::shared_ptr<AbstractTask> &task);
