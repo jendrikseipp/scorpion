@@ -254,11 +254,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     cegar::add_search_strategy_option(parser);
     cegar::add_memory_padding_option(parser);
     utils::add_log_options_to_parser(parser);
-    parser.add_option<int>(
-        "dot_graph_verbosity",
-        "verbosity of printing/writing dot graphs",
-        "0",
-        Bounds("0", "4"));
+    cegar::add_dot_graph_verbosity(parser);
     utils::add_rng_options(parser);
 
     Options opts = parser.parse();
