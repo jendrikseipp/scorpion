@@ -217,13 +217,11 @@ void CEGAR::refinement_loop() {
 
         find_flaw_timer.resume();
 
-        if (log.is_at_least_debug()) {
-            handle_dot_graph(task_proxy,
-                             *abstraction,
-                             "dot_files/graph" +
-                             to_string(abstraction->get_num_states()) + ".dot",
-                             dot_graph_verbosity);
-        }
+        handle_dot_graph(task_proxy,
+                         *abstraction,
+                         "dot_files/graph" +
+                         to_string(abstraction->get_num_states()) + ".dot",
+                         dot_graph_verbosity);
 
         unique_ptr<Split> split;
         if (pick_flawed_abstract_state ==

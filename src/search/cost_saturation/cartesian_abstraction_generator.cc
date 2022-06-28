@@ -249,7 +249,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "max_state_expansions",
         "Max number of state expansion in flaw search",
-        "1000000",
+        "1M",
         Bounds("1", "infinity"));
     cegar::add_search_strategy_option(parser);
     cegar::add_memory_padding_option(parser);

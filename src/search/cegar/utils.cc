@@ -101,13 +101,8 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
 }
 
 void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
-    vector<string> pick_flawed_abstract_state_strategies;
-    pick_flawed_abstract_state_strategies.push_back("FIRST");
-    pick_flawed_abstract_state_strategies.push_back("FIRST_ON_SHORTEST_PATH");
-    pick_flawed_abstract_state_strategies.push_back("RANDOM");
-    pick_flawed_abstract_state_strategies.push_back("MIN_H");
-    pick_flawed_abstract_state_strategies.push_back("MAX_H");
-    pick_flawed_abstract_state_strategies.push_back("BATCH_MIN_H");
+    vector<string> pick_flawed_abstract_state_strategies =
+    {"FIRST", "FIRST_ON_SHORTEST_PATH", "RANDOM", "MIN_H", "MAX_H", "BATCH_MIN_H"};
     parser.add_enum_option<cegar::PickFlawedAbstractState>(
         "pick_flawed_abstract_state",
         pick_flawed_abstract_state_strategies,
@@ -116,17 +111,9 @@ void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
 }
 
 void add_pick_split_strategies(options::OptionParser &parser) {
-    vector<string> pick_split_strategies;
-    pick_split_strategies.push_back("RANDOM");
-    pick_split_strategies.push_back("MIN_UNWANTED");
-    pick_split_strategies.push_back("MAX_UNWANTED");
-    pick_split_strategies.push_back("MIN_REFINED");
-    pick_split_strategies.push_back("MAX_REFINED");
-    pick_split_strategies.push_back("MIN_HADD");
-    pick_split_strategies.push_back("MAX_HADD");
-    pick_split_strategies.push_back("MIN_CG");
-    pick_split_strategies.push_back("MAX_CG");
-    pick_split_strategies.push_back("MAX_COVER");
+    vector<string> pick_split_strategies =
+    {"RANDOM", "MIN_UNWANTED", "MAX_UNWANTED", "MIN_REFINED", "MAX_REFINED",
+     "MIN_HADD", "MAX_HADD", "MIN_CG", "MAX_CG", "MAX_COVER"};
     parser.add_enum_option<PickSplit>(
         "pick_split",
         pick_split_strategies,
@@ -234,8 +221,8 @@ void handle_dot_graph(
         write_dot_graph(task_proxy, abstraction, file_name);
         break;
     default:
-        utils::g_log << "Invalid dot graph verbosity: " << static_cast<int>(dot_graph_verbosity)
-                     << endl;
+        cerr << "Invalid dot graph verbosity: " << static_cast<int>(dot_graph_verbosity)
+             << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 }
