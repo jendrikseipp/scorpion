@@ -76,9 +76,9 @@ class FlawSearch {
     FlawedStates flawed_states;
 
     // Statistics
-    size_t num_searches;
-    size_t num_overall_expanded_concrete_states;
-    size_t max_expanded_concrete_states;
+    int num_searches;
+    int num_overall_expanded_concrete_states;
+    int max_expanded_concrete_states;
     utils::Timer flaw_search_timer;
     utils::Timer compute_splits_timer;
     utils::Timer pick_split_timer;

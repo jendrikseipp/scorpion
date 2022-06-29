@@ -400,7 +400,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
     // Clear open list.
     stack<StateID>().swap(open_list);
 
-    size_t current_num_expanded_states = num_overall_expanded_concrete_states -
+    int current_num_expanded_states = num_overall_expanded_concrete_states -
         num_expansions_in_prev_searches;
     max_expanded_concrete_states = max(max_expanded_concrete_states,
                                        current_num_expanded_states);
@@ -639,7 +639,7 @@ unique_ptr<Split> FlawSearch::get_split_legacy(const Solution &solution) {
 void FlawSearch::print_statistics() const {
     // Avoid division by zero for corner cases.
     int flaws = max(1, abstraction.get_num_states() - 1);
-    int searches = max(1ul, num_searches);
+    int searches = max(1, num_searches);
     int expansions = num_overall_expanded_concrete_states;
     log << endl;
     log << "Flaw searches: " << searches << endl;
