@@ -1247,16 +1247,30 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Jendrik Seipp and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf">Counterexample-Guided Cartesian Abstraction Refinement for Classical Planning</a>.<br />
  <em>Journal of Artificial Intelligence Research</em> 62:535-577. 2018.</p>
-<pre><code>cegar(subtasks=[landmarks(),goals()], max_states=infinity, max_transitions=1M, max_time=infinity, pick=MAX_REFINED, search_strategy=INCREMENTAL, memory_padding=500, use_general_costs=true, verbosity=normal, transform=no_transform(), cache_estimates=true, random_seed=-1)
+<p>For a description of the incremental search, see the paper</p>
+<p>Jendrik Seipp, Samuel von Allmen and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf">Incremental Search for Counterexample-Guided Cartesian Abstraction Refinement</a>.<br />
+ In <em>Proceedings of the 30th International Conference on Automated Planning and Scheduling (ICAPS 2020)</em>, pp. 244-248. AAAI Press, 2020.</p>
+<p>Finally, we describe advanced flaw selection strategies here:</p>
+<p>David Speck and Jendrik Seipp.<br />
+ <a href="https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf">New Refinement Strategies for Cartesian Abstractions</a>.<br />
+ In <em>Proceedings of the 32nd International Conference on Automated Planning and Scheduling (ICAPS 2022)</em>, pp. to appear. AAAI Press, 2022.</p>
+<pre><code>cegar(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=BATCH_MIN_H, pick_split=MAX_COVER, tiebreak_split=MAX_REFINED, search_strategy=INCREMENTAL, memory_padding=500, dot_graph_verbosity=SILENT, random_seed=-1, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, use_general_costs=true, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
 <li><em>subtasks</em> (list of <a href="../SubtaskGenerator/">SubtaskGenerator</a>): subtask generators</li>
 <li><em>max_states</em> (int [1, infinity]): maximum sum of abstract states over all abstractions</li>
-<li><em>max_transitions</em> (int [0, infinity]): maximum sum of real transitions (excluding self-loops) over  all abstractions</li>
+<li><em>max_transitions</em> (int [0, infinity]): maximum sum of state-changing transitions (excluding self-loops) over all abstractions</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for building abstractions</li>
-<li><em>pick</em> ({RANDOM, MIN_UNWANTED, MAX_UNWANTED, MIN_REFINED, MAX_REFINED, MIN_HADD, MAX_HADD}): split-selection strategy</li>
+<li><em>pick_flawed_abstract_state</em> ({FIRST, FIRST_ON_SHORTEST_PATH, RANDOM, MIN_H, MAX_H, BATCH_MIN_H}): flaw-selection strategy</li>
+<li><em>pick_split</em> ({RANDOM, MIN_UNWANTED, MAX_UNWANTED, MIN_REFINED, MAX_REFINED, MIN_HADD, MAX_HADD, MIN_CG, MAX_CG, MAX_COVER}): split-selection strategy</li>
+<li><em>tiebreak_split</em> ({RANDOM, MIN_UNWANTED, MAX_UNWANTED, MIN_REFINED, MAX_REFINED, MIN_HADD, MAX_HADD, MIN_CG, MAX_CG, MAX_COVER}): split-selection strategy for breaking ties</li>
 <li><em>search_strategy</em> ({ASTAR, INCREMENTAL}): strategy for computing abstract plans</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
+<li><em>dot_graph_verbosity</em> ({SILENT, WRITE_TO_CONSOLE, WRITE_TO_FILE}): verbosity of printing/writing dot graphs</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>max_concrete_states_per_abstract_state</em> (int [1, infinity]): maximum number of flawed concrete states stored per abstract state</li>
+<li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search</li>
 <li><em>use_general_costs</em> (bool): allow negative costs in cost partitioning</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
@@ -1267,7 +1281,6 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 </li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <p>Language features supported:</p>
 <ul>
