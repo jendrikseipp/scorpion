@@ -9,7 +9,6 @@
 using namespace std;
 
 namespace cegar {
-const Cost ShortestPaths::INF_COSTS = numeric_limits<Cost>::max();
 const Cost ShortestPaths::DIRTY = numeric_limits<Cost>::max() - 1;
 
 ShortestPaths::ShortestPaths(const vector<int> &costs, bool debug)
@@ -19,6 +18,8 @@ ShortestPaths::ShortestPaths(const vector<int> &costs, bool debug)
     for (int cost : costs) {
         operator_costs.push_back(convert_to_64_bit_cost(cost));
     }
+    utils::g_log << "Task has zero-cost operators: " << boolalpha
+                 << task_has_zero_costs << endl;
 }
 
 Cost ShortestPaths::add_costs(Cost a, Cost b) {
@@ -309,6 +310,18 @@ unique_ptr<Solution> ShortestPaths::extract_solution(
         current_state = t.target_id;
     }
     return solution;
+}
+
+Cost ShortestPaths::get_64bit_goal_distance(int abstract_state_id) const {
+    return goal_distances.at(abstract_state_id);
+}
+
+int ShortestPaths::get_32bit_goal_distance(int abstract_state_id) const {
+    return convert_to_32_bit_cost(goal_distances.at(abstract_state_id));
+}
+
+bool ShortestPaths::is_optimal_transition(int start_id, int op_id, int target_id) const {
+    return goal_distances[start_id] - operator_costs[op_id] == goal_distances[target_id];
 }
 
 bool ShortestPaths::test_distances(

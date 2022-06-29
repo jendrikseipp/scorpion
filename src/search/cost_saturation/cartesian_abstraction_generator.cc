@@ -110,8 +110,16 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_transitions(opts.get<int>("max_transitions")),
       max_time(opts.get<double>("max_time")),
       search_strategy(opts.get<cegar::SearchStrategy>("search_strategy")),
+      pick_flawed_abstract_state(
+          opts.get<cegar::PickFlawedAbstractState>("pick_flawed_abstract_state")),
+      pick_split(opts.get<cegar::PickSplit>("pick_split")),
+      tiebreak_split(opts.get<cegar::PickSplit>("tiebreak_split")),
+      max_concrete_states_per_abstract_state(
+          opts.get<int>("max_concrete_states_per_abstract_state")),
+      max_state_expansions(opts.get<int>("max_state_expansions")),
       extra_memory_padding_mb(opts.get<int>("memory_padding")),
       rng(utils::parse_rng_from_options(opts)),
+      dot_graph_verbosity(opts.get<cegar::DotGraphVerbosity>("dot_graph_verbosity")),
       num_states(0),
       num_transitions(0) {
 }
@@ -125,10 +133,15 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         max(1, (max_states - num_states) / remaining_subtasks),
         max(1, (max_transitions - num_transitions) / remaining_subtasks),
         timer.get_remaining_time() / remaining_subtasks,
-        cegar::PickSplit::MAX_REFINED,
+        pick_flawed_abstract_state,
+        pick_split,
+        tiebreak_split,
+        max_concrete_states_per_abstract_state,
+        max_state_expansions,
         search_strategy,
         *rng,
-        log);
+        log,
+        dot_graph_verbosity);
     cout << endl;
     return cegar.extract_abstraction();
 }
@@ -206,30 +219,8 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "Cartesian abstraction generator",
         "");
 
-    parser.add_list_option<shared_ptr<cegar::SubtaskGenerator>>(
-        "subtasks",
-        "subtask generators",
-        "[landmarks(order=random), goals(order=random)]");
-    parser.add_option<int>(
-        "max_states",
-        "maximum sum of abstract states over all abstractions",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_transitions",
-        "maximum sum of state-changing transitions (excluding self-loops) over "
-        "all abstractions",
-        "1M",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time for computing abstractions",
-        "infinity",
-        Bounds("0.0", "infinity"));
-    cegar::add_search_strategy_option(parser);
-    cegar::add_memory_padding_option(parser);
+    cegar::add_common_cegar_options(parser);
     utils::add_log_options_to_parser(parser);
-    utils::add_rng_options(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())

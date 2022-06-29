@@ -63,6 +63,8 @@ public:
     const std::vector<Transitions> &get_outgoing_transitions() const;
     const std::vector<Loops> &get_loops() const;
 
+    const std::vector<FactPair> &get_preconditions(int op_id) const;
+
     int get_num_states() const;
     int get_num_operators() const;
     int get_num_non_loops() const;

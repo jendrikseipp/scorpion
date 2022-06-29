@@ -33,11 +33,16 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
-        opts.get<PickSplit>("pick"),
+        opts.get<PickFlawedAbstractState>("pick_flawed_abstract_state"),
+        opts.get<PickSplit>("pick_split"),
+        opts.get<PickSplit>("tiebreak_split"),
+        opts.get<int>("max_concrete_states_per_abstract_state"),
+        opts.get<int>("max_state_expansions"),
         opts.get<SearchStrategy>("search_strategy"),
         opts.get<int>("memory_padding"),
         *rng,
-        log);
+        log,
+        opts.get<DotGraphVerbosity>("dot_graph_verbosity"));
     return cost_saturation.generate_heuristic_functions(
         opts.get<shared_ptr<AbstractTask>>("transform"));
 }
@@ -96,7 +101,27 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
             "Journal of Artificial Intelligence Research",
             "62",
             "535-577",
-            "2018"));
+            "2018") +
+        "For a description of the incremental search, see the paper" +
+        utils::format_conference_reference(
+            {"Jendrik Seipp", "Samuel von Allmen", "Malte Helmert"},
+            "Incremental Search for Counterexample-Guided Cartesian Abstraction Refinement",
+            "https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf",
+            "Proceedings of the 30th International Conference on "
+            "Automated Planning and Scheduling (ICAPS 2020)",
+            "244-248",
+            "AAAI Press",
+            "2020") +
+        "Finally, we describe advanced flaw selection strategies here:" +
+        utils::format_conference_reference(
+            {"David Speck", "Jendrik Seipp"},
+            "New Refinement Strategies for Cartesian Abstractions",
+            "https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf",
+            "Proceedings of the 32nd International Conference on "
+            "Automated Planning and Scheduling (ICAPS 2022)",
+            "to appear",
+            "AAAI Press",
+            "2022"));
     parser.document_language_support("action costs", "supported");
     parser.document_language_support("conditional effects", "not supported");
     parser.document_language_support("axioms", "not supported");
@@ -105,44 +130,12 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_property("safe", "yes");
     parser.document_property("preferred operators", "no");
 
-    parser.add_list_option<shared_ptr<SubtaskGenerator>>(
-        "subtasks",
-        "subtask generators",
-        "[landmarks(),goals()]");
-    parser.add_option<int>(
-        "max_states",
-        "maximum sum of abstract states over all abstractions",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_transitions",
-        "maximum sum of real transitions (excluding self-loops) over "
-        " all abstractions",
-        "1M",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time in seconds for building abstractions",
-        "infinity",
-        Bounds("0.0", "infinity"));
-    vector<string> pick_strategies;
-    pick_strategies.push_back("RANDOM");
-    pick_strategies.push_back("MIN_UNWANTED");
-    pick_strategies.push_back("MAX_UNWANTED");
-    pick_strategies.push_back("MIN_REFINED");
-    pick_strategies.push_back("MAX_REFINED");
-    pick_strategies.push_back("MIN_HADD");
-    pick_strategies.push_back("MAX_HADD");
-    parser.add_enum_option<PickSplit>(
-        "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
-    add_search_strategy_option(parser);
-    add_memory_padding_option(parser);
+    add_common_cegar_options(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",
         "true");
     Heuristic::add_options_to_parser(parser);
-    utils::add_rng_options(parser);
 
     Options opts = parser.parse();
 

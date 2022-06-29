@@ -55,6 +55,7 @@ public:
     const AbstractState &get_initial_state() const;
     const Goals &get_goals() const;
     const AbstractState &get_state(int state_id) const;
+    int get_abstract_state_id(const State &state) const;
     const TransitionSystem &get_transition_system() const;
     std::unique_ptr<RefinementHierarchy> extract_refinement_hierarchy();
 

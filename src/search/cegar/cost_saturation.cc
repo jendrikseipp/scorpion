@@ -78,21 +78,31 @@ CostSaturation::CostSaturation(
     int max_non_looping_transitions,
     double max_time,
     bool use_general_costs,
+    PickFlawedAbstractState pick_flawed_abstract_state,
     PickSplit pick_split,
+    PickSplit tiebreak_split,
+    int max_concrete_states_per_abstract_state,
+    int max_state_expansions,
     SearchStrategy search_strategy,
     int memory_padding_mb,
     utils::RandomNumberGenerator &rng,
-    utils::LogProxy &log)
+    utils::LogProxy &log,
+    DotGraphVerbosity dot_graph_verbosity)
     : subtask_generators(subtask_generators),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       max_time(max_time),
       use_general_costs(use_general_costs),
+      pick_flawed_abstract_state(pick_flawed_abstract_state),
       pick_split(pick_split),
+      tiebreak_split(tiebreak_split),
+      max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
+      max_state_expansions(max_state_expansions),
       search_strategy(search_strategy),
       memory_padding_mb(memory_padding_mb),
       rng(rng),
       log(log),
+      dot_graph_verbosity(dot_graph_verbosity),
       num_states(0),
       num_non_looping_transitions(0) {
 }
@@ -195,10 +205,15 @@ void CostSaturation::build_abstractions(
             max(1, (max_non_looping_transitions - num_non_looping_transitions) /
                 rem_subtasks),
             timer.get_remaining_time() / rem_subtasks,
+            pick_flawed_abstract_state,
             pick_split,
+            tiebreak_split,
+            max_concrete_states_per_abstract_state,
+            max_state_expansions,
             search_strategy,
             rng,
-            log);
+            log,
+            dot_graph_verbosity);
 
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
         num_states += abstraction->get_num_states();

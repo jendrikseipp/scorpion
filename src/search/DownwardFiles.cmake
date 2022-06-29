@@ -704,6 +704,8 @@ fast_downward_plugin(
         cegar/cartesian_set
         cegar/cegar
         cegar/cost_saturation
+        cegar/flaw
+        cegar/flaw_search
         cegar/refinement_hierarchy
         cegar/shortest_paths
         cegar/split_selector

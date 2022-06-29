@@ -47,6 +47,11 @@ const AbstractState &Abstraction::get_state(int state_id) const {
     return *states[state_id];
 }
 
+int Abstraction::get_abstract_state_id(const State &state) const {
+    int node_id = refinement_hierarchy->get_node_id(state);
+    return refinement_hierarchy->nodes.at(node_id).get_state_id();
+}
+
 const TransitionSystem &Abstraction::get_transition_system() const {
     return *transition_system;
 }

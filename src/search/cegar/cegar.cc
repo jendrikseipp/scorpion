@@ -22,90 +22,41 @@
 using namespace std;
 
 namespace cegar {
-// Create the Cartesian set that corresponds to the given preconditions or goals.
-static CartesianSet get_cartesian_set(
-    const vector<int> &domain_sizes, const ConditionsProxy &conditions) {
-    CartesianSet cartesian_set(domain_sizes);
-    for (FactProxy condition : conditions) {
-        cartesian_set.set_single_value(
-            condition.get_variable().get_id(), condition.get_value());
-    }
-    return cartesian_set;
-}
-
-struct Flaw {
-    // Last concrete and abstract state reached while tracing solution.
-    State concrete_state;
-    const AbstractState &current_abstract_state;
-    // Hypothetical Cartesian set we would have liked to reach.
-    CartesianSet desired_cartesian_set;
-
-    Flaw(
-        State &&concrete_state,
-        const AbstractState &current_abstract_state,
-        CartesianSet &&desired_cartesian_set)
-        : concrete_state(move(concrete_state)),
-          current_abstract_state(current_abstract_state),
-          desired_cartesian_set(move(desired_cartesian_set)) {
-        assert(current_abstract_state.includes(this->concrete_state));
-    }
-
-    vector<Split> get_possible_splits() const {
-        vector<Split> splits;
-        /*
-          For each fact in the concrete state that is not contained in the
-          desired abstract state, loop over all values in the domain of the
-          corresponding variable. The values that are in both the current and
-          the desired abstract state are the "wanted" ones, i.e., the ones that
-          we want to split off.
-        */
-        for (FactProxy wanted_fact_proxy : concrete_state) {
-            FactPair fact = wanted_fact_proxy.get_pair();
-            if (!desired_cartesian_set.test(fact.var, fact.value)) {
-                VariableProxy var = wanted_fact_proxy.get_variable();
-                int var_id = var.get_id();
-                vector<int> wanted;
-                for (int value = 0; value < var.get_domain_size(); ++value) {
-                    if (current_abstract_state.contains(var_id, value) &&
-                        desired_cartesian_set.test(var_id, value)) {
-                        wanted.push_back(value);
-                    }
-                }
-                assert(!wanted.empty());
-                splits.emplace_back(var_id, move(wanted));
-            }
-        }
-        assert(!splits.empty());
-        return splits;
-    }
-};
-
 CEGAR::CEGAR(
     const shared_ptr<AbstractTask> &task,
     int max_states,
     int max_non_looping_transitions,
     double max_time,
-    PickSplit pick,
+    PickFlawedAbstractState pick_flawed_abstract_state,
+    PickSplit pick_split,
+    PickSplit tiebreak_split,
+    int max_concrete_states_per_abstract_state,
+    int max_state_expansions,
     SearchStrategy search_strategy,
     utils::RandomNumberGenerator &rng,
-    utils::LogProxy &log)
+    utils::LogProxy &log,
+    DotGraphVerbosity dot_graph_verbosity)
     : task_proxy(*task),
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
-      split_selector(task, pick),
       search_strategy(search_strategy),
+      pick_flawed_abstract_state(pick_flawed_abstract_state),
       abstraction(utils::make_unique_ptr<Abstraction>(task, log)),
       timer(max_time),
-      log(log) {
+      log(log),
+      dot_graph_verbosity(dot_graph_verbosity) {
     assert(max_states >= 1);
-    bool debug = log.is_at_least_debug();
     if (search_strategy == SearchStrategy::ASTAR) {
         abstract_search = utils::make_unique_ptr<AbstractSearch>(
             task_properties::get_operator_costs(task_proxy));
     } else if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-            task_properties::get_operator_costs(task_proxy), debug);
+            task_properties::get_operator_costs(task_proxy), false);
+        flaw_search = utils::make_unique_ptr<FlawSearch>(
+            task, *abstraction, *shortest_paths, rng,
+            pick_flawed_abstract_state, pick_split, tiebreak_split,
+            max_concrete_states_per_abstract_state, max_state_expansions, log);
     } else {
         ABORT("Unknown search strategy");
     }
@@ -117,7 +68,7 @@ CEGAR::CEGAR(
             << max_non_looping_transitions << endl;
     }
 
-    refinement_loop(rng);
+    refinement_loop();
     if (log.is_at_least_normal()) {
         log << "Done building abstraction." << endl;
         log << "Time for building abstraction: " << timer.get_elapsed_time() << endl;
@@ -188,7 +139,7 @@ bool CEGAR::may_keep_refining() const {
     return true;
 }
 
-void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
+void CEGAR::refinement_loop() {
     /*
       For landmark tasks we have to map all states in which the
       landmark might have been achieved to arbitrary abstract goal
@@ -209,9 +160,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         for (FactProxy goal : task_proxy.get_goals()) {
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
-            if (log.is_at_least_debug()) {
-                dump_dot_graph(*abstraction);
-            }
             current = &abstraction->get_state(pair.second);
         }
         assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
@@ -227,10 +175,6 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
                    abstraction->get_transition_system().get_incoming_transitions(),
                    abstraction->get_transition_system().get_outgoing_transitions(),
                    abstraction->get_goals()));
-    }
-
-    if (log.is_at_least_debug()) {
-        dump_dot_graph(*abstraction);
     }
 
     utils::Timer find_trace_timer(false);
@@ -260,43 +204,63 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
             }
             update_goal_distances_timer.stop();
 
-            if (log.is_at_least_debug()) {
-                cout << "Found abstract solution:" << endl;
-                for (const Transition &t : *solution) {
-                    OperatorProxy op = task_proxy.get_operators()[t.op_id];
-                    cout << "  " << t << " (" << op.get_name() << ", " << op.get_cost() << ")" << endl;
-                }
+            int new_abstract_solution_cost =
+                shortest_paths->get_32bit_goal_distance(abstraction->get_initial_state().get_id());
+            if (new_abstract_solution_cost > old_abstract_solution_cost) {
+                old_abstract_solution_cost = new_abstract_solution_cost;
+                log << "Abstract solution cost: " << old_abstract_solution_cost << endl;
             }
         } else {
-            if (log.is_at_least_normal()) {
-                log << "Abstract task is unsolvable." << endl;
-            }
+            log << "Abstract task is unsolvable." << endl;
             break;
         }
 
         find_flaw_timer.resume();
-        unique_ptr<Flaw> flaw = find_flaw(*solution);
+
+        // Dump/write dot file for current abstraction.
+        if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_CONSOLE) {
+            cout << create_dot_graph(task_proxy, *abstraction) << endl;
+        } else if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_FILE) {
+            write_to_file(
+                "graph" + to_string(abstraction->get_num_states()) + ".dot",
+                create_dot_graph(task_proxy, *abstraction));
+        } else if (dot_graph_verbosity != DotGraphVerbosity::SILENT) {
+            ABORT("Invalid dot graph verbosity");
+        }
+
+        unique_ptr<Split> split;
+        if (pick_flawed_abstract_state ==
+            PickFlawedAbstractState::FIRST_ON_SHORTEST_PATH) {
+            split = flaw_search->get_split_legacy(*solution);
+        } else {
+            split = flaw_search->get_split(timer);
+        }
+
         find_flaw_timer.stop();
 
-        if (!flaw) {
-            if (log.is_at_least_normal()) {
-                log << "Found concrete solution for subtask." << endl;
-            }
+        if (!utils::extra_memory_padding_is_reserved()) {
+            log << "Reached memory limit in flaw search." << endl;
+            break;
+        }
+
+        if (timer.is_expired()) {
+            log << "Reached time limit in flaw search." << endl;
+            break;
+        }
+
+        if (!split) {
+            log << "Found concrete solution." << endl;
             break;
         }
 
         refine_timer.resume();
-        const AbstractState &abstract_state = flaw->current_abstract_state;
-        int state_id = abstract_state.get_id();
+        int state_id = split->abstract_state_id;
+        const AbstractState &abstract_state = abstraction->get_state(state_id);
         assert(!abstraction->get_goals().count(state_id));
-        vector<Split> splits = flaw->get_possible_splits();
-        const Split &split = split_selector.pick_split(abstract_state, splits, rng);
-        auto new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
-        refine_timer.stop();
 
-        if (log.is_at_least_debug()) {
-            dump_dot_graph(*abstraction);
-        }
+        pair<int, int> new_state_ids = abstraction->refine(
+            abstract_state, split->var_id, split->values);
+        refine_timer.stop();
 
         update_goal_distances_timer.resume();
         if (search_strategy == SearchStrategy::ASTAR) {
@@ -324,65 +288,15 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
     }
     if (log.is_at_least_normal()) {
         log << "Time for finding abstract traces: " << find_trace_timer << endl;
-        log << "Time for finding flaws: " << find_flaw_timer << endl;
+        log << "Time for finding flaws and computing splits: " << find_flaw_timer << endl;
         log << "Time for splitting states: " << refine_timer << endl;
         log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
-    }
-}
-
-unique_ptr<Flaw> CEGAR::find_flaw(const Solution &solution) {
-    if (log.is_at_least_debug())
-        log << "Check solution:" << endl;
-
-    const AbstractState *abstract_state = &abstraction->get_initial_state();
-    State concrete_state = task_proxy.get_initial_state();
-    assert(abstract_state->includes(concrete_state));
-
-    if (log.is_at_least_debug())
-        log << "  Initial abstract state: " << *abstract_state << endl;
-
-    for (const Transition &step : solution) {
-        OperatorProxy op = task_proxy.get_operators()[step.op_id];
-        const AbstractState *next_abstract_state = &abstraction->get_state(step.target_id);
-        if (task_properties::is_applicable(op, concrete_state)) {
-            if (log.is_at_least_debug())
-                log << "  Move to " << *next_abstract_state << " with "
-                    << op.get_name() << endl;
-            State next_concrete_state = concrete_state.get_unregistered_successor(op);
-            if (!next_abstract_state->includes(next_concrete_state)) {
-                if (log.is_at_least_debug())
-                    log << "  Paths deviate." << endl;
-                return utils::make_unique_ptr<Flaw>(
-                    move(concrete_state),
-                    *abstract_state,
-                    next_abstract_state->regress(op));
-            }
-            abstract_state = next_abstract_state;
-            concrete_state = move(next_concrete_state);
-        } else {
-            if (log.is_at_least_debug())
-                log << "  Operator not applicable: " << op.get_name() << endl;
-            return utils::make_unique_ptr<Flaw>(
-                move(concrete_state),
-                *abstract_state,
-                get_cartesian_set(domain_sizes, op.get_preconditions()));
-        }
-    }
-    assert(abstraction->get_goals().count(abstract_state->get_id()));
-    if (task_properties::is_goal_state(task_proxy, concrete_state)) {
-        // We found a concrete solution.
-        return nullptr;
-    } else {
-        if (log.is_at_least_debug())
-            log << "  Goal test failed." << endl;
-        return utils::make_unique_ptr<Flaw>(
-            move(concrete_state),
-            *abstract_state,
-            get_cartesian_set(domain_sizes, task_proxy.get_goals()));
+        log << "Number of refinements: " << abstraction->get_num_states() - 1 << endl;
     }
 }
 
 void CEGAR::print_statistics() const {
     abstraction->print_statistics();
+    flaw_search->print_statistics();
 }
 }

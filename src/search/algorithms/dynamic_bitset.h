@@ -64,6 +64,10 @@ public:
         return num_bits;
     }
 
+    bool operator==(const DynamicBitset &other) const {
+        return size() == other.size() && blocks == other.blocks;
+    }
+
     /*
       Count the number of set bits.
 

@@ -1,13 +1,13 @@
 #ifndef CEGAR_UTILS_H
 #define CEGAR_UTILS_H
 
+#include "types.h"
+
 #include "../task_proxy.h"
 
 #include "../utils/hash.h"
 
 #include <memory>
-#include <unordered_set>
-#include <utility>
 #include <vector>
 
 class AbstractTask;
@@ -36,10 +36,12 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
 
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
-extern void add_search_strategy_option(options::OptionParser &parser);
-extern void add_memory_padding_option(options::OptionParser &parser);
+extern void add_common_cegar_options(options::OptionParser &parser);
 
-extern void dump_dot_graph(const Abstraction &abstraction);
+extern std::string create_dot_graph(
+    const TaskProxy &task_proxy, const Abstraction &abstraction);
+extern void write_to_file(
+    const std::string &file_name, const std::string &content);
 }
 
 /*
