@@ -8,8 +8,6 @@
 #include "../utils/hash.h"
 
 #include <memory>
-#include <unordered_set>
-#include <utility>
 #include <vector>
 
 class AbstractTask;
@@ -24,12 +22,6 @@ class OptionParser;
 
 namespace cegar {
 class Abstraction;
-
-enum class DotGraphVerbosity {
-    SILENT,
-    WRITE_TO_CONSOLE,
-    WRITE_TO_FILE
-};
 
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
 create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);

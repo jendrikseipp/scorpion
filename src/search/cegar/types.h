@@ -11,6 +11,12 @@ namespace cegar {
 class AbstractState;
 struct Transition;
 
+enum class DotGraphVerbosity {
+    SILENT,
+    WRITE_TO_CONSOLE,
+    WRITE_TO_FILE
+};
+
 enum class SearchStrategy {
     ASTAR,
     INCREMENTAL,
