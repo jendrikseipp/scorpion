@@ -101,27 +101,25 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
 }
 
 void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
-    vector<string> pick_flawed_abstract_state_strategies =
-    {"FIRST", "FIRST_ON_SHORTEST_PATH", "RANDOM", "MIN_H", "MAX_H", "BATCH_MIN_H"};
     parser.add_enum_option<cegar::PickFlawedAbstractState>(
         "pick_flawed_abstract_state",
-        pick_flawed_abstract_state_strategies,
+        {"FIRST", "FIRST_ON_SHORTEST_PATH", "RANDOM", "MIN_H", "MAX_H", "BATCH_MIN_H"},
         "flaw-selection strategy",
         "BATCH_MIN_H");
 }
 
 void add_pick_split_strategies(options::OptionParser &parser) {
-    vector<string> pick_split_strategies =
+    vector<string> strategies =
     {"RANDOM", "MIN_UNWANTED", "MAX_UNWANTED", "MIN_REFINED", "MAX_REFINED",
      "MIN_HADD", "MAX_HADD", "MIN_CG", "MAX_CG", "MAX_COVER"};
     parser.add_enum_option<PickSplit>(
         "pick_split",
-        pick_split_strategies,
+        strategies,
         "split-selection strategy",
         "MAX_COVER");
     parser.add_enum_option<PickSplit>(
         "tiebreak_split",
-        pick_split_strategies,
+        strategies,
         "split-selection strategy for breaking ties",
         "MAX_REFINED");
 }
@@ -150,9 +148,10 @@ void add_memory_padding_option(options::OptionParser &parser) {
 
 void add_dot_graph_verbosity(options::OptionParser &parser) {
     parser.add_enum_option<DotGraphVerbosity>(
-        "dot_graph_verbosity", {"SILENT", "WRITE_TO_CONSOLE", "WRITE_TO_FILE"},
-        "verbosity of printing/writing dot graphs", "SILENT"
-        );
+        "dot_graph_verbosity",
+        {"SILENT", "WRITE_TO_CONSOLE", "WRITE_TO_FILE"},
+        "verbosity of printing/writing dot graphs",
+        "SILENT");
 }
 
 string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
@@ -197,7 +196,12 @@ void write_to_file(const string &file_name, const string &content) {
     ofstream output_file(file_name);
     if (output_file.is_open()) {
         output_file << content;
+        output_file.close();
+    } else {
+        ABORT("failed to open " + file_name);
     }
-    output_file.close();
+    if (output_file.fail()) {
+        ABORT("failed to write to " + file_name);
+    }
 }
 }

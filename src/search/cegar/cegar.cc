@@ -222,7 +222,7 @@ void CEGAR::refinement_loop() {
             cout << create_dot_graph(task_proxy, *abstraction) << endl;
         } else if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_FILE) {
             write_to_file(
-                "dot-files/graph" + to_string(abstraction->get_num_states()) + ".dot",
+                "graph" + to_string(abstraction->get_num_states()) + ".dot",
                 create_dot_graph(task_proxy, *abstraction));
         } else if (dot_graph_verbosity != DotGraphVerbosity::SILENT) {
             ABORT("Invalid dot graph verbosity");
