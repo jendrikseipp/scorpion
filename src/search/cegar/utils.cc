@@ -13,6 +13,7 @@
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
+#include "../utils/rng_options.h"
 
 #include <algorithm>
 #include <cassert>
@@ -23,6 +24,8 @@
 using namespace std;
 
 namespace cegar {
+class SubtaskGenerator;
+
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {
     Options opts;
@@ -100,7 +103,7 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
     return domain_sizes;
 }
 
-void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
+static void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
     parser.add_enum_option<cegar::PickFlawedAbstractState>(
         "pick_flawed_abstract_state",
         {"FIRST", "FIRST_ON_SHORTEST_PATH", "RANDOM", "MIN_H", "MAX_H", "BATCH_MIN_H"},
@@ -108,7 +111,7 @@ void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
         "BATCH_MIN_H");
 }
 
-void add_pick_split_strategies(options::OptionParser &parser) {
+static void add_pick_split_strategies(options::OptionParser &parser) {
     vector<string> strategies =
     {"RANDOM", "MIN_UNWANTED", "MAX_UNWANTED", "MIN_REFINED", "MAX_REFINED",
      "MIN_HADD", "MAX_HADD", "MIN_CG", "MAX_CG", "MAX_COVER"};
@@ -124,7 +127,7 @@ void add_pick_split_strategies(options::OptionParser &parser) {
         "MAX_REFINED");
 }
 
-void add_search_strategy_option(options::OptionParser &parser) {
+static void add_search_strategy_option(options::OptionParser &parser) {
     parser.add_enum_option<SearchStrategy>(
         "search_strategy",
         {"ASTAR", "INCREMENTAL"},
@@ -132,7 +135,7 @@ void add_search_strategy_option(options::OptionParser &parser) {
         "INCREMENTAL");
 }
 
-void add_memory_padding_option(options::OptionParser &parser) {
+static void add_memory_padding_option(options::OptionParser &parser) {
     parser.add_option<int>(
         "memory_padding",
         "amount of extra memory in MB to reserve for recovering from "
@@ -146,7 +149,7 @@ void add_memory_padding_option(options::OptionParser &parser) {
         Bounds("0", "infinity"));
 }
 
-void add_dot_graph_verbosity(options::OptionParser &parser) {
+static void add_dot_graph_verbosity(options::OptionParser &parser) {
     parser.add_enum_option<DotGraphVerbosity>(
         "dot_graph_verbosity",
         {"SILENT", "WRITE_TO_CONSOLE", "WRITE_TO_FILE"},
@@ -203,5 +206,46 @@ void write_to_file(const string &file_name, const string &content) {
     if (output_file.fail()) {
         ABORT("failed to write to " + file_name);
     }
+}
+
+void add_common_cegar_options(options::OptionParser &parser) {
+    parser.add_list_option<shared_ptr<SubtaskGenerator>>(
+        "subtasks",
+        "subtask generators",
+        "[landmarks(order=random), goals(order=random)]");
+    parser.add_option<int>(
+        "max_states",
+        "maximum sum of abstract states over all abstractions",
+        "infinity",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_transitions",
+        "maximum sum of state-changing transitions (excluding self-loops) over "
+        "all abstractions",
+        "1M",
+        Bounds("0", "infinity"));
+    parser.add_option<double>(
+        "max_time",
+        "maximum time in seconds for building abstractions",
+        "infinity",
+        Bounds("0.0", "infinity"));
+
+    add_pick_flawed_abstract_state_strategies(parser);
+    add_pick_split_strategies(parser);
+    add_search_strategy_option(parser);
+    add_memory_padding_option(parser);
+    add_dot_graph_verbosity(parser);
+    utils::add_rng_options(parser);
+
+    parser.add_option<int>(
+        "max_concrete_states_per_abstract_state",
+        "maximum number of flawed concrete states stored per abstract state",
+        "infinity",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_state_expansions",
+        "maximum number of state expansions per flaw search",
+        "1M",
+        Bounds("1", "infinity"));
 }
 }

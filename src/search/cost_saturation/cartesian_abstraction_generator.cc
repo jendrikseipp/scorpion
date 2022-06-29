@@ -219,43 +219,8 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "Cartesian abstraction generator",
         "");
 
-    parser.add_list_option<shared_ptr<cegar::SubtaskGenerator>>(
-        "subtasks",
-        "subtask generators",
-        "[landmarks(order=random), goals(order=random)]");
-    parser.add_option<int>(
-        "max_states",
-        "maximum sum of abstract states over all abstractions",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_transitions",
-        "maximum sum of state-changing transitions (excluding self-loops) over "
-        "all abstractions",
-        "1M",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time for computing abstractions",
-        "infinity",
-        Bounds("0.0", "infinity"));
-    cegar::add_pick_flawed_abstract_state_strategies(parser);
-    cegar::add_pick_split_strategies(parser);
-    parser.add_option<int>(
-        "max_concrete_states_per_abstract_state",
-        "Max number of states per abstract state we consider in flaw search",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_state_expansions",
-        "Max number of state expansion in flaw search",
-        "1M",
-        Bounds("1", "infinity"));
-    cegar::add_search_strategy_option(parser);
-    cegar::add_memory_padding_option(parser);
+    cegar::add_common_cegar_options(parser);
     utils::add_log_options_to_parser(parser);
-    cegar::add_dot_graph_verbosity(parser);
-    utils::add_rng_options(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())

@@ -130,47 +130,12 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_property("safe", "yes");
     parser.document_property("preferred operators", "no");
 
-    parser.add_list_option<shared_ptr<SubtaskGenerator>>(
-        "subtasks",
-        "subtask generators",
-        "[landmarks(),goals()]");
-    parser.add_option<int>(
-        "max_states",
-        "maximum sum of abstract states over all abstractions",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_transitions",
-        "maximum sum of real transitions (excluding self-loops) over "
-        " all abstractions",
-        "1M",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time in seconds for building abstractions",
-        "infinity",
-        Bounds("0.0", "infinity"));
-    add_pick_flawed_abstract_state_strategies(parser);
-    add_pick_split_strategies(parser);
-    parser.add_option<int>(
-        "max_concrete_states_per_abstract_state",
-        "maximum number of flawed concrete states stored per abstract state",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_state_expansions",
-        "maximum number of state expansions per flaw search",
-        "1M",
-        Bounds("1", "infinity"));
-    add_search_strategy_option(parser);
-    add_memory_padding_option(parser);
+    add_common_cegar_options(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",
         "true");
-    add_dot_graph_verbosity(parser);
     Heuristic::add_options_to_parser(parser);
-    utils::add_rng_options(parser);
 
     Options opts = parser.parse();
 

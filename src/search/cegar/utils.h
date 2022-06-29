@@ -44,12 +44,7 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
 
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
-extern void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser);
-extern void add_pick_split_strategies(options::OptionParser &parser);
-
-extern void add_search_strategy_option(options::OptionParser &parser);
-extern void add_memory_padding_option(options::OptionParser &parser);
-extern void add_dot_graph_verbosity(options::OptionParser &parser);
+extern void add_common_cegar_options(options::OptionParser &parser);
 
 extern std::string create_dot_graph(
     const TaskProxy &task_proxy, const Abstraction &abstraction);
