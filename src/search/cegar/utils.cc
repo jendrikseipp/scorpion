@@ -155,7 +155,7 @@ void add_dot_graph_verbosity(options::OptionParser &parser) {
         );
 }
 
-string get_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
+string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
     ostringstream oss;
     int num_states = abstraction.get_num_states();
     oss << "digraph transition_system";
@@ -193,37 +193,11 @@ string get_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction
     return oss.str();
 }
 
-void dump_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
-    cout << get_dot_graph(task_proxy, abstraction) << endl;
-}
-
-void write_dot_graph(
-    const TaskProxy &task_proxy, const Abstraction &abstraction, const string &file_name) {
+void write_to_file(const string &file_name, const string &content) {
     ofstream output_file(file_name);
     if (output_file.is_open()) {
-        output_file << get_dot_graph(task_proxy, abstraction);
+        output_file << content;
     }
     output_file.close();
-}
-
-void handle_dot_graph(
-    const TaskProxy &task_proxy,
-    const Abstraction &abstraction,
-    const string &file_name,
-    DotGraphVerbosity dot_graph_verbosity) {
-    switch (dot_graph_verbosity) {
-    case DotGraphVerbosity::SILENT:
-        break;
-    case DotGraphVerbosity::WRITE_TO_CONSOLE:
-        dump_dot_graph(task_proxy, abstraction);
-        break;
-    case DotGraphVerbosity::WRITE_TO_FILE:
-        write_dot_graph(task_proxy, abstraction, file_name);
-        break;
-    default:
-        cerr << "Invalid dot graph verbosity: " << static_cast<int>(dot_graph_verbosity)
-             << endl;
-        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-    }
 }
 }

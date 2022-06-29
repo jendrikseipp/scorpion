@@ -217,11 +217,16 @@ void CEGAR::refinement_loop() {
 
         find_flaw_timer.resume();
 
-        handle_dot_graph(task_proxy,
-                         *abstraction,
-                         "dot_files/graph" +
-                         to_string(abstraction->get_num_states()) + ".dot",
-                         dot_graph_verbosity);
+        // Dump/write dot file for current abstraction.
+        if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_CONSOLE) {
+            cout << create_dot_graph(task_proxy, *abstraction) << endl;
+        } else if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_FILE) {
+            write_to_file(
+                "dot-files/graph" + to_string(abstraction->get_num_states()) + ".dot",
+                create_dot_graph(task_proxy, *abstraction));
+        } else if (dot_graph_verbosity != DotGraphVerbosity::SILENT) {
+            ABORT("Invalid dot graph verbosity");
+        }
 
         unique_ptr<Split> split;
         if (pick_flawed_abstract_state ==

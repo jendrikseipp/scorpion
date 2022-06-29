@@ -51,18 +51,10 @@ extern void add_search_strategy_option(options::OptionParser &parser);
 extern void add_memory_padding_option(options::OptionParser &parser);
 extern void add_dot_graph_verbosity(options::OptionParser &parser);
 
-extern std::string get_dot_graph(
+extern std::string create_dot_graph(
     const TaskProxy &task_proxy, const Abstraction &abstraction);
-extern void dump_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction);
-extern void write_dot_graph(
-    const TaskProxy &task_proxy,
-    const Abstraction &abstraction,
-    const std::string &file_name);
-extern void handle_dot_graph(
-    const TaskProxy &task_proxy,
-    const Abstraction &abstraction,
-    const std::string &file_name,
-    DotGraphVerbosity dot_graph_verbosity);
+extern void write_to_file(
+    const std::string &file_name, const std::string &content);
 }
 
 /*
