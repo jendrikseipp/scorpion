@@ -82,7 +82,7 @@ public:
 class ShortestPaths {
     static const Cost DIRTY;
 
-    const utils::LogProxy &log;
+    utils::LogProxy &log;
     const bool debug;
     const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;

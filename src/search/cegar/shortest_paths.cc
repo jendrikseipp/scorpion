@@ -95,7 +95,7 @@ void ShortestPaths::recompute(
 
 void ShortestPaths::mark_dirty(int state) {
     if (debug) {
-        cout << "Mark " << state << " as dirty" << endl;
+        log << "Mark " << state << " as dirty" << endl;
     }
     goal_distances[state] = DIRTY;
     // Previous shortest path is invalid now.
@@ -115,9 +115,9 @@ void ShortestPaths::update_incrementally(
     dirty_states.clear();
 
     if (debug) {
-        cout << "Reflect splitting " << v << " into " << v1 << " and " << v2 << endl;
-        cout << "Goal distances: " << goal_distances << endl;
-        cout << "Shortest paths: " << shortest_path << endl;
+        log << "Reflect splitting " << v << " into " << v1 << " and " << v2 << endl;
+        log << "Goal distances: " << goal_distances << endl;
+        log << "Shortest paths: " << shortest_path << endl;
     }
 
     // Copy distance from split state. Distances will be updated if necessary.
@@ -138,8 +138,8 @@ void ShortestPaths::update_incrementally(
     }
 
     if (debug) {
-        cout << "Goal distances: " << goal_distances << endl;
-        cout << "Shortest paths: " << shortest_path << endl;
+        log << "Goal distances: " << goal_distances << endl;
+        log << "Shortest paths: " << shortest_path << endl;
     }
 
     /*
@@ -169,8 +169,8 @@ void ShortestPaths::update_incrementally(
     while (!candidate_queue.empty()) {
         int state = candidate_queue.pop().second;
         if (debug) {
-            cout << "Try to reconnect " << state
-                 << " with h=" << goal_distances[state] << endl;
+            log << "Try to reconnect " << state
+                << " with h=" << goal_distances[state] << endl;
         }
         assert(dirty_candidate[state]);
         assert(goal_distances[state] != INF_COSTS);
@@ -184,8 +184,8 @@ void ShortestPaths::update_incrementally(
                 add_costs(goal_distances[succ], operator_costs[op_id])
                 == goal_distances[state]) {
                 if (debug) {
-                    cout << "Reconnect " << state << " to " << succ << " via "
-                         << op_id << endl;
+                    log << "Reconnect " << state << " to " << succ << " via "
+                        << op_id << endl;
                 }
                 shortest_path[state] = Transition(op_id, succ);
                 reconnected = true;
@@ -200,7 +200,7 @@ void ShortestPaths::update_incrementally(
                     goal_distances[prev] != DIRTY &&
                     shortest_path[prev].target_id == state) {
                     if (debug) {
-                        cout << "Add " << prev << " to candidate queue" << endl;
+                        log << "Add " << prev << " to candidate queue" << endl;
                     }
                     dirty_candidate[prev] = true;
                     candidate_queue.push(goal_distances[prev], prev);
@@ -212,8 +212,8 @@ void ShortestPaths::update_incrementally(
 
 
     if (debug) {
-        cout << "Goal distances: " << goal_distances << endl;
-        cout << "Dirty states: " << dirty_states << endl;
+        log << "Goal distances: " << goal_distances << endl;
+        log << "Dirty states: " << dirty_states << endl;
     }
 
 #ifndef NDEBUG
@@ -346,18 +346,18 @@ bool ShortestPaths::test_distances(
 
     for (int i = 0; i < num_states; ++i) {
         if (debug) {
-            cout << "Test state " << i << endl;
+            log << "Test state " << i << endl;
         }
         if (goal_distances[i] != INF_COSTS &&
             init_distances[i] != INF &&
             !goals.count(i)) {
             Transition t = shortest_path[i];
             if (debug) {
-                cout << "Shortest path: " << t << endl;
+                log << "Shortest path: " << t << endl;
             }
             assert(t.is_defined());
             if (debug) {
-                cout << "Outgoing transitions: " << out[i] << endl;
+                log << "Outgoing transitions: " << out[i] << endl;
             }
             assert(count(out[i].begin(), out[i].end(), t) == 1);
             assert(goal_distances[i] ==
@@ -375,13 +375,13 @@ bool ShortestPaths::test_distances(
     for (int i = 0; i < num_states; ++i) {
         if (goal_distances_32_bit_rounded_down[i] != goal_distances_32_bit[i] &&
             init_distances[i] != INF) {
-            cout << "32-bit INF: " << INF << endl;
-            cout << "64-bit 0: " << convert_to_64_bit_cost(0) << endl;
-            cout << "64-bit 1: " << convert_to_64_bit_cost(1) << endl;
-            cout << "64-bit INF: " << INF_COSTS << endl;
-            cout << "64-bit distances: " << goal_distances << endl;
-            cout << "32-bit rounded:   " << goal_distances_32_bit_rounded_down << endl;
-            cout << "32-bit distances: " << goal_distances_32_bit << endl;
+            log << "32-bit INF: " << INF << endl;
+            log << "64-bit 0: " << convert_to_64_bit_cost(0) << endl;
+            log << "64-bit 1: " << convert_to_64_bit_cost(1) << endl;
+            log << "64-bit INF: " << INF_COSTS << endl;
+            log << "64-bit distances: " << goal_distances << endl;
+            log << "32-bit rounded:   " << goal_distances_32_bit_rounded_down << endl;
+            log << "32-bit distances: " << goal_distances_32_bit << endl;
             ABORT("Distances are wrong.");
         }
     }
