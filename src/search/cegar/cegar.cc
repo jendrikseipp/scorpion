@@ -52,7 +52,7 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy));
     } else if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-            task_properties::get_operator_costs(task_proxy), false);
+            task_properties::get_operator_costs(task_proxy), log);
         flaw_search = utils::make_unique_ptr<FlawSearch>(
             task, *abstraction, *shortest_paths, rng,
             pick_flawed_abstract_state, pick_split, tiebreak_split,
@@ -208,7 +208,9 @@ void CEGAR::refinement_loop() {
                 shortest_paths->get_32bit_goal_distance(abstraction->get_initial_state().get_id());
             if (new_abstract_solution_cost > old_abstract_solution_cost) {
                 old_abstract_solution_cost = new_abstract_solution_cost;
-                log << "Abstract solution cost: " << old_abstract_solution_cost << endl;
+                if (log.is_at_least_normal()) {
+                    log << "Abstract solution cost: " << old_abstract_solution_cost << endl;
+                }
             }
         } else {
             log << "Abstract task is unsolvable." << endl;

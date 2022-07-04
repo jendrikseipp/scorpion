@@ -11,15 +11,18 @@ using namespace std;
 namespace cegar {
 const Cost ShortestPaths::DIRTY = numeric_limits<Cost>::max() - 1;
 
-ShortestPaths::ShortestPaths(const vector<int> &costs, bool debug)
-    : debug(debug),
+ShortestPaths::ShortestPaths(const vector<int> &costs, utils::LogProxy &log)
+    : log(log),
+      debug(log.is_at_least_debug()),
       task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})) {
     operator_costs.reserve(costs.size());
     for (int cost : costs) {
         operator_costs.push_back(convert_to_64_bit_cost(cost));
     }
-    utils::g_log << "Task has zero-cost operators: " << boolalpha
-                 << task_has_zero_costs << endl;
+    if (log.is_at_least_normal()) {
+        log << "Subtask has zero-cost operators: " << boolalpha
+            << task_has_zero_costs << endl;
+    }
 }
 
 Cost ShortestPaths::add_costs(Cost a, Cost b) {

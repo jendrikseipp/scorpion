@@ -641,7 +641,6 @@ void FlawSearch::print_statistics() const {
     int flaws = max(1, abstraction.get_num_states() - 1);
     int searches = max(1, num_searches);
     int expansions = num_overall_expanded_concrete_states;
-    log << endl;
     log << "Flaw searches: " << searches << endl;
     log << "Refined flaws: " << flaws << endl;
     log << "Expanded concrete states: " << expansions << endl;
@@ -655,6 +654,5 @@ void FlawSearch::print_statistics() const {
     log << "Average number of expanded concrete states per flaw search: "
         << expansions / static_cast<float>(searches) << endl;
     log << "Average flaw search time: " << flaw_search_timer() / searches << endl;
-    log << endl;
 }
 }

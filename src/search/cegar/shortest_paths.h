@@ -9,6 +9,10 @@
 #include <queue>
 #include <vector>
 
+namespace utils {
+class LogProxy;
+}
+
 namespace cegar {
 /*
   The code below requires that all operators have positive cost. Negative
@@ -78,6 +82,7 @@ public:
 class ShortestPaths {
     static const Cost DIRTY;
 
+    const utils::LogProxy &log;
     const bool debug;
     const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;
@@ -96,7 +101,7 @@ class ShortestPaths {
 
     void mark_dirty(int state);
 public:
-    ShortestPaths(const std::vector<int> &costs, bool debug);
+    ShortestPaths(const std::vector<int> &costs, utils::LogProxy &log);
 
     // Use Dijkstra's algorithm to compute the shortest path tree from scratch.
     void recompute(
