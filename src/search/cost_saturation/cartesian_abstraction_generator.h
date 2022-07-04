@@ -43,6 +43,8 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     int num_states;
     int num_transitions;
 
+    bool has_reached_resource_limit(const utils::CountdownTimer &timer) const;
+
     std::unique_ptr<cegar::Abstraction> build_abstraction_for_subtask(
         const std::shared_ptr<AbstractTask> &subtask,
         int remaining_subtasks,

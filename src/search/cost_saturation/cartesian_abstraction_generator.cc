@@ -124,6 +124,14 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       num_transitions(0) {
 }
 
+bool CartesianAbstractionGenerator::has_reached_resource_limit(
+    const utils::CountdownTimer &timer) const {
+    return num_states >= max_states ||
+           num_transitions >= max_transitions ||
+           timer.is_expired() ||
+           !utils::extra_memory_padding_is_reserved();
+}
+
 unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_for_subtask(
     const shared_ptr<AbstractTask> &subtask,
     int remaining_subtasks,
@@ -169,8 +177,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         bool unsolvable = result.first;
         abstractions.push_back(move(result.second));
 
-        if (num_states >= max_states || num_transitions >= max_transitions ||
-            !utils::extra_memory_padding_is_reserved() || unsolvable) {
+        if (has_reached_resource_limit(timer) || unsolvable) {
             break;
         }
 
@@ -193,10 +200,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     for (const auto &subtask_generator : subtask_generators) {
         cegar::SharedTasks subtasks = subtask_generator->get_subtasks(task, log);
         build_abstractions_for_subtasks(subtasks, timer, abstractions);
-        if (num_states >= max_states ||
-            num_transitions >= max_transitions ||
-            timer.is_expired() ||
-            !utils::extra_memory_padding_is_reserved()) {
+        if (has_reached_resource_limit(timer)) {
             break;
         }
     }
