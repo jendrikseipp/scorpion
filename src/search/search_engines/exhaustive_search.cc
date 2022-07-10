@@ -42,7 +42,8 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
 }
 
 ExhaustiveSearch::ExhaustiveSearch(const Options &opts)
-    : SearchEngine(opts) {
+    : SearchEngine(opts),
+    max_num_generated_states(opts.get<int>("max_num_generated_states")) {
     assert(cost_type == ONE);
 }
 
@@ -79,6 +80,14 @@ void ExhaustiveSearch::dump_state(const State &state) const {
     cout << endl;
 }
 
+SearchStatus ExhaustiveSearch::exceeds_max_num_generated_states() const {
+    if (statistics.get_generated() == max_num_generated_states) {
+        utils::g_log << "Finished dumping the reachable state space due to exceeding bound on the maximum number of generated states." << endl;
+        return FAILED;
+    }
+    return IN_PROGRESS;
+}
+
 SearchStatus ExhaustiveSearch::step() {
     if (current_state_id == static_cast<int>(state_registry.size())) {
         utils::g_log << "Finished dumping the reachable state space." << endl;
@@ -87,6 +96,8 @@ SearchStatus ExhaustiveSearch::step() {
 
     State s = state_registry.lookup_state(StateID(current_state_id));
     statistics.inc_expanded();
+    auto search_status = exceeds_max_num_generated_states();
+    if (search_status == FAILED) return search_status;
     dump_state(s);
 
     /* Next time we'll look at the next state that was created in the registry.
@@ -102,6 +113,8 @@ SearchStatus ExhaustiveSearch::step() {
         State succ_state = state_registry.get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
         cout << "T " << s.get_id().value << " " << succ_state.get_id().value << endl;
+        search_status = exceeds_max_num_generated_states();
+        if (search_status == FAILED) return search_status;
     }
     return IN_PROGRESS;
 }
@@ -111,6 +124,11 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
         "Exhaustive search",
         "Dump the reachable state space.");
     utils::add_log_options_to_parser(parser);
+    parser.add_option<int>(
+        "max_num_generated_states",
+        "maximum number of generated states before stopping",
+        "infinity",
+        Bounds("1", "infinity"));
 
     Options opts = parser.parse();
 

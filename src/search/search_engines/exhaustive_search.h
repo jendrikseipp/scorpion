@@ -9,10 +9,13 @@ class Options;
 
 namespace exhaustive_search {
 class ExhaustiveSearch : public SearchEngine {
+    int max_num_generated_states;
     int current_state_id;
     std::vector<std::vector<int>> fact_mapping;
 
     void dump_state(const State &state) const;
+
+    SearchStatus exceeds_max_num_generated_states() const;
 
 protected:
     virtual void initialize() override;
