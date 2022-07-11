@@ -15,7 +15,7 @@ class ExhaustiveSearch : public SearchEngine {
 
     void dump_state(const State &state) const;
 
-    SearchStatus exceeds_max_num_generated_states() const;
+    bool exceeds_max_num_generated_states() const;
 
 protected:
     virtual void initialize() override;

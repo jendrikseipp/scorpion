@@ -80,12 +80,12 @@ void ExhaustiveSearch::dump_state(const State &state) const {
     cout << endl;
 }
 
-SearchStatus ExhaustiveSearch::exceeds_max_num_generated_states() const {
+bool ExhaustiveSearch::exceeds_max_num_generated_states() const {
     if (statistics.get_generated() == max_num_generated_states) {
         utils::g_log << "Finished dumping the reachable state space due to exceeding bound on the maximum number of generated states." << endl;
-        return FAILED;
+        return true;
     }
-    return IN_PROGRESS;
+    return false;
 }
 
 SearchStatus ExhaustiveSearch::step() {
@@ -107,8 +107,7 @@ SearchStatus ExhaustiveSearch::step() {
 
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_op_ids) {
-        auto search_status = exceeds_max_num_generated_states();
-        if (search_status == FAILED) return search_status;
+        if (exceeds_max_num_generated_states()) return FAILED;
         // Add successor states to registry.
         State succ_state = state_registry.get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
