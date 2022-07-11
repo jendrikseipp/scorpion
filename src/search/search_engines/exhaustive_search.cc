@@ -43,6 +43,7 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
 
 ExhaustiveSearch::ExhaustiveSearch(const Options &opts)
     : SearchEngine(opts),
+    timer(utils::CountdownTimer(opts.get<double>("max_time"))),
     max_num_generated_states(opts.get<int>("max_num_generated_states")) {
     assert(cost_type == ONE);
 }
@@ -126,12 +127,16 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
         "maximum number of generated states before stopping",
         "infinity",
         Bounds("1", "infinity"));
+    parser.add_option<double>(
+        "max_time",
+        "",
+        "infinity",
+        Bounds("0", "infinity"));
 
     Options opts = parser.parse();
 
     opts.set<OperatorCost>("cost_type", ONE);
     opts.set<int>("bound", numeric_limits<int>::max());
-    opts.set<double>("max_time", numeric_limits<double>::infinity());
 
     if (parser.dry_run()) {
         return nullptr;

@@ -2,6 +2,7 @@
 #define SEARCH_ENGINES_EXHAUSTIVE_SEARCH_H
 
 #include "../search_engine.h"
+#include "../utils/countdown_timer.h"
 
 namespace options {
 class Options;
@@ -9,6 +10,7 @@ class Options;
 
 namespace exhaustive_search {
 class ExhaustiveSearch : public SearchEngine {
+    utils::CountdownTimer timer;
     int max_num_generated_states;
     int current_state_id;
     std::vector<std::vector<int>> fact_mapping;
