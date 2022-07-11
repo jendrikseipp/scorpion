@@ -96,8 +96,6 @@ SearchStatus ExhaustiveSearch::step() {
 
     State s = state_registry.lookup_state(StateID(current_state_id));
     statistics.inc_expanded();
-    auto search_status = exceeds_max_num_generated_states();
-    if (search_status == FAILED) return search_status;
     dump_state(s);
 
     /* Next time we'll look at the next state that was created in the registry.
@@ -109,12 +107,12 @@ SearchStatus ExhaustiveSearch::step() {
 
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_op_ids) {
+        auto search_status = exceeds_max_num_generated_states();
+        if (search_status == FAILED) return search_status;
         // Add successor states to registry.
         State succ_state = state_registry.get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
         cout << "T " << s.get_id().value << " " << succ_state.get_id().value << endl;
-        search_status = exceeds_max_num_generated_states();
-        if (search_status == FAILED) return search_status;
     }
     return IN_PROGRESS;
 }
