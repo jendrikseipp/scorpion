@@ -721,13 +721,23 @@ def dump_predicates(task, path):
 
 
 def dump_goal_atoms(task, path):
-    assert isinstance(task.goal, pddl.conditions.Conjunction)
-    goal_atoms = [
-        atom for atom in task.goal.parts
-    ]
+    goal_atoms = collect_goal_atoms_in_conjunction(task.goal)
     with open(path, "w") as f:
         for atom in goal_atoms:
             instantiate.print_atom(str(atom), f)
+
+
+def collect_goal_atoms_in_conjunction(goal):
+    """ Recursively parses a Conjunction of Atoms into a list of Atoms. """
+    if isinstance(goal, pddl.conditions.Conjunction):
+        goal_atoms = []
+        for part in goal.parts:
+            goal_atoms.extend(collect_goal_atoms_in_conjunction(part))
+        return goal_atoms
+    elif isinstance(goal, pddl.conditions.Atom):
+        return [goal]
+    else:
+        raise Exception("Only conjunctive goals can be dumped.")
 
 
 def dump_constants(task, path):
