@@ -4,12 +4,13 @@ from . import predicates
 
 class Task:
     def __init__(self, domain_name, task_name, requirements,
-                 types, objects, predicates, functions, init, goal,
+                 types, constants, objects, predicates, functions, init, goal,
                  actions, axioms, use_metric):
         self.domain_name = domain_name
         self.task_name = task_name
         self.requirements = requirements
         self.types = types
+        self.constants = constants
         self.objects = objects
         self.predicates = predicates
         self.functions = functions
@@ -19,6 +20,7 @@ class Task:
         self.axioms = axioms
         self.axiom_counter = 0
         self.use_min_cost_metric = use_metric
+        self.dump()
 
     def add_axiom(self, parameters, condition):
         name = "new-axiom@%d" % self.axiom_counter
@@ -34,6 +36,9 @@ class Task:
         print("Types:")
         for type in self.types:
             print("  %s" % type)
+        print("Constants:")
+        for obj in self.constants:
+            print("  %s" % obj)
         print("Objects:")
         for obj in self.objects:
             print("  %s" % obj)

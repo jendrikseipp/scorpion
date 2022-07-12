@@ -720,6 +720,22 @@ def dump_predicates(task, path):
                           for name, arity in sorted(predicates)))
 
 
+def dump_goal_atoms(task, path):
+    assert isinstance(task.goal, pddl.conditions.Conjunction)
+    goal_atoms = [
+        atom for atom in task.goal.parts
+    ]
+    with open(path, "w") as f:
+        for atom in goal_atoms:
+            instantiate.print_atom(str(atom), f)
+
+
+def dump_constants(task, path):
+    with open(path, "w") as f:
+        for constant in task.constants:
+            instantiate.print_atom(str(constant), f)
+
+
 def main():
     timer = timers.Timer()
     with timers.timing("Parsing", True):
@@ -727,6 +743,12 @@ def main():
             domain_filename=options.domain, task_filename=options.task)
     if options.dump_predicates:
         dump_predicates(task, "predicates.txt")
+
+    if options.dump_constants:
+        dump_constants(task, "constants.txt")
+
+    if options.dump_goal_atoms:
+        dump_goal_atoms(task, "goal-atoms.txt")
 
     with timers.timing("Normalizing task"):
         normalize.normalize(task)

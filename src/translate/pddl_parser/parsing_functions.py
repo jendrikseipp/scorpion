@@ -309,7 +309,7 @@ def parse_task(domain_pddl, task_pddl):
     init += [pddl.Atom("=", (obj.name, obj.name)) for obj in objects]
 
     return pddl.Task(
-        domain_name, task_name, requirements, types, objects,
+        domain_name, task_name, requirements, types, constants, objects,
         predicates, functions, init, goal, actions, axioms, use_metric)
 
 

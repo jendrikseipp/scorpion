@@ -59,6 +59,12 @@ def parse_args():
         "--dump-static-atoms", action="store_true",
         help="write static atoms to static-atoms.txt")
     argparser.add_argument(
+        "--dump-constants", action="store_true",
+        help="write constant names to constants.txt")
+    argparser.add_argument(
+        "--dump-goal-atoms", action="store_true",
+        help="write goal atoms to goal-atoms.txt")
+    argparser.add_argument(
         "--layer-strategy", default="min", choices=["min", "max"],
         help="How to assign layers to derived variables. 'min' attempts to put as "
         "many variables into the same layer as possible, while 'max' puts each variable "
