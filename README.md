@@ -4,7 +4,7 @@ Scorpion is an optimal classical planner that uses saturated cost
 partitioning to combine multiple abstraction heuristics. It also contains
 implementations of many other cost partitioning algorithms over
 abstraction and landmark heuristics. Scorpion is based on the [Fast
-Downward planning system](https://github.com/aibasel/downward) (version 22.06),
+Downward planning system](https://github.com/aibasel/downward) (version 22.06+),
 which is described below. We regularly port the latest changes from Fast Downward
 to Scorpion and also try to port Scorpion features back to Fast Downward.
 
@@ -92,6 +92,9 @@ repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
 
 
 ## Differences between Scorpion and Fast Downward
+
+Diff between the latest merged version of Fast Downward and Scorpion:
+https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 
 - Scorpion comes with the
   [h²-preprocessor](https://ojs.aaai.org/index.php/ICAPS/article/view/13708)
