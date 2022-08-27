@@ -22,9 +22,6 @@ using namespace std;
 
 namespace cegar {
 int g_hacked_extra_memory_padding_mb = 512;
-OperatorOrdering g_hacked_operator_ordering = OperatorOrdering::ID_UP;
-OperatorOrdering g_hacked_operator_tiebreak = OperatorOrdering::ID_UP;
-StateOrdering g_hacked_state_ordering = StateOrdering::STATE_ID_UP;
 bool g_hacked_sort_transitions = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
 std::shared_ptr<utils::RandomNumberGenerator> g_hacked_rng;
@@ -119,7 +116,6 @@ void add_h_update_option(options::OptionParser &parser) {
 void add_transition_representation_option(options::OptionParser &parser) {
     vector<string> options;
     options.push_back("TS");
-    options.push_back("MT");
     options.push_back("SG");
     options.push_back("TS_THEN_SG");
     parser.add_enum_option<TransitionRepresentation>(
@@ -127,46 +123,6 @@ void add_transition_representation_option(options::OptionParser &parser) {
         options,
         "how to compute transitions between abstract states",
         "TS");
-}
-
-void add_operator_ordering_option(options::OptionParser &parser, const string &name) {
-    vector<string> options;
-    options.push_back("RANDOM");
-    options.push_back("FIXED");
-    options.push_back("ID_UP");
-    options.push_back("ID_DOWN");
-    options.push_back("COST_UP");
-    options.push_back("COST_DOWN");
-    options.push_back("POSTCONDITIONS_UP");
-    options.push_back("POSTCONDITIONS_DOWN");
-    options.push_back("LAYER_UP");
-    options.push_back("LAYER_DOWN");
-    options.push_back("HADD_UP");
-    options.push_back("HADD_DOWN");
-    options.push_back("STEPS_UP");
-    options.push_back("STEPS_DOWN");
-    parser.add_enum_option<OperatorOrdering>(
-        name,
-        options,
-        "how to order operators",
-        "ID_UP");
-}
-
-void add_state_ordering_option(options::OptionParser &parser) {
-    vector<string> options;
-    options.push_back("NONE");
-    options.push_back("RANDOM");
-    options.push_back("STATE_ID_UP");
-    options.push_back("STATE_ID_DOWN");
-    options.push_back("NODE_ID_UP");
-    options.push_back("NODE_ID_DOWN");
-    options.push_back("SIZE_UP");
-    options.push_back("SIZE_DOWN");
-    parser.add_enum_option<StateOrdering>(
-        "state_order",
-        options,
-        "how to order states",
-        "STATE_ID_UP");
 }
 
 void dump_dot_graph(const Abstraction &abstraction) {

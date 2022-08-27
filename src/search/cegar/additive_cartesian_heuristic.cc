@@ -148,9 +148,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.add_enum_option<PickSplit>(
         "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
     add_h_update_option(parser);
-    add_operator_ordering_option(parser, "operator_order");
-    add_operator_ordering_option(parser, "operator_tiebreak");
-    add_state_ordering_option(parser);
     add_transition_representation_option(parser);
     parser.add_option<bool>(
         "use_general_costs",
@@ -193,9 +190,6 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
 
     g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
     g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
-    g_hacked_operator_ordering = opts.get<OperatorOrdering>("operator_order");
-    g_hacked_operator_tiebreak = opts.get<OperatorOrdering>("operator_tiebreak");
-    g_hacked_state_ordering = opts.get<StateOrdering>("state_order");
     g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
     g_hacked_rng = utils::parse_rng_from_options(opts);
 

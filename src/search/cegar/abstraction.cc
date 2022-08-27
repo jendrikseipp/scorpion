@@ -27,7 +27,7 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
       debug(debug) {
     initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
 
-    if (g_hacked_tsr == TransitionRepresentation::MT || g_hacked_tsr == TransitionRepresentation::SG) {
+    if (g_hacked_tsr == TransitionRepresentation::SG) {
         match_tree = utils::make_unique_ptr<MatchTree>(
             TaskProxy(*task).get_operators(), *refinement_hierarchy, cartesian_sets, debug);
     } else {
@@ -90,42 +90,6 @@ int Abstraction::get_num_transitions() const {
     return transition_system->get_num_non_loops();
 }
 
-void Abstraction::order_transitions(Transitions &transitions) const {
-    return;  // Sort by operators first.
-    if (g_hacked_state_ordering == StateOrdering::NONE) {
-        return;
-    }
-    std::function<double(int)> key;
-    // Make sure that the random order is stable.
-    unordered_map<int, double> state_to_random_double;
-    if (g_hacked_state_ordering == StateOrdering::RANDOM) {
-        for (const Transition &t : transitions) {
-            if (!state_to_random_double.count(t.target_id)) {
-                state_to_random_double[t.target_id] = (*g_hacked_rng)();
-            }
-        }
-        key = [&](int state) {return state_to_random_double[state];};
-    } else if (g_hacked_state_ordering == StateOrdering::STATE_ID_UP) {
-        key = [](int state) {return state;};
-    } else if (g_hacked_state_ordering == StateOrdering::STATE_ID_DOWN) {
-        key = [](int state) {return -state;};
-    } else if (g_hacked_state_ordering == StateOrdering::NODE_ID_UP) {
-        key = [&](int state) {return states[state]->get_node_id();};
-    } else if (g_hacked_state_ordering == StateOrdering::NODE_ID_DOWN) {
-        key = [&](int state) {return -states[state]->get_node_id();};
-    } else if (g_hacked_state_ordering == StateOrdering::SIZE_UP) {
-        key = [&](int state) {return states[state]->get_cartesian_set().compute_size();};
-    } else if (g_hacked_state_ordering == StateOrdering::SIZE_DOWN) {
-        key = [&](int state) {return -states[state]->get_cartesian_set().compute_size();};
-    } else {
-        ABORT("Unknown state ordering");
-    }
-    stable_sort(transitions.begin(), transitions.end(),
-                [&key](const Transition &t1, const Transition &t2) {
-                    return key(t1.target_id) < key(t2.target_id);
-                });
-}
-
 Transitions Abstraction::get_incoming_transitions(int state_id) const {
     Transitions transitions;
     if (match_tree) {
@@ -134,7 +98,6 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
     } else {
         transitions = transition_system->get_incoming_transitions()[state_id];
     }
-    order_transitions(transitions);
     if (g_hacked_sort_transitions) {
         sort(transitions.begin(), transitions.end());
     }
@@ -148,7 +111,6 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
     } else {
         transitions = transition_system->get_outgoing_transitions()[state_id];
     }
-    order_transitions(transitions);
     if (g_hacked_sort_transitions) {
         sort(transitions.begin(), transitions.end());
     }
@@ -255,14 +217,6 @@ pair<int, int> Abstraction::refine(
     if (transition_system) {
         transition_system->rewire(states, v_id, *v1, *v2, var);
     }
-    if (match_tree) {
-        match_tree->split(this->cartesian_sets, state, var);
-    }
-
-    if (debug) {
-        //transition_system->dump();
-        //match_tree->dump();
-    }
 
     states.emplace_back();
     states[v1_id] = move(v1);
@@ -270,10 +224,6 @@ pair<int, int> Abstraction::refine(
 
     assert(init_id == 0);
     assert(get_initial_state().includes(concrete_initial_state));
-
-    if (debug) {
-        //refinement_hierarchy->dump();
-    }
 
 #ifndef NDEBUG
     if (match_tree && transition_system) {

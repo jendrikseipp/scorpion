@@ -80,10 +80,6 @@ public:
     int get_cost_for_cegar(int var, int value) const {
         return get_proposition(var, value)->cost;
     }
-
-    const std::vector<UnaryOperator> &get_unary_operators_for_cegar() const {
-        return unary_operators;
-    }
 };
 }
 

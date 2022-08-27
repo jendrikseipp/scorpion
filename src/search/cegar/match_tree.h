@@ -29,10 +29,6 @@ class MatchTree {
     const std::vector<Facts> effects;
     const std::vector<Facts> postconditions;
     const std::vector<std::vector<int>> effect_vars_without_preconditions;
-    std::vector<int> relaxed_task_layer;
-    std::vector<int> relaxed_task_costs;
-    std::vector<int> relaxed_task_steps;
-    std::vector<int> fixed_operator_order;
     const std::vector<int> operator_costs;
     const RefinementHierarchy &refinement_hierarchy;
     const CartesianSets &cartesian_sets;
@@ -40,10 +36,6 @@ class MatchTree {
     const successor_generator::SuccessorGenerator &forward_successor_generator;
     const successor_generator::SuccessorGenerator &backward_successor_generator;
     const bool sort_applicable_operators_by_increasing_cost;
-
-    // Transitions from and to other abstract states.
-    std::vector<Operators> incoming;
-    std::vector<Operators> outgoing;
 
     const bool debug;
 
@@ -64,7 +56,6 @@ class MatchTree {
     bool has_transition(
         const AbstractState &src, int op_id, const AbstractState &dest,
         const std::vector<bool> &domains_intersect) const;
-    std::function<int(int)> get_order_key(OperatorOrdering ordering) const;
     void order_operators(std::vector<int> &operators) const;
 
 public:

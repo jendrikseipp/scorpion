@@ -20,37 +20,8 @@ enum class HUpdateStrategy {
     DIJKSTRA_FROM_UNCONNECTED_ORPHANS,
 };
 
-enum class OperatorOrdering {
-    RANDOM,
-    FIXED,
-    ID_UP,
-    ID_DOWN,
-    COST_UP,
-    COST_DOWN,
-    POSTCONDITIONS_UP,
-    POSTCONDITIONS_DOWN,
-    LAYER_UP,
-    LAYER_DOWN,
-    HADD_UP,
-    HADD_DOWN,
-    STEPS_UP,
-    STEPS_DOWN,
-};
-
-enum class StateOrdering {
-    NONE,
-    RANDOM,
-    STATE_ID_UP,
-    STATE_ID_DOWN,
-    NODE_ID_UP,
-    NODE_ID_DOWN,
-    SIZE_UP,
-    SIZE_DOWN,
-};
-
 enum class TransitionRepresentation {
     TS,
-    MT,
     SG,
     TS_THEN_SG,
 };
