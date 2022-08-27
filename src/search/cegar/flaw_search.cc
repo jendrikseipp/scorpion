@@ -178,6 +178,7 @@ static void add_split(vector<vector<Split>> &splits, Split &&new_split) {
         if (old_split == new_split) {
             is_duplicate = true;
             old_split.count += new_split.count;
+            break;
         }
     }
     if (!is_duplicate) {
