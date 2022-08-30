@@ -20,7 +20,7 @@ bool Node::information_is_valid() const {
                       var == UNDEFINED);
     bool split = (left_child != UNDEFINED && right_child != UNDEFINED &&
                   var != UNDEFINED);
-    return (not_split || split) && value != UNDEFINED;
+    return (not_split ^ split) && value != UNDEFINED;
 }
 
 bool Node::is_split() const {
@@ -38,8 +38,12 @@ void Node::split(int var, int value, NodeID left_child, NodeID right_child) {
 
 
 ostream &operator<<(ostream &os, const Node &node) {
-    return os << "<Node: var=" << node.var << " value=" << node.value
-              << " left=" << node.left_child << " right=" << node.right_child << ">";
+    if (node.is_split()) {
+        return os << "<Leaf Node: state=" << node.value << ">";
+    } else {
+        return os << "<Inner Node: var=" << node.var << " value=" << node.value
+                  << " left=" << node.left_child << " right=" << node.right_child << ">";
+    }
 }
 
 
@@ -57,8 +61,7 @@ NodeID RefinementHierarchy::add_node(int state_id) {
 NodeID RefinementHierarchy::get_node_id(const State &state) const {
     NodeID id = 0;
     while (nodes[id].is_split()) {
-        const Node &node = nodes[id];
-        id = node.get_child(state[node.get_var()].get_value());
+        id = nodes[id].get_child(state[nodes[id].get_var()].get_value());
     }
     return id;
 }
@@ -77,8 +80,12 @@ pair<NodeID, NodeID> RefinementHierarchy::split(
 
 int RefinementHierarchy::get_abstract_state_id(const State &state) const {
     TaskProxy subtask_proxy(*task);
-    State subtask_state = subtask_proxy.convert_ancestor_state(state);
-    return nodes[get_node_id(subtask_state)].get_state_id();
+    if (subtask_proxy.needs_to_convert_ancestor_state(state)) {
+        State subtask_state = subtask_proxy.convert_ancestor_state(state);
+        return nodes[get_node_id(subtask_state)].get_state_id();
+    } else {
+        return nodes[get_node_id(state)].get_state_id();
+    }
 }
 
 int RefinementHierarchy::get_abstract_state_id(NodeID node_id) const {

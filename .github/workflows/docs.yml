@@ -1,0 +1,37 @@
+---
+name: Docs
+
+on:
+  push:
+    branches:
+      - scorpion
+
+jobs:
+  autodoc:
+    name: Build docs
+    if: github.repository == 'jendrikseipp/scorpion'
+    timeout-minutes: 60
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@master
+
+      - name: Install Python
+        uses: actions/setup-python@master
+        with:
+          python-version: 3.8
+
+      - name: Build site
+        run: |
+          cd misc/autodoc
+          pip install -r requirements.txt
+          python3 generate-docs.py
+          mkdocs build
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: misc/autodoc/site
+
+...

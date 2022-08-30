@@ -1,6 +1,7 @@
 #ifndef CEGAR_COST_SATURATION_H
 #define CEGAR_COST_SATURATION_H
 
+#include "flaw_search.h"
 #include "refinement_hierarchy.h"
 #include "split_selector.h"
 
@@ -11,10 +12,12 @@ namespace utils {
 class CountdownTimer;
 class Duration;
 class RandomNumberGenerator;
+class LogProxy;
 }
 
 namespace cegar {
 class CartesianHeuristicFunction;
+enum class DotGraphVerbosity;
 class SubtaskGenerator;
 
 /*
@@ -30,13 +33,18 @@ class CostSaturation {
     const int max_non_looping_transitions;
     const double max_time;
     const bool use_general_costs;
+    const PickFlawedAbstractState pick_flawed_abstract_state;
     const PickSplit pick_split;
-    const HUpdateStrategy h_update;
+    const PickSplit tiebreak_split;
+    const int max_concrete_states_per_abstract_state;
+    const int max_state_expansions;
+    const SearchStrategy search_strategy;
     const int memory_padding_mb;
     const bool use_max;
     const bool use_fixed_time_limits;
     utils::RandomNumberGenerator &rng;
-    const bool debug;
+    utils::LogProxy &log;
+    const cegar::DotGraphVerbosity dot_graph_verbosity;
 
     void (*standard_new_handler)();
     std::vector<CartesianHeuristicFunction> heuristic_functions;
@@ -52,7 +60,7 @@ class CostSaturation {
     void build_abstractions(
         const std::vector<std::shared_ptr<AbstractTask>> &subtasks,
         const utils::CountdownTimer &timer,
-        std::function<bool()> should_abort);
+        const std::function<bool()> &should_abort);
     void print_statistics(utils::Duration init_time) const;
 
 public:
@@ -62,13 +70,18 @@ public:
         int max_non_looping_transitions,
         double max_time,
         bool use_general_costs,
+        PickFlawedAbstractState pick_flawed_abstract_state,
         PickSplit pick_split,
-        HUpdateStrategy h_update,
+        PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state,
+        int max_state_expansions,
+        SearchStrategy search_strategy,
         int memory_padding_mb,
         bool use_max,
         bool use_fixed_time_limits,
         utils::RandomNumberGenerator &rng,
-        bool debug);
+        utils::LogProxy &log,
+        DotGraphVerbosity dot_graph_verbosity);
 
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
         const std::shared_ptr<AbstractTask> &task);

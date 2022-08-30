@@ -1,8 +1,9 @@
 #include "max_heuristic.h"
 
-#include "../global_state.h"
 #include "../option_parser.h"
 #include "../plugin.h"
+
+#include "../utils/logging.h"
 
 #include <cassert>
 #include <vector>
@@ -25,7 +26,9 @@ namespace max_heuristic {
 // construction and destruction
 HSPMaxHeuristic::HSPMaxHeuristic(const Options &opts)
     : RelaxationHeuristic(opts) {
-    cout << "Initializing HSP max heuristic..." << endl;
+    if (log.is_at_least_normal()) {
+        log << "Initializing HSP max heuristic..." << endl;
+    }
 }
 
 // heuristic computation
@@ -79,8 +82,8 @@ void HSPMaxHeuristic::relaxed_exploration() {
     }
 }
 
-int HSPMaxHeuristic::compute_heuristic(const GlobalState &global_state) {
-    const State state = convert_global_state(global_state);
+int HSPMaxHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
 
     setup_exploration_queue();
     setup_exploration_queue_state(state);

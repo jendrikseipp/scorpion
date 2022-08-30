@@ -23,14 +23,14 @@ namespace cost_saturation {
 static vector<vector<int>> sample_states_and_return_abstract_state_ids(
     const TaskProxy &task_proxy,
     const Abstractions &abstractions,
-    sampling::RandomWalkSampler &sampler,
+    const sampling::RandomWalkSampler &sampler,
     int num_samples,
     int init_h,
     const DeadEndDetector &is_dead_end,
     double max_sampling_time) {
     assert(num_samples >= 1);
     utils::CountdownTimer sampling_timer(max_sampling_time);
-    utils::Log() << "Start sampling" << endl;
+    utils::g_log << "Start sampling" << endl;
     vector<vector<int>> abstract_state_ids_by_sample;
     abstract_state_ids_by_sample.push_back(
         get_abstract_state_ids(abstractions, task_proxy.get_initial_state()));
@@ -39,8 +39,8 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
         abstract_state_ids_by_sample.push_back(
             get_abstract_state_ids(abstractions, sampler.sample_state(init_h, is_dead_end)));
     }
-    utils::Log() << "Samples: " << abstract_state_ids_by_sample.size() << endl;
-    utils::Log() << "Sampling time: " << sampling_timer.get_elapsed_time() << endl;
+    utils::g_log << "Samples: " << abstract_state_ids_by_sample.size() << endl;
+    utils::g_log << "Sampling time: " << sampling_timer.get_elapsed_time() << endl;
     return abstract_state_ids_by_sample;
 }
 
@@ -48,6 +48,7 @@ static vector<vector<int>> sample_states_and_return_abstract_state_ids(
 CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectionGenerator(
     const shared_ptr<OrderGenerator> &order_generator,
     int max_orders,
+    int max_size_kb,
     double max_time,
     bool diversify,
     int num_samples,
@@ -55,6 +56,7 @@ CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectio
     const shared_ptr<utils::RandomNumberGenerator> &rng)
     : order_generator(order_generator),
       max_orders(max_orders),
+      max_size_kb(max_size_kb),
       max_time(max_time),
       diversify(diversify),
       num_samples(num_samples),
@@ -68,7 +70,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     const Abstractions &abstractions,
     const vector<int> &costs,
     const CPFunction &cp_function) const {
-    utils::Log log;
+    utils::Log log(utils::Verbosity::NORMAL);
     utils::CountdownTimer timer(max_time);
 
     State initial_state = task_proxy.get_initial_state();
@@ -79,8 +81,9 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
         abstractions, initial_state);
     Order order_for_init = order_generator->compute_order_for_state(
         abstract_state_ids_for_init, true);
+    vector<int> remaining_costs = costs;
     CostPartitioningHeuristic cp_for_init = cp_function(
-        abstractions, order_for_init, costs);
+        abstractions, order_for_init, remaining_costs, abstract_state_ids_for_init);
     int init_h = cp_for_init.compute_heuristic(abstract_state_ids_for_init);
 
     if (init_h == INF) {
@@ -108,8 +111,10 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     log << "Start computing cost partitionings" << endl;
     vector<CostPartitioningHeuristic> cp_heuristics;
     int evaluated_orders = 0;
+    int size_kb = 0;
     while (static_cast<int>(cp_heuristics.size()) < max_orders &&
-           (!timer.is_expired() || cp_heuristics.empty())) {
+           (!timer.is_expired() || cp_heuristics.empty()) &&
+           (size_kb < max_size_kb)) {
         bool is_first_order = (evaluated_orders == 0);
 
         vector<int> abstract_state_ids;
@@ -125,7 +130,8 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
                 abstractions, sampler.sample_state(init_h, is_dead_end));
             order = order_generator->compute_order_for_state(
                 abstract_state_ids, false);
-            cp_heuristic = cp_function(abstractions, order, costs);
+            remaining_costs = costs;
+            cp_heuristic = cp_function(abstractions, order, remaining_costs, abstract_state_ids);
         }
 
         // Optimize order.
@@ -146,6 +152,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
         // If diversify=true, only add order if it improves upon previously
         // added orders.
         if (!diversifier || diversifier->is_diverse(cp_heuristic)) {
+            size_kb += cp_heuristic.estimate_size_in_kb();
             cp_heuristics.push_back(move(cp_heuristic));
             if (diversifier) {
                 log << "Average finite h-value for " << num_samples
@@ -163,6 +170,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     log << "Cost partitionings: " << cp_heuristics.size() << endl;
     log << "Time for computing cost partitionings: " << timer.get_elapsed_time()
         << endl;
+    log << "Estimated heuristic size: " << size_kb << " KiB" << endl;
     return cp_heuristics;
 }
 }

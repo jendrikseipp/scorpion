@@ -21,7 +21,7 @@ UnsolvabilityHeuristic::UnsolvabilityHeuristic(
 
     // Collect unsolvable states from cost-partitioned heuristics.
     vector<bool> has_unsolvable_states(num_abstractions, false);
-    for (auto &cp : cp_heuristics) {
+    for (const auto &cp : cp_heuristics) {
         for (const auto &lookup_table : cp.lookup_tables) {
             for (size_t state = 0; state < lookup_table.h_values.size(); ++state) {
                 if (lookup_table.h_values[state] == INF) {

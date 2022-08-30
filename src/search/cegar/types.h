@@ -10,14 +10,19 @@
 struct FactPair;
 
 namespace cegar {
-class Abstraction;
 class AbstractState;
 class CartesianSet;
 struct Transition;
 
-enum class HUpdateStrategy {
-    STATES_ON_TRACE,
-    DIJKSTRA_FROM_UNCONNECTED_ORPHANS,
+enum class DotGraphVerbosity {
+    SILENT,
+    WRITE_TO_CONSOLE,
+    WRITE_TO_FILE
+};
+
+enum class SearchStrategy {
+    ASTAR,
+    INCREMENTAL,
 };
 
 enum class TransitionRepresentation {
@@ -35,6 +40,7 @@ static_assert(sizeof(Variable) == 1, "Variable has unexpected size");
 
 using AbstractStates = std::deque<std::unique_ptr<AbstractState>>;
 using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;
+using Cost = uint64_t;
 using Facts = std::vector<FactPair>;
 // TODO: Store goals IDs in vector once we no longer use A* search.
 using Goals = std::unordered_set<int>;
@@ -50,6 +56,7 @@ const int UNDEFINED = -1;
 
 // Positive infinity. The name "INFINITY" is taken by an ISO C99 macro.
 const int INF = std::numeric_limits<int>::max();
+const Cost INF_COSTS = std::numeric_limits<Cost>::max();
 }
 
 #endif

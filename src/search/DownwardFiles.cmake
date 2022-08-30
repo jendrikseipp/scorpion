@@ -1,4 +1,4 @@
-# See http://www.fast-downward.org/ForDevelopers/AddingSourceFiles
+# See https://www.fast-downward.org/ForDevelopers/AddingSourceFiles
 # for general information on adding source files and CMake plugins.
 #
 # All plugins are enabled by default and users can disable them by specifying
@@ -55,7 +55,6 @@ fast_downward_plugin(
         evaluation_result
         evaluator
         evaluator_cache
-        global_state
         heuristic
         open_list
         open_list_factory
@@ -178,6 +177,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME NAMED_VECTOR
+    HELP "Generic vector with associated name for each element"
+    SOURCES
+        algorithms/named_vector
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
     NAME EQUIVALENCE_RELATION
     HELP "Equivalence relation over [1, ..., n] that can be iteratively refined"
     SOURCES
@@ -206,6 +213,14 @@ fast_downward_plugin(
     HELP "Implementation of the Max Cliques algorithm by Tomita et al."
     SOURCES
         algorithms/max_cliques
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME PARTIAL_STATE_TREE
+    HELP "Compact representation of sets of fact conjunctions"
+    SOURCES
+        algorithms/partial_state_tree
     DEPENDENCY_ONLY
 )
 
@@ -313,12 +328,27 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME LIMITED_PRUNING
+    HELP "Method for limiting another pruning method"
+    SOURCES
+        pruning/limited_pruning
+)
+
+fast_downward_plugin(
     NAME STUBBORN_SETS
     HELP "Base class for all stubborn set partial order reduction methods"
     SOURCES
         pruning/stubborn_sets
     DEPENDS TASK_PROPERTIES
     DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
+    NAME STUBBORN_SETS_ATOM_CENTRIC
+    HELP "Atom-centric stubborn sets"
+    SOURCES
+        pruning/stubborn_sets_atom_centric
+    DEPENDS STUBBORN_SETS
 )
 
 fast_downward_plugin(
@@ -347,6 +377,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME BREADTH_FIRST_SEARCH
+    HELP "Breadth-first search"
+    SOURCES
+        search_engines/breadth_first_search
+    DEPENDS SEARCH_COMMON NULL_PRUNING_METHOD
+)
+
+fast_downward_plugin(
     NAME EAGER_SEARCH
     HELP "Eager search algorithm"
     SOURCES
@@ -356,11 +394,41 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME EXHAUSTIVE_SEARCH
+    HELP "Exhaustive search"
+    SOURCES
+        search_engines/exhaustive_search
+    DEPENDS SEARCH_COMMON NULL_PRUNING_METHOD
+)
+
+fast_downward_plugin(
     NAME PLUGIN_ASTAR
     HELP "A* search"
     SOURCES
         search_engines/plugin_astar
     DEPENDS EAGER_SEARCH SEARCH_COMMON
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_IDASTAR
+    HELP "IDA* search"
+    SOURCES
+        search_engines/idastar_search
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_ITERATIVE_DEEPENING_SEARCH
+    HELP "Iterative deepening search"
+    SOURCES
+        search_engines/iterative_deepening_search
+    DEPENDS INCREMENTAL_SUCCESSOR_GENERATOR
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_DFS
+    HELP "Depth-first search"
+    SOURCES
+        search_engines/depth_first_search
 )
 
 fast_downward_plugin(
@@ -385,6 +453,13 @@ fast_downward_plugin(
     SOURCES
         search_engines/plugin_eager_wastar
     DEPENDS EAGER_SEARCH SEARCH_COMMON
+)
+
+fast_downward_plugin(
+    NAME PLUGIN_IW
+    HELP "Iterative width search"
+    SOURCES
+        search_engines/iterative_width_search
 )
 
 fast_downward_plugin(
@@ -441,6 +516,7 @@ fast_downward_plugin(
     SOURCES
         lp/lp_internals
         lp/lp_solver
+    DEPENDS NAMED_VECTOR
     DEPENDENCY_ONLY
 )
 
@@ -534,6 +610,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME NOVELTY
+    HELP "Novelty-based algorithms"
+    SOURCES
+        novelty/novelty_table
+    DEPENDS TASK_PROPERTIES
+)
+
+fast_downward_plugin(
     NAME CORE_TASKS
     HELP "Core task transformations"
     SOURCES
@@ -585,6 +669,15 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME INCREMENTAL_SUCCESSOR_GENERATOR
+    HELP "Incremental successor generator"
+    SOURCES
+        task_utils/incremental_successor_generator
+    DEPENDS TASK_PROPERTIES
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
     NAME TASK_PROPERTIES
     HELP "Task properties"
     SOURCES
@@ -612,6 +705,8 @@ fast_downward_plugin(
         cegar/cartesian_set
         cegar/cegar
         cegar/cost_saturation
+        cegar/flaw
+        cegar/flaw_search
         cegar/match_tree
         cegar/refinement_hierarchy
         cegar/shortest_paths
@@ -647,6 +742,8 @@ fast_downward_plugin(
         cost_saturation/order_generator_greedy
         cost_saturation/order_generator_random
         cost_saturation/order_optimizer
+        cost_saturation/pho_heuristic
+        cost_saturation/plugin_group
         cost_saturation/projection
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
@@ -656,7 +753,7 @@ fast_downward_plugin(
         cost_saturation/unsolvability_heuristic
         cost_saturation/utils
         cost_saturation/zero_one_cost_partitioning_heuristic
-    DEPENDS CEGAR LP_SOLVER PDBS PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
+    DEPENDS CEGAR LP_SOLVER PDBS PARTIAL_STATE_TREE PRIORITY_QUEUES SAMPLING TASK_PROPERTIES
 )
 
 fast_downward_plugin(
@@ -682,7 +779,6 @@ fast_downward_plugin(
         merge_and_shrink/merge_selector
         merge_and_shrink/merge_selector_score_based_filtering
         merge_and_shrink/merge_strategy
-        merge_and_shrink/merge_strategy_aliases
         merge_and_shrink/merge_strategy_factory
         merge_and_shrink/merge_strategy_factory_precomputed
         merge_and_shrink/merge_strategy_factory_sccs
@@ -709,11 +805,14 @@ fast_downward_plugin(
     HELP "Plugin containing the code to reason with landmarks"
     SOURCES
         landmarks/exploration
+        landmarks/landmark
         landmarks/landmark_cost_assignment
         landmarks/landmark_count_heuristic
         landmarks/landmark_factory
         landmarks/landmark_factory_h_m
+        landmarks/landmark_factory_reasonable_orders_hps
         landmarks/landmark_factory_merged
+        landmarks/landmark_factory_relaxation
         landmarks/landmark_factory_rpg_exhaust
         landmarks/landmark_factory_rpg_sasp
         landmarks/landmark_factory_zhu_givan
@@ -725,9 +824,10 @@ fast_downward_plugin(
 
 fast_downward_plugin(
     NAME OPERATOR_COUNTING
-    HELP "Plugin containing the code for operator counting heuristics"
+    HELP "Plugin containing the code for operator-counting heuristics"
     SOURCES
         operator_counting/constraint_generator
+        operator_counting/delete_relaxation_constraints
         operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
         operator_counting/pho_abstraction_constraints
@@ -742,6 +842,7 @@ fast_downward_plugin(
     SOURCES
         pdbs/canonical_pdbs
         pdbs/canonical_pdbs_heuristic
+        pdbs/cegar
         pdbs/dominance_pruning
         pdbs/incremental_canonical_pdbs
         pdbs/match_tree
@@ -749,17 +850,26 @@ fast_downward_plugin(
         pdbs/pattern_cliques
         pdbs/pattern_collection_information
         pdbs/pattern_collection_generator_combo
+        pdbs/pattern_collection_generator_disjoint_cegar
         pdbs/pattern_collection_generator_genetic
         pdbs/pattern_collection_generator_hillclimbing
         pdbs/pattern_collection_generator_manual
+        pdbs/pattern_collection_generator_multiple_cegar
+        pdbs/pattern_collection_generator_multiple_random
+        pdbs/pattern_collection_generator_multiple
         pdbs/pattern_collection_generator_systematic
+        pdbs/pattern_collection_generator_systematic_scp
         pdbs/pattern_database
+        pdbs/pattern_evaluator
+        pdbs/pattern_generator_cegar
         pdbs/pattern_generator_greedy
         pdbs/pattern_generator_manual
+        pdbs/pattern_generator_random
         pdbs/pattern_generator
         pdbs/pattern_information
         pdbs/pdb_heuristic
         pdbs/plugin_group
+        pdbs/random_pattern
         pdbs/types
         pdbs/utils
         pdbs/validation

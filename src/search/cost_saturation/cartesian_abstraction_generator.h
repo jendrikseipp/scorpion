@@ -12,7 +12,10 @@ class Options;
 
 namespace cegar {
 class Abstraction;
-enum class HUpdateStrategy;
+enum class DotGraphVerbosity;
+enum class PickFlawedAbstractState;
+enum class PickSplit;
+enum class SearchStrategy;
 class SubtaskGenerator;
 }
 
@@ -27,13 +30,20 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_states;
     const int max_transitions;
     const double max_time;
-    const cegar::HUpdateStrategy h_update;
+    const cegar::SearchStrategy search_strategy;
+    const cegar::PickFlawedAbstractState pick_flawed_abstract_state;
+    const cegar::PickSplit pick_split;
+    const cegar::PickSplit tiebreak_split;
+    const int max_concrete_states_per_abstract_state;
+    const int max_state_expansions;
     const int extra_memory_padding_mb;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
-    const bool debug;
+    const cegar::DotGraphVerbosity dot_graph_verbosity;
 
     int num_states;
     int num_transitions;
+
+    bool has_reached_resource_limit(const utils::CountdownTimer &timer) const;
 
     std::unique_ptr<cegar::Abstraction> build_abstraction_for_subtask(
         const std::shared_ptr<AbstractTask> &subtask,
@@ -49,7 +59,8 @@ public:
     explicit CartesianAbstractionGenerator(const options::Options &opts);
 
     Abstractions generate_abstractions(
-        const std::shared_ptr<AbstractTask> &task);
+        const std::shared_ptr<AbstractTask> &task,
+        DeadEnds *dead_ends) override;
 };
 }
 

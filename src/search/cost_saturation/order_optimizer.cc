@@ -11,13 +11,13 @@ using namespace std;
 
 namespace cost_saturation {
 static void log_better_order(const vector<int> &order, int h, int i, int j) {
-    utils::Log() << "Switch positions " << i << " and " << j << " (abstractions "
+    utils::g_log << "Switch positions " << i << " and " << j << " (abstractions "
                  << order[j] << ", " << order[i] << "): h=" << h << endl;
-    utils::Log() << "Found improving order with h=" << h << ": " << order << endl;
+    utils::g_log << "Found improving order with h=" << h << ": " << order << endl;
 }
 
 static bool search_improving_successor(
-    CPFunction cp_function,
+    CPFunction const &cp_function,
     const utils::CountdownTimer &timer,
     const Abstractions &abstractions,
     const vector<int> &costs,
@@ -31,8 +31,9 @@ static bool search_improving_successor(
         for (int j = i + 1; j < num_abstractions && !timer.is_expired(); ++j) {
             swap(incumbent_order[i], incumbent_order[j]);
 
+            vector<int> remaining_costs = costs;
             CostPartitioningHeuristic neighbor_cp =
-                cp_function(abstractions, incumbent_order, costs);
+                cp_function(abstractions, incumbent_order, remaining_costs, abstract_state_ids);
 
             int h = neighbor_cp.compute_heuristic(abstract_state_ids);
             if (h > incumbent_h_value) {
@@ -53,7 +54,7 @@ static bool search_improving_successor(
 
 
 void optimize_order_with_hill_climbing(
-    CPFunction cp_function,
+    const CPFunction &cp_function,
     const utils::CountdownTimer &timer,
     const Abstractions &abstractions,
     const vector<int> &costs,
@@ -63,7 +64,7 @@ void optimize_order_with_hill_climbing(
     int incumbent_h_value,
     bool verbose) {
     if (verbose) {
-        utils::Log() << "Incumbent h value: " << incumbent_h_value << endl;
+        utils::g_log << "Incumbent h value: " << incumbent_h_value << endl;
     }
     while (!timer.is_expired()) {
         bool success = search_improving_successor(

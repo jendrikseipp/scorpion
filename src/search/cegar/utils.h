@@ -8,8 +8,6 @@
 #include "../utils/hash.h"
 
 #include <memory>
-#include <unordered_set>
-#include <utility>
 #include <vector>
 
 class AbstractTask;
@@ -32,7 +30,6 @@ class Abstraction;
 extern int g_hacked_extra_memory_padding_mb;
 extern bool g_hacked_sort_transitions;
 extern TransitionRepresentation g_hacked_tsr;
-extern std::shared_ptr<utils::RandomNumberGenerator> g_hacked_rng;
 
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
 create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);
@@ -47,9 +44,12 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
 
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
-extern void add_h_update_option(options::OptionParser &parser);
+extern void add_common_cegar_options(options::OptionParser &parser);
 
-extern void add_transition_representation_option(options::OptionParser &parser);
+extern std::string create_dot_graph(
+    const TaskProxy &task_proxy, const Abstraction &abstraction);
+extern void write_to_file(
+    const std::string &file_name, const std::string &content);
 
 template<typename T>
 uint64_t estimate_memory_usage_in_bytes(const std::deque<T> &d) {
@@ -78,9 +78,6 @@ uint64_t estimate_vector_of_vector_bytes(const std::vector<std::vector<T>> &vec)
     size -= vec.capacity() * sizeof(T);  // Subtract doubly-counted bytes.
     return size;
 }
-
-extern void dump_dot_graph(const Abstraction &abstraction);
-extern void write_dot_file_to_disk(const Abstraction &abstraction);
 }
 
 /*

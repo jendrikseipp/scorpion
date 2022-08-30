@@ -1,6 +1,7 @@
 #include "explicit_projection_factory.h"
 
 #include "explicit_abstraction.h"
+#include "projection.h"
 #include "types.h"
 
 #include "../pdbs/match_tree.h"
@@ -37,9 +38,9 @@ static vector<FactPair> get_projected_conditions(
 
 
 struct ProjectedEffect {
-    const FactPair fact;
-    const vector<FactPair> conditions;
-    const bool always_triggers;
+    FactPair fact;
+    vector<FactPair> conditions;
+    bool always_triggers;
 
     ProjectedEffect(
         const FactPair &projected_fact,
@@ -48,26 +49,6 @@ struct ProjectedEffect {
         : fact(projected_fact),
           conditions(move(conditions)),
           always_triggers(always_triggers) {
-    }
-};
-
-
-class ExplicitProjectionFunction : public AbstractionFunction {
-    pdbs::Pattern pattern;
-    vector<int> hash_multipliers;
-public:
-    ExplicitProjectionFunction(const pdbs::Pattern &pattern, vector<int> &&hash_multipliers_)
-        : pattern(pattern),
-          hash_multipliers(move(hash_multipliers_)) {
-        assert(pattern.size() == hash_multipliers.size());
-    }
-
-    virtual int get_abstract_state_id(const State &concrete_state) const {
-        int index = 0;
-        for (size_t i = 0; i < pattern.size(); ++i) {
-            index += hash_multipliers[i] * concrete_state[pattern[i]].get_value();
-        }
-        return index;
     }
 };
 
@@ -91,7 +72,6 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
     : task_proxy(task_proxy),
       use_add_after_delete_semantics(use_add_after_delete_semantics),
       pattern(pattern),
-      pattern_size(pattern.size()),
       relevant_preconditions(
           get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)),
       looping_operators(task_proxy.get_operators().size(), false) {
@@ -127,7 +107,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
 }
 
 vector<int> ExplicitProjectionFactory::compute_goal_states() const {
-    vector<int> goal_states;
+    vector<int> goals;
 
     // compute abstract goal var-val pairs
     vector<FactPair> abstract_goals;
@@ -142,16 +122,16 @@ vector<int> ExplicitProjectionFactory::compute_goal_states() const {
     VariablesProxy variables = task_proxy.get_variables();
     for (int state_index = 0; state_index < num_states; ++state_index) {
         if (is_goal_state(state_index, abstract_goals, variables)) {
-            goal_states.push_back(state_index);
+            goals.push_back(state_index);
         }
     }
 
-    return goal_states;
+    return goals;
 }
 
 int ExplicitProjectionFactory::rank(const UnrankedState &state) const {
     int index = 0;
-    for (int i = 0; i < pattern_size; ++i) {
+    for (size_t i = 0; i < pattern.size(); ++i) {
         index += hash_multipliers[i] * state[i];
     }
     return index;
@@ -165,8 +145,8 @@ int ExplicitProjectionFactory::unrank(int rank, int pattern_index) const {
 ExplicitProjectionFactory::UnrankedState ExplicitProjectionFactory::unrank(int rank) const {
     UnrankedState values;
     values.reserve(pattern.size());
-    for (int pattern_index = 0; pattern_index < pattern_size; ++pattern_index) {
-        values.push_back(unrank(rank, pattern_index));
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        values.push_back(unrank(rank, i));
     }
     return values;
 }
@@ -194,15 +174,12 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
 
 bool ExplicitProjectionFactory::conditions_are_satisfied(
     const vector<FactPair> &conditions, const UnrankedState &state_values) const {
-    for (const FactPair &precondition : conditions) {
-        if (state_values[precondition.var] != precondition.value) {
-            return false;
-        }
-    }
-    return true;
+    return all_of(conditions.begin(), conditions.end(), [&state_values](const FactPair &precondition) {
+                      return state_values[precondition.var] == precondition.value;
+                  });
 }
 
-bool ExplicitProjectionFactory::is_applicable(UnrankedState &state_values, int op_id) const {
+bool ExplicitProjectionFactory::is_applicable(const UnrankedState &state_values, int op_id) const {
     return conditions_are_satisfied(relevant_preconditions[op_id], state_values);
 }
 
@@ -313,7 +290,7 @@ bool ExplicitProjectionFactory::is_goal_state(
 
 unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {
     return utils::make_unique_ptr<ExplicitAbstraction>(
-        utils::make_unique_ptr<ExplicitProjectionFunction>(pattern, move(hash_multipliers)),
+        utils::make_unique_ptr<ProjectionFunction>(pattern, move(hash_multipliers)),
         move(backward_graph),
         move(looping_operators),
         move(goal_states));

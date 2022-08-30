@@ -4,6 +4,7 @@
 
 #include "../utils/countdown_timer.h"
 #include "../utils/hash.h"
+#include "../utils/logging.h"
 
 #include <cassert>
 #include <unordered_map>
@@ -114,7 +115,8 @@ public:
           num_variables(num_variables) {
     }
 
-    vector<bool> get_pruned_cliques(const utils::CountdownTimer &timer) {
+    vector<bool> get_pruned_cliques(
+        const utils::CountdownTimer &timer, utils::LogProxy &log) {
         int num_cliques = pattern_cliques.size();
         vector<bool> pruned(num_cliques, false);
         /*
@@ -138,7 +140,9 @@ public:
                   computation here if reaching the time limit and use all
                   information we collected so far.
                 */
-                cout << "Time limit reached. Abort dominance pruning." << endl;
+                if (log.is_at_least_normal()) {
+                    log << "Time limit reached. Abort dominance pruning." << endl;
+                }
                 break;
             }
         }
@@ -152,8 +156,11 @@ void prune_dominated_cliques(
     PDBCollection &pdbs,
     vector<PatternClique> &pattern_cliques,
     int num_variables,
-    double max_time) {
-    cout << "Running dominance pruning..." << endl;
+    double max_time,
+    utils::LogProxy &log) {
+    if (log.is_at_least_normal()) {
+        log << "Running dominance pruning..." << endl;
+    }
     utils::CountdownTimer timer(max_time);
 
     int num_patterns = patterns.size();
@@ -162,7 +169,7 @@ void prune_dominated_cliques(
     vector<bool> pruned = Pruner(
         patterns,
         pattern_cliques,
-        num_variables).get_pruned_cliques(timer);
+        num_variables).get_pruned_cliques(timer, log);
 
     vector<PatternClique> remaining_pattern_cliques;
     vector<bool> is_remaining_pattern(num_patterns, false);
@@ -203,17 +210,18 @@ void prune_dominated_cliques(
     }
 
     int num_pruned_collections = num_cliques - remaining_pattern_cliques.size();
-    cout << "Pruned " << num_pruned_collections << " of " << num_cliques
-         << " pattern cliques" << endl;
-
     int num_pruned_patterns = num_patterns - num_remaining_patterns;
-    cout << "Pruned " << num_pruned_patterns << " of " << num_patterns
-         << " PDBs" << endl;
 
     patterns.swap(remaining_patterns);
     pdbs.swap(remaining_pdbs);
     pattern_cliques.swap(remaining_pattern_cliques);
 
-    cout << "Dominance pruning took " << timer.get_elapsed_time() << endl;
+    if (log.is_at_least_normal()) {
+        log << "Pruned " << num_pruned_collections << " of " << num_cliques
+            << " pattern cliques" << endl;
+        log << "Pruned " << num_pruned_patterns << " of " << num_patterns
+            << " PDBs" << endl;
+        log << "Dominance pruning took " << timer.get_elapsed_time() << endl;
+    }
 }
 }

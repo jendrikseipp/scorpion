@@ -1,6 +1,7 @@
 #ifndef CEGAR_CEGAR_H
 #define CEGAR_CEGAR_H
 
+#include "flaw_search.h"
 #include "split_selector.h"
 #include "types.h"
 
@@ -12,12 +13,13 @@
 
 namespace utils {
 class RandomNumberGenerator;
+class LogProxy;
 }
 
 namespace cegar {
 class Abstraction;
 class AbstractSearch;
-struct Flaw;
+enum class DotGraphVerbosity;
 class ShortestPaths;
 
 /*
@@ -33,17 +35,22 @@ class CEGAR {
     const std::vector<int> domain_sizes;
     const int max_states;
     const int max_non_looping_transitions;
-    const SplitSelector split_selector;
-    const HUpdateStrategy h_update;
+    const SearchStrategy search_strategy;
+    const PickFlawedAbstractState pick_flawed_abstract_state;
 
     std::unique_ptr<Abstraction> abstraction;
     std::unique_ptr<AbstractSearch> abstract_search;
     std::unique_ptr<ShortestPaths> shortest_paths;
+    std::unique_ptr<FlawSearch> flaw_search;
 
     // Limit the time for building the abstraction.
     utils::CountdownTimer timer;
 
-    const bool debug;
+    utils::LogProxy &log;
+    const DotGraphVerbosity dot_graph_verbosity;
+
+    // Only used for logging progress.
+    int old_abstract_solution_cost = -1;
 
     bool may_keep_refining() const;
 
@@ -55,16 +62,12 @@ class CEGAR {
       for other subtasks with a single goal fact doesn't hurt and
       simplifies the implementation.
     */
-    int separate_facts_unreachable_before_goal();
-
-    /* Try to convert the abstract solution into a concrete trace. Return the
-       first encountered flaw or nullptr if there is no flaw. */
-    std::unique_ptr<Flaw> find_flaw(const Solution &solution);
+    void separate_facts_unreachable_before_goal() const;
 
     // Build abstraction.
-    void refinement_loop(utils::RandomNumberGenerator &rng);
+    void refinement_loop();
 
-    void print_statistics();
+    void print_statistics() const;
 
 public:
     CEGAR(
@@ -72,10 +75,15 @@ public:
         int max_states,
         int max_non_looping_transitions,
         double max_time,
-        PickSplit pick,
-        HUpdateStrategy h_update,
+        PickFlawedAbstractState pick_flawed_abstract_state,
+        PickSplit pick_split,
+        PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state,
+        int max_state_expansions,
+        SearchStrategy search_strategy,
         utils::RandomNumberGenerator &rng,
-        bool debug);
+        utils::LogProxy &log,
+        DotGraphVerbosity dot_graph_verbosity);
     ~CEGAR();
 
     CEGAR(const CEGAR &) = delete;

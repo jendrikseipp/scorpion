@@ -76,6 +76,7 @@ public:
     }
 
     int count(int var) const;
+    std::vector<int> get_values(int var) const;
     bool has_full_domain(int var) const;
 
     bool intersects(const CartesianSet &other, int var) const {

@@ -63,6 +63,10 @@ public:
     int get_abstract_state_id(const State &state) const;
     int get_abstract_state_id(NodeID node_id) const;
 
+    int get_num_nodes() const {
+        return nodes.size();
+    }
+
     template<typename Callback>
     void for_each_visited_node(const AbstractState &state, const Callback &callback) const;
 
@@ -94,9 +98,10 @@ class Node {
     NodeID left_child;
     NodeID right_child;
 
-    // Before split: UNDEFINED, after split: split variable.
+    // This is the split variable for inner nodes and UNDEFINED for leaf nodes.
     int var;
-    // Before split: state ID, after split: split value.
+
+    // This is the split value for inner nodes and the state ID for leaf nodes.
     int value;
 
     bool information_is_valid() const;
@@ -113,9 +118,9 @@ public:
         return var;
     }
 
-    NodeID get_child(int value) const {
+    NodeID get_child(int val) const {
         assert(is_split());
-        if (value == this->value)
+        if (val == value)
             return right_child;
         return left_child;
     }

@@ -53,6 +53,17 @@ int CartesianSet::count(int var) const {
     return get_view(var).count();
 }
 
+vector<int> CartesianSet::get_values(int var) const {
+    vector<int> values;
+    int domain_size = var_infos[var].domain_size;
+    for (int value = 0; value < domain_size; ++value) {
+        if (test(var, value)) {
+            values.push_back(value);
+        }
+    }
+    return values;
+}
+
 bool CartesianSet::has_full_domain(int var) const {
     for (int value = 0; value < var_infos[var].domain_size; ++value) {
         if (!test(var, value)) {

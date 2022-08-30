@@ -20,11 +20,12 @@
 using namespace std;
 
 namespace cegar {
-Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, bool debug)
+Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, utils::LogProxy &log)
     : concrete_initial_state(TaskProxy(*task).get_initial_state()),
       goal_facts(task_properties::get_fact_pairs(TaskProxy(*task).get_goals())),
       refinement_hierarchy(utils::make_unique_ptr<RefinementHierarchy>(task)),
-      debug(debug) {
+      log(log),
+      debug(log.is_at_least_debug()) {
     initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
 
     if (g_hacked_tsr == TransitionRepresentation::SG) {
@@ -67,13 +68,25 @@ const AbstractState &Abstraction::get_state(int state_id) const {
     return *states[state_id];
 }
 
+int Abstraction::get_abstract_state_id(const State &state) const {
+    return refinement_hierarchy->get_abstract_state_id(state);
+}
+
 const TransitionSystem &Abstraction::get_transition_system() const {
+    assert(transition_system);
     return *transition_system;
 }
 
 unique_ptr<RefinementHierarchy> Abstraction::extract_refinement_hierarchy() {
     assert(refinement_hierarchy);
     return move(refinement_hierarchy);
+}
+
+const vector<FactPair> Abstraction::get_preconditions(int op_id) const {
+    if (match_tree) {
+        return match_tree->get_preconditions(op_id);
+    }
+    return transition_system->get_preconditions(op_id);
 }
 
 int Abstraction::get_num_operators() const {
@@ -149,8 +162,11 @@ vector<bool> Abstraction::get_looping_operators() const {
 }
 
 void Abstraction::mark_all_states_as_goals() {
+    if (log.is_at_least_debug()) {
+        log << "Mark all states as goals." << endl;
+    }
     goals.clear();
-    for (auto &state : states) {
+    for (const auto &state : states) {
         goals.insert(state->get_id());
     }
 }
@@ -167,32 +183,48 @@ void Abstraction::initialize_trivial_abstraction(const vector<int> &domain_sizes
 
 pair<int, int> Abstraction::refine(
     const AbstractState &state, int var, const vector<int> &wanted) {
-    if (debug)
-        cout << "Refine " << state << " for " << var << "=" << wanted << endl;
+    if (log.is_at_least_debug())
+        log << "Refine " << state << " for " << var << "=" << wanted << endl;
 
     int v_id = state.get_id();
     // Reuse state ID from obsolete parent to obtain consecutive IDs.
     int v1_id = v_id;
     int v2_id = get_num_states();
 
+    pair<CartesianSet, CartesianSet> cartesian_sets =
+        state.split_domain(var, wanted);
+    CartesianSet &v1_cartesian_set = cartesian_sets.first;
+    CartesianSet &v2_cartesian_set = cartesian_sets.second;
+
+    vector<int> v2_values = wanted;
+    assert(v2_values == v2_cartesian_set.get_values(var));
+    // We partition the abstract domain into two subsets. Since the refinement
+    // hierarchy stores helper nodes for all values of one of the children, we
+    // prefer to use the smaller subset.
+    if (v2_values.size() > 1) { // Quickly test necessary condition.
+        vector<int> v1_values = v1_cartesian_set.get_values(var);
+        if (v2_values.size() > v1_values.size()) {
+            swap(v1_id, v2_id);
+            swap(v1_values, v2_values);
+            swap(v1_cartesian_set, v2_cartesian_set);
+        }
+    }
+
     // Ensure that the initial state always has state ID 0.
-    if (v_id == init_id &&
-        count(wanted.begin(), wanted.end(), concrete_initial_state[var].get_value())) {
+    if (v1_id == init_id &&
+        v2_cartesian_set.test(var, concrete_initial_state[var].get_value())) {
         swap(v1_id, v2_id);
     }
 
     // Update refinement hierarchy.
     pair<NodeID, NodeID> node_ids = refinement_hierarchy->split(
-        state.get_node_id(), var, wanted, v1_id, v2_id);
-
-    pair<CartesianSet, CartesianSet> cartesian_sets =
-        state.split_domain(var, wanted);
+        state.get_node_id(), var, v2_values, v1_id, v2_id);
 
     this->cartesian_sets.resize(max(node_ids.first, node_ids.second) + 1);
     this->cartesian_sets[node_ids.first] =
-        utils::make_unique_ptr<CartesianSet>(move(cartesian_sets.first));
+        utils::make_unique_ptr<CartesianSet>(move(v1_cartesian_set));
     this->cartesian_sets[node_ids.second] =
-        utils::make_unique_ptr<CartesianSet>(move(cartesian_sets.second));
+        utils::make_unique_ptr<CartesianSet>(move(v2_cartesian_set));
 
     unique_ptr<AbstractState> v1 = utils::make_unique_ptr<AbstractState>(
         v1_id, node_ids.first, *this->cartesian_sets[node_ids.first]);
@@ -209,8 +241,8 @@ pair<int, int> Abstraction::refine(
         if (v2->includes(goal_facts)) {
             goals.insert(v2_id);
         }
-        if (debug) {
-            cout << "Number of goal states: " << goals.size() << endl;
+        if (log.is_at_least_debug()) {
+            log << "Goal states: " << goals.size() << endl;
         }
     }
 
@@ -268,30 +300,32 @@ void Abstraction::switch_from_transition_system_to_successor_generator() {
 }
 
 void Abstraction::print_statistics() const {
-    cout << "Cartesian states: " << get_num_states() << endl;
-    cout << "Cartesian goal states: " << goals.size() << endl;
-    if (false) {
-        for (auto &state : states) {
-            cout << "state " << state->get_id() << " has size "
-                 << static_cast<unsigned long int>(state->get_cartesian_set().compute_size())
-                 << endl;
+    if (log.is_at_least_normal()) {
+        cout << "Cartesian states: " << get_num_states() << endl;
+        cout << "Cartesian goal states: " << goals.size() << endl;
+        if (false) {
+            for (auto &state : states) {
+                cout << "state " << state->get_id() << " has size "
+                     << static_cast<unsigned long int>(state->get_cartesian_set().compute_size())
+                     << endl;
+            }
         }
+        if (transition_system) {
+            transition_system->print_statistics(log);
+        }
+        if (match_tree) {
+            match_tree->print_statistics();
+        }
+        int num_helper_nodes = count(cartesian_sets.begin(), cartesian_sets.end(), nullptr);
+        int num_cartesian_sets = cartesian_sets.size() - num_helper_nodes;
+        cout << "Cartesian helper nodes: " << num_helper_nodes << endl;
+        cout << "Cartesian sets: " << num_cartesian_sets << endl;
+        cout << "Estimated memory usage for Cartesian states: "
+             << num_cartesian_sets * get_initial_state().get_cartesian_set().estimate_size_in_bytes() / 1024
+             << " KB" << endl;
+        cout << "Estimated memory usage for abstract states: "
+             << estimate_memory_usage_in_bytes(states) / 1024 << " KB" << endl;
+        refinement_hierarchy->print_statistics();
     }
-    if (transition_system) {
-        transition_system->print_statistics();
-    }
-    if (match_tree) {
-        match_tree->print_statistics();
-    }
-    int num_helper_nodes = count(cartesian_sets.begin(), cartesian_sets.end(), nullptr);
-    int num_cartesian_sets = cartesian_sets.size() - num_helper_nodes;
-    cout << "Cartesian helper nodes: " << num_helper_nodes << endl;
-    cout << "Cartesian sets: " << num_cartesian_sets << endl;
-    cout << "Estimated memory usage for Cartesian states: "
-         << num_cartesian_sets * get_initial_state().get_cartesian_set().estimate_size_in_bytes() / 1024
-         << " KB" << endl;
-    cout << "Estimated memory usage for abstract states: "
-         << estimate_memory_usage_in_bytes(states) / 1024 << " KB" << endl;
-    refinement_hierarchy->print_statistics();
 }
 }

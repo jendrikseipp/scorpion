@@ -1,0 +1,6 @@
+site_name: Plugins
+theme: material
+markdown_extensions:
+  - toc:
+      permalink: "#"
+      separator: "_"

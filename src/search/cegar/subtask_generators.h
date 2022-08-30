@@ -19,6 +19,7 @@ class Options;
 
 namespace utils {
 class RandomNumberGenerator;
+class LogProxy;
 }
 
 namespace cegar {
@@ -38,7 +39,8 @@ enum class FactOrder {
 class SubtaskGenerator {
 public:
     virtual SharedTasks get_subtasks(
-        const std::shared_ptr<AbstractTask> &task) const = 0;
+        const std::shared_ptr<AbstractTask> &task,
+        utils::LogProxy &log) const = 0;
     virtual ~SubtaskGenerator() = default;
 };
 
@@ -53,7 +55,8 @@ public:
     explicit TaskDuplicator(const options::Options &opts);
 
     virtual SharedTasks get_subtasks(
-        const std::shared_ptr<AbstractTask> &task) const override;
+        const std::shared_ptr<AbstractTask> &task,
+        utils::LogProxy &log) const override;
 };
 
 
@@ -68,7 +71,8 @@ public:
     explicit GoalDecomposition(const options::Options &opts);
 
     virtual SharedTasks get_subtasks(
-        const std::shared_ptr<AbstractTask> &task) const override;
+        const std::shared_ptr<AbstractTask> &task,
+        utils::LogProxy &log) const override;
 };
 
 
@@ -92,7 +96,8 @@ public:
     explicit LandmarkDecomposition(const options::Options &opts);
 
     virtual SharedTasks get_subtasks(
-        const std::shared_ptr<AbstractTask> &task) const override;
+        const std::shared_ptr<AbstractTask> &task,
+        utils::LogProxy &log) const override;
 };
 }
 

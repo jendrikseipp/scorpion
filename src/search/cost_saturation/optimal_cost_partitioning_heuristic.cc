@@ -30,13 +30,13 @@ OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
         opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    for (auto &abstraction : abstractions) {
+    for (const auto &abstraction : abstractions) {
         h_values.push_back(abstraction->compute_goal_distances(costs));
     }
 
     generate_lp(abstractions);
 
-    for (auto &abstraction : abstractions) {
+    for (const auto &abstraction : abstractions) {
         abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
 
@@ -59,8 +59,8 @@ void OptimalCostPartitioningHeuristic::release_memory() {
     utils::release_vector_memory(operator_cost_variables);
 }
 
-int OptimalCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State concrete_state = convert_global_state(global_state);
+int OptimalCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
+    State concrete_state = convert_ancestor_state(ancestor_state);
     // Set upper bound for distance of current abstract states to 0 and for all other
     // abstract states to infinity.
     for (int id = 0; id < static_cast<int>(abstraction_functions.size()); ++id) {
@@ -129,21 +129,24 @@ void OptimalCostPartitioningHeuristic::generate_lp(const Abstractions &abstracti
          * distance[A][s'] <= 0       if A maps s to s'
          * distance[A][s'] <= \infty  otherwise
     */
-    vector<lp::LPVariable> lp_variables;
-    vector<lp::LPConstraint> lp_constraints;
+    LPVariables lp_variables;
+    LPConstraints lp_constraints;
     for (int id = 0; id < static_cast<int>(abstractions.size()); ++id) {
         cout << "Add abstraction " << id + 1 << " of " << abstractions.size()
              << " to LP." << endl;
-        Abstraction &abstraction = *abstractions[id];
+        const Abstraction &abstraction = *abstractions[id];
         add_abstraction_variables(abstraction, id, lp_variables);
         add_abstraction_constraints(abstraction, id, lp_constraints);
     }
     add_operator_cost_constraints(lp_constraints);
-    lp_solver.load_problem(lp::LPObjectiveSense::MAXIMIZE, lp_variables, lp_constraints);
+    lp::LinearProgram lp(
+        lp::LPObjectiveSense::MAXIMIZE, move(lp_variables), move(lp_constraints),
+        lp_solver.get_infinity());
+    lp_solver.load_problem(lp);
 }
 
 void OptimalCostPartitioningHeuristic::add_abstraction_variables(
-    const Abstraction &abstraction, int id, vector<lp::LPVariable> &lp_variables) {
+    const Abstraction &abstraction, int id, LPVariables &lp_variables) {
     assert(static_cast<int>(abstraction_variables.size()) == id);
     assert(static_cast<int>(distance_variables.size()) == id);
     assert(static_cast<int>(operator_cost_variables.size()) == id);
@@ -173,8 +176,7 @@ void OptimalCostPartitioningHeuristic::add_abstraction_variables(
 }
 
 void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
-    const Abstraction &abstraction, int id,
-    vector<lp::LPConstraint> &lp_constraints) {
+    const Abstraction &abstraction, int id, LPConstraints &lp_constraints) {
     /*
       For <s', o, s''> in abstract transitions of abstraction A add constraint
       distance[A][s''] <= distance[A][s'] + operator_cost[A][o] which equals
@@ -208,7 +210,7 @@ void OptimalCostPartitioningHeuristic::add_abstraction_constraints(
 }
 
 void OptimalCostPartitioningHeuristic::add_operator_cost_constraints(
-    vector<lp::LPConstraint> &lp_constraints) {
+    LPConstraints &lp_constraints) {
     /*
       For o in operators add constraint
       sum_{A in abstractions} operator_cost[A][o] <= cost(o)
@@ -245,5 +247,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     return make_shared<OptimalCostPartitioningHeuristic>(opts);
 }
 
-static Plugin<Evaluator> _plugin("optimal_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("ocp", _parse, "heuristics_cost_partitioning");
 }

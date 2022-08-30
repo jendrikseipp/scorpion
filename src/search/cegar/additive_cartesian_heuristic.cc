@@ -20,8 +20,10 @@ using namespace std;
 
 namespace cegar {
 static vector<CartesianHeuristicFunction> generate_heuristic_functions(
-    const options::Options &opts) {
-    utils::g_log << "Initializing additive Cartesian heuristic..." << endl;
+    const options::Options &opts, utils::LogProxy &log) {
+    if (log.is_at_least_normal()) {
+        log << "Initializing additive Cartesian heuristic..." << endl;
+    }
     vector<shared_ptr<SubtaskGenerator>> subtask_generators =
         opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks");
     shared_ptr<utils::RandomNumberGenerator> rng =
@@ -32,13 +34,18 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
         opts.get<bool>("use_general_costs"),
-        opts.get<PickSplit>("pick"),
-        opts.get<HUpdateStrategy>("h_update"),
+        opts.get<PickFlawedAbstractState>("pick_flawed_abstract_state"),
+        opts.get<PickSplit>("pick_split"),
+        opts.get<PickSplit>("tiebreak_split"),
+        opts.get<int>("max_concrete_states_per_abstract_state"),
+        opts.get<int>("max_state_expansions"),
+        opts.get<SearchStrategy>("search_strategy"),
         opts.get<int>("memory_padding"),
         opts.get<bool>("use_max"),
         opts.get<bool>("use_fixed_time_limits"),
         *rng,
-        opts.get<bool>("debug"));
+        log,
+        opts.get<DotGraphVerbosity>("dot_graph_verbosity"));
     return cost_saturation.generate_heuristic_functions(
         opts.get<shared_ptr<AbstractTask>>("transform"));
 }
@@ -46,16 +53,12 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
     const options::Options &opts)
     : Heuristic(opts),
-      heuristic_functions(generate_heuristic_functions(opts)),
+      heuristic_functions(generate_heuristic_functions(opts, log)),
       use_max(opts.get<bool>("use_max")) {
 }
 
-int AdditiveCartesianHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
-    return compute_heuristic(state);
-}
-
-int AdditiveCartesianHeuristic::compute_heuristic(const State &state) {
+int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     int h = 0;
     for (const CartesianHeuristicFunction &function : heuristic_functions) {
         int value = function.get_value(state);
@@ -106,7 +109,27 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
             "Journal of Artificial Intelligence Research",
             "62",
             "535-577",
-            "2018"));
+            "2018") +
+        "For a description of the incremental search, see the paper" +
+        utils::format_conference_reference(
+            {"Jendrik Seipp", "Samuel von Allmen", "Malte Helmert"},
+            "Incremental Search for Counterexample-Guided Cartesian Abstraction Refinement",
+            "https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf",
+            "Proceedings of the 30th International Conference on "
+            "Automated Planning and Scheduling (ICAPS 2020)",
+            "244-248",
+            "AAAI Press",
+            "2020") +
+        "Finally, we describe advanced flaw selection strategies here:" +
+        utils::format_conference_reference(
+            {"David Speck", "Jendrik Seipp"},
+            "New Refinement Strategies for Cartesian Abstractions",
+            "https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf",
+            "Proceedings of the 32nd International Conference on "
+            "Automated Planning and Scheduling (ICAPS 2022)",
+            "to appear",
+            "AAAI Press",
+            "2022"));
     parser.document_language_support("action costs", "supported");
     parser.document_language_support("conditional effects", "not supported");
     parser.document_language_support("axioms", "not supported");
@@ -115,74 +138,13 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_property("safe", "yes");
     parser.document_property("preferred operators", "no");
 
-    parser.add_list_option<shared_ptr<SubtaskGenerator>>(
-        "subtasks",
-        "subtask generators",
-        "[landmarks(),goals()]");
-    parser.add_option<int>(
-        "max_states",
-        "maximum sum of abstract states over all abstractions",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_transitions",
-        "maximum sum of real transitions (excluding self-loops) over "
-        " all abstractions",
-        "1M",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time in seconds for building abstractions",
-        "infinity",
-        Bounds("0.0", "infinity"));
-    vector<string> pick_strategies;
-    pick_strategies.push_back("RANDOM");
-    pick_strategies.push_back("MIN_UNWANTED");
-    pick_strategies.push_back("MAX_UNWANTED");
-    pick_strategies.push_back("MIN_REFINED");
-    pick_strategies.push_back("MAX_REFINED");
-    pick_strategies.push_back("MIN_HADD");
-    pick_strategies.push_back("MAX_HADD");
-    pick_strategies.push_back("MIN_CG");
-    pick_strategies.push_back("MAX_CG");
-    parser.add_enum_option<PickSplit>(
-        "pick", pick_strategies, "split-selection strategy", "MAX_REFINED");
-    add_h_update_option(parser);
-    add_transition_representation_option(parser);
+    add_common_cegar_options(parser);
     parser.add_option<bool>(
         "use_general_costs",
         "allow negative costs in cost partitioning",
         "true");
-    parser.add_option<int>(
-        "memory_padding",
-        "amount of extra memory in MB to reserve for recovering from "
-        "out-of-memory situations gracefully. When the memory runs out, we "
-        "stop refining and start the search. Due to memory fragmentation, "
-        "the memory used for building the abstraction (states, transitions, "
-        "etc.) often can't be reused for things that require big continuous "
-        "blocks of memory. It is for this reason that we require a rather "
-        "large amount of memory padding by default.",
-        "500",
-        Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "use_max",
-        "compute maximum over heuristic estimates instead of SCP",
-        "false");
-    parser.add_option<bool>(
-        "use_fixed_time_limits",
-        "limit the build time for each abstraction by max_time/num_abstractions "
-        "(instead of passing unused time to the remaining abstractions)",
-        "false");
-    parser.add_option<bool>(
-        "sort_transitions",
-        "sort transitions",
-        "false");
-    parser.add_option<bool>(
-        "debug",
-        "print debugging output",
-        "false");
     Heuristic::add_options_to_parser(parser);
-    utils::add_rng_options(parser);
+
     Options opts = parser.parse();
 
     if (parser.dry_run())
@@ -191,10 +153,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
     g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
     g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
-    g_hacked_rng = utils::parse_rng_from_options(opts);
 
     // Compute the successor generator here already to get peak memory info.
-    get_successor_generator(TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")));
+    utils::LogProxy log(utils::get_log_from_options(opts));
+    get_successor_generator(TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")), log);
 
     return make_shared<AdditiveCartesianHeuristic>(opts);
 }

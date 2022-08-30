@@ -8,17 +8,18 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../algorithms/partial_state_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../tasks/modified_operator_costs_task.h"
 #include "../utils/logging.h"
+#include "../utils/markup.h"
 #include "../utils/math.h"
 #include "../utils/rng_options.h"
 
 using namespace std;
 
 namespace cost_saturation {
-// Multiply all costs by this factor to avoid using real-valued costs.
-static const int COST_FACTOR = 1000;
+static const double COST_FACTOR = 1000;
 
 static vector<int> divide_costs_among_remaining_abstractions(
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -81,11 +82,10 @@ static CostPartitioningHeuristic compute_uniform_cost_partitioning(
 static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning(
     const Abstractions &abstractions,
     const vector<int> &order,
-    const vector<int> &costs,
+    vector<int> &remaining_costs,
     bool debug) {
     assert(abstractions.size() == order.size());
 
-    vector<int> remaining_costs = costs;
     if (debug) {
         cout << "remaining costs: ";
         print_indexed_vector(remaining_costs);
@@ -97,7 +97,7 @@ static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning
     CostPartitioningHeuristic cp_heuristic;
     for (size_t pos = 0; pos < order.size(); ++pos) {
         int abstraction_id = order[pos];
-        Abstraction &abstraction = *abstractions[abstraction_id];
+        const Abstraction &abstraction = *abstractions[abstraction_id];
         divided_costs = divide_costs_among_remaining_abstractions(
             abstractions, order, remaining_costs, pos, debug);
         vector<int> h_values = abstraction.compute_goal_distances(divided_costs);
@@ -118,23 +118,26 @@ static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning
     return cp_heuristic;
 }
 
-UniformCostPartitioningHeuristic::UniformCostPartitioningHeuristic(
-    const Options &opts, Abstractions &&abstractions, CPHeuristics &&cp_heuristics)
-    : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics)) {
+
+ScaledCostPartitioningHeuristic::ScaledCostPartitioningHeuristic(
+    const Options &opts,
+    Abstractions &&abstractions,
+    CPHeuristics &&cp_heuristics,
+    unique_ptr<DeadEnds> &&dead_ends)
+    : MaxCostPartitioningHeuristic(opts, move(abstractions), move(cp_heuristics), move(dead_ends)) {
 }
 
-int UniformCostPartitioningHeuristic::compute_heuristic(const GlobalState &global_state) {
-    int result = MaxCostPartitioningHeuristic::compute_heuristic(global_state);
+int ScaledCostPartitioningHeuristic::compute_heuristic(const State &ancestor_state) {
+    int result = MaxCostPartitioningHeuristic::compute_heuristic(ancestor_state);
     if (result == DEAD_END) {
         return DEAD_END;
     }
     double epsilon = 0.01;
-    return static_cast<int>(ceil((result / static_cast<double>(COST_FACTOR)) - epsilon));
+    return static_cast<int>(ceil((result / COST_FACTOR) - epsilon));
 }
 
 
-static shared_ptr<AbstractTask> get_scaled_costs_task(
-    const shared_ptr<AbstractTask> &task) {
+shared_ptr<AbstractTask> get_scaled_costs_task(const shared_ptr<AbstractTask> &task) {
     vector<int> costs = task_properties::get_operator_costs(TaskProxy(*task));
     for (int &cost : costs) {
         if (!utils::is_product_within_limit(cost, COST_FACTOR, INF)) {
@@ -162,19 +165,28 @@ static CPHeuristics get_oucp_heuristics(
     return cps_generator.generate_cost_partitionings(
         task_proxy, abstractions, costs,
         [debug](
-            const Abstractions &abstractions,
+            const Abstractions &abstractions_,
             const vector<int> &order,
-            const vector<int> &costs) {
+            vector<int> &remaining_costs,
+            const vector<int> &) {
             return compute_opportunistic_uniform_cost_partitioning(
-                abstractions, order, costs, debug);
+                abstractions_, order, remaining_costs, debug);
         });
 }
 
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "(Opportunistic) uniform cost partitioning heuristic",
-        "");
+        "(Opportunistic) uniform cost partitioning",
+        utils::format_conference_reference(
+            {"Jendrik Seipp", "Thomas Keller", "Malte Helmert"},
+            "A Comparison of Cost Partitioning Algorithms for Optimal Classical Planning",
+            "https://jendrikseipp.com/papers/seipp-et-al-icaps2017.pdf",
+            "Proceedings of the Twenty-Seventh International Conference on "
+            "Automated Planning and Scheduling (ICAPS 2017)",
+            "259-268",
+            "AAAI Press",
+            "2017"));
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
     add_order_options_to_parser(parser);
@@ -198,9 +210,11 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"));
     opts.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
 
+    unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
     Abstractions abstractions = generate_abstractions(
         scaled_costs_task,
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
+        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+        dead_ends.get());
 
     TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
     bool debug = opts.get<bool>("debug");
@@ -217,9 +231,9 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
             get_ucp_heuristic(scaled_costs_task_proxy, abstractions, debug));
     }
 
-    return make_shared<UniformCostPartitioningHeuristic>(
-        opts, move(abstractions), move(cp_heuristics));
+    return make_shared<ScaledCostPartitioningHeuristic>(
+        opts, move(abstractions), move(cp_heuristics), move(dead_ends));
 }
 
-static Plugin<Evaluator> _plugin("uniform_cost_partitioning", _parse);
+static Plugin<Evaluator> _plugin("ucp", _parse, "heuristics_cost_partitioning");
 }

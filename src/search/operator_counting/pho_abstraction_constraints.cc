@@ -24,54 +24,92 @@ PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
-    const shared_ptr<AbstractTask> &task,
-    vector<lp::LPConstraint> &constraints,
-    double infinity) {
+    const shared_ptr<AbstractTask> &task, lp::LinearProgram &lp) {
     cost_saturation::Abstractions abstractions =
         cost_saturation::generate_abstractions(task, abstraction_generators);
+    abstraction_functions.reserve(abstractions.size());
+    h_values_by_abstraction.reserve(abstractions.size());
+    constraint_ids_by_abstraction.reserve(abstractions.size());
 
     vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*task));
-    constraint_offset = constraints.size();
-    // TODO: Remove code duplication.
+    int num_ops = operator_costs.size();
+    int num_empty_constraints = 0;
+    named_vector::NamedVector<lp::LPConstraint> &constraints = lp.get_constraints();
+
     if (saturated) {
+        useless_operators.resize(num_ops, false);
+        int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
-            constraints.emplace_back(0, infinity);
-            lp::LPConstraint &constraint = constraints.back();
+            // Add constraint \sum_{o} Y_o * scf_h(o) >= 0.
+            lp::LPConstraint constraint(0, lp.get_infinity());
             vector<int> h_values = abstraction->compute_goal_distances(
                 operator_costs);
             vector<int> saturated_costs = abstraction->compute_saturated_costs(
                 h_values);
-            for (size_t op_id = 0; op_id < saturated_costs.size(); ++op_id) {
-                if (saturated_costs[op_id] > 0) {
-                    constraint.insert(op_id, saturated_costs[op_id]);
+            for (int op_id = 0; op_id < num_ops; ++op_id) {
+                if (saturated_costs[op_id] != 0) {
+                    if (saturated_costs[op_id] == -cost_saturation::INF) {
+                        useless_operators[op_id] = true;
+                    } else {
+                        constraint.insert(op_id, saturated_costs[op_id]);
+                    }
                 }
             }
+            if (constraint.empty()) {
+                constraint_ids_by_abstraction.push_back(-1);
+                ++num_empty_constraints;
+            } else {
+                constraint_ids_by_abstraction.push_back(constraints.size());
+                constraints.push_back(move(constraint));
+            }
             h_values_by_abstraction.push_back(move(h_values));
+            ++abstraction_id;
         }
     } else {
+        int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
-            constraints.emplace_back(0, infinity);
-            lp::LPConstraint &constraint = constraints.back();
-            for (size_t op_id = 0; op_id < operator_costs.size(); ++op_id) {
+            lp::LPConstraint constraint(0, lp.get_infinity());
+            for (int op_id = 0; op_id < num_ops; ++op_id) {
                 if (abstraction->operator_is_active(op_id)) {
-                    assert(utils::in_bounds(op_id, operator_costs));
                     constraint.insert(op_id, operator_costs[op_id]);
                 }
             }
+            if (constraint.empty()) {
+                ++num_empty_constraints;
+                constraint_ids_by_abstraction.push_back(-1);
+            } else {
+                constraint_ids_by_abstraction.push_back(constraints.size());
+                constraints.push_back(move(constraint));
+            }
             h_values_by_abstraction.push_back(
                 abstraction->compute_goal_distances(operator_costs));
+            ++abstraction_id;
         }
     }
 
     for (auto &abstraction : abstractions) {
         abstraction_functions.push_back(abstraction->extract_abstraction_function());
     }
+
+    cout << "Empty constraints: " << num_empty_constraints << endl;
+    cout << "Non-empty constraints: " << constraints.size() << endl;
 }
 
 bool PhOAbstractionConstraints::update_constraints(
     const State &state, lp::LPSolver &lp_solver) {
+    if (!useless_operators.empty()) {
+        int num_ops = useless_operators.size();
+        // Force operator count of operators o with scf(o)=-\infty to be 0.
+        for (int op_id = 0; op_id < num_ops; ++op_id) {
+            if (useless_operators[op_id]) {
+                lp_solver.set_variable_lower_bound(op_id, 0.0);
+                lp_solver.set_variable_upper_bound(op_id, 0.0);
+            }
+        }
+        // Only set variable bounds once.
+        utils::release_vector_memory(useless_operators);
+    }
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
-        int constraint_id = constraint_offset + i;
         int state_id = abstraction_functions[i]->get_abstract_state_id(state);
         assert(utils::in_bounds(i, h_values_by_abstraction));
         const vector<int> &h_values = h_values_by_abstraction[i];
@@ -80,26 +118,25 @@ bool PhOAbstractionConstraints::update_constraints(
         if (h == cost_saturation::INF) {
             return true;
         }
-        lp_solver.set_constraint_lower_bound(constraint_id, h);
+        if (constraint_ids_by_abstraction[i] != -1) {
+            lp_solver.set_constraint_lower_bound(constraint_ids_by_abstraction[i], h);
+        }
     }
     return false;
 }
 
 static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Posthoc optimization constraints for abstractions",
-        "For each abstraction heuristic h the generator will add the"
-        " constraint h(s) <= sum_{o in relevant(h)} Count_o.");
+        "(Saturated) posthoc optimization constraints for abstractions", "");
 
     parser.add_list_option<shared_ptr<cost_saturation::AbstractionGenerator>>(
         "abstractions",
         "abstraction generation methods",
-        "[cartesian()]");
-
+        OptionParser::NONE);
     parser.add_option<bool>(
         "saturated",
         "use saturated instead of full operator costs in constraints",
-        "false");
+        "true");
 
     Options opts = parser.parse();
     if (parser.dry_run())

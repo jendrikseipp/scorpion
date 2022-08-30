@@ -8,6 +8,10 @@
 struct FactPair;
 class OperatorsProxy;
 
+namespace utils {
+class LogProxy;
+}
+
 namespace cegar {
 /*
   Rewire transitions after each split.
@@ -60,12 +64,14 @@ public:
     const std::vector<Loops> &get_loops() const;
     std::vector<bool> get_looping_operators() const;
 
+    const std::vector<FactPair> &get_preconditions(int op_id) const;
+
     int get_num_states() const;
     int get_num_operators() const;
     int get_num_non_loops() const;
     int get_num_loops() const;
 
-    void print_statistics() const;
+    void print_statistics(utils::LogProxy &log) const;
     void dump() const;
 };
 }

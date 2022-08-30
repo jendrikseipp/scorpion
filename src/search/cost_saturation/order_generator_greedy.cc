@@ -39,7 +39,7 @@ void OrderGeneratorGreedy::initialize(
     const Abstractions &abstractions,
     const vector<int> &costs) {
     utils::Timer timer;
-    utils::Log() << "Initialize greedy order generator" << endl;
+    utils::g_log << "Initialize greedy order generator" << endl;
 
     vector<vector<int>> saturated_costs_by_abstraction;
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
@@ -48,21 +48,21 @@ void OrderGeneratorGreedy::initialize(
         h_values_by_abstraction.push_back(move(h_values));
         saturated_costs_by_abstraction.push_back(move(saturated_costs));
     }
-    utils::Log() << "Time for computing h values and saturated costs: "
+    utils::g_log << "Time for computing h values and saturated costs: "
                  << timer << endl;
 
     vector<int> surplus_costs = compute_all_surplus_costs(
         costs, saturated_costs_by_abstraction);
-    utils::Log() << "Done computing surplus costs" << endl;
+    utils::g_log << "Done computing surplus costs" << endl;
 
-    utils::Log() << "Compute stolen costs" << endl;
+    utils::g_log << "Compute stolen costs" << endl;
     int num_abstractions = abstractions.size();
     for (int abs = 0; abs < num_abstractions; ++abs) {
         int sum_stolen_costs = compute_costs_stolen_by_heuristic(
             saturated_costs_by_abstraction[abs], surplus_costs);
         stolen_costs_by_abstraction.push_back(sum_stolen_costs);
     }
-    utils::Log() << "Time for initializing greedy order generator: "
+    utils::g_log << "Time for initializing greedy order generator: "
                  << timer << endl;
 }
 
@@ -85,10 +85,8 @@ Order OrderGeneratorGreedy::compute_order_for_state(
          });
 
     if (verbose) {
-        cout << "Static greedy scores: " << scores << endl;
         unordered_set<double> unique_scores(scores.begin(), scores.end());
         cout << "Static greedy unique scores: " << unique_scores.size() << endl;
-        cout << "Static greedy order: " << order << endl;
         cout << "Time for computing greedy order: " << greedy_timer << endl;
     }
 

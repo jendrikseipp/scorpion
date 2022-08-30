@@ -2,6 +2,8 @@
 
 #include "abstract_state.h"
 #include "abstraction.h"
+#include "flaw_search.h"
+#include "split_selector.h"
 #include "transition.h"
 #include "transition_system.h"
 
@@ -9,28 +11,32 @@
 
 #include "../heuristics/additive_heuristic.h"
 #include "../task_utils/task_properties.h"
+#include "../utils/logging.h"
 #include "../utils/memory.h"
+#include "../utils/rng_options.h"
 
 #include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <map>
 #include <sstream>
 
 using namespace std;
 
 namespace cegar {
+class SubtaskGenerator;
 int g_hacked_extra_memory_padding_mb = 512;
 bool g_hacked_sort_transitions = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
-std::shared_ptr<utils::RandomNumberGenerator> g_hacked_rng;
 
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {
     Options opts;
     opts.set<shared_ptr<AbstractTask>>("transform", task);
     opts.set<bool>("cache_estimates", false);
+    opts.set<utils::Verbosity>("verbosity", utils::Verbosity::SILENT);
     return utils::make_unique_ptr<additive_heuristic::AdditiveHeuristic>(opts);
 }
 
@@ -102,15 +108,58 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
     return domain_sizes;
 }
 
-void add_h_update_option(options::OptionParser &parser) {
-    vector<string> h_update;
-    h_update.push_back("STATES_ON_TRACE");
-    h_update.push_back("DIJKSTRA_FROM_UNCONNECTED_ORPHANS");
-    parser.add_enum_option<HUpdateStrategy>(
-        "h_update",
-        h_update,
-        "strategy for updating goal distances or distance estimates",
-        "DIJKSTRA_FROM_UNCONNECTED_ORPHANS");
+static void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
+    parser.add_enum_option<cegar::PickFlawedAbstractState>(
+        "pick_flawed_abstract_state",
+        {"FIRST", "FIRST_ON_SHORTEST_PATH", "RANDOM", "MIN_H", "MAX_H", "BATCH_MIN_H"},
+        "flaw-selection strategy",
+        "BATCH_MIN_H");
+}
+
+static void add_pick_split_strategies(options::OptionParser &parser) {
+    vector<string> strategies =
+    {"RANDOM", "MIN_UNWANTED", "MAX_UNWANTED", "MIN_REFINED", "MAX_REFINED",
+     "MIN_HADD", "MAX_HADD", "MIN_CG", "MAX_CG", "MAX_COVER"};
+    parser.add_enum_option<PickSplit>(
+        "pick_split",
+        strategies,
+        "split-selection strategy",
+        "MAX_COVER");
+    parser.add_enum_option<PickSplit>(
+        "tiebreak_split",
+        strategies,
+        "split-selection strategy for breaking ties",
+        "MAX_REFINED");
+}
+
+static void add_search_strategy_option(options::OptionParser &parser) {
+    parser.add_enum_option<SearchStrategy>(
+        "search_strategy",
+        {"ASTAR", "INCREMENTAL"},
+        "strategy for computing abstract plans",
+        "INCREMENTAL");
+}
+
+static void add_memory_padding_option(options::OptionParser &parser) {
+    parser.add_option<int>(
+        "memory_padding",
+        "amount of extra memory in MB to reserve for recovering from "
+        "out-of-memory situations gracefully. When the memory runs out, we "
+        "stop refining and start the search. Due to memory fragmentation, "
+        "the memory used for building the abstraction (states, transitions, "
+        "etc.) often can't be reused for things that require big continuous "
+        "blocks of memory. It is for this reason that we require a rather "
+        "large amount of memory padding by default.",
+        "500",
+        Bounds("0", "infinity"));
+}
+
+static void add_dot_graph_verbosity(options::OptionParser &parser) {
+    parser.add_enum_option<DotGraphVerbosity>(
+        "dot_graph_verbosity",
+        {"SILENT", "WRITE_TO_CONSOLE", "WRITE_TO_FILE"},
+        "verbosity of printing/writing dot graphs",
+        "SILENT");
 }
 
 void add_transition_representation_option(options::OptionParser &parser) {
@@ -125,51 +174,19 @@ void add_transition_representation_option(options::OptionParser &parser) {
         "TS");
 }
 
-void dump_dot_graph(const Abstraction &abstraction) {
+string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
+    ostringstream oss;
     int num_states = abstraction.get_num_states();
-    cout << "digraph transition_system";
-    cout << " {" << endl;
-    cout << "    node [shape = none] start;" << endl;
+    oss << "digraph transition_system";
+    oss << " {" << endl;
+    oss << "    node [shape = none] start;" << endl;
     for (int i = 0; i < num_states; ++i) {
         bool is_init = (i == abstraction.get_initial_state().get_id());
         bool is_goal = abstraction.get_goals().count(i);
-        cout << "    node [shape = " << (is_goal ? "doublecircle" : "circle")
-             << "] " << i << ";" << endl;
-        if (is_init)
-            cout << "    start -> " << i << ";" << endl;
-    }
-    for (int state_id = 0; state_id < num_states; ++state_id) {
-        map<int, vector<int>> parallel_transitions;
-        for (const Transition &t : abstraction.get_outgoing_transitions(state_id)) {
-            parallel_transitions[t.target_id].push_back(t.op_id);
-        }
-        for (auto &pair : parallel_transitions) {
-            int target = pair.first;
-            vector<int> &operators = pair.second;
-            sort(operators.begin(), operators.end());
-            cout << "    " << state_id << " -> " << target
-                 << " [label = \"" << utils::join(operators, "_") << "\"];" << endl;
-        }
-    }
-    cout << "}" << endl;
-}
-
-void write_dot_file_to_disk(const Abstraction &abstraction) {
-    ostringstream name;
-    name << internal << setfill('0') << setw(3) << abstraction.get_num_states();
-    ofstream out;
-    out.open("graph-" + name.str() + ".dot");
-    int num_states = abstraction.get_num_states();
-    out << "digraph transition_system";
-    out << " {" << endl;
-    out << "    node [shape = none] start;" << endl;
-    for (int i = 0; i < num_states; ++i) {
-        bool is_init = (i == abstraction.get_initial_state().get_id());
-        bool is_goal = abstraction.get_goals().count(i);
-        out << "    node [shape = " << (is_goal ? "doublecircle" : "circle")
+        oss << "    node [shape = " << (is_goal ? "doublecircle" : "circle")
             << "] " << i << ";" << endl;
         if (is_init)
-            out << "    start -> " << i << ";" << endl;
+            oss << "    start -> " << i << ";" << endl;
     }
     for (int state_id = 0; state_id < num_states; ++state_id) {
         map<int, vector<int>> parallel_transitions;
@@ -180,11 +197,84 @@ void write_dot_file_to_disk(const Abstraction &abstraction) {
             int target = pair.first;
             vector<int> &operators = pair.second;
             sort(operators.begin(), operators.end());
-            out << "    " << state_id << " -> " << target
-                << " [label = \"" << utils::join(operators, "_") << "\"];" << endl;
+            vector<string> operator_names;
+            operator_names.reserve(operators.size());
+            for (int op_id : operators) {
+                operator_names.push_back(task_proxy.get_operators()[op_id].get_name());
+            }
+            oss << "    " << state_id << " -> " << target << " [label = \""
+                << utils::join(operator_names, ", ") << "\"];" << endl;
         }
     }
-    out << "}" << endl;
-    out.close();
+    oss << "}" << endl;
+    return oss.str();
+}
+
+void write_to_file(const string &file_name, const string &content) {
+    ofstream output_file(file_name);
+    if (output_file.is_open()) {
+        output_file << content;
+        output_file.close();
+    } else {
+        ABORT("failed to open " + file_name);
+    }
+    if (output_file.fail()) {
+        ABORT("failed to write to " + file_name);
+    }
+}
+
+void add_common_cegar_options(options::OptionParser &parser) {
+    parser.add_list_option<shared_ptr<SubtaskGenerator>>(
+        "subtasks",
+        "subtask generators",
+        "[landmarks(order=random), goals(order=random)]");
+    parser.add_option<int>(
+        "max_states",
+        "maximum sum of abstract states over all abstractions",
+        "infinity",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_transitions",
+        "maximum sum of state-changing transitions (excluding self-loops) over "
+        "all abstractions",
+        "1M",
+        Bounds("0", "infinity"));
+    parser.add_option<double>(
+        "max_time",
+        "maximum time in seconds for building abstractions",
+        "infinity",
+        Bounds("0.0", "infinity"));
+    parser.add_option<bool>(
+        "use_max",
+        "compute maximum over heuristic estimates instead of SCP",
+        "false");
+    parser.add_option<bool>(
+        "use_fixed_time_limits",
+        "limit the build time for each abstraction by max_time/num_abstractions "
+        "(instead of passing unused time to the remaining abstractions)",
+        "false");
+    parser.add_option<bool>(
+        "sort_transitions",
+        "sort transitions",
+        "false");
+
+    add_transition_representation_option(parser);
+    add_pick_flawed_abstract_state_strategies(parser);
+    add_pick_split_strategies(parser);
+    add_search_strategy_option(parser);
+    add_memory_padding_option(parser);
+    add_dot_graph_verbosity(parser);
+    utils::add_rng_options(parser);
+
+    parser.add_option<int>(
+        "max_concrete_states_per_abstract_state",
+        "maximum number of flawed concrete states stored per abstract state",
+        "infinity",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "max_state_expansions",
+        "maximum number of state expansions per flaw search",
+        "1M",
+        Bounds("1", "infinity"));
 }
 }

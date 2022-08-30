@@ -5,6 +5,7 @@
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
 
+#include "../utils/logging.h"
 #include "../utils/rng_options.h"
 #include "../utils/system.h"
 
@@ -18,23 +19,23 @@ MergeTreeFactory::MergeTreeFactory(const options::Options &options)
       update_option(options.get<UpdateOption>("update_option")) {
 }
 
-void MergeTreeFactory::dump_options() const {
-    cout << "Merge tree options: " << endl;
-    cout << "Type: " << name() << endl;
-    cout << "Update option: ";
+void MergeTreeFactory::dump_options(utils::LogProxy &log) const {
+    log << "Merge tree options: " << endl;
+    log << "Type: " << name() << endl;
+    log << "Update option: ";
     switch (update_option) {
     case UpdateOption::USE_FIRST:
-        cout << "use first";
+        log << "use first";
         break;
     case UpdateOption::USE_SECOND:
-        cout << "use second";
+        log << "use second";
         break;
     case UpdateOption::USE_RANDOM:
-        cout << "use random";
+        log << "use random";
         break;
     }
-    cout << endl;
-    dump_tree_specific_options();
+    log << endl;
+    dump_tree_specific_options(log);
 }
 
 unique_ptr<MergeTree> MergeTreeFactory::compute_merge_tree(

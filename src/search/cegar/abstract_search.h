@@ -10,6 +10,8 @@
 #include <vector>
 
 namespace cegar {
+class Abstraction;
+
 /*
   Find abstract solutions using A*.
 */
@@ -18,8 +20,7 @@ class AbstractSearch {
         int g;
         Transition incoming_transition;
 public:
-        AbstractSearchInfo()
-            : incoming_transition() {
+        AbstractSearchInfo() {
             reset();
         }
 

@@ -12,7 +12,7 @@
 using namespace std;
 
 namespace cost_saturation {
-MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions abstractions)
+MaxHeuristic::MaxHeuristic(const Options &opts, const Abstractions &abstractions)
     : Heuristic(opts) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : abstractions) {
@@ -21,8 +21,8 @@ MaxHeuristic::MaxHeuristic(const Options &opts, Abstractions abstractions)
     }
 }
 
-int MaxHeuristic::compute_heuristic(const GlobalState &global_state) {
-    State state = convert_global_state(global_state);
+int MaxHeuristic::compute_heuristic(const State &ancestor_state) {
+    State state = convert_ancestor_state(ancestor_state);
     int max_h = 0;
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
         int local_state_id = abstraction_functions[i]->get_abstract_state_id(state);
@@ -39,8 +39,8 @@ int MaxHeuristic::compute_heuristic(const GlobalState &global_state) {
 
 static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Max heuristic",
-        "Maximize over a set of abstraction heuristics");
+        "Maximum over abstractions",
+        "Maximize over a set of abstraction heuristics.");
 
     prepare_parser_for_cost_partitioning_heuristic(parser);
 
@@ -58,5 +58,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     return make_shared<MaxHeuristic>(opts, move(abstractions));
 }
 
-static Plugin<Evaluator> _plugin("maximize", _parse);
+static Plugin<Evaluator> _plugin("maximize", _parse, "heuristics_cost_partitioning");
 }

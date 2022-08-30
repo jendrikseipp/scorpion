@@ -15,15 +15,16 @@ namespace cost_saturation {
 class ProjectionGenerator : public AbstractionGenerator {
     const std::shared_ptr<pdbs::PatternCollectionGenerator> pattern_generator;
     const bool dominance_pruning;
+    const bool combine_labels;
     const bool create_complete_transition_system;
     const bool use_add_after_delete_semantics;
-    const bool debug;
 
 public:
     explicit ProjectionGenerator(const options::Options &opts);
 
     Abstractions generate_abstractions(
-        const std::shared_ptr<AbstractTask> &task);
+        const std::shared_ptr<AbstractTask> &task,
+        DeadEnds *dead_ends);
 };
 }
 

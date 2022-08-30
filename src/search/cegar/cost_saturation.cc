@@ -78,25 +78,35 @@ CostSaturation::CostSaturation(
     int max_non_looping_transitions,
     double max_time,
     bool use_general_costs,
+    PickFlawedAbstractState pick_flawed_abstract_state,
     PickSplit pick_split,
-    HUpdateStrategy h_update,
+    PickSplit tiebreak_split,
+    int max_concrete_states_per_abstract_state,
+    int max_state_expansions,
+    SearchStrategy search_strategy,
     int memory_padding_mb,
     bool use_max,
     bool use_fixed_time_limits,
     utils::RandomNumberGenerator &rng,
-    bool debug)
+    utils::LogProxy &log,
+    DotGraphVerbosity dot_graph_verbosity)
     : subtask_generators(subtask_generators),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       max_time(max_time),
       use_general_costs(use_general_costs),
+      pick_flawed_abstract_state(pick_flawed_abstract_state),
       pick_split(pick_split),
-      h_update(h_update),
+      tiebreak_split(tiebreak_split),
+      max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
+      max_state_expansions(max_state_expansions),
+      search_strategy(search_strategy),
       memory_padding_mb(memory_padding_mb),
       use_max(use_max),
       use_fixed_time_limits(use_fixed_time_limits),
       rng(rng),
-      debug(debug),
+      log(log),
+      dot_graph_verbosity(dot_graph_verbosity),
       standard_new_handler(get_new_handler()),
       num_states(0),
       num_non_looping_transitions(0) {
@@ -130,7 +140,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
         };
 
     for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
-        SharedTasks subtasks = subtask_generator->get_subtasks(task);
+        SharedTasks subtasks = subtask_generator->get_subtasks(task, log);
         build_abstractions(subtasks, timer, should_abort);
         if (should_abort())
             break;
@@ -201,7 +211,7 @@ static int get_subtask_limit(int limit, int used, int remaining_subtasks) {
 void CostSaturation::build_abstractions(
     const vector<shared_ptr<AbstractTask>> &subtasks,
     const utils::CountdownTimer &timer,
-    function<bool()> should_abort) {
+    const function<bool()> &should_abort) {
     utils::Timer scf_timer;
     scf_timer.stop();
     int rem_subtasks = subtasks.size();
@@ -234,10 +244,15 @@ void CostSaturation::build_abstractions(
                 max_non_looping_transitions, num_non_looping_transitions,
                 rem_subtasks),
             time_limit,
+            pick_flawed_abstract_state,
             pick_split,
-            h_update,
+            tiebreak_split,
+            max_concrete_states_per_abstract_state,
+            max_state_expansions,
+            search_strategy,
             rng,
-            debug);
+            log,
+            dot_graph_verbosity);
         // Reset new-handler if we ran out of memory.
         if (!utils::extra_memory_padding_is_reserved()) {
             set_new_handler(standard_new_handler);
@@ -258,9 +273,10 @@ void CostSaturation::build_abstractions(
         }
 
         int num_unsolvable_states = count(goal_distances.begin(), goal_distances.end(), INF);
-        cout << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
-        cout << "Initial h value: " << goal_distances[abstraction->get_initial_state().get_id()] << endl;
-        cout << endl;
+        log << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
+        log << "Initial h value: "
+            << goal_distances[abstraction->get_initial_state().get_id()]
+            << endl << endl;
 
         heuristic_functions.emplace_back(
             abstraction->extract_refinement_hierarchy(),
@@ -275,13 +291,15 @@ void CostSaturation::build_abstractions(
 }
 
 void CostSaturation::print_statistics(utils::Duration init_time) const {
-    utils::g_log << "Done initializing additive Cartesian heuristic" << endl;
-    cout << "Time for initializing additive Cartesian heuristic: "
-         << init_time << endl;
-    cout << "Cartesian abstractions: " << heuristic_functions.size() << endl;
-    cout << "Total number of Cartesian states: " << num_states << endl;
-    cout << "Total number of non-looping transitions: "
-         << num_non_looping_transitions << endl;
-    cout << endl;
+    if (log.is_at_least_normal()) {
+        log << "Done initializing additive Cartesian heuristic" << endl;
+        log << "Time for initializing additive Cartesian heuristic: "
+            << init_time << endl;
+        log << "Cartesian abstractions: " << heuristic_functions.size() << endl;
+        log << "Total number of Cartesian states: " << num_states << endl;
+        log << "Total number of non-looping transitions: "
+            << num_non_looping_transitions << endl;
+        log << endl;
+    }
 }
 }

@@ -7,29 +7,29 @@
 
 #include <memory>
 
+namespace lp {
+class LPConstraint;
+}
+
 namespace options {
 class Options;
 }
 
-namespace cost_saturation {
-class AbstractionGenerator;
-}
-
 namespace operator_counting {
 class PhOAbstractionConstraints : public ConstraintGenerator {
-    const std::vector<std::shared_ptr<cost_saturation::AbstractionGenerator>> abstraction_generators;
+    const cost_saturation::AbstractionGenerators abstraction_generators;
     const bool saturated;
 
     cost_saturation::AbstractionFunctions abstraction_functions;
     std::vector<std::vector<int>> h_values_by_abstraction;
-    int constraint_offset;
+    std::vector<int> constraint_ids_by_abstraction;
+    std::vector<bool> useless_operators;
 public:
     explicit PhOAbstractionConstraints(const options::Options &opts);
 
     virtual void initialize_constraints(
         const std::shared_ptr<AbstractTask> &task,
-        std::vector<lp::LPConstraint> &constraints,
-        double infinity) override;
+        lp::LinearProgram &lp) override;
     virtual bool update_constraints(
         const State &state, lp::LPSolver &lp_solver) override;
 };

@@ -330,6 +330,11 @@ vector<bool> TransitionSystem::get_looping_operators() const {
     return operator_induces_self_loop;
 }
 
+const vector<FactPair> &TransitionSystem::get_preconditions(int op_id) const {
+    assert(utils::in_bounds(op_id, preconditions_by_operator));
+    return preconditions_by_operator[op_id];
+}
+
 int TransitionSystem::get_num_states() const {
     assert(incoming.size() == outgoing.size());
     assert(loops.size() == outgoing.size());
@@ -348,26 +353,28 @@ int TransitionSystem::get_num_loops() const {
     return num_loops;
 }
 
-void TransitionSystem::print_statistics() const {
-    int total_incoming_transitions = 0;
-    int total_outgoing_transitions = 0;
-    int total_loops = 0;
-    for (int state_id = 0; state_id < get_num_states(); ++state_id) {
-        total_incoming_transitions += incoming[state_id].size();
-        total_outgoing_transitions += outgoing[state_id].size();
-        total_loops += loops[state_id].size();
+void TransitionSystem::print_statistics(utils::LogProxy &log) const {
+    if (log.is_at_least_normal()) {
+        int total_incoming_transitions = 0;
+        int total_outgoing_transitions = 0;
+        int total_loops = 0;
+        for (int state_id = 0; state_id < get_num_states(); ++state_id) {
+            total_incoming_transitions += incoming[state_id].size();
+            total_outgoing_transitions += outgoing[state_id].size();
+            total_loops += loops[state_id].size();
+        }
+        assert(total_outgoing_transitions == total_incoming_transitions);
+        assert(get_num_loops() == total_loops);
+        assert(get_num_non_loops() == total_outgoing_transitions);
+        log << "Looping transitions: " << total_loops << endl;
+        log << "Non-looping transitions: " << total_outgoing_transitions << endl;
+        uint64_t bytes = 0;
+        bytes += estimate_vector_of_vector_bytes(incoming);
+        bytes += estimate_vector_of_vector_bytes(outgoing);
+        bytes += estimate_vector_of_vector_bytes(loops);
+        log << "Transition system estimated memory usage: "
+             << bytes / 1024 << " KB" << endl;
     }
-    assert(total_outgoing_transitions == total_incoming_transitions);
-    assert(get_num_loops() == total_loops);
-    assert(get_num_non_loops() == total_outgoing_transitions);
-    cout << "Looping transitions: " << total_loops << endl;
-    cout << "Non-looping transitions: " << total_outgoing_transitions << endl;
-    uint64_t bytes = 0;
-    bytes += estimate_vector_of_vector_bytes(incoming);
-    bytes += estimate_vector_of_vector_bytes(outgoing);
-    bytes += estimate_vector_of_vector_bytes(loops);
-    cout << "Transition system estimated memory usage: "
-         << bytes / 1024 << " KB" << endl;
 }
 
 void TransitionSystem::dump() const {

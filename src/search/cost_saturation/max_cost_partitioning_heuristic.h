@@ -23,22 +23,23 @@ class CostPartitioningHeuristic;
 class MaxCostPartitioningHeuristic : public Heuristic {
     std::vector<std::unique_ptr<AbstractionFunction>> abstraction_functions;
     std::vector<CostPartitioningHeuristic> cp_heuristics;
+    std::unique_ptr<DeadEnds> dead_ends;
     UnsolvabilityHeuristic unsolvability_heuristic;
 
     // For statistics.
     mutable std::vector<int> num_best_order;
 
     void print_statistics() const;
-    int compute_heuristic(const State &state) const;
 
 protected:
-    virtual int compute_heuristic(const GlobalState &global_state) override;
+    virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
     MaxCostPartitioningHeuristic(
         const options::Options &opts,
-        Abstractions abstractions,
-        std::vector<CostPartitioningHeuristic> &&cp_heuristics);
+        Abstractions &&abstractions,
+        std::vector<CostPartitioningHeuristic> &&cp_heuristics,
+        std::unique_ptr<DeadEnds> &&dead_ends);
     virtual ~MaxCostPartitioningHeuristic() override;
 };
 }

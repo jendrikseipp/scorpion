@@ -66,6 +66,10 @@ public:
     // Update match tree after v has been split for var.
     void split(const CartesianSets &cartesian_sets, const AbstractState &v, int var);
 
+    const std::vector<FactPair> get_preconditions(int op_id) const {
+        return preconditions[op_id];
+    }
+
     Transitions get_incoming_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
     Transitions get_outgoing_transitions(

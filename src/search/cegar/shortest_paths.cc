@@ -1,8 +1,7 @@
 #include "shortest_paths.h"
 
-#include "abstract_search.h"
+#include "abstract_search.h"  // For test_distances().
 #include "abstraction.h"
-#include "transition_system.h"
 #include "utils.h"
 
 #include "../utils/countdown_timer.h"
@@ -18,37 +17,18 @@ namespace cegar {
 const Cost ShortestPaths::INF_COSTS = numeric_limits<Cost>::max();
 
 ShortestPaths::ShortestPaths(
-    const vector<int> &costs, const utils::CountdownTimer &timer, bool debug)
+    const vector<int> &costs, const utils::CountdownTimer &timer, utils::LogProxy &log)
     : timer(timer),
-      debug(debug),
+      log(log),
+      debug(log.is_at_least_debug()),
       task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})) {
-    /*
-      The code below requires that all operators have positive cost. Negative
-      operators are of course tricky, but 0-cost operators are somewhat tricky,
-      too. In particular, given perfect g and h values, we want to know which
-      operators make progress towards the goal, and this is easy to do if all
-      operator costs are positive (then *all* operators that lead to a state
-      with the same f value as the current one make progress towards the goal,
-      in the sense that following those operators will necessarily take us to
-      the goal on a path with strictly decreasing h values), but not if they
-      may be 0 (consider the case where all operators cost 0: then the f*
-      values of all alive states are 0, so they give us no guidance towards the
-      goal).
-
-      If the assumption of no 0-cost operators is violated, the easiest way to
-      address this is to replace all 0-cost operators with operators of cost
-      epsilon, where epsilon > 0 is small enough that "rounding down" epsilons
-      along a shortest path always results in the correct original cost. With
-      original integer costs, picking epsilon <= 1/N for a state space with N
-      states is sufficient for this. In our actual implementation, we should
-      not use floating-point numbers, and if we stick with 32-bit integers for
-      path costs, we can run into range issues. The most obvious solution is to
-      use 64-bit integers, scaling all original operator costs by 2^32 and
-      using epsilon = 1.
-    */
     operator_costs.reserve(costs.size());
     for (int cost : costs) {
         operator_costs.push_back(convert_to_64_bit_cost(cost));
+    }
+    if (log.is_at_least_normal()) {
+        log << "Subtask has zero-cost operators: " << boolalpha
+            << task_has_zero_costs << endl;
     }
 }
 
@@ -81,11 +61,51 @@ Cost ShortestPaths::convert_to_64_bit_cost(int cost) const {
     }
 }
 
-unique_ptr<Solution> ShortestPaths::extract_solution_from_shortest_path_tree(
+void ShortestPaths::recompute(
+    const Abstraction &abstraction,
+    const unordered_set<int> &goals) {
+    open_queue.clear();
+    int num_states = abstraction.get_num_states();
+    states.resize(num_states);
+    for (StateInfo &state : states) {
+        state.goal_distance = INF_COSTS;
+    }
+    for (int goal : goals) {
+        Cost dist = 0;
+        states[goal].goal_distance = dist;
+        set_shortest_path(goal, Transition());
+        open_queue.push(dist, goal);
+    }
+    while (!open_queue.empty()) {
+        pair<Cost, int> top_pair = open_queue.pop();
+        Cost old_g = top_pair.first;
+        int state_id = top_pair.second;
+
+        Cost g = states[state_id].goal_distance;
+        assert(g < INF_COSTS);
+        assert(g <= old_g);
+        if (g < old_g)
+            continue;
+        for (const Transition &t : abstraction.get_incoming_transitions(state_id)) {
+            int succ_id = t.target_id;
+            int op_id = t.op_id;
+            Cost op_cost = operator_costs[op_id];
+            Cost succ_g = add_costs(g, op_cost);
+            if (succ_g < states[succ_id].goal_distance) {
+                states[succ_id].goal_distance = succ_g;
+                set_shortest_path(succ_id, Transition(op_id, state_id));
+                open_queue.push(succ_g, succ_id);
+            }
+        }
+    }
+}
+
+unique_ptr<Solution> ShortestPaths::extract_solution(
     int init_id, const Goals &goals) {
     // h* = \infty iff goal is unreachable from this state.
-    if (states[init_id].goal_distance == INF_COSTS)
+    if (states[init_id].goal_distance == INF_COSTS) {
         return nullptr;
+    }
 
     int current_state = init_id;
     unique_ptr<Solution> solution = utils::make_unique_ptr<Solution>();
@@ -131,7 +151,7 @@ void ShortestPaths::set_shortest_path(int state, const Transition &new_parent) {
 
 void ShortestPaths::mark_dirty(int state) {
     if (debug) {
-        cout << "Mark " << state << " as dirty" << endl;
+        log << "Mark " << state << " as dirty" << endl;
     }
     states[state].dirty = true;
     // Previous shortest path is invalid now.
@@ -140,7 +160,7 @@ void ShortestPaths::mark_dirty(int state) {
     dirty_states.push_back(state);
 }
 
-void ShortestPaths::dijkstra_from_orphans(
+void ShortestPaths::update_incrementally(
     const Abstraction &abstraction, int v, int v1, int v2) {
     /*
       Assumption: all h-values correspond to the perfect heuristic for the
@@ -156,37 +176,14 @@ void ShortestPaths::dijkstra_from_orphans(
     dirty_states.clear();
 
     if (debug) {
-        cout << "Split " << v << " into " << v1 << " and " << v2 << endl;
+        log << "Split " << v << " into " << v1 << " and " << v2 << endl;
     }
 
-#ifndef NDEBUG
-    Transition old_arc = states[v].parent;
-    Transitions v1_out = abstraction.get_outgoing_transitions(v1);
-    bool v1_settled = any_of(v1_out.begin(), v1_out.end(),
-                             [&old_arc](const Transition &t) {
-                                 return t == old_arc;
-                             });
-    Transitions v2_out = abstraction.get_outgoing_transitions(v2);
-    bool v2_settled = any_of(v2_out.begin(), v2_out.end(),
-                             [&old_arc](const Transition &t) {
-                                 return t == old_arc;
-                             });
-    assert(v1_settled ^ v2_settled); // Otherwise, there would be no progress.
-    assert(v2_settled); // Implementation detail which we use below.
-#endif
-
-    // Copy h value from split state. h(v1) will be updated if necessary.
+    // Copy distance from split state. Distances will be updated if necessary.
     states[v1].goal_distance = states[v2].goal_distance = states[v].goal_distance;
 
-    /* Due to the way we select splits, the old shortest path from v1 is
-       invalid now, but the path from v2 is still valid. We don't explicitly
-       invalidate shortest_path[v1] since v and v1 are the same ID. */
-    // TODO: set SP for v1 explicitly? Or at least assert that v==v1?
-    set_shortest_path(v2, states[v].parent);
-
-    /* Update shortest path transitions to split state. The SPT transition to v1
-       will be updated again if v1 is dirty. We therefore prefer reconnecting
-       states to v2 instead of v1. */
+    /* Update shortest path tree (SPT) transitions to v. The SPT transitions
+       will be updated again if v1 or v2 are dirty. */
     // We need to copy the vector since we reuse the index v.
     ShortestPathChildren old_children = states[v].children;
     for (const Transition &old_child : old_children) {
@@ -206,12 +203,11 @@ void ShortestPaths::dijkstra_from_orphans(
     }
 
     /*
-      Instead of just recursively inserting all orphans, we first push them
-      into a candidate queue that is sorted by (old, possibly too low)
-      h-values. Then, we try to reconnect them to a non-orphaned state at
-      no additional cost. Only if that fails, we flag the candidate as
-      orphaned and push its SPT-children (who have strictly larger h-values
-      due to no 0-cost operators) into the candidate queue.
+      If we split a state that's an ancestor of the initial state in the SPT,
+      we know that exactly one of v1 or v2 is still settled. This allows us to
+      push only one of them into the candidate queue. With splits that don't
+      consider the SPT, we cannot make this optimization anymore and need to
+      add both states to the candidate queue.
     */
     assert(candidate_queue.empty());
     assert(all_of(states.begin(), states.end(), [](const StateInfo &s) {
@@ -219,13 +215,15 @@ void ShortestPaths::dijkstra_from_orphans(
                   }));
 
     states[v1].dirty_candidate = true;
+    states[v2].dirty_candidate = true;
     candidate_queue.push(states[v1].goal_distance, v1);
+    candidate_queue.push(states[v2].goal_distance, v2);
 
     while (!candidate_queue.empty()) {
         int state = candidate_queue.pop().second;
         if (debug) {
-            cout << "Try to reconnect " << state
-                 << " with h=" << states[state].goal_distance << endl;
+            log << "Try to reconnect " << state
+                << " with h=" << states[state].goal_distance << endl;
         }
         assert(states[state].dirty_candidate);
         assert(states[state].goal_distance != INF_COSTS);
@@ -260,7 +258,7 @@ void ShortestPaths::dijkstra_from_orphans(
                 assert(states[prev].parent.target_id == state);
                 if (!states[prev].dirty_candidate && !states[prev].dirty) {
                     if (debug) {
-                        cout << "Add " << prev << " to candidate queue" << endl;
+                        log << "Add " << prev << " to candidate queue" << endl;
                     }
                     states[prev].dirty_candidate = true;
                     candidate_queue.push(states[prev].goal_distance, prev);
@@ -286,6 +284,23 @@ void ShortestPaths::dijkstra_from_orphans(
     for (int goal : abstraction.get_goals()) {
         assert(!count(dirty_states.begin(), dirty_states.end(), goal));
     }
+#endif
+
+#ifndef NDEBUG
+    /* We use dirty_states to efficiently loop over dirty states. Check that
+       its data is consistent with the data in goal_distances. */
+    vector<bool> dirty1(num_states, false);
+    for (int state : dirty_states) {
+        dirty1[state] = true;
+    }
+
+    vector<bool> dirty2(num_states, false);
+    for (int state = 0; state < num_states; ++state) {
+        if (states[state].dirty) {
+            dirty2[state] = true;
+        }
+    }
+    assert(dirty1 == dirty2);
 #endif
 
     /*
@@ -362,43 +377,16 @@ void ShortestPaths::dijkstra_from_orphans(
     }
 }
 
-void ShortestPaths::full_dijkstra(
-    const Abstraction &abstraction,
-    const unordered_set<int> &goals) {
-    open_queue.clear();
-    int num_states = abstraction.get_num_states();
-    states.resize(num_states);
-    for (StateInfo &state : states) {
-        state.goal_distance = INF_COSTS;
-    }
-    for (int goal : goals) {
-        Cost dist = 0;
-        states[goal].goal_distance = dist;
-        set_shortest_path(goal, Transition());
-        open_queue.push(dist, goal);
-    }
-    while (!open_queue.empty()) {
-        pair<Cost, int> top_pair = open_queue.pop();
-        Cost old_g = top_pair.first;
-        int state_id = top_pair.second;
+Cost ShortestPaths::get_64bit_goal_distance(int abstract_state_id) const {
+    return states[abstract_state_id].goal_distance;
+}
 
-        Cost g = states[state_id].goal_distance;
-        assert(g < INF_COSTS);
-        assert(g <= old_g);
-        if (g < old_g)
-            continue;
-        for (const Transition &t : abstraction.get_incoming_transitions(state_id)) {
-            int succ_id = t.target_id;
-            int op_id = t.op_id;
-            Cost op_cost = operator_costs[op_id];
-            Cost succ_g = add_costs(g, op_cost);
-            if (succ_g < states[succ_id].goal_distance) {
-                states[succ_id].goal_distance = succ_g;
-                set_shortest_path(succ_id, Transition(op_id, state_id));
-                open_queue.push(succ_g, succ_id);
-            }
-        }
-    }
+int ShortestPaths::get_32bit_goal_distance(int abstract_state_id) const {
+    return convert_to_32_bit_cost(get_64bit_goal_distance(abstract_state_id));
+}
+
+bool ShortestPaths::is_optimal_transition(int start_id, int op_id, int target_id) const {
+    return states[start_id].goal_distance - operator_costs[op_id] == states[target_id].goal_distance;
 }
 
 bool ShortestPaths::test_distances(
@@ -421,19 +409,19 @@ bool ShortestPaths::test_distances(
 
     for (int i = 0; i < num_states; ++i) {
         if (debug) {
-            cout << "Test state " << i << endl;
+            log << "Test state " << i << endl;
         }
         if (states[i].goal_distance != INF_COSTS &&
             init_distances[i] != INF &&
             !goals.count(i)) {
             const Transition &t = states[i].parent;
             if (debug) {
-                cout << "SP: " << t << endl;
+                log << "Shortest path: " << t << endl;
             }
             assert(t.is_defined());
             Transitions out = abstraction.get_outgoing_transitions(i);
             if (debug) {
-                cout << "Outgoing transitions: " << out << endl;
+                log << "Outgoing transitions: " << out << endl;
             }
             assert(count(out.begin(), out.end(), t) == 1);
             assert(states[i].goal_distance ==
@@ -447,12 +435,12 @@ bool ShortestPaths::test_distances(
     for (int i = 0; i < num_states; ++i) {
         if (goal_distances_32_bit_rounded_down[i] != goal_distances_32_bit[i] &&
             init_distances[i] != INF) {
-            cout << "32-bit INF: " << INF << endl;
-            cout << "64-bit 0: " << convert_to_64_bit_cost(0) << endl;
-            cout << "64-bit 1: " << convert_to_64_bit_cost(1) << endl;
-            cout << "64-bit INF: " << INF_COSTS << endl;
-            cout << "32-bit rounded:   " << goal_distances_32_bit_rounded_down << endl;
-            cout << "32-bit distances: " << goal_distances_32_bit << endl;
+            log << "32-bit INF: " << INF << endl;
+            log << "64-bit 0: " << convert_to_64_bit_cost(0) << endl;
+            log << "64-bit 1: " << convert_to_64_bit_cost(1) << endl;
+            log << "64-bit INF: " << INF_COSTS << endl;
+            log << "32-bit rounded:   " << goal_distances_32_bit_rounded_down << endl;
+            log << "32-bit distances: " << goal_distances_32_bit << endl;
             ABORT("Distances are wrong.");
         }
     }

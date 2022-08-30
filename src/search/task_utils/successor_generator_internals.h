@@ -7,7 +7,6 @@
 #include <unordered_map>
 #include <vector>
 
-class GlobalState;
 class State;
 
 namespace cegar {
@@ -20,10 +19,7 @@ public:
     virtual ~GeneratorBase() {}
 
     virtual void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops) const = 0;
-    // Transitional method, used until the search is switched to the new task interface.
-    virtual void generate_applicable_ops(
-        const GlobalState &state, std::vector<OperatorID> &applicable_ops) const = 0;
+        const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const = 0;
     virtual void generate_applicable_ops(
         const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const = 0;
 };
@@ -36,10 +32,7 @@ public:
         std::unique_ptr<GeneratorBase> generator1,
         std::unique_ptr<GeneratorBase> generator2);
     virtual void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops) const override;
-    // Transitional method, used until the search is switched to the new task interface.
-    virtual void generate_applicable_ops(
-        const GlobalState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
         const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
@@ -49,10 +42,7 @@ class GeneratorForkMulti : public GeneratorBase {
 public:
     GeneratorForkMulti(std::vector<std::unique_ptr<GeneratorBase>> children);
     virtual void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops) const override;
-    // Transitional method, used until the search is switched to the new task interface.
-    virtual void generate_applicable_ops(
-        const GlobalState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
         const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
@@ -65,10 +55,7 @@ public:
         int switch_var_id,
         std::vector<std::unique_ptr<GeneratorBase>> &&generator_for_value);
     virtual void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops) const override;
-    // Transitional method, used until the search is switched to the new task interface.
-    virtual void generate_applicable_ops(
-        const GlobalState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
         const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
@@ -81,10 +68,7 @@ public:
         int switch_var_id,
         std::unordered_map<int, std::unique_ptr<GeneratorBase>> &&generator_for_value);
     virtual void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops) const override;
-    // Transitional method, used until the search is switched to the new task interface.
-    virtual void generate_applicable_ops(
-        const GlobalState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
         const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
@@ -98,10 +82,7 @@ public:
         int switch_var_id, int value,
         std::unique_ptr<GeneratorBase> generator_for_value);
     virtual void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops) const override;
-    // Transitional method, used until the search is switched to the new task interface.
-    virtual void generate_applicable_ops(
-        const GlobalState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
         const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
@@ -111,10 +92,7 @@ class GeneratorLeafVector : public GeneratorBase {
 public:
     GeneratorLeafVector(std::vector<OperatorID> &&applicable_operators);
     virtual void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops) const override;
-    // Transitional method, used until the search is switched to the new task interface.
-    virtual void generate_applicable_ops(
-        const GlobalState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
         const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
@@ -124,10 +102,7 @@ class GeneratorLeafSingle : public GeneratorBase {
 public:
     GeneratorLeafSingle(OperatorID applicable_operator);
     virtual void generate_applicable_ops(
-        const State &state, std::vector<OperatorID> &applicable_ops) const override;
-    // Transitional method, used until the search is switched to the new task interface.
-    virtual void generate_applicable_ops(
-        const GlobalState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
         const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };

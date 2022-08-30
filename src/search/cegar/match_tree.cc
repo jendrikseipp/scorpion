@@ -5,10 +5,8 @@
 #include "../operator_id.h"
 #include "../task_proxy.h"
 
-#include "../heuristics/additive_heuristic.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
-#include "../tasks/cost_adapted_task.h"
 #include "../tasks/inverted_task.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
