@@ -729,6 +729,7 @@ def dump_goal_atoms(task, path):
 
 def collect_goal_atoms_in_conjunction(goal):
     """ Recursively parses a Conjunction of Atoms into a list of Atoms. """
+    print(goal)
     if isinstance(goal, pddl.conditions.Conjunction):
         goal_atoms = []
         for part in goal.parts:
@@ -736,6 +737,8 @@ def collect_goal_atoms_in_conjunction(goal):
         return goal_atoms
     elif isinstance(goal, pddl.conditions.Atom):
         return [goal]
+    elif isinstance(goal, pddl.conditions.Truth):
+        return []
     else:
         raise Exception("Only conjunctive goals can be dumped.")
 
