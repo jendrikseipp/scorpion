@@ -18,11 +18,14 @@ static bool is_strips_fact(const string &fact_name) {
 }
 
 static vector<vector<int>> construct_and_dump_fact_mapping(
-    const TaskProxy &task_proxy) {
+    const TaskProxy &task_proxy,
+    bool dump_atoms_to_file) {
     string atom_prefix = "Atom ";
     int num_variables = task_proxy.get_variables().size();
     vector<vector<int>> mapping(num_variables);
     int next_atom_index = 0;
+    std::ofstream atoms_file;
+    atoms_file.open("atoms.txt");
     for (int var = 0; var < num_variables; ++var) {
         int domain_size = task_proxy.get_variables()[var].get_domain_size();
         mapping[var].resize(domain_size);
@@ -32,18 +35,27 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
                 mapping[var][val] = next_atom_index;
                 cout << "F " << next_atom_index << " "
                      << fact_name.substr(atom_prefix.size()) << endl;
+                if (dump_atoms_to_file) {
+                    atoms_file << next_atom_index << " " << fact_name.substr(atom_prefix.size()) << "\n";
+                }
                 ++next_atom_index;
             } else {
                 mapping[var][val] = -1;
             }
         }
     }
+    atoms_file.close();
     return mapping;
 }
 
 ExhaustiveSearch::ExhaustiveSearch(const Options &opts)
-    : SearchEngine(opts) {
+    : SearchEngine(opts),
+      dump_atoms_to_file(opts.get<bool>("dump_atoms")),
+      dump_states_to_file(opts.get<bool>("dump_states")),
+      dump_transitions_to_file(opts.get<bool>("dump_transitions")) {
     assert(cost_type == ONE);
+    states_file.open("states.txt");
+    transitions_file.open("transitions.txt");
 }
 
 void ExhaustiveSearch::initialize() {
@@ -53,7 +65,7 @@ void ExhaustiveSearch::initialize() {
     cout << "# N (non-goal state): [non-goal state ID] [fact ID 1] [fact ID 2] ..." << endl;
     cout << "# T (transition): [source state ID] [target state ID]" << endl;
     cout << "# The initial state has ID 0." << endl;
-    fact_mapping = construct_and_dump_fact_mapping(task_proxy);
+    fact_mapping = construct_and_dump_fact_mapping(task_proxy, dump_atoms_to_file);
     assert(state_registry.size() <= 1);
     State initial_state = state_registry.get_initial_state();
     statistics.inc_generated();
@@ -66,22 +78,28 @@ void ExhaustiveSearch::print_statistics() const {
     search_space.print_statistics();
 }
 
-void ExhaustiveSearch::dump_state(const State &state) const {
+void ExhaustiveSearch::dump_state(const State &state) {
     char state_type = (task_properties::is_goal_state(task_proxy, state)) ? 'G' : 'N';
-    cout << state_type << " " << state.get_id().value;
+    std::stringstream ss;
+    ss << state_type << " " << state.get_id().value;
     for (FactProxy fact_proxy : state) {
         FactPair fact = fact_proxy.get_pair();
         int fact_id = fact_mapping[fact.var][fact.value];
         if (fact_id != -1) {
-            cout << " " << fact_id;
+            ss << " " << fact_id;
         }
     }
-    cout << endl;
+    std::cout << ss.str() << std::endl;
+    if (dump_states_to_file) {
+        states_file << ss.str() << "\n";
+    }
 }
 
 SearchStatus ExhaustiveSearch::step() {
     if (current_state_id == static_cast<int>(state_registry.size())) {
         utils::g_log << "Finished dumping the reachable state space." << endl;
+        states_file.close();
+        transitions_file.close();
         return FAILED;
     }
 
@@ -102,6 +120,9 @@ SearchStatus ExhaustiveSearch::step() {
         State succ_state = state_registry.get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
         cout << "T " << s.get_id().value << " " << succ_state.get_id().value << endl;
+        if (dump_transitions_to_file) {
+            transitions_file << s.get_id().value << " " << succ_state.get_id().value << "\n";
+        }
     }
     return IN_PROGRESS;
 }
@@ -117,6 +138,9 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     opts.set<OperatorCost>("cost_type", ONE);
     opts.set<int>("bound", numeric_limits<int>::max());
     opts.set<double>("max_time", numeric_limits<double>::infinity());
+    opts.set<bool>("dump_atoms", true);
+    opts.set<bool>("dump_states", true);
+    opts.set<bool>("dump_transitions", true);
 
     if (parser.dry_run()) {
         return nullptr;

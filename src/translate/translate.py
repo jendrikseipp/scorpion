@@ -746,7 +746,7 @@ def collect_goal_atoms_in_conjunction(goal):
 def dump_constants(task, path):
     with open(path, "w") as f:
         for constant in task.constants:
-            instantiate.print_atom(str(constant), f)
+            print(constant.name, f)
 
 
 def main():
