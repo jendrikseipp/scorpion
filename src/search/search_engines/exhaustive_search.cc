@@ -36,7 +36,8 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
                 cout << "F " << next_atom_index << " "
                      << fact_name.substr(atom_prefix.size()) << endl;
                 if (dump_atoms_to_file) {
-                    atoms_file << next_atom_index << " " << fact_name.substr(atom_prefix.size()) << "\n";
+                    // row index corresponds to atom index
+                    atoms_file << fact_name.substr(atom_prefix.size()) << "\n";
                 }
                 ++next_atom_index;
             } else {
