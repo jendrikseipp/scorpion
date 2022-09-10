@@ -14,7 +14,7 @@ STATIC_ATOMS_FILE = "static-atoms.txt"
 def print_atom(atom, file):
     atom_name = str(atom)
     assert atom_name.startswith("Atom ")
-    print(atom_name[len("Atom "):], file=file)
+    print(atom_name[len("Atom "):].replace(" ", ""), file=file)
 
 def add_type_predicates(types):
     result = []

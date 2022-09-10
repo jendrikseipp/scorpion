@@ -19,6 +19,7 @@ class ExhaustiveSearch : public SearchEngine {
     bool dump_atoms_to_file;
     bool dump_states_to_file;
     bool dump_transitions_to_file;
+
     std::ofstream states_file;
     std::ofstream transitions_file;
 

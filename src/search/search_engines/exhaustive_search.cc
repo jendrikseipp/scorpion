@@ -7,6 +7,7 @@
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
+#include <algorithm>
 #include <cassert>
 
 using namespace std;
@@ -33,11 +34,13 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
             string fact_name = task_proxy.get_variables()[var].get_fact(val).get_name();
             if (is_strips_fact(fact_name)) {
                 mapping[var][val] = next_atom_index;
+                std::string normalized_atom = fact_name.substr(atom_prefix.size());
+                normalized_atom.erase(std::remove_if(normalized_atom.begin(), normalized_atom.end(), [](unsigned char x){return std::isspace(x);}), normalized_atom.end());
                 cout << "F " << next_atom_index << " "
-                     << fact_name.substr(atom_prefix.size()) << endl;
+                     << normalized_atom << endl;
                 if (dump_atoms_to_file) {
                     // row index corresponds to atom index
-                    atoms_file << fact_name.substr(atom_prefix.size()) << "\n";
+                    atoms_file << normalized_atom << "\n";
                 }
                 ++next_atom_index;
             } else {

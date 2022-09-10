@@ -716,7 +716,7 @@ def dump_predicates(task, path):
     predicates += [(pddl_type.name, 1) for pddl_type in task.types]
 
     with open(path, "w") as f:
-        f.write("\n".join(f"{name},{arity}"
+        f.write("\n".join(f"{name} {arity}"
                           for name, arity in sorted(predicates)))
 
 
@@ -724,7 +724,7 @@ def dump_goal_atoms(task, path):
     goal_atoms = collect_goal_atoms_in_conjunction(task.goal)
     with open(path, "w") as f:
         for atom in goal_atoms:
-            instantiate.print_atom(str(atom), f)
+            instantiate.print_atom(atom, file=f)
 
 
 def collect_goal_atoms_in_conjunction(goal):
