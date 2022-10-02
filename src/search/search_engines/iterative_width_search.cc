@@ -11,13 +11,16 @@
 #include <cstdlib>
 
 using namespace std;
+using namespace dlplan::novelty;
 
 namespace iterative_width_search {
 IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
     : SearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
-      novelty_table(task_proxy, width) {
+      novelty_table(task_proxy, width),
+      m_novelty_table(NoveltyTable(std::make_shared<dlplan::novelty::NoveltyBase>(task_proxy.get_variables().size(), width))),
+      m_fact_indexer(task_proxy) {
     utils::g_log << "Setting up iterative width search." << endl;
 }
 

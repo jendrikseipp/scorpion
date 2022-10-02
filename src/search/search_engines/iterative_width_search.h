@@ -4,6 +4,7 @@
 #include "../search_engine.h"
 
 #include "../novelty/novelty_table.h"
+#include <dlplan/novelty.h>
 
 #include <deque>
 #include <memory>
@@ -20,6 +21,10 @@ class IterativeWidthSearch : public SearchEngine {
 
     std::deque<StateID> open_list;
     novelty::NoveltyTable novelty_table;
+
+    // new
+    dlplan::novelty::NoveltyTable m_novelty_table;
+    novelty::FactIndexer m_fact_indexer;
 
     bool is_novel(const State &state);
     bool is_novel(const OperatorProxy &op, const State &succ_state);

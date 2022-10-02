@@ -26,6 +26,17 @@ class FactIndexer {
 public:
     explicit FactIndexer(const TaskProxy &task_proxy);
 
+    std::vector<int> get_fact_ids(const State& state) const {
+        std::vector<int> fact_ids;
+        fact_ids.reserve(state.size());
+        for (FactProxy fact_proxy : state) {
+            FactPair fact = fact_proxy.get_pair();
+            int fact_id = get_fact_id(fact);
+            fact_ids.push_back(fact_id);
+        }
+        return fact_ids;
+    }
+
     int get_fact_id(FactPair fact) const {
         return fact_offsets[fact.var] + fact.value;
     }
