@@ -613,7 +613,7 @@ fast_downward_plugin(
     NAME NOVELTY
     HELP "Novelty-based algorithms"
     SOURCES
-        novelty/novelty_table
+        novelty/fact_indexer
     DEPENDS TASK_PROPERTIES
 )
 

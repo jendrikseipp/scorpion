@@ -18,9 +18,10 @@ IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
     : SearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
-      novelty_table(task_proxy, width),
-      m_novelty_table(NoveltyTable(std::make_shared<dlplan::novelty::NoveltyBase>(task_proxy.get_variables().size(), width))),
+      m_novelty_base(std::make_shared<dlplan::novelty::NoveltyBase>(task_proxy.get_variables().size(), width)),
+      m_novelty_table(0),
       m_fact_indexer(task_proxy) {
+    m_novelty_table = NoveltyTable(m_novelty_base->get_num_tuples());
     utils::g_log << "Setting up iterative width search." << endl;
 }
 
@@ -37,15 +38,18 @@ void IterativeWidthSearch::initialize() {
 }
 
 bool IterativeWidthSearch::is_novel(const State &state) {
-    return novelty_table.compute_novelty_and_update_table(state) < 3;
+    std::vector<int> fact_ids = m_fact_indexer.get_fact_ids(state);
+    std::sort(fact_ids.begin(), fact_ids.end());
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, fact_ids), true);
 }
 
 bool IterativeWidthSearch::is_novel(const OperatorProxy &op, const State &succ_state) {
-    return novelty_table.compute_novelty_and_update_table(op, succ_state) < 3;
+    std::vector<int> fact_ids = m_fact_indexer.get_fact_ids(op, succ_state);
+    std::sort(fact_ids.begin(), fact_ids.end());
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, fact_ids), true);
 }
 
 void IterativeWidthSearch::print_statistics() const {
-    novelty_table.print_statistics();
     statistics.print_detailed_statistics();
     search_space.print_statistics();
 }

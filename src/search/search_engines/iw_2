@@ -1,0 +1,190 @@
+(base) dominik@dominik-HP-EliteBook-845-G7-Notebook-PC:~/projects/code/scorpion$ ./fast-downward.py domain.pddl instance_2_1_0.pddl --search "iw(width=2)"
+INFO     planner time limit: None
+INFO     planner memory limit: None
+
+INFO     Running translator.
+INFO     translator stdin: None
+INFO     translator time limit: None
+INFO     translator memory limit: None
+INFO     translator command line string: /home/dominik/miniconda3/bin/python3 /home/dominik/projects/code/scorpion/builds/release/bin/translate/translate.py domain.pddl instance_2_1_0.pddl --sas-file output.sas
+Parsing...
+Problem delivery: delivery-2x2-1 [:equality, :typing]
+Types:
+  object
+  cell
+  locatable
+  package
+  truck
+Constants:
+Objects:
+  c_0_0: cell
+  c_0_1: cell
+  c_1_0: cell
+  c_1_1: cell
+  p1: package
+  t1: truck
+Predicates:
+  at(?x1: locatable, ?x2: cell)
+  carrying(?x1: truck, ?x2: package)
+  empty(?x1: truck)
+  adjacent(?x1: cell, ?x2: cell)
+  =(?x: object, ?y: object)
+Functions:
+Init:
+  Atom adjacent(c_0_1, c_1_1)
+  Atom adjacent(c_0_0, c_1_0)
+  Atom at(p1, c_0_1)
+  Atom adjacent(c_0_1, c_0_0)
+  Atom adjacent(c_1_1, c_1_0)
+  Atom adjacent(c_0_0, c_0_1)
+  Atom adjacent(c_1_1, c_0_1)
+  Atom empty(t1)
+  Atom adjacent(c_1_0, c_0_0)
+  Atom at(t1, c_0_0)
+  Atom adjacent(c_1_0, c_1_1)
+  Atom =(c_0_0, c_0_0)
+  Atom =(c_0_1, c_0_1)
+  Atom =(c_1_0, c_1_0)
+  Atom =(c_1_1, c_1_1)
+  Atom =(p1, p1)
+  Atom =(t1, t1)
+Goal:
+  Atom at(p1, c_1_1)
+Actions:
+pick-package(?t: truck, ?p: package, ?x: cell)
+Precondition:
+  Conjunction
+    Atom at(?p, ?x)
+    Atom at(?t, ?x)
+    Atom empty(?t)
+Effects:
+  NegatedAtom at(?p, ?x)
+  NegatedAtom empty(?t)
+  Atom carrying(?t, ?p)
+Cost:
+  None
+drop-package(?t: truck, ?p: package, ?x: cell)
+Precondition:
+  Conjunction
+    Atom at(?t, ?x)
+    Atom carrying(?t, ?p)
+Effects:
+  Atom empty(?t)
+  NegatedAtom carrying(?t, ?p)
+  Atom at(?p, ?x)
+Cost:
+  None
+move(?t: truck, ?from: cell, ?to: cell)
+Precondition:
+  Conjunction
+    Atom adjacent(?from, ?to)
+    Atom at(?t, ?from)
+Effects:
+  NegatedAtom at(?t, ?from)
+  Atom at(?t, ?to)
+Cost:
+  None
+Parsing: [0.010s CPU, 0.003s wall-clock]
+Normalizing task... [0.000s CPU, 0.000s wall-clock]
+Instantiating...
+Generating Datalog program... [0.000s CPU, 0.000s wall-clock]
+Normalizing Datalog program...
+Normalizing Datalog program: [0.000s CPU, 0.002s wall-clock]
+Preparing model... [0.000s CPU, 0.001s wall-clock]
+Generated 18 rules.
+Computing model... [0.000s CPU, 0.001s wall-clock]
+55 relevant atoms
+46 auxiliary atoms
+101 final queue length
+114 total queue pushes
+Completing instantiation... [0.000s CPU, 0.001s wall-clock]
+Instantiating: [0.000s CPU, 0.006s wall-clock]
+Computing fact groups...
+Finding invariants...
+8 initial candidates
+Finding invariants: [0.000s CPU, 0.002s wall-clock]
+Checking invariant weight... [0.000s CPU, 0.000s wall-clock]
+Instantiating groups... [0.000s CPU, 0.000s wall-clock]
+Collecting mutex groups... [0.000s CPU, 0.000s wall-clock]
+Choosing groups...
+1 uncovered facts
+Choosing groups: [0.000s CPU, 0.000s wall-clock]
+Building translation key... [0.000s CPU, 0.000s wall-clock]
+Computing fact groups: [0.000s CPU, 0.003s wall-clock]
+Building STRIPS to SAS dictionary... [0.000s CPU, 0.000s wall-clock]
+Building dictionary for full mutex groups... [0.000s CPU, 0.000s wall-clock]
+Building mutex information...
+Building mutex information: [0.000s CPU, 0.000s wall-clock]
+Translating task...
+Processing axioms...
+Simplifying axioms... [0.000s CPU, 0.000s wall-clock]
+Translator axioms removed by simplifying: 0
+Computing negative axioms... [0.000s CPU, 0.000s wall-clock]
+Processing axioms: [0.000s CPU, 0.000s wall-clock]
+Translating task: [0.010s CPU, 0.001s wall-clock]
+4 effect conditions simplified
+0 implied preconditions added
+Detecting unreachable propositions...
+0 operators removed
+0 axioms removed
+2 propositions removed
+Detecting unreachable propositions: [0.000s CPU, 0.001s wall-clock]
+Reordering and filtering variables...
+3 of 3 variables necessary.
+1 of 3 mutex groups necessary.
+16 of 16 operators necessary.
+0 of 0 axiom rules necessary.
+Reordering and filtering variables: [0.000s CPU, 0.000s wall-clock]
+Translator variables: 3
+Translator derived variables: 0
+Translator facts: 11
+Translator goal facts: 1
+Translator mutex groups: 1
+Translator total mutex groups size: 2
+Translator operators: 16
+Translator axioms: 0
+Translator task size: 85
+Translator peak memory: 32124 KB
+Writing output... [0.000s CPU, 0.000s wall-clock]
+Done! [0.020s CPU, 0.015s wall-clock]
+translate exit code: 0
+
+INFO     Running search (release).
+INFO     search stdin: output.sas
+INFO     search time limit: None
+INFO     search memory limit: None
+INFO     search command line string: /home/dominik/projects/code/scorpion/builds/release/bin/downward --search 'iw(width=2)' --internal-plan-file sas_plan < output.sas
+[t=5.2969e-05s, 12080 KB] reading input...
+[t=0.000418794s, 12080 KB] done reading input!
+[t=0.00308684s, 12476 KB] Building successor generator...done!
+[t=0.00318167s, 12476 KB] peak memory difference for successor generator creation: 0 KB
+[t=0.00319523s, 12476 KB] time for successor generation creation: 1.1261e-05s
+[t=0.00321103s, 12476 KB] Variables: 3
+[t=0.00322393s, 12476 KB] FactPairs: 11
+[t=0.00323695s, 12476 KB] Bytes per state: 4
+Create fact indexer.
+[t=0.00327223s, 12476 KB] Setting up iterative width search.
+[t=0.00335331s, 12476 KB] Starting iterative width search.
+[t=0.00341453s, 12476 KB] Solution found!
+[t=0.0034294s, 12476 KB] Actual search time: 4.4643e-05s
+move t1 c_0_0 c_0_1 (1)
+pick-package t1 p1 c_0_1 (1)
+move t1 c_0_1 c_1_1 (1)
+drop-package t1 p1 c_1_1 (1)
+[t=0.00344369s, 12476 KB] Plan length: 4 step(s).
+[t=0.00344369s, 12476 KB] Plan cost: 4
+[t=0.00344369s, 12476 KB] Time for computing novelty: 7.084e-06s
+[t=0.00344369s, 12476 KB] Expanded 10 state(s).
+[t=0.00344369s, 12476 KB] Reopened 0 state(s).
+[t=0.00344369s, 12476 KB] Evaluated 0 state(s).
+[t=0.00344369s, 12476 KB] Evaluations: 0
+[t=0.00344369s, 12476 KB] Generated 25 state(s).
+[t=0.00344369s, 12476 KB] Dead ends: 0 state(s).
+[t=0.00344369s, 12476 KB] Number of registered states: 13
+[t=0.00344369s, 12476 KB] Closed list load factor: 13/15 = 0.866667
+[t=0.00344369s, 12476 KB] Search time: 9.0981e-05s
+[t=0.00344369s, 12476 KB] Total time: 0.00344369s
+Solution found.
+Peak memory: 12476 KB
+Remove intermediate file output.sas
+search exit code: 0

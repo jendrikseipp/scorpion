@@ -3,7 +3,7 @@
 
 #include "../search_engine.h"
 
-#include "../novelty/novelty_table.h"
+#include "../novelty/fact_indexer.h"
 #include <dlplan/novelty.h>
 
 #include <deque>
@@ -20,9 +20,8 @@ class IterativeWidthSearch : public SearchEngine {
     const bool debug;
 
     std::deque<StateID> open_list;
-    novelty::NoveltyTable novelty_table;
 
-    // new
+    std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
     novelty::FactIndexer m_fact_indexer;
 
