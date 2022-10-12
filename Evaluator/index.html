@@ -1487,6 +1487,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 </ol>
 <p>Our implementation of the heuristic only considers preferred operators of the first type and does not include the second type. The rationale for this change is that it reduces code complexity and helps more cleanly separate landmark-based and FF-based computations in LAMA-like planner configurations. In our experiments, only considering preferred operators of the first type reduces performance when using the heuristic and its preferred operators in isolation but improves performance when using this heuristic in conjunction with the FF heuristic, as in LAMA-like planner configurations.</p>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note on performance for satisficing planning:</strong> The cost of a landmark is based on the cost of the operators that achieve it. For satisficing search this can be counterproductive since it is often better to focus on distance from goal (i.e. length of the plan) rather than cost.In experiments we achieved the best performance usingthe option 'transform=adapt_costs(one)' to enforce unit costs.</p>
 <p>Language features supported:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
