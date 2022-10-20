@@ -157,10 +157,12 @@ int MatchTree::get_state_id(NodeID node_id) const {
     return refinement_hierarchy.get_abstract_state_id(node_id);
 }
 
+#ifndef NDEBUG
 static bool contains_all_facts(const CartesianSet &set, const vector<FactPair> &facts) {
     return all_of(facts.begin(), facts.end(),
                   [&](const FactPair &fact) {return set.test(fact.var, fact.value);});
 }
+#endif
 
 bool MatchTree::incoming_operator_only_loops(const AbstractState &state, int op_id) const {
     for (const FactPair &fact : preconditions[op_id]) {
