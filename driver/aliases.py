@@ -153,6 +153,8 @@ ALIASES["scorpion"] = [
 
 PORTFOLIOS = {}
 for portfolio in os.listdir(PORTFOLIO_DIR):
+    if portfolio == "__pycache__":
+        continue
     name, ext = os.path.splitext(portfolio)
     assert ext == ".py", portfolio
     PORTFOLIOS[name.replace("_", "-")] = os.path.join(PORTFOLIO_DIR, portfolio)
