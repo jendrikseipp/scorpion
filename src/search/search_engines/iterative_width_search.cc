@@ -18,11 +18,13 @@ IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
     : SearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
-      m_novelty_base(std::make_shared<dlplan::novelty::NoveltyBase>(task_proxy.get_variables().size(), width)),
       m_novelty_table(0),
       m_fact_indexer(task_proxy) {
+    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_fact_indexer.get_num_facts(), std::max(1, width));
     m_novelty_table = NoveltyTable(m_novelty_base->get_num_tuples());
     utils::g_log << "Setting up iterative width search." << endl;
+    std::cout << "Num facts:" << m_fact_indexer.get_num_facts() << std::endl;
+    std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
 }
 
 void IterativeWidthSearch::initialize() {
@@ -38,15 +40,11 @@ void IterativeWidthSearch::initialize() {
 }
 
 bool IterativeWidthSearch::is_novel(const State &state) {
-    std::vector<int> fact_ids = m_fact_indexer.get_fact_ids(state);
-    std::sort(fact_ids.begin(), fact_ids.end());
-    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, fact_ids), true);
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_fact_indexer.get_fact_ids(state)), true);
 }
 
 bool IterativeWidthSearch::is_novel(const OperatorProxy &op, const State &succ_state) {
-    std::vector<int> fact_ids = m_fact_indexer.get_fact_ids(op, succ_state);
-    std::sort(fact_ids.begin(), fact_ids.end());
-    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, fact_ids), true);
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_fact_indexer.get_fact_ids(op, succ_state)), true);
 }
 
 void IterativeWidthSearch::print_statistics() const {
@@ -79,11 +77,16 @@ SearchStatus IterativeWidthSearch::step() {
             continue;
         }
 
+        int old_num_states = state_registry.size();
         State succ_state = state_registry.get_successor_state(state, op);
+        int new_num_states = state_registry.size();
+        bool is_new_state = (new_num_states > old_num_states);
+        if (!is_new_state) {
+            continue;
+        }
+
         statistics.inc_generated();
-
-        bool novel = is_novel(op, succ_state);
-
+        bool novel = is_novel(succ_state);
         if (!novel) {
             continue;
         }
@@ -105,7 +108,7 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis("Iterated width search", "");
 
     parser.add_option<int>(
-        "width", "maximum conjunction size", "2", Bounds("1", "2"));
+        "width", "maximum conjunction size", "2");
     SearchEngine::add_options_to_parser(parser);
 
     Options opts = parser.parse();

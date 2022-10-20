@@ -19,7 +19,6 @@ namespace novelty {
 */
 class FactIndexer {
     std::vector<int> fact_offsets;
-    std::vector<int> pair_offsets;
     int num_facts;
     int num_pairs;
 

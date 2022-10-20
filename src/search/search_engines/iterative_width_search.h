@@ -20,6 +20,7 @@ class IterativeWidthSearch : public SearchEngine {
     const bool debug;
 
     std::deque<StateID> open_list;
+    std::deque<StateID> closed_list;
 
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
