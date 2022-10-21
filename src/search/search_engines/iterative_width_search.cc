@@ -17,9 +17,10 @@ IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
     : SearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
-      m_novelty_table(0),
-      m_fact_indexer(task_proxy),
-      m_state_mapper(task_proxy) {
+      m_initial_state_id(-1),
+      m_novelty_table(0) {
+    m_fact_indexer = novelty::FactIndexer(task_proxy);
+    m_state_mapper = novelty::StateMapper(task_proxy, m_fact_indexer);
     m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_fact_indexer.get_num_facts(), std::max(1, width));
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
     utils::g_log << "Setting up iterative width search." << endl;
@@ -30,6 +31,7 @@ IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
 void IterativeWidthSearch::initialize() {
     utils::g_log << "Starting iterative width search." << endl;
     State initial_state = state_registry.get_initial_state();
+    m_initial_state_id = initial_state.get_id();
     statistics.inc_generated();
     SearchNode node = search_space.get_node(initial_state);
     node.open_initial();
@@ -65,8 +67,11 @@ SearchStatus IterativeWidthSearch::step() {
     assert(!node.is_dead_end());
     statistics.inc_expanded();
 
-    if (check_goal_and_set_plan(state)) {
-        return SOLVED;
+    /* Goal check in initial state. */
+    if (id == m_initial_state_id) {
+        if (check_goal_and_set_plan(state)) {
+            return SOLVED;
+        }
     }
 
     vector<OperatorID> applicable_ops;
@@ -91,12 +96,22 @@ SearchStatus IterativeWidthSearch::step() {
             continue;
         }
 
-        std::cout << m_state_mapper.compute_dlplan_state(succ_state.get_id().value, m_fact_indexer.get_fact_ids(succ_state)).str() << std::endl;
+        std::cout << m_state_mapper.compute_dlplan_state(succ_state).str() << std::endl;
 
         SearchNode succ_node = search_space.get_node(succ_state);
         assert(succ_node.is_new());
         succ_node.open(node, op, get_adjusted_cost(op));
         open_list.push_back(succ_state.get_id());
+
+        /* Goal check after generating new node to save one g layer.*/
+        if (check_goal_and_set_plan(succ_state)) {
+            return SOLVED;
+        }
+    }
+
+    /* Width 0 problems must be solved after at most one expansion step. */
+    if (width == 0) {
+        return FAILED;
     }
 
     return IN_PROGRESS;

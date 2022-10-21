@@ -6,6 +6,8 @@
 using namespace std;
 
 namespace novelty {
+FactIndexer::FactIndexer() {}
+
 FactIndexer::FactIndexer(const TaskProxy &task_proxy) {
     fact_offsets.reserve(task_proxy.get_variables().size());
     num_facts = 0;

@@ -13,9 +13,9 @@ namespace novelty {
 class FactIndexer {
     std::vector<int> fact_offsets;
     int num_facts;
-    int num_pairs;
 
 public:
+    FactIndexer();
     explicit FactIndexer(const TaskProxy &task_proxy);
 
     /**

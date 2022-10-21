@@ -23,6 +23,7 @@ class IterativeWidthSearch : public SearchEngine {
     std::deque<StateID> open_list;
     std::deque<StateID> closed_list;
 
+    StateID m_initial_state_id;
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
     novelty::FactIndexer m_fact_indexer;

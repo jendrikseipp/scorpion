@@ -18,10 +18,15 @@ namespace iterative_width_search {
 class IterativeWidthSearch;
 }
 
+namespace novelty {
+class StateMapper;
+}
+
 class StateID {
     friend class breadth_first_search::BreadthFirstSearch;
     friend class exhaustive_search::ExhaustiveSearch;
     friend class iterative_width_search::IterativeWidthSearch;
+    friend class novelty::StateMapper;
     friend class StateRegistry;
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template<typename>
