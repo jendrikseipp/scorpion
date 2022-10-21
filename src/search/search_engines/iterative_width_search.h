@@ -4,6 +4,7 @@
 #include "../search_engine.h"
 
 #include "../novelty/fact_indexer.h"
+#include "../novelty/state_mapper.h"
 #include <dlplan/novelty.h>
 
 #include <deque>
@@ -25,6 +26,7 @@ class IterativeWidthSearch : public SearchEngine {
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
     novelty::FactIndexer m_fact_indexer;
+    novelty::StateMapper m_state_mapper;
 
     bool is_novel(const State &state);
     bool is_novel(const OperatorProxy &op, const State &succ_state);

@@ -11,7 +11,6 @@
 #include <cstdlib>
 
 using namespace std;
-using namespace dlplan::novelty;
 
 namespace iterative_width_search {
 IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
@@ -19,9 +18,10 @@ IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
       m_novelty_table(0),
-      m_fact_indexer(task_proxy) {
+      m_fact_indexer(task_proxy),
+      m_state_mapper(task_proxy) {
     m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_fact_indexer.get_num_facts(), std::max(1, width));
-    m_novelty_table = NoveltyTable(m_novelty_base->get_num_tuples());
+    m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
     utils::g_log << "Setting up iterative width search." << endl;
     std::cout << "Num facts:" << m_fact_indexer.get_num_facts() << std::endl;
     std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
@@ -118,5 +118,6 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     return make_shared<iterative_width_search::IterativeWidthSearch>(opts);
 }
 
+// ./fast-downward.py domain.pddl instance_2_1_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "iw(width=2)"
 static Plugin<SearchEngine> _plugin("iw", _parse);
 }

@@ -499,6 +499,7 @@ fast_downward_plugin(
     HELP "Iterated search algorithm"
     SOURCES
         search_engines/iterated_search
+    DEPENDS NOVELTY
 )
 
 fast_downward_plugin(
@@ -613,6 +614,7 @@ fast_downward_plugin(
     NAME NOVELTY
     HELP "Novelty-based algorithms"
     SOURCES
+        novelty/state_mapper
         novelty/fact_indexer
     DEPENDS TASK_PROPERTIES
 )

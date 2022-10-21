@@ -42,7 +42,7 @@ if(WIN32)
     target_link_libraries(downward psapi)
 endif()
 
-target_link_libraries(downward dlplannovelty)
+target_link_libraries(downward dlplancore dlplannovelty)
 
 # If any enabled plugin requires an LP solver, compile with all
 # available LP solvers. If no solvers are installed, the planner will
