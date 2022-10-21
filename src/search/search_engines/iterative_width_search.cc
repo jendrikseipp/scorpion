@@ -91,6 +91,8 @@ SearchStatus IterativeWidthSearch::step() {
             continue;
         }
 
+        std::cout << m_state_mapper.compute_dlplan_state(succ_state.get_id().value, m_fact_indexer.get_fact_ids(succ_state)).str() << std::endl;
+
         SearchNode succ_node = search_space.get_node(succ_state);
         assert(succ_node.is_new());
         succ_node.open(node, op, get_adjusted_cost(op));

@@ -14,9 +14,14 @@ namespace exhaustive_search {
 class ExhaustiveSearch;
 }
 
+namespace iterative_width_search {
+class IterativeWidthSearch;
+}
+
 class StateID {
     friend class breadth_first_search::BreadthFirstSearch;
     friend class exhaustive_search::ExhaustiveSearch;
+    friend class iterative_width_search::IterativeWidthSearch;
     friend class StateRegistry;
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template<typename>

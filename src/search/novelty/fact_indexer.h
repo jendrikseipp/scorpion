@@ -10,13 +10,6 @@
 #include <vector>
 
 namespace novelty {
-/* Assign indices in the following order:
-    0=0: 1=0 1=1 1=2 2=0 2=1
-    0=1: 1=0 1=1 1=2 2=0 2=1
-    1=0: 2=0 2=1
-    1=1: 2=0 2=1
-    1=2: 2=0 2=1
-*/
 class FactIndexer {
     std::vector<int> fact_offsets;
     int num_facts;
