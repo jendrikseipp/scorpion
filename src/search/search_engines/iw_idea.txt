@@ -1,0 +1,5 @@
+serialized_search(algorithm=, goal_check=)
+parallelized_search(algorithms=[], goal_check=)
+iw(width=k, goal_check=)
+
+goal_check can be top_goal(), sketch(), goal_count()
