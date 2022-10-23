@@ -616,6 +616,7 @@ fast_downward_plugin(
     SOURCES
         novelty/state_mapper
         novelty/fact_indexer
+        novelty/goal_test
     DEPENDS TASK_PROPERTIES
 )
 

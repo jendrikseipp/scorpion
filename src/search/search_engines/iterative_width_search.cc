@@ -1,5 +1,7 @@
 #include "iterative_width_search.h"
 
+#include "../novelty/goal_test.h"
+
 #include "../option_parser.h"
 #include "../plugin.h"
 
@@ -127,6 +129,10 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "width", "maximum conjunction size", "2");
     SearchEngine::add_options_to_parser(parser);
+    parser.add_option<shared_ptr<novelty::GoalTest>>(
+        "goal_test",
+        "goal test",
+        "top_goal()");
 
     Options opts = parser.parse();
     if (parser.dry_run()) {
