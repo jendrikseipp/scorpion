@@ -14,8 +14,8 @@
 
 using namespace std;
 
-namespace iterative_width_search {
-IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
+namespace iw_search {
+IWSearch::IWSearch(const Options &opts)
     : SearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
@@ -30,7 +30,7 @@ IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
     std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
 }
 
-void IterativeWidthSearch::initialize() {
+void IWSearch::initialize() {
     utils::g_log << "Starting iterative width search." << endl;
     State initial_state = state_registry.get_initial_state();
     m_initial_state_id = initial_state.get_id();
@@ -43,20 +43,20 @@ void IterativeWidthSearch::initialize() {
     assert(novel);
 }
 
-bool IterativeWidthSearch::is_novel(const State &state) {
+bool IWSearch::is_novel(const State &state) {
     return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_fact_indexer.get_fact_ids(state)), true);
 }
 
-bool IterativeWidthSearch::is_novel(const OperatorProxy &op, const State &succ_state) {
+bool IWSearch::is_novel(const OperatorProxy &op, const State &succ_state) {
     return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_fact_indexer.get_fact_ids(op, succ_state)), true);
 }
 
-void IterativeWidthSearch::print_statistics() const {
+void IWSearch::print_statistics() const {
     statistics.print_detailed_statistics();
     search_space.print_statistics();
 }
 
-SearchStatus IterativeWidthSearch::step() {
+SearchStatus IWSearch::step() {
     if (open_list.empty()) {
         utils::g_log << "Completely explored state space -- no solution!" << endl;
         return FAILED;
@@ -119,7 +119,7 @@ SearchStatus IterativeWidthSearch::step() {
     return IN_PROGRESS;
 }
 
-void IterativeWidthSearch::dump_search_space() const {
+void IWSearch::dump_search_space() const {
     search_space.dump(task_proxy);
 }
 
@@ -138,7 +138,7 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     if (parser.dry_run()) {
         return nullptr;
     }
-    return make_shared<iterative_width_search::IterativeWidthSearch>(opts);
+    return make_shared<iw_search::IWSearch>(opts);
 }
 
 // ./fast-downward.py domain.pddl instance_2_1_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "iw(width=2)"

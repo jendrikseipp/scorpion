@@ -1,5 +1,5 @@
-#ifndef SEARCH_ENGINES_ITERATIVE_WIDTH_SEARCH_H
-#define SEARCH_ENGINES_ITERATIVE_WIDTH_SEARCH_H
+#ifndef SEARCH_ENGINES_SERIALIZED_ITERATIVE_WIDTH_SKETCH_SEARCH_H
+#define SEARCH_ENGINES_SERIALIZED_ITERATIVE_WIDTH_SKETCH_SEARCH_H
 
 #include "../search_engine.h"
 
@@ -15,8 +15,8 @@ namespace options {
 class Options;
 }
 
-namespace iterative_width_search {
-class IterativeWidthSearch : public SearchEngine {
+namespace siwr_search {
+class SIWRSearch : public SearchEngine {
     const int width;
     const bool debug;
 
@@ -37,7 +37,7 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit IterativeWidthSearch(const options::Options &opts);
+    explicit SIWRSearch(const options::Options &opts);
 
     virtual void print_statistics() const override;
 
