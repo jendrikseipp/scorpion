@@ -459,7 +459,9 @@ fast_downward_plugin(
     NAME PLUGIN_IW
     HELP "Iterative width search"
     SOURCES
-        search_engines/iterative_width_search
+        search_engines/hierarchical_search_engines/goal_test
+        search_engines/hierarchical_search_engines/iterative_width_search
+    DEPENDS NOVELTY
 )
 
 fast_downward_plugin(
@@ -499,7 +501,6 @@ fast_downward_plugin(
     HELP "Iterated search algorithm"
     SOURCES
         search_engines/iterated_search
-    DEPENDS NOVELTY
 )
 
 fast_downward_plugin(
@@ -616,7 +617,6 @@ fast_downward_plugin(
     SOURCES
         novelty/state_mapper
         novelty/fact_indexer
-        novelty/goal_test
     DEPENDS TASK_PROPERTIES
 )
 

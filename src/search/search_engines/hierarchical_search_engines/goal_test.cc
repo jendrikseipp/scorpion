@@ -1,14 +1,14 @@
 #include "goal_test.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
+#include "../../option_parser.h"
+#include "../../plugin.h"
 
 #include <memory>
 
 using namespace std;
 
 
-namespace novelty {
+namespace goal_test {
 
 GoalTest::GoalTest(const options::Options &opts) { }
 GoalTest::~GoalTest() { }

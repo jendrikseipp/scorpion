@@ -43,7 +43,7 @@ iw, parallelized_search, serialized_search runs steps until goal is reached, i.e
 iw, parallelized_search, serialized_search are HierarchicalSearchEngines. We must be able to pass information up and down in the hierarchy. For instance, in SIW(k) is the low level goal state also a high level goal state. This requires a pointer to the parent search and functions to pass information between parent and child.
 
 1. [parent -> child] Notify child about its parent search engine. Must be called on child search in initialize of parent search.
-```void set_parent_search_engine(SearchEngine& parent);```
+```virtual void set_parent_search_engine(SearchEngine& parent) = 0;```
 2. [child -> parent] Notify parent that low level goal was reached. Default behavior will be to check this state is also goal in parent search.
 ```virtual void on_goal(const State& state) = 0```
 3. [parent -> child] Notify child that we found new initial state.

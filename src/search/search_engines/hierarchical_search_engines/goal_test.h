@@ -1,9 +1,7 @@
-#ifndef NOVELTY_GOAL_CHECK_H
-#define NOVELTY_GOAL_CHECK_H
+#ifndef SEARCH_ENGINES_HIERARCHICAL_SEARH_ENGINES_GOAL_CHECK_H
+#define SEARCH_ENGINES_HIERARCHICAL_SEARH_ENGINES_GOAL_CHECK_H
 
-#include "fact_indexer.h"
-
-#include "../task_proxy.h"
+#include "../../task_proxy.h"
 
 #include <memory>
 #include <vector>
@@ -13,7 +11,7 @@ class Options;
 }
 
 
-namespace novelty {
+namespace goal_test {
 class GoalTest {
 public:
     explicit GoalTest(const options::Options &opts);

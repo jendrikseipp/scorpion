@@ -17,10 +17,19 @@ class Options;
 
 namespace hierarchical_search_engine {
 class HierarchicalSearchEngine : public SearchEngine {
+private:
+    SearchEngine* parent_search_engine;
+
 protected:
     virtual bool check_goal_and_set_plan(const HierarchicalSearchEngine& parent, const State &state) = 0;
 
+    virtual void set_parent_search_engine(SearchEngine& parent) = 0;
+
+    virtual void set_initial_state(const State& state) = 0;
 public:
+    /**
+     * task must be ModifiedInitialStateTask
+     */
     explicit HierarchicalSearchEngine(const options::Options &opts);
 };
 }

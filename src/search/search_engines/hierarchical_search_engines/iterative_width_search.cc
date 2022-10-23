@@ -1,13 +1,13 @@
 #include "iterative_width_search.h"
 
-#include "../novelty/goal_test.h"
+#include "goal_test.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
+#include "../../option_parser.h"
+#include "../../plugin.h"
 
-#include "../task_utils/successor_generator.h"
-#include "../task_utils/task_properties.h"
-#include "../utils/logging.h"
+#include "../../task_utils/successor_generator.h"
+#include "../../task_utils/task_properties.h"
+#include "../../utils/logging.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -129,7 +129,7 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "width", "maximum conjunction size", "2");
     SearchEngine::add_options_to_parser(parser);
-    parser.add_option<shared_ptr<novelty::GoalTest>>(
+    parser.add_option<shared_ptr<goal_test::GoalTest>>(
         "goal_test",
         "goal test",
         "top_goal()");
@@ -138,7 +138,7 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     if (parser.dry_run()) {
         return nullptr;
     }
-    return make_shared<iw_search::IWSearch>(opts);
+    return make_shared<IWSearch>(opts);
 }
 
 // ./fast-downward.py domain.pddl instance_2_1_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "iw(width=2)"

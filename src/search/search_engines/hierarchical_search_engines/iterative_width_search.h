@@ -1,10 +1,10 @@
 #ifndef SEARCH_ENGINES_ITERATIVE_WIDTH_SEARCH_H
 #define SEARCH_ENGINES_ITERATIVE_WIDTH_SEARCH_H
 
-#include "../search_engine.h"
+#include "../../search_engine.h"
 
-#include "../novelty/fact_indexer.h"
-#include "../novelty/state_mapper.h"
+#include "../../novelty/fact_indexer.h"
+#include "../../novelty/state_mapper.h"
 #include <dlplan/novelty.h>
 
 #include <deque>
