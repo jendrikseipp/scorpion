@@ -1,18 +1,19 @@
-# Search Algorithm Call Strings
+# Game Plan
+## Search Algorithm Call Strings
 
-## IW(k)
+### IW(k)
 `iw(k) = iw(width=k, goal_test=top_goal())`
 
-## IWR(k)
+### IWR(k)
 `iwr(k) = iw(width=k, goal_test=sketch(<filename>))`
 
-## SIW(k)
+### SIW(k)
 `siw(k) = serialized_search(child_search=iw(k), goal_test=top_goal())`
 
-## SIWR(k)
+### SIWR(k)
 `siwr(k) = serialized_search(child_search=iwr(k), goal_test=top_goal())`
 
-## HSIWR(k)
+### HSIWR(k)
 ```
 hsiwr(k) =
 serialized_search(child_search=
@@ -36,14 +37,20 @@ parallelized_search executes one step of each child_search (until next g-layer?)
 serialized_search executes one step of child_search.
 
 ## Search Engine solve-Function
-iw, parallelized_search, serialized_search runs steps until goal is reached, i.e., standard solve function.
+iw, parallelized_search, serialized_search runs steps until goal is reached, i.e., default solve function.
 
 ## Hierarchical Search Engine
-Set parent search engine to pass information back to the parent. Must be called on child search in initialize of parent search.
-```void set_parent_search_engine(SearchEngine* parent);```
-Callback method that is called on parent when child search reaches goal. Default behavior will be to check whether parent search reaches goal.
+iw, parallelized_search, serialized_search are HierarchicalSearchEngines. We must be able to pass information up and down in the hierarchy. For instance, in SIW(k) is the low level goal state also a high level goal state. This requires a pointer to the parent search and functions to pass information between parent and child.
+
+1. [parent -> child] Notify child about its parent search engine. Must be called on child search in initialize of parent search.
+```void set_parent_search_engine(SearchEngine& parent);```
+2. [child -> parent] Notify parent that low level goal was reached. Default behavior will be to check this state is also goal in parent search.
 ```virtual void on_goal(const State& state) = 0```
-Reinitializes search for new initial state.
+3. [parent -> child] Notify child that we found new initial state.
 ```virtual void set_initial_state(const State& state) = 0```
 
-Extensions: do we want to perform parent goal check in nongoal states of child search? Then ask for highest level goal reached?
+Extensions: we might want to perform parent goal check in nongoal states of child search.
+
+## Implementational Details
+- Q1: sharing state space over searches? A: Top level search creates a shared SearchSpace that remains for the rest of the search.
+- Q2: how to set new initial state with low overhead? A: `class ModifiedInitialStateTask : public DelegatingTask {};` When modifying a SearchEngines task, this information propagates to the task_proxy.
