@@ -13,10 +13,11 @@
 #include <cstdlib>
 
 using namespace std;
+using namespace hierarchical_search_engine;
 
 namespace iw_search {
 IWSearch::IWSearch(const Options &opts)
-    : SearchEngine(opts),
+    : HierarchicalSearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
       m_initial_state_id(-1),

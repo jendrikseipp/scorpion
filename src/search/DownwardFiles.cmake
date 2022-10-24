@@ -459,8 +459,10 @@ fast_downward_plugin(
     NAME PLUGIN_IW
     HELP "Iterative width search"
     SOURCES
+        search_engines/hierarchical_search_engines/hierarchical_search_engine
         search_engines/hierarchical_search_engines/goal_test
         search_engines/hierarchical_search_engines/iterative_width_search
+        tasks/modified_initial_state_task
     DEPENDS NOVELTY
 )
 

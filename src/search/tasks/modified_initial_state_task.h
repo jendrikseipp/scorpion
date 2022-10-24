@@ -16,7 +16,6 @@ public:
     ModifiedInitialStateTask(
         const std::shared_ptr<AbstractTask> &parent,
         std::vector<int>&& initial_state_values);
-    ~ModifiedInitialStateTask() = default;
 
     virtual std::vector<int> get_initial_state_values() const override;
 };

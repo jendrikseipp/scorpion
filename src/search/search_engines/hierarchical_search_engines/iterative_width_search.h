@@ -1,7 +1,7 @@
 #ifndef SEARCH_ENGINES_ITERATIVE_WIDTH_SEARCH_H
 #define SEARCH_ENGINES_ITERATIVE_WIDTH_SEARCH_H
 
-#include "../../search_engine.h"
+#include "hierarchical_search_engine.h"
 
 #include "../../novelty/fact_indexer.h"
 #include "../../novelty/state_mapper.h"
@@ -16,7 +16,7 @@ class Options;
 }
 
 namespace iw_search {
-class IWSearch : public SearchEngine {
+class IWSearch : public hierarchical_search_engine::HierarchicalSearchEngine {
     const int width;
     const bool debug;
 
