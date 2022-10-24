@@ -5,6 +5,7 @@
 
 #include "../../novelty/fact_indexer.h"
 #include "../../novelty/state_mapper.h"
+
 #include <dlplan/novelty.h>
 
 #include <deque>

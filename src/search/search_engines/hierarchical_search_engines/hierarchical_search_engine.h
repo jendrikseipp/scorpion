@@ -44,7 +44,7 @@ protected:
     virtual void initialize(HierarchicalSearchEngine& parent);
 
     /**
-     * Get notified about successful goal test and partial plan from child search.
+     * React upon reaching goal state.
      */
     virtual void on_goal(const State &state, Plan&& partial_plan);
 
