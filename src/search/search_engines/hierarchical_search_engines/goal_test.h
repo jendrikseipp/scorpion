@@ -13,6 +13,9 @@ class Options;
 
 namespace goal_test {
 class GoalTest {
+protected:
+    const std::shared_ptr<AbstractTask> task;
+
 public:
     explicit GoalTest(const options::Options &opts);
     virtual ~GoalTest();

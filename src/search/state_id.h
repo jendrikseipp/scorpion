@@ -22,11 +22,15 @@ namespace novelty {
 class StateMapper;
 }
 
+namespace extra_tasks {
+class PropositionalTask;
+}
+
 class StateID {
     friend class breadth_first_search::BreadthFirstSearch;
     friend class exhaustive_search::ExhaustiveSearch;
     friend class iw_search::IWSearch;
-    friend class novelty::StateMapper;
+    friend class extra_tasks::PropositionalTask;
     friend class StateRegistry;
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template<typename>

@@ -2,6 +2,7 @@
 
 #include "../../option_parser.h"
 #include "../../plugin.h"
+#include "../../task_utils/task_properties.h"
 
 #include <memory>
 
@@ -23,7 +24,16 @@ bool SketchSubgoal::is_goal(const State& initial_state, const State& current_sta
 
 IncrementGoalCount::IncrementGoalCount(const options::Options &opts)
     : GoalTest(opts) { }
-bool IncrementGoalCount::is_goal(const State& initial_state, const State& current_state) const { }
+bool IncrementGoalCount::is_goal(const State& initial_state, const State& current_state) const {
+    /*if (task_properties::is_goal_state(task_proxy, state)) {
+        log << "Solution found!" << endl;
+        Plan plan;
+        search_space.trace_path(state, plan);
+        set_plan(plan);
+        return true;
+    }
+    return false;*/
+}
 
 static shared_ptr<GoalTest> _parse_top_goal(OptionParser &parser) {
     parser.document_synopsis(

@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-namespace novelty {
+namespace extra_tasks {
 template<typename TOKEN_TYPE>
 class Tokenizer {
 public:

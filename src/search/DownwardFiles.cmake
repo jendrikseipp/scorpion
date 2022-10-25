@@ -463,7 +463,7 @@ fast_downward_plugin(
         search_engines/hierarchical_search_engines/goal_test
         search_engines/hierarchical_search_engines/iterative_width_search
         tasks/modified_initial_state_task
-    DEPENDS NOVELTY
+        tasks/propositional_task
 )
 
 fast_downward_plugin(
@@ -611,15 +611,6 @@ fast_downward_plugin(
     SOURCES
         heuristics/max_heuristic
     DEPENDS PRIORITY_QUEUES RELAXATION_HEURISTIC
-)
-
-fast_downward_plugin(
-    NAME NOVELTY
-    HELP "Novelty-based algorithms"
-    SOURCES
-        novelty/state_mapper
-        novelty/fact_indexer
-    DEPENDS TASK_PROPERTIES
 )
 
 fast_downward_plugin(

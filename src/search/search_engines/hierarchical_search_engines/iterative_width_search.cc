@@ -4,7 +4,8 @@
 
 #include "../../option_parser.h"
 #include "../../plugin.h"
-
+#include "../../tasks/root_task.h"
+#include "../../tasks/propositional_task.h"
 #include "../../task_utils/successor_generator.h"
 #include "../../task_utils/task_properties.h"
 #include "../../utils/logging.h"
@@ -22,17 +23,18 @@ IWSearch::IWSearch(const Options &opts)
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
       m_initial_state_id(-1),
       m_novelty_table(0) {
-    m_fact_indexer = novelty::FactIndexer(task_proxy);
-    m_state_mapper = novelty::StateMapper(task_proxy, m_fact_indexer);
-    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_fact_indexer.get_num_facts(), std::max(1, width));
-    m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
     utils::g_log << "Setting up iterative width search." << endl;
-    std::cout << "Num facts:" << m_fact_indexer.get_num_facts() << std::endl;
-    std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
 }
 
 void IWSearch::initialize() {
     utils::g_log << "Starting iterative width search." << endl;
+    if (!propositional_task) {
+        propositional_task = std::make_shared<extra_tasks::PropositionalTask>(tasks::g_root_task);
+    }
+    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(propositional_task->get_num_facts(), std::max(1, width));
+    m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
+    std::cout << "Num facts:" << propositional_task->get_num_facts() << std::endl;
+    std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
     State initial_state = state_registry.get_initial_state();
     m_initial_state_id = initial_state.get_id();
     statistics.inc_generated();
@@ -45,11 +47,11 @@ void IWSearch::initialize() {
 }
 
 bool IWSearch::is_novel(const State &state) {
-    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_fact_indexer.get_fact_ids(state)), true);
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, propositional_task->get_fact_ids(state)), true);
 }
 
 bool IWSearch::is_novel(const OperatorProxy &op, const State &succ_state) {
-    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_fact_indexer.get_fact_ids(op, succ_state)), true);
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, propositional_task->get_fact_ids(op, succ_state)), true);
 }
 
 void IWSearch::print_statistics() const {
@@ -99,7 +101,7 @@ SearchStatus IWSearch::step() {
             continue;
         }
 
-        std::cout << m_state_mapper.compute_dlplan_state(succ_state).str() << std::endl;
+        std::cout << propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
 
         SearchNode succ_node = search_space.get_node(succ_state);
         assert(succ_node.is_new());

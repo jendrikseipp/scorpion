@@ -1,11 +1,11 @@
-#include "state_mapper.h"
+#include "propositional_task.h"
 
 #include "tokenizer.h"
 
 #include <fstream>
 
 
-namespace novelty {
+namespace extra_tasks {
 
 static void parse_predicates_file(const std::string& filename, dlplan::core::VocabularyInfo& vocabulary_info) {
     std::ifstream infile(filename);
@@ -104,42 +104,87 @@ static const std::vector<std::pair<AtomTokenType, std::regex>> fd_atom_token_reg
     { AtomTokenType::NAME, Tokenizer<AtomTokenType>::build_regex("[a-zA-Z0-9_@\\-]+") },
 };
 
-StateMapper::StateMapper() {}
 
-StateMapper::StateMapper(const TaskProxy &task_proxy, FactIndexer fact_indexer)
-    : m_fact_indexer(fact_indexer),
-      m_vocabulary_info(std::make_shared<dlplan::core::VocabularyInfo>()) {
-    parse_predicates_file("predicates.txt", *m_vocabulary_info);
-    parse_constants_file("constants.txt", *m_vocabulary_info);
-    m_instance_info = std::make_shared<dlplan::core::InstanceInfo>(m_vocabulary_info);
-    parse_static_atoms_file("static-atoms.txt", *m_instance_info);
-    parse_goal_atoms_file("goal-atoms.txt", *m_instance_info);
+PropositionalTask::PropositionalTask(
+    const std::shared_ptr<AbstractTask> &parent)
+    : DelegatingTask(parent),
+      vocabulary_info(std::make_shared<dlplan::core::VocabularyInfo>()) {
+    parse_predicates_file("predicates.txt", *vocabulary_info);
+    parse_constants_file("constants.txt", *vocabulary_info);
+    instance_info = std::make_shared<dlplan::core::InstanceInfo>(vocabulary_info);
+    parse_static_atoms_file("static-atoms.txt", *instance_info);
+    parse_goal_atoms_file("goal-atoms.txt", *instance_info);
     std::string atom_prefix = "Atom ";
-    for (const auto& variable : task_proxy.get_variables()) {
-        for (int i = 0; i < variable.get_domain_size(); ++i) {
+    fact_offsets.reserve(TaskProxy(*parent).get_variables().size());
+    num_facts = 0;
+    for (const auto& variable : TaskProxy(*parent).get_variables()) {
+        fact_offsets.push_back(num_facts);
+        int domain_size = variable.get_domain_size();
+        num_facts += domain_size;
+        for (int i = 0; i < domain_size; ++i) {
             std::string name = variable.get_fact(i).get_name();
             if (name.substr(0, 5) == atom_prefix) {
                 std::string normalized_atom = name.substr(atom_prefix.size());
-                m_fact_index_to_dlplan_atom_index.push_back(
-                    parse_atom(normalized_atom, *m_instance_info, false, false));
+                fact_index_to_dlplan_atom_index.push_back(
+                    parse_atom(normalized_atom, *instance_info, false, false));
             } else {
-                m_fact_index_to_dlplan_atom_index.push_back(UNDEFINED);
+                fact_index_to_dlplan_atom_index.push_back(UNDEFINED);
             }
         }
     }
 }
 
-dlplan::core::State StateMapper::compute_dlplan_state(const State& state) const {
+std::vector<int> PropositionalTask::get_initial_state_values() const {
+    return initial_state_values;
+}
+
+std::vector<int> PropositionalTask::get_fact_ids(const State& state) const {
+    std::vector<int> fact_ids;
+    int num_vars = state.size();
+    fact_ids.reserve(num_vars);
+    for (FactProxy fact_proxy : state) {
+        FactPair fact = fact_proxy.get_pair();
+        int fact_id = get_fact_id(fact);
+        fact_ids.push_back(fact_id);
+    }
+    return fact_ids;
+}
+
+std::vector<int> PropositionalTask::get_fact_ids(const OperatorProxy &op, const State& state) const {
+    std::vector<int> fact_ids;
+    int num_vars = state.size();
+    for (EffectProxy effect : op.get_effects()) {
+        FactPair fact = effect.get_fact().get_pair();
+        for (int var2 = 0; var2 < num_vars; ++var2) {
+            if (fact.var == var2) {
+                continue;
+            }
+            int fact_id = get_fact_id(fact);
+            fact_ids.push_back(fact_id);
+        }
+    }
+    return fact_ids;
+}
+
+int PropositionalTask::get_fact_id(FactPair fact) const {
+    return fact_offsets[fact.var] + fact.value;
+}
+
+int PropositionalTask::get_num_facts() const {
+    return num_facts;
+}
+
+dlplan::core::State PropositionalTask::compute_dlplan_state(const State& state) const {
     std::vector<int> atom_indices;
-    atom_indices.reserve(m_fact_indexer.get_num_facts());
-    for (int fact_index : m_fact_indexer.get_fact_ids(state)) {
-        int dlplan_atom_index = m_fact_index_to_dlplan_atom_index[fact_index];
+    atom_indices.reserve(get_num_facts());
+    for (int fact_index : get_fact_ids(state)) {
+        int dlplan_atom_index = fact_index_to_dlplan_atom_index[fact_index];
         if (dlplan_atom_index != UNDEFINED) {
             atom_indices.push_back(dlplan_atom_index);
         }
     }
     atom_indices.shrink_to_fit();
-    return dlplan::core::State(m_instance_info, atom_indices, state.get_id().value);
+    return dlplan::core::State(instance_info, atom_indices, state.get_id().value);
 }
 
 }

@@ -13,11 +13,19 @@ namespace hierarchical_search_engine
 HierarchicalSearchEngine::HierarchicalSearchEngine(
     const options::Options &opts)
     : SearchEngine(opts),
-      modified_task(std::make_shared<extra_tasks::ModifiedInitialStateTask>(tasks::g_root_task, tasks::g_root_task->get_initial_state_values())),
+      propositional_task(nullptr),
+      search_task(std::make_shared<extra_tasks::ModifiedInitialStateTask>(tasks::g_root_task, tasks::g_root_task->get_initial_state_values())),
       parent_search_engine(nullptr) {
 }
 
-void HierarchicalSearchEngine::initialize(HierarchicalSearchEngine &parent)
+void HierarchicalSearchEngine::set_propositional_task(
+    std::shared_ptr<extra_tasks::PropositionalTask> propositional_task)
+{
+    propositional_task = propositional_task;
+}
+
+void HierarchicalSearchEngine::set_parent_search_engine(
+    HierarchicalSearchEngine &parent)
 {
     parent_search_engine = &parent;
 }
@@ -37,7 +45,7 @@ void HierarchicalSearchEngine::on_goal(const State &state, Plan &&partial_plan)
 void HierarchicalSearchEngine::set_initial_state(const State &state)
 {
     std::vector<int> initial_state_values = state.get_unpacked_values();
-    modified_task = std::make_shared<extra_tasks::ModifiedInitialStateTask>(tasks::g_root_task, std::move(initial_state_values));
+    search_task = std::make_shared<extra_tasks::ModifiedInitialStateTask>(tasks::g_root_task, std::move(initial_state_values));
 }
 
 static PluginTypePlugin<HierarchicalSearchEngine> _type_plugin(
