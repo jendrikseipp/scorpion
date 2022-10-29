@@ -17,9 +17,10 @@ namespace cegar {
 const Cost ShortestPaths::INF_COSTS = numeric_limits<Cost>::max();
 
 ShortestPaths::ShortestPaths(
-    const vector<int> &costs, const utils::CountdownTimer &timer, utils::LogProxy &log)
+    const vector<int> &costs, bool store_children, const utils::CountdownTimer &timer, utils::LogProxy &log)
     : timer(timer),
       log(log),
+      store_children(store_children),
       debug(log.is_at_least_debug()),
       task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})) {
     operator_costs.reserve(costs.size());
@@ -135,7 +136,7 @@ void ShortestPaths::set_shortest_path(int state, const Transition &new_parent) {
     int op_id = new_parent.op_id;
     if (states[state].parent != new_parent) {
         Transition old_parent = states[state].parent;
-        if (old_parent.is_defined()) {
+        if (store_children && old_parent.is_defined()) {
             Transition old_child(old_parent.op_id, state);
             ShortestPathChildren &old_children = states[old_parent.target_id].children;
             auto it = find(old_children.begin(), old_children.end(), old_child);
@@ -143,7 +144,7 @@ void ShortestPaths::set_shortest_path(int state, const Transition &new_parent) {
             utils::swap_and_pop_from_vector(old_children, it - old_children.begin());
         }
         states[state].parent = new_parent;
-        if (new_parent.is_defined()) {
+        if (store_children && new_parent.is_defined()) {
             states[new_parent.target_id].children.emplace_back(op_id, state);
         }
     }
@@ -184,21 +185,35 @@ void ShortestPaths::update_incrementally(
 
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
        will be updated again if v1 or v2 are dirty. */
-    // We need to copy the vector since we reuse the index v.
-    ShortestPathChildren old_children = states[v].children;
-    for (const Transition &old_child : old_children) {
-        int u = old_child.target_id;
-        int old_cost = convert_to_32_bit_cost(operator_costs[old_child.op_id]);
-        int op_id = abstraction.get_operator_between_states(u, v2, old_cost);
-        Transition new_parent = (op_id == UNDEFINED)
-            ? Transition(old_child.op_id, v1)
-            : Transition(op_id, v2);
-        set_shortest_path(u, new_parent);
+    if (store_children) {
+        // We need to copy the vector since we reuse the index v.
+        ShortestPathChildren old_children = states[v].children;
+        for (const Transition &old_child : old_children) {
+            int u = old_child.target_id;
+            int old_cost = convert_to_32_bit_cost(operator_costs[old_child.op_id]);
+            int op_id = abstraction.get_operator_between_states(u, v2, old_cost);
+            Transition new_parent = (op_id == UNDEFINED)
+                ? Transition(old_child.op_id, v1)
+                : Transition(op_id, v2);
+            set_shortest_path(u, new_parent);
 
-        if (timer.is_expired()) {
-            // All goal distances are always lower bounds, so we can abort at any time.
-            cout << "Timer expired --> abort incremental search" << endl;
-            return;
+            if (timer.is_expired()) {
+                // All goal distances are always lower bounds, so we can abort at any time.
+                cout << "Timer expired --> abort incremental search" << endl;
+                return;
+            }
+        }
+    } else {
+        for (int state : {v1, v2}) {
+            for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
+                int u = incoming.target_id;
+                int op = incoming.op_id;
+                const Transition &sp = states[u].parent;
+                if (sp.target_id == v &&
+                    operator_costs[op] == operator_costs[sp.op_id]) {
+                    set_shortest_path(u, Transition(op, state));
+                }
+            }
         }
     }
 
@@ -253,15 +268,30 @@ void ShortestPaths::update_incrementally(
             });
         if (!reconnected) {
             mark_dirty(state);
-            for (const Transition &t : states[state].children) {
-                int prev = t.target_id;
-                assert(states[prev].parent.target_id == state);
-                if (!states[prev].dirty_candidate && !states[prev].dirty) {
-                    if (debug) {
-                        log << "Add " << prev << " to candidate queue" << endl;
+
+            if (store_children) {
+                for (const Transition &t : states[state].children) {
+                    int prev = t.target_id;
+                    assert(states[prev].parent.target_id == state);
+                    if (!states[prev].dirty_candidate && !states[prev].dirty) {
+                        if (debug) {
+                            log << "Add " << prev << " to candidate queue" << endl;
+                        }
+                        states[prev].dirty_candidate = true;
+                        candidate_queue.push(states[prev].goal_distance, prev);
                     }
-                    states[prev].dirty_candidate = true;
-                    candidate_queue.push(states[prev].goal_distance, prev);
+                }
+            } else {
+                for (const Transition &t : abstraction.get_incoming_transitions(state)) {
+                    int prev = t.target_id;
+                    if (!states[prev].dirty_candidate && !states[prev].dirty &&
+                        states[prev].parent.target_id == state) {
+                        if (debug) {
+                            log << "Add " << prev << " to candidate queue" << endl;
+                        }
+                        states[prev].dirty_candidate = true;
+                        candidate_queue.push(states[prev].goal_distance, prev);
+                    }
                 }
             }
         }
@@ -449,7 +479,7 @@ bool ShortestPaths::test_distances(
 }
 
 void ShortestPaths::print_statistics() const {
-    if (false) {
+    if (false && store_children) {
         map<int, int> children_counts;
         for (const StateInfo &state : states) {
             ++children_counts[state.children.size()];
@@ -460,11 +490,13 @@ void ShortestPaths::print_statistics() const {
     }
     cout << "Shortest path tree estimated memory usage: "
          << estimate_memory_usage_in_bytes(states) / 1024 << " KB" << endl;
-    uint64_t mem_usage = 0;
-    for (const StateInfo &state : states) {
-        mem_usage += estimate_memory_usage_in_bytes(state.children) - sizeof(state.children);
+    if (store_children) {
+        uint64_t mem_usage = 0;
+        for (const StateInfo &state : states) {
+            mem_usage += estimate_memory_usage_in_bytes(state.children) - sizeof(state.children);
+        }
+        cout << "Shortest path children estimated memory usage: "
+             << mem_usage / 1024 << " KB" << endl;
     }
-    cout << "Shortest path children estimated memory usage: "
-         << mem_usage / 1024 << " KB" << endl;
 }
 }

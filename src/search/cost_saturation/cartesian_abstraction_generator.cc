@@ -110,6 +110,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_transitions(opts.get<int>("max_transitions")),
       max_time(opts.get<double>("max_time")),
       search_strategy(opts.get<cegar::SearchStrategy>("search_strategy")),
+      store_spt_children(opts.get<bool>("store_shortest_path_tree_children")),
       pick_flawed_abstract_state(
           opts.get<cegar::PickFlawedAbstractState>("pick_flawed_abstract_state")),
       pick_split(opts.get<cegar::PickSplit>("pick_split")),
@@ -147,6 +148,7 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         max_concrete_states_per_abstract_state,
         max_state_expansions,
         search_strategy,
+        store_spt_children,
         *rng,
         log,
         dot_graph_verbosity);

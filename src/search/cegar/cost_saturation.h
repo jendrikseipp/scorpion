@@ -39,6 +39,7 @@ class CostSaturation {
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
     const SearchStrategy search_strategy;
+    const bool store_spt_children;
     const int memory_padding_mb;
     const bool use_max;
     const bool use_fixed_time_limits;
@@ -76,6 +77,7 @@ public:
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
         SearchStrategy search_strategy,
+        bool store_spt_children,
         int memory_padding_mb,
         bool use_max,
         bool use_fixed_time_limits,

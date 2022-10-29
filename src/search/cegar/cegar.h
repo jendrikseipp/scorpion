@@ -81,6 +81,7 @@ public:
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
         SearchStrategy search_strategy,
+        bool store_spt_children,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,
         DotGraphVerbosity dot_graph_verbosity);

@@ -107,6 +107,7 @@ class ShortestPaths {
 
     const utils::CountdownTimer &timer;
     utils::LogProxy &log;
+    const bool store_children;
     const bool debug;
     const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;
@@ -127,7 +128,10 @@ class ShortestPaths {
 
 public:
     ShortestPaths(
-        const std::vector<int> &costs, const utils::CountdownTimer &timer, utils::LogProxy &log);
+        const std::vector<int> &costs,
+        bool store_children,
+        const utils::CountdownTimer &timer,
+        utils::LogProxy &log);
 
     // Use Dijkstra's algorithm to compute the shortest path tree from scratch.
     void recompute(

@@ -31,6 +31,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_transitions;
     const double max_time;
     const cegar::SearchStrategy search_strategy;
+    const bool store_spt_children;
     const cegar::PickFlawedAbstractState pick_flawed_abstract_state;
     const cegar::PickSplit pick_split;
     const cegar::PickSplit tiebreak_split;

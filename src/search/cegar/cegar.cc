@@ -33,6 +33,7 @@ CEGAR::CEGAR(
     int max_concrete_states_per_abstract_state,
     int max_state_expansions,
     SearchStrategy search_strategy,
+    bool store_spt_children,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
     DotGraphVerbosity dot_graph_verbosity)
@@ -55,7 +56,7 @@ CEGAR::CEGAR(
             task_properties::get_operator_costs(task_proxy));
     } else if (search_strategy == SearchStrategy::INCREMENTAL) {
         shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-            task_properties::get_operator_costs(task_proxy), timer, log);
+            task_properties::get_operator_costs(task_proxy), store_spt_children, timer, log);
         flaw_search = utils::make_unique_ptr<FlawSearch>(
             task, *abstraction, *shortest_paths, rng,
             pick_flawed_abstract_state, pick_split, tiebreak_split,
@@ -314,5 +315,8 @@ void CEGAR::refinement_loop() {
 void CEGAR::print_statistics() const {
     abstraction->print_statistics();
     flaw_search->print_statistics();
+    if (shortest_paths) {
+        shortest_paths->print_statistics();
+    }
 }
 }

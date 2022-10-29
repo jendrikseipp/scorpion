@@ -40,6 +40,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<int>("max_concrete_states_per_abstract_state"),
         opts.get<int>("max_state_expansions"),
         opts.get<SearchStrategy>("search_strategy"),
+        opts.get<bool>("store_shortest_path_tree_children"),
         opts.get<int>("memory_padding"),
         opts.get<bool>("use_max"),
         opts.get<bool>("use_fixed_time_limits"),
