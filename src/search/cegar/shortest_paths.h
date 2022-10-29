@@ -89,7 +89,6 @@ struct StateInfo {
     bool dirty_candidate;
     bool dirty;
     Transition parent;
-    Transitions children;
 
     StateInfo()
         : goal_distance(0),
@@ -98,7 +97,7 @@ struct StateInfo {
     }
 };
 static_assert(
-    sizeof(StateInfo) == sizeof(Cost) + sizeof(void *) + sizeof(Transition) + sizeof(Transitions),
+    sizeof(StateInfo) == sizeof(Cost) + sizeof(void *) + sizeof(Transition),
     "StateInfo has unexpected size");
 
 
@@ -117,11 +116,13 @@ class ShortestPaths {
     HeapQueue open_queue;
     std::deque<StateInfo> states;
     std::vector<int> dirty_states;
+    std::deque<Transitions> children;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
     Cost convert_to_64_bit_cost(int cost) const;
 
+    void resize(int num_states);
     void set_shortest_path(int state, const Transition &new_parent);
     void mark_dirty(int state);
     void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
