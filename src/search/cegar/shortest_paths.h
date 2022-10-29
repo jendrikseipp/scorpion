@@ -89,7 +89,7 @@ struct StateInfo {
     bool dirty_candidate;
     bool dirty;
     Transition parent;
-    ShortestPathChildren children;
+    Transitions children;
 
     StateInfo()
         : goal_distance(0),
@@ -98,7 +98,7 @@ struct StateInfo {
     }
 };
 static_assert(
-    sizeof(StateInfo) == sizeof(Cost) + sizeof(void *) + sizeof(Transition) + sizeof(ShortestPathChildren),
+    sizeof(StateInfo) == sizeof(Cost) + sizeof(void *) + sizeof(Transition) + sizeof(Transitions),
     "StateInfo has unexpected size");
 
 

@@ -138,7 +138,7 @@ void ShortestPaths::set_shortest_path(int state, const Transition &new_parent) {
         Transition old_parent = states[state].parent;
         if (store_children && old_parent.is_defined()) {
             Transition old_child(old_parent.op_id, state);
-            ShortestPathChildren &old_children = states[old_parent.target_id].children;
+            Transitions &old_children = states[old_parent.target_id].children;
             auto it = find(old_children.begin(), old_children.end(), old_child);
             assert(it != old_children.end());
             utils::swap_and_pop_from_vector(old_children, it - old_children.begin());
@@ -187,7 +187,7 @@ void ShortestPaths::update_incrementally(
        will be updated again if v1 or v2 are dirty. */
     if (store_children) {
         // We need to copy the vector since we reuse the index v.
-        ShortestPathChildren old_children = states[v].children;
+        Transitions old_children = states[v].children;
         for (const Transition &old_child : old_children) {
             int u = old_child.target_id;
             int old_cost = convert_to_32_bit_cost(operator_costs[old_child.op_id]);
