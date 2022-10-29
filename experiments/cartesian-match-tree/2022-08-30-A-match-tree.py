@@ -112,11 +112,11 @@ if not project.REMOTE:
     exp.add_step("remove-eval-dir", shutil.rmtree, exp.eval_dir, ignore_errors=True)
     project.add_scp_step(exp, SCP_LOGIN, REMOTE_REPOS_DIR)
 
-algorithms = []
+algorithms = ["single-ts", "batch-ts", "single-sg", "batch-sg"]
 
 project.add_absolute_report(
     exp, attributes=ATTRIBUTES, filter=[project.add_evaluations_per_time, project.group_domains],
-    #filter_algorithm=algorithms,
+    filter_algorithm=algorithms,
 )
 
 exp.add_report(PerTaskComparison(attributes=["initial_h_value"]))
