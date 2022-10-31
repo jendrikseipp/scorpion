@@ -54,3 +54,5 @@ Extensions: we might want to perform parent goal check in nongoal states of chil
 ## Implementational Details
 - Q1: sharing state space over searches? A: Top level search creates a shared SearchSpace that remains for the rest of the search.
 - Q2: how to set new initial state with low overhead? A: `class ModifiedInitialStateTask : public DelegatingTask {};` When modifying a SearchEngines task, this information propagates to the task_proxy.
+
+- filename string: filename_1 (filename_2 (filename_3 (filename_4, filename_5)))

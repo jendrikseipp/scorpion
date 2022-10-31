@@ -1,6 +1,6 @@
 #include "propositional_task.h"
 
-#include "tokenizer.h"
+#include "../utils/tokenizer.h"
 
 #include <fstream>
 
@@ -36,15 +36,15 @@ enum class AtomTokenType {
 
 
 static const std::vector<std::pair<AtomTokenType, std::regex>> atom_token_regexes = {
-    { AtomTokenType::COMMA, Tokenizer<AtomTokenType>::build_regex(",") },
-    { AtomTokenType::OPENING_PARENTHESIS, Tokenizer<AtomTokenType>::build_regex("\\(") },
-    { AtomTokenType::CLOSING_PARENTHESIS, Tokenizer<AtomTokenType>::build_regex("\\)") },
-    { AtomTokenType::NAME, Tokenizer<AtomTokenType>::build_regex("[a-zA-Z0-9_@\\-]+") },
+    { AtomTokenType::COMMA, utils::Tokenizer<AtomTokenType>::build_regex(",") },
+    { AtomTokenType::OPENING_PARENTHESIS, utils::Tokenizer<AtomTokenType>::build_regex("\\(") },
+    { AtomTokenType::CLOSING_PARENTHESIS, utils::Tokenizer<AtomTokenType>::build_regex("\\)") },
+    { AtomTokenType::NAME, utils::Tokenizer<AtomTokenType>::build_regex("[a-zA-Z0-9_@\\-]+") },
 };
 
 
 static int parse_atom(const std::string& atom_name, dlplan::core::InstanceInfo& instance_info, bool is_static, bool is_goal) {
-    auto tokens = Tokenizer<AtomTokenType>().tokenize(atom_name, atom_token_regexes);
+    auto tokens = utils::Tokenizer<AtomTokenType>().tokenize(atom_name, atom_token_regexes);
     if (tokens.size() < 3) throw std::runtime_error("parse_atom - insufficient number of tokens: " + std::to_string(tokens.size()));
     if (tokens[0].first != AtomTokenType::NAME) throw std::runtime_error("parse_atom_line - expected predicate name at position 0.");
     if (tokens[1].first != AtomTokenType::OPENING_PARENTHESIS) throw std::runtime_error("parse_atom_line - expected opening parenthesis at position 1.");
@@ -98,10 +98,10 @@ static void parse_goal_atoms_file(const std::string& filename, dlplan::core::Ins
 
 
 static const std::vector<std::pair<AtomTokenType, std::regex>> fd_atom_token_regexes = {
-    { AtomTokenType::COMMA, Tokenizer<AtomTokenType>::build_regex(",") },
-    { AtomTokenType::OPENING_PARENTHESIS, Tokenizer<AtomTokenType>::build_regex("\\(") },
-    { AtomTokenType::CLOSING_PARENTHESIS, Tokenizer<AtomTokenType>::build_regex("\\)") },
-    { AtomTokenType::NAME, Tokenizer<AtomTokenType>::build_regex("[a-zA-Z0-9_@\\-]+") },
+    { AtomTokenType::COMMA, utils::Tokenizer<AtomTokenType>::build_regex(",") },
+    { AtomTokenType::OPENING_PARENTHESIS, utils::Tokenizer<AtomTokenType>::build_regex("\\(") },
+    { AtomTokenType::CLOSING_PARENTHESIS, utils::Tokenizer<AtomTokenType>::build_regex("\\)") },
+    { AtomTokenType::NAME, utils::Tokenizer<AtomTokenType>::build_regex("[a-zA-Z0-9_@\\-]+") },
 };
 
 

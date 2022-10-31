@@ -9,6 +9,7 @@
 #include "../../task_utils/successor_generator.h"
 #include "../../task_utils/task_properties.h"
 #include "../../utils/logging.h"
+#include "../../utils/memory.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -23,6 +24,20 @@ IWSearch::IWSearch(const Options &opts)
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
       m_initial_state_id(-1),
       m_novelty_table(0) {
+    switch (opts.get<GoalTestEnum>("goal_test")) {
+        case GoalTestEnum::TOP_GOAL: {
+            goal_test = utils::make_unique_ptr<goal_test::TopGoal>(opts);
+            break;
+        }
+        case GoalTestEnum::SKETCH_SUBGOAL: {
+            goal_test = utils::make_unique_ptr<goal_test::SketchSubgoal>(opts);
+            break;
+        }
+        case GoalTestEnum::INCREMENT_GOAL_COUNT: {
+            goal_test = utils::make_unique_ptr<goal_test::IncrementGoalCount>(opts);
+            break;
+        }
+    }
     utils::g_log << "Setting up iterative width search." << endl;
 }
 
@@ -128,14 +143,10 @@ void IWSearch::dump_search_space() const {
 
 static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis("Iterated width search", "");
-
     parser.add_option<int>(
         "width", "maximum conjunction size", "2");
     SearchEngine::add_options_to_parser(parser);
-    parser.add_option<shared_ptr<goal_test::GoalTest>>(
-        "goal_test",
-        "goal test",
-        "top_goal()");
+    add_goal_test_option_to_parser(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run()) {

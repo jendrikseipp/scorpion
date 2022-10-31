@@ -25,6 +25,9 @@ class IWSearch : public hierarchical_search_engine::HierarchicalSearchEngine {
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
 
+    std::unique_ptr<goal_test::GoalTest> goal_test;
+
+private:
     bool is_novel(const State &state);
     bool is_novel(const OperatorProxy &op, const State &succ_state);
 

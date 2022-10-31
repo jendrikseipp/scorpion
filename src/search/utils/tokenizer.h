@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-namespace extra_tasks {
+namespace utils {
 template<typename TOKEN_TYPE>
 class Tokenizer {
 public:

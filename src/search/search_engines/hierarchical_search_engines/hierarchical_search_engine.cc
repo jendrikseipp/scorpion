@@ -4,12 +4,27 @@
 #include "../../plugin.h"
 #include "../../tasks/root_task.h"
 
+#include <string>
 #include <deque>
 #include <memory>
 #include <vector>
 
+using namespace std;
+
+
 namespace hierarchical_search_engine
 {
+void add_goal_test_option_to_parser(options::OptionParser &parser) {
+    vector<string> strategies =
+    {"top_goal", "sketch_subgoal", "increment_goal_count"};
+    parser.add_enum_option<GoalTestEnum>(
+        "goal_test",
+        strategies,
+        "goal test strategy",
+        "top_goal");
+}
+
+
 HierarchicalSearchEngine::HierarchicalSearchEngine(
     const options::Options &opts)
     : SearchEngine(opts),
