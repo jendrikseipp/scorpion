@@ -107,6 +107,7 @@ class ShortestPaths {
     const utils::CountdownTimer &timer;
     utils::LogProxy &log;
     const bool store_children;
+    const bool store_parents;
     const bool debug;
     const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;
@@ -117,13 +118,18 @@ class ShortestPaths {
     std::deque<StateInfo> states;
     std::vector<int> dirty_states;
     std::deque<Transitions> children;
+    std::deque<Transitions> parents;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
     Cost convert_to_64_bit_cost(int cost) const;
 
     void resize(int num_states);
-    void set_shortest_path(int state, const Transition &new_parent);
+    void set_parent(int state, const Transition &new_parent);
+    void add_parent(int state, const Transition &new_parent);
+    void remove_child(int state, const Transition &child);
+    void remove_parent(int state, const Transition &parent);
+    void clear_parents(int state);
     void mark_dirty(int state);
     void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
 
@@ -131,6 +137,7 @@ public:
     ShortestPaths(
         const std::vector<int> &costs,
         bool store_children,
+        bool store_parents,
         const utils::CountdownTimer &timer,
         utils::LogProxy &log);
 

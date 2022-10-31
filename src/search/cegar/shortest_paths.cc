@@ -17,12 +17,21 @@ namespace cegar {
 const Cost ShortestPaths::INF_COSTS = numeric_limits<Cost>::max();
 
 ShortestPaths::ShortestPaths(
-    const vector<int> &costs, bool store_children, const utils::CountdownTimer &timer, utils::LogProxy &log)
+    const vector<int> &costs,
+    bool store_children,
+    bool store_parents,
+    const utils::CountdownTimer &timer,
+    utils::LogProxy &log)
     : timer(timer),
       log(log),
       store_children(store_children),
+      store_parents(store_parents),
       debug(log.is_at_least_debug()),
       task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})) {
+    if (store_parents && !store_children) {
+        cerr << "if store_parents=true, store_children must also be set to true." << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
+    }
     operator_costs.reserve(costs.size());
     for (int cost : costs) {
         operator_costs.push_back(convert_to_64_bit_cost(cost));
@@ -67,6 +76,9 @@ void ShortestPaths::resize(int num_states) {
     if (store_children) {
         children.resize(num_states);
     }
+    if (store_parents) {
+        parents.resize(num_states);
+    }
 }
 
 void ShortestPaths::recompute(
@@ -81,7 +93,7 @@ void ShortestPaths::recompute(
     for (int goal : goals) {
         Cost dist = 0;
         states[goal].goal_distance = dist;
-        set_shortest_path(goal, Transition());
+        clear_parents(goal);
         open_queue.push(dist, goal);
     }
     while (!open_queue.empty()) {
@@ -101,8 +113,10 @@ void ShortestPaths::recompute(
             Cost succ_g = add_costs(g, op_cost);
             if (succ_g < states[succ_id].goal_distance) {
                 states[succ_id].goal_distance = succ_g;
-                set_shortest_path(succ_id, Transition(op_id, state_id));
+                set_parent(succ_id, Transition(op_id, state_id));
                 open_queue.push(succ_g, succ_id);
+            } else if (store_parents && succ_g != INF_COSTS && succ_g == states[succ_id].goal_distance) {
+                add_parent(succ_id, Transition(op_id, state_id));
             }
         }
     }
@@ -119,7 +133,12 @@ unique_ptr<Solution> ShortestPaths::extract_solution(
     unique_ptr<Solution> solution = utils::make_unique_ptr<Solution>();
     assert(!goals.count(current_state));
     while (!goals.count(current_state)) {
-        const Transition &t = states[current_state].parent;
+        Transition t = states[current_state].parent;
+        if (store_parents) {
+            assert(!parents[current_state].empty());
+            // Pick arbitrary shortest path.
+            t = parents[current_state].front();
+        }
         assert(t.op_id != UNDEFINED);
         assert(t.target_id != UNDEFINED);
         assert(t.target_id != current_state);
@@ -139,21 +158,82 @@ vector<int> ShortestPaths::get_goal_distances() const {
     return distances;
 }
 
-void ShortestPaths::set_shortest_path(int state, const Transition &new_parent) {
-    int op_id = new_parent.op_id;
-    if (states[state].parent != new_parent) {
-        Transition old_parent = states[state].parent;
-        if (store_children && old_parent.is_defined()) {
-            Transition old_child(old_parent.op_id, state);
-            Transitions &old_children = children[old_parent.target_id];
-            auto it = find(old_children.begin(), old_children.end(), old_child);
-            assert(it != old_children.end());
-            utils::swap_and_pop_from_vector(old_children, it - old_children.begin());
+void ShortestPaths::set_parent(int state, const Transition &new_parent) {
+    if (debug) {
+        log << "Set parent " << new_parent << " for " << state << endl;
+    }
+    if (store_parents) {
+        clear_parents(state);
+        add_parent(state, new_parent);
+    } else {
+        int op_id = new_parent.op_id;
+        if (states[state].parent != new_parent) {
+            Transition old_parent = states[state].parent;
+            if (store_children && old_parent.is_defined()) {
+                Transition old_child(old_parent.op_id, state);
+                Transitions &old_children = children[old_parent.target_id];
+                auto it = find(old_children.begin(), old_children.end(), old_child);
+                assert(it != old_children.end());
+                utils::swap_and_pop_from_vector(old_children, it - old_children.begin());
+            }
+            states[state].parent = new_parent;
+            if (store_children && new_parent.is_defined()) {
+                children[new_parent.target_id].emplace_back(op_id, state);
+            }
         }
-        states[state].parent = new_parent;
-        if (store_children && new_parent.is_defined()) {
-            children[new_parent.target_id].emplace_back(op_id, state);
+    }
+}
+
+void ShortestPaths::add_parent(int state, const Transition &new_parent) {
+    if (debug) {
+        log << "Add parent " << new_parent << " for " << state << endl;
+    }
+    assert(store_parents);
+    assert(new_parent.is_defined());
+    assert(find(parents[state].begin(), parents[state].end(), new_parent) == parents[state].end());
+    parents[state].push_back(new_parent);
+    if (store_children) {
+        Transitions &target_children = children[new_parent.target_id];
+        assert(find(target_children.begin(), target_children.end(),
+                    Transition(new_parent.op_id, state)) == target_children.end());
+        target_children.emplace_back(new_parent.op_id, state);
+    }
+}
+
+void ShortestPaths::remove_child(int state, const Transition &child) {
+    if (debug) {
+        log << "Remove child " << child << " from " << state << endl;
+    }
+    assert(store_parents);
+    Transitions &state_children = children[state];
+    auto it = find(state_children.begin(), state_children.end(), child);
+    assert(it != state_children.end());
+    utils::swap_and_pop_from_vector(state_children, it - state_children.begin());
+}
+
+void ShortestPaths::remove_parent(int state, const Transition &parent) {
+    if (debug) {
+        log << "Remove parent " << parent << " from " << state << endl;
+    }
+    assert(store_parents);
+    assert(parent.is_defined());
+    auto it = find(parents[state].begin(), parents[state].end(), parent);
+    assert(it != parents[state].end());
+    utils::swap_and_pop_from_vector(parents[state], it - parents[state].begin());
+}
+
+void ShortestPaths::clear_parents(int state) {
+    if (debug) {
+        log << "Clear parents for " << state << endl;
+    }
+    if (store_parents) {
+        while (!parents[state].empty()) {
+            Transition parent = move(parents[state].back());
+            remove_child(parent.target_id, Transition(parent.op_id, state));
+            parents[state].pop_back();
         }
+    } else {
+        set_parent(state, Transition());
     }
 }
 
@@ -161,10 +241,10 @@ void ShortestPaths::mark_dirty(int state) {
     if (debug) {
         log << "Mark " << state << " as dirty" << endl;
     }
-    states[state].dirty = true;
-    // Previous shortest path is invalid now.
-    set_shortest_path(state, Transition());
+    assert(store_children || !states[state].parent.is_defined());
+    assert(!store_children || parents[state].empty());
     assert(!count(dirty_states.begin(), dirty_states.end(), state));
+    states[state].dirty = true;
     dirty_states.push_back(state);
 }
 
@@ -190,19 +270,53 @@ void ShortestPaths::update_incrementally(
     // Copy distance from split state. Distances will be updated if necessary.
     states[v1].goal_distance = states[v2].goal_distance = states[v].goal_distance;
 
+    if (debug) {
+        log << "Reconnect children of split node." << endl;
+        for (size_t state = 0; state < parents.size(); ++state) {
+        cout << state << " children: " << children[state] << endl;
+        cout << state << " parents: " << parents[state] << endl;
+    }
+    }
+
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
        will be updated again if v1 or v2 are dirty. */
     if (store_children) {
         // We need to copy the vector since we reuse the index v.
-        Transitions old_children = children[v];
+        Transitions old_children = move(children[v]);
+        assert(children[v1].empty());
+        assert(children[v2].empty());
+
+        parents[v1] = parents[v2] = parents[v];
+        int new_state_id = (v1 == v) ? v2 : v1;
+        for (const Transition &parent : parents[v]) {
+            children[parent.target_id].emplace_back(parent.op_id, new_state_id);
+        }
+
         for (const Transition &old_child : old_children) {
+            int op_id = old_child.op_id;
             int u = old_child.target_id;
-            int old_cost = convert_to_32_bit_cost(operator_costs[old_child.op_id]);
-            int op_id = abstraction.get_operator_between_states(u, v2, old_cost);
-            Transition new_parent = (op_id == UNDEFINED)
-                ? Transition(old_child.op_id, v1)
-                : Transition(op_id, v2);
-            set_shortest_path(u, new_parent);
+
+            remove_parent(u, Transition(op_id, v));
+
+            if (store_parents) {
+                bool has_transition_to_v1 = abstraction.has_transition(u, op_id, v1);
+                // The old transition must be valid for at least one new state.
+                bool has_transition_to_v2 =
+                    !has_transition_to_v1 || abstraction.has_transition(u, op_id, v2);
+                if (has_transition_to_v1) {
+                    add_parent(u, Transition(op_id, v1));
+                }
+                if (has_transition_to_v2) {
+                    add_parent(u, Transition(op_id, v2));
+                }
+            } else {
+                int old_cost = convert_to_32_bit_cost(operator_costs[op_id]);
+                int new_op_id = abstraction.get_operator_between_states(u, v2, old_cost);
+                Transition new_parent = (new_op_id == UNDEFINED)
+                    ? Transition(op_id, v1)
+                    : Transition(new_op_id, v2);
+                set_parent(u, new_parent);
+            }
 
             if (timer.is_expired()) {
                 // All goal distances are always lower bounds, so we can abort at any time.
@@ -211,6 +325,9 @@ void ShortestPaths::update_incrementally(
             }
         }
     } else {
+        assert(!store_parents);
+        states[v1].parent = Transition();
+        states[v2].parent = Transition();
         for (int state : {v1, v2}) {
             for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
                 int u = incoming.target_id;
@@ -218,7 +335,7 @@ void ShortestPaths::update_incrementally(
                 const Transition &sp = states[u].parent;
                 if (sp.target_id == v &&
                     operator_costs[op] == operator_costs[sp.op_id]) {
-                    set_shortest_path(u, Transition(op, state));
+                    set_parent(u, Transition(op, state));
                 }
             }
         }
@@ -252,34 +369,54 @@ void ShortestPaths::update_incrementally(
         assert(!states[state].dirty);
         bool reconnected = false;
         // Try to reconnect to settled, solvable state.
-        abstraction.for_each_outgoing_transition(
-            state, [&](const Transition &t) {
-                int succ = t.target_id;
-                int op_id = t.op_id;
-                if (!states[succ].dirty &&
-                    add_costs(states[succ].goal_distance, operator_costs[op_id])
-                    == states[state].goal_distance) {
-                    if (debug) {
-                        cout << "Reconnect " << state << " to " << succ << " via "
-                             << op_id << " with cost " << operator_costs[op_id]
-                             << " (" << convert_to_32_bit_cost(operator_costs[op_id])
-                             << ")" << endl;
+        if (store_parents) {
+            // Remove invalid transitions from children and parents vectors.
+            parents[state].erase(
+                remove_if(
+                    parents[state].begin(), parents[state].end(),
+                    [&](const Transition &parent) {
+                        bool valid_parent =
+                            !states[parent.target_id].dirty &&
+                            abstraction.has_transition(state, parent.op_id, parent.target_id);
+                        if (!valid_parent) {
+                            remove_child(parent.target_id, Transition(parent.op_id, state));
+                        }
+                        return !valid_parent;
+                    }), parents[state].end());
+            reconnected = !parents[state].empty();
+        } else {
+            abstraction.for_each_outgoing_transition(
+                state, [&](const Transition &t) {
+                    int succ = t.target_id;
+                    int op_id = t.op_id;
+                    if (!states[succ].dirty &&
+                        add_costs(states[succ].goal_distance, operator_costs[op_id])
+                        == states[state].goal_distance) {
+                        if (debug) {
+                            cout << "Reconnect " << state << " to " << succ << " via "
+                                 << op_id << " with cost " << operator_costs[op_id]
+                                 << " (" << convert_to_32_bit_cost(operator_costs[op_id])
+                                 << ")" << endl;
+                        }
+                        assert(states[state].goal_distance != INF_COSTS);
+                        assert(states[succ].goal_distance != INF_COSTS);
+                        assert(operator_costs[op_id] != INF_COSTS);
+                        set_parent(state, Transition(op_id, succ));
+                        reconnected = true;
                     }
-                    assert(states[state].goal_distance != INF_COSTS);
-                    assert(states[succ].goal_distance != INF_COSTS);
-                    assert(operator_costs[op_id] != INF_COSTS);
-                    set_shortest_path(state, Transition(op_id, succ));
-                    reconnected = true;
-                }
-                return reconnected;
-            });
+                    return reconnected;
+                });
+        }
+        if (debug) {
+            log << "Reconnected: " << boolalpha << reconnected << endl;
+        }
         if (!reconnected) {
             mark_dirty(state);
 
             if (store_children) {
                 for (const Transition &t : children[state]) {
                     int prev = t.target_id;
-                    assert(states[prev].parent.target_id == state);
+                    assert(store_parents || states[prev].parent.target_id == state);
                     if (!states[prev].dirty_candidate && !states[prev].dirty) {
                         if (debug) {
                             log << "Add " << prev << " to candidate queue" << endl;
@@ -292,7 +429,11 @@ void ShortestPaths::update_incrementally(
                 for (const Transition &t : abstraction.get_incoming_transitions(state)) {
                     int prev = t.target_id;
                     if (!states[prev].dirty_candidate && !states[prev].dirty &&
-                        states[prev].parent.target_id == state) {
+                        ((store_parents &&
+                          find_if(parents[prev].begin(), parents[prev].end(),
+                                  [state](const Transition &t) {return t.target_id == state;})
+                          != parents[prev].end()) ||
+                         (!store_parents && states[prev].parent.target_id == state))) {
                         if (debug) {
                             log << "Add " << prev << " to candidate queue" << endl;
                         }
@@ -364,7 +505,9 @@ void ShortestPaths::update_incrementally(
                 Cost new_dist = add_costs(cost, succ_dist);
                 if (new_dist < min_dist) {
                     min_dist = new_dist;
-                    set_shortest_path(state, Transition(op_id, succ));
+                    set_parent(state, Transition(op_id, succ));
+                } else if (store_parents && new_dist != INF_COSTS && new_dist == min_dist) {
+                    add_parent(state, Transition(op_id, succ));
                 }
             }
         }
@@ -401,8 +544,11 @@ void ShortestPaths::update_incrementally(
             if (states[succ].dirty && succ_g < states[succ].goal_distance) {
                 assert(count(dirty_states.begin(), dirty_states.end(), succ) == 1);
                 states[succ].goal_distance = succ_g;
-                set_shortest_path(succ, Transition(op_id, state));
+                set_parent(succ, Transition(op_id, state));
                 open_queue.push(succ_g, succ);
+            } else if (store_parents && states[succ].dirty &&
+                       succ_g == states[succ].goal_distance && succ_g != INF_COSTS) {
+                add_parent(succ, Transition(op_id, state));
             }
         }
 
@@ -444,24 +590,44 @@ bool ShortestPaths::test_distances(
     vector<int> init_distances(num_states, 0); // Don't compute reachability info.
     // = compute_distances(out, costs, {init_state});
 
-    for (int i = 0; i < num_states; ++i) {
+    for (int v = 0; v < num_states; ++v) {
         if (debug) {
-            log << "Test state " << i << endl;
+            log << "Test state " << v << endl;
         }
-        if (states[i].goal_distance != INF_COSTS &&
-            init_distances[i] != INF &&
-            !goals.count(i)) {
-            const Transition &t = states[i].parent;
+        if (store_parents) {
+            if (debug) {
+                cout << "children: " << children[v] << endl;
+                cout << "parents: " << parents[v] << endl;
+            }
+            for (const Transition &parent : parents[v]) {
+                int w = parent.target_id;
+                int op_id = parent.op_id;
+                assert(count(children[w].begin(), children[w].end(), Transition(op_id, v)) == 1);
+                assert(abstraction.has_transition(v, op_id, w));
+            }
+            for (const Transition &child : children[v]) {
+                int u = child.target_id;
+                int op_id = child.op_id;
+                assert(count(parents[u].begin(), parents[u].end(), Transition(op_id, v)) == 1);
+                assert(abstraction.has_transition(u, op_id, v));
+            }
+        } else {
+            if (states[v].goal_distance == INF_COSTS ||
+                init_distances[v] == INF ||
+                goals.count(v)) {
+                continue;
+            }
+            const Transition &t = states[v].parent;
             if (debug) {
                 log << "Shortest path: " << t << endl;
             }
             assert(t.is_defined());
-            Transitions out = abstraction.get_outgoing_transitions(i);
+            Transitions out = abstraction.get_outgoing_transitions(v);
             if (debug) {
                 log << "Outgoing transitions: " << out << endl;
             }
             assert(count(out.begin(), out.end(), t) == 1);
-            assert(states[i].goal_distance ==
+            assert(states[v].goal_distance ==
                    add_costs(operator_costs[t.op_id], states[t.target_id].goal_distance));
         }
     }

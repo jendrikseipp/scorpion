@@ -305,6 +305,16 @@ bool MatchTree::has_transition(
     return true;
 }
 
+bool MatchTree::has_transition(
+    const AbstractState &src, int op_id, const AbstractState &dest) const {
+    int num_vars = src.get_cartesian_set().get_num_variables();
+    vector<bool> domains_intersect(num_vars, false);
+    for (int var = 0; var < num_vars; ++var) {
+        domains_intersect[var] = src.domain_subsets_intersect(dest.get_cartesian_set(), var);
+    }
+    return has_transition(src, op_id, dest, domains_intersect);
+}
+
 int MatchTree::get_operator_between_states(
     const AbstractState &src, const AbstractState &dest, int cost) const {
     int num_vars = src.get_cartesian_set().get_num_variables();

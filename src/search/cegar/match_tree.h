@@ -48,14 +48,14 @@ class MatchTree {
 
     int get_state_id(NodeID node_id) const;
 
+    bool has_transition(
+        const AbstractState &src, int op_id, const AbstractState &dest,
+        const std::vector<bool> &domains_intersect) const;
     bool incoming_operator_only_loops(const AbstractState &state, int op_id) const;
     Operators get_incoming_operators(const AbstractState &state) const;
     Operators get_outgoing_operators(const AbstractState &state) const;
     Matcher get_incoming_matcher(int op_id) const;
     Matcher get_outgoing_matcher(int op_id) const;
-    bool has_transition(
-        const AbstractState &src, int op_id, const AbstractState &dest,
-        const std::vector<bool> &domains_intersect) const;
     void order_operators(std::vector<int> &operators) const;
 
 public:
@@ -74,6 +74,8 @@ public:
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
     Transitions get_outgoing_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
+    bool has_transition(
+        const AbstractState &src, int op_id, const AbstractState &dest) const;
     int get_operator_between_states(const AbstractState &src, const AbstractState &dest, int cost) const;
     std::vector<bool> get_looping_operators(const AbstractStates &states) const;
 

@@ -261,6 +261,10 @@ void add_common_cegar_options(options::OptionParser &parser) {
         "store_shortest_path_tree_children",
         "store for each state its children in the shortest path tree",
         "true");
+    parser.add_option<bool>(
+        "store_shortest_path_tree_parents",
+        "store for each state its parents in the shortest path tree",
+        "true");
 
     add_transition_representation_option(parser);
     add_pick_flawed_abstract_state_strategies(parser);

@@ -85,6 +85,7 @@ CostSaturation::CostSaturation(
     int max_state_expansions,
     SearchStrategy search_strategy,
     bool store_spt_children,
+    bool store_spt_parents,
     int memory_padding_mb,
     bool use_max,
     bool use_fixed_time_limits,
@@ -103,6 +104,7 @@ CostSaturation::CostSaturation(
       max_state_expansions(max_state_expansions),
       search_strategy(search_strategy),
       store_spt_children(store_spt_children),
+      store_spt_parents(store_spt_parents),
       memory_padding_mb(memory_padding_mb),
       use_max(use_max),
       use_fixed_time_limits(use_fixed_time_limits),
@@ -253,6 +255,7 @@ void CostSaturation::build_abstractions(
             max_state_expansions,
             search_strategy,
             store_spt_children,
+            store_spt_parents,
             rng,
             log,
             dot_graph_verbosity);

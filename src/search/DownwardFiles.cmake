@@ -736,7 +736,7 @@ fast_downward_plugin(
         cost_saturation/abstraction
         cost_saturation/abstraction_generator
         cost_saturation/canonical_heuristic
-        cost_saturation/cartesian_abstraction_generator
+        #cost_saturation/cartesian_abstraction_generator
         cost_saturation/cost_partitioning_heuristic
         cost_saturation/cost_partitioning_heuristic_collection_generator
         cost_saturation/diversifier

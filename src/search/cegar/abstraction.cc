@@ -130,6 +130,14 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
     return transitions;
 }
 
+bool Abstraction::has_transition(int src, int op_id, int dest) const {
+    if (match_tree) {
+        return match_tree->has_transition(*states[src], op_id, *states[dest]);
+    }
+    const Transitions &transitions = transition_system->get_outgoing_transitions()[src];
+    return find(transitions.begin(), transitions.end(), Transition(op_id, dest)) != transitions.end();
+}
+
 int Abstraction::get_operator_between_states(int src, int dest, int cost) const {
     if (match_tree) {
         return match_tree->get_operator_between_states(*states[src], *states[dest], cost);
