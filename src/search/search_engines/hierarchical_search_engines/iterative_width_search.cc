@@ -137,6 +137,11 @@ SearchStatus IWSearch::step() {
     return IN_PROGRESS;
 }
 
+void IWSearch::set_initial_state(const State& state) {
+    HierarchicalSearchEngine::set_initial_state(state);
+    m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
+}
+
 void IWSearch::dump_search_space() const {
     search_space.dump(task_proxy);
 }

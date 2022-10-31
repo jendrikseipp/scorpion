@@ -35,6 +35,8 @@ protected:
     virtual void initialize() override;
     virtual SearchStatus step() override;
 
+    virtual void set_initial_state(const State& state) override;
+
 public:
     explicit IWSearch(const options::Options &opts);
 
