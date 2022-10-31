@@ -77,6 +77,8 @@ public:
     // output
     void print_basic_statistics() const;
     void print_detailed_statistics() const;
+
+    void reset();
 };
 
 #endif

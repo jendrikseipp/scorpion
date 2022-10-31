@@ -23,6 +23,7 @@ IWSearch::IWSearch(const Options &opts)
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
       m_initial_state_id(-1),
+      m_novelty_base(nullptr),
       m_novelty_table(0) {
     switch (opts.get<GoalTestEnum>("goal_test")) {
         case GoalTestEnum::TOP_GOAL: {
@@ -42,23 +43,11 @@ IWSearch::IWSearch(const Options &opts)
 }
 
 void IWSearch::initialize() {
-    utils::g_log << "Starting iterative width search." << endl;
+    utils::g_log << "Top level initialization of iterative width search." << endl;
     if (!propositional_task) {
-        propositional_task = std::make_shared<extra_tasks::PropositionalTask>(tasks::g_root_task);
+        set_propositional_task(std::make_shared<extra_tasks::PropositionalTask>(tasks::g_root_task));
     }
-    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(propositional_task->get_num_facts(), std::max(1, width));
-    m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
-    std::cout << "Num facts:" << propositional_task->get_num_facts() << std::endl;
-    std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
-    State initial_state = state_registry.get_initial_state();
-    m_initial_state_id = initial_state.get_id();
-    statistics.inc_generated();
-    SearchNode node = search_space.get_node(initial_state);
-    node.open_initial();
-    open_list.push_back(initial_state.get_id());
-    bool novel = is_novel(initial_state);
-    utils::unused_variable(novel);
-    assert(novel);
+    set_initial_state(state_registry.get_initial_state());
 }
 
 bool IWSearch::is_novel(const State &state) {
@@ -137,9 +126,26 @@ SearchStatus IWSearch::step() {
     return IN_PROGRESS;
 }
 
+void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
+    HierarchicalSearchEngine::set_propositional_task(propositional_task);
+    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(propositional_task->get_num_facts(), std::max(1, width));
+}
+
 void IWSearch::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
+    assert(m_novelty_base);
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
+    std::cout << "Num facts:" << propositional_task->get_num_facts() << std::endl;
+    std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
+    m_initial_state_id = state.get_id();
+    statistics.reset();
+    statistics.inc_generated();
+    SearchNode node = search_space.get_node(state);
+    node.open_initial();
+    open_list.push_back(state.get_id());
+    bool novel = is_novel(state);
+    utils::unused_variable(novel);
+    assert(novel);
 }
 
 void IWSearch::dump_search_space() const {

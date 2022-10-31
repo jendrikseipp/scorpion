@@ -5,7 +5,7 @@
 `iw(k) = iw(width=k, goal_test=top_goal())`
 
 ### IWR(k)
-`iwr(k) = iw(width=k, goal_test=sketch(<filename>))`
+`iwr(k) = iw(width=k, goal_test=sketch(filename=<filename>))`
 
 ### SIW(k)
 `siw(k) = serialized_search(child_search=iw(k), goal_test=top_goal())`

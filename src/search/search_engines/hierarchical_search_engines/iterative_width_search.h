@@ -35,6 +35,7 @@ protected:
     virtual void initialize() override;
     virtual SearchStatus step() override;
 
+    virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) override;
     virtual void set_initial_state(const State& state) override;
 
 public:

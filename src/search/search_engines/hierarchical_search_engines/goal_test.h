@@ -30,6 +30,8 @@ public:
 };
 
 class SketchSubgoal : public GoalTest {
+private:
+    std::string m_sketch_filename;
 public:
     explicit SketchSubgoal(const options::Options &opts);
     bool is_goal(const State& initial_state, const State& current_state) const override;

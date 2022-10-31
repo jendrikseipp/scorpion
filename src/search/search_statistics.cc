@@ -82,3 +82,20 @@ void SearchStatistics::print_detailed_statistics() const {
             << lastjump_generated_states << " state(s)." << endl;
     }
 }
+
+void SearchStatistics::reset() {
+    expanded_states = 0;
+    reopened_states = 0;
+    evaluated_states = 0;
+    evaluations = 0;
+    generated_states = 0;
+    dead_end_states = 0;
+    generated_ops = 0;
+
+    lastjump_expanded_states = 0;
+    lastjump_reopened_states = 0;
+    lastjump_evaluated_states = 0;
+    lastjump_generated_states = 0;
+
+    lastjump_f_value = -1;
+}

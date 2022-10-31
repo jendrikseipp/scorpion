@@ -19,7 +19,8 @@ TopGoal::TopGoal(const options::Options &opts)
 bool TopGoal::is_goal(const State& initial_state, const State& current_state) const { }
 
 SketchSubgoal::SketchSubgoal(const options::Options &opts)
-    : GoalTest(opts) { }
+    : GoalTest(opts),
+      m_sketch_filename(opts.get<std::string>("filename")) { }
 bool SketchSubgoal::is_goal(const State& initial_state, const State& current_state) const { }
 
 IncrementGoalCount::IncrementGoalCount(const options::Options &opts)
@@ -50,6 +51,7 @@ static shared_ptr<GoalTest> _parse_sketch_subgoal(OptionParser &parser) {
     parser.document_synopsis(
         "Sketch subgoal test",
         "");
+    parser.add_option<std::string>("filename", "filename to sketch", "");
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
