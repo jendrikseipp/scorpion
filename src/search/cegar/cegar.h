@@ -67,6 +67,7 @@ class CEGAR {
     // Build abstraction.
     void refinement_loop();
 
+    void dump_dot_graph() const;
     void print_statistics() const;
 
 public:

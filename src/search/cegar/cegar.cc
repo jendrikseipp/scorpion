@@ -172,6 +172,7 @@ void CEGAR::refinement_loop() {
         for (FactProxy goal : task_proxy.get_goals()) {
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
+            dump_dot_graph();
             current = &abstraction->get_state(pair.second);
         }
         assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
@@ -231,17 +232,6 @@ void CEGAR::refinement_loop() {
 
         find_flaw_timer.resume();
 
-        // Dump/write dot file for current abstraction.
-        if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_CONSOLE) {
-            cout << create_dot_graph(task_proxy, *abstraction) << endl;
-        } else if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_FILE) {
-            write_to_file(
-                "graph" + to_string(abstraction->get_num_states()) + ".dot",
-                create_dot_graph(task_proxy, *abstraction));
-        } else if (dot_graph_verbosity != DotGraphVerbosity::SILENT) {
-            ABORT("Invalid dot graph verbosity");
-        }
-
         unique_ptr<Split> split;
         if (pick_flawed_abstract_state ==
             PickFlawedAbstractState::FIRST_ON_SHORTEST_PATH) {
@@ -275,6 +265,8 @@ void CEGAR::refinement_loop() {
         pair<int, int> new_state_ids = abstraction->refine(
             abstract_state, split->var_id, split->values);
         refine_timer.stop();
+
+        dump_dot_graph();
 
         update_goal_distances_timer.resume();
         if (search_strategy == SearchStrategy::ASTAR) {
@@ -312,6 +304,19 @@ void CEGAR::refinement_loop() {
         log << "Time for splitting states: " << refine_timer << endl;
         log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
         log << "Number of refinements: " << abstraction->get_num_states() - 1 << endl;
+    }
+}
+
+void CEGAR::dump_dot_graph() const {
+    // Dump/write dot file for current abstraction.
+    if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_CONSOLE) {
+        cout << create_dot_graph(task_proxy, *abstraction) << endl;
+    } else if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_FILE) {
+        write_to_file(
+            "graph" + to_string(abstraction->get_num_states()) + ".dot",
+            create_dot_graph(task_proxy, *abstraction));
+    } else if (dot_graph_verbosity != DotGraphVerbosity::SILENT) {
+        ABORT("Invalid dot graph verbosity");
     }
 }
 
