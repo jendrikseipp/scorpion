@@ -273,9 +273,9 @@ void ShortestPaths::update_incrementally(
     if (debug) {
         log << "Reconnect children of split node." << endl;
         for (size_t state = 0; state < parents.size(); ++state) {
-        cout << state << " children: " << children[state] << endl;
-        cout << state << " parents: " << parents[state] << endl;
-    }
+            cout << state << " children: " << children[state] << endl;
+            cout << state << " parents: " << parents[state] << endl;
+        }
     }
 
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
@@ -296,9 +296,9 @@ void ShortestPaths::update_incrementally(
             int op_id = old_child.op_id;
             int u = old_child.target_id;
 
-            remove_parent(u, Transition(op_id, v));
-
             if (store_parents) {
+                remove_parent(u, Transition(op_id, v));
+
                 bool has_transition_to_v1 = abstraction.has_transition(u, op_id, v1);
                 // The old transition must be valid for at least one new state.
                 bool has_transition_to_v2 =
