@@ -55,7 +55,10 @@ SearchStatus IWSearch::step() {
 
     /* Goal check in initial state. */
     if (id == m_initial_state_id) {
-        if (check_goal_and_set_plan(state)) {
+        //if (check_goal_and_set_plan(state)) {
+        //    return SOLVED;
+        //}
+        if (check_goal_and_set_plan(state_registry.lookup_state(m_initial_state_id), state)) {
             return SOLVED;
         }
     }
@@ -90,7 +93,10 @@ SearchStatus IWSearch::step() {
         open_list.push_back(succ_state.get_id());
 
         /* Goal check after generating new node to save one g layer.*/
-        if (check_goal_and_set_plan(succ_state)) {
+        //if (check_goal_and_set_plan(succ_state)) {
+        //    return SOLVED;
+        //}
+        if (check_goal_and_set_plan(state_registry.lookup_state(m_initial_state_id), succ_state)) {
             return SOLVED;
         }
     }

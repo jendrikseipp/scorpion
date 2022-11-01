@@ -66,6 +66,16 @@ void HierarchicalSearchEngine::on_goal(const State &state, Plan &&partial_plan)
     }
 }
 
+bool HierarchicalSearchEngine::check_goal_and_set_plan(const State& initial_state, const State& target_state) {
+    if (m_goal_test->is_goal(initial_state, target_state)) {
+        Plan plan;
+        search_space.trace_path(target_state, plan);
+        m_parent_search_engine->on_goal(target_state, std::move(plan));
+        return true;
+    }
+    return false;
+}
+
 void HierarchicalSearchEngine::set_initial_state(const State &state)
 {
     std::vector<int> initial_state_values = state.get_unpacked_values();

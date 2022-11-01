@@ -59,6 +59,8 @@ protected:
      */
     virtual void on_goal(const State &state, Plan&& partial_plan);
 
+    virtual bool check_goal_and_set_plan(const State& initial_state, const State& target_state);
+
     /**
      * Setters
      */
