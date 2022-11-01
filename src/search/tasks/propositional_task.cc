@@ -108,12 +108,14 @@ static const std::vector<std::pair<AtomTokenType, std::regex>> fd_atom_token_reg
 PropositionalTask::PropositionalTask(
     const std::shared_ptr<AbstractTask> &parent)
     : DelegatingTask(parent),
-      vocabulary_info(std::make_shared<dlplan::core::VocabularyInfo>()) {
-    parse_predicates_file("predicates.txt", *vocabulary_info);
-    parse_constants_file("constants.txt", *vocabulary_info);
-    instance_info = std::make_shared<dlplan::core::InstanceInfo>(vocabulary_info);
-    parse_static_atoms_file("static-atoms.txt", *instance_info);
-    parse_goal_atoms_file("goal-atoms.txt", *instance_info);
+      m_vocabulary_info(std::make_shared<dlplan::core::VocabularyInfo>()),
+      m_syntactic_element_factory(std::make_shared<dlplan::core::VocabularyInfo>()) {
+    m_syntactic_element_factory = dlplan::core::SyntacticElementFactory(m_vocabulary_info);
+    parse_predicates_file("predicates.txt", *m_vocabulary_info);
+    parse_constants_file("constants.txt", *m_vocabulary_info);
+    m_instance_info = std::make_shared<dlplan::core::InstanceInfo>(m_vocabulary_info);
+    parse_static_atoms_file("static-atoms.txt", *m_instance_info);
+    parse_goal_atoms_file("goal-atoms.txt", *m_instance_info);
     std::string atom_prefix = "Atom ";
     fact_offsets.reserve(TaskProxy(*parent).get_variables().size());
     num_facts = 0;
@@ -126,7 +128,7 @@ PropositionalTask::PropositionalTask(
             if (name.substr(0, 5) == atom_prefix) {
                 std::string normalized_atom = name.substr(atom_prefix.size());
                 fact_index_to_dlplan_atom_index.push_back(
-                    parse_atom(normalized_atom, *instance_info, false, false));
+                    parse_atom(normalized_atom, *m_instance_info, false, false));
             } else {
                 fact_index_to_dlplan_atom_index.push_back(UNDEFINED);
             }
@@ -134,8 +136,21 @@ PropositionalTask::PropositionalTask(
     }
 }
 
+dlplan::core::State PropositionalTask::compute_dlplan_state(const State& state) const {
+    std::vector<int> atom_indices;
+    atom_indices.reserve(get_num_facts());
+    for (int fact_index : get_fact_ids(state)) {
+        int dlplan_atom_index = fact_index_to_dlplan_atom_index[fact_index];
+        if (dlplan_atom_index != UNDEFINED) {
+            atom_indices.push_back(dlplan_atom_index);
+        }
+    }
+    atom_indices.shrink_to_fit();
+    return dlplan::core::State(m_instance_info, atom_indices, state.get_id().value);
+}
+
 std::vector<int> PropositionalTask::get_initial_state_values() const {
-    return initial_state_values;
+    return m_initial_state_values;
 }
 
 std::vector<int> PropositionalTask::get_fact_ids(const State& state) const {
@@ -174,17 +189,12 @@ int PropositionalTask::get_num_facts() const {
     return num_facts;
 }
 
-dlplan::core::State PropositionalTask::compute_dlplan_state(const State& state) const {
-    std::vector<int> atom_indices;
-    atom_indices.reserve(get_num_facts());
-    for (int fact_index : get_fact_ids(state)) {
-        int dlplan_atom_index = fact_index_to_dlplan_atom_index[fact_index];
-        if (dlplan_atom_index != UNDEFINED) {
-            atom_indices.push_back(dlplan_atom_index);
-        }
-    }
-    atom_indices.shrink_to_fit();
-    return dlplan::core::State(instance_info, atom_indices, state.get_id().value);
+dlplan::core::SyntacticElementFactory& PropositionalTask::get_syntactic_element_factory_ref() {
+    return m_syntactic_element_factory;
+}
+
+dlplan::core::DenotationsCaches& PropositionalTask::get_denotations_caches() {
+    return m_denotations_caches;
 }
 
 }

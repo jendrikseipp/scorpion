@@ -25,37 +25,14 @@ IWSearch::IWSearch(const Options &opts)
       m_initial_state_id(-1),
       m_novelty_base(nullptr),
       m_novelty_table(0) {
-    switch (opts.get<GoalTestEnum>("goal_test")) {
-        case GoalTestEnum::TOP_GOAL: {
-            goal_test = utils::make_unique_ptr<goal_test::TopGoal>(opts);
-            break;
-        }
-        case GoalTestEnum::SKETCH_SUBGOAL: {
-            goal_test = utils::make_unique_ptr<goal_test::SketchSubgoal>(opts);
-            break;
-        }
-        case GoalTestEnum::INCREMENT_GOAL_COUNT: {
-            goal_test = utils::make_unique_ptr<goal_test::IncrementGoalCount>(opts);
-            break;
-        }
-    }
-    utils::g_log << "Setting up iterative width search." << endl;
-}
-
-void IWSearch::initialize() {
-    utils::g_log << "Top level initialization of iterative width search." << endl;
-    if (!propositional_task) {
-        set_propositional_task(std::make_shared<extra_tasks::PropositionalTask>(tasks::g_root_task));
-    }
-    set_initial_state(state_registry.get_initial_state());
 }
 
 bool IWSearch::is_novel(const State &state) {
-    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, propositional_task->get_fact_ids(state)), true);
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_propositional_task->get_fact_ids(state)), true);
 }
 
 bool IWSearch::is_novel(const OperatorProxy &op, const State &succ_state) {
-    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, propositional_task->get_fact_ids(op, succ_state)), true);
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_propositional_task->get_fact_ids(op, succ_state)), true);
 }
 
 void IWSearch::print_statistics() const {
@@ -105,7 +82,7 @@ SearchStatus IWSearch::step() {
             continue;
         }
 
-        std::cout << propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
+        std::cout << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
 
         SearchNode succ_node = search_space.get_node(succ_state);
         assert(succ_node.is_new());
@@ -126,16 +103,16 @@ SearchStatus IWSearch::step() {
     return IN_PROGRESS;
 }
 
-void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
-    HierarchicalSearchEngine::set_propositional_task(propositional_task);
-    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(propositional_task->get_num_facts(), std::max(1, width));
+void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task) {
+    HierarchicalSearchEngine::set_propositional_task(m_propositional_task);
+    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_propositional_task->get_num_facts(), std::max(1, width));
 }
 
 void IWSearch::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
     assert(m_novelty_base);
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
-    std::cout << "Num facts:" << propositional_task->get_num_facts() << std::endl;
+    std::cout << "Num facts:" << m_propositional_task->get_num_facts() << std::endl;
     std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
     m_initial_state_id = state.get_id();
     statistics.reset();
@@ -157,7 +134,7 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "width", "maximum conjunction size", "2");
     SearchEngine::add_options_to_parser(parser);
-    add_goal_test_option_to_parser(parser);
+    HierarchicalSearchEngine::add_goal_test_option(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run()) {

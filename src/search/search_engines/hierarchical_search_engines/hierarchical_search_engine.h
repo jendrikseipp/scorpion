@@ -3,45 +3,43 @@
 
 #include "goal_test.h"
 
-#include "../utils/tokenizer.h"
 #include "../../tasks/modified_initial_state_task.h"
 #include "../../search_engine.h"
 
-#include <deque>
 #include <memory>
 #include <vector>
+
 
 namespace options {
 class Options;
 }
 
 namespace hierarchical_search_engine {
-void add_goal_test_option_to_parser(options::OptionParser &parser);
-
-// Strategies for selecting a split in case there are multiple possibilities.
-enum class GoalTestEnum {
-    TOP_GOAL,
-    SKETCH_SUBGOAL,
-    INCREMENT_GOAL_COUNT,
-};
-
 /**
  */
 class HierarchicalSearchEngine : public SearchEngine {
 protected:
-    std::shared_ptr<extra_tasks::PropositionalTask> propositional_task;
-    std::shared_ptr<extra_tasks::ModifiedInitialStateTask> search_task;
+    std::shared_ptr<StateRegistry> m_state_registry;
+    std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task;
+    std::shared_ptr<extra_tasks::ModifiedInitialStateTask> m_search_task;
+    std::shared_ptr<goal_test::GoalTest> m_goal_test;
 
-    std::shared_ptr<goal_test::GoalTest> goal_test;
-    HierarchicalSearchEngine* parent_search_engine;
+    HierarchicalSearchEngine* m_parent_search_engine;
+    std::vector<std::shared_ptr<hierarchical_search_engine::HierarchicalSearchEngine>> m_child_search_engines;
 
-    Plan plan;
+    Plan m_plan;
 
 protected:
     /**
      * Performs task transformation to ModifiedInitialStateTask.
      */
     explicit HierarchicalSearchEngine(const options::Options &opts);
+
+    /**
+     * Top-level initialization.
+     * HierarchicalSearchEngines that contain children must initialize children
+     */
+    virtual void initialize() override;
 
     /**
      * React upon reaching goal state.
@@ -51,9 +49,14 @@ protected:
     /**
      * Setters
      */
+    virtual void set_state_registry(std::shared_ptr<StateRegistry> state_registry);
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task);
     virtual void set_parent_search_engine(HierarchicalSearchEngine& parent);
     virtual void set_initial_state(const State& state);
+
+public:
+    static void add_child_search_engine_option(OptionParser &parser);
+    static void add_goal_test_option(OptionParser &parser);
 };
 }
 

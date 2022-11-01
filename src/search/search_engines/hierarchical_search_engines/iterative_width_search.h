@@ -32,7 +32,6 @@ private:
     bool is_novel(const OperatorProxy &op, const State &succ_state);
 
 protected:
-    virtual void initialize() override;
     virtual SearchStatus step() override;
 
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) override;

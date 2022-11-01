@@ -16,10 +16,12 @@ const int UNDEFINED = -1;
 
 class PropositionalTask : public tasks::DelegatingTask {
 private:
-    const std::vector<int> initial_state_values;
+    const std::vector<int> m_initial_state_values;
 
-    std::shared_ptr<dlplan::core::VocabularyInfo> vocabulary_info;
-    std::shared_ptr<dlplan::core::InstanceInfo> instance_info;
+    std::shared_ptr<dlplan::core::VocabularyInfo> m_vocabulary_info;
+    std::shared_ptr<dlplan::core::InstanceInfo> m_instance_info;
+    dlplan::core::SyntacticElementFactory m_syntactic_element_factory;
+    dlplan::core::DenotationsCaches m_denotations_caches;
 
     std::vector<int> fact_offsets;
     int num_facts;
@@ -27,6 +29,8 @@ private:
 
 public:
     PropositionalTask(const std::shared_ptr<AbstractTask> &parent);
+
+    dlplan::core::State compute_dlplan_state(const State& state) const;
 
     virtual std::vector<int> get_initial_state_values() const override;
 
@@ -37,7 +41,8 @@ public:
     int get_fact_id(FactPair fact) const;
     int get_num_facts() const;
 
-    dlplan::core::State compute_dlplan_state(const State& state) const;
+    dlplan::core::SyntacticElementFactory& get_syntactic_element_factory_ref();
+    dlplan::core::DenotationsCaches& get_denotations_caches();
 };
 }
 

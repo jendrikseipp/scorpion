@@ -3,8 +3,11 @@
 #include "../../option_parser.h"
 #include "../../plugin.h"
 #include "../../task_utils/task_properties.h"
+#include "../../tasks/propositional_task.h"
 
 #include <memory>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -14,26 +17,40 @@ namespace goal_test {
 GoalTest::GoalTest(const options::Options &opts) { }
 GoalTest::~GoalTest() { }
 
+void GoalTest::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
+    m_propositional_task = propositional_task;
+}
+
+
 TopGoal::TopGoal(const options::Options &opts)
     : GoalTest(opts) { }
-bool TopGoal::is_goal(const State& initial_state, const State& current_state) const { }
+bool TopGoal::is_goal(const State& initial_state, const State& current_state) const {
+    return task_properties::is_goal_state(TaskProxy(*m_task), current_state);
+}
+
 
 SketchSubgoal::SketchSubgoal(const options::Options &opts)
     : GoalTest(opts),
       m_sketch_filename(opts.get<std::string>("filename")) { }
-bool SketchSubgoal::is_goal(const State& initial_state, const State& current_state) const { }
+bool SketchSubgoal::is_goal(const State& initial_state, const State& current_state) const {
+    return m_policy.evaluate_lazy(
+        m_propositional_task->compute_dlplan_state(initial_state),
+        m_propositional_task->compute_dlplan_state(current_state)) != nullptr;
+}
+
+void SketchSubgoal::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
+    GoalTest::set_propositional_task(propositional_task);
+    std::ifstream infile(m_sketch_filename);
+    std::stringstream content;
+    content << infile.rdbuf();
+    m_policy = dlplan::policy::PolicyReader().read(content.str(), propositional_task->get_syntactic_element_factory_ref());
+}
+
 
 IncrementGoalCount::IncrementGoalCount(const options::Options &opts)
     : GoalTest(opts) { }
 bool IncrementGoalCount::is_goal(const State& initial_state, const State& current_state) const {
-    /*if (task_properties::is_goal_state(task_proxy, state)) {
-        log << "Solution found!" << endl;
-        Plan plan;
-        search_space.trace_path(state, plan);
-        set_plan(plan);
-        return true;
-    }
-    return false;*/
+    // TODO
 }
 
 static shared_ptr<GoalTest> _parse_top_goal(OptionParser &parser) {
