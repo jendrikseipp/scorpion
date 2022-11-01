@@ -2,10 +2,7 @@
 #define SEARCH_ENGINES_SERIALIZED_SEARCH_ENGINE_H
 
 #include "hierarchical_search_engine.h"
-#include "goal_test.h"
 
-#include <memory>
-#include <vector>
 
 namespace options {
 class Options;
@@ -14,10 +11,12 @@ class Options;
 namespace serialized_search_engine {
 class SerializedSearchEngine : public hierarchical_search_engine::HierarchicalSearchEngine {
 protected:
-    /**
-     * Performs task transformation to ModifiedInitialStateTask.
-     */
+    virtual SearchStatus step() override;
+
+public:
     explicit SerializedSearchEngine(const options::Options &opts);
+
+    virtual void print_statistics() const override;
 };
 }
 

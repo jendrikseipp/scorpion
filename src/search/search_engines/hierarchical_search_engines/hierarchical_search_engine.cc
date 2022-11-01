@@ -3,6 +3,7 @@
 #include "../../option_parser.h"
 #include "../../plugin.h"
 #include "../../tasks/root_task.h"
+#include "../../tasks/propositional_task.h"
 
 #include <string>
 #include <deque>
@@ -13,17 +14,14 @@ using namespace std;
 
 
 namespace hierarchical_search_engine {
-
-
-
 HierarchicalSearchEngine::HierarchicalSearchEngine(
     const options::Options &opts)
     : SearchEngine(opts),
       m_state_registry(nullptr),
       m_propositional_task(nullptr),
       m_search_task(std::make_shared<extra_tasks::ModifiedInitialStateTask>(tasks::g_root_task, tasks::g_root_task->get_initial_state_values())),
-      m_parent_search_engine(nullptr),
-      m_goal_test(opts.get<std::shared_ptr<goal_test::GoalTest>>("goal_test")) {
+      m_goal_test(opts.get<std::shared_ptr<goal_test::GoalTest>>("goal_test")),
+      m_parent_search_engine(nullptr) {
 }
 
 void HierarchicalSearchEngine::initialize() {

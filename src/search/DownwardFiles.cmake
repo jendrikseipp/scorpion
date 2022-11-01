@@ -462,6 +462,8 @@ fast_downward_plugin(
         search_engines/hierarchical_search_engines/hierarchical_search_engine
         search_engines/hierarchical_search_engines/goal_test
         search_engines/hierarchical_search_engines/iterative_width_search
+        search_engines/hierarchical_search_engines/parallelized_search_engine
+        search_engines/hierarchical_search_engines/serialized_search_engine
         tasks/modified_initial_state_task
         tasks/propositional_task
 )

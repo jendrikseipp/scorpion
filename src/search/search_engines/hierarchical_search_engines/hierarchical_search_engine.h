@@ -12,18 +12,31 @@
 
 namespace options {
 class Options;
+class OptionParser;
+}
+
+namespace serialized_search_engine {
+class SerializedSearchEngine;
+}
+
+namespace parallelized_search_engine {
+class ParallelizedSearchEngine;
 }
 
 namespace hierarchical_search_engine {
-/**
- */
 class HierarchicalSearchEngine : public SearchEngine {
+friend class serialized_search_engine::SerializedSearchEngine;
+friend class parallelized_search_engine::ParallelizedSearchEngine;
+
 protected:
     std::shared_ptr<StateRegistry> m_state_registry;
     std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task;
     std::shared_ptr<extra_tasks::ModifiedInitialStateTask> m_search_task;
     std::shared_ptr<goal_test::GoalTest> m_goal_test;
 
+    /* Parent-child relationship:
+       Every HierarchicalSearchEngine has a parent and a collection of childs.
+    */
     HierarchicalSearchEngine* m_parent_search_engine;
     std::vector<std::shared_ptr<hierarchical_search_engine::HierarchicalSearchEngine>> m_child_search_engines;
 
@@ -55,8 +68,8 @@ protected:
     virtual void set_initial_state(const State& state);
 
 public:
-    static void add_child_search_engine_option(OptionParser &parser);
-    static void add_goal_test_option(OptionParser &parser);
+    static void add_child_search_engine_option(options::OptionParser &parser);
+    static void add_goal_test_option(options::OptionParser &parser);
 };
 }
 
