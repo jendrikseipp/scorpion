@@ -241,8 +241,7 @@ void ShortestPaths::mark_dirty(int state) {
     if (debug) {
         log << "Mark " << state << " as dirty" << endl;
     }
-    assert(store_children || !states[state].parent.is_defined());
-    assert(!store_children || parents[state].empty());
+    assert(!store_parents || parents[state].empty());
     assert(!count(dirty_states.begin(), dirty_states.end(), state));
     states[state].dirty = true;
     dirty_states.push_back(state);
@@ -271,25 +270,34 @@ void ShortestPaths::update_incrementally(
     states[v1].goal_distance = states[v2].goal_distance = states[v].goal_distance;
 
     if (debug) {
-        log << "Reconnect children of split node." << endl;
-        for (size_t state = 0; state < parents.size(); ++state) {
-            cout << state << " children: " << children[state] << endl;
-            cout << state << " parents: " << parents[state] << endl;
+        for (size_t state = 0; state < children.size(); ++state) {
+            cout << state << " children: " << children[state];
+            if (store_parents) {
+                cout << endl << state << " parents: " << parents[state] << endl;
+            } else {
+                cout << ", parent: " << states[state].parent << endl;
+            }
         }
+        log << "Reconnect children of split node." << endl;
     }
 
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
        will be updated again if v1 or v2 are dirty. */
     if (store_children) {
-        // We need to copy the vector since we reuse the index v.
-        Transitions old_children = move(children[v]);
-        assert(children[v1].empty());
-        assert(children[v2].empty());
+        Transitions old_children;
+        if (store_parents) {
+            old_children = move(children[v]);
+            assert(children[v1].empty());
+            assert(children[v2].empty());
 
-        parents[v1] = parents[v2] = parents[v];
-        int new_state_id = (v1 == v) ? v2 : v1;
-        for (const Transition &parent : parents[v]) {
-            children[parent.target_id].emplace_back(parent.op_id, new_state_id);
+            parents[v1] = parents[v2] = parents[v];
+            int new_state_id = (v1 == v) ? v2 : v1;
+            for (const Transition &parent : parents[v]) {
+                children[parent.target_id].emplace_back(parent.op_id, new_state_id);
+            }
+        } else {
+            // We need to copy the vector since we reuse the index v.
+            old_children = children[v];
         }
 
         for (const Transition &old_child : old_children) {
@@ -326,8 +334,6 @@ void ShortestPaths::update_incrementally(
         }
     } else {
         assert(!store_parents);
-        states[v1].parent = Transition();
-        states[v2].parent = Transition();
         for (int state : {v1, v2}) {
             for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
                 int u = incoming.target_id;
@@ -594,9 +600,11 @@ bool ShortestPaths::test_distances(
         if (debug) {
             log << "Test state " << v << endl;
         }
+        if (debug && store_children) {
+            cout << "children: " << children[v] << endl;
+        }
         if (store_parents) {
             if (debug) {
-                cout << "children: " << children[v] << endl;
                 cout << "parents: " << parents[v] << endl;
             }
             for (const Transition &parent : parents[v]) {
@@ -619,7 +627,7 @@ bool ShortestPaths::test_distances(
             }
             const Transition &t = states[v].parent;
             if (debug) {
-                log << "Shortest path: " << t << endl;
+                log << "Parent: " << t << endl;
             }
             assert(t.is_defined());
             Transitions out = abstraction.get_outgoing_transitions(v);
