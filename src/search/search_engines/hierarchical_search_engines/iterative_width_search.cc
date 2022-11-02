@@ -36,7 +36,7 @@ bool IWSearch::is_novel(const OperatorProxy &op, const State &succ_state) {
 
 void IWSearch::print_statistics() const {
     statistics.print_detailed_statistics();
-    search_space.print_statistics();
+    m_search_space->print_statistics();
 }
 
 SearchStatus IWSearch::step() {
@@ -46,8 +46,8 @@ SearchStatus IWSearch::step() {
     }
     StateID id = open_list.front();
     open_list.pop_front();
-    State state = state_registry.lookup_state(id);
-    SearchNode node = search_space.get_node(state);
+    State state = m_state_registry->lookup_state(id);
+    SearchNode node = m_search_space->get_node(state);
     node.close();
     assert(!node.is_dead_end());
     statistics.inc_expanded();
@@ -67,9 +67,9 @@ SearchStatus IWSearch::step() {
             continue;
         }
 
-        int old_num_states = state_registry.size();
-        State succ_state = state_registry.get_successor_state(state, op);
-        int new_num_states = state_registry.size();
+        int old_num_states = m_state_registry->size();
+        State succ_state = m_state_registry->get_successor_state(state, op);
+        int new_num_states = m_state_registry->size();
         bool is_new_state = (new_num_states > old_num_states);
         if (!is_new_state) {
             continue;
@@ -83,7 +83,7 @@ SearchStatus IWSearch::step() {
 
         std::cout << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
 
-        SearchNode succ_node = search_space.get_node(succ_state);
+        SearchNode succ_node = m_search_space->get_node(succ_state);
         assert(succ_node.is_new());
         succ_node.open(node, op, get_adjusted_cost(op));
         open_list.push_back(succ_state.get_id());
@@ -115,7 +115,7 @@ void IWSearch::set_initial_state(const State& state) {
     std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
     statistics.reset();
     statistics.inc_generated();
-    SearchNode node = search_space.get_node(state);
+    SearchNode node = m_search_space->get_node(state);
     node.open_initial();
     open_list.push_back(state.get_id());
     bool novel = is_novel(state);
@@ -124,15 +124,16 @@ void IWSearch::set_initial_state(const State& state) {
 }
 
 void IWSearch::dump_search_space() const {
-    search_space.dump(task_proxy);
+    m_search_space->dump(task_proxy);
 }
 
-static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
+static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis("Iterated width search", "");
     parser.add_option<int>(
         "width", "maximum conjunction size", "2");
-    SearchEngine::add_options_to_parser(parser);
+    HierarchicalSearchEngine::add_child_search_engine_option(parser);
     HierarchicalSearchEngine::add_goal_test_option(parser);
+    SearchEngine::add_options_to_parser(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run()) {
@@ -142,5 +143,5 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
 }
 
 // ./fast-downward.py domain.pddl instance_2_1_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "iw(width=2)"
-static Plugin<SearchEngine> _plugin("iw", _parse);
+static Plugin<HierarchicalSearchEngine> _plugin("iw", _parse);
 }

@@ -36,9 +36,10 @@ protected:
        Every HierarchicalSearchEngine has a parent and a collection of childs.
     */
     HierarchicalSearchEngine* m_parent_search_engine;
-    std::vector<std::shared_ptr<hierarchical_search_engine::HierarchicalSearchEngine>> m_child_search_engines;
+    std::vector<std::shared_ptr<HierarchicalSearchEngine>> m_child_search_engines;
 
     std::unique_ptr<State> m_initial_state;
+    std::unique_ptr<SearchSpace> m_search_space;
     Plan m_plan;
 
 protected:

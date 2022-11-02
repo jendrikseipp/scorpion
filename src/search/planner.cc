@@ -8,6 +8,7 @@
 #include "../utils/logging.h"
 #include "utils/system.h"
 #include "utils/timer.h"
+#include "search_engines/hierarchical_search_engines/hierarchical_search_engine.h"
 
 #include <iostream>
 
@@ -31,7 +32,7 @@ int main(int argc, const char **argv) {
         unit_cost = task_properties::is_unit_cost(task_proxy);
     }
 
-    shared_ptr<SearchEngine> engine;
+    shared_ptr<hierarchical_search_engine::HierarchicalSearchEngine> engine;
 
     // The command line is parsed twice: once in dry-run mode, to
     // check for simple input errors, and then in normal mode.

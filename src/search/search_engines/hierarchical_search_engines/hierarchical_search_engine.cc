@@ -21,18 +21,22 @@ HierarchicalSearchEngine::HierarchicalSearchEngine(
       m_propositional_task(nullptr),
       m_goal_test(opts.get<std::shared_ptr<goal_test::GoalTest>>("goal_test")),
       m_parent_search_engine(nullptr),
-      m_initial_state(nullptr) {
+      m_child_search_engines(opts.get_list<std::shared_ptr<HierarchicalSearchEngine>>("child_searches")),
+      m_initial_state(nullptr),
+      m_search_space(nullptr) {
 }
 
 void HierarchicalSearchEngine::initialize() {
     utils::g_log << "Top level initialization of HierarchicalSearchEngine." << endl;
     set_state_registry(std::make_shared<StateRegistry>(task_proxy));
     set_propositional_task(std::make_shared<extra_tasks::PropositionalTask>(tasks::g_root_task));
-    set_initial_state(state_registry.get_initial_state());
+    set_initial_state(m_state_registry->get_initial_state());
+    set_parent_search_engine(*this);
 }
 
 void HierarchicalSearchEngine::set_state_registry(std::shared_ptr<StateRegistry> state_registry) {
     m_state_registry = state_registry;
+    m_search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, utils::g_log);
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         child_search_engine_ptr->set_state_registry(state_registry);
     }
@@ -55,10 +59,20 @@ void HierarchicalSearchEngine::set_parent_search_engine(
     }
 }
 
+void HierarchicalSearchEngine::set_initial_state(const State &state)
+{
+    m_initial_state = utils::make_unique_ptr<State>(state);
+    m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
+    for (const auto& child_search_engine_ptr : m_child_search_engines) {
+        child_search_engine_ptr->set_initial_state(state);
+    }
+}
+
 void HierarchicalSearchEngine::on_goal(const State &state, Plan &&partial_plan)
 {
+    std::cout << "on_goal: " << m_plan.size() << std::endl;
     m_plan.insert(m_plan.end(), partial_plan.begin(), partial_plan.end());
-    if (m_goal_test->is_goal(task_proxy.get_initial_state(), state)) {
+    if (m_goal_test->is_goal(*m_initial_state, state)) {
         if (m_parent_search_engine) {
             // child level search notifies parent about found partial plan
             m_parent_search_engine->on_goal(state, std::move(m_plan));
@@ -71,26 +85,20 @@ void HierarchicalSearchEngine::on_goal(const State &state, Plan &&partial_plan)
 
 bool HierarchicalSearchEngine::check_goal_and_set_plan(const State& initial_state, const State& target_state) {
     if (m_goal_test->is_goal(initial_state, target_state)) {
+        std::cout << "goal found" << std::endl;
         Plan plan;
-        search_space.trace_path(target_state, plan);
+        m_search_space->trace_path(target_state, plan);
         on_goal(target_state, std::move(plan));
         return true;
     }
     return false;
 }
 
-void HierarchicalSearchEngine::set_initial_state(const State &state)
-{
-    m_initial_state = utils::make_unique_ptr<State>(state);
-    // TODO
-    // search_space.reset();
-}
-
 void HierarchicalSearchEngine::add_child_search_engine_option(OptionParser &parser) {
     parser.add_list_option<std::shared_ptr<HierarchicalSearchEngine>>(
         "child_searches",
         "The child searches to be executed.",
-        "");
+        "[]");
 }
 
 void HierarchicalSearchEngine::add_goal_test_option(OptionParser &parser) {

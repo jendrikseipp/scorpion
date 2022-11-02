@@ -6,6 +6,8 @@
 #include <memory>
 
 using namespace std;
+using namespace hierarchical_search_engine;
+
 
 namespace parallelized_search_engine {
 
@@ -33,10 +35,14 @@ void ParallelizedSearchEngine::print_statistics() const {
 }
 
 
-static shared_ptr<ParallelizedSearchEngine> _parse(OptionParser &parser) {
+static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Parallelized search engine",
         "");
+    SearchEngine::add_options_to_parser(parser);
+    HierarchicalSearchEngine::add_goal_test_option(parser);
+    HierarchicalSearchEngine::add_child_search_engine_option(parser);
+
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
