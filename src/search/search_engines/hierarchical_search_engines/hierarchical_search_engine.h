@@ -3,7 +3,6 @@
 
 #include "goal_test.h"
 
-#include "../../tasks/modified_initial_state_task.h"
 #include "../../search_engine.h"
 
 #include <memory>
@@ -31,7 +30,6 @@ friend class parallelized_search_engine::ParallelizedSearchEngine;
 protected:
     std::shared_ptr<StateRegistry> m_state_registry;
     std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task;
-    std::shared_ptr<extra_tasks::ModifiedInitialStateTask> m_search_task;
     std::shared_ptr<goal_test::GoalTest> m_goal_test;
 
     /* Parent-child relationship:
@@ -40,6 +38,7 @@ protected:
     HierarchicalSearchEngine* m_parent_search_engine;
     std::vector<std::shared_ptr<hierarchical_search_engine::HierarchicalSearchEngine>> m_child_search_engines;
 
+    std::unique_ptr<State> m_initial_state;
     Plan m_plan;
 
 protected:

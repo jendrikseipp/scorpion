@@ -27,6 +27,8 @@ private:
     int num_facts;
     std::vector<int> fact_index_to_dlplan_atom_index;
 
+    std::unordered_set<int> m_goal_facts;
+
 public:
     PropositionalTask(const std::shared_ptr<AbstractTask> &parent);
 
@@ -40,6 +42,8 @@ public:
 
     int get_fact_id(FactPair fact) const;
     int get_num_facts() const;
+
+    const std::unordered_set<int>& get_goal_facts() const;
 
     dlplan::core::SyntacticElementFactory& get_syntactic_element_factory_ref();
     dlplan::core::DenotationsCaches& get_denotations_caches();

@@ -2,6 +2,7 @@
 
 #include "../../option_parser.h"
 #include "../../plugin.h"
+#include "../../tasks/root_task.h"
 #include "../../task_utils/task_properties.h"
 #include "../../tasks/propositional_task.h"
 
@@ -15,6 +16,7 @@ using namespace std;
 namespace goal_test {
 
 GoalTest::GoalTest(const options::Options &opts) { }
+
 GoalTest::~GoalTest() { }
 
 void GoalTest::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
@@ -24,15 +26,18 @@ void GoalTest::set_propositional_task(std::shared_ptr<extra_tasks::Propositional
 
 TopGoal::TopGoal(const options::Options &opts)
     : GoalTest(opts) { }
-bool TopGoal::is_goal(const State& initial_state, const State& current_state) const {
-    return task_properties::is_goal_state(TaskProxy(*m_task), current_state);
+
+bool TopGoal::is_goal(const State&, const State& current_state) const {
+    return task_properties::is_goal_state(TaskProxy(*tasks::g_root_task), current_state);
 }
 
 
 SketchSubgoal::SketchSubgoal(const options::Options &opts)
     : GoalTest(opts),
       m_sketch_filename(opts.get<std::string>("filename")) { }
+
 bool SketchSubgoal::is_goal(const State& initial_state, const State& current_state) const {
+    // TODO: avoid recomputation of initial state.
     return m_policy.evaluate_lazy(
         m_propositional_task->compute_dlplan_state(initial_state),
         m_propositional_task->compute_dlplan_state(current_state)) != nullptr;
@@ -50,7 +55,17 @@ void SketchSubgoal::set_propositional_task(std::shared_ptr<extra_tasks::Proposit
 IncrementGoalCount::IncrementGoalCount(const options::Options &opts)
     : GoalTest(opts) { }
 bool IncrementGoalCount::is_goal(const State& initial_state, const State& current_state) const {
-    // TODO
+    return compute_num_unsatisfied_goal_facts(initial_state) > compute_num_unsatisfied_goal_facts(current_state);
+}
+
+int IncrementGoalCount::compute_num_unsatisfied_goal_facts(const State& state) const {
+    int unsatisfied_goal_facts = m_propositional_task->get_goal_facts().size();
+    for (int fact_id : m_propositional_task->get_fact_ids(state)) {
+        if (m_propositional_task->get_goal_facts().count(fact_id)) {
+            --unsatisfied_goal_facts;
+        }
+    }
+    return unsatisfied_goal_facts;
 }
 
 static shared_ptr<GoalTest> _parse_top_goal(OptionParser &parser) {

@@ -21,11 +21,8 @@ class IWSearch : public hierarchical_search_engine::HierarchicalSearchEngine {
     std::deque<StateID> open_list;
     std::deque<StateID> closed_list;
 
-    StateID m_initial_state_id;
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
-
-    std::unique_ptr<goal_test::GoalTest> goal_test;
 
 private:
     bool is_novel(const State &state);

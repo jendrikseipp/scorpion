@@ -16,8 +16,6 @@ class Options;
 namespace goal_test {
 class GoalTest {
 protected:
-    const std::shared_ptr<AbstractTask> m_task;
-
     std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task;
 
 public:
@@ -47,13 +45,13 @@ public:
     explicit SketchSubgoal(const options::Options &opts);
     bool is_goal(const State& initial_state, const State& current_state) const override;
 
-    /**
-     *
-     */
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) override;
 };
 
 class IncrementGoalCount : public GoalTest {
+private:
+    int compute_num_unsatisfied_goal_facts(const State& state) const;
+
 public:
     explicit IncrementGoalCount(const options::Options &opts);
     bool is_goal(const State& initial_state, const State& current_state) const override;

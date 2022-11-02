@@ -22,7 +22,6 @@ IWSearch::IWSearch(const Options &opts)
     : HierarchicalSearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
-      m_initial_state_id(-1),
       m_novelty_base(nullptr),
       m_novelty_table(0) {
 }
@@ -54,11 +53,8 @@ SearchStatus IWSearch::step() {
     statistics.inc_expanded();
 
     /* Goal check in initial state. */
-    if (id == m_initial_state_id) {
-        //if (check_goal_and_set_plan(state)) {
-        //    return SOLVED;
-        //}
-        if (check_goal_and_set_plan(state_registry.lookup_state(m_initial_state_id), state)) {
+    if (id == m_initial_state->get_id()) {
+        if (check_goal_and_set_plan(*m_initial_state, state)) {
             return SOLVED;
         }
     }
@@ -93,10 +89,7 @@ SearchStatus IWSearch::step() {
         open_list.push_back(succ_state.get_id());
 
         /* Goal check after generating new node to save one g layer.*/
-        //if (check_goal_and_set_plan(succ_state)) {
-        //    return SOLVED;
-        //}
-        if (check_goal_and_set_plan(state_registry.lookup_state(m_initial_state_id), succ_state)) {
+        if (check_goal_and_set_plan(*m_initial_state, succ_state)) {
             return SOLVED;
         }
     }
@@ -120,7 +113,6 @@ void IWSearch::set_initial_state(const State& state) {
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
     std::cout << "Num facts:" << m_propositional_task->get_num_facts() << std::endl;
     std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
-    m_initial_state_id = state.get_id();
     statistics.reset();
     statistics.inc_generated();
     SearchNode node = search_space.get_node(state);

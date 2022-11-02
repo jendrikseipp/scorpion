@@ -134,6 +134,9 @@ PropositionalTask::PropositionalTask(
             }
         }
     }
+    for (size_t index = 0; index < parent->get_num_goals(); ++index) {
+        m_goal_facts.insert(get_fact_id(parent->get_goal_fact(index)));
+    }
 }
 
 dlplan::core::State PropositionalTask::compute_dlplan_state(const State& state) const {
@@ -187,6 +190,10 @@ int PropositionalTask::get_fact_id(FactPair fact) const {
 
 int PropositionalTask::get_num_facts() const {
     return num_facts;
+}
+
+const std::unordered_set<int>& PropositionalTask::get_goal_facts() const {
+    return m_goal_facts;
 }
 
 dlplan::core::SyntacticElementFactory& PropositionalTask::get_syntactic_element_factory_ref() {

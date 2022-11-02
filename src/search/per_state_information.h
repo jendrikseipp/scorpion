@@ -157,6 +157,13 @@ public:
             cached_entries = nullptr;
         }
     }
+
+    /**
+     * Clears the underlying datastructure that stores the state information without freeing memory.
+     */
+    void reset() {
+        cached_entries->resize(0);
+    }
 };
 
 #endif

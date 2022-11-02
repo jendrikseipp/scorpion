@@ -165,3 +165,7 @@ void SearchSpace::dump(const TaskProxy &task_proxy) const {
 void SearchSpace::print_statistics() const {
     state_registry.print_statistics(log);
 }
+
+void SearchSpace::reset() {
+    search_node_infos.reset();
+}

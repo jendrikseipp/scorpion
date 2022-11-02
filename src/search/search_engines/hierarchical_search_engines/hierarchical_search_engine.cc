@@ -19,9 +19,9 @@ HierarchicalSearchEngine::HierarchicalSearchEngine(
     : SearchEngine(opts),
       m_state_registry(nullptr),
       m_propositional_task(nullptr),
-      m_search_task(std::make_shared<extra_tasks::ModifiedInitialStateTask>(tasks::g_root_task, tasks::g_root_task->get_initial_state_values())),
       m_goal_test(opts.get<std::shared_ptr<goal_test::GoalTest>>("goal_test")),
-      m_parent_search_engine(nullptr) {
+      m_parent_search_engine(nullptr),
+      m_initial_state(nullptr) {
 }
 
 void HierarchicalSearchEngine::initialize() {
@@ -41,6 +41,7 @@ void HierarchicalSearchEngine::set_state_registry(std::shared_ptr<StateRegistry>
 void HierarchicalSearchEngine::set_propositional_task(
     std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
     m_propositional_task = propositional_task;
+    m_goal_test->set_propositional_task(propositional_task);
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         child_search_engine_ptr->set_propositional_task(propositional_task);
     }
@@ -59,8 +60,10 @@ void HierarchicalSearchEngine::on_goal(const State &state, Plan &&partial_plan)
     m_plan.insert(m_plan.end(), partial_plan.begin(), partial_plan.end());
     if (m_goal_test->is_goal(task_proxy.get_initial_state(), state)) {
         if (m_parent_search_engine) {
+            // child level search notifies parent about found partial plan
             m_parent_search_engine->on_goal(state, std::move(m_plan));
         } else {
+            // top level search saves the plan
             plan_manager.save_plan(m_plan, task_proxy);
         }
     }
@@ -70,7 +73,7 @@ bool HierarchicalSearchEngine::check_goal_and_set_plan(const State& initial_stat
     if (m_goal_test->is_goal(initial_state, target_state)) {
         Plan plan;
         search_space.trace_path(target_state, plan);
-        m_parent_search_engine->on_goal(target_state, std::move(plan));
+        on_goal(target_state, std::move(plan));
         return true;
     }
     return false;
@@ -78,8 +81,9 @@ bool HierarchicalSearchEngine::check_goal_and_set_plan(const State& initial_stat
 
 void HierarchicalSearchEngine::set_initial_state(const State &state)
 {
-    std::vector<int> initial_state_values = state.get_unpacked_values();
-    m_search_task = std::make_shared<extra_tasks::ModifiedInitialStateTask>(tasks::g_root_task, std::move(initial_state_values));
+    m_initial_state = utils::make_unique_ptr<State>(state);
+    // TODO
+    // search_space.reset();
 }
 
 void HierarchicalSearchEngine::add_child_search_engine_option(OptionParser &parser) {
@@ -90,7 +94,7 @@ void HierarchicalSearchEngine::add_child_search_engine_option(OptionParser &pars
 }
 
 void HierarchicalSearchEngine::add_goal_test_option(OptionParser &parser) {
-    parser.add_list_option<std::shared_ptr<goal_test::GoalTest>>(
+    parser.add_option<std::shared_ptr<goal_test::GoalTest>>(
         "goal_test",
         "The goal test to be executed.",
         "top_goal()");
