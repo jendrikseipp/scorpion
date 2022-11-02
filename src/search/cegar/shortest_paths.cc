@@ -432,14 +432,12 @@ void ShortestPaths::update_incrementally(
                     }
                 }
             } else {
+                assert(!store_parents);
                 for (const Transition &t : abstraction.get_incoming_transitions(state)) {
                     int prev = t.target_id;
-                    if (!states[prev].dirty_candidate && !states[prev].dirty &&
-                        ((store_parents &&
-                          find_if(parents[prev].begin(), parents[prev].end(),
-                                  [state](const Transition &t) {return t.target_id == state;})
-                          != parents[prev].end()) ||
-                         (!store_parents && states[prev].parent.target_id == state))) {
+                    if (!states[prev].dirty_candidate &&
+                        !states[prev].dirty &&
+                        states[prev].parent.target_id == state) {
                         if (debug) {
                             log << "Add " << prev << " to candidate queue" << endl;
                         }
