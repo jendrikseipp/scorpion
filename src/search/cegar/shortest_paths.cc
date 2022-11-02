@@ -563,6 +563,7 @@ bool ShortestPaths::is_optimal_transition(int start_id, int op_id, int target_id
     return states[start_id].goal_distance - operator_costs[op_id] == states[target_id].goal_distance;
 }
 
+#ifndef NDEBUG
 bool ShortestPaths::test_distances(
     const Abstraction &abstraction,
     const unordered_set<int> &goals) {
@@ -640,9 +641,9 @@ bool ShortestPaths::test_distances(
             ABORT("Distances are wrong.");
         }
     }
-
     return true;
 }
+#endif
 
 void ShortestPaths::print_statistics() const {
     cout << "Shortest path tree estimated memory usage: "

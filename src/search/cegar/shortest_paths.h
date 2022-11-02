@@ -160,10 +160,11 @@ public:
     int get_32bit_goal_distance(int abstract_state_id) const;
     bool is_optimal_transition(int start_id, int op_id, int target_id) const;
 
-
+#ifndef NDEBUG
     bool test_distances(
         const Abstraction &abstraction,
         const std::unordered_set<int> &goals);
+#endif
 
     void print_statistics() const;
 };
