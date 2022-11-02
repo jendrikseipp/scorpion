@@ -45,12 +45,12 @@ BUILD_OPTIONS = ["debug"]
 DRIVER_OPTIONS = [
     "--build", "debug",
     "--validate",
-    "--overall-time-limit", "5m",
+    "--overall-time-limit", "1m",
     "--overall-memory-limit", "3584M",
 ]
 # Pairs of revision identifier and revision nick.
 REVS = [
-    ("1a7feabee", ""),
+    ("d3c314a01", ""),
 ]
 ATTRIBUTES = [
     "error",
