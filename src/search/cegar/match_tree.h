@@ -48,6 +48,7 @@ class MatchTree {
 
     int get_state_id(NodeID node_id) const;
 
+    bool is_applicable(const AbstractState &src, int op_id) const;
     bool has_transition(
         const AbstractState &src, int op_id, const AbstractState &dest,
         const std::vector<bool> &domains_intersect) const;

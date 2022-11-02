@@ -132,7 +132,12 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
 
 bool Abstraction::has_transition(int src, int op_id, int dest) const {
     if (match_tree) {
-        return match_tree->has_transition(*states[src], op_id, *states[dest]);
+        bool valid = match_tree->has_transition(*states[src], op_id, *states[dest]);
+#ifndef NDEBUG
+        Transitions out = match_tree->get_outgoing_transitions(cartesian_sets, *states[src]);
+        assert(count(out.begin(), out.end(), Transition(op_id, dest)) == static_cast<int>(valid));
+#endif
+        return valid;
     }
     const Transitions &transitions = transition_system->get_outgoing_transitions()[src];
     return find(transitions.begin(), transitions.end(), Transition(op_id, dest)) != transitions.end();

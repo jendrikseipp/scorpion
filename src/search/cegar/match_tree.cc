@@ -286,9 +286,17 @@ Transitions MatchTree::get_outgoing_transitions(
     return transitions;
 }
 
+bool MatchTree::is_applicable(const AbstractState &src, int op_id) const {
+    return all_of(preconditions[op_id].begin(), preconditions[op_id].end(),
+                  [&src](const FactPair &pre) {
+                      return src.contains(pre.var, pre.value);
+                  });
+}
+
 bool MatchTree::has_transition(
     const AbstractState &src, int op_id, const AbstractState &dest,
     const vector<bool> &domains_intersect) const {
+    assert(is_applicable(src, op_id));
     // Simultaneously loop over variables and postconditions.
     int num_vars = src.get_cartesian_set().get_num_variables();
     auto it = postconditions[op_id].begin();
@@ -307,7 +315,11 @@ bool MatchTree::has_transition(
 
 bool MatchTree::has_transition(
     const AbstractState &src, int op_id, const AbstractState &dest) const {
+    if (!is_applicable(src, op_id)) {
+        return false;
+    }
     int num_vars = src.get_cartesian_set().get_num_variables();
+    // TODO: only compute intersection for variables not mentioned in postcondition.
     vector<bool> domains_intersect(num_vars, false);
     for (int var = 0; var < num_vars; ++var) {
         domains_intersect[var] = src.domain_subsets_intersect(dest.get_cartesian_set(), var);
