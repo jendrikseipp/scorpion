@@ -44,7 +44,7 @@ CONFIGS = [
 BUILD_OPTIONS = []
 DRIVER_OPTIONS = [
     "--validate",
-    "--overall-time-limit", "30m",
+    "--overall-time-limit", "5m",
     "--overall-memory-limit", "3584M",
 ]
 # Pairs of revision identifier and revision nick.
