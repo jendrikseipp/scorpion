@@ -457,6 +457,12 @@ void ShortestPaths::update_incrementally(
     }
 
 #ifndef NDEBUG
+    /*
+      We use dirty_states to efficiently loop over dirty states. Check that all
+      solvable states marked as dirty are part of the vector. Since we don't
+      explicitly reset dirty states, the check doesn't hold in the other
+      direction.
+    */
     for (int i = 0; i < num_states; ++i) {
         if (states[i].dirty && states[i].goal_distance != INF_COSTS) {
             assert(count(dirty_states.begin(), dirty_states.end(), i) == 1);
@@ -466,23 +472,6 @@ void ShortestPaths::update_incrementally(
     for (int goal : abstraction.get_goals()) {
         assert(!count(dirty_states.begin(), dirty_states.end(), goal));
     }
-#endif
-
-#ifndef NDEBUG
-    /* We use dirty_states to efficiently loop over dirty states. Check that
-       its data is consistent with the data in goal_distances. */
-    vector<bool> dirty1(num_states, false);
-    for (int state : dirty_states) {
-        dirty1[state] = true;
-    }
-
-    vector<bool> dirty2(num_states, false);
-    for (int state = 0; state < num_states; ++state) {
-        if (states[state].dirty) {
-            dirty2[state] = true;
-        }
-    }
-    assert(dirty1 == dirty2);
 #endif
 
     /*
