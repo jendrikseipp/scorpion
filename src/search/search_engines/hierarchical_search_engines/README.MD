@@ -2,7 +2,9 @@
 
 ## IW
 
+```console
 ./fast-downward.py --keep-sas-file --build=debug domain.pddl instance_2_2_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "iw(width=2, goal_test=top_goal())"
+```
 
 ## SIW
 
