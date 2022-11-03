@@ -39,6 +39,7 @@ namespace cegar {
 */
 
 class Abstraction;
+class TransitionSystem;
 
 using Cost = uint64_t;
 
@@ -115,10 +116,12 @@ class ShortestPaths {
     // Keep data structures around to avoid reallocating them.
     HeapQueue candidate_queue;
     HeapQueue open_queue;
-    std::deque<StateInfo> states;
     std::vector<int> dirty_states;
+
+    std::deque<StateInfo> states;
     std::deque<Transitions> children;
     std::deque<Transitions> parents;
+    std::unique_ptr<TransitionSystem> rewirer;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
@@ -147,8 +150,7 @@ public:
         const std::unordered_set<int> &goals);
     // Reflect the split of v into v1 and v2.
     void update_incrementally(
-        const Abstraction &abstraction,
-        int v, int v1, int v2);
+        const Abstraction &abstraction, int v, int v1, int v2, int var);
     // Extract solution from shortest path tree.
     std::unique_ptr<Solution> extract_solution(
         int init_id,

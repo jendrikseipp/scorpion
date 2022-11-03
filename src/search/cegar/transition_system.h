@@ -59,6 +59,15 @@ public:
         const AbstractStates &states, int v_id,
         const AbstractState &v1, const AbstractState &v2, int var);
 
+    void rewire_children(
+        std::deque<Transitions> &children, std::deque<Transitions> &parents,
+        const AbstractStates &states, int v_id,
+        const AbstractState &v1, const AbstractState &v2, int var) const;
+    void rewire_parents(
+        std::deque<Transitions> &children, std::deque<Transitions> &parents,
+        const AbstractStates &states, int v_id,
+        const AbstractState &v1, const AbstractState &v2, int var) const;
+
     const std::vector<Transitions> &get_incoming_transitions() const;
     const std::vector<Transitions> &get_outgoing_transitions() const;
     const std::vector<Loops> &get_loops() const;

@@ -2,11 +2,14 @@
 
 #include "abstract_search.h"  // For test_distances().
 #include "abstraction.h"
+#include "transition_system.h"
 #include "utils.h"
 
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
+
+#include "../tasks/root_task.h"
 
 #include <cassert>
 #include <map>
@@ -31,6 +34,9 @@ ShortestPaths::ShortestPaths(
     if (store_parents && !store_children) {
         cerr << "if store_parents=true, store_children must also be set to true." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
+    }
+    if (store_parents) {
+        rewirer = utils::make_unique_ptr<TransitionSystem>(TaskProxy(*tasks::g_root_task).get_operators());
     }
     operator_costs.reserve(costs.size());
     for (int cost : costs) {
@@ -248,7 +254,7 @@ void ShortestPaths::mark_dirty(int state) {
 }
 
 void ShortestPaths::update_incrementally(
-    const Abstraction &abstraction, int v, int v1, int v2) {
+    const Abstraction &abstraction, int v, int v1, int v2, int var) {
     /*
       Assumption: all h-values correspond to the perfect heuristic for the
       state space before the split.
@@ -283,48 +289,27 @@ void ShortestPaths::update_incrementally(
 
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
        will be updated again if v1 or v2 are dirty. */
-    if (store_children) {
-        Transitions old_children;
-        if (store_parents) {
-            old_children = move(children[v]);
-            assert(children[v1].empty());
-            assert(children[v2].empty());
-
-            parents[v1] = parents[v2] = parents[v];
-            int new_state_id = (v1 == v) ? v2 : v1;
-            for (const Transition &parent : parents[v]) {
-                children[parent.target_id].emplace_back(parent.op_id, new_state_id);
-            }
-        } else {
-            // We need to copy the vector since we reuse the index v.
-            old_children = children[v];
-        }
+    if (store_children && store_parents) {
+        rewirer->rewire_children(
+            children, parents, abstraction.get_states(), v,
+            abstraction.get_state(v1), abstraction.get_state(v2), var);
+        rewirer->rewire_parents(
+            children, parents, abstraction.get_states(), v,
+            abstraction.get_state(v1), abstraction.get_state(v2), var);
+    } else if (store_children) {
+        // We need to copy the vector since we reuse the index v.
+        Transitions old_children = children[v];
 
         for (const Transition &old_child : old_children) {
             int op_id = old_child.op_id;
             int u = old_child.target_id;
 
-            if (store_parents) {
-                remove_parent(u, Transition(op_id, v));
-
-                bool has_transition_to_v1 = abstraction.has_transition(u, op_id, v1);
-                // The old transition must be valid for at least one new state.
-                bool has_transition_to_v2 =
-                    !has_transition_to_v1 || abstraction.has_transition(u, op_id, v2);
-                if (has_transition_to_v1) {
-                    add_parent(u, Transition(op_id, v1));
-                }
-                if (has_transition_to_v2) {
-                    add_parent(u, Transition(op_id, v2));
-                }
-            } else {
-                int old_cost = convert_to_32_bit_cost(operator_costs[op_id]);
-                int new_op_id = abstraction.get_operator_between_states(u, v2, old_cost);
-                Transition new_parent = (new_op_id == UNDEFINED)
-                    ? Transition(op_id, v1)
-                    : Transition(new_op_id, v2);
-                set_parent(u, new_parent);
-            }
+            int old_cost = convert_to_32_bit_cost(operator_costs[op_id]);
+            int new_op_id = abstraction.get_operator_between_states(u, v2, old_cost);
+            Transition new_parent = (new_op_id == UNDEFINED)
+                ? Transition(op_id, v1)
+                : Transition(new_op_id, v2);
+            set_parent(u, new_parent);
 
             if (timer.is_expired()) {
                 // All goal distances are always lower bounds, so we can abort at any time.
@@ -333,7 +318,6 @@ void ShortestPaths::update_incrementally(
             }
         }
     } else {
-        assert(!store_parents);
         for (int state : {v1, v2}) {
             for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
                 int u = incoming.target_id;
@@ -381,9 +365,8 @@ void ShortestPaths::update_incrementally(
                 remove_if(
                     parents[state].begin(), parents[state].end(),
                     [&](const Transition &parent) {
-                        bool valid_parent =
-                            !states[parent.target_id].dirty &&
-                            abstraction.has_transition(state, parent.op_id, parent.target_id);
+                        assert(abstraction.has_transition(state, parent.op_id, parent.target_id));
+                        bool valid_parent = !states[parent.target_id].dirty;
                         if (!valid_parent) {
                             remove_child(parent.target_id, Transition(parent.op_id, state));
                         }

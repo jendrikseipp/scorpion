@@ -275,7 +275,7 @@ void CEGAR::refinement_loop() {
                 state_id, new_state_ids.first, new_state_ids.second);
         } else {
             shortest_paths->update_incrementally(
-                *abstraction, state_id, new_state_ids.first, new_state_ids.second);
+                *abstraction, state_id, new_state_ids.first, new_state_ids.second, split->var_id);
             assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
         }
         update_goal_distances_timer.stop();

@@ -68,6 +68,10 @@ const AbstractState &Abstraction::get_state(int state_id) const {
     return *states[state_id];
 }
 
+const AbstractStates &Abstraction::get_states() const {
+    return states;
+}
+
 int Abstraction::get_abstract_state_id(const State &state) const {
     return refinement_hierarchy->get_abstract_state_id(state);
 }

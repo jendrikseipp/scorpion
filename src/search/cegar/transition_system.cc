@@ -308,6 +308,113 @@ void TransitionSystem::rewire(
 #endif
 }
 
+static void add_parent(deque<Transitions> &children, deque<Transitions> &parents, int v, int op, int w) {
+    assert(find(parents[v].begin(), parents[v].end(), Transition(op, w)) == parents[v].end());
+    assert(find(children[w].begin(), children[w].end(), Transition(op, v)) == children[w].end());
+    parents[v].emplace_back(op, w);
+    children[w].emplace_back(op, v);
+}
+
+void TransitionSystem::rewire_children(
+    deque<Transitions> &children, deque<Transitions> &parents,
+    const AbstractStates &states, int v_id,
+    const AbstractState &v1, const AbstractState &v2, int var) const {
+    /* State v has been split into v1 and v2. Now for all transitions
+       u->v we need to add transitions u->v1, u->v2, or both. */
+    int v1_id = v1.get_id();
+    int v2_id = v2.get_id();
+
+    Transitions old_children = move(children[v_id]);
+
+    unordered_set<int> updated_states;
+    for (const Transition &transition : old_children) {
+        int u_id = transition.target_id;
+        bool is_new_state = updated_states.insert(u_id).second;
+        if (is_new_state) {
+            remove_transitions_with_given_target(parents[u_id], v_id);
+        }
+    }
+
+    for (const Transition &transition : old_children) {
+        int op_id = transition.op_id;
+        int u_id = transition.target_id;
+        const AbstractState &u = *states[u_id];
+        int post = get_postcondition_value(op_id, var);
+        if (post == UNDEFINED) {
+            // op has no precondition and no effect on var.
+            bool u_and_v1_intersect = u.domain_subsets_intersect(v1, var);
+            if (u_and_v1_intersect) {
+                add_parent(children, parents, u_id, op_id, v1_id);
+            }
+            /* If u and v1 don't intersect, we must add the other transition
+               and can avoid an intersection test. */
+            if (!u_and_v1_intersect || u.domain_subsets_intersect(v2, var)) {
+                add_parent(children, parents, u_id, op_id, v2_id);
+            }
+        } else if (v1.contains(var, post)) {
+            // op can only end in v1.
+            add_parent(children, parents, u_id, op_id, v1_id);
+        } else {
+            // op can only end in v2.
+            assert(v2.contains(var, post));
+            add_parent(children, parents, u_id, op_id, v2_id);
+        }
+    }
+}
+
+void TransitionSystem::rewire_parents(
+    deque<Transitions> &children, deque<Transitions> &parents,
+    const AbstractStates &states, int v_id,
+    const AbstractState &v1, const AbstractState &v2, int var) const {
+    /* State v has been split into v1 and v2. Now for all transitions
+       v->w we need to add transitions v1->w, v2->w, or both. */
+    int v1_id = v1.get_id();
+    int v2_id = v2.get_id();
+
+    Transitions old_parents = move(parents[v_id]);
+
+    unordered_set<int> updated_states;
+    for (const Transition &transition : old_parents) {
+        int w_id = transition.target_id;
+        bool is_new_state = updated_states.insert(w_id).second;
+        if (is_new_state) {
+            remove_transitions_with_given_target(children[w_id], v_id);
+        }
+    }
+
+    for (const Transition &transition : old_parents) {
+        int op_id = transition.op_id;
+        int w_id = transition.target_id;
+        const AbstractState &w = *states[w_id];
+        int pre = get_precondition_value(op_id, var);
+        int post = get_postcondition_value(op_id, var);
+        if (post == UNDEFINED) {
+            assert(pre == UNDEFINED);
+            // op has no precondition and no effect on var.
+            bool v1_and_w_intersect = v1.domain_subsets_intersect(w, var);
+            if (v1_and_w_intersect) {
+                add_parent(children, parents, v1_id, op_id, w_id);
+            }
+            /* If v1 and w don't intersect, we must add the other transition
+               and can avoid an intersection test. */
+            if (!v1_and_w_intersect || v2.domain_subsets_intersect(w, var)) {
+                add_parent(children, parents, v2_id, op_id, w_id);
+            }
+        } else if (pre == UNDEFINED) {
+            // op has no precondition, but an effect on var.
+            add_parent(children, parents, v1_id, op_id, w_id);
+            add_parent(children, parents, v2_id, op_id, w_id);
+        } else if (v1.contains(var, pre)) {
+            // op can only start in v1.
+            add_parent(children, parents, v1_id, op_id, w_id);
+        } else {
+            // op can only start in v2.
+            assert(v2.contains(var, pre));
+            add_parent(children, parents, v2_id, op_id, w_id);
+        }
+    }
+}
+
 const vector<Transitions> &TransitionSystem::get_incoming_transitions() const {
     return incoming;
 }
@@ -373,7 +480,7 @@ void TransitionSystem::print_statistics(utils::LogProxy &log) const {
         bytes += estimate_vector_of_vector_bytes(outgoing);
         bytes += estimate_vector_of_vector_bytes(loops);
         log << "Transition system estimated memory usage: "
-             << bytes / 1024 << " KB" << endl;
+            << bytes / 1024 << " KB" << endl;
     }
 }
 
