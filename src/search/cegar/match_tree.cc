@@ -295,7 +295,7 @@ bool MatchTree::is_applicable(const AbstractState &src, int op_id) const {
 
 bool MatchTree::has_transition(
     const AbstractState &src, int op_id, const AbstractState &dest,
-    const vector<bool> &domains_intersect) const {
+    const vector<bool> *domains_intersect) const {
     assert(is_applicable(src, op_id));
     // Simultaneously loop over variables and postconditions.
     int num_vars = src.get_cartesian_set().get_num_variables();
@@ -306,7 +306,9 @@ bool MatchTree::has_transition(
                 return false;
             }
             ++it;
-        } else if (!domains_intersect[var]) {
+        } else if (
+            (domains_intersect && !(*domains_intersect)[var]) ||
+            (!domains_intersect && !src.domain_subsets_intersect(dest.get_cartesian_set(), var))) {
             return false;
         }
     }
@@ -318,13 +320,7 @@ bool MatchTree::has_transition(
     if (!is_applicable(src, op_id)) {
         return false;
     }
-    int num_vars = src.get_cartesian_set().get_num_variables();
-    // TODO: only compute intersection for variables not mentioned in postcondition.
-    vector<bool> domains_intersect(num_vars, false);
-    for (int var = 0; var < num_vars; ++var) {
-        domains_intersect[var] = src.domain_subsets_intersect(dest.get_cartesian_set(), var);
-    }
-    return has_transition(src, op_id, dest, domains_intersect);
+    return has_transition(src, op_id, dest, nullptr);
 }
 
 int MatchTree::get_operator_between_states(
@@ -339,7 +335,7 @@ int MatchTree::get_operator_between_states(
         sort(operators.begin(), operators.end());
     }
     for (int op_id : operators) {
-        if (operator_costs[op_id] == cost && has_transition(src, op_id, dest, domains_intersect)) {
+        if (operator_costs[op_id] == cost && has_transition(src, op_id, dest, &domains_intersect)) {
             return op_id;
         }
     }
