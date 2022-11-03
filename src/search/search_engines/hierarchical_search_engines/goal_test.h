@@ -24,9 +24,6 @@ public:
 
     virtual bool is_goal(const State& initial_state, const State& current_state) const = 0;
 
-    /**
-     * Setters.
-     */
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task);
 };
 

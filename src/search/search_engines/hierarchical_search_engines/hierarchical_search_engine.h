@@ -50,24 +50,23 @@ protected:
 
     /**
      * Top-level initialization.
-     * HierarchicalSearchEngines that contain children must initialize children
      */
     virtual void initialize() override;
 
     /**
      * React upon reaching goal state.
      * Propagate goal test up in the hierarchy.
-     * Propagate SearchStatus down in the hierarchy.
+     * Propagate global search status down in the hierarchy.
      */
-    virtual SearchStatus on_goal(const State &state, Plan&& partial_plan);
+    virtual SearchStatus on_goal(const State &state, Plan&& partial_plan, const SearchStatistics& statistics);
 
     /**
-     * Goal check on the leaf.
+     * React upon reaching goal state in leaf search engine.
      */
-    virtual SearchStatus on_goal_leaf(const State& initial_state, const State& target_state);
+    virtual SearchStatus on_goal_leaf(const State& state);
 
     /**
-     * Setters
+     * Setters used to (re-)initialize child searches
      */
     virtual void set_state_registry(std::shared_ptr<StateRegistry> state_registry);
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task);

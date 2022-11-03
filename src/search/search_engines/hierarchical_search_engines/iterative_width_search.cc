@@ -55,7 +55,7 @@ SearchStatus IWSearch::step() {
     /* Goal check in initial state. */
     if (id == m_initial_state->get_id()) {
         if (m_goal_test->is_goal(*m_initial_state, state)) {
-            return on_goal_leaf(*m_initial_state, state);
+            return on_goal_leaf(state);
         }
     }
 
@@ -81,7 +81,7 @@ SearchStatus IWSearch::step() {
             continue;
         }
 
-        std::cout << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
+        // std::cout << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
 
         SearchNode succ_node = m_search_space->get_node(succ_state);
         assert(succ_node.is_new());
@@ -90,7 +90,7 @@ SearchStatus IWSearch::step() {
 
         /* Goal check after generating new node to save one g layer.*/
         if (m_goal_test->is_goal(*m_initial_state, succ_state)) {
-            return on_goal_leaf(*m_initial_state, succ_state);
+            return on_goal_leaf(succ_state);
         }
     }
 
@@ -111,8 +111,8 @@ void IWSearch::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
     assert(m_novelty_base);
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
-    std::cout << "Num facts:" << m_propositional_task->get_num_facts() << std::endl;
-    std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
+    // std::cout << "Num facts:" << m_propositional_task->get_num_facts() << std::endl;
+    // std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
     statistics.reset();
     statistics.inc_generated();
     SearchNode node = m_search_space->get_node(state);

@@ -37,7 +37,6 @@ SketchSubgoal::SketchSubgoal(const options::Options &opts)
       m_sketch_filename(opts.get<std::string>("filename")) { }
 
 bool SketchSubgoal::is_goal(const State& initial_state, const State& current_state) const {
-    // TODO: avoid recomputation of initial state.
     return m_policy.evaluate_lazy(
         m_propositional_task->compute_dlplan_state(initial_state),
         m_propositional_task->compute_dlplan_state(current_state)) != nullptr;

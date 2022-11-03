@@ -21,7 +21,8 @@ SearchStatus SerializedSearchEngine::step() {
 }
 
 void SerializedSearchEngine::print_statistics() const {
-
+    statistics.print_detailed_statistics();
+    m_search_space->print_statistics();
 }
 
 

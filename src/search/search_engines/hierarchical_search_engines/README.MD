@@ -1,4 +1,16 @@
-# Game Plan
+# How to use
+
+## IW
+
+./fast-downward.py --keep-sas-file --build=debug domain.pddl instance_2_2_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "iw(width=2, goal_test=top_goal())"
+
+## SIW
+
+```console
+./fast-downward.py --keep-sas-file --build=debug domain.pddl instance_2_2_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())"
+```
+
+# Game Plan (A little bit outdated; can be ignored)
 ## Search Algorithm Call Strings
 
 ### IW(k)

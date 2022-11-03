@@ -24,14 +24,18 @@ SearchStatus ParallelizedSearchEngine::step() {
             }
             case SearchStatus::IN_PROGRESS: {
                 combined_status = SearchStatus::IN_PROGRESS;
+                break;
             }
+            default:
+                break;
         }
     }
     return combined_status;
 }
 
 void ParallelizedSearchEngine::print_statistics() const {
-
+    statistics.print_detailed_statistics();
+    m_search_space->print_statistics();
 }
 
 

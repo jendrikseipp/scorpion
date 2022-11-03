@@ -54,6 +54,7 @@ public:
     int get_generated() const {return generated_states;}
     int get_reopened() const {return reopened_states;}
     int get_generated_ops() const {return generated_ops;}
+    int get_deadend_states() const {return dead_end_states;}
 
     /*
       Call the following method with the f value of every expanded
