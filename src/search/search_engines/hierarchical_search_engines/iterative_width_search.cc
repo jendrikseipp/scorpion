@@ -54,8 +54,8 @@ SearchStatus IWSearch::step() {
 
     /* Goal check in initial state. */
     if (id == m_initial_state->get_id()) {
-        if (check_goal_and_set_plan(*m_initial_state, state)) {
-            return SOLVED;
+        if (m_goal_test->is_goal(*m_initial_state, state)) {
+            return on_goal_leaf(*m_initial_state, state);
         }
     }
 
@@ -89,8 +89,8 @@ SearchStatus IWSearch::step() {
         open_list.push_back(succ_state.get_id());
 
         /* Goal check after generating new node to save one g layer.*/
-        if (check_goal_and_set_plan(*m_initial_state, succ_state)) {
-            return SOLVED;
+        if (m_goal_test->is_goal(*m_initial_state, succ_state)) {
+            return on_goal_leaf(*m_initial_state, succ_state);
         }
     }
 
@@ -117,6 +117,7 @@ void IWSearch::set_initial_state(const State& state) {
     statistics.inc_generated();
     SearchNode node = m_search_space->get_node(state);
     node.open_initial();
+    open_list.clear();
     open_list.push_back(state.get_id());
     bool novel = is_novel(state);
     utils::unused_variable(novel);
