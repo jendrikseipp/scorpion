@@ -10,7 +10,7 @@ class Task:
         self.task_name = task_name
         self.requirements = requirements
         self.types = types
-        self.constants = constants
+        self.constants = constants§
         self.objects = objects
         self.predicates = predicates
         self.functions = functions

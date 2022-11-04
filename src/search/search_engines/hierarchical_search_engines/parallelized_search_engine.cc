@@ -53,7 +53,54 @@ static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
 
     return make_shared<ParallelizedSearchEngine>(opts);
 }
+/*
+./fast-downward.py --keep-sas-file --build=debug domain_gripper.pddl p10_gripper.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search \
+"serialized_search(
+    child_searches=[
+        parallelized_search(
+            child_searches=[
+                serialized_search(
+                    child_searches=[
+                        iw(width=0,
+                        goal_test=sketch_subgoal(filename=/home/dominik/projects/code/scorpion/hierarchical_sketch/rule_0/rule_0/sketch_0.txt)),
+                    ],
+                    goal_test=sketch_subgoal(filename=/home/dominik/projects/code/scorpion/hierarchical_sketch/rule_0/sketch_1.txt)),
+                serialized_search(
+                    child_searches=[
+                        iw(width=0,
+                        goal_test=sketch_subgoal(filename=/home/dominik/projects/code/scorpion/hierarchical_sketch/rule_1/rule_0/sketch_0.txt)),
+                    ],
+                    goal_test=sketch_subgoal(filename=/home/dominik/projects/code/scorpion/hierarchical_sketch/rule_1/sketch_1.txt)),
+            ],
+            goal_test=sketch_subgoal(filename=/home/dominik/projects/code/scorpion/hierarchical_sketch/sketch_1.txt))
+    ],
+    goal_test=top_goal())"
+ */
 
+/*
+
+./fast-downward.py --keep-sas-file --build=debug domain_gripper.pddl p10_gripper.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search \
+"serialized_search(
+    child_searches=[
+        parallelized_search(
+            child_searches=[
+                serialized_search(
+                    child_searches=[
+                        iw(width=0,
+                        goal_test=sketch_subgoal(filename=/home/dominik/projects/code/sketch-learner/testing/experiments/hierarchical_sketch/rule_1/rule_0/sketch_0.txt))
+                    ],
+                    goal_test=sketch_subgoal(filename=/home/dominik/projects/code/sketch-learner/testing/experiments/hierarchical_sketch/rule_1/sketch_1.txt)),
+                serialized_search(
+                    child_searches=[
+                        iw(width=0,
+                        goal_test=sketch_subgoal(filename=/home/dominik/projects/code/sketch-learner/testing/experiments/hierarchical_sketch/rule_0/rule_0/sketch_0.txt))
+                    ],
+                    goal_test=sketch_subgoal(filename=/home/dominik/projects/code/sketch-learner/testing/experiments/hierarchical_sketch/rule_0/sketch_1.txt))
+            ],
+            goal_test=sketch_subgoal(filename=/home/dominik/projects/code/sketch-learner/testing/experiments/hierarchical_sketch/sketch_1.txt))
+    ],
+    goal_test=top_goal())"
+*/
 static Plugin<hierarchical_search_engine::HierarchicalSearchEngine> _plugin("parallelized_search", _parse);
 
 }
