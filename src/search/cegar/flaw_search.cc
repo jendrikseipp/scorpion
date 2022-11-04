@@ -27,14 +27,7 @@ Cost FlawSearch::get_h_value(int abstract_state_id) const {
 }
 
 OptimalTransitions FlawSearch::get_f_optimal_transitions(int abstract_state_id) const {
-    OptimalTransitions transitions;
-    for (const Transition &t :
-         abstraction.get_outgoing_transitions(abstract_state_id)) {
-        if (shortest_paths.is_optimal_transition(abstract_state_id, t.op_id, t.target_id)) {
-            transitions[t.op_id].push_back(t.target_id);
-        }
-    }
-    return transitions;
+    return shortest_paths.get_optimal_transitions(abstraction, abstract_state_id);
 }
 
 void FlawSearch::add_flaw(int abs_id, const State &state) {

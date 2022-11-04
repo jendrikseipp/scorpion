@@ -11,8 +11,6 @@
 #include "../utils/logging.h"
 #include "../utils/timer.h"
 
-#include <parallel_hashmap/phmap.h>
-
 #include <stack>
 
 namespace utils {
@@ -46,8 +44,6 @@ enum class PickFlawedAbstractState {
     // For each abstract state consider all concrete states.
     BATCH_MIN_H
 };
-
-using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
 
 class FlawSearch {
     TaskProxy task_proxy;

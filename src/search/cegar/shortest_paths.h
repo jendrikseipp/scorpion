@@ -135,6 +135,7 @@ class ShortestPaths {
     void clear_parents(int state);
     void mark_dirty(int state);
     void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
+    bool is_optimal_transition(int start_id, int op_id, int target_id) const;
 
 public:
     ShortestPaths(
@@ -160,7 +161,8 @@ public:
 
     Cost get_64bit_goal_distance(int abstract_state_id) const;
     int get_32bit_goal_distance(int abstract_state_id) const;
-    bool is_optimal_transition(int start_id, int op_id, int target_id) const;
+    OptimalTransitions get_optimal_transitions(
+        const Abstraction &abstraction, int state) const;
 
 #ifndef NDEBUG
     bool test_distances(

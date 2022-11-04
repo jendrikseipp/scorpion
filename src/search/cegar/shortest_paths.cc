@@ -546,6 +546,24 @@ bool ShortestPaths::is_optimal_transition(int start_id, int op_id, int target_id
     return states[start_id].goal_distance - operator_costs[op_id] == states[target_id].goal_distance;
 }
 
+OptimalTransitions ShortestPaths::get_optimal_transitions(
+    const Abstraction &abstraction, int state) const {
+    OptimalTransitions transitions;
+    if (store_parents) {
+        for (const Transition &t : parents[state]) {
+            transitions[t.op_id].push_back(t.target_id);
+        }
+    } else {
+        for (const Transition &t :
+             abstraction.get_outgoing_transitions(state)) {
+            if (is_optimal_transition(state, t.op_id, t.target_id)) {
+                transitions[t.op_id].push_back(t.target_id);
+            }
+        }
+    }
+    return transitions;
+}
+
 #ifndef NDEBUG
 bool ShortestPaths::test_distances(
     const Abstraction &abstraction,

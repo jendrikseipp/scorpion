@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <parallel_hashmap/phmap.h>
+
 struct FactPair;
 
 namespace cegar {
@@ -48,6 +50,7 @@ using Loops = std::vector<int>;
 using Matcher = std::vector<Variable>;
 using NodeID = int;
 using Operators = std::vector<int>;
+using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
 using Solution = std::deque<Transition>;
 using Transitions = std::vector<Transition>;
 
