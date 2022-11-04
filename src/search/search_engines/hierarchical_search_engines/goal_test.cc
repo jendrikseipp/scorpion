@@ -47,6 +47,8 @@ void SketchSubgoal::set_propositional_task(std::shared_ptr<extra_tasks::Proposit
     std::ifstream infile(m_sketch_filename);
     std::stringstream content;
     content << infile.rdbuf();
+    std::cout << m_sketch_filename << std::endl;
+    std::cout << content.str() << std::endl;
     m_policy = dlplan::policy::PolicyReader().read(content.str(), propositional_task->get_syntactic_element_factory_ref());
 }
 
