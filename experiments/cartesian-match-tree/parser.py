@@ -153,6 +153,8 @@ def main():
     parser.add_pattern("successor_generator_creation_time", r"time for successor generation creation: (.+)s\n", type=float)
     parser.add_pattern("successor_generator_creation_memory", r"peak memory difference for successor generator creation: (.+) KB\n", type=int)
 
+    parser.add_bottom_up_pattern("cegar_lower_bound", r"Abstract solution cost: (.+)\n", type=int)
+
     parser.add_function(find_cegar_termination_criterion)
     parser.add_function(add_scores)
 
