@@ -28,9 +28,9 @@ def make_hierarchical_callstring(directory):
 
 
 def generate_search_string(root_directory):
-    callstring = "\"serialized_search(child_searches=["
+    callstring = "serialized_search(child_searches=["
     callstring += make_hierarchical_callstring(root_directory)
-    callstring += "], goal_test=top_goal())\""
+    callstring += "], goal_test=top_goal())"
     return callstring
 
 if __name__ == "__main__":
