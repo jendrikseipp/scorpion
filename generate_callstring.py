@@ -27,17 +27,14 @@ def make_hierarchical_callstring(directory):
         raise Exception()
 
 
-
-def main(root_directory):
-    callstring = "./fast-downward.py --keep-sas-file --build=debug domain_gripper.pddl p10_gripper.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search \""
-    callstring += "serialized_search(child_searches=["
+def generate_search_string(root_directory):
+    callstring = "\"serialized_search(child_searches=["
     callstring += make_hierarchical_callstring(root_directory)
     callstring += "], goal_test=top_goal())\""
-    print(callstring)
-    print(DIR / root_directory)
+    return callstring
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parses a directory of hierarchical policies into a callstring')
     parser.add_argument("--root_directory", type=str, required=True)
     args = parser.parse_args()
-    main(Path(args.root_directory))
+    print(generate_search_string(Path(args.root_directory)))
