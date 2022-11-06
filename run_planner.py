@@ -38,10 +38,13 @@ if __name__ == "__main__":
     parser.add_argument("--domain_file", type=str, required=True)
     parser.add_argument("--instance_file", type=str, required=True)
     parser.add_argument("--hierarchical_sketch_dir", type=str, required=True)
+    parser.add_argument("--plan-file", type=str, required=True)
     args = parser.parse_args()
     subprocess.run([
         "./fast-downward.py",
         "--keep-sas-file",
+        "--plan-file",
+        args.plan_file,
         "--build=release",
         str(args.domain_file),
         str(args.instance_file),
