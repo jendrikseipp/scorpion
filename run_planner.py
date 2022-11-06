@@ -7,7 +7,6 @@ from pathlib import Path
 def make_hierarchical_callstring(directory):
     subdirs = []
     file = None
-    print(directory)
     for path in directory.iterdir():
         if path.is_dir():
             subdirs.append(path)
