@@ -38,7 +38,7 @@ protected:
     HierarchicalSearchEngine* m_parent_search_engine;
     std::vector<std::shared_ptr<HierarchicalSearchEngine>> m_child_search_engines;
 
-    std::unique_ptr<State> m_initial_state;
+    StateID m_initial_state_id;
     std::unique_ptr<SearchSpace> m_search_space;
     Plan m_plan;
 

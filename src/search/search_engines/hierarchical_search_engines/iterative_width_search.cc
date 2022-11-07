@@ -47,14 +47,15 @@ SearchStatus IWSearch::step() {
     StateID id = open_list.front();
     open_list.pop_front();
     State state = m_state_registry->lookup_state(id);
+    // std::cout << "Initial state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
     SearchNode node = m_search_space->get_node(state);
     node.close();
     assert(!node.is_dead_end());
     statistics.inc_expanded();
 
     /* Goal check in initial state. */
-    if (id == m_initial_state->get_id()) {
-        if (m_goal_test->is_goal(*m_initial_state, state)) {
+    if (id == m_initial_state_id) {
+        if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
             return on_goal_leaf(state);
         }
     }
@@ -69,6 +70,7 @@ SearchStatus IWSearch::step() {
         }
 
         State succ_state = m_state_registry->get_successor_state(state, op);
+        // std::cout << "Succ state: " << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
         SearchNode succ_node = m_search_space->get_node(succ_state);
         if (!succ_node.is_new()) {
             continue;
@@ -85,7 +87,7 @@ SearchStatus IWSearch::step() {
         open_list.push_back(succ_state.get_id());
 
         /* Goal check after generating new node to save one g layer.*/
-        if (m_goal_test->is_goal(*m_initial_state, succ_state)) {
+        if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), succ_state)) {
             return on_goal_leaf(succ_state);
         }
     }
@@ -107,8 +109,6 @@ void IWSearch::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
     assert(m_novelty_base);
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
-    // std::cout << "Num facts:" << m_propositional_task->get_num_facts() << std::endl;
-    // std::cout << "Num entries in novelty table:" << m_novelty_base->get_num_tuples() << std::endl;
     statistics.reset();
     statistics.inc_generated();
     SearchNode node = m_search_space->get_node(state);
