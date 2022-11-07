@@ -59,6 +59,7 @@ SearchStatus IWSearch::step() {
         }
     }
 
+    //std::cout << m_propositional_task->compute_dlplan_state(*m_initial_state).str() << std::endl;
     vector<OperatorID> applicable_ops;
     successor_generator.generate_applicable_ops(state, applicable_ops);
     for (OperatorID op_id : applicable_ops) {
@@ -67,11 +68,9 @@ SearchStatus IWSearch::step() {
             continue;
         }
 
-        int old_num_states = m_state_registry->size();
         State succ_state = m_state_registry->get_successor_state(state, op);
-        int new_num_states = m_state_registry->size();
-        bool is_new_state = (new_num_states > old_num_states);
-        if (!is_new_state) {
+        SearchNode succ_node = m_search_space->get_node(succ_state);
+        if (!succ_node.is_new()) {
             continue;
         }
 
@@ -81,10 +80,7 @@ SearchStatus IWSearch::step() {
             continue;
         }
 
-        // std::cout << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
-
-        SearchNode succ_node = m_search_space->get_node(succ_state);
-        assert(succ_node.is_new());
+        //std::cout << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
         succ_node.open(node, op, get_adjusted_cost(op));
         open_list.push_back(succ_state.get_id());
 
