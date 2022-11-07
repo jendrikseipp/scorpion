@@ -9,6 +9,9 @@ namespace extra_tasks {
 
 static void parse_predicates_file(const std::string& filename, dlplan::core::VocabularyInfo& vocabulary_info) {
     std::ifstream infile(filename);
+    if (!infile.is_open()) {
+        throw std::runtime_error("parse_predicates_file - predicates.txt does not exist.");
+    }
     std::string name;
     int arity;
     while (infile >> name >> arity) {
@@ -20,6 +23,9 @@ static void parse_predicates_file(const std::string& filename, dlplan::core::Voc
 
 static void parse_constants_file(const std::string& filename, dlplan::core::VocabularyInfo& vocabulary_info) {
     std::ifstream infile(filename);
+    if (!infile.is_open()) {
+        throw std::runtime_error("parse_constants_file - constants.txt does not exist.");
+    }
     std::string name;
     while (infile >> name) {
         vocabulary_info.add_constant(name);
@@ -81,6 +87,9 @@ static int parse_atom(const std::string& atom_name, dlplan::core::InstanceInfo& 
 
 static void parse_static_atoms_file(const std::string& filename, dlplan::core::InstanceInfo& instance_info) {
     std::ifstream infile(filename);
+    if (!infile.is_open()) {
+        throw std::runtime_error("parse_static_atoms_file - static_atoms.txt does not exist.");
+    }
     std::string name;
     while (infile >> name) {
         parse_atom(name, instance_info, true, false);
@@ -90,6 +99,9 @@ static void parse_static_atoms_file(const std::string& filename, dlplan::core::I
 
 static void parse_goal_atoms_file(const std::string& filename, dlplan::core::InstanceInfo& instance_info) {
     std::ifstream infile(filename);
+    if (!infile.is_open()) {
+        throw std::runtime_error("parse_goal_atoms_file - goal_atoms.txt does not exist.");
+    }
     std::string name;
     while (infile >> name) {
         parse_atom(name, instance_info, true, true);
