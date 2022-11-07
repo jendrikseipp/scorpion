@@ -3,8 +3,6 @@ import argparse
 import subprocess
 from pathlib import Path
 
-CWD = Path.cwd()
-print(CWD)
 
 def make_hierarchical_callstring(path):
     subpaths = []
@@ -43,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("--plan-file", type=str, required=True)
     args = parser.parse_args()
     command = [
-        "./fast-downward.py",
+        args.fd_file,
         "--keep-sas-file",
         "--plan-file",
         args.plan_file,
