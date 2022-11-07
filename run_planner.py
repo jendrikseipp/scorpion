@@ -40,13 +40,14 @@ if __name__ == "__main__":
     parser.add_argument("--hierarchical_sketch_dir", type=str, required=True)
     parser.add_argument("--plan-file", type=str, required=True)
     args = parser.parse_args()
+    search_string = generate_search_string(Path(args.hierarchical_sketch_dir).resolve())
     command = [
-        args.fd_file,
+        Path(args.fd_file).resolve(),
         "--keep-sas-file",
         "--plan-file",
-        args.plan_file,
-        args.domain_file,
-        args.instance_file,
+        Path(args.plan_file).resolve(),
+        Path(args.domain_file).resolve(),
+        Path(args.instance_file).resolve(),
         "--translate-options",
         "--dump-predicates",
         "--dump-constants",
@@ -54,6 +55,6 @@ if __name__ == "__main__":
         "--dump-goal-atoms",
         "--search-options",
         "--search",
-        generate_search_string(Path(args.hierarchical_sketch_dir).resolve())]
+        search_string]
     print(f'Executing "{" ".join(map(str, command))}"')
     subprocess.run(command)
