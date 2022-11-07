@@ -34,13 +34,14 @@ def generate_search_string(root_directory):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parses a directory of hierarchical policies into a callstring')
+    parser.add_argument("--fd_file", type=str, required=True)
     parser.add_argument("--domain_file", type=str, required=True)
     parser.add_argument("--instance_file", type=str, required=True)
     parser.add_argument("--hierarchical_sketch_dir", type=str, required=True)
     parser.add_argument("--plan-file", type=str, required=True)
     args = parser.parse_args()
     subprocess.run([
-        "./fast-downward.py",
+        str(args.fd_file),
         "--keep-sas-file",
         "--plan-file",
         args.plan_file,
