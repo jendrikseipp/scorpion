@@ -96,7 +96,7 @@ SearchStatus HierarchicalSearchEngine::on_goal(const State &state, Plan &&partia
 }
 
 SearchStatus HierarchicalSearchEngine::on_goal_leaf(const State& state) {
-    // std::cout << "Initial state is now: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
+    std::cout << "Initial state is now: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
     Plan plan;
     m_search_space->trace_path(state, plan);
     if (m_parent_search_engine) {

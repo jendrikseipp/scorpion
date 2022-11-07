@@ -19,7 +19,10 @@ class IWSearch : public hierarchical_search_engine::HierarchicalSearchEngine {
     const bool debug;
 
     std::deque<StateID> open_list;
-    std::deque<StateID> closed_list;
+    StateID m_current_state_id;
+    std::unique_ptr<SearchNode> m_current_search_node;
+    std::vector<OperatorID> m_applicable_ops;
+    int m_current_op;
 
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;

@@ -18,6 +18,7 @@ SearchStatus ParallelizedSearchEngine::step() {
     SearchStatus combined_status = SearchStatus::UNSOLVABLE;
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         SearchStatus child_search_status = child_search_engine_ptr->step();
+        std::cout << child_search_status << std::endl;
         switch (child_search_status) {
             case SearchStatus::SOLVED: {
                 return child_search_status;
