@@ -43,13 +43,13 @@ void IWSearch::print_statistics() const {
 }
 
 SearchStatus IWSearch::step() {
-    std::cout << "open list: " << open_list.size() << std::endl;
-    if (open_list.empty()) {
-        utils::g_log << "Completely explored state space -- no solution!" << endl;
-        return FAILED;
-    }
     if (m_current_op == m_applicable_ops.size()) {
         m_current_state_id = StateID::no_state;
+    }
+    std::cout << "open list: " << open_list.size() << std::endl;
+    if (open_list.empty() && m_current_state_id == StateID::no_state) {
+        utils::g_log << "Completely explored state space -- no solution!" << endl;
+        return FAILED;
     }
     // TODO: switch from 1 expansion to 1 generate step for efficiency
     if (m_current_state_id == StateID::no_state) {
