@@ -2,6 +2,7 @@
 
 #include "../../option_parser.h"
 #include "../../plugin.h"
+#include "../../tasks/propositional_task.h"
 
 #include <memory>
 
@@ -13,11 +14,31 @@ namespace serialized_search_engine {
 
 SerializedSearchEngine::SerializedSearchEngine(const options::Options &opts)
     : hierarchical_search_engine::HierarchicalSearchEngine(opts) {
+    m_name = "SerializedSearchEngine";
 }
 
 SearchStatus SerializedSearchEngine::step() {
     assert(m_child_search_engines.size() == 1);
     return m_child_search_engines.front()->step();
+}
+
+SearchStatus SerializedSearchEngine::on_goal(HierarchicalSearchEngine* caller, const State &state, Plan &&partial_plan, const SearchStatistics& child_statistics)
+{
+    std::cout << get_name() << " on_goal: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
+    m_is_active = false;
+    m_plan.insert(m_plan.end(), partial_plan.begin(), partial_plan.end());
+    caller->set_initial_state(state);
+    if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
+        if (m_parent_search_engine) {
+            // Uppropagate goal test and downpropagate global search status
+            return m_parent_search_engine->on_goal(this, state, std::move(m_plan), statistics);
+        } else {
+            // Top-level search saves the plan when reaching top-level goal.
+            plan_manager.save_plan(m_plan, task_proxy);
+            return SearchStatus::SOLVED;
+        }
+    }
+    return SearchStatus::IN_PROGRESS;
 }
 
 void SerializedSearchEngine::print_statistics() const {

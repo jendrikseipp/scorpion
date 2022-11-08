@@ -22,7 +22,7 @@ class IWSearch : public hierarchical_search_engine::HierarchicalSearchEngine {
     StateID m_current_state_id;
     std::unique_ptr<SearchNode> m_current_search_node;
     std::vector<OperatorID> m_applicable_ops;
-    int m_current_op;
+    size_t m_current_op;
 
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
@@ -32,6 +32,9 @@ private:
     bool is_novel(const OperatorProxy &op, const State &succ_state);
 
 protected:
+    /**
+     * Generates next successor state and reacts upon.
+     */
     virtual SearchStatus step() override;
 
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) override;
@@ -39,6 +42,8 @@ protected:
 
 public:
     explicit IWSearch(const options::Options &opts);
+
+    virtual SearchStatus on_goal_leaf(const State& state) override;
 
     virtual void print_statistics() const override;
 

@@ -16,6 +16,8 @@ protected:
 public:
     explicit SerializedSearchEngine(const options::Options &opts);
 
+    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state, Plan&& partial_plan, const SearchStatistics& statistics) override;
+
     virtual void print_statistics() const override;
 };
 }

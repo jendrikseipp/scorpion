@@ -26,6 +26,7 @@ namespace hierarchical_search_engine {
 class HierarchicalSearchEngine : public SearchEngine {
 friend class serialized_search_engine::SerializedSearchEngine;
 friend class parallelized_search_engine::ParallelizedSearchEngine;
+friend class iw_search::IWSearch;
 
 protected:
     std::shared_ptr<StateRegistry> m_state_registry;
@@ -41,6 +42,12 @@ protected:
     StateID m_initial_state_id;
     std::unique_ptr<SearchSpace> m_search_space;
     Plan m_plan;
+
+    std::string m_name;
+
+    // maximum bound until search terminates
+    int m_bound;
+    bool m_is_active;
 
 protected:
     /**
@@ -58,7 +65,7 @@ protected:
      * Propagate goal test up in the hierarchy.
      * Propagate global search status down in the hierarchy.
      */
-    virtual SearchStatus on_goal(const State &state, Plan&& partial_plan, const SearchStatistics& statistics);
+    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state, Plan&& partial_plan, const SearchStatistics& statistics);
 
     /**
      * React upon reaching goal state in leaf search engine.
@@ -72,6 +79,10 @@ protected:
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task);
     virtual void set_parent_search_engine(HierarchicalSearchEngine* parent);
     virtual void set_initial_state(const State& state);
+    virtual void set_bound(int bound);
+
+    virtual bool get_is_active();
+    virtual std::string get_name();
 
 public:
     static void add_child_search_engine_option(options::OptionParser &parser);

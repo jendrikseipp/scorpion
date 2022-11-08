@@ -27,6 +27,7 @@ IWSearch::IWSearch(const Options &opts)
       m_current_op(0),
       m_novelty_base(nullptr),
       m_novelty_table(0) {
+    m_name = "IWSearch";
 }
 
 bool IWSearch::is_novel(const State &state) {
@@ -46,17 +47,18 @@ SearchStatus IWSearch::step() {
     if (m_current_op == m_applicable_ops.size()) {
         m_current_state_id = StateID::no_state;
     }
-    std::cout << "open list: " << open_list.size() << std::endl;
+
     if (open_list.empty() && m_current_state_id == StateID::no_state) {
         utils::g_log << "Completely explored state space -- no solution!" << endl;
+        m_is_active = false;
         return FAILED;
     }
-    // TODO: switch from 1 expansion to 1 generate step for efficiency
+
     if (m_current_state_id == StateID::no_state) {
         m_current_state_id = open_list.front();
-        std::cout << "popped from open list: " << m_current_state_id << std::endl;
         open_list.pop_front();
         State current_state = m_state_registry->lookup_state(m_current_state_id);
+        std::cout << get_name() << " current_state: " << m_propositional_task->compute_dlplan_state(current_state).str() << std::endl;
         m_current_search_node = utils::make_unique_ptr<SearchNode>(m_search_space->get_node(current_state));
         m_current_search_node->close();
         assert(!m_current_search_node->is_dead_end());
@@ -66,6 +68,12 @@ SearchStatus IWSearch::step() {
         m_current_op = 0;
     }
     State current_state = m_state_registry->lookup_state(m_current_state_id);
+
+    SearchNode current_node = m_search_space->get_node(current_state);
+    if (current_node.get_g() > bound) {
+        return SearchStatus::FAILED;
+    }
+
     /* Goal check in initial state. */
     if (m_current_state_id == m_initial_state_id) {
         if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), current_state)) {
@@ -75,31 +83,28 @@ SearchStatus IWSearch::step() {
 
     OperatorProxy op = task_proxy.get_operators()[m_applicable_ops[m_current_op]];
     ++m_current_op;
-    std::cout << m_current_op << " " << m_applicable_ops.size() << std::endl;
     State succ_state = m_state_registry->get_successor_state(current_state, op);
-    std::cout << "succ_state: " << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
+    std::cout << get_name() << " succ_state: " << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
 
     SearchNode succ_node = m_search_space->get_node(succ_state);
     if (!succ_node.is_new()) {
-        std::cout << "is not new" << std::endl;
         return IN_PROGRESS;
     }
 
     statistics.inc_generated();
     bool novel = is_novel(succ_state);
     if (!novel) {
-        std::cout << "is not novel" << std::endl;
         return IN_PROGRESS;
     }
 
-    succ_node.open(*m_current_search_node, op, get_adjusted_cost(op));
-    //open_list.push_back(succ_state.get_id());
+    // succ_node.open(*m_current_search_node, op, get_adjusted_cost(op));
+    succ_node.open(*m_current_search_node, op, 1);
+    if (width > 0) {
+        open_list.push_back(succ_state.get_id());
+    }
 
     if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), succ_state)) {
-        std::cout << "is goal" << std::endl;
         return on_goal_leaf(succ_state);
-    } else {
-        std::cout << "is not goal" << std::endl;
     }
     return IN_PROGRESS;
 }
@@ -110,7 +115,6 @@ void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::Propositional
 }
 
 void IWSearch::set_initial_state(const State& state) {
-    std::cout << "initial state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
     HierarchicalSearchEngine::set_initial_state(state);
     assert(m_novelty_base);
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
@@ -126,6 +130,19 @@ void IWSearch::set_initial_state(const State& state) {
     bool novel = is_novel(state);
     utils::unused_variable(novel);
     assert(novel);
+}
+
+SearchStatus IWSearch::on_goal_leaf(const State& state) {
+    std::cout << get_name() << " on_goal_leaf: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
+    m_is_active = false;
+    Plan plan;
+    m_search_space->trace_path(state, plan);
+    if (m_parent_search_engine) {
+        return m_parent_search_engine->on_goal(this, state, std::move(plan), statistics);
+    } else {
+        plan_manager.save_plan(plan, task_proxy);
+        return SearchStatus::SOLVED;
+    }
 }
 
 void IWSearch::dump_search_space() const {
