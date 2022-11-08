@@ -70,7 +70,7 @@ void HierarchicalSearchEngine::set_initial_state(const State &state)
     }
 }
 
-SearchStatus HierarchicalSearchEngine::on_goal(const State &state, Plan &&partial_plan, const SearchStatistics& child_statistics)
+SearchStatus HierarchicalSearchEngine::on_goal(HierarchicalSearchEngine* caller, const State &state, Plan &&partial_plan, const SearchStatistics& child_statistics)
 {
     statistics.inc_expanded(child_statistics.get_expanded());
     statistics.inc_evaluated_states(child_statistics.get_evaluated_states());
@@ -79,13 +79,15 @@ SearchStatus HierarchicalSearchEngine::on_goal(const State &state, Plan &&partia
     statistics.inc_reopened(child_statistics.get_reopened());
     statistics.inc_dead_ends(child_statistics.get_deadend_states());
     m_plan.insert(m_plan.end(), partial_plan.begin(), partial_plan.end());
-    for (auto child_search_engine_ptr : m_child_search_engines) {
-        child_search_engine_ptr->set_initial_state(state);
-    }
+    std::cout << m_name << "::" << "on_goal" << std::endl;
+    // TODO: only set initial state of caller
+    // because only this search reached goal
+    std::cout << caller->m_name << "::set_initial_state" << std::endl;
+    caller->set_initial_state(state);
     if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
         if (m_parent_search_engine) {
             // Uppropagate goal test and downpropagate global search status
-            return m_parent_search_engine->on_goal(state, std::move(m_plan), statistics);
+            return m_parent_search_engine->on_goal(this, state, std::move(m_plan), statistics);
         } else {
             // Top-level search saves the plan when reaching top-level goal.
             plan_manager.save_plan(m_plan, task_proxy);
@@ -96,11 +98,11 @@ SearchStatus HierarchicalSearchEngine::on_goal(const State &state, Plan &&partia
 }
 
 SearchStatus HierarchicalSearchEngine::on_goal_leaf(const State& state) {
-    // std::cout << "Initial state is now: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
+    std::cout << "Initial state is now: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
     Plan plan;
     m_search_space->trace_path(state, plan);
     if (m_parent_search_engine) {
-        return m_parent_search_engine->on_goal(state, std::move(plan), statistics);
+        return m_parent_search_engine->on_goal(this, state, std::move(plan), statistics);
     } else {
         plan_manager.save_plan(plan, task_proxy);
         return SearchStatus::SOLVED;

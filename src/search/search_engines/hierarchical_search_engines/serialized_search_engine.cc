@@ -13,6 +13,7 @@ namespace serialized_search_engine {
 
 SerializedSearchEngine::SerializedSearchEngine(const options::Options &opts)
     : hierarchical_search_engine::HierarchicalSearchEngine(opts) {
+    m_name = "SerializedSearchEngine";
 }
 
 SearchStatus SerializedSearchEngine::step() {

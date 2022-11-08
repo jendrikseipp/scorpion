@@ -12,7 +12,9 @@ using namespace hierarchical_search_engine;
 namespace parallelized_search_engine {
 
 ParallelizedSearchEngine::ParallelizedSearchEngine(const options::Options &opts)
-    : hierarchical_search_engine::HierarchicalSearchEngine(opts) { }
+    : hierarchical_search_engine::HierarchicalSearchEngine(opts) {
+        m_name = "ParallelizedSearchEngine";
+}
 
 SearchStatus ParallelizedSearchEngine::step() {
     SearchStatus combined_status = SearchStatus::UNSOLVABLE;

@@ -28,6 +28,8 @@ friend class serialized_search_engine::SerializedSearchEngine;
 friend class parallelized_search_engine::ParallelizedSearchEngine;
 
 protected:
+    std::string m_name;
+
     std::shared_ptr<StateRegistry> m_state_registry;
     std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task;
     std::shared_ptr<goal_test::GoalTest> m_goal_test;
@@ -58,7 +60,7 @@ protected:
      * Propagate goal test up in the hierarchy.
      * Propagate global search status down in the hierarchy.
      */
-    virtual SearchStatus on_goal(const State &state, Plan&& partial_plan, const SearchStatistics& statistics);
+    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state, Plan&& partial_plan, const SearchStatistics& statistics);
 
     /**
      * React upon reaching goal state in leaf search engine.

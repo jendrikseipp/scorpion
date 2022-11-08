@@ -24,6 +24,7 @@ IWSearch::IWSearch(const Options &opts)
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
       m_novelty_base(nullptr),
       m_novelty_table(0) {
+    m_name = "IWSearch";
 }
 
 bool IWSearch::is_novel(const State &state) {
@@ -84,7 +85,9 @@ SearchStatus IWSearch::step() {
 
         //std::cout << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
         succ_node.open(node, op, get_adjusted_cost(op));
-        open_list.push_back(succ_state.get_id());
+        if (width > 0) {
+            open_list.push_back(succ_state.get_id());
+        }
 
         /* Goal check after generating new node to save one g layer.*/
         if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), succ_state)) {
