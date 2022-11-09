@@ -13,71 +13,55 @@ using namespace hierarchical_search_engine;
 namespace parallelized_search_engine {
 
 ParallelizedSearchEngine::ParallelizedSearchEngine(const options::Options &opts)
-    : hierarchical_search_engine::HierarchicalSearchEngine(opts),
-      m_shortest_plan_size(std::numeric_limits<int>::max()) {
+    : hierarchical_search_engine::HierarchicalSearchEngine(opts) {
     m_name = "ParallelizedSearchEngine";
 }
 
 SearchStatus ParallelizedSearchEngine::step() {
-    // case 1: perform steps of active child searches in parallel.
+    // 1. Perform one generate step of active child search.
     bool has_active_child_search = false;
-    SearchStatus combined_status = SearchStatus::UNSOLVABLE;
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         if (child_search_engine_ptr->get_is_active()) {
             has_active_child_search = true;
-            SearchStatus child_search_status = child_search_engine_ptr->step();
-            switch (child_search_status) {
-                case SearchStatus::SOLVED: {
-                    return child_search_status;
-                }
-                case SearchStatus::IN_PROGRESS: {
-                    combined_status = SearchStatus::IN_PROGRESS;
-                    break;
-                }
-                default:
-                    break;
-            }
+            child_search_engine_ptr->step();
         }
     }
-    if (has_active_child_search) {
-        return combined_status;
-    } else {
-        // case 2: propagate goal check
-        if (m_partial_plans.empty()) {
+    // 2. If search exhausted, notify parent.
+    if (!has_active_child_search) {
+        if (!m_target_state) {
             return SearchStatus::UNSOLVABLE;
         }
-        size_t best_search_index = -1;
-        int bound = std::numeric_limits<int>::max();
-        for (size_t i = 0; i < m_partial_plans.size(); ++i) {
-            if (m_partial_plans.size() < bound) {
-                best_search_index = bound;
-                bound = m_partial_plans.size();
-            }
-        }
         for (const auto& child_search_engine_ptr : m_child_search_engines) {
-            child_search_engine_ptr->set_initial_state(m_target_states[best_search_index]);
+            statistics.inc_expanded(child_search_engine_ptr->statistics.get_expanded());
+            statistics.inc_generated(child_search_engine_ptr->statistics.get_generated());
         }
-        return m_parent_search_engine->on_goal(this, m_target_states[best_search_index], std::move(m_partial_plans[best_search_index]), statistics);
+        State state = *m_target_state;
+        return m_parent_search_engine->on_goal(this, state);
     }
     return SearchStatus::IN_PROGRESS;
 }
 
-SearchStatus ParallelizedSearchEngine::on_goal(HierarchicalSearchEngine* caller, const State &state, Plan &&partial_plan, const SearchStatistics& child_statistics)
+SearchStatus ParallelizedSearchEngine::on_goal(HierarchicalSearchEngine* caller, const State &state)
 {
-    std::cout << get_name() << " on_goal: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
-    m_shortest_plan_size = std::min<int>(m_shortest_plan_size, partial_plan.size());
-    for (const auto& child_search_engine_ptr : m_child_search_engines) {
-        child_search_engine_ptr->set_bound(m_shortest_plan_size - 2);
+    if (m_debug)
+        std::cout << get_name() << " on_goal: " << m_propositional_task->compute_dlplan_state(state).str() << " " << m_plan.size() << std::endl;
+    if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
+        // Achieved goal: Update current best solution.
+        Plan caller_plan = caller->get_plan();
+        if (!m_target_state || caller_plan.size() < m_plan.size()) {
+            m_plan = caller_plan;
+            m_target_state = utils::make_unique_ptr<State>(state);
+            for (const auto& child_search_engine_ptr : m_child_search_engines) {
+                child_search_engine_ptr->set_bound(static_cast<int>(caller_plan.size()) - 2);
+            }
+        }
     }
-    m_partial_plans.push_back(std::move(partial_plan));
-    m_target_states.push_back(state);
     return SearchStatus::IN_PROGRESS;
 }
 
 void ParallelizedSearchEngine::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
-    m_partial_plans.clear();
-    m_target_states.clear();
+    m_target_state = nullptr;
 }
 
 void ParallelizedSearchEngine::print_statistics() const {

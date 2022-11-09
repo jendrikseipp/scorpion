@@ -49,42 +49,51 @@ SearchStatus IWSearch::step() {
     }
 
     if (open_list.empty() && m_current_state_id == StateID::no_state) {
-        utils::g_log << "Completely explored state space -- no solution!" << endl;
+        if (m_debug)
+            std::cout << "Completely explored state space -- no solution!" << std::endl;
         m_is_active = false;
-        return FAILED;
+        return SearchStatus::FAILED;
     }
 
     if (m_current_state_id == StateID::no_state) {
         m_current_state_id = open_list.front();
         open_list.pop_front();
         State current_state = m_state_registry->lookup_state(m_current_state_id);
-        std::cout << get_name() << " current_state: " << m_propositional_task->compute_dlplan_state(current_state).str() << std::endl;
+        if (m_debug)
+            std::cout << get_name() << " current_state: " << m_propositional_task->compute_dlplan_state(current_state).str() << std::endl;
         m_current_search_node = utils::make_unique_ptr<SearchNode>(m_search_space->get_node(current_state));
         m_current_search_node->close();
         assert(!m_current_search_node->is_dead_end());
         statistics.inc_expanded();
         m_applicable_ops.clear();
         successor_generator.generate_applicable_ops(current_state, m_applicable_ops);
+        if (m_debug) {
+            std::cout << "num applicable ops: " << m_applicable_ops.size() << std::endl;
+        }
         m_current_op = 0;
     }
     State current_state = m_state_registry->lookup_state(m_current_state_id);
 
     SearchNode current_node = m_search_space->get_node(current_state);
-    if (current_node.get_g() > bound) {
+    // std::cout << current_node.get_g() << " " << m_bound << std::endl;
+    if (current_node.get_g() > m_bound) {
+        m_is_active = false;
         return SearchStatus::FAILED;
     }
 
     /* Goal check in initial state. */
     if (m_current_state_id == m_initial_state_id) {
         if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), current_state)) {
-            return on_goal_leaf(current_state);
+            return on_goal(nullptr, current_state);
         }
     }
 
     OperatorProxy op = task_proxy.get_operators()[m_applicable_ops[m_current_op]];
     ++m_current_op;
     State succ_state = m_state_registry->get_successor_state(current_state, op);
-    std::cout << get_name() << " succ_state: " << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
+
+    if (m_debug)
+        std::cout << get_name() << " succ_state: " << m_propositional_task->compute_dlplan_state(succ_state).str() << std::endl;
 
     SearchNode succ_node = m_search_space->get_node(succ_state);
     if (!succ_node.is_new()) {
@@ -104,7 +113,7 @@ SearchStatus IWSearch::step() {
     }
 
     if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), succ_state)) {
-        return on_goal_leaf(succ_state);
+        return on_goal(nullptr, succ_state);
     }
     return IN_PROGRESS;
 }
@@ -132,17 +141,13 @@ void IWSearch::set_initial_state(const State& state) {
     assert(novel);
 }
 
-SearchStatus IWSearch::on_goal_leaf(const State& state) {
-    std::cout << get_name() << " on_goal_leaf: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
+SearchStatus IWSearch::on_goal(HierarchicalSearchEngine*, const State& state) {
+    if (m_debug)
+        std::cout << get_name() << " on_goal: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
     m_is_active = false;
-    Plan plan;
-    m_search_space->trace_path(state, plan);
-    if (m_parent_search_engine) {
-        return m_parent_search_engine->on_goal(this, state, std::move(plan), statistics);
-    } else {
-        plan_manager.save_plan(plan, task_proxy);
-        return SearchStatus::SOLVED;
-    }
+    assert(m_plan.empty());
+    m_search_space->trace_path(state, m_plan);
+    return m_parent_search_engine->on_goal(this, state);
 }
 
 void IWSearch::dump_search_space() const {

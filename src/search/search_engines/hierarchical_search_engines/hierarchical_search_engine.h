@@ -49,6 +49,8 @@ protected:
     int m_bound;
     bool m_is_active;
 
+    bool m_debug;
+
 protected:
     /**
      * Performs task transformation to ModifiedInitialStateTask.
@@ -59,30 +61,32 @@ protected:
      * Top-level initialization.
      */
     virtual void initialize() override;
+    virtual bool initial_state_goal_test() override;
 
     /**
-     * React upon reaching goal state.
-     * Propagate goal test up in the hierarchy.
-     * Propagate global search status down in the hierarchy.
-     */
-    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state, Plan&& partial_plan, const SearchStatistics& statistics);
-
-    /**
-     * React upon reaching goal state in leaf search engine.
-     */
-    virtual SearchStatus on_goal_leaf(const State& state);
-
-    /**
-     * Setters used to (re-)initialize child searches
+     * Child-level initialization.
      */
     virtual void set_state_registry(std::shared_ptr<StateRegistry> state_registry);
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task);
     virtual void set_parent_search_engine(HierarchicalSearchEngine* parent);
+
+    /**
+     * React upon reaching goal state.
+     */
+    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state);
+
+    /**
+     * Setters.
+     */
     virtual void set_initial_state(const State& state);
     virtual void set_bound(int bound);
 
+    /**
+     * Getters.
+     */
     virtual bool get_is_active();
     virtual std::string get_name();
+    virtual Plan get_plan();
 
 public:
     static void add_child_search_engine_option(options::OptionParser &parser);

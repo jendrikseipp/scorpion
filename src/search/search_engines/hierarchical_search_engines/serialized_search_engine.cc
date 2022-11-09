@@ -19,24 +19,35 @@ SerializedSearchEngine::SerializedSearchEngine(const options::Options &opts)
 
 SearchStatus SerializedSearchEngine::step() {
     assert(m_child_search_engines.size() == 1);
-    return m_child_search_engines.front()->step();
+    auto search_status = m_child_search_engines.front()->step();
+    if (search_status == SearchStatus::FAILED) {
+        m_is_active = false;
+    }
+    return search_status;
 }
 
-SearchStatus SerializedSearchEngine::on_goal(HierarchicalSearchEngine* caller, const State &state, Plan &&partial_plan, const SearchStatistics& child_statistics)
+SearchStatus SerializedSearchEngine::on_goal(HierarchicalSearchEngine* caller, const State &state)
 {
-    std::cout << get_name() << " on_goal: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
-    m_is_active = false;
-    m_plan.insert(m_plan.end(), partial_plan.begin(), partial_plan.end());
-    caller->set_initial_state(state);
+    if (m_debug)
+        std::cout << get_name() << " on_goal: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
+    // 1. Serialize plan
+    Plan caller_plan = caller->get_plan();
+    m_plan.insert(m_plan.end(), caller_plan.begin(), caller_plan.end());
+    statistics.inc_expanded(caller->statistics.get_expanded());
+    statistics.inc_generated(caller->statistics.get_generated());
     if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
+        // Achieved goal: notify parent.
+        m_is_active = false;
         if (m_parent_search_engine) {
-            // Uppropagate goal test and downpropagate global search status
-            return m_parent_search_engine->on_goal(this, state, std::move(m_plan), statistics);
+            return m_parent_search_engine->on_goal(this, state);
         } else {
-            // Top-level search saves the plan when reaching top-level goal.
+            // Top-level search saves the plan instead.
             plan_manager.save_plan(m_plan, task_proxy);
             return SearchStatus::SOLVED;
         }
+    } else {
+        // Unachieved goal: child search must continue from new initial state
+        caller->set_initial_state(state);
     }
     return SearchStatus::IN_PROGRESS;
 }

@@ -43,7 +43,7 @@ protected:
 public:
     explicit IWSearch(const options::Options &opts);
 
-    virtual SearchStatus on_goal_leaf(const State& state) override;
+    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State& state) override;
 
     virtual void print_statistics() const override;
 

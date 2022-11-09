@@ -11,9 +11,8 @@ class Options;
 namespace parallelized_search_engine {
 class ParallelizedSearchEngine : public hierarchical_search_engine::HierarchicalSearchEngine {
 private:
-    std::vector<Plan> m_partial_plans;
-    std::vector<State> m_target_states;
-    int m_shortest_plan_size;
+    // the target state reached by shortest plan
+    std::unique_ptr<State> m_target_state;
 
 protected:
     virtual SearchStatus step() override;
@@ -21,7 +20,7 @@ protected:
 public:
     explicit ParallelizedSearchEngine(const options::Options &opts);
 
-    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state, Plan&& partial_plan, const SearchStatistics& statistics) override;
+    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state) override;
 
     virtual void set_initial_state(const State& state);
 
