@@ -19,6 +19,10 @@ SerializedSearchEngine::SerializedSearchEngine(const options::Options &opts)
 
 SearchStatus SerializedSearchEngine::step() {
     assert(m_child_search_engines.size() == 1);
+    if (m_plan.size() > m_bound) {
+        m_is_active = false;
+        return SearchStatus::FAILED;
+    }
     auto search_status = m_child_search_engines.front()->step();
     if (search_status == SearchStatus::FAILED) {
         m_is_active = false;
