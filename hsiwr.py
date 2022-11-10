@@ -33,7 +33,7 @@ def generate_search_string(root_directory):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Parses a directory of hierarchical policies into a callstring')
+    parser = argparse.ArgumentParser(description='Hierarchical Serialized Iterated Width With Sketches (HSIWR) Algorithm')
     parser.add_argument("--fd_file", type=str, default="./fast-downward.py")
     parser.add_argument("--domain_file", type=str, required=True)
     parser.add_argument("--instance_file", type=str, required=True)
