@@ -26,7 +26,7 @@ HierarchicalSearchEngine::HierarchicalSearchEngine(
       m_search_space(nullptr),
       m_bound(std::numeric_limits<int>::max()),
       m_is_active(true),
-      m_debug(false) {
+      m_debug(true) {
 }
 
 void HierarchicalSearchEngine::initialize() {

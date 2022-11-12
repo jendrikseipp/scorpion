@@ -55,7 +55,7 @@ From: ubuntu:20.04
 	cd /
 
 	ln -frs /scorpion/fast-downward.py /fast-downward.py
-	ln -frs /scorpion/hsiwr.py /hsiwr.py
+	ln -frs /scorpion/siwr.py /siwr.py
 
 %runscript
     DOMAINFILE=$1
@@ -63,7 +63,7 @@ From: ubuntu:20.04
 	DCK=$3
 	PLANFILE=$4
 
-    /hsiwr.py --fd_file /fast-downward.py --domain_file $DOMAINFILE --instance_file $PROBLEMFILE --hierarchical_sketch_dir $DCK --plan-file $PLANFILE
+    /siwr.py --fd_file /fast-downward.py --domain_file $DOMAINFILE --instance_file $PROBLEMFILE --sketch-file $DCK --plan-file $PLANFILE
 
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
