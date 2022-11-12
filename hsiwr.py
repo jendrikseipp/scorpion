@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--domain_file", type=str, required=True)
     parser.add_argument("--instance_file", type=str, required=True)
     parser.add_argument("--hierarchical_sketch_dir", type=str, required=True)
-    parser.add_argument("--plan-file", type=str, required=True)
+    parser.add_argument("--plan_file", type=str, required=True)
     args = parser.parse_args()
     search_string = generate_search_string(Path(args.hierarchical_sketch_dir).resolve())
     command = [

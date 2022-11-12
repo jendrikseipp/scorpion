@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument("--instance_file", type=str, required=True)
     parser.add_argument("--sketch_file", type=str, required=True)
     parser.add_argument("--width", type=int, required=True)
-    parser.add_argument("--plan-file", type=str, required=True)
+    parser.add_argument("--plan_file", type=str, required=True)
     args = parser.parse_args()
     search_string = generate_search_string(Path(args.sketch_file).resolve(), args.width)
     command = [

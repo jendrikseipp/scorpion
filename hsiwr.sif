@@ -63,7 +63,7 @@ From: ubuntu:20.04
 	DCK=$3
 	PLANFILE=$4
 
-    /hsiwr.py --fd_file /fast-downward.py --domain_file $DOMAINFILE --instance_file $PROBLEMFILE --hierarchical_sketch_dir $DCK --plan-file $PLANFILE
+    /hsiwr.py --fd_file /fast-downward.py --domain_file $DOMAINFILE --instance_file $PROBLEMFILE --hierarchical_sketch_dir $DCK --plan_file $PLANFILE
 
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
