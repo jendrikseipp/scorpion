@@ -4,9 +4,9 @@ import subprocess
 from pathlib import Path
 
 
-def generate_search_string(sketch_file):
+def generate_search_string(sketch_file, width):
     callstring = "serialized_search(child_searches=["
-    callstring += "iw(width=0, goal_test=sketch_subgoal(filename=" + str(sketch_file) + "))"
+    callstring += "iw(width=" + str(width) + ", goal_test=sketch_subgoal(filename=" + str(sketch_file) + "))"
     callstring += "], goal_test=top_goal())"
     return callstring
 
@@ -17,9 +17,10 @@ if __name__ == "__main__":
     parser.add_argument("--domain_file", type=str, required=True)
     parser.add_argument("--instance_file", type=str, required=True)
     parser.add_argument("--sketch_file", type=str, required=True)
+    parser.add_argument("--width", type=int, required=True)
     parser.add_argument("--plan-file", type=str, required=True)
     args = parser.parse_args()
-    search_string = generate_search_string(Path(args.sketch_file).resolve())
+    search_string = generate_search_string(Path(args.sketch_file).resolve(), args.width)
     command = [
         Path(args.fd_file).resolve(),
         "--keep-sas-file",
