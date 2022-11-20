@@ -1,6 +1,0 @@
-(:policy
-(:boolean_features "b_empty(c_and(c_one_of(rooma),c_primitive(at-robby,0)))")
-(:numerical_features "n_count(r_primitive(carry,0,1))")
-(:rule (:conditions (:c_n_gt 0) (:c_b_neg 0)) (:effects (:e_n_bot 0) (:e_b_pos 0)))
-(:rule (:conditions (:c_n_gt 0) (:c_b_pos 0)) (:effects (:e_n_dec 0) (:e_b_bot 0)))
-)

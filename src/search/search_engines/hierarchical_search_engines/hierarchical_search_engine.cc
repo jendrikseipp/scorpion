@@ -23,7 +23,10 @@ HierarchicalSearchEngine::HierarchicalSearchEngine(
       m_parent_search_engine(nullptr),
       m_child_search_engines(opts.get_list<std::shared_ptr<HierarchicalSearchEngine>>("child_searches")),
       m_initial_state_id(StateID::no_state),
-      m_search_space(nullptr) {
+      m_search_space(nullptr),
+      m_bound(std::numeric_limits<int>::max()),
+      m_is_active(true),
+      m_debug(false) {
 }
 
 void HierarchicalSearchEngine::initialize() {
@@ -32,6 +35,15 @@ void HierarchicalSearchEngine::initialize() {
     set_propositional_task(std::make_shared<extra_tasks::PropositionalTask>(tasks::g_root_task));
     set_initial_state(m_state_registry->get_initial_state());
     set_parent_search_engine(nullptr);
+}
+
+bool HierarchicalSearchEngine::initial_state_goal_test() {
+    bool is_goal = m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), m_state_registry->lookup_state(m_initial_state_id));
+    // save empty plan.
+    if (is_goal) {
+        plan_manager.save_plan(m_plan, task_proxy);
+    }
+    return is_goal;
 }
 
 void HierarchicalSearchEngine::set_state_registry(std::shared_ptr<StateRegistry> state_registry) {
@@ -61,52 +73,43 @@ void HierarchicalSearchEngine::set_parent_search_engine(
 
 void HierarchicalSearchEngine::set_initial_state(const State &state)
 {
+    if (m_debug)
+        std::cout << get_name() << " set_initial_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
     m_plan.clear();
     m_initial_state_id = state.get_id();
     m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
+    m_bound = std::numeric_limits<int>::max();
+    m_is_active = true;
     statistics.reset();
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         child_search_engine_ptr->set_initial_state(state);
     }
 }
 
-SearchStatus HierarchicalSearchEngine::on_goal(HierarchicalSearchEngine* caller, const State &state, Plan &&partial_plan, const SearchStatistics& child_statistics)
-{
-    statistics.inc_expanded(child_statistics.get_expanded());
-    statistics.inc_evaluated_states(child_statistics.get_evaluated_states());
-    statistics.inc_evaluations(child_statistics.get_evaluations());
-    statistics.inc_generated(child_statistics.get_generated());
-    statistics.inc_reopened(child_statistics.get_reopened());
-    statistics.inc_dead_ends(child_statistics.get_deadend_states());
-    m_plan.insert(m_plan.end(), partial_plan.begin(), partial_plan.end());
-    std::cout << m_name << "::" << "on_goal" << std::endl;
-    // TODO: only set initial state of caller
-    // because only this search reached goal
-    std::cout << caller->m_name << "::set_initial_state" << std::endl;
-    caller->set_initial_state(state);
-    if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
-        if (m_parent_search_engine) {
-            // Uppropagate goal test and downpropagate global search status
-            return m_parent_search_engine->on_goal(this, state, std::move(m_plan), statistics);
-        } else {
-            // Top-level search saves the plan when reaching top-level goal.
-            plan_manager.save_plan(m_plan, task_proxy);
-            return SearchStatus::SOLVED;
-        }
+void HierarchicalSearchEngine::set_bound(int bound) {
+    m_bound = bound;
+    for (const auto& child_search_engine_ptr : m_child_search_engines) {
+        child_search_engine_ptr->set_bound(bound);
     }
-    return SearchStatus::IN_PROGRESS;
 }
 
-SearchStatus HierarchicalSearchEngine::on_goal_leaf(const State& state) {
-    std::cout << "Initial state is now: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
-    Plan plan;
-    m_search_space->trace_path(state, plan);
-    if (m_parent_search_engine) {
-        return m_parent_search_engine->on_goal(this, state, std::move(plan), statistics);
-    } else {
-        plan_manager.save_plan(plan, task_proxy);
-        return SearchStatus::SOLVED;
-    }
+bool HierarchicalSearchEngine::get_is_active() {
+    return m_is_active;
+}
+
+std::string HierarchicalSearchEngine::get_name() {
+    std::stringstream ss;
+    ss << this << " " << m_name;
+    return ss.str();
+}
+
+Plan HierarchicalSearchEngine::get_plan() {
+    return m_plan;
+}
+
+SearchStatus HierarchicalSearchEngine::on_goal(HierarchicalSearchEngine*, const State&)
+{
+    throw std::runtime_error("HierarchicalSearchEngine::on_goal - called pure abstract method.");
 }
 
 void HierarchicalSearchEngine::add_child_search_engine_option(OptionParser &parser) {

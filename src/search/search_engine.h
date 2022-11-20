@@ -53,6 +53,9 @@ protected:
     double max_time;
 
     virtual void initialize() {}
+    virtual bool initial_state_goal_test() {
+       throw std::runtime_error("SearchEngine::initial_state_goal_test - tried to call pure abstract method.");
+    }
     virtual SearchStatus step() = 0;
 
     void set_plan(const Plan &plan);
