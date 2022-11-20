@@ -71,21 +71,20 @@ SearchStatus IWSearch::step() {
             std::cout << "num applicable ops: " << m_applicable_ops.size() << std::endl;
         }
         m_current_op = 0;
+
+        /* Goal check in initial state. */
+        if (m_current_state_id == m_initial_state_id) {
+            if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), current_state)) {
+                return on_goal(nullptr, current_state);
+            }
+        }
     }
     State current_state = m_state_registry->lookup_state(m_current_state_id);
 
     SearchNode current_node = m_search_space->get_node(current_state);
-    // std::cout << current_node.get_g() << " " << m_bound << std::endl;
     if (current_node.get_g() > m_bound) {
         m_is_active = false;
         return SearchStatus::FAILED;
-    }
-
-    /* Goal check in initial state. */
-    if (m_current_state_id == m_initial_state_id) {
-        if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), current_state)) {
-            return on_goal(nullptr, current_state);
-        }
     }
 
     OperatorProxy op = task_proxy.get_operators()[m_applicable_ops[m_current_op]];
@@ -99,16 +98,15 @@ SearchStatus IWSearch::step() {
     if (!succ_node.is_new()) {
         return IN_PROGRESS;
     }
-
-    statistics.inc_generated();
-    bool novel = is_novel(succ_state);
-    if (!novel) {
-        return IN_PROGRESS;
-    }
-
     // succ_node.open(*m_current_search_node, op, get_adjusted_cost(op));
     succ_node.open(*m_current_search_node, op, 1);
+
+    statistics.inc_generated();
     if (width > 0) {
+        bool novel = is_novel(succ_state);
+        if (!novel) {
+            return IN_PROGRESS;
+        }
         open_list.push_back(succ_state.get_id());
     }
 

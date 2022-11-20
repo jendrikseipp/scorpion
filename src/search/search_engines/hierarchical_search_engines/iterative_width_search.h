@@ -43,6 +43,9 @@ protected:
 public:
     explicit IWSearch(const options::Options &opts);
 
+    /**
+     * Set plan and propagate on_goal to parent search engine.
+     */
     virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State& state) override;
 
     virtual void print_statistics() const override;

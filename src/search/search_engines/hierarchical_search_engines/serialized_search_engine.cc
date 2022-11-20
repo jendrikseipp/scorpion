@@ -15,11 +15,13 @@ namespace serialized_search_engine {
 SerializedSearchEngine::SerializedSearchEngine(const options::Options &opts)
     : hierarchical_search_engine::HierarchicalSearchEngine(opts) {
     m_name = "SerializedSearchEngine";
+    if (m_child_search_engines.size() != 1) {
+        throw std::runtime_error("SerializedSearchEngine::SerializedSearchEngine - exactly one child search engine required.");
+    }
 }
 
 SearchStatus SerializedSearchEngine::step() {
-    assert(m_child_search_engines.size() == 1);
-    if (m_plan.size() > m_bound) {
+    if (static_cast<int>(m_plan.size()) > m_bound) {
         m_is_active = false;
         return SearchStatus::FAILED;
     }

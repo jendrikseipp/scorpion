@@ -39,7 +39,8 @@ SketchSubgoal::SketchSubgoal(const options::Options &opts)
 bool SketchSubgoal::is_goal(const State& initial_state, const State& current_state) const {
     return m_policy.evaluate_lazy(
         m_propositional_task->compute_dlplan_state(initial_state),
-        m_propositional_task->compute_dlplan_state(current_state)) != nullptr;
+        m_propositional_task->compute_dlplan_state(current_state),
+        m_propositional_task->get_denotations_caches()) != nullptr;
 }
 
 void SketchSubgoal::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
