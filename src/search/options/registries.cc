@@ -220,6 +220,13 @@ void Registry::add_plugin_info_arg(
     const string &default_value,
     const Bounds &bounds,
     const ValueExplanations &value_explanations) {
+    const vector<ArgumentInfo> &arg_info = get_plugin_info(key).arg_help;
+    if (find_if(arg_info.begin(), arg_info.end(),
+                [&arg_name](const ArgumentInfo &info) {
+                    return info.key == arg_name;
+                }) != arg_info.end()) {
+        cout << ("Warning: plugin " + key + " already has argument " + arg_name) << endl;
+    }
     get_plugin_info(key).arg_help.emplace_back(
         arg_name, help, type_name, default_value, bounds, value_explanations);
 }

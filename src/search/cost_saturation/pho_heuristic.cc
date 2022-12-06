@@ -143,7 +143,6 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     parser.add_option<bool>("saturated", "saturate costs", "true");
     add_order_options_to_parser(parser);
     lp::add_lp_solver_option_to_parser(parser);
-    utils::add_log_options_to_parser(parser);
 
     options::Options opts = parser.parse();
     if (parser.help_mode() || parser.dry_run()) {

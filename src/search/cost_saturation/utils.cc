@@ -190,7 +190,6 @@ void prepare_parser_for_cost_partitioning_heuristic(
 shared_ptr<Evaluator> get_max_cp_heuristic(options::OptionParser &parser, const CPFunction &cp_function) {
     prepare_parser_for_cost_partitioning_heuristic(parser);
     add_order_options_to_parser(parser);
-    Heuristic::add_options_to_parser(parser);
 
     options::Options opts = parser.parse();
     if (parser.help_mode())

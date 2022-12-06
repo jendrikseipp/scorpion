@@ -127,7 +127,6 @@ static shared_ptr<Evaluator> _parse(OptionParser &parser) {
     prepare_parser_for_cost_partitioning_heuristic(parser);
     add_saturator_option(parser);
     add_order_options_to_parser(parser);
-    Heuristic::add_options_to_parser(parser);
 
     options::Options opts = parser.parse();
     if (parser.help_mode())
