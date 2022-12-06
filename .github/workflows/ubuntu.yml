@@ -19,20 +19,30 @@ jobs:
     runs-on: ${{ matrix.ubuntu-version }}
     strategy:
       matrix:
-        ubuntu-version: [ubuntu-18.04, ubuntu-20.04]
+        ubuntu-version: [ubuntu-20.04, ubuntu-22.04]
         compiler-version:
           - {cc: gcc, cxx: g++}
           - {cc: gcc-10, cxx: g++-10}
+          - {cc: gcc-12, cxx: g++-12}
           - {cc: clang, cxx: clang++}
           - {cc: clang-11, cxx: clang++-11}
-        python-version: [3.6]
+# For Ubuntu 22.04 we do not have to explicitly include the newest Clang
+# because it happens to be the default version.
+#           - {cc: clang-14, cxx: clang++-14}
+        python-version: [3.8]
         # Unfortunately, we couldn't figure out a way to name the
         # compiler versions so that we don't have to copy them here.
         exclude:
-          - ubuntu-version: ubuntu-18.04
+          - ubuntu-version: ubuntu-20.04
+            compiler-version: {cc: gcc-12, cxx: g++-12}
+          - ubuntu-version: ubuntu-22.04
             compiler-version: {cc: gcc-10, cxx: g++-10}
-          - ubuntu-version: ubuntu-18.04
-            compiler-version: {cc: clang-11, cxx: clang++-11}
+          - ubuntu-version: ubuntu-22.04
+            compiler-version: {cc: clang-11, cxx: clang-11}
+# If we explicitly include the newest Clang above, we need to exclude
+# it here for the older Ubuntu version.
+#          - ubuntu-version: ubuntu-20.04
+#            compiler-version: {cc: clang-14, cxx: clang++-14}
     env:
       CC: ${{ matrix.compiler-version.cc }}
       CXX: ${{ matrix.compiler-version.cxx }}
@@ -54,6 +64,15 @@ jobs:
         run: |
           sudo apt-get -y install zlib1g-dev libgmp3-dev ${{ matrix.compiler-version.cc }}
           mkdir /home/runner/lib
+
+      # In 22.04 g++-12 is not automatically installed when gcc-12 gets
+      # installed, so we do it separately. We do not use an unconditional
+      # install for any value of cxx because there is no separate package for
+      # clang++.
+      - name: Install CXX
+        if: startsWith(matrix.compiler-version.cxx, 'g++-')
+        run: |
+          sudo apt-get -y install ${{ matrix.compiler-version.cxx }}
 
       # We only want to set up Osi if both LP solvers are set, hence
       # we execute the following three steps only if both secrets
@@ -146,8 +165,8 @@ jobs:
     strategy:
       matrix:
         version:
-          - {ubuntu: ubuntu-18.04, python: 3.6}
-          - {ubuntu: ubuntu-20.04, python: 3.8}
+          - {ubuntu: ubuntu-20.04, python: '3.8'}
+          - {ubuntu: ubuntu-22.04, python: '3.10'}
     env:
       CPLEX_URL: ${{ secrets.CPLEX129_LINUX_URL }}
       SOPLEX_URL: ${{ secrets.SOPLEX311_URL }}
@@ -158,7 +177,7 @@ jobs:
           name: compiled-planner-${{ matrix.version.ubuntu }}
 
       - name: Delete artifact
-        uses: geekyeggo/delete-artifact@master
+        uses: geekyeggo/delete-artifact@v2
         with:
           name: compiled-planner-${{ matrix.version.ubuntu }}
 
