@@ -62,6 +62,10 @@ CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectio
       num_samples(num_samples),
       max_optimization_time(max_optimization_time),
       rng(rng) {
+    if (max_orders == INF && max_size_kb == INF && max_time == numeric_limits<double>::infinity()) {
+        cerr << "max_orders, max_size and max_time cannot all be infinity" << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
+    }
 }
 
 vector<CostPartitioningHeuristic>
