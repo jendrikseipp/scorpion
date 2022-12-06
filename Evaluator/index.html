@@ -1741,7 +1741,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="greedy_zero-one_cost_partitioning">Greedy zero-one cost partitioning<a class="headerlink" href="#greedy_zero-one_cost_partitioning" title="Permanent link">#</a></h2>
-<pre><code>gzocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>gzocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
@@ -1762,15 +1762,6 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
 <li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
-<li><code>silent</code>: only the most basic output</li>
-<li><code>normal</code>: relevant information to monitor progress</li>
-<li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
-</li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Language features supported:</p>
 <ul>
@@ -1853,7 +1844,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 </ul>
 <h2 id="post-hoc_optimization_heuristic">Post-hoc optimization heuristic<a class="headerlink" href="#post-hoc_optimization_heuristic" title="Permanent link">#</a></h2>
 <p>Compute the maximum over multiple PhO heuristics precomputed offline.</p>
-<pre><code>pho(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturated=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, lpsolver=CPLEX, verbosity=normal)
+<pre><code>pho(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturated=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, lpsolver=CPLEX)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
@@ -1882,13 +1873,6 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><code>SOPLEX</code>: open source solver by ZIB</li>
 </ul>
 </li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
-<li><code>silent</code>: only the most basic output</li>
-<li><code>normal</code>: relevant information to monitor progress</li>
-<li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
-</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
 <p>Language features supported:</p>
@@ -1909,7 +1893,7 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <p>Jendrik Seipp, Thomas Keller and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-jair2020.pdf">Saturated Cost Partitioning for Optimal Classical Planning</a>.<br />
  <em>Journal of Artificial Intelligence Research</em> 67:129-167. 2020.</p>
-<pre><code>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
@@ -1936,15 +1920,6 @@ The old predefinition key <code>--heuristic</code> is still supported but deprec
 <li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
 <li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
-<li><code>silent</code>: only the most basic output</li>
-<li><code>normal</code>: relevant information to monitor progress</li>
-<li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
-</li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p><strong>Difference to cegar():</strong> The cegar() plugin computes a single saturated cost partitioning over Cartesian abstraction heuristics. In contrast, saturated_cost_partitioning() supports computing the maximum over multiple saturated cost partitionings using different heuristic orders, and it supports both Cartesian abstraction heuristics and pattern database heuristics. While cegar() interleaves abstraction computation with cost partitioning, saturated_cost_partitioning() computes all abstractions using the original costs.</p>
 <p>Language features supported:</p>
