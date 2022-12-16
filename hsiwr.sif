@@ -38,7 +38,7 @@ From: ubuntu:20.04
     ## Install DLPlan
 	git clone https://github.com/rleap-project/dlplan.git
 	cd /dlplan
-	git checkout 6c95ababf19838a92f506e92f2298dbb29d4eb15
+	git checkout 5da056586b24e0859578956ad3fa8697acaeae07
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/ -S . -B build/
 	cmake --build build -j4
 	cmake --install build
@@ -50,7 +50,7 @@ From: ubuntu:20.04
     ## Install scorpion
 	git clone https://github.com/drexlerd/scorpion.git
 	cd /scorpion
-	git checkout b8bd75379b4d9e75c5dba8011ae97fd1b627ca70
+	git checkout f3619d48d3f79466a3918707755e0534fb6a8201
 	./build.py
 	cd /
 
