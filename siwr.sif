@@ -38,7 +38,7 @@ From: ubuntu:20.04
     ## Install DLPlan
 	git clone https://github.com/rleap-project/dlplan.git
 	cd /dlplan
-	git checkout fbe9e01c7d930a7c965729e01f428b8e416b7dea
+	git checkout 6c95ababf19838a92f506e92f2298dbb29d4eb15
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/ -S . -B build/
 	cmake --build build -j4
 	cmake --install build
@@ -50,7 +50,7 @@ From: ubuntu:20.04
     ## Install scorpion
 	git clone https://github.com/drexlerd/scorpion.git
 	cd /scorpion
-	git checkout 210661130552f675e8c3f821ae160249e9a86a0c
+	git checkout b8bd75379b4d9e75c5dba8011ae97fd1b627ca70
 	./build.py
 	cd /
 
@@ -69,6 +69,6 @@ From: ubuntu:20.04
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
 %labels
-Name        HSIWR
-Description HSIWR implemented in FastDownward with DLPlan
+Name        SIWR
+Description SIWR implemented in FastDownward with DLPlan
 Authors     Dominik Drexler <dominik.drexler@liu.se>
