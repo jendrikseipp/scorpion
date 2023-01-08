@@ -17,7 +17,13 @@ Journal of Artificial Intelligence Research 67, pp. 129-167. 2020.
 
 ## Instructions
 
-After installing the requirements (see below), compile the planner with
+Install the dependencies (the table below lists which versions are tested):
+
+    sudo apt install cmake g++ git make python3
+
+For plugins based on linear programming (e.g., `ocp()`, `pho()`) you need
+to [add an LP solver](https://www.fast-downward.org/LPBuildInstructions). Then
+compile the planner with
 
     ./build.py
 
@@ -26,7 +32,7 @@ and see the available options with
     ./fast-downward.py --help  # driver
     ./fast-downward.py --search -- --help  # search component
 
-For more details (including build instructions for Windows), see the
+For more details (including build instructions for macOS and Windows), see the
 documentation about
 [compiling](https://www.fast-downward.org/ObtainingAndRunningFastDownward)
 and [running](https://www.fast-downward.org/PlannerUsage) the planner. The
