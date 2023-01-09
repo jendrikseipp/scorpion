@@ -16,13 +16,16 @@ class Options;
 namespace iw_search {
 class IWSearch : public hierarchical_search_engine::HierarchicalSearchEngine {
     const int width;
+    const bool iterate;
     const bool debug;
 
     std::deque<StateID> open_list;
     StateID m_current_state_id;
+    StateID m_initial_state_id;
     std::unique_ptr<SearchNode> m_current_search_node;
     std::vector<OperatorID> m_applicable_ops;
     size_t m_current_op;
+    int m_current_width;
 
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
