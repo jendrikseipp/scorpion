@@ -21,13 +21,16 @@ namespace iw_search {
 IWSearch::IWSearch(const Options &opts)
     : HierarchicalSearchEngine(opts),
       width(opts.get<int>("width")),
+      iterate(opts.get<bool>("iterate")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
       m_current_state_id(StateID::no_state),
+      m_initial_state_id(StateID::no_state),
       m_current_search_node(nullptr),
       m_current_op(0),
       m_novelty_base(nullptr),
       m_novelty_table(0) {
     m_name = "IWSearch";
+    m_current_width = iterate ? 0 : width;
 }
 
 bool IWSearch::is_novel(const State &state) {
@@ -44,15 +47,21 @@ void IWSearch::print_statistics() const {
 }
 
 SearchStatus IWSearch::step() {
+    if (m_current_width > width) {
+        m_is_active = false;
+        if (m_debug)
+            std::cout << "Completely explored state space -- no solution!" << std::endl;
+        return SearchStatus::FAILED;
+    }
+
     if (m_current_op == m_applicable_ops.size()) {
         m_current_state_id = StateID::no_state;
     }
 
     if (open_list.empty() && m_current_state_id == StateID::no_state) {
-        if (m_debug)
-            std::cout << "Completely explored state space -- no solution!" << std::endl;
-        m_is_active = false;
-        return SearchStatus::FAILED;
+        ++m_current_width;
+        set_initial_state(m_state_registry->lookup_state(m_initial_state_id));
+        return SearchStatus::IN_PROGRESS;
     }
 
     if (m_current_state_id == StateID::no_state) {
@@ -118,16 +127,17 @@ SearchStatus IWSearch::step() {
 
 void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task) {
     HierarchicalSearchEngine::set_propositional_task(m_propositional_task);
-    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_propositional_task->get_num_facts(), std::max(1, width));
 }
 
 void IWSearch::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
     assert(m_novelty_base);
+    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_propositional_task->get_num_facts(), std::max(1, m_current_width));
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
     statistics.reset();
     statistics.inc_generated();
     m_current_state_id = StateID::no_state;
+    m_initial_state_id = state.get_id();
     m_applicable_ops.clear();
     m_current_op = 0;
     SearchNode node = m_search_space->get_node(state);
@@ -156,6 +166,8 @@ static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis("Iterated width search", "");
     parser.add_option<int>(
         "width", "maximum conjunction size", "2");
+    parser.add_option<bool>(
+        "iterate", "iterate k=0,...,width", "false");
     HierarchicalSearchEngine::add_child_search_engine_option(parser);
     HierarchicalSearchEngine::add_goal_test_option(parser);
     SearchEngine::add_options_to_parser(parser);

@@ -75,6 +75,7 @@ void HierarchicalSearchEngine::set_initial_state(const State &state)
 {
     if (m_debug)
         std::cout << get_name() << " set_initial_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
+    std::cout << get_name() << " set_initial_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
     m_plan.clear();
     m_initial_state_id = state.get_id();
     m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
