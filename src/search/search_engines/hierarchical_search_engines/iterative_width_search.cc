@@ -131,7 +131,6 @@ void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::Propositional
 
 void IWSearch::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
-    assert(m_novelty_base);
     m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_propositional_task->get_num_facts(), std::max(1, m_current_width));
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
     statistics.reset();
