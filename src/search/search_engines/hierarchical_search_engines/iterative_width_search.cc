@@ -143,6 +143,10 @@ void IWSearch::dump_search_space() const {
     m_search_space->dump(task_proxy);
 }
 
+PartialSolutions IWSearch::get_partial_solutions() const {
+    return {PartialSolution{m_plan, m_state_registry->lookup_state(m_goal_state_id), m_current_width}};
+}
+
 static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis("Iterated width search", "");
     parser.add_option<int>(

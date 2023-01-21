@@ -99,8 +99,12 @@ std::string HierarchicalSearchEngine::get_name() {
     return ss.str();
 }
 
-Plan HierarchicalSearchEngine::get_plan() {
-    return m_plan;
+int HierarchicalSearchEngine::compute_partial_solutions_length(const PartialSolutions& partial_solutions) {
+    int length = 0;
+    for (const auto& partial_solution : partial_solutions) {
+        length += partial_solution.plan.size();
+    }
+    return length;
 }
 
 void HierarchicalSearchEngine::add_child_search_engine_option(OptionParser &parser) {

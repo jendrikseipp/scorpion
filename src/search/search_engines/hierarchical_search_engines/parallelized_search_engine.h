@@ -3,6 +3,7 @@
 
 #include "hierarchical_search_engine.h"
 
+using namespace hierarchical_search_engine;
 
 namespace options {
 class Options;
@@ -13,10 +14,9 @@ class Options;
  * and returns the best solution.
 */
 namespace parallelized_search_engine {
-class ParallelizedSearchEngine : public hierarchical_search_engine::HierarchicalSearchEngine {
+class ParallelizedSearchEngine : public HierarchicalSearchEngine {
 private:
-    // the target state reached by shortest plan
-    std::unique_ptr<State> m_target_state;
+    PartialSolutions m_partial_solutions;
 
     std::vector<bool> m_in_progress_child_searches;
 
@@ -34,6 +34,8 @@ public:
     virtual void set_initial_state(const State& state);
 
     virtual void print_statistics() const override;
+
+    virtual PartialSolutions get_partial_solutions() const override;
 };
 }
 

@@ -3,13 +3,17 @@
 
 #include "hierarchical_search_engine.h"
 
+using namespace hierarchical_search_engine;
 
 namespace options {
 class Options;
 }
 
 namespace serialized_search_engine {
-class SerializedSearchEngine : public hierarchical_search_engine::HierarchicalSearchEngine {
+class SerializedSearchEngine : public HierarchicalSearchEngine {
+private:
+    PartialSolutions m_partial_solutions;
+
 protected:
     /**
      * Executes a step of the single child search engine.
@@ -20,6 +24,8 @@ public:
     explicit SerializedSearchEngine(const options::Options &opts);
 
     virtual void print_statistics() const override;
+
+    virtual PartialSolutions get_partial_solutions() const override;
 };
 }
 

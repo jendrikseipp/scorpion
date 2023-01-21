@@ -9,12 +9,14 @@
 #include <memory>
 #include <vector>
 
+using namespace hierarchical_search_engine;
+
 namespace options {
 class Options;
 }
 
 namespace iw_search {
-class IWSearch : public hierarchical_search_engine::HierarchicalSearchEngine {
+class IWSearch : public HierarchicalSearchEngine {
     const int width;
     const bool iterate;
     const bool debug;
@@ -44,6 +46,8 @@ public:
     virtual void print_statistics() const override;
 
     void dump_search_space() const;
+
+    virtual PartialSolutions get_partial_solutions() const override;
 };
 }
 

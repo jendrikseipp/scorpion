@@ -25,31 +25,24 @@ SearchStatus SerializedSearchEngine::step() {
     auto search_status = child_search.step();
     if (search_status == SearchStatus::SOLVED) {
         // 1. Concatenate partial plan
-        State goal_state = m_state_registry->lookup_state(child_search.m_goal_state_id);
-        Plan child_plan = child_search.get_plan();
-        m_plan.insert(m_plan.end(), child_plan.begin(), child_plan.end());
-        if (static_cast<int>(m_plan.size()) > m_bound) {
-            statistics.inc_expanded(child_search.statistics.get_expanded());
-            statistics.inc_generated(child_search.statistics.get_generated());
+        PartialSolutions child_partial_solutions = child_search.get_partial_solutions();
+        m_partial_solutions.insert(m_partial_solutions.end(), child_partial_solutions.begin(), child_partial_solutions.end());
+        int length = compute_partial_solutions_length(m_partial_solutions);
+        if (length > m_bound) {
             return SearchStatus::FAILED;
-        } else if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), goal_state)) {
+        } else if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), m_partial_solutions.back().state)) {
             // 2. Search finished: return resulting search status and update statistics.
-            statistics.inc_expanded(child_search.statistics.get_expanded());
-            statistics.inc_generated(child_search.statistics.get_generated());
             if (m_debug)
-                std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(goal_state).str() << std::endl;
+                std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(m_partial_solutions.back().state).str() << std::endl;
             if (!m_parent_search_engine) {
                 plan_manager.save_plan(m_plan, task_proxy);
             }
             return SearchStatus::SOLVED;
         } else {
             // 3. Search unfinished: update child search initial states
-            m_child_search_engines.front()->set_initial_state(goal_state);
+            m_child_search_engines.front()->set_initial_state(m_partial_solutions.back().state);
             return SearchStatus::IN_PROGRESS;
         }
-    } else if (search_status == SearchStatus::FAILED) {
-        statistics.inc_expanded(child_search.statistics.get_expanded());
-        statistics.inc_generated(child_search.statistics.get_generated());
     }
     return search_status;
 }
@@ -57,6 +50,10 @@ SearchStatus SerializedSearchEngine::step() {
 void SerializedSearchEngine::print_statistics() const {
     statistics.print_detailed_statistics();
     m_search_space->print_statistics();
+}
+
+PartialSolutions SerializedSearchEngine::get_partial_solutions() const {
+    return m_partial_solutions;
 }
 
 
@@ -77,5 +74,7 @@ static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
 
 // ./fast-downward.py --keep-sas-file --build=debug domain.pddl instance_2_1_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())"
 // valgrind ./downward --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())" < output.sas
+
+// ./fast-downward.py --keep-sas-file --build=debug ../sketch-learner/testing/benchmarks/delivery/domain.pddl ../sketch-learner/testing/benchmarks/delivery/instance_3_3_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())"
 static Plugin<HierarchicalSearchEngine> _plugin("serialized_search", _parse);
 }

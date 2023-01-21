@@ -23,6 +23,22 @@ class ParallelizedSearchEngine;
 }
 
 namespace hierarchical_search_engine {
+
+/**
+ * Solution of an IW search.
+*/
+struct PartialSolution {
+    Plan plan;
+    State state;
+    // average effective width;
+    int aew;
+    // maximum effective width;
+    int mew;
+};
+
+using PartialSolutions = std::vector<PartialSolution>;
+
+
 class HierarchicalSearchEngine : public SearchEngine {
 friend class serialized_search_engine::SerializedSearchEngine;
 friend class parallelized_search_engine::ParallelizedSearchEngine;
@@ -80,7 +96,12 @@ protected:
      * Getters.
      */
     virtual std::string get_name();
-    virtual Plan get_plan();
+    virtual PartialSolutions get_partial_solutions() const = 0;
+    // TODO: collect statistics recursively
+    virtual SearchStatistics collect_statistics() const ;
+
+
+    static int compute_partial_solutions_length(const PartialSolutions& partial_solutions);
 
 public:
     static void add_child_search_engine_option(options::OptionParser &parser);
