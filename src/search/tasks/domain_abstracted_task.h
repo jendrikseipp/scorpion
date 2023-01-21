@@ -23,6 +23,7 @@ class DomainAbstractedTask : public tasks::DelegatingTask {
     const std::vector<FactPair> goals;
     const std::vector<std::vector<std::string>> fact_names;
     const std::vector<std::vector<int>> value_map;
+    std::vector<int> abstracted_variables;
 
     int get_abstract_value(const FactPair &fact) const {
         assert(utils::in_bounds(fact.var, value_map));

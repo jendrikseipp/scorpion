@@ -45,6 +45,13 @@ DomainAbstractedTask::DomainAbstractedTask(
     if (has_conditional_effects(*parent)) {
         ABORT("DomainAbstractedTask doesn't support conditional effects.");
     }
+    // Speed optimization: we want to loop only over abstracted variables below.
+    for (int var = 0; var < get_num_variables(); ++var) {
+        if (get_variable_domain_size(var) < parent->get_variable_domain_size(var)) {
+            abstracted_variables.push_back(var);
+        }
+    }
+    abstracted_variables.shrink_to_fit();
 }
 
 int DomainAbstractedTask::get_variable_domain_size(int var) const {
@@ -81,8 +88,7 @@ vector<int> DomainAbstractedTask::get_initial_state_values() const {
 
 void DomainAbstractedTask::convert_state_values_from_parent(
     vector<int> &values) const {
-    int num_vars = domain_size.size();
-    for (int var = 0; var < num_vars; ++var) {
+    for (int var : abstracted_variables) {
         int old_value = values[var];
         int new_value = value_map[var][old_value];
         values[var] = new_value;
