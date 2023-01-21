@@ -97,6 +97,6 @@ void DomainAbstractedTask::convert_state_values_from_parent(
 
 bool DomainAbstractedTask::does_convert_ancestor_state_values(
     const AbstractTask *) const {
-    return true;
+    return !abstracted_variables.empty();
 }
 }
