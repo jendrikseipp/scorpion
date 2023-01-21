@@ -19,11 +19,6 @@ protected:
 public:
     explicit SerializedSearchEngine(const options::Options &opts);
 
-    /**
-     * If state is goal then propagate on_goal to parent search engine.
-     */
-    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state) override;
-
     virtual void print_statistics() const override;
 };
 }

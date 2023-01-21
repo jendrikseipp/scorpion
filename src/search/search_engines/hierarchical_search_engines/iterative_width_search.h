@@ -20,8 +20,6 @@ class IWSearch : public hierarchical_search_engine::HierarchicalSearchEngine {
     const bool debug;
 
     std::deque<StateID> open_list;
-    StateID m_current_state_id;
-    StateID m_initial_state_id;
     int m_current_width;
 
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
@@ -42,11 +40,6 @@ protected:
 
 public:
     explicit IWSearch(const options::Options &opts);
-
-    /**
-     * Set plan and propagate on_goal to parent search engine.
-     */
-    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State& state) override;
 
     virtual void print_statistics() const override;
 

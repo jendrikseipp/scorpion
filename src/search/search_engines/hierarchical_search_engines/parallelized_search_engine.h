@@ -8,11 +8,17 @@ namespace options {
 class Options;
 }
 
+/**
+ * ParallelizedSearchEngine runs a set of searches
+ * and returns the best solution.
+*/
 namespace parallelized_search_engine {
 class ParallelizedSearchEngine : public hierarchical_search_engine::HierarchicalSearchEngine {
 private:
     // the target state reached by shortest plan
     std::unique_ptr<State> m_target_state;
+
+    std::vector<bool> m_in_progress_child_searches;
 
 protected:
     /**
@@ -24,11 +30,6 @@ protected:
 
 public:
     explicit ParallelizedSearchEngine(const options::Options &opts);
-
-    /**
-     * If state is goal then update current best solution.
-     */
-    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state) override;
 
     virtual void set_initial_state(const State& state);
 

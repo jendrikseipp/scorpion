@@ -42,12 +42,12 @@ protected:
     std::vector<std::shared_ptr<HierarchicalSearchEngine>> m_child_search_engines;
 
     StateID m_initial_state_id;
+    StateID m_goal_state_id;
     std::unique_ptr<SearchSpace> m_search_space;
     Plan m_plan;
 
     // maximum bound until search terminates
     int m_bound;
-    bool m_is_active;
 
     bool m_debug;
 
@@ -71,11 +71,6 @@ protected:
     virtual void set_parent_search_engine(HierarchicalSearchEngine* parent);
 
     /**
-     * React upon reaching goal state.
-     */
-    virtual SearchStatus on_goal(HierarchicalSearchEngine* caller, const State &state);
-
-    /**
      * Setters.
      */
     virtual void set_initial_state(const State& state);
@@ -84,7 +79,6 @@ protected:
     /**
      * Getters.
      */
-    virtual bool get_is_active();
     virtual std::string get_name();
     virtual Plan get_plan();
 

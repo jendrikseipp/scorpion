@@ -23,8 +23,6 @@ IWSearch::IWSearch(const Options &opts)
       width(opts.get<int>("width")),
       iterate(opts.get<bool>("iterate")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
-      m_current_state_id(StateID::no_state),
-      m_initial_state_id(StateID::no_state),
       m_novelty_base(nullptr),
       m_novelty_table(0) {
     m_name = "IWSearch";
@@ -47,7 +45,6 @@ void IWSearch::print_statistics() const {
 SearchStatus IWSearch::step() {
     /* Search exhausted */
     if (m_current_width > width) {
-        m_is_active = false;
         if (m_debug)
             std::cout << "Completely explored state space -- no solution!" << std::endl;
         return SearchStatus::FAILED;
@@ -73,14 +70,14 @@ SearchStatus IWSearch::step() {
 
     /* Search exhausted by bound. */
     if (node.get_g() > m_bound) {
-        m_is_active = false;
         return SearchStatus::FAILED;
     }
 
     /* Goal check in initial state. */
     if (id == m_initial_state_id) {
         if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
-            return on_goal(nullptr, state);
+            assert(m_plan.empty());
+            return SearchStatus::SOLVED;
         }
     }
 
@@ -95,7 +92,7 @@ SearchStatus IWSearch::step() {
 
         SearchNode succ_node = m_search_space->get_node(succ_state);
         if (!succ_node.is_new()) {
-            return IN_PROGRESS;
+            continue;
         }
 
         succ_node.open(node, op, 1);
@@ -110,7 +107,12 @@ SearchStatus IWSearch::step() {
         }
 
         if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), succ_state)) {
-            return on_goal(nullptr, succ_state);
+            if (m_debug)
+                std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
+            assert(m_plan.empty());
+            m_search_space->trace_path(succ_state, m_plan);
+            m_goal_state_id = succ_state.get_id();
+            return SearchStatus::SOLVED;
         }
     }
     return IN_PROGRESS;
@@ -126,8 +128,8 @@ void IWSearch::set_initial_state(const State& state) {
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
     statistics.reset();
     statistics.inc_generated();
-    m_current_state_id = StateID::no_state;
     m_initial_state_id = state.get_id();
+    m_goal_state_id = StateID::no_state;
     SearchNode node = m_search_space->get_node(state);
     node.open_initial();
     open_list.clear();
@@ -135,15 +137,6 @@ void IWSearch::set_initial_state(const State& state) {
     bool novel = is_novel(state);
     utils::unused_variable(novel);
     assert(novel);
-}
-
-SearchStatus IWSearch::on_goal(HierarchicalSearchEngine*, const State& state) {
-    if (m_debug)
-        std::cout << get_name() << " on_goal: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
-    m_is_active = false;
-    assert(m_plan.empty());
-    m_search_space->trace_path(state, m_plan);
-    return m_parent_search_engine->on_goal(this, state);
 }
 
 void IWSearch::dump_search_space() const {

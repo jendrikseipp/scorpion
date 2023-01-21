@@ -21,41 +21,37 @@ SerializedSearchEngine::SerializedSearchEngine(const options::Options &opts)
 }
 
 SearchStatus SerializedSearchEngine::step() {
-    if (static_cast<int>(m_plan.size()) > m_bound) {
-        m_is_active = false;
-        return SearchStatus::FAILED;
-    }
-    auto search_status = m_child_search_engines.front()->step();
-    if (search_status == SearchStatus::FAILED) {
-        m_is_active = false;
+    auto& child_search = *m_child_search_engines.front().get();
+    auto search_status = child_search.step();
+    if (search_status == SearchStatus::SOLVED) {
+        // 1. Concatenate partial plan
+        State goal_state = m_state_registry->lookup_state(child_search.m_goal_state_id);
+        Plan child_plan = child_search.get_plan();
+        m_plan.insert(m_plan.end(), child_plan.begin(), child_plan.end());
+        if (static_cast<int>(m_plan.size()) > m_bound) {
+            statistics.inc_expanded(child_search.statistics.get_expanded());
+            statistics.inc_generated(child_search.statistics.get_generated());
+            return SearchStatus::FAILED;
+        } else if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), goal_state)) {
+            // 2. Search finished: return resulting search status and update statistics.
+            statistics.inc_expanded(child_search.statistics.get_expanded());
+            statistics.inc_generated(child_search.statistics.get_generated());
+            if (m_debug)
+                std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(goal_state).str() << std::endl;
+            if (!m_parent_search_engine) {
+                plan_manager.save_plan(m_plan, task_proxy);
+            }
+            return SearchStatus::SOLVED;
+        } else {
+            // 3. Search unfinished: update child search initial states
+            m_child_search_engines.front()->set_initial_state(goal_state);
+            return SearchStatus::IN_PROGRESS;
+        }
+    } else if (search_status == SearchStatus::FAILED) {
+        statistics.inc_expanded(child_search.statistics.get_expanded());
+        statistics.inc_generated(child_search.statistics.get_generated());
     }
     return search_status;
-}
-
-SearchStatus SerializedSearchEngine::on_goal(HierarchicalSearchEngine* caller, const State &state)
-{
-    if (m_debug)
-        std::cout << get_name() << " on_goal: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
-    // 1. Serialize plan
-    Plan caller_plan = caller->get_plan();
-    m_plan.insert(m_plan.end(), caller_plan.begin(), caller_plan.end());
-    statistics.inc_expanded(caller->statistics.get_expanded());
-    statistics.inc_generated(caller->statistics.get_generated());
-    if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
-        // Achieved goal: notify parent.
-        m_is_active = false;
-        if (m_parent_search_engine) {
-            return m_parent_search_engine->on_goal(this, state);
-        } else {
-            // Top-level search saves the plan instead.
-            plan_manager.save_plan(m_plan, task_proxy);
-            return SearchStatus::SOLVED;
-        }
-    } else {
-        // Unachieved goal: child search must continue from new initial state
-        caller->set_initial_state(state);
-    }
-    return SearchStatus::IN_PROGRESS;
 }
 
 void SerializedSearchEngine::print_statistics() const {
