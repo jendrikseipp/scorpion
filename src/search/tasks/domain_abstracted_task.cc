@@ -34,7 +34,7 @@ ValueMap::ValueMap(
     for (int var = 0; var < task.get_num_variables(); ++var) {
         if (task.get_variable_domain_size(var) < parent_task.get_variable_domain_size(var)) {
             variable_to_pool_index[var] = abstracted_variables.size();
-            abstracted_variables.push_back(var);
+            abstracted_variables.push_back({var, variable_to_pool_index[var]});
             new_values.push_back(move(value_map[var]));
         }
     }
@@ -42,10 +42,10 @@ ValueMap::ValueMap(
 }
 
 void ValueMap::convert(std::vector<int> &state_values) const {
-    for (int var : abstracted_variables) {
-        int old_value = state_values[var];
-        int new_value = new_values[variable_to_pool_index[var]][old_value];
-        state_values[var] = new_value;
+    for (const AbstractedVariable &abs_var : abstracted_variables) {
+        int old_value = state_values[abs_var.var];
+        int new_value = new_values[abs_var.pool_index][old_value];
+        state_values[abs_var.var] = new_value;
     }
 }
 

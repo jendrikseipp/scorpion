@@ -14,8 +14,13 @@
 #include <vector>
 
 namespace extra_tasks {
+struct AbstractedVariable {
+    int var;
+    int pool_index;
+};
+
 class ValueMap {
-    itlib::small_vector<int, 8> abstracted_variables;
+    itlib::small_vector<AbstractedVariable, 8> abstracted_variables;
     std::vector<int> variable_to_pool_index;
     array_pool_template::ArrayPool<int> new_values;
 
