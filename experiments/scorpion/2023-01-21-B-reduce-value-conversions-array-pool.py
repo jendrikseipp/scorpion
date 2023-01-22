@@ -49,8 +49,9 @@ DRIVER_OPTIONS = [
 # Pairs of revision identifier and revision nick.
 REVS = [
     ("c2bac3fcf", "02-skip-conversion-if-no-abstracted-vars"),
-    ("5f42b3918", "01-loop-over-abstracted-vars"),
-    ("04eab2f90", "00-base"),
+    ("59a3888a0", "03-value-map-class"),
+    ("f1c00a8b2", "04-small-vector"),
+    ("ef8303cee", "05-abs-var-struct"),
 ]
 ATTRIBUTES = [
     "error",
