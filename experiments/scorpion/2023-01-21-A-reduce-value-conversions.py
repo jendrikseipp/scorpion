@@ -19,8 +19,8 @@ import project
 
 REPO = project.get_repo_base()
 BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
-SCP_LOGIN = "myname@myserver.com"
-REMOTE_REPOS_DIR = "/infai/seipp/projects"
+SCP_LOGIN = "nsc"
+REMOTE_REPOS_DIR = "/proj/dfsplan/users/x_jense"
 BOUNDS_FILE = "bounds.json"
 SUITE = ["depot:p01.pddl", "grid:prob01.pddl", "gripper:prob01.pddl"]
 try:
@@ -30,7 +30,7 @@ except KeyError:
 if project.REMOTE:
     # ENV = project.BaselSlurmEnvironment(email="my.name@myhost.ch")
     ENV = project.TetralithEnvironment(
-        email="first.last@liu.se", extra_options="#SBATCH --account=snic2022-5-341"
+        email="jendrik.seipp@liu.se", extra_options="#SBATCH --account=snic2022-5-341"
     )
     SUITE = project.SUITE_OPTIMAL_STRIPS
 else:
