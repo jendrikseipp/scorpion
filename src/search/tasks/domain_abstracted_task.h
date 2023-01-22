@@ -6,6 +6,8 @@
 #include "../algorithms/array_pool.h"
 #include "../utils/collections.h"
 
+#include <small_vector.hpp>
+
 #include <cassert>
 #include <string>
 #include <utility>
@@ -13,7 +15,7 @@
 
 namespace extra_tasks {
 class ValueMap {
-    std::vector<int> abstracted_variables;
+    itlib::small_vector<int, 8> abstracted_variables;
     std::vector<int> variable_to_pool_index;
     array_pool_template::ArrayPool<int> new_values;
 
