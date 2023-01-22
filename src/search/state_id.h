@@ -20,6 +20,7 @@ class IWSearch;
 
 namespace hierarchical_search_engine {
 class HierarchicalSearchEngine;
+struct IWSearchSolution;
 }
 
 namespace novelty {
@@ -35,6 +36,7 @@ class StateID {
     friend class exhaustive_search::ExhaustiveSearch;
     friend class iw_search::IWSearch;
     friend class hierarchical_search_engine::HierarchicalSearchEngine;
+    friend struct hierarchical_search_engine::IWSearchSolution;
     friend class extra_tasks::PropositionalTask;
     friend class StateRegistry;
     friend std::ostream &operator<<(std::ostream &os, StateID id);

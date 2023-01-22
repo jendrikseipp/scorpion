@@ -26,17 +26,25 @@ namespace hierarchical_search_engine {
 
 /**
  * Solution of an IW search.
+ * In addition to plan, we also store
+ * the target state to proceed search greedily,
+ * the effective width used to solve the subproblem.
 */
-struct PartialSolution {
+struct IWSearchSolution {
+    // The applied actions
     Plan plan;
-    State state;
-    // average effective width;
-    int aew;
-    // maximum effective width;
-    int mew;
+    // The reached state
+    StateID state_id;
+    // effective width;
+    int ew;
+
+    IWSearchSolution() { }
+
+    IWSearchSolution(Plan plan, StateID state_id, int ew)
+        : plan(plan), state_id(state_id), ew(ew) { }
 };
 
-using PartialSolutions = std::vector<PartialSolution>;
+using IWSearchSolutions = std::vector<IWSearchSolution>;
 
 
 class HierarchicalSearchEngine : public SearchEngine {
@@ -57,13 +65,10 @@ protected:
     HierarchicalSearchEngine* m_parent_search_engine;
     std::vector<std::shared_ptr<HierarchicalSearchEngine>> m_child_search_engines;
 
-    StateID m_initial_state_id;
-    StateID m_goal_state_id;
-    std::unique_ptr<SearchSpace> m_search_space;
-    Plan m_plan;
-
     // maximum bound until search terminates
     int m_bound;
+
+    StateID m_initial_state_id;
 
     bool m_debug;
 
@@ -73,11 +78,12 @@ protected:
      */
     explicit HierarchicalSearchEngine(const options::Options &opts);
 
+    virtual void search() override;
+
     /**
      * Top-level initialization.
      */
     virtual void initialize() override;
-    virtual bool initial_state_goal_test() override;
 
     /**
      * Child-level initialization.
@@ -96,12 +102,12 @@ protected:
      * Getters.
      */
     virtual std::string get_name();
-    virtual PartialSolutions get_partial_solutions() const = 0;
+    virtual IWSearchSolutions get_partial_solutions() const = 0;
     // TODO: collect statistics recursively
     virtual SearchStatistics collect_statistics() const ;
 
 
-    static int compute_partial_solutions_length(const PartialSolutions& partial_solutions);
+    static int compute_partial_solutions_length(const IWSearchSolutions& partial_solutions);
 
 public:
     static void add_child_search_engine_option(options::OptionParser &parser);

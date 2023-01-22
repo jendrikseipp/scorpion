@@ -33,7 +33,7 @@ SearchStatus ParallelizedSearchEngine::step() {
         if (search_status == SearchStatus::SOLVED) {
             // 2. Update current best solution
             //    and solution upper bound in child searches
-            PartialSolutions child_partial_solutions = child_search.get_partial_solutions();
+            IWSearchSolutions child_partial_solutions = child_search.get_partial_solutions();
             int new_length = compute_partial_solutions_length(child_partial_solutions);
             int old_length = compute_partial_solutions_length(m_partial_solutions);
             if (m_partial_solutions.empty() || new_length < old_length) {
@@ -66,7 +66,7 @@ void ParallelizedSearchEngine::print_statistics() const {
     m_search_space->print_statistics();
 }
 
-PartialSolutions ParallelizedSearchEngine::get_partial_solutions() const {
+IWSearchSolutions ParallelizedSearchEngine::get_partial_solutions() const {
     return m_partial_solutions;
 }
 

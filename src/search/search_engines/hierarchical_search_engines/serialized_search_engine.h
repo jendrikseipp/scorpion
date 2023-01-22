@@ -12,7 +12,7 @@ class Options;
 namespace serialized_search_engine {
 class SerializedSearchEngine : public HierarchicalSearchEngine {
 private:
-    PartialSolutions m_partial_solutions;
+    IWSearchSolutions m_partial_solutions;
 
 protected:
     /**
@@ -25,7 +25,7 @@ public:
 
     virtual void print_statistics() const override;
 
-    virtual PartialSolutions get_partial_solutions() const override;
+    virtual IWSearchSolutions get_partial_solutions() const override;
 };
 }
 

@@ -31,10 +31,11 @@ class SuccessorGenerator;
 enum SearchStatus {IN_PROGRESS, TIMEOUT, FAILED, SOLVED, UNSOLVABLE};
 
 class SearchEngine {
+protected:
     SearchStatus status;
     bool solution_found;
     Plan plan;
-protected:
+
     // Hold a reference to the task implementation and pass it to objects that need it.
     const std::shared_ptr<AbstractTask> task;
     // Use task_proxy to access task information.
@@ -69,7 +70,7 @@ public:
     bool found_solution() const;
     SearchStatus get_status() const;
     const Plan &get_plan() const;
-    void search();
+    virtual void search();
     const SearchStatistics &get_statistics() const {return statistics;}
     void set_bound(int b) {bound = b;}
     int get_bound() {return bound;}

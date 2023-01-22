@@ -24,7 +24,8 @@ IWSearch::IWSearch(const Options &opts)
       iterate(opts.get<bool>("iterate")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
       m_novelty_base(nullptr),
-      m_novelty_table(0) {
+      m_novelty_table(0),
+      m_search_space(nullptr) {
     m_name = "IWSearch";
     m_current_width = iterate ? 0 : width;
 }
@@ -76,7 +77,7 @@ SearchStatus IWSearch::step() {
     /* Goal check in initial state. */
     if (id == m_initial_state_id) {
         if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
-            assert(m_plan.empty());
+            m_solution = IWSearchSolution{{}, state.get_id(), m_current_width};
             return SearchStatus::SOLVED;
         }
     }
@@ -109,13 +110,20 @@ SearchStatus IWSearch::step() {
         if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), succ_state)) {
             if (m_debug)
                 std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
-            assert(m_plan.empty());
-            m_search_space->trace_path(succ_state, m_plan);
-            m_goal_state_id = succ_state.get_id();
+
+            // set the solution.
+            Plan plan;
+            m_search_space->trace_path(succ_state, plan);
+            m_solution = IWSearchSolution{plan, succ_state.get_id(), m_current_width};
             return SearchStatus::SOLVED;
         }
     }
     return IN_PROGRESS;
+}
+
+void IWSearch::set_state_registry(std::shared_ptr<StateRegistry> state_registry) {
+    HierarchicalSearchEngine::set_state_registry(state_registry);
+    m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
 }
 
 void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task) {
@@ -129,7 +137,7 @@ void IWSearch::set_initial_state(const State& state) {
     statistics.reset();
     statistics.inc_generated();
     m_initial_state_id = state.get_id();
-    m_goal_state_id = StateID::no_state;
+    m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
     SearchNode node = m_search_space->get_node(state);
     node.open_initial();
     open_list.clear();
@@ -143,8 +151,8 @@ void IWSearch::dump_search_space() const {
     m_search_space->dump(task_proxy);
 }
 
-PartialSolutions IWSearch::get_partial_solutions() const {
-    return {PartialSolution{m_plan, m_state_registry->lookup_state(m_goal_state_id), m_current_width}};
+IWSearchSolutions IWSearch::get_partial_solutions() const {
+    return {m_solution,};
 }
 
 static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {

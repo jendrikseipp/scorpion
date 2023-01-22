@@ -86,16 +86,12 @@ void SearchEngine::set_plan(const Plan &p) {
 void SearchEngine::search() {
     initialize();
     utils::CountdownTimer timer(max_time);
-    if (initial_state_goal_test()) {
-        status = SOLVED;
-    } else {
-        while (status == IN_PROGRESS) {
-            status = step();
-            if (timer.is_expired()) {
-                log << "Time limit reached. Abort search." << endl;
-                status = TIMEOUT;
-                break;
-            }
+    while (status == IN_PROGRESS) {
+        status = step();
+        if (timer.is_expired()) {
+            log << "Time limit reached. Abort search." << endl;
+            status = TIMEOUT;
+            break;
         }
     }
     // TODO: Revise when and which search times are logged.

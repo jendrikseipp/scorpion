@@ -4,6 +4,7 @@
 #include "../../plugin.h"
 #include "../../tasks/root_task.h"
 #include "../../tasks/propositional_task.h"
+#include "../../utils/countdown_timer.h"
 
 #include <string>
 #include <deque>
@@ -22,10 +23,8 @@ HierarchicalSearchEngine::HierarchicalSearchEngine(
       m_goal_test(opts.get<std::shared_ptr<goal_test::GoalTest>>("goal_test")),
       m_parent_search_engine(nullptr),
       m_child_search_engines(opts.get_list<std::shared_ptr<HierarchicalSearchEngine>>("child_searches")),
-      m_initial_state_id(StateID::no_state),
-      m_goal_state_id(StateID::no_state),
-      m_search_space(nullptr),
       m_bound(std::numeric_limits<int>::max()),
+      m_initial_state_id(StateID::no_state),
       m_debug(true) {
 }
 
@@ -37,18 +36,29 @@ void HierarchicalSearchEngine::initialize() {
     set_parent_search_engine(nullptr);
 }
 
-bool HierarchicalSearchEngine::initial_state_goal_test() {
-    bool is_goal = m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), m_state_registry->lookup_state(m_initial_state_id));
-    // save empty plan.
-    if (is_goal) {
-        plan_manager.save_plan(m_plan, task_proxy);
+void HierarchicalSearchEngine::search() {
+    initialize();
+    utils::CountdownTimer timer(max_time);
+    if (m_goal_test->is_goal(m_state_registry->get_initial_state(), m_state_registry->get_initial_state())) {
+        Plan plan;
+        plan_manager.save_plan(plan, task_proxy);
+        status = SOLVED;
+    } else {
+        while (status == IN_PROGRESS) {
+            status = step();
+            if (timer.is_expired()) {
+                log << "Time limit reached. Abort search." << endl;
+                status = TIMEOUT;
+                break;
+            }
+        }
     }
-    return is_goal;
+    // TODO: Revise when and which search times are logged.
+    log << "Actual search time: " << timer.get_elapsed_time() << endl;
 }
 
 void HierarchicalSearchEngine::set_state_registry(std::shared_ptr<StateRegistry> state_registry) {
     m_state_registry = state_registry;
-    m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         child_search_engine_ptr->set_state_registry(state_registry);
     }
@@ -75,12 +85,9 @@ void HierarchicalSearchEngine::set_initial_state(const State &state)
 {
     if (m_debug)
         std::cout << get_name() << " set_initial_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
-    std::cout << get_name() << " set_initial_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
-    m_plan.clear();
+
     m_initial_state_id = state.get_id();
-    m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
     m_bound = std::numeric_limits<int>::max();
-    statistics.reset();
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         child_search_engine_ptr->set_initial_state(state);
     }
@@ -99,7 +106,7 @@ std::string HierarchicalSearchEngine::get_name() {
     return ss.str();
 }
 
-int HierarchicalSearchEngine::compute_partial_solutions_length(const PartialSolutions& partial_solutions) {
+int HierarchicalSearchEngine::compute_partial_solutions_length(const IWSearchSolutions& partial_solutions) {
     int length = 0;
     for (const auto& partial_solution : partial_solutions) {
         length += partial_solution.plan.size();

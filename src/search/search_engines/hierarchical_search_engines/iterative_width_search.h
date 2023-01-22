@@ -27,6 +27,10 @@ class IWSearch : public HierarchicalSearchEngine {
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
 
+    std::unique_ptr<SearchSpace> m_search_space;
+
+    IWSearchSolution m_solution;
+
 private:
     bool is_novel(const State &state);
     bool is_novel(const OperatorProxy &op, const State &succ_state);
@@ -37,6 +41,7 @@ protected:
      */
     virtual SearchStatus step() override;
 
+    virtual void set_state_registry(std::shared_ptr<StateRegistry> state_registry) override;
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) override;
     virtual void set_initial_state(const State& state) override;
 
@@ -47,7 +52,7 @@ public:
 
     void dump_search_space() const;
 
-    virtual PartialSolutions get_partial_solutions() const override;
+    virtual IWSearchSolutions get_partial_solutions() const override;
 };
 }
 

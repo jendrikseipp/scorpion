@@ -25,7 +25,7 @@ SearchStatus SerializedSearchEngine::step() {
     auto search_status = child_search.step();
     if (search_status == SearchStatus::SOLVED) {
         // 1. Concatenate partial plan
-        PartialSolutions child_partial_solutions = child_search.get_partial_solutions();
+        IWSearchSolutions child_partial_solutions = child_search.get_partial_solutions();
         m_partial_solutions.insert(m_partial_solutions.end(), child_partial_solutions.begin(), child_partial_solutions.end());
         int length = compute_partial_solutions_length(m_partial_solutions);
         if (length > m_bound) {
@@ -52,7 +52,7 @@ void SerializedSearchEngine::print_statistics() const {
     m_search_space->print_statistics();
 }
 
-PartialSolutions SerializedSearchEngine::get_partial_solutions() const {
+IWSearchSolutions SerializedSearchEngine::get_partial_solutions() const {
     return m_partial_solutions;
 }
 
