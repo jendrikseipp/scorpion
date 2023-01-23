@@ -45,6 +45,7 @@ SearchStatus SerializedSearchEngine::step() {
 }
 
 void SerializedSearchEngine::reinitialize() {
+    HierarchicalSearchEngine::reinitialize();
     m_partial_solutions.clear();
 }
 

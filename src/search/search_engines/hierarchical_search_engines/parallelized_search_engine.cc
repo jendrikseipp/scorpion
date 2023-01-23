@@ -56,6 +56,7 @@ SearchStatus ParallelizedSearchEngine::step() {
 }
 
 void ParallelizedSearchEngine::reinitialize() {
+    HierarchicalSearchEngine::reinitialize();
     m_partial_solutions.clear();
 }
 

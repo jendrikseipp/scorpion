@@ -49,6 +49,7 @@ void IWSearch::print_statistics() const {
 }
 
 void IWSearch::reinitialize() {
+    HierarchicalSearchEngine::reinitialize();
     m_current_width = m_iterate ? 0 : m_width;
 }
 
