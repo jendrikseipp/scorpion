@@ -18,6 +18,7 @@ ParallelizedSearchEngine::ParallelizedSearchEngine(const options::Options &opts)
 }
 
 SearchStatus ParallelizedSearchEngine::step() {
+    /* Note: we do not use goal test and only compare solution of children. */
     for (size_t i = 0; i < m_child_search_engines.size(); ++i) {
         bool in_progress = m_in_progress_child_searches[i];
         if (!in_progress) continue;
@@ -54,9 +55,12 @@ SearchStatus ParallelizedSearchEngine::step() {
     return SearchStatus::IN_PROGRESS;
 }
 
+void ParallelizedSearchEngine::reinitialize() {
+    m_partial_solutions.clear();
+}
+
 void ParallelizedSearchEngine::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
-    m_partial_solutions.clear();
     std::fill(m_in_progress_child_searches.begin(), m_in_progress_child_searches.end(), true);
 }
 

@@ -50,7 +50,7 @@ From: ubuntu:20.04
     ## Install scorpion
 	git clone https://github.com/drexlerd/scorpion.git
 	cd /scorpion
-	git checkout f3619d48d3f79466a3918707755e0534fb6a8201
+	git checkout 7010d4a14f263b3bcb3fdbbaae90318e0a702887
 	./build.py
 	cd /
 
@@ -71,3 +71,4 @@ From: ubuntu:20.04
 Name        HSIWR
 Description HSIWR implemented in FastDownward with DLPlan
 Authors     Dominik Drexler <dominik.drexler@liu.se>
+# sudo singularity build hsiwr.img hsiwr.sif

@@ -32,11 +32,15 @@ IWSearch::IWSearch(const Options &opts)
 }
 
 bool IWSearch::is_novel(const State &state) {
+    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_propositional_task->get_fact_ids(state)), true);
+}
+
+bool IWSearch::is_goal(const State &initial_state, const State &state) {
     utils::Timer timer;
-    bool result = m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_propositional_task->get_fact_ids(state)), true);
+    bool is_goal = m_goal_test->is_goal(initial_state, state);
     timer.stop();
     statistics.inc_valuation_seconds(timer());
-    return result;
+    return is_goal;
 }
 
 void IWSearch::print_statistics() const {

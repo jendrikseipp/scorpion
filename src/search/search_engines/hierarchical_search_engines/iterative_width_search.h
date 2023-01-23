@@ -31,6 +31,7 @@ class IWSearch : public HierarchicalSearchEngine {
 
 private:
     bool is_novel(const State &state);
+    bool is_goal(const State &initial_state, const State &state);
 
 protected:
     virtual void reinitialize() override;

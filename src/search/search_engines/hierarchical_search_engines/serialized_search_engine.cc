@@ -20,8 +20,8 @@ SerializedSearchEngine::SerializedSearchEngine(const options::Options &opts)
 }
 
 SearchStatus SerializedSearchEngine::step() {
-    auto& child_search = *m_child_search_engines.front().get();
-    auto search_status = child_search.step();
+    HierarchicalSearchEngine& child_search = *m_child_search_engines.front().get();
+    SearchStatus search_status = child_search.step();
     if (search_status == SearchStatus::SOLVED) {
         // 1. Concatenate partial plan
         IWSearchSolutions child_partial_solutions = child_search.get_partial_solutions();
@@ -42,6 +42,10 @@ SearchStatus SerializedSearchEngine::step() {
         }
     }
     return search_status;
+}
+
+void SerializedSearchEngine::reinitialize() {
+    m_partial_solutions.clear();
 }
 
 void SerializedSearchEngine::print_statistics() const {

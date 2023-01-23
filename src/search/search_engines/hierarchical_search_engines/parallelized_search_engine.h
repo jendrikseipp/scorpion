@@ -29,6 +29,8 @@ protected:
 public:
     explicit ParallelizedSearchEngine(const options::Options &opts);
 
+    virtual void reinitialize() override;
+
     virtual void set_initial_state(const State& state);
 
     virtual void print_statistics() const override;

@@ -22,6 +22,8 @@ protected:
 public:
     explicit SerializedSearchEngine(const options::Options &opts);
 
+    virtual void reinitialize() override;
+
     virtual void print_statistics() const override;
 
     virtual IWSearchSolutions get_partial_solutions() const override;
