@@ -86,7 +86,7 @@ SearchStatus IWSearch::step() {
 
     /* Goal check in initial state of subproblem. */
     if (id == m_initial_state_id) {
-        if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
+        if (is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
             m_solution = IWSearchSolution{{}, state.get_id(), m_current_width};
             return SearchStatus::SOLVED;
         }
@@ -117,7 +117,7 @@ SearchStatus IWSearch::step() {
             m_open_list.push_back(succ_state.get_id());
         }
 
-        if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), succ_state)) {
+        if (is_goal(m_state_registry->lookup_state(m_initial_state_id), succ_state)) {
             if (m_debug)
                 std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
 
