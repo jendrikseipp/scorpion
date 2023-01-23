@@ -15,6 +15,17 @@ using namespace std;
 
 
 namespace hierarchical_search_engine {
+
+static std::vector<std::shared_ptr<HierarchicalSearchEngine>>
+to_hierarchical_search_engines(const std::vector<std::shared_ptr<SearchEngine>>& child_search_engines) {
+    std::vector<std::shared_ptr<HierarchicalSearchEngine>> result;
+    for (std::shared_ptr<SearchEngine> child_search_engine : child_search_engines) {
+        result.push_back(std::dynamic_pointer_cast<HierarchicalSearchEngine>(child_search_engine));
+    }
+    return result;
+}
+
+
 HierarchicalSearchEngine::HierarchicalSearchEngine(
     const options::Options &opts)
     : SearchEngine(opts),
@@ -22,10 +33,10 @@ HierarchicalSearchEngine::HierarchicalSearchEngine(
       m_propositional_task(nullptr),
       m_goal_test(opts.get<std::shared_ptr<goal_test::GoalTest>>("goal_test")),
       m_parent_search_engine(nullptr),
-      m_child_search_engines(opts.get_list<std::shared_ptr<HierarchicalSearchEngine>>("child_searches")),
+      m_child_search_engines(to_hierarchical_search_engines(opts.get_list<std::shared_ptr<SearchEngine>>("child_searches"))),
       m_bound(std::numeric_limits<int>::max()),
       m_initial_state_id(StateID::no_state),
-      m_debug(true) {
+      m_debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG) {
 }
 
 void HierarchicalSearchEngine::initialize() {
@@ -37,6 +48,7 @@ void HierarchicalSearchEngine::initialize() {
 }
 
 void HierarchicalSearchEngine::reinitialize() {
+    m_bound = std::numeric_limits<int>::max();
     for (const auto& child_search_engine : m_child_search_engines) {
         child_search_engine->reinitialize();
     }
@@ -62,6 +74,7 @@ void HierarchicalSearchEngine::search() {
     SearchStatistics result_statistics = collect_statistics();
     statistics.inc_generated(result_statistics.get_generated());
     statistics.inc_expanded(result_statistics.get_expanded());
+    statistics.inc_valuation_seconds(result_statistics.get_valuation_seconds());
     if (status == SOLVED) {
         Plan plan;
         int mew = 0;
@@ -75,6 +88,7 @@ void HierarchicalSearchEngine::search() {
         aew /= partial_solutions.size();
         cout << "Maximum effective width: " << mew << endl;
         cout << "Average effective width: " << aew << endl;
+        cout << "Total time for evaluation features: " << statistics.get_valuation_seconds() << endl;
         plan_manager.save_plan(plan, task_proxy);
     }
     // TODO: Revise when and which search times are logged.
@@ -111,7 +125,6 @@ void HierarchicalSearchEngine::set_initial_state(const State &state)
         std::cout << get_name() << " set_initial_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
 
     m_initial_state_id = state.get_id();
-    m_bound = std::numeric_limits<int>::max();
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         child_search_engine_ptr->set_initial_state(state);
     }
@@ -136,6 +149,7 @@ SearchStatistics HierarchicalSearchEngine::collect_statistics() const {
         SearchStatistics child_statistics = child_search_engine->collect_statistics();
         result_statistics.inc_generated(child_statistics.get_generated());
         result_statistics.inc_expanded(child_statistics.get_expanded());
+        result_statistics.inc_valuation_seconds(child_statistics.get_valuation_seconds());
     }
     return result_statistics;
 }
@@ -149,7 +163,7 @@ int HierarchicalSearchEngine::compute_partial_solutions_length(const IWSearchSol
 }
 
 void HierarchicalSearchEngine::add_child_search_engine_option(OptionParser &parser) {
-    parser.add_list_option<std::shared_ptr<HierarchicalSearchEngine>>(
+    parser.add_list_option<std::shared_ptr<SearchEngine>>(
         "child_searches",
         "The child searches to be executed.",
         "[]");

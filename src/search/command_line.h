@@ -10,10 +10,7 @@ namespace options {
 class Registry;
 }
 
-namespace hierarchical_search_engine {
-class HierarchicalSearchEngine;
-}
-//class SearchEngine;
+class SearchEngine;
 
 class ArgError : public utils::Exception {
     std::string msg;
@@ -23,7 +20,7 @@ public:
     virtual void print() const override;
 };
 
-extern std::shared_ptr<hierarchical_search_engine::HierarchicalSearchEngine> parse_cmd_line(
+extern std::shared_ptr<SearchEngine> parse_cmd_line(
     int argc, const char **argv, options::Registry &registry, bool dry_run,
     bool is_unit_cost);
 

@@ -7,10 +7,9 @@
 #include <memory>
 
 using namespace std;
-using namespace hierarchical_search_engine;
 
 
-namespace serialized_search_engine {
+namespace hierarchical_search_engine {
 
 SerializedSearchEngine::SerializedSearchEngine(const options::Options &opts)
     : hierarchical_search_engine::HierarchicalSearchEngine(opts) {
@@ -54,7 +53,7 @@ IWSearchSolutions SerializedSearchEngine::get_partial_solutions() const {
 }
 
 
-static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
+static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Serialized search engine",
         "");
@@ -73,5 +72,5 @@ static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
 // valgrind ./downward --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())" < output.sas
 
 // ./fast-downward.py --keep-sas-file --build=debug ../sketch-learner/testing/benchmarks/delivery/domain.pddl ../sketch-learner/testing/benchmarks/delivery/instance_3_3_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())"
-static Plugin<HierarchicalSearchEngine> _plugin("serialized_search", _parse);
+static Plugin<SearchEngine> _plugin("serialized_search", _parse);
 }

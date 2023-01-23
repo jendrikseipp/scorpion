@@ -9,19 +9,17 @@
 #include <memory>
 #include <vector>
 
-using namespace hierarchical_search_engine;
 
 namespace options {
 class Options;
 }
 
-namespace iw_search {
+namespace hierarchical_search_engine {
 class IWSearch : public HierarchicalSearchEngine {
-    const int width;
-    const bool iterate;
-    const bool debug;
+    const int m_width;
+    const bool m_iterate;
 
-    std::deque<StateID> open_list;
+    std::deque<StateID> m_open_list;
     int m_current_width;
 
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
@@ -33,7 +31,6 @@ class IWSearch : public HierarchicalSearchEngine {
 
 private:
     bool is_novel(const State &state);
-    bool is_novel(const OperatorProxy &op, const State &succ_state);
 
 protected:
     virtual void reinitialize() override;

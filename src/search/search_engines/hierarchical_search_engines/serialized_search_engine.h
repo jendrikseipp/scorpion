@@ -3,13 +3,12 @@
 
 #include "hierarchical_search_engine.h"
 
-using namespace hierarchical_search_engine;
 
 namespace options {
 class Options;
 }
 
-namespace serialized_search_engine {
+namespace hierarchical_search_engine {
 class SerializedSearchEngine : public HierarchicalSearchEngine {
 private:
     IWSearchSolutions m_partial_solutions;

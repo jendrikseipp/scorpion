@@ -7,10 +7,9 @@
 #include <memory>
 
 using namespace std;
-using namespace hierarchical_search_engine;
 
 
-namespace parallelized_search_engine {
+namespace hierarchical_search_engine {
 
 ParallelizedSearchEngine::ParallelizedSearchEngine(const options::Options &opts)
     : hierarchical_search_engine::HierarchicalSearchEngine(opts),
@@ -69,7 +68,7 @@ IWSearchSolutions ParallelizedSearchEngine::get_partial_solutions() const {
 }
 
 
-static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
+static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis(
         "Parallelized search engine",
         "");
@@ -84,6 +83,6 @@ static shared_ptr<HierarchicalSearchEngine> _parse(OptionParser &parser) {
     return make_shared<ParallelizedSearchEngine>(opts);
 }
 
-static Plugin<hierarchical_search_engine::HierarchicalSearchEngine> _plugin("parallelized_search", _parse);
+static Plugin<SearchEngine> _plugin("parallelized_search", _parse);
 
 }

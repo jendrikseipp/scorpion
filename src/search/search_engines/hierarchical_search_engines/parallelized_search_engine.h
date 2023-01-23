@@ -3,8 +3,6 @@
 
 #include "hierarchical_search_engine.h"
 
-using namespace hierarchical_search_engine;
-
 namespace options {
 class Options;
 }
@@ -13,7 +11,7 @@ class Options;
  * ParallelizedSearchEngine runs a set of searches
  * and returns the best solution.
 */
-namespace parallelized_search_engine {
+namespace hierarchical_search_engine {
 class ParallelizedSearchEngine : public HierarchicalSearchEngine {
 private:
     IWSearchSolutions m_partial_solutions;

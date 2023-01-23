@@ -25,6 +25,8 @@ SearchStatistics::SearchStatistics(utils::LogProxy &log)
     lastjump_generated_states = 0;
 
     lastjump_f_value = -1;
+
+    valuation_seconds = 0.;
 }
 
 void SearchStatistics::report_f_value_progress(int f) {

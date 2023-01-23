@@ -33,6 +33,8 @@ class SearchStatistics {
     int lastjump_evaluated_states;
     int lastjump_generated_states;
 
+    double valuation_seconds;
+
     void print_f_line() const;
 public:
     explicit SearchStatistics(utils::LogProxy &log);
@@ -46,6 +48,7 @@ public:
     void inc_generated_ops(int inc = 1) {generated_ops += inc;}
     void inc_evaluations(int inc = 1) {evaluations += inc;}
     void inc_dead_ends(int inc = 1) {dead_end_states += inc;}
+    void inc_valuation_seconds(double inc = 1.) {valuation_seconds += inc;}
 
     // Methods that access statistics.
     int get_expanded() const {return expanded_states;}
@@ -55,6 +58,7 @@ public:
     int get_reopened() const {return reopened_states;}
     int get_generated_ops() const {return generated_ops;}
     int get_deadend_states() const {return dead_end_states;}
+    double get_valuation_seconds() {return valuation_seconds;}
 
     /*
       Call the following method with the f value of every expanded

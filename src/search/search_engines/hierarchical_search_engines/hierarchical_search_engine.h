@@ -15,15 +15,9 @@ class Options;
 class OptionParser;
 }
 
-namespace serialized_search_engine {
-class SerializedSearchEngine;
-}
-
-namespace parallelized_search_engine {
-class ParallelizedSearchEngine;
-}
-
 namespace hierarchical_search_engine {
+class ParallelizedSearchEngine;
+class SerializedSearchEngine;
 
 /**
  * Solution of an IW search.
@@ -50,9 +44,9 @@ using IWSearchSolutions = std::vector<IWSearchSolution>;
 
 
 class HierarchicalSearchEngine : public SearchEngine {
-friend class serialized_search_engine::SerializedSearchEngine;
-friend class parallelized_search_engine::ParallelizedSearchEngine;
-friend class iw_search::IWSearch;
+friend class SerializedSearchEngine;
+friend class ParallelizedSearchEngine;
+friend class IWSearch;
 
 protected:
     std::string m_name;
