@@ -62,8 +62,6 @@ void ParallelizedSearchEngine::set_initial_state(const State& state) {
 }
 
 void ParallelizedSearchEngine::print_statistics() const {
-    statistics.print_detailed_statistics();
-    m_search_space->print_statistics();
 }
 
 IWSearchSolutions ParallelizedSearchEngine::get_partial_solutions() const {

@@ -36,6 +36,12 @@ void HierarchicalSearchEngine::initialize() {
     set_parent_search_engine(nullptr);
 }
 
+void HierarchicalSearchEngine::reinitialize() {
+    for (const auto& child_search_engine : m_child_search_engines) {
+        child_search_engine->reinitialize();
+    }
+}
+
 void HierarchicalSearchEngine::search() {
     initialize();
     utils::CountdownTimer timer(max_time);
@@ -52,6 +58,24 @@ void HierarchicalSearchEngine::search() {
                 break;
             }
         }
+    }
+    SearchStatistics result_statistics = collect_statistics();
+    statistics.inc_generated(result_statistics.get_generated());
+    statistics.inc_expanded(result_statistics.get_expanded());
+    if (status == SOLVED) {
+        Plan plan;
+        int mew = 0;
+        float aew = 0;
+        const auto partial_solutions = get_partial_solutions();
+        for (const auto& partial_solution : partial_solutions) {
+            plan.insert(plan.end(), partial_solution.plan.begin(), partial_solution.plan.end());
+            mew = max(mew, partial_solution.ew);
+            aew += partial_solution.ew;
+        }
+        aew /= partial_solutions.size();
+        cout << "Maximum effective width: " << mew << endl;
+        cout << "Average effective width: " << aew << endl;
+        plan_manager.save_plan(plan, task_proxy);
     }
     // TODO: Revise when and which search times are logged.
     log << "Actual search time: " << timer.get_elapsed_time() << endl;
@@ -104,6 +128,16 @@ std::string HierarchicalSearchEngine::get_name() {
     std::stringstream ss;
     ss << this << " " << m_name;
     return ss.str();
+}
+
+SearchStatistics HierarchicalSearchEngine::collect_statistics() const {
+    SearchStatistics result_statistics(log);
+    for (const auto& child_search_engine : m_child_search_engines) {
+        SearchStatistics child_statistics = child_search_engine->collect_statistics();
+        result_statistics.inc_generated(child_statistics.get_generated());
+        result_statistics.inc_expanded(child_statistics.get_expanded());
+    }
+    return result_statistics;
 }
 
 int HierarchicalSearchEngine::compute_partial_solutions_length(const IWSearchSolutions& partial_solutions) {

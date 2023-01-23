@@ -43,6 +43,13 @@ void IWSearch::print_statistics() const {
     m_search_space->print_statistics();
 }
 
+void IWSearch::reinitialize() {
+    m_current_width = iterate ? 0 : width;
+    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_propositional_task->get_num_facts(), std::max(1, m_current_width));
+    m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
+    m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
+}
+
 SearchStatus IWSearch::step() {
     /* Search exhausted */
     if (m_current_width > width) {
@@ -54,6 +61,7 @@ SearchStatus IWSearch::step() {
     /* Restart search and increment width bound. */
     if (open_list.empty()) {
         ++m_current_width;
+        std::cout << "current_width: " << m_current_width << std::endl;
         set_initial_state(m_state_registry->lookup_state(m_initial_state_id));
         return SearchStatus::IN_PROGRESS;
     }
@@ -74,7 +82,7 @@ SearchStatus IWSearch::step() {
         return SearchStatus::FAILED;
     }
 
-    /* Goal check in initial state. */
+    /* Goal check in initial state of subproblem. */
     if (id == m_initial_state_id) {
         if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), state)) {
             m_solution = IWSearchSolution{{}, state.get_id(), m_current_width};
@@ -132,12 +140,13 @@ void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::Propositional
 
 void IWSearch::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
+
     m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_propositional_task->get_num_facts(), std::max(1, m_current_width));
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
-    statistics.reset();
+    m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
+
     statistics.inc_generated();
     m_initial_state_id = state.get_id();
-    m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
     SearchNode node = m_search_space->get_node(state);
     node.open_initial();
     open_list.clear();
@@ -145,6 +154,10 @@ void IWSearch::set_initial_state(const State& state) {
     bool novel = is_novel(state);
     utils::unused_variable(novel);
     assert(novel);
+}
+
+SearchStatistics IWSearch::collect_statistics() const {
+    return statistics;
 }
 
 void IWSearch::dump_search_space() const {

@@ -4,6 +4,7 @@
 #include "goal_test.h"
 
 #include "../../search_engine.h"
+#include "../../state_id.h"
 
 #include <memory>
 #include <vector>
@@ -38,7 +39,8 @@ struct IWSearchSolution {
     // effective width;
     int ew;
 
-    IWSearchSolution() { }
+    IWSearchSolution() :
+        state_id(StateID::no_state) { }
 
     IWSearchSolution(Plan plan, StateID state_id, int ew)
         : plan(plan), state_id(state_id), ew(ew) { }
@@ -59,9 +61,6 @@ protected:
     std::shared_ptr<extra_tasks::PropositionalTask> m_propositional_task;
     std::shared_ptr<goal_test::GoalTest> m_goal_test;
 
-    /* Parent-child relationship:
-       Every HierarchicalSearchEngine has a parent and a collection of childs.
-    */
     HierarchicalSearchEngine* m_parent_search_engine;
     std::vector<std::shared_ptr<HierarchicalSearchEngine>> m_child_search_engines;
 
@@ -78,12 +77,11 @@ protected:
      */
     explicit HierarchicalSearchEngine(const options::Options &opts);
 
-    virtual void search() override;
-
     /**
      * Top-level initialization.
      */
     virtual void initialize() override;
+    virtual void reinitialize();
 
     /**
      * Child-level initialization.
@@ -103,15 +101,15 @@ protected:
      */
     virtual std::string get_name();
     virtual IWSearchSolutions get_partial_solutions() const = 0;
-    // TODO: collect statistics recursively
-    virtual SearchStatistics collect_statistics() const ;
-
+    virtual SearchStatistics collect_statistics() const;
 
     static int compute_partial_solutions_length(const IWSearchSolutions& partial_solutions);
 
 public:
     static void add_child_search_engine_option(options::OptionParser &parser);
     static void add_goal_test_option(options::OptionParser &parser);
+
+    virtual void search() override;
 };
 }
 

@@ -36,14 +36,22 @@ private:
     bool is_novel(const OperatorProxy &op, const State &succ_state);
 
 protected:
+    virtual void reinitialize() override;
+
     /**
      * Generates next successor state and reacts upon.
+     * Returns:
+     *    - SOLVED if solution is found and can be retrieved with get_partial_solutions()
+     *    - FAILED if either search terminated by bound of search space explored
+     *    - IN_PROGRESS if search unfinished
      */
     virtual SearchStatus step() override;
 
     virtual void set_state_registry(std::shared_ptr<StateRegistry> state_registry) override;
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) override;
     virtual void set_initial_state(const State& state) override;
+
+    virtual SearchStatistics collect_statistics() const override;
 
 public:
     explicit IWSearch(const options::Options &opts);

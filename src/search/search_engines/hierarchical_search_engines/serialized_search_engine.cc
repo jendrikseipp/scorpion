@@ -30,17 +30,15 @@ SearchStatus SerializedSearchEngine::step() {
         int length = compute_partial_solutions_length(m_partial_solutions);
         if (length > m_bound) {
             return SearchStatus::FAILED;
-        } else if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), m_partial_solutions.back().state)) {
+        } else if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), m_state_registry->lookup_state(m_partial_solutions.back().state_id))) {
             // 2. Search finished: return resulting search status and update statistics.
             if (m_debug)
-                std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(m_partial_solutions.back().state).str() << std::endl;
-            if (!m_parent_search_engine) {
-                plan_manager.save_plan(m_plan, task_proxy);
-            }
+                std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(m_state_registry->lookup_state(m_partial_solutions.back().state_id)).str() << std::endl;
             return SearchStatus::SOLVED;
         } else {
             // 3. Search unfinished: update child search initial states
-            m_child_search_engines.front()->set_initial_state(m_partial_solutions.back().state);
+            m_child_search_engines.front()->reinitialize();
+            m_child_search_engines.front()->set_initial_state(m_state_registry->lookup_state(m_partial_solutions.back().state_id));
             return SearchStatus::IN_PROGRESS;
         }
     }
@@ -49,7 +47,6 @@ SearchStatus SerializedSearchEngine::step() {
 
 void SerializedSearchEngine::print_statistics() const {
     statistics.print_detailed_statistics();
-    m_search_space->print_statistics();
 }
 
 IWSearchSolutions SerializedSearchEngine::get_partial_solutions() const {
