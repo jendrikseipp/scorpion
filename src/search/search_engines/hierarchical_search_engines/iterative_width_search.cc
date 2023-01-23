@@ -108,7 +108,7 @@ SearchStatus IWSearch::step() {
         succ_node.open(node, op, 1);
         statistics.inc_generated();
 
-        if (m_width > 0) {
+        if (m_current_width > 0) {
             bool novel = is_novel(succ_state);
             if (!novel) {
                 continue;
