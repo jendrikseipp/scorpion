@@ -174,7 +174,7 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.add_option<int>(
         "width", "maximum conjunction size", "2");
     parser.add_option<bool>(
-        "iterate", "iterate k=0,...,width", "false");
+        "iterate", "iterate k=0,...,width", "true");
     HierarchicalSearchEngine::add_child_search_engine_option(parser);
     HierarchicalSearchEngine::add_goal_test_option(parser);
     SearchEngine::add_options_to_parser(parser);
