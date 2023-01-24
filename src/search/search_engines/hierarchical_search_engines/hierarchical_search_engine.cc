@@ -86,7 +86,7 @@ void HierarchicalSearchEngine::search() {
             mew = max(mew, partial_solution.ew);
             aew += partial_solution.ew;
         }
-        aew /= partial_solutions.size();
+        aew = partial_solutions.empty() ? 0. : aew / partial_solutions.size();
         cout << "Maximum effective width: " << mew << endl;
         cout << "Average effective width: " << aew << endl;
         cout << "Total time for evaluation features: " << statistics.get_valuation_seconds() << endl;
