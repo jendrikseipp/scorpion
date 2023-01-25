@@ -172,7 +172,7 @@ IWSearchSolutions IWSearch::get_partial_solutions() const {
 static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis("Iterated width search", "");
     parser.add_option<int>(
-        "width", "maximum conjunction size", "2");
+        "width", "maximum conjunction size", "2", Bounds("0", "2"));
     parser.add_option<bool>(
         "iterate", "iterate k=0,...,width", "true");
     HierarchicalSearchEngine::add_child_search_engine_option(parser);
