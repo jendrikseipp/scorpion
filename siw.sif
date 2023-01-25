@@ -50,7 +50,7 @@ From: ubuntu:20.04
     ## Install scorpion
 	git clone https://github.com/drexlerd/scorpion.git
 	cd /scorpion
-	git checkout f3619d48d3f79466a3918707755e0534fb6a8201
+	git checkout 639d7f6e6588a3f41a531afa4cf6a393cfc7d1d8
 	./build.py
 	cd /
 
@@ -68,6 +68,7 @@ From: ubuntu:20.04
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
 %labels
-Name        SIWR
-Description SIWR implemented in FastDownward with DLPlan
+Name        SIW
+Description SIW implemented in FastDownward with DLPlan
 Authors     Dominik Drexler <dominik.drexler@liu.se>
+# sudo singularity build siw.img siw.sif

@@ -29,7 +29,7 @@ SearchStatus SerializedSearchEngine::step() {
         int length = compute_partial_solutions_length(m_partial_solutions);
         if (length > m_bound) {
             return SearchStatus::FAILED;
-        } else if (m_goal_test->is_goal(m_state_registry->lookup_state(m_initial_state_id), m_state_registry->lookup_state(m_partial_solutions.back().state_id))) {
+        } else if (is_goal(m_state_registry->lookup_state(m_initial_state_id), m_state_registry->lookup_state(m_partial_solutions.back().state_id))) {
             // 2. Search finished: return resulting search status and update statistics.
             if (m_debug)
                 std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(m_state_registry->lookup_state(m_partial_solutions.back().state_id)).str() << std::endl;
@@ -76,6 +76,6 @@ static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
 // ./fast-downward.py --keep-sas-file --build=debug domain.pddl instance_2_1_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())"
 // valgrind ./downward --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())" < output.sas
 
-// ./fast-downward.py --keep-sas-file --build=debug ../sketch-learner/testing/benchmarks/delivery/domain.pddl ../sketch-learner/testing/benchmarks/delivery/instance_3_3_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())"
+// ./fast-downward.py --keep-sas-file ../sketch-learner/testing/benchmarks/delivery/domain.pddl ../sketch-learner/testing/benchmarks/delivery/instance_3_3_0.pddl --translate-options --dump-predicates --dump-constants --dump-static-atoms --dump-goal-atoms --search-options --search "serialized_search(child_searches=[iw(width=2, goal_test=increment_goal_count())], goal_test=top_goal())"
 static Plugin<SearchEngine> _plugin("serialized_search", _parse);
 }

@@ -77,6 +77,8 @@ protected:
     virtual void initialize() override;
     virtual void reinitialize();
 
+    virtual bool is_goal(const State &initial_state, const State &state);
+
     /**
      * Child-level initialization.
      */

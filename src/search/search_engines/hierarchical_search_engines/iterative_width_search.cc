@@ -26,21 +26,19 @@ IWSearch::IWSearch(const Options &opts)
       m_iterate(opts.get<bool>("iterate")),
       m_novelty_base(nullptr),
       m_novelty_table(0),
+      m_novelty_table_2(task_proxy, 0, nullptr),
       m_search_space(nullptr) {
     m_name = "IWSearch";
     m_current_width = m_iterate ? 0 : m_width;
 }
 
 bool IWSearch::is_novel(const State &state) {
-    return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_propositional_task->get_fact_ids(state)), true);
+    // return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_propositional_task->get_fact_ids(state)), true);
+    return m_novelty_table_2.compute_novelty_and_update_table(state);
 }
 
-bool IWSearch::is_goal(const State &initial_state, const State &state) {
-    utils::Timer timer;
-    bool is_goal = m_goal_test->is_goal(initial_state, state);
-    timer.stop();
-    statistics.inc_valuation_seconds(timer());
-    return is_goal;
+bool IWSearch::is_novel(const OperatorProxy& op, const State &state) {
+    return m_novelty_table_2.compute_novelty_and_update_table(op, state);
 }
 
 void IWSearch::print_statistics() const {
@@ -110,7 +108,7 @@ SearchStatus IWSearch::step() {
         statistics.inc_generated();
 
         if (m_current_width > 0) {
-            bool novel = is_novel(succ_state);
+            bool novel = is_novel(op, succ_state);
             if (!novel) {
                 continue;
             }
@@ -145,6 +143,7 @@ void IWSearch::set_initial_state(const State& state) {
 
     m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_propositional_task->get_num_facts(), std::max(1, m_current_width));
     m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
+    m_novelty_table_2 = novelty::NoveltyTable(task_proxy, m_current_width, m_propositional_task->get_fact_indexer());
     m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
 
     statistics.inc_generated();

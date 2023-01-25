@@ -3,6 +3,8 @@
 
 #include "hierarchical_search_engine.h"
 
+#include "../../novelty/novelty_table.h"
+
 #include <dlplan/novelty.h>
 
 #include <deque>
@@ -24,6 +26,7 @@ class IWSearch : public HierarchicalSearchEngine {
 
     std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
     dlplan::novelty::NoveltyTable m_novelty_table;
+    novelty::NoveltyTable m_novelty_table_2;
 
     std::unique_ptr<SearchSpace> m_search_space;
 
@@ -31,7 +34,7 @@ class IWSearch : public HierarchicalSearchEngine {
 
 private:
     bool is_novel(const State &state);
-    bool is_goal(const State &initial_state, const State &state);
+    bool is_novel(const OperatorProxy& op, const State &state);
 
 protected:
     virtual void reinitialize() override;

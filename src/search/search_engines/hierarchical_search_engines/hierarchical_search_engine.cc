@@ -55,6 +55,14 @@ void HierarchicalSearchEngine::reinitialize() {
     }
 }
 
+bool HierarchicalSearchEngine::is_goal(const State &initial_state, const State &state) {
+    utils::Timer timer;
+    bool is_goal = m_goal_test->is_goal(initial_state, state);
+    timer.stop();
+    statistics.inc_valuation_seconds(timer());
+    return is_goal;
+}
+
 void HierarchicalSearchEngine::search() {
     initialize();
     utils::CountdownTimer timer(max_time);

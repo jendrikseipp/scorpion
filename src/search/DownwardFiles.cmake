@@ -465,6 +465,7 @@ fast_downward_plugin(
         search_engines/hierarchical_search_engines/parallelized_search_engine
         search_engines/hierarchical_search_engines/serialized_search_engine
         tasks/propositional_task
+        novelty/novelty_table
 )
 
 fast_downward_plugin(

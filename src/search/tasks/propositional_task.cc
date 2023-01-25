@@ -1,6 +1,7 @@
 #include "propositional_task.h"
 
 #include "../utils/tokenizer.h"
+#include "../novelty/novelty_table.h"
 
 #include <fstream>
 
@@ -121,7 +122,8 @@ PropositionalTask::PropositionalTask(
     const std::shared_ptr<AbstractTask> &parent)
     : DelegatingTask(parent),
       m_vocabulary_info(std::make_shared<dlplan::core::VocabularyInfo>()),
-      m_syntactic_element_factory(std::make_shared<dlplan::core::VocabularyInfo>()) {
+      m_syntactic_element_factory(std::make_shared<dlplan::core::VocabularyInfo>()),
+      m_fact_indexer(std::make_shared<novelty::FactIndexer>(TaskProxy(*parent))) {
     m_syntactic_element_factory = dlplan::core::SyntacticElementFactory(m_vocabulary_info);
     parse_predicates_file("predicates.txt", *m_vocabulary_info);
     parse_constants_file("constants.txt", *m_vocabulary_info);
@@ -214,6 +216,10 @@ dlplan::core::SyntacticElementFactory& PropositionalTask::get_syntactic_element_
 
 dlplan::core::DenotationsCaches& PropositionalTask::get_denotations_caches() {
     return m_denotations_caches;
+}
+
+std::shared_ptr<novelty::FactIndexer> PropositionalTask::get_fact_indexer() {
+    return m_fact_indexer;
 }
 
 }

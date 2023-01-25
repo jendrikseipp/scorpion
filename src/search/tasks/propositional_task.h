@@ -10,6 +10,9 @@
 #include <memory>
 #include <vector>
 
+namespace novelty {
+class FactIndexer;
+}
 
 namespace extra_tasks {
 const int UNDEFINED = -1;
@@ -29,6 +32,8 @@ private:
 
     std::unordered_set<int> m_goal_facts;
 
+    std::shared_ptr<novelty::FactIndexer> m_fact_indexer;
+
 public:
     PropositionalTask(const std::shared_ptr<AbstractTask> &parent);
 
@@ -47,6 +52,8 @@ public:
 
     dlplan::core::SyntacticElementFactory& get_syntactic_element_factory_ref();
     dlplan::core::DenotationsCaches& get_denotations_caches();
+
+    std::shared_ptr<novelty::FactIndexer> get_fact_indexer();
 };
 }
 
