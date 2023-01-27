@@ -119,7 +119,8 @@ static const std::vector<std::pair<AtomTokenType, std::regex>> fd_atom_token_reg
 
 
 PropositionalTask::PropositionalTask(
-    const std::shared_ptr<AbstractTask> &parent)
+    const std::shared_ptr<AbstractTask> &parent,
+    bool add_negated_propositions)
     : DelegatingTask(parent),
       m_vocabulary_info(std::make_shared<dlplan::core::VocabularyInfo>()),
       m_syntactic_element_factory(std::make_shared<dlplan::core::VocabularyInfo>()),
@@ -131,22 +132,27 @@ PropositionalTask::PropositionalTask(
     parse_static_atoms_file("static-atoms.txt", *m_instance_info);
     parse_goal_atoms_file("goal-atoms.txt", *m_instance_info);
     std::string atom_prefix = "Atom ";
-    fact_offsets.reserve(TaskProxy(*parent).get_variables().size());
-    num_facts = 0;
-    for (const auto& variable : TaskProxy(*parent).get_variables()) {
-        fact_offsets.push_back(num_facts);
-        int domain_size = variable.get_domain_size();
-        num_facts += domain_size;
-        for (int i = 0; i < domain_size; ++i) {
-            std::string name = variable.get_fact(i).get_name();
-            if (name.substr(0, 5) == atom_prefix) {
-                std::string normalized_atom = name.substr(atom_prefix.size());
-                fact_index_to_dlplan_atom_index.push_back(
-                    parse_atom(normalized_atom, *m_instance_info, false, false));
-            } else {
-                fact_index_to_dlplan_atom_index.push_back(UNDEFINED);
+    if (add_negated_propositions) {
+        fact_offsets.reserve(TaskProxy(*parent).get_variables().size());
+        num_facts = 0;
+        for (const auto& variable : TaskProxy(*parent).get_variables()) {
+            fact_offsets.push_back(num_facts);
+            int domain_size = variable.get_domain_size();
+            num_facts += domain_size;
+            for (int i = 0; i < domain_size; ++i) {
+                std::string name = variable.get_fact(i).get_name();
+                if (name.substr(0, 5) == atom_prefix) {
+                    std::string normalized_atom = name.substr(atom_prefix.size());
+                    fact_index_to_dlplan_atom_index.push_back(
+                        parse_atom(normalized_atom, *m_instance_info, false, false));
+                } else {
+                    // we do not use this fact in novelty testing
+                    fact_index_to_dlplan_atom_index.push_back(UNDEFINED);
+                }
             }
         }
+    } else {
+
     }
     for (size_t index = 0; index < parent->get_num_goals(); ++index) {
         m_goal_facts.insert(get_fact_id(parent->get_goal_fact(index)));
@@ -164,10 +170,6 @@ dlplan::core::State PropositionalTask::compute_dlplan_state(const State& state) 
     }
     atom_indices.shrink_to_fit();
     return dlplan::core::State(m_instance_info, atom_indices, state.get_id().value);
-}
-
-std::vector<int> PropositionalTask::get_initial_state_values() const {
-    return m_initial_state_values;
 }
 
 std::vector<int> PropositionalTask::get_fact_ids(const State& state) const {
