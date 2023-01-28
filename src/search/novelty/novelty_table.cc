@@ -3,6 +3,7 @@
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
+
 using namespace std;
 
 namespace novelty {
@@ -61,8 +62,12 @@ FactIndexer::FactIndexer(const TaskProxy &task_proxy) {
 }
 
 NoveltyTable::NoveltyTable(
-    const TaskProxy &task_proxy, int width, const shared_ptr<FactIndexer> &fact_indexer_)
+    const TaskProxy &task_proxy,
+    int width,
+    std::shared_ptr<extra_tasks::PropositionalTask> propositional_task,
+    shared_ptr<FactIndexer> fact_indexer_)
     : width(width),
+      propositional_task(propositional_task),
       fact_indexer(fact_indexer_),
       compute_novelty_timer(false) {
     if (!fact_indexer) {
@@ -81,8 +86,14 @@ int NoveltyTable::compute_novelty_and_update_table(const State &state) {
     if (width == 2) {
         for (int var1 = 0; var1 < num_vars; ++var1) {
             FactPair fact1 = state[var1].get_pair();
+            if (propositional_task->is_negated_fact(fact_indexer->get_fact_id(fact1))) {
+                continue;
+            }
             for (int var2 = var1 + 1; var2 < num_vars; ++var2) {
                 FactPair fact2 = state[var2].get_pair();
+                if (propositional_task->is_negated_fact(fact_indexer->get_fact_id(fact2))) {
+                    continue;
+                }
                 int pair_id = fact_indexer->get_pair_id(fact1, fact2);
                 bool seen = seen_fact_pairs[pair_id];
                 if (!seen) {
@@ -117,11 +128,17 @@ int NoveltyTable::compute_novelty_and_update_table(
         int num_vars = succ_state.size();
         for (EffectProxy effect : op.get_effects()) {
             FactPair fact1 = effect.get_fact().get_pair();
+            if (propositional_task->is_negated_fact(fact_indexer->get_fact_id(fact1))) {
+                continue;
+            }
             for (int var2 = 0; var2 < num_vars; ++var2) {
                 if (fact1.var == var2) {
                     continue;
                 }
                 FactPair fact2 = succ_state[var2].get_pair();
+                if (propositional_task->is_negated_fact(fact_indexer->get_fact_id(fact2))) {
+                    continue;
+                }
                 int pair_id = fact_indexer->get_pair_id(fact1, fact2);
                 bool seen = seen_fact_pairs[pair_id];
                 if (!seen) {
@@ -136,6 +153,9 @@ int NoveltyTable::compute_novelty_and_update_table(
     for (EffectProxy effect : op.get_effects()) {
         FactPair fact = effect.get_fact().get_pair();
         int fact_id = fact_indexer->get_fact_id(fact);
+        if (propositional_task->is_negated_fact(fact_id)) {
+            continue;
+        }
         if (!seen_facts[fact_id]) {
             seen_facts[fact_id] = true;
             novelty = 1;
@@ -145,6 +165,22 @@ int NoveltyTable::compute_novelty_and_update_table(
     compute_novelty_timer.stop();
     return novelty;
 }
+
+
+int NoveltyTable::compute_novelty_and_update_table(const std::vector<int>& propositions) {
+    compute_novelty_timer.resume();
+    int novelty = UNKNOWN_NOVELTY;
+    for (int prop : propositions) {
+        bool seen = seen_fact_pairs[prop];
+        if (!seen) {
+            novelty = width;
+            seen_fact_pairs[prop] = true;
+        }
+    }
+    compute_novelty_timer.stop();
+    return novelty;
+}
+
 
 void NoveltyTable::reset() {
     seen_facts.assign(fact_indexer->get_num_facts(), false);

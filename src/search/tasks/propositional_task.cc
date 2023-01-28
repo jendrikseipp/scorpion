@@ -120,7 +120,7 @@ static const std::vector<std::pair<AtomTokenType, std::regex>> fd_atom_token_reg
 
 PropositionalTask::PropositionalTask(
     const std::shared_ptr<AbstractTask> &parent,
-    bool add_negated_propositions)
+    const TaskProxy &task_proxy)
     : DelegatingTask(parent),
       m_vocabulary_info(std::make_shared<dlplan::core::VocabularyInfo>()),
       m_syntactic_element_factory(std::make_shared<dlplan::core::VocabularyInfo>()),
@@ -132,38 +132,30 @@ PropositionalTask::PropositionalTask(
     parse_static_atoms_file("static-atoms.txt", *m_instance_info);
     parse_goal_atoms_file("goal-atoms.txt", *m_instance_info);
     std::string atom_prefix = "Atom ";
-    if (add_negated_propositions) {
-        fact_offsets.reserve(TaskProxy(*parent).get_variables().size());
-        num_facts = 0;
-        for (const auto& variable : TaskProxy(*parent).get_variables()) {
-            fact_offsets.push_back(num_facts);
-            int domain_size = variable.get_domain_size();
-            num_facts += domain_size;
-            for (int i = 0; i < domain_size; ++i) {
-                std::string name = variable.get_fact(i).get_name();
-                if (name.substr(0, 5) == atom_prefix) {
-                    std::string normalized_atom = name.substr(atom_prefix.size());
-                    fact_index_to_dlplan_atom_index.push_back(
-                        parse_atom(normalized_atom, *m_instance_info, false, false));
-                } else {
-                    // we do not use this fact in novelty testing
-                    fact_index_to_dlplan_atom_index.push_back(UNDEFINED);
-                }
-            }
+    for (FactProxy fact_proxy : task_proxy.get_variables().get_facts()) {
+        std::string name = fact_proxy.get_name();
+        std::cout << name << std::endl;
+        if (name.substr(0, 5) == atom_prefix) {
+            m_is_negated_facts.push_back(false);
+            std::string normalized_name = name.substr(atom_prefix.size());
+            fact_index_to_dlplan_atom_index.push_back(
+                parse_atom(normalized_name, *m_instance_info, false, false)
+            );
+        } else {
+            m_is_negated_facts.push_back(true);
+            fact_index_to_dlplan_atom_index.push_back(UNDEFINED);
         }
-    } else {
-
     }
     for (size_t index = 0; index < parent->get_num_goals(); ++index) {
-        m_goal_facts.insert(get_fact_id(parent->get_goal_fact(index)));
+        m_goal_fact_ids.insert(m_fact_indexer->get_fact_id(parent->get_goal_fact(index)));
     }
 }
 
 dlplan::core::State PropositionalTask::compute_dlplan_state(const State& state) const {
     std::vector<int> atom_indices;
-    atom_indices.reserve(get_num_facts());
-    for (int fact_index : get_fact_ids(state)) {
-        int dlplan_atom_index = fact_index_to_dlplan_atom_index[fact_index];
+    atom_indices.reserve(m_fact_indexer->get_num_facts());
+    for (int fact_id : get_state_fact_ids(state)) {
+        int dlplan_atom_index = fact_index_to_dlplan_atom_index[fact_id];
         if (dlplan_atom_index != UNDEFINED) {
             atom_indices.push_back(dlplan_atom_index);
         }
@@ -172,44 +164,21 @@ dlplan::core::State PropositionalTask::compute_dlplan_state(const State& state) 
     return dlplan::core::State(m_instance_info, atom_indices, state.get_id().value);
 }
 
-std::vector<int> PropositionalTask::get_fact_ids(const State& state) const {
+const std::unordered_set<int>& PropositionalTask::get_goal_fact_ids() const {
+    return m_goal_fact_ids;
+}
+
+std::vector<int> PropositionalTask::get_state_fact_ids(const State& state) const {
     std::vector<int> fact_ids;
-    int num_vars = state.size();
-    fact_ids.reserve(num_vars);
     for (FactProxy fact_proxy : state) {
         FactPair fact = fact_proxy.get_pair();
-        int fact_id = get_fact_id(fact);
-        fact_ids.push_back(fact_id);
+        fact_ids.push_back(m_fact_indexer->get_fact_id(fact));
     }
     return fact_ids;
 }
 
-std::vector<int> PropositionalTask::get_fact_ids(const OperatorProxy &op, const State& state) const {
-    std::vector<int> fact_ids;
-    int num_vars = state.size();
-    for (EffectProxy effect : op.get_effects()) {
-        FactPair fact = effect.get_fact().get_pair();
-        for (int var2 = 0; var2 < num_vars; ++var2) {
-            if (fact.var == var2) {
-                continue;
-            }
-            int fact_id = get_fact_id(fact);
-            fact_ids.push_back(fact_id);
-        }
-    }
-    return fact_ids;
-}
-
-int PropositionalTask::get_fact_id(FactPair fact) const {
-    return fact_offsets[fact.var] + fact.value;
-}
-
-int PropositionalTask::get_num_facts() const {
-    return num_facts;
-}
-
-const std::unordered_set<int>& PropositionalTask::get_goal_facts() const {
-    return m_goal_facts;
+bool PropositionalTask::is_negated_fact(int fact_id) const {
+    return m_is_negated_facts[fact_id];
 }
 
 dlplan::core::SyntacticElementFactory& PropositionalTask::get_syntactic_element_factory_ref() {

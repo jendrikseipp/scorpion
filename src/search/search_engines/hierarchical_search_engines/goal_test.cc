@@ -61,9 +61,9 @@ bool IncrementGoalCount::is_goal(const State& initial_state, const State& curren
 }
 
 int IncrementGoalCount::compute_num_unsatisfied_goal_facts(const State& state) const {
-    int unsatisfied_goal_facts = m_propositional_task->get_goal_facts().size();
-    for (int fact_id : m_propositional_task->get_fact_ids(state)) {
-        if (m_propositional_task->get_goal_facts().count(fact_id)) {
+    int unsatisfied_goal_facts = m_propositional_task->get_goal_fact_ids().size();
+    for (int fact_id : m_propositional_task->get_state_fact_ids(state)) {
+        if (m_propositional_task->get_goal_fact_ids().count(fact_id)) {
             --unsatisfied_goal_facts;
         }
     }

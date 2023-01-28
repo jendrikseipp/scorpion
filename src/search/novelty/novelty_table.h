@@ -5,6 +5,8 @@
 
 #include "../utils/timer.h"
 
+#include "../tasks/propositional_task.h"
+
 #include <cassert>
 #include <memory>
 #include <vector>
@@ -54,6 +56,7 @@ public:
 class NoveltyTable {
     int width;
 
+    std::shared_ptr<extra_tasks::PropositionalTask> propositional_task;
     std::shared_ptr<FactIndexer> fact_indexer;
     std::vector<bool> seen_facts;
     std::vector<bool> seen_fact_pairs;
@@ -66,13 +69,18 @@ public:
     NoveltyTable(
         const TaskProxy &task_proxy,
         int width,
-        const std::shared_ptr<FactIndexer> &fact_indexer = nullptr);
+        std::shared_ptr<extra_tasks::PropositionalTask> propositional_task,
+        std::shared_ptr<FactIndexer> fact_indexer = nullptr);
 
     static const int UNKNOWN_NOVELTY = 3;
+
 
     int compute_novelty_and_update_table(const State &state);
     int compute_novelty_and_update_table(
         const OperatorProxy &op, const State &succ_state);
+
+    int compute_novelty_and_update_table(const std::vector<int>& propositions);
+
     void reset();
 
     void print_statistics() const;

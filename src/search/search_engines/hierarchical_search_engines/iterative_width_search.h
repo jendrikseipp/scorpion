@@ -24,9 +24,7 @@ class IWSearch : public HierarchicalSearchEngine {
     std::deque<StateID> m_open_list;
     int m_current_width;
 
-    std::shared_ptr<dlplan::novelty::NoveltyBase> m_novelty_base;
-    dlplan::novelty::NoveltyTable m_novelty_table;
-    novelty::NoveltyTable m_novelty_table_2;
+    novelty::NoveltyTable m_novelty_table;
 
     std::unique_ptr<SearchSpace> m_search_space;
 

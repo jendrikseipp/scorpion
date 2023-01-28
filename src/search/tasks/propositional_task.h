@@ -24,23 +24,16 @@ private:
     dlplan::core::SyntacticElementFactory m_syntactic_element_factory;
     dlplan::core::DenotationsCaches m_denotations_caches;
 
-
-    std::vector<int> fact_offsets;
-    int num_facts;
     std::vector<int> fact_index_to_dlplan_atom_index;
-    std::vector<int> fact_index_to_prop_index;
+    std::vector<bool> m_is_negated_facts;
 
-
-    std::unordered_set<int> m_goal_facts;
+    std::unordered_set<int> m_goal_fact_ids;
 
     // TODO: remove this and rely purely on propositional task
     std::shared_ptr<novelty::FactIndexer> m_fact_indexer;
 
-private:
-    int get_fact_id(FactPair fact) const;
-
 public:
-    PropositionalTask(const std::shared_ptr<AbstractTask> &parent, bool add_negated_propositions=true);
+    PropositionalTask(const std::shared_ptr<AbstractTask> &parent, const TaskProxy &task_proxy);
 
     /**
      * Returns a propositional state.
@@ -48,16 +41,11 @@ public:
     dlplan::core::State compute_dlplan_state(const State& state) const;
 
     /**
-     * For novelty testing.
-     */
-    std::vector<int> get_fact_ids(const State& state) const;
-    std::vector<int> get_fact_ids(const OperatorProxy &op, const State& state) const;
-    int get_num_facts() const;
-
-    /**
      * For goal counter.
      */
-    const std::unordered_set<int>& get_goal_facts() const;
+    const std::unordered_set<int>& get_goal_fact_ids() const;
+    std::vector<int> get_state_fact_ids(const State& state) const;
+    bool is_negated_fact(int fact_id) const;
 
     /**
      * Getters.

@@ -43,7 +43,7 @@ HierarchicalSearchEngine::HierarchicalSearchEngine(
 void HierarchicalSearchEngine::initialize() {
     utils::g_log << "Top level initialization of HierarchicalSearchEngine." << endl;
     set_state_registry(std::make_shared<StateRegistry>(task_proxy));
-    set_propositional_task(std::make_shared<extra_tasks::PropositionalTask>(tasks::g_root_task));
+    set_propositional_task(std::make_shared<extra_tasks::PropositionalTask>(tasks::g_root_task, task_proxy));
     set_initial_state(m_state_registry->get_initial_state());
     set_parent_search_engine(nullptr);
 }

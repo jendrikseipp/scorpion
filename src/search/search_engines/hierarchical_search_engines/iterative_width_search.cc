@@ -24,21 +24,20 @@ IWSearch::IWSearch(const Options &opts)
     : HierarchicalSearchEngine(opts),
       m_width(opts.get<int>("width")),
       m_iterate(opts.get<bool>("iterate")),
-      m_novelty_base(nullptr),
-      m_novelty_table(0),
-      m_novelty_table_2(task_proxy, 0, nullptr),
+      m_novelty_table(task_proxy, 0, nullptr),
       m_search_space(nullptr) {
     m_name = "IWSearch";
     m_current_width = m_iterate ? 0 : m_width;
 }
 
 bool IWSearch::is_novel(const State &state) {
-    // return m_novelty_table.insert(dlplan::novelty::TupleIndexGenerator(m_novelty_base, m_propositional_task->get_fact_ids(state)), true);
-    return m_novelty_table_2.compute_novelty_and_update_table(state);
+    // return m_novelty_table.compute_novelty_and_update_table(m_propositional_task->get_propositions(state)) < 3;
+    return m_novelty_table.compute_novelty_and_update_table(state) < 3;
 }
 
 bool IWSearch::is_novel(const OperatorProxy& op, const State &state) {
-    return m_novelty_table_2.compute_novelty_and_update_table(op, state);
+    // return m_novelty_table.compute_novelty_and_update_table(m_propositional_task->get_propositions(op, state)) < 3;
+    return m_novelty_table.compute_novelty_and_update_table(op, state) < 3;
 }
 
 void IWSearch::print_statistics() const {
@@ -140,10 +139,7 @@ void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::Propositional
 
 void IWSearch::set_initial_state(const State& state) {
     HierarchicalSearchEngine::set_initial_state(state);
-
-    m_novelty_base = std::make_shared<dlplan::novelty::NoveltyBase>(m_propositional_task->get_num_facts(), std::max(1, m_current_width));
-    m_novelty_table = dlplan::novelty::NoveltyTable(m_novelty_base->get_num_tuples());
-    m_novelty_table_2 = novelty::NoveltyTable(task_proxy, m_current_width, m_propositional_task->get_fact_indexer());
+    m_novelty_table = novelty::NoveltyTable(task_proxy, m_current_width, m_propositional_task, m_propositional_task->get_fact_indexer());
     m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
 
     statistics.inc_generated();
