@@ -132,6 +132,7 @@ PropositionalTask::PropositionalTask(
     parse_static_atoms_file("static-atoms.txt", *m_instance_info);
     parse_goal_atoms_file("goal-atoms.txt", *m_instance_info);
     std::string atom_prefix = "Atom ";
+    std::cout << "Num_facts: " << m_fact_indexer->get_num_facts() << std::endl;
     for (FactProxy fact_proxy : task_proxy.get_variables().get_facts()) {
         std::string name = fact_proxy.get_name();
         std::cout << name << std::endl;

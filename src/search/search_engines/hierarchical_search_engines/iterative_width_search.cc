@@ -27,7 +27,7 @@ IWSearch::IWSearch(const Options &opts)
       m_novelty_table(task_proxy, 0, nullptr),
       m_search_space(nullptr) {
     m_name = "IWSearch";
-    m_current_width = m_iterate ? 1 : m_width;
+    m_current_width = m_iterate ? 0 : m_width;
 }
 
 bool IWSearch::is_novel(const State &state) {
@@ -47,7 +47,7 @@ void IWSearch::print_statistics() const {
 
 void IWSearch::reinitialize() {
     HierarchicalSearchEngine::reinitialize();
-    m_current_width = m_iterate ? 1 : m_width;
+    m_current_width = m_iterate ? 0 : m_width;
 }
 
 SearchStatus IWSearch::step() {
@@ -104,11 +104,13 @@ SearchStatus IWSearch::step() {
         }
 
         succ_node.open(node, op, 1);
-        bool novel = is_novel(op, succ_state);
-        if (!novel) {
-            continue;
+        if (m_current_width > 0) {
+            bool novel = is_novel(op, succ_state);
+            if (!novel) {
+                continue;
+            }
+            m_open_list.push_back(succ_state.get_id());
         }
-        m_open_list.push_back(succ_state.get_id());
         statistics.inc_generated();
 
         if (is_goal(succ_state)) {
@@ -165,9 +167,9 @@ IWSearchSolutions IWSearch::get_partial_solutions() const {
 static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
     parser.document_synopsis("Iterated width search", "");
     parser.add_option<int>(
-        "width", "maximum conjunction size", "2", Bounds("1", "2"));
+        "width", "maximum conjunction size", "2", Bounds("0", "2"));
     parser.add_option<bool>(
-        "iterate", "iterate k=1,...,width", "true");
+        "iterate", "iterate k=0,...,width", "true");
     HierarchicalSearchEngine::add_child_search_engine_option(parser);
     HierarchicalSearchEngine::add_goal_test_option(parser);
     SearchEngine::add_options_to_parser(parser);
