@@ -108,6 +108,9 @@ int NoveltyTable::compute_novelty_and_update_table(const State &state) {
     for (FactProxy fact_proxy : state) {
         FactPair fact = fact_proxy.get_pair();
         int fact_id = fact_indexer->get_fact_id(fact);
+        if (propositional_task->is_negated_fact(fact_id)) {
+            continue;
+        }
         if (!seen_facts[fact_id]) {
             seen_facts[fact_id] = true;
             novelty = 1;
@@ -126,17 +129,18 @@ int NoveltyTable::compute_novelty_and_update_table(
     // Check for novelty 2.
     if (width == 2) {
         int num_vars = succ_state.size();
-        for (EffectProxy effect : op.get_effects()) {
-            FactPair fact1 = effect.get_fact().get_pair();
-            if (propositional_task->is_negated_fact(fact_indexer->get_fact_id(fact1))) {
+        for (int var2 = 0; var2 < num_vars; ++var2) {
+            FactPair fact2 = succ_state[var2].get_pair();
+            // We test state variable first because we expect many negated atoms.
+            if (propositional_task->is_negated_fact(fact_indexer->get_fact_id(fact2))) {
                 continue;
             }
-            for (int var2 = 0; var2 < num_vars; ++var2) {
+            for (EffectProxy effect : op.get_effects()) {
+                FactPair fact1 = effect.get_fact().get_pair();
                 if (fact1.var == var2) {
                     continue;
                 }
-                FactPair fact2 = succ_state[var2].get_pair();
-                if (propositional_task->is_negated_fact(fact_indexer->get_fact_id(fact2))) {
+                if (propositional_task->is_negated_fact(fact_indexer->get_fact_id(fact1))) {
                     continue;
                 }
                 int pair_id = fact_indexer->get_pair_id(fact1, fact2);
@@ -147,7 +151,7 @@ int NoveltyTable::compute_novelty_and_update_table(
                 }
             }
         }
-    }
+}
 
     // Check for novelty 1.
     for (EffectProxy effect : op.get_effects()) {

@@ -55,9 +55,9 @@ void HierarchicalSearchEngine::reinitialize() {
     }
 }
 
-bool HierarchicalSearchEngine::is_goal(const State &initial_state, const State &state) {
+bool HierarchicalSearchEngine::is_goal(const State &state) {
     utils::Timer timer;
-    bool is_goal = m_goal_test->is_goal(initial_state, state);
+    bool is_goal = m_goal_test->is_goal(state);
     timer.stop();
     statistics.inc_valuation_seconds(timer());
     return is_goal;
@@ -66,7 +66,7 @@ bool HierarchicalSearchEngine::is_goal(const State &initial_state, const State &
 void HierarchicalSearchEngine::search() {
     initialize();
     utils::CountdownTimer timer(max_time);
-    if (m_goal_test->is_goal(m_state_registry->get_initial_state(), m_state_registry->get_initial_state())) {
+    if (is_goal(m_state_registry->get_initial_state())) {
         Plan plan;
         plan_manager.save_plan(plan, task_proxy);
         status = SOLVED;
@@ -133,6 +133,7 @@ void HierarchicalSearchEngine::set_initial_state(const State &state)
     if (m_debug)
         std::cout << get_name() << " set_initial_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
 
+    m_goal_test->set_initial_state(state);
     m_initial_state_id = state.get_id();
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         child_search_engine_ptr->set_initial_state(state);

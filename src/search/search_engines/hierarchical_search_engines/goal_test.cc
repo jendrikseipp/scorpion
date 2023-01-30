@@ -15,9 +15,12 @@ using namespace std;
 
 namespace goal_test {
 
-GoalTest::GoalTest(const options::Options &opts) { }
+GoalTest::GoalTest(const options::Options&) { }
 
 GoalTest::~GoalTest() { }
+
+void GoalTest::set_initial_state(const State&) {
+}
 
 void GoalTest::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
     m_propositional_task = propositional_task;
@@ -27,19 +30,26 @@ void GoalTest::set_propositional_task(std::shared_ptr<extra_tasks::Propositional
 TopGoal::TopGoal(const options::Options &opts)
     : GoalTest(opts) { }
 
-bool TopGoal::is_goal(const State&, const State& current_state) const {
+bool TopGoal::is_goal(const State& current_state) const {
     return task_properties::is_goal_state(TaskProxy(*tasks::g_root_task), current_state);
 }
 
 
 SketchSubgoal::SketchSubgoal(const options::Options &opts)
     : GoalTest(opts),
-      m_sketch_filename(opts.get<std::string>("filename")) { }
+      m_sketch_filename(opts.get<std::string>("filename")),
+      m_initial_state(nullptr) { }
 
-bool SketchSubgoal::is_goal(const State& initial_state, const State& current_state) const {
-    return m_policy.evaluate_lazy(
-        m_propositional_task->compute_dlplan_state(initial_state),
+void SketchSubgoal::set_initial_state(const State& initial_state) {
+    m_initial_state = utils::make_unique_ptr<dlplan::core::State>(m_propositional_task->compute_dlplan_state(initial_state));
+    m_satisfied_rules = m_policy.evaluate_conditions_eager(*m_initial_state, m_propositional_task->get_denotations_caches());
+}
+
+bool SketchSubgoal::is_goal(const State& current_state) const {
+    return m_policy.evaluate_effects_lazy(
+        *m_initial_state,
         m_propositional_task->compute_dlplan_state(current_state),
+        m_satisfied_rules,
         m_propositional_task->get_denotations_caches()) != nullptr;
 }
 
@@ -55,9 +65,14 @@ void SketchSubgoal::set_propositional_task(std::shared_ptr<extra_tasks::Proposit
 
 
 IncrementGoalCount::IncrementGoalCount(const options::Options &opts)
-    : GoalTest(opts) { }
-bool IncrementGoalCount::is_goal(const State& initial_state, const State& current_state) const {
-    return compute_num_unsatisfied_goal_facts(initial_state) > compute_num_unsatisfied_goal_facts(current_state);
+    : GoalTest(opts), m_num_unsatisfied_initial_goal_facts(-1) { }
+
+void IncrementGoalCount::set_initial_state(const State& initial_state) {
+    m_num_unsatisfied_initial_goal_facts = compute_num_unsatisfied_goal_facts(initial_state);
+}
+
+bool IncrementGoalCount::is_goal(const State& current_state) const {
+    return m_num_unsatisfied_initial_goal_facts > compute_num_unsatisfied_goal_facts(current_state);
 }
 
 int IncrementGoalCount::compute_num_unsatisfied_goal_facts(const State& state) const {

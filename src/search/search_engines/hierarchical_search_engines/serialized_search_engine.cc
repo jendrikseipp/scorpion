@@ -29,7 +29,7 @@ SearchStatus SerializedSearchEngine::step() {
         int length = compute_partial_solutions_length(m_partial_solutions);
         if (length > m_bound) {
             return SearchStatus::FAILED;
-        } else if (is_goal(m_state_registry->lookup_state(m_initial_state_id), m_state_registry->lookup_state(m_partial_solutions.back().state_id))) {
+        } else if (is_goal(m_state_registry->lookup_state(m_partial_solutions.back().state_id))) {
             // 2. Search finished: return resulting search status and update statistics.
             if (m_debug)
                 std::cout << get_name() << " goal_state: " << m_propositional_task->compute_dlplan_state(m_state_registry->lookup_state(m_partial_solutions.back().state_id)).str() << std::endl;
