@@ -37,7 +37,7 @@ HierarchicalSearchEngine::HierarchicalSearchEngine(
       m_bound(std::numeric_limits<int>::max()),
       m_initial_state_id(StateID::no_state),
       m_debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG) {
-      // m_debug(true) {
+      //m_debug(true) {
 }
 
 void HierarchicalSearchEngine::initialize() {
@@ -90,7 +90,6 @@ void HierarchicalSearchEngine::search() {
         float aew = 0;
         const auto partial_solutions = get_partial_solutions();
         for (const auto& partial_solution : partial_solutions) {
-            std::cout << partial_solution.ew << " " << partial_solution.plan.size() << std::endl;
             plan.insert(plan.end(), partial_solution.plan.begin(), partial_solution.plan.end());
             mew = max(mew, partial_solution.ew);
             aew += partial_solution.ew;

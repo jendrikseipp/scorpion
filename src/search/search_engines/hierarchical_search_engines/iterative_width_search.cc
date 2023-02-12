@@ -75,6 +75,7 @@ SearchStatus IWSearch::step() {
     node.close();
     assert(!node.is_dead_end());
     statistics.inc_expanded();
+    // std::cout << get_name() << " expanded: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
 
     /* Search exhausted by bound. */
     if (node.get_g() > m_bound) {

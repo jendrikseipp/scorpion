@@ -132,7 +132,8 @@ PropositionalTask::PropositionalTask(
     parse_static_atoms_file("static-atoms.txt", *m_instance_info);
     parse_goal_atoms_file("goal-atoms.txt", *m_instance_info);
     std::string atom_prefix = "Atom ";
-    std::cout << "Num_facts: " << m_fact_indexer->get_num_facts() << std::endl;
+    std::cout << "Num facts: " << m_fact_indexer->get_num_facts() << std::endl;
+    int count_propositional_facts = 0;
     for (FactProxy fact_proxy : task_proxy.get_variables().get_facts()) {
         std::string name = fact_proxy.get_name();
         std::cout << name << std::endl;
@@ -142,11 +143,13 @@ PropositionalTask::PropositionalTask(
             fact_index_to_dlplan_atom_index.push_back(
                 parse_atom(normalized_name, *m_instance_info, false, false)
             );
+            ++count_propositional_facts;
         } else {
             m_is_negated_facts.push_back(true);
             fact_index_to_dlplan_atom_index.push_back(UNDEFINED);
         }
     }
+    std::cout << "Num propositional facts: " << count_propositional_facts << std::endl;
     for (size_t index = 0; index < parent->get_num_goals(); ++index) {
         m_goal_fact_ids.insert(m_fact_indexer->get_fact_id(parent->get_goal_fact(index)));
     }
