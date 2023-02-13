@@ -38,16 +38,16 @@ bool TopGoal::is_goal(const State& current_state) const {
 SketchSubgoal::SketchSubgoal(const options::Options &opts)
     : GoalTest(opts),
       m_sketch_filename(opts.get<std::string>("filename")),
-      m_initial_state(nullptr) { }
+      m_initial_state(dlplan::core::State(nullptr, std::vector<int>({}))) { }
 
 void SketchSubgoal::set_initial_state(const State& initial_state) {
-    m_initial_state = utils::make_unique_ptr<dlplan::core::State>(m_propositional_task->compute_dlplan_state(initial_state));
-    m_satisfied_rules = m_policy.evaluate_conditions_eager(*m_initial_state, m_propositional_task->get_denotations_caches());
+    m_initial_state = m_propositional_task->compute_dlplan_state(initial_state);
+    m_satisfied_rules = m_policy.evaluate_conditions_eager(m_initial_state, m_propositional_task->get_denotations_caches());
 }
 
 bool SketchSubgoal::is_goal(const State& current_state) const {
     bool is_subgoal = m_policy.evaluate_effects_lazy(
-        *m_initial_state,
+        m_initial_state,
         m_propositional_task->compute_dlplan_state(current_state),
         m_satisfied_rules,
         m_propositional_task->get_denotations_caches()) != nullptr;
