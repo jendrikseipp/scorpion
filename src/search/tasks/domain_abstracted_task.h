@@ -3,6 +3,7 @@
 
 #include "delegating_task.h"
 
+#include "../algorithms/array_pool.h"
 #include "../utils/collections.h"
 
 #include <cassert>
@@ -11,6 +12,26 @@
 #include <vector>
 
 namespace extra_tasks {
+struct AbstractedVariable {
+    int var;
+    int pool_index;
+};
+
+class ValueMap {
+    std::vector<AbstractedVariable> abstracted_variables;
+    std::vector<int> variable_to_pool_index;
+    array_pool_template::ArrayPool<int> new_values;
+
+public:
+    ValueMap(
+        const AbstractTask &task,
+        const AbstractTask &parent_task,
+        std::vector<std::vector<int>> &&value_map);
+    void convert(std::vector<int> &state_values) const;
+    FactPair convert(const FactPair &fact) const;
+    bool does_convert_values() const;
+};
+
 /*
   Task transformation for performing domain abstraction.
 
@@ -22,17 +43,7 @@ class DomainAbstractedTask : public tasks::DelegatingTask {
     const std::vector<int> initial_state_values;
     const std::vector<FactPair> goals;
     const std::vector<std::vector<std::string>> fact_names;
-    const std::vector<std::vector<int>> value_map;
-
-    int get_abstract_value(const FactPair &fact) const {
-        assert(utils::in_bounds(fact.var, value_map));
-        assert(utils::in_bounds(fact.value, value_map[fact.var]));
-        return value_map[fact.var][fact.value];
-    }
-
-    FactPair get_abstract_fact(const FactPair &fact) const {
-        return FactPair(fact.var, get_abstract_value(fact));
-    }
+    const ValueMap value_map;
 
 public:
     DomainAbstractedTask(
