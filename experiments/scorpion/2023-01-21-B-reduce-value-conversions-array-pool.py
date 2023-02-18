@@ -13,6 +13,8 @@ from downward.experiment import (
 )
 from lab.experiment import Experiment, get_default_data_dir
 
+from labreports import PerTaskComparison
+
 import project
 
 
@@ -59,6 +61,7 @@ ATTRIBUTES = [
     "search_start_time",
     "search_start_memory",
     "search_time",
+    "score_search_time",
     "total_time",
     "coverage",
     "expansions",
@@ -112,5 +115,15 @@ project.add_absolute_report(
     attributes=ATTRIBUTES,
     filter=[project.add_evaluations_per_time, project.group_domains],
 )
+
+exp.add_report(PerTaskComparison(
+        attributes=["search_time"]))
+
+project.add_scatter_plot_reports(
+    exp,
+    algorithm_pairs=[("02-skip-conversion-if-no-abstracted-vars:cegar-scp-online", "05-abs-var-struct:cegar-scp-online")],
+    attributes=["search_time", "memory"],
+)
+
 
 exp.run_steps()

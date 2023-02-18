@@ -16,6 +16,7 @@ from lab.environments import (
 )
 from lab.experiment import ARGPARSER
 from lab.reports import Attribute, geometric_mean
+from lab import tools
 
 
 # Silence import-unused messages. Experiment scripts may use these imports.
@@ -314,3 +315,17 @@ def add_absolute_report(exp, *, name=None, outfile=None, **kwargs):
     if not REMOTE:
         exp.add_step(f"open-{name}", subprocess.call, ["xdg-open", outfile])
     exp.add_step(f"publish-{name}", subprocess.call, ["publish", outfile])
+
+
+def add_scatter_plot_reports(exp, algorithm_pairs, attributes, *, filter=None):
+    for algo1, algo2 in algorithm_pairs:
+        for attribute in attributes:
+            exp.add_report(ScatterPlotReport(
+                    relative=RELATIVE,
+                    get_category=None if TEX else lambda run1, run2: run1["domain"],
+                    attributes=[attribute],
+                    filter_algorithm=[algo1, algo2],
+                    filter=[add_evaluations_per_time, group_domains] + tools.make_list(filter),
+                    format="tex" if TEX else "png",
+                ),
+                name=f"{exp.name}-{algo1}-{algo2}-{attribute}{'-relative' if RELATIVE else ''}")
