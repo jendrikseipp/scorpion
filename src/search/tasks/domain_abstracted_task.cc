@@ -31,6 +31,7 @@ ValueMap::ValueMap(
     const AbstractTask &parent_task,
     vector<vector<int>> &&value_map)
     : variable_to_pool_index(task.get_num_variables(), -1) {
+    // Only store value mappings for abstracted variables.
     for (int var = 0; var < task.get_num_variables(); ++var) {
         if (task.get_variable_domain_size(var) < parent_task.get_variable_domain_size(var)) {
             variable_to_pool_index[var] = abstracted_variables.size();

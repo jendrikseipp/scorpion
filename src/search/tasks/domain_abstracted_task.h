@@ -6,8 +6,6 @@
 #include "../algorithms/array_pool.h"
 #include "../utils/collections.h"
 
-#include <small_vector.hpp>
-
 #include <cassert>
 #include <string>
 #include <utility>
@@ -20,7 +18,7 @@ struct AbstractedVariable {
 };
 
 class ValueMap {
-    itlib::small_vector<AbstractedVariable, 8> abstracted_variables;
+    std::vector<AbstractedVariable> abstracted_variables;
     std::vector<int> variable_to_pool_index;
     array_pool_template::ArrayPool<int> new_values;
 
