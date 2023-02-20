@@ -83,7 +83,7 @@ To simplify the installation process, we provide an executable
 It accepts the same arguments as the `fast-downward.py` script (see above).
 
     # Download the image,
-    apptainer pull scorpion.sif library://jendrikseipp/default/scorpion:latest
+    apptainer pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
 
     # or build it yourself.
     apptainer build scorpion.sif Apptainer
