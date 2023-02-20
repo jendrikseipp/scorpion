@@ -9,14 +9,14 @@ Stage: build
 %post
     ## Install all necessary dependencies.
     apt-get update
-    apt-get -y install --no-install-recommends cmake g++ make python3
+    apt-get -y install --no-install-recommends cmake g++ make python3.11
 
     ## Clear build directory.
     rm -rf /planner/builds
 
     ## Build planner.
     cd /planner
-    ./build.py
+    python3.11 build.py
 
     ## Strip binaries.
     strip --strip-all /planner/builds/release/bin/downward /planner/builds/release/bin/preprocess-h2
@@ -33,13 +33,13 @@ Stage: run
 
 %post
     apt-get update
-    apt-get -y install --no-install-recommends python3
+    apt-get -y install --no-install-recommends python3.11
     rm -rf /var/lib/apt/lists/*
 
 %runscript
     #!/bin/bash
 
-    /planner/fast-downward.py "$@"
+    python3.11 /planner/fast-downward.py "$@"
 
 %labels
     Name        Scorpion
