@@ -1,8 +1,10 @@
+# Stage 1: Compile the planner
 Bootstrap: docker
 From: ubuntu:20.04
+Stage: build
 
 %files
-    `pwd` /planner
+    . /planner
 
 %post
     ## Install all necessary dependencies.
@@ -19,16 +21,20 @@ From: ubuntu:20.04
     ## Strip binaries.
     strip --strip-all /planner/builds/release/bin/downward /planner/builds/release/bin/preprocess-h2
 
-    ## Remove packages unneeded for running the planner.
-    apt-get -y autoremove cmake g++ make
-    rm -rf /var/lib/apt/lists/*
+# Stage 2: Run the planner
+Bootstrap: docker
+From: ubuntu:20.04
+Stage: run
 
-    ## Only keep essential binaries.
-    mkdir -p /compiled-planner/builds/release
-    mv /planner/driver /planner/fast-downward.py /compiled-planner
-    mv /planner/builds/release/bin /compiled-planner/builds/release
-    rm -rf /planner
-    mv /compiled-planner /planner
+%files from build
+    /planner/driver
+    /planner/fast-downward.py
+    /planner/builds/release/bin
+
+%post
+    apt-get update
+    apt-get -y install --no-install-recommends python3
+    rm -rf /var/lib/apt/lists/*
 
 %runscript
     #!/bin/bash
@@ -37,5 +43,5 @@ From: ubuntu:20.04
 
 %labels
     Name        Scorpion
-    Description Saturated cost partitioning over abstraction heuristics
+    Description Classical planning system with state-of-the-art cost partitioning algorithms
     Authors     Jendrik Seipp <jendrik.seipp@liu.se>
