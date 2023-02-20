@@ -42,7 +42,7 @@ ValueMap::ValueMap(
     abstracted_variables.shrink_to_fit();
 }
 
-void ValueMap::convert(std::vector<int> &state_values) const {
+void ValueMap::convert(vector<int> &state_values) const {
     for (const AbstractedVariable &abs_var : abstracted_variables) {
         int old_value = state_values[abs_var.var];
         int new_value = new_values[abs_var.pool_index][old_value];
