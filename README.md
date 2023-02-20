@@ -76,18 +76,17 @@ abstractions](https://jair.org/index.php/jair/article/view/11217).
 component_options=[], driver_options=["--transform-task", "preprocess-h2",
 "--alias", "scorpion"]` to run the recommended Scorpion configuration.)
 
-#### Singularity container
+#### Apptainer image
 
 To simplify the installation process, we provide an executable
-[Singularity](https://github.com/hpcng/singularity) container for
-Scorpion. It accepts the same arguments as the `fast-downward.py` script
-(see above).
+[Apptainer](https://apptainer.org/) container (formerly known as Singularity).
+It accepts the same arguments as the `fast-downward.py` script (see above).
 
-    # Download the container (tested with Singularity 3.5),
-    singularity pull scorpion.sif library://jendrikseipp/default/scorpion:latest
+    # Download the image,
+    apptainer pull scorpion.sif library://jendrikseipp/default/scorpion:latest
 
-    # or build the container yourself.
-    sudo singularity build scorpion.sif Singularity
+    # or build it yourself.
+    apptainer build scorpion.sif Apptainer
 
     # Then run recommended configuration (available via "scorpion" alias).
     ./scorpion.sif --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
