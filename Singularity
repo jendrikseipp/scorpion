@@ -1,6 +1,6 @@
 # Stage 1: Compile the planner
 Bootstrap: docker
-From: ubuntu:20.04
+From: ubuntu:22.04
 Stage: build
 
 %files
@@ -23,7 +23,7 @@ Stage: build
 
 # Stage 2: Run the planner
 Bootstrap: docker
-From: ubuntu:20.04
+From: ubuntu:22.04
 Stage: run
 
 %files from build
