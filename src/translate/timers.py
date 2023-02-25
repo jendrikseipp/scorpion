@@ -3,6 +3,8 @@ import os
 import sys
 import time
 
+import tools
+
 
 class Timer:
     def __init__(self):
@@ -14,9 +16,10 @@ class Timer:
         return times[0] + times[1]
 
     def __str__(self):
-        return "[%.3fs CPU, %.3fs wall-clock]" % (
+        return "[%.3fs CPU, %.3fs wall-clock, %d KB]" % (
             self._clock() - self.start_clock,
-            time.time() - self.start_time)
+            time.time() - self.start_time,
+            tools.get_peak_memory_in_kb())
 
 
 @contextlib.contextmanager
