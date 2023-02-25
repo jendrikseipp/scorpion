@@ -17,7 +17,6 @@ class ProjectionGenerator : public AbstractionGenerator {
     const bool dominance_pruning;
     const bool combine_labels;
     const bool create_complete_transition_system;
-    const bool use_add_after_delete_semantics;
 
 public:
     explicit ProjectionGenerator(const options::Options &opts);
