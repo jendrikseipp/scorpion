@@ -53,7 +53,7 @@ class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
     std::vector<double> remaining_costs;
 
     std::vector<int> compute_landmark_order(
-        const std::vector<std::vector<int>> &achievers_by_lm);
+        const std::vector<const Landmark::Achievers *> &achievers_by_lm);
 
 public:
     LandmarkUniformSharedCostAssignment(const std::vector<int> &operator_costs,
