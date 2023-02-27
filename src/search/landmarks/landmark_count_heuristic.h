@@ -1,6 +1,8 @@
 #ifndef LANDMARKS_LANDMARK_COUNT_HEURISTIC_H
 #define LANDMARKS_LANDMARK_COUNT_HEURISTIC_H
 
+#include "landmark.h"
+
 #include "../heuristic.h"
 
 class BitsetView;
@@ -43,7 +45,7 @@ class LandmarkCountHeuristic : public Heuristic {
     void generate_preferred_operators(
         const State &state, const BitsetView &reached);
 
-    int get_min_cost_of_achievers(const std::set<int> &achievers,
+    int get_min_cost_of_achievers(const Landmark::Achievers &achievers,
                                   const TaskProxy &task_proxy);
     void compute_landmark_costs();
 protected:
