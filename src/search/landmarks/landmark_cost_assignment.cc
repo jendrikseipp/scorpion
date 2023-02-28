@@ -66,7 +66,7 @@ LandmarkUniformSharedCostAssignment::LandmarkUniformSharedCostAssignment(
 }
 
 vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
-    const vector<const Landmark::Achievers *> &achievers_by_lm) {
+    const vector<vector<int>> &achievers_by_lm) {
     vector<int> order(achievers_by_lm.size());
     iota(order.begin(), order.end(), 0);
 
@@ -75,14 +75,14 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
     h_values.reserve(achievers_by_lm.size());
     vector<int> used_costs;
     used_costs.reserve(achievers_by_lm.size());
-    for (const Landmark::Achievers *achievers : achievers_by_lm) {
+    for (const vector<int> &achievers : achievers_by_lm) {
         int min_cost = numeric_limits<int>::max();
-        for (int op_id : *achievers) {
+        for (int op_id : achievers) {
             assert(utils::in_bounds(op_id, operator_costs));
             min_cost = min(min_cost, operator_costs[op_id]);
         }
         h_values.push_back(min_cost);
-        used_costs.push_back(min_cost * achievers->size());
+        used_costs.push_back(min_cost * achievers.size());
     }
     assert(h_values.size() == achievers_by_lm.size());
     assert(used_costs.size() == achievers_by_lm.size());
@@ -91,17 +91,17 @@ vector<int> LandmarkUniformSharedCostAssignment::compute_landmark_order(
         scoring_function == ScoringFunction::MAX_HEURISTIC_PER_STOLEN_COSTS) {
         vector<int> surplus_costs = operator_costs;
         for (size_t i = 0; i < achievers_by_lm.size(); ++i) {
-            const Landmark::Achievers *achievers = achievers_by_lm[i];
-            for (int op_id : *achievers) {
+            const vector<int> &achievers = achievers_by_lm[i];
+            for (int op_id : achievers) {
                 surplus_costs[op_id] -= h_values[i];
             }
         }
         used_costs.clear();
         int i = 0;
-        for (const Landmark::Achievers *achievers : achievers_by_lm) {
+        for (const vector<int> &achievers : achievers_by_lm) {
             int wanted_by_lm = h_values[i];
             int stolen = 0;
-            for (int op_id : *achievers) {
+            for (int op_id : achievers) {
                 stolen += cost_saturation::compute_stolen_costs(
                     wanted_by_lm, surplus_costs[op_id]);
             }
@@ -200,18 +200,19 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value(
     if (reuse_costs || greedy) {
         // UOCP + ZOCP + SCP
         remaining_costs = original_costs;
-        vector<const Landmark::Achievers *> achievers_by_lm;
+        vector<vector<int>> achievers_by_lm;
         achievers_by_lm.reserve(relevant_lms.size());
         for (const LandmarkNode *node : relevant_lms) {
             // TODO: Iterate over Landmarks instead of LandmarkNodes
             int lmn_status =
                 lm_status_manager.get_landmark_status(node->get_id());
-            achievers_by_lm.push_back(&get_achievers(lmn_status, node->get_landmark()));
+            const Landmark::Achievers &achievers = get_achievers(lmn_status, node->get_landmark());
+            achievers_by_lm.emplace_back(achievers.begin(), achievers.end());
         }
         for (int lm_id : compute_landmark_order(achievers_by_lm)) {
-            const Landmark::Achievers *achievers = achievers_by_lm[lm_id];
+            const vector<int> &achievers = achievers_by_lm[lm_id];
             double min_cost = numeric_limits<double>::max();
-            for (int op_id : *achievers) {
+            for (int op_id : achievers) {
                 assert(utils::in_bounds(op_id, achieved_lms_by_op));
                 int num_achieved = achieved_lms_by_op[op_id];
                 assert(num_achieved >= 1);
@@ -221,7 +222,7 @@ double LandmarkUniformSharedCostAssignment::cost_sharing_h_value(
                 min_cost = min(min_cost, cost);
             }
             h += min_cost;
-            for (int op_id : *achievers) {
+            for (int op_id : achievers) {
                 assert(utils::in_bounds(op_id, remaining_costs));
                 double &remaining_cost = remaining_costs[op_id];
                 assert(remaining_cost >= 0);

@@ -119,8 +119,11 @@ project.add_absolute_report(
 project.add_scatter_plot_reports(
     exp,
     algorithm_pairs=[
+        ("01-remove-flag:bjolp-scp", "02-use-phmap-for-util-hash:bjolp-scp"),
+        ("02-use-phmap-for-util-hash:bjolp-scp", "03-use-phmap-for-lm-achievers:bjolp-scp"),
+        ("03-use-phmap-for-lm-achievers:bjolp-scp", "04-no-copy-achievers:bjolp-scp"),
     ],
-    attributes=["search_time", "memory"],
+    attributes=["total_time", "memory"],
 )
 
 
