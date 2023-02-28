@@ -3,11 +3,12 @@
 
 #include "../task_proxy.h"
 
-#include <set>
+#include "../utils/hash.h"
 
 namespace landmarks {
 class Landmark {
 public:
+    using Achievers = utils::HashSet<int>;
     Landmark(std::vector<FactPair> _facts, bool disjunctive, bool conjunctive,
              bool is_true_in_goal = false, bool is_derived = false)
         : facts(move(_facts)), disjunctive(disjunctive), conjunctive(conjunctive),
@@ -31,8 +32,8 @@ public:
     bool is_true_in_goal;
     bool is_derived;
 
-    std::set<int> first_achievers;
-    std::set<int> possible_achievers;
+    Achievers first_achievers;
+    Achievers possible_achievers;
 
     bool is_true_in_state(const State &state) const;
 };
