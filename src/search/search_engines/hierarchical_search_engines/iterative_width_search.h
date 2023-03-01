@@ -48,7 +48,7 @@ protected:
 
     virtual void set_state_registry(std::shared_ptr<StateRegistry> state_registry) override;
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) override;
-    virtual void set_initial_state(const State& state) override;
+    virtual bool set_initial_state(const State& state) override;
 
     virtual SearchStatistics collect_statistics() const override;
 

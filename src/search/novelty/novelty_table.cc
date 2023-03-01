@@ -103,7 +103,6 @@ int NoveltyTable::compute_novelty_and_update_table(const State &state) {
             }
         }
     }
-
     // Check for novelty 1.
     for (FactProxy fact_proxy : state) {
         FactPair fact = fact_proxy.get_pair();
@@ -116,6 +115,7 @@ int NoveltyTable::compute_novelty_and_update_table(const State &state) {
             novelty = 1;
         }
     }
+
 
     compute_novelty_timer.stop();
     return novelty;
@@ -151,8 +151,7 @@ int NoveltyTable::compute_novelty_and_update_table(
                 }
             }
         }
-}
-
+    }
     // Check for novelty 1.
     for (EffectProxy effect : op.get_effects()) {
         FactPair fact = effect.get_fact().get_pair();
@@ -165,6 +164,7 @@ int NoveltyTable::compute_novelty_and_update_table(
             novelty = 1;
         }
     }
+
 
     compute_novelty_timer.stop();
     return novelty;

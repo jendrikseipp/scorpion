@@ -22,7 +22,7 @@ public:
     explicit GoalTest(const options::Options &opts);
     virtual ~GoalTest();
 
-    virtual void set_initial_state(const State& initial_state);
+    virtual bool set_initial_state(const State& initial_state);
     virtual bool is_goal(const State& current_state) const = 0;
 
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task);
@@ -43,7 +43,7 @@ private:
 
 public:
     explicit SketchSubgoal(const options::Options &opts);
-    void set_initial_state(const State& initial_state) override;
+    bool set_initial_state(const State& initial_state) override;
     bool is_goal(const State& current_state) const override;
 
     virtual void set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) override;
@@ -58,7 +58,7 @@ private:
 
 public:
     explicit IncrementGoalCount(const options::Options &opts);
-    void set_initial_state(const State& initial_state) override;
+    bool set_initial_state(const State& initial_state) override;
     bool is_goal(const State& current_state) const override;
 };
 

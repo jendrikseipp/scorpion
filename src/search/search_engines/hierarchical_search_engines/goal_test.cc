@@ -19,7 +19,8 @@ GoalTest::GoalTest(const options::Options&) { }
 
 GoalTest::~GoalTest() { }
 
-void GoalTest::set_initial_state(const State&) {
+bool GoalTest::set_initial_state(const State&) {
+    return false;
 }
 
 void GoalTest::set_propositional_task(std::shared_ptr<extra_tasks::PropositionalTask> propositional_task) {
@@ -40,9 +41,10 @@ SketchSubgoal::SketchSubgoal(const options::Options &opts)
       m_sketch_filename(opts.get<std::string>("filename")),
       m_initial_state(dlplan::core::State(nullptr, std::vector<int>({}))) { }
 
-void SketchSubgoal::set_initial_state(const State& initial_state) {
+bool SketchSubgoal::set_initial_state(const State& initial_state) {
     m_initial_state = m_propositional_task->compute_dlplan_state(initial_state);
     m_satisfied_rules = m_policy.evaluate_conditions_eager(m_initial_state, m_propositional_task->get_denotations_caches());
+    return m_satisfied_rules.size() > 0;
 }
 
 bool SketchSubgoal::is_goal(const State& current_state) const {
@@ -69,8 +71,9 @@ void SketchSubgoal::set_propositional_task(std::shared_ptr<extra_tasks::Proposit
 IncrementGoalCount::IncrementGoalCount(const options::Options &opts)
     : GoalTest(opts), m_num_unsatisfied_initial_goal_facts(-1) { }
 
-void IncrementGoalCount::set_initial_state(const State& initial_state) {
+bool IncrementGoalCount::set_initial_state(const State& initial_state) {
     m_num_unsatisfied_initial_goal_facts = compute_num_unsatisfied_goal_facts(initial_state);
+    return true;
 }
 
 bool IncrementGoalCount::is_goal(const State& current_state) const {

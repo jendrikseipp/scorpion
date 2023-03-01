@@ -137,8 +137,7 @@ void IWSearch::set_propositional_task(std::shared_ptr<extra_tasks::Propositional
     HierarchicalSearchEngine::set_propositional_task(m_propositional_task);
 }
 
-void IWSearch::set_initial_state(const State& state) {
-    HierarchicalSearchEngine::set_initial_state(state);
+bool IWSearch::set_initial_state(const State& state) {
     m_novelty_table = novelty::NoveltyTable(task_proxy, m_current_width, m_propositional_task, m_propositional_task->get_fact_indexer());
     m_search_space = utils::make_unique_ptr<SearchSpace>(*m_state_registry, utils::g_log);
 
@@ -151,6 +150,7 @@ void IWSearch::set_initial_state(const State& state) {
     bool novel = is_novel(state);
     utils::unused_variable(novel);
     assert(novel);
+    return m_goal_test->set_initial_state(state);
 }
 
 SearchStatistics IWSearch::collect_statistics() const {

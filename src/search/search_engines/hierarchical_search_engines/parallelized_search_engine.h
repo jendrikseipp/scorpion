@@ -14,9 +14,9 @@ class Options;
 namespace hierarchical_search_engine {
 class ParallelizedSearchEngine : public HierarchicalSearchEngine {
 private:
-    IWSearchSolutions m_partial_solutions;
+    HierarchicalSearchEngine* m_active_search_engine;
 
-    std::vector<bool> m_in_progress_child_searches;
+    IWSearchSolutions m_partial_solutions;
 
 protected:
     /**
@@ -31,7 +31,7 @@ public:
 
     virtual void reinitialize() override;
 
-    virtual void set_initial_state(const State& state);
+    virtual bool set_initial_state(const State& state);
 
     virtual void print_statistics() const override;
 

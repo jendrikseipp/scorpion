@@ -88,8 +88,9 @@ protected:
 
     /**
      * Setters.
+     * Returns true iff search engine provides additional subgoal states.
      */
-    virtual void set_initial_state(const State& state);
+    virtual bool set_initial_state(const State& state);
     virtual void set_bound(int bound);
 
     /**

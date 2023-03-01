@@ -128,16 +128,16 @@ void HierarchicalSearchEngine::set_parent_search_engine(
     }
 }
 
-void HierarchicalSearchEngine::set_initial_state(const State &state)
+bool HierarchicalSearchEngine::set_initial_state(const State &state)
 {
     if (m_debug)
         std::cout << get_name() << " set_initial_state: " << m_propositional_task->compute_dlplan_state(state).str() << std::endl;
 
-    m_goal_test->set_initial_state(state);
     m_initial_state_id = state.get_id();
     for (const auto& child_search_engine_ptr : m_child_search_engines) {
         child_search_engine_ptr->set_initial_state(state);
     }
+    return m_goal_test->set_initial_state(state);
 }
 
 void HierarchicalSearchEngine::set_bound(int bound) {

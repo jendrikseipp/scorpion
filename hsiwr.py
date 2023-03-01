@@ -1,35 +1,50 @@
 #! /usr/bin/env python3
+import re
 import argparse
 import subprocess
+import os
 from pathlib import Path
 
 
-def make_hierarchical_callstring(path):
+def make_callstring(path: Path):
     subpaths = []
-    file = None
-    for name in path.iterdir():
-        if name.is_dir():
-            subpaths.append(path / name)
-        elif name.is_file():
-            file = path / name
-    assert file is not None
-    if len(subpaths) > 1:
-        # intantiate parallel search
-        return "parallelized_search(child_searches=[" + ",".join([make_hierarchical_callstring(subpath) for subpath in subpaths]) + "], goal_test=sketch_subgoal(filename=" + str(file) + "))"
-    elif len(subpaths) == 1:
-        # instantiate serialized search
-        return "serialized_search(child_searches=[" + make_hierarchical_callstring(subpaths[0]) + "], goal_test=sketch_subgoal(filename=" + str(file) + "))"
-    elif len(subpaths) == 0:
-        return "iw(width=0, goal_test=sketch_subgoal(filename=" + str(file) + "))"
+    rule_file = None
+    sketch_file = None
+    for subpath in path.iterdir():
+        if subpath.is_dir():
+            subpaths.append(subpath)
+        elif subpath.is_file():
+            name = subpath.name
+            if name.startswith("rule_"):
+                rule_file = name
+            elif name.startswith("sketch_"):
+                sketch_file = name
+            else:
+                raise Exception()
+    if sketch_file is not None:
+        # Nondeterminstic decomposition
+        if subpaths:
+            callstring = "parallelized_search(child_searches=["
+            for subpath in subpaths:
+                callstring += make_callstring(subpath) + ","
+            callstring += "], goal_test="
+            if rule_file:
+                callstring += f"sketch_subgoal(filename={str(path / rule_file)})"
+            else:
+                callstring += f"top_goal()"
+            callstring += ")"
+            return callstring
+        else:
+            sketch_width = int(re.findall(r"sketch_(\d+).txt", sketch_file)[0][0])
+            return f"serialized_search(child_searches=[iw(width={sketch_width},goal_test=sketch_subgoal(filename={str(path / sketch_file)}))], goal_test=sketch_subgoal(filename={str(path / rule_file)}))"
     else:
-        raise Exception()
-
-
-def generate_search_string(root_directory):
-    callstring = "serialized_search(child_searches=["
-    callstring += make_hierarchical_callstring(root_directory)
-    callstring += "], goal_test=top_goal())"
-    return callstring
+        # Lower level behavior requires search
+        if rule_file:
+            rule_width = int(re.findall(r"rule_(\d+).txt", rule_file)[0][0])
+            return f"iw(width={rule_width}, goal_test=sketch_subgoal(filename={str(path / rule_file)}))"
+        else:
+            Exception()
+    Exception()
 
 
 if __name__ == "__main__":
@@ -40,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument("--hierarchical_sketch_dir", type=str, required=True)
     parser.add_argument("--plan_file", type=str, required=True)
     args = parser.parse_args()
-    search_string = generate_search_string(Path(args.hierarchical_sketch_dir).resolve())
+    search_string = make_callstring(Path(args.hierarchical_sketch_dir).resolve())
     command = [
         Path(args.fd_file).resolve(),
         "--keep-sas-file",
