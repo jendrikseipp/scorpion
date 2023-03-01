@@ -36,7 +36,10 @@ def make_callstring(path: Path):
             return callstring
         else:
             sketch_width = int(re.findall(r"sketch_(\d+).txt", sketch_file)[0][0])
-            return f"serialized_search(child_searches=[iw(width={sketch_width},goal_test=sketch_subgoal(filename={str(path / sketch_file)}))], goal_test=sketch_subgoal(filename={str(path / rule_file)}))"
+            if rule_file:
+                return f"serialized_search(child_searches=[iw(width={sketch_width},goal_test=sketch_subgoal(filename={str(path / sketch_file)}))], goal_test=sketch_subgoal(filename={str(path / rule_file)}))"
+            else:
+                return f"serialized_search(child_searches=[iw(width={sketch_width},goal_test=sketch_subgoal(filename={str(path / sketch_file)}))], goal_test=top_goal())"
     else:
         # Lower level behavior requires search
         if rule_file:
