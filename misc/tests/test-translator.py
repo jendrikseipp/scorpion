@@ -56,7 +56,7 @@ def translate_task(task_file):
         sys.exit(f"Call failed: {' '.join(cmd)}\n{err}")
     # Remove information that may differ between calls.
     for pattern in [
-            r"\[(.+s CPU, .+s wall-clock)\]",
+            r"\[(.+s CPU, .+s wall-clock, \d+ KB)\]",
             r"(\d+) KB",
             r"Planner time: (.+s)",
             ]:
