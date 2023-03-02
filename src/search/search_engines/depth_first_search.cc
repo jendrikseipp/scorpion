@@ -83,6 +83,7 @@ void DepthFirstSearch::recursive_search(const DFSNode &node) {
             return;
         }
         operator_sequence.pop_back();
+        // This works because std::unordered_set guarantees pointer stability.
         states_on_path.erase(res.first);
         check_invariants();
     }

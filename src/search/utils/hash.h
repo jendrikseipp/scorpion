@@ -9,8 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include <parallel_hashmap/phmap.h>
-
 namespace utils {
 /*
   We provide a family of hash functions that are supposedly higher
@@ -305,10 +303,10 @@ struct Hash {
   To hash types that are not supported out of the box, implement utils::feed.
 */
 template<typename T1, typename T2>
-using HashMap = phmap::flat_hash_map<T1, T2, Hash<T1>>;
+using HashMap = std::unordered_map<T1, T2, Hash<T1>>;
 
 template<typename T>
-using HashSet = phmap::flat_hash_set<T, Hash<T>>;
+using HashSet = std::unordered_set<T, Hash<T>>;
 }
 
 #endif
