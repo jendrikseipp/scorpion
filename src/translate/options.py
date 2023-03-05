@@ -56,6 +56,9 @@ def parse_args():
         "--dump-predicates", action="store_true",
         help="write predicate names and arity to predicates.txt")
     argparser.add_argument(
+        "--dump-static-predicates", action="store_true",
+        help="write static predicates to static-predicates.txt")
+    argparser.add_argument(
         "--dump-static-atoms", action="store_true",
         help="write static atoms to static-atoms.txt")
     argparser.add_argument(

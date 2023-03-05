@@ -28,6 +28,7 @@ if __name__ == "__main__":
         Path(args.domain_file).resolve(),
         Path(args.instance_file).resolve(),
         "--translate-options",
+        "--dump-static-predicates",
         "--dump-predicates",
         "--dump-constants",
         "--dump-static-atoms",

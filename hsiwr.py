@@ -59,6 +59,7 @@ if __name__ == "__main__":
     parser.add_argument("--plan_file", type=str, required=True)
     args = parser.parse_args()
     search_string = make_callstring(Path(args.hierarchical_sketch_dir).resolve())
+    print(search_string)
     command = [
         Path(args.fd_file).resolve(),
         "--keep-sas-file",
@@ -67,6 +68,7 @@ if __name__ == "__main__":
         Path(args.domain_file).resolve(),
         Path(args.instance_file).resolve(),
         "--translate-options",
+        "--dump-static-predicates",
         "--dump-predicates",
         "--dump-constants",
         "--dump-static-atoms",

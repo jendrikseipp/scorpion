@@ -9,6 +9,8 @@ import pddl_to_prolog
 import pddl
 import timers
 
+PREDICATES_FILE = "predicates.txt"
+STATIC_PREDICATES_FILE = "static-predicates.txt"
 STATIC_ATOMS_FILE = "static-atoms.txt"
 
 def print_atom(atom, file):
@@ -23,13 +25,8 @@ def add_type_predicates(types):
             result.append("Atom %s(%s)" % (k, obj))
     return result
 
-def dump_static_atoms(task, model):
-    """Dump all atoms belonging to static predicates.
 
-    A predicate is static if all its groundings are static. There are predicates
-    where only a subset of their groundings are static. We dump static atoms
-    belonging to non-static predicates in append_static_atoms() in translate.py.
-    """
+def compute_fluent_and_static_predicates(task, model):
     all_predicates = set()
     fluent_predicates = set()
     for action in task.actions:
@@ -44,9 +41,42 @@ def dump_static_atoms(task, model):
             all_predicates.add(action.precondition.predicate)
     for axiom in task.axioms:
         fluent_predicates.add(axiom.name)
+    static_predicates = all_predicates - fluent_predicates
+    return fluent_predicates, static_predicates
+
+def dump_predicates(task, model):
+    fluent_predicates, _ = compute_fluent_and_static_predicates(task, model)
+    predicate_name_to_predicate = dict()
+    for predicate in task.predicates:
+        predicate_name_to_predicate[predicate.name] = predicate
+    with open(PREDICATES_FILE, "w") as f:
+        for predicate_name in fluent_predicates:
+            predicate = predicate_name_to_predicate[predicate_name]
+            f.write(f"{predicate_name} {len(predicate.arguments)}\n")
+
+def dump_static_predicates(task, model):
+    """Dump all static predicates. """
+    _, static_predicates = compute_fluent_and_static_predicates(task, model)
+    predicate_name_to_predicate = dict()
+    for predicate in task.predicates:
+        predicate_name_to_predicate[predicate.name] = predicate
+    with open(STATIC_PREDICATES_FILE, "w") as f:
+        for predicate_name in sorted(static_predicates):
+            predicate = predicate_name_to_predicate[predicate_name]
+            f.write(f"{predicate_name} {len(predicate.arguments)}\n")
+        for type in task.types:
+            f.write(f"{type.name} 1\n")
+
+def dump_static_atoms(task, model):
+    """Dump all atoms belonging to static predicates.
+
+    A predicate is static if all its groundings are static. There are predicates
+    where only a subset of their groundings are static. We dump static atoms
+    belonging to non-static predicates in append_static_atoms() in translate.py.
+    """
     types = get_objects_by_type(task.objects, task.types)
     type_predicates = add_type_predicates(types)
-    static_predicates = all_predicates - fluent_predicates
+    _, static_predicates = compute_fluent_and_static_predicates(task, model)
     initial_state_atoms = set(task.init)
     with open(STATIC_ATOMS_FILE, "w") as f:
         for atom in model:
@@ -153,6 +183,10 @@ def instantiate(task, model):
 def explore(task):
     prog = pddl_to_prolog.translate(task)
     model = build_model.compute_model(prog)
+    if options.dump_predicates:
+        dump_predicates(task, model)
+    if options.dump_static_predicates:
+        dump_static_predicates(task, model)
     if options.dump_static_atoms:
         dump_static_atoms(task, model)
     with timers.timing("Completing instantiation"):

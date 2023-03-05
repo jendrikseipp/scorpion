@@ -708,6 +708,8 @@ def dump_statistics(sas_task):
 
 
 def dump_predicates(task, path):
+    """ Deprecated method. """
+    raise Exception()
     predicates = [
         (predicate.name, len(predicate.arguments))
         for predicate in task.predicates
@@ -754,8 +756,8 @@ def main():
     with timers.timing("Parsing", True):
         task = pddl_parser.open(
             domain_filename=options.domain, task_filename=options.task)
-    if options.dump_predicates:
-        dump_predicates(task, "predicates.txt")
+    #if options.dump_predicates:
+    #    dump_predicates(task, "predicates.txt")
 
     if options.dump_constants:
         dump_constants(task, "constants.txt")
