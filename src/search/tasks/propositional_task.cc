@@ -8,7 +8,7 @@
 
 namespace extra_tasks {
 
-static void parse_predicates_file(const std::string& filename, dlplan::core::VocabularyInfo& vocabulary_info) {
+static void parse_predicates_file(const std::string& filename, dlplan::core::VocabularyInfo& vocabulary_info, bool is_static) {
     std::ifstream infile(filename);
     if (!infile.is_open()) {
         throw std::runtime_error("parse_predicates_file - predicates.txt does not exist.");
@@ -16,8 +16,8 @@ static void parse_predicates_file(const std::string& filename, dlplan::core::Voc
     std::string name;
     int arity;
     while (infile >> name >> arity) {
-        vocabulary_info.add_predicate(name, arity);
-        vocabulary_info.add_predicate(name + "_g", arity);
+        vocabulary_info.add_predicate(name, arity, is_static);
+        vocabulary_info.add_predicate(name + "_g", arity, true);
     }
 }
 
@@ -126,7 +126,8 @@ PropositionalTask::PropositionalTask(
       m_syntactic_element_factory(std::make_shared<dlplan::core::VocabularyInfo>()),
       m_fact_indexer(std::make_shared<novelty::FactIndexer>(TaskProxy(*parent))) {
     m_syntactic_element_factory = dlplan::core::SyntacticElementFactory(m_vocabulary_info);
-    parse_predicates_file("predicates.txt", *m_vocabulary_info);
+    parse_predicates_file("predicates.txt", *m_vocabulary_info, false);
+    parse_predicates_file("static-predicates.txt", *m_vocabulary_info, true);
     parse_constants_file("constants.txt", *m_vocabulary_info);
     m_instance_info = std::make_shared<dlplan::core::InstanceInfo>(m_vocabulary_info);
     parse_static_atoms_file("static-atoms.txt", *m_instance_info);
