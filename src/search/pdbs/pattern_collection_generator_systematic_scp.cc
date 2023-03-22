@@ -9,6 +9,7 @@
 #include "../algorithms/array_pool.h"
 #include "../algorithms/partial_state_tree.h"
 #include "../algorithms/priority_queues.h"
+#include "../cost_saturation/explicit_projection_factory.h"
 #include "../cost_saturation/projection.h"
 #include "../cost_saturation/utils.h"
 #include "../task_utils/task_properties.h"
@@ -286,6 +287,7 @@ PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP
       max_evaluations_per_restart(opts.get<int>("max_evaluations_per_restart")),
       max_total_evaluations(opts.get<int>("max_total_evaluations")),
       saturate(opts.get<bool>("saturate")),
+      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
       pattern_type(opts.get<PatternType>("pattern_type")),
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_dead_ends(opts.get<bool>("store_dead_ends")),
@@ -300,6 +302,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
     SequentialPatternGenerator &pattern_generator,
     DeadEnds *dead_ends,
     priority_queues::AdaptiveQueue<int> &pq,
+    const shared_ptr<PatternCollection> &patterns,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
     PatternSet &patterns_checked_for_dead_ends,
@@ -376,29 +379,36 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             continue;
         }
 
-        projection_computation_timer->resume();
-        PatternEvaluator pattern_evaluator(task_proxy, evaluator_task_info, pattern, costs);
-        projection_computation_timer->stop();
-
         bool select_pattern = true;
         if (saturate) {
             projection_evaluation_timer->resume();
-            // Only check each pattern for dead ends once.
-            DeadEnds *tmp_dead_ends = dead_ends;
-            if (tmp_dead_ends) {
-                if (patterns_checked_for_dead_ends.count(pattern)) {
-                    tmp_dead_ends = nullptr;
-                } else {
-                    patterns_checked_for_dead_ends.insert(pattern);
+            if (create_complete_transition_system) {
+                unique_ptr<cost_saturation::Abstraction> projection =
+                    cost_saturation::ExplicitProjectionFactory(task_proxy, pattern).convert_to_abstraction();
+                // TODO: return true as soon as first settled state has positive costs.
+                select_pattern = contains_positive_finite_value(projection->compute_goal_distances(costs));
+            } else {
+                // Only check each pattern for dead ends once.
+                DeadEnds *tmp_dead_ends = dead_ends;
+                if (tmp_dead_ends) {
+                    if (patterns_checked_for_dead_ends.count(pattern)) {
+                        tmp_dead_ends = nullptr;
+                    } else {
+                        patterns_checked_for_dead_ends.insert(pattern);
+                    }
                 }
-            }
-            select_pattern = pattern_evaluator.is_useful(pattern, pq, tmp_dead_ends, costs);
-            projection_evaluation_timer->stop();
+                projection_computation_timer->resume();
+                PatternEvaluator pattern_evaluator(task_proxy, evaluator_task_info, pattern, costs);
+                projection_computation_timer->stop();
+                select_pattern = pattern_evaluator.is_useful(pattern, pq, tmp_dead_ends, costs);
+
 #ifndef NDEBUG
-            vector<int> goal_distances = cost_saturation::Projection(
-                task_proxy, task_info, pattern).compute_goal_distances(costs);
-            assert(select_pattern == contains_positive_finite_value(goal_distances));
+                vector<int> goal_distances = cost_saturation::Projection(
+                    task_proxy, task_info, pattern).compute_goal_distances(costs);
+                assert(select_pattern == contains_positive_finite_value(goal_distances));
 #endif
+            }
+            projection_evaluation_timer->stop();
         }
 
         ++num_pattern_evaluations;
@@ -407,15 +417,21 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             if (saturate) {
                 log << "Add pattern " << pattern << endl;
             }
-            unique_ptr<cost_saturation::Projection> projection =
-                utils::make_unique_ptr<cost_saturation::Projection>(
+            unique_ptr<cost_saturation::Abstraction> projection;
+            if (create_complete_transition_system) {
+                projection = cost_saturation::ExplicitProjectionFactory(
+                    task_proxy, pattern).convert_to_abstraction();
+            } else {
+                projection = utils::make_unique_ptr<cost_saturation::Projection>(
                     task_proxy, task_info, pattern);
+            }
             if (saturate) {
                 vector<int> goal_distances = projection->compute_goal_distances(costs);
                 vector<int> saturated_costs = projection->compute_saturated_costs(
                     goal_distances);
                 cost_saturation::reduce_costs(costs, saturated_costs);
             }
+            patterns->push_back(pattern);
             projections->push_back(move(projection));
             pattern_set.insert(pattern);
             collection_size += pdb_size;
@@ -437,6 +453,15 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
     projection_evaluation_timer = utils::make_unique_ptr<utils::Timer>();
     projection_evaluation_timer->stop();
     TaskProxy task_proxy(*task);
+    task_properties::verify_no_axioms(task_proxy);
+    if (!create_complete_transition_system &&
+        task_properties::has_conditional_effects(task_proxy)) {
+        cerr << "Error: configuration doesn't support conditional effects. "
+            "Use sys_scp(..., create_complete_transition_system=true) "
+            "for tasks with conditional effects."
+             << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
+    }
     shared_ptr<cost_saturation::TaskInfo> task_info =
         make_shared<cost_saturation::TaskInfo>(task_proxy);
     TaskInfo evaluator_task_info(task_proxy);
@@ -450,6 +475,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
         task, evaluator_task_info, max_pattern_size,
         pattern_type, pattern_order, *rng);
     priority_queues::AdaptiveQueue<int> pq;
+    shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     PatternSet patterns_checked_for_dead_ends;
@@ -461,7 +487,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator,
             dead_ends,
-            pq, projections, pattern_set, patterns_checked_for_dead_ends,
+            pq, patterns, projections, pattern_set, patterns_checked_for_dead_ends,
             collection_size, timer.get_remaining_time());
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "
@@ -501,11 +527,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
             << endl;
     }
 
-    shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
-    patterns->reserve(projections->size());
-    for (auto &projection : *projections) {
-        patterns->push_back(projection->get_pattern());
-    }
+    assert(patterns->size() == projections->size());
     PatternCollectionInformation pci(task_proxy, patterns, log);
     pci.set_projections(projections);
     return pci;
@@ -571,6 +593,10 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "saturate",
         "only select patterns useful in saturated cost partitionings",
         "true");
+    parser.add_option<bool>(
+        "create_complete_transition_system",
+        "create explicit transition system (necessary for tasks with conditional effects)",
+        "false");
     add_pattern_type_option(parser);
     parser.add_option<bool>(
         "ignore_useless_patterns",

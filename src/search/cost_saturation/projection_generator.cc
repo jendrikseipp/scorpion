@@ -76,6 +76,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
     utils::Timer pdbs_timer;
     shared_ptr<TaskInfo> task_info = make_shared<TaskInfo>(task_proxy);
     Abstractions abstractions;
+    task_properties::verify_no_axioms(task_proxy);
     for (const pdbs::Pattern &pattern : *patterns) {
         unique_ptr<Abstraction> projection;
         if (projections) {
@@ -85,6 +86,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
             projection = ExplicitProjectionFactory(
                 task_proxy, pattern).convert_to_abstraction();
         } else {
+            task_properties::verify_no_conditional_effects(task_proxy);
             projection = utils::make_unique_ptr<Projection>(
                 task_proxy, task_info, pattern, combine_labels);
         }
@@ -127,7 +129,7 @@ static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
         "true");
     parser.add_option<bool>(
         "create_complete_transition_system",
-        "create complete transition system",
+        "create explicit transition system (necessary for tasks with conditional effects)",
         "false");
     utils::add_log_options_to_parser(parser);
 
