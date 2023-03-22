@@ -1089,7 +1089,7 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <p>Jendrik Seipp.<br />
  <a href="https://jendrikseipp.com/papers/seipp-ijcai2019.pdf">Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning</a>.<br />
  In <em>Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI 2019)</em>, pp. 5621-5627. IJCAI, 2019.</p>
-<pre><code>sys_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, pattern_type=interesting_non_negative, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, verbosity=normal)
+<pre><code>sys_scp(max_pattern_size=infinity, max_pdb_size=2M, max_collection_size=20M, max_patterns=infinity, max_time=100, max_time_per_restart=10, max_evaluations_per_restart=infinity, max_total_evaluations=infinity, saturate=true, create_complete_transition_system=false, pattern_type=interesting_non_negative, ignore_useless_patterns=false, store_dead_ends=true, order=CG_DOWN, random_seed=-1, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>max_pattern_size</em> (int [1, infinity]): maximum number of variables per pattern</li>
@@ -1101,6 +1101,7 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><em>max_evaluations_per_restart</em> (int [0, infinity]): maximum pattern evaluations per the inner loop</li>
 <li><em>max_total_evaluations</em> (int [0, infinity]): maximum total pattern evaluations</li>
 <li><em>saturate</em> (bool): only select patterns useful in saturated cost partitionings</li>
+<li><em>create_complete_transition_system</em> (bool): create explicit transition system (necessary for tasks with conditional effects)</li>
 <li><em>pattern_type</em> ({naive, interesting_general, interesting_non_negative}): type of pattern</li>
 <li><em>ignore_useless_patterns</em> (bool): ignore patterns that induce no transitions with positive finite cost</li>
 <li><em>store_dead_ends</em> (bool): store dead ends in dead end tree (used to prune the search later)</li>
