@@ -158,6 +158,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
     const vector<shared_ptr<AbstractTask>> &subtasks,
     const utils::CountdownTimer &timer,
     Abstractions &abstractions) {
+    log << "Build abstractions for " << subtasks.size() << " subtasks in "
+        << timer.get_remaining_time() << endl;
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
         unique_ptr<cegar::Abstraction> cartesian_abstraction =
