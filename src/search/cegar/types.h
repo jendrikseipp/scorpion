@@ -17,11 +17,6 @@ enum class DotGraphVerbosity {
     WRITE_TO_FILE
 };
 
-enum class SearchStrategy {
-    ASTAR,
-    INCREMENTAL,
-};
-
 using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
 using Cost = uint64_t;
 // TODO: Store goal IDs in vector once we no longer use an A* search.

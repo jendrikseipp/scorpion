@@ -706,7 +706,6 @@ fast_downward_plugin(
     HELP "Plugin containing the code for CEGAR heuristics"
     SOURCES
         cegar/abstraction
-        cegar/abstract_search
         cegar/abstract_state
         cegar/additive_cartesian_heuristic
         cegar/cartesian_heuristic_function

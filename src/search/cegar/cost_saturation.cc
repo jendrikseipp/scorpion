@@ -1,6 +1,5 @@
 #include "cost_saturation.h"
 
-#include "abstract_search.h"
 #include "abstract_state.h"
 #include "abstraction.h"
 #include "cartesian_heuristic_function.h"
@@ -83,7 +82,6 @@ CostSaturation::CostSaturation(
     PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state,
     int max_state_expansions,
-    SearchStrategy search_strategy,
     int memory_padding_mb,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
@@ -98,7 +96,6 @@ CostSaturation::CostSaturation(
       tiebreak_split(tiebreak_split),
       max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
       max_state_expansions(max_state_expansions),
-      search_strategy(search_strategy),
       memory_padding_mb(memory_padding_mb),
       rng(rng),
       log(log),
@@ -213,7 +210,6 @@ void CostSaturation::build_abstractions(
             tiebreak_split,
             max_concrete_states_per_abstract_state,
             max_state_expansions,
-            search_strategy,
             rng,
             log,
             dot_graph_verbosity);

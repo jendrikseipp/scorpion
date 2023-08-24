@@ -127,6 +127,11 @@ public:
         const std::vector<Transitions> &out,
         const std::unordered_set<int> &goals);
 };
+
+std::vector<int> compute_distances(
+    const std::vector<Transitions> &transitions,
+    const std::vector<int> &costs,
+    const std::unordered_set<int> &start_ids);
 }
 
 #endif

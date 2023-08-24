@@ -1,7 +1,6 @@
 #include "cegar.h"
 
 #include "abstraction.h"
-#include "abstract_search.h"
 #include "abstract_state.h"
 #include "cartesian_set.h"
 #include "shortest_paths.h"
@@ -32,7 +31,6 @@ CEGAR::CEGAR(
     PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state,
     int max_state_expansions,
-    SearchStrategy search_strategy,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
     DotGraphVerbosity dot_graph_verbosity)
@@ -40,26 +38,18 @@ CEGAR::CEGAR(
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
-      search_strategy(search_strategy),
       pick_flawed_abstract_state(pick_flawed_abstract_state),
       abstraction(utils::make_unique_ptr<Abstraction>(task, log)),
       timer(max_time),
       log(log),
       dot_graph_verbosity(dot_graph_verbosity) {
     assert(max_states >= 1);
-    if (search_strategy == SearchStrategy::ASTAR) {
-        abstract_search = utils::make_unique_ptr<AbstractSearch>(
-            task_properties::get_operator_costs(task_proxy));
-    } else if (search_strategy == SearchStrategy::INCREMENTAL) {
-        shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-            task_properties::get_operator_costs(task_proxy), log);
-        flaw_search = utils::make_unique_ptr<FlawSearch>(
-            task, *abstraction, *shortest_paths, rng,
-            pick_flawed_abstract_state, pick_split, tiebreak_split,
-            max_concrete_states_per_abstract_state, max_state_expansions, log);
-    } else {
-        ABORT("Unknown search strategy");
-    }
+    shortest_paths = utils::make_unique_ptr<ShortestPaths>(
+        task_properties::get_operator_costs(task_proxy), log);
+    flaw_search = utils::make_unique_ptr<FlawSearch>(
+        task, *abstraction, *shortest_paths, rng,
+        pick_flawed_abstract_state, pick_split, tiebreak_split,
+        max_concrete_states_per_abstract_state, max_state_expansions, log);
 
     if (log.is_at_least_normal()) {
         log << "Start building abstraction." << endl;
@@ -168,15 +158,13 @@ void CEGAR::refinement_loop() {
     }
 
     // Initialize abstract goal distances and shortest path tree.
-    if (search_strategy == SearchStrategy::INCREMENTAL) {
-        shortest_paths->recompute(
-            abstraction->get_transition_system().get_incoming_transitions(),
-            abstraction->get_goals());
-        assert(shortest_paths->test_distances(
-                   abstraction->get_transition_system().get_incoming_transitions(),
-                   abstraction->get_transition_system().get_outgoing_transitions(),
-                   abstraction->get_goals()));
-    }
+    shortest_paths->recompute(
+        abstraction->get_transition_system().get_incoming_transitions(),
+        abstraction->get_goals());
+    assert(shortest_paths->test_distances(
+               abstraction->get_transition_system().get_incoming_transitions(),
+               abstraction->get_transition_system().get_outgoing_transitions(),
+               abstraction->get_goals()));
 
     utils::Timer find_trace_timer(false);
     utils::Timer find_flaw_timer(false);
@@ -186,25 +174,11 @@ void CEGAR::refinement_loop() {
     while (may_keep_refining()) {
         find_trace_timer.resume();
         unique_ptr<Solution> solution;
-        if (search_strategy == SearchStrategy::ASTAR) {
-            solution = abstract_search->find_solution(
-                abstraction->get_transition_system().get_outgoing_transitions(),
-                abstraction->get_initial_state().get_id(),
-                abstraction->get_goals());
-        } else {
-            solution = shortest_paths->extract_solution(
-                abstraction->get_initial_state().get_id(), abstraction->get_goals());
-        }
+        solution = shortest_paths->extract_solution(
+            abstraction->get_initial_state().get_id(), abstraction->get_goals());
         find_trace_timer.stop();
 
         if (solution) {
-            update_goal_distances_timer.resume();
-            if (search_strategy == SearchStrategy::ASTAR) {
-                abstract_search->update_goal_distances_of_states_on_trace(
-                    *solution, abstraction->get_initial_state().get_id());
-            }
-            update_goal_distances_timer.stop();
-
             int new_abstract_solution_cost =
                 shortest_paths->get_32bit_goal_distance(abstraction->get_initial_state().get_id());
             if (new_abstract_solution_cost > old_abstract_solution_cost) {
@@ -266,20 +240,14 @@ void CEGAR::refinement_loop() {
         refine_timer.stop();
 
         update_goal_distances_timer.resume();
-        if (search_strategy == SearchStrategy::ASTAR) {
-            // Since h-values only increase we can assign the h-value to the children.
-            abstract_search->copy_h_value_to_children(
-                state_id, new_state_ids.first, new_state_ids.second);
-        } else {
-            shortest_paths->update_incrementally(
-                abstraction->get_transition_system().get_incoming_transitions(),
-                abstraction->get_transition_system().get_outgoing_transitions(),
-                state_id, new_state_ids.first, new_state_ids.second);
-            assert(shortest_paths->test_distances(
-                       abstraction->get_transition_system().get_incoming_transitions(),
-                       abstraction->get_transition_system().get_outgoing_transitions(),
-                       abstraction->get_goals()));
-        }
+        shortest_paths->update_incrementally(
+            abstraction->get_transition_system().get_incoming_transitions(),
+            abstraction->get_transition_system().get_outgoing_transitions(),
+            state_id, new_state_ids.first, new_state_ids.second);
+        assert(shortest_paths->test_distances(
+                   abstraction->get_transition_system().get_incoming_transitions(),
+                   abstraction->get_transition_system().get_outgoing_transitions(),
+                   abstraction->get_goals()));
         update_goal_distances_timer.stop();
 
         if (log.is_at_least_verbose() &&

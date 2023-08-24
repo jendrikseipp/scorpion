@@ -127,14 +127,6 @@ static void add_pick_split_strategies(options::OptionParser &parser) {
         "MAX_REFINED");
 }
 
-static void add_search_strategy_option(options::OptionParser &parser) {
-    parser.add_enum_option<SearchStrategy>(
-        "search_strategy",
-        {"ASTAR", "INCREMENTAL"},
-        "strategy for computing abstract plans",
-        "INCREMENTAL");
-}
-
 static void add_memory_padding_option(options::OptionParser &parser) {
     parser.add_option<int>(
         "memory_padding",
@@ -232,7 +224,6 @@ void add_common_cegar_options(options::OptionParser &parser) {
 
     add_pick_flawed_abstract_state_strategies(parser);
     add_pick_split_strategies(parser);
-    add_search_strategy_option(parser);
     add_memory_padding_option(parser);
     add_dot_graph_verbosity(parser);
     utils::add_rng_options(parser);

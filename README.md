@@ -111,6 +111,8 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 - The `--transform-task` command allows you to run arbitrary preprocessing
   commands that transform the SAS+ output from the translator before
   passing it to the search.
+- Scorpion uses [incremental search for Cartesian abstraction
+  refinement](https://ojs.aaai.org/index.php/ICAPS/article/view/6667).
 - Scorpion uses a
   [phmap::flat_hash_set](https://github.com/greg7mdp/parallel-hashmap) to check
   for duplicate states, which often drastically reduces the peak memory usage,
@@ -125,11 +127,6 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 
 
 ### New plugin options
-
-- `{cegar/cartesian}(..., search_strategy=incremental)`: use [incremental search for
-  Cartesian abstraction
-  refinement](https://ojs.aaai.org/index.php/ICAPS/article/view/6667)
-  (default).
 
 - `{cegar/cartesian}(..., pick_flawed_abstract_state={batch_min_h, ...})`:
   find all current flaws, then iteratively repair the flaw that's closest to the goal

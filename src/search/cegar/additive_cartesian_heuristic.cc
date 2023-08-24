@@ -38,7 +38,6 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<PickSplit>("tiebreak_split"),
         opts.get<int>("max_concrete_states_per_abstract_state"),
         opts.get<int>("max_state_expansions"),
-        opts.get<SearchStrategy>("search_strategy"),
         opts.get<int>("memory_padding"),
         *rng,
         log,
