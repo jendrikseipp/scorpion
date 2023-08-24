@@ -553,7 +553,7 @@
                   <h1>AbstractionGenerator</h1>
                 
                 <h2 id="cartesian_abstraction_generator">Cartesian abstraction generator<a class="headerlink" href="#cartesian_abstraction_generator" title="Permanent link">#</a></h2>
-<pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=BATCH_MIN_H, pick_split=MAX_COVER, tiebreak_split=MAX_REFINED, search_strategy=INCREMENTAL, memory_padding=500, dot_graph_verbosity=SILENT, random_seed=-1, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, verbosity=normal)
+<pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=BATCH_MIN_H, pick_split=MAX_COVER, tiebreak_split=MAX_REFINED, memory_padding=500, dot_graph_verbosity=SILENT, random_seed=-1, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>subtasks</em> (list of <a href="../SubtaskGenerator/">SubtaskGenerator</a>): subtask generators</li>
@@ -563,7 +563,6 @@
 <li><em>pick_flawed_abstract_state</em> ({FIRST, FIRST_ON_SHORTEST_PATH, RANDOM, MIN_H, MAX_H, BATCH_MIN_H}): flaw-selection strategy</li>
 <li><em>pick_split</em> ({RANDOM, MIN_UNWANTED, MAX_UNWANTED, MIN_REFINED, MAX_REFINED, MIN_HADD, MAX_HADD, MIN_CG, MAX_CG, MAX_COVER}): split-selection strategy</li>
 <li><em>tiebreak_split</em> ({RANDOM, MIN_UNWANTED, MAX_UNWANTED, MIN_REFINED, MAX_REFINED, MIN_HADD, MAX_HADD, MIN_CG, MAX_CG, MAX_COVER}): split-selection strategy for breaking ties</li>
-<li><em>search_strategy</em> ({ASTAR, INCREMENTAL}): strategy for computing abstract plans</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
 <li><em>dot_graph_verbosity</em> ({SILENT, WRITE_TO_CONSOLE, WRITE_TO_FILE}): verbosity of printing/writing dot graphs</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
