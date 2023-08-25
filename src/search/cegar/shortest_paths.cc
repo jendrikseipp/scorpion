@@ -57,8 +57,7 @@ Cost ShortestPaths::convert_to_64_bit_cost(int cost) const {
 }
 
 void ShortestPaths::recompute(
-    const vector<Transitions> &in,
-    const unordered_set<int> &goals) {
+    const vector<Transitions> &in, const Goals &goals) {
     open_queue.clear();
     shortest_path = Transitions(in.size());
     goal_distances = vector<Cost>(in.size(), INF_COSTS);
@@ -330,7 +329,7 @@ bool ShortestPaths::is_optimal_transition(int start_id, int op_id, int target_id
 bool ShortestPaths::test_distances(
     const vector<Transitions> &in,
     const vector<Transitions> &out,
-    const unordered_set<int> &goals) {
+    const Goals &goals) {
     assert(none_of(goal_distances.begin(), goal_distances.end(),
                    [](Cost d) {return d == DIRTY;}));
     int num_states = in.size();
