@@ -100,9 +100,18 @@ void CEGAR::separate_facts_unreachable_before_goal() const {
       Split off the goal fact from the initial state. Then the new initial
       state is the only non-goal state and no goal state will have to be split
       later.
+
+      For all states s in which the landmark might have been achieved we need
+      h(s)=0. If the limits don't allow splitting off all facts unreachable
+      before the goal to achieve this, we instead preserve h(s)=0 for *all*
+      states s and cannot split off the goal fact from the abstract initial
+      state.
     */
-    abstraction->refine(
-        abstraction->get_initial_state(), goal.get_variable().get_id(), {goal.get_value()});
+    assert(abstraction->get_initial_state().includes(task_proxy.get_initial_state()));
+    assert(reachable_facts.count(goal));
+    if (may_keep_refining()) {
+        abstraction->refine(abstraction->get_initial_state(), goal.get_variable().get_id(), {goal.get_value()});
+    }
 }
 
 bool CEGAR::may_keep_refining() const {
