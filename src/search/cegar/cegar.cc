@@ -158,6 +158,9 @@ void CEGAR::refinement_loop() {
         assert(abstraction->get_num_states() == 1);
         const AbstractState *current = &abstraction->get_initial_state();
         for (FactProxy goal : task_proxy.get_goals()) {
+            if (!may_keep_refining()) {
+                break;
+            }
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
             current = &abstraction->get_state(pair.second);
