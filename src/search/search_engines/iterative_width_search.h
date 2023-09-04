@@ -13,6 +13,7 @@ namespace options {
 class Options;
 }
 
+// TODO: rename to IteratedWidthSearch.
 namespace iterative_width_search {
 class IterativeWidthSearch : public SearchEngine {
     const int width;
@@ -29,7 +30,7 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit IterativeWidthSearch(const options::Options &opts);
+    explicit IterativeWidthSearch(const plugins::Options &opts);
 
     virtual void print_statistics() const override;
 

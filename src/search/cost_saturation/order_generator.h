@@ -5,8 +5,8 @@
 
 #include <vector>
 
-namespace options {
-class OptionParser;
+namespace plugins {
+class Feature;
 class Options;
 }
 
@@ -19,7 +19,7 @@ class OrderGenerator {
 protected:
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 public:
-    explicit OrderGenerator(const options::Options &opts);
+    explicit OrderGenerator(const plugins::Options &opts);
     virtual ~OrderGenerator() = default;
 
     virtual void initialize(
@@ -29,7 +29,7 @@ public:
         const std::vector<int> &abstract_state_ids, bool verbose) = 0;
 };
 
-extern void add_common_order_generator_options(options::OptionParser &parser);
+extern void add_common_order_generator_options(plugins::Feature &feature);
 }
 
 #endif

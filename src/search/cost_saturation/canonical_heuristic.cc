@@ -4,11 +4,10 @@
 #include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
 
 #include "../algorithms/max_cliques.h"
 #include "../algorithms/dynamic_bitset.h"
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
@@ -54,7 +53,7 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
     return max_cliques;
 }
 
-CanonicalHeuristic::CanonicalHeuristic(const Options &opts)
+CanonicalHeuristic::CanonicalHeuristic(const plugins::Options &opts)
     : Heuristic(opts) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
 
@@ -106,24 +105,16 @@ int CanonicalHeuristic::compute_max_over_sums(
     return max_h;
 }
 
+class CanonicalHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, CanonicalHeuristic> {
+public:
+    CanonicalHeuristicFeature() : TypedFeature("canonical_heuristic") {
+        document_subcategory("heuristics_cost_partitioning");
+        document_title("Canonical heuristic over abstractions");
+        document_synopsis("Shuffle abstractions randomly.");
+        add_options_for_cost_partitioning_heuristic(*this);
+    }
+};
 
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Canonical heuristic over abstractions",
-        "");
-
-    prepare_parser_for_cost_partitioning_heuristic(parser);
-
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    return make_shared<CanonicalHeuristic>(opts);
-}
-
-static Plugin<Evaluator> _plugin(
-    "canonical_heuristic", _parse, "heuristics_cost_partitioning");
+static plugins::FeaturePlugin<CanonicalHeuristicFeature> _plugin;
 }

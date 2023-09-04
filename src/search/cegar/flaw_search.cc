@@ -8,6 +8,7 @@
 #include "transition_system.h"
 #include "utils.h"
 
+#include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/countdown_timer.h"
@@ -656,4 +657,25 @@ void FlawSearch::print_statistics() const {
         << expansions / static_cast<float>(searches) << endl;
     log << "Average flaw search time: " << flaw_search_timer() / searches << endl;
 }
+
+static plugins::TypedEnumPlugin<PickFlawedAbstractState> _enum_plugin({
+        {"first",
+         "Consider first encountered flawed abstract state and a random concrete state."},
+        {"first_on_shortest_path",
+         "Follow the arbitrary solution in the shortest path tree (no flaw search). "
+         "Consider first encountered flawed abstract state and a random concrete state."},
+        {"random",
+         "Collect all flawed abstract states and then consider a random abstract state "
+         "and a random concrete state."},
+        {"min_h",
+         "Collect all flawed abstract states and then consider a random abstract state "
+         "with minimum h value and a random concrete state."},
+        {"max_h",
+         "Collect all flawed abstract states and then consider a random abstract state "
+         "with maximum h value and a random concrete state."},
+        {"batch_min_h",
+         "Collect all flawed abstract states and iteratively refine them (by increasing "
+         "h value). Only start a new flaw search once all remaining flawed abstract "
+         "states are refined. For each abstract state consider all concrete states."},
+    });
 }

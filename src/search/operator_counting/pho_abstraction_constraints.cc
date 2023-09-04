@@ -1,12 +1,10 @@
 #include "pho_abstraction_constraints.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
 #include "../cost_saturation/abstraction.h"
 #include "../cost_saturation/abstraction_generator.h"
 #include "../cost_saturation/utils.h"
 #include "../lp/lp_solver.h"
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 
@@ -16,7 +14,7 @@
 using namespace std;
 
 namespace operator_counting {
-PhOAbstractionConstraints::PhOAbstractionConstraints(const Options &opts)
+PhOAbstractionConstraints::PhOAbstractionConstraints(const plugins::Options &opts)
     : abstraction_generators(
           opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
               "abstractions")),
@@ -125,25 +123,22 @@ bool PhOAbstractionConstraints::update_constraints(
     return false;
 }
 
-static shared_ptr<ConstraintGenerator> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "(Saturated) posthoc optimization constraints for abstractions", "");
+class PhOAbstractionConstraintsFeature
+    : public plugins::TypedFeature<ConstraintGenerator, PhOAbstractionConstraints> {
+public:
+    PhOAbstractionConstraintsFeature() : TypedFeature("pho_abstraction_constraints") {
+        document_title("(Saturated) posthoc optimization constraints for abstractions");
 
-    parser.add_list_option<shared_ptr<cost_saturation::AbstractionGenerator>>(
-        "abstractions",
-        "abstraction generation methods",
-        OptionParser::NONE);
-    parser.add_option<bool>(
-        "saturated",
-        "use saturated instead of full operator costs in constraints",
-        "true");
+        add_list_option<shared_ptr<cost_saturation::AbstractionGenerator>>(
+            "abstractions",
+            "abstraction generation methods",
+            plugins::ArgumentInfo::NO_DEFAULT);
+        add_option<bool>(
+            "saturated",
+            "use saturated instead of full operator costs in constraints",
+            "true");
+    }
+};
 
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-
-    return make_shared<PhOAbstractionConstraints>(opts);
-}
-
-static Plugin<ConstraintGenerator> _plugin("pho_abstraction_constraints", _parse);
+static plugins::FeaturePlugin<PhOAbstractionConstraintsFeature> _plugin;
 }

@@ -20,7 +20,7 @@ class ProjectionGenerator : public AbstractionGenerator {
     const bool use_add_after_delete_semantics;
 
 public:
-    explicit ProjectionGenerator(const options::Options &opts);
+    explicit ProjectionGenerator(const plugins::Options &opts);
 
     Abstractions generate_abstractions(
         const std::shared_ptr<AbstractTask> &task,

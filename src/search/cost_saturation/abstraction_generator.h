@@ -15,7 +15,7 @@ protected:
     mutable utils::LogProxy log;
 
 public:
-    explicit AbstractionGenerator(const options::Options &opts);
+    explicit AbstractionGenerator(const plugins::Options &opts);
     virtual ~AbstractionGenerator() = default;
 
     virtual Abstractions generate_abstractions(

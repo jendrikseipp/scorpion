@@ -17,6 +17,10 @@ namespace causal_graph {
 class CausalGraph;
 }
 
+namespace options {
+class Feature;
+}
+
 namespace utils {
 class CountdownTimer;
 }
@@ -76,7 +80,7 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
     virtual PatternCollectionInformation compute_patterns(
         const std::shared_ptr<AbstractTask> &task) override;
 public:
-    explicit PatternCollectionGeneratorSystematic(const options::Options &opts);
+    explicit PatternCollectionGeneratorSystematic(const plugins::Options &opts);
 
     void generate(
         const std::shared_ptr<AbstractTask> &task,
@@ -84,7 +88,7 @@ public:
         const utils::CountdownTimer &timer);
 };
 
-extern void add_pattern_type_option(options::OptionParser &parser);
+extern void add_pattern_type_option(plugins::Feature &feature);
 }
 
 #endif

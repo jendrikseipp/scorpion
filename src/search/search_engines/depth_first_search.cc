@@ -1,8 +1,6 @@
 #include "depth_first_search.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 
@@ -19,7 +17,7 @@ namespace depth_first_search {
 static const int INF = numeric_limits<int>::max();
 
 
-DepthFirstSearch::DepthFirstSearch(const Options &opts)
+DepthFirstSearch::DepthFirstSearch(const plugins::Options &opts)
     : SearchEngine(opts),
       single_plan(opts.get<bool>("single_plan")),
       max_depth(0),
@@ -111,26 +109,22 @@ void DepthFirstSearch::save_plan_if_necessary() {
     // We don't need to save here, as we automatically save plans when we find them.
 }
 
-static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Depth-first search",
-        "This is a depth-first tree search that avoids running in cycles by "
-        "skipping states s that are already visited earlier on the path to s. "
-        "Doing so, the search becomes complete.");
-    parser.add_option<bool>(
-        "single_plan",
-        "stop after finding the first plan",
-        "false");
-    SearchEngine::add_options_to_parser(parser);
-
-    Options opts = parser.parse();
-
-    if (parser.dry_run()) {
-        return nullptr;
+class DepthFirstSearchFeature
+    : public plugins::TypedFeature<SearchEngine, depth_first_search::DepthFirstSearch> {
+public:
+    DepthFirstSearchFeature() : TypedFeature("dfs") {
+        document_title("Depth-first search");
+        document_synopsis(
+            "This is a depth-first tree search that avoids running in cycles by "
+            "skipping states s that are already visited earlier on the path to s. "
+            "Doing so, the search becomes complete.");
+        add_option<bool>(
+            "single_plan",
+            "stop after finding the first plan",
+            "false");
+        SearchEngine::add_options_to_feature(*this);
     }
+};
 
-    return make_shared<depth_first_search::DepthFirstSearch>(opts);
-}
-
-static Plugin<SearchEngine> _plugin("dfs", _parse);
+static plugins::FeaturePlugin<DepthFirstSearchFeature> _plugin;
 }

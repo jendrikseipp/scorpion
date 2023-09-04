@@ -14,7 +14,7 @@ protected:
     virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
-    MaxHeuristic(const options::Options &opts, const Abstractions &abstractions);
+    MaxHeuristic(const plugins::Options &opts, const Abstractions &abstractions);
 };
 }
 

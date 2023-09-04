@@ -5,7 +5,7 @@
 #include "../task_proxy.h"
 
 #include "../algorithms/priority_queues.h"
-#include "../pdbs/match_tree.h"
+#include "../pdbs/slim_match_tree.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -279,7 +279,7 @@ Projection::Projection(
         pattern_domain_sizes.push_back(variables[pattern_var].get_domain_size());
     }
 
-    match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
+    match_tree_backward = utils::make_unique_ptr<pdbs::SlimMatchTree>(
         task_proxy, pattern, hash_multipliers);
 
     OperatorGroups operator_groups;

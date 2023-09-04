@@ -4,6 +4,7 @@
 #include "transition_system.h"
 #include "utils.h"
 
+#include "../plugins/plugin.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
 
@@ -162,4 +163,9 @@ vector<int> compute_distances(
     }
     return distances;
 }
+
+static plugins::TypedEnumPlugin<SearchStrategy> _enum_plugin({
+        {"astar", ""},
+        {"incremental", ""},
+    });
 }

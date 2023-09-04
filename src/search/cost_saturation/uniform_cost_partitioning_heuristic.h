@@ -21,7 +21,7 @@ protected:
 
 public:
     ScaledCostPartitioningHeuristic(
-        const options::Options &opts,
+        const plugins::Options &opts,
         Abstractions &&abstractions,
         CPHeuristics &&cp_heuristics,
         std::unique_ptr<DeadEnds> &&dead_ends);

@@ -1,8 +1,6 @@
 #include "iterative_deepening_search.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 
@@ -14,7 +12,7 @@
 using namespace std;
 
 namespace iterative_deepening_search {
-IterativeDeepeningSearch::IterativeDeepeningSearch(const Options &opts)
+IterativeDeepeningSearch::IterativeDeepeningSearch(const plugins::Options &opts)
     : SearchEngine(opts),
       single_plan(opts.get<bool>("single_plan")),
       sg(task_proxy),
@@ -92,24 +90,18 @@ void IterativeDeepeningSearch::save_plan_if_necessary() {
     // We don't need to save here, as we automatically save plans when we find them.
 }
 
-static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Iterative deepening search",
-        "");
-    parser.add_option<bool>(
-        "single_plan",
-        "stop after finding the first (shortest) plan",
-        "true");
-
-    SearchEngine::add_options_to_parser(parser);
-    Options opts = parser.parse();
-
-    if (parser.dry_run()) {
-        return nullptr;
+class IterativeDeepeningSearchFeature
+    : public plugins::TypedFeature<SearchEngine, iterative_deepening_search::IterativeDeepeningSearch> {
+public:
+    IterativeDeepeningSearchFeature() : TypedFeature("ids") {
+        document_title("Iterative deepening search");
+        add_option<bool>(
+            "single_plan",
+            "stop after finding the first (shortest) plan",
+            "true");
+        SearchEngine::add_options_to_feature(*this);
     }
+};
 
-    return make_shared<iterative_deepening_search::IterativeDeepeningSearch>(opts);
-}
-
-static Plugin<SearchEngine> _plugin("ids", _parse);
+static plugins::FeaturePlugin<IterativeDeepeningSearchFeature> _plugin;
 }

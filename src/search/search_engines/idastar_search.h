@@ -66,7 +66,7 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit IDAstarSearch(const options::Options &opts);
+    explicit IDAstarSearch(const plugins::Options &opts);
 
     void save_plan_if_necessary() override;
 

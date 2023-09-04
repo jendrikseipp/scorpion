@@ -134,22 +134,9 @@ PatternEvaluator::PatternEvaluator(
     const pdbs::Pattern &pattern,
     const vector<int> &costs)
     : task_info(task_info) {
-    assert(utils::is_sorted_unique(pattern));
-
-    vector<int> hash_multipliers;
-    hash_multipliers.reserve(pattern.size());
-    num_states = 1;
-    for (int var : pattern) {
-        hash_multipliers.push_back(num_states);
-        if (utils::is_product_within_limit(
-                num_states, task_info.domain_sizes[var], numeric_limits<int>::max())) {
-            num_states *= task_info.domain_sizes[var];
-        } else {
-            cerr << "Given pattern is too large! (Overflow occured): " << endl;
-            cerr << pattern << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
-        }
-    }
+    pdbs::Projection projection(task_proxy, pattern);
+    hash_multipliers = projection.get_hash_multipliers();
+    num_states = projection.get_num_abstract_states();
 
     vector<int> variable_to_pattern_index(task_info.get_num_variables(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
@@ -163,7 +150,7 @@ PatternEvaluator::PatternEvaluator(
     }
 
     match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
-        task_proxy, pattern, hash_multipliers);
+        task_proxy, projection);
 
     vector<pair<int, int>> active_ops;
     for (const OperatorInfo &op : task_info.operator_infos) {
@@ -351,7 +338,6 @@ void PatternEvaluator::store_new_dead_ends(
     const Pattern &pattern,
     const vector<int> &distances,
     DeadEnds &dead_ends) const {
-    const vector<int> &hash_multipliers = match_tree_backward->get_hash_multipliers();
     int pattern_size = hash_multipliers.size();
     for (size_t index = 0; index < distances.size(); ++index) {
         if (distances[index] == INF) {

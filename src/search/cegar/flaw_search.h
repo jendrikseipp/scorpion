@@ -26,24 +26,13 @@ class Abstraction;
 class ShortestPaths;
 
 // Variants from ICAPS 2022 paper (in order): FIRST, MIN_H, MAX_H, MIN_H, BATCH_MIN_H.
+// See bottom of .cc file for documentation.
 enum class PickFlawedAbstractState {
-    // Consider first encountered flawed abstract state + a random concrete state.
     FIRST,
-    // Legacy code: follow the arbitrary solution in shortest path tree (no flaw search).
-    // Consider first encountered flawed abstract state + a random concrete state.
     FIRST_ON_SHORTEST_PATH,
-    // Collect all flawed abstract states.
-    // Consider a random abstract state + a random concrete state.
     RANDOM,
-    // Collect all flawed abstract states.
-    // Consider a random abstract state with min h + a random concrete state.
     MIN_H,
-    // Collect all flawed abstract states.
-    // Consider a random abstract state with max h + a random concrete state.
     MAX_H,
-    // Collect all flawed abstract states and iteratively refine them (by increasing h value).
-    // Only start a new flaw search once all remaining flawed abstract states are refined.
-    // For each abstract state consider all concrete states.
     BATCH_MIN_H
 };
 

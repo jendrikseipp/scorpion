@@ -7,8 +7,7 @@
 #include "transition.h"
 #include "transition_system.h"
 
-#include "../option_parser.h"
-
+#include "../plugins/plugin.h"
 #include "../heuristics/additive_heuristic.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
@@ -28,7 +27,7 @@ class SubtaskGenerator;
 
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {
-    Options opts;
+    plugins::Options opts;
     opts.set<shared_ptr<AbstractTask>>("transform", task);
     opts.set<bool>("cache_estimates", false);
     opts.set<utils::Verbosity>("verbosity", utils::Verbosity::SILENT);
@@ -103,40 +102,33 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
     return domain_sizes;
 }
 
-static void add_pick_flawed_abstract_state_strategies(options::OptionParser &parser) {
-    parser.add_enum_option<cegar::PickFlawedAbstractState>(
+static void add_pick_flawed_abstract_state_strategies(plugins::Feature &feature) {
+    feature.add_option<cegar::PickFlawedAbstractState>(
         "pick_flawed_abstract_state",
-        {"FIRST", "FIRST_ON_SHORTEST_PATH", "RANDOM", "MIN_H", "MAX_H", "BATCH_MIN_H"},
         "flaw-selection strategy",
-        "BATCH_MIN_H");
+        "batch_min_h");
 }
 
-static void add_pick_split_strategies(options::OptionParser &parser) {
-    vector<string> strategies =
-    {"RANDOM", "MIN_UNWANTED", "MAX_UNWANTED", "MIN_REFINED", "MAX_REFINED",
-     "MIN_HADD", "MAX_HADD", "MIN_CG", "MAX_CG", "MAX_COVER"};
-    parser.add_enum_option<PickSplit>(
+static void add_pick_split_strategies(plugins::Feature &feature) {
+    feature.add_option<PickSplit>(
         "pick_split",
-        strategies,
         "split-selection strategy",
-        "MAX_COVER");
-    parser.add_enum_option<PickSplit>(
+        "max_cover");
+    feature.add_option<PickSplit>(
         "tiebreak_split",
-        strategies,
         "split-selection strategy for breaking ties",
-        "MAX_REFINED");
+        "max_refined");
 }
 
-static void add_search_strategy_option(options::OptionParser &parser) {
-    parser.add_enum_option<SearchStrategy>(
+static void add_search_strategy_option(plugins::Feature &feature) {
+    feature.add_option<SearchStrategy>(
         "search_strategy",
-        {"ASTAR", "INCREMENTAL"},
         "strategy for computing abstract plans",
-        "INCREMENTAL");
+        "incremental");
 }
 
-static void add_memory_padding_option(options::OptionParser &parser) {
-    parser.add_option<int>(
+static void add_memory_padding_option(plugins::Feature &feature) {
+    feature.add_option<int>(
         "memory_padding",
         "amount of extra memory in MB to reserve for recovering from "
         "out-of-memory situations gracefully. When the memory runs out, we "
@@ -146,15 +138,14 @@ static void add_memory_padding_option(options::OptionParser &parser) {
         "blocks of memory. It is for this reason that we require a rather "
         "large amount of memory padding by default.",
         "500",
-        Bounds("0", "infinity"));
+        plugins::Bounds("0", "infinity"));
 }
 
-static void add_dot_graph_verbosity(options::OptionParser &parser) {
-    parser.add_enum_option<DotGraphVerbosity>(
+static void add_dot_graph_verbosity(plugins::Feature &feature) {
+    feature.add_option<DotGraphVerbosity>(
         "dot_graph_verbosity",
-        {"SILENT", "WRITE_TO_CONSOLE", "WRITE_TO_FILE"},
         "verbosity of printing/writing dot graphs",
-        "SILENT");
+        "silent");
 }
 
 string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
@@ -208,44 +199,50 @@ void write_to_file(const string &file_name, const string &content) {
     }
 }
 
-void add_common_cegar_options(options::OptionParser &parser) {
-    parser.add_list_option<shared_ptr<SubtaskGenerator>>(
+void add_common_cegar_options(plugins::Feature &feature) {
+    feature.add_list_option<shared_ptr<SubtaskGenerator>>(
         "subtasks",
         "subtask generators",
         "[landmarks(order=random), goals(order=random)]");
-    parser.add_option<int>(
+    feature.add_option<int>(
         "max_states",
         "maximum sum of abstract states over all abstractions",
         "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
+        plugins::Bounds("1", "infinity"));
+    feature.add_option<int>(
         "max_transitions",
         "maximum sum of state-changing transitions (excluding self-loops) over "
         "all abstractions",
         "1M",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
+        plugins::Bounds("0", "infinity"));
+    feature.add_option<double>(
         "max_time",
         "maximum time in seconds for building abstractions",
         "infinity",
-        Bounds("0.0", "infinity"));
+        plugins::Bounds("0.0", "infinity"));
 
-    add_pick_flawed_abstract_state_strategies(parser);
-    add_pick_split_strategies(parser);
-    add_search_strategy_option(parser);
-    add_memory_padding_option(parser);
-    add_dot_graph_verbosity(parser);
-    utils::add_rng_options(parser);
+    add_pick_flawed_abstract_state_strategies(feature);
+    add_pick_split_strategies(feature);
+    add_search_strategy_option(feature);
+    add_memory_padding_option(feature);
+    add_dot_graph_verbosity(feature);
+    utils::add_rng_options(feature);
 
-    parser.add_option<int>(
+    feature.add_option<int>(
         "max_concrete_states_per_abstract_state",
         "maximum number of flawed concrete states stored per abstract state",
         "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
+        plugins::Bounds("1", "infinity"));
+    feature.add_option<int>(
         "max_state_expansions",
         "maximum number of state expansions per flaw search",
         "1M",
-        Bounds("1", "infinity"));
+        plugins::Bounds("1", "infinity"));
 }
+
+static plugins::TypedEnumPlugin<DotGraphVerbosity> _enum_plugin({
+        {"silent", ""},
+        {"write_to_console", ""},
+        {"write_to_file", ""}
+    });
 }

@@ -69,6 +69,7 @@ class PatternEvaluator {
 
     std::vector<AbstractBackwardOperator> abstract_backward_operators;
     std::unique_ptr<pdbs::MatchTree> match_tree_backward;
+    std::vector<int> hash_multipliers;
 
     int num_states;
 

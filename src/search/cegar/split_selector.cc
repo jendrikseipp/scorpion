@@ -6,6 +6,7 @@
 
 #include "../heuristics/additive_heuristic.h"
 
+#include "../plugins/plugin.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
 #include "../utils/rng.h"
@@ -298,4 +299,37 @@ Split SplitSelector::pick_split(
     }
     return selected_split;
 }
+
+static plugins::TypedEnumPlugin<PickSplit> _enum_plugin({
+        {"random",
+         "select a random variable (among all eligible variables)"},
+        {"min_unwanted",
+         "select an eligible variable which has the least unwanted values "
+         "(number of values of v that land in the abstract state whose "
+         "h-value will probably be raised) in the flaw state"},
+        {"max_unwanted",
+         "select an eligible variable which has the most unwanted values "
+         "(number of values of v that land in the abstract state whose "
+         "h-value will probably be raised) in the flaw state"},
+        {"min_refined",
+         "select an eligible variable which is the least refined "
+         "(-1 * (remaining_values(v) / original_domain_size(v))) "
+         "in the flaw state"},
+        {"max_refined",
+         "select an eligible variable which is the most refined "
+         "(-1 * (remaining_values(v) / original_domain_size(v))) "
+         "in the flaw state"},
+        {"min_hadd",
+         "select an eligible variable with minimal h^add(s_0) value "
+         "over all facts that need to be removed from the flaw state"},
+        {"max_hadd",
+         "select an eligible variable with maximal h^add(s_0) value "
+         "over all facts that need to be removed from the flaw state"},
+        {"min_cg",
+         "order by increasing position in partial ordering of causal graph"},
+        {"max_cg",
+         "order by decreasing position in partial ordering of causal graph"},
+        {"max_cover",
+         "compute split that covers the maximum number of flaws for several concrete states."}
+    });
 }

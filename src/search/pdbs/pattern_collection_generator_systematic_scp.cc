@@ -2,8 +2,7 @@
 
 #include "pattern_evaluator.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
+#include "../plugins/plugin.h"
 #include "../task_proxy.h"
 
 #include "../algorithms/array_pool.h"
@@ -11,6 +10,7 @@
 #include "../algorithms/priority_queues.h"
 #include "../cost_saturation/projection.h"
 #include "../cost_saturation/utils.h"
+#include "../plugins/options.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
@@ -107,7 +107,7 @@ static unique_ptr<PatternCollection> get_patterns(
     PatternType pattern_type,
     const utils::CountdownTimer &timer) {
     utils::g_log << "Generate patterns for size " << pattern_size << endl;
-    options::Options opts;
+    plugins::Options opts;
     opts.set<int>("pattern_max_size", pattern_size);
     opts.set<PatternType>("pattern_type", pattern_type);
     opts.set<utils::Verbosity>("verbosity", utils::Verbosity::NORMAL);
@@ -233,7 +233,7 @@ public:
             assert(internal_id != -1);
             auto slice = patterns[bucket_id].get_slice(internal_id);
             return {
-                       slice.begin(), slice.end()
+                slice.begin(), slice.end()
             };
         } else if (cached_pattern_size < max_pattern_size) {
             unique_ptr<PatternCollection> current_patterns = get_patterns(
@@ -275,7 +275,7 @@ public:
 
 
 PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP(
-    const Options &opts)
+    const plugins::Options &opts)
     : PatternCollectionGenerator(opts),
       max_pattern_size(opts.get<int>("max_pattern_size")),
       max_pdb_size(opts.get<int>("max_pdb_size")),
@@ -512,93 +512,96 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
 }
 
 
-static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Sys-SCP patterns",
-        "Systematically generate larger (interesting) patterns but only keep "
-        "a pattern if it's useful under a saturated cost partitioning. "
-        "For details, see" + utils::format_conference_reference(
-            {"Jendrik Seipp"},
-            "Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning",
-            "https://jendrikseipp.com/papers/seipp-ijcai2019.pdf",
-            "Proceedings of the 28th International Joint Conference on "
-            "Artificial Intelligence (IJCAI 2019)",
-            "5621-5627",
-            "IJCAI",
-            "2019"));
+class PatternCollectionGeneratorSystematicSCPFeature
+    : public plugins::TypedFeature<PatternCollectionGenerator, PatternCollectionGeneratorSystematicSCP> {
+public:
+    PatternCollectionGeneratorSystematicSCPFeature() : TypedFeature("sys_scp") {
+        document_title("Sys-SCP patterns");
+        document_synopsis(
+            "Systematically generate larger (interesting) patterns but only keep "
+            "a pattern if it's useful under a saturated cost partitioning. "
+            "For details, see" + utils::format_conference_reference(
+                {"Jendrik Seipp"},
+                "Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning",
+                "https://jendrikseipp.com/papers/seipp-ijcai2019.pdf",
+                "Proceedings of the 28th International Joint Conference on "
+                "Artificial Intelligence (IJCAI 2019)",
+                "5621-5627",
+                "IJCAI",
+                "2019"));
+        add_option<int>(
+            "max_pattern_size",
+            "maximum number of variables per pattern",
+            "infinity",
+            plugins::Bounds("1", "infinity"));
+        add_option<int>(
+            "max_pdb_size",
+            "maximum number of states in a PDB",
+            "2M",
+            plugins::Bounds("1", "infinity"));
+        add_option<int>(
+            "max_collection_size",
+            "maximum number of states in the pattern collection",
+            "20M",
+            plugins::Bounds("1", "infinity"));
+        add_option<int>(
+            "max_patterns",
+            "maximum number of patterns",
+            "infinity",
+            plugins::Bounds("1", "infinity"));
+        add_option<double>(
+            "max_time",
+            "maximum time in seconds for generating patterns",
+            "100",
+            plugins::Bounds("0.0", "infinity"));
+        add_option<double>(
+            "max_time_per_restart",
+            "maximum time in seconds for each restart",
+            "10",
+            plugins::Bounds("0.0", "infinity"));
+        add_option<int>(
+            "max_evaluations_per_restart",
+            "maximum pattern evaluations per the inner loop",
+            "infinity",
+            plugins::Bounds("0", "infinity"));
+        add_option<int>(
+            "max_total_evaluations",
+            "maximum total pattern evaluations",
+            "infinity",
+            plugins::Bounds("0", "infinity"));
+        add_option<bool>(
+            "saturate",
+            "only select patterns useful in saturated cost partitionings",
+            "true");
+        add_pattern_type_option(*this);
+        add_option<bool>(
+            "ignore_useless_patterns",
+            "ignore patterns that induce no transitions with positive finite cost",
+            "false");
+        add_option<bool>(
+            "store_dead_ends",
+            "store dead ends in dead end tree (used to prune the search later)",
+            "true");
+        add_option<PatternOrder>(
+            "order",
+            "order in which to consider patterns of the same size (based on states "
+            "in projection, active operators or position of the pattern variables "
+            "in the partial ordering of the causal graph)",
+            "cg_down");
+        utils::add_rng_options(*this);
+        add_generator_options_to_feature(*this);
+    }
+};
 
-    parser.add_option<int>(
-        "max_pattern_size",
-        "maximum number of variables per pattern",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_pdb_size",
-        "maximum number of states in a PDB",
-        "2M",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_collection_size",
-        "maximum number of states in the pattern collection",
-        "20M",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_patterns",
-        "maximum number of patterns",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time in seconds for generating patterns",
-        "100",
-        Bounds("0.0", "infinity"));
-    parser.add_option<double>(
-        "max_time_per_restart",
-        "maximum time in seconds for each restart",
-        "10",
-        Bounds("0.0", "infinity"));
-    parser.add_option<int>(
-        "max_evaluations_per_restart",
-        "maximum pattern evaluations per the inner loop",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<int>(
-        "max_total_evaluations",
-        "maximum total pattern evaluations",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "saturate",
-        "only select patterns useful in saturated cost partitionings",
-        "true");
-    add_pattern_type_option(parser);
-    parser.add_option<bool>(
-        "ignore_useless_patterns",
-        "ignore patterns that induce no transitions with positive finite cost",
-        "false");
-    parser.add_option<bool>(
-        "store_dead_ends",
-        "store dead ends in dead end tree (used to prune the search later)",
-        "true");
-    parser.add_enum_option<PatternOrder>(
-        "order",
-        {"RANDOM", "STATES_UP", "STATES_DOWN", "OPS_UP", "OPS_DOWN", "CG_UP", "CG_DOWN"},
-        "order in which to consider patterns of the same size (based on states "
-        "in projection, active operators or position of the pattern variables "
-        "in the partial ordering of the causal graph)",
-        "CG_DOWN");
-    utils::add_rng_options(parser);
-    add_generator_options_to_parser(parser);
+static plugins::FeaturePlugin<PatternCollectionGeneratorSystematicSCPFeature> _plugin;
 
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    return make_shared<PatternCollectionGeneratorSystematicSCP>(opts);
-}
-
-static Plugin<PatternCollectionGenerator> _plugin("sys_scp", _parse);
+static plugins::TypedEnumPlugin<PatternOrder> _enum_plugin({
+        {"random", "order randomly"},
+        {"states_up", "order by increasing number of abstract states"},
+        {"states_down", "order by decreasing number of abstract states"},
+        {"ops_up", "order by increasing number of active operators"},
+        {"ops_down", "order by decreasing number of active operators"},
+        {"cg_up", "use lexicographical order"},
+        {"cg_down", "use reverse lexicographical order"},
+    });
 }

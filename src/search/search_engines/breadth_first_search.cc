@@ -2,10 +2,9 @@
 
 #include "search_common.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
 #include "../pruning_method.h"
 
+#include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
@@ -16,7 +15,7 @@
 using namespace std;
 
 namespace breadth_first_search {
-BreadthFirstSearch::BreadthFirstSearch(const Options &opts)
+BreadthFirstSearch::BreadthFirstSearch(const plugins::Options &opts)
     : SearchEngine(opts),
       single_plan(opts.get<bool>("single_plan")),
       write_plan(opts.get<bool>("write_plan")),
@@ -116,45 +115,39 @@ void BreadthFirstSearch::save_plan_if_necessary() {
     // We don't need to save here, as we automatically save plans when we find them.
 }
 
-static void add_pruning_option(OptionParser &parser) {
-    parser.add_option<shared_ptr<PruningMethod>>(
-        "pruning",
-        "Pruning methods can prune or reorder the set of applicable operators in "
-        "each state and thereby influence the number and order of successor states "
-        "that are considered.",
-        "null()");
-}
-
-static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Breadth-first search",
-        "Breadth-first graph search.");
-
-    parser.add_option<bool>(
-        "single_plan",
-        "Stop search after finding the first (shortest) plan.",
-        "true");
-    parser.add_option<bool>(
-        "write_plan",
-        "Store the necessary information during search for writing plans once "
-        "they're found.",
-        "true");
-
-    add_pruning_option(parser);
-    utils::add_log_options_to_parser(parser);
-
-    Options opts = parser.parse();
-
-    opts.set<OperatorCost>("cost_type", ONE);
-    opts.set<int>("bound", numeric_limits<int>::max());
-    opts.set<double>("max_time", numeric_limits<double>::infinity());
-
-    if (parser.dry_run()) {
-        return nullptr;
+class BreadthFirstSearchFeature
+    : public plugins::TypedFeature<SearchEngine, BreadthFirstSearch> {
+public:
+    BreadthFirstSearchFeature() : TypedFeature("brfs") {
+        document_title("Breadth-first search");
+        document_synopsis("Breadth-first graph search.");
+        add_option<bool>(
+            "single_plan",
+            "Stop search after finding the first (shortest) plan.",
+            "true");
+        add_option<bool>(
+            "write_plan",
+            "Store the necessary information during search for writing plans once "
+            "they're found.",
+            "true");
+        add_option<shared_ptr<PruningMethod>>(
+            "pruning",
+            "Pruning methods can prune or reorder the set of applicable operators in "
+            "each state and thereby influence the number and order of successor states "
+            "that are considered.",
+            "null()");
+        utils::add_log_options_to_feature(*this);
     }
 
-    return make_shared<BreadthFirstSearch>(opts);
-}
+    virtual shared_ptr<BreadthFirstSearch> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        plugins::Options opts = options;
+        opts.set<OperatorCost>("cost_type", ONE);
+        opts.set<int>("bound", numeric_limits<int>::max());
+        opts.set<double>("max_time", numeric_limits<double>::infinity());
+        return make_shared<BreadthFirstSearch>(opts);
+    }
+};
 
-static Plugin<SearchEngine> _plugin("brfs", _parse);
+static plugins::FeaturePlugin<BreadthFirstSearchFeature> _plugin;
 }

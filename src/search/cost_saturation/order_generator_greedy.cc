@@ -3,9 +3,7 @@
 #include "abstraction.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
@@ -15,7 +13,7 @@
 using namespace std;
 
 namespace cost_saturation {
-OrderGeneratorGreedy::OrderGeneratorGreedy(const Options &opts)
+OrderGeneratorGreedy::OrderGeneratorGreedy(const plugins::Options &opts)
     : OrderGenerator(opts),
       scoring_function(opts.get<ScoringFunction>("scoring_function")) {
 }
@@ -94,19 +92,17 @@ Order OrderGeneratorGreedy::compute_order_for_state(
     return order;
 }
 
+class OrderGeneratorGreedyFeature
+    : public plugins::TypedFeature<OrderGenerator, OrderGeneratorGreedy> {
+public:
+    OrderGeneratorGreedyFeature() : TypedFeature("greedy_orders") {
+        document_subcategory("heuristics_cost_partitioning");
+        document_title("Greedy orders");
+        document_synopsis("Order abstractions greedily by a given scoring function.");
+        add_scoring_function_to_feature(*this);
+        add_common_order_generator_options(*this);
+    }
+};
 
-static shared_ptr<OrderGenerator> _parse_greedy(OptionParser &parser) {
-    parser.document_synopsis(
-        "Greedy orders",
-        "Order abstractions greedily by a given scoring function.");
-    add_scoring_function_to_parser(parser);
-    add_common_order_generator_options(parser);
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<OrderGeneratorGreedy>(opts);
-}
-
-static Plugin<OrderGenerator> _plugin_greedy("greedy_orders", _parse_greedy);
+static plugins::FeaturePlugin<OrderGeneratorGreedyFeature> _plugin;
 }

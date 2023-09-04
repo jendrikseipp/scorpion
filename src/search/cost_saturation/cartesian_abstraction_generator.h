@@ -56,7 +56,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
         Abstractions &abstractions);
 
 public:
-    explicit CartesianAbstractionGenerator(const options::Options &opts);
+    explicit CartesianAbstractionGenerator(const plugins::Options &opts);
 
     Abstractions generate_abstractions(
         const std::shared_ptr<AbstractTask> &task,

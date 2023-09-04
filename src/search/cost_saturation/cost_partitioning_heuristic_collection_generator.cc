@@ -93,7 +93,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     if (init_h == INF) {
         log << "Initial state is unsolvable." << endl;
         return {
-                   cp_for_init
+            cp_for_init
         };
     }
 

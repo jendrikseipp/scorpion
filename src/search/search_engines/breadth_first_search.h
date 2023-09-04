@@ -47,7 +47,7 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit BreadthFirstSearch(const options::Options &opts);
+    explicit BreadthFirstSearch(const plugins::Options &opts);
 
     virtual void save_plan_if_necessary() override;
 

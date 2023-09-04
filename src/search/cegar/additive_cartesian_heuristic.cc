@@ -5,9 +5,7 @@
 #include "types.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/rng.h"
@@ -19,7 +17,7 @@ using namespace std;
 
 namespace cegar {
 static vector<CartesianHeuristicFunction> generate_heuristic_functions(
-    const options::Options &opts, utils::LogProxy &log) {
+    const plugins::Options &opts, utils::LogProxy &log) {
     if (log.is_at_least_normal()) {
         log << "Initializing additive Cartesian heuristic..." << endl;
     }
@@ -48,7 +46,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
 }
 
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
-    const options::Options &opts)
+    const plugins::Options &opts)
     : Heuristic(opts),
       heuristic_functions(generate_heuristic_functions(opts, log)) {
 }
@@ -67,83 +65,82 @@ int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
     return sum_h;
 }
 
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Additive CEGAR heuristic",
-        "See the paper introducing Counterexample-guided Abstraction "
-        "Refinement (CEGAR) for classical planning:" +
-        utils::format_conference_reference(
-            {"Jendrik Seipp", "Malte Helmert"},
-            "Counterexample-guided Cartesian Abstraction Refinement",
-            "https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2013.pdf",
-            "Proceedings of the 23rd International Conference on Automated "
-            "Planning and Scheduling (ICAPS 2013)",
-            "347-351",
-            "AAAI Press",
-            "2013") +
-        "and the paper showing how to make the abstractions additive:" +
-        utils::format_conference_reference(
-            {"Jendrik Seipp", "Malte Helmert"},
-            "Diverse and Additive Cartesian Abstraction Heuristics",
-            "https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2014.pdf",
-            "Proceedings of the 24th International Conference on "
-            "Automated Planning and Scheduling (ICAPS 2014)",
-            "289-297",
-            "AAAI Press",
-            "2014") +
-        "For more details on Cartesian CEGAR and saturated cost partitioning, "
-        "see the journal paper" +
-        utils::format_journal_reference(
-            {"Jendrik Seipp", "Malte Helmert"},
-            "Counterexample-Guided Cartesian Abstraction Refinement for "
-            "Classical Planning",
-            "https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf",
-            "Journal of Artificial Intelligence Research",
-            "62",
-            "535-577",
-            "2018") +
-        "For a description of the incremental search, see the paper" +
-        utils::format_conference_reference(
-            {"Jendrik Seipp", "Samuel von Allmen", "Malte Helmert"},
-            "Incremental Search for Counterexample-Guided Cartesian Abstraction Refinement",
-            "https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf",
-            "Proceedings of the 30th International Conference on "
-            "Automated Planning and Scheduling (ICAPS 2020)",
-            "244-248",
-            "AAAI Press",
-            "2020") +
-        "Finally, we describe advanced flaw selection strategies here:" +
-        utils::format_conference_reference(
-            {"David Speck", "Jendrik Seipp"},
-            "New Refinement Strategies for Cartesian Abstractions",
-            "https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf",
-            "Proceedings of the 32nd International Conference on "
-            "Automated Planning and Scheduling (ICAPS 2022)",
-            "to appear",
-            "AAAI Press",
-            "2022"));
-    parser.document_language_support("action costs", "supported");
-    parser.document_language_support("conditional effects", "not supported");
-    parser.document_language_support("axioms", "not supported");
-    parser.document_property("admissible", "yes");
-    parser.document_property("consistent", "yes");
-    parser.document_property("safe", "yes");
-    parser.document_property("preferred operators", "no");
+class AdditiveCartesianHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, AdditiveCartesianHeuristic> {
+public:
+    AdditiveCartesianHeuristicFeature() : TypedFeature("cegar") {
+        document_title("Additive CEGAR heuristic");
+        document_synopsis(
+            "See the paper introducing Counterexample-guided Abstraction "
+            "Refinement (CEGAR) for classical planning:" +
+            utils::format_conference_reference(
+                {"Jendrik Seipp", "Malte Helmert"},
+                "Counterexample-guided Cartesian Abstraction Refinement",
+                "https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2013.pdf",
+                "Proceedings of the 23rd International Conference on Automated "
+                "Planning and Scheduling (ICAPS 2013)",
+                "347-351",
+                "AAAI Press",
+                "2013") +
+            "and the paper showing how to make the abstractions additive:" +
+            utils::format_conference_reference(
+                {"Jendrik Seipp", "Malte Helmert"},
+                "Diverse and Additive Cartesian Abstraction Heuristics",
+                "https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2014.pdf",
+                "Proceedings of the 24th International Conference on "
+                "Automated Planning and Scheduling (ICAPS 2014)",
+                "289-297",
+                "AAAI Press",
+                "2014") +
+            "For more details on Cartesian CEGAR and saturated cost partitioning, "
+            "see the journal paper" +
+            utils::format_journal_reference(
+                {"Jendrik Seipp", "Malte Helmert"},
+                "Counterexample-Guided Cartesian Abstraction Refinement for "
+                "Classical Planning",
+                "https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf",
+                "Journal of Artificial Intelligence Research",
+                "62",
+                "535-577",
+                "2018") +
+            "For a description of the incremental search, see the paper" +
+            utils::format_conference_reference(
+                {"Jendrik Seipp", "Samuel von Allmen", "Malte Helmert"},
+                "Incremental Search for Counterexample-Guided Cartesian Abstraction Refinement",
+                "https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf",
+                "Proceedings of the 30th International Conference on "
+                "Automated Planning and Scheduling (ICAPS 2020)",
+                "244-248",
+                "AAAI Press",
+                "2020") +
+            "Finally, we describe advanced flaw selection strategies here:" +
+            utils::format_conference_reference(
+                {"David Speck", "Jendrik Seipp"},
+                "New Refinement Strategies for Cartesian Abstractions",
+                "https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf",
+                "Proceedings of the 32nd International Conference on "
+                "Automated Planning and Scheduling (ICAPS 2022)",
+                "to appear",
+                "AAAI Press",
+                "2022"));
 
-    add_common_cegar_options(parser);
-    parser.add_option<bool>(
-        "use_general_costs",
-        "allow negative costs in cost partitioning",
-        "true");
-    Heuristic::add_options_to_parser(parser);
+        add_common_cegar_options(*this);
+        add_option<bool>(
+            "use_general_costs",
+            "allow negative costs in cost partitioning",
+            "true");
+        Heuristic::add_options_to_feature(*this);
 
-    Options opts = parser.parse();
+        document_language_support("action costs", "supported");
+        document_language_support("conditional effects", "not supported");
+        document_language_support("axioms", "not supported");
 
-    if (parser.dry_run())
-        return nullptr;
+        document_property("admissible", "yes");
+        document_property("consistent", "yes");
+        document_property("safe", "yes");
+        document_property("preferred operators", "no");
+    }
+};
 
-    return make_shared<AdditiveCartesianHeuristic>(opts);
-}
-
-static Plugin<Evaluator> _plugin("cegar", _parse);
+static plugins::FeaturePlugin<AdditiveCartesianHeuristicFeature> _plugin;
 }

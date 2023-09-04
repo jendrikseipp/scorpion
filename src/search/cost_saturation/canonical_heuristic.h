@@ -26,7 +26,7 @@ protected:
     virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
-    explicit CanonicalHeuristic(const options::Options &opts);
+    explicit CanonicalHeuristic(const plugins::Options &opts);
 };
 }
 

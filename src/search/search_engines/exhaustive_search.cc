@@ -1,8 +1,6 @@
 #include "exhaustive_search.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
@@ -41,7 +39,7 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
     return mapping;
 }
 
-ExhaustiveSearch::ExhaustiveSearch(const Options &opts)
+ExhaustiveSearch::ExhaustiveSearch(const plugins::Options &opts)
     : SearchEngine(opts) {
     assert(cost_type == ONE);
 }
@@ -106,24 +104,24 @@ SearchStatus ExhaustiveSearch::step() {
     return IN_PROGRESS;
 }
 
-static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Exhaustive search",
-        "Dump the reachable state space.");
-    utils::add_log_options_to_parser(parser);
-
-    Options opts = parser.parse();
-
-    opts.set<OperatorCost>("cost_type", ONE);
-    opts.set<int>("bound", numeric_limits<int>::max());
-    opts.set<double>("max_time", numeric_limits<double>::infinity());
-
-    if (parser.dry_run()) {
-        return nullptr;
+class ExhaustiveSearchFeature
+    : public plugins::TypedFeature<SearchEngine, ExhaustiveSearch> {
+public:
+    ExhaustiveSearchFeature() : TypedFeature("dump_reachable_search_space") {
+        document_title("Exhaustive search");
+        document_synopsis("Dump the reachable state space.");
+        utils::add_log_options_to_feature(*this);
     }
 
-    return make_shared<ExhaustiveSearch>(opts);
-}
+    virtual shared_ptr<ExhaustiveSearch> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        plugins::Options opts;
+        opts.set<OperatorCost>("cost_type", ONE);
+        opts.set<int>("bound", numeric_limits<int>::max());
+        opts.set<double>("max_time", numeric_limits<double>::infinity());
+        return make_shared<ExhaustiveSearch>(opts);
+    }
+};
 
-static Plugin<SearchEngine> _plugin("dump_reachable_search_space", _parse);
+static plugins::FeaturePlugin<ExhaustiveSearchFeature> _plugin;
 }

@@ -21,7 +21,7 @@ class OrderGeneratorGreedy : public OrderGenerator {
         int abs_id) const;
 
 public:
-    explicit OrderGeneratorGreedy(const options::Options &opts);
+    explicit OrderGeneratorGreedy(const plugins::Options &opts);
 
     virtual void initialize(
         const Abstractions &abstractions,

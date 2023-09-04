@@ -29,7 +29,7 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit IterativeDeepeningSearch(const options::Options &opts);
+    explicit IterativeDeepeningSearch(const plugins::Options &opts);
 
     void save_plan_if_necessary() override;
 

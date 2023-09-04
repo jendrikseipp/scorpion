@@ -197,28 +197,28 @@ Example using A* search and saturated cost partitioning over BJOLP
 landmarks:
 
     --evaluator
-      "lmc=lmcount(lm_merged([lm_rhw(), lm_hm(m=1)]),
-      admissible=true, cost_partitioning=suboptimal, greedy=true,
+      "lmc=landmark_cost_partitioning(lm_merged([lm_rhw(), lm_hm(m=1)]),
+      cost_partitioning=suboptimal, greedy=true,
       reuse_costs=true, scoring_function=max_heuristic_per_stolen_costs)"
     --search
       "astar(lmc, lazy_evaluator=lmc)"
 
-Different cost partitioning algorithms (all need `admissible=true`):
+Different cost partitioning algorithms for landmark heuristics:
 
 - Optimal cost partitioning (part of vanilla Fast Downward):
-  `lmcount(..., cost_partitioning=optimal)`
+  `landmark_cost_partitioning(..., cost_partitioning=optimal)`
 - Canonical heuristic:
-  `lmcount(..., cost_partitioning=canonical)`
+  `landmark_cost_partitioning(..., cost_partitioning=canonical)`
 - Post-hoc optimization:
-  `lmcount(..., cost_partitioning=pho)`
+  `landmark_cost_partitioning(..., cost_partitioning=pho)`
 - Uniform cost partitioning:
-  `lmcount(..., cost_partitioning=suboptimal, greedy=false, reuse_costs=false)`
+  `landmark_cost_partitioning(..., cost_partitioning=suboptimal, greedy=false, reuse_costs=false)`
 - Opportunistic uniform cost partitioning (part of vanilla Fast Downward):
-  `lmcount(..., cost_partitioning=suboptimal, greedy=false, reuse_costs=true, scoring_function=min_stolen_costs)`
+  `landmark_cost_partitioning(..., cost_partitioning=suboptimal, greedy=false, reuse_costs=true, scoring_function=min_stolen_costs)`
 - Greedy zero-one cost partitioning:
-  `lmcount(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=false, scoring_function=max_heuristic)`
+  `landmark_cost_partitioning(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=false, scoring_function=max_heuristic)`
 - Saturated cost partitioning:
-  `lmcount(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=true, scoring_function=max_heuristic_per_stolen_costs)`
+  `landmark_cost_partitioning(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=true, scoring_function=max_heuristic_per_stolen_costs)`
 
 
 ## New search engines
@@ -257,7 +257,7 @@ This version of Fast Downward has been tested with the following software versio
 | OS           | Python | C++ compiler                                                     | CMake |
 | ------------ | ------ | ---------------------------------------------------------------- | ----- |
 | Ubuntu 22.04 | 3.10   | GCC 11, GCC 12, Clang 14                                         | 3.22  |
-| Ubuntu 20.04 | 3.8    | GCC 9, GCC 10, Clang 10, Clang 11                                | 3.16  |
+| Ubuntu 20.04 | 3.8    | GCC 10, Clang 12                                                 | 3.16  |
 | macOS 12     | 3.10   | AppleClang 14                                                    | 3.24  |
 | macOS 11     | 3.8    | AppleClang 13                                                    | 3.24  |
 | Windows 10   | 3.8    | Visual Studio Enterprise 2019 (MSVC 19.29) and 2022 (MSVC 19.31) | 3.22  |
@@ -332,13 +332,6 @@ branches are Malte Helmert, Gabi Röger and Silvia Richter.
 
 
 ## License
-
-The following directory is not part of Fast Downward as covered by
-this license:
-
-- ./src/search/ext
-
-For the rest, the following license applies:
 
 ```
 Fast Downward is free software: you can redistribute it and/or modify

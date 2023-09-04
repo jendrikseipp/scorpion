@@ -1,8 +1,6 @@
 #include "iterative_width_search.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
@@ -13,7 +11,7 @@
 using namespace std;
 
 namespace iterative_width_search {
-IterativeWidthSearch::IterativeWidthSearch(const Options &opts)
+IterativeWidthSearch::IterativeWidthSearch(const plugins::Options &opts)
     : SearchEngine(opts),
       width(opts.get<int>("width")),
       debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
@@ -94,19 +92,16 @@ void IterativeWidthSearch::dump_search_space() const {
     search_space.dump(task_proxy);
 }
 
-static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
-    parser.document_synopsis("Iterated width search", "");
-
-    parser.add_option<int>(
-        "width", "maximum conjunction size", "2", Bounds("1", "2"));
-    SearchEngine::add_options_to_parser(parser);
-
-    Options opts = parser.parse();
-    if (parser.dry_run()) {
-        return nullptr;
+class IterativeWidthSearchFeature
+    : public plugins::TypedFeature<SearchEngine, iterative_width_search::IterativeWidthSearch> {
+public:
+    IterativeWidthSearchFeature() : TypedFeature("iw") {
+        document_title("Iterated width search");
+        add_option<int>(
+            "width", "maximum conjunction size", "2", plugins::Bounds("1", "2"));
+        SearchEngine::add_options_to_feature(*this);
     }
-    return make_shared<iterative_width_search::IterativeWidthSearch>(opts);
-}
+};
 
-static Plugin<SearchEngine> _plugin("iw", _parse);
+static plugins::FeaturePlugin<IterativeWidthSearchFeature> _plugin;
 }

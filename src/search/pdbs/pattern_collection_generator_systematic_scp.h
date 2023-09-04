@@ -11,7 +11,7 @@ namespace cost_saturation {
 class TaskInfo;
 }
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
@@ -80,7 +80,7 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
     virtual PatternCollectionInformation compute_patterns(
         const std::shared_ptr<AbstractTask> &task) override;
 public:
-    explicit PatternCollectionGeneratorSystematicSCP(const options::Options &opts);
+    explicit PatternCollectionGeneratorSystematicSCP(const plugins::Options &opts);
 };
 }
 

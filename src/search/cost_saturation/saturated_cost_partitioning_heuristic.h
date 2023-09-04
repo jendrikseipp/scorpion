@@ -5,13 +5,19 @@
 
 #include <vector>
 
-namespace options {
-class OptionParser;
+namespace plugins {
+class Feature;
 class Options;
 }
 
 namespace cost_saturation {
 class CostPartitioningHeuristic;
+
+enum class Saturator {
+    ALL,
+    PERIM,
+    PERIMSTAR,
+};
 
 extern CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const Abstractions &abstractions,
@@ -25,8 +31,8 @@ extern CostPartitioningHeuristic compute_perim_saturated_cost_partitioning(
     std::vector<int> &remaining_costs,
     const std::vector<int> &abstract_state_ids);
 
-extern void add_saturator_option(options::OptionParser &parser);
-extern CPFunction get_cp_function_from_options(const options::Options &opts);
+extern void add_saturator_option(plugins::Feature &feature);
+extern CPFunction get_cp_function_from_options(const plugins::Options &options);
 }
 
 #endif

@@ -16,8 +16,8 @@ namespace additive_heuristic {
 class AdditiveHeuristic;
 }
 
-namespace options {
-class OptionParser;
+namespace plugins {
+class Feature;
 }
 
 namespace cegar {
@@ -36,7 +36,7 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
 
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
 
-extern void add_common_cegar_options(options::OptionParser &parser);
+extern void add_common_cegar_options(plugins::Feature &feature);
 
 extern std::string create_dot_graph(
     const TaskProxy &task_proxy, const Abstraction &abstraction);

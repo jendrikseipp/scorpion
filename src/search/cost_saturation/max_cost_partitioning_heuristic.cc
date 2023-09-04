@@ -68,7 +68,7 @@ static AbstractionFunctions extract_abstraction_functions_from_useful_abstractio
 }
 
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
-    const options::Options &opts,
+    const plugins::Options &opts,
     Abstractions &&abstractions,
     vector<CostPartitioningHeuristic> &&cp_heuristics_,
     unique_ptr<DeadEnds> &&dead_ends_)

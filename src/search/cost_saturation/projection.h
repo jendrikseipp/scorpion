@@ -16,7 +16,7 @@ class TaskProxy;
 class VariablesProxy;
 
 namespace pdbs {
-class MatchTree;
+class SlimMatchTree;
 }
 
 namespace cost_saturation {
@@ -97,7 +97,7 @@ class Projection : public Abstraction {
     std::vector<bool> looping_operators;
 
     std::vector<RankedOperator> ranked_operators;
-    std::unique_ptr<pdbs::MatchTree> match_tree_backward;
+    std::unique_ptr<pdbs::SlimMatchTree> match_tree_backward;
 
     // Number of abstract states in the projection.
     int num_states;

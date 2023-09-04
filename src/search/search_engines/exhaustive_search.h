@@ -19,7 +19,7 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit ExhaustiveSearch(const options::Options &opts);
+    explicit ExhaustiveSearch(const plugins::Options &opts);
 
     virtual void print_statistics() const override;
 };

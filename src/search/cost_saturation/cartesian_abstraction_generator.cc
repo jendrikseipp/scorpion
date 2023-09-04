@@ -3,9 +3,6 @@
 #include "explicit_abstraction.h"
 #include "types.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
 #include "../cegar/abstraction.h"
 #include "../cegar/abstract_search.h"
 #include "../cegar/abstract_state.h"
@@ -16,6 +13,7 @@
 #include "../cegar/subtask_generators.h"
 #include "../cegar/transition_system.h"
 #include "../cegar/utils.h"
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/rng_options.h"
 
@@ -90,19 +88,19 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
 
     bool unsolvable = h_values[initial_state_id] == INF;
     return {
-               unsolvable,
-               utils::make_unique_ptr<ExplicitAbstraction>(
-                   utils::make_unique_ptr<CartesianAbstractionFunction>(
-                       cartesian_abstraction.extract_refinement_hierarchy()),
-                   move(backward_graph),
-                   move(looping_operators),
-                   move(goal_states))
+        unsolvable,
+        utils::make_unique_ptr<ExplicitAbstraction>(
+            utils::make_unique_ptr<CartesianAbstractionFunction>(
+                cartesian_abstraction.extract_refinement_hierarchy()),
+            move(backward_graph),
+            move(looping_operators),
+            move(goal_states))
     };
 }
 
 
 CartesianAbstractionGenerator::CartesianAbstractionGenerator(
-    const options::Options &opts)
+    const plugins::Options &opts)
     : AbstractionGenerator(opts),
       subtask_generators(
           opts.get_list<shared_ptr<cegar::SubtaskGenerator>>("subtasks")),
@@ -218,20 +216,15 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     return abstractions;
 }
 
-static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Cartesian abstraction generator",
-        "");
+class CartesianAbstractionGeneratorFeature
+    : public plugins::TypedFeature<AbstractionGenerator, CartesianAbstractionGenerator> {
+public:
+    CartesianAbstractionGeneratorFeature() : TypedFeature("cartesian") {
+        document_title("Cartesian abstraction generator");
+        cegar::add_common_cegar_options(*this);
+        utils::add_log_options_to_feature(*this);
+    }
+};
 
-    cegar::add_common_cegar_options(parser);
-    utils::add_log_options_to_parser(parser);
-
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-
-    return make_shared<CartesianAbstractionGenerator>(opts);
-}
-
-static Plugin<AbstractionGenerator> _plugin("cartesian", _parse);
+static plugins::FeaturePlugin<CartesianAbstractionGeneratorFeature> _plugin;
 }

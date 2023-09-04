@@ -2,9 +2,8 @@
 
 #include "../evaluation_context.h"
 #include "../evaluator.h"
-#include "../option_parser.h"
-#include "../plugin.h"
 
+#include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 
@@ -62,7 +61,7 @@ void FifoCache::clear() {
     queue<State>().swap(states);
 }
 
-IDAstarSearch::IDAstarSearch(const Options &opts)
+IDAstarSearch::IDAstarSearch(const plugins::Options &opts)
     : SearchEngine(opts),
       h_evaluator(opts.get<shared_ptr<Evaluator>>("eval")),
       single_plan(opts.get<bool>("single_plan")),
@@ -175,39 +174,34 @@ void IDAstarSearch::save_plan_if_necessary() {
     // We don't need to save here, as we automatically save plans when we find them.
 }
 
-static shared_ptr<SearchEngine> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "IDA* search",
-        "IDA* search with an optional g-value cache.");
-    parser.add_option<shared_ptr<Evaluator>>(
-        "eval",
-        "evaluator for h-value. Make sure to use cache_estimates=false.");
-    parser.add_option<int>(
-        "initial_f_limit",
-        "initial depth limit",
-        "0",
-        Bounds("0", "infinity"));
-    parser.add_option<int>(
-        "cache_size",
-        "maximum number of states to cache. For cache_size=infinity the cache "
-        "fills up until approaching the memory limit, at which point the "
-        "current number of states becomes the maximum cache size.",
-        "0",
-        Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "single_plan",
-        "stop after finding the first plan",
-        "true");
-
-    SearchEngine::add_options_to_parser(parser);
-    Options opts = parser.parse();
-
-    if (parser.dry_run()) {
-        return nullptr;
+class IDAstarSearchFeature
+    : public plugins::TypedFeature<SearchEngine, idastar_search::IDAstarSearch> {
+public:
+    IDAstarSearchFeature() : TypedFeature("idastar") {
+        document_title("IDA* search");
+        document_synopsis("IDA* search with an optional g-value cache.");
+        add_option<shared_ptr<Evaluator>>(
+            "eval",
+            "evaluator for h-value. Make sure to use cache_estimates=false.");
+        add_option<int>(
+            "initial_f_limit",
+            "initial depth limit",
+            "0",
+            plugins::Bounds("0", "infinity"));
+        add_option<int>(
+            "cache_size",
+            "maximum number of states to cache. For cache_size=infinity the cache "
+            "fills up until approaching the memory limit, at which point the "
+            "current number of states becomes the maximum cache size.",
+            "0",
+            plugins::Bounds("0", "infinity"));
+        add_option<bool>(
+            "single_plan",
+            "stop after finding the first plan",
+            "true");
+        SearchEngine::add_options_to_feature(*this);
     }
+};
 
-    return make_shared<idastar_search::IDAstarSearch>(opts);
-}
-
-static Plugin<SearchEngine> _plugin("idastar", _parse);
+static plugins::FeaturePlugin<IDAstarSearchFeature> _plugin;
 }

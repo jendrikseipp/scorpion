@@ -3,8 +3,8 @@
 
 #include <vector>
 
-namespace options {
-class OptionParser;
+namespace plugins {
+class Feature;
 }
 
 namespace cost_saturation {
@@ -45,7 +45,7 @@ extern int compute_costs_stolen_by_heuristic(
     const std::vector<int> &saturated_costs,
     const std::vector<int> &surplus_costs);
 
-extern void add_scoring_function_to_parser(options::OptionParser &parser);
+extern void add_scoring_function_to_feature(plugins::Feature &feature);
 }
 
 #endif

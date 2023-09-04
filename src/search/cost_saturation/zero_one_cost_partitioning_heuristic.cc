@@ -5,8 +5,7 @@
 #include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
+#include "../plugins/plugin.h"
 
 using namespace std;
 
@@ -37,12 +36,21 @@ static CostPartitioningHeuristic compute_zero_one_cost_partitioning(
     return cp_heuristic;
 }
 
-static shared_ptr<Evaluator> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Greedy zero-one cost partitioning",
-        "");
-    return get_max_cp_heuristic(parser, compute_zero_one_cost_partitioning);
-}
+class ZeroOneCostPartitioningHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, MaxCostPartitioningHeuristic> {
+public:
+    ZeroOneCostPartitioningHeuristicFeature() : TypedFeature("gzocp") {
+        document_subcategory("heuristics_cost_partitioning");
+        document_title("Greedy zero-one cost partitioning");
+        add_options_for_cost_partitioning_heuristic(*this);
+        add_order_options(*this);
+    }
 
-static Plugin<Evaluator> _plugin("gzocp", _parse, "heuristics_cost_partitioning");
+    virtual shared_ptr<MaxCostPartitioningHeuristic> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return get_max_cp_heuristic(options, compute_zero_one_cost_partitioning);
+    }
+};
+
+static plugins::FeaturePlugin<ZeroOneCostPartitioningHeuristicFeature> _plugin;
 }
