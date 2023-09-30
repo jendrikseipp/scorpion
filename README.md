@@ -76,18 +76,17 @@ abstractions](https://jair.org/index.php/jair/article/view/11217).
 component_options=[], driver_options=["--transform-task", "preprocess-h2",
 "--alias", "scorpion"]` to run the recommended Scorpion configuration.)
 
-#### Singularity container
+#### Apptainer image
 
 To simplify the installation process, we provide an executable
-[Singularity](https://github.com/hpcng/singularity) container for
-Scorpion. It accepts the same arguments as the `fast-downward.py` script
-(see above).
+[Apptainer](https://apptainer.org/) container (formerly known as Singularity).
+It accepts the same arguments as the `fast-downward.py` script (see above).
 
-    # Download the container (tested with Singularity 3.5),
-    singularity pull scorpion.sif library://jendrikseipp/default/scorpion:latest
+    # Download the image,
+    apptainer pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
 
-    # or build the container yourself.
-    sudo singularity build scorpion.sif Singularity
+    # or build it yourself.
+    apptainer build scorpion.sif Apptainer
 
     # Then run recommended configuration (available via "scorpion" alias).
     ./scorpion.sif --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
@@ -112,6 +111,8 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 - The `--transform-task` command allows you to run arbitrary preprocessing
   commands that transform the SAS+ output from the translator before
   passing it to the search.
+- Scorpion uses [incremental search for Cartesian abstraction
+  refinement](https://ojs.aaai.org/index.php/ICAPS/article/view/6667).
 - Scorpion uses a
   [phmap::flat_hash_set](https://github.com/greg7mdp/parallel-hashmap) to check
   for duplicate states, which often drastically reduces the peak memory usage,
@@ -126,11 +127,6 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 
 
 ### New plugin options
-
-- `{cegar/cartesian}(..., search_strategy=incremental)`: use [incremental search for
-  Cartesian abstraction
-  refinement](https://ojs.aaai.org/index.php/ICAPS/article/view/6667)
-  (default).
 
 - `{cegar/cartesian}(..., pick_flawed_abstract_state={batch_min_h, ...})`:
   find all current flaws, then iteratively repair the flaw that's closest to the goal

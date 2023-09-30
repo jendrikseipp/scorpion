@@ -16,7 +16,6 @@ class ExplicitProjectionFactory {
     using UnrankedState = std::vector<int>;
 
     TaskProxy task_proxy;
-    const bool use_add_after_delete_semantics;
     const pdbs::Pattern pattern;
     const std::vector<std::vector<FactPair>> relevant_preconditions;
     std::vector<int> variable_to_pattern_index;
@@ -61,8 +60,7 @@ class ExplicitProjectionFactory {
 public:
     ExplicitProjectionFactory(
         const TaskProxy &task_proxy,
-        const pdbs::Pattern &pattern,
-        bool use_add_after_delete_semantics);
+        const pdbs::Pattern &pattern);
 
     std::unique_ptr<Abstraction> convert_to_abstraction();
 };

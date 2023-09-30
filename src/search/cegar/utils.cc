@@ -120,13 +120,6 @@ static void add_pick_split_strategies(plugins::Feature &feature) {
         "max_refined");
 }
 
-static void add_search_strategy_option(plugins::Feature &feature) {
-    feature.add_option<SearchStrategy>(
-        "search_strategy",
-        "strategy for computing abstract plans",
-        "incremental");
-}
-
 static void add_memory_padding_option(plugins::Feature &feature) {
     feature.add_option<int>(
         "memory_padding",
@@ -223,7 +216,6 @@ void add_common_cegar_options(plugins::Feature &feature) {
 
     add_pick_flawed_abstract_state_strategies(feature);
     add_pick_split_strategies(feature);
-    add_search_strategy_option(feature);
     add_memory_padding_option(feature);
     add_dot_graph_verbosity(feature);
     utils::add_rng_options(feature);

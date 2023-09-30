@@ -15,7 +15,6 @@ class Abstraction;
 enum class DotGraphVerbosity;
 enum class PickFlawedAbstractState;
 enum class PickSplit;
-enum class SearchStrategy;
 class SubtaskGenerator;
 }
 
@@ -30,7 +29,6 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_states;
     const int max_transitions;
     const double max_time;
-    const cegar::SearchStrategy search_strategy;
     const cegar::PickFlawedAbstractState pick_flawed_abstract_state;
     const cegar::PickSplit pick_split;
     const cegar::PickSplit tiebreak_split;

@@ -18,7 +18,6 @@ class LogProxy;
 
 namespace cegar {
 class Abstraction;
-class AbstractSearch;
 enum class DotGraphVerbosity;
 class ShortestPaths;
 
@@ -35,11 +34,9 @@ class CEGAR {
     const std::vector<int> domain_sizes;
     const int max_states;
     const int max_non_looping_transitions;
-    const SearchStrategy search_strategy;
     const PickFlawedAbstractState pick_flawed_abstract_state;
 
     std::unique_ptr<Abstraction> abstraction;
-    std::unique_ptr<AbstractSearch> abstract_search;
     std::unique_ptr<ShortestPaths> shortest_paths;
     std::unique_ptr<FlawSearch> flaw_search;
 
@@ -80,7 +77,6 @@ public:
         PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
-        SearchStrategy search_strategy,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,
         DotGraphVerbosity dot_graph_verbosity);

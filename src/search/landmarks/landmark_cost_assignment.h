@@ -1,9 +1,10 @@
 #ifndef LANDMARKS_LANDMARK_COST_ASSIGNMENT_H
 #define LANDMARKS_LANDMARK_COST_ASSIGNMENT_H
 
+#include "landmark.h"
+
 #include "../lp/lp_solver.h"
 
-#include <set>
 #include <vector>
 
 class OperatorsProxy;
@@ -23,13 +24,13 @@ class LandmarkNode;
 class LandmarkStatusManager;
 
 class LandmarkCostAssignment {
-    const std::set<int> empty;
+    const Landmark::Achievers empty;
 protected:
     const LandmarkGraph &lm_graph;
     const std::vector<int> operator_costs;
 
-    const std::set<int> &get_achievers(int lmn_status,
-                                       const Landmark &landmark) const;
+    const Landmark::Achievers &get_achievers(
+        int lmn_status, const Landmark &landmark) const;
 public:
     LandmarkCostAssignment(const std::vector<int> &operator_costs,
                            const LandmarkGraph &graph);

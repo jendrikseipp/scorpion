@@ -136,7 +136,7 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const options::Options &opts)
     }
 }
 
-int LandmarkCountHeuristic::get_min_cost_of_achievers(const set<int> &achievers,
+int LandmarkCountHeuristic::get_min_cost_of_achievers(const Landmark::Achievers &achievers,
                                                       const TaskProxy &task_proxy) {
     int min_cost = numeric_limits<int>::max();
     for (int id : achievers) {

@@ -106,7 +106,7 @@ public:
     // Use Dijkstra's algorithm to compute the shortest path tree from scratch.
     void recompute(
         const std::vector<Transitions> &transitions,
-        const std::unordered_set<int> &goals);
+        const Goals &goals);
     // Reflect the split of v into v1 and v2.
     void update_incrementally(
         const std::vector<Transitions> &in,
@@ -125,8 +125,13 @@ public:
     bool test_distances(
         const std::vector<Transitions> &in,
         const std::vector<Transitions> &out,
-        const std::unordered_set<int> &goals);
+        const Goals &goals);
 };
+
+std::vector<int> compute_distances(
+    const std::vector<Transitions> &transitions,
+    const std::vector<int> &costs,
+    const std::unordered_set<int> &start_ids);
 }
 
 #endif
