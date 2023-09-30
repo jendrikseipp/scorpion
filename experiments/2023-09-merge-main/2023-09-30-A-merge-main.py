@@ -19,8 +19,7 @@ SCP_LOGIN = "nsc"
 REMOTE_REPOS_DIR = "/proj/dfsplan/users/x_jense"
 BOUNDS_FILE = "bounds.json"
 SUITE = ["depot:p01.pddl", "grid:prob01.pddl", "gripper:prob01.pddl"]
-# If REVISION_CACHE is None, the default "./data/revision-cache/" is used.
-REVISION_CACHE = os.environ.get("DOWNWARD_REVISION_CACHE")
+REVISION_CACHE = project.DIR / "data" / "revision-cache"
 if project.REMOTE:
     ENV = project.TetralithEnvironment(
         email="jendrik.seipp@liu.se", extra_options="#SBATCH --account=snic2023-5-341"
