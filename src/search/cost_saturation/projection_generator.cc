@@ -3,11 +3,11 @@
 #include "explicit_projection_factory.h"
 #include "projection.h"
 
-#include "../plugins/plugin.h"
-
 #include "../pdbs/dominance_pruning.h"
 #include "../pdbs/pattern_database.h"
 #include "../pdbs/pattern_generator.h"
+#include "../plugins/options.h"
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 
 #include <memory>
