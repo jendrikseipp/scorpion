@@ -29,7 +29,12 @@ else:
     ENV = project.LocalEnvironment(processes=2)
 
 CONFIGS = [
-    ("cegar-scp-online", ["--search", "astar(scp_online([cartesian()]))"]),
+    ("cegar-scp-online", [
+        "--search", """astar(scp_online([
+            projections(sys_scp(max_time=100, max_time_per_restart=10)),
+            cartesian()],
+            saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
+            pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))"""]),
 ]
 BUILD_OPTIONS = []
 DRIVER_OPTIONS = [
@@ -113,6 +118,5 @@ project.add_scatter_plot_reports(
     attributes=["search_time", "memory"],
 )
 
-exp.add_parse_again_step()
 
 exp.run_steps()

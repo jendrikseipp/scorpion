@@ -266,7 +266,7 @@ def _get_exp_dir_relative_to_repo():
 
 
 def add_scp_step(exp, login, repos_dir):
-    remote_exp = Path(repos_dir) / _get_exp_dir_relative_to_repo()
+    remote_exp = Path(repos_dir) / str(_get_exp_dir_relative_to_repo()).replace("dev-merge", "dev")
     exp.add_step(
         "scp-eval-dir",
         subprocess.call,
