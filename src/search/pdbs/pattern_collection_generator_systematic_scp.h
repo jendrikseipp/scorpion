@@ -49,6 +49,7 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
     const int max_evaluations_per_restart;
     const int max_total_evaluations;
     const bool saturate;
+    const bool create_complete_transition_system;
     const PatternType pattern_type;
     const bool ignore_useless_patterns;
     const bool store_dead_ends;
@@ -70,6 +71,7 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
         SequentialPatternGenerator &pattern_generator,
         DeadEnds *dead_ends,
         priority_queues::AdaptiveQueue<int> &pq,
+        const std::shared_ptr<PatternCollection> &patterns,
         const std::shared_ptr<ProjectionCollection> &projections,
         PatternSet &pattern_set,
         PatternSet &patterns_checked_for_dead_ends,

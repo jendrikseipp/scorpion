@@ -3,11 +3,11 @@
 #include "explicit_projection_factory.h"
 #include "projection.h"
 
+#include "../plugins/plugin.h"
+
 #include "../pdbs/dominance_pruning.h"
 #include "../pdbs/pattern_database.h"
 #include "../pdbs/pattern_generator.h"
-#include "../plugins/options.h"
-#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 
 #include <memory>
@@ -22,8 +22,7 @@ ProjectionGenerator::ProjectionGenerator(const plugins::Options &opts)
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
       dominance_pruning(opts.get<bool>("dominance_pruning")),
       combine_labels(opts.get<bool>("combine_labels")),
-      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
-      use_add_after_delete_semantics(opts.get<bool>("use_add_after_delete_semantics")) {
+      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")) {
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
@@ -76,6 +75,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
     utils::Timer pdbs_timer;
     shared_ptr<TaskInfo> task_info = make_shared<TaskInfo>(task_proxy);
     Abstractions abstractions;
+    task_properties::verify_no_axioms(task_proxy);
     for (const pdbs::Pattern &pattern : *patterns) {
         unique_ptr<Abstraction> projection;
         if (projections) {
@@ -83,8 +83,9 @@ Abstractions ProjectionGenerator::generate_abstractions(
             projection = move((*projections)[abstractions.size()]);
         } else if (create_complete_transition_system) {
             projection = ExplicitProjectionFactory(
-                task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction();
+                task_proxy, pattern).convert_to_abstraction();
         } else {
+            task_properties::verify_no_conditional_effects(task_proxy);
             projection = utils::make_unique_ptr<Projection>(
                 task_proxy, task_info, pattern, combine_labels);
         }
@@ -128,11 +129,7 @@ public:
             "true");
         add_option<bool>(
             "create_complete_transition_system",
-            "create complete transition system",
-            "false");
-        add_option<bool>(
-            "use_add_after_delete_semantics",
-            "skip transitions that are invalid according to add-after-delete semantics",
+            "create explicit transition system",
             "false");
         utils::add_log_options_to_feature(*this);
     }

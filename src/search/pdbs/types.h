@@ -11,7 +11,7 @@ class PartialStateTree;
 }
 
 namespace cost_saturation {
-class Projection;
+class Abstraction;
 }
 
 namespace pdbs {
@@ -20,7 +20,8 @@ class PatternDatabase;
 using Pattern = std::vector<int>;
 using PatternCollection = std::vector<Pattern>;
 using PDBCollection = std::vector<std::shared_ptr<PatternDatabase>>;
-using ProjectionCollection = std::vector<std::unique_ptr<cost_saturation::Projection>>;
+// TODO: Rename to Abstractions?
+using ProjectionCollection = std::vector<std::unique_ptr<cost_saturation::Abstraction>>;
 using PatternSet = utils::HashSet<Pattern>;
 using PatternID = int;
 /* NOTE: pattern cliques are often called maximal additive pattern subsets

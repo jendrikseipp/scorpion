@@ -639,23 +639,22 @@ unique_ptr<Split> FlawSearch::get_split_legacy(const Solution &solution) {
 }
 
 void FlawSearch::print_statistics() const {
-    // Avoid division by zero for corner cases.
-    int flaws = max(1, abstraction.get_num_states() - 1);
-    int searches = max(1, num_searches);
+    int refinements = abstraction.get_num_states() - 1;
     int expansions = num_overall_expanded_concrete_states;
-    log << "Flaw searches: " << searches << endl;
-    log << "Refined flaws: " << flaws << endl;
+    log << "Flaw searches: " << num_searches << endl;
     log << "Expanded concrete states: " << expansions << endl;
     log << "Maximum expanded concrete states in single flaw search: "
         << max_expanded_concrete_states << endl;
     log << "Flaw search time: " << flaw_search_timer << endl;
     log << "Time for computing splits: " << compute_splits_timer << endl;
     log << "Time for selecting splits: " << pick_split_timer << endl;
-    log << "Average number of refined flaws: "
-        << flaws / static_cast<float>(searches) << endl;
-    log << "Average number of expanded concrete states per flaw search: "
-        << expansions / static_cast<float>(searches) << endl;
-    log << "Average flaw search time: " << flaw_search_timer() / searches << endl;
+    if (num_searches > 0) {
+        log << "Average number of refinements per flaw search: "
+            << refinements / static_cast<float>(num_searches) << endl;
+        log << "Average number of expanded concrete states per flaw search: "
+            << expansions / static_cast<float>(num_searches) << endl;
+        log << "Average flaw search time: " << flaw_search_timer() / num_searches << endl;
+    }
 }
 
 static plugins::TypedEnumPlugin<PickFlawedAbstractState> _enum_plugin({

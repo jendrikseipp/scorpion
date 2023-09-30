@@ -4,7 +4,6 @@
 #include "types.h"
 
 #include "../cegar/abstraction.h"
-#include "../cegar/abstract_search.h"
 #include "../cegar/abstract_state.h"
 #include "../cegar/cegar.h"
 #include "../cegar/cost_saturation.h"
@@ -107,7 +106,6 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_states(opts.get<int>("max_states")),
       max_transitions(opts.get<int>("max_transitions")),
       max_time(opts.get<double>("max_time")),
-      search_strategy(opts.get<cegar::SearchStrategy>("search_strategy")),
       pick_flawed_abstract_state(
           opts.get<cegar::PickFlawedAbstractState>("pick_flawed_abstract_state")),
       pick_split(opts.get<cegar::PickSplit>("pick_split")),
@@ -144,7 +142,6 @@ unique_ptr<cegar::Abstraction> CartesianAbstractionGenerator::build_abstraction_
         tiebreak_split,
         max_concrete_states_per_abstract_state,
         max_state_expansions,
-        search_strategy,
         *rng,
         log,
         dot_graph_verbosity);
@@ -156,6 +153,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
     const vector<shared_ptr<AbstractTask>> &subtasks,
     const utils::CountdownTimer &timer,
     Abstractions &abstractions) {
+    log << "Build abstractions for " << subtasks.size() << " subtasks in "
+        << timer.get_remaining_time() << endl;
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
         unique_ptr<cegar::Abstraction> cartesian_abstraction =

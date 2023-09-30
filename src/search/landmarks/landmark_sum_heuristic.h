@@ -1,6 +1,7 @@
 #ifndef LANDMARKS_LANDMARK_SUM_HEURISTIC_H
 #define LANDMARKS_LANDMARK_SUM_HEURISTIC_H
 
+#include "landmark.h"
 #include "landmark_heuristic.h"
 
 namespace landmarks {
@@ -10,7 +11,7 @@ class LandmarkSumHeuristic : public LandmarkHeuristic {
     std::vector<int> min_first_achiever_costs;
     std::vector<int> min_possible_achiever_costs;
 
-    int get_min_cost_of_achievers(const std::set<int> &achievers) const;
+    int get_min_cost_of_achievers(Achievers &achievers) const;
     void compute_landmark_costs();
 
     int get_heuristic_value(const State &state) override;

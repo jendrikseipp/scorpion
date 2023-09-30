@@ -249,6 +249,8 @@ Projection::Projection(
       task_info(task_info),
       pattern(pattern),
       looping_operators(compute_looping_operators(*task_info, pattern)) {
+    assert(!task_properties::has_axioms(task_proxy));
+    assert(!task_properties::has_conditional_effects(task_proxy));
     assert(utils::is_sorted_unique(pattern));
 
     hash_multipliers.reserve(pattern.size());
