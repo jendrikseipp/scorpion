@@ -22,7 +22,7 @@ SUITE = ["depot:p01.pddl", "grid:prob01.pddl", "gripper:prob01.pddl"]
 REVISION_CACHE = project.DIR / "data" / "revision-cache"
 if project.REMOTE:
     ENV = project.TetralithEnvironment(
-        email="jendrik.seipp@liu.se", extra_options="#SBATCH --account=snic2023-5-314"
+        email="jendrik.seipp@liu.se", extra_options="#SBATCH --account=naiss2023-5-314"
     )
     SUITE = project.SUITE_OPTIMAL_STRIPS
 else:
