@@ -45,6 +45,7 @@ REV_NICKS = [
     ("4a083b2ef", "01-reduce-value-conversions"),
     #("9dd563534", "02-merge-main"),  # build broken because SlimPDB files are missing.
     ("3861241ab", "03-merge-scorpion-branches"),
+    ("c182d3328", "04-merge-scorpion-branches-again"),
 ]
 ATTRIBUTES = [
     "error",
