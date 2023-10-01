@@ -147,7 +147,7 @@ pair<int, int> Abstraction::refine(
     assert(init_id == 0);
     assert(get_initial_state().includes(concrete_initial_state));
 
-    return make_pair(v1_id, v2_id);
+    return {v1_id, v2_id};
 }
 
 void Abstraction::print_statistics() const {
