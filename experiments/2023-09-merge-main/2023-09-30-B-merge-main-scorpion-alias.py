@@ -110,12 +110,9 @@ exp.add_report(PerTaskComparison(
 project.add_scatter_plot_reports(
     exp,
     algorithm_pairs=[
-        ("02-skip-conversion-if-no-abstracted-vars:cegar-scp-online", "03-value-map-class:cegar-scp-online"),
-        ("03-value-map-class:cegar-scp-online", "04-small-vector:cegar-scp-online"),
-        ("04-small-vector:cegar-scp-online", "05-abs-var-struct:cegar-scp-online"),
-        ("02-skip-conversion-if-no-abstracted-vars:cegar-scp-online", "05-abs-var-struct:cegar-scp-online"),
+        ("01-reduce-value-conversions-cegar-scp-online", "04-merge-scorpion-branches-again-cegar-scp-online"),
     ],
-    attributes=["search_time", "memory"],
+    attributes=["total_time", "memory"],
 )
 
 
