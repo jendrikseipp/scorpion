@@ -17,7 +17,7 @@
 using namespace std;
 
 namespace cost_saturation {
-static const double COST_FACTOR = 1000;
+static const int COST_FACTOR = 1000;
 
 static vector<int> divide_costs_among_remaining_abstractions(
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -131,7 +131,7 @@ int ScaledCostPartitioningHeuristic::compute_heuristic(const State &ancestor_sta
         return DEAD_END;
     }
     double epsilon = 0.01;
-    return static_cast<int>(ceil((result / COST_FACTOR) - epsilon));
+    return static_cast<int>(ceil((result / static_cast<double>(COST_FACTOR)) - epsilon));
 }
 
 
@@ -142,7 +142,7 @@ shared_ptr<AbstractTask> get_scaled_costs_task(const shared_ptr<AbstractTask> &t
             cerr << "Overflowing cost : " << cost << endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
-        cost = static_cast<int>(cost * COST_FACTOR);
+        cost *= COST_FACTOR;
     }
     return make_shared<extra_tasks::ModifiedOperatorCostsTask>(task, move(costs));
 }
