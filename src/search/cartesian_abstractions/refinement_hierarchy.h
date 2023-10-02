@@ -14,49 +14,6 @@ class AbstractTask;
 class State;
 
 namespace cartesian_abstractions {
-class Node;
-
-/*
-  This class stores the refinement hierarchy of a Cartesian
-  abstraction. The hierarchy forms a DAG with inner nodes for each
-  split and leaf nodes for the abstract states.
-
-  It is used for efficient lookup of abstract states during search.
-
-  Inner nodes correspond to abstract states that have been split (or
-  helper nodes, see below). Leaf nodes correspond to the current
-  (unsplit) states in an abstraction. The use of helper nodes makes
-  this structure a directed acyclic graph (instead of a tree).
-*/
-class RefinementHierarchy {
-    std::shared_ptr<AbstractTask> task;
-    std::vector<Node> nodes;
-
-    NodeID add_node(int state_id);
-    NodeID get_node_id(const State &state) const;
-
-public:
-    explicit RefinementHierarchy(const std::shared_ptr<AbstractTask> &task);
-
-    /*
-      Update the split tree for the new split. Additionally to the left
-      and right child nodes add |values|-1 helper nodes that all have
-      the right child as their right child and the next helper node as
-      their left child.
-    */
-    std::pair<NodeID, NodeID> split(
-        NodeID node_id, int var, const std::vector<int> &values,
-        int left_state_id, int right_state_id);
-
-    int get_abstract_state_id(const State &state) const;
-    friend int Abstraction::get_abstract_state_id(const State &state) const;
-
-    int get_num_nodes() const {
-        return nodes.size();
-    }
-};
-
-
 class Node {
     /*
       While right_child is always the node of a (possibly split)
@@ -100,6 +57,46 @@ public:
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Node &node);
+};
+
+/*
+  This class stores the refinement hierarchy of a Cartesian
+  abstraction. The hierarchy forms a DAG with inner nodes for each
+  split and leaf nodes for the abstract states.
+
+  It is used for efficient lookup of abstract states during search.
+
+  Inner nodes correspond to abstract states that have been split (or
+  helper nodes, see below). Leaf nodes correspond to the current
+  (unsplit) states in an abstraction. The use of helper nodes makes
+  this structure a directed acyclic graph (instead of a tree).
+*/
+class RefinementHierarchy {
+    std::shared_ptr<AbstractTask> task;
+    std::vector<Node> nodes;
+
+    NodeID add_node(int state_id);
+    NodeID get_node_id(const State &state) const;
+
+public:
+    explicit RefinementHierarchy(const std::shared_ptr<AbstractTask> &task);
+
+    /*
+      Update the split tree for the new split. Additionally to the left
+      and right child nodes add |values|-1 helper nodes that all have
+      the right child as their right child and the next helper node as
+      their left child.
+    */
+    std::pair<NodeID, NodeID> split(
+        NodeID node_id, int var, const std::vector<int> &values,
+        int left_state_id, int right_state_id);
+
+    int get_abstract_state_id(const State &state) const;
+    friend int Abstraction::get_abstract_state_id(const State &state) const;
+
+    int get_num_nodes() const {
+        return nodes.size();
+    }
 };
 }
 
