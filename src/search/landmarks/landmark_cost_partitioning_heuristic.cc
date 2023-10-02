@@ -17,16 +17,10 @@
 using namespace std;
 
 namespace landmarks {
-enum class CostPartitioningAlgorithm {
-    OPTIMAL,
-    SUBOPTIMAL,
-    CANONICAL,
-    PHO
-};
-
 LandmarkCostPartitioningHeuristic::LandmarkCostPartitioningHeuristic(
     const plugins::Options &opts)
-    : LandmarkHeuristic(opts) {
+    : LandmarkHeuristic(opts),
+      cost_partitioning_strategy(opts.get<CostPartitioningStrategy>("cost_partitioning")) {
     if (log.is_at_least_normal()) {
         log << "Initializing landmark cost partitioning heuristic..." << endl;
     }
@@ -39,11 +33,6 @@ void LandmarkCostPartitioningHeuristic::check_unsupported_features(
     const plugins::Options &opts) {
     shared_ptr<LandmarkFactory> lm_graph_factory =
         opts.get<shared_ptr<LandmarkFactory>>("lm_factory");
-    if (lm_graph_factory->computes_reasonable_orders()) {
-        cerr << "Reasonable orderings should not be used for "
-             << "admissible heuristics." << endl;
-        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-    }
 
     if (task_properties::has_axioms(task_proxy)) {
         cerr << "Cost partitioning does not support axioms." << endl;
@@ -61,37 +50,52 @@ void LandmarkCostPartitioningHeuristic::check_unsupported_features(
 void LandmarkCostPartitioningHeuristic::set_cost_assignment(
     const plugins::Options &opts) {
     vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
-    CostPartitioningAlgorithm cp_type = opts.get<CostPartitioningAlgorithm>("cost_partitioning");
-    if (cp_type == CostPartitioningAlgorithm::OPTIMAL) {
+    if (cost_partitioning_strategy == CostPartitioningStrategy::OPTIMAL) {
         lm_cost_assignment =
             utils::make_unique_ptr<LandmarkEfficientOptimalSharedCostAssignment>(
                 operator_costs, *lm_graph, opts.get<lp::LPSolverType>("lpsolver"));
-    } else if (cp_type == CostPartitioningAlgorithm::SUBOPTIMAL) {
+    } else if (cost_partitioning_strategy == CostPartitioningStrategy::CANONICAL) {
+        lm_cost_assignment = utils::make_unique_ptr<LandmarkCanonicalHeuristic>(
+            operator_costs, *lm_graph);
+    } else if (cost_partitioning_strategy == CostPartitioningStrategy::PHO) {
+        lm_cost_assignment = utils::make_unique_ptr<LandmarkPhO>(
+            operator_costs, *lm_graph, opts.get<lp::LPSolverType>("lpsolver"));
+    } else {
+        bool reuse_costs = false;
+        bool greedy = false;
+        if (cost_partitioning_strategy == CostPartitioningStrategy::UNIFORM) {
+            reuse_costs = false;
+            greedy = false;
+        } else if (cost_partitioning_strategy == CostPartitioningStrategy::OPPORTUNISTIC_UNIFORM) {
+            reuse_costs = true;
+            greedy = false;
+        } else if (cost_partitioning_strategy == CostPartitioningStrategy::GREEDY_ZERO_ONE) {
+            reuse_costs = false;
+            greedy = true;
+        } else if (cost_partitioning_strategy == CostPartitioningStrategy::SATURATED) {
+            reuse_costs = true;
+            greedy = true;
+        } else {
+            ABORT("Unknown cost partitioning strategy");
+        }
         lm_cost_assignment =
             utils::make_unique_ptr<LandmarkUniformSharedCostAssignment>(
                 operator_costs,
                 *lm_graph,
                 opts.get<bool>("alm"),
-                opts.get<bool>("reuse_costs"),
-                opts.get<bool>("greedy"),
+                reuse_costs,
+                greedy,
                 opts.get<cost_saturation::ScoringFunction>("scoring_function"),
                 utils::parse_rng_from_options(opts));
-    } else if (cp_type == CostPartitioningAlgorithm::CANONICAL) {
-        lm_cost_assignment = utils::make_unique_ptr<LandmarkCanonicalHeuristic>(
-            operator_costs, *lm_graph);
-    } else if (cp_type == CostPartitioningAlgorithm::PHO) {
-        lm_cost_assignment = utils::make_unique_ptr<LandmarkPhO>(
-            operator_costs, *lm_graph, opts.get<lp::LPSolverType>("lpsolver"));
-    } else {
-        ABORT("unknown cost partitioning type");
     }
 }
 
 int LandmarkCostPartitioningHeuristic::get_heuristic_value(
-    const State & /*state*/) {
+    const State &ancestor_state) {
     double epsilon = 0.01;
 
-    double h_val = lm_cost_assignment->cost_sharing_h_value(*lm_status_manager);
+    double h_val = lm_cost_assignment->cost_sharing_h_value(
+        *lm_status_manager, ancestor_state);
     if (h_val == numeric_limits<double>::max()) {
         return DEAD_END;
     } else {
@@ -131,12 +135,12 @@ public:
                 "2010"));
 
         LandmarkHeuristic::add_options_to_feature(*this);
-        add_option<CostPartitioningAlgorithm>(
-            "cost_partitioning", "cost partitioning algorithm", "suboptimal");
+        add_option<CostPartitioningStrategy>(
+            "cost_partitioning",
+            "strategy for partitioning operator costs among landmarks",
+            "uniform");
         cost_saturation::add_scoring_function_to_feature(*this);
         add_option<bool>("alm", "use action landmarks", "true");
-        add_option<bool>("reuse_costs", "reuse unused costs", "false");
-        add_option<bool>("greedy", "assign costs greedily", "false");
         lp::add_lp_solver_option_to_feature(*this);
         utils::add_rng_options(*this);
 
@@ -156,17 +160,14 @@ public:
             "which point the above inequality might not hold anymore.");
         document_note(
             "Optimal Cost Partitioning",
-            "To use ``optimal=true``, you must build the planner with LP "
+            "To use ``cost_partitioning=optimal``, you must build the planner with LP "
             "support. See LPBuildInstructions.");
         document_note(
             "Preferred operators",
             "Preferred operators should not be used for optimal planning. "
-            "We allow computing preferred operators for this heuristic because "
-            "it could be used for satisficing planning where preferred "
-            "operators might improve performance (not tested). See "
-            "Evaluator#Landmark_sum_heuristic for more information on how "
-            "our implementation of preferred operators differs from the "
-            "description in the literature.");
+            "See Evaluator#Landmark_sum_heuristic for more information "
+            "on using preferred operators; the comments there also apply "
+            "to this heuristic.");
 
         document_language_support("action costs", "supported");
         document_language_support(
@@ -184,11 +185,18 @@ public:
 
 static plugins::FeaturePlugin<LandmarkCostPartitioningHeuristicFeature> _plugin;
 
-static plugins::TypedEnumPlugin<CostPartitioningAlgorithm> _enum_plugin({
+static plugins::TypedEnumPlugin<CostPartitioningStrategy> _enum_plugin({
         {"optimal",
-         "optimal cost partitioning"},
-        {"suboptimal",
-         "GZOCP/SCP/UCP/UOCP, depending on the values for greedy and reuse_costs"},
+         "use optimal (LP-based) cost partitioning"},
+        {"uniform",
+         "partition operator costs uniformly among all landmarks "
+         "achieved by that operator"},
+        {"opportunistic_uniform",
+         "like uniform, but order landmarks and reuse costs not consumed by earlier landmarks"},
+        {"greedy_zero_one",
+         "order landmarks and give each landmark the costs of all the operators it contains"},
+        {"saturated",
+         "like greedy_zero_one, but reuse costs not consumed by earlier landmarks"},
         {"canonical",
          "canonical heuristic over landmarks"},
         {"pho",

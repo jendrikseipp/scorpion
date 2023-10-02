@@ -142,7 +142,7 @@ shared_ptr<AbstractTask> get_scaled_costs_task(const shared_ptr<AbstractTask> &t
             cerr << "Overflowing cost : " << cost << endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
-        cost *= COST_FACTOR;
+        cost = static_cast<int>(cost * COST_FACTOR);
     }
     return make_shared<extra_tasks::ModifiedOperatorCostsTask>(task, move(costs));
 }

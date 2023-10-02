@@ -33,7 +33,7 @@ bool Diversifier::is_diverse(const CostPartitioningHeuristic &cp_heuristic) {
 }
 
 float Diversifier::compute_avg_finite_sample_h_value() const {
-    double sum_h = 0;
+    float sum_h = 0;
     int num_finite_values = 0;
     for (int h : portfolio_h_values) {
         if (h != INF) {

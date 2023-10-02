@@ -83,7 +83,7 @@ static int get_num_active_ops(
     return num_active_ops;
 }
 
-bool contains_positive_finite_value(const vector<int> &values) {
+static bool contains_positive_finite_value(const vector<int> &values) {
     return any_of(values.begin(), values.end(),
                   [](int v) {return v > 0 && v != numeric_limits<int>::max();});
 }

@@ -121,8 +121,8 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
         vector<int> weighted_h_values;
         weighted_h_values.reserve(h_values_by_abstraction[i].size());
         for (int h : h_values_by_abstraction[i]) {
-            assert(weight > 0);
-            weighted_h_values.push_back(h == INF ? INF : weight * h);
+            assert(weight > 0.0);
+            weighted_h_values.push_back(h == INF ? INF : static_cast<int>(weight * h));
         }
         cp_heuristic.add_h_values(i, move(weighted_h_values));
     }

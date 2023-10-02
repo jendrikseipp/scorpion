@@ -6,13 +6,24 @@
 namespace landmarks {
 class LandmarkCostAssignment;
 
+enum class CostPartitioningStrategy {
+    OPTIMAL,
+    UNIFORM,
+    OPPORTUNISTIC_UNIFORM,
+    GREEDY_ZERO_ONE,
+    SATURATED,
+    CANONICAL,
+    PHO,
+};
+
 class LandmarkCostPartitioningHeuristic : public LandmarkHeuristic {
+    const CostPartitioningStrategy cost_partitioning_strategy;
     std::unique_ptr<LandmarkCostAssignment> lm_cost_assignment;
 
     void check_unsupported_features(const plugins::Options &opts);
     void set_cost_assignment(const plugins::Options &opts);
 
-    int get_heuristic_value(const State &state) override;
+    int get_heuristic_value(const State &ancestor_state) override;
 public:
     explicit LandmarkCostPartitioningHeuristic(const plugins::Options &opts);
 

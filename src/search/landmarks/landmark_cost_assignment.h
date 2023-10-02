@@ -3,10 +3,13 @@
 
 #include "landmark.h"
 
+#include "../task_proxy.h"
+
 #include "../lp/lp_solver.h"
 
 #include <vector>
 
+class ConstBitsetView;
 class OperatorsProxy;
 
 namespace cost_saturation {
@@ -24,20 +27,20 @@ class LandmarkNode;
 class LandmarkStatusManager;
 
 class LandmarkCostAssignment {
-    const Achievers empty;
 protected:
     const LandmarkGraph &lm_graph;
     const std::vector<int> operator_costs;
 
     const Achievers &get_achievers(
-        int lmn_status, const Landmark &landmark) const;
+        const Landmark &landmark, bool past) const;
 public:
     LandmarkCostAssignment(const std::vector<int> &operator_costs,
                            const LandmarkGraph &graph);
     virtual ~LandmarkCostAssignment() = default;
 
     virtual double cost_sharing_h_value(
-        const LandmarkStatusManager &lm_status_manager) = 0;
+        const LandmarkStatusManager &lm_status_manager,
+        const State &ancestor_state) = 0;
 };
 
 class LandmarkUniformSharedCostAssignment : public LandmarkCostAssignment {
@@ -65,21 +68,23 @@ public:
                                         const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
     virtual double cost_sharing_h_value(
-        const LandmarkStatusManager &lm_status_manager) override;
+        const LandmarkStatusManager &lm_status_manager,
+        const State &ancestor_state) override;
 };
 
 class LandmarkCanonicalHeuristic : public LandmarkCostAssignment {
     std::vector<std::vector<int>> compute_max_additive_subsets(
-        const LandmarkStatusManager &lm_status_manager,
+        const ConstBitsetView &past_landmarks,
         const std::vector<const LandmarkNode *> &relevant_landmarks);
-    int compute_minimum_landmark_cost(const LandmarkNode &lm, int lm_status) const;
+    int compute_minimum_landmark_cost(const LandmarkNode &lm_node, bool past) const;
 public:
     LandmarkCanonicalHeuristic(
         const std::vector<int> &operator_costs,
         const LandmarkGraph &graph);
 
     virtual double cost_sharing_h_value(
-        const LandmarkStatusManager &lm_status_manager) override;
+        const LandmarkStatusManager &lm_status_manager,
+        const State &ancestor_state) override;
 };
 
 class LandmarkPhO : public LandmarkCostAssignment {
@@ -90,7 +95,7 @@ class LandmarkPhO : public LandmarkCostAssignment {
 
     lp::LinearProgram build_initial_lp();
 
-    double compute_landmark_cost(const LandmarkNode &lm) const;
+    double compute_landmark_cost(const LandmarkNode &lm, bool past) const;
 public:
     LandmarkPhO(
         const std::vector<int> &operator_costs,
@@ -98,7 +103,8 @@ public:
         lp::LPSolverType solver_type);
 
     virtual double cost_sharing_h_value(
-        const LandmarkStatusManager &lm_status_manager) override;
+        const LandmarkStatusManager &lm_status_manager,
+        const State &ancestor_state) override;
 };
 
 class LandmarkEfficientOptimalSharedCostAssignment : public LandmarkCostAssignment {
@@ -121,7 +127,8 @@ public:
         lp::LPSolverType solver_type);
 
     virtual double cost_sharing_h_value(
-        const LandmarkStatusManager &lm_status_manager) override;
+        const LandmarkStatusManager &lm_status_manager,
+        const State &ancestor_state) override;
 };
 }
 

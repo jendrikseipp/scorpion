@@ -6,9 +6,20 @@ if(NOT FAST_DOWNWARD_MAIN_CMAKELISTS_READ)
         "and restart cmake.")
 endif()
 
-project(preprocess-h2)
-fast_downward_set_compiler_flags()
-fast_downward_set_linker_flags()
+cmake_minimum_required(VERSION 3.16)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext)
+
+# Path containing custom CMake modules
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../search/cmake)
+include(common_cxx_flags)
+include(macros)
+include(options)
+
+report_bitwidth()
+#set_up_build_types("Debug;Release")
+
+project(preprocess-h2 LANGUAGES CXX)
 
 set(PREPROCESS_SOURCES
     planner.cc

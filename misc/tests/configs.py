@@ -172,14 +172,14 @@ def configs_optimal_extended():
             """astar(gzocp(
                 [projections(systematic(2))], max_orders=1))"""],
         "lm_ucp":
-            _get_landmark_config(cost_partitioning="suboptimal", greedy=False, reuse_costs=False),
+            _get_landmark_config(cost_partitioning="uniform"),
         "lm_can": _get_landmark_config(cost_partitioning="canonical"),
         "lm_oucp":
-            _get_landmark_config(cost_partitioning="suboptimal", greedy=False, reuse_costs=True, scoring_function="min_stolen_costs"),
+            _get_landmark_config(cost_partitioning="opportunistic_uniform", scoring_function="min_stolen_costs"),
         "lm_gzocp":
-            _get_landmark_config(cost_partitioning="suboptimal", greedy=True, reuse_costs=False, scoring_function="max_heuristic"),
+            _get_landmark_config(cost_partitioning="greedy_zero_one", scoring_function="max_heuristic"),
         "lm_scp":
-            _get_landmark_config(cost_partitioning="suboptimal", greedy=True, reuse_costs=True, scoring_function="max_heuristic_per_stolen_costs"),
+            _get_landmark_config(cost_partitioning="saturated", scoring_function="max_heuristic_per_stolen_costs"),
         "idastar": ["--search", "idastar(blind(cache_estimates=false))"],
     }
 

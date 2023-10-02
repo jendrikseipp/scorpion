@@ -52,7 +52,7 @@ def main():
         cmd.append("--check")
     try:
         # Hide clean files printed on stdout.
-        returncode = subprocess.call(cmd, stdout=subprocess.PIPE)
+        returncode = subprocess.call(cmd)
     except FileNotFoundError:
         sys.exit(f"Error: {executable} not found. Is it on the PATH?")
     if not args.modify and returncode != 0:

@@ -10,7 +10,7 @@ namespace options {
 class Options;
 }
 
-namespace cegar {
+namespace cartesian_abstractions {
 class Abstraction;
 enum class DotGraphVerbosity;
 enum class PickFlawedAbstractState;
@@ -25,25 +25,25 @@ class RandomNumberGenerator;
 
 namespace cost_saturation {
 class CartesianAbstractionGenerator : public AbstractionGenerator {
-    const std::vector<std::shared_ptr<cegar::SubtaskGenerator>> subtask_generators;
+    const std::vector<std::shared_ptr<cartesian_abstractions::SubtaskGenerator>> subtask_generators;
     const int max_states;
     const int max_transitions;
     const double max_time;
-    const cegar::PickFlawedAbstractState pick_flawed_abstract_state;
-    const cegar::PickSplit pick_split;
-    const cegar::PickSplit tiebreak_split;
+    const cartesian_abstractions::PickFlawedAbstractState pick_flawed_abstract_state;
+    const cartesian_abstractions::PickSplit pick_split;
+    const cartesian_abstractions::PickSplit tiebreak_split;
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
     const int extra_memory_padding_mb;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
-    const cegar::DotGraphVerbosity dot_graph_verbosity;
+    const cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity;
 
     int num_states;
     int num_transitions;
 
     bool has_reached_resource_limit(const utils::CountdownTimer &timer) const;
 
-    std::unique_ptr<cegar::Abstraction> build_abstraction_for_subtask(
+    std::unique_ptr<cartesian_abstractions::Abstraction> build_abstraction_for_subtask(
         const std::shared_ptr<AbstractTask> &subtask,
         int remaining_subtasks,
         const utils::CountdownTimer &timer);
