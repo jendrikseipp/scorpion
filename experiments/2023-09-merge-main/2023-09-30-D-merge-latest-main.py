@@ -108,7 +108,7 @@ exp.add_report(PerTaskComparison(
 project.add_scatter_plot_reports(
     exp,
     algorithm_pairs=[
-        ("04-merge-scorpion-branches-again-cegar-scp-online", "05-merge-main-before-cegar-renaming-cegar-scp-online"),
+        ("05-merge-main-before-cegar-renaming-cegar-scp-online", "06-merge-latest-main-cegar-scp-online"),
     ],
     attributes=["total_time", "memory"],
 )
