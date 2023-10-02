@@ -73,7 +73,6 @@ jobs:
 
           echo %cd%
           dir
-          echo $ENV:GITHUB_WORKSPACE
 
           echo "Install CPLEX"
           mkdir D:\a\downward
