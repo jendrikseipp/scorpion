@@ -420,8 +420,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../SearchEngine/" class="md-nav__link">
-        SearchEngine
+      <a href="../SearchAlgorithm/" class="md-nav__link">
+        SearchAlgorithm
       </a>
     </li>
   
@@ -485,20 +485,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#landmarks" class="md-nav__link">
-    landmarks
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#original" class="md-nav__link">
-    original
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -537,20 +523,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#landmarks" class="md-nav__link">
-    landmarks
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#original" class="md-nav__link">
-    original
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -568,25 +540,35 @@
                 
                 <p>Subtask generator (used by the CEGAR heuristic).</p>
 <h2 id="goals">goals<a class="headerlink" href="#goals" title="Permanent link">#</a></h2>
-<pre><code>goals(order=HADD_DOWN, random_seed=-1)
+<pre><code>goals(order=hadd_down, random_seed=-1)
 </code></pre>
 <ul>
-<li><em>order</em> ({ORIGINAL, RANDOM, HADD_UP, HADD_DOWN}): ordering of goal or landmark facts</li>
+<li><em>order</em> ({original, random, hadd_up, hadd_down}): ordering of goal or landmark facts</li>
+<li><code>original</code>: according to their (internal) variable index</li>
+<li><code>random</code>: according to a random permutation</li>
+<li><code>hadd_up</code>: according to their h^add value, lowest first</li>
+<li><code>hadd_down</code>: according to their h^add value, highest first </li>
+<li>
+<p><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.
+== landmarks ==
+    landmarks(order=hadd_down, random_seed=-1, combine_facts=true)</p>
+</li>
+<li>
+<p><em>order</em> ({original, random, hadd_up, hadd_down}): ordering of goal or landmark facts</p>
+</li>
+<li><code>original</code>: according to their (internal) variable index</li>
+<li><code>random</code>: according to a random permutation</li>
+<li><code>hadd_up</code>: according to their h^add value, lowest first</li>
+<li><code>hadd_down</code>: according to their h^add value, highest first </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-</ul>
-<h2 id="landmarks">landmarks<a class="headerlink" href="#landmarks" title="Permanent link">#</a></h2>
-<pre><code>landmarks(order=HADD_DOWN, random_seed=-1, combine_facts=true)
-</code></pre>
-<ul>
-<li><em>order</em> ({ORIGINAL, RANDOM, HADD_UP, HADD_DOWN}): ordering of goal or landmark facts</li>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>combine_facts</em> (bool): combine landmark facts with domain abstraction</li>
-</ul>
-<h2 id="original">original<a class="headerlink" href="#original" title="Permanent link">#</a></h2>
-<pre><code>original(copies=1)
-</code></pre>
-<ul>
-<li><em>copies</em> (int [1, infinity]): number of task copies</li>
+<li>
+<p><em>combine_facts</em> (bool): combine landmark facts with domain abstraction
+== original ==
+    original(copies=1)</p>
+</li>
+<li>
+<p><em>copies</em> (int [1, infinity]): number of task copies</p>
+</li>
 </ul>
                 
               

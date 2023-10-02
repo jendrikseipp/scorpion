@@ -305,41 +305,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#hm_landmarks" class="md-nav__link">
-    h^m Landmarks
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#merged_landmarks" class="md-nav__link">
-    Merged Landmarks
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hps_orders" class="md-nav__link">
-    HPS Orders
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rhw_landmarks" class="md-nav__link">
-    RHW Landmarks
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#zhugivan_landmarks" class="md-nav__link">
-    Zhu/Givan Landmarks
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -491,8 +456,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../SearchEngine/" class="md-nav__link">
-        SearchEngine
+      <a href="../SearchAlgorithm/" class="md-nav__link">
+        SearchAlgorithm
       </a>
     </li>
   
@@ -558,41 +523,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#hm_landmarks" class="md-nav__link">
-    h^m Landmarks
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#merged_landmarks" class="md-nav__link">
-    Merged Landmarks
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hps_orders" class="md-nav__link">
-    HPS Orders
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rhw_landmarks" class="md-nav__link">
-    RHW Landmarks
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#zhugivan_landmarks" class="md-nav__link">
-    Zhu/Givan Landmarks
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -609,118 +539,101 @@
                   <h1>LandmarkFactory</h1>
                 
                 <p>A landmark factory specification is either a newly created instance or a landmark factory that has been defined previously. This page describes how one can specify a new landmark factory instance. For re-using landmark factories, see OptionSyntax#Landmark_Predefinitions.</p>
-<p>This plugin type can be predefined using <code>--landmarks</code>.</p>
+<p>This feature type can be bound to variables using <code>let(variable_name, variable_definition, expression)</code> where <code>expression</code> can use <code>variable_name</code>. Predefinitions using <code>--evaluator</code>, <code>--heuristic</code>, and <code>--landmarks</code> are automatically transformed into <code>let</code>-expressions but are deprecated.</p>
 <h2 id="exhaustive_landmarks">Exhaustive Landmarks<a class="headerlink" href="#exhaustive_landmarks" title="Permanent link">#</a></h2>
 <p>Exhaustively checks for each fact if it is a landmark.This check is done using relaxed planning.</p>
 <pre><code>lm_exhaust(verbosity=normal, only_causal_landmarks=false)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
+<li><em>only_causal_landmarks</em> (bool): keep only causal landmarks
+Language features supported:</li>
+<li>
+<p><strong>conditional_effects:</strong> ignored, i.e. not supported
+== h^m Landmarks ==
+The landmark generation method introduced by Keyder, Richter &amp; Helmert (ECAI 2010).
+    lm_hm(m=2, conjunctive_landmarks=true, verbosity=normal, use_orders=true)</p>
 </li>
-<li><em>only_causal_landmarks</em> (bool): keep only causal landmarks</li>
-</ul>
-<p>Language features supported:</p>
-<ul>
-<li><strong>conditional_effects:</strong> ignored, i.e. not supported</li>
-</ul>
-<h2 id="hm_landmarks">h^m Landmarks<a class="headerlink" href="#hm_landmarks" title="Permanent link">#</a></h2>
-<p>The landmark generation method introduced by Keyder, Richter &amp; Helmert (ECAI 2010).</p>
-<pre><code>lm_hm(m=2, conjunctive_landmarks=true, verbosity=normal, use_orders=true)
-</code></pre>
-<ul>
-<li><em>m</em> (int): subset size (if unsure, use the default of 2)</li>
+<li>
+<p><em>m</em> (int): subset size (if unsure, use the default of 2)</p>
+</li>
 <li><em>conjunctive_landmarks</em> (bool): keep conjunctive landmarks</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
+<li><em>use_orders</em> (bool): use orders between landmarks
+Language features supported:</li>
+<li>
+<p><strong>conditional_effects:</strong> ignored, i.e. not supported
+== Merged Landmarks ==
+Merges the landmarks and orderings from the parameter landmarks
+    lm_merged(lm_factories, verbosity=normal)</p>
 </li>
-<li><em>use_orders</em> (bool): use orders between landmarks</li>
-</ul>
-<h2 id="merged_landmarks">Merged Landmarks<a class="headerlink" href="#merged_landmarks" title="Permanent link">#</a></h2>
-<p>Merges the landmarks and orderings from the parameter landmarks</p>
-<pre><code>lm_merged(lm_factories, verbosity=normal)
-</code></pre>
-<ul>
-<li><em>lm_factories</em> (list of <a href="./">LandmarkFactory</a>): </li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li>
+<p><em>lm_factories</em> (list of <a href="./">LandmarkFactory</a>): </p>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output
+<strong>Precedence:</strong> Fact landmarks take precedence over disjunctive landmarks, orderings take precedence in the usual manner (gn &gt; nat &gt; reas &gt; o_reas). </li>
 </ul>
-</li>
-</ul>
-<p><strong>Precedence:</strong> Fact landmarks take precedence over disjunctive landmarks, orderings take precedence in the usual manner (gn &gt; nat &gt; reas &gt; o_reas). </p>
 <p><strong>Note:</strong> Does not currently support conjunctive landmarks</p>
-<p>Language features supported:</p>
-<ul>
-<li><strong>conditional_effects:</strong> supported if all components support them</li>
-</ul>
-<h2 id="hps_orders">HPS Orders<a class="headerlink" href="#hps_orders" title="Permanent link">#</a></h2>
-<p>Adds reasonable orders and obedient reasonable orders described in the following paper</p>
+<p>Language features supported:
+ * <strong>conditional_effects:</strong> supported if all components support them
+== HPS Orders ==
+Adds reasonable orders described in the following paper</p>
 <p>Jörg Hoffmann, Julie Porteous and Laura Sebastia.<br />
- <a href="https://jair.org/index.php/jair/article/view/10390/24882">Ordered Landmarks in Planning</a>.<br />
- <em>Journal of Artificial Intelligence Research</em> 22:215-278. 2004.</p>
+<a href="https://jair.org/index.php/jair/article/view/10390/24882">Ordered Landmarks in Planning</a>.<br />
+<em>Journal of Artificial Intelligence Research</em> 22:215-278. 2004.</p>
 <pre><code>lm_reasonable_orders_hps(lm_factory, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>lm_factory</em> (<a href="./">LandmarkFactory</a>): </li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output</li>
+<li><code>debug</code>: like verbose with additional debug output
+<strong>Obedient-reasonable orders:</strong> Hoffmann et al. (2004) suggest obedient-reasonable orders in addition to reasonable orders. Obedient-reasonable orders were later also used by the LAMA planner (Richter and Westphal, 2010). They are "reasonable orders" under the assumption that all (non-obedient) reasonable orders are actually "natural", i.e., every plan obeys the reasonable orders. We observed experimentally that obedient-reasonable orders have minimal effect on the performance of LAMA (Büchner et al., 2023) and decided to remove them in issue1089.</li>
 </ul>
-</li>
-</ul>
-<p>Language features supported:</p>
-<ul>
-<li><strong>conditional_effects:</strong> supported if subcomponent supports them</li>
-</ul>
-<h2 id="rhw_landmarks">RHW Landmarks<a class="headerlink" href="#rhw_landmarks" title="Permanent link">#</a></h2>
-<p>The landmark generation method introduced by Richter, Helmert and Westphal (AAAI 2008).</p>
-<pre><code>lm_rhw(disjunctive_landmarks=true, verbosity=normal, use_orders=true, only_causal_landmarks=false)
-</code></pre>
+<p>Language features supported:
+ * <strong>conditional_effects:</strong> supported if subcomponent supports them
+== RHW Landmarks ==
+The landmark generation method introduced by Richter, Helmert and Westphal (AAAI 2008).
+    lm_rhw(disjunctive_landmarks=true, verbosity=normal, use_orders=true, only_causal_landmarks=false)</p>
 <ul>
 <li><em>disjunctive_landmarks</em> (bool): keep disjunctive landmarks</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
-</li>
 <li><em>use_orders</em> (bool): use orders between landmarks</li>
-<li><em>only_causal_landmarks</em> (bool): keep only causal landmarks</li>
-</ul>
-<p>Language features supported:</p>
-<ul>
-<li><strong>conditional_effects:</strong> supported</li>
-</ul>
-<h2 id="zhugivan_landmarks">Zhu/Givan Landmarks<a class="headerlink" href="#zhugivan_landmarks" title="Permanent link">#</a></h2>
-<p>The landmark generation method introduced by Zhu &amp; Givan (ICAPS 2003 Doctoral Consortium).</p>
-<pre><code>lm_zg(verbosity=normal, use_orders=true)
-</code></pre>
-<ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><em>only_causal_landmarks</em> (bool): keep only causal landmarks
+Language features supported:</li>
+<li>
+<p><strong>conditional_effects:</strong> supported
+== Zhu/Givan Landmarks ==
+The landmark generation method introduced by Zhu &amp; Givan (ICAPS 2003 Doctoral Consortium).
+    lm_zg(verbosity=normal, use_orders=true)</p>
+</li>
+<li>
+<p><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</p>
+</li>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
-</li>
-<li><em>use_orders</em> (bool): use orders between landmarks</li>
-</ul>
-<p>Language features supported:</p>
-<ul>
+<li><em>use_orders</em> (bool): use orders between landmarks
+Language features supported:</li>
 <li><strong>conditional_effects:</strong> We think they are supported, but this is not 100% sure.</li>
 </ul>
                 

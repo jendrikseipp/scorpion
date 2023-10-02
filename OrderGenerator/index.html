@@ -390,21 +390,7 @@
       
         <li class="md-nav__item">
   <a href="#dynamic_greedy_orders" class="md-nav__link">
-    dynamic_greedy_orders
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#greedy_orders" class="md-nav__link">
-    Greedy orders
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#random_orders" class="md-nav__link">
-    Random orders
+    Dynamic greedy orders
   </a>
   
 </li>
@@ -470,8 +456,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../SearchEngine/" class="md-nav__link">
-        SearchEngine
+      <a href="../SearchAlgorithm/" class="md-nav__link">
+        SearchAlgorithm
       </a>
     </li>
   
@@ -532,21 +518,7 @@
       
         <li class="md-nav__item">
   <a href="#dynamic_greedy_orders" class="md-nav__link">
-    dynamic_greedy_orders
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#greedy_orders" class="md-nav__link">
-    Greedy orders
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#random_orders" class="md-nav__link">
-    Random orders
+    Dynamic greedy orders
   </a>
   
 </li>
@@ -567,27 +539,35 @@
                   <h1>OrderGenerator</h1>
                 
                 <p>Order abstractions for saturated cost partitioning.</p>
-<h2 id="dynamic_greedy_orders">dynamic_greedy_orders<a class="headerlink" href="#dynamic_greedy_orders" title="Permanent link">#</a></h2>
-<pre><code>dynamic_greedy_orders(scoring_function=MAX_HEURISTIC_PER_STOLEN_COSTS, random_seed=-1)
+<h2 id="dynamic_greedy_orders">Dynamic greedy orders<a class="headerlink" href="#dynamic_greedy_orders" title="Permanent link">#</a></h2>
+<p>Order abstractions greedily by a given scoring function, dynamically recomputing the next best abstraction after each ordering step.</p>
+<pre><code>dynamic_greedy_orders(scoring_function=max_heuristic_per_stolen_costs, random_seed=-1)
 </code></pre>
 <ul>
-<li><em>scoring_function</em> ({MAX_HEURISTIC, MIN_STOLEN_COSTS, MAX_HEURISTIC_PER_STOLEN_COSTS}): scoring function</li>
+<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks</li>
+<li><code>max_heuristic</code>: order by decreasing heuristic value for the given state</li>
+<li><code>min_stolen_costs</code>: order by increasing sum of costs stolen from other heuristics</li>
+<li><code>max_heuristic_per_stolen_costs</code>: order by decreasing ratio of heuristic value divided by sum of stolen costs</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<h2 id="greedy_orders">Greedy orders<a class="headerlink" href="#greedy_orders" title="Permanent link">#</a></h2>
-<p>Order abstractions greedily by a given scoring function.</p>
-<pre><code>greedy_orders(scoring_function=MAX_HEURISTIC_PER_STOLEN_COSTS, random_seed=-1)
-</code></pre>
+<p>= Cost Partitioning Heuristics =</p>
+<p>== Greedy orders ==
+Order abstractions greedily by a given scoring function.
+    greedy_orders(scoring_function=max_heuristic_per_stolen_costs, random_seed=-1)</p>
 <ul>
-<li><em>scoring_function</em> ({MAX_HEURISTIC, MIN_STOLEN_COSTS, MAX_HEURISTIC_PER_STOLEN_COSTS}): scoring function</li>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-</ul>
-<h2 id="random_orders">Random orders<a class="headerlink" href="#random_orders" title="Permanent link">#</a></h2>
-<p>Shuffle abstractions randomly.</p>
-<pre><code>random_orders(random_seed=-1)
-</code></pre>
-<ul>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks</li>
+<li><code>max_heuristic</code>: order by decreasing heuristic value for the given state</li>
+<li><code>min_stolen_costs</code>: order by increasing sum of costs stolen from other heuristics</li>
+<li><code>max_heuristic_per_stolen_costs</code>: order by decreasing ratio of heuristic value divided by sum of stolen costs</li>
+<li>
+<p><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.
+== Random orders ==
+Shuffle abstractions randomly.
+    random_orders(random_seed=-1)</p>
+</li>
+<li>
+<p><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</p>
+</li>
 </ul>
                 
               
