@@ -38,7 +38,7 @@ struct FlawedState {
     }
 
     friend std::ostream &operator<<(std::ostream &os, const FlawedState &s) {
-        return os << "Flawed abstract state: id=" << s.abs_id << ", h=" << s.h
+        return os << "id=" << s.abs_id << ", h=" << s.h
                   << ", states=" << s.concrete_states.size();
     }
 
