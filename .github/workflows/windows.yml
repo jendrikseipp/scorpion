@@ -86,7 +86,7 @@ jobs:
           dir D:\a\scorpion
 
           echo "Copy the relevant directory to a location which is not magically protected against cmake"
-          Xcopy /E /I ..\cplex_temp\cplex ..\cplex
+          Xcopy /E /I D:\a\downward\cplex_temp\cplex $ENV:cplex_DIR
 
 
       - name: Compile planner
