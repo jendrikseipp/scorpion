@@ -35,7 +35,8 @@ macro(check_and_set_compiler_flag FLAG)
 endmacro()
 
 macro(fast_downward_set_compiler_flags)
-    if(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang")
+    set(non_windows_compilers "GNU" "Clang" "AppleClang")
+    if(${CMAKE_CXX_COMPILER_ID} IN_LIST non_windows_compilers)
         check_and_set_compiler_flag( "-std=c++20" )
 
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
