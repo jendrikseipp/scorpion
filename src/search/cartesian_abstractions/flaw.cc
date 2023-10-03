@@ -9,7 +9,7 @@
 using namespace std;
 
 namespace cartesian_abstractions {
-const FlawedState FlawedState::no_state = FlawedState(-1, -1u, {});
+const FlawedState FlawedState::no_state = FlawedState(-1, UNDEFINED_COST, {});
 
 bool FlawedStates::is_consistent() const {
     return flawed_states_queue.size() == static_cast<int>(flawed_states.size());
@@ -53,7 +53,7 @@ FlawedState FlawedStates::pop_random_flawed_state_and_clear(utils::RandomNumberG
     vector<StateID> conc_states = move(random_bucket->second);
     clear();
     assert(is_consistent());
-    return FlawedState(abstract_state_id, -1u, move(conc_states));
+    return FlawedState(abstract_state_id, UNDEFINED_COST, move(conc_states));
 }
 
 int FlawedStates::num_abstract_states() const {
