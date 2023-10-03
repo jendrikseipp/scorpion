@@ -1,11 +1,3 @@
-if(NOT FAST_DOWNWARD_MAIN_CMAKELISTS_READ)
-    message(
-        FATAL_ERROR
-        "Run cmake on the CMakeLists.txt in the 'src' directory. "
-        "Please delete CMakeCache.txt from the current directory "
-        "and restart cmake.")
-endif()
-
 project(preprocess-h2 LANGUAGES CXX)
 
 set(PREPROCESS_SOURCES
@@ -59,13 +51,6 @@ macro(fast_downward_set_compiler_flags)
         set(CMAKE_CXX_FLAGS_PROFILE "-O3 -pg")
     elseif(MSVC)
         check_and_set_compiler_flag( "/std:c++20" )
-        # We force linking to be static on Windows because this makes compiling OSI simpler
-        # (dynamic linking would require DLLs for OSI). On Windows this is a compiler
-        # setting, not a linker setting.
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-        string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-        string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 
         # Enable exceptions.
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
@@ -93,11 +78,6 @@ macro(fast_downward_set_compiler_flags)
         # "unreferenced local function has been removed";
         # see http://stackoverflow.com/questions/3051992/compiler-warning-at-c-template-base-class
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4505")
-
-        # TODO: Configuration-specific flags. We currently rely on the fact that
-        # CMAKE_CXX_FLAGS_RELEASE and CMAKE_CXX_FLAGS_DEBUG get reasonable settings
-        # from cmake. This is the case for most build environments, but we have less
-        # control over the way the binary is created.
     else()
         message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER}")
     endif()

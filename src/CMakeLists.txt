@@ -51,6 +51,5 @@ add_custom_command(TARGET translate POST_BUILD
     COMMENT "Copying translator module into output directory")
 
 # Add search component as a subproject.
-set(FAST_DOWNWARD_MAIN_CMAKELISTS_READ TRUE)
 add_subdirectory(preprocess_h2)
 add_subdirectory(search)
