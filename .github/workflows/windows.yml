@@ -74,10 +74,16 @@ jobs:
           echo %cd%
           dir
 
+          mkdir D:\a\downward\downward  # This directory only exists for repos called "downward".
+
           echo "Install CPLEX"
-          mkdir D:\a\downward
           Start-Process -FilePath .\cplex.exe -ArgumentList "-f", "D:\a\scorpion\scorpion\.github\workflows\misc\cplex2211_windows_installer.properties" -PassThru | Wait-Process
           del .\cplex.exe
+
+          dir
+          dir D:\a
+          dir D:\a\downward
+          dir D:\a\scorpion
 
           echo "Copy the relevant directory to a location which is not magically protected against cmake"
           Xcopy /E /I ..\cplex_temp\cplex ..\cplex

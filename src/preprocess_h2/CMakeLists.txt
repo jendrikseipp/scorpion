@@ -17,7 +17,7 @@ include(macros)
 include(options)
 
 report_bitwidth()
-#set_up_build_types("Debug;Release")
+set_up_build_types("Debug;Release")
 
 project(preprocess-h2 LANGUAGES CXX)
 
@@ -36,3 +36,4 @@ set(PREPROCESS_SOURCES
 )
 
 add_executable(preprocess-h2 ${PREPROCESS_SOURCES})
+target_link_libraries(preprocess-h2 INTERFACE common_cxx_flags)
