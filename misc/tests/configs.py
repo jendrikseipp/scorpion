@@ -168,8 +168,7 @@ def configs_optimal_extended():
             """astar(ucp([projections(systematic(2))], opportunistic=true, max_orders=1))"""],
         "gzocp": [
             "--search",
-            """astar(gzocp(
-                [projections(systematic(2))], max_orders=1))"""],
+            """astar(gzocp([projections(systematic(2))], max_orders=1))"""],
         "lm_ucp":
             _get_landmark_config(cost_partitioning="uniform"),
         "lm_can": _get_landmark_config(cost_partitioning="canonical"),
