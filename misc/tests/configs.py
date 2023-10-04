@@ -165,8 +165,7 @@ def configs_optimal_extended():
             """astar(ucp([projections(systematic(2))]))"""],
         "oucp": [
             "--search",
-            """astar(ucp(
-                [projections(systematic(2))], opportunistic=true, max_orders=1))"""],
+            """astar(ucp([projections(systematic(2))], opportunistic=true, max_orders=1))"""],
         "gzocp": [
             "--search",
             """astar(gzocp(
