@@ -978,6 +978,7 @@ create_fast_downward_library(
         operator_counting/delete_relaxation_constraints
         operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
+        operator_counting/pho_abstraction_constraints
         operator_counting/pho_constraints
         operator_counting/state_equation_constraints
     DEPENDS lp_solver landmark_cut_heuristic pdbs task_properties

@@ -13,8 +13,6 @@ class State;
 class TaskProxy;
 
 namespace cartesian_abstractions {
-class Node;
-
 /*
   Store the Cartesian set and the ID of the node in the refinement hierarchy
   for an abstract state.

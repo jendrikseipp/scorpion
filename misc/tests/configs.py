@@ -165,12 +165,10 @@ def configs_optimal_extended():
             """astar(ucp([projections(systematic(2))]))"""],
         "oucp": [
             "--search",
-            """astar(ucp(
-                [projections(systematic(2))], opportunistic=true, max_orders=1))"""],
+            """astar(ucp([projections(systematic(2))], opportunistic=true, max_orders=1))"""],
         "gzocp": [
             "--search",
-            """astar(gzocp(
-                [projections(systematic(2))], max_orders=1))"""],
+            """astar(gzocp([projections(systematic(2))], max_orders=1))"""],
         "lm_ucp":
             _get_landmark_config(cost_partitioning="uniform"),
         "lm_can": _get_landmark_config(cost_partitioning="canonical"),
@@ -240,12 +238,10 @@ def configs_optimal_lp(lp_solver="cplex"):
             f"""astar(ocp([projections(systematic(2))], lpsolver={lp_solver}))"""],
         "pho": [
             "--search",
-            f"""astar(operatorcounting([pho_abstraction_constraints(
-                [projections(systematic(2))], saturated=false)], lpsolver={lp_solver}))"""],
+            f"""astar(operatorcounting([pho_abstraction_constraints([projections(systematic(2))], saturated=false)], lpsolver={lp_solver}))"""],
         "spho": [
             "--search",
-            f"""astar(operatorcounting([pho_abstraction_constraints(
-                [projections(systematic(2))], saturated=true)], lpsolver={lp_solver}))"""],
+            f"""astar(operatorcounting([pho_abstraction_constraints([projections(systematic(2))], saturated=true)], lpsolver={lp_solver}))"""],
         "spho_offline": [
             "--search",
             """astar(pho([projections(systematic(2))], saturated=true, max_orders=1))"""],

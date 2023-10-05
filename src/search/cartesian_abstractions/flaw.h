@@ -4,12 +4,13 @@
 #include "shortest_paths.h"
 #include "types.h"
 
+#include "../state_id.h"
+
 #include "../utils/hash.h"
 
 #include <utility>
 
 class State;
-class StateID;
 
 namespace utils {
 class RandomNumberGenerator;
