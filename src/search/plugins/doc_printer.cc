@@ -190,6 +190,7 @@ void Txt2TagsPrinter::print_category_synopsis(const string &synopsis,
            << "expressions but are deprecated."
            << endl;
     }
+    os << endl;
 }
 
 void Txt2TagsPrinter::print_category_footer() const {

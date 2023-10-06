@@ -94,7 +94,7 @@ public:
             "- **safe:** h(s) = infinity is only true for states "
             "with h*(s) = infinity\n"
             "- **preferred operators:** this heuristic identifies "
-            "preferred operators ");
+            "preferred operators\n\n");
         allow_variable_binding();
     }
 }
