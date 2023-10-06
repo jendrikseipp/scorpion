@@ -409,6 +409,20 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#merge_strategy_sscs" class="md-nav__link">
+    Merge strategy SSCs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stateless_merge_strategy" class="md-nav__link">
+    Stateless merge strategy
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -619,6 +633,20 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#merge_strategy_sscs" class="md-nav__link">
+    Merge strategy SSCs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stateless_merge_strategy" class="md-nav__link">
+    Stateless merge strategy
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -647,16 +675,16 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output
-<strong>Note:</strong> An example of a precomputed merge startegy is a linear merge strategy, which can be obtained using:</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
+<p><strong>Note:</strong> An example of a precomputed merge startegy is a linear merge strategy, which can be obtained using:</p>
 <pre><code>merge_strategy=merge_precomputed(merge_tree=linear(&lt;variable_order&gt;))
 </code></pre>
-<p>== Merge strategy SSCs ==
-This merge strategy implements the algorithm described in the paper </p>
+<h2 id="merge_strategy_sscs">Merge strategy SSCs<a class="headerlink" href="#merge_strategy_sscs" title="Permanent link">#</a></h2>
+<p>This merge strategy implements the algorithm described in the paper </p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
-<a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
-In <em>Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)</em>, pp. 2358-2366. AAAI Press, 2016.</p>
+ <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
+ In <em>Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)</em>, pp. 2358-2366. AAAI Press, 2016.</p>
 <p>In a nutshell, it computes the maximal SCCs of the causal graph, obtaining a partitioning of the task's variables. Every such partition is then merged individually, using the specified fallback merge strategy, considering the SCCs in a configurable order. Afterwards, all resulting composite abstractions are merged to form the final abstraction, again using the specified fallback merge strategy and the configurable order of the SCCs.</p>
 <pre><code>merge_sccs(order_of_sccs=topological, merge_tree=&lt;none&gt;, merge_selector=&lt;none&gt;, verbosity=normal)
 </code></pre>
@@ -672,22 +700,21 @@ In <em>Proceedings of the 26th International Conference on Planning and Scheduli
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li>
-<p><code>debug</code>: like verbose with additional debug output
-== Stateless merge strategy ==
-This merge strategy has a merge selector, which computes the next merge only depending on the current state of the factored transition system, not requiring any additional information.
-    merge_stateless(merge_selector, verbosity=normal)</p>
-</li>
-<li>
-<p><em>merge_selector</em> (<a href="../MergeSelector/">MergeSelector</a>): The merge selector to be used.</p>
-</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+<h2 id="stateless_merge_strategy">Stateless merge strategy<a class="headerlink" href="#stateless_merge_strategy" title="Permanent link">#</a></h2>
+<p>This merge strategy has a merge selector, which computes the next merge only depending on the current state of the factored transition system, not requiring any additional information.</p>
+<pre><code>merge_stateless(merge_selector, verbosity=normal)
+</code></pre>
+<ul>
+<li><em>merge_selector</em> (<a href="../MergeSelector/">MergeSelector</a>): The merge selector to be used.</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output
-<strong>Note:</strong> Examples include the DFP merge strategy, which can be obtained using:</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
+<p><strong>Note:</strong> Examples include the DFP merge strategy, which can be obtained using:</p>
 <pre><code>merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order(&lt;order_option&gt;))]))
 </code></pre>
 <p>and the (dynamic/score-based) MIASM strategy, which can be obtained using:</p>

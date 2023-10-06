@@ -276,6 +276,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#projections" class="md-nav__link">
+    projections
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -619,6 +626,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#projections" class="md-nav__link">
+    projections
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -686,15 +700,14 @@
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
-<li>
-<p><code>debug</code>: like verbose with additional debug output
-== projections ==
-Projection generator
-    projections(patterns=<none>, dominance_pruning=false, combine_labels=true, create_complete_transition_system=false, verbosity=normal)</p>
-</li>
-<li>
-<p><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</p>
-</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+<h2 id="projections">projections<a class="headerlink" href="#projections" title="Permanent link">#</a></h2>
+<p>Projection generator</p>
+<pre><code>projections(patterns=&lt;none&gt;, dominance_pruning=false, combine_labels=true, create_complete_transition_system=false, verbosity=normal)
+</code></pre>
+<ul>
+<li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
 <li><em>dominance_pruning</em> (bool): prune dominated patterns</li>
 <li><em>combine_labels</em> (bool): group labels that only induce parallel transitions</li>
 <li><em>create_complete_transition_system</em> (bool): create explicit transition system</li>
