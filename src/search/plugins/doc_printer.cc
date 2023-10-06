@@ -133,7 +133,7 @@ void Txt2TagsPrinter::print_arguments(const Feature &feature) const {
         if (arg_type.is_enum_type()) {
             for (const pair<string, string> &explanation :
                  arg_type.get_documented_enum_values()) {
-                os << "  - ``" << explanation.first << "``: "
+                os << "    - ``" << explanation.first << "``: "
                    << explanation.second << endl;
             }
         }
