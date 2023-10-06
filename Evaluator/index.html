@@ -65,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#blind_heuristic" class="md-skip">
+        <a href="#additive_heuristic" class="md-skip">
           Skip to content
         </a>
       
@@ -306,6 +306,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#additive_heuristic" class="md-nav__link">
+    Additive heuristic
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#blind_heuristic" class="md-nav__link">
@@ -916,6 +923,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#additive_heuristic" class="md-nav__link">
+    Additive heuristic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#blind_heuristic" class="md-nav__link">
     Blind heuristic
   </a>
@@ -1246,18 +1260,21 @@
 <li><strong>admissible:</strong> h(s) &lt;= h*(s) for all states s</li>
 <li><strong>consistent:</strong> h(s) &lt;= c(s, s') + h(s') for all states s connected to states s' by an action with cost c(s, s')</li>
 <li><strong>safe:</strong> h(s) = infinity is only true for states with h*(s) = infinity</li>
-<li><strong>preferred operators:</strong> this heuristic identifies preferred operators </li>
+<li><strong>preferred operators:</strong> this heuristic identifies preferred operators</li>
 </ul>
-<p>This feature type can be bound to variables using <code>let(variable_name, variable_definition, expression)</code> where <code>expression</code> can use <code>variable_name</code>. Predefinitions using <code>--evaluator</code>, <code>--heuristic</code>, and <code>--landmarks</code> are automatically transformed into <code>let</code>-expressions but are deprecated.
-== Additive heuristic ==
-    add(verbosity=normal, transform=no_transform(), cache_estimates=true)
- * <em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.
-  * <code>silent</code>: only the most basic output
-  * <code>normal</code>: relevant information to monitor progress
-  * <code>verbose</code>: full output
-  * <code>debug</code>: like verbose with additional debug output
- * <em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.
- * <em>cache_estimates</em> (bool): cache heuristic estimates</p>
+<p>This feature type can be bound to variables using <code>let(variable_name, variable_definition, expression)</code> where <code>expression</code> can use <code>variable_name</code>. Predefinitions using <code>--evaluator</code>, <code>--heuristic</code>, and <code>--landmarks</code> are automatically transformed into <code>let</code>-expressions but are deprecated.</p>
+<h2 id="additive_heuristic">Additive heuristic<a class="headerlink" href="#additive_heuristic" title="Permanent link">#</a></h2>
+<pre><code>add(verbosity=normal, transform=no_transform(), cache_estimates=true)
+</code></pre>
+<ul>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+</ul>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
