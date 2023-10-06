@@ -88,12 +88,12 @@ public:
             "For re-using evaluators, see OptionSyntax#Evaluator_Predefinitions.\n\n"
             "If the evaluator is a heuristic, "
             "definitions of //properties// in the descriptions below:\n\n"
-            " * **admissible:** h(s) <= h*(s) for all states s\n"
-            " * **consistent:** h(s) <= c(s, s') + h(s') for all states s "
+            "- **admissible:** h(s) <= h*(s) for all states s\n"
+            "- **consistent:** h(s) <= c(s, s') + h(s') for all states s "
             "connected to states s' by an action with cost c(s, s')\n"
-            " * **safe:** h(s) = infinity is only true for states "
+            "- **safe:** h(s) = infinity is only true for states "
             "with h*(s) = infinity\n"
-            " * **preferred operators:** this heuristic identifies "
+            "- **preferred operators:** this heuristic identifies "
             "preferred operators ");
         allow_variable_binding();
     }

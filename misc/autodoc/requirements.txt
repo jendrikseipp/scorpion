@@ -68,7 +68,7 @@ requests==2.31.0
     # via mkdocs-material
 six==1.16.0
     # via python-dateutil
-txt2tags==3.8
+txt2tags -e git+https://github.com/txt2tags/txt2tags.git@4d1fe66#egg={txt2tags}
     # via -r requirements.in
 urllib3==2.0.6
     # via requests
