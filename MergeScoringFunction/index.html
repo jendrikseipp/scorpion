@@ -741,14 +741,18 @@
 <pre><code>total_order(atomic_ts_order=reverse_level, product_ts_order=new_to_old, atomic_before_product=false, random_seed=-1)
 </code></pre>
 <ul>
-<li><em>atomic_ts_order</em> ({reverse_level, level, random}): The order in which atomic transition systems are considered when considering pairs of potential merges.</li>
+<li><em>atomic_ts_order</em> ({reverse_level, level, random}): The order in which atomic transition systems are considered when considering pairs of potential merges.<ul>
 <li><code>reverse_level</code>: the variable order of Fast Downward</li>
 <li><code>level</code>: opposite of reverse_level</li>
 <li><code>random</code>: a randomized order</li>
-<li><em>product_ts_order</em> ({old_to_new, new_to_old, random}): The order in which product transition systems are considered when considering pairs of potential merges.</li>
+</ul>
+</li>
+<li><em>product_ts_order</em> ({old_to_new, new_to_old, random}): The order in which product transition systems are considered when considering pairs of potential merges.<ul>
 <li><code>old_to_new</code>: consider composite transition systems from oldest to most recent</li>
 <li><code>new_to_old</code>: opposite of old_to_new</li>
 <li><code>random</code>: a randomized order</li>
+</ul>
+</li>
 <li><em>atomic_before_product</em> (bool): Consider atomic transition systems before composite ones iff true.</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>

@@ -671,11 +671,13 @@
 </code></pre>
 <ul>
 <li><em>merge_tree</em> (<a href="../MergeTree/">MergeTree</a>): The precomputed merge tree.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> An example of a precomputed merge startegy is a linear merge strategy, which can be obtained using:</p>
 <pre><code>merge_strategy=merge_precomputed(merge_tree=linear(&lt;variable_order&gt;))
@@ -689,18 +691,22 @@
 <pre><code>merge_sccs(order_of_sccs=topological, merge_tree=&lt;none&gt;, merge_selector=&lt;none&gt;, verbosity=normal)
 </code></pre>
 <ul>
-<li><em>order_of_sccs</em> ({topological, reverse_topological, decreasing, increasing}): how the SCCs should be ordered</li>
+<li><em>order_of_sccs</em> ({topological, reverse_topological, decreasing, increasing}): how the SCCs should be ordered<ul>
 <li><code>topological</code>: according to the topological ordering of the directed graph where each obtained SCC is a 'supervertex'</li>
 <li><code>reverse_topological</code>: according to the reverse topological ordering of the directed graph where each obtained SCC is a 'supervertex'</li>
 <li><code>decreasing</code>: biggest SCCs first, using 'topological' as tie-breaker</li>
 <li><code>increasing</code>: smallest SCCs first, using 'topological' as tie-breaker</li>
+</ul>
+</li>
 <li><em>merge_tree</em> (<a href="../MergeTree/">MergeTree</a>): the fallback merge strategy to use if a precomputed strategy should be used.</li>
 <li><em>merge_selector</em> (<a href="../MergeSelector/">MergeSelector</a>): the fallback merge strategy to use if a stateless strategy should be used.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="stateless_merge_strategy">Stateless merge strategy<a class="headerlink" href="#stateless_merge_strategy" title="Permanent link">#</a></h2>
 <p>This merge strategy has a merge selector, which computes the next merge only depending on the current state of the factored transition system, not requiring any additional information.</p>
@@ -708,11 +714,13 @@
 </code></pre>
 <ul>
 <li><em>merge_selector</em> (<a href="../MergeSelector/">MergeSelector</a>): The merge selector to be used.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> Examples include the DFP merge strategy, which can be obtained using:</p>
 <pre><code>merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order(&lt;order_option&gt;))]))

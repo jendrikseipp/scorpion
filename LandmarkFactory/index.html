@@ -713,11 +713,13 @@
 <pre><code>lm_exhaust(verbosity=normal, only_causal_landmarks=false)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>only_causal_landmarks</em> (bool): keep only causal landmarks</li>
 </ul>
 <p>Supported language features:</p>
@@ -731,11 +733,13 @@
 <ul>
 <li><em>m</em> (int): subset size (if unsure, use the default of 2)</li>
 <li><em>conjunctive_landmarks</em> (bool): keep conjunctive landmarks</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>use_orders</em> (bool): use orders between landmarks</li>
 </ul>
 <p>Supported language features:</p>
@@ -748,11 +752,13 @@
 </code></pre>
 <ul>
 <li><em>lm_factories</em> (list of <a href="./">LandmarkFactory</a>): </li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Precedence:</strong> Fact landmarks take precedence over disjunctive landmarks, orderings take precedence in the usual manner (gn &gt; nat &gt; reas &gt; o_reas). </p>
 <p><strong>Note:</strong> Does not currently support conjunctive landmarks</p>
@@ -769,11 +775,13 @@
 </code></pre>
 <ul>
 <li><em>lm_factory</em> (<a href="./">LandmarkFactory</a>): </li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Obedient-reasonable orders:</strong> Hoffmann et al. (2004) suggest obedient-reasonable orders in addition to reasonable orders. Obedient-reasonable orders were later also used by the LAMA planner (Richter and Westphal, 2010). They are "reasonable orders" under the assumption that all (non-obedient) reasonable orders are actually "natural", i.e., every plan obeys the reasonable orders. We observed experimentally that obedient-reasonable orders have minimal effect on the performance of LAMA (Büchner et al., 2023) and decided to remove them in issue1089.</p>
 <p>Supported language features:</p>
@@ -786,11 +794,13 @@
 </code></pre>
 <ul>
 <li><em>disjunctive_landmarks</em> (bool): keep disjunctive landmarks</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>use_orders</em> (bool): use orders between landmarks</li>
 <li><em>only_causal_landmarks</em> (bool): keep only causal landmarks</li>
 </ul>
@@ -803,11 +813,13 @@
 <pre><code>lm_zg(verbosity=normal, use_orders=true)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>use_orders</em> (bool): use orders between landmarks</li>
 </ul>
 <p>Supported language features:</p>

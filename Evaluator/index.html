@@ -1267,11 +1267,13 @@
 <pre><code>add(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1293,11 +1295,13 @@
 <pre><code>blind(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1318,11 +1322,13 @@
 <pre><code>cea(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1367,14 +1373,16 @@
 <li><em>max_states</em> (int [1, infinity]): maximum sum of abstract states over all abstractions</li>
 <li><em>max_transitions</em> (int [0, infinity]): maximum sum of state-changing transitions (excluding self-loops) over all abstractions</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for building abstractions</li>
-<li><em>pick_flawed_abstract_state</em> ({first, first_on_shortest_path, random, min_h, max_h, batch_min_h}): flaw-selection strategy</li>
+<li><em>pick_flawed_abstract_state</em> ({first, first_on_shortest_path, random, min_h, max_h, batch_min_h}): flaw-selection strategy<ul>
 <li><code>first</code>: Consider first encountered flawed abstract state and a random concrete state.</li>
 <li><code>first_on_shortest_path</code>: Follow the arbitrary solution in the shortest path tree (no flaw search). Consider first encountered flawed abstract state and a random concrete state.</li>
 <li><code>random</code>: Collect all flawed abstract states and then consider a random abstract state and a random concrete state.</li>
 <li><code>min_h</code>: Collect all flawed abstract states and then consider a random abstract state with minimum h value and a random concrete state.</li>
 <li><code>max_h</code>: Collect all flawed abstract states and then consider a random abstract state with maximum h value and a random concrete state.</li>
 <li><code>batch_min_h</code>: Collect all flawed abstract states and iteratively refine them (by increasing h value). Only start a new flaw search once all remaining flawed abstract states are refined. For each abstract state consider all concrete states.</li>
-<li><em>pick_split</em> ({random, min_unwanted, max_unwanted, min_refined, max_refined, min_hadd, max_hadd, min_cg, max_cg, max_cover}): split-selection strategy</li>
+</ul>
+</li>
+<li><em>pick_split</em> ({random, min_unwanted, max_unwanted, min_refined, max_refined, min_hadd, max_hadd, min_cg, max_cg, max_cover}): split-selection strategy<ul>
 <li><code>random</code>: select a random variable (among all eligible variables)</li>
 <li><code>min_unwanted</code>: select an eligible variable which has the least unwanted values (number of values of v that land in the abstract state whose h-value will probably be raised) in the flaw state</li>
 <li><code>max_unwanted</code>: select an eligible variable which has the most unwanted values (number of values of v that land in the abstract state whose h-value will probably be raised) in the flaw state</li>
@@ -1385,7 +1393,9 @@
 <li><code>min_cg</code>: order by increasing position in partial ordering of causal graph</li>
 <li><code>max_cg</code>: order by decreasing position in partial ordering of causal graph</li>
 <li><code>max_cover</code>: compute split that covers the maximum number of flaws for several concrete states.</li>
-<li><em>tiebreak_split</em> ({random, min_unwanted, max_unwanted, min_refined, max_refined, min_hadd, max_hadd, min_cg, max_cg, max_cover}): split-selection strategy for breaking ties</li>
+</ul>
+</li>
+<li><em>tiebreak_split</em> ({random, min_unwanted, max_unwanted, min_refined, max_refined, min_hadd, max_hadd, min_cg, max_cg, max_cover}): split-selection strategy for breaking ties<ul>
 <li><code>random</code>: select a random variable (among all eligible variables)</li>
 <li><code>min_unwanted</code>: select an eligible variable which has the least unwanted values (number of values of v that land in the abstract state whose h-value will probably be raised) in the flaw state</li>
 <li><code>max_unwanted</code>: select an eligible variable which has the most unwanted values (number of values of v that land in the abstract state whose h-value will probably be raised) in the flaw state</li>
@@ -1396,20 +1406,26 @@
 <li><code>min_cg</code>: order by increasing position in partial ordering of causal graph</li>
 <li><code>max_cg</code>: order by decreasing position in partial ordering of causal graph</li>
 <li><code>max_cover</code>: compute split that covers the maximum number of flaws for several concrete states.</li>
+</ul>
+</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
-<li><em>dot_graph_verbosity</em> ({silent, write_to_console, write_to_file}): verbosity of printing/writing dot graphs</li>
+<li><em>dot_graph_verbosity</em> ({silent, write_to_console, write_to_file}): verbosity of printing/writing dot graphs<ul>
 <li><code>silent</code>: </li>
 <li><code>write_to_console</code>: </li>
 <li><code>write_to_file</code>: </li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>max_concrete_states_per_abstract_state</em> (int [1, infinity]): maximum number of flawed concrete states stored per abstract state</li>
 <li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search</li>
 <li><em>use_general_costs</em> (bool): allow negative costs in cost partitioning</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1431,11 +1447,13 @@
 </code></pre>
 <ul>
 <li><em>max_cache_size</em> (int [0, infinity]): maximum number of cached entries per variable (set to 0 to disable cache)</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1456,11 +1474,13 @@
 <pre><code>ff(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1481,11 +1501,13 @@
 <pre><code>goalcount(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1507,11 +1529,13 @@
 </code></pre>
 <ul>
 <li><em>m</em> (int [1, infinity]): subset size</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1532,11 +1556,13 @@
 <pre><code>hmax(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1566,14 +1592,16 @@
 <li><em>prog_goal</em> (bool): Use goal progression.</li>
 <li><em>prog_gn</em> (bool): Use greedy-necessary ordering progression.</li>
 <li><em>prog_r</em> (bool): Use reasonable ordering progression.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
-<li><em>cost_partitioning</em> ({optimal, uniform, opportunistic_uniform, greedy_zero_one, saturated, canonical, pho}): strategy for partitioning operator costs among landmarks</li>
+<li><em>cost_partitioning</em> ({optimal, uniform, opportunistic_uniform, greedy_zero_one, saturated, canonical, pho}): strategy for partitioning operator costs among landmarks<ul>
 <li><code>optimal</code>: use optimal (LP-based) cost partitioning</li>
 <li><code>uniform</code>: partition operator costs uniformly among all landmarks achieved by that operator</li>
 <li><code>opportunistic_uniform</code>: like uniform, but order landmarks and reuse costs not consumed by earlier landmarks</li>
@@ -1581,14 +1609,20 @@
 <li><code>saturated</code>: like greedy_zero_one, but reuse costs not consumed by earlier landmarks</li>
 <li><code>canonical</code>: canonical heuristic over landmarks</li>
 <li><code>pho</code>: post-hoc optimization over landmarks</li>
-<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks</li>
+</ul>
+</li>
+<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks<ul>
 <li><code>max_heuristic</code>: order by decreasing heuristic value for the given state</li>
 <li><code>min_stolen_costs</code>: order by increasing sum of costs stolen from other heuristics</li>
 <li><code>max_heuristic_per_stolen_costs</code>: order by decreasing ratio of heuristic value divided by sum of stolen costs</li>
+</ul>
+</li>
 <li><em>alm</em> (bool): use action landmarks</li>
-<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs</li>
+<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
@@ -1622,11 +1656,13 @@
 <li><em>prog_goal</em> (bool): Use goal progression.</li>
 <li><em>prog_gn</em> (bool): Use greedy-necessary ordering progression.</li>
 <li><em>prog_r</em> (bool): Use reasonable ordering progression.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1655,11 +1691,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <pre><code>lmcut(verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1696,11 +1734,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <pre><code>merge_and_shrink(verbosity=normal, transform=no_transform(), cache_estimates=true, merge_strategy, shrink_strategy, label_reduction=&lt;none&gt;, prune_unreachable_states=true, prune_irrelevant_states=true, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1, main_loop_max_time=infinity)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>merge_strategy</em> (<a href="../MergeStrategy/">MergeStrategy</a>): See detailed documentation for merge strategies. We currently recommend SCC-DFP, which can be achieved using <code>merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order]))</code></li>
@@ -1742,14 +1782,18 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <ul>
 <li><em>constraint_generators</em> (list of <a href="../ConstraintGenerator/">ConstraintGenerator</a>): methods that generate constraints over operator-counting variables</li>
 <li><em>use_integer_operator_counts</em> (bool): restrict operator-counting variables to integer values. Computing the heuristic with integer variables can produce higher values but requires solving a MIP instead of an LP which is generally more computationally expensive. Turning this option on can thus drastically increase the runtime.</li>
-<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs</li>
+<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1774,22 +1818,26 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>value</em> (int [0, infinity]): the constant value</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="g-value_evaluator">g-value evaluator<a class="headerlink" href="#g-value_evaluator" title="Permanent link">#</a></h2>
 <p>Returns the g-value (path cost) of the search node.</p>
 <pre><code>g(verbosity=normal)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="max_evaluator">Max evaluator<a class="headerlink" href="#max_evaluator" title="Permanent link">#</a></h2>
 <p>Calculates the maximum of the sub-evaluators.</p>
@@ -1797,22 +1845,26 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="./">Evaluator</a>): at least one evaluator</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="preference_evaluator">Preference evaluator<a class="headerlink" href="#preference_evaluator" title="Permanent link">#</a></h2>
 <p>Returns 0 if preferred is true and 1 otherwise.</p>
 <pre><code>pref(verbosity=normal)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="sum_evaluator">Sum evaluator<a class="headerlink" href="#sum_evaluator" title="Permanent link">#</a></h2>
 <p>Calculates the sum of the sub-evaluators.</p>
@@ -1820,11 +1872,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="./">Evaluator</a>): at least one evaluator</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="weighted_evaluator">Weighted evaluator<a class="headerlink" href="#weighted_evaluator" title="Permanent link">#</a></h2>
 <p>Multiplies the value of the evaluator with the given weight.</p>
@@ -1833,11 +1887,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <ul>
 <li><em>eval</em> (<a href="./">Evaluator</a>): evaluator</li>
 <li><em>weight</em> (int): weight</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h1 id="cost_partitioning_heuristics">Cost Partitioning Heuristics<a class="headerlink" href="#cost_partitioning_heuristics" title="Permanent link">#</a></h1>
 <h2 id="canonical_heuristic_over_abstractions">Canonical heuristic over abstractions<a class="headerlink" href="#canonical_heuristic_over_abstractions" title="Permanent link">#</a></h2>
@@ -1846,11 +1902,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1872,11 +1930,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
@@ -1907,11 +1967,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -1934,16 +1996,20 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
-<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs</li>
+<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
+</ul>
+</li>
 <li><em>allow_negative_costs</em> (bool): use general instead of non-negative cost partitioning</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
@@ -1966,11 +2032,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>saturated</em> (bool): saturate costs</li>
@@ -1982,9 +2050,11 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><em>samples</em> (int [1, infinity]): number of samples for diversification</li>
 <li><em>max_optimization_time</em> (double [0, infinity]): maximum time in seconds for optimizing each order with hill climbing</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs</li>
+<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
 <p>Supported language features:</p>
@@ -2009,17 +2079,21 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
-<li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions</li>
+<li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions<ul>
 <li><code>all</code>: preserve estimates of all states</li>
 <li><code>perim</code>: preserve estimates of states in perimeter around goal</li>
 <li><code>perimstar</code>: compute 'perim' first and then 'all' with remaining costs</li>
+</ul>
+</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
 <li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
 <li><em>max_size</em> (int [0, infinity]): maximum heuristic size in KiB</li>
@@ -2052,17 +2126,21 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
-<li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions</li>
+<li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions<ul>
 <li><code>all</code>: preserve estimates of all states</li>
 <li><code>perim</code>: preserve estimates of states in perimeter around goal</li>
 <li><code>perimstar</code>: compute 'perim' first and then 'all' with remaining costs</li>
+</ul>
+</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
 <li><em>max_size</em> (int [0, infinity]): maximum (estimated) heuristic size in KiB</li>
 <li><em>max_time</em> (double [0, infinity]): maximum time in seconds for finding orders</li>
@@ -2091,11 +2169,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
@@ -2130,11 +2210,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <ul>
 <li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
 <li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -2172,11 +2254,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><em>max_generated_patterns</em> (int [0, infinity]): maximum number of generated patterns</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -2208,11 +2292,13 @@ The search is ended if there is no more improvement (or the improvement is small
 </code></pre>
 <ul>
 <li><em>pattern</em> (<a href="../PatternGenerator/">PatternGenerator</a>): pattern generation method</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -2235,11 +2321,13 @@ The search is ended if there is no more improvement (or the improvement is small
 </code></pre>
 <ul>
 <li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -2266,14 +2354,18 @@ The search is ended if there is no more improvement (or the improvement is small
 </code></pre>
 <ul>
 <li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
-<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs</li>
+<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -2302,14 +2394,18 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><em>num_samples</em> (int [0, infinity]): Number of states to sample</li>
 <li><em>max_num_heuristics</em> (int [0, infinity]): maximum number of potential heuristics</li>
 <li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
-<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs</li>
+<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
@@ -2337,14 +2433,18 @@ The search is ended if there is no more improvement (or the improvement is small
 </code></pre>
 <ul>
 <li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
-<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs</li>
+<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
@@ -2373,14 +2473,18 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><em>num_heuristics</em> (int [0, infinity]): number of potential heuristics</li>
 <li><em>num_samples</em> (int [0, infinity]): Number of states to sample</li>
 <li><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</li>
-<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs</li>
+<li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>

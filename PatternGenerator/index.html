@@ -770,11 +770,13 @@
 <li><em>max_pdb_size</em> (int [1, infinity]): maximum number of states in the final pattern database (possibly ignored by a singleton pattern consisting of a single goal variable)</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for the pattern generation</li>
 <li><em>use_wildcard_plans</em> (bool): if true, compute wildcard plans which are sequences of sets of operators that induce the same transition; otherwise compute regular plans which are sequences of single operators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <h3 id="short_description_of_the_cegar_algorithm">Short description of the CEGAR algorithm<a class="headerlink" href="#short_description_of_the_cegar_algorithm" title="Permanent link">#</a></h3>
@@ -791,22 +793,26 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 </code></pre>
 <ul>
 <li><em>max_states</em> (int [1, infinity]): maximal number of abstract states in the pattern database.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="manual_pattern">manual_pattern<a class="headerlink" href="#manual_pattern" title="Permanent link">#</a></h2>
 <pre><code>manual_pattern(pattern, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>pattern</em> (list of int): list of variable numbers of the planning task that should be used as pattern.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="random_pattern">Random Pattern<a class="headerlink" href="#random_pattern" title="Permanent link">#</a></h2>
 <p>This pattern generator implements the 'single randomized causal graph' algorithm described in experiments of the the paper</p>
@@ -820,11 +826,13 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <li><em>max_pdb_size</em> (int [1, infinity]): maximum number of states in the final pattern database (possibly ignored by a singleton pattern consisting of a single goal variable)</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for the pattern generation</li>
 <li><em>bidirectional</em> (bool): this option decides if the causal graph is considered to be directed or undirected selecting predecessors of already selected variables. If true (default), it is considered to be undirected (precondition-effect edges are bidirectional). If false, it is considered to be directed (a variable is a neighbor only if it is a predecessor.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <h3 id="short_description_of_the_random_pattern_algorithm">Short description of the random pattern algorithm<a class="headerlink" href="#short_description_of_the_random_pattern_algorithm" title="Permanent link">#</a></h3>

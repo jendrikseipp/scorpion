@@ -982,11 +982,13 @@
 </code></pre>
 <ul>
 <li><em>max_states</em> (int [1, infinity]): maximum abstraction size for combo strategy</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="disjoint_cegar">Disjoint CEGAR<a class="headerlink" href="#disjoint_cegar" title="Permanent link">#</a></h2>
 <p>This pattern collection generator uses the CEGAR algorithm to compute a pattern for the planning task. See below for a description of the algorithm and some implementation notes. The original algorithm (called single CEGAR) is described in the paper </p>
@@ -1000,11 +1002,13 @@
 <li><em>max_collection_size</em> (int [1, infinity]): maximum number of states in the pattern collection (ignored for the initial collection consisting of a singleton pattern for each goal variable)</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for this pattern collection generator (ignored for computing the initial collection consisting of a singleton pattern for each goal variable)</li>
 <li><em>use_wildcard_plans</em> (bool): if true, compute wildcard plans which are sequences of sets of operators that induce the same transition; otherwise compute regular plans which are sequences of single operators</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <h3 id="short_description_of_the_cegar_algorithm">Short description of the CEGAR algorithm<a class="headerlink" href="#short_description_of_the_cegar_algorithm" title="Permanent link">#</a></h3>
@@ -1030,11 +1034,13 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <li><em>mutation_probability</em> (double [0.0, 1.0]): probability for flipping a bit in the genetic algorithm</li>
 <li><em>disjoint</em> (bool): consider a pattern collection invalid (giving it very low fitness) if its patterns are not disjoint</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> This pattern generation method uses the zero/one pattern database heuristic.</p>
 <h3 id="implementation_notes">Implementation Notes<a class="headerlink" href="#implementation_notes" title="Permanent link">#</a></h3>
@@ -1071,11 +1077,13 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for improving the initial pattern collection via hill climbing. If set to 0, no hill climbing is performed at all. Note that this limit only affects hill climbing. Use max_time_dominance_pruning to limit the time spent for pruning dominated patterns.</li>
 <li><em>max_generated_patterns</em> (int [0, infinity]): maximum number of generated patterns</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> The pattern collection created by the algorithm will always contain all patterns consisting of a single goal variable, even if this violates the pdb_max_size or collection_max_size limits.</p>
 <p><strong>Note:</strong> This pattern generation method generates patterns optimized for use with the canonical pattern database heuristic.</p>
@@ -1091,11 +1099,13 @@ The search is ended if there is no more improvement (or the improvement is small
 </code></pre>
 <ul>
 <li><em>patterns</em> (list of list of int): list of patterns (which are lists of variable numbers of the planning task).</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="multiple_cegar">Multiple CEGAR<a class="headerlink" href="#multiple_cegar" title="Permanent link">#</a></h2>
 <p>This pattern collection generator implements the multiple CEGAR algorithm described in the paper</p>
@@ -1113,11 +1123,13 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><em>stagnation_limit</em> (double [1.0, infinity]): maximum time in seconds this pattern generator is allowed to run without generating a new pattern. It terminates prematurely if this limit is hit unless enable_blacklist_on_stagnation is enabled.</li>
 <li><em>blacklist_trigger_percentage</em> (double [0.0, 1.0]): percentage of total_max_time after which blacklisting is enabled</li>
 <li><em>enable_blacklist_on_stagnation</em> (bool): if true, blacklisting is enabled when stagnation_limit is hit for the first time (unless it was already enabled due to blacklist_trigger_percentage) and pattern generation is terminated when stagnation_limit is hit for the second time. If false, pattern generation is terminated already the first time stagnation_limit is hit.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>use_wildcard_plans</em> (bool): if true, compute wildcard plans which are sequences of sets of operators that induce the same transition; otherwise compute regular plans which are sequences of single operators</li>
 </ul>
@@ -1151,11 +1163,13 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><em>stagnation_limit</em> (double [1.0, infinity]): maximum time in seconds this pattern generator is allowed to run without generating a new pattern. It terminates prematurely if this limit is hit unless enable_blacklist_on_stagnation is enabled.</li>
 <li><em>blacklist_trigger_percentage</em> (double [0.0, 1.0]): percentage of total_max_time after which blacklisting is enabled</li>
 <li><em>enable_blacklist_on_stagnation</em> (bool): if true, blacklisting is enabled when stagnation_limit is hit for the first time (unless it was already enabled due to blacklist_trigger_percentage) and pattern generation is terminated when stagnation_limit is hit for the second time. If false, pattern generation is terminated already the first time stagnation_limit is hit.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>bidirectional</em> (bool): this option decides if the causal graph is considered to be directed or undirected selecting predecessors of already selected variables. If true (default), it is considered to be undirected (precondition-effect edges are bidirectional). If false, it is considered to be directed (a variable is a neighbor only if it is a predecessor.</li>
 </ul>
@@ -1186,13 +1200,15 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><em>max_total_evaluations</em> (int [0, infinity]): maximum total pattern evaluations</li>
 <li><em>saturate</em> (bool): only select patterns useful in saturated cost partitionings</li>
 <li><em>create_complete_transition_system</em> (bool): create explicit transition system (necessary for tasks with conditional effects)</li>
-<li><em>pattern_type</em> ({naive, interesting_general, interesting_non_negative}): type of patterns</li>
+<li><em>pattern_type</em> ({naive, interesting_general, interesting_non_negative}): type of patterns<ul>
 <li><code>naive</code>: all patterns up to the given size</li>
 <li><code>interesting_general</code>: only consider the union of two disjoint patterns if the union has more information than the individual patterns under a general cost partitioning</li>
 <li><code>interesting_non_negative</code>: like interesting_general, but considering non-negative cost partitioning</li>
+</ul>
+</li>
 <li><em>ignore_useless_patterns</em> (bool): ignore patterns that induce no transitions with positive finite cost</li>
 <li><em>store_dead_ends</em> (bool): store dead ends in dead end tree (used to prune the search later)</li>
-<li><em>order</em> ({random, states_up, states_down, ops_up, ops_down, cg_up, cg_down}): order in which to consider patterns of the same size (based on states in projection, active operators or position of the pattern variables in the partial ordering of the causal graph)</li>
+<li><em>order</em> ({random, states_up, states_down, ops_up, ops_down, cg_up, cg_down}): order in which to consider patterns of the same size (based on states in projection, active operators or position of the pattern variables in the partial ordering of the causal graph)<ul>
 <li><code>random</code>: order randomly</li>
 <li><code>states_up</code>: order by increasing number of abstract states</li>
 <li><code>states_down</code>: order by decreasing number of abstract states</li>
@@ -1200,12 +1216,16 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><code>ops_down</code>: order by decreasing number of active operators</li>
 <li><code>cg_up</code>: use lexicographical order</li>
 <li><code>cg_down</code>: use reverse lexicographical order</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="systematically_generated_patterns">Systematically generated patterns<a class="headerlink" href="#systematically_generated_patterns" title="Permanent link">#</a></h2>
 <p>Generates all (interesting) patterns with up to pattern_max_size variables. For details, see</p>
@@ -1220,15 +1240,19 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 </code></pre>
 <ul>
 <li><em>pattern_max_size</em> (int [1, infinity]): max number of variables per pattern</li>
-<li><em>pattern_type</em> ({naive, interesting_general, interesting_non_negative}): type of patterns</li>
+<li><em>pattern_type</em> ({naive, interesting_general, interesting_non_negative}): type of patterns<ul>
 <li><code>naive</code>: all patterns up to the given size</li>
 <li><code>interesting_general</code>: only consider the union of two disjoint patterns if the union has more information than the individual patterns under a general cost partitioning</li>
 <li><code>interesting_non_negative</code>: like interesting_general, but considering non-negative cost partitioning</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 
 

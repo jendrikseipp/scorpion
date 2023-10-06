@@ -659,14 +659,16 @@
 <li><em>max_states</em> (int [1, infinity]): maximum sum of abstract states over all abstractions</li>
 <li><em>max_transitions</em> (int [0, infinity]): maximum sum of state-changing transitions (excluding self-loops) over all abstractions</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for building abstractions</li>
-<li><em>pick_flawed_abstract_state</em> ({first, first_on_shortest_path, random, min_h, max_h, batch_min_h}): flaw-selection strategy</li>
+<li><em>pick_flawed_abstract_state</em> ({first, first_on_shortest_path, random, min_h, max_h, batch_min_h}): flaw-selection strategy<ul>
 <li><code>first</code>: Consider first encountered flawed abstract state and a random concrete state.</li>
 <li><code>first_on_shortest_path</code>: Follow the arbitrary solution in the shortest path tree (no flaw search). Consider first encountered flawed abstract state and a random concrete state.</li>
 <li><code>random</code>: Collect all flawed abstract states and then consider a random abstract state and a random concrete state.</li>
 <li><code>min_h</code>: Collect all flawed abstract states and then consider a random abstract state with minimum h value and a random concrete state.</li>
 <li><code>max_h</code>: Collect all flawed abstract states and then consider a random abstract state with maximum h value and a random concrete state.</li>
 <li><code>batch_min_h</code>: Collect all flawed abstract states and iteratively refine them (by increasing h value). Only start a new flaw search once all remaining flawed abstract states are refined. For each abstract state consider all concrete states.</li>
-<li><em>pick_split</em> ({random, min_unwanted, max_unwanted, min_refined, max_refined, min_hadd, max_hadd, min_cg, max_cg, max_cover}): split-selection strategy</li>
+</ul>
+</li>
+<li><em>pick_split</em> ({random, min_unwanted, max_unwanted, min_refined, max_refined, min_hadd, max_hadd, min_cg, max_cg, max_cover}): split-selection strategy<ul>
 <li><code>random</code>: select a random variable (among all eligible variables)</li>
 <li><code>min_unwanted</code>: select an eligible variable which has the least unwanted values (number of values of v that land in the abstract state whose h-value will probably be raised) in the flaw state</li>
 <li><code>max_unwanted</code>: select an eligible variable which has the most unwanted values (number of values of v that land in the abstract state whose h-value will probably be raised) in the flaw state</li>
@@ -677,7 +679,9 @@
 <li><code>min_cg</code>: order by increasing position in partial ordering of causal graph</li>
 <li><code>max_cg</code>: order by decreasing position in partial ordering of causal graph</li>
 <li><code>max_cover</code>: compute split that covers the maximum number of flaws for several concrete states.</li>
-<li><em>tiebreak_split</em> ({random, min_unwanted, max_unwanted, min_refined, max_refined, min_hadd, max_hadd, min_cg, max_cg, max_cover}): split-selection strategy for breaking ties</li>
+</ul>
+</li>
+<li><em>tiebreak_split</em> ({random, min_unwanted, max_unwanted, min_refined, max_refined, min_hadd, max_hadd, min_cg, max_cg, max_cover}): split-selection strategy for breaking ties<ul>
 <li><code>random</code>: select a random variable (among all eligible variables)</li>
 <li><code>min_unwanted</code>: select an eligible variable which has the least unwanted values (number of values of v that land in the abstract state whose h-value will probably be raised) in the flaw state</li>
 <li><code>max_unwanted</code>: select an eligible variable which has the most unwanted values (number of values of v that land in the abstract state whose h-value will probably be raised) in the flaw state</li>
@@ -688,19 +692,25 @@
 <li><code>min_cg</code>: order by increasing position in partial ordering of causal graph</li>
 <li><code>max_cg</code>: order by decreasing position in partial ordering of causal graph</li>
 <li><code>max_cover</code>: compute split that covers the maximum number of flaws for several concrete states.</li>
+</ul>
+</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
-<li><em>dot_graph_verbosity</em> ({silent, write_to_console, write_to_file}): verbosity of printing/writing dot graphs</li>
+<li><em>dot_graph_verbosity</em> ({silent, write_to_console, write_to_file}): verbosity of printing/writing dot graphs<ul>
 <li><code>silent</code>: </li>
 <li><code>write_to_console</code>: </li>
 <li><code>write_to_file</code>: </li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>max_concrete_states_per_abstract_state</em> (int [1, infinity]): maximum number of flawed concrete states stored per abstract state</li>
 <li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="projections">projections<a class="headerlink" href="#projections" title="Permanent link">#</a></h2>
 <p>Projection generator</p>
@@ -711,11 +721,13 @@
 <li><em>dominance_pruning</em> (bool): prune dominated patterns</li>
 <li><em>combine_labels</em> (bool): group labels that only induce parallel transitions</li>
 <li><em>create_complete_transition_system</em> (bool): create explicit transition system</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 
 

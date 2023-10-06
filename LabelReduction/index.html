@@ -647,14 +647,18 @@
 <ul>
 <li><em>before_shrinking</em> (bool): apply label reduction before shrinking</li>
 <li><em>before_merging</em> (bool): apply label reduction before merging</li>
-<li><em>method</em> ({two_transition_systems, all_transition_systems, all_transition_systems_with_fixpoint}): Label reduction method. See the AAAI14 paper by Sievers et al. for explanation of the default label reduction method and the 'combinable relation' .Also note that you must set at least one of the options reduce_labels_before_shrinking or reduce_labels_before_merging in order to use the chosen label reduction configuration.</li>
+<li><em>method</em> ({two_transition_systems, all_transition_systems, all_transition_systems_with_fixpoint}): Label reduction method. See the AAAI14 paper by Sievers et al. for explanation of the default label reduction method and the 'combinable relation' .Also note that you must set at least one of the options reduce_labels_before_shrinking or reduce_labels_before_merging in order to use the chosen label reduction configuration.<ul>
 <li><code>two_transition_systems</code>: compute the 'combinable relation' only for the two transition systems being merged next</li>
 <li><code>all_transition_systems</code>: compute the 'combinable relation' for labels once for every transition system and reduce labels</li>
 <li><code>all_transition_systems_with_fixpoint</code>: keep computing the 'combinable relation' for labels iteratively for all transition systems until no more labels can be reduced</li>
-<li><em>system_order</em> ({regular, reverse, random}): Order of transition systems for the label reduction methods that iterate over the set of all transition systems. Only useful for the choices all_transition_systems and all_transition_systems_with_fixpoint for the option label_reduction_method.</li>
+</ul>
+</li>
+<li><em>system_order</em> ({regular, reverse, random}): Order of transition systems for the label reduction methods that iterate over the set of all transition systems. Only useful for the choices all_transition_systems and all_transition_systems_with_fixpoint for the option label_reduction_method.<ul>
 <li><code>regular</code>: transition systems are considered in the order given in the planner input if atomic and in the order of their creation if composite.</li>
 <li><code>reverse</code>: inverse of regular</li>
 <li><code>random</code>: random order</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 

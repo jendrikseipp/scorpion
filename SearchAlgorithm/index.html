@@ -944,17 +944,21 @@
 <li><em>eval</em> (<a href="../Evaluator/">Evaluator</a>): evaluator for h-value</li>
 <li><em>lazy_evaluator</em> (<a href="../Evaluator/">Evaluator</a>): An evaluator that re-evaluates a state before it is expanded.</li>
 <li><em>pruning</em> (<a href="../PruningMethod/">PruningMethod</a>): Pruning methods can prune or reorder the set of applicable operators in each state and thereby influence the number and order of successor states that are considered.</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>lazy_evaluator:</strong> When a state s is taken out of the open list, the lazy evaluator h re-evaluates s. If h(s) changes (for example because h is path-dependent), s is not expanded, but instead reinserted into the open list. This option is currently only present for the A* algorithm.</p>
 <h3 id="equivalent_statements_using_general_eager_search">Equivalent statements using general eager search<a class="headerlink" href="#equivalent_statements_using_general_eager_search" title="Permanent link">#</a></h3>
@@ -973,11 +977,13 @@
 <li><em>single_plan</em> (bool): Stop search after finding the first (shortest) plan.</li>
 <li><em>write_plan</em> (bool): Store the necessary information during search for writing plans once they're found.</li>
 <li><em>pruning</em> (<a href="../PruningMethod/">PruningMethod</a>): Pruning methods can prune or reorder the set of applicable operators in each state and thereby influence the number and order of successor states that are considered.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="depth-first_search">Depth-first search<a class="headerlink" href="#depth-first_search" title="Permanent link">#</a></h2>
 <p>This is a depth-first tree search that avoids running in cycles by skipping states s that are already visited earlier on the path to s. Doing so, the search becomes complete.</p>
@@ -985,28 +991,34 @@
 </code></pre>
 <ul>
 <li><em>single_plan</em> (bool): stop after finding the first plan</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="exhaustive_search">Exhaustive search<a class="headerlink" href="#exhaustive_search" title="Permanent link">#</a></h2>
 <p>Dump the reachable state space.</p>
 <pre><code>dump_reachable_search_space(verbosity=normal)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="eager_best-first_search">Eager best-first search<a class="headerlink" href="#eager_best-first_search" title="Permanent link">#</a></h2>
 <pre><code>eager(open, reopen_closed=false, f_eval=&lt;none&gt;, preferred=[], pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
@@ -1017,17 +1029,21 @@
 <li><em>f_eval</em> (<a href="../Evaluator/">Evaluator</a>): set evaluator for jump statistics. (Optional; if no evaluator is used, jump statistics will not be displayed.)</li>
 <li><em>preferred</em> (list of <a href="../Evaluator/">Evaluator</a>): use preferred operators of these evaluators</li>
 <li><em>pruning</em> (<a href="../PruningMethod/">PruningMethod</a>): Pruning methods can prune or reorder the set of applicable operators in each state and thereby influence the number and order of successor states that are considered.</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="greedy_search_eager">Greedy search (eager)<a class="headerlink" href="#greedy_search_eager" title="Permanent link">#</a></h2>
 <pre><code>eager_greedy(evals, preferred=[], boost=0, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
@@ -1037,17 +1053,21 @@
 <li><em>preferred</em> (list of <a href="../Evaluator/">Evaluator</a>): use preferred operators of these evaluators</li>
 <li><em>boost</em> (int): boost value for preferred operator open lists</li>
 <li><em>pruning</em> (<a href="../PruningMethod/">PruningMethod</a>): Pruning methods can prune or reorder the set of applicable operators in each state and thereby influence the number and order of successor states that are considered.</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Open list:</strong> In most cases, eager greedy best first search uses an alternation open list with one queue for each evaluator. If preferred operator evaluators are used, it adds an extra queue for each of these evaluators that includes only the nodes that are generated with a preferred operator. If only one evaluator and no preferred operator evaluator is used, the search does not use an alternation open list but a standard open list with only one queue.</p>
 <p><strong>Closed nodes:</strong> Closed node are not re-opened</p>
@@ -1092,17 +1112,21 @@
 <li><em>boost</em> (int): boost value for preferred operator open lists</li>
 <li><em>w</em> (int): evaluator weight</li>
 <li><em>pruning</em> (<a href="../PruningMethod/">PruningMethod</a>): Pruning methods can prune or reorder the set of applicable operators in each state and thereby influence the number and order of successor states that are considered.</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Open lists and equivalent statements using general eager search:</strong> See corresponding notes for "(Weighted) A* search (lazy)"</p>
 <p><strong>Note:</strong> Eager weighted A<em> search uses an alternation open list while A</em> search uses a tie-breaking open list. Consequently, </p>
@@ -1116,21 +1140,27 @@
 </code></pre>
 <ul>
 <li><em>h</em> (<a href="../Evaluator/">Evaluator</a>): heuristic</li>
-<li><em>preferred_usage</em> ({prune_by_preferred, rank_preferred_first}): preferred operator usage</li>
+<li><em>preferred_usage</em> ({prune_by_preferred, rank_preferred_first}): preferred operator usage<ul>
 <li><code>prune_by_preferred</code>: prune successors achieved by non-preferred operators</li>
 <li><code>rank_preferred_first</code>: first insert successors achieved by preferred operators, then those by non-preferred operators</li>
+</ul>
+</li>
 <li><em>preferred</em> (list of <a href="../Evaluator/">Evaluator</a>): use preferred operators of these evaluators</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="ida_search">IDA* search<a class="headerlink" href="#ida_search" title="Permanent link">#</a></h2>
 <p>IDA* search with an optional g-value cache.</p>
@@ -1141,34 +1171,42 @@
 <li><em>initial_f_limit</em> (int [0, infinity]): initial depth limit</li>
 <li><em>cache_size</em> (int [0, infinity]): maximum number of states to cache. For cache_size=infinity the cache fills up until approaching the memory limit, at which point the current number of states becomes the maximum cache size.</li>
 <li><em>single_plan</em> (bool): stop after finding the first plan</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="iterative_deepening_search">Iterative deepening search<a class="headerlink" href="#iterative_deepening_search" title="Permanent link">#</a></h2>
 <pre><code>ids(single_plan=true, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>single_plan</em> (bool): stop after finding the first (shortest) plan</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="iterated_search">Iterated search<a class="headerlink" href="#iterated_search" title="Permanent link">#</a></h2>
 <pre><code>iterated(algorithm_configs, pass_bound=true, repeat_last=false, continue_on_fail=false, continue_on_solve=true, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
@@ -1179,17 +1217,21 @@
 <li><em>repeat_last</em> (bool): repeat last phase of search</li>
 <li><em>continue_on_fail</em> (bool): continue search after no solution found</li>
 <li><em>continue_on_solve</em> (bool): continue search after solution found</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note 1:</strong> We don't cache heuristic values between search iterations at the moment. If you perform a LAMA-style iterative search, heuristic values will be computed multiple times.</p>
 <p><strong>Note 2:</strong> The configuration</p>
@@ -1205,17 +1247,21 @@
 </code></pre>
 <ul>
 <li><em>width</em> (int [1, 2]): maximum conjunction size</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <h2 id="lazy_best-first_search">Lazy best-first search<a class="headerlink" href="#lazy_best-first_search" title="Permanent link">#</a></h2>
 <pre><code>lazy(open, reopen_closed=false, preferred=[], randomize_successors=false, preferred_successors_first=false, random_seed=-1, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
@@ -1227,17 +1273,21 @@
 <li><em>randomize_successors</em> (bool): randomize the order in which successors are generated</li>
 <li><em>preferred_successors_first</em> (bool): consider preferred operators first</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Successor ordering:</strong> When using randomize_successors=true and preferred_successors_first=true, randomization happens before preferred operators are moved to the front.</p>
 <h2 id="greedy_search_lazy">Greedy search (lazy)<a class="headerlink" href="#greedy_search_lazy" title="Permanent link">#</a></h2>
@@ -1251,17 +1301,21 @@
 <li><em>randomize_successors</em> (bool): randomize the order in which successors are generated</li>
 <li><em>preferred_successors_first</em> (bool): consider preferred operators first</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Successor ordering:</strong> When using randomize_successors=true and preferred_successors_first=true, randomization happens before preferred operators are moved to the front.</p>
 <p><strong>Open lists:</strong> In most cases, lazy greedy best first search uses an alternation open list with one queue for each evaluator. If preferred operator evaluators are used, it adds an extra queue for each of these evaluators that includes only the nodes that are generated with a preferred operator. If only one evaluator and no preferred operator evaluator is used, the search does not use an alternation open list but a standard open list with only one queue.</p>
@@ -1309,17 +1363,21 @@
 <li><em>randomize_successors</em> (bool): randomize the order in which successors are generated</li>
 <li><em>preferred_successors_first</em> (bool): consider preferred operators first</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.</li>
+<li><em>cost_type</em> ({normal, one, plusone}): Operator cost adjustment type. No matter what this setting is, axioms will always be considered as actions of cost 0 by the heuristics that treat axioms as actions.<ul>
 <li><code>normal</code>: all actions are accounted for with their real cost</li>
 <li><code>one</code>: all actions are accounted for as unit cost</li>
 <li><code>plusone</code>: all actions are accounted for as their real cost + 1 (except if all actions have original cost 1, in which case cost 1 is used). This is the behaviour known for the heuristics of the LAMA planner. This is intended to be used by the heuristics, not search algorithms, but is supported for both.</li>
+</ul>
+</li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Successor ordering:</strong> When using randomize_successors=true and preferred_successors_first=true, randomization happens before preferred operators are moved to the front.</p>
 <p><strong>Open lists:</strong> In the general case, it uses an alternation open list with one queue for each evaluator h that ranks the nodes by g + w * h. If preferred operator evaluators are used, it adds for each of the evaluators another such queue that only inserts nodes that are generated by preferred operators. In the special case with only one evaluator and no preferred operator evaluators, it uses a single queue that is ranked by g + w * h. </p>

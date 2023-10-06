@@ -694,10 +694,12 @@
 <pre><code>dynamic_greedy_orders(scoring_function=max_heuristic_per_stolen_costs, random_seed=-1)
 </code></pre>
 <ul>
-<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks</li>
+<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks<ul>
 <li><code>max_heuristic</code>: order by decreasing heuristic value for the given state</li>
 <li><code>min_stolen_costs</code>: order by increasing sum of costs stolen from other heuristics</li>
 <li><code>max_heuristic_per_stolen_costs</code>: order by decreasing ratio of heuristic value divided by sum of stolen costs</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <h1 id="cost_partitioning_heuristics">Cost Partitioning Heuristics<a class="headerlink" href="#cost_partitioning_heuristics" title="Permanent link">#</a></h1>
@@ -706,10 +708,12 @@
 <pre><code>greedy_orders(scoring_function=max_heuristic_per_stolen_costs, random_seed=-1)
 </code></pre>
 <ul>
-<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks</li>
+<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks<ul>
 <li><code>max_heuristic</code>: order by decreasing heuristic value for the given state</li>
 <li><code>min_stolen_costs</code>: order by increasing sum of costs stolen from other heuristics</li>
 <li><code>max_heuristic_per_stolen_costs</code>: order by decreasing ratio of heuristic value divided by sum of stolen costs</li>
+</ul>
+</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <h2 id="random_orders">Random orders<a class="headerlink" href="#random_orders" title="Permanent link">#</a></h2>

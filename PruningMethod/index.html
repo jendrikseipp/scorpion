@@ -702,16 +702,20 @@
 </code></pre>
 <ul>
 <li><em>use_sibling_shortcut</em> (bool): use variable-based marking in addition to atom-based marking</li>
-<li><em>atom_selection_strategy</em> ({fast_downward, quick_skip, static_small, dynamic_small}): Strategy for selecting unsatisfied atoms from action preconditions or the goal atoms. All strategies use the fast_downward strategy for breaking ties.</li>
+<li><em>atom_selection_strategy</em> ({fast_downward, quick_skip, static_small, dynamic_small}): Strategy for selecting unsatisfied atoms from action preconditions or the goal atoms. All strategies use the fast_downward strategy for breaking ties.<ul>
 <li><code>fast_downward</code>: select the atom (v, d) with the variable v that comes first in the Fast Downward variable ordering (which is based on the causal graph)</li>
 <li><code>quick_skip</code>: if possible, select an unsatisfied atom whose producers are already marked</li>
 <li><code>static_small</code>: select the atom achieved by the fewest number of actions</li>
 <li><code>dynamic_small</code>: select the atom achieved by the fewest number of actions that are not yet part of the stubborn set</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+</ul>
+</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note on verbosity parameter:</strong> Setting verbosity to verbose or higher enables time measurements in each call to prune_operators for a given state. This induces a significant overhead, up to 30% in configurations like blind search with the no pruning method (<code>null</code>). We recommend using at most normal verbosity for running experiments.</p>
 <h2 id="limited_pruning">Limited pruning<a class="headerlink" href="#limited_pruning" title="Permanent link">#</a></h2>
@@ -722,11 +726,13 @@
 <li><em>pruning</em> (<a href="./">PruningMethod</a>): the underlying pruning method to be applied</li>
 <li><em>min_required_pruning_ratio</em> (double [0.0, 1.0]): disable pruning if the pruning ratio is lower than this value after 'expansions_before_checking_pruning_ratio' expansions</li>
 <li><em>expansions_before_checking_pruning_ratio</em> (int [0, infinity]): number of expansions before deciding whether to disable pruning</li>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note on verbosity parameter:</strong> Setting verbosity to verbose or higher enables time measurements in each call to prune_operators for a given state. This induces a significant overhead, up to 30% in configurations like blind search with the no pruning method (<code>null</code>). We recommend using at most normal verbosity for running experiments.</p>
 <p><strong>Example:</strong> To use atom centric stubborn sets and limit them, use</p>
@@ -738,11 +744,13 @@
 <pre><code>null(verbosity=normal)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note on verbosity parameter:</strong> Setting verbosity to verbose or higher enables time measurements in each call to prune_operators for a given state. This induces a significant overhead, up to 30% in configurations like blind search with the no pruning method (<code>null</code>). We recommend using at most normal verbosity for running experiments.</p>
 <h2 id="stubbornsetsec">StubbornSetsEC<a class="headerlink" href="#stubbornsetsec" title="Permanent link">#</a></h2>
@@ -753,11 +761,13 @@
 <pre><code>stubborn_sets_ec(verbosity=normal)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note on verbosity parameter:</strong> Setting verbosity to verbose or higher enables time measurements in each call to prune_operators for a given state. This induces a significant overhead, up to 30% in configurations like blind search with the no pruning method (<code>null</code>). We recommend using at most normal verbosity for running experiments.</p>
 <h2 id="stubborn_sets_simple">Stubborn sets simple<a class="headerlink" href="#stubborn_sets_simple" title="Permanent link">#</a></h2>
@@ -771,11 +781,13 @@
 <pre><code>stubborn_sets_simple(verbosity=normal)
 </code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
 <li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note on verbosity parameter:</strong> Setting verbosity to verbose or higher enables time measurements in each call to prune_operators for a given state. This induces a significant overhead, up to 30% in configurations like blind search with the no pruning method (<code>null</code>). We recommend using at most normal verbosity for running experiments.</p>
 
