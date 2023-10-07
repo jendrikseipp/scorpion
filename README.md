@@ -91,12 +91,13 @@ It accepts the same arguments as the `fast-downward.py` script (see above).
     # Then run recommended configuration (available via "scorpion" alias).
     ./scorpion.sif --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
 
-### IPC 2018 version
+### IPC versions
 
-If you prefer to run the Scorpion version from IPC 2018 (which uses an
-older Fast Downward version and different abstractions), we recommend
-using the [Scorpion IPC
-repo](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/).
+If you prefer to run the Scorpion versions from the IPC 2018 or 2023 (which are
+based on an older Fast Downward version and use different abstractions), we
+recommend using the
+[Scorpion 2018](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/) or
+[Scorpion 2023](https://github.com/ipc2023-classical/planner25) repos.
 
 
 ## Differences between Scorpion and Fast Downward
