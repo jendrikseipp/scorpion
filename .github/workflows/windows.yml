@@ -3,9 +3,9 @@ name: Windows
 
 on:
   push:
-    branches: [main, issue*, release-*, scorpion]
+    branches: [main, release-*, scorpion]
   pull_request:
-    branches: [main, issue*, release-*, scorpion]
+    branches: [main, release-*, scorpion]
 
 env:
   ARCH: "x64"
