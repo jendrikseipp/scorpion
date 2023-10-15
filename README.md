@@ -25,8 +25,7 @@ Install the dependencies (the table below lists which versions are tested):
     sudo apt install cmake g++ git make python3
 
 For plugins based on linear programming (e.g., `ocp()`, `pho()`) you need
-to [add an LP solver](https://www.fast-downward.org/LPBuildInstructions). Then
-compile the planner with
+to [add an LP solver](BUILD.md). Then compile the planner with
 
     ./build.py
 
@@ -36,12 +35,10 @@ and see the available options with
     ./fast-downward.py --search -- --help  # search component
 
 For more details (including build instructions for macOS and Windows), see the
-documentation about
-[compiling](https://www.fast-downward.org/ObtainingAndRunningFastDownward)
-and [running](https://www.fast-downward.org/PlannerUsage) the planner. The
-[plugin documentation](https://jendrikseipp.github.io/scorpion) shows
-which plugins are available (heuristics, search algorithms, etc.) and how
-to use them.
+documentation about [compiling](BUILD.md) and
+[running](https://www.fast-downward.org/PlannerUsage) the planner. The [plugin
+documentation](https://jendrikseipp.github.io/scorpion) shows which plugins are
+available (heuristics, search algorithms, etc.) and how to use them.
 
 
 ### Recommended configuration
