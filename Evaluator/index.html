@@ -1625,10 +1625,10 @@
 </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p><strong>Usage with A*:</strong> We recommend to add this heuristic as lazy_evaluator when using it in the A* algorithm. This way, the heuristic is recomputed before a state is expanded, leading to improved estimates that incorporate all knowledge gained from paths that were found after the state was inserted into the open list.</p>
 <p><strong>Consistency:</strong> The heuristic is consistent along single paths if it is set as lazy_evaluator; i.e. when expanding s then we have h(s) &lt;= h(s')+cost(a) for all successors s' of s reached with a. But newly found paths to s can increase h(s), at which point the above inequality might not hold anymore.</p>
-<p><strong>Optimal Cost Partitioning:</strong> To use <code>cost_partitioning=optimal</code>, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Optimal Cost Partitioning:</strong> To use <code>cost_partitioning=optimal</code>, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p><strong>Preferred operators:</strong> Preferred operators should not be used for optimal planning. See <a href="./#landmark_sum_heuristic">Landmark sum heuristic</a> for more information on using preferred operators; the comments there also apply to this heuristic.</p>
 <p>Supported language features:</p>
 <ul>
@@ -1797,7 +1797,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
-<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
@@ -2012,7 +2012,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </li>
 <li><em>allow_negative_costs</em> (bool): use general instead of non-negative cost partitioning</li>
 </ul>
-<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
@@ -2056,7 +2056,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 </li>
 </ul>
-<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
@@ -2236,7 +2236,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h2 id="ipdb">iPDB<a class="headerlink" href="#ipdb" title="Permanent link">#</a></h2>
 <p>This approach is a combination of using the <a href="./#canonical_pdb">Canonical PDB</a> heuristic over patterns computed with the <a href="../PatternCollectionGenerator/#hillclimbing">hillclimbing</a> algorithm for pattern generation. It is a short-hand for the command-line option <code>cpdbs(hillclimbing())</code>. Both the heuristic and the pattern generation algorithm are described in the following paper:</p>
 <p>Patrik Haslum, Adi Botea, Malte Helmert, Blai Bonet and Sven Koenig.<br />
- <a href="http://www.informatik.uni-freiburg.de/~ki/papers/haslum-etal-aaai07.pdf">Domain-Independent Construction of Pattern Database Heuristics for Cost-Optimal Planning</a>.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/haslum-et-al-aaai07.pdf">Domain-Independent Construction of Pattern Database Heuristics for Cost-Optimal Planning</a>.<br />
  In <em>Proceedings of the 22nd AAAI Conference on Artificial Intelligence (AAAI 2007)</em>, pp. 1007-1012. AAAI Press, 2007.</p>
 <p>For implementation notes, see:</p>
 <p>Silvan Sievers, Manuela Ortlieb and Malte Helmert.<br />
@@ -2369,7 +2369,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
-<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
@@ -2410,7 +2410,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
@@ -2448,7 +2448,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
-<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
@@ -2489,7 +2489,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See LPBuildInstructions.</p>
+<p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
