@@ -129,6 +129,10 @@ def transform_task(args):
         if err.returncode != -signal.SIGXCPU:
             returncodes.print_stderr(
                 f"Task transformation returned exit status {err.returncode}")
+        # If the task transformation failed, we proceed with the original task.
+        return (err.returncode, True)
+    else:
+        return (0, True)
 
 
 def run_search(args):
