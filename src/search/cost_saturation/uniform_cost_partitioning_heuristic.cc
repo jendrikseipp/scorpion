@@ -5,10 +5,8 @@
 #include "cost_partitioning_heuristic.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
 #include "../algorithms/partial_state_tree.h"
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 #include "../tasks/modified_operator_costs_task.h"
 #include "../utils/logging.h"
@@ -19,7 +17,7 @@
 using namespace std;
 
 namespace cost_saturation {
-static const double COST_FACTOR = 1000;
+static const int COST_FACTOR = 1000;
 
 static vector<int> divide_costs_among_remaining_abstractions(
     const vector<unique_ptr<Abstraction>> &abstractions,
@@ -120,7 +118,7 @@ static CostPartitioningHeuristic compute_opportunistic_uniform_cost_partitioning
 
 
 ScaledCostPartitioningHeuristic::ScaledCostPartitioningHeuristic(
-    const Options &opts,
+    const plugins::Options &opts,
     Abstractions &&abstractions,
     CPHeuristics &&cp_heuristics,
     unique_ptr<DeadEnds> &&dead_ends)
@@ -133,7 +131,7 @@ int ScaledCostPartitioningHeuristic::compute_heuristic(const State &ancestor_sta
         return DEAD_END;
     }
     double epsilon = 0.01;
-    return static_cast<int>(ceil((result / COST_FACTOR) - epsilon));
+    return static_cast<int>(ceil((result / static_cast<double>(COST_FACTOR)) - epsilon));
 }
 
 
@@ -174,66 +172,67 @@ static CPHeuristics get_oucp_heuristics(
         });
 }
 
+class UniformCostPartitioningHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, MaxCostPartitioningHeuristic> {
+public:
+    UniformCostPartitioningHeuristicFeature() : TypedFeature("ucp") {
+        document_subcategory("heuristics_cost_partitioning");
+        document_title("(Opportunistic) uniform cost partitioning");
+        document_synopsis(
+            utils::format_conference_reference(
+                {"Jendrik Seipp", "Thomas Keller", "Malte Helmert"},
+                "A Comparison of Cost Partitioning Algorithms for Optimal Classical Planning",
+                "https://jendrikseipp.com/papers/seipp-et-al-icaps2017.pdf",
+                "Proceedings of the Twenty-Seventh International Conference on "
+                "Automated Planning and Scheduling (ICAPS 2017)",
+                "259-268",
+                "AAAI Press",
+                "2017"));
 
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "(Opportunistic) uniform cost partitioning",
-        utils::format_conference_reference(
-            {"Jendrik Seipp", "Thomas Keller", "Malte Helmert"},
-            "A Comparison of Cost Partitioning Algorithms for Optimal Classical Planning",
-            "https://jendrikseipp.com/papers/seipp-et-al-icaps2017.pdf",
-            "Proceedings of the Twenty-Seventh International Conference on "
-            "Automated Planning and Scheduling (ICAPS 2017)",
-            "259-268",
-            "AAAI Press",
-            "2017"));
-
-    prepare_parser_for_cost_partitioning_heuristic(parser);
-    add_order_options_to_parser(parser);
-    parser.add_option<bool>(
-        "opportunistic",
-        "recalculate uniform cost partitioning after each considered abstraction",
-        "false");
-    parser.add_option<bool>(
-        "debug",
-        "print debugging messages",
-        "false");
-
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    shared_ptr<AbstractTask> scaled_costs_task =
-        get_scaled_costs_task(opts.get<shared_ptr<AbstractTask>>("transform"));
-    opts.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
-
-    unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
-    Abstractions abstractions = generate_abstractions(
-        scaled_costs_task,
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
-        dead_ends.get());
-
-    TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
-    bool debug = opts.get<bool>("debug");
-
-    CPHeuristics cp_heuristics;
-    if (opts.get<bool>("opportunistic")) {
-        cp_heuristics = get_oucp_heuristics(
-            scaled_costs_task_proxy,
-            abstractions,
-            get_cp_heuristic_collection_generator_from_options(opts),
-            debug);
-    } else {
-        cp_heuristics.push_back(
-            get_ucp_heuristic(scaled_costs_task_proxy, abstractions, debug));
+        add_options_for_cost_partitioning_heuristic(*this);
+        add_order_options(*this);
+        add_option<bool>(
+            "opportunistic",
+            "recalculate uniform cost partitioning after each considered abstraction",
+            "false");
+        add_option<bool>(
+            "debug",
+            "print debugging messages",
+            "false");
     }
 
-    return make_shared<ScaledCostPartitioningHeuristic>(
-        opts, move(abstractions), move(cp_heuristics), move(dead_ends));
-}
+    virtual shared_ptr<MaxCostPartitioningHeuristic> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        shared_ptr<AbstractTask> scaled_costs_task =
+            get_scaled_costs_task(options.get<shared_ptr<AbstractTask>>("transform"));
+        plugins::Options options_with_scaled_costs_task = options;
+        options_with_scaled_costs_task.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
 
-static Plugin<Evaluator> _plugin("ucp", _parse, "heuristics_cost_partitioning");
+        unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
+        Abstractions abstractions = generate_abstractions(
+            scaled_costs_task,
+            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+            dead_ends.get());
+
+        TaskProxy scaled_costs_task_proxy(*scaled_costs_task);
+        bool debug = options.get<bool>("debug");
+
+        CPHeuristics cp_heuristics;
+        if (options.get<bool>("opportunistic")) {
+            cp_heuristics = get_oucp_heuristics(
+                scaled_costs_task_proxy,
+                abstractions,
+                get_cp_heuristic_collection_generator_from_options(options),
+                debug);
+        } else {
+            cp_heuristics.push_back(
+                get_ucp_heuristic(scaled_costs_task_proxy, abstractions, debug));
+        }
+
+        return make_shared<ScaledCostPartitioningHeuristic>(
+            options_with_scaled_costs_task, move(abstractions), move(cp_heuristics), move(dead_ends));
+    }
+};
+
+static plugins::FeaturePlugin<UniformCostPartitioningHeuristicFeature> _plugin;
 }

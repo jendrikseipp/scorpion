@@ -9,7 +9,7 @@
 
 class State;
 
-namespace cegar {
+namespace cartesian_abstractions {
 class AbstractState;
 }
 
@@ -21,7 +21,7 @@ public:
     virtual void generate_applicable_ops(
         const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const = 0;
     virtual void generate_applicable_ops(
-        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const = 0;
+        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const = 0;
 };
 
 class GeneratorForkBinary : public GeneratorBase {
@@ -34,7 +34,7 @@ public:
     virtual void generate_applicable_ops(
         const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
 
 class GeneratorForkMulti : public GeneratorBase {
@@ -44,7 +44,7 @@ public:
     virtual void generate_applicable_ops(
         const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
 
 class GeneratorSwitchVector : public GeneratorBase {
@@ -57,7 +57,7 @@ public:
     virtual void generate_applicable_ops(
         const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
 
 class GeneratorSwitchHash : public GeneratorBase {
@@ -70,7 +70,7 @@ public:
     virtual void generate_applicable_ops(
         const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
 
 class GeneratorSwitchSingle : public GeneratorBase {
@@ -84,7 +84,7 @@ public:
     virtual void generate_applicable_ops(
         const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
 
 class GeneratorLeafVector : public GeneratorBase {
@@ -94,7 +94,7 @@ public:
     virtual void generate_applicable_ops(
         const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
 
 class GeneratorLeafSingle : public GeneratorBase {
@@ -104,7 +104,7 @@ public:
     virtual void generate_applicable_ops(
         const std::vector<int> &state, std::vector<OperatorID> &applicable_ops) const override;
     virtual void generate_applicable_ops(
-        const cegar::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
+        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const override;
 };
 }
 

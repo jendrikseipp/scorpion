@@ -3,10 +3,9 @@
 #include "utils.h"
 #include "validation.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../plugins/plugin.h"
 #include "../task_utils/causal_graph.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
@@ -52,7 +51,7 @@ static void compute_union_pattern(
 
 
 PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
-    const Options &opts)
+    const plugins::Options &opts)
     : PatternCollectionGenerator(opts),
       max_pattern_size(opts.get<int>("pattern_max_size")),
       pattern_type(opts.get<PatternType>("pattern_type")) {
@@ -373,66 +372,59 @@ void PatternCollectionGeneratorSystematic::generate(
     patterns = nullptr;
 }
 
-void add_pattern_type_option(OptionParser &parser) {
-    vector<string> pattern_types;
-    pattern_types.push_back("naive");
-    pattern_types.push_back("interesting_general");
-    pattern_types.push_back("interesting_non_negative");
-    vector<string> pattern_types_doc;
-    pattern_types_doc.push_back("all patterns up to the given size");
-    pattern_types_doc.push_back(
-        "only consider the union of two disjoint patterns if the union has "
-        "more information than the individual patterns under a general cost "
-        "partitioning");
-    pattern_types_doc.push_back(
-        "like interesting_general, but considering non-negative cost partitioning");
-    parser.add_enum_option<PatternType>(
+void add_pattern_type_option(plugins::Feature &feature) {
+    feature.add_option<PatternType>(
         "pattern_type",
-        pattern_types,
-        "type of pattern",
+        "type of patterns",
         "interesting_non_negative");
 }
 
-static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Systematically generated patterns",
-        "Generates all (interesting) patterns with up to pattern_max_size "
-        "variables. "
-        "For details, see" + utils::format_conference_reference(
-            {"Florian Pommerening", "Gabriele Roeger", "Malte Helmert"},
-            "Getting the Most Out of Pattern Databases for Classical Planning",
-            "https://ai.dmi.unibas.ch/papers/pommerening-et-al-ijcai2013.pdf",
-            "Proceedings of the Twenty-Third International Joint"
-            " Conference on Artificial Intelligence (IJCAI 2013)",
-            "2357-2364",
-            "AAAI Press",
-            "2013") +
-        "The pattern_type=interesting_general setting was introduced in" +
-        utils::format_conference_reference(
-            {"Florian Pommerening", "Thomas Keller", "Valentina Halasi",
-             "Jendrik Seipp", "Silvan Sievers", "Malte Helmert"},
-            "Dantzig-Wolfe Decomposition for Cost Partitioning",
-            "https://ai.dmi.unibas.ch/papers/pommerening-et-al-icaps2021.pdf",
-            "Proceedings of the 31st International Conference on Automated "
-            "Planning and Scheduling (ICAPS 2021)",
-            "271-280",
-            "AAAI Press",
-            "2021"));
+class PatternCollectionGeneratorSystematicFeature : public plugins::TypedFeature<PatternCollectionGenerator, PatternCollectionGeneratorSystematic> {
+public:
+    PatternCollectionGeneratorSystematicFeature() : TypedFeature("systematic") {
+        document_title("Systematically generated patterns");
+        document_synopsis(
+            "Generates all (interesting) patterns with up to pattern_max_size "
+            "variables. "
+            "For details, see" + utils::format_conference_reference(
+                {"Florian Pommerening", "Gabriele Roeger", "Malte Helmert"},
+                "Getting the Most Out of Pattern Databases for Classical Planning",
+                "https://ai.dmi.unibas.ch/papers/pommerening-et-al-ijcai2013.pdf",
+                "Proceedings of the Twenty-Third International Joint"
+                " Conference on Artificial Intelligence (IJCAI 2013)",
+                "2357-2364",
+                "AAAI Press",
+                "2013") +
+            "The pattern_type=interesting_general setting was introduced in" +
+            utils::format_conference_reference(
+                {"Florian Pommerening", "Thomas Keller", "Valentina Halasi",
+                 "Jendrik Seipp", "Silvan Sievers", "Malte Helmert"},
+                "Dantzig-Wolfe Decomposition for Cost Partitioning",
+                "https://ai.dmi.unibas.ch/papers/pommerening-et-al-icaps2021.pdf",
+                "Proceedings of the 31st International Conference on Automated "
+                "Planning and Scheduling (ICAPS 2021)",
+                "271-280",
+                "AAAI Press",
+                "2021"));
 
-    parser.add_option<int>(
-        "pattern_max_size",
-        "max number of variables per pattern",
-        "1",
-        Bounds("1", "infinity"));
-    add_pattern_type_option(parser);
-    add_generator_options_to_parser(parser);
+        add_option<int>(
+            "pattern_max_size",
+            "max number of variables per pattern",
+            "1",
+            plugins::Bounds("1", "infinity"));
+        add_pattern_type_option(*this);
+        add_generator_options_to_feature(*this);
+    }
+};
 
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
+static plugins::FeaturePlugin<PatternCollectionGeneratorSystematicFeature> _plugin;
 
-    return make_shared<PatternCollectionGeneratorSystematic>(opts);
-}
-
-static Plugin<PatternCollectionGenerator> _plugin("systematic", _parse);
+static plugins::TypedEnumPlugin<PatternType> _enum_plugin({
+        {"naive", "all patterns up to the given size"},
+        {"interesting_general",
+         "only consider the union of two disjoint patterns if the union has "
+         "more information than the individual patterns under a general cost "
+         "partitioning"},
+        {"interesting_non_negative", "like interesting_general, but considering non-negative cost partitioning"},
+    });
 }

@@ -20,7 +20,7 @@ class OrderGeneratorDynamicGreedy : public OrderGenerator {
         std::vector<int> remaining_costs) const;
 
 public:
-    explicit OrderGeneratorDynamicGreedy(const options::Options &opts);
+    explicit OrderGeneratorDynamicGreedy(const plugins::Options &opts);
 
     virtual void initialize(
         const Abstractions &abstractions,

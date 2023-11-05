@@ -67,10 +67,8 @@ static vector<vector<FactPair>> get_relevant_preconditions_by_operator(
 
 ExplicitProjectionFactory::ExplicitProjectionFactory(
     const TaskProxy &task_proxy,
-    const pdbs::Pattern &pattern,
-    bool use_add_after_delete_semantics)
+    const pdbs::Pattern &pattern)
     : task_proxy(task_proxy),
-      use_add_after_delete_semantics(use_add_after_delete_semantics),
       pattern(pattern),
       relevant_preconditions(
           get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)),
@@ -195,16 +193,6 @@ void ExplicitProjectionFactory::add_transitions(
         if (conditions_are_satisfied(effect.conditions, src_values)) {
             if (effect.always_triggers) {
                 definite_dest_values[effect.fact.var] = effect.fact.value;
-                if (use_add_after_delete_semantics) {
-                    // Remove all possible effects that would be overwritten by definite effects.
-                    for (auto it = possible_effects.begin(); it != possible_effects.end();) {
-                        if (it->var == effect.fact.var) {
-                            it = possible_effects.erase(it);
-                        } else {
-                            ++it;
-                        }
-                    }
-                }
             } else {
                 possible_effects.insert(effect.fact);
             }

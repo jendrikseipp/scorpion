@@ -29,7 +29,7 @@ def check_search_code_with_clang_tidy():
     src_files = utils.get_src_files(search_dir, (".h", ".cc"))
     compile_commands = [{
         "directory": os.path.join(build_dir, "search"),
-        "command": "g++ -I{}/ext -std=c++11 -c {}".format(search_dir, src_file),
+        "command": "g++ -std=c++20 -c {}".format(src_file),
         "file": src_file}
         for src_file in src_files
     ]
@@ -78,27 +78,25 @@ def check_search_code_with_clang_tidy():
         "readability-uniqueptr-delete-release",
         ]
     cmd = [
-        "run-clang-tidy-8",
+        "run-clang-tidy-12",
         "-quiet",
         "-p", build_dir,
-        "-clang-tidy-binary=clang-tidy-8",
-        # Include all non-system headers (.*) except the ones from search/ext/.
-        "-header-filter=.*,-tree.hh,-tree_util.hh",
+        "-clang-tidy-binary=clang-tidy-12",
         "-checks=-*," + ",".join(checks)]
     print("Running clang-tidy: " + " ".join(pipes.quote(x) for x in cmd))
     print()
     try:
         output = subprocess.check_output(cmd, cwd=DIR, stderr=subprocess.STDOUT).decode("utf-8")
     except subprocess.CalledProcessError as err:
-        print("Failed to run clang-tidy-8. Is it on the PATH?")
+        print("Failed to run clang-tidy-12. Is it on the PATH?")
         print("Output:", err.stdout)
         return False
-    errors = re.findall(r"^(.*:\d+:\d+: (?:warning|error): .*)$", output, flags=re.M)
+    errors = re.findall(r"^(.*:\d+:\d+: .*(?:warning|error): .*)$", output, flags=re.M)
     for error in errors:
         print(error)
     if errors:
         fix_cmd = cmd + [
-            "-clang-apply-replacements-binary=clang-apply-replacements-8", "-fix"]
+            "-clang-apply-replacements-binary=clang-apply-replacements-12", "-fix"]
         print()
         print("You may be able to fix these issues with the following command: " +
             " ".join(pipes.quote(x) for x in fix_cmd))

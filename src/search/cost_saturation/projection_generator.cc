@@ -3,12 +3,11 @@
 #include "explicit_projection_factory.h"
 #include "projection.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
 #include "../pdbs/dominance_pruning.h"
 #include "../pdbs/pattern_database.h"
 #include "../pdbs/pattern_generator.h"
+#include "../plugins/options.h"
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 
 #include <memory>
@@ -17,14 +16,13 @@ using namespace pdbs;
 using namespace std;
 
 namespace cost_saturation {
-ProjectionGenerator::ProjectionGenerator(const options::Options &opts)
+ProjectionGenerator::ProjectionGenerator(const plugins::Options &opts)
     : AbstractionGenerator(opts),
       pattern_generator(
           opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
       dominance_pruning(opts.get<bool>("dominance_pruning")),
       combine_labels(opts.get<bool>("combine_labels")),
-      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
-      use_add_after_delete_semantics(opts.get<bool>("use_add_after_delete_semantics")) {
+      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")) {
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
@@ -77,6 +75,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
     utils::Timer pdbs_timer;
     shared_ptr<TaskInfo> task_info = make_shared<TaskInfo>(task_proxy);
     Abstractions abstractions;
+    task_properties::verify_no_axioms(task_proxy);
     for (const pdbs::Pattern &pattern : *patterns) {
         unique_ptr<Abstraction> projection;
         if (projections) {
@@ -84,8 +83,9 @@ Abstractions ProjectionGenerator::generate_abstractions(
             projection = move((*projections)[abstractions.size()]);
         } else if (create_complete_transition_system) {
             projection = ExplicitProjectionFactory(
-                task_proxy, pattern, use_add_after_delete_semantics).convert_to_abstraction();
+                task_proxy, pattern).convert_to_abstraction();
         } else {
+            task_properties::verify_no_conditional_effects(task_proxy);
             projection = utils::make_unique_ptr<Projection>(
                 task_proxy, task_info, pattern, combine_labels);
         }
@@ -109,39 +109,31 @@ Abstractions ProjectionGenerator::generate_abstractions(
     return abstractions;
 }
 
-static shared_ptr<AbstractionGenerator> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Projection generator",
-        "");
+class ProjectionGeneratorFeature
+    : public plugins::TypedFeature<AbstractionGenerator, ProjectionGenerator> {
+public:
+    ProjectionGeneratorFeature() : TypedFeature("projections") {
+        document_title("");
+        document_synopsis("Projection generator");
+        add_option<shared_ptr<pdbs::PatternCollectionGenerator>>(
+            "patterns",
+            "pattern generation method",
+            plugins::ArgumentInfo::NO_DEFAULT);
+        add_option<bool>(
+            "dominance_pruning",
+            "prune dominated patterns",
+            "false");
+        add_option<bool>(
+            "combine_labels",
+            "group labels that only induce parallel transitions",
+            "true");
+        add_option<bool>(
+            "create_complete_transition_system",
+            "create explicit transition system",
+            "false");
+        utils::add_log_options_to_feature(*this);
+    }
+};
 
-    parser.add_option<shared_ptr<pdbs::PatternCollectionGenerator>>(
-        "patterns",
-        "pattern generation method",
-        OptionParser::NONE);
-    parser.add_option<bool>(
-        "dominance_pruning",
-        "prune dominated patterns",
-        "false");
-    parser.add_option<bool>(
-        "combine_labels",
-        "group labels that only induce parallel transitions",
-        "true");
-    parser.add_option<bool>(
-        "create_complete_transition_system",
-        "create complete transition system",
-        "false");
-    parser.add_option<bool>(
-        "use_add_after_delete_semantics",
-        "skip transitions that are invalid according to add-after-delete semantics",
-        "false");
-    utils::add_log_options_to_parser(parser);
-
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-
-    return make_shared<ProjectionGenerator>(opts);
-}
-
-static Plugin<AbstractionGenerator> _plugin("projections", _parse);
+static plugins::FeaturePlugin<ProjectionGeneratorFeature> _plugin;
 }

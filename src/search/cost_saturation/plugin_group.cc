@@ -1,7 +1,11 @@
-#include "../plugin.h"
+#include "../plugins/plugin.h"
 
-namespace cost_saturation {
-static PluginGroupPlugin _plugin(
-    "heuristics_cost_partitioning",
-    "Cost Partitioning Heuristics");
+namespace cost_saturation_plugin_group {
+static class CostSaturationGroupPlugin : public plugins::SubcategoryPlugin {
+public:
+    CostSaturationGroupPlugin() : SubcategoryPlugin("heuristics_cost_partitioning") {
+        document_title("Cost Partitioning Heuristics");
+    }
+}
+_subcategory_plugin;
 }

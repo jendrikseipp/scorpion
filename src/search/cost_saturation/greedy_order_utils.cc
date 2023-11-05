@@ -2,8 +2,8 @@
 
 #include "types.h"
 
-#include "../option_parser.h"
-
+#include "../cost_saturation/greedy_order_utils.h"
+#include "../plugins/plugin.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 
@@ -95,11 +95,19 @@ double compute_score(int h, int used_costs, ScoringFunction scoring_function) {
     }
 }
 
-void add_scoring_function_to_parser(OptionParser &parser) {
-    parser.add_enum_option<ScoringFunction>(
+void add_scoring_function_to_feature(plugins::Feature &feature) {
+    feature.add_option<ScoringFunction>(
         "scoring_function",
-        {"MAX_HEURISTIC", "MIN_STOLEN_COSTS", "MAX_HEURISTIC_PER_STOLEN_COSTS"},
-        "scoring function",
-        "MAX_HEURISTIC_PER_STOLEN_COSTS");
+        "metric for ordering abstractions/landmarks",
+        "max_heuristic_per_stolen_costs");
 }
+
+static plugins::TypedEnumPlugin<ScoringFunction> _enum_plugin({
+        {"max_heuristic",
+         "order by decreasing heuristic value for the given state"},
+        {"min_stolen_costs",
+         "order by increasing sum of costs stolen from other heuristics"},
+        {"max_heuristic_per_stolen_costs",
+         "order by decreasing ratio of heuristic value divided by sum of stolen costs"},
+    });
 }

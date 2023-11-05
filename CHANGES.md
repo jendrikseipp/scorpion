@@ -9,39 +9,299 @@ For more details, check the repository history
 (<https://issues.fast-downward.org>). Repository branches are named
 after the corresponding tracker issues.
 
-## Changes since the last release
+## Fast Downward 23.06
 
-- search and pruning module, for users: Fix performance regression
-  introduced in issue1042 due to always measuring time spent in
-  pruning methods. This is now only done in verbose verbosity level.
-  To this end, the verbosity parameter was added to the pruning module.
+Released on July 31, 2023.
+
+Highlights:
+
+- The option parser of the search component has been completely
+  reimplemented. The new option parser has full error reporting where
+  the old code crashed on errors or silently accepted them. This is
+  also an important stepping stone towards a future use of Fast
+  Downward as a library. With the change, the `--evaluator`,
+  `--heuristic` and `--landmarks` options are now deprecated in favor
+  of a new `let` syntax. For example,
+
+    `--evaluator h=EVALUATOR --search SEARCH_ALGORITHM`
+
+  is deprecated in favor of the expression
+
+    `--search let(h, EVALUATOR, SEARCH_ALGORITHM)`
+
+- We now compile using the C++20 standard, so all modern C++ features
+  can be used as long as they are supported by all main compilers Fast
+  Downward supports (see `README.md`).
+
+- The linear programming and mixed integer programming features of
+  Fast Downward now communicate directly with the LP/MIP solvers
+  (SoPlex or CPLEX) rather than using the open solver interface OSI as
+  an intermediary. This has also allowed us to move to more modern
+  versions of these solvers.
+
+- The `lmcount` heuristic has been split into two separate heuristics
+  called `landmark_sum` and `landmark_cost_partitioning`. The former
+  corresponds to the old `lmcount` with the option `admissible=false`,
+  the latter to the old `lmcount` with the option `admissible=true`.
+
+- The two new landmark heuristics (`landmark_sum` and
+  `landmark_cost_partitioning`) compute preferred operators more
+  efficiently than before. On average, this improves performance of
+  LAMA-style planner configurations.
+
+- The merge-and-shrink heuristic now stores labels and their
+  transitions more efficiently, resulting in improved speed for
+  merge-and-shrink heuristic construction.
+
+- The MIASM merge strategy for merge-and-shrink (more precisely, the
+  `sf_miasm` merge scoring function) now has an option to cache
+  scores. Caching is enabled by default and greatly speeds up
+  construction of MIASM-based merge-and-shrink heuristics.
+
+Details:
+
+- option parser: We implemented a new way of defining features and
+  parsing them from the command line. The new parser now supports
+  defining variables for features (heuristics and landmark graphs so
+  far) as an expression within the option string. For example,
+    `let(h, lmcut(), astar(h))`
+  instantiates the `lmcut` heuristic, binds it to the variable `h`
+  and uses it within the `astar` search algorithm.
+
+  This change to the parser is an important stepping stone towards
+  solving a more general problem about how components interact.
+  Details of the new parser are described in a blog article. We
+  also improved the documentation of enum values.
+  <https://www.fast-downward.org/ForDevelopers/Blog/TheNewOptionParser>
+  <https://issues.fast-downward.org/issue1073>
+  <https://issues.fast-downward.org/issue1040>
+
+- translator, for developers: Unreachable atoms are now filtered from
+  mutex groups in an earlier processing step than before. In a few
+  domains this leads to a different finite-domain representation. We
+  could remove an old hack related to static literals in goals, which
+  is no longer necessary. We also added some type annotations, in
+  particular to the core data structures.
+  <https://issues.fast-downward.org/issue1079>
+
+- translator, for users: The change described in the previous entry
+  can lead to Fast Downward producing a slightly different
+  finite-domain representation in some cases.
+
+- search algorithms, for developers: Instead of "search engine" we now
+  say "search algorithm" everywhere. Among other things, this affects
+  source file and directory names, namespaces, class names. The change
+  is also reflected in the documentation.
+  <https://issues.fast-downward.org/issue1099>
+
+- Cartesian abstractions, for developers: The `cegar` directory and
+  namespace have been renamed to `cartesian_abstractions` to avoid
+  confusion with CEGAR-based code in the `pdbs` directory.
+  <https://issues.fast-downward.org/issue1098>
+
+- landmarks: We replaced the `lmcount` heuristic with two new
+  heuristics called `landmark_sum` and `landmark_cost_partitioning`.
+  No functionality is added or removed: `landmark_sum` replaces
+  `lmcount` with the option `admissible=false` and
+  `landmark_cost_partitioning` replaces `lmcount` with the option
+  `admissible=true`.
+  <https://issues.fast-downward.org/issue1071>
+
+- landmarks: Refactor the computation of preferred operators in the
+  landmark heuristics (`landmark_sum` and
+  `landmark_cost_partitioning`). The change affects configurations
+  based on LAMA that use preferred operators. While the semantics of
+  the code did not change, the new version is slightly faster and can
+  solve more tasks and/or improves plan quality in an anytime
+  configuration within the same time limit.
+  <https://issues.fast-downward.org/issue1070>
+
+- merge-and-shrink: Improve the way that labels and their transitions
+  are stored. We removed the class `LabelEquivalenceRelation`. Instead
+  `TransitionSystem` now handles locally equivalent labels itself
+  using a new `LocalLabelInfo` class and stores a mapping from global
+  to local labels. Labels are now removed from label groups in batches
+  during label reduction. With this change, we can now construct the
+  atomic factored transition system (and the overall heuristic) in
+  significantly more cases, reducing both memory usage and
+  construction time.
+  <https://issues.fast-downward.org/issue927>
+
+- merge-and-shrink: The MIASM scoring function (feature `sf_miasm`)
+  now has an option to cache scores for merge candidates, enabled by
+  default. This greatly decreases computation time of M&S abstractions
+  with this scoring function.
+  <https://issues.fast-downward.org/issue1092>
+
+- pattern databases: The pattern generators `cegar_pattern` and
+  `random_pattern` now correctly support fractional values for the
+  `max_time` parameter. Previously the fractional part was silently
+  ignored. For example a timeout of 7.5 seconds was treated as 7
+  seconds.
+
+- pattern databases, for developers: We split off the computation of
+  pattern databases from the `PatternDatabase` class.
+  `PatternDatabase` now stores pattern, `hash_multipliers` and
+  `num_states` in a new class `Projection`, used for ranking and
+  unranking. PDBs can be computed via a function which uses an
+  internal class `PatternDatabaseFactory`. Abstract operators live in
+  their own files now, similar to `MatchTree`. Performance does not
+  change due to this issue.
+  <https://issues.fast-downward.org/issue1019>
+
+- LP/MIP solvers: So far, we used the open solver interface OSI to
+  communicate with MIP and LP solvers. We now replaced this with our
+  own interface to have more direct control and fewer external
+  dependencies. We now support CPLEX 22.1.1 and SoPlex from their
+  current main branch (released versions <= 6.0.3 are incompatible
+  with C++20). We removed the solver options for CLP and Gurobi in the
+  process: CLP has much worse performance than SoPlex, which is also
+  open source, while Gurobi was never practically possible to compile
+  with, as we did not have a CMake find script for it. Performance
+  with CPLEX increases in MIP configurations and stays roughly the
+  same in LP configurations. Performance with SoPlex increases for
+  potential heuristics and decreased slightly in other configurations.
+  Our Windows builds forced static linking because of OSI. With OSI
+  removed, they no longer do.
+  <https://issues.fast-downward.org/issue1076>
+  <https://issues.fast-downward.org/issue1093>
+  <https://issues.fast-downward.org/issue1095>
+
+- LP/MIP solvers, for developers: Previously, LP solvers could crash
+  if a constraint included multiple terms for the same variable. We
+  now protect against this with an assertion in debug mode. The change
+  has no effect on release builds.
+  <https://issues.fast-downward.org/issue1088>
+
+- build: The build script now performs the requested builds in the
+  given order. For example,
+    `./build.py debug release`
+  will perform a debug build and then a release build. Previously, the
+  order was arbitrary, depending on Python dictionary order.
+  <https://issues.fast-downward.org/issue1086>
+
+- C++ standard: We now compile the planner using the C++20 standard.
+  We added tests for GCC 12 and clang 14 but dropped tests for
+  GCC 9, clang 10, and clang 11.
+
+  The minimal supported compilers are now:
+  * g++-10
+  * clang-12
+  * MSVC 19.34
+  * AppleClang 13.0
+
+  Language features supported by all of these compilers may now be
+  used in the planner. For a list of such features and more details,
+  see the issue tracker. The list includes `std::optional`, so we
+  removed the implementation of `optional` in `src/search/ext`.
+  <https://issues.fast-downward.org/issue1028>
+  <https://issues.fast-downward.org/issue1094>
+
+- Windows build: We now enable more compiler warnings on Windows
+  builds. In detail, we no longer ignore warnings C4800, C4512, C4706,
+  C4100, C4127, C4309, C4702, C4239, C4996, and C4505 on Windows
+  builds as they no longer occur in our code. Warnings in GitHub
+  actions are now also treated as errors in Windows builds.
+  <https://issues.fast-downward.org/issue565>
+
+- infrastructure: We fixed a problem with using CPLEX in the GitHub
+  action builds on Ubuntu.
+  <https://issues.fast-downward.org/issue1093>
+
+- infrastructure: We update the version of uncrustify used to fix code
+  formatting. Instructions on how to install the new version can be
+  found on the wiki:
+  <https://www.fast-downward.org/ForDevelopers/Uncrustify>.
+  <https://issues.fast-downward.org/issue1090>
+
+## Fast Downward 22.12
+
+Released on December 15, 2022.
+
+Highlights:
+
+- We now test more recent versions of Ubuntu Linux (22.04 and 20.04),
+  macOS (11 and 12) and Python (3.8 and 3.10).
+
+- Most search algorithms are now faster. We fixed a performance
+  problem related to state pruning, which also affected search
+  configurations that did not explicitly select a pruning method.
+
+- All landmark factories now respect action costs. Previously, this
+  was only the case when using admissible landmark heuristic or when
+  using the `lm_rhw` landmark factory. Note that ignoring action costs
+  (i.e., the old behaviour for landmark factories other than `lm_rhw`)
+  often finds plans faster and is still possible with the
+  `adapt_costs` transformation.
+
+Details:
+
+- driver: Planner time is now logged in a consistent format.
+  Previously, it would sometimes be logged in scientific notation.
+
+- driver, for developers: Skip __pycache__ directory when collecting
+  portfolios.
+  <https://issues.fast-downward.org/issue1057>
+
+- translator: Allow importing pddl_parser without parsing arguments
+  from command line.
+  <https://issues.fast-downward.org/issue1068>
+
+- pruning methods: Fix a performance regression caused by spending too
+  much time measuring elapsed time. This is now only done at verbosity
+  level `verbose` or higher. Verbosity level parameter added to all
+  pruning methods.
   <https://issues.fast-downward.org/issue1058>
+  Note that most search algorithms in Fast Downward always use a
+  pruning method (a trivial method pruning nothing is used by default)
+  and were therefore affected by this performance problem.
 
-- landmarks: Landmark costs for lmcount in the inadmissible settings are now
-  always based on the cost of their achievers, and the cost for derived
-  landmarks can now be set with a new option 'derived_lm_cost' (either 0 or 1,
-  with 1 being the default).
-  When using lmcount in satisficing search where we do not care about cost,
-  experiments show that using 'transform=adapt_costs(ONE)' and
-  'derived_lm_cost=1' performs best, since a plan is usually found faster if we
-  focus on its length rather than its cost.
-  <https://issues.fast-downward.org/issue1009>
-
-- driver, for developers: skip __pycache__ directory when collection portfolio
-  aliases
-  <https://issues.fast-downward.org/issue1055>
-
-- pruning module, for developers: we cleaned up the internal structure of
-  stubborn set pruning.
+- pruning methods, for developers: We cleaned up the internal
+  structure of stubborn set pruning.
   <https://issues.fast-downward.org/issue1059>
 
-- driver: we fixed a bug where using the option --overall-time-limit or a
-  portfolio caused the driver to crash with Python 3.10.
+- landmarks: All landmark factories are now sensitive to action costs.
+  <https://issues.fast-downward.org/issue1009>
+  When using the `lmcount` heuristic in inadmissible mode (option
+  `admissible=false`), previously only the `lm_rhw` landmark factory
+  considered action costs. Now, all landmark factories do. (This was
+  already the case with `admissible=true`.)
+  Experiments show that ignoring action costs is often beneficial when
+  we are more interested in planner speed or coverage than plan
+  quality. This can be achieved by using the option
+  `transform=adapt_costs(ONE)`.
+
+- landmarks: Reduce verbosity of h^m landmarks.
+  The `lm_hm` landmark factory is now less verbose by default. Use
+  verbosity level `verbose` or higher to enable the previous output.
+
+- infrastructure: Update tested OS versions and clang-tidy version.
+  <https://issues.fast-downward.org/issue1067>
+  - The tested Ubuntu versions are now 22.04 and 20.04.
+  - The tested macOS versions are now macOS 11 and macOS 12.
+  - The tested Windows version remains Windows 10.
+  - We now test Python 3.10 (Ubuntu 22.04, macOS 12)
+    and Python 3.8 (Ubuntu 20.04, macOS11, Windows 10).
+  - We now use clang-tidy-12.
+   See `README.md` for details.
+
+- infrastructure: Update delete-artifact version number in GitHub
+  action, update zlib version in Windows build.
+
+## Fast Downward 22.06.1
+
+Released on September 15, 2022.
+
+This is a bugfix release fixing two serious bugs in Fast Downward
+22.06:
+
+- Driver configurations relying on certain kinds of time limits (using
+  the `--overall-time-limit` option or portfolios) crashed when using
+  Python 3.10.
   <https://issues.fast-downward.org/issue1064>
 
-- post-hoc optimization constraints (pho_constraints): Fix a bug that could 
-  cause crashes (segmentation faults) when using post-hoc optimization 
-  constraints.
+- Using post-hoc optimization constraints (`pho_constraints`) caused
+  crashes (segmentation faults) or other undefined behavior.
   <https://issues.fast-downward.org/issue1061>
 
 

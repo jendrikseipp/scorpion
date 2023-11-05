@@ -3,23 +3,28 @@ name: macOS
 
 on:
   push:
-    branches: [main, issue*, release-*, scorpion]
+    branches: [main, release-*, scorpion]
   pull_request:
-    branches: [main, issue*, release-*, scorpion]
+    branches: [main, release-*, scorpion]
 
 jobs:
   test:
     name: Compile and test planner
     timeout-minutes: 60
-    runs-on: macos-10.15
+    runs-on: ${{ matrix.version.macos }}
+    strategy:
+      matrix:
+        version:
+          - {macos: macos-11, python: '3.8'}
+          - {macos: macos-12, python: '3.10'}
     steps:
       - name: Clone repository
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
 
       - name: Install Python
-        uses: actions/setup-python@master
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: ${{ matrix.version.python }}
 
       - name: Compile planner
         run: |

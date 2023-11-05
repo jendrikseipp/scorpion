@@ -11,7 +11,7 @@ namespace lp {
 class LPConstraint;
 }
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
@@ -25,7 +25,7 @@ class PhOAbstractionConstraints : public ConstraintGenerator {
     std::vector<int> constraint_ids_by_abstraction;
     std::vector<bool> useless_operators;
 public:
-    explicit PhOAbstractionConstraints(const options::Options &opts);
+    explicit PhOAbstractionConstraints(const plugins::Options &opts);
 
     virtual void initialize_constraints(
         const std::shared_ptr<AbstractTask> &task,

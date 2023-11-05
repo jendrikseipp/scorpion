@@ -21,7 +21,7 @@ void SuccessorGenerator::generate_applicable_ops(
 }
 
 void SuccessorGenerator::generate_applicable_ops(
-    const cegar::AbstractState &state, vector<OperatorID> &applicable_ops) const {
+    const cartesian_abstractions::AbstractState &state, vector<OperatorID> &applicable_ops) const {
     root->generate_applicable_ops(state, applicable_ops);
 }
 

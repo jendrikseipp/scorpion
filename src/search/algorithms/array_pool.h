@@ -28,6 +28,11 @@ public:
     Iterator end() const {
         return last;
     }
+
+    Value operator[](int index) const {
+        assert(first + index < last);
+        return *(first + index);
+    }
 private:
     friend class ArrayPool<Value>;
 
@@ -59,6 +64,17 @@ class ArrayPool {
 public:
     ArrayPool()
         : positions({0}) {
+    }
+
+    void extend(std::vector<std::vector<Value>> &&vecs) {
+        int num_new_entries = 0;
+        for (auto &vec : vecs) {
+            num_new_entries += vec.size();
+        }
+        reserve(size() + vecs.size(), data.size() + num_new_entries);
+        for (auto &&vec : vecs) {
+            push_back(move(vec));
+        }
     }
 
     void push_back(std::vector<Value> &&vec) {

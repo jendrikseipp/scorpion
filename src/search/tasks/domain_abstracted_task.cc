@@ -26,6 +26,44 @@ static bool has_conditional_effects(const AbstractTask &task) {
     return false;
 }
 
+ValueMap::ValueMap(
+    const AbstractTask &task,
+    const AbstractTask &parent_task,
+    vector<vector<int>> &&value_map)
+    : variable_to_pool_index(task.get_num_variables(), -1) {
+    // Only store value mappings for abstracted variables.
+    for (int var = 0; var < task.get_num_variables(); ++var) {
+        if (task.get_variable_domain_size(var) < parent_task.get_variable_domain_size(var)) {
+            variable_to_pool_index[var] = abstracted_variables.size();
+            abstracted_variables.push_back({var, variable_to_pool_index[var]});
+            new_values.push_back(move(value_map[var]));
+        }
+    }
+    abstracted_variables.shrink_to_fit();
+}
+
+void ValueMap::convert(vector<int> &state_values) const {
+    for (const AbstractedVariable &abs_var : abstracted_variables) {
+        int old_value = state_values[abs_var.var];
+        int new_value = new_values[abs_var.pool_index][old_value];
+        state_values[abs_var.var] = new_value;
+    }
+}
+
+FactPair ValueMap::convert(const FactPair &fact) const {
+    if (variable_to_pool_index[fact.var] == -1) {
+        // This is the common case.
+        return fact;
+    } else {
+        return FactPair(fact.var, new_values[variable_to_pool_index[fact.var]][fact.value]);
+    }
+}
+
+bool ValueMap::does_convert_values() const {
+    return !abstracted_variables.empty();
+}
+
+
 DomainAbstractedTask::DomainAbstractedTask(
     const shared_ptr<AbstractTask> &parent,
     vector<int> &&domain_size,
@@ -38,7 +76,7 @@ DomainAbstractedTask::DomainAbstractedTask(
       initial_state_values(move(initial_state_values)),
       goals(move(goals)),
       fact_names(move(fact_names)),
-      value_map(move(value_map)) {
+      value_map(*this, *parent, move(value_map)) {
     if (parent->get_num_axioms() > 0) {
         ABORT("DomainAbstractedTask doesn't support axioms.");
     }
@@ -61,18 +99,18 @@ bool DomainAbstractedTask::are_facts_mutex(const FactPair &, const FactPair &) c
 
 FactPair DomainAbstractedTask::get_operator_precondition(
     int op_index, int fact_index, bool is_axiom) const {
-    return get_abstract_fact(
+    return value_map.convert(
         parent->get_operator_precondition(op_index, fact_index, is_axiom));
 }
 
 FactPair DomainAbstractedTask::get_operator_effect(
     int op_index, int eff_index, bool is_axiom) const {
-    return get_abstract_fact(
+    return value_map.convert(
         parent->get_operator_effect(op_index, eff_index, is_axiom));
 }
 
 FactPair DomainAbstractedTask::get_goal_fact(int index) const {
-    return get_abstract_fact(parent->get_goal_fact(index));
+    return value_map.convert(parent->get_goal_fact(index));
 }
 
 vector<int> DomainAbstractedTask::get_initial_state_values() const {
@@ -81,16 +119,11 @@ vector<int> DomainAbstractedTask::get_initial_state_values() const {
 
 void DomainAbstractedTask::convert_state_values_from_parent(
     vector<int> &values) const {
-    int num_vars = domain_size.size();
-    for (int var = 0; var < num_vars; ++var) {
-        int old_value = values[var];
-        int new_value = value_map[var][old_value];
-        values[var] = new_value;
-    }
+    value_map.convert(values);
 }
 
 bool DomainAbstractedTask::does_convert_ancestor_state_values(
     const AbstractTask *) const {
-    return true;
+    return value_map.does_convert_values();
 }
 }

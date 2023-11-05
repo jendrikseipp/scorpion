@@ -4,13 +4,10 @@
 #include "cost_partitioning_heuristic.h"
 #include "cost_partitioning_heuristic_collection_generator.h"
 #include "order_generator.h"
-#include "saturated_cost_partitioning_heuristic.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
 #include "../algorithms/partial_state_tree.h"
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
@@ -47,7 +44,7 @@ static void extract_useful_abstraction_functions(
 
 
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
-    const options::Options &opts,
+    const plugins::Options &opts,
     Abstractions &&abstractions_,
     unique_ptr<DeadEnds> &&dead_ends_)
     : Heuristic(opts),
@@ -194,68 +191,68 @@ void SaturatedCostPartitioningOnlineHeuristic::print_final_statistics() const {
 }
 
 
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Online saturated cost partitioning",
-        "Compute the maximum over multiple saturated cost partitioning heuristics "
-        "diversified during the search. For details, see " +
-        utils::format_conference_reference(
-            {"Jendrik Seipp"},
-            "Online Saturated Cost Partitioning for Classical Planning",
-            "https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf",
-            "Proceedings of the 31st International Conference on Automated "
-            "Planning and Scheduling (ICAPS 2021)",
-            "317-321",
-            "AAAI Press",
-            "2021"));
+class SaturatedCostPartitioningOnlineHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, SaturatedCostPartitioningOnlineHeuristic> {
+public:
+    SaturatedCostPartitioningOnlineHeuristicFeature() : TypedFeature("scp_online") {
+        document_subcategory("heuristics_cost_partitioning");
+        document_title("Online saturated cost partitioning");
+        document_synopsis(
+            "Compute the maximum over multiple saturated cost partitioning heuristics "
+            "diversified during the search. For details, see " +
+            utils::format_conference_reference(
+                {"Jendrik Seipp"},
+                "Online Saturated Cost Partitioning for Classical Planning",
+                "https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf",
+                "Proceedings of the 31st International Conference on Automated "
+                "Planning and Scheduling (ICAPS 2021)",
+                "317-321",
+                "AAAI Press",
+                "2021"));
+        // The online version is not consistent.
+        bool consistent = false;
+        add_options_for_cost_partitioning_heuristic(*this, consistent);
+        add_saturator_option(*this);
 
-    // The online version is not consistent.
-    bool consistent = false;
-    prepare_parser_for_cost_partitioning_heuristic(parser, consistent);
-    add_saturator_option(parser);
+        add_option<shared_ptr<OrderGenerator>>(
+            "orders",
+            "order generator",
+            "greedy_orders()");
+        add_option<int>(
+            "max_size",
+            "maximum (estimated) heuristic size in KiB",
+            "infinity",
+            plugins::Bounds("0", "infinity"));
+        add_option<double>(
+            "max_time",
+            "maximum time in seconds for finding orders",
+            "200",
+            plugins::Bounds("0", "infinity"));
+        add_option<int>(
+            "interval",
+            "select every i-th evaluated state for online diversification",
+            "10K",
+            plugins::Bounds("1", "infinity"));
+        add_option<bool>(
+            "debug",
+            "print debug output",
+            "false");
+        utils::add_rng_options(*this);
+    }
 
-    parser.add_option<shared_ptr<OrderGenerator>>(
-        "orders",
-        "order generator",
-        "greedy_orders()");
-    parser.add_option<int>(
-        "max_size",
-        "maximum (estimated) heuristic size in KiB",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time in seconds for finding orders",
-        "200",
-        Bounds("0", "infinity"));
-    parser.add_option<int>(
-        "interval",
-        "select every i-th evaluated state for online diversification",
-        "10K",
-        Bounds("1", "infinity"));
-    parser.add_option<bool>(
-        "debug",
-        "print debug output",
-        "false");
-    utils::add_rng_options(parser);
+    virtual shared_ptr<SaturatedCostPartitioningOnlineHeuristic> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        shared_ptr<AbstractTask> task = options.get<shared_ptr<AbstractTask>>("transform");
+        unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
+        Abstractions abstractions = generate_abstractions(
+            task,
+            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+            dead_ends.get());
 
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
+        return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
+            options, move(abstractions), move(dead_ends));
+    }
+};
 
-    if (parser.dry_run())
-        return nullptr;
-
-    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
-    unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
-    Abstractions abstractions = generate_abstractions(
-        task,
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
-        dead_ends.get());
-
-    return make_shared<SaturatedCostPartitioningOnlineHeuristic>(
-        opts, move(abstractions), move(dead_ends));
-}
-
-static Plugin<Evaluator> _plugin("scp_online", _parse, "heuristics_cost_partitioning");
+static plugins::FeaturePlugin<SaturatedCostPartitioningOnlineHeuristicFeature> _plugin;
 }

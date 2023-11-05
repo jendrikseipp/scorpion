@@ -7,7 +7,7 @@ namespace cost_saturation {
 class OrderGeneratorRandom : public OrderGenerator {
     std::vector<int> random_order;
 public:
-    explicit OrderGeneratorRandom(const options::Options &opts);
+    explicit OrderGeneratorRandom(const plugins::Options &opts);
 
     virtual void initialize(
         const Abstractions &abstractions,

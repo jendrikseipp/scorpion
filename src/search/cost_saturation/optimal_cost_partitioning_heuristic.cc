@@ -4,9 +4,7 @@
 #include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
@@ -19,7 +17,7 @@ using namespace std;
 
 namespace cost_saturation {
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
-    const options::Options &opts)
+    const plugins::Options &opts)
     : Heuristic(opts),
       lp_solver(opts.get<lp::LPSolverType>("lpsolver")),
       allow_negative_costs(opts.get<bool>("allow_negative_costs")) {
@@ -225,27 +223,21 @@ void OptimalCostPartitioningHeuristic::add_operator_cost_constraints(
     }
 }
 
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Optimal cost partitioning heuristic",
-        "");
+class OptimalCostPartitioningHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, OptimalCostPartitioningHeuristic> {
+public:
+    OptimalCostPartitioningHeuristicFeature() : TypedFeature("ocp") {
+        document_subcategory("heuristics_cost_partitioning");
+        document_title("Optimal cost partitioning heuristic");
+        document_synopsis("Compute an optimal cost partitioning for each evaluated state.");
+        add_options_for_cost_partitioning_heuristic(*this);
+        lp::add_lp_solver_option_to_feature(*this);
+        add_option<bool>(
+            "allow_negative_costs",
+            "use general instead of non-negative cost partitioning",
+            "true");
+    }
+};
 
-    prepare_parser_for_cost_partitioning_heuristic(parser);
-    lp::add_lp_solver_option_to_parser(parser);
-    parser.add_option<bool>(
-        "allow_negative_costs",
-        "use general instead of non-negative cost partitioning",
-        "true");
-
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    return make_shared<OptimalCostPartitioningHeuristic>(opts);
-}
-
-static Plugin<Evaluator> _plugin("ocp", _parse, "heuristics_cost_partitioning");
+static plugins::FeaturePlugin<OptimalCostPartitioningHeuristicFeature> _plugin;
 }

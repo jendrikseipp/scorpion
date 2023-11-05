@@ -4,15 +4,13 @@
 #include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 
 using namespace std;
 
 namespace cost_saturation {
-MaxHeuristic::MaxHeuristic(const Options &opts, const Abstractions &abstractions)
+MaxHeuristic::MaxHeuristic(const plugins::Options &opts, const Abstractions &abstractions)
     : Heuristic(opts) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : abstractions) {
@@ -36,27 +34,25 @@ int MaxHeuristic::compute_heuristic(const State &ancestor_state) {
     return max_h;
 }
 
+class MaxHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, MaxHeuristic> {
+public:
+    MaxHeuristicFeature() : TypedFeature("maximize") {
+        document_subcategory("heuristics_cost_partitioning");
+        document_title("Maximum over abstractions");
+        document_synopsis("Maximize over a set of abstraction heuristics.");
+        add_options_for_cost_partitioning_heuristic(*this);
+    }
 
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Maximum over abstractions",
-        "Maximize over a set of abstraction heuristics.");
+    virtual shared_ptr<MaxHeuristic> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        Abstractions abstractions = generate_abstractions(
+            options.get<shared_ptr<AbstractTask>>("transform"),
+            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
-    prepare_parser_for_cost_partitioning_heuristic(parser);
+        return make_shared<MaxHeuristic>(options, move(abstractions));
+    }
+};
 
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    Abstractions abstractions = generate_abstractions(
-        opts.get<shared_ptr<AbstractTask>>("transform"),
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-
-    return make_shared<MaxHeuristic>(opts, move(abstractions));
-}
-
-static Plugin<Evaluator> _plugin("maximize", _parse, "heuristics_cost_partitioning");
+static plugins::FeaturePlugin<MaxHeuristicFeature> _plugin;
 }

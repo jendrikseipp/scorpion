@@ -1,6 +1,7 @@
 #ifndef COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 #define COST_SATURATION_SATURATED_COST_PARTITIONING_ONLINE_HEURISTIC_H
 
+#include "saturated_cost_partitioning_heuristic.h"
 #include "types.h"
 
 #include "../heuristic.h"
@@ -44,7 +45,7 @@ protected:
 
 public:
     SaturatedCostPartitioningOnlineHeuristic(
-        const options::Options &opts,
+        const plugins::Options &opts,
         Abstractions &&abstractions,
         std::unique_ptr<DeadEnds> &&dead_ends);
     virtual ~SaturatedCostPartitioningOnlineHeuristic() override;

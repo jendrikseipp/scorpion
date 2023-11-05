@@ -1,8 +1,7 @@
 #include "stubborn_sets_ec.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
+#include "../utils/logging.h"
 #include "../utils/markup.h"
 
 #include <cassert>
@@ -103,7 +102,7 @@ static void get_conflicting_vars(const vector<FactPair> &facts1,
     }
 }
 
-StubbornSetsEC::StubbornSetsEC(const options::Options &opts)
+StubbornSetsEC::StubbornSetsEC(const plugins::Options &opts)
     : StubbornSetsActionCentric(opts) {
 }
 
@@ -325,32 +324,29 @@ void StubbornSetsEC::handle_stubborn_operator(const State &state, int op_no) {
     }
 }
 
-static shared_ptr<PruningMethod> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "StubbornSetsEC",
-        "Stubborn sets represent a state pruning method which computes a subset "
-        "of applicable operators in each state such that completeness and "
-        "optimality of the overall search is preserved. As stubborn sets rely "
-        "on several design choices, there are different variants thereof. "
-        "The variant 'StubbornSetsEC' resolves the design choices such that "
-        "the resulting pruning method is guaranteed to strictly dominate the "
-        "Expansion Core pruning method. For details, see" + utils::format_conference_reference(
-            {"Martin Wehrle", "Malte Helmert", "Yusra Alkhazraji", "Robert Mattmueller"},
-            "The Relative Pruning Power of Strong Stubborn Sets and Expansion Core",
-            "http://www.aaai.org/ocs/index.php/ICAPS/ICAPS13/paper/view/6053/6185",
-            "Proceedings of the 23rd International Conference on Automated Planning "
-            "and Scheduling (ICAPS 2013)",
-            "251-259",
-            "AAAI Press",
-            "2013"));
-    add_pruning_options_to_parser(parser);
-
-    Options opts = parser.parse();
-    if (parser.dry_run()) {
-        return nullptr;
+class StubbornSetsECFeature : public plugins::TypedFeature<PruningMethod, StubbornSetsEC> {
+public:
+    StubbornSetsECFeature() : TypedFeature("stubborn_sets_ec") {
+        document_title("StubbornSetsEC");
+        document_synopsis(
+            "Stubborn sets represent a state pruning method which computes a subset "
+            "of applicable operators in each state such that completeness and "
+            "optimality of the overall search is preserved. As stubborn sets rely "
+            "on several design choices, there are different variants thereof. "
+            "The variant 'StubbornSetsEC' resolves the design choices such that "
+            "the resulting pruning method is guaranteed to strictly dominate the "
+            "Expansion Core pruning method. For details, see" + utils::format_conference_reference(
+                {"Martin Wehrle", "Malte Helmert", "Yusra Alkhazraji", "Robert Mattmueller"},
+                "The Relative Pruning Power of Strong Stubborn Sets and Expansion Core",
+                "http://www.aaai.org/ocs/index.php/ICAPS/ICAPS13/paper/view/6053/6185",
+                "Proceedings of the 23rd International Conference on Automated Planning "
+                "and Scheduling (ICAPS 2013)",
+                "251-259",
+                "AAAI Press",
+                "2013"));
+        add_pruning_options_to_feature(*this);
     }
-    return make_shared<StubbornSetsEC>(opts);
-}
+};
 
-static Plugin<PruningMethod> _plugin("stubborn_sets_ec", _parse);
+static plugins::FeaturePlugin<StubbornSetsECFeature> _plugin;
 }

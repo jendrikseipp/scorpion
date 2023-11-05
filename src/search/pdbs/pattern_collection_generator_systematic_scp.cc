@@ -2,15 +2,16 @@
 
 #include "pattern_evaluator.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
+#include "../plugins/plugin.h"
 #include "../task_proxy.h"
 
 #include "../algorithms/array_pool.h"
 #include "../algorithms/partial_state_tree.h"
 #include "../algorithms/priority_queues.h"
+#include "../cost_saturation/explicit_projection_factory.h"
 #include "../cost_saturation/projection.h"
 #include "../cost_saturation/utils.h"
+#include "../plugins/options.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
@@ -82,7 +83,7 @@ static int get_num_active_ops(
     return num_active_ops;
 }
 
-bool contains_positive_finite_value(const vector<int> &values) {
+static bool contains_positive_finite_value(const vector<int> &values) {
     return any_of(values.begin(), values.end(),
                   [](int v) {return v > 0 && v != numeric_limits<int>::max();});
 }
@@ -107,7 +108,7 @@ static unique_ptr<PatternCollection> get_patterns(
     PatternType pattern_type,
     const utils::CountdownTimer &timer) {
     utils::g_log << "Generate patterns for size " << pattern_size << endl;
-    options::Options opts;
+    plugins::Options opts;
     opts.set<int>("pattern_max_size", pattern_size);
     opts.set<PatternType>("pattern_type", pattern_type);
     opts.set<utils::Verbosity>("verbosity", utils::Verbosity::NORMAL);
@@ -233,7 +234,7 @@ public:
             assert(internal_id != -1);
             auto slice = patterns[bucket_id].get_slice(internal_id);
             return {
-                       slice.begin(), slice.end()
+                slice.begin(), slice.end()
             };
         } else if (cached_pattern_size < max_pattern_size) {
             unique_ptr<PatternCollection> current_patterns = get_patterns(
@@ -275,7 +276,7 @@ public:
 
 
 PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP(
-    const Options &opts)
+    const plugins::Options &opts)
     : PatternCollectionGenerator(opts),
       max_pattern_size(opts.get<int>("max_pattern_size")),
       max_pdb_size(opts.get<int>("max_pdb_size")),
@@ -286,6 +287,7 @@ PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP
       max_evaluations_per_restart(opts.get<int>("max_evaluations_per_restart")),
       max_total_evaluations(opts.get<int>("max_total_evaluations")),
       saturate(opts.get<bool>("saturate")),
+      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
       pattern_type(opts.get<PatternType>("pattern_type")),
       ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
       store_dead_ends(opts.get<bool>("store_dead_ends")),
@@ -300,6 +302,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
     SequentialPatternGenerator &pattern_generator,
     DeadEnds *dead_ends,
     priority_queues::AdaptiveQueue<int> &pq,
+    const shared_ptr<PatternCollection> &patterns,
     const shared_ptr<ProjectionCollection> &projections,
     PatternSet &pattern_set,
     PatternSet &patterns_checked_for_dead_ends,
@@ -376,29 +379,36 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             continue;
         }
 
-        projection_computation_timer->resume();
-        PatternEvaluator pattern_evaluator(task_proxy, evaluator_task_info, pattern, costs);
-        projection_computation_timer->stop();
-
         bool select_pattern = true;
         if (saturate) {
             projection_evaluation_timer->resume();
-            // Only check each pattern for dead ends once.
-            DeadEnds *tmp_dead_ends = dead_ends;
-            if (tmp_dead_ends) {
-                if (patterns_checked_for_dead_ends.count(pattern)) {
-                    tmp_dead_ends = nullptr;
-                } else {
-                    patterns_checked_for_dead_ends.insert(pattern);
+            if (create_complete_transition_system) {
+                unique_ptr<cost_saturation::Abstraction> projection =
+                    cost_saturation::ExplicitProjectionFactory(task_proxy, pattern).convert_to_abstraction();
+                // TODO: return true as soon as first settled state has positive costs.
+                select_pattern = contains_positive_finite_value(projection->compute_goal_distances(costs));
+            } else {
+                // Only check each pattern for dead ends once.
+                DeadEnds *tmp_dead_ends = dead_ends;
+                if (tmp_dead_ends) {
+                    if (patterns_checked_for_dead_ends.count(pattern)) {
+                        tmp_dead_ends = nullptr;
+                    } else {
+                        patterns_checked_for_dead_ends.insert(pattern);
+                    }
                 }
-            }
-            select_pattern = pattern_evaluator.is_useful(pattern, pq, tmp_dead_ends, costs);
-            projection_evaluation_timer->stop();
+                projection_computation_timer->resume();
+                PatternEvaluator pattern_evaluator(task_proxy, evaluator_task_info, pattern, costs);
+                projection_computation_timer->stop();
+                select_pattern = pattern_evaluator.is_useful(pattern, pq, tmp_dead_ends, costs);
+
 #ifndef NDEBUG
-            vector<int> goal_distances = cost_saturation::Projection(
-                task_proxy, task_info, pattern).compute_goal_distances(costs);
-            assert(select_pattern == contains_positive_finite_value(goal_distances));
+                vector<int> goal_distances = cost_saturation::Projection(
+                    task_proxy, task_info, pattern).compute_goal_distances(costs);
+                assert(select_pattern == contains_positive_finite_value(goal_distances));
 #endif
+            }
+            projection_evaluation_timer->stop();
         }
 
         ++num_pattern_evaluations;
@@ -407,15 +417,21 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             if (saturate) {
                 log << "Add pattern " << pattern << endl;
             }
-            unique_ptr<cost_saturation::Projection> projection =
-                utils::make_unique_ptr<cost_saturation::Projection>(
+            unique_ptr<cost_saturation::Abstraction> projection;
+            if (create_complete_transition_system) {
+                projection = cost_saturation::ExplicitProjectionFactory(
+                    task_proxy, pattern).convert_to_abstraction();
+            } else {
+                projection = utils::make_unique_ptr<cost_saturation::Projection>(
                     task_proxy, task_info, pattern);
+            }
             if (saturate) {
                 vector<int> goal_distances = projection->compute_goal_distances(costs);
                 vector<int> saturated_costs = projection->compute_saturated_costs(
                     goal_distances);
                 cost_saturation::reduce_costs(costs, saturated_costs);
             }
+            patterns->push_back(pattern);
             projections->push_back(move(projection));
             pattern_set.insert(pattern);
             collection_size += pdb_size;
@@ -437,6 +453,15 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
     projection_evaluation_timer = utils::make_unique_ptr<utils::Timer>();
     projection_evaluation_timer->stop();
     TaskProxy task_proxy(*task);
+    task_properties::verify_no_axioms(task_proxy);
+    if (!create_complete_transition_system &&
+        task_properties::has_conditional_effects(task_proxy)) {
+        cerr << "Error: configuration doesn't support conditional effects. "
+            "Use sys_scp(..., create_complete_transition_system=true) "
+            "for tasks with conditional effects."
+             << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
+    }
     shared_ptr<cost_saturation::TaskInfo> task_info =
         make_shared<cost_saturation::TaskInfo>(task_proxy);
     TaskInfo evaluator_task_info(task_proxy);
@@ -450,6 +475,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
         task, evaluator_task_info, max_pattern_size,
         pattern_type, pattern_order, *rng);
     priority_queues::AdaptiveQueue<int> pq;
+    shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
     shared_ptr<ProjectionCollection> projections = make_shared<ProjectionCollection>();
     PatternSet pattern_set;
     PatternSet patterns_checked_for_dead_ends;
@@ -461,7 +487,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator,
             dead_ends,
-            pq, projections, pattern_set, patterns_checked_for_dead_ends,
+            pq, patterns, projections, pattern_set, patterns_checked_for_dead_ends,
             collection_size, timer.get_remaining_time());
         int num_patterns_after = projections->size();
         log << "Patterns: " << num_patterns_after << ", collection size: "
@@ -501,104 +527,107 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
             << endl;
     }
 
-    shared_ptr<PatternCollection> patterns = make_shared<PatternCollection>();
-    patterns->reserve(projections->size());
-    for (auto &projection : *projections) {
-        patterns->push_back(projection->get_pattern());
-    }
+    assert(patterns->size() == projections->size());
     PatternCollectionInformation pci(task_proxy, patterns, log);
     pci.set_projections(projections);
     return pci;
 }
 
 
-static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Sys-SCP patterns",
-        "Systematically generate larger (interesting) patterns but only keep "
-        "a pattern if it's useful under a saturated cost partitioning. "
-        "For details, see" + utils::format_conference_reference(
-            {"Jendrik Seipp"},
-            "Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning",
-            "https://jendrikseipp.com/papers/seipp-ijcai2019.pdf",
-            "Proceedings of the 28th International Joint Conference on "
-            "Artificial Intelligence (IJCAI 2019)",
-            "5621-5627",
-            "IJCAI",
-            "2019"));
+class PatternCollectionGeneratorSystematicSCPFeature
+    : public plugins::TypedFeature<PatternCollectionGenerator, PatternCollectionGeneratorSystematicSCP> {
+public:
+    PatternCollectionGeneratorSystematicSCPFeature() : TypedFeature("sys_scp") {
+        document_title("Sys-SCP patterns");
+        document_synopsis(
+            "Systematically generate larger (interesting) patterns but only keep "
+            "a pattern if it's useful under a saturated cost partitioning. "
+            "For details, see" + utils::format_conference_reference(
+                {"Jendrik Seipp"},
+                "Pattern Selection for Optimal Classical Planning with Saturated Cost Partitioning",
+                "https://jendrikseipp.com/papers/seipp-ijcai2019.pdf",
+                "Proceedings of the 28th International Joint Conference on "
+                "Artificial Intelligence (IJCAI 2019)",
+                "5621-5627",
+                "IJCAI",
+                "2019"));
+        add_option<int>(
+            "max_pattern_size",
+            "maximum number of variables per pattern",
+            "infinity",
+            plugins::Bounds("1", "infinity"));
+        add_option<int>(
+            "max_pdb_size",
+            "maximum number of states in a PDB",
+            "2M",
+            plugins::Bounds("1", "infinity"));
+        add_option<int>(
+            "max_collection_size",
+            "maximum number of states in the pattern collection",
+            "20M",
+            plugins::Bounds("1", "infinity"));
+        add_option<int>(
+            "max_patterns",
+            "maximum number of patterns",
+            "infinity",
+            plugins::Bounds("1", "infinity"));
+        add_option<double>(
+            "max_time",
+            "maximum time in seconds for generating patterns",
+            "100",
+            plugins::Bounds("0.0", "infinity"));
+        add_option<double>(
+            "max_time_per_restart",
+            "maximum time in seconds for each restart",
+            "10",
+            plugins::Bounds("0.0", "infinity"));
+        add_option<int>(
+            "max_evaluations_per_restart",
+            "maximum pattern evaluations per the inner loop",
+            "infinity",
+            plugins::Bounds("0", "infinity"));
+        add_option<int>(
+            "max_total_evaluations",
+            "maximum total pattern evaluations",
+            "infinity",
+            plugins::Bounds("0", "infinity"));
+        add_option<bool>(
+            "saturate",
+            "only select patterns useful in saturated cost partitionings",
+            "true");
+        add_option<bool>(
+            "create_complete_transition_system",
+            "create explicit transition system (necessary for tasks with conditional effects)",
+            "false");
+        add_pattern_type_option(*this);
+        add_option<bool>(
+            "ignore_useless_patterns",
+            "ignore patterns that induce no transitions with positive finite cost",
+            "false");
+        add_option<bool>(
+            "store_dead_ends",
+            "store dead ends in dead end tree (used to prune the search later)",
+            "true");
+        add_option<PatternOrder>(
+            "order",
+            "order in which to consider patterns of the same size (based on states "
+            "in projection, active operators or position of the pattern variables "
+            "in the partial ordering of the causal graph)",
+            "cg_down");
+        utils::add_rng_options(*this);
+        add_generator_options_to_feature(*this);
+    }
+};
 
-    parser.add_option<int>(
-        "max_pattern_size",
-        "maximum number of variables per pattern",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_pdb_size",
-        "maximum number of states in a PDB",
-        "2M",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_collection_size",
-        "maximum number of states in the pattern collection",
-        "20M",
-        Bounds("1", "infinity"));
-    parser.add_option<int>(
-        "max_patterns",
-        "maximum number of patterns",
-        "infinity",
-        Bounds("1", "infinity"));
-    parser.add_option<double>(
-        "max_time",
-        "maximum time in seconds for generating patterns",
-        "100",
-        Bounds("0.0", "infinity"));
-    parser.add_option<double>(
-        "max_time_per_restart",
-        "maximum time in seconds for each restart",
-        "10",
-        Bounds("0.0", "infinity"));
-    parser.add_option<int>(
-        "max_evaluations_per_restart",
-        "maximum pattern evaluations per the inner loop",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<int>(
-        "max_total_evaluations",
-        "maximum total pattern evaluations",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<bool>(
-        "saturate",
-        "only select patterns useful in saturated cost partitionings",
-        "true");
-    add_pattern_type_option(parser);
-    parser.add_option<bool>(
-        "ignore_useless_patterns",
-        "ignore patterns that induce no transitions with positive finite cost",
-        "false");
-    parser.add_option<bool>(
-        "store_dead_ends",
-        "store dead ends in dead end tree (used to prune the search later)",
-        "true");
-    parser.add_enum_option<PatternOrder>(
-        "order",
-        {"RANDOM", "STATES_UP", "STATES_DOWN", "OPS_UP", "OPS_DOWN", "CG_UP", "CG_DOWN"},
-        "order in which to consider patterns of the same size (based on states "
-        "in projection, active operators or position of the pattern variables "
-        "in the partial ordering of the causal graph)",
-        "CG_DOWN");
-    utils::add_rng_options(parser);
-    add_generator_options_to_parser(parser);
+static plugins::FeaturePlugin<PatternCollectionGeneratorSystematicSCPFeature> _plugin;
 
-    Options opts = parser.parse();
-    if (parser.help_mode())
-        return nullptr;
-
-    if (parser.dry_run())
-        return nullptr;
-
-    return make_shared<PatternCollectionGeneratorSystematicSCP>(opts);
-}
-
-static Plugin<PatternCollectionGenerator> _plugin("sys_scp", _parse);
+static plugins::TypedEnumPlugin<PatternOrder> _enum_plugin({
+        {"random", "order randomly"},
+        {"states_up", "order by increasing number of abstract states"},
+        {"states_down", "order by decreasing number of abstract states"},
+        {"ops_up", "order by increasing number of active operators"},
+        {"ops_down", "order by decreasing number of active operators"},
+        {"cg_up", "use lexicographical order"},
+        {"cg_down", "use reverse lexicographical order"},
+    });
 }

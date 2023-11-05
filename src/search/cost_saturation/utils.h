@@ -11,14 +11,15 @@ class AbstractTask;
 class Evaluator;
 class State;
 
-namespace options {
-class OptionParser;
+namespace plugins {
+class Feature;
 class Options;
 }
 
 namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningHeuristicCollectionGenerator;
+class MaxCostPartitioningHeuristic;
 
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
@@ -58,13 +59,12 @@ extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
 
 
-extern void add_order_options_to_parser(options::OptionParser &parser);
-extern void prepare_parser_for_cost_partitioning_heuristic(
-    options::OptionParser &parser, bool consistent = true);
-extern std::shared_ptr<Evaluator> get_max_cp_heuristic(
-    options::OptionParser &parser, const CPFunction &cp_function);
+extern void add_order_options(plugins::Feature &feature);
+extern void add_options_for_cost_partitioning_heuristic(plugins::Feature &feature, bool consistent = true);
+extern std::shared_ptr<MaxCostPartitioningHeuristic> get_max_cp_heuristic(
+    const plugins::Options &opts, const CPFunction &cp_function);
 extern CostPartitioningHeuristicCollectionGenerator
-get_cp_heuristic_collection_generator_from_options(const options::Options &opts);
+get_cp_heuristic_collection_generator_from_options(const plugins::Options &opts);
 
 template<typename T>
 void print_indexed_vector(const std::vector<T> &vec) {

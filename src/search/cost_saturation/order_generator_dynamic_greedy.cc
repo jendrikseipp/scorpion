@@ -3,9 +3,7 @@
 #include "abstraction.h"
 #include "utils.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
+#include "../plugins/plugin.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
@@ -15,7 +13,7 @@
 using namespace std;
 
 namespace cost_saturation {
-OrderGeneratorDynamicGreedy::OrderGeneratorDynamicGreedy(const Options &opts)
+OrderGeneratorDynamicGreedy::OrderGeneratorDynamicGreedy(const plugins::Options &opts)
     : OrderGenerator(opts),
       scoring_function(opts.get<ScoringFunction>("scoring_function")),
       abstractions(nullptr),
@@ -101,17 +99,18 @@ Order OrderGeneratorDynamicGreedy::compute_order_for_state(
     return order;
 }
 
+class OrderGeneratorDynamicGreedyFeature
+    : public plugins::TypedFeature<OrderGenerator, OrderGeneratorDynamicGreedy> {
+public:
+    OrderGeneratorDynamicGreedyFeature() : TypedFeature("dynamic_greedy_orders") {
+        document_title("Dynamic greedy orders");
+        document_synopsis(
+            "Order abstractions greedily by a given scoring function, "
+            "dynamically recomputing the next best abstraction after each ordering step.");
+        add_scoring_function_to_feature(*this);
+        add_common_order_generator_options(*this);
+    }
+};
 
-static shared_ptr<OrderGenerator> _parse_greedy(OptionParser &parser) {
-    add_scoring_function_to_parser(parser);
-    add_common_order_generator_options(parser);
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<OrderGeneratorDynamicGreedy>(opts);
-}
-
-static Plugin<OrderGenerator> _plugin_greedy(
-    "dynamic_greedy_orders", _parse_greedy);
+static plugins::FeaturePlugin<OrderGeneratorDynamicGreedyFeature> _plugin;
 }

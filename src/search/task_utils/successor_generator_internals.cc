@@ -2,7 +2,7 @@
 
 #include "../task_proxy.h"
 
-#include "../cegar/abstract_state.h"
+#include "../cartesian_abstractions/abstract_state.h"
 
 #include <cassert>
 
@@ -89,7 +89,7 @@ void GeneratorForkBinary::generate_applicable_ops(
 }
 
 void GeneratorForkBinary::generate_applicable_ops(
-    const cegar::AbstractState &state, vector<OperatorID> &applicable_ops) const {
+    const cartesian_abstractions::AbstractState &state, vector<OperatorID> &applicable_ops) const {
     generator1->generate_applicable_ops(state, applicable_ops);
     generator2->generate_applicable_ops(state, applicable_ops);
 }
@@ -110,7 +110,7 @@ void GeneratorForkMulti::generate_applicable_ops(
 }
 
 void GeneratorForkMulti::generate_applicable_ops(
-    const cegar::AbstractState &state, vector<OperatorID> &applicable_ops) const {
+    const cartesian_abstractions::AbstractState &state, vector<OperatorID> &applicable_ops) const {
     for (const auto &generator : children)
         generator->generate_applicable_ops(state, applicable_ops);
 }
@@ -131,7 +131,7 @@ void GeneratorSwitchVector::generate_applicable_ops(
 }
 
 void GeneratorSwitchVector::generate_applicable_ops(
-    const cegar::AbstractState &state, vector<OperatorID> &applicable_ops) const {
+    const cartesian_abstractions::AbstractState &state, vector<OperatorID> &applicable_ops) const {
     for (size_t value = 0; value < generator_for_value.size(); ++value) {
         const unique_ptr<GeneratorBase> &generator_for_val = generator_for_value[value];
         if (generator_for_val && state.contains(switch_var_id, value)) {
@@ -158,7 +158,7 @@ void GeneratorSwitchHash::generate_applicable_ops(
 }
 
 void GeneratorSwitchHash::generate_applicable_ops(
-    const cegar::AbstractState &state, vector<OperatorID> &applicable_ops) const {
+    const cartesian_abstractions::AbstractState &state, vector<OperatorID> &applicable_ops) const {
     for (auto &pair : generator_for_value) {
         int value = pair.first;
         const unique_ptr<GeneratorBase> &generator_for_val = pair.second;
@@ -184,7 +184,7 @@ void GeneratorSwitchSingle::generate_applicable_ops(
 }
 
 void GeneratorSwitchSingle::generate_applicable_ops(
-    const cegar::AbstractState &state, vector<OperatorID> &applicable_ops) const {
+    const cartesian_abstractions::AbstractState &state, vector<OperatorID> &applicable_ops) const {
     if (state.contains(switch_var_id, value)) {
         generator_for_value->generate_applicable_ops(state, applicable_ops);
     }
@@ -209,7 +209,7 @@ void GeneratorLeafVector::generate_applicable_ops(
 }
 
 void GeneratorLeafVector::generate_applicable_ops(
-    const cegar::AbstractState &, vector<OperatorID> &applicable_ops) const {
+    const cartesian_abstractions::AbstractState &, vector<OperatorID> &applicable_ops) const {
     // See above for the reason for using push_back instead of insert.
     for (OperatorID id : applicable_operators) {
         applicable_ops.push_back(id);
@@ -226,7 +226,7 @@ void GeneratorLeafSingle::generate_applicable_ops(
 }
 
 void GeneratorLeafSingle::generate_applicable_ops(
-    const cegar::AbstractState &, vector<OperatorID> &applicable_ops) const {
+    const cartesian_abstractions::AbstractState &, vector<OperatorID> &applicable_ops) const {
     applicable_ops.push_back(applicable_operator);
 }
 }

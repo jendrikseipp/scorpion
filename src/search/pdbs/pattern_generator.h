@@ -13,9 +13,9 @@
 
 class AbstractTask;
 
-namespace options {
-class OptionParser;
+namespace plugins {
 class Options;
+class Feature;
 }
 
 namespace utils {
@@ -33,7 +33,7 @@ protected:
     PatternHandler handle_pattern;
     DeadEnds *dead_ends;
 public:
-    explicit PatternCollectionGenerator(const options::Options &opts);
+    explicit PatternCollectionGenerator(const plugins::Options &opts);
     virtual ~PatternCollectionGenerator() = default;
 
     PatternCollectionInformation generate(
@@ -51,13 +51,13 @@ class PatternGenerator {
 protected:
     mutable utils::LogProxy log;
 public:
-    explicit PatternGenerator(const options::Options &opts);
+    explicit PatternGenerator(const plugins::Options &opts);
     virtual ~PatternGenerator() = default;
 
     PatternInformation generate(const std::shared_ptr<AbstractTask> &task);
 };
 
-extern void add_generator_options_to_parser(options::OptionParser &parser);
+extern void add_generator_options_to_feature(plugins::Feature &feature);
 }
 
 #endif

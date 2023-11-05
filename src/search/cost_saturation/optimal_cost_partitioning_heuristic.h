@@ -67,7 +67,7 @@ protected:
     virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
-    explicit OptimalCostPartitioningHeuristic(const options::Options &opts);
+    explicit OptimalCostPartitioningHeuristic(const plugins::Options &opts);
 };
 }
 
