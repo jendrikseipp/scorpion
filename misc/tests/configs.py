@@ -122,6 +122,15 @@ def configs_optimal_extended():
         "astar_cegar": [
             "--search",
             "astar(cegar())"],
+        "astar_cegar_ts": [
+            "--search",
+            "astar(cegar(transition_representation=ts))"],
+        "astar_cegar_sg": [
+            "--search",
+            "astar(cegar(transition_representation=sg))"],
+        "astar_cegar_ts_then_sg": [
+            "--search",
+            "astar(cegar(transition_representation=ts_then_sg))"],
         "pdb": [
             "--search",
             "astar(pdb())"],
