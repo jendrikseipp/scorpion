@@ -29,11 +29,13 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, utils::LogProxy &
     initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
 
     if (g_hacked_tsr == TransitionRepresentation::SG) {
+        log << "Use match tree." << endl;
         match_tree = utils::make_unique_ptr<MatchTree>(
             TaskProxy(*task).get_operators(), *refinement_hierarchy, cartesian_sets, debug);
     } else {
         assert(g_hacked_tsr == TransitionRepresentation::TS ||
                g_hacked_tsr == TransitionRepresentation::TS_THEN_SG);
+        log << "Store transitions." << endl;
         transition_system = utils::make_unique_ptr<TransitionSystem>(
             TaskProxy(*task).get_operators());
     }
@@ -303,7 +305,9 @@ pair<int, int> Abstraction::refine(
     }
 #endif
 
-    return {v1_id, v2_id};
+    return {
+               v1_id, v2_id
+    };
 }
 
 void Abstraction::switch_from_transition_system_to_successor_generator() {

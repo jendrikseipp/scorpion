@@ -18,6 +18,10 @@ using namespace std;
 namespace cartesian_abstractions {
 static vector<CartesianHeuristicFunction> generate_heuristic_functions(
     const plugins::Options &opts, utils::LogProxy &log) {
+    g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
+    g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
+    g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
+
     if (log.is_at_least_normal()) {
         log << "Initializing additive Cartesian heuristic..." << endl;
     }
@@ -53,13 +57,6 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
     : Heuristic(opts),
       heuristic_functions(generate_heuristic_functions(opts, log)),
       use_max(opts.get<bool>("use_max")) {
-    g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
-    g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
-    g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
-
-    // Compute the successor generator here already to get peak memory info.
-    utils::LogProxy log(utils::get_log_from_options(opts));
-    get_successor_generator(TaskProxy(*opts.get<shared_ptr<AbstractTask>>("transform")), log);
 }
 
 int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
