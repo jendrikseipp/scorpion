@@ -87,13 +87,13 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
 
     bool unsolvable = h_values[initial_state_id] == INF;
     return {
-        unsolvable,
-        utils::make_unique_ptr<ExplicitAbstraction>(
-            utils::make_unique_ptr<CartesianAbstractionFunction>(
-                cartesian_abstraction.extract_refinement_hierarchy()),
-            move(backward_graph),
-            move(looping_operators),
-            move(goal_states))
+               unsolvable,
+               utils::make_unique_ptr<ExplicitAbstraction>(
+                   utils::make_unique_ptr<CartesianAbstractionFunction>(
+                       cartesian_abstraction.extract_refinement_hierarchy()),
+                   move(backward_graph),
+                   move(looping_operators),
+                   move(goal_states))
     };
 }
 
@@ -123,6 +123,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     cartesian_abstractions::g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
     cartesian_abstractions::g_hacked_tsr = opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation");
     cartesian_abstractions::g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
+    cartesian_abstractions::g_hacked_shrink_spt_vectors_interval = opts.get<int>("shrink_spt_vectors_interval");
 }
 
 bool CartesianAbstractionGenerator::has_reached_resource_limit(

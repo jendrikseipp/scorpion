@@ -21,6 +21,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
     g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
     g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
     g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
+    g_hacked_shrink_spt_vectors_interval = opts.get<int>("shrink_spt_vectors_interval");
 
     if (log.is_at_least_normal()) {
         log << "Initializing additive Cartesian heuristic..." << endl;

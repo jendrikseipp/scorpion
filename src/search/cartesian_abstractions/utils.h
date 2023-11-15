@@ -29,6 +29,7 @@ class Abstraction;
 
 extern int g_hacked_extra_memory_padding_mb;
 extern bool g_hacked_sort_transitions;
+extern int g_hacked_shrink_spt_vectors_interval;
 extern TransitionRepresentation g_hacked_tsr;
 
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>

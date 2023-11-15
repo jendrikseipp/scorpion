@@ -28,6 +28,7 @@ namespace cartesian_abstractions {
 class SubtaskGenerator;
 int g_hacked_extra_memory_padding_mb = 512;
 bool g_hacked_sort_transitions = false;
+int g_hacked_shrink_spt_vectors_interval = 0;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
 
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
@@ -236,6 +237,11 @@ void add_common_cegar_options(plugins::Feature &feature) {
         "sort_transitions",
         "sort transitions",
         "false");
+    feature.add_option<int>(
+        "shrink_spt_vectors_interval",
+        "number of refinements between which the children and parents vectors of the SPT are shrunk",
+        "0",
+        plugins::Bounds("0", "infinity"));
     feature.add_option<bool>(
         "store_shortest_path_tree_children",
         "store for each state its children in the shortest path tree",
