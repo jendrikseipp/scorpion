@@ -510,6 +510,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
     if (g_hacked_use_abstract_flaw_search) {
         priority_queue<pair<Cost, int>>().swap(abstract_open_list);
         fill(is_in_abstract_open_list.begin(), is_in_abstract_open_list.end(), false);
+        phmap::flat_hash_map<int, phmap::flat_hash_set<StateID, StateIDHash>>().swap(f_optimal_states);
     } else {
         stack<StateID>().swap(open_list);
     }
