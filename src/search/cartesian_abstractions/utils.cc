@@ -28,6 +28,7 @@ namespace cartesian_abstractions {
 class SubtaskGenerator;
 int g_hacked_extra_memory_padding_mb = 512;
 bool g_hacked_sort_transitions = false;
+bool g_hacked_use_abstract_flaw_search = false;
 int g_hacked_shrink_spt_vectors_interval = 0;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
 
@@ -236,6 +237,10 @@ void add_common_cegar_options(plugins::Feature &feature) {
     feature.add_option<bool>(
         "sort_transitions",
         "sort transitions",
+        "false");
+    feature.add_option<bool>(
+        "use_abstract_flaw_search",
+        "let the flaw search expand all concrete states belonging to an abstract state at once",
         "false");
     feature.add_option<int>(
         "shrink_spt_vectors_interval",
