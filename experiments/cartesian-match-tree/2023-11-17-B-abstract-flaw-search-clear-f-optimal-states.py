@@ -129,4 +129,6 @@ def cegar_found_solution(run):
 
 project.add_scatter_plot_reports(exp, [("batch-ts-children=False-parents=False", "batch-sg-children=False-parents=False")], attributes=["time_for_building_abstraction"], filter=cegar_found_solution)
 
+exp.add_parse_again_step()
+
 exp.run_steps()
