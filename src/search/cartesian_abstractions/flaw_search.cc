@@ -255,7 +255,9 @@ SearchStatus FlawSearch::abstract_step() {
                 } else if (succ_node.is_new()) {
                     // No flaw
                     succ_node.open(node, op, op.get_cost());
-                    f_optimal_states[target].insert(succ_state.get_id());
+                    if (static_cast<int>(f_optimal_states[target].size()) < max_concrete_states_per_abstract_state) {
+                        f_optimal_states[target].insert(succ_state.get_id());
+                    }
                     if (!is_in_abstract_open_list[target]) {
                         if (log.is_at_least_debug()) {
                             log << "Add " << target << " to open list" << endl;
