@@ -31,7 +31,7 @@ else:
 CONFIGS = [
     (f"{nick}-{transition_representation}-children={store_spt_children}-parents={store_spt_parents}-max-time={max_time}", ["--search", f"astar(cegar(subtasks=[original()], max_states=infinity, max_transitions=infinity, max_time={max_time}, sort_transitions=true, transition_representation={transition_representation}, pick_flawed_abstract_state={pick_state}, pick_split={split}, tiebreak_split={tiebreak_split}, memory_padding=512, random_seed=0, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, store_shortest_path_tree_children={store_spt_children}, store_shortest_path_tree_parents={store_spt_parents}))"])
     for transition_representation in [
-        #"ts",
+        "ts",
         "sg",
     ]
     for nick, pick_state, split, tiebreak_split in [
@@ -43,7 +43,7 @@ CONFIGS = [
         #(True, False),
         (True, True),
     ]
-    for max_time in [900, 1000, 1200, 1500]
+    for max_time in [900, 1200, 1500]
 ] + [
     (f"cegar-pdb-{max_pdb_size}", ["--search", f"astar(pdb(cegar_pattern(max_pdb_size={max_pdb_size}, max_time=infinity, use_wildcard_plans=true)))"])
     for max_pdb_size in ["1M", "10M", "100M", "1G"]

@@ -1,19 +1,19 @@
 #! /usr/bin/env python
 
+import json
 import os
-import os.path
 import shutil
+
+import custom_parser
 
 from downward import suites
 from downward.cached_revision import CachedFastDownwardRevision
-from downward.experiment import (
-    _DownwardAlgorithm,
-    _get_solver_resource_name,
-    FastDownwardRun,
-)
-from lab.experiment import Experiment, get_default_data_dir
+from downward.experiment import FastDownwardAlgorithm, FastDownwardRun
+from lab.experiment import Experiment
 
 import project
+
+from labreports.cactus_plot import CactusPlot
 
 
 REPO = project.get_repo_base()
@@ -21,9 +21,11 @@ BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
 SCP_LOGIN = "nsc"
 REMOTE_REPOS_DIR = "/proj/dfsplan/users/x_jense/"
 SUITE = ["depot:p01.pddl", "grid:prob01.pddl", "gripper:prob01.pddl"]
-REVISION_CACHE = os.environ.get("DOWNWARD_REVISION_CACHE") or os.path.join(get_default_data_dir(), "revision-cache")
+REVISION_CACHE = (
+    os.environ.get("DOWNWARD_REVISION_CACHE") or project.DIR / "data" / "revision-cache"
+)
 if project.REMOTE:
-    ENV = project.TetralithEnvironment(email="jendrik.seipp@liu.se", memory_per_cpu="5G", extra_options="#SBATCH --account=snic2022-5-341")
+    ENV = project.TetralithEnvironment(email="jendrik.seipp@liu.se", memory_per_cpu="5G", extra_options="#SBATCH --account=naiss2023-5-314")
     SUITE = project.SUITE_OPTIMAL_STRIPS
 else:
     ENV = project.LocalEnvironment(processes=2)
@@ -51,7 +53,7 @@ DRIVER_OPTIONS = [
     "--overall-memory-limit", "4596M",
 ]
 # Pairs of revision identifier and revision nick.
-REVS = [
+REV_NICKS = [
     ("85fa496eb", ""),
 ]
 ATTRIBUTES = [
@@ -76,23 +78,15 @@ ATTRIBUTES = [
 ]
 
 exp = Experiment(environment=ENV)
-for rev, rev_nick in REVS:
-    cached_rev = CachedFastDownwardRevision(REPO, rev, BUILD_OPTIONS)
-    cached_rev.cache(REVISION_CACHE)
-    cache_path = os.path.join(REVISION_CACHE, cached_rev.name)
-    dest_path = "code-" + cached_rev.name
-    exp.add_resource("", cache_path, dest_path)
-    # Overwrite the script to set an environment variable.
-    exp.add_resource(
-        _get_solver_resource_name(cached_rev),
-        os.path.join(cache_path, "fast-downward.py"),
-        os.path.join(dest_path, "fast-downward.py"),
-    )
+for rev, rev_nick in REV_NICKS:
+    cached_rev = CachedFastDownwardRevision(REVISION_CACHE, REPO, rev, BUILD_OPTIONS)
+    cached_rev.cache()
+    exp.add_resource("", cached_rev.path, cached_rev.get_relative_exp_path())
     for config_nick, config in CONFIGS:
         algo_name = f"{rev_nick}-{config_nick}" if rev_nick else config_nick
 
         for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
-            algo = _DownwardAlgorithm(
+            algo = FastDownwardAlgorithm(
                 algo_name,
                 cached_rev,
                 DRIVER_OPTIONS,
@@ -104,11 +98,12 @@ for rev, rev_nick in REVS:
 exp.add_parser(project.FastDownwardExperiment.EXITCODE_PARSER)
 exp.add_parser(project.FastDownwardExperiment.TRANSLATOR_PARSER)
 exp.add_parser(project.FastDownwardExperiment.SINGLE_SEARCH_PARSER)
-exp.add_parser(project.DIR / "parser.py")
+exp.add_parser(custom_parser.get_parser())
 exp.add_parser(project.FastDownwardExperiment.PLANNER_PARSER)
 
 exp.add_step("build", exp.build)
 exp.add_step("start", exp.start_runs)
+exp.add_step("parse", exp.parse)
 exp.add_fetcher(name="fetch")
 
 if not project.REMOTE:
@@ -116,7 +111,9 @@ if not project.REMOTE:
     project.add_scp_step(exp, SCP_LOGIN, REMOTE_REPOS_DIR)
 
 project.add_absolute_report(
-    exp, attributes=ATTRIBUTES, filter=[project.add_evaluations_per_time, project.group_domains],
+    exp,
+    attributes=ATTRIBUTES,
+    filter=[project.add_evaluations_per_time, project.group_domains],
 )
 
 def cegar_found_solution(run):
@@ -125,5 +122,7 @@ def cegar_found_solution(run):
     return run
 
 project.add_scatter_plot_reports(exp, [("batch-ts-children=False-parents=False", "batch-sg-children=False-parents=False")], attributes=["time_for_building_abstraction"], filter=cegar_found_solution)
+
+exp.add_report(CactusPlot(attributes=["cegar_found_concrete_solution", "time_for_building_abstraction", "aha"]))
 
 exp.run_steps()
