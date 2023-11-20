@@ -29,9 +29,9 @@ else:
     ENV = project.LocalEnvironment(processes=2)
 
 CONFIGS = [
-    (f"{nick}-{transition_representation}-children={store_spt_children}-parents={store_spt_parents}-max-time={max_time}", ["--search", f"astar(cegar(subtasks=[original()], max_states=infinity, max_transitions=infinity, max_time={max_time}, sort_transitions=true, transition_representation={transition_representation}, pick_flawed_abstract_state={pick_state}, pick_split={split}, tiebreak_split={tiebreak_split}, memory_padding=512, random_seed=0, max_concrete_states_per_abstract_state=1K, max_state_expansions=1M, store_shortest_path_tree_children={store_spt_children}, store_shortest_path_tree_parents={store_spt_parents}))"])
+    (f"{nick}-{transition_representation}-children={store_spt_children}-parents={store_spt_parents}-abstract={use_abstract_flaw_search}-max-conc={max_concrete_states_per_abstract_state}", ["--search", f"astar(cegar(subtasks=[original()], max_states=infinity, max_transitions=infinity, max_time=1800, sort_transitions=true, transition_representation={transition_representation}, pick_flawed_abstract_state={pick_state}, pick_split={split}, tiebreak_split={tiebreak_split}, memory_padding=512, random_seed=0, max_concrete_states_per_abstract_state={max_concrete_states_per_abstract_state}, max_state_expansions=1M, store_shortest_path_tree_children={store_spt_children}, store_shortest_path_tree_parents={store_spt_parents}, use_abstract_flaw_search={use_abstract_flaw_search}), bound=0)"])
     for transition_representation in [
-        "ts",
+        #"ts",
         "sg",
     ]
     for nick, pick_state, split, tiebreak_split in [
@@ -41,16 +41,12 @@ CONFIGS = [
     for store_spt_children, store_spt_parents in ([
         (False, False),
         #(True, False),
-        (True, True),
+        #(True, True),
     ] if transition_representation == "sg" else [
         (False, False),
     ])
-    for max_time in [900, 1200, 1500]
-] + [
-    (f"cegar-pdb-{max_pdb_size}", ["--search", f"astar(pdb(cegar_pattern(max_pdb_size={max_pdb_size}, max_time=infinity, use_wildcard_plans=true)))"])
-    for max_pdb_size in ["1M", "10M", "100M", "1G"]
-] + [
-    ("mas", ["--search", "astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order()])),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50k,threshold_before_merge=1))"]),
+    for use_abstract_flaw_search in [False]
+    for max_concrete_states_per_abstract_state in ["1K"]
 ]
 BUILD_OPTIONS = []
 DRIVER_OPTIONS = [
@@ -60,7 +56,7 @@ DRIVER_OPTIONS = [
 ]
 # Pairs of revision identifier and revision nick.
 REV_NICKS = [
-    ("b4c280968", ""),
+    ("b74544dfa", ""),
 ]
 ATTRIBUTES = [
     "error",
