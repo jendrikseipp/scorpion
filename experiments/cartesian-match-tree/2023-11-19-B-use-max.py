@@ -13,8 +13,6 @@ from lab.experiment import Experiment
 
 import project
 
-from labreports.cactus_plot import CactusPlot
-
 
 REPO = project.get_repo_base()
 BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
@@ -31,39 +29,42 @@ else:
     ENV = project.LocalEnvironment(processes=2)
 
 CONFIGS = [
-    (f"{nick}-{transition_representation}-children={store_spt_children}-parents={store_spt_parents}", ["--search", f"astar(cegar(subtasks=[original()], max_states=infinity, max_transitions=infinity, max_time=1800, sort_transitions=true, transition_representation={transition_representation}, pick_flawed_abstract_state={pick_state}, pick_split={split}, tiebreak_split={tiebreak_split}, memory_padding=500, random_seed=0, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, store_shortest_path_tree_children={store_spt_children}, store_shortest_path_tree_parents={store_spt_parents}), bound=0)"])
+    (f"{nick}-{transition_representation}-children={store_spt_children}-parents={store_spt_parents}-max-time={max_time}", ["--search", f"astar(cegar(subtasks=[original()], max_states=infinity, max_transitions=infinity, max_time={max_time}, sort_transitions=true, transition_representation={transition_representation}, pick_flawed_abstract_state={pick_state}, pick_split={split}, tiebreak_split={tiebreak_split}, memory_padding=512, random_seed=0, max_concrete_states_per_abstract_state=1K, max_state_expansions=1M, store_shortest_path_tree_children={store_spt_children}, store_shortest_path_tree_parents={store_spt_parents}, use_max=true))"])
     for transition_representation in [
         "ts",
         "sg",
     ]
     for nick, pick_state, split, tiebreak_split in [
-        ("single", "first_on_shortest_path", "max_refined", "min_cg"),
+        #("single", "first_on_shortest_path", "max_refined", "min_cg"),
         ("batch", "batch_min_h", "max_cover", "max_refined"),
     ]
-    for store_spt_children, store_spt_parents in [
+    for store_spt_children, store_spt_parents in ([
         (False, False),
         #(True, False),
         (True, True),
-    ]
+    ] if transition_representation == "sg" else [
+        (False, False),
+    ])
+    for max_time in [900, 1200, 1500]
 ]
 BUILD_OPTIONS = []
 DRIVER_OPTIONS = [
     "--validate",
-    "--overall-time-limit", "60m",
-    "--overall-memory-limit", "4596M",
+    "--overall-time-limit", "30m",
+    "--overall-memory-limit", "4G",
 ]
 # Pairs of revision identifier and revision nick.
 REV_NICKS = [
-    ("85fa496eb", ""),
+    ("b4c280968", ""),
 ]
 ATTRIBUTES = [
     "error",
     "run_dir",
     "search_start_time",
     "search_start_memory",
-    #"total_time",
-    #"coverage",
-    #"expansions_until_last_jump",
+    "total_time",
+    "coverage",
+    "expansions_until_last_jump",
     "memory",
     "initial_h_value",
     "search_start_time_score", "search_start_memory_score",
@@ -122,7 +123,5 @@ def cegar_found_solution(run):
     return run
 
 project.add_scatter_plot_reports(exp, [("batch-ts-children=False-parents=False", "batch-sg-children=False-parents=False")], attributes=["time_for_building_abstraction"], filter=cegar_found_solution)
-
-exp.add_report(CactusPlot(attributes=["cegar_found_concrete_solution", "time_for_building_abstraction"]))
 
 exp.run_steps()
