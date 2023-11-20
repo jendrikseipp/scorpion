@@ -125,7 +125,7 @@ SearchStatus FlawSearch::step() {
     // Check for each transition if the operator is applicable or if there is a deviation.
     for (auto &pair : get_f_optimal_transitions(abs_id)) {
         if (!utils::extra_memory_padding_is_reserved()) {
-            return TIMEOUT;
+            return OUT_OF_MEMORY;
         }
 
         int op_id = pair.first;
@@ -216,7 +216,7 @@ SearchStatus FlawSearch::abstract_step() {
         // Check for each transition if the operator is applicable or if there is a deviation.
         for (auto &pair : optimal_transitions) {
             if (!utils::extra_memory_padding_is_reserved()) {
-                return TIMEOUT;
+                return OUT_OF_MEMORY;
             }
 
             int op_id = pair.first;
@@ -492,18 +492,10 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
 
         int current_num_expanded_states = num_overall_expanded_concrete_states -
             num_expansions_in_prev_searches;
-        if (current_num_expanded_states >= max_state_expansions) {
-            // Expansion limit reached.
-            if (flawed_states.num_abstract_states() == 0) {
-                // No flaw found.
-                // TODO: Why release memory padding here?
-                utils::release_extra_memory_padding();
-                log << "Expansion limit reached with no flaw." << endl;
-                search_status = TIMEOUT;
-            } else {
-                log << "Expansion limit reached with flaws." << endl;
-                search_status = FAILED;
-            }
+        // To remain complete, only take the expansions limit into account once at least one flaw has been found.
+        if (current_num_expanded_states >= max_state_expansions && flawed_states.num_abstract_states() > 0) {
+            log << "Expansion limit reached with flaws." << endl;
+            search_status = FAILED;
             break;
         }
         search_status = g_hacked_use_abstract_flaw_search ? abstract_step() : step();
@@ -540,8 +532,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
 unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cegar_timer) {
     auto search_status = search_for_flaws(cegar_timer);
 
-    // Memory padding
-    if (search_status == TIMEOUT)
+    if (search_status == TIMEOUT || search_status == OUT_OF_MEMORY)
         return nullptr;
 
     if (search_status == FAILED) {
@@ -614,8 +605,7 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
         }
     }
 
-    // Memory padding
-    if (search_status == TIMEOUT)
+    if (search_status == TIMEOUT || search_status == OUT_OF_MEMORY)
         return nullptr;
 
     if (search_status == FAILED) {

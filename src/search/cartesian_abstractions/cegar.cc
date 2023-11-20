@@ -225,6 +225,12 @@ void CEGAR::refinement_loop() {
 
         find_flaw_timer.stop();
 
+        // Now split==nullptr iff we found a solution or ran out of time or memory.
+        // The assertion might fail if we run out of resources between the last check and the assertion.
+        assert((split && utils::extra_memory_padding_is_reserved() && !timer.is_expired()) ||
+               (!split && (!utils::extra_memory_padding_is_reserved() || timer.is_expired())) ||
+               (!split && utils::extra_memory_padding_is_reserved() && !timer.is_expired()));
+
         if (!utils::extra_memory_padding_is_reserved()) {
             log << "Reached memory limit in flaw search." << endl;
             break;

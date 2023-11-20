@@ -28,7 +28,7 @@ namespace successor_generator {
 class SuccessorGenerator;
 }
 
-enum SearchStatus {IN_PROGRESS, TIMEOUT, FAILED, SOLVED, UNSOLVABLE};
+enum SearchStatus {IN_PROGRESS, TIMEOUT, FAILED, SOLVED, UNSOLVABLE, OUT_OF_MEMORY};
 
 class SearchAlgorithm {
     std::string description;
