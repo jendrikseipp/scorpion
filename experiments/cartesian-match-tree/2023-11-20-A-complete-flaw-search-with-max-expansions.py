@@ -45,7 +45,7 @@ CONFIGS = [
     ] if transition_representation == "sg" else [
         (False, False),
     ])
-    for use_abstract_flaw_search in [False]
+    for use_abstract_flaw_search in [False, True]
     for max_concrete_states_per_abstract_state in ["1K"]
 ]
 BUILD_OPTIONS = []
