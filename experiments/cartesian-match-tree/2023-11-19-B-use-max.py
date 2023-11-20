@@ -55,7 +55,7 @@ DRIVER_OPTIONS = [
 ]
 # Pairs of revision identifier and revision nick.
 REV_NICKS = [
-    ("b4c280968", ""),
+    ("b74544dfa", ""),
 ]
 ATTRIBUTES = [
     "error",
