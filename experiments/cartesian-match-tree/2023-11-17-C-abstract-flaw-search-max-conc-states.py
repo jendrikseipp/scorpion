@@ -128,7 +128,7 @@ def cegar_found_solution(run):
         run["time_for_building_abstraction"] = None
     return run
 
-project.add_scatter_plot_reports(exp, [("batch-ts-children=False-parents=False", "batch-sg-children=False-parents=False")], attributes=["time_for_building_abstraction"], filter=cegar_found_solution)
+project.add_scatter_plot_reports(exp, [("batch-sg-children=False-parents=False-abstract=False-max-conc=1K", "batch-sg-children=False-parents=False-abstract=True-max-conc=1K")], attributes=["time_for_building_abstraction", "search_start_memory"], filter=cegar_found_solution)
 
 exp.add_parse_again_step()
 
