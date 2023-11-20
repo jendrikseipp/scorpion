@@ -34,6 +34,10 @@ OptimalTransitions FlawSearch::get_f_optimal_transitions(int abstract_state_id) 
 void FlawSearch::add_flaw(int abs_id, const State &state) {
     assert(abstraction.get_state(abs_id).includes(state));
 
+    if (log.is_at_least_debug()) {
+        log << "Add flaw abs:" << abs_id << " conc:" << state.get_id() << endl;
+    }
+
     // We limit the number of concrete states we consider per abstract state.
     // For a new abstract state (with a potentially unseen h-value),
     // this if-statement is never true.
@@ -72,17 +76,27 @@ void FlawSearch::initialize() {
     last_refined_flawed_state = FlawedState::no_state;
     best_flaw_h = (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) ? 0 : INF_COSTS;
     assert(open_list.empty());
+    assert(abstract_open_list.empty());
+    assert(count(is_in_abstract_open_list.begin(), is_in_abstract_open_list.end(), true) == 0);
+    assert(f_optimal_states.empty());
+    assert(flawed_states.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, silent_log);
-    cached_abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
-
-    assert(flawed_states.empty());
-
     const State &initial_state = state_registry->get_initial_state();
-    (*cached_abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
     SearchNode node = search_space->get_node(initial_state);
     node.open_initial();
-    open_list.push(initial_state.get_id());
+    if (g_hacked_use_abstract_flaw_search) {
+        int init_id = abstraction.get_initial_state().get_id();
+        Cost init_h = shortest_paths.get_64bit_goal_distance(init_id);
+        f_optimal_states[init_id].insert(initial_state.get_id());
+        is_in_abstract_open_list.resize(abstraction.get_num_states(), false);
+        abstract_open_list.push(make_pair(init_h, init_id));
+        is_in_abstract_open_list[init_id] = true;
+    } else {
+        cached_abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
+        (*cached_abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
+        open_list.push(initial_state.get_id());
+    }
 }
 
 SearchStatus FlawSearch::step() {
@@ -162,6 +176,109 @@ SearchStatus FlawSearch::step() {
             break;
         }
     }
+    return IN_PROGRESS;
+}
+
+SearchStatus FlawSearch::abstract_step() {
+    if (abstract_open_list.empty()) {
+        // Completely explored f-optimal state space.
+        return FAILED;
+    }
+    auto pair = abstract_open_list.top();
+    abstract_open_list.pop();
+    int abs_id = pair.second;
+    is_in_abstract_open_list[abs_id] = false;
+    if (log.is_at_least_debug()) {
+        log << "Expand abstract state " << abs_id << endl;
+    }
+
+    OptimalTransitions optimal_transitions = get_f_optimal_transitions(abs_id);
+
+    for (StateID conc_id : f_optimal_states[abs_id]) {
+        State s = state_registry->lookup_state(conc_id);
+        SearchNode node = search_space->get_node(s);
+        assert(!node.is_closed());
+        node.close();
+        assert(!node.is_dead_end());
+        ++num_overall_expanded_concrete_states;
+        if (log.is_at_least_debug()) {
+            log << "Expand concrete state " << s.get_id() << endl;
+        }
+
+        if (task_properties::is_goal_state(task_proxy, s) &&
+            pick_flawed_abstract_state != PickFlawedAbstractState::MAX_H) {
+            return SOLVED;
+        }
+
+        bool found_flaw = false;
+        assert(abs_id == get_abstract_state_id(s));
+
+        // Check for each transition if the operator is applicable or if there is a deviation.
+        for (auto &pair : optimal_transitions) {
+            if (!utils::extra_memory_padding_is_reserved()) {
+                return TIMEOUT;
+            }
+
+            int op_id = pair.first;
+            const vector<int> &targets = pair.second;
+            OperatorProxy op = task_proxy.get_operators()[op_id];
+            if (log.is_at_least_debug()) {
+                log << "Check transition via " << op_id << " to " << targets << endl;
+            }
+
+            if (!task_properties::is_applicable(op, s)) {
+                // Applicability flaw
+                if (!found_flaw) {
+                    add_flaw(abs_id, s);
+                    found_flaw = true;
+                }
+                if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
+                    return FAILED;
+                }
+                continue;
+            }
+
+            State succ_state = state_registry->get_successor_state(s, op);
+            SearchNode succ_node = search_space->get_node(succ_state);
+            assert(!succ_node.is_dead_end());
+
+            for (int target : targets) {
+                if (!abstraction.get_state(target).includes(succ_state)) {
+                    // Deviation flaw
+                    if (!found_flaw) {
+                        add_flaw(abs_id, s);
+                        found_flaw = true;
+                    }
+                    if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
+                        return FAILED;
+                    }
+                } else if (succ_node.is_new()) {
+                    // No flaw
+                    succ_node.open(node, op, op.get_cost());
+                    if (static_cast<int>(f_optimal_states[target].size()) < max_concrete_states_per_abstract_state) {
+                        f_optimal_states[target].insert(succ_state.get_id());
+                    }
+                    if (!is_in_abstract_open_list[target]) {
+                        if (log.is_at_least_debug()) {
+                            log << "Add " << target << " to open list" << endl;
+                        }
+                        abstract_open_list.push(make_pair(shortest_paths.get_64bit_goal_distance(target), target));
+                        is_in_abstract_open_list[target] = true;
+                    }
+
+                    if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
+                        // Only consider one successor.
+                        break;
+                    }
+                }
+            }
+            if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {
+                // Only consider one successor as in the legacy variant.
+                break;
+            }
+        }
+    }
+    f_optimal_states.erase(abs_id);
     return IN_PROGRESS;
 }
 
@@ -389,10 +506,16 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
             }
             break;
         }
-        search_status = step();
+        search_status = g_hacked_use_abstract_flaw_search ? abstract_step() : step();
     }
     // Clear open list.
-    stack<StateID>().swap(open_list);
+    if (g_hacked_use_abstract_flaw_search) {
+        priority_queue<pair<Cost, int>>().swap(abstract_open_list);
+        fill(is_in_abstract_open_list.begin(), is_in_abstract_open_list.end(), false);
+        phmap::flat_hash_map<int, phmap::flat_hash_set<StateID, StateIDHash>>().swap(f_optimal_states);
+    } else {
+        stack<StateID>().swap(open_list);
+    }
 
     int current_num_expanded_states = num_overall_expanded_concrete_states -
         num_expansions_in_prev_searches;

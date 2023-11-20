@@ -41,6 +41,8 @@ def find_cegar_termination_criterion(content, props):
         "cegar_reached_transitions_limit": "Reached maximum number of transitions.",
         "cegar_reached_time_limit": "Reached time limit.",
         "cegar_reached_memory_limit": "Reached memory limit.",
+        "cegar_reached_time_limit_in_flaw_search": "Reached time limit in flaw search.",
+        "cegar_reached_memory_limit_in_flaw_search": "Reached memory limit in flaw search.",
     }
 
     for outcome, text in outcomes.items():

@@ -123,6 +123,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     cartesian_abstractions::g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
     cartesian_abstractions::g_hacked_tsr = opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation");
     cartesian_abstractions::g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
+    cartesian_abstractions::g_hacked_use_abstract_flaw_search = opts.get<bool>("use_abstract_flaw_search");
     cartesian_abstractions::g_hacked_shrink_spt_vectors_interval = opts.get<int>("shrink_spt_vectors_interval");
 }
 
