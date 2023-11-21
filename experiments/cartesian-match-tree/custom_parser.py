@@ -39,6 +39,8 @@ def find_cegar_termination_criterion(content, props):
         "cegar_reached_transitions_limit": "Reached maximum number of transitions.",
         "cegar_reached_time_limit": "Reached time limit.",
         "cegar_reached_memory_limit": "Reached memory limit.",
+        "cegar_reached_time_limit_in_flaw_search": "Reached time limit in flaw search.",
+        "cegar_reached_memory_limit_in_flaw_search": "Reached memory limit in flaw search.",
     }
 
     for outcome, text in outcomes.items():
@@ -151,7 +153,8 @@ def get_parser():
     parser.add_pattern("successor_generator_creation_time", r"time for successor generation creation: (.+)s\n", type=float)
     parser.add_pattern("successor_generator_creation_memory", r"peak memory difference for successor generator creation: (.+) KB\n", type=int)
 
-    parser.add_bottom_up_pattern("cegar_lower_bound", r"Abstract solution cost: (.+)\n", type=int)
+    parser.add_bottom_up_pattern("cegar_lower_bound", r"Abstract solution cost: (.+)\n", type=int)  # old
+    parser.add_bottom_up_pattern("cegar_lower_bound", r"Lower bound: (.+)\n", type=int)  # new
 
     parser.add_function(find_cegar_termination_criterion)
     parser.add_function(add_scores)

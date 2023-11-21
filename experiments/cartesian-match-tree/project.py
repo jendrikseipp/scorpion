@@ -331,7 +331,15 @@ def check_initial_h_value(run):
     h = run.get("initial_h_value")
     task = f"{run['domain']}:{run['problem']}"
     if h == 9223372036854775807 and task not in UNSOLVABLE_TASKS:
-        logging.error(f"Warning: infinite initial h value task {task}: {h}")
+        lab.tools.add_unexplained_error(run, f"infinite initial h value: {h}")
+    return True
+
+
+def check_search_started(run):
+    if "search_start_time" not in run:
+        error = run.get("error")
+        if error not in ["search-unsolvable-incomplete", "translate-out-of-memory"]:
+            lab.tools.add_unexplained_error(run, f"search not started due to {error}")
     return True
 
 
@@ -358,6 +366,6 @@ class OptimalityCheckFilter:
             task = self._get_task(run)
             self.tasks_to_costs[task].append(cost)
             if task not in self.warned_tasks and len(set(self.tasks_to_costs[task])) > 1:
-                logging.error(f"Warning: different costs for task {task}: {self.tasks_to_costs[task]}")
+                lab.tools.add_unexplained_error(run, f"found different costs for task {task}: {self.tasks_to_costs[task]}")
                 self.warned_tasks.add(task)
         return True
