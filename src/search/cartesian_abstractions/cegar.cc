@@ -204,8 +204,8 @@ void CEGAR::refinement_loop() {
                 shortest_paths->get_32bit_goal_distance(abstraction->get_initial_state().get_id());
             if (new_abstract_solution_cost > old_abstract_solution_cost) {
                 old_abstract_solution_cost = new_abstract_solution_cost;
-                if (log.is_at_least_normal()) {
-                    log << "Abstract solution cost: " << old_abstract_solution_cost << endl;
+                if (log.is_at_least_verbose()) {
+                    log << "Lower bound: " << old_abstract_solution_cost << endl;
                 }
             }
         } else {
