@@ -320,12 +320,6 @@ void ShortestPaths::update_incrementally(
                 ? Transition(op_id, v1)
                 : Transition(new_op_id, v2);
             set_parent(u, new_parent);
-
-            if (timer.is_expired()) {
-                // All goal distances are always lower bounds, so we can abort at any time.
-                cout << "Timer expired --> abort incremental search" << endl;
-                return;
-            }
         }
     } else {
         for (int state : {v1, v2}) {
@@ -443,7 +437,7 @@ void ShortestPaths::update_incrementally(
         states[state].dirty_candidate = false;
 
         if (timer.is_expired()) {
-            // All goal distances are always lower bounds, so we can abort at any time.
+            // Up to here all goal distances are always lower bounds, so we can abort at any time.
             cout << "Timer expired --> abort incremental search" << endl;
             return;
         }
@@ -500,12 +494,6 @@ void ShortestPaths::update_incrementally(
         if (min_dist != INF_COSTS) {
             open_queue.push(min_dist, state);
         }
-
-        if (timer.is_expired()) {
-            // All goal distances are always lower bounds, so we can abort at any time.
-            cout << "Timer expired --> abort incremental search" << endl;
-            return;
-        }
     }
 
     while (!open_queue.empty()) {
@@ -534,12 +522,6 @@ void ShortestPaths::update_incrementally(
                        succ_g == states[succ].goal_distance && succ_g != INF_COSTS) {
                 add_parent(succ, Transition(op_id, state));
             }
-        }
-
-        if (timer.is_expired()) {
-            // All goal distances are always lower bounds, so we can abort at any time.
-            cout << "Timer expired --> abort incremental search" << endl;
-            return;
         }
     }
 }
