@@ -1,3 +1,5 @@
+from collections import defaultdict
+import logging
 from pathlib import Path
 import platform
 import re
@@ -319,3 +321,31 @@ def add_scatter_plot_reports(exp, algorithm_pairs, attributes, *, filter=None):
                     format="tex" if TEX else "png",
                 ),
                 name=f"{exp.name}-{algo1}-{algo2}-{attribute}{'-relative' if RELATIVE else ''}")
+
+
+class OptimalityCheckFilter:
+    """Check that all algorithms have the same cost for commonly solved tasks.
+
+    >>> from downward.reports.absolute import AbsoluteReport
+    >>> filter = OptimalityCheckFilter()
+    >>> report = AbsoluteReport(filter=[filter.check_costs])
+
+    """
+
+    def __init__(self):
+        self.tasks_to_costs = defaultdict(list)
+        self.warned_tasks = set()
+
+    def _get_task(self, run):
+        return (run["domain"], run["problem"])
+
+    def check_costs(self, run):
+        cost = run.get("cost")
+        if cost is not None:
+            assert run["coverage"]
+            task = self._get_task(run)
+            self.tasks_to_costs[task].append(cost)
+            if task not in self.warned_tasks and len(set(self.tasks_to_costs[task])) > 1:
+                logging.error(f"Warning: different costs for task {task}: {self.tasks_to_costs[task]}")
+                self.warned_tasks.add(task)
+        return True

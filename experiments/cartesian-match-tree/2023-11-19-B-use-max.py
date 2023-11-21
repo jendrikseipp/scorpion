@@ -63,6 +63,7 @@ ATTRIBUTES = [
     "search_start_time",
     "search_start_memory",
     "total_time",
+    "cost",
     "coverage",
     "expansions_until_last_jump",
     "memory",
@@ -111,10 +112,12 @@ if not project.REMOTE:
     exp.add_step("remove-eval-dir", shutil.rmtree, exp.eval_dir, ignore_errors=True)
     project.add_scp_step(exp, SCP_LOGIN, REMOTE_REPOS_DIR)
 
+filter = project.OptimalityCheckFilter()
+
 project.add_absolute_report(
     exp,
     attributes=ATTRIBUTES,
-    filter=[project.add_evaluations_per_time, project.group_domains],
+    filter=[project.add_evaluations_per_time, project.group_domains, filter.check_costs],
 )
 
 def cegar_found_solution(run):
