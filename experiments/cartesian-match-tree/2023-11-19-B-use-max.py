@@ -117,7 +117,7 @@ filter = project.OptimalityCheckFilter()
 project.add_absolute_report(
     exp,
     attributes=ATTRIBUTES,
-    filter=[project.add_evaluations_per_time, project.group_domains, filter.check_costs],
+    filter=[project.add_evaluations_per_time, project.group_domains, filter.check_costs, project.check_initial_h_value],
 )
 
 def cegar_found_solution(run):
