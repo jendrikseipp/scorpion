@@ -65,12 +65,18 @@ vector<int> CartesianSet::get_values(int var) const {
 }
 
 bool CartesianSet::has_full_domain(int var) const {
+    bool result = (count(var) == var_infos[var].domain_size);
+#ifndef NDEBUG
+    bool slow_result = true;
     for (int value = 0; value < var_infos[var].domain_size; ++value) {
         if (!test(var, value)) {
-            return false;
+            slow_result = false;
+            break;
         }
     }
-    return true;
+    assert(result == slow_result);
+#endif
+    return result;
 }
 
 bool CartesianSet::is_superset_of(const CartesianSet &other) const {
