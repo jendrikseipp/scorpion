@@ -54,10 +54,10 @@ DRIVER_OPTIONS = [
 ]
 # Pairs of revision identifier and revision nick.
 REV_NICKS = [
-    ("1631af0bc", "base"),
-    ("930fda6c4", "optimize-test"),
-    ("c83d56fd6", "popcount"),
-    ("4de0c15a2", "count-in-has-full-domain"),
+    ("1631af0bc", "01-base"),
+    ("930fda6c4", "02-optimize-test"),
+    ("c83d56fd6", "03-popcount"),
+    ("4de0c15a2", "04-count-in-has-full-domain"),
 ]
 ATTRIBUTES = [
     "error",
