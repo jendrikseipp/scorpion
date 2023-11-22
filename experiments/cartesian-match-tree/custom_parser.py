@@ -91,19 +91,14 @@ def add_scores(content, props):
 
 def get_parser():
     parser = CommonParser()
-    parser.add_bottom_up_pattern(
+    parser.add_pattern(
         "search_start_time",
-        r"\[t=(.+)s, \d+ KB\] g=0, 1 evaluated, 0 expanded",
+        r"\[t=(.+)s, \d+ KB\] Initial heuristic value for .+: (?:\d+|infinity)\n",
         type=float,
     )
-    parser.add_bottom_up_pattern(
-        "search_start_memory",
-        r"\[t=.+s, (\d+) KB\] g=0, 1 evaluated, 0 expanded",
-        type=int,
-    )
     parser.add_pattern(
-        "initial_h_value",
-        r"f = (\d+) \[1 evaluated, 0 expanded, t=.+s, \d+ KB\]",
+        "search_start_memory",
+        r"\[t=.+s, (\d+) KB\] Initial heuristic value for .+: (?:\d+|infinity)\n",
         type=int,
     )
     parser.add_repeated_pattern(
