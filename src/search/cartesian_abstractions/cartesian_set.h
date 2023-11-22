@@ -3,6 +3,7 @@
 
 #include "../per_state_bitset.h"
 
+#include <cstdlib>
 #include <ostream>
 #include <vector>
 
@@ -59,9 +60,15 @@ public:
     void add_all(int var);
     void remove_all(int var);
 
+    // This method is called extremely often, so we optimize it as much as possible.
     bool test(int var, int value) const {
-        int block_index = var_infos[var].block_index + BitsetMath::block_index(value);
-        bool result = (domains[block_index] & BitsetMath::bit_mask(value)) != 0;
+        std::div_t div = std::div(value, BitsetMath::bits_per_block);
+        assert(div.quot == static_cast<int>(BitsetMath::block_index(value)));
+        assert(div.rem == static_cast<int>(BitsetMath::bit_index(value)));
+        int block_index = var_infos[var].block_index + div.quot;
+        BitsetMath::Block bit_mask = BitsetMath::Block(1) << div.rem;
+        assert(bit_mask == BitsetMath::bit_mask(value));
+        bool result = (domains[block_index] & bit_mask) != 0;
         assert(result == get_view(var).test(value));
         return result;
     }
