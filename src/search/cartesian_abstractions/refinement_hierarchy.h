@@ -115,12 +115,6 @@ public:
     }
 
     template<typename Callback>
-    void for_each_visited_node(const AbstractState &state, const Callback &callback) const;
-
-    template<typename Callback>
-    void for_each_visited_family(const AbstractState &state, const Callback &callback) const;
-
-    template<typename Callback>
     void for_each_leaf(
         const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set,
         const Matcher &matcher, const Callback &callback) const;
@@ -131,31 +125,6 @@ public:
     void print_statistics() const;
     void dump(int level = 0, NodeID id = 0) const;
 };
-
-
-// Invoke the callback function on normal *and* helper nodes.
-template<typename Callback>
-void RefinementHierarchy::for_each_visited_node(
-    const AbstractState &state, const Callback &callback) const {
-    NodeID state_node_id = state.get_node_id();
-    NodeID node_id = 0;
-    while (node_id != state_node_id) {
-        callback(node_id);
-        node_id = get_real_children(node_id, state.get_cartesian_set()).correct_child;
-    }
-    callback(state_node_id);
-}
-
-template<typename Callback>
-void RefinementHierarchy::for_each_visited_family(
-    const AbstractState &state, const Callback &callback) const {
-    NodeID node_id = 0;
-    while (nodes[node_id].is_split()) {
-        Children children = get_real_children(node_id, state.get_cartesian_set());
-        callback(node_id, children);
-        node_id = children.correct_child;
-    }
-}
 
 template<typename Callback>
 void RefinementHierarchy::for_each_leaf(
