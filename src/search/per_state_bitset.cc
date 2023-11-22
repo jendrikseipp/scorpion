@@ -1,5 +1,7 @@
 #include "per_state_bitset.h"
 
+#include <bit>
+
 using namespace std;
 
 
@@ -84,9 +86,16 @@ bool ConstBitsetView::test(int index) const {
 
 int ConstBitsetView::count() const {
     int result = 0;
-    for (int index = 0; index < num_bits; ++index) {
-        result += test(index);
+    for (int i = 0; i < data.size(); ++i) {
+        result += popcount(data[i]);
     }
+#ifndef NDEBUG
+    int slow_result = 0;
+    for (int index = 0; index < num_bits; ++index) {
+        slow_result += test(index);
+    }
+    assert(result == slow_result);
+#endif
     return result;
 }
 
