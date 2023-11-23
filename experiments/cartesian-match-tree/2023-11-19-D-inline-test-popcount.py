@@ -126,11 +126,11 @@ project.add_absolute_report(
     filter=[project.check_initial_h_value, filter.check_costs, project.check_search_started, project.add_evaluations_per_time, project.group_domains],
 )
 
-def cegar_found_solution(run):
-    if run.get("cegar_found_concrete_solution") != 1:
-        run["time_for_building_abstraction"] = None
+def cegar_found_no_solution(run):
+    if run.get("cegar_found_concrete_solution") == 1:
+        run["cartesian_states"] = None
     return run
 
-project.add_scatter_plot_reports(exp, [("batch-ts-children=False-parents=False", "batch-sg-children=False-parents=False")], attributes=["time_for_building_abstraction"], filter=cegar_found_solution)
+project.add_scatter_plot_reports(exp, [("01-base:batch-sg-children=True-parents=True-max-time=1200", "02-optimize-test:batch-sg-children=True-parents=True-max-time=1200")], attributes=["cartesian_states"], filter=cegar_found_no_solution)
 
 exp.run_steps()
