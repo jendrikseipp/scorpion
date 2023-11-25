@@ -92,33 +92,6 @@ int RefinementHierarchy::get_abstract_state_id(NodeID node_id) const {
     return nodes[node_id].get_state_id();
 }
 
-Children RefinementHierarchy::get_real_children(
-    NodeID node_id, const CartesianSet &cartesian_set) const {
-    const Node &node = nodes[node_id];
-    assert(node.is_split());
-    bool follow_right_child = cartesian_set.test(node.get_var(), node.value);
-    // Traverse helper nodes.
-    NodeID helper = node.left_child;
-    while (nodes[helper].right_child == node.right_child) {
-        if (!follow_right_child &&
-            cartesian_set.test(nodes[helper].var, nodes[helper].value)) {
-            follow_right_child = true;
-        }
-        helper = nodes[helper].left_child;
-    }
-
-    if (follow_right_child) {
-        return {
-            node.right_child, helper
-        };
-    } else {
-        return {
-            helper, node.right_child
-        };
-    }
-}
-
-
 TaskProxy RefinementHierarchy::get_task_proxy() const {
     return TaskProxy(*task);
 }
