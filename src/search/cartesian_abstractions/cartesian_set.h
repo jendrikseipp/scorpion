@@ -62,11 +62,14 @@ public:
 
     // This method is called extremely often, so we optimize it as much as possible.
     bool test(int var, int value) const {
-        std::div_t div = std::div(value, BitsetMath::bits_per_block);
-        assert(div.quot == static_cast<int>(BitsetMath::block_index(value)));
-        assert(div.rem == static_cast<int>(BitsetMath::bit_index(value)));
-        int block_index = var_infos[var].block_index + div.quot;
-        BitsetMath::Block bit_mask = BitsetMath::Block(1) << div.rem;
+        // std::div is slower than consecutive / and %, since compilers merge them.
+        // (https://www.codeproject.com/Tips/1274380/Cplusplus11-std-div-Benchmark).
+        int block_index = value / BitsetMath::bits_per_block;
+        int bit_index = value % BitsetMath::bits_per_block;
+        assert(block_index == static_cast<int>(BitsetMath::block_index(value)));
+        assert(bit_index == static_cast<int>(BitsetMath::bit_index(value)));
+        block_index += var_infos[var].block_index;
+        BitsetMath::Block bit_mask = BitsetMath::Block(1) << bit_index;
         assert(bit_mask == BitsetMath::bit_mask(value));
         bool result = (domains[block_index] & bit_mask) != 0;
         assert(result == get_view(var).test(value));

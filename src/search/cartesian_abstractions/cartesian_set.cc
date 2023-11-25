@@ -42,6 +42,7 @@ void CartesianSet::set_single_value(int var, int value) {
 }
 
 void CartesianSet::add_all(int var) {
+    // TODO: make this more efficient by not looping over all bits?
     get_view(var).set();
 }
 
@@ -65,6 +66,7 @@ vector<int> CartesianSet::get_values(int var) const {
 }
 
 bool CartesianSet::has_full_domain(int var) const {
+    // TODO: make this more efficient by not looping over all set bits?
     bool result = (count(var) == var_infos[var].domain_size);
 #ifndef NDEBUG
     bool slow_result = true;
