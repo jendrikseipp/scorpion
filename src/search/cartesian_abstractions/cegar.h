@@ -50,6 +50,7 @@ class CEGAR {
     int old_abstract_solution_cost = -1;
 
     bool may_keep_refining() const;
+    bool check_and_switch_transition_representation() const;
 
     /*
       Map all states that can only be reached after reaching the goal

@@ -231,6 +231,12 @@ void CEGAR::refinement_loop() {
                (!split && (!utils::extra_memory_padding_is_reserved() || timer.is_expired())) ||
                (!split && utils::extra_memory_padding_is_reserved() && !timer.is_expired()));
 
+        bool did_switch = check_and_switch_transition_representation();
+        if (!split && did_switch) {
+            // Start next iteration to find flaw with SG representation.
+            continue;
+        }
+
         if (!utils::extra_memory_padding_is_reserved()) {
             log << "Reached memory limit in flaw search." << endl;
             break;
@@ -270,16 +276,7 @@ void CEGAR::refinement_loop() {
                 << max_non_looping_transitions << " transitions" << endl;
         }
 
-        if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
-            !utils::extra_memory_padding_is_reserved()) {
-            cout << "Memory limit reached -> compute transitions on demand" << endl;
-            abstraction->switch_from_transition_system_to_successor_generator();
-            utils::reserve_extra_memory_padding(g_hacked_extra_memory_padding_mb);
-        } else if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
-                   abstraction->get_num_transitions() >= max_non_looping_transitions) {
-            cout << "Transition limit reached -> compute transitions on demand" << endl;
-            abstraction->switch_from_transition_system_to_successor_generator();
-        }
+        check_and_switch_transition_representation();
     }
     if (log.is_at_least_normal()) {
         log << "Time for finding abstract traces: " << find_trace_timer << endl;
@@ -288,6 +285,22 @@ void CEGAR::refinement_loop() {
         log << "Time for updating goal distances: " << update_goal_distances_timer << endl;
         log << "Number of refinements: " << abstraction->get_num_states() - 1 << endl;
     }
+}
+
+bool CEGAR::check_and_switch_transition_representation() const {
+    if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
+        !utils::extra_memory_padding_is_reserved()) {
+        log << "Memory limit reached -> compute transitions on demand" << endl;
+        abstraction->switch_from_transition_system_to_successor_generator();
+        utils::reserve_extra_memory_padding(g_hacked_extra_memory_padding_mb);
+        return true;
+    } else if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
+               abstraction->get_num_transitions() >= max_non_looping_transitions) {
+        log << "Transition limit reached -> compute transitions on demand" << endl;
+        abstraction->switch_from_transition_system_to_successor_generator();
+        return true;
+    }
+    return false;
 }
 
 void CEGAR::dump_dot_graph() const {
