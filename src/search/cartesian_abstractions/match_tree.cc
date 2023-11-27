@@ -12,6 +12,7 @@
 #include "../utils/rng.h"
 
 #include <algorithm>
+#include <execution>
 #include <map>
 
 using namespace std;
@@ -332,7 +333,7 @@ int MatchTree::get_operator_between_states(
     }
     vector<int> operators = get_outgoing_operators(src);
     if (g_hacked_sort_transitions) {
-        sort(operators.begin(), operators.end());
+        sort(execution::unseq, operators.begin(), operators.end());
     }
     for (int op_id : operators) {
         if (operator_costs[op_id] == cost && has_transition(src, op_id, dest, &domains_intersect)) {
