@@ -12,6 +12,7 @@
 #include "../utils/rng.h"
 
 #include <cassert>
+#include <execution>
 #include <iostream>
 #include <limits>
 
@@ -40,7 +41,8 @@ bool Split::combine_with(Split &&other) {
         assert(utils::is_sorted_unique(values));
         assert(utils::is_sorted_unique(other.values));
         vector<int> combined_values;
-        set_union(values.begin(), values.end(),
+        set_union(execution::unseq,
+                  values.begin(), values.end(),
                   other.values.begin(), other.values.end(),
                   back_inserter(combined_values));
         swap(values, combined_values);

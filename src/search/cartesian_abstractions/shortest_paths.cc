@@ -12,6 +12,7 @@
 #include "../tasks/root_task.h"
 
 #include <cassert>
+#include <execution>
 #include <map>
 
 using namespace std;
@@ -178,7 +179,7 @@ void ShortestPaths::set_parent(int state, const Transition &new_parent) {
             if (store_children && old_parent.is_defined()) {
                 Transition old_child(old_parent.op_id, state);
                 Transitions &old_children = children[old_parent.target_id];
-                auto it = find(old_children.begin(), old_children.end(), old_child);
+                auto it = find(execution::unseq, old_children.begin(), old_children.end(), old_child);
                 assert(it != old_children.end());
                 utils::swap_and_pop_from_vector(old_children, it - old_children.begin());
             }
@@ -212,7 +213,7 @@ void ShortestPaths::remove_child(int state, const Transition &child) {
     }
     assert(store_parents);
     Transitions &state_children = children[state];
-    auto it = find(state_children.begin(), state_children.end(), child);
+    auto it = find(execution::unseq, state_children.begin(), state_children.end(), child);
     assert(it != state_children.end());
     utils::swap_and_pop_from_vector(state_children, it - state_children.begin());
 }
@@ -223,7 +224,7 @@ void ShortestPaths::remove_parent(int state, const Transition &parent) {
     }
     assert(store_parents);
     assert(parent.is_defined());
-    auto it = find(parents[state].begin(), parents[state].end(), parent);
+    auto it = find(execution::unseq, parents[state].begin(), parents[state].end(), parent);
     assert(it != parents[state].end());
     utils::swap_and_pop_from_vector(parents[state], it - parents[state].begin());
 }

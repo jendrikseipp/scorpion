@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <execution>
 
 using namespace std;
 
@@ -277,7 +278,7 @@ void CostSaturation::build_abstractions(
             reduce_remaining_costs(saturated_costs);
         }
 
-        int num_unsolvable_states = count(goal_distances.begin(), goal_distances.end(), INF);
+        int num_unsolvable_states = count(execution::unseq, goal_distances.begin(), goal_distances.end(), INF);
         log << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
         log << "Initial h value: "
             << goal_distances[abstraction->get_initial_state().get_id()]
