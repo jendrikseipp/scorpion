@@ -24,6 +24,7 @@ ATTRIBUTES = [
     "time_for_building_abstraction",
     project.Attribute("cegar_found_concrete_solution", min_wins=False, absolute=True),
     project.Attribute("cegar_proved_unsolvability", min_wins=False, absolute=True),
+    project.Attribute("cartesian_states", min_wins=False),
     "cegar_*", "cartesian_*", "successor_generator_*",
 ]
 
@@ -32,14 +33,15 @@ exp.add_step(
     "remove-combined-properties", project.remove_file, Path(exp.eval_dir) / "properties"
 )
 
-project.fetch_algorithm(exp, "2023-11-19-C-fix-shortest-paths", "batch-ts-children=False-parents=False-max-time=1200", new_algo="ts")
-project.fetch_algorithm(exp, "2023-11-19-C-fix-shortest-paths", "batch-sg-children=False-parents=False-max-time=1200", new_algo="sg")
-project.fetch_algorithm(exp, "2023-11-19-C-fix-shortest-paths", "batch-sg-children=True-parents=True-max-time=1200", new_algo="sg-cache")
+project.fetch_algorithm(exp, "2023-11-19-D-inline-test-popcount", "04-count-in-has-full-domain:batch-sg-children=True-parents=True-max-time=1200")
+project.fetch_algorithm(exp, "2023-11-19-E-sort-transitions-in-parallel", "09-simd:batch-sg-children=True-parents=True-max-time=1200")
 
 filters = [project.add_evaluations_per_time]
 
 project.add_absolute_report(
-    exp, attributes=ATTRIBUTES, filter=filters, filter_cegar_found_concrete_solution=1, name=f"{exp.name}"
+    exp, attributes=ATTRIBUTES, filter=filters,
+    #filter_cegar_found_concrete_solution=1,
+    name=f"{exp.name}"
 )
 
 def combine_cegar_outcomes(run):
@@ -57,21 +59,13 @@ for attribute in ["cegar_reached_time_limit", "cegar_reached_memory_limit", "ceg
 def cegar_found_solution(run):
     if run.get("cegar_found_concrete_solution") != 1:
         run["time_for_building_abstraction"] = None
-        run["search_start_memory"] = None
-        run["search_start_time"] = None
     return run
 
 def limit_h_value(run):
-    if run.get("initial_h_value", 1000) > 100:
+    if run.get("initial_h_value", 1000  ) > 100:
         run["initial_h_value"] = None
     return run
 
-def set_min_expansions(run):
-    if run.get("expansions_until_last_jump") == 0:
-        run["expansions_until_last_jump"] = 1
-    return run
-
-project.add_scatter_plot_reports(exp, [("ts", "sg-cache")], attributes=["time_for_building_abstraction", "search_start_memory"], filter=[cegar_found_solution])
-project.add_scatter_plot_reports(exp, [("ts", "sg-cache")], attributes=["initial_h_value", "expansions_until_last_jump"], filter=[limit_h_value, set_min_expansions])
+project.add_scatter_plot_reports(exp, [("04-count-in-has-full-domain:batch-sg-children=True-parents=True-max-time=1200", "09-simd:batch-sg-children=True-parents=True-max-time=1200")], attributes=[project.Attribute("cartesian_states", min_wins=False)], filter=[cegar_found_solution, limit_h_value])
 
 exp.run_steps()
