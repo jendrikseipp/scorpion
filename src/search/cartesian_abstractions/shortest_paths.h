@@ -120,7 +120,7 @@ class ShortestPaths {
 
     std::deque<StateInfo> states;
     std::deque<Transitions> children;
-    std::deque<Transitions> parents;
+    mutable std::deque<Transitions> parents;
     std::unique_ptr<TransitionSystem> rewirer;
 
     static Cost add_costs(Cost a, Cost b);
