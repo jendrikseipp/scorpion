@@ -54,6 +54,7 @@ def check_search_code_with_clang_tidy():
         "readability-avoid-const-params-in-decls",
         # "readability-braces-around-statements",
         "readability-container-size-empty",
+        "readability-const-return-type",
         "readability-delete-null-pointer",
         "readability-deleted-default",
         # "readability-else-after-return",
