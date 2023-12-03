@@ -81,6 +81,15 @@ bool CartesianSet::has_full_domain(int var) const {
     return result;
 }
 
+bool CartesianSet::intersects(const CartesianSet &other) const {
+    for (int var = 0; var < get_num_variables(); ++var) {
+        if (!intersects(other, var)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool CartesianSet::is_superset_of(const CartesianSet &other) const {
     for (int var = 0; var < get_num_variables(); ++var) {
         bool is_subset = other.get_view(var).is_subset_of(get_view(var));

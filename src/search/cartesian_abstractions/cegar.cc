@@ -288,13 +288,13 @@ void CEGAR::refinement_loop() {
 }
 
 bool CEGAR::check_and_switch_transition_representation() const {
-    if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
+    if (g_hacked_tsr == TransitionRepresentation::STORE_THEN_SG_RH &&
         !utils::extra_memory_padding_is_reserved()) {
         log << "Memory limit reached -> compute transitions on demand" << endl;
         abstraction->switch_from_transition_system_to_successor_generator();
         utils::reserve_extra_memory_padding(g_hacked_extra_memory_padding_mb);
         return true;
-    } else if (g_hacked_tsr == TransitionRepresentation::TS_THEN_SG &&
+    } else if (g_hacked_tsr == TransitionRepresentation::STORE_THEN_SG_RH &&
                abstraction->get_num_transitions() >= max_non_looping_transitions) {
         log << "Transition limit reached -> compute transitions on demand" << endl;
         abstraction->switch_from_transition_system_to_successor_generator();

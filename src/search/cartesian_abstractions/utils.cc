@@ -30,7 +30,7 @@ int g_hacked_extra_memory_padding_mb = 512;
 bool g_hacked_sort_transitions = false;
 bool g_hacked_use_abstract_flaw_search = false;
 int g_hacked_shrink_spt_vectors_interval = 0;
-TransitionRepresentation g_hacked_tsr = TransitionRepresentation::TS;
+TransitionRepresentation g_hacked_tsr = TransitionRepresentation::STORE;
 
 unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
     const shared_ptr<AbstractTask> &task) {
@@ -152,7 +152,7 @@ static void add_transition_representation_option(plugins::Feature &feature) {
     feature.add_option<TransitionRepresentation>(
         "transition_representation",
         "how to compute transitions between abstract states",
-        "ts");
+        "store");
 }
 
 string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
@@ -282,8 +282,11 @@ static plugins::TypedEnumPlugin<DotGraphVerbosity> _enum_plugin_dot_graph_verbos
     });
 
 static plugins::TypedEnumPlugin<TransitionRepresentation> _enum_plugin_transition_representation({
-        {"ts", "store transitions"},
-        {"sg", "compute transitions on demand via successor generator"},
-        {"ts_then_sg", "start with storing transitions until running out of memory, then compute them on demand"}
+        {"store", "store transitions"},
+        {"naive", "compute applicable operators by looping over all operators and transitions by looping over all abstract states"},
+        {"sg", "compute operators via successor generator and transitions naively"},
+        {"rh", "compute operators naively and transitions via refinement hierarchy"},
+        {"sg_rh", "compute operators via successor generator and transitions via refinement hierarchy"},
+        {"store_then_sg_rh", "start with storing transitions until running out of memory, then compute them on demand"},
     });
 }

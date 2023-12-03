@@ -53,8 +53,6 @@ class MatchTree {
         const AbstractState &src, int op_id, const AbstractState &dest,
         const std::vector<bool> *domains_intersect) const;
     bool incoming_operator_only_loops(const AbstractState &state, int op_id) const;
-    Operators get_incoming_operators(const AbstractState &state) const;
-    Operators get_outgoing_operators(const AbstractState &state) const;
     Matcher get_incoming_matcher(int op_id) const;
     Matcher get_outgoing_matcher(int op_id) const;
     void order_operators(std::vector<int> &operators) const;
@@ -67,12 +65,28 @@ public:
     // Update match tree after v has been split for var.
     void split(const CartesianSets &cartesian_sets, const AbstractState &v, int var);
 
-    const std::vector<FactPair> get_preconditions(int op_id) const {
+    const std::vector<FactPair> &get_preconditions(int op_id) const {
         return preconditions[op_id];
     }
+    const std::vector<FactPair> &get_effects(int op_id) const {
+        return effects[op_id];
+    }
+    const std::vector<FactPair> &get_postconditions(int op_id) const {
+        return postconditions[op_id];
+    }
 
+    Operators get_incoming_operators(const AbstractState &state) const;
+    Operators get_outgoing_operators(const AbstractState &state) const;
+    Transitions get_incoming_transitions(
+        const CartesianSets &cartesian_sets,
+        const AbstractState &state,
+        const std::vector<int> &incoming_operators) const;
     Transitions get_incoming_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
+    Transitions get_outgoing_transitions(
+        const CartesianSets &cartesian_sets,
+        const AbstractState &state,
+        const std::vector<int> &outgoing_operators) const;
     Transitions get_outgoing_transitions(
         const CartesianSets &cartesian_sets, const AbstractState &state) const;
     bool has_transition(

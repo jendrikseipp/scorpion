@@ -29,13 +29,16 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, utils::LogProxy &
       debug(log.is_at_least_debug()) {
     initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
 
-    if (g_hacked_tsr == TransitionRepresentation::SG) {
-        log << "Use match tree." << endl;
+    if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
+        g_hacked_tsr == TransitionRepresentation::SG ||
+        g_hacked_tsr == TransitionRepresentation::RH ||
+        g_hacked_tsr == TransitionRepresentation::SG_RH) {
+        log << "Create match tree." << endl;
         match_tree = utils::make_unique_ptr<MatchTree>(
             TaskProxy(*task).get_operators(), *refinement_hierarchy, cartesian_sets, debug);
     } else {
-        assert(g_hacked_tsr == TransitionRepresentation::TS ||
-               g_hacked_tsr == TransitionRepresentation::TS_THEN_SG);
+        assert(g_hacked_tsr == TransitionRepresentation::STORE ||
+               g_hacked_tsr == TransitionRepresentation::STORE_THEN_SG_RH);
         log << "Store transitions." << endl;
         transition_system = utils::make_unique_ptr<TransitionSystem>(
             TaskProxy(*task).get_operators());
@@ -112,12 +115,51 @@ int Abstraction::get_num_transitions() const {
 
 Transitions Abstraction::get_incoming_transitions(int state_id) const {
     Transitions transitions;
-    if (match_tree) {
+    if (transition_system) {
+        transitions = transition_system->get_incoming_transitions()[state_id];
+    } else if (g_hacked_tsr == TransitionRepresentation::SG_RH) {
         transitions = match_tree->get_incoming_transitions(
             cartesian_sets, *states[state_id]);
-    } else {
-        transitions = transition_system->get_incoming_transitions()[state_id];
+    } else if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
+               g_hacked_tsr == TransitionRepresentation::SG ||
+               g_hacked_tsr == TransitionRepresentation::RH) {
+        const auto &target = states[state_id];
+
+        vector<int> incoming_ops;
+        if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
+            g_hacked_tsr == TransitionRepresentation::RH) {
+            for (int op_id = 0; op_id < match_tree->get_num_operators(); ++op_id) {
+                if (target->includes(match_tree->get_postconditions(op_id))) {
+                    incoming_ops.push_back(op_id);
+                }
+            }
+        } else {
+            assert(g_hacked_tsr == TransitionRepresentation::SG);
+            incoming_ops = match_tree->get_incoming_operators(*target);
+        }
+
+        if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
+            g_hacked_tsr == TransitionRepresentation::SG) {
+            for (int op_id : incoming_ops) {
+                CartesianSet regression = target->get_cartesian_set();
+                for (const FactPair &fact : match_tree->get_effects(op_id)) {
+                    regression.add_all(fact.var);
+                }
+                for (const FactPair &fact : match_tree->get_preconditions(op_id)) {
+                    regression.set_single_value(fact.var, fact.value);
+                }
+                for (const auto &src : states) {
+                    if (src->get_id() != target->get_id() && src->get_cartesian_set().intersects(regression)) {
+                        transitions.emplace_back(op_id, src->get_id());
+                    }
+                }
+            }
+        } else {
+            assert(g_hacked_tsr == TransitionRepresentation::RH);
+            transitions = match_tree->get_incoming_transitions(cartesian_sets, *target, incoming_ops);
+        }
     }
+
     if (g_hacked_sort_transitions) {
         sort(execution::unseq, transitions.begin(), transitions.end());
     }
@@ -126,10 +168,52 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
 
 Transitions Abstraction::get_outgoing_transitions(int state_id) const {
     Transitions transitions;
-    if (match_tree) {
-        transitions = match_tree->get_outgoing_transitions(cartesian_sets, *states[state_id]);
-    } else {
+    if (transition_system) {
         transitions = transition_system->get_outgoing_transitions()[state_id];
+    } else if (g_hacked_tsr == TransitionRepresentation::SG_RH) {
+        transitions = match_tree->get_outgoing_transitions(cartesian_sets, *states[state_id]);
+    } else if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
+               g_hacked_tsr == TransitionRepresentation::SG ||
+               g_hacked_tsr == TransitionRepresentation::RH) {
+        const auto &src = states[state_id];
+
+        vector<int> outgoing_ops;
+        if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
+            g_hacked_tsr == TransitionRepresentation::RH) {
+            for (int op_id = 0; op_id < match_tree->get_num_operators(); ++op_id) {
+                /*
+                  Ignore self-loop operators. An operator loops iff state
+                  contains all its effects, since then the resulting Cartesian
+                  set is a subset of state.
+                */
+                if (src->includes(match_tree->get_preconditions(op_id)) &&
+                    any_of(match_tree->get_effects(op_id).begin(), match_tree->get_effects(op_id).end(),
+                           [&src](const FactPair &fact) {return !src->contains(fact.var, fact.value);})) {
+                    outgoing_ops.push_back(op_id);
+                }
+            }
+        } else {
+            assert(g_hacked_tsr == TransitionRepresentation::SG);
+            outgoing_ops = match_tree->get_outgoing_operators(*src);
+        }
+
+        if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
+            g_hacked_tsr == TransitionRepresentation::SG) {
+            for (int op_id : outgoing_ops) {
+                CartesianSet progression = src->get_cartesian_set();
+                for (const FactPair &post : match_tree->get_postconditions(op_id)) {
+                    progression.set_single_value(post.var, post.value);
+                }
+                for (const auto &target : states) {
+                    if (target->get_cartesian_set().intersects(progression)) {
+                        transitions.emplace_back(op_id, target->get_id());
+                    }
+                }
+            }
+        } else {
+            assert(g_hacked_tsr == TransitionRepresentation::RH);
+            transitions = match_tree->get_outgoing_transitions(cartesian_sets, *src, outgoing_ops);
+        }
     }
     if (g_hacked_sort_transitions) {
         sort(execution::unseq, transitions.begin(), transitions.end());
@@ -138,7 +222,13 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
 }
 
 bool Abstraction::has_transition(int src, int op_id, int dest) const {
-    if (match_tree) {
+#ifdef NDEBUG
+    ABORT("Abstraction::has_transition() should only be called in debug mode.");
+#endif
+    if (transition_system) {
+        const Transitions &transitions = transition_system->get_outgoing_transitions()[src];
+        return find(transitions.begin(), transitions.end(), Transition(op_id, dest)) != transitions.end();
+    } else {
         bool valid = match_tree->has_transition(*states[src], op_id, *states[dest]);
 #ifndef NDEBUG
         Transitions out = match_tree->get_outgoing_transitions(cartesian_sets, *states[src]);
@@ -146,10 +236,9 @@ bool Abstraction::has_transition(int src, int op_id, int dest) const {
 #endif
         return valid;
     }
-    const Transitions &transitions = transition_system->get_outgoing_transitions()[src];
-    return find(transitions.begin(), transitions.end(), Transition(op_id, dest)) != transitions.end();
 }
 
+// Method is only called if store_children=true and store_parents=false.
 int Abstraction::get_operator_between_states(int src, int dest, int cost) const {
     if (match_tree) {
         return match_tree->get_operator_between_states(*states[src], *states[dest], cost);
@@ -315,7 +404,7 @@ void Abstraction::switch_from_transition_system_to_successor_generator() {
     assert(transition_system);
     assert(!match_tree);
     transition_system = nullptr;
-    g_hacked_tsr = TransitionRepresentation::SG;
+    g_hacked_tsr = TransitionRepresentation::SG_RH;
     match_tree = utils::make_unique_ptr<MatchTree>(
         refinement_hierarchy->get_task_proxy().get_operators(),
         *refinement_hierarchy, cartesian_sets, debug);

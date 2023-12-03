@@ -23,9 +23,12 @@ enum class DotGraphVerbosity {
 };
 
 enum class TransitionRepresentation {
-    TS,
+    STORE,
+    NAIVE,
     SG,
-    TS_THEN_SG,
+    RH,
+    SG_RH,
+    STORE_THEN_SG_RH,
 };
 
 enum class Variable : char {

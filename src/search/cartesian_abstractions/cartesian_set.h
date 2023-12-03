@@ -90,6 +90,7 @@ public:
         }
         return false;
     }
+    bool intersects(const CartesianSet &other) const;
 
     bool is_superset_of(const CartesianSet &other) const;
 

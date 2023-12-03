@@ -245,9 +245,11 @@ Matcher MatchTree::get_outgoing_matcher(int op_id) const {
 }
 
 Transitions MatchTree::get_incoming_transitions(
-    const CartesianSets &cartesian_sets, const AbstractState &state) const {
+    const CartesianSets &cartesian_sets,
+    const AbstractState &state,
+    const vector<int> &incoming_operators) const {
     Transitions transitions;
-    for (int op_id : get_incoming_operators(state)) {
+    for (int op_id : incoming_operators) {
         CartesianSet tmp_cartesian_set = state.get_cartesian_set();
         for (const FactPair &fact : effects[op_id]) {
             tmp_cartesian_set.add_all(fact.var);
@@ -268,10 +270,17 @@ Transitions MatchTree::get_incoming_transitions(
     return transitions;
 }
 
-Transitions MatchTree::get_outgoing_transitions(
+Transitions MatchTree::get_incoming_transitions(
     const CartesianSets &cartesian_sets, const AbstractState &state) const {
+    return get_incoming_transitions(cartesian_sets, state, get_incoming_operators(state));
+}
+
+Transitions MatchTree::get_outgoing_transitions(
+    const CartesianSets &cartesian_sets,
+    const AbstractState &state,
+    const vector<int> &outgoing_operators) const {
     Transitions transitions;
-    for (int op_id : get_outgoing_operators(state)) {
+    for (int op_id : outgoing_operators) {
         CartesianSet tmp_cartesian_set = state.get_cartesian_set();
         for (const FactPair &fact : postconditions[op_id]) {
             tmp_cartesian_set.set_single_value(fact.var, fact.value);
@@ -285,6 +294,11 @@ Transitions MatchTree::get_outgoing_transitions(
             });
     }
     return transitions;
+}
+
+Transitions MatchTree::get_outgoing_transitions(
+    const CartesianSets &cartesian_sets, const AbstractState &state) const {
+    return get_outgoing_transitions(cartesian_sets, state, get_outgoing_operators(state));
 }
 
 bool MatchTree::is_applicable(const AbstractState &src, int op_id) const {
