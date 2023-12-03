@@ -118,10 +118,16 @@ if not project.REMOTE:
 
 filter = project.OptimalityCheckFilter()
 
+filters = [project.check_initial_h_value, filter.check_costs, project.check_search_started, project.add_evaluations_per_time, project.group_domains]
+
 project.add_absolute_report(
     exp,
     attributes=ATTRIBUTES,
-    filter=[project.check_initial_h_value, filter.check_costs, project.check_search_started, project.add_evaluations_per_time, project.group_domains],
+    filter=filters,
+)
+
+project.add_absolute_report(
+    exp, attributes=ATTRIBUTES, filter=filters, filter_cegar_found_concrete_solution=1, name=f"{exp.name}-solved"
 )
 
 def cegar_found_no_solution(run):

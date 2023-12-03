@@ -32,9 +32,9 @@ exp.add_step(
     "remove-combined-properties", project.remove_file, Path(exp.eval_dir) / "properties"
 )
 
-project.fetch_algorithm(exp, "2023-11-19-C-fix-shortest-paths", "batch-ts-children=False-parents=False-max-time=1200", new_algo="ts")
-project.fetch_algorithm(exp, "2023-11-19-C-fix-shortest-paths", "batch-sg-children=False-parents=False-max-time=1200", new_algo="sg")
-project.fetch_algorithm(exp, "2023-11-19-C-fix-shortest-paths", "batch-sg-children=True-parents=True-max-time=1200", new_algo="sg-cache")
+project.fetch_algorithm(exp, "2023-12-02-A-transition-representations", "01-ts", new_algo="ts")
+project.fetch_algorithm(exp, "2023-12-02-A-transition-representations", "02-sg", new_algo="sg")
+project.fetch_algorithm(exp, "2023-12-02-A-transition-representations", "02-sg-cache", new_algo="sg-cache")
 
 filters = [project.add_evaluations_per_time]
 
@@ -72,6 +72,7 @@ def set_min_expansions(run):
     return run
 
 project.add_scatter_plot_reports(exp, [("ts", "sg-cache")], attributes=["time_for_building_abstraction", "search_start_memory"], filter=[cegar_found_solution])
+project.add_scatter_plot_reports(exp, [("ts", "sg")], attributes=["search_start_memory"], filter=[cegar_found_solution])
 project.add_scatter_plot_reports(exp, [("ts", "sg-cache")], attributes=["initial_h_value", "expansions_until_last_jump"], filter=[limit_h_value, set_min_expansions])
 
 exp.run_steps()
