@@ -18,6 +18,8 @@ def check_header_files(component):
     errors = []
     for filename in header_files:
         assert filename.endswith(".h"), filename
+        if "/ext/" in filename:
+            continue
         rel_filename = os.path.relpath(filename, start=component_dir)
         guard = rel_filename.replace(".", "_").replace("/", "_").replace("-", "_").upper()
         expected = "#ifndef " + guard
