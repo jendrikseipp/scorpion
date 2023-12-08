@@ -10,6 +10,8 @@ from downward.cached_revision import CachedFastDownwardRevision
 from downward.experiment import FastDownwardAlgorithm, FastDownwardRun
 from lab.experiment import Experiment
 
+from labreports.counter import PerAlgorithmCounterReport
+
 import project
 
 
@@ -128,6 +130,41 @@ project.add_absolute_report(
     filter=filters,
 )
 
+def add_cegar_outcome(run):
+    if run.get("error") == "exitcode-250":
+        run["cegar_outcome"] = "cegar_reached_memory_limit"
+    elif run.get("error") == "translate-out-of-memory":
+        run["cegar_outcome"] = "translator-out-of-memory"
+    elif run.get("error") == "search-out-of-time" and run.get("search_start_time") is None:
+        run["cegar_outcome"] = "cegar_reached_time_limit"
+    elif run.get("cegar_outcome") in ["cegar_proved_unsolvability", "cegar_found_concrete_solution"]:
+        run["cegar_outcome"] = "solved-during-refinement"
+    elif run.get("cegar_outcome") == "cegar_reached_memory_limit_in_flaw_search":
+        run["cegar_outcome"] = "cegar_reached_memory_limit"
+    elif run.get("cegar_outcome") == "cegar_reached_time_limit_in_flaw_search":
+        run["cegar_outcome"] = "cegar_reached_time_limit"
+    return run
+
+def add_search_outcome(run):
+    if run.get("cegar_outcome") == "solved-during-refinement":
+        run["error"] = "solved-during-refinement"
+    elif run.get("error") == "exitcode-250":
+        run["error"] = "search-out-of-memory"
+    elif run.get("error") == "success":
+        run["error"] = "solved-during-search"
+    return run
+
+def add_overall_outcome(run):
+    if run.get("cegar_outcome") == "solved-during-refinement" or run.get("error") == "solved-during-search":
+        run["error"] = "solved-overall"
+    return run
+
+exp.add_report(PerAlgorithmCounterReport(attributes=["cegar_outcome"], filter=filters + [add_cegar_outcome], format="tex" if project.TEX else "html"), name="cegar-outcomes")
+exp.add_report(PerAlgorithmCounterReport(attributes=["error"], filter=filters + [add_cegar_outcome, add_search_outcome], format="tex" if project.TEX else "html"), name="search-outcomes")
+exp.add_report(PerAlgorithmCounterReport(attributes=["error"], filter=filters + [add_cegar_outcome, add_search_outcome, add_overall_outcome], format="tex" if project.TEX else "html"), name="overall-outcomes")
+
+exp.add_report(PerAlgorithmCounterReport(attributes=["expansions_until_last_jump"], filter=filters, format="tex" if project.TEX else "html"), name="expansions-until-last-jump")
+
 project.add_absolute_report(
     exp, attributes=ATTRIBUTES, filter=filters, filter_cegar_found_concrete_solution=1, name=f"{exp.name}-solved"
 )
@@ -137,10 +174,29 @@ def cegar_found_no_solution(run):
         run["cartesian_states"] = None
     return run
 
+def cegar_found_solution(run):
+    if not run.get("cegar_found_concrete_solution"):
+        run["time_for_building_abstraction"] = None
+        run["search_start_memory"] = None
+    return run
+
 project.add_scatter_plot_reports(exp, [
-    ("01-base:batch-sg-children=True-parents=True-max-time=1200", "02-optimize-test:batch-sg-children=True-parents=True-max-time=1200"),
-    ("02-optimize-test:batch-sg-children=True-parents=True-max-time=1200", "03-popcount:batch-sg-children=True-parents=True-max-time=1200"),
-    ("03-popcount:batch-sg-children=True-parents=True-max-time=1200", "04-count-in-has-full-domain:batch-sg-children=True-parents=True-max-time=1200"),
-    ], attributes=["cartesian_states"], filter=cegar_found_no_solution)
+    ("02-naive", "03-sg"),
+    ], attributes=["time_for_building_abstraction"], filter=cegar_found_solution)
+
+def subtract_memory_padding(run):
+    if run.get("search_start_memory") is not None:
+        run["search_start_memory"] -= 512 * 1024
+    return run
+
+def limit_init_h(run):
+    if "initial_h_value" in run and run["initial_h_value"] > 100:
+        run["initial_h_value"] = None
+    return run
+
+project.add_scatter_plot_reports(exp, [
+    ("01-store", "05-sg_rh"),
+    ("01-store", "05-sg_rh-cache"),
+    ], attributes=["time_for_building_abstraction", "expansions_until_last_jump", "initial_h_value", "search_start_memory"], filter=[cegar_found_solution, subtract_memory_padding, limit_init_h])
 
 exp.run_steps()

@@ -101,11 +101,6 @@ def get_parser():
         r"\[t=.+s, (\d+) KB\] Initial heuristic value for .+: (?:\d+|infinity)\n",
         type=int,
     )
-    parser.add_repeated_pattern(
-        "h_values",
-        r"New best heuristic value for .+: (\d+)\n",
-        type=int,
-    )
 
     # Cartesian abstractions.
     parser.add_pattern("time_for_computing_cartesian_abstractions", r"Time for initializing additive Cartesian heuristic: (.+)s\n", type=float)
