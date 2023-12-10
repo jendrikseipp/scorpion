@@ -258,8 +258,8 @@ void CostSaturation::print_statistics(utils::Duration init_time) const {
         log << "Done initializing additive Cartesian heuristic" << endl;
         log << "Time for initializing additive Cartesian heuristic: "
             << init_time << endl;
-        log << "Cartesian abstractions built: " << heuristic_functions.size() << endl;
-        log << "Cartesian states: " << num_states << endl;
+        log << "Cartesian abstractions: " << heuristic_functions.size() << endl;
+        log << "Total number of Cartesian states: " << num_states << endl;
         log << "Total number of non-looping transitions: "
             << num_non_looping_transitions << endl;
         log << endl;

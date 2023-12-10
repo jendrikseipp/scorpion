@@ -53,10 +53,10 @@ CEGAR::CEGAR(
 
     if (log.is_at_least_normal()) {
         log << "Start building abstraction." << endl;
-        log << "Time limit: " << timer.get_remaining_time() << endl;
         log << "Maximum number of states: " << max_states << endl;
         log << "Maximum number of transitions: "
             << max_non_looping_transitions << endl;
+        log << "Maximum time: " << timer.get_remaining_time() << endl;
     }
 
     refinement_loop();

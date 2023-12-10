@@ -30,9 +30,13 @@ struct Transition {
         return op_id == other.op_id && target_id == other.target_id;
     }
 
+    bool operator!=(const Transition &other) const {
+        return !(*this == other);
+    }
+
     bool operator<(const Transition &other) const {
-        return op_id < other.op_id ||
-               (op_id == other.op_id && target_id < other.target_id);
+        return std::tie(op_id, target_id)
+               < std::tie(other.op_id, other.target_id);
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Transition &t) {
