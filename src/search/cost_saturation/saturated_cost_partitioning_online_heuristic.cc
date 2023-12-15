@@ -78,11 +78,13 @@ SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuris
 }
 
 int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &ancestor_state) {
+    assert(!task_proxy.needs_to_convert_ancestor_state(ancestor_state));
+    const State &state = ancestor_state;
+
     if (improve_heuristic) {
         improve_heuristic_timer->resume();
     }
 
-    State state = convert_ancestor_state(ancestor_state);
 
     if (dead_ends && dead_ends->subsumes(state)) {
         improve_heuristic_timer->stop();
