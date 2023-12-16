@@ -49,6 +49,8 @@ ATTRIBUTES = [
     "run_dir",
     "search_start_time",
     "search_start_memory",
+    "search_time",
+    "score_search_time",
     "total_time",
     "cost",
     "coverage",
@@ -114,8 +116,10 @@ project.add_absolute_report(
 )
 
 project.add_scatter_plot_reports(exp, [
-    ("01-store", "05-sg_rh"),
-    ("01-store", "05-sg_rh-cache"),
-    ], attributes=["time_for_building_abstraction", "expansions_until_last_jump", "initial_h_value", "search_start_memory"], filter=[])
+    ("01-base:scp", "02-no-convert-ancestors:scp"),
+    ("02-no-convert-ancestors:scp", "03-get-ids-transform:scp"),
+    ("03-get-ids-transform:scp", "04-get-ids-unseq:scp"),
+    ("02-no-convert-ancestors:scp", "04-get-ids-unseq:scp"),
+    ], attributes=["search_time"], filter=[])
 
 exp.run_steps()
