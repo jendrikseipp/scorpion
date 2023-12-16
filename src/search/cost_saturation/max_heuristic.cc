@@ -22,6 +22,7 @@ MaxHeuristic::MaxHeuristic(const plugins::Options &opts, const Abstractions &abs
 int MaxHeuristic::compute_heuristic(const State &ancestor_state) {
     assert(!task_proxy.needs_to_convert_ancestor_state(ancestor_state));
     const State &state = ancestor_state;
+    state.unpack();
     int max_h = 0;
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
         int local_state_id = abstraction_functions[i]->get_abstract_state_id(state);
