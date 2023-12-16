@@ -4,6 +4,7 @@
 #include "abstraction.h"
 #include "types.h"
 
+#include <execution>
 #include <iostream>
 #include <vector>
 
@@ -41,13 +42,15 @@ extern int compute_max_h(
 template<typename AbstractionsOrFunction>
 std::vector<int> get_abstract_state_ids(
     const std::vector<AbstractionsOrFunction> &abstractions, const State &state) {
-    std::vector<int> abstract_state_ids;
-    abstract_state_ids.reserve(abstractions.size());
+    std::vector<int> abstract_state_ids(abstractions.size(), -2);
     // Only add local state IDs for useful abstractions and use dummy value if abstraction will never be used.
     auto get_abs_state_id = [&state](const AbstractionsOrFunction &abstraction) {
             return abstraction ? abstraction->get_abstract_state_id(state) : -1;
         };
-    std::transform(abstractions.cbegin(), abstractions.cend(), std::back_inserter(abstract_state_ids), get_abs_state_id);
+    std::transform(
+        std::execution::unseq,
+        abstractions.cbegin(), abstractions.cend(),
+        abstract_state_ids.begin(), get_abs_state_id);
     return abstract_state_ids;
 }
 
