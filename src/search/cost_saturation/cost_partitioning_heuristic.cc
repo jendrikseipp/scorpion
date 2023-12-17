@@ -53,20 +53,18 @@ void CostPartitioningHeuristic::add(CostPartitioningHeuristic &&other) {
 
 int CostPartitioningHeuristic::compute_heuristic(
     const vector<int> &abstract_state_ids) const {
-    int sum_h = 0;
-    for (const LookupTable &lookup_table : lookup_tables) {
-        assert(utils::in_bounds(lookup_table.abstraction_id, abstract_state_ids));
-        int state_id = abstract_state_ids[lookup_table.abstraction_id];
-        assert(utils::in_bounds(state_id, lookup_table.h_values));
-        int h = lookup_table.h_values[state_id];
-        assert(h >= 0);
-        if (h == INF) {
-            return INF;
-        }
-        sum_h += h;
-        assert(sum_h >= 0);
-    }
-    return sum_h;
+    return transform_reduce(
+        lookup_tables.cbegin(), lookup_tables.cend(),
+        0,
+        [](int h1, int h2) {
+            return (h1 == INF || h2 == INF) ? INF : h1 + h2;
+        },
+        [&abstract_state_ids](const LookupTable &lookup_table) {
+            assert(utils::in_bounds(lookup_table.abstraction_id, abstract_state_ids));
+            int state_id = abstract_state_ids[lookup_table.abstraction_id];
+            assert(utils::in_bounds(state_id, lookup_table.h_values));
+            return lookup_table.h_values[state_id];
+        });
 }
 
 int CostPartitioningHeuristic::get_num_lookup_tables() const {
