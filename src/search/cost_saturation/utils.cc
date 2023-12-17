@@ -5,6 +5,7 @@
 #include "cost_partitioning_heuristic.h"
 #include "cost_partitioning_heuristic_collection_generator.h"
 #include "max_cost_partitioning_heuristic.h"
+#include "unsolvability_heuristic.h"
 
 #include "../algorithms/partial_state_tree.h"
 #include "../plugins/plugin.h"
@@ -36,6 +37,43 @@ Abstractions generate_abstractions(
     utils::g_log << "Abstractions: " << abstractions.size() << endl;
     utils::g_log << "Abstractions per generator: " << abstractions_per_generator << endl;
     return abstractions;
+}
+
+AbstractionFunctions extract_abstraction_functions_from_useful_abstractions(
+    const vector<CostPartitioningHeuristic> &cp_heuristics,
+    const UnsolvabilityHeuristic *unsolvability_heuristic,
+    Abstractions &abstractions) {
+    int num_abstractions = abstractions.size();
+
+    // Collect IDs of useful abstractions.
+    vector<bool> useful_abstractions(num_abstractions, false);
+    if (unsolvability_heuristic) {
+        unsolvability_heuristic->mark_useful_abstractions(useful_abstractions);
+    }
+    for (const auto &cp_heuristic : cp_heuristics) {
+        cp_heuristic.mark_useful_abstractions(useful_abstractions);
+    }
+
+    AbstractionFunctions abstraction_functions;
+    abstraction_functions.reserve(num_abstractions);
+    for (int i = 0; i < num_abstractions; ++i) {
+        if (useful_abstractions[i]) {
+            abstraction_functions.push_back(
+                abstractions[i]->extract_abstraction_function());
+        } else {
+            abstraction_functions.push_back(nullptr);
+        }
+    }
+
+    int num_useless_abstractions = count(
+        abstraction_functions.begin(), abstraction_functions.end(), nullptr);
+    int num_useful_abstractions = num_abstractions - num_useless_abstractions;
+    utils::g_log << "Useful abstractions: " << num_useful_abstractions << "/"
+                 << num_abstractions << " = "
+                 << static_cast<double>(num_useful_abstractions) / num_abstractions
+                 << endl;
+
+    return abstraction_functions;
 }
 
 Order get_default_order(int num_abstractions) {
