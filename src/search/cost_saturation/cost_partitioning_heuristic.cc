@@ -54,6 +54,7 @@ void CostPartitioningHeuristic::add(CostPartitioningHeuristic &&other) {
 int CostPartitioningHeuristic::compute_heuristic(
     const vector<int> &abstract_state_ids) const {
     return transform_reduce(
+        execution::unseq,
         lookup_tables.cbegin(), lookup_tables.cend(),
         0,
         [](int h1, int h2) {
