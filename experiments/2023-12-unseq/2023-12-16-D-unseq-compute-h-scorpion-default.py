@@ -29,18 +29,19 @@ else:
 
 MAX_TIME_OUTER = 100 if project.REMOTE else 0.1
 MAX_TIME_INNER = 10 if project.REMOTE else 0.01
-DEFAULT_ABSTRACTIONS = ("["
-    "projections(hillclimbing(max_generated_patterns=200, random_seed=0)), "
-    "projections(systematic(2)), "
-    "cartesian()]")
 CONFIGS = [
-    (f"scp", ["--search", f"astar(scp({DEFAULT_ABSTRACTIONS},saturator=perimstar,max_time=infinity,max_orders=50,diversify=false,orders=greedy_orders(), random_seed=0))"])
+    (f"scp", ["--search", f"""astar(scp_online([
+        projections(sys_scp(max_time={MAX_TIME_OUTER}, max_time_per_restart={MAX_TIME_INNER})),
+        cartesian()],
+        saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
+        pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))"""])
 ]
 BUILD_OPTIONS = []
 DRIVER_OPTIONS = [
     "--validate",
     "--overall-time-limit", "30m",
     "--overall-memory-limit", "4G",
+    "--transform-task", "preprocess-h2",
 ]
 
 # Pairs of revision identifier and revision nick.
