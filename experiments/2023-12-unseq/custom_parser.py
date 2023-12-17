@@ -146,6 +146,8 @@ def get_parser():
     parser.add_bottom_up_pattern("cegar_lower_bound", r"Abstract solution cost: (.+)\n", type=int)  # old
     parser.add_bottom_up_pattern("cegar_lower_bound", r"Lower bound: (.+)\n", type=int)  # new
 
+    parser.add_pattern("useful_abstractions_ratio", r"Useful abstractions: \d+/\d+ = (.+)\n", type=float)
+
     parser.add_function(find_cegar_termination_criterion)
     parser.add_function(add_scores)
 
