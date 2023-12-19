@@ -66,9 +66,10 @@ vector<int> CartesianSet::get_values(int var) const {
 }
 
 bool CartesianSet::has_full_domain(int var) const {
-    // TODO: make this more efficient by not looping over all set bits?
-    bool result = (count(var) == var_infos[var].domain_size);
+    bool fast_result = get_view(var).test();
 #ifndef NDEBUG
+    bool result = (count(var) == var_infos[var].domain_size);
+    assert(fast_result == result);
     bool slow_result = true;
     for (int value = 0; value < var_infos[var].domain_size; ++value) {
         if (!test(var, value)) {
@@ -78,7 +79,7 @@ bool CartesianSet::has_full_domain(int var) const {
     }
     assert(result == slow_result);
 #endif
-    return result;
+    return fast_result;
 }
 
 bool CartesianSet::intersects(const CartesianSet &other) const {

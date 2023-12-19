@@ -22,12 +22,8 @@ BitsetMath::Block BitsetMath::bit_mask(size_t pos) {
 }
 
 
-int BitsetView::count_bits_in_last_block() const {
-    return BitsetMath::bit_index(num_bits);
-}
-
 void BitsetView::zero_unused_bits() {
-    int bits_in_last_block = count_bits_in_last_block();
+    int bits_in_last_block = BitsetMath::bit_index(num_bits);
     if (bits_in_last_block != 0) {
         assert(data.size() != 0);
         data[data.size() - 1] &= ~(BitsetMath::ones << bits_in_last_block);
@@ -89,6 +85,21 @@ int BitsetView::size() const {
 
 ConstBitsetView::ConstBitsetView(ConstArrayView<BitsetMath::Block> data, int num_bits) :
     data(data), num_bits(num_bits) {}
+
+bool ConstBitsetView::test() const {
+    assert(data.size() > 0);
+    // Check that first n-1 blocks are fully set.
+    for (int i = 0; i < data.size() - 1; ++i) {
+        if (data[i] != BitsetMath::ones) {
+            return false;
+        }
+    }
+
+    // Check last block.
+    int bits_in_last_block = BitsetMath::bit_index(num_bits);
+    int empty_positions_in_last_block = BitsetMath::bits_per_block - bits_in_last_block;
+    return data[data.size() - 1] == (BitsetMath::ones >> empty_positions_in_last_block);
+}
 
 
 bool ConstBitsetView::test(int index) const {

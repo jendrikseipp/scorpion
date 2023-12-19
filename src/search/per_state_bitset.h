@@ -34,6 +34,7 @@ public:
     ConstBitsetView(const ConstBitsetView &other) = default;
     ConstBitsetView &operator=(const ConstBitsetView &other) = default;
 
+    bool test() const;
     bool test(int index) const;
     int count() const;
     bool intersects(const ConstBitsetView &other) const;
@@ -53,7 +54,6 @@ class BitsetView {
     ArrayView<BitsetMath::Block> data;
     int num_bits;
 
-    int count_bits_in_last_block() const;
     void zero_unused_bits();
 public:
     BitsetView(ArrayView<BitsetMath::Block> data, int num_bits) :
