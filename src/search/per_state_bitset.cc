@@ -22,6 +22,18 @@ BitsetMath::Block BitsetMath::bit_mask(size_t pos) {
 }
 
 
+int BitsetView::count_bits_in_last_block() const {
+    return BitsetMath::bit_index(num_bits);
+}
+
+void BitsetView::zero_unused_bits() {
+    int bits_in_last_block = count_bits_in_last_block();
+    if (bits_in_last_block != 0) {
+        assert(data.size() != 0);
+        data[data.size() - 1] &= ~(BitsetMath::ones << bits_in_last_block);
+    }
+}
+
 void BitsetView::set(int index) {
     assert(index >= 0 && index < num_bits);
     int block_index = BitsetMath::block_index(index);
@@ -29,9 +41,10 @@ void BitsetView::set(int index) {
 }
 
 void BitsetView::set() {
-    for (int index = 0; index < num_bits; ++index) {
-        set(index);
+    for (int i = 0; i < data.size(); ++i) {
+        data[i] = BitsetMath::ones;
     }
+    zero_unused_bits();
 }
 
 void BitsetView::reset(int index) {

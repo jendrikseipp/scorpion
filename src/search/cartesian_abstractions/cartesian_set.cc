@@ -42,8 +42,8 @@ void CartesianSet::set_single_value(int var, int value) {
 }
 
 void CartesianSet::add_all(int var) {
-    // TODO: make this more efficient by not looping over all bits?
     get_view(var).set();
+    assert(has_full_domain(var));
 }
 
 void CartesianSet::remove_all(int var) {

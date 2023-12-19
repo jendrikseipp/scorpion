@@ -52,6 +52,9 @@ public:
 class BitsetView {
     ArrayView<BitsetMath::Block> data;
     int num_bits;
+
+    int count_bits_in_last_block() const;
+    void zero_unused_bits();
 public:
     BitsetView(ArrayView<BitsetMath::Block> data, int num_bits) :
         data(data), num_bits(num_bits) {}
