@@ -101,10 +101,6 @@ bool CartesianSet::is_superset_of(const CartesianSet &other) const {
     return true;
 }
 
-uint64_t CartesianSet::estimate_size_in_bytes() const {
-    return estimate_memory_usage_in_bytes(domains);
-}
-
 double CartesianSet::compute_size() const {
     double size = 1.0;
     for (int var = 0; var < get_num_variables(); ++var) {

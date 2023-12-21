@@ -645,24 +645,6 @@ bool ShortestPaths::test_distances(
 #endif
 
 void ShortestPaths::print_statistics() const {
-    log << "Shortest path states estimated memory usage: "
-        << estimate_memory_usage_in_bytes(states) / 1024 << " KB" << endl;
-    if (store_children) {
-        uint64_t mem_usage = 0;
-        for (size_t i = 0; i < states.size(); ++i) {
-            mem_usage += estimate_memory_usage_in_bytes(children[i]);
-        }
-        log << "Shortest path children estimated memory usage: "
-            << mem_usage / 1024 << " KB" << endl;
-    }
-    if (store_parents) {
-        uint64_t mem_usage = 0;
-        for (size_t i = 0; i < states.size(); ++i) {
-            mem_usage += estimate_memory_usage_in_bytes(parents[i]);
-        }
-        log << "Shortest path parents estimated memory usage: "
-            << mem_usage / 1024 << " KB" << endl;
-    }
 }
 
 vector<int> compute_goal_distances(

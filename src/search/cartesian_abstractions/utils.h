@@ -20,10 +20,6 @@ namespace plugins {
 class Feature;
 }
 
-namespace utils {
-class RandomNumberGenerator;
-}
-
 namespace cartesian_abstractions {
 class Abstraction;
 
@@ -52,34 +48,6 @@ extern std::string create_dot_graph(
     const TaskProxy &task_proxy, const Abstraction &abstraction);
 extern void write_to_file(
     const std::string &file_name, const std::string &content);
-
-template<typename T>
-uint64_t estimate_memory_usage_in_bytes(const std::deque<T> &d) {
-    uint64_t size = 0;
-    size += sizeof(d);            // size of empty deque
-    size += d.size() * sizeof(T); // size of actual entries
-    return size;
-}
-
-// Adapted from utils::estimate_vector_bytes().
-template<typename T>
-uint64_t estimate_memory_usage_in_bytes(const std::vector<T> &vec) {
-    uint64_t size = 0;
-    size += 2 * sizeof(void *);         // overhead for dynamic memory management
-    size += sizeof(vec);                // size of empty vector
-    size += vec.capacity() * sizeof(T); // size of actual entries
-    return size;
-}
-
-template<typename T>
-uint64_t estimate_vector_of_vector_bytes(const std::vector<std::vector<T>> &vec) {
-    uint64_t size = estimate_memory_usage_in_bytes(vec);
-    for (auto &inner : vec) {
-        size += estimate_memory_usage_in_bytes(inner);
-    }
-    size -= vec.capacity() * sizeof(T);  // Subtract doubly-counted bytes.
-    return size;
-}
 }
 
 /*

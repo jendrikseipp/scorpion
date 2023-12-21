@@ -94,8 +94,6 @@ public:
 
     bool is_superset_of(const CartesianSet &other) const;
 
-    uint64_t estimate_size_in_bytes() const;
-
     int get_num_variables() const {
         return var_infos.size();
     }

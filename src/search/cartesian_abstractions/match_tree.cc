@@ -388,13 +388,5 @@ int MatchTree::get_num_operators() const {
 }
 
 void MatchTree::print_statistics() const {
-    uint64_t static_mem_usage = 0;
-    static_mem_usage += estimate_memory_usage_in_bytes(preconditions);
-    static_mem_usage += estimate_memory_usage_in_bytes(effects);
-    static_mem_usage += estimate_memory_usage_in_bytes(postconditions);
-    static_mem_usage += estimate_memory_usage_in_bytes(effect_vars_without_preconditions);
-    cout << "Match tree estimated memory usage for operator info: "
-         << static_mem_usage / 1024 << " KB" << endl;
-    basic_string<char> test;
 }
 }

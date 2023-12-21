@@ -49,10 +49,6 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, utils::LogProxy &
             TaskProxy(*task).get_operators());
     }
 #endif
-
-    cout << "Estimated memory usage for single Cartesian state: "
-         << get_initial_state().get_cartesian_set().estimate_size_in_bytes()
-         << " B" << endl;
 }
 
 Abstraction::~Abstraction() {
@@ -431,11 +427,6 @@ void Abstraction::print_statistics() const {
         int num_cartesian_sets = cartesian_sets.size() - num_helper_nodes;
         cout << "Cartesian helper nodes: " << num_helper_nodes << endl;
         cout << "Cartesian sets: " << num_cartesian_sets << endl;
-        cout << "Estimated memory usage for Cartesian states: "
-             << num_cartesian_sets * get_initial_state().get_cartesian_set().estimate_size_in_bytes() / 1024
-             << " KB" << endl;
-        cout << "Estimated memory usage for abstract states: "
-             << estimate_memory_usage_in_bytes(states) / 1024 << " KB" << endl;
         refinement_hierarchy->print_statistics();
     }
 }
