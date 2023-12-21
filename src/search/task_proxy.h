@@ -724,16 +724,6 @@ public:
         return create_state(std::move(state_values));
     }
 
-    // Variant of convert_ancestor_state() that doesn't create a new vector.
-    void convert_ancestor_state_values(
-        const State &ancestor_state, std::vector<int> &state_values) const {
-        TaskProxy ancestor_task_proxy = ancestor_state.get_task();
-        // Assume that ancestor_state is already unpacked.
-        state_values = ancestor_state.get_unpacked_values();
-        task->convert_ancestor_state_values(
-            state_values, ancestor_task_proxy.task);
-    }
-
     bool needs_to_convert_ancestor_state(const State &ancestor_state) const {
         TaskProxy ancestor_task_proxy = ancestor_state.get_task();
         return task->does_convert_ancestor_state_values(ancestor_task_proxy.task);

@@ -74,11 +74,9 @@ public:
 class RefinementHierarchy {
     std::shared_ptr<AbstractTask> task;
     std::vector<Node> nodes;
-    mutable std::vector<int> tmp_state_values;
 
     NodeID add_node(int state_id);
     NodeID get_node_id(const State &state) const;
-    NodeID get_node_id(const std::vector<int> &state) const;
 
 public:
     explicit RefinementHierarchy(const std::shared_ptr<AbstractTask> &task);
