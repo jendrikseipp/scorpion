@@ -2,9 +2,7 @@
 #define ALGORITHMS_DYNAMIC_BITSET_H
 
 #include <cassert>
-#include <cstdint>
 #include <limits>
-#include <ostream>
 #include <vector>
 
 /*
@@ -19,7 +17,7 @@ class DynamicBitset {
         "Block type must be unsigned");
 
     std::vector<Block> blocks;
-    std::size_t num_bits;
+    const std::size_t num_bits;
 
     static const Block zeros;
     static const Block ones;
@@ -128,17 +126,6 @@ public:
                 return false;
         }
         return true;
-    }
-
-    uint64_t estimate_size_in_bytes() const {
-        return sizeof(*this) + blocks.capacity() * sizeof(Block);
-    }
-
-    friend std::ostream &operator<<(std::ostream &os, const DynamicBitset &bitset) {
-        for (size_t index = 0; index < bitset.num_bits; ++index) {
-            os << bitset.test(index);
-        }
-        return os;
     }
 };
 
