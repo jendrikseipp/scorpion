@@ -41,32 +41,6 @@ static void log_info_about_stored_lookup_tables(
                  << num_stored_values / static_cast<double>(num_total_values) << endl;
 }
 
-static AbstractionFunctions extract_abstraction_functions_from_useful_abstractions(
-    const vector<CostPartitioningHeuristic> &cp_heuristics,
-    const UnsolvabilityHeuristic &unsolvability_heuristic,
-    Abstractions &abstractions) {
-    int num_abstractions = abstractions.size();
-
-    // Collect IDs of useful abstractions.
-    vector<bool> useful_abstractions(num_abstractions, false);
-    unsolvability_heuristic.mark_useful_abstractions(useful_abstractions);
-    for (const auto &cp_heuristic : cp_heuristics) {
-        cp_heuristic.mark_useful_abstractions(useful_abstractions);
-    }
-
-    AbstractionFunctions abstraction_functions;
-    abstraction_functions.reserve(num_abstractions);
-    for (int i = 0; i < num_abstractions; ++i) {
-        if (useful_abstractions[i]) {
-            abstraction_functions.push_back(
-                abstractions[i]->extract_abstraction_function());
-        } else {
-            abstraction_functions.push_back(nullptr);
-        }
-    }
-    return abstraction_functions;
-}
-
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
     const plugins::Options &opts,
     Abstractions &&abstractions,
@@ -80,16 +54,7 @@ MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
 
     // We only need abstraction functions during search and no transition systems.
     abstraction_functions = extract_abstraction_functions_from_useful_abstractions(
-        cp_heuristics, unsolvability_heuristic, abstractions);
-
-    int num_abstractions = abstractions.size();
-    int num_useless_abstractions = count(
-        abstraction_functions.begin(), abstraction_functions.end(), nullptr);
-    int num_useful_abstractions = num_abstractions - num_useless_abstractions;
-    utils::g_log << "Useful abstractions: " << num_useful_abstractions << "/"
-                 << num_abstractions << " = "
-                 << static_cast<double>(num_useful_abstractions) / num_abstractions
-                 << endl;
+        cp_heuristics, &unsolvability_heuristic, abstractions);
 }
 
 MaxCostPartitioningHeuristic::~MaxCostPartitioningHeuristic() {

@@ -21,11 +21,17 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningHeuristicCollectionGenerator;
 class MaxCostPartitioningHeuristic;
+class UnsolvabilityHeuristic;
 
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
     const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators,
     DeadEnds *dead_ends = nullptr);
+
+extern AbstractionFunctions extract_abstraction_functions_from_useful_abstractions(
+    const std::vector<CostPartitioningHeuristic> &cp_heuristics,
+    const UnsolvabilityHeuristic *unsolvability_heuristic,
+    Abstractions &abstractions);
 
 extern Order get_default_order(int num_abstractions);
 
