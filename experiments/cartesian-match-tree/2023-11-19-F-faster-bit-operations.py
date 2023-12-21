@@ -130,10 +130,8 @@ def cegar_found_no_solution(run):
         run["cartesian_states"] = None
     return run
 
-project.add_scatter_plot_reports(exp, [
-    ("01-base:batch-sg-children=True-parents=True-max-time=1200", "02-optimize-test:batch-sg-children=True-parents=True-max-time=1200"),
-    ("02-optimize-test:batch-sg-children=True-parents=True-max-time=1200", "03-popcount:batch-sg-children=True-parents=True-max-time=1200"),
-    ("03-popcount:batch-sg-children=True-parents=True-max-time=1200", "04-count-in-has-full-domain:batch-sg-children=True-parents=True-max-time=1200"),
-    ], attributes=["cartesian_states"], filter=cegar_found_no_solution)
+algos = [f"{rev_nick}:{config_nick}" if rev_nick else f"{config_nick}" for _, rev_nick in REV_NICKS for config_nick, _ in CONFIGS]
+algo_pairs = list(zip(algos, algos[1:]))
+project.add_scatter_plot_reports(exp, algo_pairs, attributes=[project.Attribute("cartesian_states", min_wins=False)], filter=cegar_found_no_solution)
 
 exp.run_steps()
