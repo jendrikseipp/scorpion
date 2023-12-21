@@ -18,31 +18,6 @@
 using namespace std;
 
 namespace cost_saturation {
-// TODO: avoid code duplication
-static void extract_useful_abstraction_functions(
-    const vector<CostPartitioningHeuristic> &cp_heuristics,
-    Abstractions &abstractions,
-    AbstractionFunctions &abstraction_functions) {
-    int num_abstractions = abstractions.size();
-
-    // Collect IDs of useful abstractions.
-    vector<bool> useful_abstractions(num_abstractions, false);
-    for (const auto &cp_heuristic : cp_heuristics) {
-        cp_heuristic.mark_useful_abstractions(useful_abstractions);
-    }
-
-    abstraction_functions.reserve(num_abstractions);
-    for (int i = 0; i < num_abstractions; ++i) {
-        if (useful_abstractions[i]) {
-            abstraction_functions.push_back(abstractions[i]->extract_abstraction_function());
-        } else {
-            abstraction_functions.push_back(nullptr);
-        }
-    }
-    assert(abstraction_functions.size() == abstractions.size());
-}
-
-
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const plugins::Options &opts,
     Abstractions &&abstractions_,
@@ -82,6 +57,8 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &anc
         improve_heuristic_timer->resume();
     }
 
+    assert(!task_proxy.needs_to_convert_ancestor_state(ancestor_state));
+    // The conversion is unneeded but it results in an unpacked state, which is faster.
     State state = convert_ancestor_state(ancestor_state);
 
     if (dead_ends && dead_ends->subsumes(state)) {
@@ -108,8 +85,8 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &anc
         ((*improve_heuristic_timer)() >= max_time || size_kb >= max_size_kb)) {
         utils::g_log << "Stop heuristic improvement phase." << endl;
         improve_heuristic = false;
-        extract_useful_abstraction_functions(
-            cp_heuristics, abstractions, abstraction_functions);
+        abstraction_functions = extract_abstraction_functions_from_useful_abstractions(
+            cp_heuristics, nullptr, abstractions);
         utils::release_vector_memory(abstractions);
         print_intermediate_statistics();
         print_final_statistics();

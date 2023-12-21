@@ -4,6 +4,7 @@
 #include "abstraction.h"
 #include "types.h"
 
+#include <execution>
 #include <iostream>
 #include <vector>
 
@@ -20,11 +21,17 @@ namespace cost_saturation {
 class AbstractionGenerator;
 class CostPartitioningHeuristicCollectionGenerator;
 class MaxCostPartitioningHeuristic;
+class UnsolvabilityHeuristic;
 
 extern Abstractions generate_abstractions(
     const std::shared_ptr<AbstractTask> &task,
     const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators,
     DeadEnds *dead_ends = nullptr);
+
+extern AbstractionFunctions extract_abstraction_functions_from_useful_abstractions(
+    const std::vector<CostPartitioningHeuristic> &cp_heuristics,
+    const UnsolvabilityHeuristic *unsolvability_heuristic,
+    Abstractions &abstractions);
 
 extern Order get_default_order(int num_abstractions);
 
@@ -38,20 +45,18 @@ extern int compute_max_h(
     const std::vector<int> &abstract_state_ids,
     std::vector<int> *num_best_order = nullptr);
 
-template<typename AbstractionsOrFunctions>
+template<typename AbstractionsOrFunction>
 std::vector<int> get_abstract_state_ids(
-    const AbstractionsOrFunctions &abstractions, const State &state) {
-    std::vector<int> abstract_state_ids;
-    abstract_state_ids.reserve(abstractions.size());
-    for (auto &abstraction : abstractions) {
-        if (abstraction) {
-            // Only add local state IDs for useful abstractions.
-            abstract_state_ids.push_back(abstraction->get_abstract_state_id(state));
-        } else {
-            // Add dummy value if abstraction will never be used.
-            abstract_state_ids.push_back(-1);
-        }
-    }
+    const std::vector<AbstractionsOrFunction> &abstractions, const State &state) {
+    std::vector<int> abstract_state_ids(abstractions.size(), -2);
+    // Only add local state IDs for useful abstractions and use dummy value if abstraction will never be used.
+    auto get_abs_state_id = [&state](const AbstractionsOrFunction &abstraction) {
+            return abstraction ? abstraction->get_abstract_state_id(state) : -1;
+        };
+    std::transform(
+        std::execution::unseq,
+        abstractions.cbegin(), abstractions.cend(),
+        abstract_state_ids.begin(), get_abs_state_id);
     return abstract_state_ids;
 }
 

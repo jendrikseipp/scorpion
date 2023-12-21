@@ -87,13 +87,13 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
 
     bool unsolvable = h_values[initial_state_id] == INF;
     return {
-               unsolvable,
-               utils::make_unique_ptr<ExplicitAbstraction>(
-                   utils::make_unique_ptr<CartesianAbstractionFunction>(
-                       cartesian_abstraction.extract_refinement_hierarchy()),
-                   move(backward_graph),
-                   move(looping_operators),
-                   move(goal_states))
+        unsolvable,
+        utils::make_unique_ptr<ExplicitAbstraction>(
+            utils::make_unique_ptr<CartesianAbstractionFunction>(
+                cartesian_abstraction.extract_refinement_hierarchy()),
+            move(backward_graph),
+            move(looping_operators),
+            move(goal_states))
     };
 }
 

@@ -100,7 +100,7 @@ class RefinementHierarchy {
         NodeID helper = node.left_child;
         while (nodes[helper].right_child == node.right_child) {
             if (!follow_right_child &&
-                    cartesian_set.test(nodes[helper].var, nodes[helper].value)) {
+                cartesian_set.test(nodes[helper].var, nodes[helper].value)) {
                 follow_right_child = true;
             }
             helper = nodes[helper].left_child;

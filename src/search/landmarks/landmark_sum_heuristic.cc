@@ -1,5 +1,6 @@
 #include "landmark_sum_heuristic.h"
 
+#include "landmark.h"
 #include "landmark_factory.h"
 #include "landmark_status_manager.h"
 #include "util.h"
@@ -43,7 +44,7 @@ LandmarkSumHeuristic::LandmarkSumHeuristic(const plugins::Options &opts)
 }
 
 int LandmarkSumHeuristic::get_min_cost_of_achievers(
-    Achievers &achievers) const {
+    const unordered_set<int> &achievers) const {
     int min_cost = numeric_limits<int>::max();
     for (int id : achievers) {
         OperatorProxy op = get_operator_or_axiom(task_proxy, id);
