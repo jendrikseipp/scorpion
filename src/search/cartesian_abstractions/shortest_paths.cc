@@ -380,27 +380,26 @@ void ShortestPaths::update_incrementally(
                     }), parents[state].end());
             reconnected = !parents[state].empty();
         } else {
-            abstraction.for_each_outgoing_transition(
-                state, [&](const Transition &t) {
-                    int succ = t.target_id;
-                    int op_id = t.op_id;
-                    if (!states[succ].dirty &&
-                        add_costs(states[succ].goal_distance, operator_costs[op_id])
-                        == states[state].goal_distance) {
-                        if (debug) {
-                            cout << "Reconnect " << state << " to " << succ << " via "
-                                 << op_id << " with cost " << operator_costs[op_id]
-                                 << " (" << convert_to_32_bit_cost(operator_costs[op_id])
-                                 << ")" << endl;
-                        }
-                        assert(states[state].goal_distance != INF_COSTS);
-                        assert(states[succ].goal_distance != INF_COSTS);
-                        assert(operator_costs[op_id] != INF_COSTS);
-                        set_parent(state, Transition(op_id, succ));
-                        reconnected = true;
+            for (const Transition &t : abstraction.get_outgoing_transitions(state)) {
+                int succ = t.target_id;
+                int op_id = t.op_id;
+                if (!states[succ].dirty &&
+                    add_costs(states[succ].goal_distance, operator_costs[op_id])
+                    == states[state].goal_distance) {
+                    if (debug) {
+                        cout << "Reconnect " << state << " to " << succ << " via "
+                             << op_id << " with cost " << operator_costs[op_id]
+                             << " (" << convert_to_32_bit_cost(operator_costs[op_id])
+                             << ")" << endl;
                     }
-                    return reconnected;
-                });
+                    assert(states[state].goal_distance != INF_COSTS);
+                    assert(states[succ].goal_distance != INF_COSTS);
+                    assert(operator_costs[op_id] != INF_COSTS);
+                    set_parent(state, Transition(op_id, succ));
+                    reconnected = true;
+                    break;
+                }
+            }
         }
         if (debug) {
             log << "Reconnected: " << boolalpha << reconnected << endl;

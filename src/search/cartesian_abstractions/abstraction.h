@@ -75,22 +75,6 @@ public:
     int get_operator_between_states(int src, int dest, int cost) const;
     std::vector<bool> get_looping_operators() const;
 
-    template<typename Callback>
-    void for_each_outgoing_transition(int state_id, const Callback &callback) const {
-        // TODO: use specialized version again (if it's faster).
-        if (match_tree && false) {
-            return match_tree->for_each_outgoing_transition(
-                cartesian_sets, *states[state_id], callback);
-        } else {
-            for (const Transition &t : get_outgoing_transitions(state_id)) {
-                bool abort = callback(t);
-                if (abort) {
-                    return;
-                }
-            }
-        }
-    }
-
     /* Needed for CEGAR::separate_facts_unreachable_before_goal(). */
     void mark_all_states_as_goals();
 
