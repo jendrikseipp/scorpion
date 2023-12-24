@@ -1,7 +1,6 @@
 #ifndef CARTESIAN_ABSTRACTIONS_ABSTRACTION_H
 #define CARTESIAN_ABSTRACTIONS_ABSTRACTION_H
 
-#include "match_tree.h"
 #include "types.h"
 
 #include "../task_proxy.h"
