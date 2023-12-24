@@ -70,10 +70,6 @@ bool AbstractState::domain_subsets_intersect(const AbstractState &other, int var
     return cartesian_set.intersects(other.cartesian_set, var);
 }
 
-bool AbstractState::domain_subsets_intersect(const CartesianSet &other, int var) const {
-    return cartesian_set.intersects(other, var);
-}
-
 bool AbstractState::includes(const State &concrete_state) const {
     for (FactProxy fact : concrete_state) {
         if (!cartesian_set.test(fact.get_variable().get_id(), fact.get_value()))

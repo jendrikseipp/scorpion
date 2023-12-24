@@ -323,7 +323,7 @@ bool MatchTree::has_transition(
             ++it;
         } else if (
             (domains_intersect && !(*domains_intersect)[var]) ||
-            (!domains_intersect && !src.domain_subsets_intersect(dest.get_cartesian_set(), var))) {
+            (!domains_intersect && !src.domain_subsets_intersect(dest, var))) {
             return false;
         }
     }
@@ -343,7 +343,7 @@ int MatchTree::get_operator_between_states(
     int num_vars = src.get_cartesian_set().get_num_variables();
     vector<bool> domains_intersect(num_vars, false);
     for (int var = 0; var < num_vars; ++var) {
-        domains_intersect[var] = src.domain_subsets_intersect(dest.get_cartesian_set(), var);
+        domains_intersect[var] = src.domain_subsets_intersect(dest, var);
     }
     vector<int> operators = get_outgoing_operators(src);
     if (g_hacked_sort_transitions) {
