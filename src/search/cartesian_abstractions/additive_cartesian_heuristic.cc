@@ -46,7 +46,6 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         opts.get<bool>("store_shortest_path_tree_parents"),
         opts.get<int>("memory_padding"),
         opts.get<bool>("use_max"),
-        opts.get<bool>("use_fixed_time_limits"),
         *rng,
         log,
         opts.get<DotGraphVerbosity>("dot_graph_verbosity"));

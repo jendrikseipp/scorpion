@@ -45,8 +45,10 @@ static vector<int> compute_saturated_costs(
         int h = h_values[state_id];
 
         /*
-          No need to maintain goal distances of unreachable (g == INF)
-          and dead end states (h == INF).
+          No need to maintain goal distances of dead end states (h == INF).
+
+          We could also ignore unreachable states (g == INF), but we'd first need
+          to compute the g values.
 
           Note that the "succ_h == INF" test below is sufficient for
           ignoring dead end states. The "h == INF" test is a speed
@@ -87,7 +89,6 @@ CostSaturation::CostSaturation(
     bool store_spt_parents,
     int memory_padding_mb,
     bool use_max,
-    bool use_fixed_time_limits,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
     DotGraphVerbosity dot_graph_verbosity)
@@ -105,16 +106,12 @@ CostSaturation::CostSaturation(
       store_spt_parents(store_spt_parents),
       memory_padding_mb(memory_padding_mb),
       use_max(use_max),
-      use_fixed_time_limits(use_fixed_time_limits),
       rng(rng),
       log(log),
       dot_graph_verbosity(dot_graph_verbosity),
       standard_new_handler(get_new_handler()),
       num_states(0),
       num_non_looping_transitions(0) {
-    if (subtask_generators.size() > 1 && use_fixed_time_limits) {
-        ABORT("Using fixed time limits makes no sense for multiple subtask generators.");
-    }
 }
 
 vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
@@ -239,9 +236,7 @@ void CostSaturation::build_abstractions(
             }
         }
 
-        double time_limit = use_fixed_time_limits
-            ? max_time / subtasks.size()
-            : timer.get_remaining_time() / rem_subtasks;
+        double time_limit = timer.get_remaining_time() / rem_subtasks;
         CEGAR cegar(
             subtask,
             get_subtask_limit(max_states, num_states, rem_subtasks),

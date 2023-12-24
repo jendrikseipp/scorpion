@@ -230,11 +230,6 @@ void add_common_cegar_options(plugins::Feature &feature) {
         "compute maximum over heuristic estimates instead of SCP",
         "false");
     feature.add_option<bool>(
-        "use_fixed_time_limits",
-        "limit the build time for each abstraction by max_time/num_abstractions "
-        "(instead of passing unused time to the remaining abstractions)",
-        "false");
-    feature.add_option<bool>(
         "sort_transitions",
         "sort transitions",
         "false");
