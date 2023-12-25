@@ -444,16 +444,13 @@ unique_ptr<Split> FlawSearch::create_split(
             }
         }
 
-        for (auto &pair : deviation_states_by_target) {
-            int target = pair.first;
-            const vector<State> &deviation_states = pair.second;
-            if (!deviation_states.empty()) {
-                int num_vars = domain_sizes.size();
-                get_deviation_splits(
-                    abstract_state, deviation_states,
-                    get_unaffected_variables(op, num_vars),
-                    abstraction.get_state(target), domain_sizes, splits);
-            }
+        for (const auto &[target, deviation_states] : deviation_states_by_target) {
+            assert(!deviation_states.empty());
+            int num_vars = domain_sizes.size();
+            get_deviation_splits(
+                abstract_state, deviation_states,
+                get_unaffected_variables(op, num_vars),
+                abstraction.get_state(target), domain_sizes, splits);
         }
     }
 
