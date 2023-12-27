@@ -97,6 +97,9 @@ bool ConstBitsetView::test() const {
 
     // Check last block.
     int bits_in_last_block = BitsetMath::bit_index(num_bits);
+    if (bits_in_last_block == 0) {
+        bits_in_last_block = BitsetMath::bits_per_block;
+    }
     int empty_positions_in_last_block = BitsetMath::bits_per_block - bits_in_last_block;
     return data[data.size() - 1] == (BitsetMath::ones >> empty_positions_in_last_block);
 }
