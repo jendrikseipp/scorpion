@@ -321,8 +321,7 @@ static vector<int> get_unaffected_variables(
 
 static void get_deviation_splits(
     const AbstractState &abs_state,
-    const vector<State> &conc_states,
-    const vector<int> &unaffected_variables,
+    const fact_map::FactMap &fact_count,
     const AbstractState &target_abs_state,
     const vector<int> &domain_sizes,
     vector<vector<Split>> &splits) {
@@ -341,15 +340,6 @@ static void get_deviation_splits(
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin t[v], wanted = intersect(a[v], b[v]).
     */
-    // Note: it could be faster to use an efficient hash map for this.
-    fact_map::FactMap fact_count(domain_sizes, 0);
-    for (const State &conc_state : conc_states) {
-        for (int var : unaffected_variables) {
-            int state_value = conc_state[var].get_value();
-            ++fact_count[FactPair(var, state_value)];
-        }
-    }
-
     for (size_t var = 0; var < domain_sizes.size(); ++var) {
         for (int value = 0; value < domain_sizes[var]; ++value) {
             FactPair fact(var, value);
@@ -418,7 +408,10 @@ unique_ptr<Split> FlawSearch::create_split(
             }
         }
 
-        phmap::flat_hash_map<int, vector<State>> deviation_states_by_target;
+        int num_vars = domain_sizes.size();
+        vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
+
+        phmap::flat_hash_map<int, fact_map::FactMap> fact_count_by_target;
         for (size_t i = 0; i < states.size(); ++i) {
             if (!applicable[i]) {
                 continue;
@@ -439,17 +432,23 @@ unique_ptr<Split> FlawSearch::create_split(
                 } else {
                     // Deviation flaw
                     assert(target != get_abstract_state_id(succ_state));
-                    deviation_states_by_target[target].push_back(state);
+                    auto pos = fact_count_by_target.find(target);
+                    if (pos == fact_count_by_target.end()) {
+                        pos = fact_count_by_target.emplace_hint(
+                            pos, target, fact_map::FactMap{domain_sizes, 0});
+                    }
+                    fact_map::FactMap &fact_count = pos->second;
+                    for (int var : unaffected_variables) {
+                        int state_value = state[var].get_value();
+                        ++fact_count[FactPair(var, state_value)];
+                    }
                 }
             }
         }
 
-        for (const auto &[target, deviation_states] : deviation_states_by_target) {
-            assert(!deviation_states.empty());
-            int num_vars = domain_sizes.size();
+        for (const auto &[target, fact_count] : fact_count_by_target) {
             get_deviation_splits(
-                abstract_state, deviation_states,
-                get_unaffected_variables(op, num_vars),
+                abstract_state, fact_count,
                 abstraction.get_state(target), domain_sizes, splits);
         }
     }
