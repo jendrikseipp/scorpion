@@ -8,6 +8,7 @@
 #include "transition_system.h"
 #include "utils.h"
 
+#include "../algorithms/fact_map.h"
 #include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
@@ -341,19 +342,18 @@ static void get_deviation_splits(
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin t[v], wanted = intersect(a[v], b[v]).
     */
     // Note: it could be faster to use an efficient hash map for this.
-    vector<vector<int>> fact_count(domain_sizes.size());
-    for (size_t var = 0; var < domain_sizes.size(); ++var) {
-        fact_count[var].resize(domain_sizes[var], 0);
-    }
+    fact_map::FactMap fact_count(domain_sizes, 0);
     for (const State &conc_state : conc_states) {
         for (int var : unaffected_variables) {
             int state_value = conc_state[var].get_value();
-            ++fact_count[var][state_value];
+            ++fact_count[FactPair(var, state_value)];
         }
     }
+
     for (size_t var = 0; var < domain_sizes.size(); ++var) {
         for (int value = 0; value < domain_sizes[var]; ++value) {
-            if (fact_count[var][value] && !target_abs_state.contains(var, value)) {
+            FactPair fact(var, value);
+            if (fact_count[fact] && !target_abs_state.contains(var, value)) {
                 // Note: we could precompute the "wanted" vector, but not the split.
                 vector<int> wanted;
                 for (int value = 0; value < domain_sizes[var]; ++value) {
@@ -365,7 +365,7 @@ static void get_deviation_splits(
                 assert(!wanted.empty());
                 add_split(splits, Split(
                               abs_state.get_id(), var, value, move(wanted),
-                              fact_count[var][value]));
+                              fact_count[fact]));
             }
         }
     }
