@@ -319,9 +319,20 @@ static vector<int> get_unaffected_variables(
     return unaffected_vars;
 }
 
+struct FactPairHash {
+    std::size_t operator()(FactPair fact) const {
+        utils::HashState hash_state;
+        hash_state.feed(fact.var);
+        hash_state.feed(fact.value);
+        return hash_state.get_hash64();
+    }
+};
+
+using CompactFactMap = phmap::flat_hash_map<FactPair, int, FactPairHash>;
+
 static void get_deviation_splits(
     const AbstractState &abs_state,
-    const fact_map::FactMap &fact_count,
+    const CompactFactMap &fact_count,
     const AbstractState &target_abs_state,
     const vector<int> &domain_sizes,
     vector<vector<Split>> &splits) {
@@ -340,23 +351,20 @@ static void get_deviation_splits(
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin t[v], wanted = intersect(a[v], b[v]).
     */
-    for (size_t var = 0; var < domain_sizes.size(); ++var) {
-        for (int value = 0; value < domain_sizes[var]; ++value) {
-            FactPair fact(var, value);
-            if (fact_count[fact] && !target_abs_state.contains(var, value)) {
-                // Note: we could precompute the "wanted" vector, but not the split.
-                vector<int> wanted;
-                for (int value = 0; value < domain_sizes[var]; ++value) {
-                    if (abs_state.contains(var, value) &&
-                        target_abs_state.contains(var, value)) {
-                        wanted.push_back(value);
-                    }
+    for (auto &[fact, count] : fact_count) {
+        assert(count > 0);
+        int var = fact.var;
+        if (!target_abs_state.contains(var, fact.value)) {
+            // Note: we could precompute the "wanted" vector, but not the split.
+            vector<int> wanted;
+            for (int value = 0; value < domain_sizes[var]; ++value) {
+                if (abs_state.contains(var, value) &&
+                    target_abs_state.contains(var, value)) {
+                    wanted.push_back(value);
                 }
-                assert(!wanted.empty());
-                add_split(splits, Split(
-                              abs_state.get_id(), var, value, move(wanted),
-                              fact_count[fact]));
             }
+            assert(!wanted.empty());
+            add_split(splits, Split(abs_state.get_id(), var, fact.value, move(wanted), count));
         }
     }
 }
@@ -411,7 +419,7 @@ unique_ptr<Split> FlawSearch::create_split(
         int num_vars = domain_sizes.size();
         vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
 
-        phmap::flat_hash_map<int, fact_map::FactMap> fact_count_by_target;
+        phmap::flat_hash_map<int, CompactFactMap> fact_count_by_target;
         for (size_t i = 0; i < states.size(); ++i) {
             if (!applicable[i]) {
                 continue;
@@ -435,9 +443,9 @@ unique_ptr<Split> FlawSearch::create_split(
                     auto pos = fact_count_by_target.find(target);
                     if (pos == fact_count_by_target.end()) {
                         pos = fact_count_by_target.emplace_hint(
-                            pos, target, fact_map::FactMap{domain_sizes, 0});
+                            pos, target, CompactFactMap{});
                     }
-                    fact_map::FactMap &fact_count = pos->second;
+                    CompactFactMap &fact_count = pos->second;
                     for (int var : unaffected_variables) {
                         int state_value = state[var].get_value();
                         ++fact_count[FactPair(var, state_value)];
