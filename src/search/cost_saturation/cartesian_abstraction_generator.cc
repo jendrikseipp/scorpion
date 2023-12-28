@@ -34,7 +34,7 @@ public:
 };
 
 
-static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
+static unique_ptr<Abstraction> convert_abstraction(
     cartesian_abstractions::Abstraction &cartesian_abstraction,
     const vector<int> &h_values) {
     // Retrieve non-looping transitions.
@@ -60,17 +60,12 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
         cartesian_abstraction.get_goals().begin(),
         cartesian_abstraction.get_goals().end());
 
-    int initial_state_id = cartesian_abstraction.get_initial_state().get_id();
-    bool unsolvable = h_values[initial_state_id] == INF;
-    return {
-        unsolvable,
-        utils::make_unique_ptr<ExplicitAbstraction>(
-            utils::make_unique_ptr<CartesianAbstractionFunction>(
-                cartesian_abstraction.extract_refinement_hierarchy()),
-            move(backward_graph),
-            cartesian_abstraction.get_looping_operators(),
-            move(goal_states))
-    };
+    return utils::make_unique_ptr<ExplicitAbstraction>(
+        utils::make_unique_ptr<CartesianAbstractionFunction>(
+            cartesian_abstraction.extract_refinement_hierarchy()),
+        move(backward_graph),
+        cartesian_abstraction.get_looping_operators(),
+        move(goal_states));
 }
 
 
@@ -153,8 +148,10 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         }
 
         num_states += cartesian_abstraction->get_num_states();
+        int initial_state_id = cartesian_abstraction->get_initial_state().get_id();
+        bool unsolvable = goal_distances[initial_state_id] == INF;
 
-        auto [unsolvable, abstraction] = convert_abstraction(*cartesian_abstraction, goal_distances);
+        auto abstraction = convert_abstraction(*cartesian_abstraction, goal_distances);
         // This is needlessly slow by looping over all transitions, but it's probably not worth optimizing this.
         abstraction->for_each_transition([this](const Transition &) {++num_transitions;});
         abstractions.push_back(move(abstraction));
