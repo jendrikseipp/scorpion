@@ -36,12 +36,7 @@ public:
 
 static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
     cartesian_abstractions::Abstraction &cartesian_abstraction,
-    const vector<int> &operator_costs) {
-    // Compute h values.
-    int initial_state_id = cartesian_abstraction.get_initial_state().get_id();
-    vector<int> h_values = cartesian_abstractions::compute_goal_distances(
-        cartesian_abstraction, operator_costs, cartesian_abstraction.get_goals());
-
+    const vector<int> &h_values) {
     // Retrieve non-looping transitions.
     vector<vector<Successor>> backward_graph(cartesian_abstraction.get_num_states());
     for (int target = 0; target < cartesian_abstraction.get_num_states(); ++target) {
@@ -65,6 +60,7 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
         cartesian_abstraction.get_goals().begin(),
         cartesian_abstraction.get_goals().end());
 
+    int initial_state_id = cartesian_abstraction.get_initial_state().get_id();
     bool unsolvable = h_values[initial_state_id] == INF;
     return {
         unsolvable,
@@ -115,7 +111,8 @@ bool CartesianAbstractionGenerator::has_reached_resource_limit(
            !utils::extra_memory_padding_is_reserved();
 }
 
-unique_ptr<cartesian_abstractions::Abstraction> CartesianAbstractionGenerator::build_abstraction_for_subtask(
+pair<unique_ptr<cartesian_abstractions::Abstraction>, vector<int>>
+CartesianAbstractionGenerator::build_abstraction_for_subtask(
     const shared_ptr<AbstractTask> &subtask,
     int remaining_subtasks,
     const utils::CountdownTimer &timer) {
@@ -135,7 +132,7 @@ unique_ptr<cartesian_abstractions::Abstraction> CartesianAbstractionGenerator::b
         log,
         dot_graph_verbosity);
     cout << endl;
-    return cegar.extract_abstraction();
+    return {cegar.extract_abstraction(), cegar.get_goal_distances()};
 }
 
 void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
@@ -146,7 +143,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         << timer.get_remaining_time() << endl;
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
-        unique_ptr<cartesian_abstractions::Abstraction> cartesian_abstraction =
+        auto [cartesian_abstraction, goal_distances] =
             build_abstraction_for_subtask(subtask, remaining_subtasks, timer);
 
         /* If we run out of memory while building an abstraction, we discard it
@@ -157,8 +154,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
 
         num_states += cartesian_abstraction->get_num_states();
 
-        vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*subtask));
-        auto [unsolvable, abstraction] = convert_abstraction(*cartesian_abstraction, operator_costs);
+        auto [unsolvable, abstraction] = convert_abstraction(*cartesian_abstraction, goal_distances);
         // This is needlessly slow by looping over all transitions, but it's probably not worth optimizing this.
         abstraction->for_each_transition([this](const Transition &) {++num_transitions;});
         abstractions.push_back(move(abstraction));

@@ -45,7 +45,8 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
 
     bool has_reached_resource_limit(const utils::CountdownTimer &timer) const;
 
-    std::unique_ptr<cartesian_abstractions::Abstraction> build_abstraction_for_subtask(
+    std::pair<std::unique_ptr<cartesian_abstractions::Abstraction>, std::vector<int>>
+    build_abstraction_for_subtask(
         const std::shared_ptr<AbstractTask> &subtask,
         int remaining_subtasks,
         const utils::CountdownTimer &timer);
