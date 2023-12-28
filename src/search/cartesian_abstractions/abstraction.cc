@@ -79,11 +79,6 @@ int Abstraction::get_abstract_state_id(const State &state) const {
     return refinement_hierarchy->get_abstract_state_id(state);
 }
 
-const TransitionSystem &Abstraction::get_transition_system() const {
-    assert(transition_system);
-    return *transition_system;
-}
-
 unique_ptr<RefinementHierarchy> Abstraction::extract_refinement_hierarchy() {
     assert(refinement_hierarchy);
     return move(refinement_hierarchy);
@@ -253,6 +248,7 @@ int Abstraction::get_operator_between_states(int src, int dest, int cost) const 
     return UNDEFINED;
 }
 
+// TODO: ignore self-loops at unsolvable states.
 vector<bool> Abstraction::get_looping_operators() const {
 #ifndef NDEBUG
     if (match_tree && transition_system) {

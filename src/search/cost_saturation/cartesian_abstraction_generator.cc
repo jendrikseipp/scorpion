@@ -34,30 +34,10 @@ public:
 };
 
 
-static vector<bool> get_looping_operators(
-    const cartesian_abstractions::TransitionSystem &ts, const vector<int> &h_values) {
-    assert(ts.get_loops().size() == h_values.size());
-    int num_states = h_values.size();
-    int num_operators = ts.get_num_operators();
-    vector<bool> operator_induces_self_loop(num_operators, false);
-    for (int state = 0; state < num_states; ++state) {
-        // Ignore self-loops at unsolvable states.
-        if (h_values[state] != INF) {
-            for (int op_id : ts.get_loops()[state]) {
-                operator_induces_self_loop[op_id] = true;
-            }
-        }
-    }
-    return operator_induces_self_loop;
-}
-
-
 static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
     cartesian_abstractions::Abstraction &cartesian_abstraction,
     const vector<int> &operator_costs) {
     // Compute h values.
-    const cartesian_abstractions::TransitionSystem &ts =
-        cartesian_abstraction.get_transition_system();
     int initial_state_id = cartesian_abstraction.get_initial_state().get_id();
     vector<int> h_values = cartesian_abstractions::compute_goal_distances(
         cartesian_abstraction, operator_costs, cartesian_abstraction.get_goals());
@@ -69,7 +49,8 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
         if (h_values[target] == INF) {
             continue;
         }
-        for (const cartesian_abstractions::Transition &transition : ts.get_incoming_transitions()[target]) {
+        for (const cartesian_abstractions::Transition &transition :
+             cartesian_abstraction.get_incoming_transitions(target)) {
             int src = transition.target_id;
             // Prune transitions *from* unsolvable states.
             if (h_values[src] == INF) {
@@ -80,7 +61,6 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
         backward_graph[target].shrink_to_fit();
     }
 
-    vector<bool> looping_operators = get_looping_operators(ts, h_values);
     vector<int> goal_states(
         cartesian_abstraction.get_goals().begin(),
         cartesian_abstraction.get_goals().end());
@@ -92,7 +72,7 @@ static pair<bool, unique_ptr<Abstraction>> convert_abstraction(
             utils::make_unique_ptr<CartesianAbstractionFunction>(
                 cartesian_abstraction.extract_refinement_hierarchy()),
             move(backward_graph),
-            move(looping_operators),
+            cartesian_abstraction.get_looping_operators(),
             move(goal_states))
     };
 }
@@ -176,12 +156,12 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         }
 
         num_states += cartesian_abstraction->get_num_states();
-        num_transitions += cartesian_abstraction->get_transition_system().get_num_non_loops();
 
         vector<int> operator_costs = task_properties::get_operator_costs(TaskProxy(*subtask));
-        auto result = convert_abstraction(*cartesian_abstraction, operator_costs);
-        bool unsolvable = result.first;
-        abstractions.push_back(move(result.second));
+        auto [unsolvable, abstraction] = convert_abstraction(*cartesian_abstraction, operator_costs);
+        // This is needlessly slow by looping over all transitions, but it's probably not worth optimizing this.
+        abstraction->for_each_transition([this](const Transition &) {++num_transitions;});
+        abstractions.push_back(move(abstraction));
 
         if (has_reached_resource_limit(timer) || unsolvable) {
             break;
