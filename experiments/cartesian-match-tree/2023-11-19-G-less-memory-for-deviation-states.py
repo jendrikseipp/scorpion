@@ -134,8 +134,24 @@ def cegar_found_no_solution(run):
         run["cartesian_states"] = None
     return run
 
-algos = [f"{config_nick}:{rev_nick}" if rev_nick else f"{config_nick}" for _, rev_nick in REV_NICKS for config_nick, _ in CONFIGS]
+def cegar_found_solution(run):
+    if run.get("cegar_found_concrete_solution") == 0:
+        run["search_start_memory"] = None
+        run["search_start_time"] = None
+    return run
+
+algos = [
+    f"{config_nick}:{rev_nick}" if rev_nick else f"{config_nick}"
+    for _, rev_nick in REV_NICKS + [("7ea2f7987", "17-flat-hash-map")]
+    for config_nick, _ in CONFIGS
+    if "cache" not in config_nick]
 algo_pairs = list(zip(algos, algos[1:]))
 project.add_scatter_plot_reports(exp, algo_pairs, attributes=[project.Attribute("cartesian_states", min_wins=False)], filter=cegar_found_no_solution)
+project.add_scatter_plot_reports(exp, algo_pairs, attributes=[project.Attribute("search_start_memory", min_wins=True)], filter=cegar_found_solution)
+project.add_scatter_plot_reports(exp, algo_pairs, attributes=[project.Attribute("search_start_time", min_wins=True)], filter=cegar_found_solution)
+algo_pairs = [("01-sg_rh:13-loop-over-pairs", "01-sg_rh:17-flat-hash-map")]
+project.add_scatter_plot_reports(exp, algo_pairs, attributes=["search_start_time", "search_start_memory"], filter=cegar_found_solution)
+
+#project.fetch_algorithms(exp, "2023-11-19-H-flat-hash-map-for-fact-count")
 
 exp.run_steps()
