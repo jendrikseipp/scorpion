@@ -9,6 +9,8 @@ on:
 
 jobs:
   test:
+    # AppleClang doesn't support std::execution, so Scorpion skips the workflow.
+    if: github.repository == 'aibasel/downward'
     name: Compile and test planner
     timeout-minutes: 60
     runs-on: ${{ matrix.version.macos }}
