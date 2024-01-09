@@ -56,7 +56,6 @@ public:
     */
     void get_applicable_operator_ids(
         int state_index, std::vector<int> &operator_ids) const;
-
     void dump(utils::LogProxy &log) const;
 };
 }

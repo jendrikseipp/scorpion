@@ -168,8 +168,7 @@ void dump_task(const TaskProxy &task_proxy) {
 }
 
 PerTaskInformation<int_packer::IntPacker> g_state_packers(
-    [](const TaskProxy &task_proxy)
-    {
+    [](const TaskProxy &task_proxy) {
         VariablesProxy variables = task_proxy.get_variables();
         vector<int> variable_ranges;
         variable_ranges.reserve(variables.size());
