@@ -21,7 +21,7 @@ public:
         const std::vector<int> &costs,
         lp::LPSolverType solver_type,
         bool saturated,
-        utils::LogProxy log);
+        const utils::LogProxy &log);
 
     CostPartitioningHeuristic compute_cost_partitioning(
         const Abstractions &abstractions,

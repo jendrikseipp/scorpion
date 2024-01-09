@@ -28,7 +28,7 @@ PhO::PhO(
     const vector<int> &costs,
     lp::LPSolverType solver_type,
     bool saturated,
-    utils::LogProxy log)
+    const utils::LogProxy &log)
     : lp_solver(solver_type),
       log(log) {
     double infinity = lp_solver.get_infinity();

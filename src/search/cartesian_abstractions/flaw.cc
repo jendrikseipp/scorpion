@@ -79,13 +79,13 @@ bool FlawedStates::empty() const {
 
 void FlawedStates::dump() const {
     int num_concrete_states = 0;
-    for (auto pair : flawed_states) {
+    for (auto &pair : flawed_states) {
         num_concrete_states += pair.second.size();
     }
 
     cout << "Found " << num_concrete_states << " concrete states in "
          << flawed_states.size() << " abstract states." << endl;
-    for (auto pair : flawed_states) {
+    for (auto &pair : flawed_states) {
         cout << "  id: " << pair.first << ", states: " << pair.second.size() << endl;
     }
 }

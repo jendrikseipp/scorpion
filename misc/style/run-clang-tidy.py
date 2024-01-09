@@ -18,7 +18,9 @@ LIGHTWEIGHT_TYPES = ["StateID"]
 IGNORES = [
     "'cplex.h' file not found [clang-diagnostic-error]",
     "'soplex.h' file not found [clang-diagnostic-error]",
+    "[clang-diagnostic-error]",  # Simply ignore all compiler errors since we test compilation elsewhere.
     "local copy 'copied_key' of the variable 'key' is never modified; consider avoiding the copy [performance-unnecessary-copy-initialization]",
+    "local copy 'options_with_scaled_costs_task' of the variable 'options' is never modified; consider avoiding the copy [performance-unnecessary-copy-initialization]",
 ]
 
 
