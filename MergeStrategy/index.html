@@ -685,8 +685,8 @@
 <h2 id="merge_strategy_sscs">Merge strategy SSCs<a class="headerlink" href="#merge_strategy_sscs" title="Permanent link">#</a></h2>
 <p>This merge strategy implements the algorithm described in the paper </p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
- In <em>Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)</em>, pp. 2358-2366. AAAI Press, 2016.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
+In <em>Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)</em>, pp. 2358-2366. AAAI Press, 2016.</p>
 <p>In a nutshell, it computes the maximal SCCs of the causal graph, obtaining a partitioning of the task's variables. Every such partition is then merged individually, using the specified fallback merge strategy, considering the SCCs in a configurable order. Afterwards, all resulting composite abstractions are merged to form the final abstraction, again using the specified fallback merge strategy and the configurable order of the SCCs.</p>
 <pre><code>merge_sccs(order_of_sccs=topological, merge_tree=&lt;none&gt;, merge_selector=&lt;none&gt;, verbosity=normal)
 </code></pre>

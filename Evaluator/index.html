@@ -1348,24 +1348,24 @@
 <h2 id="additive_cartesian_cegar_heuristic">Additive Cartesian CEGAR heuristic<a class="headerlink" href="#additive_cartesian_cegar_heuristic" title="Permanent link">#</a></h2>
 <p>See the paper introducing counterexample-guided Cartesian abstraction refinement (CEGAR) for classical planning:</p>
 <p>Jendrik Seipp and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2013.pdf">Counterexample-guided Cartesian Abstraction Refinement</a>.<br />
- In <em>Proceedings of the 23rd International Conference on Automated Planning and Scheduling (ICAPS 2013)</em>, pp. 347-351. AAAI Press, 2013.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2013.pdf">Counterexample-guided Cartesian Abstraction Refinement</a>.<br />
+In <em>Proceedings of the 23rd International Conference on Automated Planning and Scheduling (ICAPS 2013)</em>, pp. 347-351. AAAI Press, 2013.</p>
 <p>and the paper showing how to make the abstractions additive:</p>
 <p>Jendrik Seipp and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2014.pdf">Diverse and Additive Cartesian Abstraction Heuristics</a>.<br />
- In <em>Proceedings of the 24th International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 289-297. AAAI Press, 2014.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2014.pdf">Diverse and Additive Cartesian Abstraction Heuristics</a>.<br />
+In <em>Proceedings of the 24th International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 289-297. AAAI Press, 2014.</p>
 <p>For more details on Cartesian CEGAR and saturated cost partitioning, see the journal paper</p>
 <p>Jendrik Seipp and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf">Counterexample-Guided Cartesian Abstraction Refinement for Classical Planning</a>.<br />
- <em>Journal of Artificial Intelligence Research</em> 62:535-577. 2018.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf">Counterexample-Guided Cartesian Abstraction Refinement for Classical Planning</a>.<br />
+<em>Journal of Artificial Intelligence Research</em> 62:535-577. 2018.</p>
 <p>For a description of the incremental search, see the paper</p>
 <p>Jendrik Seipp, Samuel von Allmen and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf">Incremental Search for Counterexample-Guided Cartesian Abstraction Refinement</a>.<br />
- In <em>Proceedings of the 30th International Conference on Automated Planning and Scheduling (ICAPS 2020)</em>, pp. 244-248. AAAI Press, 2020.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf">Incremental Search for Counterexample-Guided Cartesian Abstraction Refinement</a>.<br />
+In <em>Proceedings of the 30th International Conference on Automated Planning and Scheduling (ICAPS 2020)</em>, pp. 244-248. AAAI Press, 2020.</p>
 <p>Finally, we describe advanced flaw selection strategies here:</p>
 <p>David Speck and Jendrik Seipp.<br />
- <a href="https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf">New Refinement Strategies for Cartesian Abstractions</a>.<br />
- In <em>Proceedings of the 32nd International Conference on Automated Planning and Scheduling (ICAPS 2022)</em>, pp. to appear. AAAI Press, 2022.</p>
+<a href="https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf">New Refinement Strategies for Cartesian Abstractions</a>.<br />
+In <em>Proceedings of the 32nd International Conference on Automated Planning and Scheduling (ICAPS 2022)</em>, pp. to appear. AAAI Press, 2022.</p>
 <pre><code>cegar(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=batch_min_h, pick_split=max_cover, tiebreak_split=max_refined, memory_padding=500, dot_graph_verbosity=silent, random_seed=-1, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, use_general_costs=true, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
@@ -1582,8 +1582,8 @@
 <h2 id="landmark_cost_partitioning_heuristic">Landmark cost partitioning heuristic<a class="headerlink" href="#landmark_cost_partitioning_heuristic" title="Permanent link">#</a></h2>
 <p>Landmark progression is implemented according to the following paper:</p>
 <p>Clemens Büchner, Thomas Keller, Salomé Eriksson and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/buechner-et-al-icaps2023.pdf">Landmarks Progression in Heuristic Search</a>.<br />
- In <em>Proceedings of the Thirty-Third International Conference on Automated Planning and Scheduling (ICAPS 2023)</em>, pp. 70-79. AAAI Press, 2023.</p>
+<a href="https://ai.dmi.unibas.ch/papers/buechner-et-al-icaps2023.pdf">Landmarks Progression in Heuristic Search</a>.<br />
+In <em>Proceedings of the Thirty-Third International Conference on Automated Planning and Scheduling (ICAPS 2023)</em>, pp. 70-79. AAAI Press, 2023.</p>
 <pre><code>landmark_cost_partitioning(lm_factory, pref=false, prog_goal=true, prog_gn=true, prog_r=true, verbosity=normal, transform=no_transform(), cache_estimates=true, cost_partitioning=uniform, scoring_function=max_heuristic_per_stolen_costs, alm=true, lpsolver=cplex, random_seed=-1)
 </code></pre>
 <ul>
@@ -1646,8 +1646,8 @@
 <h2 id="landmark_sum_heuristic">Landmark sum heuristic<a class="headerlink" href="#landmark_sum_heuristic" title="Permanent link">#</a></h2>
 <p>Landmark progression is implemented according to the following paper:</p>
 <p>Clemens Büchner, Thomas Keller, Salomé Eriksson and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/buechner-et-al-icaps2023.pdf">Landmarks Progression in Heuristic Search</a>.<br />
- In <em>Proceedings of the Thirty-Third International Conference on Automated Planning and Scheduling (ICAPS 2023)</em>, pp. 70-79. AAAI Press, 2023.</p>
+<a href="https://ai.dmi.unibas.ch/papers/buechner-et-al-icaps2023.pdf">Landmarks Progression in Heuristic Search</a>.<br />
+In <em>Proceedings of the Thirty-Third International Conference on Automated Planning and Scheduling (ICAPS 2023)</em>, pp. 70-79. AAAI Press, 2023.</p>
 <pre><code>landmark_sum(lm_factory, pref=false, prog_goal=true, prog_gn=true, prog_r=true, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
@@ -1717,20 +1717,20 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h2 id="merge-and-shrink_heuristic">Merge-and-shrink heuristic<a class="headerlink" href="#merge-and-shrink_heuristic" title="Permanent link">#</a></h2>
 <p>This heuristic implements the algorithm described in the following paper:</p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-aaai2014.pdf">Generalized Label Reduction for Merge-and-Shrink Heuristics</a>.<br />
- In <em>Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2358-2366. AAAI Press, 2014.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-aaai2014.pdf">Generalized Label Reduction for Merge-and-Shrink Heuristics</a>.<br />
+In <em>Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2358-2366. AAAI Press, 2014.</p>
 <p>For a more exhaustive description of merge-and-shrink, see the journal paper</p>
 <p>Silvan Sievers and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-helmert-jair2021.pdf">Merge-and-Shrink: A Compositional Theory of Transformations of Factored Transition Systems</a>.<br />
- <em>Journal of Artificial Intelligence Research</em> 71:781-883. 2021.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-helmert-jair2021.pdf">Merge-and-Shrink: A Compositional Theory of Transformations of Factored Transition Systems</a>.<br />
+<em>Journal of Artificial Intelligence Research</em> 71:781-883. 2021.</p>
 <p>The following paper describes how to improve the DFP merge strategy with tie-breaking, and presents two new merge strategies (dyn-MIASM and SCC-DFP):</p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
- In <em>Proceedings of the 26th International Conference on Automated Planning and Scheduling (ICAPS 2016)</em>, pp. 294-298. AAAI Press, 2016.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
+In <em>Proceedings of the 26th International Conference on Automated Planning and Scheduling (ICAPS 2016)</em>, pp. 294-298. AAAI Press, 2016.</p>
 <p>Details of the algorithms and the implementation are described in the paper</p>
 <p>Silvan Sievers.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-socs2018.pdf">Merge-and-Shrink Heuristics for Classical Planning: Efficient Implementation and Partial Abstractions</a>.<br />
- In <em>Proceedings of the 11th Annual Symposium on Combinatorial Search (SoCS 2018)</em>, pp. 90-98. AAAI Press, 2018.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-socs2018.pdf">Merge-and-Shrink Heuristics for Classical Planning: Efficient Implementation and Partial Abstractions</a>.<br />
+In <em>Proceedings of the 11th Annual Symposium on Combinatorial Search (SoCS 2018)</em>, pp. 90-98. AAAI Press, 2018.</p>
 <pre><code>merge_and_shrink(verbosity=normal, transform=no_transform(), cache_estimates=true, merge_strategy, shrink_strategy, label_reduction=&lt;none&gt;, prune_unreachable_states=true, prune_irrelevant_states=true, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1, main_loop_max_time=infinity)
 </code></pre>
 <ul>
@@ -1775,8 +1775,8 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h2 id="operator-counting_heuristic">Operator-counting heuristic<a class="headerlink" href="#operator-counting_heuristic" title="Permanent link">#</a></h2>
 <p>An operator-counting heuristic computes a linear program (LP) in each state. The LP has one variable Count_o for each operator o that represents how often the operator is used in a plan. Operator-counting constraints are linear constraints over these varaibles that are guaranteed to have a solution with Count_o = occurrences(o, pi) for every plan pi. Minimizing the total cost of operators subject to some operator-counting constraints is an admissible heuristic. For details, see</p>
 <p>Florian Pommerening, Gabriele Roeger, Malte Helmert and Blai Bonet.<br />
- <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
- In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
+<a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
+In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
 <pre><code>operatorcounting(constraint_generators, use_integer_operator_counts=false, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
@@ -2073,8 +2073,8 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h2 id="saturated_cost_partitioning">Saturated cost partitioning<a class="headerlink" href="#saturated_cost_partitioning" title="Permanent link">#</a></h2>
 <p>Compute the maximum over multiple saturated cost partitioning heuristics using different orders. For details, see </p>
 <p>Jendrik Seipp, Thomas Keller and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-jair2020.pdf">Saturated Cost Partitioning for Optimal Classical Planning</a>.<br />
- <em>Journal of Artificial Intelligence Research</em> 67:129-167. 2020.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-jair2020.pdf">Saturated Cost Partitioning for Optimal Classical Planning</a>.<br />
+<em>Journal of Artificial Intelligence Research</em> 67:129-167. 2020.</p>
 <pre><code>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1)
 </code></pre>
 <ul>
@@ -2120,8 +2120,8 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h2 id="online_saturated_cost_partitioning">Online saturated cost partitioning<a class="headerlink" href="#online_saturated_cost_partitioning" title="Permanent link">#</a></h2>
 <p>Compute the maximum over multiple saturated cost partitioning heuristics diversified during the search. For details, see </p>
 <p>Jendrik Seipp.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf">Online Saturated Cost Partitioning for Classical Planning</a>.<br />
- In <em>Proceedings of the 31st International Conference on Automated Planning and Scheduling (ICAPS 2021)</em>, pp. 317-321. AAAI Press, 2021.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf">Online Saturated Cost Partitioning for Classical Planning</a>.<br />
+In <em>Proceedings of the 31st International Conference on Automated Planning and Scheduling (ICAPS 2021)</em>, pp. 317-321. AAAI Press, 2021.</p>
 <pre><code>scp_online(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_size=infinity, max_time=200, interval=10K, debug=false, random_seed=-1)
 </code></pre>
 <ul>
@@ -2163,8 +2163,8 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="opportunistic_uniform_cost_partitioning">(Opportunistic) uniform cost partitioning<a class="headerlink" href="#opportunistic_uniform_cost_partitioning" title="Permanent link">#</a></h2>
 <p>Jendrik Seipp, Thomas Keller and Malte Helmert.<br />
- <a href="https://jendrikseipp.com/papers/seipp-et-al-icaps2017.pdf">A Comparison of Cost Partitioning Algorithms for Optimal Classical Planning</a>.<br />
- In <em>Proceedings of the Twenty-Seventh International Conference on Automated Planning and Scheduling (ICAPS 2017)</em>, pp. 259-268. AAAI Press, 2017.</p>
+<a href="https://jendrikseipp.com/papers/seipp-et-al-icaps2017.pdf">A Comparison of Cost Partitioning Algorithms for Optimal Classical Planning</a>.<br />
+In <em>Proceedings of the Twenty-Seventh International Conference on Automated Planning and Scheduling (ICAPS 2017)</em>, pp. 259-268. AAAI Press, 2017.</p>
 <pre><code>ucp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, opportunistic=false, debug=false)
 </code></pre>
 <ul>
@@ -2236,12 +2236,12 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h2 id="ipdb">iPDB<a class="headerlink" href="#ipdb" title="Permanent link">#</a></h2>
 <p>This approach is a combination of using the <a href="./#canonical_pdb">Canonical PDB</a> heuristic over patterns computed with the <a href="../PatternCollectionGenerator/#hillclimbing">hillclimbing</a> algorithm for pattern generation. It is a short-hand for the command-line option <code>cpdbs(hillclimbing())</code>. Both the heuristic and the pattern generation algorithm are described in the following paper:</p>
 <p>Patrik Haslum, Adi Botea, Malte Helmert, Blai Bonet and Sven Koenig.<br />
- <a href="https://ai.dmi.unibas.ch/papers/haslum-et-al-aaai07.pdf">Domain-Independent Construction of Pattern Database Heuristics for Cost-Optimal Planning</a>.<br />
- In <em>Proceedings of the 22nd AAAI Conference on Artificial Intelligence (AAAI 2007)</em>, pp. 1007-1012. AAAI Press, 2007.</p>
+<a href="https://ai.dmi.unibas.ch/papers/haslum-et-al-aaai07.pdf">Domain-Independent Construction of Pattern Database Heuristics for Cost-Optimal Planning</a>.<br />
+In <em>Proceedings of the 22nd AAAI Conference on Artificial Intelligence (AAAI 2007)</em>, pp. 1007-1012. AAAI Press, 2007.</p>
 <p>For implementation notes, see:</p>
 <p>Silvan Sievers, Manuela Ortlieb and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-socs2012.pdf">Efficient Implementation of Pattern Database Heuristics for Classical Planning</a>.<br />
- In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-socs2012.pdf">Efficient Implementation of Pattern Database Heuristics for Classical Planning</a>.<br />
+In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</p>
 <p>See also <a href="./#canonical_pdb">Canonical PDB</a> and <a href="../PatternCollectionGenerator/#hill_climbing">Hill climbing</a> for more details.</p>
 <pre><code>ipdb(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, max_time_dominance_pruning=infinity, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
@@ -2348,8 +2348,8 @@ The search is ended if there is no more improvement (or the improvement is small
 <h2 id="potential_heuristic_optimized_for_all_states">Potential heuristic optimized for all states<a class="headerlink" href="#potential_heuristic_optimized_for_all_states" title="Permanent link">#</a></h2>
 <p>The algorithm is based on</p>
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
- In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
+In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
 <pre><code>all_states_potential(max_potential=1e8, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
@@ -2386,8 +2386,8 @@ The search is ended if there is no more improvement (or the improvement is small
 <h2 id="diverse_potential_heuristics">Diverse potential heuristics<a class="headerlink" href="#diverse_potential_heuristics" title="Permanent link">#</a></h2>
 <p>The algorithm is based on</p>
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
- In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
+In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
 <pre><code>diverse_potentials(num_samples=1000, max_num_heuristics=infinity, max_potential=1e8, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true, random_seed=-1)
 </code></pre>
 <ul>
@@ -2427,8 +2427,8 @@ The search is ended if there is no more improvement (or the improvement is small
 <h2 id="potential_heuristic_optimized_for_initial_state">Potential heuristic optimized for initial state<a class="headerlink" href="#potential_heuristic_optimized_for_initial_state" title="Permanent link">#</a></h2>
 <p>The algorithm is based on</p>
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
- In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
+In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
 <pre><code>initial_state_potential(max_potential=1e8, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true)
 </code></pre>
 <ul>
@@ -2465,8 +2465,8 @@ The search is ended if there is no more improvement (or the improvement is small
 <h2 id="sample-based_potential_heuristics">Sample-based potential heuristics<a class="headerlink" href="#sample-based_potential_heuristics" title="Permanent link">#</a></h2>
 <p>Maximum over multiple potential heuristics optimized for samples. The algorithm is based on</p>
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
- In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
+<a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
+In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
 <pre><code>sample_based_potentials(num_heuristics=1, num_samples=1000, max_potential=1e8, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true, random_seed=-1)
 </code></pre>
 <ul>

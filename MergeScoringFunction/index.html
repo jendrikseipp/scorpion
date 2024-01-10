@@ -696,8 +696,8 @@
 <h2 id="dfp_scoring">DFP scoring<a class="headerlink" href="#dfp_scoring" title="Permanent link">#</a></h2>
 <p>This scoring function computes the 'DFP' score as descrdibed in the paper "Directed model checking with distance-preserving abstractions" by Draeger, Finkbeiner and Podelski (SPIN 2006), adapted to planning in the following paper:</p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-aaai2014.pdf">Generalized Label Reduction for Merge-and-Shrink Heuristics</a>.<br />
- In <em>Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2358-2366. AAAI Press, 2014.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-aaai2014.pdf">Generalized Label Reduction for Merge-and-Shrink Heuristics</a>.<br />
+In <em>Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI 2014)</em>, pp. 2358-2366. AAAI Press, 2014.</p>
 <pre><code>dfp()
 </code></pre>
 <p><strong>Note:</strong> To obtain the configurations called DFP-B-50K described in the paper, use the following configuration of the merge-and-shrink heuristic and adapt the tie-breaking criteria of <code>total_order</code> as desired:</p>
@@ -710,8 +710,8 @@
 <h2 id="miasm">MIASM<a class="headerlink" href="#miasm" title="Permanent link">#</a></h2>
 <p>This scoring function favors merging transition systems such that in their product, there are many dead states, which can then be pruned without sacrificing information. In particular, the score it assigns to a product is the ratio of alive states to the total number of states. To compute this score, this class thus computes the product of all pairs of transition systems, potentially copying and shrinking the transition systems before if otherwise their product would exceed the specified size limits. A stateless merge strategy using this scoring function is called dyn-MIASM (nowadays also called sbMIASM for score-based MIASM) and is described in the following paper:</p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
- In <em>Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)</em>, pp. 2358-2366. AAAI Press, 2016.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
+In <em>Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)</em>, pp. 2358-2366. AAAI Press, 2016.</p>
 <pre><code>sf_miasm(shrink_strategy, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1, use_caching=true)
 </code></pre>
 <ul>
@@ -735,8 +735,8 @@
 <h2 id="total_order">Total order<a class="headerlink" href="#total_order" title="Permanent link">#</a></h2>
 <p>This scoring function computes a total order on the merge candidates, based on the specified options. The score for each merge candidate correponds to its position in the order. This scoring function is mainly intended as tie-breaking, and has been introduced in the following paper:</p>
 <p>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
- <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
- In <em>Proceedings of the 26th International Conference on Automated Planning and Scheduling (ICAPS 2016)</em>, pp. 294-298. AAAI Press, 2016.</p>
+<a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
+In <em>Proceedings of the 26th International Conference on Automated Planning and Scheduling (ICAPS 2016)</em>, pp. 294-298. AAAI Press, 2016.</p>
 <p>Furthermore, using the atomic_ts_order option, this scoring function, if used alone in a score based filtering merge selector, can be used to emulate the corresponding (precomputed) linear merge strategies reverse level/level (independently of the other options).</p>
 <pre><code>total_order(atomic_ts_order=reverse_level, product_ts_order=new_to_old, atomic_before_product=false, random_seed=-1)
 </code></pre>
