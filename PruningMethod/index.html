@@ -695,13 +695,16 @@
 <p>Prune or reorder applicable operators.</p>
 <h2 id="atom-centric_stubborn_sets">Atom-centric stubborn sets<a class="headerlink" href="#atom-centric_stubborn_sets" title="Permanent link">#</a></h2>
 <p>Stubborn sets are a state pruning method which computes a subset of applicable actions in each state such that completeness and optimality of the overall search is preserved. Previous stubborn set implementations mainly track information about actions. In contrast, this implementation focuses on atomic propositions (atoms), which often speeds up the computation on IPC benchmarks. For details, see</p>
-<p>Gabriele Roeger, Malte Helmert, Jendrik Seipp and Silvan Sievers.<br />
-<a href="https://ai.dmi.unibas.ch/papers/roeger-et-al-socs2020.pdf">An Atom-Centric Perspective on Stubborn Sets</a>.<br />
-In <em>Proceedings of the 13th Annual Symposium on Combinatorial Search (SoCS 2020)</em>, pp. 57-65. AAAI Press, 2020.</p>
-<pre><code>atom_centric_stubborn_sets(use_sibling_shortcut=true, atom_selection_strategy=quick_skip, verbosity=normal)
-</code></pre>
 <ul>
-<li><em>use_sibling_shortcut</em> (bool): use variable-based marking in addition to atom-based marking</li>
+<li>
+<p>Gabriele Roeger, Malte Helmert, Jendrik Seipp and Silvan Sievers.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/roeger-et-al-socs2020.pdf">An Atom-Centric Perspective on Stubborn Sets</a>.<br />
+ In <em>Proceedings of the 13th Annual Symposium on Combinatorial Search (SoCS 2020)</em>, pp. 57-65. AAAI Press, 2020.</p>
+<p>atom_centric_stubborn_sets(use_sibling_shortcut=true, atom_selection_strategy=quick_skip, verbosity=normal)</p>
+</li>
+<li>
+<p><em>use_sibling_shortcut</em> (bool): use variable-based marking in addition to atom-based marking</p>
+</li>
 <li><em>atom_selection_strategy</em> ({fast_downward, quick_skip, static_small, dynamic_small}): Strategy for selecting unsatisfied atoms from action preconditions or the goal atoms. All strategies use the fast_downward strategy for breaking ties.<ul>
 <li><code>fast_downward</code>: select the atom (v, d) with the variable v that comes first in the Fast Downward variable ordering (which is based on the causal graph)</li>
 <li><code>quick_skip</code>: if possible, select an unsatisfied atom whose producers are already marked</li>
@@ -755,13 +758,16 @@ In <em>Proceedings of the 13th Annual Symposium on Combinatorial Search (SoCS 20
 <p><strong>Note on verbosity parameter:</strong> Setting verbosity to verbose or higher enables time measurements in each call to prune_operators for a given state. This induces a significant overhead, up to 30% in configurations like blind search with the no pruning method (<code>null</code>). We recommend using at most normal verbosity for running experiments.</p>
 <h2 id="stubbornsetsec">StubbornSetsEC<a class="headerlink" href="#stubbornsetsec" title="Permanent link">#</a></h2>
 <p>Stubborn sets represent a state pruning method which computes a subset of applicable operators in each state such that completeness and optimality of the overall search is preserved. As stubborn sets rely on several design choices, there are different variants thereof. The variant 'StubbornSetsEC' resolves the design choices such that the resulting pruning method is guaranteed to strictly dominate the Expansion Core pruning method. For details, see</p>
-<p>Martin Wehrle, Malte Helmert, Yusra Alkhazraji and Robert Mattmueller.<br />
-<a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS13/paper/view/6053/6185">The Relative Pruning Power of Strong Stubborn Sets and Expansion Core</a>.<br />
-In <em>Proceedings of the 23rd International Conference on Automated Planning and Scheduling (ICAPS 2013)</em>, pp. 251-259. AAAI Press, 2013.</p>
-<pre><code>stubborn_sets_ec(verbosity=normal)
-</code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li>
+<p>Martin Wehrle, Malte Helmert, Yusra Alkhazraji and Robert Mattmueller.<br />
+ <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS13/paper/view/6053/6185">The Relative Pruning Power of Strong Stubborn Sets and Expansion Core</a>.<br />
+ In <em>Proceedings of the 23rd International Conference on Automated Planning and Scheduling (ICAPS 2013)</em>, pp. 251-259. AAAI Press, 2013.</p>
+<p>stubborn_sets_ec(verbosity=normal)</p>
+</li>
+<li>
+<p><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</p>
+<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>
@@ -772,16 +778,21 @@ In <em>Proceedings of the 23rd International Conference on Automated Planning an
 <p><strong>Note on verbosity parameter:</strong> Setting verbosity to verbose or higher enables time measurements in each call to prune_operators for a given state. This induces a significant overhead, up to 30% in configurations like blind search with the no pruning method (<code>null</code>). We recommend using at most normal verbosity for running experiments.</p>
 <h2 id="stubborn_sets_simple">Stubborn sets simple<a class="headerlink" href="#stubborn_sets_simple" title="Permanent link">#</a></h2>
 <p>Stubborn sets represent a state pruning method which computes a subset of applicable operators in each state such that completeness and optimality of the overall search is preserved. As stubborn sets rely on several design choices, there are different variants thereof. This stubborn set variant resolves the design choices in a straight-forward way. For details, see the following papers: </p>
-<p>Yusra Alkhazraji, Martin Wehrle, Robert Mattmueller and Malte Helmert.<br />
-<a href="https://ai.dmi.unibas.ch/papers/alkhazraji-et-al-ecai2012.pdf">A Stubborn Set Algorithm for Optimal Planning</a>.<br />
-In <em>Proceedings of the 20th European Conference on Artificial Intelligence (ECAI 2012)</em>, pp. 891-892. IOS Press, 2012.</p>
-<p>Martin Wehrle and Malte Helmert.<br />
-<a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7922/8042">Efficient Stubborn Sets: Generalized Algorithms and Selection Strategies</a>.<br />
-In <em>Proceedings of the 24th International Conference on Automated Planning  and Scheduling (ICAPS 2014)</em>, pp. 323-331. AAAI Press, 2014.</p>
-<pre><code>stubborn_sets_simple(verbosity=normal)
-</code></pre>
 <ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li>
+<p>Yusra Alkhazraji, Martin Wehrle, Robert Mattmueller and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/alkhazraji-et-al-ecai2012.pdf">A Stubborn Set Algorithm for Optimal Planning</a>.<br />
+ In <em>Proceedings of the 20th European Conference on Artificial Intelligence (ECAI 2012)</em>, pp. 891-892. IOS Press, 2012.</p>
+</li>
+<li>
+<p>Martin Wehrle and Malte Helmert.<br />
+ <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7922/8042">Efficient Stubborn Sets: Generalized Algorithms and Selection Strategies</a>.<br />
+ In <em>Proceedings of the 24th International Conference on Automated Planning  and Scheduling (ICAPS 2014)</em>, pp. 323-331. AAAI Press, 2014.</p>
+<p>stubborn_sets_simple(verbosity=normal)</p>
+</li>
+<li>
+<p><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</p>
+<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
 <li><code>verbose</code>: full output</li>

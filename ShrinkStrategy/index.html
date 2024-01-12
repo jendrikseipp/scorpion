@@ -667,13 +667,16 @@
 <p>This page describes the various shrink strategies supported by the planner.</p>
 <h2 id="bismulation_based_shrink_strategy">Bismulation based shrink strategy<a class="headerlink" href="#bismulation_based_shrink_strategy" title="Permanent link">#</a></h2>
 <p>This shrink strategy implements the algorithm described in the paper:</p>
-<p>Raz Nissim, Joerg Hoffmann and Malte Helmert.<br />
-<a href="https://ai.dmi.unibas.ch/papers/nissim-et-al-ijcai2011.pdf">Computing Perfect Heuristics in Polynomial Time: On Bisimulation and Merge-and-Shrink Abstractions in Optimal Planning.</a>.<br />
-In <em>Proceedings of the Twenty-Second International Joint Conference on Artificial Intelligence (IJCAI 2011)</em>, pp. 1983-1990. AAAI Press, 2011.</p>
-<pre><code>shrink_bisimulation(greedy=false, at_limit=return)
-</code></pre>
 <ul>
-<li><em>greedy</em> (bool): use greedy bisimulation</li>
+<li>
+<p>Raz Nissim, Joerg Hoffmann and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/nissim-et-al-ijcai2011.pdf">Computing Perfect Heuristics in Polynomial Time: On Bisimulation and Merge-and-Shrink Abstractions in Optimal Planning.</a>.<br />
+ In <em>Proceedings of the Twenty-Second International Joint Conference on Artificial Intelligence (IJCAI 2011)</em>, pp. 1983-1990. AAAI Press, 2011.</p>
+<p>shrink_bisimulation(greedy=false, at_limit=return)</p>
+</li>
+<li>
+<p><em>greedy</em> (bool): use greedy bisimulation</p>
+</li>
 <li><em>at_limit</em> ({return, use_up}): what to do when the size limit is hit<ul>
 <li><code>return</code>: stop without refining the equivalence class further</li>
 <li><code>use_up</code>: continue refining the equivalence class until the size limit is hit</li>
@@ -684,13 +687,16 @@ In <em>Proceedings of the Twenty-Second International Joint Conference on Artifi
 <p><strong>shrink_bisimulation(greedy=false):</strong> Combine this with the merge-and-shrink option max_states=N (where N is a numerical parameter for which sensible values include 1000, 10000, 50000, 100000 and 200000) and with the linear merge strategy reverse_level to obtain the variant 'exact bisimulation with a size limit', called DFP-bop in the IJCAI 2011 paper. When we last ran experiments on interaction of shrink strategies with label reduction, this strategy performed best when used with label reduction before shrinking (and no label reduction before merging).</p>
 <h2 id="f-preserving_shrink_strategy">f-preserving shrink strategy<a class="headerlink" href="#f-preserving_shrink_strategy" title="Permanent link">#</a></h2>
 <p>This shrink strategy implements the algorithm described in the paper:</p>
-<p>Malte Helmert, Patrik Haslum and Joerg Hoffmann.<br />
-<a href="https://ai.dmi.unibas.ch/papers/helmert-et-al-icaps2007.pdf">Flexible Abstraction Heuristics for Optimal Sequential Planning</a>.<br />
-In <em>Proceedings of the Seventeenth International Conference on Automated Planning and Scheduling (ICAPS 2007)</em>, pp. 176-183. AAAI Press, 2007.</p>
-<pre><code>shrink_fh(random_seed=-1, shrink_f=high, shrink_h=low)
-</code></pre>
 <ul>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li>
+<p>Malte Helmert, Patrik Haslum and Joerg Hoffmann.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/helmert-et-al-icaps2007.pdf">Flexible Abstraction Heuristics for Optimal Sequential Planning</a>.<br />
+ In <em>Proceedings of the Seventeenth International Conference on Automated Planning and Scheduling (ICAPS 2007)</em>, pp. 176-183. AAAI Press, 2007.</p>
+<p>shrink_fh(random_seed=-1, shrink_f=high, shrink_h=low)</p>
+</li>
+<li>
+<p><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</p>
+</li>
 <li><em>shrink_f</em> ({high, low}): in which direction the f based shrink priority is ordered<ul>
 <li><code>high</code>: prefer shrinking states with high value</li>
 <li><code>low</code>: prefer shrinking states with low value</li>
