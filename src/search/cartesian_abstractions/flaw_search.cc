@@ -320,7 +320,7 @@ static vector<int> get_unaffected_variables(
 }
 
 struct FactPairHash {
-    std::size_t operator()(FactPair fact) const {
+    size_t operator()(FactPair fact) const {
         utils::HashState hash_state;
         hash_state.feed(fact.var);
         hash_state.feed(fact.value);
