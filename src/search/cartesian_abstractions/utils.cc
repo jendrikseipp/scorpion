@@ -245,11 +245,11 @@ void add_common_cegar_options(plugins::Feature &feature) {
     feature.add_option<bool>(
         "store_shortest_path_tree_children",
         "store for each state its children in the shortest path tree",
-        "true");
+        "false");
     feature.add_option<bool>(
         "store_shortest_path_tree_parents",
         "store for each state its parents in the shortest path tree",
-        "true");
+        "false");
 
     add_transition_representation_option(feature);
     add_pick_flawed_abstract_state_strategies(feature);
