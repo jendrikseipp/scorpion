@@ -11,14 +11,31 @@ See [below](#differences-between-scorpion-and-fast-downward) for a detailed list
 of extensions. We regularly port the latest changes from Fast Downward to
 Scorpion and also integrate some features from Scorpion back into Fast Downward.
 
-Please use the following reference when citing Scorpion:
-Jendrik Seipp, Thomas Keller and Malte Helmert.
+**Citing Scorpion**:</br>
+Jendrik Seipp, Thomas Keller and Malte Helmert.</br>
 [Saturated Cost Partitioning for Optimal Classical Planning](
-https://www.jair.org/index.php/jair/article/view/11673).
+https://www.jair.org/index.php/jair/article/view/11673).</br>
 Journal of Artificial Intelligence Research 67, pp. 129-167. 2020.
 
 
 ## Instructions
+
+### Apptainer image
+
+To simplify the installation process, we provide an executable
+[Apptainer](https://apptainer.org/) container (formerly known as Singularity).
+It accepts the same arguments as the `fast-downward.py` script (see below).
+
+    # Download the image,
+    apptainer pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
+
+    # or build it yourself.
+    apptainer build scorpion.sif Apptainer
+
+    # Then run the recommended configuration (via the "scorpion" alias).
+    ./scorpion.sif --transform-task preprocess-h2 --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
+
+### Manual compilation
 
 Install the dependencies (the table below lists which versions are tested):
 
@@ -41,20 +58,22 @@ documentation](https://jendrikseipp.github.io/scorpion) shows which plugins are
 available (heuristics, search algorithms, etc.) and how to use them.
 
 
-### Recommended configuration
+### Recommended configurations
 
-We recommend using the following configuration:
+For **STRIPS tasks**, we recommend using the `--alias scorpion` shortcut
 
-```
-./fast-downward.py \
-  --transform-task preprocess-h2 \
-  ../benchmarks/gripper/prob01.pddl \
-  --search "astar(scp_online([
-        projections(sys_scp(max_time=100, max_time_per_restart=10)),
-        cartesian()],
-        saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
-        pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))"
-```
+    ./fast-downward.py --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
+
+which is equivalent to
+
+    ./fast-downward.py \
+      --transform-task preprocess-h2 \
+      PROBLEM_FILE \
+      --search "astar(scp_online([
+          projections(sys_scp(max_time=100, max_time_per_restart=10)),
+          cartesian()],
+          saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
+          pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))"
 
 The `preprocess-h2` call prunes irrelevant operators in a preprocessing
 step. The search configuration uses [partial order
@@ -73,26 +92,22 @@ abstractions](https://jair.org/index.php/jair/article/view/11217).
 component_options=[], driver_options=["--transform-task", "preprocess-h2",
 "--alias", "scorpion"]` to run the recommended Scorpion configuration.)
 
-#### Apptainer image
+For **tasks with conditional effects**, we recommend using
 
-To simplify the installation process, we provide an executable
-[Apptainer](https://apptainer.org/) container (formerly known as Singularity).
-It accepts the same arguments as the `fast-downward.py` script (see above).
-
-    # Download the image,
-    apptainer pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
-
-    # or build it yourself.
-    apptainer build scorpion.sif Apptainer
-
-    # Then run recommended configuration (available via "scorpion" alias).
-    ./scorpion.sif --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
+    ./fast-downward.py \
+      --transform-task preprocess-h2 \
+      PROBLEM_FILE \
+      --search "astar(scp_online([projections(sys_scp(
+            max_time=100, max_time_per_restart=10, max_pdb_size=2M, max_collection_size=20M,
+            pattern_type=interesting_non_negative, create_complete_transition_system=true),
+          create_complete_transition_system=true)],
+        saturator=perimstar, max_time=100, max_size=1M, interval=10K, orders=greedy_orders()))"
 
 ### IPC versions
 
 If you prefer to run the Scorpion versions from the IPC 2018 or 2023 (which are
 based on an older Fast Downward version and use different abstractions), we
-recommend using the
+recommend using the Apptainer images from the
 [Scorpion 2018](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/) or
 [Scorpion 2023](https://github.com/ipc2023-classical/planner25) repos.
 
