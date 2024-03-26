@@ -108,9 +108,6 @@ def get_parser():
     parser.add_pattern("cartesian_states", r"Cartesian states: (.+)\n", type=int)
     parser.add_pattern("cartesian_unreachable_states", r"Unreachable Cartesian states: (.+)\n", type=int)
     parser.add_pattern("cartesian_unsolvable_states", r"Unsolvable Cartesian states: (.+)\n", type=int)
-    #parser.add_bottom_up_pattern("cartesian_states_total", r"Total number of Cartesian states: (.+)\n", type=int)
-    #parser.add_pattern("cartesian_transitions", r"Total number of non-looping transitions: (.+)\n", type=int)
-    #parser.add_pattern("cartesian_transitions", r"Total number of transitions in Cartesian abstractions: (.+)\n", type=int)
     parser.add_pattern("cartesian_loops", r"Looping transitions: (.+)\n", type=int)
     parser.add_pattern("cartesian_transitions", r"Non-looping transitions: (.+)\n", type=int)
 
@@ -136,9 +133,6 @@ def get_parser():
     parser.add_pattern("time_for_splitting_states", r"Time for splitting states: (.+)s\n", type=float)
     parser.add_pattern("time_for_updating_goal_distances", r"Time for updating goal distances: (.+)s\n", type=float)
     parser.add_pattern("time_for_building_abstraction", r"Time for building abstraction: (.+)s\n", type=float)
-
-    #parser.add_repeated_pattern("cartesian_abstraction_build_times", r"Time for building abstraction: (.+)s\n", type=float)
-    #parser.add_pattern("cartesian_saturated_cost_functions_time", r"Time for computing saturated cost functions: (.+)s\n", type=float)
 
     parser.add_pattern("successor_generator_creation_time", r"time for successor generation creation: (.+)s\n", type=float)
     parser.add_pattern("successor_generator_creation_memory", r"peak memory difference for successor generator creation: (.+) KB\n", type=int)
