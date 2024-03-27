@@ -49,6 +49,5 @@ int main(int argc, const char **argv) {
     } else if (search_algorithm->get_status() == UNSOLVABLE) {
         exitcode = ExitCode::SEARCH_UNSOLVABLE;
     }
-    utils::report_exit_code_reentrant(exitcode);
-    return static_cast<int>(exitcode);
+    exit_with(exitcode);
 }

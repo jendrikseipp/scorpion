@@ -50,6 +50,7 @@ DEBUG = False
 ## we only list codes that are used by the translator component of the planner.
 TRANSLATE_OUT_OF_MEMORY = 20
 TRANSLATE_OUT_OF_TIME = 21
+TRANSLATE_INPUT_ERROR = 31
 
 simplified_effect_condition_counter = 0
 added_implied_precondition_counter = 0
@@ -584,12 +585,15 @@ def pddl_to_sas(task):
     elif goal_list is None:
         return unsolvable_sas_task("Trivially false goal")
 
+    negative_in_goal = set()
     for item in goal_list:
         assert isinstance(item, pddl.Literal)
+        if item.negated:
+            negative_in_goal.add(item.negate())
 
     with timers.timing("Computing fact groups", block=True):
         groups, mutex_groups, translation_key = fact_groups.compute_groups(
-            task, atoms, reachable_action_params)
+            task, atoms, reachable_action_params, negative_in_goal)
 
     with timers.timing("Building STRIPS to SAS dictionary"):
         ranges, strips_to_sas = strips_to_sas_dictionary(
@@ -800,3 +804,6 @@ if __name__ == "__main__":
         traceback.print_exc(file=sys.stdout)
         print("=" * 79)
         sys.exit(TRANSLATE_OUT_OF_MEMORY)
+    except pddl_parser.ParseError as e:
+        print(e)
+        sys.exit(TRANSLATE_INPUT_ERROR)
