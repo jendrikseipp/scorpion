@@ -32,7 +32,7 @@ It accepts the same arguments as the `fast-downward.py` script (see below).
     # or build it yourself.
     apptainer build scorpion.sif Apptainer
 
-    # Then run the recommended configuration (via the "scorpion" alias).
+    # Then run the recommended configuration (for solving STRIPS tasks optimally).
     ./scorpion.sif --transform-task preprocess-h2 --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
 
 ### Manual compilation
@@ -60,7 +60,20 @@ available (heuristics, search algorithms, etc.) and how to use them.
 
 ### Recommended configurations
 
-For **STRIPS tasks**, we recommend using the `--alias scorpion` shortcut
+In case you want to **solve tasks quickly** and do **not require optimality**,
+we recommend using the first iteration of
+[LAMA](https://www.jair.org/index.php/jair/article/view/10667) with an added
+[type-based open list](https://ojs.aaai.org/index.php/AAAI/article/view/9036/):
+
+    ./fast-downward.py \
+      --transform-task preprocess-h2 \
+      [DOMAIN_FILE] PROBLEM_FILE \
+      --search "let(hlm, landmark_sum(lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one)),
+        let(hff, ff(transform=adapt_costs(one)),
+        lazy(alt([single(hff), single(hff, pref_only=true), single(hlm), single(hlm, pref_only=true),
+        type_based([hff, g()])], boost=1000), preferred=[hff, hlm], cost_type=one)))"
+
+For solving **STRIPS tasks optimally**, we recommend using the `--alias scorpion` shortcut
 
     ./fast-downward.py --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
 
@@ -68,7 +81,7 @@ which is equivalent to
 
     ./fast-downward.py \
       --transform-task preprocess-h2 \
-      PROBLEM_FILE \
+      [DOMAIN_FILE] PROBLEM_FILE \
       --search "astar(scp_online([
           projections(sys_scp(max_time=100, max_time_per_restart=10)),
           cartesian()],
@@ -92,11 +105,11 @@ abstractions](https://jair.org/index.php/jair/article/view/11217).
 component_options=[], driver_options=["--transform-task", "preprocess-h2",
 "--alias", "scorpion"]` to run the recommended Scorpion configuration.)
 
-For **tasks with conditional effects**, we recommend using
+For solving **tasks with conditional effects optimally**, we recommend using
 
     ./fast-downward.py \
       --transform-task preprocess-h2 \
-      PROBLEM_FILE \
+      [DOMAIN_FILE] PROBLEM_FILE \
       --search "astar(scp_online([projections(sys_scp(
             max_time=100, max_time_per_restart=10, max_pdb_size=2M, max_collection_size=20M,
             pattern_type=interesting_non_negative, create_complete_transition_system=true),
