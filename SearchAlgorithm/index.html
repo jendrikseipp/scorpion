@@ -1009,17 +1009,8 @@
 </ul>
 <h2 id="exhaustive_search">Exhaustive search<a class="headerlink" href="#exhaustive_search" title="Permanent link">#</a></h2>
 <p>Dump the reachable state space.</p>
-<pre><code>dump_reachable_search_space(verbosity=normal)
+<pre><code>dump_reachable_search_space()
 </code></pre>
-<ul>
-<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
-<li><code>silent</code>: only the most basic output</li>
-<li><code>normal</code>: relevant information to monitor progress</li>
-<li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
-</li>
-</ul>
 <h2 id="eager_best-first_search">Eager best-first search<a class="headerlink" href="#eager_best-first_search" title="Permanent link">#</a></h2>
 <pre><code>eager(open, reopen_closed=false, f_eval=&lt;none&gt;, preferred=[], pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
 </code></pre>
