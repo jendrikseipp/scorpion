@@ -80,7 +80,7 @@ void ExhaustiveSearch::dump_state(const State &state) const {
 SearchStatus ExhaustiveSearch::step() {
     if (current_state_id == static_cast<int>(state_registry.size())) {
         utils::g_log << "Finished dumping the reachable state space." << endl;
-        return FAILED;
+        return SOLVED;
     }
 
     State s = state_registry.lookup_state(StateID(current_state_id));
