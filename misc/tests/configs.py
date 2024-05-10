@@ -179,6 +179,8 @@ def configs_optimal_extended():
         "lm_scp":
             _get_landmark_config(cost_partitioning="saturated", scoring_function="max_heuristic_per_stolen_costs"),
         "idastar": ["--search", "idastar(blind(cache_estimates=false))"],
+        # This is not really an optimal configuration, but we add it here to test it.
+        "exhaustive": ["--search", "dump_reachable_search_space()"],
     }
 
 
