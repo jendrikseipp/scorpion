@@ -95,7 +95,6 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     cartesian_abstractions::g_hacked_tsr = opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation");
     cartesian_abstractions::g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
     cartesian_abstractions::g_hacked_use_abstract_flaw_search = opts.get<bool>("use_abstract_flaw_search");
-    cartesian_abstractions::g_hacked_shrink_spt_vectors_interval = opts.get<int>("shrink_spt_vectors_interval");
 }
 
 bool CartesianAbstractionGenerator::has_reached_resource_limit(
@@ -127,7 +126,9 @@ CartesianAbstractionGenerator::build_abstraction_for_subtask(
         log,
         dot_graph_verbosity);
     cout << endl;
-    return {cegar.extract_abstraction(), cegar.get_goal_distances()};
+    return {
+               cegar.extract_abstraction(), cegar.get_goal_distances()
+    };
 }
 
 void CartesianAbstractionGenerator::build_abstractions_for_subtasks(

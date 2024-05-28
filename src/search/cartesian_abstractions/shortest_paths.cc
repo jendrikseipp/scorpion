@@ -269,16 +269,6 @@ void ShortestPaths::update_incrementally(
     resize(num_states);
     dirty_states.clear();
 
-    // Periodically reduce the memory consumption of children and parents vectors.
-    if (g_hacked_shrink_spt_vectors_interval != 0 && num_states % g_hacked_shrink_spt_vectors_interval == 0) {
-        for (auto &transitions : children) {
-            transitions.shrink_to_fit();
-        }
-        for (auto &transitions : parents) {
-            transitions.shrink_to_fit();
-        }
-    }
-
     if (debug) {
         log << "Split " << v << " into " << v1 << " and " << v2 << endl;
     }
