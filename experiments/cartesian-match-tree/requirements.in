@@ -1,2 +1,2 @@
-lab==8.0
+lab==8.2
 labreports @ git+ssh://git@github.com/jendrikseipp/labreports.git@e751e7c
