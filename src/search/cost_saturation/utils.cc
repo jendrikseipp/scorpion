@@ -10,9 +10,7 @@
 #include "../algorithms/partial_state_tree.h"
 #include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
-#include "../utils/collections.h"
 #include "../utils/logging.h"
-#include "../utils/rng.h"
 #include "../utils/rng_options.h"
 
 #include <cassert>

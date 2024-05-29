@@ -4,7 +4,6 @@
 #include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
-
 #include "../algorithms/max_cliques.h"
 #include "../algorithms/dynamic_bitset.h"
 #include "../plugins/plugin.h"

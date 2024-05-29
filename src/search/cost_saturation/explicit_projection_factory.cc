@@ -4,8 +4,6 @@
 #include "projection.h"
 #include "types.h"
 
-#include "../pdbs/match_tree.h"
-#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"

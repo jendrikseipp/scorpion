@@ -12,8 +12,6 @@
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
-#include <cmath>
-
 using namespace std;
 
 namespace cost_saturation {

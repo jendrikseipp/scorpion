@@ -4,7 +4,6 @@
 #include "projection.h"
 
 #include "../pdbs/dominance_pruning.h"
-#include "../pdbs/pattern_database.h"
 #include "../pdbs/pattern_generator.h"
 #include "../plugins/options.h"
 #include "../plugins/plugin.h"

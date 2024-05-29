@@ -9,8 +9,6 @@
 #include "../task_proxy.h"
 
 #include "../task_utils/sampling.h"
-#include "../task_utils/task_properties.h"
-#include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"

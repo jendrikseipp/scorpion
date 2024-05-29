@@ -1,7 +1,6 @@
 #ifndef COST_SATURATION_PHO_HEURISTIC_H
 #define COST_SATURATION_PHO_HEURISTIC_H
 
-#include "abstraction.h"
 #include "types.h"
 
 #include "../lp/lp_solver.h"

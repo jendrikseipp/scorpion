@@ -9,7 +9,6 @@
 #include "../algorithms/partial_state_tree.h"
 #include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
-#include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/rng_options.h"

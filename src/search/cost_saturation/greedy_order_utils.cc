@@ -4,11 +4,9 @@
 
 #include "../cost_saturation/greedy_order_utils.h"
 #include "../plugins/plugin.h"
-#include "../utils/collections.h"
 #include "../utils/logging.h"
 
 #include <cassert>
-#include <cmath>
 
 using namespace std;
 
