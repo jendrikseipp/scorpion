@@ -9,15 +9,12 @@
 
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
-#include "../utils/math.h"
 #include "../utils/memory.h"
-#include "../utils/rng.h"
 
 #include <algorithm>
 #include <cassert>
 #include <execution>
 #include <iostream>
-#include <unordered_map>
 
 using namespace std;
 
@@ -110,8 +107,7 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
     if (transition_system) {
         transitions = transition_system->get_incoming_transitions()[state_id];
     } else if (g_hacked_tsr == TransitionRepresentation::SG_RH) {
-        transitions = match_tree->get_incoming_transitions(
-            cartesian_sets, *states[state_id]);
+        transitions = match_tree->get_incoming_transitions(*states[state_id]);
     } else if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
                g_hacked_tsr == TransitionRepresentation::SG ||
                g_hacked_tsr == TransitionRepresentation::RH) {
@@ -148,7 +144,7 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
             }
         } else {
             assert(g_hacked_tsr == TransitionRepresentation::RH);
-            transitions = match_tree->get_incoming_transitions(cartesian_sets, *target, incoming_ops);
+            transitions = match_tree->get_incoming_transitions(*target, incoming_ops);
         }
     }
 
@@ -163,7 +159,7 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
     if (transition_system) {
         transitions = transition_system->get_outgoing_transitions()[state_id];
     } else if (g_hacked_tsr == TransitionRepresentation::SG_RH) {
-        transitions = match_tree->get_outgoing_transitions(cartesian_sets, *states[state_id]);
+        transitions = match_tree->get_outgoing_transitions(*states[state_id]);
     } else if (g_hacked_tsr == TransitionRepresentation::NAIVE ||
                g_hacked_tsr == TransitionRepresentation::SG ||
                g_hacked_tsr == TransitionRepresentation::RH) {
@@ -204,7 +200,7 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
             }
         } else {
             assert(g_hacked_tsr == TransitionRepresentation::RH);
-            transitions = match_tree->get_outgoing_transitions(cartesian_sets, *src, outgoing_ops);
+            transitions = match_tree->get_outgoing_transitions(*src, outgoing_ops);
         }
     }
     if (g_hacked_sort_transitions) {
@@ -223,7 +219,7 @@ bool Abstraction::has_transition(int src, int op_id, int dest) const {
     } else {
         bool valid = match_tree->has_transition(*states[src], op_id, *states[dest]);
 #ifndef NDEBUG
-        Transitions out = match_tree->get_outgoing_transitions(cartesian_sets, *states[src]);
+        Transitions out = match_tree->get_outgoing_transitions(*states[src]);
         assert(count(out.begin(), out.end(), Transition(op_id, dest)) == static_cast<int>(valid));
 #endif
         return valid;
@@ -364,7 +360,7 @@ pair<int, int> Abstraction::refine(
         for (int state_id : {v1_id, v2_id}) {
             const AbstractState &state = *states[state_id];
             Transitions ts_out = transition_system->get_outgoing_transitions()[state_id];
-            Transitions mt_out = match_tree->get_outgoing_transitions(this->cartesian_sets, state);
+            Transitions mt_out = match_tree->get_outgoing_transitions(state);
             sort(ts_out.begin(), ts_out.end());
             sort(mt_out.begin(), mt_out.end());
             if (ts_out != mt_out) {
@@ -375,7 +371,7 @@ pair<int, int> Abstraction::refine(
             assert(ts_out == mt_out);
 
             Transitions ts_in = transition_system->get_incoming_transitions()[state_id];
-            Transitions mt_in = match_tree->get_incoming_transitions(this->cartesian_sets, state);
+            Transitions mt_in = match_tree->get_incoming_transitions(state);
             sort(ts_in.begin(), ts_in.end());
             sort(mt_in.begin(), mt_in.end());
             if (ts_in != mt_in) {
@@ -389,7 +385,7 @@ pair<int, int> Abstraction::refine(
 #endif
 
     return {
-        v1_id, v2_id
+               v1_id, v2_id
     };
 }
 

@@ -8,8 +8,7 @@
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../tasks/inverted_task.h"
-#include "../utils/logging.h"
-#include "../utils/rng.h"
+#include "../utils/timer.h"
 
 #include <algorithm>
 #include <execution>
@@ -245,7 +244,6 @@ Matcher MatchTree::get_outgoing_matcher(int op_id) const {
 }
 
 Transitions MatchTree::get_incoming_transitions(
-    const CartesianSets &cartesian_sets,
     const AbstractState &state,
     const vector<int> &incoming_operators) const {
     Transitions transitions;
@@ -270,13 +268,11 @@ Transitions MatchTree::get_incoming_transitions(
     return transitions;
 }
 
-Transitions MatchTree::get_incoming_transitions(
-    const CartesianSets &cartesian_sets, const AbstractState &state) const {
-    return get_incoming_transitions(cartesian_sets, state, get_incoming_operators(state));
+Transitions MatchTree::get_incoming_transitions(const AbstractState &state) const {
+    return get_incoming_transitions(state, get_incoming_operators(state));
 }
 
 Transitions MatchTree::get_outgoing_transitions(
-    const CartesianSets &cartesian_sets,
     const AbstractState &state,
     const vector<int> &outgoing_operators) const {
     Transitions transitions;
@@ -296,9 +292,8 @@ Transitions MatchTree::get_outgoing_transitions(
     return transitions;
 }
 
-Transitions MatchTree::get_outgoing_transitions(
-    const CartesianSets &cartesian_sets, const AbstractState &state) const {
-    return get_outgoing_transitions(cartesian_sets, state, get_outgoing_operators(state));
+Transitions MatchTree::get_outgoing_transitions(const AbstractState &state) const {
+    return get_outgoing_transitions(state, get_outgoing_operators(state));
 }
 
 bool MatchTree::is_applicable(const AbstractState &src, int op_id) const {

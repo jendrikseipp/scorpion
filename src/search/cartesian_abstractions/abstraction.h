@@ -5,8 +5,6 @@
 
 #include "../task_proxy.h"
 
-#include "../utils/collections.h"
-
 #include <memory>
 #include <vector>
 
