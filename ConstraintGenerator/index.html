@@ -296,6 +296,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#delete_relaxation_constraints_from_rankooh_and_rintanen" class="md-nav__link">
+    Delete relaxation constraints from Rankooh and Rintanen
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#lm-cut_landmark_constraints" class="md-nav__link">
     LM-cut landmark constraints
   </a>
@@ -648,6 +655,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#delete_relaxation_constraints_from_rankooh_and_rintanen" class="md-nav__link">
+    Delete relaxation constraints from Rankooh and Rintanen
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#lm-cut_landmark_constraints" class="md-nav__link">
     LM-cut landmark constraints
   </a>
@@ -699,7 +713,7 @@
 <p>Tatsuya Imai and Alex Fukunaga.<br />
  <a href="https://www.jair.org/index.php/jair/article/download/10972/26119/">On a practical, integer-linear programming model for delete-freetasks and its use as a heuristic for cost-optimal planning</a>.<br />
  <em>Journal of Artificial Intelligence Research</em> 54:631-677. 2015.</p>
-<p>delete_relaxation_constraints(use_time_vars=false, use_integer_vars=false)</p>
+<p>delete_relaxation_if_constraints(use_time_vars=false, use_integer_vars=false)</p>
 </li>
 <li>
 <p><em>use_time_vars</em> (bool): use variables for time steps. With these additional variables the constraints enforce an order between the selected operators. Leaving this off (default) corresponds to the time relaxation by Imai and Fukunaga. Switching it on, can increase the heuristic value but will increase the size of the constraints which has a strong impact on runtime. Constraints involving time variables use a big-M encoding, so they are more useful if used with integer variables.</p>
@@ -707,8 +721,32 @@
 <li><em>use_integer_vars</em> (bool): restrict auxiliary variables to integer values. These variables encode whether operators are used, facts are reached, which operator first achieves which fact, and in which order the operators are used. Restricting them to integers generally improves the heuristic value at the cost of increased runtime.</li>
 </ul>
 <p><strong>Example:</strong> To compute the optimal delete-relaxation heuristic h^+^, use</p>
-<pre><code>operatorcounting([delete_relaxation_constraints(use_time_vars=true, use_integer_vars=true)], use_integer_operator_counts=true))
+<pre><code>operatorcounting([delete_relaxation_if_constraints(use_time_vars=true, use_integer_vars=true)], use_integer_operator_counts=true))
 </code></pre>
+<p><strong>Note:</strong> For best performance we recommend using the alternative formulation by Rankooh and Rintanen, accessible through the option <code>delete_relaxation_rr_constraints</code>.</p>
+<h2 id="delete_relaxation_constraints_from_rankooh_and_rintanen">Delete relaxation constraints from Rankooh and Rintanen<a class="headerlink" href="#delete_relaxation_constraints_from_rankooh_and_rintanen" title="Permanent link">#</a></h2>
+<p>Operator-counting constraints based on the delete relaxation. By default the constraints encode an easy-to-compute relaxation of h^+^. With the right settings, these constraints can be used to compute the optimal delete-relaxation heuristic h^+^ (see example below). For details, see</p>
+<ul>
+<li>
+<p>Masood Feyzbakhsh Rankooh and Jussi Rintanen.<br />
+ <a href="https://ojs.aaai.org/index.php/ICAPS/article/view/19787/19546">Efficient Computation and Informative Estimation ofh+ by Integer and Linear Programming</a>.<br />
+ <em>Proceedings of the Thirty-Second International Conference on Automated Planning and Scheduling (ICAPS2022)</em> 32:71-79. 2022.</p>
+<p>delete_relaxation_rr_constraints(acyclicity_type=vertex_elimination, use_integer_vars=false)</p>
+</li>
+<li>
+<p><em>acyclicity_type</em> ({time_labels, vertex_elimination, none}): The most relaxed version of this constraint only enforces that achievers of facts are picked in such a way that all goal facts have an achiever, and the preconditions all achievers are either true in the current state or have achievers themselves. In this version, cycles in the achiever relation can occur. Such cycles can be excluded with additional auxilliary varibles and constraints.</p>
+<ul>
+<li><code>time_labels</code>: introduces MIP variables that encode the time at which each fact is reached. Acyclicity is enforced with constraints that ensure that preconditions of actions are reached before their effects.</li>
+<li><code>vertex_elimination</code>: introduces binary variables based on vertex elimination. These variables encode that one fact has to be reached before another fact. Instead of adding such variables for every pair of states, they are only added for a subset sufficient to ensure acyclicity. Constraints enforce that preconditions of actions are reached before their effects and that the assignment encodes a valid order.</li>
+<li><code>none</code>: No acyclicity is enforced. The resulting heuristic is a relaxation of the delete-relaxation heuristic.</li>
+</ul>
+</li>
+<li><em>use_integer_vars</em> (bool): restrict auxiliary variables to integer values. These variables encode whether facts are reached, which operator first achieves which fact, and (depending on the acyclicity_type) in which order the operators are used. Restricting them to integers generally improves the heuristic value at the cost of increased runtime.</li>
+</ul>
+<p><strong>Example:</strong> To compute the optimal delete-relaxation heuristic h^+^, useinteger variables and some way of enforcing acyclicity (other than "none"). For example</p>
+<pre><code>operatorcounting([delete_relaxation_rr_constraints(acyclicity_type=vertex_elimination, use_integer_vars=true)], use_integer_operator_counts=true))
+</code></pre>
+<p><strong>Note:</strong> While the delete-relaxation constraints by Imai and Fukunaga (accessible via option <code>delete_relaxation_if_constraints</code>) serve a similar purpose to the constraints implemented here, we recommend using this formulation as it can generally be solved more efficiently, in particular in case of the h^+^ configuration, and some relaxations offer tighter bounds.</p>
 <h2 id="lm-cut_landmark_constraints">LM-cut landmark constraints<a class="headerlink" href="#lm-cut_landmark_constraints" title="Permanent link">#</a></h2>
 <p>Computes a set of landmarks in each state using the LM-cut method. For each landmark L the constraint sum_{o in L} Count_o &gt;= 1 is added to the operator-counting LP temporarily. After the heuristic value for the state is computed, all temporary constraints are removed again. For details, see</p>
 <ul>
