@@ -86,12 +86,17 @@ void SearchAlgorithm::set_plan(const Plan &p) {
 void SearchAlgorithm::search() {
     initialize();
     utils::CountdownTimer timer(max_time);
-    while (status == IN_PROGRESS) {
-        status = step();
-        if (timer.is_expired()) {
-            log << "Time limit reached. Abort search." << endl;
-            status = TIMEOUT;
-            break;
+    if (bound == 0) {
+        log << "Initial state is pruned because the g-bound is 0." << endl;
+        status = FAILED;
+    } else {
+        while (status == IN_PROGRESS) {
+            status = step();
+            if (timer.is_expired()) {
+                log << "Time limit reached. Abort search." << endl;
+                status = TIMEOUT;
+                break;
+            }
         }
     }
     // TODO: Revise when and which search times are logged.
