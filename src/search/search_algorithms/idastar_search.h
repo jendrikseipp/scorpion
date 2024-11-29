@@ -7,13 +7,8 @@
 
 #include <memory>
 #include <queue>
-#include <vector>
 
 class Evaluator;
-
-namespace options {
-class Options;
-}
 
 namespace idastar_search {
 struct IDAstarNode {
@@ -66,7 +61,10 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit IDAstarSearch(const plugins::Options &opts);
+    IDAstarSearch(
+        const std::shared_ptr<Evaluator> &h_evaluator, int initial_f_limit,
+        int cache_size, bool single_plan, OperatorCost cost_type, int bound,
+        double max_time, const std::string &description, utils::Verbosity verbosity);
 
     void save_plan_if_necessary() override;
 

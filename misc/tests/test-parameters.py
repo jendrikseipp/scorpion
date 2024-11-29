@@ -50,14 +50,15 @@ TEMPORARY_EXCEPTIONS = [
     "initial_state_potential",
     "all_states_potential",
     "diverse_potentials",
-    "dump_reachable_search_space",
-    "brfs",
 ]
 
 PERMANENT_EXCEPTIONS = [
     "adapt_costs",
+    "brfs",
     "canonical_heuristic",
+    "dump_reachable_search_space",
     "gzocp",
+    "idastar",
     "pho",
     "ocp",
     "scp",

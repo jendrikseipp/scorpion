@@ -39,9 +39,10 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
     return mapping;
 }
 
-ExhaustiveSearch::ExhaustiveSearch(const plugins::Options &opts)
-    : SearchAlgorithm(opts) {
-    assert(cost_type == ONE);
+ExhaustiveSearch::ExhaustiveSearch()
+    : SearchAlgorithm(
+          ONE, numeric_limits<int>::max(), numeric_limits<double>::infinity(),
+          "dump_reachable_search_space", utils::Verbosity::NORMAL) {
 }
 
 void ExhaustiveSearch::initialize() {
@@ -114,12 +115,7 @@ public:
 
     virtual shared_ptr<ExhaustiveSearch> create_component(
         const plugins::Options &, const utils::Context &) const override {
-        plugins::Options opts;
-        opts.set<OperatorCost>("cost_type", ONE);
-        opts.set<int>("bound", numeric_limits<int>::max());
-        opts.set<double>("max_time", numeric_limits<double>::infinity());
-        opts.set<utils::Verbosity>("verbosity", utils::Verbosity::NORMAL);
-        return make_shared<ExhaustiveSearch>(opts);
+        return plugins::make_shared_from_arg_tuples<ExhaustiveSearch>();
     }
 };
 

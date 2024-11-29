@@ -15,13 +15,16 @@
 using namespace std;
 
 namespace breadth_first_search {
-BreadthFirstSearch::BreadthFirstSearch(const plugins::Options &opts)
-    : SearchAlgorithm(opts),
-      single_plan(opts.get<bool>("single_plan")),
-      write_plan(opts.get<bool>("write_plan")),
+BreadthFirstSearch::BreadthFirstSearch(
+    bool single_plan, bool write_plan, const shared_ptr<PruningMethod> &pruning,
+    const string &description, utils::Verbosity verbosity)
+    : SearchAlgorithm(
+          ONE, numeric_limits<int>::max(),
+          numeric_limits<double>::infinity(), description, verbosity),
+      single_plan(single_plan),
+      write_plan(write_plan),
       last_plan_cost(-1),
-      pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")) {
-    assert(cost_type == ONE);
+      pruning_method(pruning) {
 }
 
 void BreadthFirstSearch::initialize() {
@@ -136,16 +139,21 @@ public:
             "each state and thereby influence the number and order of successor states "
             "that are considered.",
             "null()");
+        add_option<string>(
+            "description",
+            "description used to identify search algorithm in logs",
+            "\"brfs\"");
         utils::add_log_options_to_feature(*this);
     }
 
     virtual shared_ptr<BreadthFirstSearch> create_component(
         const plugins::Options &options, const utils::Context &) const override {
-        plugins::Options opts = options;
-        opts.set<OperatorCost>("cost_type", ONE);
-        opts.set<int>("bound", numeric_limits<int>::max());
-        opts.set<double>("max_time", numeric_limits<double>::infinity());
-        return make_shared<BreadthFirstSearch>(opts);
+        return plugins::make_shared_from_arg_tuples<BreadthFirstSearch>(
+            options.get<bool>("single_plan"),
+            options.get<bool>("write_plan"),
+            options.get<shared_ptr<PruningMethod>>("pruning"),
+            options.get<string>("description"),
+            utils::get_log_arguments_from_options(options));
     }
 };
 

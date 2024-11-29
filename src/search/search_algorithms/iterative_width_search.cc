@@ -10,10 +10,12 @@
 using namespace std;
 
 namespace iterative_width_search {
-IterativeWidthSearch::IterativeWidthSearch(const plugins::Options &opts)
-    : SearchAlgorithm(opts),
-      width(opts.get<int>("width")),
-      debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
+IterativeWidthSearch::IterativeWidthSearch(
+    int width, OperatorCost cost_type, int bound, double max_time,
+    const string &description, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+      width(width),
+      debug(verbosity == utils::Verbosity::DEBUG),
       novelty_table(task_proxy, width) {
     utils::g_log << "Setting up iterative width search." << endl;
 }
@@ -99,6 +101,13 @@ public:
         add_option<int>(
             "width", "maximum conjunction size", "2", plugins::Bounds("1", "2"));
         add_search_algorithm_options_to_feature(*this, "iw");
+    }
+
+    virtual shared_ptr<IterativeWidthSearch> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<IterativeWidthSearch>(
+            options.get<int>("width"),
+            get_search_algorithm_arguments_from_options(options));
     }
 };
 

@@ -3,10 +3,6 @@
 
 #include "../search_algorithm.h"
 
-namespace options {
-class Options;
-}
-
 namespace exhaustive_search {
 class ExhaustiveSearch : public SearchAlgorithm {
     int current_state_id;
@@ -19,7 +15,7 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit ExhaustiveSearch(const plugins::Options &opts);
+    ExhaustiveSearch();
 
     virtual void print_statistics() const override;
 };

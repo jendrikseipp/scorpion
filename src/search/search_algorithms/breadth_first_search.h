@@ -8,10 +8,6 @@
 
 class PruningMethod;
 
-namespace options {
-class Options;
-}
-
 namespace breadth_first_search {
 struct Parent {
     StateID state_id;
@@ -47,7 +43,9 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit BreadthFirstSearch(const plugins::Options &opts);
+    BreadthFirstSearch(
+        bool single_plan, bool write_plan, const std::shared_ptr<PruningMethod> &pruning,
+        const std::string &description, utils::Verbosity verbosity);
 
     virtual void save_plan_if_necessary() override;
 
