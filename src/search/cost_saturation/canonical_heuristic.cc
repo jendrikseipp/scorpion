@@ -52,12 +52,14 @@ static MaxAdditiveSubsets compute_max_additive_subsets(
     return max_cliques;
 }
 
-CanonicalHeuristic::CanonicalHeuristic(const plugins::Options &opts)
-    : Heuristic(opts) {
+CanonicalHeuristic::CanonicalHeuristic(
+    const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
+    const shared_ptr<AbstractTask> &transform, bool cache_estimates,
+    const string &description, utils::Verbosity verbosity)
+    : Heuristic(transform, cache_estimates, description, verbosity) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
 
-    Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
+    Abstractions abstractions = generate_abstractions(task, abstraction_generators);
 
     utils::g_log << "Compute abstract goal distances" << endl;
     for (const auto &abstraction : abstractions) {
@@ -111,7 +113,14 @@ public:
         document_subcategory("heuristics_cost_partitioning");
         document_title("Canonical heuristic over abstractions");
         document_synopsis("Shuffle abstractions randomly.");
-        add_options_for_cost_partitioning_heuristic(*this);
+        add_options_for_cost_partitioning_heuristic(*this, "canonical_heuristic");
+    }
+
+    virtual shared_ptr<CanonicalHeuristic> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<CanonicalHeuristic>(
+            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+            get_heuristic_arguments_from_options(options));
     }
 };
 

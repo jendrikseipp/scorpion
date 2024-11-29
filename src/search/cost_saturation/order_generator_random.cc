@@ -9,8 +9,8 @@
 using namespace std;
 
 namespace cost_saturation {
-OrderGeneratorRandom::OrderGeneratorRandom(const plugins::Options &opts) :
-    OrderGenerator(opts) {
+OrderGeneratorRandom::OrderGeneratorRandom(int random_seed) :
+    OrderGenerator(random_seed) {
 }
 
 void OrderGeneratorRandom::initialize(
@@ -34,7 +34,13 @@ public:
         document_subcategory("heuristics_cost_partitioning");
         document_title("Random orders");
         document_synopsis("Shuffle abstractions randomly.");
-        add_common_order_generator_options(*this);
+        add_order_generator_arguments_to_feature(*this);
+    }
+
+    virtual shared_ptr<OrderGeneratorRandom> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<OrderGeneratorRandom>(
+            get_order_generator_arguments_from_options(options));
     }
 };
 

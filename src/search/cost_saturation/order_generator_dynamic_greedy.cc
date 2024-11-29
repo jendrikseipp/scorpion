@@ -13,9 +13,10 @@
 using namespace std;
 
 namespace cost_saturation {
-OrderGeneratorDynamicGreedy::OrderGeneratorDynamicGreedy(const plugins::Options &opts)
-    : OrderGenerator(opts),
-      scoring_function(opts.get<ScoringFunction>("scoring_function")),
+OrderGeneratorDynamicGreedy::OrderGeneratorDynamicGreedy(
+    ScoringFunction scoring_function, int random_seed)
+    : OrderGenerator(random_seed),
+      scoring_function(scoring_function),
       abstractions(nullptr),
       costs(nullptr) {
 }
@@ -108,7 +109,14 @@ public:
             "Order abstractions greedily by a given scoring function, "
             "dynamically recomputing the next best abstraction after each ordering step.");
         add_scoring_function_to_feature(*this);
-        add_common_order_generator_options(*this);
+        add_order_generator_arguments_to_feature(*this);
+    }
+
+    virtual shared_ptr<OrderGeneratorDynamicGreedy> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<OrderGeneratorDynamicGreedy>(
+            options.get<ScoringFunction>("scoring_function"),
+            get_order_generator_arguments_from_options(options));
     }
 };
 

@@ -14,8 +14,6 @@
 #include "../utils/countdown_timer.h"
 #include "../utils/rng.h"
 
-#include <iterator>
-
 using namespace std;
 
 namespace cartesian_abstractions {
@@ -155,7 +153,7 @@ SearchStatus FlawSearch::step() {
             } else if (succ_node.is_new()) {
                 // No flaw
                 (*cached_abstract_state_ids)[succ_state] = target;
-                succ_node.open(node, op, op.get_cost());
+                succ_node.open_new_node(node, op, op.get_cost());
                 open_list.push(succ_state.get_id());
 
                 if (pick_flawed_abstract_state == PickFlawedAbstractState::FIRST) {

@@ -2,7 +2,6 @@
 
 #include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
-#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
 #include <cassert>
@@ -81,7 +80,7 @@ SearchStatus IterativeWidthSearch::step() {
 
         SearchNode succ_node = search_space.get_node(succ_state);
         assert(succ_node.is_new());
-        succ_node.open(node, op, get_adjusted_cost(op));
+        succ_node.open_new_node(node, op, get_adjusted_cost(op));
         open_list.push_back(succ_state.get_id());
     }
 
@@ -99,7 +98,7 @@ public:
         document_title("Iterated width search");
         add_option<int>(
             "width", "maximum conjunction size", "2", plugins::Bounds("1", "2"));
-        SearchAlgorithm::add_options_to_feature(*this);
+        add_search_algorithm_options_to_feature(*this, "iw");
     }
 };
 

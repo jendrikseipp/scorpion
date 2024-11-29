@@ -19,11 +19,13 @@ static int get_undefined_value(VariableProxy var) {
     return var.get_domain_size();
 }
 
-PotentialOptimizer::PotentialOptimizer(const plugins::Options &opts)
-    : task(opts.get<shared_ptr<AbstractTask>>("transform")),
+PotentialOptimizer::PotentialOptimizer(
+    const shared_ptr<AbstractTask> &transform,
+    lp::LPSolverType lpsolver, double max_potential)
+    : task(transform),
       task_proxy(*task),
-      lp_solver(opts.get<lp::LPSolverType>("lpsolver")),
-      max_potential(opts.get<double>("max_potential")),
+      lp_solver(lpsolver),
+      max_potential(max_potential),
       num_lp_vars(0) {
     task_properties::verify_no_axioms(task_proxy);
     task_properties::verify_no_conditional_effects(task_proxy);
@@ -134,9 +136,16 @@ void PotentialOptimizer::construct_lp() {
             int post = effect.get_fact().get_value();
             int pre_lp = lp_var_ids[var_id][pre];
             int post_lp = lp_var_ids[var_id][post];
-            assert(pre_lp != post_lp);
-            coefficients.emplace_back(pre_lp, 1);
-            coefficients.emplace_back(post_lp, -1);
+            if (pre_lp != post_lp) {
+                /*
+                  Prevail conditions with pre = post can occur in transformed
+                  tasks, see issue1150. We ignore them since they cancel out and
+                  LPConstraints may not have two coefficients for the same
+                  variable.
+                */
+                coefficients.emplace_back(pre_lp, 1);
+                coefficients.emplace_back(post_lp, -1);
+            }
         }
         sort(coefficients.begin(), coefficients.end());
         for (const auto &coeff : coefficients)

@@ -99,7 +99,7 @@ public:
             "single_plan",
             "stop after finding the first (shortest) plan",
             "true");
-        SearchAlgorithm::add_options_to_feature(*this);
+        add_search_algorithm_options_to_feature(*this, "ids");
     }
 };
 

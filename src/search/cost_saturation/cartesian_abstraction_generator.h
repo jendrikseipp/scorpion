@@ -6,10 +6,6 @@
 #include <memory>
 #include <vector>
 
-namespace options {
-class Options;
-}
-
 namespace cartesian_abstractions {
 class Abstraction;
 enum class DotGraphVerbosity;
@@ -54,7 +50,16 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
         Abstractions &abstractions);
 
 public:
-    explicit CartesianAbstractionGenerator(const plugins::Options &opts);
+    CartesianAbstractionGenerator(
+        const std::vector<std::shared_ptr<cartesian_abstractions::SubtaskGenerator>> &subtasks,
+        int max_states, int max_transitions, double max_time,
+        cartesian_abstractions::PickFlawedAbstractState pick_flawed_abstract_state,
+        cartesian_abstractions::PickSplit pick_split,
+        cartesian_abstractions::PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state, int max_state_expansions,
+        int memory_padding, int random_seed,
+        cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
+        utils::Verbosity verbosity);
 
     Abstractions generate_abstractions(
         const std::shared_ptr<AbstractTask> &task,

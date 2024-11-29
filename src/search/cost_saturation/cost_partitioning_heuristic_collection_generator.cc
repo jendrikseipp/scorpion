@@ -12,6 +12,7 @@
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
+#include "../utils/rng_options.h"
 
 #include <cassert>
 
@@ -51,7 +52,7 @@ CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectio
     bool diversify,
     int num_samples,
     double max_optimization_time,
-    const shared_ptr<utils::RandomNumberGenerator> &rng)
+    int random_seed)
     : order_generator(order_generator),
       max_orders(max_orders),
       max_size_kb(max_size_kb),
@@ -59,7 +60,7 @@ CostPartitioningHeuristicCollectionGenerator::CostPartitioningHeuristicCollectio
       diversify(diversify),
       num_samples(num_samples),
       max_optimization_time(max_optimization_time),
-      rng(rng) {
+      rng(utils::get_rng(random_seed)) {
     if (max_orders == INF && max_size_kb == INF && max_time == numeric_limits<double>::infinity()) {
         cerr << "max_orders, max_size and max_time cannot all be infinity" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);

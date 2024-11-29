@@ -180,12 +180,12 @@ void add_order_options(plugins::Feature &feature) {
         "maximum time in seconds for optimizing each order with hill climbing",
         "2",
         plugins::Bounds("0", "infinity"));
-    utils::add_rng_options(feature);
+    utils::add_rng_options_to_feature(feature);
 }
 
-CostPartitioningHeuristicCollectionGenerator
+shared_ptr<CostPartitioningHeuristicCollectionGenerator>
 get_cp_heuristic_collection_generator_from_options(const plugins::Options &opts) {
-    return CostPartitioningHeuristicCollectionGenerator(
+    return plugins::make_shared_from_arg_tuples<CostPartitioningHeuristicCollectionGenerator>(
         opts.get<shared_ptr<OrderGenerator>>("orders"),
         opts.get<int>("max_orders"),
         opts.get<int>("max_size"),
@@ -193,11 +193,11 @@ get_cp_heuristic_collection_generator_from_options(const plugins::Options &opts)
         opts.get<bool>("diversify"),
         opts.get<int>("samples"),
         opts.get<double>("max_optimization_time"),
-        utils::parse_rng_from_options(opts));
+        utils::get_rng_arguments_from_options(opts));
 }
 
 void add_options_for_cost_partitioning_heuristic(
-    plugins::Feature &feature, bool consistent) {
+    plugins::Feature &feature, const string &description, bool consistent) {
     feature.document_language_support("action costs", "supported");
     feature.document_language_support(
         "conditional effects",
@@ -218,7 +218,7 @@ void add_options_for_cost_partitioning_heuristic(
         "[projections(hillclimbing(max_time=60)), "
         "projections(systematic(2)), "
         "cartesian()]");
-    Heuristic::add_options_to_feature(feature);
+    add_heuristic_options_to_feature(feature, description);
 }
 
 
@@ -230,12 +230,12 @@ shared_ptr<MaxCostPartitioningHeuristic> get_max_cp_heuristic(const plugins::Opt
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"), dead_ends.get());
     vector<CostPartitioningHeuristic> cp_heuristics =
-        get_cp_heuristic_collection_generator_from_options(opts).generate_cost_partitionings(
+        get_cp_heuristic_collection_generator_from_options(opts)->generate_cost_partitionings(
             task_proxy, abstractions, costs, cp_function);
-    return make_shared<MaxCostPartitioningHeuristic>(
-        opts,
+    return plugins::make_shared_from_arg_tuples<MaxCostPartitioningHeuristic>(
         move(abstractions),
         move(cp_heuristics),
-        move(dead_ends));
+        move(dead_ends),
+        get_heuristic_arguments_from_options(opts));
 }
 }

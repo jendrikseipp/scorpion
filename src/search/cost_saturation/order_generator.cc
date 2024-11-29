@@ -6,12 +6,16 @@
 using namespace std;
 
 namespace cost_saturation {
-OrderGenerator::OrderGenerator(const plugins::Options &opts)
-    : rng(utils::parse_rng_from_options(opts)) {
+OrderGenerator::OrderGenerator(int random_seed)
+    : rng(utils::get_rng(random_seed)) {
 }
 
-void add_common_order_generator_options(plugins::Feature &feature) {
-    utils::add_rng_options(feature);
+void add_order_generator_arguments_to_feature(plugins::Feature &feature) {
+    utils::add_rng_options_to_feature(feature);
+}
+
+tuple<int> get_order_generator_arguments_from_options(const plugins::Options &opts) {
+    return tuple_cat(make_tuple(opts.get<int>("random_seed")));
 }
 
 static class OrderGeneratorCategoryPlugin : public plugins::TypedCategoryPlugin<OrderGenerator> {

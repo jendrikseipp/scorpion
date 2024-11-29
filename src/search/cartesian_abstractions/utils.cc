@@ -25,15 +25,6 @@ using namespace std;
 namespace cartesian_abstractions {
 class SubtaskGenerator;
 
-unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
-    const shared_ptr<AbstractTask> &task) {
-    plugins::Options opts;
-    opts.set<shared_ptr<AbstractTask>>("transform", task);
-    opts.set<bool>("cache_estimates", false);
-    opts.set<utils::Verbosity>("verbosity", utils::Verbosity::SILENT);
-    return utils::make_unique_ptr<additive_heuristic::AdditiveHeuristic>(opts);
-}
-
 static bool operator_applicable(
     const OperatorProxy &op, const utils::HashSet<FactProxy> &facts) {
     for (FactProxy precondition : op.get_preconditions()) {
@@ -213,13 +204,8 @@ void add_common_cegar_options(plugins::Feature &feature) {
         "maximum time in seconds for building abstractions",
         "infinity",
         plugins::Bounds("0.0", "infinity"));
-
     add_pick_flawed_abstract_state_strategies(feature);
     add_pick_split_strategies(feature);
-    add_memory_padding_option(feature);
-    add_dot_graph_verbosity(feature);
-    utils::add_rng_options(feature);
-
     feature.add_option<int>(
         "max_concrete_states_per_abstract_state",
         "maximum number of flawed concrete states stored per abstract state",
@@ -230,6 +216,9 @@ void add_common_cegar_options(plugins::Feature &feature) {
         "maximum number of state expansions per flaw search",
         "1M",
         plugins::Bounds("1", "infinity"));
+    add_memory_padding_option(feature);
+    utils::add_rng_options_to_feature(feature);
+    add_dot_graph_verbosity(feature);
 }
 
 static plugins::TypedEnumPlugin<DotGraphVerbosity> _enum_plugin({

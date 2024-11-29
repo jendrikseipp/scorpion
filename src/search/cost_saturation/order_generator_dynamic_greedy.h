@@ -4,10 +4,6 @@
 #include "greedy_order_utils.h"
 #include "order_generator.h"
 
-namespace options {
-class Options;
-}
-
 namespace cost_saturation {
 class OrderGeneratorDynamicGreedy : public OrderGenerator {
     const ScoringFunction scoring_function;
@@ -20,7 +16,7 @@ class OrderGeneratorDynamicGreedy : public OrderGenerator {
         std::vector<int> remaining_costs) const;
 
 public:
-    explicit OrderGeneratorDynamicGreedy(const plugins::Options &opts);
+    OrderGeneratorDynamicGreedy(ScoringFunction scoring_function, int random_seed);
 
     virtual void initialize(
         const Abstractions &abstractions,

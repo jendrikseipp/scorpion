@@ -123,7 +123,7 @@ public:
             "single_plan",
             "stop after finding the first plan",
             "false");
-        SearchAlgorithm::add_options_to_feature(*this);
+        add_search_algorithm_options_to_feature(*this, "dfs");
     }
 };
 

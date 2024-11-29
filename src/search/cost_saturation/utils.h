@@ -65,10 +65,11 @@ extern void reduce_costs(
 
 
 extern void add_order_options(plugins::Feature &feature);
-extern void add_options_for_cost_partitioning_heuristic(plugins::Feature &feature, bool consistent = true);
+extern void add_options_for_cost_partitioning_heuristic(
+    plugins::Feature &feature, const std::string &description, bool consistent = true);
 extern std::shared_ptr<MaxCostPartitioningHeuristic> get_max_cp_heuristic(
     const plugins::Options &opts, const CPFunction &cp_function);
-extern CostPartitioningHeuristicCollectionGenerator
+extern std::shared_ptr<CostPartitioningHeuristicCollectionGenerator>
 get_cp_heuristic_collection_generator_from_options(const plugins::Options &opts);
 
 template<typename T>

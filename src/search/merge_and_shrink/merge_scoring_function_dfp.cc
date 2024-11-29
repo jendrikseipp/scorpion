@@ -100,12 +100,13 @@ string MergeScoringFunctionDFP::name() const {
     return "dfp";
 }
 
-class MergeScoringFunctionDFPFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionDFP> {
+class MergeScoringFunctionDFPFeature
+    : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionDFP> {
 public:
     MergeScoringFunctionDFPFeature() : TypedFeature("dfp") {
         document_title("DFP scoring");
         document_synopsis(
-            "This scoring function computes the 'DFP' score as descrdibed in the "
+            "This scoring function computes the 'DFP' score as described in the "
             "paper \"Directed model checking with distance-preserving abstractions\" "
             "by Draeger, Finkbeiner and Podelski (SPIN 2006), adapted to planning in "
             "the following paper:" + utils::format_conference_reference(

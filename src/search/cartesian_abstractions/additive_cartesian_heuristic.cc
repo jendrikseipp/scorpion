@@ -17,37 +17,54 @@ using namespace std;
 
 namespace cartesian_abstractions {
 static vector<CartesianHeuristicFunction> generate_heuristic_functions(
-    const plugins::Options &opts, utils::LogProxy &log) {
+    const shared_ptr<AbstractTask> &transform,
+    const vector<shared_ptr<SubtaskGenerator>> &subtask_generators,
+    int max_states, int max_transitions, double max_time,
+    bool use_general_costs, PickFlawedAbstractState pick_flawed_abstract_state,
+    PickSplit pick_split, PickSplit tiebreak_split,
+    int max_concrete_states_per_abstract_state, int max_state_expansions,
+    int memory_padding_mb, int random_seed,
+    utils::LogProxy &log, DotGraphVerbosity dot_graph_verbosity) {
     if (log.is_at_least_normal()) {
         log << "Initializing additive Cartesian heuristic..." << endl;
     }
-    vector<shared_ptr<SubtaskGenerator>> subtask_generators =
-        opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks");
     shared_ptr<utils::RandomNumberGenerator> rng =
-        utils::parse_rng_from_options(opts);
+        utils::get_rng(random_seed);
     CostSaturation cost_saturation(
         subtask_generators,
-        opts.get<int>("max_states"),
-        opts.get<int>("max_transitions"),
-        opts.get<double>("max_time"),
-        opts.get<bool>("use_general_costs"),
-        opts.get<PickFlawedAbstractState>("pick_flawed_abstract_state"),
-        opts.get<PickSplit>("pick_split"),
-        opts.get<PickSplit>("tiebreak_split"),
-        opts.get<int>("max_concrete_states_per_abstract_state"),
-        opts.get<int>("max_state_expansions"),
-        opts.get<int>("memory_padding"),
+        max_states,
+        max_transitions,
+        max_time,
+        use_general_costs,
+        pick_flawed_abstract_state,
+        pick_split,
+        tiebreak_split,
+        max_concrete_states_per_abstract_state,
+        max_state_expansions,
+        memory_padding_mb,
         *rng,
         log,
-        opts.get<DotGraphVerbosity>("dot_graph_verbosity"));
-    return cost_saturation.generate_heuristic_functions(
-        opts.get<shared_ptr<AbstractTask>>("transform"));
+        dot_graph_verbosity);
+    return cost_saturation.generate_heuristic_functions(transform);
 }
 
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
-    const plugins::Options &opts)
-    : Heuristic(opts),
-      heuristic_functions(generate_heuristic_functions(opts, log)) {
+    const vector<shared_ptr<SubtaskGenerator>> &subtasks,
+    int max_states, int max_transitions, double max_time,
+    PickFlawedAbstractState pick_flawed_abstract_state,
+    PickSplit pick_split, PickSplit tiebreak_split,
+    int max_concrete_states_per_abstract_state, int max_state_expansions,
+    int memory_padding, int random_seed, DotGraphVerbosity dot_graph_verbosity,
+    bool use_general_costs, const shared_ptr<AbstractTask> &transform,
+    bool cache_estimates, const string &description, utils::Verbosity verbosity)
+    : Heuristic(transform, cache_estimates, description, verbosity),
+      heuristic_functions(generate_heuristic_functions(
+                              transform, subtasks, max_states, max_transitions,
+                              max_time, use_general_costs, pick_flawed_abstract_state,
+                              pick_split,
+                              tiebreak_split, max_concrete_states_per_abstract_state,
+                              max_state_expansions, memory_padding,
+                              random_seed, log, dot_graph_verbosity)) {
 }
 
 int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
@@ -128,7 +145,7 @@ public:
             "use_general_costs",
             "allow negative costs in cost partitioning",
             "true");
-        Heuristic::add_options_to_feature(*this);
+        add_heuristic_options_to_feature(*this, "cegar");
 
         document_language_support("action costs", "supported");
         document_language_support("conditional effects", "not supported");
@@ -138,6 +155,26 @@ public:
         document_property("consistent", "yes");
         document_property("safe", "yes");
         document_property("preferred operators", "no");
+    }
+
+    virtual shared_ptr<AdditiveCartesianHeuristic> create_component(
+        const plugins::Options &opts,
+        const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<AdditiveCartesianHeuristic>(
+            opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),
+            opts.get<int>("max_states"),
+            opts.get<int>("max_transitions"),
+            opts.get<double>("max_time"),
+            opts.get<PickFlawedAbstractState>("pick_flawed_abstract_state"),
+            opts.get<PickSplit>("pick_split"),
+            opts.get<PickSplit>("tiebreak_split"),
+            opts.get<int>("max_concrete_states_per_abstract_state"),
+            opts.get<int>("max_state_expansions"),
+            opts.get<int>("memory_padding"),
+            utils::get_rng_arguments_from_options(opts),
+            opts.get<DotGraphVerbosity>("dot_graph_verbosity"),
+            opts.get<bool>("use_general_costs"),
+            get_heuristic_arguments_from_options(opts));
     }
 };
 

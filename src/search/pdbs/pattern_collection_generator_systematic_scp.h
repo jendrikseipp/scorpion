@@ -69,7 +69,6 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
         const std::shared_ptr<cost_saturation::TaskInfo> &task_info,
         const TaskInfo &evaluator_task_info,
         SequentialPatternGenerator &pattern_generator,
-        DeadEnds *dead_ends,
         priority_queues::AdaptiveQueue<int> &pq,
         const std::shared_ptr<PatternCollection> &patterns,
         const std::shared_ptr<ProjectionCollection> &projections,
@@ -82,7 +81,23 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
     virtual PatternCollectionInformation compute_patterns(
         const std::shared_ptr<AbstractTask> &task) override;
 public:
-    explicit PatternCollectionGeneratorSystematicSCP(const plugins::Options &opts);
+    PatternCollectionGeneratorSystematicSCP(
+        int max_pattern_size,
+        int max_pdb_size,
+        int max_collection_size,
+        int max_patterns,
+        double max_time,
+        double max_time_per_restart,
+        int max_evaluations_per_restart,
+        int max_total_evaluations,
+        bool saturate,
+        bool create_complete_transition_system,
+        PatternType pattern_type,
+        bool ignore_useless_patterns,
+        bool store_dead_ends,
+        PatternOrder order,
+        int random_seed,
+        utils::Verbosity verbosity);
 };
 }
 

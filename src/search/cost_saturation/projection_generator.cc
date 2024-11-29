@@ -15,13 +15,17 @@ using namespace pdbs;
 using namespace std;
 
 namespace cost_saturation {
-ProjectionGenerator::ProjectionGenerator(const plugins::Options &opts)
-    : AbstractionGenerator(opts),
-      pattern_generator(
-          opts.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns")),
-      dominance_pruning(opts.get<bool>("dominance_pruning")),
-      combine_labels(opts.get<bool>("combine_labels")),
-      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")) {
+ProjectionGenerator::ProjectionGenerator(
+    const shared_ptr<pdbs::PatternCollectionGenerator> &patterns,
+    bool dominance_pruning,
+    bool combine_labels,
+    bool create_complete_transition_system,
+    utils::Verbosity verbosity)
+    : AbstractionGenerator(verbosity),
+      pattern_generator(patterns),
+      dominance_pruning(dominance_pruning),
+      combine_labels(combine_labels),
+      create_complete_transition_system(create_complete_transition_system) {
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
@@ -130,7 +134,17 @@ public:
             "create_complete_transition_system",
             "create explicit transition system",
             "false");
-        utils::add_log_options_to_feature(*this);
+        add_abstraction_generator_arguments_to_feature(*this);
+    }
+
+    virtual shared_ptr<ProjectionGenerator> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<ProjectionGenerator>(
+            options.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns"),
+            options.get<bool>("dominance_pruning"),
+            options.get<bool>("combine_labels"),
+            options.get<bool>("create_complete_transition_system"),
+            get_abstraction_generator_arguments_from_options(options));
     }
 };
 

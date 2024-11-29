@@ -121,7 +121,7 @@ public:
             "pattern database heuristics. While cegar() interleaves abstraction "
             "computation with cost partitioning, saturated_cost_partitioning() "
             "computes all abstractions using the original costs.");
-        add_options_for_cost_partitioning_heuristic(*this);
+        add_options_for_cost_partitioning_heuristic(*this, "scp");
         add_saturator_option(*this);
         add_order_options(*this);
     }
@@ -136,13 +136,13 @@ public:
             task, options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"), dead_ends.get());
         CPFunction cp_function = get_cp_function_from_options(options);
         vector<CostPartitioningHeuristic> cp_heuristics =
-            get_cp_heuristic_collection_generator_from_options(options).generate_cost_partitionings(
+            get_cp_heuristic_collection_generator_from_options(options)->generate_cost_partitionings(
                 task_proxy, abstractions, costs, cp_function);
-        return make_shared<MaxCostPartitioningHeuristic>(
-            options,
+        return plugins::make_shared_from_arg_tuples<MaxCostPartitioningHeuristic>(
             move(abstractions),
             move(cp_heuristics),
-            move(dead_ends));
+            move(dead_ends),
+            get_heuristic_arguments_from_options(options));
     }
 };
 

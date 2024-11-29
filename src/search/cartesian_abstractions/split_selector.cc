@@ -64,7 +64,11 @@ SplitSelector::SplitSelector(
       tiebreak_pick(tiebreak_pick) {
     if (first_pick == PickSplit::MIN_HADD || first_pick == PickSplit::MAX_HADD ||
         tiebreak_pick == PickSplit::MIN_HADD || tiebreak_pick == PickSplit::MAX_HADD) {
-        additive_heuristic = create_additive_heuristic(task);
+        additive_heuristic =
+            utils::make_unique_ptr<additive_heuristic::AdditiveHeuristic>(
+                tasks::AxiomHandlingType::APPROXIMATE_NEGATIVE, task,
+                false, "h^add within CEGAR abstractions",
+                utils::Verbosity::SILENT);
         additive_heuristic->compute_heuristic_for_cegar(
             task_proxy.get_initial_state());
     }

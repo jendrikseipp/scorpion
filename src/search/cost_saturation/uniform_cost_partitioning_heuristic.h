@@ -21,10 +21,12 @@ protected:
 
 public:
     ScaledCostPartitioningHeuristic(
-        const plugins::Options &opts,
         Abstractions &&abstractions,
-        CPHeuristics &&cp_heuristics,
-        std::unique_ptr<DeadEnds> &&dead_ends);
+        std::vector<CostPartitioningHeuristic> &&cp_heuristics,
+        std::unique_ptr<DeadEnds> &&dead_ends,
+        const std::shared_ptr<AbstractTask> &transform,
+        bool cache_estimates, const std::string &description,
+        utils::Verbosity verbosity);
 };
 
 
