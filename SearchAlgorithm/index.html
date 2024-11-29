@@ -972,12 +972,13 @@
 </code></pre>
 <h2 id="breadth-first_search">Breadth-first search<a class="headerlink" href="#breadth-first_search" title="Permanent link">#</a></h2>
 <p>Breadth-first graph search.</p>
-<pre><code>brfs(single_plan=true, write_plan=true, pruning=null(), verbosity=normal)
+<pre><code>brfs(single_plan=true, write_plan=true, pruning=null(), description="brfs", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>single_plan</em> (bool): Stop search after finding the first (shortest) plan.</li>
 <li><em>write_plan</em> (bool): Store the necessary information during search for writing plans once they're found.</li>
 <li><em>pruning</em> (<a href="../PruningMethod/">PruningMethod</a>): Pruning methods can prune or reorder the set of applicable operators in each state and thereby influence the number and order of successor states that are considered.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
