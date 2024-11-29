@@ -237,7 +237,7 @@ def configs_satisficing_extended():
 
 def configs_optimal_lp(lp_solver="cplex"):
     return {
-        "allpot": ["--search", f"astar(all_states_potentials(lpsolver={lp_solver}))"],
+        "allpot": ["--search", f"astar(all_states_potential(lpsolver={lp_solver}))"],
         "divpot": ["--search", f"astar(diverse_potentials(lpsolver={lp_solver}))"],
         "initpot": ["--search", f"astar(initial_state_potential(lpsolver={lp_solver}))"],
         "samplepot": ["--search", f"astar(sample_based_potentials(lpsolver={lp_solver}))"],
