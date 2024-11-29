@@ -39,17 +39,6 @@ FactIndexer::FactIndexer(const TaskProxy &task_proxy) {
     cout << "Facts: " << num_facts << endl;
     cout << "Pairs: " << num_pairs << endl;
     cout << "Pair offsets: " << pair_offsets << endl;
-    int expected_id = 0;
-    for (FactProxy fact_proxy1 : task_proxy.get_variables().get_facts()) {
-        FactPair fact1 = fact_proxy1.get_pair();
-        for (FactProxy fact_proxy2 : task_proxy.get_variables().get_facts()) {
-            FactPair fact2 = fact_proxy2.get_pair();
-            if (!(fact1 < fact2) || fact1.var == fact2.var) {
-                continue;
-            }
-            ++expected_id;
-        }
-    }
 #endif
 }
 

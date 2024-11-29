@@ -14,8 +14,6 @@ IterativeWidthSearch::IterativeWidthSearch(
     int width, OperatorCost cost_type, int bound, double max_time,
     const string &description, utils::Verbosity verbosity)
     : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
-      width(width),
-      debug(verbosity == utils::Verbosity::DEBUG),
       novelty_table(task_proxy, width) {
     utils::g_log << "Setting up iterative width search." << endl;
 }

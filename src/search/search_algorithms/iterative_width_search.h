@@ -10,9 +10,6 @@
 // TODO: rename to IteratedWidthSearch.
 namespace iterative_width_search {
 class IterativeWidthSearch : public SearchAlgorithm {
-    const int width;
-    const bool debug;
-
     std::deque<StateID> open_list;
     novelty::NoveltyTable novelty_table;
 
