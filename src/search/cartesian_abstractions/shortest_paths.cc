@@ -242,7 +242,6 @@ void ShortestPaths::update_incrementally(
       known.) After this initialization, proceed with a normal Dijkstra search,
       but only consider arcs that lead from dirty to dirty states.
     */
-    int num_orphans = 0;
     open_queue.clear();
     for (int state : dirty_states) {
         Cost &dist = goal_distances[state];
@@ -264,7 +263,6 @@ void ShortestPaths::update_incrementally(
         dist = min_dist;
         if (min_dist != INF_COSTS) {
             open_queue.push(dist, state);
-            ++num_orphans;
         }
     }
     while (!open_queue.empty()) {
