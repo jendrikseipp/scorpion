@@ -652,7 +652,7 @@
 
 <p>Create abstractions for cost partitioning heuristics.</p>
 <h2 id="cartesian_abstraction_generator">Cartesian abstraction generator<a class="headerlink" href="#cartesian_abstraction_generator" title="Permanent link">#</a></h2>
-<pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=batch_min_h, pick_split=max_cover, tiebreak_split=max_refined, memory_padding=500, dot_graph_verbosity=silent, random_seed=-1, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, verbosity=normal)
+<pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=batch_min_h, pick_split=max_cover, tiebreak_split=max_refined, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, memory_padding=500, random_seed=-1, dot_graph_verbosity=silent, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>subtasks</em> (list of <a href="../SubtaskGenerator/">SubtaskGenerator</a>): subtask generators</li>
@@ -694,16 +694,16 @@
 <li><code>max_cover</code>: compute split that covers the maximum number of flaws for several concrete states.</li>
 </ul>
 </li>
+<li><em>max_concrete_states_per_abstract_state</em> (int [1, infinity]): maximum number of flawed concrete states stored per abstract state</li>
+<li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>dot_graph_verbosity</em> ({silent, write_to_console, write_to_file}): verbosity of printing/writing dot graphs<ul>
 <li><code>silent</code>: </li>
 <li><code>write_to_console</code>: </li>
 <li><code>write_to_file</code>: </li>
 </ul>
 </li>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>max_concrete_states_per_abstract_state</em> (int [1, infinity]): maximum number of flawed concrete states stored per abstract state</li>
-<li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>

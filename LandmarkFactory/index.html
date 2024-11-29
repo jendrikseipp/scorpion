@@ -710,9 +710,10 @@
 <p>This feature type can be bound to variables using <code>let(variable_name, variable_definition, expression)</code> where <code>expression</code> can use <code>variable_name</code>. Predefinitions using <code>--evaluator</code>, <code>--heuristic</code>, and <code>--landmarks</code> are automatically transformed into <code>let</code>-expressions but are deprecated.</p>
 <h2 id="exhaustive_landmarks">Exhaustive Landmarks<a class="headerlink" href="#exhaustive_landmarks" title="Permanent link">#</a></h2>
 <p>Exhaustively checks for each fact if it is a landmark.This check is done using relaxed planning.</p>
-<pre><code>lm_exhaust(verbosity=normal, only_causal_landmarks=false)
+<pre><code>lm_exhaust(only_causal_landmarks=false, verbosity=normal)
 </code></pre>
 <ul>
+<li><em>only_causal_landmarks</em> (bool): keep only causal landmarks</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -720,7 +721,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>only_causal_landmarks</em> (bool): keep only causal landmarks</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -728,11 +728,12 @@
 </ul>
 <h2 id="hm_landmarks">h^m Landmarks<a class="headerlink" href="#hm_landmarks" title="Permanent link">#</a></h2>
 <p>The landmark generation method introduced by Keyder, Richter &amp; Helmert (ECAI 2010).</p>
-<pre><code>lm_hm(m=2, conjunctive_landmarks=true, verbosity=normal, use_orders=true)
+<pre><code>lm_hm(m=2, conjunctive_landmarks=true, use_orders=true, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>m</em> (int): subset size (if unsure, use the default of 2)</li>
 <li><em>conjunctive_landmarks</em> (bool): keep conjunctive landmarks</li>
+<li><em>use_orders</em> (bool): use orders between landmarks</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -740,7 +741,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>use_orders</em> (bool): use orders between landmarks</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -793,10 +793,12 @@
 </ul>
 <h2 id="rhw_landmarks">RHW Landmarks<a class="headerlink" href="#rhw_landmarks" title="Permanent link">#</a></h2>
 <p>The landmark generation method introduced by Richter, Helmert and Westphal (AAAI 2008).</p>
-<pre><code>lm_rhw(disjunctive_landmarks=true, verbosity=normal, use_orders=true, only_causal_landmarks=false)
+<pre><code>lm_rhw(disjunctive_landmarks=true, use_orders=true, only_causal_landmarks=false, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>disjunctive_landmarks</em> (bool): keep disjunctive landmarks</li>
+<li><em>use_orders</em> (bool): use orders between landmarks</li>
+<li><em>only_causal_landmarks</em> (bool): keep only causal landmarks</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -804,8 +806,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>use_orders</em> (bool): use orders between landmarks</li>
-<li><em>only_causal_landmarks</em> (bool): keep only causal landmarks</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -813,9 +813,10 @@
 </ul>
 <h2 id="zhugivan_landmarks">Zhu/Givan Landmarks<a class="headerlink" href="#zhugivan_landmarks" title="Permanent link">#</a></h2>
 <p>The landmark generation method introduced by Zhu &amp; Givan (ICAPS 2003 Doctoral Consortium).</p>
-<pre><code>lm_zg(verbosity=normal, use_orders=true)
+<pre><code>lm_zg(use_orders=true, verbosity=normal)
 </code></pre>
 <ul>
+<li><em>use_orders</em> (bool): use orders between landmarks</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -823,7 +824,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>use_orders</em> (bool): use orders between landmarks</li>
 </ul>
 <p>Supported language features:</p>
 <ul>

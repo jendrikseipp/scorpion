@@ -997,7 +997,7 @@
 <p>Alexander Rovner, Silvan Sievers and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/rovner-et-al-icaps2019.pdf">Counterexample-Guided Abstraction Refinement for Pattern Selection in Optimal Classical Planning</a>.<br />
  In <em>Proceedings of the 29th International Conference on Automated Planning and Scheduling (ICAPS 2019)</em>, pp. 362-367. AAAI Press, 2019.</p>
-<p>disjoint_cegar(max_pdb_size=1000000, max_collection_size=10000000, max_time=infinity, use_wildcard_plans=true, verbosity=normal, random_seed=-1)</p>
+<p>disjoint_cegar(max_pdb_size=1000000, max_collection_size=10000000, max_time=infinity, use_wildcard_plans=true, random_seed=-1, verbosity=normal)</p>
 </li>
 <li>
 <p><em>max_pdb_size</em> (int [1, infinity]): maximum number of states per pattern database (ignored for the initial collection consisting of a singleton pattern for each goal variable)</p>
@@ -1005,6 +1005,7 @@
 <li><em>max_collection_size</em> (int [1, infinity]): maximum number of states in the pattern collection (ignored for the initial collection consisting of a singleton pattern for each goal variable)</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for this pattern collection generator (ignored for computing the initial collection consisting of a singleton pattern for each goal variable)</li>
 <li><em>use_wildcard_plans</em> (bool): if true, compute wildcard plans which are sequences of sets of operators that induce the same transition; otherwise compute regular plans which are sequences of single operators</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1012,7 +1013,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <h3 id="short_description_of_the_cegar_algorithm">Short description of the CEGAR algorithm<a class="headerlink" href="#short_description_of_the_cegar_algorithm" title="Permanent link">#</a></h3>
 <p>The CEGAR algorithm computes a pattern collection for a given planning task and a given (sub)set of its goals in a randomized order as follows. Starting from the pattern collection consisting of a singleton pattern for each goal variable, it repeatedly attempts to execute an optimal plan of each pattern in the concrete task, collects reasons why this is not possible (so-called flaws) and refines the pattern in question by adding a variable to it.
@@ -1077,7 +1077,7 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <p>Silvan Sievers, Manuela Ortlieb and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-socs2012.pdf">Efficient Implementation of Pattern Database Heuristics for Classical Planning</a>.<br />
  In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</p>
-<p>hillclimbing(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, verbosity=normal)</p>
+<p>hillclimbing(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, random_seed=-1, verbosity=normal)</p>
 </li>
 <li>
 <p><em>pdb_max_size</em> (int [1, infinity]): maximal number of states per pattern database </p>
@@ -1086,7 +1086,6 @@ Further parameters allow blacklisting a (sub)set of the non-goal variables which
 <li><em>num_samples</em> (int [1, infinity]): number of samples (random states) on which to evaluate each candidate pattern collection</li>
 <li><em>min_improvement</em> (int [1, infinity]): minimum number of samples on which a candidate pattern collection must improve on the current one to be considered as the next pattern collection </li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for improving the initial pattern collection via hill climbing. If set to 0, no hill climbing is performed at all. Note that this limit only affects hill climbing. Use max_time_dominance_pruning to limit the time spent for pruning dominated patterns.</li>
-<li><em>max_generated_patterns</em> (int [0, infinity]): maximum number of generated patterns</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
@@ -1126,9 +1125,10 @@ The search is ended if there is no more improvement (or the improvement is small
  In <em>Proceedings of the 29th International Conference on Automated Planning and Scheduling (ICAPS 2019)</em>, pp. 362-367. AAAI Press, 2019.</li>
 </ul>
 <p>It is an instantiation of the 'multiple algorithm framework'. To compute a pattern in each iteration, it uses the CEGAR algorithm restricted to a single goal variable. See below for descriptions of the algorithms.</p>
-<pre><code>multiple_cegar(max_pdb_size=1M, max_collection_size=10M, pattern_generation_max_time=infinity, total_max_time=100.0, stagnation_limit=20.0, blacklist_trigger_percentage=0.75, enable_blacklist_on_stagnation=true, verbosity=normal, random_seed=-1, use_wildcard_plans=true)
+<pre><code>multiple_cegar(use_wildcard_plans=true, max_pdb_size=1M, max_collection_size=10M, pattern_generation_max_time=infinity, total_max_time=100.0, stagnation_limit=20.0, blacklist_trigger_percentage=0.75, enable_blacklist_on_stagnation=true, random_seed=-1, verbosity=normal)
 </code></pre>
 <ul>
+<li><em>use_wildcard_plans</em> (bool): if true, compute wildcard plans which are sequences of sets of operators that induce the same transition; otherwise compute regular plans which are sequences of single operators</li>
 <li><em>max_pdb_size</em> (int [1, infinity]): maximum number of states for each pattern database, computed by compute_pattern (possibly ignored by singleton patterns consisting of a goal variable)</li>
 <li><em>max_collection_size</em> (int [1, infinity]): maximum number of states in all pattern databases of the collection (possibly ignored, see max_pdb_size)</li>
 <li><em>pattern_generation_max_time</em> (double [0.0, infinity]): maximum time in seconds for each call to the algorithm for computing a single pattern</li>
@@ -1136,6 +1136,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><em>stagnation_limit</em> (double [1.0, infinity]): maximum time in seconds this pattern generator is allowed to run without generating a new pattern. It terminates prematurely if this limit is hit unless enable_blacklist_on_stagnation is enabled.</li>
 <li><em>blacklist_trigger_percentage</em> (double [0.0, 1.0]): percentage of total_max_time after which blacklisting is enabled</li>
 <li><em>enable_blacklist_on_stagnation</em> (bool): if true, blacklisting is enabled when stagnation_limit is hit for the first time (unless it was already enabled due to blacklist_trigger_percentage) and pattern generation is terminated when stagnation_limit is hit for the second time. If false, pattern generation is terminated already the first time stagnation_limit is hit.</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1143,8 +1144,6 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>use_wildcard_plans</em> (bool): if true, compute wildcard plans which are sequences of sets of operators that induce the same transition; otherwise compute regular plans which are sequences of single operators</li>
 </ul>
 <h3 id="short_description_of_the_cegar_algorithm_1">Short description of the CEGAR algorithm<a class="headerlink" href="#short_description_of_the_cegar_algorithm_1" title="Permanent link">#</a></h3>
 <p>The CEGAR algorithm computes a pattern collection for a given planning task and a given (sub)set of its goals in a randomized order as follows. Starting from the pattern collection consisting of a singleton pattern for each goal variable, it repeatedly attempts to execute an optimal plan of each pattern in the concrete task, collects reasons why this is not possible (so-called flaws) and refines the pattern in question by adding a variable to it.
@@ -1168,9 +1167,10 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
  In <em>Proceedings of the 29th International Conference on Automated Planning and Scheduling (ICAPS 2019)</em>, pp. 362-367. AAAI Press, 2019.</li>
 </ul>
 <p>It is an instantiation of the 'multiple algorithm framework'. To compute a pattern in each iteration, it uses the random pattern algorithm, called 'single randomized causal graph' (sRCG) in the paper. See below for descriptions of the algorithms.</p>
-<pre><code>random_patterns(max_pdb_size=1M, max_collection_size=10M, pattern_generation_max_time=infinity, total_max_time=100.0, stagnation_limit=20.0, blacklist_trigger_percentage=0.75, enable_blacklist_on_stagnation=true, verbosity=normal, random_seed=-1, bidirectional=true)
+<pre><code>random_patterns(bidirectional=true, max_pdb_size=1M, max_collection_size=10M, pattern_generation_max_time=infinity, total_max_time=100.0, stagnation_limit=20.0, blacklist_trigger_percentage=0.75, enable_blacklist_on_stagnation=true, random_seed=-1, verbosity=normal)
 </code></pre>
 <ul>
+<li><em>bidirectional</em> (bool): this option decides if the causal graph is considered to be directed or undirected selecting predecessors of already selected variables. If true (default), it is considered to be undirected (precondition-effect edges are bidirectional). If false, it is considered to be directed (a variable is a neighbor only if it is a predecessor.</li>
 <li><em>max_pdb_size</em> (int [1, infinity]): maximum number of states for each pattern database, computed by compute_pattern (possibly ignored by singleton patterns consisting of a goal variable)</li>
 <li><em>max_collection_size</em> (int [1, infinity]): maximum number of states in all pattern databases of the collection (possibly ignored, see max_pdb_size)</li>
 <li><em>pattern_generation_max_time</em> (double [0.0, infinity]): maximum time in seconds for each call to the algorithm for computing a single pattern</li>
@@ -1178,6 +1178,7 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><em>stagnation_limit</em> (double [1.0, infinity]): maximum time in seconds this pattern generator is allowed to run without generating a new pattern. It terminates prematurely if this limit is hit unless enable_blacklist_on_stagnation is enabled.</li>
 <li><em>blacklist_trigger_percentage</em> (double [0.0, 1.0]): percentage of total_max_time after which blacklisting is enabled</li>
 <li><em>enable_blacklist_on_stagnation</em> (bool): if true, blacklisting is enabled when stagnation_limit is hit for the first time (unless it was already enabled due to blacklist_trigger_percentage) and pattern generation is terminated when stagnation_limit is hit for the second time. If false, pattern generation is terminated already the first time stagnation_limit is hit.</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1185,8 +1186,6 @@ The algorithm runs until reaching a given time limit. Another parameter allows e
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>bidirectional</em> (bool): this option decides if the causal graph is considered to be directed or undirected selecting predecessors of already selected variables. If true (default), it is considered to be undirected (precondition-effect edges are bidirectional). If false, it is considered to be directed (a variable is a neighbor only if it is a predecessor.</li>
 </ul>
 <h3 id="short_description_of_the_random_pattern_algorithm">Short description of the random pattern algorithm<a class="headerlink" href="#short_description_of_the_random_pattern_algorithm" title="Permanent link">#</a></h3>
 <p>The random pattern algorithm computes a pattern for a given planning task and a single goal of the task as follows. Starting with the given goal variable, the algorithm executes a random walk on the causal graph. In each iteration, it selects a random causal graph neighbor of the current variable. It terminates if no neighbor fits the pattern due to the size limit or if the time limit is reached.</p>

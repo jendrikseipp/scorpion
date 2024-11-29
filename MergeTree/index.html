@@ -645,24 +645,24 @@ Merge trees are typically used in the merge strategy of type 'precomputed', but 
 <p>Malte Helmert, Patrik Haslum and Joerg Hoffmann.<br />
  <a href="https://ai.dmi.unibas.ch/papers/helmert-et-al-icaps2007.pdf">Flexible Abstraction Heuristics for Optimal Sequential Planning</a>.<br />
  In <em>Proceedings of the Seventeenth International Conference on Automated Planning and Scheduling (ICAPS 2007)</em>, pp. 176-183. AAAI Press, 2007.</p>
-<p>linear(random_seed=-1, update_option=use_random, variable_order=cg_goal_level)</p>
+<p>linear(variable_order=cg_goal_level, random_seed=-1, update_option=use_random)</p>
 </li>
 <li>
-<p><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</p>
-</li>
-<li><em>update_option</em> ({use_first, use_second, use_random}): When the merge tree is used within another merge strategy, how should it be updated when a merge different to a merge from the tree is performed.<ul>
-<li><code>use_first</code>: the node representing the index that would have been merged earlier survives</li>
-<li><code>use_second</code>: the node representing the index that would have been merged later survives</li>
-<li><code>use_random</code>: a random node (of the above two) survives</li>
-</ul>
-</li>
-<li><em>variable_order</em> ({cg_goal_level, cg_goal_random, goal_cg_level, random, level, reverse_level}): the order in which atomic transition systems are merged<ul>
+<p><em>variable_order</em> ({cg_goal_level, cg_goal_random, goal_cg_level, random, level, reverse_level}): the order in which atomic transition systems are merged</p>
+<ul>
 <li><code>cg_goal_level</code>: variables are prioritized first if they have an arc to a previously added variable, second if their goal value is defined and third according to their level in the causal graph</li>
 <li><code>cg_goal_random</code>: variables are prioritized first if they have an arc to a previously added variable, second if their goal value is defined and third randomly</li>
 <li><code>goal_cg_level</code>: variables are prioritized first if their goal value is defined, second if they have an arc to a previously added variable, and third according to their level in the causal graph</li>
 <li><code>random</code>: variables are ordered randomly</li>
 <li><code>level</code>: variables are ordered according to their level in the causal graph</li>
 <li><code>reverse_level</code>: variables are ordered reverse to their level in the causal graph</li>
+</ul>
+</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
+<li><em>update_option</em> ({use_first, use_second, use_random}): When the merge tree is used within another merge strategy, how should it be updated when a merge different to a merge from the tree is performed.<ul>
+<li><code>use_first</code>: the node representing the index that would have been merged earlier survives</li>
+<li><code>use_second</code>: the node representing the index that would have been merged later survives</li>
+<li><code>use_random</code>: a random node (of the above two) survives</li>
 </ul>
 </li>
 </ul>

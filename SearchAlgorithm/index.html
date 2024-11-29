@@ -938,7 +938,7 @@
 
 <h2 id="a_search_eager">A* search (eager)<a class="headerlink" href="#a_search_eager" title="Permanent link">#</a></h2>
 <p>A* is a special case of eager best first search that uses g+h as f-function. We break ties using the evaluator. Closed nodes are re-opened.</p>
-<pre><code>astar(eval, lazy_evaluator=&lt;none&gt;, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>astar(eval, lazy_evaluator=&lt;none&gt;, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, description="astar", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>eval</em> (<a href="../Evaluator/">Evaluator</a>): evaluator for h-value</li>
@@ -952,6 +952,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -987,7 +988,7 @@
 </ul>
 <h2 id="depth-first_search">Depth-first search<a class="headerlink" href="#depth-first_search" title="Permanent link">#</a></h2>
 <p>This is a depth-first tree search that avoids running in cycles by skipping states s that are already visited earlier on the path to s. Doing so, the search becomes complete.</p>
-<pre><code>dfs(single_plan=false, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>dfs(single_plan=false, cost_type=normal, bound=infinity, max_time=infinity, description="dfs", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>single_plan</em> (bool): stop after finding the first plan</li>
@@ -999,6 +1000,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1012,7 +1014,7 @@
 <pre><code>dump_reachable_search_space()
 </code></pre>
 <h2 id="eager_best-first_search">Eager best-first search<a class="headerlink" href="#eager_best-first_search" title="Permanent link">#</a></h2>
-<pre><code>eager(open, reopen_closed=false, f_eval=&lt;none&gt;, preferred=[], pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>eager(open, reopen_closed=false, f_eval=&lt;none&gt;, preferred=[], pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, description="eager", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>open</em> (<a href="../OpenList/">OpenList</a>): open list</li>
@@ -1028,6 +1030,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1037,7 +1040,7 @@
 </li>
 </ul>
 <h2 id="greedy_search_eager">Greedy search (eager)<a class="headerlink" href="#greedy_search_eager" title="Permanent link">#</a></h2>
-<pre><code>eager_greedy(evals, preferred=[], boost=0, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>eager_greedy(evals, preferred=[], boost=0, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, description="eager_greedy", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="../Evaluator/">Evaluator</a>): evaluators</li>
@@ -1052,6 +1055,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1064,13 +1068,13 @@
 <p><strong>Closed nodes:</strong> Closed node are not re-opened</p>
 <h3 id="equivalent_statements_using_general_eager_search_1">Equivalent statements using general eager search<a class="headerlink" href="#equivalent_statements_using_general_eager_search_1" title="Permanent link">#</a></h3>
 <pre><code>--evaluator h2=eval2
---search eager_greedy([eval1, h2], preferred=h2, boost=100)
+--search eager_greedy([eval1, h2], preferred=[h2], boost=100)
 </code></pre>
 <p>is equivalent to</p>
 <pre><code>--evaluator h1=eval1 --heuristic h2=eval2
 --search eager(alt([single(h1), single(h1, pref_only=true), single(h2), 
                     single(h2, pref_only=true)], boost=100),
-               preferred=h2)
+               preferred=[h2])
 </code></pre>
 <hr />
 <pre><code>--search eager_greedy([eval1, eval2])
@@ -1080,21 +1084,21 @@
 </code></pre>
 <hr />
 <pre><code>--evaluator h1=eval1
---search eager_greedy(h1, preferred=h1)
+--search eager_greedy([h1], preferred=[h1])
 </code></pre>
 <p>is equivalent to</p>
 <pre><code>--evaluator h1=eval1
 --search eager(alt([single(h1), single(h1, pref_only=true)]),
-               preferred=h1)
+               preferred=[h1])
 </code></pre>
 <hr />
-<pre><code>--search eager_greedy(eval1)
+<pre><code>--search eager_greedy([eval1])
 </code></pre>
 <p>is equivalent to</p>
 <pre><code>--search eager(single(eval1))
 </code></pre>
 <h2 id="eager_weighted_a_search">Eager weighted A* search<a class="headerlink" href="#eager_weighted_a_search" title="Permanent link">#</a></h2>
-<pre><code>eager_wastar(evals, preferred=[], reopen_closed=true, boost=0, w=1, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>eager_wastar(evals, preferred=[], reopen_closed=true, boost=0, w=1, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, description="eager_wastar", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="../Evaluator/">Evaluator</a>): evaluators</li>
@@ -1111,6 +1115,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1127,7 +1132,7 @@
 <pre><code>--search astar(h())
 </code></pre>
 <h2 id="lazy_enforced_hill-climbing">Lazy enforced hill-climbing<a class="headerlink" href="#lazy_enforced_hill-climbing" title="Permanent link">#</a></h2>
-<pre><code>ehc(h, preferred_usage=prune_by_preferred, preferred=[], cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>ehc(h, preferred_usage=prune_by_preferred, preferred=[], cost_type=normal, bound=infinity, max_time=infinity, description="ehc", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>h</em> (<a href="../Evaluator/">Evaluator</a>): heuristic</li>
@@ -1145,6 +1150,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1155,7 +1161,7 @@
 </ul>
 <h2 id="ida_search">IDA* search<a class="headerlink" href="#ida_search" title="Permanent link">#</a></h2>
 <p>IDA* search with an optional g-value cache.</p>
-<pre><code>idastar(eval, initial_f_limit=0, cache_size=0, single_plan=true, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>idastar(eval, initial_f_limit=0, cache_size=0, single_plan=true, cost_type=normal, bound=infinity, max_time=infinity, description="idastar", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>eval</em> (<a href="../Evaluator/">Evaluator</a>): evaluator for h-value. Make sure to use cache_estimates=false.</li>
@@ -1170,6 +1176,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1179,7 +1186,7 @@
 </li>
 </ul>
 <h2 id="iterative_deepening_search">Iterative deepening search<a class="headerlink" href="#iterative_deepening_search" title="Permanent link">#</a></h2>
-<pre><code>ids(single_plan=true, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>ids(single_plan=true, cost_type=normal, bound=infinity, max_time=infinity, description="ids", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>single_plan</em> (bool): stop after finding the first (shortest) plan</li>
@@ -1191,6 +1198,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1200,11 +1208,11 @@
 </li>
 </ul>
 <h2 id="iterated_search">Iterated search<a class="headerlink" href="#iterated_search" title="Permanent link">#</a></h2>
-<pre><code>iterated(algorithm_configs, pass_bound=true, repeat_last=false, continue_on_fail=false, continue_on_solve=true, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>iterated(algorithm_configs, pass_bound=true, repeat_last=false, continue_on_fail=false, continue_on_solve=true, cost_type=normal, bound=infinity, max_time=infinity, description="iterated", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>algorithm_configs</em> (list of <a href="./">SearchAlgorithm</a>): list of search algorithms for each phase</li>
-<li><em>pass_bound</em> (bool): use bound from previous search. The bound is the real cost of the plan found before, regardless of the cost_type parameter.</li>
+<li><em>pass_bound</em> (bool): use the bound of iterated search as a bound for its component search algorithms, unless these already have a lower bound set. The iterated search bound is tightened whenever a component finds a cheaper plan.</li>
 <li><em>repeat_last</em> (bool): repeat last phase of search</li>
 <li><em>continue_on_fail</em> (bool): continue search after no solution found</li>
 <li><em>continue_on_solve</em> (bool): continue search after solution found</li>
@@ -1216,6 +1224,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1224,17 +1233,16 @@
 </ul>
 </li>
 </ul>
-<p><strong>Note 1:</strong> We don't cache heuristic values between search iterations at the moment. If you perform a LAMA-style iterative search, heuristic values will be computed multiple times.</p>
+<p><strong>Note 1:</strong> We don't cache heuristic values between search iterations at the moment. If you perform a LAMA-style iterative search, heuristic values and other per-state information will be computed multiple times.</p>
 <p><strong>Note 2:</strong> The configuration</p>
 <pre><code>--search "iterated([lazy_wastar([ipdb()],w=10), lazy_wastar([ipdb()],w=5), lazy_wastar([ipdb()],w=3), lazy_wastar([ipdb()],w=2), lazy_wastar([ipdb()],w=1)])"
 </code></pre>
 <p>would perform the preprocessing phase of the ipdb heuristic 5 times (once before each iteration).</p>
 <p>To avoid this, use heuristic predefinition, which avoids duplicate preprocessing, as follows:</p>
-<pre><code>--evaluator "h=ipdb()" --search "iterated([lazy_wastar([h],w=10), lazy_wastar([h],w=5), lazy_wastar([h],w=3), lazy_wastar([h],w=2), lazy_wastar([h],w=1)])"
+<pre><code>"let(h,ipdb(),iterated([lazy_wastar([h],w=10), lazy_wastar([h],w=5), lazy_wastar([h],w=3), lazy_wastar([h],w=2), lazy_wastar([h],w=1)]))"
 </code></pre>
-<p><strong>Note 3:</strong> If you reuse the same landmark count heuristic (using heuristic predefinition) between iterations, the path data (that is, landmark status for each visited state) will be saved between iterations.</p>
 <h2 id="iterated_width_search">Iterated width search<a class="headerlink" href="#iterated_width_search" title="Permanent link">#</a></h2>
-<pre><code>iw(width=2, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>iw(width=2, cost_type=normal, bound=infinity, max_time=infinity, description="iw", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>width</em> (int [1, 2]): maximum conjunction size</li>
@@ -1246,6 +1254,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1255,7 +1264,7 @@
 </li>
 </ul>
 <h2 id="lazy_best-first_search">Lazy best-first search<a class="headerlink" href="#lazy_best-first_search" title="Permanent link">#</a></h2>
-<pre><code>lazy(open, reopen_closed=false, preferred=[], randomize_successors=false, preferred_successors_first=false, random_seed=-1, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>lazy(open, reopen_closed=false, preferred=[], randomize_successors=false, preferred_successors_first=false, random_seed=-1, cost_type=normal, bound=infinity, max_time=infinity, description="lazy", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>open</em> (<a href="../OpenList/">OpenList</a>): open list</li>
@@ -1272,6 +1281,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1282,13 +1292,13 @@
 </ul>
 <p><strong>Successor ordering:</strong> When using randomize_successors=true and preferred_successors_first=true, randomization happens before preferred operators are moved to the front.</p>
 <h2 id="greedy_search_lazy">Greedy search (lazy)<a class="headerlink" href="#greedy_search_lazy" title="Permanent link">#</a></h2>
-<pre><code>lazy_greedy(evals, preferred=[], reopen_closed=false, boost=1000, randomize_successors=false, preferred_successors_first=false, random_seed=-1, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>lazy_greedy(evals, boost=1000, reopen_closed=false, preferred=[], randomize_successors=false, preferred_successors_first=false, random_seed=-1, cost_type=normal, bound=infinity, max_time=infinity, description="lazy_greedy", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="../Evaluator/">Evaluator</a>): evaluators</li>
-<li><em>preferred</em> (list of <a href="../Evaluator/">Evaluator</a>): use preferred operators of these evaluators</li>
-<li><em>reopen_closed</em> (bool): reopen closed nodes</li>
 <li><em>boost</em> (int): boost value for alternation queues that are restricted to preferred operator nodes</li>
+<li><em>reopen_closed</em> (bool): reopen closed nodes</li>
+<li><em>preferred</em> (list of <a href="../Evaluator/">Evaluator</a>): use preferred operators of these evaluators</li>
 <li><em>randomize_successors</em> (bool): randomize the order in which successors are generated</li>
 <li><em>preferred_successors_first</em> (bool): consider preferred operators first</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
@@ -1300,6 +1310,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1312,13 +1323,13 @@
 <p><strong>Open lists:</strong> In most cases, lazy greedy best first search uses an alternation open list with one queue for each evaluator. If preferred operator evaluators are used, it adds an extra queue for each of these evaluators that includes only the nodes that are generated with a preferred operator. If only one evaluator and no preferred operator evaluator is used, the search does not use an alternation open list but a standard open list with only one queue.</p>
 <h3 id="equivalent_statements_using_general_lazy_search">Equivalent statements using general lazy search<a class="headerlink" href="#equivalent_statements_using_general_lazy_search" title="Permanent link">#</a></h3>
 <pre><code>--evaluator h2=eval2
---search lazy_greedy([eval1, h2], preferred=h2, boost=100)
+--search lazy_greedy([eval1, h2], preferred=[h2], boost=100)
 </code></pre>
 <p>is equivalent to</p>
 <pre><code>--evaluator h1=eval1 --heuristic h2=eval2
 --search lazy(alt([single(h1), single(h1, pref_only=true), single(h2),
                   single(h2, pref_only=true)], boost=100),
-              preferred=h2)
+              preferred=[h2])
 </code></pre>
 <hr />
 <pre><code>--search lazy_greedy([eval1, eval2], boost=100)
@@ -1328,22 +1339,22 @@
 </code></pre>
 <hr />
 <pre><code>--evaluator h1=eval1
---search lazy_greedy(h1, preferred=h1)
+--search lazy_greedy([h1], preferred=[h1])
 </code></pre>
 <p>is equivalent to</p>
 <pre><code>--evaluator h1=eval1
 --search lazy(alt([single(h1), single(h1, pref_only=true)], boost=1000),
-              preferred=h1)
+              preferred=[h1])
 </code></pre>
 <hr />
-<pre><code>--search lazy_greedy(eval1)
+<pre><code>--search lazy_greedy([eval1])
 </code></pre>
 <p>is equivalent to</p>
 <pre><code>--search lazy(single(eval1))
 </code></pre>
 <h2 id="weighted_a_search_lazy">(Weighted) A* search (lazy)<a class="headerlink" href="#weighted_a_search_lazy" title="Permanent link">#</a></h2>
 <p>Weighted A* is a special case of lazy best first search.</p>
-<pre><code>lazy_wastar(evals, preferred=[], reopen_closed=true, boost=1000, w=1, randomize_successors=false, preferred_successors_first=false, random_seed=-1, cost_type=normal, bound=infinity, max_time=infinity, verbosity=normal)
+<pre><code>lazy_wastar(evals, preferred=[], reopen_closed=true, boost=1000, w=1, randomize_successors=false, preferred_successors_first=false, random_seed=-1, cost_type=normal, bound=infinity, max_time=infinity, description="lazy_wastar", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="../Evaluator/">Evaluator</a>): evaluators</li>
@@ -1362,6 +1373,7 @@
 </li>
 <li><em>bound</em> (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost, regardless of the cost_type parameter</li>
 <li><em>max_time</em> (double): maximum time in seconds the search is allowed to run for. The timeout is only checked after each complete search step (usually a node expansion), so the actual runtime can be arbitrarily longer. Therefore, this parameter should not be used for time-limiting experiments. Timed-out searches are treated as failed searches, just like incomplete search algorithms that exhaust their search space.</li>
+<li><em>description</em> (string): description used to identify search algorithm in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>

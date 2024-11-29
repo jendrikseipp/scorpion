@@ -1264,9 +1264,17 @@
 </ul>
 <p>This feature type can be bound to variables using <code>let(variable_name, variable_definition, expression)</code> where <code>expression</code> can use <code>variable_name</code>. Predefinitions using <code>--evaluator</code>, <code>--heuristic</code>, and <code>--landmarks</code> are automatically transformed into <code>let</code>-expressions but are deprecated.</p>
 <h2 id="additive_heuristic">Additive heuristic<a class="headerlink" href="#additive_heuristic" title="Permanent link">#</a></h2>
-<pre><code>add(verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>add(axioms=approximate_negative_cycles, transform=no_transform(), cache_estimates=true, description="add", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>axioms</em> ({approximate_negative, approximate_negative_cycles}): How to compute axioms that describe how the negated (=default) value of a derived variable can be achieved.<ul>
+<li><code>approximate_negative</code>: Overapproximate negated axioms for all derived variables by setting an empty condition, indicating the default value can always be achieved for free.</li>
+<li><code>approximate_negative_cycles</code>: Overapproximate negated axioms for all derived variables which have cyclic dependencies by setting an empty condition, indicating the default value can always be achieved for free. For all other derived variables, the negated axioms are computedexactly. Note that this can potentially lead to a combinatorial explosion.</li>
+</ul>
+</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1274,27 +1282,28 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
 <li><strong>conditional effects:</strong> supported</li>
-<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+<li><strong>axioms:</strong> supported</li>
 </ul>
 <p>Properties:</p>
 <ul>
 <li><strong>admissible:</strong> no</li>
 <li><strong>consistent:</strong> no</li>
-<li><strong>safe:</strong> yes for tasks without axioms</li>
+<li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> yes</li>
 </ul>
 <h2 id="blind_heuristic">Blind heuristic<a class="headerlink" href="#blind_heuristic" title="Permanent link">#</a></h2>
 <p>Returns cost of cheapest action for non-goal states, 0 for goal states</p>
-<pre><code>blind(verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>blind(transform=no_transform(), cache_estimates=true, description="blind", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1302,8 +1311,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -1319,9 +1326,17 @@
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="context-enhanced_additive_heuristic">Context-enhanced additive heuristic<a class="headerlink" href="#context-enhanced_additive_heuristic" title="Permanent link">#</a></h2>
-<pre><code>cea(verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>cea(axioms=approximate_negative_cycles, transform=no_transform(), cache_estimates=true, description="cea", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>axioms</em> ({approximate_negative, approximate_negative_cycles}): How to compute axioms that describe how the negated (=default) value of a derived variable can be achieved.<ul>
+<li><code>approximate_negative</code>: Overapproximate negated axioms for all derived variables by setting an empty condition, indicating the default value can always be achieved for free.</li>
+<li><code>approximate_negative_cycles</code>: Overapproximate negated axioms for all derived variables which have cyclic dependencies by setting an empty condition, indicating the default value can always be achieved for free. For all other derived variables, the negated axioms are computedexactly. Note that this can potentially lead to a combinatorial explosion.</li>
+</ul>
+</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1329,14 +1344,12 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
 <li><strong>conditional effects:</strong> supported</li>
-<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+<li><strong>axioms:</strong> supported</li>
 </ul>
 <p>Properties:</p>
 <ul>
@@ -1376,7 +1389,7 @@
 <p>David Speck and Jendrik Seipp.<br />
  <a href="https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf">New Refinement Strategies for Cartesian Abstractions</a>.<br />
  In <em>Proceedings of the 32nd International Conference on Automated Planning and Scheduling (ICAPS 2022)</em>, pp. to appear. AAAI Press, 2022.</p>
-<p>cegar(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=batch_min_h, pick_split=max_cover, tiebreak_split=max_refined, memory_padding=500, dot_graph_verbosity=silent, random_seed=-1, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, use_general_costs=true, verbosity=normal, transform=no_transform(), cache_estimates=true)</p>
+<p>cegar(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=batch_min_h, pick_split=max_cover, tiebreak_split=max_refined, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, memory_padding=500, random_seed=-1, dot_graph_verbosity=silent, use_general_costs=true, transform=no_transform(), cache_estimates=true, description="cegar", verbosity=normal)</p>
 </li>
 <li>
 <p><em>subtasks</em> (list of <a href="../SubtaskGenerator/">SubtaskGenerator</a>): subtask generators</p>
@@ -1419,17 +1432,20 @@
 <li><code>max_cover</code>: compute split that covers the maximum number of flaws for several concrete states.</li>
 </ul>
 </li>
+<li><em>max_concrete_states_per_abstract_state</em> (int [1, infinity]): maximum number of flawed concrete states stored per abstract state</li>
+<li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
+<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>dot_graph_verbosity</em> ({silent, write_to_console, write_to_file}): verbosity of printing/writing dot graphs<ul>
 <li><code>silent</code>: </li>
 <li><code>write_to_console</code>: </li>
 <li><code>write_to_file</code>: </li>
 </ul>
 </li>
-<li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
-<li><em>max_concrete_states_per_abstract_state</em> (int [1, infinity]): maximum number of flawed concrete states stored per abstract state</li>
-<li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search</li>
 <li><em>use_general_costs</em> (bool): allow negative costs in cost partitioning</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1437,8 +1453,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -1454,10 +1468,18 @@
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="causal_graph_heuristic">Causal graph heuristic<a class="headerlink" href="#causal_graph_heuristic" title="Permanent link">#</a></h2>
-<pre><code>cg(max_cache_size=1000000, verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>cg(max_cache_size=1000000, axioms=approximate_negative_cycles, transform=no_transform(), cache_estimates=true, description="cg", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>max_cache_size</em> (int [0, infinity]): maximum number of cached entries per variable (set to 0 to disable cache)</li>
+<li><em>axioms</em> ({approximate_negative, approximate_negative_cycles}): How to compute axioms that describe how the negated (=default) value of a derived variable can be achieved.<ul>
+<li><code>approximate_negative</code>: Overapproximate negated axioms for all derived variables by setting an empty condition, indicating the default value can always be achieved for free.</li>
+<li><code>approximate_negative_cycles</code>: Overapproximate negated axioms for all derived variables which have cyclic dependencies by setting an empty condition, indicating the default value can always be achieved for free. For all other derived variables, the negated axioms are computedexactly. Note that this can potentially lead to a combinatorial explosion.</li>
+</ul>
+</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1465,14 +1487,12 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
 <li><strong>conditional effects:</strong> supported</li>
-<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+<li><strong>axioms:</strong> supported</li>
 </ul>
 <p>Properties:</p>
 <ul>
@@ -1482,9 +1502,17 @@
 <li><strong>preferred operators:</strong> yes</li>
 </ul>
 <h2 id="ff_heuristic">FF heuristic<a class="headerlink" href="#ff_heuristic" title="Permanent link">#</a></h2>
-<pre><code>ff(verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>ff(axioms=approximate_negative_cycles, transform=no_transform(), cache_estimates=true, description="ff", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>axioms</em> ({approximate_negative, approximate_negative_cycles}): How to compute axioms that describe how the negated (=default) value of a derived variable can be achieved.<ul>
+<li><code>approximate_negative</code>: Overapproximate negated axioms for all derived variables by setting an empty condition, indicating the default value can always be achieved for free.</li>
+<li><code>approximate_negative_cycles</code>: Overapproximate negated axioms for all derived variables which have cyclic dependencies by setting an empty condition, indicating the default value can always be achieved for free. For all other derived variables, the negated axioms are computedexactly. Note that this can potentially lead to a combinatorial explosion.</li>
+</ul>
+</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1492,26 +1520,27 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
 <li><strong>conditional effects:</strong> supported</li>
-<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+<li><strong>axioms:</strong> supported</li>
 </ul>
 <p>Properties:</p>
 <ul>
 <li><strong>admissible:</strong> no</li>
 <li><strong>consistent:</strong> no</li>
-<li><strong>safe:</strong> yes for tasks without axioms</li>
+<li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> yes</li>
 </ul>
 <h2 id="goal_count_heuristic">Goal count heuristic<a class="headerlink" href="#goal_count_heuristic" title="Permanent link">#</a></h2>
-<pre><code>goalcount(verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>goalcount(transform=no_transform(), cache_estimates=true, description="goalcount", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1519,8 +1548,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -1536,10 +1563,13 @@
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="hm_heuristic">h^m heuristic<a class="headerlink" href="#hm_heuristic" title="Permanent link">#</a></h2>
-<pre><code>hm(m=2, verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>hm(m=2, transform=no_transform(), cache_estimates=true, description="hm", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>m</em> (int [1, infinity]): subset size</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1547,8 +1577,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -1564,9 +1592,17 @@
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="max_heuristic">Max heuristic<a class="headerlink" href="#max_heuristic" title="Permanent link">#</a></h2>
-<pre><code>hmax(verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>hmax(axioms=approximate_negative_cycles, transform=no_transform(), cache_estimates=true, description="hmax", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>axioms</em> ({approximate_negative, approximate_negative_cycles}): How to compute axioms that describe how the negated (=default) value of a derived variable can be achieved.<ul>
+<li><code>approximate_negative</code>: Overapproximate negated axioms for all derived variables by setting an empty condition, indicating the default value can always be achieved for free.</li>
+<li><code>approximate_negative_cycles</code>: Overapproximate negated axioms for all derived variables which have cyclic dependencies by setting an empty condition, indicating the default value can always be achieved for free. For all other derived variables, the negated axioms are computedexactly. Note that this can potentially lead to a combinatorial explosion.</li>
+</ul>
+</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1574,20 +1610,18 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
 <li><strong>action costs:</strong> supported</li>
 <li><strong>conditional effects:</strong> supported</li>
-<li><strong>axioms:</strong> supported (in the sense that the planner won't complain -- handling of axioms might be very stupid and even render the heuristic unsafe)</li>
+<li><strong>axioms:</strong> supported</li>
 </ul>
 <p>Properties:</p>
 <ul>
 <li><strong>admissible:</strong> yes for tasks without axioms</li>
 <li><strong>consistent:</strong> yes for tasks without axioms</li>
-<li><strong>safe:</strong> yes for tasks without axioms</li>
+<li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="landmark_cost_partitioning_heuristic">Landmark cost partitioning heuristic<a class="headerlink" href="#landmark_cost_partitioning_heuristic" title="Permanent link">#</a></h2>
@@ -1597,7 +1631,7 @@
 <p>Clemens Büchner, Thomas Keller, Salomé Eriksson and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/buechner-et-al-icaps2023.pdf">Landmarks Progression in Heuristic Search</a>.<br />
  In <em>Proceedings of the Thirty-Third International Conference on Automated Planning and Scheduling (ICAPS 2023)</em>, pp. 70-79. AAAI Press, 2023.</p>
-<p>landmark_cost_partitioning(lm_factory, pref=false, prog_goal=true, prog_gn=true, prog_r=true, verbosity=normal, transform=no_transform(), cache_estimates=true, cost_partitioning=uniform, scoring_function=max_heuristic_per_stolen_costs, alm=true, lpsolver=cplex, random_seed=-1)</p>
+<p>landmark_cost_partitioning(lm_factory, pref=false, prog_goal=true, prog_gn=true, prog_r=true, transform=no_transform(), cache_estimates=true, description="landmark_cost_partitioning", verbosity=normal, cost_partitioning=uniform, alm=true, lpsolver=cplex, scoring_function=max_heuristic_per_stolen_costs, random_seed=-1)</p>
 </li>
 <li>
 <p><em>lm_factory</em> (<a href="../LandmarkFactory/">LandmarkFactory</a>): the set of landmarks to use for this heuristic. The set of landmarks can be specified here, or predefined (see <a href="../LandmarkFactory/">LandmarkFactory</a>).</p>
@@ -1606,6 +1640,9 @@
 <li><em>prog_goal</em> (bool): Use goal progression.</li>
 <li><em>prog_gn</em> (bool): Use greedy-necessary ordering progression.</li>
 <li><em>prog_r</em> (bool): Use reasonable ordering progression.</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1613,8 +1650,6 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>cost_partitioning</em> ({optimal, uniform, opportunistic_uniform, greedy_zero_one, saturated, canonical, pho}): strategy for partitioning operator costs among landmarks<ul>
 <li><code>optimal</code>: use optimal (LP-based) cost partitioning</li>
 <li><code>uniform</code>: partition operator costs uniformly among all landmarks achieved by that operator</li>
@@ -1625,16 +1660,16 @@
 <li><code>pho</code>: post-hoc optimization over landmarks</li>
 </ul>
 </li>
-<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks<ul>
-<li><code>max_heuristic</code>: order by decreasing heuristic value for the given state</li>
-<li><code>min_stolen_costs</code>: order by increasing sum of costs stolen from other heuristics</li>
-<li><code>max_heuristic_per_stolen_costs</code>: order by decreasing ratio of heuristic value divided by sum of stolen costs</li>
-</ul>
-</li>
 <li><em>alm</em> (bool): use action landmarks</li>
 <li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
+</ul>
+</li>
+<li><em>scoring_function</em> ({max_heuristic, min_stolen_costs, max_heuristic_per_stolen_costs}): metric for ordering abstractions/landmarks<ul>
+<li><code>max_heuristic</code>: order by decreasing heuristic value for the given state</li>
+<li><code>min_stolen_costs</code>: order by increasing sum of costs stolen from other heuristics</li>
+<li><code>max_heuristic_per_stolen_costs</code>: order by decreasing ratio of heuristic value divided by sum of stolen costs</li>
 </ul>
 </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
@@ -1664,7 +1699,7 @@
 <p>Clemens Büchner, Thomas Keller, Salomé Eriksson and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/buechner-et-al-icaps2023.pdf">Landmarks Progression in Heuristic Search</a>.<br />
  In <em>Proceedings of the Thirty-Third International Conference on Automated Planning and Scheduling (ICAPS 2023)</em>, pp. 70-79. AAAI Press, 2023.</p>
-<p>landmark_sum(lm_factory, pref=false, prog_goal=true, prog_gn=true, prog_r=true, verbosity=normal, transform=no_transform(), cache_estimates=true)</p>
+<p>landmark_sum(lm_factory, pref=false, prog_goal=true, prog_gn=true, prog_r=true, transform=no_transform(), cache_estimates=true, description="landmark_sum_heuristic", verbosity=normal, axioms=approximate_negative_cycles)</p>
 </li>
 <li>
 <p><em>lm_factory</em> (<a href="../LandmarkFactory/">LandmarkFactory</a>): the set of landmarks to use for this heuristic. The set of landmarks can be specified here, or predefined (see <a href="../LandmarkFactory/">LandmarkFactory</a>).</p>
@@ -1673,6 +1708,9 @@
 <li><em>prog_goal</em> (bool): Use goal progression.</li>
 <li><em>prog_gn</em> (bool): Use greedy-necessary ordering progression.</li>
 <li><em>prog_r</em> (bool): Use reasonable ordering progression.</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1680,8 +1718,11 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>axioms</em> ({approximate_negative, approximate_negative_cycles}): How to compute axioms that describe how the negated (=default) value of a derived variable can be achieved.<ul>
+<li><code>approximate_negative</code>: Overapproximate negated axioms for all derived variables by setting an empty condition, indicating the default value can always be achieved for free.</li>
+<li><code>approximate_negative_cycles</code>: Overapproximate negated axioms for all derived variables which have cyclic dependencies by setting an empty condition, indicating the default value can always be achieved for free. For all other derived variables, the negated axioms are computedexactly. Note that this can potentially lead to a combinatorial explosion.</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note on performance for satisficing planning:</strong> The cost of a landmark is based on the cost of the operators that achieve it. For satisficing search this can be counterproductive since it is often better to focus on distance from goal (i.e. length of the plan) rather than cost. In experiments we achieved the best performance using the option 'transform=adapt_costs(one)' to enforce unit costs.</p>
 <p><strong>Preferred operators:</strong> Computing preferred operators is <em>only enabled</em> when setting pref=true because it has a nontrivial runtime cost. Using the heuristic for preferred operators without setting pref=true has no effect.
@@ -1695,19 +1736,22 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <ul>
 <li><strong>action costs:</strong> supported</li>
 <li><strong>conditional_effects:</strong> supported if the <a href="../LandmarkFactory/">LandmarkFactory</a> supports them; otherwise ignored</li>
-<li><strong>axioms:</strong> ignored</li>
+<li><strong>axioms:</strong> supported</li>
 </ul>
 <p>Properties:</p>
 <ul>
 <li><strong>preferred operators:</strong> yes (if enabled; see <code>pref</code> option)</li>
 <li><strong>admissible:</strong> no</li>
 <li><strong>consistent:</strong> no</li>
-<li><strong>safe:</strong> yes except on tasks with axioms or on tasks with conditional effects when using a <a href="../LandmarkFactory/">LandmarkFactory</a> not supporting them</li>
+<li><strong>safe:</strong> yes except on tasks with conditional effects when using a <a href="../LandmarkFactory/">LandmarkFactory</a> not supporting them</li>
 </ul>
 <h2 id="landmark-cut_heuristic">Landmark-cut heuristic<a class="headerlink" href="#landmark-cut_heuristic" title="Permanent link">#</a></h2>
-<pre><code>lmcut(verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>lmcut(transform=no_transform(), cache_estimates=true, description="lmcut", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1715,8 +1759,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -1756,20 +1798,11 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <p>Silvan Sievers.<br />
  <a href="https://ai.dmi.unibas.ch/papers/sievers-socs2018.pdf">Merge-and-Shrink Heuristics for Classical Planning: Efficient Implementation and Partial Abstractions</a>.<br />
  In <em>Proceedings of the 11th Annual Symposium on Combinatorial Search (SoCS 2018)</em>, pp. 90-98. AAAI Press, 2018.</p>
-<p>merge_and_shrink(verbosity=normal, transform=no_transform(), cache_estimates=true, merge_strategy, shrink_strategy, label_reduction=<none>, prune_unreachable_states=true, prune_irrelevant_states=true, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1, main_loop_max_time=infinity)</p>
+<p>merge_and_shrink(merge_strategy, shrink_strategy, label_reduction=<none>, prune_unreachable_states=true, prune_irrelevant_states=true, max_states=-1, max_states_before_merge=-1, threshold_before_merge=-1, main_loop_max_time=infinity, transform=no_transform(), cache_estimates=true, description="merge_and_shrink", verbosity=normal)</p>
 </li>
 <li>
-<p><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.</p>
-<ul>
-<li><code>silent</code>: only the most basic output</li>
-<li><code>normal</code>: relevant information to monitor progress</li>
-<li><code>verbose</code>: full output</li>
-<li><code>debug</code>: like verbose with additional debug output</li>
-</ul>
+<p><em>merge_strategy</em> (<a href="../MergeStrategy/">MergeStrategy</a>): See detailed documentation for merge strategies. We currently recommend SCC-DFP, which can be achieved using <code>merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order]))</code></p>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
-<li><em>merge_strategy</em> (<a href="../MergeStrategy/">MergeStrategy</a>): See detailed documentation for merge strategies. We currently recommend SCC-DFP, which can be achieved using <code>merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order]))</code></li>
 <li><em>shrink_strategy</em> (<a href="../ShrinkStrategy/">ShrinkStrategy</a>): See detailed documentation for shrink strategies. We currently recommend non-greedy shrink_bisimulation, which can be achieved using <code>shrink_strategy=shrink_bisimulation(greedy=false)</code></li>
 <li><em>label_reduction</em> (<a href="../LabelReduction/">LabelReduction</a>): See detailed documentation for labels. There is currently only one 'option' to use label_reduction, which is <code>label_reduction=exact</code> Also note the interaction with shrink strategies.</li>
 <li><em>prune_unreachable_states</em> (bool): If true, prune abstract states unreachable from the initial state.</li>
@@ -1778,6 +1811,16 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><em>max_states_before_merge</em> (int [-1, infinity]): maximum transition system size allowed for two transition systems before being merged to form the synchronized product.</li>
 <li><em>threshold_before_merge</em> (int [-1, infinity]): If a transition system, before being merged, surpasses this soft transition system size limit, the shrink strategy is called to possibly shrink the transition system.</li>
 <li><em>main_loop_max_time</em> (double [0.0, infinity]): A limit in seconds on the runtime of the main loop of the algorithm. If the limit is exceeded, the algorithm terminates, potentially returning a factored transition system with several factors. Also note that the time limit is only checked between transformations of the main loop, but not during, so it can be exceeded if a transformation is runtime-intense.</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
+<li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
+<li><code>silent</code>: only the most basic output</li>
+<li><code>normal</code>: relevant information to monitor progress</li>
+<li><code>verbose</code>: full output</li>
+<li><code>debug</code>: like verbose with additional debug output</li>
+</ul>
+</li>
 </ul>
 <p><strong>Note:</strong> Conditional effects are supported directly. Note, however, that for tasks that are not factored (in the sense of the JACM 2014 merge-and-shrink paper), the atomic transition systems on which merge-and-shrink heuristics are based are nondeterministic, which can lead to poor heuristics even when only perfect shrinking is performed.</p>
 <p><strong>Note:</strong> When pruning unreachable states, admissibility and consistency is only guaranteed for reachable states and transitions between reachable states. While this does not impact regular A* search which will never encounter any unreachable state, it impacts techniques like symmetry-based pruning: a reachable state which is mapped to an unreachable symmetric state (which hence is pruned) would falsely be considered a dead-end and also be pruned, thus violating optimality of the search.</p>
@@ -1805,7 +1848,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <p>Florian Pommerening, Gabriele Roeger, Malte Helmert and Blai Bonet.<br />
  <a href="http://www.aaai.org/ocs/index.php/ICAPS/ICAPS14/paper/view/7892/8031">LP-based Heuristics for Cost-optimal Planning</a>.<br />
  In <em>Proceedings of the Twenty-Fourth International Conference on Automated Planning and Scheduling (ICAPS 2014)</em>, pp. 226-234. AAAI Press, 2014.</p>
-<p>operatorcounting(constraint_generators, use_integer_operator_counts=false, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true)</p>
+<p>operatorcounting(constraint_generators, use_integer_operator_counts=false, lpsolver=cplex, transform=no_transform(), cache_estimates=true, description="operatorcounting", verbosity=normal)</p>
 </li>
 <li>
 <p><em>constraint_generators</em> (list of <a href="../ConstraintGenerator/">ConstraintGenerator</a>): methods that generate constraints over operator-counting variables</p>
@@ -1816,6 +1859,9 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>soplex</code>: open source solver by ZIB</li>
 </ul>
 </li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1823,8 +1869,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
@@ -1843,10 +1887,11 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h1 id="basic_evaluators">Basic Evaluators<a class="headerlink" href="#basic_evaluators" title="Permanent link">#</a></h1>
 <h2 id="constant_evaluator">Constant evaluator<a class="headerlink" href="#constant_evaluator" title="Permanent link">#</a></h2>
 <p>Returns a constant value.</p>
-<pre><code>const(value=1, verbosity=normal)
+<pre><code>const(value=1, description="const", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>value</em> (int [0, infinity]): the constant value</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1857,9 +1902,10 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="g-value_evaluator">g-value evaluator<a class="headerlink" href="#g-value_evaluator" title="Permanent link">#</a></h2>
 <p>Returns the g-value (path cost) of the search node.</p>
-<pre><code>g(verbosity=normal)
+<pre><code>g(description="g", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1870,10 +1916,11 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="max_evaluator">Max evaluator<a class="headerlink" href="#max_evaluator" title="Permanent link">#</a></h2>
 <p>Calculates the maximum of the sub-evaluators.</p>
-<pre><code>max(evals, verbosity=normal)
+<pre><code>max(evals, description="max", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="./">Evaluator</a>): at least one evaluator</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1884,9 +1931,10 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="preference_evaluator">Preference evaluator<a class="headerlink" href="#preference_evaluator" title="Permanent link">#</a></h2>
 <p>Returns 0 if preferred is true and 1 otherwise.</p>
-<pre><code>pref(verbosity=normal)
+<pre><code>pref(description="pref", verbosity=normal)
 </code></pre>
 <ul>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1897,10 +1945,11 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="sum_evaluator">Sum evaluator<a class="headerlink" href="#sum_evaluator" title="Permanent link">#</a></h2>
 <p>Calculates the sum of the sub-evaluators.</p>
-<pre><code>sum(evals, verbosity=normal)
+<pre><code>sum(evals, description="sum", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>evals</em> (list of <a href="./">Evaluator</a>): at least one evaluator</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1911,11 +1960,12 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="weighted_evaluator">Weighted evaluator<a class="headerlink" href="#weighted_evaluator" title="Permanent link">#</a></h2>
 <p>Multiplies the value of the evaluator with the given weight.</p>
-<pre><code>weight(eval, weight, verbosity=normal)
+<pre><code>weight(eval, weight, description="weight", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>eval</em> (<a href="./">Evaluator</a>): evaluator</li>
 <li><em>weight</em> (int): weight</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1927,10 +1977,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h1 id="cost_partitioning_heuristics">Cost Partitioning Heuristics<a class="headerlink" href="#cost_partitioning_heuristics" title="Permanent link">#</a></h1>
 <h2 id="canonical_heuristic_over_abstractions">Canonical heuristic over abstractions<a class="headerlink" href="#canonical_heuristic_over_abstractions" title="Permanent link">#</a></h2>
 <p>Shuffle abstractions randomly.</p>
-<pre><code>canonical_heuristic(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>canonical_heuristic(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, description="canonical_heuristic", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1938,8 +1991,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -1955,10 +2006,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="greedy_zero-one_cost_partitioning">Greedy zero-one cost partitioning<a class="headerlink" href="#greedy_zero-one_cost_partitioning" title="Permanent link">#</a></h2>
-<pre><code>gzocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1)
+<pre><code>gzocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, description="gzocp", verbosity=normal, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -1966,8 +2020,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
 <li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
 <li><em>max_size</em> (int [0, infinity]): maximum heuristic size in KiB</li>
@@ -1992,10 +2044,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="maximum_over_abstractions">Maximum over abstractions<a class="headerlink" href="#maximum_over_abstractions" title="Permanent link">#</a></h2>
 <p>Maximize over a set of abstraction heuristics.</p>
-<pre><code>maximize(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>maximize(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, description="maximize", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2003,8 +2058,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -2021,10 +2074,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="optimal_cost_partitioning_heuristic">Optimal cost partitioning heuristic<a class="headerlink" href="#optimal_cost_partitioning_heuristic" title="Permanent link">#</a></h2>
 <p>Compute an optimal cost partitioning for each evaluated state.</p>
-<pre><code>ocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, lpsolver=cplex, allow_negative_costs=true)
+<pre><code>ocp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, description="ocp", verbosity=normal, lpsolver=cplex, allow_negative_costs=true)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2032,8 +2088,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>lpsolver</em> ({cplex, soplex}): external solver that should be used to solve linear programs<ul>
 <li><code>cplex</code>: commercial solver by IBM</li>
 <li><code>soplex</code>: open source solver by ZIB</li>
@@ -2057,10 +2111,13 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <h2 id="post-hoc_optimization_heuristic">Post-hoc optimization heuristic<a class="headerlink" href="#post-hoc_optimization_heuristic" title="Permanent link">#</a></h2>
 <p>Compute the maximum over multiple PhO heuristics precomputed offline.</p>
-<pre><code>pho(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturated=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, lpsolver=cplex)
+<pre><code>pho(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, description="pho", verbosity=normal, saturated=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, lpsolver=cplex)
 </code></pre>
 <ul>
 <li><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2068,8 +2125,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>saturated</em> (bool): saturate costs</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
 <li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
@@ -2106,11 +2161,14 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <p>Jendrik Seipp, Thomas Keller and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-jair2020.pdf">Saturated Cost Partitioning for Optimal Classical Planning</a>.<br />
  <em>Journal of Artificial Intelligence Research</em> 67:129-167. 2020.</p>
-<p>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1)</p>
+<p>scp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, description="scp", verbosity=normal, saturator=all, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1)</p>
 </li>
 <li>
 <p><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</p>
 </li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2118,8 +2176,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions<ul>
 <li><code>all</code>: preserve estimates of all states</li>
 <li><code>perim</code>: preserve estimates of states in perimeter around goal</li>
@@ -2156,11 +2212,14 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <p>Jendrik Seipp.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-icaps2021.pdf">Online Saturated Cost Partitioning for Classical Planning</a>.<br />
  In <em>Proceedings of the 31st International Conference on Automated Planning and Scheduling (ICAPS 2021)</em>, pp. 317-321. AAAI Press, 2021.</p>
-<p>scp_online(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, saturator=all, orders=greedy_orders(), max_size=infinity, max_time=200, interval=10K, debug=false, random_seed=-1)</p>
+<p>scp_online(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, description="scp_online", verbosity=normal, saturator=all, orders=greedy_orders(), max_size=infinity, max_time=200, interval=10K, debug=false, random_seed=-1)</p>
 </li>
 <li>
 <p><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</p>
 </li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2168,8 +2227,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>saturator</em> ({all, perim, perimstar}): function that computes saturated cost functions<ul>
 <li><code>all</code>: preserve estimates of all states</li>
 <li><code>perim</code>: preserve estimates of states in perimeter around goal</li>
@@ -2202,11 +2259,14 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <p>Jendrik Seipp, Thomas Keller and Malte Helmert.<br />
  <a href="https://jendrikseipp.com/papers/seipp-et-al-icaps2017.pdf">A Comparison of Cost Partitioning Algorithms for Optimal Classical Planning</a>.<br />
  In <em>Proceedings of the Twenty-Seventh International Conference on Automated Planning and Scheduling (ICAPS 2017)</em>, pp. 259-268. AAAI Press, 2017.</p>
-<p>ucp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], verbosity=normal, transform=no_transform(), cache_estimates=true, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, opportunistic=false, debug=false)</p>
+<p>ucp(abstractions=[projections(hillclimbing(max_time=60)), projections(systematic(2)), cartesian()], transform=no_transform(), cache_estimates=true, description="ucp", verbosity=normal, orders=greedy_orders(), max_orders=infinity, max_size=infinity, max_time=200, diversify=true, samples=1000, max_optimization_time=2, random_seed=-1, opportunistic=false, debug=false)</p>
 </li>
 <li>
 <p><em>abstractions</em> (list of <a href="../AbstractionGenerator/">AbstractionGenerator</a>): abstraction generators</p>
 </li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2214,8 +2274,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>orders</em> (<a href="../OrderGenerator/">OrderGenerator</a>): order generator</li>
 <li><em>max_orders</em> (int [0, infinity]): maximum number of orders</li>
 <li><em>max_size</em> (int [0, infinity]): maximum heuristic size in KiB</li>
@@ -2243,11 +2301,14 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <h1 id="pattern_database_heuristics">Pattern Database Heuristics<a class="headerlink" href="#pattern_database_heuristics" title="Permanent link">#</a></h1>
 <h2 id="canonical_pdb">Canonical PDB<a class="headerlink" href="#canonical_pdb" title="Permanent link">#</a></h2>
 <p>The canonical pattern database heuristic is calculated as follows. For a given pattern collection C, the value of the canonical heuristic function is the maximum over all maximal additive subsets A in C, where the value for one subset S in A is the sum of the heuristic values for all patterns in S for a given state.</p>
-<pre><code>cpdbs(patterns=systematic(1), max_time_dominance_pruning=infinity, verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>cpdbs(patterns=systematic(1), max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true, description="cpdbs", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
 <li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2255,8 +2316,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -2285,7 +2344,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
  In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</li>
 </ul>
 <p>See also <a href="./#canonical_pdb">Canonical PDB</a> and <a href="../PatternCollectionGenerator/#hill_climbing">Hill climbing</a> for more details.</p>
-<pre><code>ipdb(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, max_generated_patterns=infinity, random_seed=-1, max_time_dominance_pruning=infinity, verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>ipdb(pdb_max_size=2000000, collection_max_size=20000000, num_samples=1000, min_improvement=10, max_time=infinity, random_seed=-1, max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true, description="cpdbs", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>pdb_max_size</em> (int [1, infinity]): maximal number of states per pattern database </li>
@@ -2293,9 +2352,11 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><em>num_samples</em> (int [1, infinity]): number of samples (random states) on which to evaluate each candidate pattern collection</li>
 <li><em>min_improvement</em> (int [1, infinity]): minimum number of samples on which a candidate pattern collection must improve on the current one to be considered as the next pattern collection </li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for improving the initial pattern collection via hill climbing. If set to 0, no hill climbing is performed at all. Note that this limit only affects hill climbing. Use max_time_dominance_pruning to limit the time spent for pruning dominated patterns.</li>
-<li><em>max_generated_patterns</em> (int [0, infinity]): maximum number of generated patterns</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>max_time_dominance_pruning</em> (double [0.0, infinity]): The maximum time in seconds spent on dominance pruning. Using 0.0 turns off dominance pruning. Dominance pruning excludes patterns and additive subsets that will never contribute to the heuristic value because there are dominating subsets in the collection.</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2303,8 +2364,6 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p><strong>Note:</strong> The pattern collection created by the algorithm will always contain all patterns consisting of a single goal variable, even if this violates the pdb_max_size or collection_max_size limits.</p>
 <p><strong>Note:</strong> This pattern generation method generates patterns optimized for use with the canonical pattern database heuristic.</p>
@@ -2329,11 +2388,26 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="pattern_database_heuristic">Pattern database heuristic<a class="headerlink" href="#pattern_database_heuristic" title="Permanent link">#</a></h2>
-<p>TODO</p>
-<pre><code>pdb(pattern=greedy(), verbosity=normal, transform=no_transform(), cache_estimates=true)
-</code></pre>
+<p>Computes goal distance in state space abstractions based on projections. First used in domain-independent planning by:</p>
 <ul>
-<li><em>pattern</em> (<a href="../PatternGenerator/">PatternGenerator</a>): pattern generation method</li>
+<li>Stefan Edelkamp.<br />
+ <a href="https://aaai.org/papers/7280-ecp-01-2001/">Planning with Pattern Databases</a>.<br />
+ In <em>Proceedings of the Sixth European Conference on Planning (ECP 2001)</em>, pp. 84-90. AAAI Press, 2001.</li>
+</ul>
+<p>For implementation notes, see:</p>
+<ul>
+<li>
+<p>Silvan Sievers, Manuela Ortlieb and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-socs2012.pdf">Efficient Implementation of Pattern Database Heuristics for Classical Planning</a>.<br />
+ In <em>Proceedings of the Fifth Annual Symposium on Combinatorial Search (SoCS 2012)</em>, pp. 105-111. AAAI Press, 2012.</p>
+<p>pdb(pattern=greedy(), transform=no_transform(), cache_estimates=true, description="pdb", verbosity=normal)</p>
+</li>
+<li>
+<p><em>pattern</em> (<a href="../PatternGenerator/">PatternGenerator</a>): pattern generation method</p>
+</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2341,8 +2415,6 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -2359,10 +2431,13 @@ The search is ended if there is no more improvement (or the improvement is small
 </ul>
 <h2 id="zero-one_pdb">Zero-One PDB<a class="headerlink" href="#zero-one_pdb" title="Permanent link">#</a></h2>
 <p>The zero/one pattern database heuristic is simply the sum of the heuristic values of all patterns in the pattern collection. In contrast to the canonical pattern database heuristic, there is no need to check for additive subsets, because the additivity of the patterns is guaranteed by action cost partitioning. This heuristic uses the most simple form of action cost partitioning, i.e. if an operator affects more than one pattern in the collection, its costs are entirely taken into account for one pattern (the first one which it affects) and set to zero for all other affected patterns.</p>
-<pre><code>zopdbs(patterns=systematic(1), verbosity=normal, transform=no_transform(), cache_estimates=true)
+<pre><code>zopdbs(patterns=systematic(1), transform=no_transform(), cache_estimates=true, description="zopdbs", verbosity=normal)
 </code></pre>
 <ul>
 <li><em>patterns</em> (<a href="../PatternCollectionGenerator/">PatternCollectionGenerator</a>): pattern generation method</li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2370,8 +2445,6 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p>Supported language features:</p>
 <ul>
@@ -2394,7 +2467,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
-<p>all_states_potential(max_potential=1e8, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true)</p>
+<p>all_states_potential(max_potential=1e8, lpsolver=cplex, transform=no_transform(), cache_estimates=true, description="all_states_potential", verbosity=normal)</p>
 </li>
 <li>
 <p><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</p>
@@ -2404,6 +2477,9 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>soplex</code>: open source solver by ZIB</li>
 </ul>
 </li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2411,8 +2487,6 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
@@ -2435,7 +2509,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
-<p>diverse_potentials(num_samples=1000, max_num_heuristics=infinity, max_potential=1e8, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true, random_seed=-1)</p>
+<p>diverse_potentials(num_samples=1000, max_num_heuristics=infinity, max_potential=1e8, lpsolver=cplex, transform=no_transform(), cache_estimates=true, description="diverse_potentials", verbosity=normal, random_seed=-1)</p>
 </li>
 <li>
 <p><em>num_samples</em> (int [0, infinity]): Number of states to sample</p>
@@ -2447,6 +2521,9 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>soplex</code>: open source solver by ZIB</li>
 </ul>
 </li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2454,8 +2531,6 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
@@ -2479,7 +2554,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
-<p>initial_state_potential(max_potential=1e8, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true)</p>
+<p>initial_state_potential(max_potential=1e8, lpsolver=cplex, transform=no_transform(), cache_estimates=true, description="initial_state_potential", verbosity=normal)</p>
 </li>
 <li>
 <p><em>max_potential</em> (double [0.0, infinity]): Bound potentials by this number. Using the bound <code>infinity</code> disables the bounds. In some domains this makes the computation of weights unbounded in which case no weights can be extracted. Using very high weights can cause numerical instability in the LP solver, while using very low weights limits the choice of potential heuristics. For details, see the ICAPS paper cited above.</p>
@@ -2489,6 +2564,9 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>soplex</code>: open source solver by ZIB</li>
 </ul>
 </li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2496,8 +2574,6 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
 <p>Supported language features:</p>
@@ -2520,7 +2596,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <p>Jendrik Seipp, Florian Pommerening and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2015.pdf">New Optimization Functions for Potential Heuristics</a>.<br />
  In <em>Proceedings of the 25th International Conference on Automated Planning and Scheduling (ICAPS 2015)</em>, pp. 193-201. AAAI Press, 2015.</p>
-<p>sample_based_potentials(num_heuristics=1, num_samples=1000, max_potential=1e8, lpsolver=cplex, verbosity=normal, transform=no_transform(), cache_estimates=true, random_seed=-1)</p>
+<p>sample_based_potentials(num_heuristics=1, num_samples=1000, max_potential=1e8, lpsolver=cplex, transform=no_transform(), cache_estimates=true, description="sample_based_potentials", verbosity=normal, random_seed=-1)</p>
 </li>
 <li>
 <p><em>num_heuristics</em> (int [0, infinity]): number of potential heuristics</p>
@@ -2532,6 +2608,9 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>soplex</code>: open source solver by ZIB</li>
 </ul>
 </li>
+<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
+<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
+<li><em>description</em> (string): description used to identify evaluator in logs</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -2539,8 +2618,6 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>transform</em> (<a href="../AbstractTask/">AbstractTask</a>): Optional task transformation for the heuristic. Currently, adapt_costs() and no_transform() are available.</li>
-<li><em>cache_estimates</em> (bool): cache heuristic estimates</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
 <p><strong>Note:</strong> to use an LP solver, you must build the planner with LP support. See <a href="https://github.com/aibasel/downward/blob/main/BUILD.md">build instructions</a>.</p>
