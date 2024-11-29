@@ -574,8 +574,8 @@ unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer
     }
 
     if (split) {
-        assert(!(pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H
-                 || pick_flawed_abstract_state == PickFlawedAbstractState::MIN_H)
+        assert((pick_flawed_abstract_state != PickFlawedAbstractState::MAX_H
+                && pick_flawed_abstract_state != PickFlawedAbstractState::MIN_H)
                || best_flaw_h == get_h_value(split->abstract_state_id));
     }
     return split;

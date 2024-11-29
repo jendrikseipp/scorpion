@@ -46,14 +46,14 @@ protected:
 public:
     SaturatedCostPartitioningOnlineHeuristic(
         const std::shared_ptr<OrderGenerator> &order_generator,
-        const Saturator saturator,
-        const CPFunction cp_function,
+        Saturator saturator,
+        const CPFunction &cp_function,
         Abstractions &&abstractions_,
         std::unique_ptr<DeadEnds> &&dead_ends_,
-        const int interval,
-        const double max_time,
-        const int max_size_kb,
-        const bool debug,
+        int interval,
+        double max_time,
+        int max_size_kb,
+        bool debug,
         const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
         const std::string &description, utils::Verbosity verbosity);
     virtual ~SaturatedCostPartitioningOnlineHeuristic() override;

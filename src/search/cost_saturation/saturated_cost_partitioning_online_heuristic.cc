@@ -19,8 +19,8 @@ using namespace std;
 namespace cost_saturation {
 SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeuristic(
     const shared_ptr<OrderGenerator> &order_generator,
-    const Saturator saturator,
-    const CPFunction cp_function,
+    Saturator saturator,
+    const CPFunction &cp_function,
     Abstractions &&abstractions_,
     unique_ptr<DeadEnds> &&dead_ends_,
     const int interval,
