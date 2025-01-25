@@ -38,15 +38,15 @@ static vector<FactPair> get_projected_conditions(
 struct ProjectedEffect {
     FactPair fact;
     vector<FactPair> conditions;
-    bool always_triggers;
+    bool conditions_covered_by_pattern;
 
     ProjectedEffect(
         const FactPair &projected_fact,
         vector<FactPair> &&conditions,
-        bool always_triggers)
+        bool conditions_covered_by_pattern)
         : fact(projected_fact),
           conditions(move(conditions)),
-          always_triggers(always_triggers) {
+          conditions_covered_by_pattern(conditions_covered_by_pattern) {
     }
 };
 
@@ -157,12 +157,13 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
             EffectConditionsProxy original_conditions = effect.get_conditions();
             vector<FactPair> projected_conditions = get_projected_conditions(
                 original_conditions, pattern);
-            bool always_tiggers = (
+            assert(projected_conditions.size() <= original_conditions.size());
+            bool conditions_covered_by_pattern = (
                 projected_conditions.size() == original_conditions.size());
             projected_effects.emplace_back(
                 FactPair(pattern_index, effect_fact.value),
                 move(projected_conditions),
-                always_tiggers);
+                conditions_covered_by_pattern);
         }
     }
     return projected_effects;
@@ -183,13 +184,20 @@ void ExplicitProjectionFactory::add_transitions(
     const UnrankedState &src_values, int src_rank,
     int op_id, const vector<ProjectedEffect> &effects) {
     const bool debug = false;
-    if (debug)
+    if (debug) {
+        cout << endl;
+        cout << "op: " << op_id << endl;
         cout << "source state: " << src_values << endl;
+    }
     UnrankedState definite_dest_values = src_values;
+    // TODO: Store possible effects per variable to avoid computing superset across facts for the same variable.
     utils::HashSet<FactPair> possible_effects;
     for (const ProjectedEffect &effect : effects) {
         if (conditions_are_satisfied(effect.conditions, src_values)) {
-            if (effect.always_triggers) {
+            if (debug) {
+                cout << "conditions satisfied: " << effect.conditions << endl;
+            }
+            if (effect.conditions_covered_by_pattern) {
                 definite_dest_values[effect.fact.var] = effect.fact.value;
             } else {
                 possible_effects.insert(effect.fact);
