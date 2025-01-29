@@ -189,59 +189,79 @@ void ExplicitProjectionFactory::add_transitions(
         cout << "op: " << op_id << endl;
         cout << "source state: " << src_values << endl;
     }
-    UnrankedState definite_dest_values = src_values;
-    // TODO: Store possible effects per variable to avoid computing superset across facts for the same variable.
-    utils::HashSet<FactPair> possible_effects;
+    utils::HashMap<int, utils::HashSet<FactPair>> var_to_possible_effects;
     for (const ProjectedEffect &effect : effects) {
+        // Optimization: skip over no-op effects.
+        if (src_values[effect.fact.var] == effect.fact.value) {
+            continue;
+        }
         if (conditions_are_satisfied(effect.conditions, src_values)) {
-            if (debug) {
-                cout << "conditions satisfied: " << effect.conditions << endl;
-            }
             if (effect.conditions_covered_by_pattern) {
-                definite_dest_values[effect.fact.var] = effect.fact.value;
+                assert(var_to_possible_effects[effect.fact.var].empty());
+                var_to_possible_effects[effect.fact.var].insert(effect.fact);
             } else {
-                possible_effects.insert(effect.fact);
+                if (var_to_possible_effects[effect.fact.var].empty()) {
+                    // Add dummy fact signaling that no effect triggers for this variable.
+                    var_to_possible_effects[effect.fact.var].insert(FactPair::no_fact);
+                }
+                var_to_possible_effects[effect.fact.var].insert(effect.fact);
             }
         }
     }
     if (debug) {
-        cout << "definite values: " << definite_dest_values << endl;
-        cout << "possible effects: " << possible_effects.size() << endl;
+        cout << "number of effect variables: " << var_to_possible_effects.size() << endl;
     }
-    // Remove all possible effects that would only set definite effects again.
-    for (auto it = possible_effects.begin(); it != possible_effects.end();) {
-        if (definite_dest_values[it->var] == it->value) {
-            it = possible_effects.erase(it);
-        } else {
-            ++it;
-        }
+
+    if (var_to_possible_effects.empty()) {
+        looping_operators[op_id] = true;
+        return;
     }
-    if (debug) {
-        cout << "filtered possible effects: " << possible_effects.size() << endl;
+
+    // Apply all combinations of possible effects per variable and add transitions.
+    vector<vector<FactPair>> possible_effects;
+    vector<vector<FactPair>::iterator> iterators;
+    for (auto &[var, fact_set] : var_to_possible_effects) {
+        vector<FactPair> facts;
+        facts.reserve(fact_set.size());
+        facts.insert(facts.end(), fact_set.begin(), fact_set.end());
+        possible_effects.push_back(move(facts));
     }
-    // Apply all subsets of possible effects and add transitions.
-    int powerset_size = 1 << possible_effects.size();
-    for (int mask = 0; mask < powerset_size; ++mask) {
-        UnrankedState possible_dest_values = definite_dest_values;
-        int i = 0;
-        for (const FactPair &fact : possible_effects) {
-            if (mask & (1 << i)) {
-                possible_dest_values[fact.var] = fact.value;
+    for (auto &facts : possible_effects) {
+        iterators.push_back(facts.begin());
+    }
+    int k = possible_effects.size();
+    assert(k >= 1);
+    while (iterators[0] != possible_effects[0].end()) {
+        // Process the pointed-to facts.
+        if (debug) {
+            cout << "Possible facts: ";
+            for (auto it : iterators) {
+                cout << *it << " ";
             }
-            ++i;
+            cout << endl;
+        }
+
+        UnrankedState dest_values = src_values;
+        for (auto it : iterators) {
+            FactPair fact = *it;
+            if (fact != FactPair::no_fact) {
+                dest_values[fact.var] = fact.value;
+            }
         }
         if (debug)
-            cout << "dest state: " << possible_dest_values << endl;
-        int dest_rank = rank(possible_dest_values);
+            cout << "dest state: " << dest_values << endl;
+        int dest_rank = rank(dest_values);
         if (dest_rank == src_rank) {
             looping_operators[op_id] = true;
         } else {
             backward_graph[dest_rank].emplace_back(op_id, src_rank);
-#ifndef NDEBUG
-            vector<Successor> copied_transitions = backward_graph[dest_rank];
-            sort(copied_transitions.begin(), copied_transitions.end());
-            assert(utils::is_sorted_unique(copied_transitions));
-#endif
+        }
+
+        // Increment the "counter" by 1.
+        ++iterators[k - 1];
+        for (int i = k - 1; (i > 0) && (iterators[i] == possible_effects[i].end()); --i) {
+            iterators[i] = possible_effects[i].begin();
+            ++iterators[i - 1];
         }
     }
 }
@@ -263,6 +283,14 @@ void ExplicitProjectionFactory::compute_transitions() {
             }
         }
     }
+
+#ifndef NDEBUG
+    for (const auto &transitions : backward_graph) {
+        vector<Successor> copied_transitions = transitions;
+        sort(copied_transitions.begin(), copied_transitions.end());
+        assert(utils::is_sorted_unique(copied_transitions));
+    }
+#endif
 }
 
 bool ExplicitProjectionFactory::is_goal_state(
