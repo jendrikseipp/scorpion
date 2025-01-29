@@ -109,6 +109,16 @@ Abstractions ProjectionGenerator::generate_abstractions(
     log << "Time for building projections: " << pdbs_timer << endl;
     log << "Number of projections: " << abstractions.size() << endl;
     log << "Number of states in projections: " << collection_size << endl;
+
+#ifndef NDEBUG
+    uint64_t num_transitions = 0;
+    for (auto &abstraction : abstractions) {
+        abstraction->for_each_transition(
+            [&num_transitions] (const Transition &) {++num_transitions;});
+    }
+    log << "Number of transitions in projections: " << num_transitions << endl;
+#endif
+
     return abstractions;
 }
 
