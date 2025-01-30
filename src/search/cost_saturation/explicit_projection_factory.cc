@@ -51,6 +51,10 @@ struct ProjectedEffect {
           conditions(move(conditions)),
           conditions_covered_by_pattern(conditions_covered_by_pattern) {
     }
+
+    bool operator<(const ProjectedEffect &other) const {
+        return fact < other.fact;
+    }
 };
 
 
@@ -176,6 +180,7 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
                 conditions_covered_by_pattern);
         }
     }
+    sort(projected_effects.begin(), projected_effects.end());
     return projected_effects;
 }
 
@@ -198,7 +203,8 @@ void ExplicitProjectionFactory::add_transitions(
     }
     int src_rank = rank(src_values);
     int dest_rank = src_rank;
-    utils::HashMap<int, utils::HashSet<FactPair>> var_to_possible_effects;
+    vector<vector<FactPair>> possible_effects;
+    // Loop over effects which are sorted by effect fact.
     for (const ProjectedEffect &effect : effects) {
         // Optimization: skip over no-op effects.
         if (src_values[effect.fact.var] == effect.fact.value) {
@@ -206,18 +212,35 @@ void ExplicitProjectionFactory::add_transitions(
         }
         if (conditions_are_satisfied(effect.conditions, src_values)) {
             if (effect.conditions_covered_by_pattern) {
-                assert(!var_to_possible_effects.contains(effect.fact.var));
                 dest_rank = replace_fact(dest_rank, effect.fact.var, src_values[effect.fact.var], effect.fact.value);
             } else {
-                var_to_possible_effects[effect.fact.var].insert(effect.fact);
+                // Store possible effects, grouped into buckets by variable.
+                if (possible_effects.empty()) {
+                    // Start first bucket.
+                    // Add dummy fact signaling that no effect triggers for this variable.
+                    possible_effects.push_back({FactPair::no_fact, effect.fact});
+                } else {
+                    FactPair last_fact = possible_effects.back().back();
+                    if (last_fact == effect.fact) {
+                        // Nothing to do for repeated fact.
+                        continue;
+                    } else if (last_fact.var == effect.fact.var) {
+                        // Keep filling the same bucket.
+                        possible_effects.back().push_back(effect.fact);
+                    } else {
+                        // Start new bucket.
+                        // Add dummy fact signaling that no effect triggers for this variable.
+                        possible_effects.push_back({FactPair::no_fact, effect.fact});
+                    }
+                }
             }
         }
     }
     if (debug) {
-        cout << "variables with possible effects: " << var_to_possible_effects.size() << endl;
+        cout << "variables with possible effects: " << possible_effects.size() << endl;
     }
 
-    if (var_to_possible_effects.empty()) {
+    if (possible_effects.empty()) {
         if (dest_rank == src_rank) {
             looping_operators[op_id] = true;
         } else {
@@ -227,17 +250,8 @@ void ExplicitProjectionFactory::add_transitions(
     }
 
     // Apply all combinations of possible effects per variable and add transitions.
-    vector<vector<FactPair>> possible_effects;
     vector<vector<FactPair>::iterator> iterators;
-    for (auto &[var, fact_set] : var_to_possible_effects) {
-        assert(!fact_set.empty());
-        vector<FactPair> facts;
-        facts.reserve(fact_set.size());
-        // Add dummy fact signaling that no effect triggers for this variable.
-        facts.push_back(FactPair::no_fact);
-        facts.insert(facts.end(), fact_set.begin(), fact_set.end());
-        possible_effects.push_back(move(facts));
-    }
+    iterators.reserve(possible_effects.size());
     for (auto &facts : possible_effects) {
         iterators.push_back(facts.begin());
     }
