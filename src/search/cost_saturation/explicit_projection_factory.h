@@ -17,7 +17,6 @@ class ExplicitProjectionFactory {
 
     TaskProxy task_proxy;
     const pdbs::Pattern pattern;
-    const std::vector<std::vector<FactPair>> relevant_preconditions;
     std::vector<int> variable_to_pattern_index;
     std::vector<int> domain_sizes;
 
@@ -32,26 +31,24 @@ class ExplicitProjectionFactory {
     std::vector<int> hash_multipliers;
 
     int rank(const UnrankedState &state) const;
-    int unrank(int rank, int pattern_index) const;
-    UnrankedState unrank(int rank) const;
+    void multiply_out_aux(
+        const std::vector<FactPair> &partial_state,
+        int partial_state_pos,
+        UnrankedState &state, int state_pos,
+        const std::function<void(const UnrankedState &)> &callback) const;
+    void multiply_out(
+        const std::vector<FactPair> &partial_state,
+        const std::function<void(const UnrankedState &)> &callback) const;
 
     std::vector<ProjectedEffect> get_projected_effects(const OperatorProxy &op) const;
     bool conditions_are_satisfied(
         const std::vector<FactPair> &conditions, const UnrankedState &state_values) const;
-    bool is_applicable(const UnrankedState &state_values, int op_id) const;
     void add_transitions(
-        const UnrankedState &src_values, int src_rank,
-        int op_id, const std::vector<ProjectedEffect> &effects);
+        const UnrankedState &src_values,
+        int op_id,
+        const std::vector<ProjectedEffect> &effects);
     void compute_transitions();
 
-    void multiply_out_aux(
-        const std::vector<FactPair> &partial_state,
-        int partial_state_pos,
-        std::vector<int> &state, int state_pos,
-        const std::function<void(const std::vector<int> &)> &callback) const;
-    void multiply_out(
-        const std::vector<FactPair> &partial_state,
-        const std::function<void(const std::vector<int> &)> &callback) const;
     std::vector<int> rank_goal_states() const;
 
 public:
