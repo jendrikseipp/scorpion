@@ -189,6 +189,7 @@ void ExplicitProjectionFactory::add_transitions(
         cout << "op: " << op_id << endl;
         cout << "source state: " << src_values << endl;
     }
+    UnrankedState definite_dest_values = src_values;
     utils::HashMap<int, utils::HashSet<FactPair>> var_to_possible_effects;
     for (const ProjectedEffect &effect : effects) {
         // Optimization: skip over no-op effects.
@@ -197,13 +198,9 @@ void ExplicitProjectionFactory::add_transitions(
         }
         if (conditions_are_satisfied(effect.conditions, src_values)) {
             if (effect.conditions_covered_by_pattern) {
-                assert(var_to_possible_effects[effect.fact.var].empty());
-                var_to_possible_effects[effect.fact.var].insert(effect.fact);
+                assert(!var_to_possible_effects.contains(effect.fact.var));
+                definite_dest_values[effect.fact.var] = effect.fact.value;
             } else {
-                if (var_to_possible_effects[effect.fact.var].empty()) {
-                    // Add dummy fact signaling that no effect triggers for this variable.
-                    var_to_possible_effects[effect.fact.var].insert(FactPair::no_fact);
-                }
                 var_to_possible_effects[effect.fact.var].insert(effect.fact);
             }
         }
@@ -213,7 +210,12 @@ void ExplicitProjectionFactory::add_transitions(
     }
 
     if (var_to_possible_effects.empty()) {
-        looping_operators[op_id] = true;
+        int dest_rank = rank(definite_dest_values);
+        if (dest_rank == src_rank) {
+            looping_operators[op_id] = true;
+        } else {
+            backward_graph[dest_rank].emplace_back(op_id, src_rank);
+        }
         return;
     }
 
@@ -221,8 +223,11 @@ void ExplicitProjectionFactory::add_transitions(
     vector<vector<FactPair>> possible_effects;
     vector<vector<FactPair>::iterator> iterators;
     for (auto &[var, fact_set] : var_to_possible_effects) {
+        assert(!fact_set.empty());
         vector<FactPair> facts;
         facts.reserve(fact_set.size());
+        // Add dummy fact signaling that no effect triggers for this variable.
+        facts.push_back(FactPair::no_fact);
         facts.insert(facts.end(), fact_set.begin(), fact_set.end());
         possible_effects.push_back(move(facts));
     }
@@ -241,7 +246,7 @@ void ExplicitProjectionFactory::add_transitions(
             cout << endl;
         }
 
-        UnrankedState dest_values = src_values;
+        UnrankedState dest_values = definite_dest_values;
         for (auto it : iterators) {
             FactPair fact = *it;
             if (fact != FactPair::no_fact) {
