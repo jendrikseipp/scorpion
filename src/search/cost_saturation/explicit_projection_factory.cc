@@ -99,6 +99,10 @@ int ExplicitProjectionFactory::rank(const UnrankedState &state) const {
     return index;
 }
 
+int ExplicitProjectionFactory::replace_fact(int state, int var, int old_val, int new_val) const {
+    return state + hash_multipliers[var] * (new_val - old_val);
+}
+
 void ExplicitProjectionFactory::multiply_out_aux(
     const vector<FactPair> &partial_state, int partial_state_pos,
     UnrankedState &state, int state_pos,
@@ -192,7 +196,8 @@ void ExplicitProjectionFactory::add_transitions(
         cout << "op: " << op_id << endl;
         cout << "source state: " << src_values << endl;
     }
-    UnrankedState definite_dest_values = src_values;
+    int src_rank = rank(src_values);
+    int dest_rank = src_rank;
     utils::HashMap<int, utils::HashSet<FactPair>> var_to_possible_effects;
     for (const ProjectedEffect &effect : effects) {
         // Optimization: skip over no-op effects.
@@ -202,19 +207,17 @@ void ExplicitProjectionFactory::add_transitions(
         if (conditions_are_satisfied(effect.conditions, src_values)) {
             if (effect.conditions_covered_by_pattern) {
                 assert(!var_to_possible_effects.contains(effect.fact.var));
-                definite_dest_values[effect.fact.var] = effect.fact.value;
+                dest_rank = replace_fact(dest_rank, effect.fact.var, src_values[effect.fact.var], effect.fact.value);
             } else {
                 var_to_possible_effects[effect.fact.var].insert(effect.fact);
             }
         }
     }
     if (debug) {
-        cout << "number of effect variables: " << var_to_possible_effects.size() << endl;
+        cout << "variables with possible effects: " << var_to_possible_effects.size() << endl;
     }
 
-    int src_rank = rank(src_values);
     if (var_to_possible_effects.empty()) {
-        int dest_rank = rank(definite_dest_values);
         if (dest_rank == src_rank) {
             looping_operators[op_id] = true;
         } else {
@@ -250,21 +253,21 @@ void ExplicitProjectionFactory::add_transitions(
             cout << endl;
         }
 
-        UnrankedState dest_values = definite_dest_values;
+        int base_dest_rank = dest_rank;
         for (auto it : iterators) {
             FactPair fact = *it;
             if (fact != FactPair::no_fact) {
-                dest_values[fact.var] = fact.value;
+                dest_rank = replace_fact(dest_rank, fact.var, src_values[fact.var], fact.value);
             }
         }
         if (debug)
-            cout << "dest state: " << dest_values << endl;
-        int dest_rank = rank(dest_values);
+            cout << "dest state: " << dest_rank << endl;
         if (dest_rank == src_rank) {
             looping_operators[op_id] = true;
         } else {
             backward_graph[dest_rank].emplace_back(op_id, src_rank);
         }
+        dest_rank = base_dest_rank;
 
         // Increment the "counter" by 1.
         ++iterators[k - 1];
