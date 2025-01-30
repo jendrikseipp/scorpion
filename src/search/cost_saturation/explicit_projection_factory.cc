@@ -9,6 +9,8 @@
 #include "../utils/math.h"
 #include "../utils/memory.h"
 
+#include <numeric>
+
 using namespace std;
 
 namespace cost_saturation {
@@ -99,30 +101,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
     }
 
     compute_transitions();
-    goal_states = compute_goal_states();
-}
-
-vector<int> ExplicitProjectionFactory::compute_goal_states() const {
-    vector<int> goals;
-
-    // compute abstract goal var-val pairs
-    vector<FactPair> abstract_goals;
-    for (FactProxy goal : task_proxy.get_goals()) {
-        int var_id = goal.get_variable().get_id();
-        int val = goal.get_value();
-        if (variable_to_pattern_index[var_id] != -1) {
-            abstract_goals.emplace_back(variable_to_pattern_index[var_id], val);
-        }
-    }
-
-    VariablesProxy variables = task_proxy.get_variables();
-    for (int state_index = 0; state_index < num_states; ++state_index) {
-        if (is_goal_state(state_index, abstract_goals, variables)) {
-            goals.push_back(state_index);
-        }
-    }
-
-    return goals;
+    goal_states = rank_goal_states();
 }
 
 int ExplicitProjectionFactory::rank(const UnrankedState &state) const {
@@ -145,6 +124,60 @@ ExplicitProjectionFactory::UnrankedState ExplicitProjectionFactory::unrank(int r
         values.push_back(unrank(rank, i));
     }
     return values;
+}
+
+void ExplicitProjectionFactory::multiply_out_aux(
+    const vector<FactPair> &partial_state, int partial_state_pos,
+    vector<int> &state, int state_pos,
+    const function<void(const vector<int> &)> &callback) const {
+    if (state_pos == static_cast<int>(pattern.size())) {
+        callback(state);
+    } else if (partial_state_pos < static_cast<int>(partial_state.size()) &&
+               partial_state[partial_state_pos].var == state_pos) {
+        state[state_pos] = partial_state[partial_state_pos].value;
+        multiply_out_aux(partial_state, partial_state_pos + 1, state, state_pos + 1, callback);
+    } else {
+        for (int value = 0; value < domain_sizes[state_pos]; ++value) {
+            state[state_pos] = value;
+            multiply_out_aux(partial_state, partial_state_pos, state, state_pos + 1, callback);
+        }
+    }
+}
+
+void ExplicitProjectionFactory::multiply_out(
+    const vector<FactPair> &partial_state,
+    const function<void(const vector<int> &)> &callback) const {
+    assert(utils::is_sorted_unique(partial_state));
+    vector<int> state(pattern.size());
+    multiply_out_aux(partial_state, 0, state, 0, callback);
+}
+
+vector<int> ExplicitProjectionFactory::rank_goal_states() const {
+    vector<FactPair> abstract_goals;
+    for (FactProxy goal : task_proxy.get_goals()) {
+        int var_id = goal.get_variable().get_id();
+        int val = goal.get_value();
+        if (variable_to_pattern_index[var_id] != -1) {
+            abstract_goals.emplace_back(variable_to_pattern_index[var_id], val);
+        }
+    }
+
+    vector<int> goal_states;
+    if (abstract_goals.empty()) {
+        /*
+          In a projection to non-goal variables all states are goal states. We
+          treat this as a special case to avoid unnecessary effort multiplying
+          out all states.
+        */
+        goal_states.resize(num_states);
+        iota(goal_states.begin(), goal_states.end(), 0);
+    } else {
+        sort(abstract_goals.begin(), abstract_goals.end());
+        multiply_out(abstract_goals, [&](const vector<int> &state) {
+                         goal_states.push_back(rank(state));
+                     });
+    }
+    return goal_states;
 }
 
 vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
@@ -296,23 +329,6 @@ void ExplicitProjectionFactory::compute_transitions() {
         assert(utils::is_sorted_unique(copied_transitions));
     }
 #endif
-}
-
-bool ExplicitProjectionFactory::is_goal_state(
-    int state_index,
-    const vector<FactPair> &abstract_goals,
-    const VariablesProxy &variables) const {
-    for (const FactPair &abstract_goal : abstract_goals) {
-        int pattern_var_id = abstract_goal.var;
-        int var_id = pattern[pattern_var_id];
-        VariableProxy var = variables[var_id];
-        int temp = state_index / hash_multipliers[pattern_var_id];
-        int val = temp % var.get_domain_size();
-        if (val != abstract_goal.value) {
-            return false;
-        }
-    }
-    return true;
 }
 
 unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {

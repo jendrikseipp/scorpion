@@ -44,18 +44,15 @@ class ExplicitProjectionFactory {
         int op_id, const std::vector<ProjectedEffect> &effects);
     void compute_transitions();
 
-    std::vector<int> compute_goal_states() const;
-
-    /*
-      For a given abstract state (given as index), the according values
-      for each variable in the state are computed and compared with the
-      given pairs of goal variables and values. Returns true iff the
-      state is a goal state.
-    */
-    bool is_goal_state(
-        int state_index,
-        const std::vector<FactPair> &abstract_goals,
-        const VariablesProxy &variables) const;
+    void multiply_out_aux(
+        const std::vector<FactPair> &partial_state,
+        int partial_state_pos,
+        std::vector<int> &state, int state_pos,
+        const std::function<void(const std::vector<int> &)> &callback) const;
+    void multiply_out(
+        const std::vector<FactPair> &partial_state,
+        const std::function<void(const std::vector<int> &)> &callback) const;
+    std::vector<int> rank_goal_states() const;
 
 public:
     ExplicitProjectionFactory(
