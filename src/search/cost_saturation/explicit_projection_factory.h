@@ -31,7 +31,6 @@ class ExplicitProjectionFactory {
     std::vector<int> hash_multipliers;
 
     int rank(const UnrankedState &state) const;
-    int replace_fact(int state, int var, int old_val, int new_val) const;
     void multiply_out_aux(
         const std::vector<FactPair> &partial_state,
         int partial_state_pos,
