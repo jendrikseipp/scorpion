@@ -34,6 +34,9 @@ static vector<FactPair> get_projected_conditions(
         }
     }
     sort(relevant_conditions.begin(), relevant_conditions.end());
+    relevant_conditions.erase(unique(relevant_conditions.begin(), relevant_conditions.end()),
+                              relevant_conditions.end());
+    assert(utils::is_sorted_unique(relevant_conditions));
     return relevant_conditions;
 }
 
@@ -196,13 +199,13 @@ void ExplicitProjectionFactory::add_transitions(
     int op_id,
     const vector<ProjectedEffect> &effects) {
     const bool debug = false;
+    int src_rank = rank(src_values);
+    int base_dest_rank = src_rank;
     if (debug) {
         cout << endl;
         cout << "op: " << op_id << endl;
-        cout << "source state: " << src_values << endl;
+        cout << "source state: " << src_values << " -> " << src_rank << endl;
     }
-    int src_rank = rank(src_values);
-    int dest_rank = src_rank;
     vector<vector<FactPair>> possible_effects;
     // Loop over effects which are sorted by effect fact.
     for (const ProjectedEffect &effect : effects) {
@@ -212,7 +215,8 @@ void ExplicitProjectionFactory::add_transitions(
         }
         if (conditions_are_satisfied(effect.conditions, src_values)) {
             if (effect.conditions_covered_by_pattern) {
-                dest_rank = replace_fact(dest_rank, effect.fact.var, src_values[effect.fact.var], effect.fact.value);
+                base_dest_rank = replace_fact(
+                    base_dest_rank, effect.fact.var, src_values[effect.fact.var], effect.fact.value);
             } else {
                 // Store possible effects, grouped into buckets by variable.
                 if (possible_effects.empty()) {
@@ -238,13 +242,14 @@ void ExplicitProjectionFactory::add_transitions(
     }
     if (debug) {
         cout << "variables with possible effects: " << possible_effects.size() << endl;
+        cout << "base dest rank: " << base_dest_rank << endl;
     }
 
     if (possible_effects.empty()) {
-        if (dest_rank == src_rank) {
+        if (base_dest_rank == src_rank) {
             looping_operators[op_id] = true;
         } else {
-            backward_graph[dest_rank].emplace_back(op_id, src_rank);
+            backward_graph[base_dest_rank].emplace_back(op_id, src_rank);
         }
         return;
     }
@@ -267,21 +272,22 @@ void ExplicitProjectionFactory::add_transitions(
             cout << endl;
         }
 
-        int base_dest_rank = dest_rank;
+        int dest_rank = base_dest_rank;
         for (auto it : iterators) {
             FactPair fact = *it;
             if (fact != FactPair::no_fact) {
                 dest_rank = replace_fact(dest_rank, fact.var, src_values[fact.var], fact.value);
             }
         }
-        if (debug)
-            cout << "dest state: " << dest_rank << endl;
+        if (debug) {
+            cout << backward_graph.size() << endl;
+            cout << "Add transition from " << src_rank << " to " << dest_rank << endl;
+        }
         if (dest_rank == src_rank) {
             looping_operators[op_id] = true;
         } else {
             backward_graph[dest_rank].emplace_back(op_id, src_rank);
         }
-        dest_rank = base_dest_rank;
 
         // Increment the "counter" by 1.
         ++iterators[k - 1];
