@@ -272,7 +272,10 @@ void ExplicitProjectionFactory::add_transitions(
     for (auto &facts : possible_effects) {
         for (auto it = facts.begin(); it != facts.end();) {
             if (base_dest_values[it->var] == it->value) {
-                it = facts.erase(it);
+                // Swap current fact with the last fact.
+                *it = facts.back();
+                facts.pop_back();
+                // Do not increment the iterator, as we need to check the swapped-in fact.
             } else {
                 ++it;
             }
@@ -282,7 +285,10 @@ void ExplicitProjectionFactory::add_transitions(
     // Remove empty vectors.
     for (auto it = possible_effects.begin(); it != possible_effects.end();) {
         if (it->empty()) {
-            it = possible_effects.erase(it);
+            // Swap current vector with the last vector.
+            *it = move(possible_effects.back());
+            possible_effects.pop_back();
+            // Do not increment, as we need to check the swapped-in vector.
         } else {
             ++it;
         }
