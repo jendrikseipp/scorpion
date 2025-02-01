@@ -9,7 +9,7 @@ import project
 
 SUITE = [
     "briefcaseworld",
-    "burnt-pancakes-factored",
+    #"burnt-pancakes-factored",
     "caldera",
     "caldera-split",
     "cavediving-14-adl",
@@ -25,12 +25,12 @@ SUITE = [
     "fsc-visualmarker",
     "ged1-ds1",
     "gedp-ds2ndp",
-    "matrix-multiplication",
+    #"matrix-multiplication",
     "miconic-simpleadl",
     "nurikabe",
-    "pancakes-factored",
+    #"pancakes-factored",
     "rubiks-cube",
-    "rubiks-cube-factored",
+    #"rubiks-cube-factored",
     "settlers",
     "spider",
     "t0-adder",
@@ -43,11 +43,11 @@ SUITE = [
     "t0-sortnet",
     "t0-sortnet-alt",
     "t0-uts",
-    "topspin-factored",
+    #"topspin-factored",
 ]
 
 
-ENV = project.TetralithEnvironment(email="jendrik.seipp@liu.se", memory_per_cpu="8G")
+ENV = project.TetralithEnvironment(email="jendrik.seipp@liu.se", memory_per_cpu="8G", extra_options="#SBATCH --account=naiss2024-5-421")
 # Use path to your Fast Downward repository.
 REPO = "/proj/dfsplan/users/x_jense/scorpion-dev"
 DIR = Path(__file__).parent
