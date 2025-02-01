@@ -202,6 +202,19 @@ bool ExplicitProjectionFactory::conditions_are_satisfied(
                   });
 }
 
+void ExplicitProjectionFactory::add_transition(
+    int src_rank, int op_id, const UnrankedState &dest_values, bool debug) {
+    int dest_rank = rank(dest_values);
+    if (debug) {
+        cout << "Add transition from " << src_rank << " to " << dest_rank << endl;
+    }
+    if (dest_rank == src_rank) {
+        looping_operators[op_id] = true;
+    } else {
+        backward_graph[dest_rank].emplace_back(op_id, src_rank);
+    }
+}
+
 void ExplicitProjectionFactory::add_transitions(
     const UnrankedState &src_values,
     int op_id,
@@ -218,7 +231,7 @@ void ExplicitProjectionFactory::add_transitions(
                  << (effect.conditions_covered_by_pattern ? "!" : "?") << endl;
         }
     }
-    // TODO: add specialized version for operators without conditional effects.
+
     vector<vector<FactPair>> possible_effects;
     // Loop over effects which are sorted by effect fact.
     for (const ProjectedEffect &effect : effects) {
@@ -283,12 +296,7 @@ void ExplicitProjectionFactory::add_transitions(
 
     // Handle the case where all effects always trigger in this state.
     if (possible_effects.empty()) {
-        int base_dest_rank = rank(base_dest_values);
-        if (base_dest_rank == src_rank) {
-            looping_operators[op_id] = true;
-        } else {
-            backward_graph[base_dest_rank].emplace_back(op_id, src_rank);
-        }
+        add_transition(src_rank, op_id, base_dest_values);
         return;
     }
 
@@ -317,15 +325,7 @@ void ExplicitProjectionFactory::add_transitions(
                 dest_values[fact.var] = fact.value;
             }
         }
-        int dest_rank = rank(dest_values);
-        if (debug) {
-            cout << "Add transition from " << src_rank << " to " << dest_rank << endl;
-        }
-        if (dest_rank == src_rank) {
-            looping_operators[op_id] = true;
-        } else {
-            backward_graph[dest_rank].emplace_back(op_id, src_rank);
-        }
+        add_transition(src_rank, op_id, dest_values, debug);
 
         // Increment the "counter" by 1.
         ++iterators[k - 1];
