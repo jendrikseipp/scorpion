@@ -212,7 +212,6 @@ public:
     virtual shared_ptr<CartesianAbstractionGenerator> create_component(
         const plugins::Options &opts,
         const utils::Context &) const override {
-        cartesian_abstractions::g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
         cartesian_abstractions::g_hacked_tsr = opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation");
         cartesian_abstractions::g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
         cartesian_abstractions::g_hacked_use_abstract_flaw_search = opts.get<bool>("use_abstract_flaw_search");

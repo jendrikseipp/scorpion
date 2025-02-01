@@ -23,7 +23,6 @@ class Feature;
 namespace cartesian_abstractions {
 class Abstraction;
 
-extern int g_hacked_extra_memory_padding_mb;
 extern bool g_hacked_sort_transitions;
 extern bool g_hacked_use_abstract_flaw_search;
 extern TransitionRepresentation g_hacked_tsr;

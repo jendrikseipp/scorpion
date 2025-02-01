@@ -26,7 +26,6 @@ using namespace std;
 
 namespace cartesian_abstractions {
 class SubtaskGenerator;
-int g_hacked_extra_memory_padding_mb = 512;
 bool g_hacked_sort_transitions = false;
 bool g_hacked_use_abstract_flaw_search = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::STORE;
