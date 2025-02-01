@@ -8,16 +8,12 @@
 #include "transition_system.h"
 
 #include "../plugins/plugin.h"
-#include "../heuristics/additive_heuristic.h"
-#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
-#include "../utils/memory.h"
 #include "../utils/rng_options.h"
 
 #include <algorithm>
 #include <cassert>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <map>
 #include <sstream>
