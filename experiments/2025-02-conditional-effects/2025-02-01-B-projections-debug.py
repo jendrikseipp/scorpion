@@ -56,7 +56,6 @@ BENCHMARKS_DIR = "/proj/dfsplan/users/x_jense/conditional-effects-for-abstractio
 # If REVISION_CACHE is None, the default ./data/revision-cache is used.
 REVISION_CACHE = None
 REV_NICKS = [
-    ("cff78b5d9", "01-base"),
     ("11b976303", "02-faster-explicit-projections"),
 ]
 
@@ -115,8 +114,8 @@ for rev, rev_nick in REV_NICKS:
             REPO,
             rev,
             config,
-            build_options=["release", "-j4"],
-            driver_options=sas_driver_options,
+            build_options=["debug", "-j4"],
+            driver_options=sas_driver_options + ["--build", "debug"],
         )
 
 # Add step that writes experiment files to disk.
