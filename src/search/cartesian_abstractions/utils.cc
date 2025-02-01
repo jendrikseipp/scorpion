@@ -221,7 +221,7 @@ void add_common_cegar_options(plugins::Feature &feature) {
         "false");
     feature.add_option<bool>(
         "sort_transitions",
-        "sort transitions",
+        "sort transitions to ensure the different transition system representations yield the same abstractions",
         "false");
     feature.add_option<bool>(
         "use_abstract_flaw_search",

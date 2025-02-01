@@ -108,7 +108,7 @@ bool CartesianAbstractionGenerator::has_reached_resource_limit(
 }
 
 pair<unique_ptr<cartesian_abstractions::Abstraction>, vector<int>>
-CartesianAbstractionGenerator::build_abstraction_for_subtask(
+CartesianAbstractionGenerator::compute_abstraction_and_goal_distances_for_subtask(
     const shared_ptr<AbstractTask> &subtask,
     int remaining_subtasks,
     const utils::CountdownTimer &timer) {
@@ -142,7 +142,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
         auto [cartesian_abstraction, goal_distances] =
-            build_abstraction_for_subtask(subtask, remaining_subtasks, timer);
+            compute_abstraction_and_goal_distances_for_subtask(subtask, remaining_subtasks, timer);
 
         /* If we run out of memory while building an abstraction, we discard it
            to avoid running out of memory during the abstraction conversion. */
