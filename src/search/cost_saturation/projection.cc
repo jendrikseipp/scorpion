@@ -137,12 +137,12 @@ static OperatorGroups group_equivalent_operators(
         grouped_operator_ids[make_pair(move(preconditions), move(effects))].push_back(op.get_id());
     }
     OperatorGroups groups;
-    for (auto &entry : grouped_operator_ids) {
-        auto &pre_eff = entry.first;
+    for (auto &[pre_eff, operator_ids] : grouped_operator_ids) {
         OperatorGroup group;
-        group.preconditions = move(pre_eff.first);
-        group.effects = move(pre_eff.second);
-        group.operator_ids = move(entry.second);
+        // Can't copy the facts because map keys are const.
+        group.preconditions = pre_eff.first;
+        group.effects = pre_eff.second;
+        group.operator_ids = move(operator_ids);
         assert(utils::is_sorted_unique(group.operator_ids));
         groups.push_back(move(group));
     }

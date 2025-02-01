@@ -35,7 +35,6 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     // minimal improvement required for hill climbing to continue search
     const int min_improvement;
     const double max_time;
-    const int max_generated_patterns;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::unique_ptr<IncrementalCanonicalPDBs> current_pdbs;
@@ -133,9 +132,17 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     virtual PatternCollectionInformation compute_patterns(
         const std::shared_ptr<AbstractTask> &task) override;
 public:
-    explicit PatternCollectionGeneratorHillclimbing(const plugins::Options &opts);
-    virtual ~PatternCollectionGeneratorHillclimbing() = default;
+    PatternCollectionGeneratorHillclimbing(
+        int pdb_max_size, int collection_max_size, int num_samples,
+        int min_improvement, double max_time, int random_seed,
+        utils::Verbosity verbosity);
 };
+
+extern void add_hillclimbing_options_to_feature(
+    plugins::Feature &feature);
+std::tuple<int, int, int, int, double, int>
+get_hillclimbing_arguments_from_options(
+    const plugins::Options &opts);
 }
 
 #endif

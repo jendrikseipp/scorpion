@@ -2,7 +2,6 @@
 
 #include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
-#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
 #include <cassert>
@@ -11,10 +10,10 @@
 using namespace std;
 
 namespace iterative_width_search {
-IterativeWidthSearch::IterativeWidthSearch(const plugins::Options &opts)
-    : SearchAlgorithm(opts),
-      width(opts.get<int>("width")),
-      debug(opts.get<utils::Verbosity>("verbosity") == utils::Verbosity::DEBUG),
+IterativeWidthSearch::IterativeWidthSearch(
+    int width, OperatorCost cost_type, int bound, double max_time,
+    const string &description, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
       novelty_table(task_proxy, width) {
     utils::g_log << "Setting up iterative width search." << endl;
 }
@@ -81,7 +80,7 @@ SearchStatus IterativeWidthSearch::step() {
 
         SearchNode succ_node = search_space.get_node(succ_state);
         assert(succ_node.is_new());
-        succ_node.open(node, op, get_adjusted_cost(op));
+        succ_node.open_new_node(node, op, get_adjusted_cost(op));
         open_list.push_back(succ_state.get_id());
     }
 
@@ -99,7 +98,14 @@ public:
         document_title("Iterated width search");
         add_option<int>(
             "width", "maximum conjunction size", "2", plugins::Bounds("1", "2"));
-        SearchAlgorithm::add_options_to_feature(*this);
+        add_search_algorithm_options_to_feature(*this, "iw");
+    }
+
+    virtual shared_ptr<IterativeWidthSearch> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<IterativeWidthSearch>(
+            options.get<int>("width"),
+            get_search_algorithm_arguments_from_options(options));
     }
 };
 

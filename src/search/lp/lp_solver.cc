@@ -24,6 +24,11 @@ void add_lp_solver_option_to_feature(plugins::Feature &feature) {
         "See [build instructions https://github.com/aibasel/downward/blob/main/BUILD.md].");
 }
 
+tuple<LPSolverType> get_lp_solver_arguments_from_options(
+    const plugins::Options &opts) {
+    return make_tuple(opts.get<LPSolverType>("lpsolver"));
+}
+
 LPConstraint::LPConstraint(double lower_bound, double upper_bound)
     : lower_bound(lower_bound),
       upper_bound(upper_bound) {
@@ -107,7 +112,7 @@ const string &LinearProgram::get_objective_name() const {
     return objective_name;
 }
 
-void LinearProgram::set_objective_name(string name) {
+void LinearProgram::set_objective_name(const string &name) {
     objective_name = name;
 }
 

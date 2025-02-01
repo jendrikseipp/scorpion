@@ -12,8 +12,6 @@
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
-#include <cmath>
-
 using namespace std;
 
 namespace cost_saturation {
@@ -28,7 +26,7 @@ PhO::PhO(
     const vector<int> &costs,
     lp::LPSolverType solver_type,
     bool saturated,
-    utils::LogProxy log)
+    const utils::LogProxy &log)
     : lp_solver(solver_type),
       log(log) {
     double infinity = lp_solver.get_infinity();
@@ -141,7 +139,7 @@ public:
         document_synopsis(
             "Compute the maximum over multiple PhO heuristics precomputed offline.");
 
-        add_options_for_cost_partitioning_heuristic(*this);
+        add_options_for_cost_partitioning_heuristic(*this, "pho");
         add_option<bool>("saturated", "saturate costs", "true");
         add_order_options(*this);
         lp::add_lp_solver_option_to_feature(*this);
@@ -151,8 +149,6 @@ public:
         const plugins::Options &options, const utils::Context &) const override {
         shared_ptr<AbstractTask> scaled_costs_task =
             get_scaled_costs_task(options.get<shared_ptr<AbstractTask>>("transform"));
-        plugins::Options options_with_scaled_costs_task = options;
-        options_with_scaled_costs_task.set<shared_ptr<AbstractTask>>("transform", scaled_costs_task);
 
         TaskProxy task_proxy(*scaled_costs_task);
         vector<int> costs = task_properties::get_operator_costs(task_proxy);
@@ -160,7 +156,7 @@ public:
             scaled_costs_task, options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
         PhO pho(abstractions, costs, options.get<lp::LPSolverType>("lpsolver"),
                 options.get<bool>("saturated"),
-                utils::get_log_from_options(options));
+                utils::get_log_for_verbosity(options.get<utils::Verbosity>("verbosity")));
         CPFunction cp_function = [&pho](const Abstractions &abstractions_,
                                         const vector<int> &order_,
                                         const vector<int> &costs_,
@@ -168,14 +164,15 @@ public:
                 return pho.compute_cost_partitioning(abstractions_, order_, costs_, abstract_state_ids);
             };
         vector<CostPartitioningHeuristic> cp_heuristics =
-            get_cp_heuristic_collection_generator_from_options(options).generate_cost_partitionings(
+            get_cp_heuristic_collection_generator_from_options(options)->generate_cost_partitionings(
                 task_proxy, abstractions, costs, cp_function);
-        return make_shared<ScaledCostPartitioningHeuristic>(
-            options_with_scaled_costs_task,
+        return plugins::make_shared_from_arg_tuples<ScaledCostPartitioningHeuristic>(
             move(abstractions),
             move(cp_heuristics),
             // TODO: extract dead ends.
-            nullptr);
+            nullptr,
+            scaled_costs_task, options.get<bool>("cache_estimates"),
+            options.get<string>("description"), options.get<utils::Verbosity>("verbosity"));
     }
 };
 

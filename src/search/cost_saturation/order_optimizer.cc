@@ -5,8 +5,6 @@
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 
-#include <cassert>
-
 using namespace std;
 
 namespace cost_saturation {

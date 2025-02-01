@@ -1,9 +1,7 @@
-import os
-
 from .util import DRIVER_DIR
 
 
-PORTFOLIO_DIR = os.path.join(DRIVER_DIR, "portfolios")
+PORTFOLIO_DIR = DRIVER_DIR / "portfolios"
 
 ALIASES = {}
 
@@ -150,12 +148,11 @@ ALIASES["scorpion"] = [
 
 
 PORTFOLIOS = {}
-for portfolio in os.listdir(PORTFOLIO_DIR):
-    if portfolio == "__pycache__":
+for portfolio in PORTFOLIO_DIR.iterdir():
+    if portfolio.name == "__pycache__":
         continue
-    name, ext = os.path.splitext(portfolio)
-    assert ext == ".py", portfolio
-    PORTFOLIOS[name.replace("_", "-")] = os.path.join(PORTFOLIO_DIR, portfolio)
+    assert portfolio.suffix == ".py", str(portfolio)
+    PORTFOLIOS[portfolio.stem.replace("_", "-")] = PORTFOLIO_DIR / portfolio
 
 
 def show_aliases():

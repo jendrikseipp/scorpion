@@ -19,7 +19,7 @@ class OrderGenerator {
 protected:
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 public:
-    explicit OrderGenerator(const plugins::Options &opts);
+    explicit OrderGenerator(int random_seed);
     virtual ~OrderGenerator() = default;
 
     virtual void initialize(
@@ -29,7 +29,9 @@ public:
         const std::vector<int> &abstract_state_ids, bool verbose) = 0;
 };
 
-extern void add_common_order_generator_options(plugins::Feature &feature);
+extern void add_order_generator_arguments_to_feature(plugins::Feature &feature);
+extern std::tuple<int> get_order_generator_arguments_from_options(
+    const plugins::Options &opts);
 }
 
 #endif

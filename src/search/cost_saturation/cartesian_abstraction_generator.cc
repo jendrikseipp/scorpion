@@ -70,31 +70,33 @@ static unique_ptr<Abstraction> convert_abstraction(
 
 
 CartesianAbstractionGenerator::CartesianAbstractionGenerator(
-    const plugins::Options &opts)
-    : AbstractionGenerator(opts),
-      subtask_generators(
-          opts.get_list<shared_ptr<cartesian_abstractions::SubtaskGenerator>>("subtasks")),
-      max_states(opts.get<int>("max_states")),
-      max_transitions(opts.get<int>("max_transitions")),
-      max_time(opts.get<double>("max_time")),
-      store_spt_children(opts.get<bool>("store_shortest_path_tree_children")),
-      store_spt_parents(opts.get<bool>("store_shortest_path_tree_parents")),
-      pick_flawed_abstract_state(
-          opts.get<cartesian_abstractions::PickFlawedAbstractState>("pick_flawed_abstract_state")),
-      pick_split(opts.get<cartesian_abstractions::PickSplit>("pick_split")),
-      tiebreak_split(opts.get<cartesian_abstractions::PickSplit>("tiebreak_split")),
-      max_concrete_states_per_abstract_state(
-          opts.get<int>("max_concrete_states_per_abstract_state")),
-      max_state_expansions(opts.get<int>("max_state_expansions")),
-      extra_memory_padding_mb(opts.get<int>("memory_padding")),
-      rng(utils::parse_rng_from_options(opts)),
-      dot_graph_verbosity(opts.get<cartesian_abstractions::DotGraphVerbosity>("dot_graph_verbosity")),
+    const vector<shared_ptr<cartesian_abstractions::SubtaskGenerator>> &subtasks,
+    int max_states, int max_transitions, double max_time,
+    cartesian_abstractions::PickFlawedAbstractState pick_flawed_abstract_state,
+    cartesian_abstractions::PickSplit pick_split,
+    cartesian_abstractions::PickSplit tiebreak_split,
+    int max_concrete_states_per_abstract_state, int max_state_expansions,
+    bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
+    int memory_padding, int random_seed,
+    cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
+    utils::Verbosity verbosity)
+    : AbstractionGenerator(verbosity),
+      subtask_generators(subtasks),
+      max_states(max_states),
+      max_transitions(max_transitions),
+      max_time(max_time),
+      store_spt_children(store_shortest_path_tree_children),
+      store_spt_parents(store_shortest_path_tree_parents),
+      pick_flawed_abstract_state(pick_flawed_abstract_state),
+      pick_split(pick_split),
+      tiebreak_split(tiebreak_split),
+      max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
+      max_state_expansions(max_state_expansions),
+      extra_memory_padding_mb(memory_padding),
+      rng(utils::get_rng(random_seed)),
+      dot_graph_verbosity(dot_graph_verbosity),
       num_states(0),
       num_transitions(0) {
-    cartesian_abstractions::g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
-    cartesian_abstractions::g_hacked_tsr = opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation");
-    cartesian_abstractions::g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
-    cartesian_abstractions::g_hacked_use_abstract_flaw_search = opts.get<bool>("use_abstract_flaw_search");
 }
 
 bool CartesianAbstractionGenerator::has_reached_resource_limit(
@@ -127,7 +129,7 @@ CartesianAbstractionGenerator::build_abstraction_for_subtask(
         dot_graph_verbosity);
     cout << endl;
     return {
-               cegar.extract_abstraction(), cegar.get_goal_distances()
+        cegar.extract_abstraction(), cegar.get_goal_distances()
     };
 }
 
@@ -205,6 +207,32 @@ public:
         document_title("Cartesian abstraction generator");
         cartesian_abstractions::add_common_cegar_options(*this);
         utils::add_log_options_to_feature(*this);
+    }
+
+    virtual shared_ptr<CartesianAbstractionGenerator> create_component(
+        const plugins::Options &opts,
+        const utils::Context &) const override {
+        cartesian_abstractions::g_hacked_extra_memory_padding_mb = opts.get<int>("memory_padding");
+        cartesian_abstractions::g_hacked_tsr = opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation");
+        cartesian_abstractions::g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
+        cartesian_abstractions::g_hacked_use_abstract_flaw_search = opts.get<bool>("use_abstract_flaw_search");
+
+        return plugins::make_shared_from_arg_tuples<CartesianAbstractionGenerator>(
+            opts.get_list<shared_ptr<cartesian_abstractions::SubtaskGenerator>>("subtasks"),
+            opts.get<int>("max_states"),
+            opts.get<int>("max_transitions"),
+            opts.get<double>("max_time"),
+            opts.get<cartesian_abstractions::PickFlawedAbstractState>("pick_flawed_abstract_state"),
+            opts.get<cartesian_abstractions::PickSplit>("pick_split"),
+            opts.get<cartesian_abstractions::PickSplit>("tiebreak_split"),
+            opts.get<int>("max_concrete_states_per_abstract_state"),
+            opts.get<int>("max_state_expansions"),
+            opts.get<bool>("store_shortest_path_tree_children"),
+            opts.get<bool>("store_shortest_path_tree_parents"),
+            opts.get<int>("memory_padding"),
+            utils::get_rng_arguments_from_options(opts),
+            opts.get<cartesian_abstractions::DotGraphVerbosity>("dot_graph_verbosity"),
+            opts.get<utils::Verbosity>("verbosity"));
     }
 };
 

@@ -4,10 +4,6 @@
 #include "order_generator.h"
 #include "greedy_order_utils.h"
 
-namespace options {
-class Options;
-}
-
 namespace cost_saturation {
 class OrderGeneratorGreedy : public OrderGenerator {
     const ScoringFunction scoring_function;
@@ -21,7 +17,7 @@ class OrderGeneratorGreedy : public OrderGenerator {
         int abs_id) const;
 
 public:
-    explicit OrderGeneratorGreedy(const plugins::Options &opts);
+    OrderGeneratorGreedy(ScoringFunction scoring_function, int random_seed);
 
     virtual void initialize(
         const Abstractions &abstractions,

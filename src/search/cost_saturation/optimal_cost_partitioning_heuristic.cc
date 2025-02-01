@@ -17,16 +17,17 @@ using namespace std;
 
 namespace cost_saturation {
 OptimalCostPartitioningHeuristic::OptimalCostPartitioningHeuristic(
-    const plugins::Options &opts)
-    : Heuristic(opts),
-      lp_solver(opts.get<lp::LPSolverType>("lpsolver")),
-      allow_negative_costs(opts.get<bool>("allow_negative_costs")) {
+    const vector<shared_ptr<AbstractionGenerator>> &abstraction_generators,
+    bool allow_negative_costs, lp::LPSolverType lpsolver,
+    const shared_ptr<AbstractTask> &transform,
+    bool cache_estimates, const string &description,
+    utils::Verbosity verbosity)
+    : Heuristic(transform, cache_estimates, description, verbosity),
+      lp_solver(lpsolver),
+      allow_negative_costs(allow_negative_costs) {
     utils::Timer timer;
 
-    Abstractions abstractions = generate_abstractions(
-        task,
-        opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-
+    Abstractions abstractions = generate_abstractions(task, abstraction_generators);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (const auto &abstraction : abstractions) {
         h_values.push_back(abstraction->compute_goal_distances(costs));
@@ -230,12 +231,21 @@ public:
         document_subcategory("heuristics_cost_partitioning");
         document_title("Optimal cost partitioning heuristic");
         document_synopsis("Compute an optimal cost partitioning for each evaluated state.");
-        add_options_for_cost_partitioning_heuristic(*this);
+        add_options_for_cost_partitioning_heuristic(*this, "ocp");
         lp::add_lp_solver_option_to_feature(*this);
         add_option<bool>(
             "allow_negative_costs",
             "use general instead of non-negative cost partitioning",
             "true");
+    }
+
+    virtual shared_ptr<OptimalCostPartitioningHeuristic> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<OptimalCostPartitioningHeuristic>(
+            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+            options.get<bool>("allow_negative_costs"),
+            lp::get_lp_solver_arguments_from_options(options),
+            get_heuristic_arguments_from_options(options));
     }
 };
 

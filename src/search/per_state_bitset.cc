@@ -116,13 +116,6 @@ int ConstBitsetView::count() const {
     for (int i = 0; i < data.size(); ++i) {
         result += popcount(data[i]);
     }
-#ifndef NDEBUG
-    int slow_result = 0;
-    for (int index = 0; index < num_bits; ++index) {
-        slow_result += test(index);
-    }
-    assert(result == slow_result);
-#endif
     return result;
 }
 

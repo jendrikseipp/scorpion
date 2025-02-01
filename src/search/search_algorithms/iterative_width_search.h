@@ -6,19 +6,10 @@
 #include "../novelty/novelty_table.h"
 
 #include <deque>
-#include <memory>
-#include <vector>
-
-namespace options {
-class Options;
-}
 
 // TODO: rename to IteratedWidthSearch.
 namespace iterative_width_search {
 class IterativeWidthSearch : public SearchAlgorithm {
-    const int width;
-    const bool debug;
-
     std::deque<StateID> open_list;
     novelty::NoveltyTable novelty_table;
 
@@ -30,7 +21,9 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit IterativeWidthSearch(const plugins::Options &opts);
+    IterativeWidthSearch(
+        int width, OperatorCost cost_type, int bound, double max_time,
+        const std::string &description, utils::Verbosity verbosity);
 
     virtual void print_statistics() const override;
 

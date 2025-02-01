@@ -11,14 +11,31 @@ See [below](#differences-between-scorpion-and-fast-downward) for a detailed list
 of extensions. We regularly port the latest changes from Fast Downward to
 Scorpion and also integrate some features from Scorpion back into Fast Downward.
 
-Please use the following reference when citing Scorpion:
-Jendrik Seipp, Thomas Keller and Malte Helmert.
+**Citing Scorpion**:</br>
+Jendrik Seipp, Thomas Keller and Malte Helmert.</br>
 [Saturated Cost Partitioning for Optimal Classical Planning](
-https://www.jair.org/index.php/jair/article/view/11673).
+https://www.jair.org/index.php/jair/article/view/11673).</br>
 Journal of Artificial Intelligence Research 67, pp. 129-167. 2020.
 
 
 ## Instructions
+
+### Apptainer image
+
+To simplify the installation process, we provide an executable
+[Apptainer](https://apptainer.org/) container (formerly known as Singularity).
+It accepts the same arguments as the `fast-downward.py` script (see below).
+
+    # Download the image,
+    apptainer pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
+
+    # or build it yourself.
+    apptainer build scorpion.sif Apptainer
+
+    # Then run the recommended configuration (for solving STRIPS tasks optimally).
+    ./scorpion.sif --transform-task preprocess-h2 --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
+
+### Manual compilation
 
 Install the dependencies (the table below lists which versions are tested):
 
@@ -41,20 +58,35 @@ documentation](https://jendrikseipp.github.io/scorpion) shows which plugins are
 available (heuristics, search algorithms, etc.) and how to use them.
 
 
-### Recommended configuration
+### Recommended configurations
 
-We recommend using the following configuration:
+In case you want to **solve tasks quickly** and do **not require optimality**,
+we recommend using the first iteration of
+[LAMA](https://www.jair.org/index.php/jair/article/view/10667) with an added
+[type-based open list](https://ojs.aaai.org/index.php/AAAI/article/view/9036/):
 
-```
-./fast-downward.py \
-  --transform-task preprocess-h2 \
-  ../benchmarks/gripper/prob01.pddl \
-  --search "astar(scp_online([
-        projections(sys_scp(max_time=100, max_time_per_restart=10)),
-        cartesian()],
-        saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
-        pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))"
-```
+    ./fast-downward.py \
+      --transform-task preprocess-h2 \
+      [DOMAIN_FILE] PROBLEM_FILE \
+      --search "let(hlm, landmark_sum(lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one)),
+        let(hff, ff(transform=adapt_costs(one)),
+        lazy(alt([single(hff), single(hff, pref_only=true), single(hlm), single(hlm, pref_only=true),
+        type_based([hff, g()])], boost=1000), preferred=[hff, hlm], cost_type=one)))"
+
+For solving **STRIPS tasks optimally**, we recommend using the `--alias scorpion` shortcut
+
+    ./fast-downward.py --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
+
+which is equivalent to
+
+    ./fast-downward.py \
+      --transform-task preprocess-h2 \
+      [DOMAIN_FILE] PROBLEM_FILE \
+      --search "astar(scp_online([
+          projections(sys_scp(max_time=100, max_time_per_restart=10)),
+          cartesian()],
+          saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
+          pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))"
 
 The `preprocess-h2` call prunes irrelevant operators in a preprocessing
 step. The search configuration uses [partial order
@@ -73,26 +105,22 @@ abstractions](https://jair.org/index.php/jair/article/view/11217).
 component_options=[], driver_options=["--transform-task", "preprocess-h2",
 "--alias", "scorpion"]` to run the recommended Scorpion configuration.)
 
-#### Apptainer image
+For solving **tasks with conditional effects optimally**, we recommend using
 
-To simplify the installation process, we provide an executable
-[Apptainer](https://apptainer.org/) container (formerly known as Singularity).
-It accepts the same arguments as the `fast-downward.py` script (see above).
-
-    # Download the image,
-    apptainer pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
-
-    # or build it yourself.
-    apptainer build scorpion.sif Apptainer
-
-    # Then run recommended configuration (available via "scorpion" alias).
-    ./scorpion.sif --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
+    ./fast-downward.py \
+      --transform-task preprocess-h2 \
+      [DOMAIN_FILE] PROBLEM_FILE \
+      --search "astar(scp_online([projections(sys_scp(
+            max_time=100, max_time_per_restart=10, max_pdb_size=2M, max_collection_size=20M,
+            pattern_type=interesting_non_negative, create_complete_transition_system=true),
+          create_complete_transition_system=true)],
+        saturator=perimstar, max_time=100, max_size=1M, interval=10K, orders=greedy_orders()))"
 
 ### IPC versions
 
 If you prefer to run the Scorpion versions from the IPC 2018 or 2023 (which are
 based on an older Fast Downward version and use different abstractions), we
-recommend using the
+recommend using the Apptainer images from the
 [Scorpion 2018](https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/) or
 [Scorpion 2023](https://github.com/ipc2023-classical/planner25) repos.
 
@@ -137,9 +165,6 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 
 - `{cegar,cartesian}(..., dot_graph_verbosity={silent, write_to_console, write_to_file})`:
   write intermediate abstractions as Graphviz dot files to stdout or to files (default=`silent`).
-
-- `hillclimbing(..., max_generated_patterns=200)`: limit the number of
-  patterns generated by hill climbing.
 
 - `systematic(..., pattern_type=interesting_general)`: compute interesting
   patterns for general cost partitioning.
@@ -235,7 +260,7 @@ Different cost partitioning algorithms for landmark heuristics:
 
 Fast Downward is a domain-independent classical planning system.
 
-Copyright 2003-2023 Fast Downward contributors (see below).
+Copyright 2003-2024 Fast Downward contributors (see below).
 
 For further information:
 - Fast Downward website: <https://www.fast-downward.org>
@@ -260,13 +285,13 @@ This version of Fast Downward has been tested with the following software versio
 
 | OS           | Python | C++ compiler                                                     | CMake |
 | ------------ | ------ | ---------------------------------------------------------------- | ----- |
-| Ubuntu 22.04 | 3.10   | GCC 11, GCC 12, Clang 14                                         | 3.22  |
-| Ubuntu 20.04 | 3.8    | GCC 10, Clang 12                                                 | 3.16  |
-| macOS 12     | 3.10   | AppleClang 14                                                    | 3.24  |
-| macOS 11     | 3.8    | AppleClang 13                                                    | 3.24  |
-| Windows 10   | 3.8    | Visual Studio Enterprise 2019 (MSVC 19.29) and 2022 (MSVC 19.31) | 3.22  |
+| Ubuntu 24.04 | 3.10   | GCC 14, Clang 18                                                 | 3.30  |
+| Ubuntu 22.04 | 3.10   | GCC 12, Clang 15                                                 | 3.30  |
+| macOS 14     | 3.10   | AppleClang 15                                                    | 3.30  |
+| macOS 13     | 3.10   | AppleClang 15                                                    | 3.30  |
+| Windows 10   | 3.8    | Visual Studio Enterprise 2019 (MSVC 19.29) and 2022 (MSVC 19.41) | 3.30  |
 
-We test LP support with CPLEX 22.1.1 and SoPlex 6.0.3+. On Ubuntu we
+We test LP support with CPLEX 22.1.1 and SoPlex 7.1.1. On Ubuntu we
 test both CPLEX and SoPlex. On Windows we currently only test CPLEX,
 and on macOS we do not test LP solvers (yet).
 
@@ -285,19 +310,23 @@ Currently, this list is sorted by the last year the person has been
 active, and in case of ties, by the earliest year the person started
 contributing, and finally by last name.
 
-- 2003-2023 Malte Helmert
-- 2008-2016, 2018-2023 Gabriele Roeger
-- 2010-2023 Jendrik Seipp
-- 2010-2011, 2013-2023 Silvan Sievers
-- 2012-2023 Florian Pommerening
-- 2013, 2015-2023 Salomé Eriksson
+- 2003-2024 Malte Helmert
+- 2008-2016, 2018-2024 Gabriele Roeger
+- 2010-2024 Jendrik Seipp
+- 2010-2011, 2013-2024 Silvan Sievers
+- 2012-2024 Florian Pommerening
+- 2013, 2015-2024 Salomé Eriksson
+- 2018-2024 Patrick Ferber
+- 2021-2024 Clemens Büchner
+- 2022-2024 Remo Christen
+- 2023-2024 Simon Dold
+- 2023-2024 Claudia S. Grundke
+- 2024 Martín Pozo
+- 2024 Tanja Schindler
+- 2024 David Speck
 - 2015, 2021-2023 Thomas Keller
-- 2018-2023 Patrick Ferber
 - 2018-2020, 2023 Augusto B. Corrêa
-- 2021-2023 Clemens Büchner
-- 2022-2023 Remo Christen
-- 2023 Simon Dold
-- 2023 Claudia S. Grundke
+- 2023 Victor Paléologue
 - 2023 Emanuele Tirendi
 - 2021-2022 Dominik Drexler
 - 2016-2020 Cedric Geissmann

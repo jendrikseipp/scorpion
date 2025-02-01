@@ -23,6 +23,10 @@ struct FactPair {
         return var < other.var || (var == other.var && value < other.value);
     }
 
+    bool operator>=(const FactPair &other) const {
+        return !((*this) < other);
+    }
+
     bool operator==(const FactPair &other) const {
         return var == other.var && value == other.value;
     }

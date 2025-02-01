@@ -4,12 +4,12 @@
 #include "projection.h"
 #include "types.h"
 
-#include "../pdbs/match_tree.h"
-#include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
 #include "../utils/memory.h"
+
+#include <numeric>
 
 using namespace std;
 
@@ -33,6 +33,10 @@ static vector<FactPair> get_projected_conditions(
             relevant_conditions.emplace_back(pattern_index, fact.get_value());
         }
     }
+    sort(relevant_conditions.begin(), relevant_conditions.end());
+    relevant_conditions.erase(unique(relevant_conditions.begin(), relevant_conditions.end()),
+                              relevant_conditions.end());
+    assert(utils::is_sorted_unique(relevant_conditions));
     return relevant_conditions;
 }
 
@@ -40,29 +44,30 @@ static vector<FactPair> get_projected_conditions(
 struct ProjectedEffect {
     FactPair fact;
     vector<FactPair> conditions;
-    bool always_triggers;
+    bool conditions_covered_by_pattern;
 
     ProjectedEffect(
         const FactPair &projected_fact,
         vector<FactPair> &&conditions,
-        bool always_triggers)
+        bool conditions_covered_by_pattern)
         : fact(projected_fact),
           conditions(move(conditions)),
-          always_triggers(always_triggers) {
+          conditions_covered_by_pattern(conditions_covered_by_pattern) {
+    }
+
+    bool operator<(const ProjectedEffect &other) const {
+        return fact < other.fact;
+    }
+
+    bool operator>=(const ProjectedEffect &other) const {
+        return fact >= other.fact;
+    }
+
+    bool operator==(const ProjectedEffect &other) const {
+        assert(utils::is_sorted_unique(conditions));
+        return fact == other.fact && conditions == other.conditions;
     }
 };
-
-
-static vector<vector<FactPair>> get_relevant_preconditions_by_operator(
-    const OperatorsProxy &ops, const pdbs::Pattern &pattern) {
-    vector<vector<FactPair>> preconditions_by_operator;
-    preconditions_by_operator.reserve(ops.size());
-    for (OperatorProxy op : ops) {
-        preconditions_by_operator.push_back(
-            get_projected_conditions(op.get_preconditions(), pattern));
-    }
-    return preconditions_by_operator;
-}
 
 
 ExplicitProjectionFactory::ExplicitProjectionFactory(
@@ -70,8 +75,6 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
     const pdbs::Pattern &pattern)
     : task_proxy(task_proxy),
       pattern(pattern),
-      relevant_preconditions(
-          get_relevant_preconditions_by_operator(task_proxy.get_operators(), pattern)),
       looping_operators(task_proxy.get_operators().size(), false) {
     assert(utils::is_sorted_unique(pattern));
 
@@ -101,30 +104,7 @@ ExplicitProjectionFactory::ExplicitProjectionFactory(
     }
 
     compute_transitions();
-    goal_states = compute_goal_states();
-}
-
-vector<int> ExplicitProjectionFactory::compute_goal_states() const {
-    vector<int> goals;
-
-    // compute abstract goal var-val pairs
-    vector<FactPair> abstract_goals;
-    for (FactProxy goal : task_proxy.get_goals()) {
-        int var_id = goal.get_variable().get_id();
-        int val = goal.get_value();
-        if (variable_to_pattern_index[var_id] != -1) {
-            abstract_goals.emplace_back(variable_to_pattern_index[var_id], val);
-        }
-    }
-
-    VariablesProxy variables = task_proxy.get_variables();
-    for (int state_index = 0; state_index < num_states; ++state_index) {
-        if (is_goal_state(state_index, abstract_goals, variables)) {
-            goals.push_back(state_index);
-        }
-    }
-
-    return goals;
+    goal_states = rank_goal_states();
 }
 
 int ExplicitProjectionFactory::rank(const UnrankedState &state) const {
@@ -135,18 +115,58 @@ int ExplicitProjectionFactory::rank(const UnrankedState &state) const {
     return index;
 }
 
-int ExplicitProjectionFactory::unrank(int rank, int pattern_index) const {
-    int temp = rank / hash_multipliers[pattern_index];
-    return temp % domain_sizes[pattern_index];
+void ExplicitProjectionFactory::multiply_out_aux(
+    const vector<FactPair> &partial_state, int partial_state_pos,
+    UnrankedState &state, int state_pos,
+    const function<void(const UnrankedState &)> &callback) const {
+    if (state_pos == static_cast<int>(pattern.size())) {
+        callback(state);
+    } else if (partial_state_pos < static_cast<int>(partial_state.size()) &&
+               partial_state[partial_state_pos].var == state_pos) {
+        state[state_pos] = partial_state[partial_state_pos].value;
+        multiply_out_aux(partial_state, partial_state_pos + 1, state, state_pos + 1, callback);
+    } else {
+        for (int value = 0; value < domain_sizes[state_pos]; ++value) {
+            state[state_pos] = value;
+            multiply_out_aux(partial_state, partial_state_pos, state, state_pos + 1, callback);
+        }
+    }
 }
 
-ExplicitProjectionFactory::UnrankedState ExplicitProjectionFactory::unrank(int rank) const {
-    UnrankedState values;
-    values.reserve(pattern.size());
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        values.push_back(unrank(rank, i));
+void ExplicitProjectionFactory::multiply_out(
+    const vector<FactPair> &partial_state,
+    const function<void(const UnrankedState &)> &callback) const {
+    assert(utils::is_sorted_unique(partial_state));
+    UnrankedState state(pattern.size());
+    multiply_out_aux(partial_state, 0, state, 0, callback);
+}
+
+vector<int> ExplicitProjectionFactory::rank_goal_states() const {
+    vector<FactPair> abstract_goals;
+    for (FactProxy goal : task_proxy.get_goals()) {
+        int var_id = goal.get_variable().get_id();
+        int val = goal.get_value();
+        if (variable_to_pattern_index[var_id] != -1) {
+            abstract_goals.emplace_back(variable_to_pattern_index[var_id], val);
+        }
     }
-    return values;
+
+    vector<int> goal_states;
+    if (abstract_goals.empty()) {
+        /*
+          In a projection to non-goal variables all states are goal states. We
+          treat this as a special case to avoid unnecessary effort multiplying
+          out all states.
+        */
+        goal_states.resize(num_states);
+        iota(goal_states.begin(), goal_states.end(), 0);
+    } else {
+        sort(abstract_goals.begin(), abstract_goals.end());
+        multiply_out(abstract_goals, [&](const UnrankedState &state) {
+                         goal_states.push_back(rank(state));
+                     });
+    }
+    return goal_states;
 }
 
 vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
@@ -159,14 +179,19 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
             EffectConditionsProxy original_conditions = effect.get_conditions();
             vector<FactPair> projected_conditions = get_projected_conditions(
                 original_conditions, pattern);
-            bool always_tiggers = (
+            assert(projected_conditions.size() <= original_conditions.size());
+            bool conditions_covered_by_pattern = (
                 projected_conditions.size() == original_conditions.size());
             projected_effects.emplace_back(
                 FactPair(pattern_index, effect_fact.value),
                 move(projected_conditions),
-                always_tiggers);
+                conditions_covered_by_pattern);
         }
     }
+    projected_effects.erase(unique(projected_effects.begin(), projected_effects.end()),
+                            projected_effects.end());
+    sort(projected_effects.begin(), projected_effects.end());
+    assert(utils::is_sorted_unique(projected_effects));
     return projected_effects;
 }
 
@@ -177,103 +202,169 @@ bool ExplicitProjectionFactory::conditions_are_satisfied(
                   });
 }
 
-bool ExplicitProjectionFactory::is_applicable(const UnrankedState &state_values, int op_id) const {
-    return conditions_are_satisfied(relevant_preconditions[op_id], state_values);
+void ExplicitProjectionFactory::add_transition(
+    int src_rank, int op_id, const UnrankedState &dest_values, bool debug) {
+    int dest_rank = rank(dest_values);
+    if (debug) {
+        cout << "Add transition from " << src_rank << " to " << dest_rank << endl;
+    }
+    if (dest_rank == src_rank) {
+        looping_operators[op_id] = true;
+    } else {
+        backward_graph[dest_rank].emplace_back(op_id, src_rank);
+    }
 }
 
 void ExplicitProjectionFactory::add_transitions(
-    const UnrankedState &src_values, int src_rank,
-    int op_id, const vector<ProjectedEffect> &effects) {
+    const UnrankedState &src_values,
+    int op_id,
+    const vector<ProjectedEffect> &effects) {
     const bool debug = false;
-    if (debug)
-        cout << "source state: " << src_values << endl;
-    UnrankedState definite_dest_values = src_values;
-    utils::HashSet<FactPair> possible_effects;
+    int src_rank = rank(src_values);
+    UnrankedState base_dest_values = src_values;
+    if (debug) {
+        cout << endl;
+        cout << "op: " << op_id << endl;
+        cout << "source state: " << src_values << " -> " << src_rank << endl;
+        for (const auto &effect : effects) {
+            cout << effect.conditions << " -> " << effect.fact
+                 << (effect.conditions_covered_by_pattern ? "!" : "?") << endl;
+        }
+    }
+
+    vector<vector<FactPair>> possible_effects;
+    // Loop over effects which are sorted by effect fact.
     for (const ProjectedEffect &effect : effects) {
+        // Optimization: skip over no-op effects.
+        if (src_values[effect.fact.var] == effect.fact.value) {
+            continue;
+        }
         if (conditions_are_satisfied(effect.conditions, src_values)) {
-            if (effect.always_triggers) {
-                definite_dest_values[effect.fact.var] = effect.fact.value;
+            if (effect.conditions_covered_by_pattern) {
+                base_dest_values[effect.fact.var] = effect.fact.value;
             } else {
-                possible_effects.insert(effect.fact);
+                // Store possible effects, grouped into buckets by variable.
+                if (possible_effects.empty()) {
+                    // Start first bucket.
+                    possible_effects.push_back({effect.fact});
+                } else {
+                    FactPair last_fact = possible_effects.back().back();
+                    if (last_fact == effect.fact) {
+                        // Nothing to do for repeated fact.
+                        continue;
+                    } else if (last_fact.var == effect.fact.var) {
+                        // Keep filling the same bucket.
+                        possible_effects.back().push_back(effect.fact);
+                    } else {
+                        // Start new bucket.
+                        possible_effects.push_back({effect.fact});
+                    }
+                }
             }
         }
     }
     if (debug) {
-        cout << "definite values: " << definite_dest_values << endl;
-        cout << "possible effects: " << possible_effects.size() << endl;
+        cout << "variables with possible effects: " << possible_effects.size() << endl;
+        cout << "base dest values: " << base_dest_values << endl;
     }
+
     // Remove all possible effects that would only set definite effects again.
+    for (auto &facts : possible_effects) {
+        for (auto it = facts.begin(); it != facts.end();) {
+            if (base_dest_values[it->var] == it->value) {
+                // Swap current fact with the last fact.
+                *it = facts.back();
+                facts.pop_back();
+                // Do not increment the iterator, as we need to check the swapped-in fact.
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    // Remove empty vectors.
     for (auto it = possible_effects.begin(); it != possible_effects.end();) {
-        if (definite_dest_values[it->var] == it->value) {
-            it = possible_effects.erase(it);
+        if (it->empty()) {
+            // Swap current vector with the last vector.
+            *it = move(possible_effects.back());
+            possible_effects.pop_back();
+            // Do not increment, as we need to check the swapped-in vector.
         } else {
             ++it;
         }
     }
-    if (debug) {
-        cout << "filtered possible effects: " << possible_effects.size() << endl;
+
+    /* Add dummy fact for each variable with possible effects, signaling that no
+       effect triggers for this variable. */
+    for (auto &facts : possible_effects) {
+        facts.push_back(FactPair::no_fact);
     }
-    // Apply all subsets of possible effects and add transitions.
-    int powerset_size = 1 << possible_effects.size();
-    for (int mask = 0; mask < powerset_size; ++mask) {
-        UnrankedState possible_dest_values = definite_dest_values;
-        int i = 0;
-        for (const FactPair &fact : possible_effects) {
-            if (mask & (1 << i)) {
-                possible_dest_values[fact.var] = fact.value;
+
+    // Handle the case where all effects always trigger in this state.
+    if (possible_effects.empty()) {
+        add_transition(src_rank, op_id, base_dest_values);
+        return;
+    }
+
+    // Apply all combinations of possible effects per variable and add transitions.
+    vector<vector<FactPair>::iterator> iterators;
+    iterators.reserve(possible_effects.size());
+    for (auto &facts : possible_effects) {
+        iterators.push_back(facts.begin());
+    }
+    int k = possible_effects.size();
+    assert(k >= 1);
+    while (iterators[0] != possible_effects[0].end()) {
+        // Process the pointed-to facts.
+        if (debug) {
+            cout << "Possible facts: ";
+            for (auto it : iterators) {
+                cout << *it << " ";
             }
-            ++i;
+            cout << endl;
         }
-        if (debug)
-            cout << "dest state: " << possible_dest_values << endl;
-        int dest_rank = rank(possible_dest_values);
-        if (dest_rank == src_rank) {
-            looping_operators[op_id] = true;
-        } else {
-            backward_graph[dest_rank].emplace_back(op_id, src_rank);
-#ifndef NDEBUG
-            vector<Successor> copied_transitions = backward_graph[dest_rank];
-            sort(copied_transitions.begin(), copied_transitions.end());
-            assert(utils::is_sorted_unique(copied_transitions));
-#endif
+
+        UnrankedState dest_values = base_dest_values;
+        for (auto it : iterators) {
+            FactPair fact = *it;
+            if (fact != FactPair::no_fact) {
+                dest_values[fact.var] = fact.value;
+            }
+        }
+        add_transition(src_rank, op_id, dest_values, debug);
+
+        // Increment the "counter" by 1.
+        ++iterators[k - 1];
+        for (int i = k - 1; (i > 0) && (iterators[i] == possible_effects[i].end()); --i) {
+            iterators[i] = possible_effects[i].begin();
+            ++iterators[i - 1];
         }
     }
 }
 
 void ExplicitProjectionFactory::compute_transitions() {
-    int num_operators = task_proxy.get_operators().size();
-    vector<vector<ProjectedEffect>> effects;
-    effects.reserve(num_operators);
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        effects.push_back(get_projected_effects(op));
-    }
-
     backward_graph.resize(num_states);
-    for (int src_rank = 0; src_rank < num_states; ++src_rank) {
-        vector<int> src_values = unrank(src_rank);
-        for (int op_id = 0; op_id < num_operators; ++op_id) {
-            if (is_applicable(src_values, op_id)) {
-                add_transitions(src_values, src_rank, op_id, effects[op_id]);
-            }
-        }
-    }
-}
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        int op_id = op.get_id();
+        auto preconditions = get_projected_conditions(op.get_preconditions(), pattern);
+        auto effects = get_projected_effects(op);
 
-bool ExplicitProjectionFactory::is_goal_state(
-    int state_index,
-    const vector<FactPair> &abstract_goals,
-    const VariablesProxy &variables) const {
-    for (const FactPair &abstract_goal : abstract_goals) {
-        int pattern_var_id = abstract_goal.var;
-        int var_id = pattern[pattern_var_id];
-        VariableProxy var = variables[var_id];
-        int temp = state_index / hash_multipliers[pattern_var_id];
-        int val = temp % var.get_domain_size();
-        if (val != abstract_goal.value) {
-            return false;
+        if (effects.empty()) {
+            looping_operators[op_id] = true;
+        } else {
+            multiply_out(preconditions, [&](const UnrankedState &state) {
+                             add_transitions(state, op_id, effects);
+                         });
         }
     }
-    return true;
+
+#ifndef NDEBUG
+    for (const auto &transitions : backward_graph) {
+        vector<Successor> copied_transitions = transitions;
+        sort(copied_transitions.begin(), copied_transitions.end());
+        assert(utils::is_sorted_unique(copied_transitions));
+    }
+#endif
 }
 
 unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {

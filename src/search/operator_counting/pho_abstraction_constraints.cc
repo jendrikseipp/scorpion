@@ -36,7 +36,6 @@ void PhOAbstractionConstraints::initialize_constraints(
 
     if (saturated) {
         useless_operators.resize(num_ops, false);
-        int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
             // Add constraint \sum_{o} Y_o * scf_h(o) >= 0.
             lp::LPConstraint constraint(0, lp.get_infinity());
@@ -61,10 +60,8 @@ void PhOAbstractionConstraints::initialize_constraints(
                 constraints.push_back(move(constraint));
             }
             h_values_by_abstraction.push_back(move(h_values));
-            ++abstraction_id;
         }
     } else {
-        int abstraction_id = 0;
         for (auto &abstraction : abstractions) {
             lp::LPConstraint constraint(0, lp.get_infinity());
             for (int op_id = 0; op_id < num_ops; ++op_id) {
@@ -81,7 +78,6 @@ void PhOAbstractionConstraints::initialize_constraints(
             }
             h_values_by_abstraction.push_back(
                 abstraction->compute_goal_distances(operator_costs));
-            ++abstraction_id;
         }
     }
 

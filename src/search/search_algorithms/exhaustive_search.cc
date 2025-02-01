@@ -39,9 +39,10 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
     return mapping;
 }
 
-ExhaustiveSearch::ExhaustiveSearch(const plugins::Options &opts)
-    : SearchAlgorithm(opts) {
-    assert(cost_type == ONE);
+ExhaustiveSearch::ExhaustiveSearch()
+    : SearchAlgorithm(
+          ONE, numeric_limits<int>::max(), numeric_limits<double>::infinity(),
+          "dump_reachable_search_space", utils::Verbosity::NORMAL) {
 }
 
 void ExhaustiveSearch::initialize() {
@@ -80,7 +81,7 @@ void ExhaustiveSearch::dump_state(const State &state) const {
 SearchStatus ExhaustiveSearch::step() {
     if (current_state_id == static_cast<int>(state_registry.size())) {
         utils::g_log << "Finished dumping the reachable state space." << endl;
-        return FAILED;
+        return SOLVED;
     }
 
     State s = state_registry.lookup_state(StateID(current_state_id));
@@ -110,16 +111,11 @@ public:
     ExhaustiveSearchFeature() : TypedFeature("dump_reachable_search_space") {
         document_title("Exhaustive search");
         document_synopsis("Dump the reachable state space.");
-        utils::add_log_options_to_feature(*this);
     }
 
     virtual shared_ptr<ExhaustiveSearch> create_component(
         const plugins::Options &, const utils::Context &) const override {
-        plugins::Options opts;
-        opts.set<OperatorCost>("cost_type", ONE);
-        opts.set<int>("bound", numeric_limits<int>::max());
-        opts.set<double>("max_time", numeric_limits<double>::infinity());
-        return make_shared<ExhaustiveSearch>(opts);
+        return plugins::make_shared_from_arg_tuples<ExhaustiveSearch>();
     }
 };
 

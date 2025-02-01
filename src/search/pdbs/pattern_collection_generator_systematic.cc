@@ -51,10 +51,11 @@ static void compute_union_pattern(
 
 
 PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
-    const plugins::Options &opts)
-    : PatternCollectionGenerator(opts),
-      max_pattern_size(opts.get<int>("pattern_max_size")),
-      pattern_type(opts.get<PatternType>("pattern_type")) {
+    int pattern_max_size, PatternType pattern_type,
+    utils::Verbosity verbosity)
+    : PatternCollectionGenerator(verbosity),
+      max_pattern_size(pattern_max_size),
+      pattern_type(pattern_type) {
 }
 
 void PatternCollectionGeneratorSystematic::compute_eff_pre_neighbors(
@@ -379,7 +380,8 @@ void add_pattern_type_option(plugins::Feature &feature) {
         "interesting_non_negative");
 }
 
-class PatternCollectionGeneratorSystematicFeature : public plugins::TypedFeature<PatternCollectionGenerator, PatternCollectionGeneratorSystematic> {
+class PatternCollectionGeneratorSystematicFeature
+    : public plugins::TypedFeature<PatternCollectionGenerator, PatternCollectionGeneratorSystematic> {
 public:
     PatternCollectionGeneratorSystematicFeature() : TypedFeature("systematic") {
         document_title("Systematically generated patterns");
@@ -414,6 +416,17 @@ public:
             plugins::Bounds("1", "infinity"));
         add_pattern_type_option(*this);
         add_generator_options_to_feature(*this);
+    }
+
+    virtual shared_ptr<PatternCollectionGeneratorSystematic>
+    create_component(
+        const plugins::Options &opts,
+        const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<PatternCollectionGeneratorSystematic>(
+            opts.get<int>("pattern_max_size"),
+            opts.get<PatternType>("pattern_type"),
+            get_generator_arguments_from_options(opts)
+            );
     }
 };
 

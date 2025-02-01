@@ -47,8 +47,6 @@ public:
     int get_num_pairs() const {
         return num_pairs;
     }
-
-    void dump() const;
 };
 
 class NoveltyTable {

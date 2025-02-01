@@ -385,7 +385,7 @@ pair<int, int> Abstraction::refine(
 #endif
 
     return {
-               v1_id, v2_id
+        v1_id, v2_id
     };
 }
 
@@ -403,13 +403,6 @@ void Abstraction::print_statistics() const {
     if (log.is_at_least_normal()) {
         cout << "Cartesian states: " << get_num_states() << endl;
         cout << "Cartesian goal states: " << goals.size() << endl;
-        if (false) {
-            for (auto &state : states) {
-                cout << "state " << state->get_id() << " has size "
-                     << static_cast<unsigned long int>(state->get_cartesian_set().compute_size())
-                     << endl;
-            }
-        }
         if (transition_system) {
             transition_system->print_statistics(log);
         }

@@ -42,11 +42,12 @@ static void log_info_about_stored_lookup_tables(
 }
 
 MaxCostPartitioningHeuristic::MaxCostPartitioningHeuristic(
-    const plugins::Options &opts,
     Abstractions &&abstractions,
     vector<CostPartitioningHeuristic> &&cp_heuristics_,
-    unique_ptr<DeadEnds> &&dead_ends_)
-    : Heuristic(opts),
+    unique_ptr<DeadEnds> &&dead_ends_,
+    const shared_ptr<AbstractTask> &transform,
+    bool cache_estimates, const string &description, utils::Verbosity verbosity)
+    : Heuristic(transform, cache_estimates, description, verbosity),
       cp_heuristics(move(cp_heuristics_)),
       dead_ends(move(dead_ends_)),
       unsolvability_heuristic(abstractions, cp_heuristics) {

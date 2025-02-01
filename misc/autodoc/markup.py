@@ -3,7 +3,7 @@ import logging
 try:
     import txt2tags
 except ImportError:
-    from external import txt2tags
+    raise SystemExit("txt2tags is not installed. Please install it with 'pip install -r requirements.txt', preferably in a virtual environment.")
 
 
 def _get_config(target):

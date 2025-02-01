@@ -17,7 +17,6 @@ class ExplicitProjectionFactory {
 
     TaskProxy task_proxy;
     const pdbs::Pattern pattern;
-    const std::vector<std::vector<FactPair>> relevant_preconditions;
     std::vector<int> variable_to_pattern_index;
     std::vector<int> domain_sizes;
 
@@ -32,30 +31,26 @@ class ExplicitProjectionFactory {
     std::vector<int> hash_multipliers;
 
     int rank(const UnrankedState &state) const;
-    int unrank(int rank, int pattern_index) const;
-    UnrankedState unrank(int rank) const;
+    void multiply_out_aux(
+        const std::vector<FactPair> &partial_state,
+        int partial_state_pos,
+        UnrankedState &state, int state_pos,
+        const std::function<void(const UnrankedState &)> &callback) const;
+    void multiply_out(
+        const std::vector<FactPair> &partial_state,
+        const std::function<void(const UnrankedState &)> &callback) const;
 
     std::vector<ProjectedEffect> get_projected_effects(const OperatorProxy &op) const;
     bool conditions_are_satisfied(
         const std::vector<FactPair> &conditions, const UnrankedState &state_values) const;
-    bool is_applicable(const UnrankedState &state_values, int op_id) const;
+    void add_transition(int src_rank, int op_id, const UnrankedState &dest_values, bool debug = false);
     void add_transitions(
-        const UnrankedState &src_values, int src_rank,
-        int op_id, const std::vector<ProjectedEffect> &effects);
+        const UnrankedState &src_values,
+        int op_id,
+        const std::vector<ProjectedEffect> &effects);
     void compute_transitions();
 
-    std::vector<int> compute_goal_states() const;
-
-    /*
-      For a given abstract state (given as index), the according values
-      for each variable in the state are computed and compared with the
-      given pairs of goal variables and values. Returns true iff the
-      state is a goal state.
-    */
-    bool is_goal_state(
-        int state_index,
-        const std::vector<FactPair> &abstract_goals,
-        const VariablesProxy &variables) const;
+    std::vector<int> rank_goal_states() const;
 
 public:
     ExplicitProjectionFactory(

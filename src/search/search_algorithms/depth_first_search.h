@@ -3,14 +3,6 @@
 
 #include "../search_algorithm.h"
 
-#include <memory>
-
-class Evaluator;
-
-namespace options {
-class Options;
-}
-
 namespace depth_first_search {
 struct DFSNode {
     State state;
@@ -39,7 +31,9 @@ protected:
     virtual SearchStatus step() override;
 
 public:
-    explicit DepthFirstSearch(const plugins::Options &opts);
+    DepthFirstSearch(
+        bool single_plan, OperatorCost cost_type, int bound, double max_time,
+        const std::string &description, utils::Verbosity verbosity);
 
     virtual void save_plan_if_necessary() override;
 

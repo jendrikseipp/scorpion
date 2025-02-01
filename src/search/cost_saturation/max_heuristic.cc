@@ -10,8 +10,11 @@
 using namespace std;
 
 namespace cost_saturation {
-MaxHeuristic::MaxHeuristic(const plugins::Options &opts, const Abstractions &abstractions)
-    : Heuristic(opts) {
+MaxHeuristic::MaxHeuristic(
+    Abstractions &&abstractions,
+    const shared_ptr<AbstractTask> &transform, bool cache_estimates,
+    const string &description, utils::Verbosity verbosity)
+    : Heuristic(transform, cache_estimates, description, verbosity) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : abstractions) {
         h_values_by_abstraction.push_back(abstraction->compute_goal_distances(costs));
@@ -43,7 +46,7 @@ public:
         document_subcategory("heuristics_cost_partitioning");
         document_title("Maximum over abstractions");
         document_synopsis("Maximize over a set of abstraction heuristics.");
-        add_options_for_cost_partitioning_heuristic(*this);
+        add_options_for_cost_partitioning_heuristic(*this, "maximize");
     }
 
     virtual shared_ptr<MaxHeuristic> create_component(
@@ -52,7 +55,8 @@ public:
             options.get<shared_ptr<AbstractTask>>("transform"),
             options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
 
-        return make_shared<MaxHeuristic>(options, move(abstractions));
+        return plugins::make_shared_from_arg_tuples<MaxHeuristic>(
+            move(abstractions), get_heuristic_arguments_from_options(options));
     }
 };
 

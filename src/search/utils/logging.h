@@ -32,9 +32,11 @@ enum class Verbosity {
   Internal class encapsulated by LogProxy.
 */
 class Log {
+    static const int TIMER_PRECISION = 6;
     std::ostream &stream;
     const Verbosity verbosity;
     bool line_has_started;
+    void add_prefix() const;
 
 public:
     explicit Log(Verbosity verbosity)
@@ -45,10 +47,8 @@ public:
     Log &operator<<(const T &elem) {
         if (!line_has_started) {
             line_has_started = true;
-            stream << "[t=" << g_timer << ", "
-                   << get_peak_memory_in_kb() << " KB] ";
+            add_prefix();
         }
-
         stream << elem;
         return *this;
     }
@@ -130,7 +130,10 @@ public:
 extern LogProxy g_log;
 
 extern void add_log_options_to_feature(plugins::Feature &feature);
-extern LogProxy get_log_from_options(const plugins::Options &options);
+extern std::tuple<Verbosity> get_log_arguments_from_options(
+    const plugins::Options &opts);
+
+extern LogProxy get_log_for_verbosity(const Verbosity &verbosity);
 extern LogProxy get_silent_log();
 
 class ContextError : public utils::Exception {

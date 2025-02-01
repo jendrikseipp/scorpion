@@ -1,7 +1,6 @@
 #ifndef COST_SATURATION_PHO_HEURISTIC_H
 #define COST_SATURATION_PHO_HEURISTIC_H
 
-#include "abstraction.h"
 #include "types.h"
 
 #include "../lp/lp_solver.h"
@@ -21,7 +20,7 @@ public:
         const std::vector<int> &costs,
         lp::LPSolverType solver_type,
         bool saturated,
-        utils::LogProxy log);
+        const utils::LogProxy &log);
 
     CostPartitioningHeuristic compute_cost_partitioning(
         const Abstractions &abstractions,

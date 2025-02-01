@@ -12,9 +12,11 @@
 using namespace std;
 
 namespace iterative_deepening_search {
-IterativeDeepeningSearch::IterativeDeepeningSearch(const plugins::Options &opts)
-    : SearchAlgorithm(opts),
-      single_plan(opts.get<bool>("single_plan")),
+IterativeDeepeningSearch::IterativeDeepeningSearch(
+    bool single_plan, OperatorCost cost_type, int bound, double max_time,
+    const string &description, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+      single_plan(single_plan),
       sg(task_proxy),
       last_plan_cost(-1) {
     if (!task_properties::is_unit_cost(task_proxy)) {
@@ -99,7 +101,14 @@ public:
             "single_plan",
             "stop after finding the first (shortest) plan",
             "true");
-        SearchAlgorithm::add_options_to_feature(*this);
+        add_search_algorithm_options_to_feature(*this, "ids");
+    }
+
+    virtual shared_ptr<IterativeDeepeningSearch> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<IterativeDeepeningSearch>(
+            options.get<bool>("single_plan"),
+            get_search_algorithm_arguments_from_options(options));
     }
 };
 

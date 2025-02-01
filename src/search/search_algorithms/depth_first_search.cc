@@ -5,8 +5,6 @@
 #include "../task_utils/task_properties.h"
 
 #include "../utils/logging.h"
-#include "../utils/memory.h"
-#include "../utils/timer.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -17,9 +15,11 @@ namespace depth_first_search {
 static const int INF = numeric_limits<int>::max();
 
 
-DepthFirstSearch::DepthFirstSearch(const plugins::Options &opts)
-    : SearchAlgorithm(opts),
-      single_plan(opts.get<bool>("single_plan")),
+DepthFirstSearch::DepthFirstSearch(
+    bool single_plan, OperatorCost cost_type, int bound, double max_time,
+    const string &description, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+      single_plan(single_plan),
       max_depth(0),
       cheapest_plan_cost(INF) {
     if (max_time != numeric_limits<double>::infinity()) {
@@ -123,7 +123,14 @@ public:
             "single_plan",
             "stop after finding the first plan",
             "false");
-        SearchAlgorithm::add_options_to_feature(*this);
+        add_search_algorithm_options_to_feature(*this, "dfs");
+    }
+
+    virtual shared_ptr<DepthFirstSearch> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<DepthFirstSearch>(
+            options.get<bool>("single_plan"),
+            get_search_algorithm_arguments_from_options(options));
     }
 };
 

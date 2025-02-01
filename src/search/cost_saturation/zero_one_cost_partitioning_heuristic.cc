@@ -42,7 +42,7 @@ public:
     ZeroOneCostPartitioningHeuristicFeature() : TypedFeature("gzocp") {
         document_subcategory("heuristics_cost_partitioning");
         document_title("Greedy zero-one cost partitioning");
-        add_options_for_cost_partitioning_heuristic(*this);
+        add_options_for_cost_partitioning_heuristic(*this, "gzocp");
         add_order_options(*this);
     }
 

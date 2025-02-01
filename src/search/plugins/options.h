@@ -76,7 +76,7 @@ public:
       example). This should no longer be necessary once we switch to builders.
       At this time, the constructor can probably be deleted.
     */
-    Options(const plugins::Options &other) = default;
+    Options(const Options &other) = default;
 
     template<typename T>
     void set(const std::string &key, T value) {

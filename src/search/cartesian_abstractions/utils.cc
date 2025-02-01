@@ -31,15 +31,6 @@ bool g_hacked_sort_transitions = false;
 bool g_hacked_use_abstract_flaw_search = false;
 TransitionRepresentation g_hacked_tsr = TransitionRepresentation::STORE;
 
-unique_ptr<additive_heuristic::AdditiveHeuristic> create_additive_heuristic(
-    const shared_ptr<AbstractTask> &task) {
-    plugins::Options opts;
-    opts.set<shared_ptr<AbstractTask>>("transform", task);
-    opts.set<bool>("cache_estimates", false);
-    opts.set<utils::Verbosity>("verbosity", utils::Verbosity::SILENT);
-    return utils::make_unique_ptr<additive_heuristic::AdditiveHeuristic>(opts);
-}
-
 static bool operator_applicable(
     const OperatorProxy &op, const utils::HashSet<FactProxy> &facts) {
     for (FactProxy precondition : op.get_preconditions()) {
@@ -248,10 +239,6 @@ void add_common_cegar_options(plugins::Feature &feature) {
     add_transition_representation_option(feature);
     add_pick_flawed_abstract_state_strategies(feature);
     add_pick_split_strategies(feature);
-    add_memory_padding_option(feature);
-    add_dot_graph_verbosity(feature);
-    utils::add_rng_options(feature);
-
     feature.add_option<int>(
         "max_concrete_states_per_abstract_state",
         "maximum number of flawed concrete states stored per abstract state",
@@ -262,6 +249,9 @@ void add_common_cegar_options(plugins::Feature &feature) {
         "maximum number of state expansions per flaw search if a flaw has already been found",
         "1M",
         plugins::Bounds("1", "infinity"));
+    add_memory_padding_option(feature);
+    utils::add_rng_options_to_feature(feature);
+    add_dot_graph_verbosity(feature);
 }
 
 static plugins::TypedEnumPlugin<DotGraphVerbosity> _enum_plugin_dot_graph_verbosity({

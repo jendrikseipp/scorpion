@@ -61,12 +61,15 @@ void FifoCache::clear() {
     queue<State>().swap(states);
 }
 
-IDAstarSearch::IDAstarSearch(const plugins::Options &opts)
-    : SearchAlgorithm(opts),
-      h_evaluator(opts.get<shared_ptr<Evaluator>>("eval")),
-      single_plan(opts.get<bool>("single_plan")),
+IDAstarSearch::IDAstarSearch(
+    const shared_ptr<Evaluator> &h_evaluator, int initial_f_limit, int cache_size,
+    bool single_plan, OperatorCost cost_type, int bound, double max_time,
+    const string &description, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+      h_evaluator(h_evaluator),
+      single_plan(single_plan),
       iteration(0),
-      f_limit(opts.get<int>("initial_f_limit")),
+      f_limit(initial_f_limit),
       cheapest_plan_cost(numeric_limits<int>::max()),
       num_cache_hits(0),
       num_expansions(0),
@@ -75,7 +78,6 @@ IDAstarSearch::IDAstarSearch(const plugins::Options &opts)
         cerr << "Error: set cache_estimates=false for IDA* heuristics." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
-    int cache_size = opts.get<int>("cache_size");
     if (cache_size > 0) {
         cache = utils::make_unique_ptr<FifoCache>(cache_size);
     }
@@ -199,7 +201,17 @@ public:
             "single_plan",
             "stop after finding the first plan",
             "true");
-        SearchAlgorithm::add_options_to_feature(*this);
+        add_search_algorithm_options_to_feature(*this, "idastar");
+    }
+
+    virtual shared_ptr<IDAstarSearch> create_component(
+        const plugins::Options &options, const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<IDAstarSearch>(
+            options.get<shared_ptr<Evaluator>>("eval"),
+            options.get<int>("initial_f_limit"),
+            options.get<int>("cache_size"),
+            options.get<bool>("single_plan"),
+            get_search_algorithm_arguments_from_options(options));
     }
 };
 

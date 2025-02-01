@@ -9,10 +9,6 @@
 #include <memory>
 #include <vector>
 
-namespace options {
-class Options;
-}
-
 namespace cost_saturation {
 class AbstractionFunction;
 class CostPartitioningHeuristic;
@@ -36,10 +32,12 @@ protected:
 
 public:
     MaxCostPartitioningHeuristic(
-        const plugins::Options &opts,
         Abstractions &&abstractions,
         std::vector<CostPartitioningHeuristic> &&cp_heuristics,
-        std::unique_ptr<DeadEnds> &&dead_ends);
+        std::unique_ptr<DeadEnds> &&dead_ends,
+        const std::shared_ptr<AbstractTask> &transform,
+        bool cache_estimates, const std::string &description,
+        utils::Verbosity verbosity);
     virtual ~MaxCostPartitioningHeuristic() override;
 };
 }

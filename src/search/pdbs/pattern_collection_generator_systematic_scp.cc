@@ -108,11 +108,8 @@ static unique_ptr<PatternCollection> get_patterns(
     PatternType pattern_type,
     const utils::CountdownTimer &timer) {
     utils::g_log << "Generate patterns for size " << pattern_size << endl;
-    plugins::Options opts;
-    opts.set<int>("pattern_max_size", pattern_size);
-    opts.set<PatternType>("pattern_type", pattern_type);
-    opts.set<utils::Verbosity>("verbosity", utils::Verbosity::NORMAL);
-    PatternCollectionGeneratorSystematic generator(opts);
+    PatternCollectionGeneratorSystematic generator(
+        pattern_size, pattern_type, utils::Verbosity::NORMAL);
     unique_ptr<PatternCollection> patterns_ptr =
         utils::make_unique_ptr<PatternCollection>();
     PatternCollection &patterns = *patterns_ptr;
@@ -276,23 +273,38 @@ public:
 
 
 PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP(
-    const plugins::Options &opts)
-    : PatternCollectionGenerator(opts),
-      max_pattern_size(opts.get<int>("max_pattern_size")),
-      max_pdb_size(opts.get<int>("max_pdb_size")),
-      max_collection_size(opts.get<int>("max_collection_size")),
-      max_patterns(opts.get<int>("max_patterns")),
-      max_time(opts.get<double>("max_time")),
-      max_time_per_restart(opts.get<double>("max_time_per_restart")),
-      max_evaluations_per_restart(opts.get<int>("max_evaluations_per_restart")),
-      max_total_evaluations(opts.get<int>("max_total_evaluations")),
-      saturate(opts.get<bool>("saturate")),
-      create_complete_transition_system(opts.get<bool>("create_complete_transition_system")),
-      pattern_type(opts.get<PatternType>("pattern_type")),
-      ignore_useless_patterns(opts.get<bool>("ignore_useless_patterns")),
-      store_dead_ends(opts.get<bool>("store_dead_ends")),
-      pattern_order(opts.get<PatternOrder>("order")),
-      rng(utils::parse_rng_from_options(opts)) {
+    int max_pattern_size,
+    int max_pdb_size,
+    int max_collection_size,
+    int max_patterns,
+    double max_time,
+    double max_time_per_restart,
+    int max_evaluations_per_restart,
+    int max_total_evaluations,
+    bool saturate,
+    bool create_complete_transition_system,
+    PatternType pattern_type,
+    bool ignore_useless_patterns,
+    bool store_dead_ends,
+    PatternOrder order,
+    int random_seed,
+    utils::Verbosity verbosity)
+    : PatternCollectionGenerator(verbosity),
+      max_pattern_size(max_pattern_size),
+      max_pdb_size(max_pdb_size),
+      max_collection_size(max_collection_size),
+      max_patterns(max_patterns),
+      max_time(max_time),
+      max_time_per_restart(max_time_per_restart),
+      max_evaluations_per_restart(max_evaluations_per_restart),
+      max_total_evaluations(max_total_evaluations),
+      saturate(saturate),
+      create_complete_transition_system(create_complete_transition_system),
+      pattern_type(pattern_type),
+      ignore_useless_patterns(ignore_useless_patterns),
+      store_dead_ends(store_dead_ends),
+      pattern_order(order),
+      rng(utils::get_rng(random_seed)) {
 }
 
 bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
@@ -300,7 +312,6 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
     const shared_ptr<cost_saturation::TaskInfo> &task_info,
     const TaskInfo &evaluator_task_info,
     SequentialPatternGenerator &pattern_generator,
-    DeadEnds *dead_ends,
     priority_queues::AdaptiveQueue<int> &pq,
     const shared_ptr<PatternCollection> &patterns,
     const shared_ptr<ProjectionCollection> &projections,
@@ -486,7 +497,6 @@ PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_pa
         int num_patterns_before = projections->size();
         limit_reached = select_systematic_patterns(
             task, task_info, evaluator_task_info, pattern_generator,
-            dead_ends,
             pq, patterns, projections, pattern_set, patterns_checked_for_dead_ends,
             collection_size, timer.get_remaining_time());
         int num_patterns_after = projections->size();
@@ -614,8 +624,32 @@ public:
             "in projection, active operators or position of the pattern variables "
             "in the partial ordering of the causal graph)",
             "cg_down");
-        utils::add_rng_options(*this);
+        utils::add_rng_options_to_feature(*this);
         add_generator_options_to_feature(*this);
+    }
+
+    virtual shared_ptr<PatternCollectionGeneratorSystematicSCP>
+    create_component(
+        const plugins::Options &opts,
+        const utils::Context &) const override {
+        return plugins::make_shared_from_arg_tuples<PatternCollectionGeneratorSystematicSCP>(
+            opts.get<int>("max_pattern_size"),
+            opts.get<int>("max_pdb_size"),
+            opts.get<int>("max_collection_size"),
+            opts.get<int>("max_patterns"),
+            opts.get<double>("max_time"),
+            opts.get<double>("max_time_per_restart"),
+            opts.get<int>("max_evaluations_per_restart"),
+            opts.get<int>("max_total_evaluations"),
+            opts.get<bool>("saturate"),
+            opts.get<bool>("create_complete_transition_system"),
+            opts.get<PatternType>("pattern_type"),
+            opts.get<bool>("ignore_useless_patterns"),
+            opts.get<bool>("store_dead_ends"),
+            opts.get<PatternOrder>("order"),
+            utils::get_rng_arguments_from_options(opts),
+            get_generator_arguments_from_options(opts)
+            );
     }
 };
 
