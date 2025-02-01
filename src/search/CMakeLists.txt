@@ -864,7 +864,6 @@ create_fast_downward_library(
         additive_heuristic
         dynamic_bitset
         extra_tasks
-        fact_map
         landmarks
         priority_queues
         task_properties
@@ -1090,13 +1089,5 @@ create_fast_downward_library(
     HELP "Compact representation of sets of fact conjunctions"
     SOURCES
         algorithms/partial_state_tree
-    DEPENDENCY_ONLY
-)
-
-create_fast_downward_library(
-    NAME fact_map
-    HELP "Compact mapping from facts to ints"
-    SOURCES
-        algorithms/fact_map
     DEPENDENCY_ONLY
 )

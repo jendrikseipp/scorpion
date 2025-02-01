@@ -8,7 +8,6 @@
 #include "transition_system.h"
 #include "utils.h"
 
-#include "../algorithms/fact_map.h"
 #include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
