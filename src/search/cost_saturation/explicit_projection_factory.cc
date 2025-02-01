@@ -58,6 +58,15 @@ struct ProjectedEffect {
     bool operator<(const ProjectedEffect &other) const {
         return fact < other.fact;
     }
+
+    bool operator>=(const ProjectedEffect &other) const {
+        return fact >= other.fact;
+    }
+
+    bool operator==(const ProjectedEffect &other) const {
+        assert(utils::is_sorted_unique(conditions));
+        return fact == other.fact && conditions == other.conditions;
+    }
 };
 
 
@@ -179,7 +188,10 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
                 conditions_covered_by_pattern);
         }
     }
+    projected_effects.erase(unique(projected_effects.begin(), projected_effects.end()),
+                            projected_effects.end());
     sort(projected_effects.begin(), projected_effects.end());
+    assert(utils::is_sorted_unique(projected_effects));
     return projected_effects;
 }
 
@@ -206,6 +218,7 @@ void ExplicitProjectionFactory::add_transitions(
                  << (effect.conditions_covered_by_pattern ? "!" : "?") << endl;
         }
     }
+    // TODO: add specialized version for operators without conditional effects.
     vector<vector<FactPair>> possible_effects;
     // Loop over effects which are sorted by effect fact.
     for (const ProjectedEffect &effect : effects) {
