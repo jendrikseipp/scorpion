@@ -28,7 +28,6 @@ enum class TransitionRepresentation {
     SG,
     RH,
     SG_RH,
-    STORE_THEN_SG_RH,
 };
 
 enum class Variable : char {

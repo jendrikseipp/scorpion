@@ -35,8 +35,7 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, utils::LogProxy &
         match_tree = utils::make_unique_ptr<MatchTree>(
             TaskProxy(*task).get_operators(), *refinement_hierarchy, cartesian_sets, debug);
     } else {
-        assert(g_hacked_tsr == TransitionRepresentation::STORE ||
-               g_hacked_tsr == TransitionRepresentation::STORE_THEN_SG_RH);
+        assert(g_hacked_tsr == TransitionRepresentation::STORE);
         log << "Store transitions." << endl;
         transition_system = utils::make_unique_ptr<TransitionSystem>(
             TaskProxy(*task).get_operators());

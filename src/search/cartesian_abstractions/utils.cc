@@ -266,6 +266,5 @@ static plugins::TypedEnumPlugin<TransitionRepresentation> _enum_plugin_transitio
         {"sg", "compute operators via successor generator and transitions naively"},
         {"rh", "compute operators naively and transitions via refinement hierarchy"},
         {"sg_rh", "compute operators via successor generator and transitions via refinement hierarchy"},
-        {"store_then_sg_rh", "start with storing transitions until running out of memory, then compute them on demand"},
     });
 }
