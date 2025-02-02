@@ -210,10 +210,6 @@ void add_common_cegar_options(plugins::Feature &feature) {
         "infinity",
         plugins::Bounds("0.0", "infinity"));
     feature.add_option<bool>(
-        "use_max",
-        "compute maximum over heuristic estimates instead of SCP",
-        "false");
-    feature.add_option<bool>(
         "sort_transitions",
         "sort transitions to ensure the different transition system representations yield the same abstractions",
         "false");

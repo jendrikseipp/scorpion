@@ -42,7 +42,6 @@ class CostSaturation {
     const bool store_spt_children;
     const bool store_spt_parents;
     const int memory_padding_mb;
-    const bool use_max;
     utils::RandomNumberGenerator &rng;
     utils::LogProxy &log;
     const cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity;
@@ -80,7 +79,6 @@ public:
         bool store_spt_children,
         bool store_spt_parents,
         int memory_padding_mb,
-        bool use_max,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,
         DotGraphVerbosity dot_graph_verbosity);

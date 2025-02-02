@@ -159,7 +159,8 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
 
 Transitions Abstraction::get_outgoing_transitions(int state_id) const {
     Transitions transitions;
-    if (transition_system) {
+    if (transition_representation == TransitionRepresentation::STORE) {
+        assert(transition_system);
         transitions = transition_system->get_outgoing_transitions()[state_id];
     } else if (transition_representation == TransitionRepresentation::SG_RH) {
         transitions = match_tree->get_outgoing_transitions(*states[state_id]);

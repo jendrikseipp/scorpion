@@ -18,7 +18,6 @@ enum class TransitionRepresentation;
   summing all of their values.
 */
 class AdditiveCartesianHeuristic : public Heuristic {
-    const bool use_max;
     std::vector<CartesianHeuristicFunction> heuristic_functions;
 
 protected:
@@ -33,7 +32,7 @@ public:
         int max_concrete_states_per_abstract_state, int max_state_expansions,
         TransitionRepresentation transition_representation,
         bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
-        int memory_padding, bool use_max, int random_seed, DotGraphVerbosity dot_graph_verbosity,
+        int memory_padding, int random_seed, DotGraphVerbosity dot_graph_verbosity,
         bool use_general_costs,
         const std::shared_ptr<AbstractTask> &transform,
         bool cache_estimates, const std::string &description, utils::Verbosity verbosity);

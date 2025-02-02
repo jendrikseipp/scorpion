@@ -89,7 +89,6 @@ CostSaturation::CostSaturation(
     bool store_spt_children,
     bool store_spt_parents,
     int memory_padding_mb,
-    bool use_max,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
     DotGraphVerbosity dot_graph_verbosity)
@@ -107,7 +106,6 @@ CostSaturation::CostSaturation(
       store_spt_children(store_spt_children),
       store_spt_parents(store_spt_parents),
       memory_padding_mb(memory_padding_mb),
-      use_max(use_max),
       rng(rng),
       log(log),
       dot_graph_verbosity(dot_graph_verbosity),
@@ -268,7 +266,9 @@ void CostSaturation::build_abstractions(
         //assert(num_states <= max_states);  // We always separate goal and non-goal states.
 
         vector<int> goal_distances = cegar.get_goal_distances();
-        if (!use_max) {
+        if (subtask_generators.size() == 1 && subtasks.size() == 1) {
+            log << "There is only one abstraction --> skip computing saturated costs." << endl;
+        } else {
             scf_timer.resume();
             vector<int> saturated_costs = compute_saturated_costs(
                 *abstraction, goal_distances, use_general_costs);

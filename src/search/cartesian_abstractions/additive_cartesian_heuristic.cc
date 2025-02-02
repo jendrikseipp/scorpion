@@ -23,11 +23,10 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
     int max_concrete_states_per_abstract_state, int max_state_expansions,
     TransitionRepresentation transition_representation,
     bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
-    int memory_padding, bool use_max, int random_seed, DotGraphVerbosity dot_graph_verbosity,
+    int memory_padding, int random_seed, DotGraphVerbosity dot_graph_verbosity,
     bool use_general_costs, const shared_ptr<AbstractTask> &transform,
     bool cache_estimates, const string &description, utils::Verbosity verbosity)
-    : Heuristic(transform, cache_estimates, description, verbosity),
-      use_max(use_max) {
+    : Heuristic(transform, cache_estimates, description, verbosity) {
     CostSaturation cost_saturation(
         subtasks,
         max_states,
@@ -43,7 +42,6 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
         store_shortest_path_tree_children,
         store_shortest_path_tree_parents,
         memory_padding,
-        use_max,
         *utils::get_rng(random_seed),
         log,
         dot_graph_verbosity);
@@ -159,7 +157,6 @@ public:
             opts.get<bool>("store_shortest_path_tree_children"),
             opts.get<bool>("store_shortest_path_tree_parents"),
             opts.get<int>("memory_padding"),
-            opts.get<bool>("use_max"),
             utils::get_rng_arguments_from_options(opts),
             opts.get<DotGraphVerbosity>("dot_graph_verbosity"),
             opts.get<bool>("use_general_costs"),
