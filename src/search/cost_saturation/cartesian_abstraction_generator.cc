@@ -33,8 +33,8 @@ public:
 };
 
 
-static unique_ptr<Abstraction> convert_abstraction(
-    cartesian_abstractions::Abstraction &cartesian_abstraction,
+static vector<vector<Successor>> get_backward_graph(
+    const cartesian_abstractions::Abstraction &cartesian_abstraction,
     const vector<int> &h_values) {
     // Retrieve non-looping transitions.
     vector<vector<Successor>> backward_graph(cartesian_abstraction.get_num_states());
@@ -54,17 +54,7 @@ static unique_ptr<Abstraction> convert_abstraction(
         }
         backward_graph[target].shrink_to_fit();
     }
-
-    vector<int> goal_states(
-        cartesian_abstraction.get_goals().begin(),
-        cartesian_abstraction.get_goals().end());
-
-    return utils::make_unique_ptr<ExplicitAbstraction>(
-        utils::make_unique_ptr<CartesianAbstractionFunction>(
-            cartesian_abstraction.extract_refinement_hierarchy()),
-        move(backward_graph),
-        cartesian_abstraction.get_looping_operators(),
-        move(goal_states));
+    return backward_graph;
 }
 
 
@@ -153,9 +143,19 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         int initial_state_id = cartesian_abstraction->get_initial_state().get_id();
         bool unsolvable = goal_distances[initial_state_id] == INF;
 
-        auto abstraction = convert_abstraction(*cartesian_abstraction, goal_distances);
-        // This is needlessly slow by looping over all transitions, but it's probably not worth optimizing this.
-        abstraction->for_each_transition([this](const Transition &) {++num_transitions;});
+        auto backward_graph = get_backward_graph(*cartesian_abstraction, goal_distances);
+        for (const auto &transitions : backward_graph) {
+            num_transitions += transitions.size();
+        }
+        vector<int> goal_states(
+            cartesian_abstraction->get_goals().begin(),
+            cartesian_abstraction->get_goals().end());
+        auto abstraction = utils::make_unique_ptr<ExplicitAbstraction>(
+            utils::make_unique_ptr<CartesianAbstractionFunction>(
+                cartesian_abstraction->extract_refinement_hierarchy()),
+            move(backward_graph),
+            cartesian_abstraction->get_looping_operators(),
+            move(goal_states));
         abstractions.push_back(move(abstraction));
 
         if (has_reached_resource_limit(timer) || unsolvable) {
