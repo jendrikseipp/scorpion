@@ -76,10 +76,10 @@ int SaturatedCostPartitioningOnlineHeuristic::compute_heuristic(const State &anc
 
     vector<int> abstract_state_ids;
     if (improve_heuristic) {
-        assert(!abstractions.empty() && abstraction_functions.empty());
+        assert(abstraction_functions.empty());
         abstract_state_ids = get_abstract_state_ids(abstractions, state);
     } else {
-        assert(abstractions.empty() && !abstraction_functions.empty());
+        assert(abstractions.empty());
         abstract_state_ids = get_abstract_state_ids(abstraction_functions, state);
     }
 
