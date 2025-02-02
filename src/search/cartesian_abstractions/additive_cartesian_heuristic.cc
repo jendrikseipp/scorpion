@@ -8,7 +8,6 @@
 #include "../plugins/plugin.h"
 #include "../utils/logging.h"
 #include "../utils/markup.h"
-#include "../utils/rng.h"
 #include "../utils/rng_options.h"
 
 #include <cassert>
@@ -16,44 +15,6 @@
 using namespace std;
 
 namespace cartesian_abstractions {
-static vector<CartesianHeuristicFunction> generate_heuristic_functions(
-    const shared_ptr<AbstractTask> &transform,
-    const vector<shared_ptr<SubtaskGenerator>> &subtask_generators,
-    int max_states, int max_transitions, double max_time,
-    bool use_general_costs, PickFlawedAbstractState pick_flawed_abstract_state,
-    PickSplit pick_split, PickSplit tiebreak_split,
-    int max_concrete_states_per_abstract_state, int max_state_expansions,
-    TransitionRepresentation transition_representation,
-    bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
-    int memory_padding_mb, bool use_max, int random_seed,
-    utils::LogProxy &log, DotGraphVerbosity dot_graph_verbosity) {
-    if (log.is_at_least_normal()) {
-        log << "Initializing additive Cartesian heuristic..." << endl;
-    }
-    shared_ptr<utils::RandomNumberGenerator> rng =
-        utils::get_rng(random_seed);
-    CostSaturation cost_saturation(
-        subtask_generators,
-        max_states,
-        max_transitions,
-        max_time,
-        use_general_costs,
-        pick_flawed_abstract_state,
-        pick_split,
-        tiebreak_split,
-        max_concrete_states_per_abstract_state,
-        max_state_expansions,
-        transition_representation,
-        store_shortest_path_tree_children,
-        store_shortest_path_tree_parents,
-        memory_padding_mb,
-        use_max,
-        *rng,
-        log,
-        dot_graph_verbosity);
-    return cost_saturation.generate_heuristic_functions(transform);
-}
-
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
     const vector<shared_ptr<SubtaskGenerator>> &subtasks,
     int max_states, int max_transitions, double max_time,
@@ -66,16 +27,27 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
     bool use_general_costs, const shared_ptr<AbstractTask> &transform,
     bool cache_estimates, const string &description, utils::Verbosity verbosity)
     : Heuristic(transform, cache_estimates, description, verbosity),
-      heuristic_functions(generate_heuristic_functions(
-                              transform, subtasks, max_states, max_transitions,
-                              max_time, use_general_costs, pick_flawed_abstract_state,
-                              pick_split,
-                              tiebreak_split, max_concrete_states_per_abstract_state,
-                              max_state_expansions, transition_representation,
-                              store_shortest_path_tree_children,
-                              store_shortest_path_tree_parents, memory_padding, use_max,
-                              random_seed, log, dot_graph_verbosity)),
       use_max(use_max) {
+    CostSaturation cost_saturation(
+        subtasks,
+        max_states,
+        max_transitions,
+        max_time,
+        use_general_costs,
+        pick_flawed_abstract_state,
+        pick_split,
+        tiebreak_split,
+        max_concrete_states_per_abstract_state,
+        max_state_expansions,
+        transition_representation,
+        store_shortest_path_tree_children,
+        store_shortest_path_tree_parents,
+        memory_padding,
+        use_max,
+        *utils::get_rng(random_seed),
+        log,
+        dot_graph_verbosity);
+    heuristic_functions = cost_saturation.generate_heuristic_functions(transform);
 }
 
 int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
