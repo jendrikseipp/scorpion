@@ -54,18 +54,11 @@ struct ProjectedEffect {
           conditions(move(conditions)),
           conditions_covered_by_pattern(conditions_covered_by_pattern) {
     }
+    auto operator<=>(const ProjectedEffect &) const = default;
 
-    bool operator<(const ProjectedEffect &other) const {
-        return fact < other.fact;
-    }
-
-    bool operator>=(const ProjectedEffect &other) const {
-        return fact >= other.fact;
-    }
-
-    bool operator==(const ProjectedEffect &other) const {
-        assert(utils::is_sorted_unique(conditions));
-        return fact == other.fact && conditions == other.conditions;
+    friend ostream &operator<<(ostream &os, const ProjectedEffect &effect) {
+        return os << effect.conditions << " --> " << effect.fact
+                  << (effect.conditions_covered_by_pattern ? "!" : "?");
     }
 };
 
@@ -227,8 +220,7 @@ void ExplicitProjectionFactory::add_transitions(
         cout << "op: " << op_id << endl;
         cout << "source state: " << src_values << " -> " << src_rank << endl;
         for (const auto &effect : effects) {
-            cout << effect.conditions << " -> " << effect.fact
-                 << (effect.conditions_covered_by_pattern ? "!" : "?") << endl;
+            cout << effect << endl;
         }
     }
 
