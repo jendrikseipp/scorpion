@@ -38,6 +38,7 @@ class CostSaturation {
     const PickSplit tiebreak_split;
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
+    const TransitionRepresentation transition_representation;
     const bool store_spt_children;
     const bool store_spt_parents;
     const int memory_padding_mb;
@@ -75,6 +76,7 @@ public:
         PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
+        TransitionRepresentation transition_representation,
         bool store_spt_children,
         bool store_spt_parents,
         int memory_padding_mb,

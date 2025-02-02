@@ -25,6 +25,7 @@ class TransitionSystem;
   RefinementHierarchy.
 */
 class Abstraction {
+    TransitionRepresentation transition_representation;
     std::unique_ptr<TransitionSystem> transition_system;
     const State concrete_initial_state;
     const std::vector<FactPair> goal_facts;
@@ -49,7 +50,10 @@ class Abstraction {
     void initialize_trivial_abstraction(const std::vector<int> &domain_sizes);
 
 public:
-    Abstraction(const std::shared_ptr<AbstractTask> &task, utils::LogProxy &log);
+    Abstraction(
+        const std::shared_ptr<AbstractTask> &task,
+        TransitionRepresentation transition_representation,
+        utils::LogProxy &log);
     ~Abstraction();
 
     Abstraction(const Abstraction &) = delete;

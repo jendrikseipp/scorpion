@@ -2,21 +2,16 @@
 
 #include "abstraction.h"
 #include "abstract_state.h"
-#include "cartesian_set.h"
 #include "shortest_paths.h"
 #include "transition_system.h"
 #include "utils.h"
 
 #include "../task_utils/task_properties.h"
-#include "../utils/language.h"
 #include "../utils/logging.h"
-#include "../utils/math.h"
 #include "../utils/memory.h"
 
-#include <algorithm>
 #include <cassert>
 #include <iostream>
-#include <unordered_map>
 
 using namespace std;
 
@@ -31,6 +26,7 @@ CEGAR::CEGAR(
     PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state,
     int max_state_expansions,
+    TransitionRepresentation transition_representation,
     bool store_spt_children,
     bool store_spt_parents,
     utils::RandomNumberGenerator &rng,
@@ -41,7 +37,7 @@ CEGAR::CEGAR(
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       pick_flawed_abstract_state(pick_flawed_abstract_state),
-      abstraction(utils::make_unique_ptr<Abstraction>(task, log)),
+      abstraction(utils::make_unique_ptr<Abstraction>(task, transition_representation, log)),
       timer(max_time),
       log(log),
       dot_graph_verbosity(dot_graph_verbosity) {

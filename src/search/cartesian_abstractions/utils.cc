@@ -24,7 +24,6 @@ namespace cartesian_abstractions {
 class SubtaskGenerator;
 bool g_hacked_sort_transitions = false;
 bool g_hacked_use_abstract_flaw_search = false;
-TransitionRepresentation g_hacked_tsr = TransitionRepresentation::STORE;
 
 static bool operator_applicable(
     const OperatorProxy &op, const utils::HashSet<FactProxy> &facts) {

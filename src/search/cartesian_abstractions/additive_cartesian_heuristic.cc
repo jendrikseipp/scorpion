@@ -23,6 +23,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
     bool use_general_costs, PickFlawedAbstractState pick_flawed_abstract_state,
     PickSplit pick_split, PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state, int max_state_expansions,
+    TransitionRepresentation transition_representation,
     bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
     int memory_padding_mb, bool use_max, int random_seed,
     utils::LogProxy &log, DotGraphVerbosity dot_graph_verbosity) {
@@ -42,6 +43,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         tiebreak_split,
         max_concrete_states_per_abstract_state,
         max_state_expansions,
+        transition_representation,
         store_shortest_path_tree_children,
         store_shortest_path_tree_parents,
         memory_padding_mb,
@@ -58,6 +60,7 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
     PickFlawedAbstractState pick_flawed_abstract_state,
     PickSplit pick_split, PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state, int max_state_expansions,
+    TransitionRepresentation transition_representation,
     bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
     int memory_padding, bool use_max, int random_seed, DotGraphVerbosity dot_graph_verbosity,
     bool use_general_costs, const shared_ptr<AbstractTask> &transform,
@@ -68,7 +71,8 @@ AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
                               max_time, use_general_costs, pick_flawed_abstract_state,
                               pick_split,
                               tiebreak_split, max_concrete_states_per_abstract_state,
-                              max_state_expansions, store_shortest_path_tree_children,
+                              max_state_expansions, transition_representation,
+                              store_shortest_path_tree_children,
                               store_shortest_path_tree_parents, memory_padding, use_max,
                               random_seed, log, dot_graph_verbosity)),
       use_max(use_max) {
@@ -167,7 +171,6 @@ public:
     virtual shared_ptr<AdditiveCartesianHeuristic> create_component(
         const plugins::Options &opts,
         const utils::Context &) const override {
-        g_hacked_tsr = opts.get<TransitionRepresentation>("transition_representation");
         g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
         g_hacked_use_abstract_flaw_search = opts.get<bool>("use_abstract_flaw_search");
         return plugins::make_shared_from_arg_tuples<AdditiveCartesianHeuristic>(
@@ -180,6 +183,7 @@ public:
             opts.get<PickSplit>("tiebreak_split"),
             opts.get<int>("max_concrete_states_per_abstract_state"),
             opts.get<int>("max_state_expansions"),
+            opts.get<TransitionRepresentation>("transition_representation"),
             opts.get<bool>("store_shortest_path_tree_children"),
             opts.get<bool>("store_shortest_path_tree_parents"),
             opts.get<int>("memory_padding"),

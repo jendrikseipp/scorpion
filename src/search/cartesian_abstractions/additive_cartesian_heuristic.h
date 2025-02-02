@@ -11,6 +11,7 @@ class SubtaskGenerator;
 enum class DotGraphVerbosity;
 enum class PickFlawedAbstractState;
 enum class PickSplit;
+enum class TransitionRepresentation;
 
 /*
   Store CartesianHeuristicFunctions and compute overall heuristic by
@@ -30,6 +31,7 @@ public:
         PickFlawedAbstractState pick_flawed_abstract_state,
         PickSplit pick_split, PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state, int max_state_expansions,
+        TransitionRepresentation transition_representation,
         bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
         int memory_padding, bool use_max, int random_seed, DotGraphVerbosity dot_graph_verbosity,
         bool use_general_costs,

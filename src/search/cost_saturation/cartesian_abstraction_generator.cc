@@ -65,6 +65,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     cartesian_abstractions::PickSplit pick_split,
     cartesian_abstractions::PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state, int max_state_expansions,
+    cartesian_abstractions::TransitionRepresentation transition_representation,
     bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
     int memory_padding, int random_seed,
     cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
@@ -74,6 +75,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_states(max_states),
       max_transitions(max_transitions),
       max_time(max_time),
+      transition_representation(transition_representation),
       store_spt_children(store_shortest_path_tree_children),
       store_spt_parents(store_shortest_path_tree_parents),
       pick_flawed_abstract_state(pick_flawed_abstract_state),
@@ -111,6 +113,7 @@ CartesianAbstractionGenerator::compute_abstraction_and_goal_distances_for_subtas
         tiebreak_split,
         max_concrete_states_per_abstract_state,
         max_state_expansions,
+        transition_representation,
         store_spt_children,
         store_spt_parents,
         *rng,
@@ -211,7 +214,6 @@ public:
     virtual shared_ptr<CartesianAbstractionGenerator> create_component(
         const plugins::Options &opts,
         const utils::Context &) const override {
-        cartesian_abstractions::g_hacked_tsr = opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation");
         cartesian_abstractions::g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
         cartesian_abstractions::g_hacked_use_abstract_flaw_search = opts.get<bool>("use_abstract_flaw_search");
 
@@ -225,6 +227,7 @@ public:
             opts.get<cartesian_abstractions::PickSplit>("tiebreak_split"),
             opts.get<int>("max_concrete_states_per_abstract_state"),
             opts.get<int>("max_state_expansions"),
+            opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation"),
             opts.get<bool>("store_shortest_path_tree_children"),
             opts.get<bool>("store_shortest_path_tree_parents"),
             opts.get<int>("memory_padding"),
