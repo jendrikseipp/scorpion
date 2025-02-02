@@ -25,7 +25,7 @@ REVISION_CACHE = (
     os.environ.get("DOWNWARD_REVISION_CACHE") or project.DIR / "data" / "revision-cache"
 )
 if project.REMOTE:
-    ENV = project.TetralithEnvironment(email="jendrik.seipp@liu.se", memory_per_cpu="5G", extra_options="#SBATCH --account=naiss2023-5-314")
+    ENV = project.TetralithEnvironment(email="jendrik.seipp@liu.se", memory_per_cpu="5G", extra_options="#SBATCH --account=naiss2024-5-421")
     SUITE = project.SUITE_OPTIMAL_STRIPS
 else:
     ENV = project.LocalEnvironment(processes=2)
