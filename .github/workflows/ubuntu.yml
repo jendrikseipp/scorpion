@@ -21,7 +21,7 @@ jobs:
       matrix:
         version:
           - {ubuntu: 'ubuntu-22.04', python: '3.10', cc: gcc-12, cxx: g++-12, run_tox_tests: true}
-          - {ubuntu: 'ubuntu-22.04', python: '3.10', cc: clang-15, cxx: clang++-15, run_tox_tests: false}
+          #- {ubuntu: 'ubuntu-22.04', python: '3.10', cc: clang-15, cxx: clang++-15, run_tox_tests: false} # Clang 15 trips over defaulted spaceship operator.
           - {ubuntu: 'ubuntu-24.04', python: '3.10', cc: gcc-14, cxx: g++-14, run_tox_tests: true}
           - {ubuntu: 'ubuntu-24.04', python: '3.10', cc: clang-18, cxx: clang++-18, run_tox_tests: false}
     env:
