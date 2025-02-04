@@ -181,9 +181,9 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
                 conditions_covered_by_pattern);
         }
     }
+    sort(projected_effects.begin(), projected_effects.end());
     projected_effects.erase(unique(projected_effects.begin(), projected_effects.end()),
                             projected_effects.end());
-    sort(projected_effects.begin(), projected_effects.end());
     assert(utils::is_sorted_unique(projected_effects));
     return projected_effects;
 }
