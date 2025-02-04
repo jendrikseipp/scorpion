@@ -238,17 +238,16 @@ def _get_exp_dir_relative_to_repo():
     return repo_name / rel_script_dir / "data" / expname
 
 
-def add_scp_step(exp, login, repos_dir):
+def add_scp_step(exp, login, repos_dir, name="scp-eval-dir"):
     remote_exp = Path(repos_dir) / _get_exp_dir_relative_to_repo()
     exp.add_step(
-        "scp-eval-dir",
+        name,
         subprocess.call,
         [
-            "scp",
-            "-r",  # Copy recursively.
-            "-C",  # Compress files.
-            f"{login}:{remote_exp}-eval",
-            f"{exp.path}-eval",
+            "rsync",
+            "-Pavz",
+            f"{login}:{remote_exp}-eval/",
+            f"{exp.path}-eval/",
         ],
     )
 
