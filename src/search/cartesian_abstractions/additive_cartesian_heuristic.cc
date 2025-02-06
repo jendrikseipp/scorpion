@@ -142,7 +142,6 @@ public:
         const plugins::Options &opts,
         const utils::Context &) const override {
         g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
-        g_hacked_use_abstract_flaw_search = opts.get<bool>("use_abstract_flaw_search");
         return plugins::make_shared_from_arg_tuples<AdditiveCartesianHeuristic>(
             opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),
             opts.get<int>("max_states"),

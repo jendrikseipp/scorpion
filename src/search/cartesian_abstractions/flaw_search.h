@@ -58,10 +58,6 @@ class FlawSearch {
 
     // Search data
     std::stack<StateID> open_list;
-    // Use a max heap to expand abstract states in decreasing order by h value.
-    std::priority_queue<std::pair<Cost, int>> abstract_open_list;
-    std::vector<bool> is_in_abstract_open_list;
-    phmap::flat_hash_map<int, phmap::flat_hash_set<StateID, StateIDHash>> f_optimal_states;
     std::unique_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
     std::unique_ptr<PerStateInformation<int>> cached_abstract_state_ids;
@@ -86,7 +82,6 @@ class FlawSearch {
 
     void initialize();
     SearchStatus step();
-    SearchStatus abstract_step();
     SearchStatus search_for_flaws(const utils::CountdownTimer &cegar_timer);
 
     std::unique_ptr<Split> create_split(

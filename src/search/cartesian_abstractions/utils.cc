@@ -23,7 +23,6 @@ using namespace std;
 namespace cartesian_abstractions {
 class SubtaskGenerator;
 bool g_hacked_sort_transitions = false;
-bool g_hacked_use_abstract_flaw_search = false;
 
 static bool operator_applicable(
     const OperatorProxy &op, const utils::HashSet<FactProxy> &facts) {
@@ -212,10 +211,6 @@ void add_common_cegar_options(plugins::Feature &feature) {
     feature.add_option<bool>(
         "sort_transitions",
         "sort transitions to ensure the different transition system representations yield the same abstractions",
-        "false");
-    feature.add_option<bool>(
-        "use_abstract_flaw_search",
-        "let the flaw search expand all concrete states belonging to an abstract state at once",
         "false");
     feature.add_option<bool>(
         "store_shortest_path_tree_children",
