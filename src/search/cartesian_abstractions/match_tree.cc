@@ -225,20 +225,20 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
 }
 
 Matcher MatchTree::get_incoming_matcher(int op_id) const {
-    Matcher matcher(num_variables, Variable::UNAFFECTED);
+    Matcher matcher(num_variables, MatcherVariable::UNAFFECTED);
     for (int var : effect_vars_without_preconditions[op_id]) {
-        matcher[var] = Variable::FULL_DOMAIN;
+        matcher[var] = MatcherVariable::FULL_DOMAIN;
     }
     for (const FactPair &fact : preconditions[op_id]) {
-        matcher[fact.var] = Variable::SINGLE_VALUE;
+        matcher[fact.var] = MatcherVariable::SINGLE_VALUE;
     }
     return matcher;
 }
 
 Matcher MatchTree::get_outgoing_matcher(int op_id) const {
-    Matcher matcher(num_variables, Variable::UNAFFECTED);
+    Matcher matcher(num_variables, MatcherVariable::UNAFFECTED);
     for (const FactPair &fact : postconditions[op_id]) {
-        matcher[fact.var] = Variable::SINGLE_VALUE;
+        matcher[fact.var] = MatcherVariable::SINGLE_VALUE;
     }
     return matcher;
 }

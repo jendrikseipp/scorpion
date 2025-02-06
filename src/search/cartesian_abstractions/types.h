@@ -30,12 +30,12 @@ enum class TransitionRepresentation {
     SG_RH,
 };
 
-enum class Variable : char {
+enum class MatcherVariable : char {
     UNAFFECTED,
     SINGLE_VALUE,
     FULL_DOMAIN,
 };
-static_assert(sizeof(Variable) == 1, "Variable has unexpected size");
+static_assert(sizeof(MatcherVariable) == 1, "MatcherVariable has unexpected size");
 
 using AbstractStates = std::deque<std::unique_ptr<AbstractState>>;
 using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;
@@ -43,7 +43,7 @@ using Cost = uint64_t;
 using Facts = std::vector<FactPair>;
 using Goals = std::unordered_set<int>;
 using Loops = std::vector<int>;
-using Matcher = std::vector<Variable>;
+using Matcher = std::vector<MatcherVariable>;
 using NodeID = int;
 using Operators = std::vector<int>;
 using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;

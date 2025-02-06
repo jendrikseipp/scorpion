@@ -160,8 +160,8 @@ void RefinementHierarchy::for_each_leaf(
             stack.push(children.correct_child);
             // Now test the other child.
             int var = nodes[node_id].var;
-            if ((matcher[var] != Variable::SINGLE_VALUE) && (
-                    matcher[var] == Variable::FULL_DOMAIN ||
+            if ((matcher[var] != MatcherVariable::SINGLE_VALUE) && (
+                    matcher[var] == MatcherVariable::FULL_DOMAIN ||
                     cartesian_set.intersects(
                         *all_cartesian_sets[children.other_child], var))) {
                 stack.push(children.other_child);
