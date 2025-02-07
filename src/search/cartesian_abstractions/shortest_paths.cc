@@ -36,7 +36,7 @@ ShortestPaths::ShortestPaths(
         cerr << "if store_parents=true, store_children must also be set to true." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
-    if (store_parents) {
+    if (store_children) {
         rewirer = utils::make_unique_ptr<TransitionSystem>(TaskProxy(*tasks::g_root_task).get_operators());
     }
     operator_costs.reserve(costs.size());
