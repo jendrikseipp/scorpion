@@ -4,6 +4,8 @@
 
 #include "../task_proxy.h"
 
+#include "../utils/logging.h"
+
 using namespace std;
 
 namespace cartesian_abstractions {
@@ -100,9 +102,9 @@ shared_ptr<AbstractTask> RefinementHierarchy::get_task() const {
     return task;
 }
 
-void RefinementHierarchy::print_statistics() const {
-    cout << "Refinement hierarchy nodes: " << nodes.size() << endl;
-    cout << "Refinement hierarchy capacity: " << nodes.capacity() << endl;
+void RefinementHierarchy::print_statistics(utils::LogProxy &log) const {
+    log << "Refinement hierarchy nodes: " << nodes.size() << endl;
+    log << "Refinement hierarchy capacity: " << nodes.capacity() << endl;
 }
 
 void RefinementHierarchy::dump(int level, NodeID id) const {

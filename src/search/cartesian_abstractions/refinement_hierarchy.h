@@ -139,7 +139,7 @@ public:
     TaskProxy get_task_proxy() const;
     std::shared_ptr<AbstractTask> get_task() const;
 
-    void print_statistics() const;
+    void print_statistics(utils::LogProxy &log) const;
     void dump(int level = 0, NodeID id = 0) const;
 };
 

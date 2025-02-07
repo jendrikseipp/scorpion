@@ -405,8 +405,8 @@ void Abstraction::switch_from_transition_system_to_successor_generator() {
 
 void Abstraction::print_statistics() const {
     if (log.is_at_least_normal()) {
-        cout << "Cartesian states: " << get_num_states() << endl;
-        cout << "Cartesian goal states: " << goals.size() << endl;
+        log << "Cartesian states: " << get_num_states() << endl;
+        log << "Cartesian goal states: " << goals.size() << endl;
         if (transition_system) {
             transition_system->print_statistics(log);
         }
@@ -415,9 +415,9 @@ void Abstraction::print_statistics() const {
         }
         int num_helper_nodes = count(cartesian_sets.begin(), cartesian_sets.end(), nullptr);
         int num_cartesian_sets = cartesian_sets.size() - num_helper_nodes;
-        cout << "Cartesian helper nodes: " << num_helper_nodes << endl;
-        cout << "Cartesian sets: " << num_cartesian_sets << endl;
-        refinement_hierarchy->print_statistics();
+        log << "Cartesian helper nodes: " << num_helper_nodes << endl;
+        log << "Cartesian sets: " << num_cartesian_sets << endl;
+        refinement_hierarchy->print_statistics(log);
     }
 }
 }
