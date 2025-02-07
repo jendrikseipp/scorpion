@@ -259,6 +259,7 @@ vector<bool> Abstraction::get_looping_operators() const {
     if (match_tree) {
         return match_tree->get_looping_operators(states);
     } else {
+        assert(transition_system);
         return transition_system->get_looping_operators();
     }
 }
