@@ -634,6 +634,18 @@ bool ShortestPaths::test_distances(
 #endif
 
 void ShortestPaths::print_statistics() const {
+    if (log.is_at_least_verbose()) {
+        map<int, int> children_counts;
+        for (const auto &c : children) {
+            children_counts[c.size()] += 1;
+        }
+        log << "SPT children: " << children_counts << endl;
+        map<int, int> parents_counts;
+        for (const auto &p : parents) {
+            parents_counts[p.size()] += 1;
+        }
+        log << "SPT parents: " << parents_counts << endl;
+    }
 }
 
 vector<int> compute_goal_distances(
