@@ -1,7 +1,7 @@
 #include "shortest_paths.h"
 
 #include "abstraction.h"
-#include "transition_system.h"
+#include "transition_rewirer.h"
 #include "utils.h"
 
 #include "../algorithms/priority_queues.h"
@@ -37,7 +37,7 @@ ShortestPaths::ShortestPaths(
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
     if (store_children) {
-        rewirer = utils::make_unique_ptr<TransitionSystem>(TaskProxy(*tasks::g_root_task).get_operators());
+        rewirer = utils::make_unique_ptr<TransitionRewirer>(TaskProxy(*tasks::g_root_task).get_operators());
     }
     operator_costs.reserve(costs.size());
     for (int cost : costs) {
@@ -291,10 +291,7 @@ void ShortestPaths::update_incrementally(
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
        will be updated again if v1 or v2 are dirty. */
     if (store_children && store_parents) {
-        rewirer->rewire_children(
-            children, parents, abstraction.get_states(), v,
-            abstraction.get_state(v1), abstraction.get_state(v2), var);
-        rewirer->rewire_parents(
+        rewirer->rewire_transitions(
             children, parents, abstraction.get_states(), v,
             abstraction.get_state(v1), abstraction.get_state(v2), var);
     } else if (store_children) {

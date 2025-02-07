@@ -856,6 +856,7 @@ create_fast_downward_library(
         cartesian_abstractions/shortest_paths
         cartesian_abstractions/subtask_generators
         cartesian_abstractions/transition
+        cartesian_abstractions/transition_rewirer
         cartesian_abstractions/transition_system
         cartesian_abstractions/types
         cartesian_abstractions/utils

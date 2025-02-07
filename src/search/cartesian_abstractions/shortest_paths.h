@@ -39,7 +39,7 @@ namespace cartesian_abstractions {
 */
 
 class Abstraction;
-class TransitionSystem;
+class TransitionRewirer;
 
 using Cost = uint64_t;
 
@@ -121,7 +121,7 @@ class ShortestPaths {
     std::deque<StateInfo> states;
     std::deque<Transitions> children;
     mutable std::deque<Transitions> parents;
-    std::unique_ptr<TransitionSystem> rewirer;
+    std::unique_ptr<TransitionRewirer> rewirer;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
