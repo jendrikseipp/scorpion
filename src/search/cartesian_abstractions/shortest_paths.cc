@@ -531,11 +531,13 @@ OptimalTransitions ShortestPaths::get_optimal_transitions(
     const Abstraction &abstraction, int state) const {
     OptimalTransitions transitions;
     if (store_parents) {
-        if (g_hacked_sort_transitions) {
-            sort(execution::unseq, parents[state].begin(), parents[state].end());
-        }
         for (const Transition &t : parents[state]) {
             transitions[t.op_id].push_back(t.target_id);
+        }
+        if (g_hacked_sort_transitions) {
+            for (auto &[op_id, transitions_for_op]: transitions) {
+                sort(execution::unseq, transitions_for_op.begin(), transitions_for_op.end());
+            }
         }
     } else {
         for (const Transition &t :
