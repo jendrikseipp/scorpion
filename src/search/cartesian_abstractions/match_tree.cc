@@ -14,7 +14,6 @@
 
 #include <algorithm>
 #include <execution>
-#include <map>
 
 using namespace std;
 
@@ -33,35 +32,6 @@ static vector<vector<FactPair>> get_effects_by_operator(
         effects_by_operator.push_back(move(effects));
     }
     return effects_by_operator;
-}
-
-static vector<FactPair> get_postconditions(
-    const OperatorProxy &op) {
-    // Use map to obtain sorted postconditions.
-    map<int, int> var_to_post;
-    for (FactProxy fact : op.get_preconditions()) {
-        var_to_post[fact.get_variable().get_id()] = fact.get_value();
-    }
-    for (EffectProxy effect : op.get_effects()) {
-        FactPair fact = effect.get_fact().get_pair();
-        var_to_post[fact.var] = fact.value;
-    }
-    vector<FactPair> postconditions;
-    postconditions.reserve(var_to_post.size());
-    for (const pair<const int, int> &fact : var_to_post) {
-        postconditions.emplace_back(fact.first, fact.second);
-    }
-    return postconditions;
-}
-
-static vector<vector<FactPair>> get_postconditions_by_operator(
-    const OperatorsProxy &ops) {
-    vector<vector<FactPair>> postconditions_by_operator;
-    postconditions_by_operator.reserve(ops.size());
-    for (OperatorProxy op : ops) {
-        postconditions_by_operator.push_back(get_postconditions(op));
-    }
-    return postconditions_by_operator;
 }
 
 static vector<int> get_effect_vars_without_preconditions(
@@ -110,7 +80,7 @@ MatchTree::MatchTree(
     : num_variables(refinement_hierarchy.get_task_proxy().get_variables().size()),
       preconditions(transition_rewirer.preconditions_by_operator),
       effects(get_effects_by_operator(ops)),
-      postconditions(get_postconditions_by_operator(ops)),
+      postconditions(transition_rewirer.postconditions_by_operator),
       effect_vars_without_preconditions(get_effect_vars_without_preconditions_by_operator(ops)),
       operator_costs(get_operator_costs(ops)),
       transition_rewirer(transition_rewirer),

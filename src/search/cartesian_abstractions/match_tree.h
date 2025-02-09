@@ -25,7 +25,7 @@ class MatchTree {
     const int num_variables;
     const std::vector<Facts> &preconditions;
     const std::vector<Facts> effects;
-    const std::vector<Facts> postconditions;
+    const std::vector<Facts> &postconditions;
     const std::vector<std::vector<int>> effect_vars_without_preconditions;
     const std::vector<int> operator_costs;
     const TransitionRewirer &transition_rewirer;
