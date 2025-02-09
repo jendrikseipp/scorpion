@@ -2,9 +2,8 @@
 #define CARTESIAN_ABSTRACTIONS_MATCH_TREE_H
 
 #include "abstract_state.h"
-#include "cartesian_set.h"
 #include "refinement_hierarchy.h"
-#include "transition.h"
+#include "transition_rewirer.h"
 #include "types.h"
 
 #include <vector>
@@ -24,12 +23,12 @@ class RefinementHierarchy;
 */
 class MatchTree {
     const int num_variables;
-    // TODO: group this info in new Operator class?
-    const std::vector<Facts> preconditions;
+    const std::vector<Facts> &preconditions;
     const std::vector<Facts> effects;
     const std::vector<Facts> postconditions;
     const std::vector<std::vector<int>> effect_vars_without_preconditions;
     const std::vector<int> operator_costs;
+    const TransitionRewirer &transition_rewirer;
     const RefinementHierarchy &refinement_hierarchy;
     const CartesianSets &cartesian_sets;
     std::shared_ptr<AbstractTask> inverted_task;
@@ -42,9 +41,6 @@ class MatchTree {
     void resize_vectors(int new_size);
 
     void add_operators_in_trivial_abstraction();
-
-    int get_precondition_value(int op_id, int var) const;
-    int get_postcondition_value(int op_id, int var) const;
 
     int get_state_id(NodeID node_id) const;
 
@@ -59,20 +55,17 @@ class MatchTree {
 
 public:
     MatchTree(
-        const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
-        const CartesianSets &cartesian_sets, bool debug);
+        const OperatorsProxy &ops,
+        const TransitionRewirer &transition_rewirer,
+        const RefinementHierarchy &refinement_hierarchy,
+        const CartesianSets &cartesian_sets,
+        bool debug);
 
     // Update match tree after v has been split for var.
     void split(const AbstractState &v, int var);
 
-    const std::vector<FactPair> &get_preconditions(int op_id) const {
-        return preconditions[op_id];
-    }
     const std::vector<FactPair> &get_effects(int op_id) const {
         return effects[op_id];
-    }
-    const std::vector<FactPair> &get_postconditions(int op_id) const {
-        return postconditions[op_id];
     }
 
     Operators get_incoming_operators(const AbstractState &state) const;

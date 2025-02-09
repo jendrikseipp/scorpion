@@ -1,6 +1,7 @@
 #ifndef CARTESIAN_ABSTRACTIONS_ABSTRACTION_H
 #define CARTESIAN_ABSTRACTIONS_ABSTRACTION_H
 
+#include "transition_rewirer.h"
 #include "types.h"
 
 #include "../task_proxy.h"
@@ -26,6 +27,7 @@ class TransitionSystem;
 */
 class Abstraction {
     TransitionRepresentation transition_representation;
+    TransitionRewirer transition_rewirer;
     std::unique_ptr<TransitionSystem> transition_system;
     const State concrete_initial_state;
     const std::vector<FactPair> goal_facts;
@@ -66,7 +68,7 @@ public:
     int get_abstract_state_id(const State &state) const;
     std::unique_ptr<RefinementHierarchy> extract_refinement_hierarchy();
 
-    const std::vector<FactPair> get_preconditions(int op_id) const;
+    const std::vector<FactPair> &get_preconditions(int op_id) const;
     int get_num_operators() const;
     int get_num_transitions() const;
     Transitions get_incoming_transitions(int state_id) const;
@@ -81,8 +83,6 @@ public:
     // Split state into two child states.
     std::pair<int, int> refine(
         const AbstractState &state, int var, const std::vector<int> &wanted);
-
-    void switch_from_transition_system_to_successor_generator();
 
     void print_statistics() const;
 };

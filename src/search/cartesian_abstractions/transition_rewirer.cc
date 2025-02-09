@@ -94,14 +94,6 @@ TransitionRewirer::TransitionRewirer(const OperatorsProxy &ops)
       postconditions_by_operator(get_postconditions_by_operator(ops)) {
 }
 
-int TransitionRewirer::get_precondition_value(int op_id, int var) const {
-    return lookup_value(preconditions_by_operator[op_id], var);
-}
-
-int TransitionRewirer::get_postcondition_value(int op_id, int var) const {
-    return lookup_value(postconditions_by_operator[op_id], var);
-}
-
 void TransitionRewirer::rewire_transitions(
     deque<Transitions> &incoming, deque<Transitions> &outgoing,
     const AbstractStates &states, int v_id,
@@ -266,9 +258,12 @@ void TransitionRewirer::rewire_loops(
     }
 }
 
-const vector<FactPair> &TransitionRewirer::get_preconditions(int op_id) const {
-    assert(utils::in_bounds(op_id, preconditions_by_operator));
-    return preconditions_by_operator[op_id];
+int TransitionRewirer::get_precondition_value(int op_id, int var) const {
+    return lookup_value(preconditions_by_operator[op_id], var);
+}
+
+int TransitionRewirer::get_postcondition_value(int op_id, int var) const {
+    return lookup_value(postconditions_by_operator[op_id], var);
 }
 
 int TransitionRewirer::get_num_operators() const {

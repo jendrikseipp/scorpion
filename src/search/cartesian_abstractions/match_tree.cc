@@ -1,5 +1,7 @@
 #include "match_tree.h"
 
+#include "transition.h"
+#include "transition_rewirer.h"
 #include "utils.h"
 
 #include "../operator_id.h"
@@ -17,18 +19,6 @@
 using namespace std;
 
 namespace cartesian_abstractions {
-static vector<vector<FactPair>> get_preconditions_by_operator(
-    const OperatorsProxy &ops) {
-    vector<vector<FactPair>> preconditions_by_operator;
-    preconditions_by_operator.reserve(ops.size());
-    for (OperatorProxy op : ops) {
-        vector<FactPair> preconditions = task_properties::get_fact_pairs(op.get_preconditions());
-        sort(preconditions.begin(), preconditions.end());
-        preconditions_by_operator.push_back(move(preconditions));
-    }
-    return preconditions_by_operator;
-}
-
 static vector<vector<FactPair>> get_effects_by_operator(
     const OperatorsProxy &ops) {
     vector<vector<FactPair>> effects_by_operator;
@@ -102,18 +92,6 @@ static vector<vector<int>> get_effect_vars_without_preconditions_by_operator(
     return result;
 }
 
-static int lookup_value(const vector<FactPair> &facts, int var) {
-    assert(is_sorted(facts.begin(), facts.end()));
-    for (const FactPair &fact : facts) {
-        if (fact.var == var) {
-            return fact.value;
-        } else if (fact.var > var) {
-            return UNDEFINED;
-        }
-    }
-    return UNDEFINED;
-}
-
 static vector<int> get_operator_costs(const OperatorsProxy &operators) {
     vector<int> costs;
     costs.reserve(operators.size());
@@ -124,14 +102,18 @@ static vector<int> get_operator_costs(const OperatorsProxy &operators) {
 
 
 MatchTree::MatchTree(
-    const OperatorsProxy &ops, const RefinementHierarchy &refinement_hierarchy,
-    const CartesianSets &cartesian_sets, bool debug)
+    const OperatorsProxy &ops,
+    const TransitionRewirer &transition_rewirer,
+    const RefinementHierarchy &refinement_hierarchy,
+    const CartesianSets &cartesian_sets,
+    bool debug)
     : num_variables(refinement_hierarchy.get_task_proxy().get_variables().size()),
-      preconditions(get_preconditions_by_operator(ops)),
+      preconditions(transition_rewirer.preconditions_by_operator),
       effects(get_effects_by_operator(ops)),
       postconditions(get_postconditions_by_operator(ops)),
       effect_vars_without_preconditions(get_effect_vars_without_preconditions_by_operator(ops)),
       operator_costs(get_operator_costs(ops)),
+      transition_rewirer(transition_rewirer),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
       inverted_task(make_shared<extra_tasks::InvertedTask>(refinement_hierarchy.get_task())),
@@ -143,14 +125,6 @@ MatchTree::MatchTree(
           !task_properties::is_unit_cost(refinement_hierarchy.get_task_proxy())),
       debug(debug) {
     utils::Timer layer_timer;
-}
-
-int MatchTree::get_precondition_value(int op_id, int var) const {
-    return lookup_value(preconditions[op_id], var);
-}
-
-int MatchTree::get_postcondition_value(int op_id, int var) const {
-    return lookup_value(postconditions[op_id], var);
 }
 
 int MatchTree::get_state_id(NodeID node_id) const {
