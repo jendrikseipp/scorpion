@@ -39,7 +39,7 @@ public:
     void rewire_loops(
         std::deque<Loops> &loops,
         std::deque<Transitions> &incoming, std::deque<Transitions> &outgoing,
-        int v_id, const AbstractState &v1, const AbstractState &v2, int var);
+        int v_id, const AbstractState &v1, const AbstractState &v2, int var) const;
 
     int get_precondition_value(int op_id, int var) const;
     int get_postcondition_value(int op_id, int var) const;

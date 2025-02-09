@@ -1,7 +1,6 @@
 #ifndef CARTESIAN_ABSTRACTIONS_ABSTRACTION_H
 #define CARTESIAN_ABSTRACTIONS_ABSTRACTION_H
 
-#include "transition_rewirer.h"
 #include "types.h"
 
 #include "../task_proxy.h"
@@ -17,6 +16,7 @@ namespace cartesian_abstractions {
 class AbstractState;
 class MatchTree;
 class RefinementHierarchy;
+class TransitionRewirer;
 class TransitionSystem;
 
 /*
@@ -27,7 +27,7 @@ class TransitionSystem;
 */
 class Abstraction {
     TransitionRepresentation transition_representation;
-    TransitionRewirer transition_rewirer;
+    const TransitionRewirer &transition_rewirer;
     std::unique_ptr<TransitionSystem> transition_system;
     const State concrete_initial_state;
     const std::vector<FactPair> goal_facts;
@@ -54,6 +54,7 @@ class Abstraction {
 public:
     Abstraction(
         const std::shared_ptr<AbstractTask> &task,
+        const TransitionRewirer &transition_rewirer,
         TransitionRepresentation transition_representation,
         utils::LogProxy &log);
     ~Abstraction();

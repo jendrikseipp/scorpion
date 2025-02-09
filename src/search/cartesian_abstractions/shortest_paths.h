@@ -106,6 +106,7 @@ static_assert(
 class ShortestPaths {
     static const Cost INF_COSTS;
 
+    const TransitionRewirer &rewirer;
     const utils::CountdownTimer &timer;
     utils::LogProxy &log;
     const bool store_children;
@@ -122,7 +123,6 @@ class ShortestPaths {
     std::deque<StateInfo> states;
     std::deque<Transitions> children;
     std::deque<Transitions> parents;
-    std::unique_ptr<TransitionRewirer> rewirer;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
@@ -140,6 +140,7 @@ class ShortestPaths {
 
 public:
     ShortestPaths(
+        const TransitionRewirer &rewirer,
         const std::vector<int> &costs,
         bool store_children,
         bool store_parents,

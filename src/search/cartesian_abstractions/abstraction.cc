@@ -21,10 +21,11 @@ using namespace std;
 namespace cartesian_abstractions {
 Abstraction::Abstraction(
     const shared_ptr<AbstractTask> &task,
+    const TransitionRewirer &transition_rewirer,
     TransitionRepresentation transition_representation,
     utils::LogProxy &log)
     : transition_representation(transition_representation),
-      transition_rewirer(TaskProxy(*task).get_operators()),
+      transition_rewirer(transition_rewirer),
       concrete_initial_state(TaskProxy(*task).get_initial_state()),
       goal_facts(task_properties::get_fact_pairs(TaskProxy(*task).get_goals())),
       refinement_hierarchy(utils::make_unique_ptr<RefinementHierarchy>(task)),
@@ -42,13 +43,11 @@ Abstraction::Abstraction(
     } else {
         assert(transition_representation == TransitionRepresentation::STORE);
         log << "Store transitions." << endl;
-        transition_system = utils::make_unique_ptr<TransitionSystem>(
-            TaskProxy(*task).get_operators());
+        transition_system = utils::make_unique_ptr<TransitionSystem>(transition_rewirer);
     }
 #ifndef NDEBUG
     if (!transition_system && debug) {
-        transition_system = utils::make_unique_ptr<TransitionSystem>(
-            TaskProxy(*task).get_operators());
+        transition_system = utils::make_unique_ptr<TransitionSystem>(transition_rewirer);
     }
 #endif
 }

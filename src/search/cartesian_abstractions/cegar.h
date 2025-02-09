@@ -3,6 +3,7 @@
 
 #include "flaw_search.h"
 #include "split_selector.h"
+#include "transition_rewirer.h"
 #include "types.h"
 
 #include "../task_proxy.h"
@@ -36,6 +37,7 @@ class CEGAR {
     const int max_non_looping_transitions;
     const PickFlawedAbstractState pick_flawed_abstract_state;
 
+    TransitionRewirer transition_rewirer;
     std::unique_ptr<Abstraction> abstraction;
     std::unique_ptr<ShortestPaths> shortest_paths;
     std::unique_ptr<FlawSearch> flaw_search;

@@ -37,13 +37,15 @@ CEGAR::CEGAR(
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       pick_flawed_abstract_state(pick_flawed_abstract_state),
-      abstraction(utils::make_unique_ptr<Abstraction>(task, transition_representation, log)),
+      transition_rewirer(task_proxy.get_operators()),
+      abstraction(utils::make_unique_ptr<Abstraction>(
+                      task, transition_rewirer, transition_representation, log)),
       timer(max_time),
       log(log),
       dot_graph_verbosity(dot_graph_verbosity) {
     assert(max_states >= 1);
     shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-        task_properties::get_operator_costs(task_proxy),
+        transition_rewirer, task_properties::get_operator_costs(task_proxy),
         store_spt_children, store_spt_parents, timer, log);
     flaw_search = utils::make_unique_ptr<FlawSearch>(
         task, *abstraction, *shortest_paths, rng,

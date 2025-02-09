@@ -18,7 +18,7 @@ namespace cartesian_abstractions {
   Rewire transitions after each split.
 */
 class TransitionSystem {
-    TransitionRewirer rewirer;
+    const TransitionRewirer &rewirer;
 
     // Transitions from and to other abstract states.
     std::deque<Transitions> incoming;
@@ -46,7 +46,7 @@ class TransitionSystem {
         const AbstractState &v1, const AbstractState &v2, int var);
 
 public:
-    explicit TransitionSystem(const OperatorsProxy &ops);
+    explicit TransitionSystem(const TransitionRewirer &rewirer);
 
     // Update transition system after v has been split for var into v1 and v2.
     void rewire(

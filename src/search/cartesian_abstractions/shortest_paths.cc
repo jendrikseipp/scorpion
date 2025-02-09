@@ -21,12 +21,14 @@ namespace cartesian_abstractions {
 const Cost ShortestPaths::INF_COSTS = numeric_limits<Cost>::max();
 
 ShortestPaths::ShortestPaths(
+    const TransitionRewirer &rewirer,
     const vector<int> &costs,
     bool store_children,
     bool store_parents,
     const utils::CountdownTimer &timer,
     utils::LogProxy &log)
-    : timer(timer),
+    : rewirer(rewirer),
+      timer(timer),
       log(log),
       store_children(store_children),
       store_parents(store_parents),
@@ -35,9 +37,6 @@ ShortestPaths::ShortestPaths(
     if (store_parents && !store_children) {
         cerr << "if store_parents=true, store_children must also be set to true." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-    }
-    if (store_children) {
-        rewirer = utils::make_unique_ptr<TransitionRewirer>(TaskProxy(*tasks::g_root_task).get_operators());
     }
     operator_costs.reserve(costs.size());
     for (int cost : costs) {
@@ -291,7 +290,7 @@ void ShortestPaths::update_incrementally(
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
        will be updated again if v1 or v2 are dirty. */
     if (store_children && store_parents) {
-        rewirer->rewire_transitions(
+        rewirer.rewire_transitions(
             children, parents, abstraction.get_states(), v,
             abstraction.get_state(v1), abstraction.get_state(v2), var);
     } else if (store_children) {

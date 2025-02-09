@@ -204,7 +204,7 @@ void TransitionRewirer::rewire_outgoing_transitions(
 
 void TransitionRewirer::rewire_loops(
     deque<Loops> &loops, deque<Transitions> &incoming, deque<Transitions> &outgoing,
-    int v_id, const AbstractState &v1, const AbstractState &v2, int var) {
+    int v_id, const AbstractState &v1, const AbstractState &v2, int var) const {
     Loops old_loops = move(loops[v_id]);
     assert(loops[v_id].empty());
     /* State v has been split into v1 and v2. Now for all self-loops

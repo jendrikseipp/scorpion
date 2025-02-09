@@ -2,16 +2,15 @@
 
 #include "abstract_state.h"
 #include "transition.h"
-
-#include "../task_proxy.h"
+#include "transition_rewirer.h"
 
 #include "../utils/logging.h"
 
 using namespace std;
 
 namespace cartesian_abstractions {
-TransitionSystem::TransitionSystem(const OperatorsProxy &ops)
-    : rewirer(ops),
+TransitionSystem::TransitionSystem(const TransitionRewirer &rewirer)
+    : rewirer(rewirer),
       num_non_loops(0),
       num_loops(0) {
     add_loops_in_trivial_abstraction();
