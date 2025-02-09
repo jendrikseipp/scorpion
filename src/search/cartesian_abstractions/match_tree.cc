@@ -91,8 +91,6 @@ MatchTree::MatchTree(
           successor_generator::g_successor_generators[refinement_hierarchy.get_task_proxy()]),
       backward_successor_generator(
           successor_generator::g_successor_generators[TaskProxy(*inverted_task)]),
-      sort_applicable_operators_by_increasing_cost(
-          !task_properties::is_unit_cost(refinement_hierarchy.get_task_proxy())),
       debug(debug) {
     utils::Timer layer_timer;
 }
@@ -297,6 +295,8 @@ int MatchTree::get_operator_between_states(
 }
 
 vector<bool> MatchTree::get_looping_operators(const AbstractStates &states) const {
+    /* TODO: Is it faster to consider each op, use the refinement hierarchy to get
+       the set of states op is applicable in and check whether it loops for one of them? */
     vector<bool> looping(preconditions.size(), false);
     vector<OperatorID> applicable_ops;
     for (auto &state : states) {
@@ -310,7 +310,6 @@ vector<bool> MatchTree::get_looping_operators(const AbstractStates &states) cons
             assert(contains_all_facts(state->get_cartesian_set(), preconditions[op]));
             // An operator loops iff state contains all its effects,
             // since then the resulting Cartesian set is a subset of state.
-            // TODO: is it faster to compute the intersection of incoming and outgoing operators?
             if (all_of(effects[op].begin(), effects[op].end(),
                        [&state](const FactPair &fact) {
                            return state->contains(fact.var, fact.value);

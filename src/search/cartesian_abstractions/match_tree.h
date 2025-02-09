@@ -34,7 +34,6 @@ class MatchTree {
     std::shared_ptr<AbstractTask> inverted_task;
     const successor_generator::SuccessorGenerator &forward_successor_generator;
     const successor_generator::SuccessorGenerator &backward_successor_generator;
-    const bool sort_applicable_operators_by_increasing_cost;
 
     const bool debug;
 
