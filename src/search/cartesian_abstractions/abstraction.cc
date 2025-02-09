@@ -96,7 +96,7 @@ int Abstraction::get_num_operators() const {
     return transition_system->get_num_operators();
 }
 
-int Abstraction::get_num_transitions() const {
+int Abstraction::get_num_stored_transitions() const {
     if (match_tree) {
         return 0;
     }
@@ -229,6 +229,7 @@ bool Abstraction::has_transition(int src, int op_id, int dest) const {
 }
 
 // Method is only called if store_children=true and store_parents=false.
+// TODO: Remove this combination and this method?
 int Abstraction::get_operator_between_states(int src, int dest, int cost) const {
     if (match_tree) {
         return match_tree->get_operator_between_states(*states[src], *states[dest], cost);
