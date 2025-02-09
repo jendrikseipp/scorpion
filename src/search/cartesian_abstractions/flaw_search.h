@@ -11,7 +11,6 @@
 #include "../utils/logging.h"
 #include "../utils/timer.h"
 
-#include <queue>
 #include <stack>
 
 namespace utils {
@@ -33,12 +32,6 @@ enum class PickFlawedAbstractState {
     MIN_H,
     MAX_H,
     BATCH_MIN_H
-};
-
-struct StateIDHash {
-    std::size_t operator()(StateID id) const {
-        return id.hash();
-    }
 };
 
 class FlawSearch {
