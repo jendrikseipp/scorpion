@@ -297,8 +297,9 @@ void ShortestPaths::update_incrementally(
     } else if (store_children) {
         // We need to copy the vector since we reuse the index v.
         Transitions old_children = children[v];
-
-        // TODO: consider old children in sorted order if sort_transtions=true.
+        if (g_hacked_sort_transitions) {
+            sort(execution::unseq, old_children.begin(), old_children.end());
+        }
         for (const Transition &old_child : old_children) {
             int op_id = old_child.op_id;
             int u = old_child.target_id;
@@ -395,7 +396,9 @@ void ShortestPaths::update_incrementally(
             mark_dirty(state);
 
             if (store_children) {
-                // TODO: consider children in sorted order if sort_transtions=true.
+                if (g_hacked_sort_transitions) {
+                    sort(execution::unseq, children[state].begin(), children[state].end());
+                }
                 for (const Transition &t : children[state]) {
                     int prev = t.target_id;
                     assert(store_parents || states[prev].parent.target_id == state);
@@ -540,8 +543,7 @@ OptimalTransitions ShortestPaths::get_optimal_transitions(
             }
         }
     } else {
-        for (const Transition &t :
-             abstraction.get_outgoing_transitions(state)) {
+        for (const Transition &t : abstraction.get_outgoing_transitions(state)) {
             if (is_optimal_transition(state, t.op_id, t.target_id)) {
                 transitions[t.op_id].push_back(t.target_id);
             }
