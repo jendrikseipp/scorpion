@@ -15,15 +15,6 @@ class AbstractTask;
 class State;
 
 namespace cartesian_abstractions {
-struct Children {
-    NodeID correct_child;
-    NodeID other_child;
-
-    Children(NodeID correct_child, NodeID other_child)
-        : correct_child(correct_child), other_child(other_child) {
-    }
-};
-
 class Node {
     friend class RefinementHierarchy;
 
@@ -92,6 +83,21 @@ class RefinementHierarchy {
     NodeID add_node(int state_id);
     NodeID get_node_id(const State &state) const;
 
+    // Helper data structure that holds the result for get_real_children().
+    struct Children {
+        NodeID intersecting_child;
+        NodeID possibly_intersecting_child;
+
+        Children(NodeID correct_child, NodeID other_child)
+            : intersecting_child(correct_child), possibly_intersecting_child(other_child) {
+        }
+    };
+
+    /*
+      Traverse the hierarchy past the helper nodes and return the two "actual"
+      children under the given node, out of which one (intersecting_child) is
+      guaranteed to intersect with cartesian_set.
+    */
     Children get_real_children(NodeID node_id, const CartesianSet &cartesian_set) const {
         const Node &node = nodes[node_id];
         assert(node.is_split());
@@ -131,6 +137,7 @@ public:
         return nodes.size();
     }
 
+    // Call callback for each leaf node that intersects with cartesian_set.
     template<typename Callback>
     void for_each_leaf(
         const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set,
@@ -157,14 +164,14 @@ void RefinementHierarchy::for_each_leaf(
 
             // The Cartesian set must intersect with one or two of the children.
             // We know that it intersects with "correct child".
-            stack.push(children.correct_child);
+            stack.push(children.intersecting_child);
             // Now test the other child.
             int var = nodes[node_id].var;
             if ((matcher[var] != MatcherVariable::SINGLE_VALUE) && (
                     matcher[var] == MatcherVariable::FULL_DOMAIN ||
                     cartesian_set.intersects(
-                        *all_cartesian_sets[children.other_child], var))) {
-                stack.push(children.other_child);
+                        *all_cartesian_sets[children.possibly_intersecting_child], var))) {
+                stack.push(children.possibly_intersecting_child);
             }
         } else {
             callback(node_id);
