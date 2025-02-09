@@ -130,9 +130,9 @@ class ShortestPaths {
     void resize(int num_states);
     void set_parent(int state, const Transition &new_parent);
     void add_parent(int state, const Transition &new_parent);
-    void remove_child(int state, const Transition &child);
     void remove_parent(int state, const Transition &parent);
     void clear_parents(int state);
+    void remove_child(int state, const Transition &child);
     void mark_dirty(int state);
     void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
     bool is_optimal_transition(int start_id, int op_id, int target_id) const;
