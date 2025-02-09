@@ -89,6 +89,7 @@ struct StateInfo {
     Cost goal_distance;
     bool dirty_candidate;
     bool dirty;
+    // TODO: Store in separate vector that is only filled when store_parents=false.
     Transition parent;
 
     StateInfo()

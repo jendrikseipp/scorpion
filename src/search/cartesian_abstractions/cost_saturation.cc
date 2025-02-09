@@ -214,8 +214,7 @@ void CostSaturation::build_abstractions(
     const vector<shared_ptr<AbstractTask>> &subtasks,
     const utils::CountdownTimer &timer,
     const function<bool()> &should_abort) {
-    utils::Timer scf_timer;
-    scf_timer.stop();
+    utils::Timer scf_timer(false);
     int rem_subtasks = subtasks.size();
     for (shared_ptr<AbstractTask> subtask : subtasks) {
         subtask = get_remaining_costs_task(subtask);
