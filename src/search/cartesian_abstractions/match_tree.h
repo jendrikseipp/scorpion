@@ -78,7 +78,6 @@ public:
     Transitions get_outgoing_transitions(const AbstractState &state) const;
     bool has_transition(
         const AbstractState &src, int op_id, const AbstractState &dest) const;
-    int get_operator_between_states(const AbstractState &src, const AbstractState &dest, int cost) const;
     std::vector<bool> get_looping_operators(const AbstractStates &states) const;
 
     int get_num_nodes() const;

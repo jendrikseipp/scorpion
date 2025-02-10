@@ -109,8 +109,7 @@ class ShortestPaths {
     const TransitionRewirer &rewirer;
     const utils::CountdownTimer &timer;
     utils::LogProxy &log;
-    const bool store_children;
-    const bool store_parents;
+    const bool use_cache;
     const bool debug;
     const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;

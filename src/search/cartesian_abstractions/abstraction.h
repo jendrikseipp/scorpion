@@ -75,7 +75,6 @@ public:
     Transitions get_incoming_transitions(int state_id) const;
     Transitions get_outgoing_transitions(int state_id) const;
     bool has_transition(int src, int op_id, int dest) const;
-    int get_operator_between_states(int src, int dest, int cost) const;
     std::vector<bool> get_looping_operators() const;
 
     /* Needed for CEGAR::separate_facts_unreachable_before_goal(). */

@@ -30,12 +30,11 @@ ShortestPaths::ShortestPaths(
     : rewirer(rewirer),
       timer(timer),
       log(log),
-      store_children(store_children),
-      store_parents(store_parents),
+      use_cache(store_children && store_parents),
       debug(log.is_at_least_debug()),
       task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})) {
-    if (store_parents && !store_children) {
-        cerr << "if store_parents=true, store_children must also be set to true." << endl;
+    if (store_parents ^ store_children) {
+        cerr << "store_children and store_parents must have the same value." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
     operator_costs.reserve(costs.size());
@@ -79,10 +78,8 @@ Cost ShortestPaths::convert_to_64_bit_cost(int cost) const {
 
 void ShortestPaths::resize(int num_states) {
     states.resize(num_states);
-    if (store_children) {
+    if (use_cache) {
         children.resize(num_states);
-    }
-    if (store_parents) {
         parents.resize(num_states);
     }
 }
@@ -121,7 +118,7 @@ void ShortestPaths::recompute(
                 states[succ_id].goal_distance = succ_g;
                 set_parent(succ_id, Transition(op_id, state_id));
                 open_queue.push(succ_g, succ_id);
-            } else if (store_parents && succ_g != INF_COSTS && succ_g == states[succ_id].goal_distance) {
+            } else if (use_cache && succ_g != INF_COSTS && succ_g == states[succ_id].goal_distance) {
                 add_parent(succ_id, Transition(op_id, state_id));
             }
         }
@@ -140,7 +137,7 @@ unique_ptr<Solution> ShortestPaths::extract_solution(
     assert(!goals.count(current_state));
     while (!goals.count(current_state)) {
         Transition t = states[current_state].parent;
-        if (store_parents) {
+        if (use_cache) {
             assert(!parents[current_state].empty());
             // Pick arbitrary shortest path.
             t = parents[current_state].front();
@@ -168,25 +165,11 @@ void ShortestPaths::set_parent(int state, const Transition &new_parent) {
     if (debug) {
         log << "Set parent " << new_parent << " for " << state << endl;
     }
-    if (store_parents) {
+    if (use_cache) {
         clear_parents(state);
         add_parent(state, new_parent);
     } else {
-        int op_id = new_parent.op_id;
-        if (states[state].parent != new_parent) {
-            Transition old_parent = states[state].parent;
-            if (store_children && old_parent.is_defined()) {
-                Transition old_child(old_parent.op_id, state);
-                Transitions &old_children = children[old_parent.target_id];
-                auto it = find(execution::unseq, old_children.begin(), old_children.end(), old_child);
-                assert(it != old_children.end());
-                utils::swap_and_pop_from_vector(old_children, it - old_children.begin());
-            }
-            states[state].parent = new_parent;
-            if (store_children && new_parent.is_defined()) {
-                children[new_parent.target_id].emplace_back(op_id, state);
-            }
-        }
+        states[state].parent = new_parent;
     }
 }
 
@@ -194,11 +177,11 @@ void ShortestPaths::add_parent(int state, const Transition &new_parent) {
     if (debug) {
         log << "Add parent " << new_parent << " for " << state << endl;
     }
-    assert(store_parents);
+    assert(use_cache);
     assert(new_parent.is_defined());
     assert(find(parents[state].begin(), parents[state].end(), new_parent) == parents[state].end());
     parents[state].push_back(new_parent);
-    if (store_children) {
+    if (use_cache) {
         Transitions &target_children = children[new_parent.target_id];
         assert(find(target_children.begin(), target_children.end(),
                     Transition(new_parent.op_id, state)) == target_children.end());
@@ -210,7 +193,7 @@ void ShortestPaths::remove_child(int state, const Transition &child) {
     if (debug) {
         log << "Remove child " << child << " from " << state << endl;
     }
-    assert(store_parents);
+    assert(use_cache);
     Transitions &state_children = children[state];
     auto it = find(execution::unseq, state_children.begin(), state_children.end(), child);
     assert(it != state_children.end());
@@ -221,7 +204,7 @@ void ShortestPaths::remove_parent(int state, const Transition &parent) {
     if (debug) {
         log << "Remove parent " << parent << " from " << state << endl;
     }
-    assert(store_parents);
+    assert(use_cache);
     assert(parent.is_defined());
     auto it = find(execution::unseq, parents[state].begin(), parents[state].end(), parent);
     assert(it != parents[state].end());
@@ -232,7 +215,7 @@ void ShortestPaths::clear_parents(int state) {
     if (debug) {
         log << "Clear parents for " << state << endl;
     }
-    if (store_parents) {
+    if (use_cache) {
         while (!parents[state].empty()) {
             Transition parent = move(parents[state].back());
             remove_child(parent.target_id, Transition(parent.op_id, state));
@@ -247,7 +230,7 @@ void ShortestPaths::mark_dirty(int state) {
     if (debug) {
         log << "Mark " << state << " as dirty" << endl;
     }
-    assert(!store_parents || parents[state].empty());
+    assert(!use_cache || parents[state].empty());
     assert(!count(dirty_states.begin(), dirty_states.end(), state));
     states[state].dirty = true;
     dirty_states.push_back(state);
@@ -278,7 +261,7 @@ void ShortestPaths::update_incrementally(
     if (debug) {
         for (size_t state = 0; state < children.size(); ++state) {
             cout << state << " children: " << children[state];
-            if (store_parents) {
+            if (use_cache) {
                 cout << endl << state << " parents: " << parents[state] << endl;
             } else {
                 cout << ", parent: " << states[state].parent << endl;
@@ -289,27 +272,10 @@ void ShortestPaths::update_incrementally(
 
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
        will be updated again if v1 or v2 are dirty. */
-    if (store_children && store_parents) {
+    if (use_cache) {
         rewirer.rewire_transitions(
             children, parents, abstraction.get_states(), v,
             abstraction.get_state(v1), abstraction.get_state(v2), var);
-    } else if (store_children) {
-        // We need to copy the vector since we reuse the index v.
-        Transitions old_children = children[v];
-        if (g_hacked_sort_transitions) {
-            sort(execution::unseq, old_children.begin(), old_children.end());
-        }
-        for (const Transition &old_child : old_children) {
-            int op_id = old_child.op_id;
-            int u = old_child.target_id;
-
-            int old_cost = convert_to_32_bit_cost(operator_costs[op_id]);
-            int new_op_id = abstraction.get_operator_between_states(u, v2, old_cost);
-            Transition new_parent = (new_op_id == UNDEFINED)
-                ? Transition(op_id, v1)
-                : Transition(new_op_id, v2);
-            set_parent(u, new_parent);
-        }
     } else {
         for (int state : {v1, v2}) {
             for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
@@ -352,7 +318,7 @@ void ShortestPaths::update_incrementally(
         assert(!states[state].dirty);
         bool reconnected = false;
         // Try to reconnect to settled, solvable state.
-        if (store_parents) {
+        if (use_cache) {
             // Remove invalid transitions from children and parents vectors.
             parents[state].erase(
                 remove_if(
@@ -394,13 +360,12 @@ void ShortestPaths::update_incrementally(
         if (!reconnected) {
             mark_dirty(state);
 
-            if (store_children) {
+            if (use_cache) {
                 if (g_hacked_sort_transitions) {
                     sort(execution::unseq, children[state].begin(), children[state].end());
                 }
                 for (const Transition &t : children[state]) {
                     int prev = t.target_id;
-                    assert(store_parents || states[prev].parent.target_id == state);
                     if (!states[prev].dirty_candidate && !states[prev].dirty) {
                         if (debug) {
                             log << "Add " << prev << " to candidate queue" << endl;
@@ -410,7 +375,6 @@ void ShortestPaths::update_incrementally(
                     }
                 }
             } else {
-                assert(!store_parents);
                 for (const Transition &t : abstraction.get_incoming_transitions(state)) {
                     int prev = t.target_id;
                     if (!states[prev].dirty_candidate &&
@@ -476,7 +440,7 @@ void ShortestPaths::update_incrementally(
                 if (new_dist < min_dist) {
                     min_dist = new_dist;
                     set_parent(state, Transition(op_id, succ));
-                } else if (store_parents && new_dist != INF_COSTS && new_dist == min_dist) {
+                } else if (use_cache && new_dist != INF_COSTS && new_dist == min_dist) {
                     add_parent(state, Transition(op_id, succ));
                 }
             }
@@ -509,7 +473,7 @@ void ShortestPaths::update_incrementally(
                 states[succ].goal_distance = succ_g;
                 set_parent(succ, Transition(op_id, state));
                 open_queue.push(succ_g, succ);
-            } else if (store_parents && states[succ].dirty &&
+            } else if (use_cache && states[succ].dirty &&
                        succ_g == states[succ].goal_distance && succ_g != INF_COSTS) {
                 add_parent(succ, Transition(op_id, state));
             }
@@ -532,7 +496,7 @@ bool ShortestPaths::is_optimal_transition(int start_id, int op_id, int target_id
 OptimalTransitions ShortestPaths::get_optimal_transitions(
     const Abstraction &abstraction, int state) const {
     OptimalTransitions transitions;
-    if (store_parents) {
+    if (use_cache) {
         for (const Transition &t : parents[state]) {
             transitions[t.op_id].push_back(t.target_id);
         }
@@ -574,10 +538,10 @@ bool ShortestPaths::test_distances(
         if (debug) {
             log << "Test state " << v << endl;
         }
-        if (debug && store_children) {
+        if (debug && use_cache) {
             cout << "children: " << children[v] << endl;
         }
-        if (store_parents) {
+        if (use_cache) {
             if (debug) {
                 cout << "parents: " << parents[v] << endl;
             }

@@ -243,6 +243,7 @@ bool MatchTree::is_applicable(const AbstractState &src, int op_id) const {
                   });
 }
 
+// TODO: can we remove the domains_intersect parameter?
 bool MatchTree::has_transition(
     const AbstractState &src, int op_id, const AbstractState &dest,
     const vector<bool> *domains_intersect) const {
@@ -271,25 +272,6 @@ bool MatchTree::has_transition(
         return false;
     }
     return has_transition(src, op_id, dest, nullptr);
-}
-
-int MatchTree::get_operator_between_states(
-    const AbstractState &src, const AbstractState &dest, int cost) const {
-    int num_vars = src.get_cartesian_set().get_num_variables();
-    vector<bool> domains_intersect(num_vars, false);
-    for (int var = 0; var < num_vars; ++var) {
-        domains_intersect[var] = src.domain_subsets_intersect(dest, var);
-    }
-    vector<int> operators = get_outgoing_operators(src);
-    if (g_hacked_sort_transitions) {
-        sort(execution::unseq, operators.begin(), operators.end());
-    }
-    for (int op_id : operators) {
-        if (operator_costs[op_id] == cost && has_transition(src, op_id, dest, &domains_intersect)) {
-            return op_id;
-        }
-    }
-    return UNDEFINED;
 }
 
 vector<bool> MatchTree::get_looping_operators(const AbstractStates &states) const {

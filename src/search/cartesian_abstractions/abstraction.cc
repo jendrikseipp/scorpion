@@ -230,25 +230,6 @@ bool Abstraction::has_transition(int src, int op_id, int dest) const {
     }
 }
 
-// Method is only called if store_children=true and store_parents=false.
-// TODO: Remove this combination and this method?
-int Abstraction::get_operator_between_states(int src, int dest, int cost) const {
-    if (match_tree) {
-        return match_tree->get_operator_between_states(*states[src], *states[dest], cost);
-    }
-    OperatorsProxy operators = refinement_hierarchy->get_task_proxy().get_operators();
-    Transitions transitions = transition_system->get_outgoing_transitions()[src];
-    if (g_hacked_sort_transitions) {
-        (transitions.begin(), transitions.end());
-    }
-    for (const Transition &t : transitions) {
-        if (t.target_id == dest && operators[t.op_id].get_cost() == cost) {
-            return t.op_id;
-        }
-    }
-    return UNDEFINED;
-}
-
 // TODO: ignore self-loops at unsolvable states.
 vector<bool> Abstraction::get_looping_operators() const {
 #ifndef NDEBUG
