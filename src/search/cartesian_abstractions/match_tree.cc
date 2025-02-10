@@ -1,14 +1,12 @@
 #include "match_tree.h"
 
 #include "transition.h"
-#include "transition_rewirer.h"
 #include "utils.h"
 
 #include "../operator_id.h"
 #include "../task_proxy.h"
 
 #include "../task_utils/successor_generator.h"
-#include "../task_utils/task_properties.h"
 #include "../tasks/inverted_task.h"
 #include "../utils/timer.h"
 
@@ -73,17 +71,17 @@ static vector<int> get_operator_costs(const OperatorsProxy &operators) {
 
 MatchTree::MatchTree(
     const OperatorsProxy &ops,
-    const TransitionRewirer &transition_rewirer,
+    const vector<Facts> &preconditions_by_operator,
+    const vector<Facts> &postconditions_by_operator,
     const RefinementHierarchy &refinement_hierarchy,
     const CartesianSets &cartesian_sets,
     bool debug)
     : num_variables(refinement_hierarchy.get_task_proxy().get_variables().size()),
-      preconditions(transition_rewirer.preconditions_by_operator),
+      preconditions(preconditions_by_operator),
       effects(get_effects_by_operator(ops)),
-      postconditions(transition_rewirer.postconditions_by_operator),
+      postconditions(postconditions_by_operator),
       effect_vars_without_preconditions(get_effect_vars_without_preconditions_by_operator(ops)),
       operator_costs(get_operator_costs(ops)),
-      transition_rewirer(transition_rewirer),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
       inverted_task(make_shared<extra_tasks::InvertedTask>(refinement_hierarchy.get_task())),

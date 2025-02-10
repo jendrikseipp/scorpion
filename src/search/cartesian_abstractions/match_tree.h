@@ -3,7 +3,6 @@
 
 #include "abstract_state.h"
 #include "refinement_hierarchy.h"
-#include "transition_rewirer.h"
 #include "types.h"
 
 #include <vector>
@@ -28,7 +27,6 @@ class MatchTree {
     const std::vector<Facts> &postconditions;
     const std::vector<std::vector<int>> effect_vars_without_preconditions;
     const std::vector<int> operator_costs;
-    const TransitionRewirer &transition_rewirer;
     const RefinementHierarchy &refinement_hierarchy;
     const CartesianSets &cartesian_sets;
     std::shared_ptr<AbstractTask> inverted_task;
@@ -55,7 +53,8 @@ class MatchTree {
 public:
     MatchTree(
         const OperatorsProxy &ops,
-        const TransitionRewirer &transition_rewirer,
+        const std::vector<Facts> &preconditions_by_operator,
+        const std::vector<Facts> &postconditions_by_operator,
         const RefinementHierarchy &refinement_hierarchy,
         const CartesianSets &cartesian_sets,
         bool debug);

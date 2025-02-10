@@ -39,7 +39,10 @@ Abstraction::Abstraction(
         transition_representation == TransitionRepresentation::SG_RH) {
         log << "Create match tree." << endl;
         match_tree = utils::make_unique_ptr<MatchTree>(
-            TaskProxy(*task).get_operators(), transition_rewirer, *refinement_hierarchy, cartesian_sets, debug);
+            TaskProxy(*task).get_operators(),
+            transition_rewirer.get_preconditions(),
+            transition_rewirer.get_postconditions(),
+            *refinement_hierarchy, cartesian_sets, debug);
     } else {
         assert(transition_representation == TransitionRepresentation::STORE);
         log << "Store transitions." << endl;

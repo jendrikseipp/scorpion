@@ -14,8 +14,6 @@ class OperatorsProxy;
 
 namespace cartesian_abstractions {
 class TransitionRewirer {
-    friend class MatchTree;
-
     const std::vector<std::vector<FactPair>> preconditions_by_operator;
     const std::vector<std::vector<FactPair>> postconditions_by_operator;
 
@@ -51,6 +49,13 @@ public:
     const std::vector<FactPair> &get_postconditions(int op_id) const {
         assert(utils::in_bounds(op_id, postconditions_by_operator));
         return postconditions_by_operator[op_id];
+    }
+
+    const std::vector<Facts> &get_preconditions() const {
+        return preconditions_by_operator;
+    }
+    const std::vector<Facts> &get_postconditions() const {
+        return postconditions_by_operator;
     }
 
     int get_num_operators() const;
