@@ -17,6 +17,9 @@ class TransitionRewirer {
     const std::vector<std::vector<FactPair>> preconditions_by_operator;
     const std::vector<std::vector<FactPair>> postconditions_by_operator;
 
+    int get_precondition_value(int op_id, int var) const;
+    int get_postcondition_value(int op_id, int var) const;
+
     void rewire_incoming_transitions(
         std::deque<Transitions> &incoming, std::deque<Transitions> &outgoing,
         const AbstractStates &states, int v_id,
@@ -38,9 +41,6 @@ public:
         std::deque<Loops> &loops,
         std::deque<Transitions> &incoming, std::deque<Transitions> &outgoing,
         int v_id, const AbstractState &v1, const AbstractState &v2, int var) const;
-
-    int get_precondition_value(int op_id, int var) const;
-    int get_postcondition_value(int op_id, int var) const;
 
     const std::vector<FactPair> &get_preconditions(int op_id) const {
         assert(utils::in_bounds(op_id, preconditions_by_operator));
