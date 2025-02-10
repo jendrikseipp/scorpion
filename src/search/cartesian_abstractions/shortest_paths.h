@@ -122,6 +122,7 @@ class ShortestPaths {
     std::deque<StateInfo> states;
     std::deque<Transitions> children;
     std::deque<Transitions> parents;
+    int num_parents;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;

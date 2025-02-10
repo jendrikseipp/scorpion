@@ -9,8 +9,6 @@
 #include "../utils/logging.h"
 #include "../utils/memory.h"
 
-#include "../tasks/root_task.h"
-
 #include <cassert>
 #include <execution>
 #include <map>
@@ -32,7 +30,8 @@ ShortestPaths::ShortestPaths(
       log(log),
       use_cache(store_children && store_parents),
       debug(log.is_at_least_debug()),
-      task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})) {
+      task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})),
+      num_parents(0) {
     if (store_parents ^ store_children) {
         cerr << "store_children and store_parents must have the same value." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
@@ -181,6 +180,7 @@ void ShortestPaths::add_parent(int state, const Transition &new_parent) {
     assert(new_parent.is_defined());
     assert(find(parents[state].begin(), parents[state].end(), new_parent) == parents[state].end());
     parents[state].push_back(new_parent);
+    ++num_parents;
     if (use_cache) {
         Transitions &target_children = children[new_parent.target_id];
         assert(find(target_children.begin(), target_children.end(),
@@ -209,6 +209,7 @@ void ShortestPaths::remove_parent(int state, const Transition &parent) {
     auto it = find(execution::unseq, parents[state].begin(), parents[state].end(), parent);
     assert(it != parents[state].end());
     utils::swap_and_pop_from_vector(parents[state], it - parents[state].begin());
+    --num_parents;
 }
 
 void ShortestPaths::clear_parents(int state) {
@@ -216,6 +217,7 @@ void ShortestPaths::clear_parents(int state) {
         log << "Clear parents for " << state << endl;
     }
     if (use_cache) {
+        num_parents -= parents[state].size();
         while (!parents[state].empty()) {
             Transition parent = move(parents[state].back());
             remove_child(parent.target_id, Transition(parent.op_id, state));
@@ -273,9 +275,13 @@ void ShortestPaths::update_incrementally(
     /* Update shortest path tree (SPT) transitions to v. The SPT transitions
        will be updated again if v1 or v2 are dirty. */
     if (use_cache) {
+        num_parents -= (children[v].size() + parents[v].size());
         rewirer.rewire_transitions(
             children, parents, abstraction.get_states(), v,
             abstraction.get_state(v1), abstraction.get_state(v2), var);
+        num_parents +=
+            children[v1].size() + children[v2].size() +
+            parents[v1].size() + parents[v2].size();
     } else {
         for (int state : {v1, v2}) {
             for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
@@ -320,6 +326,7 @@ void ShortestPaths::update_incrementally(
         // Try to reconnect to settled, solvable state.
         if (use_cache) {
             // Remove invalid transitions from children and parents vectors.
+            int num_parents_before = parents[state].size();
             parents[state].erase(
                 remove_if(
                     parents[state].begin(), parents[state].end(),
@@ -331,6 +338,8 @@ void ShortestPaths::update_incrementally(
                         }
                         return !valid_parent;
                     }), parents[state].end());
+            int num_parents_after = parents[state].size();
+            num_parents += num_parents_after - num_parents_before;
             reconnected = !parents[state].empty();
         } else {
             for (const Transition &t : abstraction.get_outgoing_transitions(state)) {
@@ -593,6 +602,13 @@ bool ShortestPaths::test_distances(
             ABORT("Distances are wrong.");
         }
     }
+
+    int real_num_parents = 0;
+    for (const auto &p : parents) {
+        real_num_parents += p.size();
+    }
+    assert(num_parents == real_num_parents);
+
     return true;
 }
 #endif
@@ -609,6 +625,7 @@ void ShortestPaths::print_statistics() const {
             parents_counts[p.size()] += 1;
         }
         log << "SPT parents: " << parents_counts << endl;
+        log << "SPT stored parents: " << num_parents << endl;
     }
 }
 
