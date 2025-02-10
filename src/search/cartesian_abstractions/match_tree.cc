@@ -237,17 +237,23 @@ Transitions MatchTree::get_outgoing_transitions(const AbstractState &state) cons
 }
 
 bool MatchTree::is_applicable(const AbstractState &src, int op_id) const {
+#ifdef NDEBUG
+    ABORT("MatchTree::is_applicable() should only be called in debug mode.");
+#endif
     return all_of(preconditions[op_id].begin(), preconditions[op_id].end(),
                   [&src](const FactPair &pre) {
                       return src.contains(pre.var, pre.value);
                   });
 }
 
-// TODO: can we remove the domains_intersect parameter?
 bool MatchTree::has_transition(
-    const AbstractState &src, int op_id, const AbstractState &dest,
-    const vector<bool> *domains_intersect) const {
-    assert(is_applicable(src, op_id));
+    const AbstractState &src, int op_id, const AbstractState &dest) const {
+#ifdef NDEBUG
+    ABORT("MatchTree::has_transition() should only be called in debug mode.");
+#endif
+    if (!is_applicable(src, op_id)) {
+        return false;
+    }
     // Simultaneously loop over variables and postconditions.
     int num_vars = src.get_cartesian_set().get_num_variables();
     auto it = postconditions[op_id].begin();
@@ -257,21 +263,11 @@ bool MatchTree::has_transition(
                 return false;
             }
             ++it;
-        } else if (
-            (domains_intersect && !(*domains_intersect)[var]) ||
-            (!domains_intersect && !src.domain_subsets_intersect(dest, var))) {
+        } else if (!src.domain_subsets_intersect(dest, var)) {
             return false;
         }
     }
     return true;
-}
-
-bool MatchTree::has_transition(
-    const AbstractState &src, int op_id, const AbstractState &dest) const {
-    if (!is_applicable(src, op_id)) {
-        return false;
-    }
-    return has_transition(src, op_id, dest, nullptr);
 }
 
 vector<bool> MatchTree::get_looping_operators(const AbstractStates &states) const {

@@ -42,9 +42,6 @@ class MatchTree {
     int get_state_id(NodeID node_id) const;
 
     bool is_applicable(const AbstractState &src, int op_id) const;
-    bool has_transition(
-        const AbstractState &src, int op_id, const AbstractState &dest,
-        const std::vector<bool> *domains_intersect) const;
     bool incoming_operator_only_loops(const AbstractState &state, int op_id) const;
     Matcher get_incoming_matcher(int op_id) const;
     Matcher get_outgoing_matcher(int op_id) const;
