@@ -81,8 +81,6 @@ public:
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
         TransitionRepresentation transition_representation,
-        bool store_spt_children,
-        bool store_spt_parents,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,
         DotGraphVerbosity dot_graph_verbosity);

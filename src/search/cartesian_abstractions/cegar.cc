@@ -27,8 +27,6 @@ CEGAR::CEGAR(
     int max_concrete_states_per_abstract_state,
     int max_state_expansions,
     TransitionRepresentation transition_representation,
-    bool store_spt_children,
-    bool store_spt_parents,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
     DotGraphVerbosity dot_graph_verbosity)
@@ -44,9 +42,12 @@ CEGAR::CEGAR(
       log(log),
       dot_graph_verbosity(dot_graph_verbosity) {
     assert(max_states >= 1);
+    int max_cached_spt_parents = (transition_representation == TransitionRepresentation::STORE)
+                                     ? 0
+                                     : max_non_looping_transitions;
     shortest_paths = utils::make_unique_ptr<ShortestPaths>(
         transition_rewirer, task_properties::get_operator_costs(task_proxy),
-        store_spt_children, store_spt_parents, timer, log);
+        max_cached_spt_parents, timer, log);
     flaw_search = utils::make_unique_ptr<FlawSearch>(
         task, *abstraction, *shortest_paths, rng,
         pick_flawed_abstract_state, pick_split, tiebreak_split,

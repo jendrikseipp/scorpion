@@ -31,7 +31,6 @@ public:
         PickSplit pick_split, PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state, int max_state_expansions,
         TransitionRepresentation transition_representation,
-        bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
         int memory_padding, int random_seed, DotGraphVerbosity dot_graph_verbosity,
         bool use_general_costs,
         const std::shared_ptr<AbstractTask> &transform,

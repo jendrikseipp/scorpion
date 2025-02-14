@@ -198,8 +198,10 @@ void add_common_cegar_options(plugins::Feature &feature) {
         plugins::Bounds("1", "infinity"));
     feature.add_option<int>(
         "max_transitions",
-        "maximum sum of state-changing transitions (excluding self-loops) over "
-        "all abstractions",
+        "If transition_representation=store, this value limits the maximum sum of "
+        "state-changing transitions (excluding self-loops) over all abstractions. "
+        "Otherwise, this value limits the number of cached transitions in the "
+        "shortest path tree of each abstraction individually.",
         "1M",
         plugins::Bounds("0", "infinity"));
     feature.add_option<double>(
@@ -210,14 +212,6 @@ void add_common_cegar_options(plugins::Feature &feature) {
     feature.add_option<bool>(
         "sort_transitions",
         "sort transitions to ensure the different transition system representations yield the same abstractions",
-        "false");
-    feature.add_option<bool>(
-        "store_shortest_path_tree_children",
-        "store for each state its children in the shortest path tree",
-        "false");
-    feature.add_option<bool>(
-        "store_shortest_path_tree_parents",
-        "store for each state its parents in the shortest path tree",
         "false");
 
     add_transition_representation_option(feature);

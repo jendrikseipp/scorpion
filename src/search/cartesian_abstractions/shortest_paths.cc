@@ -21,21 +21,17 @@ const Cost ShortestPaths::INF_COSTS = numeric_limits<Cost>::max();
 ShortestPaths::ShortestPaths(
     const TransitionRewirer &rewirer,
     const vector<int> &costs,
-    bool store_children,
-    bool store_parents,
+    int max_cached_parents,
     const utils::CountdownTimer &timer,
     utils::LogProxy &log)
     : rewirer(rewirer),
       timer(timer),
       log(log),
-      use_cache(store_children && store_parents),
+      max_cached_parents(max_cached_parents),
+      use_cache(max_cached_parents > 0),
       debug(log.is_at_least_debug()),
       task_has_zero_costs(any_of(costs.begin(), costs.end(), [](int c) {return c == 0;})),
       num_parents(0) {
-    if (store_parents ^ store_children) {
-        cerr << "store_children and store_parents must have the same value." << endl;
-        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-    }
     operator_costs.reserve(costs.size());
     for (int cost : costs) {
         operator_costs.push_back(convert_to_64_bit_cost(cost));
@@ -77,6 +73,20 @@ Cost ShortestPaths::convert_to_64_bit_cost(int cost) const {
 
 void ShortestPaths::resize(int num_states) {
     states.resize(num_states);
+
+    if (use_cache && num_parents > max_cached_parents) {
+        log << "Maximum number of cached shortest paths exceeded --> clear cache." << endl;
+        for (int state = 0; state < static_cast<int>(parents.size()); ++state) {
+            if (!parents[state].empty()) {
+                // Use arbitrary parent.
+                states[state].parent = parents[state].front();
+            }
+        }
+        deque<Transitions>().swap(children);
+        deque<Transitions>().swap(parents);
+        use_cache = false;
+    }
+
     if (use_cache) {
         children.resize(num_states);
         parents.resize(num_states);
@@ -603,11 +613,13 @@ bool ShortestPaths::test_distances(
         }
     }
 
-    int real_num_parents = 0;
-    for (const auto &p : parents) {
-        real_num_parents += p.size();
+    if (use_cache) {
+        int real_num_parents = 0;
+        for (const auto &p : parents) {
+            real_num_parents += p.size();
+        }
+        assert(num_parents == real_num_parents);
     }
-    assert(num_parents == real_num_parents);
 
     return true;
 }

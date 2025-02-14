@@ -39,8 +39,6 @@ class CostSaturation {
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
     const TransitionRepresentation transition_representation;
-    const bool store_spt_children;
-    const bool store_spt_parents;
     const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
     utils::LogProxy &log;
@@ -76,8 +74,6 @@ public:
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
         TransitionRepresentation transition_representation,
-        bool store_spt_children,
-        bool store_spt_parents,
         int memory_padding_mb,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,

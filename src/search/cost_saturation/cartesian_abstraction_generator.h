@@ -27,8 +27,6 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_transitions;
     const double max_time;
     const cartesian_abstractions::TransitionRepresentation transition_representation;
-    const bool store_spt_children;
-    const bool store_spt_parents;
     const cartesian_abstractions::PickFlawedAbstractState pick_flawed_abstract_state;
     const cartesian_abstractions::PickSplit pick_split;
     const cartesian_abstractions::PickSplit tiebreak_split;
@@ -63,7 +61,6 @@ public:
         cartesian_abstractions::PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state, int max_state_expansions,
         cartesian_abstractions::TransitionRepresentation transition_representation,
-        bool store_shortest_path_tree_children, bool store_shortest_path_tree_parents,
         int memory_padding, int random_seed,
         cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
         utils::Verbosity verbosity);

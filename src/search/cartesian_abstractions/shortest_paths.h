@@ -109,7 +109,8 @@ class ShortestPaths {
     const TransitionRewirer &rewirer;
     const utils::CountdownTimer &timer;
     utils::LogProxy &log;
-    const bool use_cache;
+    const int max_cached_parents;
+    bool use_cache;
     const bool debug;
     const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;
@@ -142,8 +143,7 @@ public:
     ShortestPaths(
         const TransitionRewirer &rewirer,
         const std::vector<int> &costs,
-        bool store_children,
-        bool store_parents,
+        int max_cached_parents,
         const utils::CountdownTimer &timer,
         utils::LogProxy &log);
 
@@ -167,9 +167,7 @@ public:
         const Abstraction &abstraction, int state) const;
 
 #ifndef NDEBUG
-    bool test_distances(
-        const Abstraction &abstraction,
-        const Goals &goals);
+    bool test_distances(const Abstraction &abstraction, const Goals &goals);
 #endif
 
     void print_statistics() const;
