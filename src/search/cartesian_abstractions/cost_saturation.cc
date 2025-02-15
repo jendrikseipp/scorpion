@@ -217,8 +217,7 @@ void CostSaturation::build_abstractions(
 
         if (!utils::extra_memory_padding_is_reserved()) {
             utils::g_log << "Reserve extra memory padding for the next abstraction" << endl;
-            // The current new-handler aborts the program if the allocation fails.
-            // If the new-handler is nullptr, it throws std::bad_alloc.
+            // Unset new-handler so that a failed allocation throws std::bad_alloc.
             set_new_handler(nullptr);
             try {
                 utils::reserve_extra_memory_padding(memory_padding_mb);
