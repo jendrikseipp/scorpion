@@ -44,7 +44,7 @@ class CostSaturation {
     utils::LogProxy &log;
     const cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity;
 
-    void (*standard_new_handler)();
+    void (*fast_downward_new_handler)();
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
     int num_states;

@@ -105,7 +105,7 @@ CostSaturation::CostSaturation(
       rng(rng),
       log(log),
       dot_graph_verbosity(dot_graph_verbosity),
-      standard_new_handler(get_new_handler()),
+      fast_downward_new_handler(get_new_handler()),
       num_states(0),
       num_non_looping_transitions(0) {
 }
@@ -147,8 +147,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
         utils::g_log << "Done building abstractions --> release extra memory padding." << endl;
         utils::release_extra_memory_padding();
     }
-    // The current new-handler may already be the standard handler or nullptr.
-    set_new_handler(standard_new_handler);
+    set_new_handler(fast_downward_new_handler);
     print_statistics(timer.get_elapsed_time());
 
     vector<CartesianHeuristicFunction> functions;
@@ -224,7 +223,7 @@ void CostSaturation::build_abstractions(
             try {
                 utils::reserve_extra_memory_padding(memory_padding_mb);
             } catch (const bad_alloc &) {
-                set_new_handler(standard_new_handler);
+                set_new_handler(fast_downward_new_handler);
                 utils::g_log << "Failed to reserve extra memory padding for the next "
                     "abstraction. --> Stop building new abstractions." << endl;
                 break;
@@ -250,7 +249,7 @@ void CostSaturation::build_abstractions(
             dot_graph_verbosity);
         // Reset new-handler if we ran out of memory.
         if (!utils::extra_memory_padding_is_reserved()) {
-            set_new_handler(standard_new_handler);
+            set_new_handler(fast_downward_new_handler);
         }
 
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
