@@ -76,12 +76,16 @@ void ShortestPaths::resize(int num_states) {
 
     if (use_cache && num_parents > max_cached_parents) {
         log << "Maximum number of cached shortest paths exceeded --> clear cache." << endl;
+
+        // For each state, remember single arbitrary parent.
+        parent.resize(num_states);
         for (int state = 0; state < static_cast<int>(parents.size()); ++state) {
             if (!parents[state].empty()) {
-                // Use arbitrary parent.
-                states[state].parent = parents[state].front();
+                parent[state] = parents[state].front();
             }
         }
+
+        // Free memory.
         deque<Transitions>().swap(children);
         deque<Transitions>().swap(parents);
         use_cache = false;
@@ -90,6 +94,8 @@ void ShortestPaths::resize(int num_states) {
     if (use_cache) {
         children.resize(num_states);
         parents.resize(num_states);
+    } else {
+        parent.resize(num_states);
     }
 }
 
@@ -145,14 +151,10 @@ unique_ptr<Solution> ShortestPaths::extract_solution(
     unique_ptr<Solution> solution = utils::make_unique_ptr<Solution>();
     assert(!goals.count(current_state));
     while (!goals.count(current_state)) {
-        Transition t = states[current_state].parent;
-        if (use_cache) {
-            assert(!parents[current_state].empty());
-            // Pick arbitrary shortest path.
-            t = parents[current_state].front();
-        }
-        assert(t.op_id != UNDEFINED);
-        assert(t.target_id != UNDEFINED);
+        assert(!use_cache || !parents[current_state].empty());
+        // Pick arbitrary parent if there are multiple parents.
+        Transition t = use_cache ?parents[current_state].front() : parent[current_state];
+        assert(t.is_defined());
         assert(t.target_id != current_state);
         assert(states[t.target_id].goal_distance <= states[current_state].goal_distance);
         solution->push_back(t);
@@ -178,7 +180,7 @@ void ShortestPaths::set_parent(int state, const Transition &new_parent) {
         clear_parents(state);
         add_parent(state, new_parent);
     } else {
-        states[state].parent = new_parent;
+        parent[state] = new_parent;
     }
 }
 
@@ -276,7 +278,7 @@ void ShortestPaths::update_incrementally(
             if (use_cache) {
                 cout << endl << state << " parents: " << parents[state] << endl;
             } else {
-                cout << ", parent: " << states[state].parent << endl;
+                cout << ", parent: " << parent[state] << endl;
             }
         }
         log << "Reconnect children of split node." << endl;
@@ -297,7 +299,7 @@ void ShortestPaths::update_incrementally(
             for (const Transition &incoming : abstraction.get_incoming_transitions(state)) {
                 int u = incoming.target_id;
                 int op = incoming.op_id;
-                const Transition &sp = states[u].parent;
+                const Transition &sp = parent[u];
                 if (sp.target_id == v &&
                     operator_costs[op] == operator_costs[sp.op_id]) {
                     set_parent(u, Transition(op, state));
@@ -398,7 +400,7 @@ void ShortestPaths::update_incrementally(
                     int prev = t.target_id;
                     if (!states[prev].dirty_candidate &&
                         !states[prev].dirty &&
-                        states[prev].parent.target_id == state) {
+                        parent[prev].target_id == state) {
                         if (debug) {
                             log << "Add " << prev << " to candidate queue" << endl;
                         }
@@ -582,7 +584,7 @@ bool ShortestPaths::test_distances(
                 goals.count(v)) {
                 continue;
             }
-            const Transition &t = states[v].parent;
+            const Transition &t = parent[v];
             if (debug) {
                 log << "Parent: " << t << endl;
             }

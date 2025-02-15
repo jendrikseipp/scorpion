@@ -89,8 +89,6 @@ struct StateInfo {
     Cost goal_distance;
     bool dirty_candidate;
     bool dirty;
-    // TODO: Store in separate vector that is only filled when store_parents=false.
-    Transition parent;
 
     StateInfo()
         : goal_distance(0),
@@ -99,7 +97,7 @@ struct StateInfo {
     }
 };
 static_assert(
-    sizeof(StateInfo) == sizeof(Cost) + sizeof(void *) + sizeof(Transition),
+    sizeof(StateInfo) == sizeof(Cost) + sizeof(void *),
     "StateInfo has unexpected size");
 
 
@@ -121,9 +119,14 @@ class ShortestPaths {
     std::vector<int> dirty_states;
 
     std::deque<StateInfo> states;
+
+    // Store all shortest paths for all states in both directions if use_cache=true.
     std::deque<Transitions> children;
     std::deque<Transitions> parents;
     int num_parents;
+
+    // Store single shortest path for each state if use_cache=false.
+    std::deque<Transition> parent;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
