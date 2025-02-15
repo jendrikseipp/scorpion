@@ -256,7 +256,7 @@ void CostSaturation::build_abstractions(
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
         num_states += abstraction->get_num_states();
         num_non_looping_transitions += abstraction->get_num_stored_transitions();
-        //assert(num_states <= max_states);  // We always separate goal and non-goal states.
+        assert(num_states <= max_states);
 
         vector<int> goal_distances = cegar.get_goal_distances();
         if (subtask_generators.size() == 1 && subtasks.size() == 1) {

@@ -173,7 +173,8 @@ void CEGAR::refinement_loop() {
             dump_dot_graph();
             current = &abstraction->get_state(pair.second);
         }
-        assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
+        assert(!may_keep_refining() ||
+               !abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
         assert(abstraction->get_goals().size() == 1);
     }
 
