@@ -45,10 +45,6 @@ public:
     bool operator!=(const StateID &other) const {
         return !(*this == other);
     }
-
-    int hash() const {
-        return value;
-    }
 };
 
 
