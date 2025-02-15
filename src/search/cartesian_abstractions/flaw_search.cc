@@ -111,7 +111,7 @@ SearchStatus FlawSearch::step() {
     // Check for each transition if the operator is applicable or if there is a deviation.
     for (auto &pair : get_f_optimal_transitions(abs_id)) {
         if (!utils::extra_memory_padding_is_reserved()) {
-            return OUT_OF_MEMORY;
+            return TIMEOUT;
         }
 
         int op_id = pair.first;
@@ -412,7 +412,7 @@ SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_tim
 unique_ptr<Split> FlawSearch::get_single_split(const utils::CountdownTimer &cegar_timer) {
     auto search_status = search_for_flaws(cegar_timer);
 
-    if (search_status == TIMEOUT || search_status == OUT_OF_MEMORY)
+    if (search_status == TIMEOUT)
         return nullptr;
 
     if (search_status == FAILED) {
@@ -485,7 +485,7 @@ FlawSearch::get_min_h_batch_split(const utils::CountdownTimer &cegar_timer) {
         }
     }
 
-    if (search_status == TIMEOUT || search_status == OUT_OF_MEMORY)
+    if (search_status == TIMEOUT)
         return nullptr;
 
     if (search_status == FAILED) {
