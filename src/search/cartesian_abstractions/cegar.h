@@ -34,7 +34,7 @@ class CEGAR {
     const TaskProxy task_proxy;
     const std::vector<int> domain_sizes;
     const int max_states;
-    const int max_non_looping_transitions;
+    const int max_stored_transitions;
     const PickFlawedAbstractState pick_flawed_abstract_state;
 
     TransitionRewirer transition_rewirer;
@@ -73,7 +73,7 @@ public:
     CEGAR(
         const std::shared_ptr<AbstractTask> &task,
         int max_states,
-        int max_non_looping_transitions,
+        int max_transitions,
         double max_time,
         PickFlawedAbstractState pick_flawed_abstract_state,
         PickSplit pick_split,

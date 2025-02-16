@@ -19,7 +19,7 @@ namespace cartesian_abstractions {
 CEGAR::CEGAR(
     const shared_ptr<AbstractTask> &task,
     int max_states,
-    int max_non_looping_transitions,
+    int max_transitions,
     double max_time,
     PickFlawedAbstractState pick_flawed_abstract_state,
     PickSplit pick_split,
@@ -33,7 +33,8 @@ CEGAR::CEGAR(
     : task_proxy(*task),
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),
-      max_non_looping_transitions(max_non_looping_transitions),
+      max_stored_transitions(
+          transition_representation == TransitionRepresentation::STORE ? max_transitions : INF),
       pick_flawed_abstract_state(pick_flawed_abstract_state),
       transition_rewirer(task_proxy.get_operators()),
       abstraction(utils::make_unique_ptr<Abstraction>(
@@ -44,7 +45,7 @@ CEGAR::CEGAR(
     assert(max_states >= 1);
     int max_cached_spt_parents = (transition_representation == TransitionRepresentation::STORE)
                                      ? 0
-                                     : max_non_looping_transitions;
+                                     : max_transitions;
     shortest_paths = utils::make_unique_ptr<ShortestPaths>(
         transition_rewirer, task_properties::get_operator_costs(task_proxy),
         max_cached_spt_parents, timer, log);
@@ -56,8 +57,8 @@ CEGAR::CEGAR(
     if (log.is_at_least_normal()) {
         log << "Start building abstraction." << endl;
         log << "Maximum number of states: " << max_states << endl;
-        log << "Maximum number of transitions: "
-            << max_non_looping_transitions << endl;
+        log << "Maximum number of stored transitions: "
+            << max_transitions << endl;
         log << "Maximum time: " << timer.get_remaining_time() << endl;
     }
 
@@ -127,7 +128,7 @@ bool CEGAR::may_keep_refining() const {
             log << "Reached maximum number of states." << endl;
         }
         return false;
-    } else if (abstraction->get_num_stored_transitions() >= max_non_looping_transitions) {
+    } else if (abstraction->get_num_stored_transitions() >= max_stored_transitions) {
         if (log.is_at_least_normal()) {
             log << "Reached maximum number of transitions." << endl;
         }
@@ -267,7 +268,7 @@ void CEGAR::refinement_loop() {
             abstraction->get_num_states() % 1000 == 0) {
             log << abstraction->get_num_states() << "/" << max_states << " states, "
                 << abstraction->get_num_stored_transitions() << "/"
-                << max_non_looping_transitions << " transitions" << endl;
+                << max_stored_transitions << " transitions" << endl;
         }
     }
     if (log.is_at_least_normal()) {

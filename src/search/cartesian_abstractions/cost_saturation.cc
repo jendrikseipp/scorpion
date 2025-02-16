@@ -77,7 +77,7 @@ static vector<int> compute_saturated_costs(
 CostSaturation::CostSaturation(
     const vector<shared_ptr<SubtaskGenerator>> &subtask_generators,
     int max_states,
-    int max_non_looping_transitions,
+    int max_transitions,
     double max_time,
     bool use_general_costs,
     PickFlawedAbstractState pick_flawed_abstract_state,
@@ -92,7 +92,7 @@ CostSaturation::CostSaturation(
     DotGraphVerbosity dot_graph_verbosity)
     : subtask_generators(subtask_generators),
       max_states(max_states),
-      max_non_looping_transitions(max_non_looping_transitions),
+      max_transitions(max_transitions),
       max_time(max_time),
       use_general_costs(use_general_costs),
       pick_flawed_abstract_state(pick_flawed_abstract_state),
@@ -107,7 +107,7 @@ CostSaturation::CostSaturation(
       dot_graph_verbosity(dot_graph_verbosity),
       fast_downward_new_handler(get_new_handler()),
       num_states(0),
-      num_non_looping_transitions(0) {
+      num_transitions(0) {
 }
 
 vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
@@ -129,7 +129,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
     function<bool()> should_abort =
         [&] () {
             return num_states >= max_states ||
-                   num_non_looping_transitions >= max_non_looping_transitions ||
+                   num_transitions >= max_transitions ||
                    timer.is_expired() ||
                    state_is_dead_end(initial_state);
         };
@@ -198,10 +198,10 @@ bool CostSaturation::state_is_dead_end(const State &state) const {
 }
 
 static int get_subtask_limit(int limit, int used, int remaining_subtasks) {
-    assert(used < limit);
-    if (limit == INF) {
-        return INF;
+    if (limit == INF || limit == 0) {
+        return limit;
     }
+    assert(used < limit);
     return max(1, (limit - used) / remaining_subtasks);
 }
 
@@ -233,9 +233,7 @@ void CostSaturation::build_abstractions(
         CEGAR cegar(
             subtask,
             get_subtask_limit(max_states, num_states, rem_subtasks),
-            get_subtask_limit(
-                max_non_looping_transitions, num_non_looping_transitions,
-                rem_subtasks),
+            get_subtask_limit(max_transitions, num_transitions, rem_subtasks),
             time_limit,
             pick_flawed_abstract_state,
             pick_split,
@@ -253,7 +251,7 @@ void CostSaturation::build_abstractions(
 
         unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
         num_states += abstraction->get_num_states();
-        num_non_looping_transitions += abstraction->get_num_stored_transitions();
+        num_transitions += abstraction->get_num_stored_transitions();
         assert(num_states <= max_states);
 
         vector<int> goal_distances = cegar.get_goal_distances();
@@ -292,8 +290,7 @@ void CostSaturation::print_statistics(utils::Duration init_time) const {
             << init_time << endl;
         log << "Cartesian abstractions: " << heuristic_functions.size() << endl;
         log << "Total number of Cartesian states: " << num_states << endl;
-        log << "Total number of non-looping transitions: "
-            << num_non_looping_transitions << endl;
+        log << "Total number of non-looping transitions: " << num_transitions << endl;
         log << endl;
     }
 }

@@ -211,7 +211,8 @@ void add_common_cegar_options(plugins::Feature &feature) {
         plugins::Bounds("0.0", "infinity"));
     feature.add_option<bool>(
         "sort_transitions",
-        "sort transitions to ensure the different transition system representations yield the same abstractions",
+        "sort transitions to ensure the different transition system representations "
+        "yield the same abstractions",
         "false");
 
     add_transition_representation_option(feature);
