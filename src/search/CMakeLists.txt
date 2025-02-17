@@ -760,6 +760,7 @@ create_fast_downward_library(
     SOURCES
         tasks/domain_abstracted_task
         tasks/domain_abstracted_task_factory
+        tasks/inverted_task
         tasks/modified_goals_task
         tasks/modified_operator_costs_task
     DEPENDS
@@ -849,11 +850,13 @@ create_fast_downward_library(
         cartesian_abstractions/cost_saturation
         cartesian_abstractions/flaw
         cartesian_abstractions/flaw_search
+        cartesian_abstractions/match_tree
         cartesian_abstractions/refinement_hierarchy
         cartesian_abstractions/split_selector
         cartesian_abstractions/shortest_paths
         cartesian_abstractions/subtask_generators
         cartesian_abstractions/transition
+        cartesian_abstractions/transition_rewirer
         cartesian_abstractions/transition_system
         cartesian_abstractions/types
         cartesian_abstractions/utils

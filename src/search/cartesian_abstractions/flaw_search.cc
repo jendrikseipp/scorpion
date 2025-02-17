@@ -26,18 +26,15 @@ Cost FlawSearch::get_h_value(int abstract_state_id) const {
 }
 
 OptimalTransitions FlawSearch::get_f_optimal_transitions(int abstract_state_id) const {
-    OptimalTransitions transitions;
-    for (const Transition &t :
-         abstraction.get_transition_system().get_outgoing_transitions()[abstract_state_id]) {
-        if (shortest_paths.is_optimal_transition(abstract_state_id, t.op_id, t.target_id)) {
-            transitions[t.op_id].push_back(t.target_id);
-        }
-    }
-    return transitions;
+    return shortest_paths.get_optimal_transitions(abstraction, abstract_state_id);
 }
 
 void FlawSearch::add_flaw(int abs_id, const State &state) {
     assert(abstraction.get_state(abs_id).includes(state));
+
+    if (log.is_at_least_debug()) {
+        log << "Add flaw abs:" << abs_id << " conc:" << state.get_id() << endl;
+    }
 
     // We limit the number of concrete states we consider per abstract state.
     // For a new abstract state (with a potentially unseen h-value),
@@ -77,16 +74,14 @@ void FlawSearch::initialize() {
     last_refined_flawed_state = FlawedState::no_state;
     best_flaw_h = (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) ? 0 : INF_COSTS;
     assert(open_list.empty());
+    assert(flawed_states.empty());
     state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
     search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, silent_log);
-    cached_abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
-
-    assert(flawed_states.empty());
-
     const State &initial_state = state_registry->get_initial_state();
-    (*cached_abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
     SearchNode node = search_space->get_node(initial_state);
     node.open_initial();
+    cached_abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
+    (*cached_abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
     open_list.push(initial_state.get_id());
 }
 
@@ -206,10 +201,20 @@ static vector<int> get_unaffected_variables(
     return unaffected_vars;
 }
 
+struct FactPairHash {
+    size_t operator()(FactPair fact) const {
+        utils::HashState hash_state;
+        hash_state.feed(fact.var);
+        hash_state.feed(fact.value);
+        return hash_state.get_hash64();
+    }
+};
+
+using CompactFactMap = phmap::flat_hash_map<FactPair, int, FactPairHash>;
+
 static void get_deviation_splits(
     const AbstractState &abs_state,
-    const vector<State> &conc_states,
-    const vector<int> &unaffected_variables,
+    const CompactFactMap &fact_count,
     const AbstractState &target_abs_state,
     const vector<int> &domain_sizes,
     vector<vector<Split>> &splits) {
@@ -228,33 +233,20 @@ static void get_deviation_splits(
       pre(o)[v] undefined, eff(o)[v] defined: no split possible since regression adds whole domain.
       pre(o)[v] and eff(o)[v] undefined: if s[v] \notin t[v], wanted = intersect(a[v], b[v]).
     */
-    // Note: it could be faster to use an efficient hash map for this.
-    vector<vector<int>> fact_count(domain_sizes.size());
-    for (size_t var = 0; var < domain_sizes.size(); ++var) {
-        fact_count[var].resize(domain_sizes[var], 0);
-    }
-    for (const State &conc_state : conc_states) {
-        for (int var : unaffected_variables) {
-            int state_value = conc_state[var].get_value();
-            ++fact_count[var][state_value];
-        }
-    }
-    for (size_t var = 0; var < domain_sizes.size(); ++var) {
-        for (int value = 0; value < domain_sizes[var]; ++value) {
-            if (fact_count[var][value] && !target_abs_state.contains(var, value)) {
-                // Note: we could precompute the "wanted" vector, but not the split.
-                vector<int> wanted;
-                for (int value = 0; value < domain_sizes[var]; ++value) {
-                    if (abs_state.contains(var, value) &&
-                        target_abs_state.contains(var, value)) {
-                        wanted.push_back(value);
-                    }
+    for (auto &[fact, count] : fact_count) {
+        assert(count > 0);
+        int var = fact.var;
+        if (!target_abs_state.contains(var, fact.value)) {
+            // Note: we could precompute the "wanted" vector, but not the split.
+            vector<int> wanted;
+            for (int value = 0; value < domain_sizes[var]; ++value) {
+                if (abs_state.contains(var, value) &&
+                    target_abs_state.contains(var, value)) {
+                    wanted.push_back(value);
                 }
-                assert(!wanted.empty());
-                add_split(splits, Split(
-                              abs_state.get_id(), var, value, move(wanted),
-                              fact_count[var][value]));
             }
+            assert(!wanted.empty());
+            add_split(splits, Split(abs_state.get_id(), var, fact.value, move(wanted), count));
         }
     }
 }
@@ -271,7 +263,6 @@ unique_ptr<Split> FlawSearch::create_split(
             << state_ids.size() << " concrete states." << endl;
     }
 
-    const TransitionSystem &ts = abstraction.get_transition_system();
     vector<vector<Split>> splits(task_proxy.get_variables().size());
     for (auto &pair : get_f_optimal_transitions(abstract_state_id)) {
         int op_id = pair.first;
@@ -286,7 +277,7 @@ unique_ptr<Split> FlawSearch::create_split(
         }
 
         vector<bool> applicable(states.size(), true);
-        for (FactPair fact : ts.get_preconditions(op_id)) {
+        for (FactPair fact : abstraction.get_preconditions(op_id)) {
             vector<int> state_value_count(domain_sizes[fact.var], 0);
             for (size_t i = 0; i < states.size(); ++i) {
                 const State &state = states[i];
@@ -307,7 +298,10 @@ unique_ptr<Split> FlawSearch::create_split(
             }
         }
 
-        phmap::flat_hash_map<int, vector<State>> deviation_states_by_target;
+        int num_vars = domain_sizes.size();
+        vector<int> unaffected_variables = get_unaffected_variables(op, num_vars);
+
+        phmap::flat_hash_map<int, CompactFactMap> fact_count_by_target;
         for (size_t i = 0; i < states.size(); ++i) {
             if (!applicable[i]) {
                 continue;
@@ -328,21 +322,24 @@ unique_ptr<Split> FlawSearch::create_split(
                 } else {
                     // Deviation flaw
                     assert(target != get_abstract_state_id(succ_state));
-                    deviation_states_by_target[target].push_back(state);
+                    auto pos = fact_count_by_target.find(target);
+                    if (pos == fact_count_by_target.end()) {
+                        pos = fact_count_by_target.emplace_hint(
+                            pos, target, CompactFactMap{});
+                    }
+                    CompactFactMap &fact_count = pos->second;
+                    for (int var : unaffected_variables) {
+                        int state_value = state[var].get_value();
+                        ++fact_count[FactPair(var, state_value)];
+                    }
                 }
             }
         }
 
-        for (auto &pair : deviation_states_by_target) {
-            int target = pair.first;
-            const vector<State> &deviation_states = pair.second;
-            if (!deviation_states.empty()) {
-                int num_vars = domain_sizes.size();
-                get_deviation_splits(
-                    abstract_state, deviation_states,
-                    get_unaffected_variables(op, num_vars),
-                    abstraction.get_state(target), domain_sizes, splits);
-            }
+        for (const auto &[target, fact_count] : fact_count_by_target) {
+            get_deviation_splits(
+                abstract_state, fact_count,
+                abstraction.get_state(target), domain_sizes, splits);
         }
     }
 

@@ -10,6 +10,7 @@
 #include <vector>
 
 namespace utils {
+class CountdownTimer;
 class LogProxy;
 }
 
@@ -36,6 +37,11 @@ namespace cartesian_abstractions {
   costs, we could run into range issues. Therefore, we use 64-bit integers,
   scale all original operator costs by 2^32 and use epsilon = 1.
 */
+
+class Abstraction;
+class TransitionRewirer;
+
+using Cost = uint64_t;
 
 class HeapQueue {
     using Entry = std::pair<Cost, int>;
@@ -79,10 +85,30 @@ public:
 };
 
 
-class ShortestPaths {
-    static const Cost DIRTY;
+struct StateInfo {
+    Cost goal_distance;
+    bool dirty_candidate;
+    bool dirty;
 
+    StateInfo()
+        : goal_distance(0),
+          dirty_candidate(false),
+          dirty(false) {
+    }
+};
+static_assert(
+    sizeof(StateInfo) == sizeof(Cost) + sizeof(void *),
+    "StateInfo has unexpected size");
+
+
+class ShortestPaths {
+    static const Cost INF_COSTS;
+
+    const TransitionRewirer &rewirer;
+    const utils::CountdownTimer &timer;
     utils::LogProxy &log;
+    const int max_cached_parents;
+    bool use_cache;
     const bool debug;
     const bool task_has_zero_costs;
     std::vector<Cost> operator_costs;
@@ -90,46 +116,68 @@ class ShortestPaths {
     // Keep data structures around to avoid reallocating them.
     HeapQueue candidate_queue;
     HeapQueue open_queue;
-    std::vector<Cost> goal_distances;
-    std::vector<bool> dirty_candidate;
     std::vector<int> dirty_states;
-    Transitions shortest_path;
+
+    std::deque<StateInfo> states;
+
+    // Store all shortest paths for all states in both directions if use_cache=true.
+    std::deque<Transitions> children;
+    std::deque<Transitions> parents;
+    int num_parents;
+
+    // Store single shortest path for each state if use_cache=false.
+    std::deque<Transition> parent;
 
     static Cost add_costs(Cost a, Cost b);
     int convert_to_32_bit_cost(Cost cost) const;
     Cost convert_to_64_bit_cost(int cost) const;
 
+    void resize(int num_states);
+    void set_parent(int state, const Transition &new_parent);
+    void add_parent(int state, const Transition &new_parent);
+    void remove_parent(int state, const Transition &parent);
+    void clear_parents(int state);
+    void remove_child(int state, const Transition &child);
     void mark_dirty(int state);
+    void mark_orphaned_predecessors(const Abstraction &abstraction, int state);
+    bool is_optimal_transition(int start_id, int op_id, int target_id) const;
+
 public:
-    ShortestPaths(const std::vector<int> &costs, utils::LogProxy &log);
+    ShortestPaths(
+        const TransitionRewirer &rewirer,
+        const std::vector<int> &costs,
+        int max_cached_parents,
+        const utils::CountdownTimer &timer,
+        utils::LogProxy &log);
 
     // Use Dijkstra's algorithm to compute the shortest path tree from scratch.
     void recompute(
-        const std::vector<Transitions> &transitions,
+        const Abstraction &abstraction,
         const Goals &goals);
     // Reflect the split of v into v1 and v2.
     void update_incrementally(
-        const std::vector<Transitions> &in,
-        const std::vector<Transitions> &out,
-        int v, int v1, int v2);
+        const Abstraction &abstraction, int v, int v1, int v2, int var);
     // Extract solution from shortest path tree.
     std::unique_ptr<Solution> extract_solution(
         int init_id,
         const Goals &goals);
 
+    std::vector<int> get_goal_distances() const;
+
     Cost get_64bit_goal_distance(int abstract_state_id) const;
     int get_32bit_goal_distance(int abstract_state_id) const;
-    bool is_optimal_transition(int start_id, int op_id, int target_id) const;
+    OptimalTransitions get_optimal_transitions(
+        const Abstraction &abstraction, int state) const;
 
-    // For debugging.
-    bool test_distances(
-        const std::vector<Transitions> &in,
-        const std::vector<Transitions> &out,
-        const Goals &goals);
+#ifndef NDEBUG
+    bool test_distances(const Abstraction &abstraction, const Goals &goals);
+#endif
+
+    void print_statistics() const;
 };
 
-std::vector<int> compute_distances(
-    const std::vector<Transitions> &transitions,
+extern std::vector<int> compute_goal_distances(
+    const Abstraction &abstraction,
     const std::vector<int> &costs,
     const std::unordered_set<int> &start_ids);
 }

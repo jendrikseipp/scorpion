@@ -3,6 +3,7 @@
 
 #include "flaw_search.h"
 #include "split_selector.h"
+#include "transition_rewirer.h"
 #include "types.h"
 
 #include "../task_proxy.h"
@@ -33,9 +34,10 @@ class CEGAR {
     const TaskProxy task_proxy;
     const std::vector<int> domain_sizes;
     const int max_states;
-    const int max_non_looping_transitions;
+    const int max_stored_transitions;
     const PickFlawedAbstractState pick_flawed_abstract_state;
 
+    TransitionRewirer transition_rewirer;
     std::unique_ptr<Abstraction> abstraction;
     std::unique_ptr<ShortestPaths> shortest_paths;
     std::unique_ptr<FlawSearch> flaw_search;
@@ -64,19 +66,21 @@ class CEGAR {
     // Build abstraction.
     void refinement_loop();
 
+    void dump_dot_graph() const;
     void print_statistics() const;
 
 public:
     CEGAR(
         const std::shared_ptr<AbstractTask> &task,
         int max_states,
-        int max_non_looping_transitions,
+        int max_transitions,
         double max_time,
         PickFlawedAbstractState pick_flawed_abstract_state,
         PickSplit pick_split,
         PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
+        TransitionRepresentation transition_representation,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,
         DotGraphVerbosity dot_graph_verbosity);
@@ -85,6 +89,7 @@ public:
     CEGAR(const CEGAR &) = delete;
 
     std::unique_ptr<Abstraction> extract_abstraction();
+    std::vector<int> get_goal_distances() const;
 };
 }
 

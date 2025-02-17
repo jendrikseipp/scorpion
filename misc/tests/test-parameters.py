@@ -56,6 +56,8 @@ PERMANENT_EXCEPTIONS = [
     "adapt_costs",
     "brfs",
     "canonical_heuristic",
+    "cartesian",
+    "cegar",
     "dump_reachable_search_space",
     "gzocp",
     "idastar",

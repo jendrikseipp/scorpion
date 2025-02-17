@@ -8,10 +8,7 @@
 #include "transition_system.h"
 
 #include "../plugins/plugin.h"
-#include "../heuristics/additive_heuristic.h"
-#include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
-#include "../utils/memory.h"
 #include "../utils/rng_options.h"
 
 #include <algorithm>
@@ -24,6 +21,7 @@ using namespace std;
 
 namespace cartesian_abstractions {
 class SubtaskGenerator;
+bool g_hacked_sort_transitions = false;
 
 static bool operator_applicable(
     const OperatorProxy &op, const utils::HashSet<FactProxy> &facts) {
@@ -132,6 +130,13 @@ static void add_dot_graph_verbosity(plugins::Feature &feature) {
         "silent");
 }
 
+static void add_transition_representation_option(plugins::Feature &feature) {
+    feature.add_option<TransitionRepresentation>(
+        "transition_representation",
+        "how to compute transitions between abstract states",
+        "store");
+}
+
 string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
     ostringstream oss;
     int num_states = abstraction.get_num_states();
@@ -148,9 +153,7 @@ string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstract
     }
     for (int state_id = 0; state_id < num_states; ++state_id) {
         map<int, vector<int>> parallel_transitions;
-        auto transitions =
-            abstraction.get_transition_system().get_outgoing_transitions();
-        for (const Transition &t : transitions[state_id]) {
+        for (const Transition &t : abstraction.get_outgoing_transitions(state_id)) {
             parallel_transitions[t.target_id].push_back(t.op_id);
         }
         for (auto &pair : parallel_transitions) {
@@ -195,8 +198,10 @@ void add_common_cegar_options(plugins::Feature &feature) {
         plugins::Bounds("1", "infinity"));
     feature.add_option<int>(
         "max_transitions",
-        "maximum sum of state-changing transitions (excluding self-loops) over "
-        "all abstractions",
+        "If transition_representation=store, this value limits the maximum sum of "
+        "state-changing transitions (excluding self-loops) over all abstractions. "
+        "Otherwise, this value limits the number of cached transitions in the "
+        "shortest path tree of each abstraction individually.",
         "1M",
         plugins::Bounds("0", "infinity"));
     feature.add_option<double>(
@@ -204,6 +209,13 @@ void add_common_cegar_options(plugins::Feature &feature) {
         "maximum time in seconds for building abstractions",
         "infinity",
         plugins::Bounds("0.0", "infinity"));
+    feature.add_option<bool>(
+        "sort_transitions",
+        "sort transitions to ensure the different transition system representations "
+        "yield the same abstractions",
+        "false");
+
+    add_transition_representation_option(feature);
     add_pick_flawed_abstract_state_strategies(feature);
     add_pick_split_strategies(feature);
     feature.add_option<int>(
@@ -213,7 +225,7 @@ void add_common_cegar_options(plugins::Feature &feature) {
         plugins::Bounds("1", "infinity"));
     feature.add_option<int>(
         "max_state_expansions",
-        "maximum number of state expansions per flaw search",
+        "maximum number of state expansions per flaw search if a flaw has already been found",
         "1M",
         plugins::Bounds("1", "infinity"));
     add_memory_padding_option(feature);
@@ -221,9 +233,17 @@ void add_common_cegar_options(plugins::Feature &feature) {
     add_dot_graph_verbosity(feature);
 }
 
-static plugins::TypedEnumPlugin<DotGraphVerbosity> _enum_plugin({
+static plugins::TypedEnumPlugin<DotGraphVerbosity> _enum_plugin_dot_graph_verbosity({
         {"silent", ""},
         {"write_to_console", ""},
         {"write_to_file", ""}
+    });
+
+static plugins::TypedEnumPlugin<TransitionRepresentation> _enum_plugin_transition_representation({
+        {"store", "store transitions"},
+        {"naive", "compute applicable operators by looping over all operators and transitions by looping over all abstract states"},
+        {"sg", "compute operators via successor generator and transitions naively"},
+        {"rh", "compute operators naively and transitions via refinement hierarchy"},
+        {"sg_rh", "compute operators via successor generator and transitions via refinement hierarchy"},
     });
 }

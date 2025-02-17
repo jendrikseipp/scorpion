@@ -2,21 +2,16 @@
 
 #include "abstraction.h"
 #include "abstract_state.h"
-#include "cartesian_set.h"
 #include "shortest_paths.h"
 #include "transition_system.h"
 #include "utils.h"
 
 #include "../task_utils/task_properties.h"
-#include "../utils/language.h"
 #include "../utils/logging.h"
-#include "../utils/math.h"
 #include "../utils/memory.h"
 
-#include <algorithm>
 #include <cassert>
 #include <iostream>
-#include <unordered_map>
 
 using namespace std;
 
@@ -24,28 +19,36 @@ namespace cartesian_abstractions {
 CEGAR::CEGAR(
     const shared_ptr<AbstractTask> &task,
     int max_states,
-    int max_non_looping_transitions,
+    int max_transitions,
     double max_time,
     PickFlawedAbstractState pick_flawed_abstract_state,
     PickSplit pick_split,
     PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state,
     int max_state_expansions,
+    TransitionRepresentation transition_representation,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log,
     DotGraphVerbosity dot_graph_verbosity)
     : task_proxy(*task),
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),
-      max_non_looping_transitions(max_non_looping_transitions),
+      max_stored_transitions(
+          transition_representation == TransitionRepresentation::STORE ? max_transitions : INF),
       pick_flawed_abstract_state(pick_flawed_abstract_state),
-      abstraction(utils::make_unique_ptr<Abstraction>(task, log)),
+      transition_rewirer(task_proxy.get_operators()),
+      abstraction(utils::make_unique_ptr<Abstraction>(
+                      task, transition_rewirer, transition_representation, log)),
       timer(max_time),
       log(log),
       dot_graph_verbosity(dot_graph_verbosity) {
     assert(max_states >= 1);
+    int max_cached_spt_parents = (transition_representation == TransitionRepresentation::STORE)
+                                     ? 0
+                                     : max_transitions;
     shortest_paths = utils::make_unique_ptr<ShortestPaths>(
-        task_properties::get_operator_costs(task_proxy), log);
+        transition_rewirer, task_properties::get_operator_costs(task_proxy),
+        max_cached_spt_parents, timer, log);
     flaw_search = utils::make_unique_ptr<FlawSearch>(
         task, *abstraction, *shortest_paths, rng,
         pick_flawed_abstract_state, pick_split, tiebreak_split,
@@ -54,8 +57,8 @@ CEGAR::CEGAR(
     if (log.is_at_least_normal()) {
         log << "Start building abstraction." << endl;
         log << "Maximum number of states: " << max_states << endl;
-        log << "Maximum number of transitions: "
-            << max_non_looping_transitions << endl;
+        log << "Maximum number of stored transitions: "
+            << max_transitions << endl;
         log << "Maximum time: " << timer.get_remaining_time() << endl;
     }
 
@@ -73,6 +76,11 @@ CEGAR::~CEGAR() {
 unique_ptr<Abstraction> CEGAR::extract_abstraction() {
     assert(abstraction);
     return move(abstraction);
+}
+
+vector<int> CEGAR::get_goal_distances() const {
+    assert(shortest_paths);
+    return shortest_paths->get_goal_distances();
 }
 
 void CEGAR::separate_facts_unreachable_before_goal() const {
@@ -120,7 +128,7 @@ bool CEGAR::may_keep_refining() const {
             log << "Reached maximum number of states." << endl;
         }
         return false;
-    } else if (abstraction->get_transition_system().get_num_non_loops() >= max_non_looping_transitions) {
+    } else if (abstraction->get_num_stored_transitions() >= max_stored_transitions) {
         if (log.is_at_least_normal()) {
             log << "Reached maximum number of transitions." << endl;
         }
@@ -163,20 +171,22 @@ void CEGAR::refinement_loop() {
             }
             FactPair fact = goal.get_pair();
             auto pair = abstraction->refine(*current, fact.var, {fact.value});
+            dump_dot_graph();
             current = &abstraction->get_state(pair.second);
         }
-        assert(!abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
+        assert(!may_keep_refining() ||
+               !abstraction->get_goals().count(abstraction->get_initial_state().get_id()));
         assert(abstraction->get_goals().size() == 1);
     }
 
     // Initialize abstract goal distances and shortest path tree.
+    if (log.is_at_least_debug()) {
+        log << "Initialize abstract goal distances and shortest path tree." << endl;
+    }
     shortest_paths->recompute(
-        abstraction->get_transition_system().get_incoming_transitions(),
+        *abstraction,
         abstraction->get_goals());
-    assert(shortest_paths->test_distances(
-               abstraction->get_transition_system().get_incoming_transitions(),
-               abstraction->get_transition_system().get_outgoing_transitions(),
-               abstraction->get_goals()));
+    assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
 
     utils::Timer find_trace_timer(false);
     utils::Timer find_flaw_timer(false);
@@ -195,8 +205,8 @@ void CEGAR::refinement_loop() {
                 shortest_paths->get_32bit_goal_distance(abstraction->get_initial_state().get_id());
             if (new_abstract_solution_cost > old_abstract_solution_cost) {
                 old_abstract_solution_cost = new_abstract_solution_cost;
-                if (log.is_at_least_normal()) {
-                    log << "Abstract solution cost: " << old_abstract_solution_cost << endl;
+                if (log.is_at_least_verbose()) {
+                    log << "Lower bound: " << old_abstract_solution_cost << endl;
                 }
             }
         } else {
@@ -205,17 +215,6 @@ void CEGAR::refinement_loop() {
         }
 
         find_flaw_timer.resume();
-
-        // Dump/write dot file for current abstraction.
-        if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_CONSOLE) {
-            cout << create_dot_graph(task_proxy, *abstraction) << endl;
-        } else if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_FILE) {
-            write_to_file(
-                "graph" + to_string(abstraction->get_num_states()) + ".dot",
-                create_dot_graph(task_proxy, *abstraction));
-        } else if (dot_graph_verbosity != DotGraphVerbosity::SILENT) {
-            ABORT("Invalid dot graph verbosity");
-        }
 
         unique_ptr<Split> split;
         if (pick_flawed_abstract_state ==
@@ -226,6 +225,12 @@ void CEGAR::refinement_loop() {
         }
 
         find_flaw_timer.stop();
+
+        // Now split==nullptr iff we found a solution or ran out of time or memory.
+        // The assertion might fail if we run out of resources between the last check and the assertion.
+        assert((split && utils::extra_memory_padding_is_reserved() && !timer.is_expired()) ||
+               (!split && (!utils::extra_memory_padding_is_reserved() || timer.is_expired())) ||
+               (!split && utils::extra_memory_padding_is_reserved() && !timer.is_expired()));
 
         if (!utils::extra_memory_padding_is_reserved()) {
             log << "Reached memory limit in flaw search." << endl;
@@ -251,22 +256,19 @@ void CEGAR::refinement_loop() {
             abstract_state, split->var_id, split->values);
         refine_timer.stop();
 
+        dump_dot_graph();
+
         update_goal_distances_timer.resume();
         shortest_paths->update_incrementally(
-            abstraction->get_transition_system().get_incoming_transitions(),
-            abstraction->get_transition_system().get_outgoing_transitions(),
-            state_id, new_state_ids.first, new_state_ids.second);
-        assert(shortest_paths->test_distances(
-                   abstraction->get_transition_system().get_incoming_transitions(),
-                   abstraction->get_transition_system().get_outgoing_transitions(),
-                   abstraction->get_goals()));
+            *abstraction, state_id, new_state_ids.first, new_state_ids.second, split->var_id);
+        assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
         update_goal_distances_timer.stop();
 
         if (log.is_at_least_verbose() &&
             abstraction->get_num_states() % 1000 == 0) {
             log << abstraction->get_num_states() << "/" << max_states << " states, "
-                << abstraction->get_transition_system().get_num_non_loops() << "/"
-                << max_non_looping_transitions << " transitions" << endl;
+                << abstraction->get_num_stored_transitions() << "/"
+                << max_stored_transitions << " transitions" << endl;
         }
     }
     if (log.is_at_least_normal()) {
@@ -278,8 +280,22 @@ void CEGAR::refinement_loop() {
     }
 }
 
+void CEGAR::dump_dot_graph() const {
+    // Dump/write dot file for current abstraction.
+    if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_CONSOLE) {
+        cout << create_dot_graph(task_proxy, *abstraction) << endl;
+    } else if (dot_graph_verbosity == DotGraphVerbosity::WRITE_TO_FILE) {
+        write_to_file(
+            "graph" + to_string(abstraction->get_num_states()) + ".dot",
+            create_dot_graph(task_proxy, *abstraction));
+    } else if (dot_graph_verbosity != DotGraphVerbosity::SILENT) {
+        ABORT("Invalid dot graph verbosity");
+    }
+}
+
 void CEGAR::print_statistics() const {
     abstraction->print_statistics();
     flaw_search->print_statistics();
+    shortest_paths->print_statistics();
 }
 }

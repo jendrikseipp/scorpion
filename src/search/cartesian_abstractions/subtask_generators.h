@@ -1,6 +1,8 @@
 #ifndef CARTESIAN_ABSTRACTIONS_SUBTASK_GENERATORS_H
 #define CARTESIAN_ABSTRACTIONS_SUBTASK_GENERATORS_H
 
+#include "types.h"
+
 #include <memory>
 #include <vector>
 
@@ -17,7 +19,6 @@ class LogProxy;
 }
 
 namespace cartesian_abstractions {
-using Facts = std::vector<FactPair>;
 using SharedTasks = std::vector<std::shared_ptr<AbstractTask>>;
 
 enum class FactOrder {

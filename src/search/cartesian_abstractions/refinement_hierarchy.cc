@@ -1,6 +1,10 @@
 #include "refinement_hierarchy.h"
 
+#include "utils.h"
+
 #include "../task_proxy.h"
+
+#include "../utils/logging.h"
 
 using namespace std;
 
@@ -14,11 +18,11 @@ Node::Node(int state_id)
 }
 
 bool Node::information_is_valid() const {
-    return value != UNDEFINED && (
-        // leaf node
-        (left_child == UNDEFINED && right_child == UNDEFINED && var == UNDEFINED) ||
-        // inner node
-        (left_child != UNDEFINED && right_child != UNDEFINED && var != UNDEFINED));
+    bool not_split = (left_child == UNDEFINED && right_child == UNDEFINED &&
+                      var == UNDEFINED);
+    bool split = (left_child != UNDEFINED && right_child != UNDEFINED &&
+                  var != UNDEFINED);
+    return (not_split ^ split) && value != UNDEFINED;
 }
 
 bool Node::is_split() const {
@@ -33,7 +37,6 @@ void Node::split(int var, int value, NodeID left_child, NodeID right_child) {
     this->right_child = right_child;
     assert(is_split());
 }
-
 
 
 ostream &operator<<(ostream &os, const Node &node) {
@@ -84,6 +87,48 @@ int RefinementHierarchy::get_abstract_state_id(const State &state) const {
         return nodes[get_node_id(subtask_state)].get_state_id();
     } else {
         return nodes[get_node_id(state)].get_state_id();
+    }
+}
+
+int RefinementHierarchy::get_abstract_state_id(NodeID node_id) const {
+    return nodes[node_id].get_state_id();
+}
+
+TaskProxy RefinementHierarchy::get_task_proxy() const {
+    return TaskProxy(*task);
+}
+
+shared_ptr<AbstractTask> RefinementHierarchy::get_task() const {
+    return task;
+}
+
+void RefinementHierarchy::print_statistics(utils::LogProxy &log) const {
+    log << "Refinement hierarchy nodes: " << nodes.size() << endl;
+    log << "Refinement hierarchy capacity: " << nodes.capacity() << endl;
+}
+
+void RefinementHierarchy::dump(int level, NodeID id) const {
+    for (int i = 0; i < level; ++i) {
+        cout << "  ";
+    }
+    Node node = nodes[id];
+
+    cout << id;
+    if (node.is_split()) {
+        cout << " (" << node.var << "=" << node.value << ")";
+    }
+    cout << endl;
+
+    if (node.is_split()) {
+        // Skip helper nodes.
+        NodeID helper = node.left_child;
+        while (nodes[helper].right_child == node.right_child) {
+            helper = nodes[helper].left_child;
+        }
+
+        ++level;
+        dump(level, helper);
+        dump(level, nodes[id].right_child);
     }
 }
 }

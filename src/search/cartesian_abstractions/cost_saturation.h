@@ -30,7 +30,7 @@ class SubtaskGenerator;
 class CostSaturation {
     const std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators;
     const int max_states;
-    const int max_non_looping_transitions;
+    const int max_transitions;
     const double max_time;
     const bool use_general_costs;
     const PickFlawedAbstractState pick_flawed_abstract_state;
@@ -38,15 +38,17 @@ class CostSaturation {
     const PickSplit tiebreak_split;
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
+    const TransitionRepresentation transition_representation;
     const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
     utils::LogProxy &log;
     const cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity;
 
+    void (*fast_downward_new_handler)();
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
     int num_states;
-    int num_non_looping_transitions;
+    int num_transitions;
 
     void reset(const TaskProxy &task_proxy);
     void reduce_remaining_costs(const std::vector<int> &saturated_costs);
@@ -63,7 +65,7 @@ public:
     CostSaturation(
         const std::vector<std::shared_ptr<SubtaskGenerator>> &subtask_generators,
         int max_states,
-        int max_non_looping_transitions,
+        int max_transitions,
         double max_time,
         bool use_general_costs,
         PickFlawedAbstractState pick_flawed_abstract_state,
@@ -71,6 +73,7 @@ public:
         PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state,
         int max_state_expansions,
+        TransitionRepresentation transition_representation,
         int memory_padding_mb,
         utils::RandomNumberGenerator &rng,
         utils::LogProxy &log,

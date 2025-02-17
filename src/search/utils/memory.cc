@@ -28,7 +28,6 @@ void release_extra_memory_padding() {
     assert(extra_memory_padding);
     delete[] extra_memory_padding;
     extra_memory_padding = nullptr;
-    assert(standard_out_of_memory_handler);
     set_new_handler(standard_out_of_memory_handler);
 }
 

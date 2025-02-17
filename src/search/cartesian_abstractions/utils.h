@@ -23,6 +23,8 @@ class Feature;
 namespace cartesian_abstractions {
 class Abstraction;
 
+extern bool g_hacked_sort_transitions;
+
 extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
 create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);
 

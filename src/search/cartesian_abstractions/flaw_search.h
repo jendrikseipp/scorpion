@@ -11,8 +11,6 @@
 #include "../utils/logging.h"
 #include "../utils/timer.h"
 
-#include <parallel_hashmap/phmap.h>
-
 #include <stack>
 
 namespace utils {
@@ -35,8 +33,6 @@ enum class PickFlawedAbstractState {
     MAX_H,
     BATCH_MIN_H
 };
-
-using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
 
 class FlawSearch {
     TaskProxy task_proxy;

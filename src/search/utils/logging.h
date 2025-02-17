@@ -5,6 +5,7 @@
 #include "system.h"
 #include "timer.h"
 
+#include <map>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -192,6 +193,21 @@ ostream &operator<<(ostream &stream, const vector<T> &vec) {
         stream << vec[i];
     }
     stream << "]";
+    return stream;
+}
+
+template<class K, class V, class... Args>
+ostream &operator<<(ostream &stream, const map<K, V, Args...> &map) {
+    stream << "{";
+    bool first = true;
+    for (auto &[key, value] : map) {
+        if (!first) {
+            stream << ", ";
+        }
+        stream << key << ":" << value;
+        first = false;
+    }
+    stream << "}";
     return stream;
 }
 }

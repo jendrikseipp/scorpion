@@ -23,10 +23,10 @@ class AbstractState {
     // This state's node in the refinement hierarchy.
     NodeID node_id;
 
-    CartesianSet cartesian_set;
+    const CartesianSet &cartesian_set;
 
 public:
-    AbstractState(int state_id, NodeID node_id, CartesianSet &&cartesian_set);
+    AbstractState(int state_id, NodeID node_id, const CartesianSet &cartesian_set);
 
     AbstractState(const AbstractState &) = delete;
 
@@ -56,13 +56,17 @@ public:
 
     NodeID get_node_id() const;
 
+    const CartesianSet &get_cartesian_set() const {
+        return cartesian_set;
+    }
+
     friend std::ostream &operator<<(std::ostream &os, const AbstractState &state) {
         return os << "#" << state.get_id() << state.cartesian_set;
     }
 
     // Create the initial, unrefined abstract state.
     static std::unique_ptr<AbstractState> get_trivial_abstract_state(
-        const std::vector<int> &domain_sizes);
+        const CartesianSet &trivial_cartesian_set);
 };
 }
 

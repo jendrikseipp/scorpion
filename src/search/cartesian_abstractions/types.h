@@ -7,8 +7,13 @@
 #include <unordered_set>
 #include <vector>
 
+#include <parallel_hashmap/phmap.h>
+
+struct FactPair;
+
 namespace cartesian_abstractions {
 class AbstractState;
+class CartesianSet;
 struct Transition;
 
 enum class DotGraphVerbosity {
@@ -17,11 +22,31 @@ enum class DotGraphVerbosity {
     WRITE_TO_FILE
 };
 
-using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
+enum class TransitionRepresentation {
+    STORE,
+    NAIVE,
+    SG,
+    RH,
+    SG_RH,
+};
+
+enum class MatcherVariable : char {
+    UNAFFECTED,
+    SINGLE_VALUE,
+    FULL_DOMAIN,
+};
+static_assert(sizeof(MatcherVariable) == 1, "MatcherVariable has unexpected size");
+
+using AbstractStates = std::deque<std::unique_ptr<AbstractState>>;
+using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;
 using Cost = uint64_t;
+using Facts = std::vector<FactPair>;
 using Goals = std::unordered_set<int>;
-using NodeID = int;
 using Loops = std::vector<int>;
+using Matcher = std::vector<MatcherVariable>;
+using NodeID = int;
+using Operators = std::vector<int>;
+using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
 using Solution = std::deque<Transition>;
 using Transitions = std::vector<Transition>;
 

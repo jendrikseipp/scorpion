@@ -12,6 +12,7 @@ enum class DotGraphVerbosity;
 enum class PickFlawedAbstractState;
 enum class PickSplit;
 class SubtaskGenerator;
+enum class TransitionRepresentation;
 }
 
 namespace utils {
@@ -25,6 +26,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_states;
     const int max_transitions;
     const double max_time;
+    const cartesian_abstractions::TransitionRepresentation transition_representation;
     const cartesian_abstractions::PickFlawedAbstractState pick_flawed_abstract_state;
     const cartesian_abstractions::PickSplit pick_split;
     const cartesian_abstractions::PickSplit tiebreak_split;
@@ -39,11 +41,6 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
 
     bool has_reached_resource_limit(const utils::CountdownTimer &timer) const;
 
-    std::unique_ptr<cartesian_abstractions::Abstraction> build_abstraction_for_subtask(
-        const std::shared_ptr<AbstractTask> &subtask,
-        int remaining_subtasks,
-        const utils::CountdownTimer &timer);
-
     void build_abstractions_for_subtasks(
         const std::vector<std::shared_ptr<AbstractTask>> &subtasks,
         const utils::CountdownTimer &timer,
@@ -57,6 +54,7 @@ public:
         cartesian_abstractions::PickSplit pick_split,
         cartesian_abstractions::PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state, int max_state_expansions,
+        cartesian_abstractions::TransitionRepresentation transition_representation,
         int memory_padding, int random_seed,
         cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
         utils::Verbosity verbosity);

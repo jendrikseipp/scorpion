@@ -118,7 +118,7 @@ def _get_landmark_config(**kwargs):
 
 
 def configs_optimal_extended():
-    return {
+    configs = {
         "astar_cegar": [
             "--search",
             "astar(cegar([landmarks(), goals()]))"],
@@ -185,6 +185,9 @@ def configs_optimal_extended():
         # This is not really an optimal configuration, but we add it here to test it.
         "exhaustive": ["--search", "dump_reachable_search_space()"],
     }
+    configs.update({f"astar_cegar_{tsr}": ["--search", f"astar(cegar(transition_representation={tsr}))"]
+                    for tsr in ["store", "naive", "sg", "rh", "sg_rh"]})
+    return configs
 
 
 def configs_satisficing_extended():

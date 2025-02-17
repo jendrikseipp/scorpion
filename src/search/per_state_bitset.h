@@ -8,7 +8,7 @@
 
 class BitsetMath {
 public:
-    using Block = unsigned int;
+    using Block = unsigned char;
     static_assert(
         !std::numeric_limits<Block>::is_signed,
         "Block type must be unsigned");
@@ -29,21 +29,32 @@ class ConstBitsetView {
     ConstArrayView<BitsetMath::Block> data;
     int num_bits;
 public:
-    ConstBitsetView(ConstArrayView<BitsetMath::Block> data, int num_bits) :
-        data(data), num_bits(num_bits) {}
-
+    ConstBitsetView(ConstArrayView<BitsetMath::Block> data, int num_bits);
 
     ConstBitsetView(const ConstBitsetView &other) = default;
     ConstBitsetView &operator=(const ConstBitsetView &other) = default;
 
+    bool test() const;
     bool test(int index) const;
+    int count() const;
+    bool intersects(const ConstBitsetView &other) const;
+    bool is_subset_of(const ConstBitsetView &other) const;
     int size() const;
+
+    friend std::ostream &operator<<(std::ostream &os, const ConstBitsetView &view) {
+        for (int index = 0; index < view.num_bits; ++index) {
+            os << view.test(index);
+        }
+        return os;
+    }
 };
 
 
 class BitsetView {
     ArrayView<BitsetMath::Block> data;
     int num_bits;
+
+    void zero_unused_bits();
 public:
     BitsetView(ArrayView<BitsetMath::Block> data, int num_bits) :
         data(data), num_bits(num_bits) {}
@@ -57,11 +68,20 @@ public:
     }
 
     void set(int index);
+    void set();
     void reset(int index);
     void reset();
     bool test(int index) const;
     void intersect(const BitsetView &other);
+    bool intersects(const BitsetView &other) const;
     int size() const;
+
+    friend std::ostream &operator<<(std::ostream &os, const BitsetView &view) {
+        for (int index = 0; index < view.num_bits; ++index) {
+            os << view.test(index);
+        }
+        return os;
+    }
 };
 
 
