@@ -241,9 +241,6 @@ static plugins::TypedEnumPlugin<DotGraphVerbosity> _enum_plugin_dot_graph_verbos
 
 static plugins::TypedEnumPlugin<TransitionRepresentation> _enum_plugin_transition_representation({
         {"store", "store transitions"},
-        {"naive", "compute applicable operators by looping over all operators and transitions by looping over all abstract states"},
-        {"sg", "compute operators via successor generator and transitions naively"},
-        {"rh", "compute operators naively and transitions via refinement hierarchy"},
-        {"sg_rh", "compute operators via successor generator and transitions via refinement hierarchy"},
+        {"compute", "efficiently compute transitions on demand"},
     });
 }

@@ -102,50 +102,9 @@ int Abstraction::get_num_stored_transitions() const {
 }
 
 Transitions Abstraction::get_incoming_transitions(int state_id) const {
-    Transitions transitions;
-    if (transition_system) {
-        transitions = transition_system->get_incoming_transitions()[state_id];
-    } else if (transition_representation == TransitionRepresentation::SG_RH) {
-        transitions = match_tree->get_incoming_transitions(*states[state_id]);
-    } else if (transition_representation == TransitionRepresentation::NAIVE ||
-               transition_representation == TransitionRepresentation::SG ||
-               transition_representation == TransitionRepresentation::RH) {
-        const auto &target = states[state_id];
-
-        vector<int> incoming_ops;
-        if (transition_representation == TransitionRepresentation::NAIVE ||
-            transition_representation == TransitionRepresentation::RH) {
-            for (int op_id = 0; op_id < match_tree->get_num_operators(); ++op_id) {
-                if (target->includes(transition_rewirer->get_postconditions(op_id))) {
-                    incoming_ops.push_back(op_id);
-                }
-            }
-        } else {
-            assert(transition_representation == TransitionRepresentation::SG);
-            incoming_ops = match_tree->get_incoming_operators(*target);
-        }
-
-        if (transition_representation == TransitionRepresentation::NAIVE ||
-            transition_representation == TransitionRepresentation::SG) {
-            for (int op_id : incoming_ops) {
-                CartesianSet regression = target->get_cartesian_set();
-                for (const FactPair &fact : match_tree->get_effects(op_id)) {
-                    regression.add_all(fact.var);
-                }
-                for (const FactPair &fact : get_preconditions(op_id)) {
-                    regression.set_single_value(fact.var, fact.value);
-                }
-                for (const auto &src : states) {
-                    if (src->get_id() != target->get_id() && src->get_cartesian_set().intersects(regression)) {
-                        transitions.emplace_back(op_id, src->get_id());
-                    }
-                }
-            }
-        } else {
-            assert(transition_representation == TransitionRepresentation::RH);
-            transitions = match_tree->get_incoming_transitions(*target, incoming_ops);
-        }
-    }
+    Transitions transitions = transition_system
+        ? transition_system->get_incoming_transitions()[state_id]
+        : match_tree->get_incoming_transitions(*states[state_id]);
 
     if (g_hacked_sort_transitions) {
         sort(execution::unseq, transitions.begin(), transitions.end());
@@ -154,55 +113,10 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
 }
 
 Transitions Abstraction::get_outgoing_transitions(int state_id) const {
-    Transitions transitions;
-    if (transition_representation == TransitionRepresentation::STORE) {
-        assert(transition_system);
-        transitions = transition_system->get_outgoing_transitions()[state_id];
-    } else if (transition_representation == TransitionRepresentation::SG_RH) {
-        transitions = match_tree->get_outgoing_transitions(*states[state_id]);
-    } else if (transition_representation == TransitionRepresentation::NAIVE ||
-               transition_representation == TransitionRepresentation::SG ||
-               transition_representation == TransitionRepresentation::RH) {
-        const auto &src = states[state_id];
+    Transitions transitions = transition_system
+        ? transition_system->get_outgoing_transitions()[state_id]
+        : match_tree->get_outgoing_transitions(*states[state_id]);
 
-        vector<int> outgoing_ops;
-        if (transition_representation == TransitionRepresentation::NAIVE ||
-            transition_representation == TransitionRepresentation::RH) {
-            for (int op_id = 0; op_id < match_tree->get_num_operators(); ++op_id) {
-                /*
-                  Ignore self-loop operators. An operator loops iff state
-                  contains all its effects, since then the resulting Cartesian
-                  set is a subset of state.
-                */
-                if (src->includes(get_preconditions(op_id)) &&
-                    any_of(match_tree->get_effects(op_id).begin(), match_tree->get_effects(op_id).end(),
-                           [&src](const FactPair &fact) {return !src->contains(fact.var, fact.value);})) {
-                    outgoing_ops.push_back(op_id);
-                }
-            }
-        } else {
-            assert(transition_representation == TransitionRepresentation::SG);
-            outgoing_ops = match_tree->get_outgoing_operators(*src);
-        }
-
-        if (transition_representation == TransitionRepresentation::NAIVE ||
-            transition_representation == TransitionRepresentation::SG) {
-            for (int op_id : outgoing_ops) {
-                CartesianSet progression = src->get_cartesian_set();
-                for (const FactPair &post : transition_rewirer->get_postconditions(op_id)) {
-                    progression.set_single_value(post.var, post.value);
-                }
-                for (const auto &target : states) {
-                    if (target->get_cartesian_set().intersects(progression)) {
-                        transitions.emplace_back(op_id, target->get_id());
-                    }
-                }
-            }
-        } else {
-            assert(transition_representation == TransitionRepresentation::RH);
-            transitions = match_tree->get_outgoing_transitions(*src, outgoing_ops);
-        }
-    }
     if (g_hacked_sort_transitions) {
         sort(execution::unseq, transitions.begin(), transitions.end());
     }

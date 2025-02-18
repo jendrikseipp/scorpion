@@ -24,10 +24,7 @@ enum class DotGraphVerbosity {
 
 enum class TransitionRepresentation {
     STORE,
-    NAIVE,
-    SG,
-    RH,
-    SG_RH,
+    COMPUTE,
 };
 
 enum class MatcherVariable : char {
