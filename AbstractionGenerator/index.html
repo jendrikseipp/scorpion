@@ -652,13 +652,19 @@
 
 <p>Create abstractions for cost partitioning heuristics.</p>
 <h2 id="cartesian_abstraction_generator">Cartesian abstraction generator<a class="headerlink" href="#cartesian_abstraction_generator" title="Permanent link">#</a></h2>
-<pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, pick_flawed_abstract_state=batch_min_h, pick_split=max_cover, tiebreak_split=max_refined, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, memory_padding=500, random_seed=-1, dot_graph_verbosity=silent, verbosity=normal)
+<pre><code>cartesian(subtasks=[landmarks(order=random), goals(order=random)], max_states=infinity, max_transitions=1M, max_time=infinity, sort_transitions=false, transition_representation=store, pick_flawed_abstract_state=batch_min_h, pick_split=max_cover, tiebreak_split=max_refined, max_concrete_states_per_abstract_state=infinity, max_state_expansions=1M, memory_padding=500, random_seed=-1, dot_graph_verbosity=silent, verbosity=normal)
 </code></pre>
 <ul>
 <li><em>subtasks</em> (list of <a href="../SubtaskGenerator/">SubtaskGenerator</a>): subtask generators</li>
 <li><em>max_states</em> (int [1, infinity]): maximum sum of abstract states over all abstractions</li>
-<li><em>max_transitions</em> (int [0, infinity]): maximum sum of state-changing transitions (excluding self-loops) over all abstractions</li>
+<li><em>max_transitions</em> (int [0, infinity]): If transition_representation=store, this value limits the maximum sum of state-changing transitions (excluding self-loops) over all abstractions. Otherwise, this value limits the number of cached transitions in the shortest path tree of each abstraction individually.</li>
 <li><em>max_time</em> (double [0.0, infinity]): maximum time in seconds for building abstractions</li>
+<li><em>sort_transitions</em> (bool): sort transitions to ensure the different transition system representations yield the same abstractions</li>
+<li><em>transition_representation</em> ({store, compute}): how to compute transitions between abstract states<ul>
+<li><code>store</code>: store transitions</li>
+<li><code>compute</code>: efficiently compute transitions on demand</li>
+</ul>
+</li>
 <li><em>pick_flawed_abstract_state</em> ({first, first_on_shortest_path, random, min_h, max_h, batch_min_h}): flaw-selection strategy<ul>
 <li><code>first</code>: Consider first encountered flawed abstract state and a random concrete state.</li>
 <li><code>first_on_shortest_path</code>: Follow the arbitrary solution in the shortest path tree (no flaw search). Consider first encountered flawed abstract state and a random concrete state.</li>
@@ -695,7 +701,7 @@
 </ul>
 </li>
 <li><em>max_concrete_states_per_abstract_state</em> (int [1, infinity]): maximum number of flawed concrete states stored per abstract state</li>
-<li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search</li>
+<li><em>max_state_expansions</em> (int [1, infinity]): maximum number of state expansions per flaw search if a flaw has already been found</li>
 <li><em>memory_padding</em> (int [0, infinity]): amount of extra memory in MB to reserve for recovering from out-of-memory situations gracefully. When the memory runs out, we stop refining and start the search. Due to memory fragmentation, the memory used for building the abstraction (states, transitions, etc.) often can't be reused for things that require big continuous blocks of memory. It is for this reason that we require a rather large amount of memory padding by default.</li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>dot_graph_verbosity</em> ({silent, write_to_console, write_to_file}): verbosity of printing/writing dot graphs<ul>
