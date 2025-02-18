@@ -27,7 +27,7 @@ class TransitionSystem;
 */
 class Abstraction {
     const TransitionRepresentation transition_representation;
-    const TransitionRewirer &transition_rewirer;
+    const std::shared_ptr<TransitionRewirer> transition_rewirer;
     std::unique_ptr<TransitionSystem> transition_system;
     const State concrete_initial_state;
     const std::vector<FactPair> goal_facts;
@@ -54,7 +54,7 @@ class Abstraction {
 public:
     Abstraction(
         const std::shared_ptr<AbstractTask> &task,
-        const TransitionRewirer &transition_rewirer,
+        const std::shared_ptr<TransitionRewirer> &transition_rewirer,
         TransitionRepresentation transition_representation,
         utils::LogProxy &log);
     ~Abstraction();

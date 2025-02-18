@@ -21,7 +21,7 @@ using namespace std;
 namespace cartesian_abstractions {
 Abstraction::Abstraction(
     const shared_ptr<AbstractTask> &task,
-    const TransitionRewirer &transition_rewirer,
+    const shared_ptr<TransitionRewirer> &transition_rewirer,
     TransitionRepresentation transition_representation,
     utils::LogProxy &log)
     : transition_representation(transition_representation),
@@ -35,18 +35,18 @@ Abstraction::Abstraction(
 
     if (transition_representation == TransitionRepresentation::STORE) {
         log << "Store transitions." << endl;
-        transition_system = utils::make_unique_ptr<TransitionSystem>(transition_rewirer);
+        transition_system = utils::make_unique_ptr<TransitionSystem>(*transition_rewirer);
     } else {
         log << "Create match tree." << endl;
         match_tree = utils::make_unique_ptr<MatchTree>(
             TaskProxy(*task).get_operators(),
-            transition_rewirer.get_preconditions(),
-            transition_rewirer.get_postconditions(),
+            transition_rewirer->get_preconditions(),
+            transition_rewirer->get_postconditions(),
             *refinement_hierarchy, cartesian_sets, debug);
     }
 #ifndef NDEBUG
     if (!transition_system && debug) {
-        transition_system = utils::make_unique_ptr<TransitionSystem>(transition_rewirer);
+        transition_system = utils::make_unique_ptr<TransitionSystem>(*transition_rewirer);
     }
 #endif
 }
@@ -84,7 +84,7 @@ unique_ptr<RefinementHierarchy> Abstraction::extract_refinement_hierarchy() {
 }
 
 const vector<FactPair> &Abstraction::get_preconditions(int op_id) const {
-    return transition_rewirer.get_preconditions(op_id);
+    return transition_rewirer->get_preconditions(op_id);
 }
 
 int Abstraction::get_num_operators() const {
@@ -116,7 +116,7 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
         if (transition_representation == TransitionRepresentation::NAIVE ||
             transition_representation == TransitionRepresentation::RH) {
             for (int op_id = 0; op_id < match_tree->get_num_operators(); ++op_id) {
-                if (target->includes(transition_rewirer.get_postconditions(op_id))) {
+                if (target->includes(transition_rewirer->get_postconditions(op_id))) {
                     incoming_ops.push_back(op_id);
                 }
             }
@@ -189,7 +189,7 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
             transition_representation == TransitionRepresentation::SG) {
             for (int op_id : outgoing_ops) {
                 CartesianSet progression = src->get_cartesian_set();
-                for (const FactPair &post : transition_rewirer.get_postconditions(op_id)) {
+                for (const FactPair &post : transition_rewirer->get_postconditions(op_id)) {
                     progression.set_single_value(post.var, post.value);
                 }
                 for (const auto &target : states) {
