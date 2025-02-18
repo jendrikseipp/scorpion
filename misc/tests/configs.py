@@ -186,7 +186,7 @@ def configs_optimal_extended():
         "exhaustive": ["--search", "dump_reachable_search_space()"],
     }
     configs.update({f"astar_cegar_{tsr}": ["--search", f"astar(cegar(transition_representation={tsr}))"]
-                    for tsr in ["store", "naive", "sg", "rh", "sg_rh"]})
+                    for tsr in ["store", "compute"]})
     return configs
 
 
