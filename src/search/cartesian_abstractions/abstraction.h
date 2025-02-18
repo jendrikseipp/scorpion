@@ -26,7 +26,6 @@ class TransitionSystem;
   RefinementHierarchy.
 */
 class Abstraction {
-    const TransitionRepresentation transition_representation;
     const std::shared_ptr<TransitionRewirer> transition_rewirer;
     std::unique_ptr<TransitionSystem> transition_system;
     const State concrete_initial_state;

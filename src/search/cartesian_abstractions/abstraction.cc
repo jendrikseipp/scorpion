@@ -24,8 +24,7 @@ Abstraction::Abstraction(
     const shared_ptr<TransitionRewirer> &transition_rewirer,
     TransitionRepresentation transition_representation,
     utils::LogProxy &log)
-    : transition_representation(transition_representation),
-      transition_rewirer(transition_rewirer),
+    : transition_rewirer(transition_rewirer),
       concrete_initial_state(TaskProxy(*task).get_initial_state()),
       goal_facts(task_properties::get_fact_pairs(TaskProxy(*task).get_goals())),
       refinement_hierarchy(utils::make_unique_ptr<RefinementHierarchy>(task)),
@@ -249,24 +248,24 @@ pair<int, int> Abstraction::refine(
 #ifndef NDEBUG
     if (match_tree && transition_system) {
         for (int state_id : {v1_id, v2_id}) {
-            const AbstractState &state = *states[state_id];
+            const AbstractState &s = *states[state_id];
             Transitions ts_out = transition_system->get_outgoing_transitions()[state_id];
-            Transitions mt_out = match_tree->get_outgoing_transitions(state);
+            Transitions mt_out = match_tree->get_outgoing_transitions(s);
             sort(ts_out.begin(), ts_out.end());
             sort(mt_out.begin(), mt_out.end());
             if (ts_out != mt_out) {
-                cout << "State " << state_id << ", node: " << state.get_node_id() << endl;
+                cout << "State " << state_id << ", node: " << s.get_node_id() << endl;
                 cout << "  TS out: " << ts_out << endl;
                 cout << "  MT out: " << mt_out << endl;
             }
             assert(ts_out == mt_out);
 
             Transitions ts_in = transition_system->get_incoming_transitions()[state_id];
-            Transitions mt_in = match_tree->get_incoming_transitions(state);
+            Transitions mt_in = match_tree->get_incoming_transitions(s);
             sort(ts_in.begin(), ts_in.end());
             sort(mt_in.begin(), mt_in.end());
             if (ts_in != mt_in) {
-                cout << "State " << state_id << ", node: " << state.get_node_id() << endl;
+                cout << "State " << state_id << ", node: " << s.get_node_id() << endl;
                 cout << "  TS in: " << ts_in << endl;
                 cout << "  MT in: " << mt_in << endl;
             }
