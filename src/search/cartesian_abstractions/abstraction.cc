@@ -88,17 +88,11 @@ const vector<FactPair> &Abstraction::get_preconditions(int op_id) const {
 }
 
 int Abstraction::get_num_operators() const {
-    if (match_tree) {
-        return match_tree->get_num_operators();
-    }
-    return transition_system->get_num_operators();
+    return transition_rewirer->get_num_operators();
 }
 
 int Abstraction::get_num_stored_transitions() const {
-    if (match_tree) {
-        return 0;
-    }
-    return transition_system->get_num_non_loops();
+    return transition_system ? transition_system->get_num_non_loops() : 0;
 }
 
 Transitions Abstraction::get_incoming_transitions(int state_id) const {
