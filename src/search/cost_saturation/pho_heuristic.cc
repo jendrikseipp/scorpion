@@ -146,7 +146,7 @@ public:
     }
 
     virtual shared_ptr<ScaledCostPartitioningHeuristic> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         shared_ptr<AbstractTask> scaled_costs_task =
             get_scaled_costs_task(options.get<shared_ptr<AbstractTask>>("transform"));
 

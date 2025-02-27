@@ -127,7 +127,7 @@ public:
     }
 
     virtual shared_ptr<MaxCostPartitioningHeuristic> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         shared_ptr<AbstractTask> task = options.get<shared_ptr<AbstractTask>>("transform");
         TaskProxy task_proxy(*task);
         vector<int> costs = task_properties::get_operator_costs(task_proxy);

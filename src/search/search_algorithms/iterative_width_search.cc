@@ -102,7 +102,7 @@ public:
     }
 
     virtual shared_ptr<IterativeWidthSearch> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<IterativeWidthSearch>(
             options.get<int>("width"),
             get_search_algorithm_arguments_from_options(options));

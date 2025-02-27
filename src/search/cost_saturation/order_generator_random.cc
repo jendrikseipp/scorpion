@@ -38,7 +38,7 @@ public:
     }
 
     virtual shared_ptr<OrderGeneratorRandom> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<OrderGeneratorRandom>(
             get_order_generator_arguments_from_options(options));
     }

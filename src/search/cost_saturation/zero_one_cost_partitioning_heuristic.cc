@@ -47,7 +47,7 @@ public:
     }
 
     virtual shared_ptr<MaxCostPartitioningHeuristic> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         return get_max_cp_heuristic(options, compute_zero_one_cost_partitioning);
     }
 };

@@ -105,7 +105,7 @@ public:
     }
 
     virtual shared_ptr<IterativeDeepeningSearch> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<IterativeDeepeningSearch>(
             options.get<bool>("single_plan"),
             get_search_algorithm_arguments_from_options(options));

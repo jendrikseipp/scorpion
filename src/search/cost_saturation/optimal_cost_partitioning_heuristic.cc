@@ -240,7 +240,7 @@ public:
     }
 
     virtual shared_ptr<OptimalCostPartitioningHeuristic> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<OptimalCostPartitioningHeuristic>(
             options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
             options.get<bool>("allow_negative_costs"),

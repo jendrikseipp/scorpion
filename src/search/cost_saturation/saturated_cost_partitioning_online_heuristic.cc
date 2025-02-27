@@ -226,7 +226,7 @@ public:
     }
 
     virtual shared_ptr<SaturatedCostPartitioningOnlineHeuristic> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         shared_ptr<AbstractTask> task = options.get<shared_ptr<AbstractTask>>("transform");
         unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
         Abstractions abstractions = generate_abstractions(

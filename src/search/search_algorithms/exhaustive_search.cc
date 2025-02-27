@@ -114,7 +114,7 @@ public:
     }
 
     virtual shared_ptr<ExhaustiveSearch> create_component(
-        const plugins::Options &, const utils::Context &) const override {
+        const plugins::Options &) const override {
         return plugins::make_shared_from_arg_tuples<ExhaustiveSearch>();
     }
 };

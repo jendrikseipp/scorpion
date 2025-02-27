@@ -205,7 +205,7 @@ public:
     }
 
     virtual shared_ptr<IDAstarSearch> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<IDAstarSearch>(
             options.get<shared_ptr<Evaluator>>("eval"),
             options.get<int>("initial_f_limit"),

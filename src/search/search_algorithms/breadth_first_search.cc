@@ -147,7 +147,7 @@ public:
     }
 
     virtual shared_ptr<BreadthFirstSearch> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<BreadthFirstSearch>(
             options.get<bool>("single_plan"),
             options.get<bool>("write_plan"),

@@ -136,8 +136,7 @@ public:
     }
 
     virtual shared_ptr<AdditiveCartesianHeuristic> create_component(
-        const plugins::Options &opts,
-        const utils::Context &) const override {
+        const plugins::Options &opts) const override {
         g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
         return plugins::make_shared_from_arg_tuples<AdditiveCartesianHeuristic>(
             opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),

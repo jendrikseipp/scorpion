@@ -50,7 +50,7 @@ public:
     }
 
     virtual shared_ptr<MaxHeuristic> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         Abstractions abstractions = generate_abstractions(
             options.get<shared_ptr<AbstractTask>>("transform"),
             options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));

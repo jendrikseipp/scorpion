@@ -10,7 +10,7 @@ class AbstractTask;
 struct FactPair;
 
 namespace landmarks {
-class LandmarkGraph;
+class LandmarkNode;
 }
 
 namespace utils {
@@ -85,8 +85,7 @@ class LandmarkDecomposition : public SubtaskGenerator {
        achieved before a given landmark can be made true. */
     std::shared_ptr<AbstractTask> build_domain_abstracted_task(
         const std::shared_ptr<AbstractTask> &parent,
-        const landmarks::LandmarkGraph &landmark_graph,
-        const FactPair &fact) const;
+        const landmarks::LandmarkNode *node) const;
 
 public:
     explicit LandmarkDecomposition(FactOrder order,

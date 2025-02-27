@@ -148,7 +148,7 @@ public:
     }
 
     virtual shared_ptr<ProjectionGenerator> create_component(
-        const plugins::Options &options, const utils::Context &) const override {
+        const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<ProjectionGenerator>(
             options.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns"),
             options.get<bool>("dominance_pruning"),

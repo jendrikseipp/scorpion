@@ -13,7 +13,6 @@
 #include "../cost_saturation/utils.h"
 #include "../plugins/options.h"
 #include "../task_utils/task_properties.h"
-#include "../utils/collections.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/markup.h"
@@ -26,7 +25,6 @@
 #include <iostream>
 #include <limits>
 #include <numeric>
-#include <queue>
 
 using namespace std;
 
@@ -629,9 +627,7 @@ public:
     }
 
     virtual shared_ptr<PatternCollectionGeneratorSystematicSCP>
-    create_component(
-        const plugins::Options &opts,
-        const utils::Context &) const override {
+    create_component(const plugins::Options &opts) const override {
         return plugins::make_shared_from_arg_tuples<PatternCollectionGeneratorSystematicSCP>(
             opts.get<int>("max_pattern_size"),
             opts.get<int>("max_pdb_size"),

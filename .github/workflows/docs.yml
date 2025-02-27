@@ -26,6 +26,7 @@ jobs:
           cd misc/autodoc
           pip install -r requirements.txt
           python3 generate-docs.py
+          cp -r ../../docs .
           mkdocs build
 
       - name: Deploy
