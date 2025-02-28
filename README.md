@@ -154,6 +154,10 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 
 ### New plugin options
 
+- `{cegar/cartesian}(..., transition_representation={store, compute})`:
+  compute transitions on demand instead of storing them
+  ([paper](https://ojs.aaai.org/index.php/ICAPS/article/view/31511), default=`store`).
+
 - `{cegar/cartesian}(..., pick_flawed_abstract_state={batch_min_h, ...})`:
   find all current flaws, then iteratively repair the flaw that's closest to the goal
   ([paper](https://ojs.aaai.org/index.php/ICAPS/article/view/19819), default=`batch_min_h`).
@@ -217,8 +221,7 @@ landmarks:
 
     --evaluator
       "lmc=landmark_cost_partitioning(lm_merged([lm_rhw(), lm_hm(m=1)]),
-      cost_partitioning=suboptimal, greedy=true,
-      reuse_costs=true, scoring_function=max_heuristic_per_stolen_costs)"
+      cost_partitioning=saturated, scoring_function=max_heuristic_per_stolen_costs)"
     --search
       "astar(lmc, lazy_evaluator=lmc)"
 
@@ -231,13 +234,13 @@ Different cost partitioning algorithms for landmark heuristics:
 - Post-hoc optimization:
   `landmark_cost_partitioning(..., cost_partitioning=pho)`
 - Uniform cost partitioning:
-  `landmark_cost_partitioning(..., cost_partitioning=suboptimal, greedy=false, reuse_costs=false)`
-- Opportunistic uniform cost partitioning (part of vanilla Fast Downward):
-  `landmark_cost_partitioning(..., cost_partitioning=suboptimal, greedy=false, reuse_costs=true, scoring_function=min_stolen_costs)`
+  `landmark_cost_partitioning(..., cost_partitioning=uniform)`
+- Opportunistic uniform cost partitioning (also part of vanilla Fast Downward):
+  `landmark_cost_partitioning(..., cost_partitioning=opportunistic_uniform, scoring_function=min_stolen_costs)`
 - Greedy zero-one cost partitioning:
-  `landmark_cost_partitioning(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=false, scoring_function=max_heuristic)`
+  `landmark_cost_partitioning(..., cost_partitioning=greedy_zero_one, scoring_function=max_heuristic)`
 - Saturated cost partitioning:
-  `landmark_cost_partitioning(..., cost_partitioning=suboptimal, greedy=true, reuse_costs=true, scoring_function=max_heuristic_per_stolen_costs)`
+  `landmark_cost_partitioning(..., cost_partitioning=saturated, scoring_function=max_heuristic_per_stolen_costs)`
 
 
 ## New search engines
