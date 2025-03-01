@@ -1,3 +1,4 @@
 mkdocs
+mkdocs-literate-nav
 mkdocs-material
 txt2tags==3.9
