@@ -1,6 +1,43 @@
-site_name: Plugins
-theme: material
+site_name: Scorpion
+nav:
+  - Home: index.md
+  - Documentation: documentation/
+repo_url: https://github.com/jendrikseipp/scorpion/
+theme:
+  name: material
+  #logo: img/driller.svg
+  #favicon: img/favicon.ico
+  language: en
+  #palette:
+  #  primary: deep-orange
+  features:
+    #    - content.action.edit
+    - navigation.indexes
+    - navigation.footer # prev, next buttons
 markdown_extensions:
+  - tables
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tilde
   - toc:
       permalink: "#"
       separator: "_"
+  - attr_list
+plugins:
+  #- mike:
+  #    version_selector: true
+  - literate-nav:
+      nav_file: SUMMARY.md
+#        #      implicit_index: true
+  - search:
+      enabled: true
+#extra:
+#  version:
+#    provider: mike
