@@ -41,11 +41,9 @@ bool Split::combine_with(Split &&other) {
         assert(utils::is_sorted_unique(values));
         assert(utils::is_sorted_unique(other.values));
         vector<int> combined_values;
-        combined_values.reserve(values.size() + other.values.size());
-        set_union(execution::unseq,
-                  values.begin(), values.end(),
+        set_union(values.begin(), values.end(),
                   other.values.begin(), other.values.end(),
-                  combined_values.begin());
+                  back_inserter(combined_values));
         swap(values, combined_values);
         return true;
     } else {
