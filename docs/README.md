@@ -1,17 +1,13 @@
-# Fast Downward Documentation
+# Scorpion Documentation
 
-  -  [Getting started](quick-start.md) provides instructions to get you started
-     as quickly as possible.
-  -  [Planner usage](planner-usage.md) explains more ways of invoking the
-     planner.
-  -  [PDDL support](pddl-support.md) specifies the subset of PDDL that is
-     supported by Fast Downward.
+This website contains the documentation for the Scorpion planner. Since Scorpion is based on [Fast Downward](https://fast-downward.org/), the documentation is mostly the same as the Fast Downward documentation.
+
+  -  The [README](readme.md) shows how to run Scorpion and lists the differences to Fast Downward.
+  -  [PDDL support](pddl-support.md) specifies the subset of PDDL that Scorpion supports.
   -  [Search plugins](search/index.md) documents the different ingredients for the
      search configuration, such as [search algorithms](search/SearchAlgorithm.md) and [heuristics](search/Evaluator.md).
   -  [Syntax for search plugins](search-plugin-syntax.md) defines the syntax for configuring the search
      plugins.
-  -  [IPC planners](ipc-planners.md) explains how to run some planner
-     configurations from IPC 2011 and 2018.
   -  [Exit Codes](exit-codes.md) describes the exit codes as returned by the
      planner.
   -  [Translator output format](translator-output-format.md) documents the

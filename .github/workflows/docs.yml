@@ -27,6 +27,7 @@ jobs:
           pip install -r requirements.txt
           python3 generate-docs.py
           cp -r ../../docs .
+          cp ../../README.md docs/readme.md
           mkdocs build
 
       - name: Deploy
