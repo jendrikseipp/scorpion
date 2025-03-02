@@ -103,8 +103,8 @@ def run_translate(args):
 
 def transform_task(args):
     logging.info("Run task transformation (%s)." % args.transform_task)
-    time_limit = limits.get_time_limit(None, args.overall_time_limit)
-    memory_limit = limits.get_memory_limit(None, args.overall_memory_limit)
+    time_limit = limits.get_time_limit(args.transform_time_limit, args.overall_time_limit)
+    memory_limit = limits.get_memory_limit(args.transform_memory_limit, args.overall_memory_limit)
     options = []
     if args.transform_task_options:
         options = args.transform_task_options.split(",")
