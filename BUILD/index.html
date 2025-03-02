@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="..">
-      
-      
-        <link rel="next" href="../search/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -20,7 +16,7 @@
     
     
       
-        <title>PDDL support - Scorpion</title>
+        <title>BUILD - Scorpion</title>
       
     
     
@@ -65,7 +61,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pddl_support_of_fast_downward" class="md-skip">
+        <a href="#dependencies" class="md-skip">
           Skip to content
         </a>
       
@@ -101,7 +97,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              PDDL support
+              BUILD
             
           </span>
         </div>
@@ -231,29 +227,9 @@
       
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    PDDL support
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../pddl-support/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -262,47 +238,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#general_information" class="md-nav__link">
-    General information
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#limitations" class="md-nav__link">
-    Limitations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bugs" class="md-nav__link">
-    Bugs
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -836,8 +771,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -846,22 +779,89 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#general_information" class="md-nav__link">
-    General information
+  <a href="#dependencies" class="md-nav__link">
+    Dependencies
+  </a>
+  
+    <nav class="md-nav" aria-label="Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mandatory_dependencies" class="md-nav__link">
+    Mandatory Dependencies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional_linear-programming_solvers" class="md-nav__link">
+    Optional: Linear-Programming Solvers
+  </a>
+  
+    <nav class="md-nav" aria-label="Optional: Linear-Programming Solvers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing_cplex" class="md-nav__link">
+    Installing CPLEX
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installing_soplex_on_linuxmacos" class="md-nav__link">
+    Installing SoPlex on Linux/macOS
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional_plan_validator" class="md-nav__link">
+    Optional: Plan Validator
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compiling_the_planner" class="md-nav__link">
+    Compiling the planner
+  </a>
+  
+    <nav class="md-nav" aria-label="Compiling the planner">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#compiling_on_windows" class="md-nav__link">
+    Compiling on Windows
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing_the_build" class="md-nav__link">
+    Testing the build
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#limitations" class="md-nav__link">
-    Limitations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bugs" class="md-nav__link">
-    Bugs
+  <a href="#troubleshooting" class="md-nav__link">
+    Troubleshooting
   </a>
   
 </li>
@@ -884,76 +884,83 @@
   
 
 
-<h1 id="pddl_support_of_fast_downward">PDDL support of Fast Downward<a class="headerlink" href="#pddl_support_of_fast_downward" title="Permanent link">#</a></h1>
-<p>On this page, we collect information regarding the subset of PDDL that
-is supported by Fast Downward. So far, this is not an exhaustive list,
-but we hope that it will become more comprehensive over time. If you
-want to contribute information or have a question, please get in touch!
-(See the contact information on the <a href="https://www.fast-downward.org">home page</a>.)</p>
-<h2 id="general_information">General information<a class="headerlink" href="#general_information" title="Permanent link">#</a></h2>
-<p>Fast Downward aims to support PDDL 2.2 level 1 plus the <code>:action-costs</code>
-requirement from PDDL 3.1. For a definition of the various "levels" of
-PDDL, see p. 63 the paper "PDDL2.1: An Extension to PDDL for Expressing
-Temporal Planning Domains" by Maria Fox and Derek Long (JAIR 20:61-124,
-2003).</p>
-<p>This means that the following major parts of PDDL are unsupported:</p>
+  <h1>BUILD</h1>
+
+<h2 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">#</a></h2>
+<h3 id="mandatory_dependencies">Mandatory Dependencies<a class="headerlink" href="#mandatory_dependencies" title="Permanent link">#</a></h3>
+<p><strong>Linux/MacOS:</strong> you need a C++ compiler, CMake and GNU make.
+  To run the planner, you also need Python 3.</p>
+<p>On Debian/Ubuntu, the following should install all these dependencies:
+  <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo apt install cmake g++ make python3
+</span></code></pre></div></p>
+<p><strong>Windows:</strong> install <a href="https://visualstudio.microsoft.com/de/vs/older-downloads/">Visual Studio &gt;= 2017</a>,
+<a href="https://www.python.org/downloads/windows/">Python</a>, and <a href="http://www.cmake.org/download/">CMake</a>.
+During the installation of Visual Studio, the C++ compiler is not installed by default, but the IDE prompts you to install it when you create a new C++ project.</p>
+<h3 id="optional_linear-programming_solvers">Optional: Linear-Programming Solvers<a class="headerlink" href="#optional_linear-programming_solvers" title="Permanent link">#</a></h3>
+<p>Some planner configurations depend on an LP or MIP solver. We support CPLEX (commercial, <a href="http://ibm.com/academic">free academic license</a>) and SoPlex (Apache License, no MIP support). You can install one or both solvers without causing conflicts.</p>
+<p>Once LP solvers are installed and the environment variables <code>cplex_DIR</code> and/or <code>soplex_DIR</code> are set up correctly, Fast Downward automatically includes each solver detected on the system in the build.</p>
+<h4 id="installing_cplex">Installing CPLEX<a class="headerlink" href="#installing_cplex" title="Permanent link">#</a></h4>
+<p>Obtain CPLEX and follow the guided installation. See <a href="#troubleshooting">troubleshooting</a> if you have problems accessing the installer.
+On Windows, install CPLEX into a directory without spaces.</p>
+<p>After the installation, set the environment variable <code>cplex_DIR</code> to the subdirectory <code>/cplex</code> of the installation.
+For example on Ubuntu:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">cplex_DIR</span><span class="o">=</span>/opt/ibm/ILOG/CPLEX_Studio2211/cplex
+</span></code></pre></div>
+Note that on Windows, setting up the environment variable might require using <code>/</code> instead of the more Windows-common <code>\</code>.</p>
+<h4 id="installing_soplex_on_linuxmacos">Installing SoPlex on Linux/macOS<a class="headerlink" href="#installing_soplex_on_linuxmacos" title="Permanent link">#</a></h4>
+<p><strong>Important:</strong>  The GNU Multiple Precision library (GMP) is critical for the performance of SoPlex but the build does not complain if it is not present.
+Make sure that the build uses the library (check the output of CMake for <code>Found GMP</code>).</p>
+<p>We require at least SoPlex 7.1.0, which can be built from source as follows (adapt the paths if you install a different version or want to use a different location):
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>libgmp3-dev
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>wget<span class="w"> </span>https://github.com/scipopt/soplex/archive/refs/tags/release-710.tar.gz<span class="w"> </span>-O<span class="w"> </span>-<span class="w"> </span><span class="p">|</span><span class="w"> </span>tar<span class="w"> </span>-xz
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>cmake<span class="w"> </span>-S<span class="w"> </span>soplex-release-710<span class="w"> </span>-B<span class="w"> </span>build
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>cmake<span class="w"> </span>--build<span class="w"> </span>build
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">soplex_DIR</span><span class="o">=</span>/opt/soplex-7.1.0
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>cmake<span class="w"> </span>--install<span class="w"> </span>build<span class="w"> </span>--prefix<span class="w"> </span><span class="nv">$soplex_DIR</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>rm<span class="w"> </span>-rf<span class="w"> </span>soplex-release-710<span class="w"> </span>build
+</span></code></pre></div></p>
+<p>After installation, permanently set the environment variable <code>soplex_DIR</code> to the value you used during the installation.</p>
+<h3 id="optional_plan_validator">Optional: Plan Validator<a class="headerlink" href="#optional_plan_validator" title="Permanent link">#</a></h3>
+<p>You can validate the found plans by passing <code>--validate</code> (implied by <code>--debug</code>) to the planner if the <a href="https://github.com/KCL-Planning/VAL">VAL plan validation software</a>
+is installed on your system and the binary <code>validate</code> is on the <code>PATH</code>.</p>
+<p><strong>Note:</strong> VAL has a <a href="https://github.com/KCL-Planning/VAL/issues/48">bug</a> that prevents it from correctly handling the IPC 18 data network domain.
+You can install an older version, e.g., under Debian/Ubuntu:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>g++<span class="w"> </span>make<span class="w"> </span>flex<span class="w"> </span>bison
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/KCL-Planning/VAL.git
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">cd</span><span class="w"> </span>VAL
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>git<span class="w"> </span>checkout<span class="w"> </span>a5565396007eee73ac36527fbf904142b3077c74
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>make<span class="w"> </span>clean<span class="w">  </span><span class="c1"># Remove old binaries.</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/-Werror //g&#39;</span><span class="w"> </span>Makefile<span class="w">  </span><span class="c1"># Ignore warnings.</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>make
+</span></code></pre></div>
+<p>Don't forget to add the resulting <code>validate</code> binary to your <code>PATH</code>.</p>
+<h2 id="compiling_the_planner">Compiling the planner<a class="headerlink" href="#compiling_the_planner" title="Permanent link">#</a></h2>
+<p>To build the planner, from the top-level directory run:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>./build.py
+</span></code></pre></div>
+<p>This creates the default build <code>release</code> in the directory <code>builds</code>. For information on alternative builds (e.g. <code>debug</code>) and further options, call
+<code>./build.py --help</code>. <a href="https://www.fast-downward.org/ForDevelopers/CMake">Our website</a> has details on how to set up development builds.</p>
+<h3 id="compiling_on_windows">Compiling on Windows<a class="headerlink" href="#compiling_on_windows" title="Permanent link">#</a></h3>
+<p>Windows does not interpret the shebang in Python files, so you have to call <code>build.py</code> as <code>python3 build.py</code> (make sure <code>python3</code> is on your <code>PATH</code>). Also note that options are passed without <code>--</code>, e.g., <code>python3 build.py build=debug</code>.</p>
+<p>Note that compiling from the terminal is only possible with the right environment. The easiest way to get such an environment is to use the <code>Developer PowerShell for VS 2019</code> or <code>Developer PowerShell</code>.</p>
+<p>Alternatively, you can <a href="https://www.fast-downward.org/ForDevelopers/CMake#Custom_Builds">create a Visual Studio Project</a>, open it in Visual Studio and build from there. Visual Studio creates its binary files in subdirectories of the project that our driver script currently does not recognize. If you build with Visual Studio, you have to run the individual components of the planner yourself.</p>
+<h2 id="testing_the_build">Testing the build<a class="headerlink" href="#testing_the_build" title="Permanent link">#</a></h2>
+<p>To test your build use:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./fast-downward.py<span class="w"> </span>misc/tests/benchmarks/miconic/s1-0.pddl<span class="w"> </span>--search<span class="w"> </span><span class="s2">&quot;astar(lmcut())&quot;</span>
+</span></code></pre></div>
+<p>To test the LP support use:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>./fast-downward.py<span class="w"> </span>misc/tests/benchmarks/miconic/s1-0.pddl<span class="w"> </span>--search<span class="w"> </span><span class="s2">&quot;astar(operatorcounting([lmcut_constraints()]))&quot;</span>
+</span></code></pre></div></p>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">#</a></h2>
 <ul>
-<li>All aspects of numerical planning. These are introduced at level 2
-    of PDDL. Exception: some numerical features are part of the
-    <code>:action-costs</code> requirement of PDDL 3.1, and these are supported by the
-    planner.</li>
-<li>All aspects of temporal planning. These are introduced at level 3 of
-    PDDL and above.</li>
-<li>Soft goals and preferences. These are introduced in PDDL 3.0.</li>
-<li>Object fluents. These are introduced in PDDL 3.1.</li>
+<li>If you changed the build environment, delete the <code>builds</code> directory and rebuild.</li>
+<li><strong>Windows:</strong> If you cannot execute the Fast Downward binary in a new command line, then it might be unable to find a dynamically linked library.
+  Use <code>dumpbin /dependents PATH\TO\DOWNWARD\BINARY</code> to list all required libraries and ensure that they can be found in your <code>PATH</code> variable.</li>
+<li><strong>CPLEX:</strong> After logging in at the IBM website, you find the Ilog studio software under Technology -&gt; Data Science. Choose the right version and switch to HTTP download unless you have the IBM download manager installed. If you have problems using their website with Firefox, try Chrome instead. Execute the downloaded binary and follow the guided installation.</li>
+<li><strong>CPLEX:</strong> If you get warnings about unresolved references with CPLEX, visit their <a href="http://www-01.ibm.com/support/docview.wss?uid=swg21399926">help pages</a>.</li>
+<li><strong>MacOS:</strong> If your compiler doesn't find flex or bison when building VAL, your include directories might be in a non-standard location. In this case you probably have to specify where to look for includes and libraries in VAL's <br />
+  Makefile (probably <code>/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr</code>).</li>
 </ul>
-<p>Expressed positively, this means that the following features of PDDL are
-supported beyond basic STRIPS, with some limitations mentioned below:</p>
-<ul>
-<li>all ADL features such as quantified and conditional effects and
-    negation, disjunction and quantification in conditions</li>
-<li>axioms and derived predicates (introduced in PDDL 2.2)</li>
-<li>action costs (introduced in PDDL 3.1)</li>
-</ul>
-<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">#</a></h2>
-<ul>
-<li><strong>PDDL types:</strong> <code>(either ...)</code> types are not supported</li>
-<li><strong>conditional effects:</strong> Not all heuristics support conditional
-    effects. See <a href="../search/Evaluator/">Evaluator</a> for details.
-    Also, as of this writing, support for conditional effects is still
-    somewhat buggy/incomplete. Some constructs lead to translator
-    crashes. This is especially true for operators that have multiple
-    conditional effects affecting the same variable, or several
-    variables that the translator groups into a single finite-domain
-    variable.</li>
-<li><strong>axioms:</strong> Not all heuristics support axioms. See
-    <a href="../search/Evaluator/">Evaluator</a> for details.</li>
-<li><strong>universal conditions:</strong> Universal conditions in preconditions,
-    effect conditions and the goal are internally compiled into axioms
-    by the planner. Therefore, heuristics that do not support axioms
-    (see previous point) do not support universal conditions either.</li>
-<li><strong>action costs:</strong> Action costs must be non-negative integers (i.e.,
-    not fractional), and each action may contain at most one effect
-    affecting <code>(total-cost)</code>, which may not be part of conditional effects.
-    These are the same restrictions that were in use for IPC 2008 and IPC 2011.</li>
-</ul>
-<p>These limitations are somewhat likely to be lifted in the future, but progress
-is slow.</p>
-<h2 id="bugs">Bugs<a class="headerlink" href="#bugs" title="Permanent link">#</a></h2>
-<p>Some features are supported in theory, but currently affected by bugs.
-In addition to the issues with conditional effects mentioned above which
-are somewhere between a bug and a missing feature, we are currently
-aware of the following bugs:</p>
-<ul>
-<li><a href="http://issues.fast-downward.org/issue215">http://issues.fast-downward.org/issue215</a>: incorrect atoms
-    (undeclared predicate, wrong arity, unknown object) and assignments
-    (undeclared functions, wrong arity, referring to unknown objects, or
-    unsupported value) may cause errors that are not correctly reported.</li>
-</ul>
-<p>The above list might be outdated by the time you are reading this.
-Follow the links to the issue tracker to be sure. If the list is not up
-to date, it would be great if you could send us a note so that we can
-remedy this. (See contact information on the <a href="https://www.fast-downward.org">home page</a>.)</p>
 
 
 
@@ -970,44 +977,6 @@ remedy this. (See contact information on the <a href="https://www.fast-downward.
       
         <footer class="md-footer">
   
-    
-      
-      <nav class="md-footer__inner md-grid" aria-label="Footer" >
-        
-          
-          <a href=".." class="md-footer__link md-footer__link--prev" aria-label="Previous: ">
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-            </div>
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              <div class="md-ellipsis">
-                
-              </div>
-            </div>
-          </a>
-        
-        
-          
-          <a href="../search/" class="md-footer__link md-footer__link--next" aria-label="Next: Search Plugins">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Search Plugins
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
     
   
   <div class="md-footer-meta md-typeset">
