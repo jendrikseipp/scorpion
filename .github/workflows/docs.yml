@@ -28,6 +28,7 @@ jobs:
           python3 generate-docs.py
           cp -r ../../docs .
           cp ../../README.md docs/readme.md
+          cp ../../BUILD.md docs/BUILD.md
           mkdocs build
 
       - name: Deploy

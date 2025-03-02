@@ -52,9 +52,8 @@ and see the available options with
     ./fast-downward.py --search -- --help  # search component
 
 For more details (including build instructions for macOS and Windows), see the
-documentation about [compiling](BUILD.md) and
-[running](https://www.fast-downward.org/PlannerUsage) the planner. The [plugin
-documentation](https://jendrikseipp.github.io/scorpion) shows which plugins are
+documentation about [compiling](BUILD.md) the planner. The [plugin
+documentation](https://jendrikseipp.github.io/scorpion/search) shows which plugins are
 available (heuristics, search algorithms, etc.) and how to use them.
 
 
@@ -204,7 +203,7 @@ You can also compute the maximum over abstraction heuristics:
 - `maximize([cartesian()])`
 
 The plugin documentation shows all options for [cost partitioning
-heuristics](https://jendrikseipp.github.io/scorpion/Evaluator/#cost_partitioning_heuristics).
+heuristics](https://jendrikseipp.github.io/scorpion/search/Evaluator/#cost_partitioning_heuristics).
 
 ## New pattern collection generators
 
