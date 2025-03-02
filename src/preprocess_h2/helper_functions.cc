@@ -203,6 +203,7 @@ void generate_cpp_input(const vector<Variable *> &ordered_vars,
     outfile.close();
 }
 void generate_unsolvable_cpp_input() {
+    cout << "Unsolvable task in preprocessor" << endl;
     ofstream outfile;
     outfile.open("output.sas", ios::out);
     outfile << "begin_version" << endl;

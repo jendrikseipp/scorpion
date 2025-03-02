@@ -17,13 +17,11 @@
 #include <iostream>
 using namespace std;
 
-int main(int argc, const char **argv) {
+void preprocess(int argc, const char **argv) {
     int h2_mutex_time = 300; // 5 minutes to compute mutexes by default
     bool include_augmented_preconditions = false;
     bool expensive_statistics = false;
     bool disable_bw_h2 = false;
-
-    clock_t start_time = clock();
 
     bool metric;
     vector<Variable *> variables;
@@ -99,11 +97,8 @@ int main(int argc, const char **argv) {
         if (!compute_h2_mutexes(ordering, operators, axioms,
                                 mutexes, initial_state, goals,
                                 h2_mutex_time, disable_bw_h2)) {
-            // TODO: don't duplicate the code to return an unsolvable task, log and exit here
-            cout << "Unsolvable task in preprocessor" << endl;
             generate_unsolvable_cpp_input();
-            cout << "done" << endl;
-            return 0;
+            return;
         }
 
         //Update the causal graph and remove unneccessary variables
@@ -136,11 +131,8 @@ int main(int argc, const char **argv) {
         new_goals.swap(goals);
         cout << "Change id of initial state" << endl;
         if (initial_state.remove_unreachable_facts()) {
-            // TODO: don't duplicate the code to return an unsolvable task, log and exit here
-            cout << "Unsolvable task in preprocessor" << endl;
             generate_unsolvable_cpp_input();
-            cout << "done" << endl;
-            return 0;
+            return;
         }
 
         cout << "Remove unreachable facts from variables: " << ordering.size() << endl;
@@ -242,16 +234,19 @@ int main(int argc, const char **argv) {
 
     cout << "Writing output..." << endl;
     if (ordering.empty()) {
-        cout << "Unsolvable task in preprocessor" << endl;
         generate_unsolvable_cpp_input();
     } else {
         generate_cpp_input(
             ordering, metric, mutexes, initial_state, goals, operators, axioms);
     }
+}
 
+int main(int argc, const char **argv) {
+    clock_t start_time = clock();
+    preprocess(argc, argv);
     clock_t end_time = clock();
     double cpu_time_used = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC;
     cout << "Preprocessor time: " << cpu_time_used << "s" << endl;
-
     cout << "done" << endl;
+    return 0;
 }
