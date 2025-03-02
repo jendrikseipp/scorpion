@@ -173,12 +173,15 @@ def _split_planner_args(parser, args):
     args.filenames, options = _split_off_filenames(args.planner_args)
 
     args.translate_options = []
+    args.transform_options = []
     args.search_options = []
 
     curr_options = args.search_options
     for option in options:
         if option == "--translate-options":
             curr_options = args.translate_options
+        elif option == "--transform-options":
+            curr_options = args.transform_options
         elif option == "--search-options":
             curr_options = args.search_options
         else:
@@ -387,6 +390,9 @@ def parse_args():
         "--translate", action="store_true",
         help="run translator component")
     components.add_argument(
+        "--transform-task",
+        help='path to or name of external program that transforms output.sas (e.g. preprocess-h2)')
+    components.add_argument(
         "--search", action="store_true",
         help="run search component")
 
@@ -413,12 +419,6 @@ def parse_args():
     driver_other.add_argument(
         "--debug", action="store_true",
         help="alias for --build=debug --validate")
-    driver_other.add_argument(
-        "--transform-task",
-        help='path to or name of external program that transforms output.sas (e.g. h2-mutexes)')
-    driver_other.add_argument(
-        "--transform-task-options",
-        help='comma-separated list of key-value option pairs for task transformation (e.g. h2_time_limit,10)')
     driver_other.add_argument(
         "--validate", action="store_true",
         help='validate plans (implied by --debug); needs "validate" (VAL) on PATH')

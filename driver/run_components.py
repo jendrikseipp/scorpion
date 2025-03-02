@@ -105,12 +105,6 @@ def transform_task(args):
     logging.info("Run task transformation (%s)." % args.transform_task)
     time_limit = limits.get_time_limit(args.transform_time_limit, args.overall_time_limit)
     memory_limit = limits.get_memory_limit(args.transform_memory_limit, args.overall_memory_limit)
-    options = []
-    if args.transform_task_options:
-        options = args.transform_task_options.split(",")
-        for i, option in enumerate(options):
-            if i % 2 == 0:
-                options[i] = "--" + option
 
     if not shutil.which(args.transform_task):
         preprocessor_name = "preprocess-h2"
@@ -122,7 +116,7 @@ def transform_task(args):
     try:
         call.check_call(
             "transform-task",
-            [args.transform_task] + options,
+            [args.transform_task] + args.transform_options,
             stdin=args.search_input,
             time_limit=time_limit,
             memory_limit=memory_limit)
