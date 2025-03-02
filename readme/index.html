@@ -1,0 +1,1426 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.3">
+    
+    
+      
+        <title>Scorpion - Scorpion</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.79e020e9.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#scorpion" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Scorpion" class="md-header__button md-logo" aria-label="Scorpion" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Scorpion
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Scorpion
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jendrikseipp/scorpion/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Scorpion" class="md-nav__button md-logo" aria-label="Scorpion" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Scorpion
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jendrikseipp/scorpion/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Getting started
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../planner-usage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Planner usage
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pddl-support/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PDDL support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../search/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Search plugins
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Search plugins
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/AbstractTask/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AbstractTask
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/AbstractionGenerator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AbstractionGenerator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/ConstraintGenerator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ConstraintGenerator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/Evaluator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Evaluator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/LabelReduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LabelReduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/LandmarkFactory/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LandmarkFactory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/MergeScoringFunction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MergeScoringFunction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/MergeSelector/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MergeSelector
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/MergeStrategy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MergeStrategy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/MergeTree/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MergeTree
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/OpenList/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OpenList
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/OrderGenerator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OrderGenerator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/PatternCollectionGenerator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PatternCollectionGenerator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/PatternGenerator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PatternGenerator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/PruningMethod/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PruningMethod
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/SearchAlgorithm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    SearchAlgorithm
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/ShrinkStrategy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ShrinkStrategy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/SubtaskGenerator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    SubtaskGenerator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search-plugin-syntax/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sytax for search plugins
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ipc-planners/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    IPC planners
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exit-codes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exit codes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../translator-output-format/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Translator output format
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#instructions" class="md-nav__link">
+    Instructions
+  </a>
+  
+    <nav class="md-nav" aria-label="Instructions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#apptainer_image" class="md-nav__link">
+    Apptainer image
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual_compilation" class="md-nav__link">
+    Manual compilation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended_configurations" class="md-nav__link">
+    Recommended configurations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ipc_versions" class="md-nav__link">
+    IPC versions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#differences_between_scorpion_and_fast_downward" class="md-nav__link">
+    Differences between Scorpion and Fast Downward
+  </a>
+  
+    <nav class="md-nav" aria-label="Differences between Scorpion and Fast Downward">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new_translator_options" class="md-nav__link">
+    New translator options
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new_plugin_options" class="md-nav__link">
+    New plugin options
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new_cost_partitioning_algorithms_for_abstraction_heuristics" class="md-nav__link">
+    New cost partitioning algorithms for abstraction heuristics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new_pattern_collection_generators" class="md-nav__link">
+    New pattern collection generators
+  </a>
+  
+    <nav class="md-nav" aria-label="New pattern collection generators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new_cost_partitioning_algorithms_for_landmark_heuristics" class="md-nav__link">
+    New cost partitioning algorithms for landmark heuristics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new_search_engines" class="md-nav__link">
+    New search engines
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scientific_experiments" class="md-nav__link">
+    Scientific experiments
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported_software_versions" class="md-nav__link">
+    Supported software versions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build_instructions" class="md-nav__link">
+    Build instructions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributors" class="md-nav__link">
+    Contributors
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#history" class="md-nav__link">
+    History
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#license" class="md-nav__link">
+    License
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="scorpion">Scorpion<a class="headerlink" href="#scorpion" title="Permanent link">#</a></h1>
+<p>Scorpion is a classical planning system that extends <a href="https://www.fast-downward.org">Fast
+Downward</a>. The main extensions are:</p>
+<ul>
+<li>novel state-of-the-art algorithms for optimal classical planning</li>
+<li>additional search algorithms</li>
+<li>several new plugin options and utilities</li>
+</ul>
+<p>See <a href="#differences-between-scorpion-and-fast-downward">below</a> for a detailed list
+of extensions. We regularly port the latest changes from Fast Downward to
+Scorpion and also integrate some features from Scorpion back into Fast Downward.</p>
+<p><strong>Citing Scorpion</strong>:</br>
+Jendrik Seipp, Thomas Keller and Malte Helmert.</br>
+<a href="https://www.jair.org/index.php/jair/article/view/11673">Saturated Cost Partitioning for Optimal Classical Planning</a>.</br>
+Journal of Artificial Intelligence Research 67, pp. 129-167. 2020.</p>
+<h2 id="instructions">Instructions<a class="headerlink" href="#instructions" title="Permanent link">#</a></h2>
+<h3 id="apptainer_image">Apptainer image<a class="headerlink" href="#apptainer_image" title="Permanent link">#</a></h3>
+<p>To simplify the installation process, we provide an executable
+<a href="https://apptainer.org/">Apptainer</a> container (formerly known as Singularity).
+It accepts the same arguments as the <code>fast-downward.py</code> script (see below).</p>
+<div class="language-text highlight"><pre><span></span><code># Download the image,
+apptainer pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
+
+# or build it yourself.
+apptainer build scorpion.sif Apptainer
+
+# Then run the recommended configuration (for solving STRIPS tasks optimally).
+./scorpion.sif --transform-task preprocess-h2 --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
+</code></pre></div>
+<h3 id="manual_compilation">Manual compilation<a class="headerlink" href="#manual_compilation" title="Permanent link">#</a></h3>
+<p>Install the dependencies (the table below lists which versions are tested):</p>
+<div class="language-text highlight"><pre><span></span><code>sudo apt install cmake g++ git make python3
+</code></pre></div>
+<p>For plugins based on linear programming (e.g., <code>ocp()</code>, <code>pho()</code>) you need
+to <a href="BUILD.md">add an LP solver</a>. Then compile the planner with</p>
+<div class="language-text highlight"><pre><span></span><code>./build.py
+</code></pre></div>
+<p>and see the available options with</p>
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --help  # driver
+./fast-downward.py --search -- --help  # search component
+</code></pre></div>
+<p>For more details (including build instructions for macOS and Windows), see the
+documentation about <a href="BUILD.md">compiling</a> and
+<a href="https://www.fast-downward.org/PlannerUsage">running</a> the planner. The <a href="https://jendrikseipp.github.io/scorpion">plugin
+documentation</a> shows which plugins are
+available (heuristics, search algorithms, etc.) and how to use them.</p>
+<h3 id="recommended_configurations">Recommended configurations<a class="headerlink" href="#recommended_configurations" title="Permanent link">#</a></h3>
+<p>In case you want to <strong>solve tasks quickly</strong> and do <strong>not require optimality</strong>,
+we recommend using the first iteration of
+<a href="https://www.jair.org/index.php/jair/article/view/10667">LAMA</a> with an added
+<a href="https://ojs.aaai.org/index.php/AAAI/article/view/9036/">type-based open list</a>:</p>
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py \
+  --transform-task preprocess-h2 \
+  [DOMAIN_FILE] PROBLEM_FILE \
+  --search &quot;let(hlm, landmark_sum(lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one)),
+    let(hff, ff(transform=adapt_costs(one)),
+    lazy(alt([single(hff), single(hff, pref_only=true), single(hlm), single(hlm, pref_only=true),
+    type_based([hff, g()])], boost=1000), preferred=[hff, hlm], cost_type=one)))&quot;
+</code></pre></div>
+<p>For solving <strong>STRIPS tasks optimally</strong>, we recommend using the <code>--alias scorpion</code> shortcut</p>
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
+</code></pre></div>
+<p>which is equivalent to</p>
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py \
+  --transform-task preprocess-h2 \
+  [DOMAIN_FILE] PROBLEM_FILE \
+  --search &quot;astar(scp_online([
+      projections(sys_scp(max_time=100, max_time_per_restart=10)),
+      cartesian()],
+      saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
+      pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))&quot;
+</code></pre></div>
+<p>The <code>preprocess-h2</code> call prunes irrelevant operators in a preprocessing
+step. The search configuration uses <a href="https://ojs.aaai.org/index.php/SOCS/article/view/18535">partial order
+reduction</a> and
+maximizes over
+<a href="https://www.jair.org/index.php/jair/article/view/11673">diverse</a>,
+<a href="https://ojs.aaai.org/index.php/ICAPS/article/view/3503">subset-saturated</a>
+cost partitioning heuristics computed
+<a href="https://ojs.aaai.org/index.php/ICAPS/article/view/15976/">online</a> during
+the search. The underlying abstractions are <a href="https://www.ijcai.org/proceedings/2019/780">Sys-SCP pattern
+databases</a> and <a href="https://jair.org/index.php/jair/article/view/11217">Cartesian
+abstractions</a>.</p>
+<p>(In <a href="https://lab.readthedocs.io/">Downward Lab</a> you can use
+<code>add_algorithm(name="scorpion", repo="path/to/repo", rev="scorpion",
+component_options=[], driver_options=["--transform-task", "preprocess-h2",
+"--alias", "scorpion"]</code> to run the recommended Scorpion configuration.)</p>
+<p>For solving <strong>tasks with conditional effects optimally</strong>, we recommend using</p>
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py \
+  --transform-task preprocess-h2 \
+  [DOMAIN_FILE] PROBLEM_FILE \
+  --search &quot;astar(scp_online([projections(sys_scp(
+        max_time=100, max_time_per_restart=10, max_pdb_size=2M, max_collection_size=20M,
+        pattern_type=interesting_non_negative, create_complete_transition_system=true),
+      create_complete_transition_system=true)],
+    saturator=perimstar, max_time=100, max_size=1M, interval=10K, orders=greedy_orders()))&quot;
+</code></pre></div>
+<h3 id="ipc_versions">IPC versions<a class="headerlink" href="#ipc_versions" title="Permanent link">#</a></h3>
+<p>If you prefer to run the Scorpion versions from the IPC 2018 or 2023 (which are
+based on an older Fast Downward version and use different abstractions), we
+recommend using the Apptainer images from the
+<a href="https://bitbucket.org/ipc2018-classical/team44/src/ipc-2018-seq-opt/">Scorpion 2018</a> or
+<a href="https://github.com/ipc2023-classical/planner25">Scorpion 2023</a> repos.</p>
+<h2 id="differences_between_scorpion_and_fast_downward">Differences between Scorpion and Fast Downward<a class="headerlink" href="#differences_between_scorpion_and_fast_downward" title="Permanent link">#</a></h2>
+<p>Diff between the latest merged version of Fast Downward and Scorpion:
+https://github.com/jendrikseipp/scorpion/compare/main...scorpion</p>
+<ul>
+<li>Scorpion comes with the
+  <a href="https://ojs.aaai.org/index.php/ICAPS/article/view/13708">h²-preprocessor</a>
+  by Vidal Alcázar and Álvaro Torralba that prunes irrelevant operators.
+  Pass <code>--transform-task preprocess-h2</code> to use it.</li>
+<li>The <code>--transform-task</code> command allows you to run arbitrary preprocessing
+  commands that transform the SAS+ output from the translator before
+  passing it to the search.</li>
+<li>Scorpion uses <a href="https://ojs.aaai.org/index.php/ICAPS/article/view/6667">incremental search for Cartesian abstraction
+  refinement</a>.</li>
+<li>Scorpion uses a
+  <a href="https://github.com/greg7mdp/parallel-hashmap">phmap::flat_hash_set</a> to check
+  for duplicate states, which often drastically reduces the peak memory usage,
+  compared to Fast Downward's <code>IntHashSet</code>.</li>
+<li>If <a href="https://ccache.dev/">ccache</a> is installed (recommended), Scorpion
+  uses it to cache compilation files.</li>
+</ul>
+<h3 id="new_translator_options">New translator options<a class="headerlink" href="#new_translator_options" title="Permanent link">#</a></h3>
+<ul>
+<li>Use <code>--dump-predicates</code> and <code>--dump-static-atoms</code> to write files with
+  information that's useful for learning domain control knowledge.</li>
+</ul>
+<h3 id="new_plugin_options">New plugin options<a class="headerlink" href="#new_plugin_options" title="Permanent link">#</a></h3>
+<ul>
+<li>
+<p><code>{cegar/cartesian}(..., transition_representation={store, compute})</code>:
+  compute transitions on demand instead of storing them
+  (<a href="https://ojs.aaai.org/index.php/ICAPS/article/view/31511">paper</a>, default=<code>store</code>).</p>
+</li>
+<li>
+<p><code>{cegar/cartesian}(..., pick_flawed_abstract_state={batch_min_h, ...})</code>:
+  find all current flaws, then iteratively repair the flaw that's closest to the goal
+  (<a href="https://ojs.aaai.org/index.php/ICAPS/article/view/19819">paper</a>, default=<code>batch_min_h</code>).</p>
+</li>
+<li>
+<p><code>{cegar/cartesian}(..., pick_split={max_cover, ...}, tiebreak_split={max_refined, ...})</code>:
+  smarter strategies for splitting a flawed abstract state
+  (<a href="https://ojs.aaai.org/index.php/ICAPS/article/view/19819">paper</a>, default=<code>max_cover</code>
+  and <code>max_refined</code> for tiebreaking).</p>
+</li>
+<li>
+<p><code>{cegar,cartesian}(..., dot_graph_verbosity={silent, write_to_console, write_to_file})</code>:
+  write intermediate abstractions as Graphviz dot files to stdout or to files (default=<code>silent</code>).</p>
+</li>
+<li>
+<p><code>systematic(..., pattern_type=interesting_general)</code>: compute interesting
+  patterns for general cost partitioning.</p>
+</li>
+</ul>
+<h3 id="new_cost_partitioning_algorithms_for_abstraction_heuristics">New cost partitioning algorithms for abstraction heuristics<a class="headerlink" href="#new_cost_partitioning_algorithms_for_abstraction_heuristics" title="Permanent link">#</a></h3>
+<p>We use Cartesian abstractions in the example configurations below
+(<code>[cartesian()]</code>). You can also use pattern database heuristics, e.g.,
+<code>[projections(systematic(2))]</code>, or mix abstractions, e.g.,
+<code>[projections(systematic(3)), cartesian()]</code>. Some of the algorithms below
+are also part of vanilla Fast Downward, but are only implemented for PDB
+heuristics.</p>
+<ul>
+<li>Optimal cost partitioning:
+  <code>ocp([cartesian()])</code></li>
+<li>Canonical heuristic:
+  <code>canonical_heuristic([cartesian()])</code></li>
+<li>Uniform cost partitioning:
+  <code>ucp([cartesian()], opportunistic=false)</code></li>
+<li>Opportunistic uniform cost partitioning:
+  <code>ucp([cartesian()], ..., opportunistic=true)</code></li>
+<li>Greedy zero-one cost partitioning:
+  <code>gzocp([cartesian()], ...)</code></li>
+<li>Saturated cost partitioning:
+  <code>scp([cartesian()], ...)</code> (offline), <code>scp_online([cartesian()], ...)</code> (online)</li>
+<li>(Saturated) post-hoc optimization:
+  <code>pho([cartesian()], ..., saturated={false,true})</code> (offline),
+  <code>operatorcounting([pho_abstraction_constraints([cartesian()], saturated={false,true})])</code> (online)</li>
+</ul>
+<p>You can also compute the maximum over abstraction heuristics:</p>
+<ul>
+<li><code>maximize([cartesian()])</code></li>
+</ul>
+<p>The plugin documentation shows all options for <a href="https://jendrikseipp.github.io/scorpion/Evaluator/#cost_partitioning_heuristics">cost partitioning
+heuristics</a>.</p>
+<h2 id="new_pattern_collection_generators">New pattern collection generators<a class="headerlink" href="#new_pattern_collection_generators" title="Permanent link">#</a></h2>
+<ul>
+<li>Systematic patterns with size limits:
+  <code>sys_scp(max_pattern_size=X, max_pdb_size=Y, max_collection_size=Z, ..., saturate=false)</code></li>
+<li>Sys-SCP patterns:
+  <code>sys_scp(...)</code></li>
+</ul>
+<h3 id="new_cost_partitioning_algorithms_for_landmark_heuristics">New cost partitioning algorithms for landmark heuristics<a class="headerlink" href="#new_cost_partitioning_algorithms_for_landmark_heuristics" title="Permanent link">#</a></h3>
+<p>Example using A* search and saturated cost partitioning over BJOLP
+landmarks:</p>
+<div class="language-text highlight"><pre><span></span><code>--evaluator
+  &quot;lmc=landmark_cost_partitioning(lm_merged([lm_rhw(), lm_hm(m=1)]),
+  cost_partitioning=saturated, scoring_function=max_heuristic_per_stolen_costs)&quot;
+--search
+  &quot;astar(lmc, lazy_evaluator=lmc)&quot;
+</code></pre></div>
+<p>Different cost partitioning algorithms for landmark heuristics:</p>
+<ul>
+<li>Optimal cost partitioning (part of vanilla Fast Downward):
+  <code>landmark_cost_partitioning(..., cost_partitioning=optimal)</code></li>
+<li>Canonical heuristic:
+  <code>landmark_cost_partitioning(..., cost_partitioning=canonical)</code></li>
+<li>Post-hoc optimization:
+  <code>landmark_cost_partitioning(..., cost_partitioning=pho)</code></li>
+<li>Uniform cost partitioning:
+  <code>landmark_cost_partitioning(..., cost_partitioning=uniform)</code></li>
+<li>Opportunistic uniform cost partitioning (also part of vanilla Fast Downward):
+  <code>landmark_cost_partitioning(..., cost_partitioning=opportunistic_uniform, scoring_function=min_stolen_costs)</code></li>
+<li>Greedy zero-one cost partitioning:
+  <code>landmark_cost_partitioning(..., cost_partitioning=greedy_zero_one, scoring_function=max_heuristic)</code></li>
+<li>Saturated cost partitioning:
+  <code>landmark_cost_partitioning(..., cost_partitioning=saturated, scoring_function=max_heuristic_per_stolen_costs)</code></li>
+</ul>
+<h2 id="new_search_engines">New search engines<a class="headerlink" href="#new_search_engines" title="Permanent link">#</a></h2>
+<ul>
+<li>Breadth-first search (without overhead of the more general <code>eager()</code> search):
+  <code>brfs()</code></li>
+<li>Depth-first search:
+  <code>dfs()</code></li>
+<li>Exhaustive search (useful for dumping the reachable state space of small input tasks):
+  <code>dump_reachable_search_space()</code></li>
+<li>IDA* search:
+  <code>idastar(cegar(cache_estimates=false))</code></li>
+<li>Iterative width search:
+  <code>iw(width=2)</code></li>
+</ul>
+<hr />
+<p><img src="misc/images/fast-downward.svg" width="800" alt="Fast Downward"></p>
+<p>Fast Downward is a domain-independent classical planning system.</p>
+<p>Copyright 2003-2024 Fast Downward contributors (see below).</p>
+<p>For further information:
+- Fast Downward website: <a href="https://www.fast-downward.org">https://www.fast-downward.org</a>
+- Report a bug or file an issue: <a href="https://issues.fast-downward.org">https://issues.fast-downward.org</a>
+- Fast Downward mailing list: <a href="https://groups.google.com/forum/#!forum/fast-downward">https://groups.google.com/forum/#!forum/fast-downward</a>
+- Fast Downward main repository: <a href="https://github.com/aibasel/downward">https://github.com/aibasel/downward</a></p>
+<h2 id="scientific_experiments">Scientific experiments<a class="headerlink" href="#scientific_experiments" title="Permanent link">#</a></h2>
+<p>We recommend to use the <a href="https://github.com/aibasel/downward/releases/latest">latest release</a> instead of the tip of the main branch.
+The <a href="https://lab.readthedocs.io/en/stable/">Downward Lab</a> Python package helps running Fast Downward experiments.
+Our separate <a href="https://github.com/aibasel/downward-benchmarks">benchmark repository</a> contains a collection of planning tasks.</p>
+<h2 id="supported_software_versions">Supported software versions<a class="headerlink" href="#supported_software_versions" title="Permanent link">#</a></h2>
+<p>The planner is mainly developed under Linux; and all of its features should work with no restrictions under this platform.
+The planner should compile and run correctly on macOS, but we cannot guarantee that it works as well as under Linux.
+The same comment applies for Windows, where additionally some diagnostic features (e.g., reporting peak memory usage when the planner is terminated by a signal) are not supported.
+Setting time and memory limits and running portfolios is not supported under Windows either.</p>
+<p>This version of Fast Downward has been tested with the following software versions:</p>
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>Python</th>
+<th>C++ compiler</th>
+<th>CMake</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ubuntu 24.04</td>
+<td>3.10</td>
+<td>GCC 14, Clang 18</td>
+<td>3.30</td>
+</tr>
+<tr>
+<td>Ubuntu 22.04</td>
+<td>3.10</td>
+<td>GCC 12, Clang 15</td>
+<td>3.30</td>
+</tr>
+<tr>
+<td>macOS 14</td>
+<td>3.10</td>
+<td>AppleClang 15</td>
+<td>3.30</td>
+</tr>
+<tr>
+<td>macOS 13</td>
+<td>3.10</td>
+<td>AppleClang 15</td>
+<td>3.30</td>
+</tr>
+<tr>
+<td>Windows 10</td>
+<td>3.8</td>
+<td>Visual Studio Enterprise 2019 (MSVC 19.29) and 2022 (MSVC 19.41)</td>
+<td>3.30</td>
+</tr>
+</tbody>
+</table>
+<p>We test LP support with CPLEX 22.1.1 and SoPlex 7.1.1. On Ubuntu we
+test both CPLEX and SoPlex. On Windows we currently only test CPLEX,
+and on macOS we do not test LP solvers (yet).</p>
+<h2 id="build_instructions">Build instructions<a class="headerlink" href="#build_instructions" title="Permanent link">#</a></h2>
+<p>See <a href="BUILD.md">BUILD.md</a>.</p>
+<h2 id="contributors">Contributors<a class="headerlink" href="#contributors" title="Permanent link">#</a></h2>
+<p>The following list includes all people that actively contributed to
+Fast Downward, i.e., all people that appear in some commits in Fast
+Downward's history (see below for a history on how Fast Downward
+emerged) or people that influenced the development of such commits.
+Currently, this list is sorted by the last year the person has been
+active, and in case of ties, by the earliest year the person started
+contributing, and finally by last name.</p>
+<ul>
+<li>2003-2024 Malte Helmert</li>
+<li>2008-2016, 2018-2024 Gabriele Roeger</li>
+<li>2010-2024 Jendrik Seipp</li>
+<li>2010-2011, 2013-2024 Silvan Sievers</li>
+<li>2012-2024 Florian Pommerening</li>
+<li>2013, 2015-2024 Salomé Eriksson</li>
+<li>2018-2024 Patrick Ferber</li>
+<li>2021-2024 Clemens Büchner</li>
+<li>2022-2024 Remo Christen</li>
+<li>2023-2024 Simon Dold</li>
+<li>2023-2024 Claudia S. Grundke</li>
+<li>2024 Martín Pozo</li>
+<li>2024 Tanja Schindler</li>
+<li>2024 David Speck</li>
+<li>2015, 2021-2023 Thomas Keller</li>
+<li>2018-2020, 2023 Augusto B. Corrêa</li>
+<li>2023 Victor Paléologue</li>
+<li>2023 Emanuele Tirendi</li>
+<li>2021-2022 Dominik Drexler</li>
+<li>2016-2020 Cedric Geissmann</li>
+<li>2017-2020 Guillem Francès</li>
+<li>2020 Rik de Graaff</li>
+<li>2015-2019 Manuel Heusner</li>
+<li>2017 Daniel Killenberger</li>
+<li>2016 Yusra Alkhazraji</li>
+<li>2016 Martin Wehrle</li>
+<li>2014-2015 Patrick von Reth</li>
+<li>2009-2014 Erez Karpas</li>
+<li>2014 Robert P. Goldman</li>
+<li>2010-2012 Andrew Coles</li>
+<li>2010, 2012 Patrik Haslum</li>
+<li>2003-2011 Silvia Richter</li>
+<li>2009-2011 Emil Keyder</li>
+<li>2010-2011 Moritz Gronbach</li>
+<li>2010-2011 Manuela Ortlieb</li>
+<li>2011 Vidal Alcázar Saiz</li>
+<li>2011 Michael Katz</li>
+<li>2011 Raz Nissim</li>
+<li>2010 Moritz Goebelbecker</li>
+<li>2007-2009 Matthias Westphal</li>
+<li>2009 Christian Muise</li>
+</ul>
+<h2 id="history">History<a class="headerlink" href="#history" title="Permanent link">#</a></h2>
+<p>The current version of Fast Downward is the merger of three different
+projects:</p>
+<ul>
+<li>the original version of Fast Downward developed by Malte Helmert
+  and Silvia Richter</li>
+<li>LAMA, developed by Silvia Richter and Matthias Westphal based on
+  the original Fast Downward</li>
+<li>FD-Tech, a modified version of Fast Downward developed by Erez
+  Karpas and Michael Katz based on the original code</li>
+</ul>
+<p>In addition to these three main sources, the codebase incorporates
+code and features from numerous branches of the Fast Downward codebase
+developed for various research papers. The main contributors to these
+branches are Malte Helmert, Gabi Röger and Silvia Richter.</p>
+<h2 id="license">License<a class="headerlink" href="#license" title="Permanent link">#</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Fast Downward is free software: you can redistribute it and/or modify
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>it under the terms of the GNU General Public License as published by
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>the Free Software Foundation, either version 3 of the License, or (at
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>your option) any later version.
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>Fast Downward is distributed in the hope that it will be useful, but
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>WITHOUT ANY WARRANTY; without even the implied warranty of
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>General Public License for more details.
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>You should have received a copy of the GNU General Public License
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
+</span></code></pre></div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.indexes", "navigation.footer"], "search": "../assets/javascripts/workers/search.a264c092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.6eac0284.min.js"></script>
+      
+    
+  </body>
+</html>
