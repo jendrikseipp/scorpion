@@ -13,6 +13,7 @@
 #include "axiom.h"
 #include "h2_mutexes.h"
 #include "variable.h"
+#include <ctime>
 #include <iostream>
 using namespace std;
 
@@ -21,6 +22,8 @@ int main(int argc, const char **argv) {
     bool include_augmented_preconditions = false;
     bool expensive_statistics = false;
     bool disable_bw_h2 = false;
+
+    clock_t start_time = clock();
 
     bool metric;
     vector<Variable *> variables;
@@ -59,7 +62,7 @@ int main(int argc, const char **argv) {
             expensive_statistics = true;
         } else {
             cerr << "unknown option " << arg << endl << endl;
-            cout << "Usage: ./preprocess [--no_rel] [--no_h2]  [--no_bw_h2] [--augmented_pre] [--stat] < output" << endl;
+            cout << "Usage: ./preprocess [--no_rel] [--h2_time_limit SECONDS] [--no_h2] [--no_bw_h2] [--augmented_pre] [--stat] < output" << endl;
             exit(2);
         }
     }
@@ -245,5 +248,10 @@ int main(int argc, const char **argv) {
         generate_cpp_input(
             ordering, metric, mutexes, initial_state, goals, operators, axioms);
     }
+
+    clock_t end_time = clock();
+    double cpu_time_used = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC;
+    cout << "Preprocessor time: " << cpu_time_used << "s" << endl;
+
     cout << "done" << endl;
 }
