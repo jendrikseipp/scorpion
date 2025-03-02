@@ -39,6 +39,10 @@ Op_h2::Op_h2(const Operator &op,
     sort(del.begin(), del.end());
 }
 
+static double get_passed_time(clock_t start) {
+    return static_cast<double>(clock() - start) / CLOCKS_PER_SEC;
+}
+
 bool compute_h2_mutexes(const vector <Variable *> &variables,
                         vector<Operator> &operators,
                         vector<Axiom> &axioms,
@@ -81,27 +85,32 @@ bool compute_h2_mutexes(const vector <Variable *> &variables,
             } else if (mutexes_detected == UNSOLVABLE) {
                 return false;
             }
+            cout << "Mutexes detected: " << mutexes_detected << endl;
 
             if (regression)
                 total_mutexes_bw += mutexes_detected;
             else
                 total_mutexes_fw += mutexes_detected;
 
-
+            cout << "Detect unreachable fluents" << endl;
             int res_unreachable = h2.detect_unreachable_fluents(variables, initial_state, goals);
             if (res_unreachable == UNSOLVABLE)
                 return false;
             bool unreachable_detected = res_unreachable != 0;
+            cout << "Finished detecting unreachable fluents" << endl;
 
+            cout << "Remove spurious operators" << endl;
             bool spurious_detected = h2.remove_spurious_operators(operators);
+            cout << "Finished removing spurious operators" << endl;
 
             update_progression |= spurious_detected || unreachable_detected || (regression && mutexes_detected);
             update_regression |= spurious_detected || unreachable_detected || (!regression && mutexes_detected);
         }
         regression = !regression;
+        cout << "Time after iteration " << num_iterations << ": " << get_passed_time(start_t) << "s" << endl;
     } while (update_progression || update_regression);
 
-    cout << "Total mutex and disambiguation time: " << (double)(clock() - start_t) / CLOCKS_PER_SEC << " iterations: " << num_iterations << endl;
+    cout << "Total mutex and disambiguation time: " << get_passed_time(start_t) << " iterations: " << num_iterations << endl;
     cout << "Total mutexes found forward: " << total_mutexes_fw << endl;
     cout << "Total mutexes found backward: " << total_mutexes_bw << endl;
     return true;
