@@ -123,9 +123,11 @@ def transform_task(args):
         call.check_call(
             "transform-task",
             [args.transform_task] + options,
-            stdin=args.sas_file,
+            stdin=args.search_input,
             time_limit=time_limit,
             memory_limit=memory_limit)
+        # The output file is hardcoded in preprocess-h2
+        args.search_input = "output.sas"
     except subprocess.CalledProcessError as err:
         if err.returncode != -signal.SIGXCPU:
             returncodes.print_stderr(

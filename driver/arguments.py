@@ -101,7 +101,7 @@ Examples:
 {_format_examples(EXAMPLES)}
 """
 
-COMPONENTS_PLUS_OVERALL = ["translate", "search", "validate", "overall"]
+COMPONENTS_PLUS_OVERALL = ["translate", "transform", "search", "validate", "overall"]
 DEFAULT_SAS_FILE = Path("output.sas")
 
 
@@ -213,7 +213,12 @@ def _set_components_automatically(parser, args):
     2. Otherwise, run all components."""
 
     if len(args.filenames) == 1 and _looks_like_search_input(args.filenames[0]):
-        args.components = ["search"]
+        if args.transform_task:
+            args.components = ["transform", "search"]
+        else:
+            args.components = ["search"]
+    elif args.transform_task:
+        args.components = ["translate", "transform", "search"]
     else:
         args.components = ["translate", "search"]
 
@@ -232,6 +237,8 @@ def _set_components_and_inputs(parser, args):
     args.components = []
     if args.translate or args.run_all:
         args.components.append("translate")
+    if args.run_all:
+        args.components.append("transform")
     if args.search or args.run_all:
         args.components.append("search")
 
@@ -257,7 +264,7 @@ def _set_components_and_inputs(parser, args):
             args.translate_inputs = []
         else:
             args.translate_inputs = _get_pddl_input_files(args, parser, "translator")
-    elif first == "search":
+    elif first == "transform" or first == "search":
         if "--help" in args.search_options:
             args.search_input = None
         elif len(args.filenames) == 1:
