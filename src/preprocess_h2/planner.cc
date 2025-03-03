@@ -244,8 +244,7 @@ void preprocess(int argc, const char **argv) {
 int main(int argc, const char **argv) {
     clock_t start_time = clock();
     preprocess(argc, argv);
-    clock_t end_time = clock();
-    double cpu_time_used = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC;
+    double cpu_time_used = get_passed_time(start_time);
     cout << "Preprocessor time: " << cpu_time_used << "s" << endl;
     cout << "done" << endl;
     return 0;

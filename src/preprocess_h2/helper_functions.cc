@@ -18,6 +18,10 @@ using namespace std;
 static const int SAS_FILE_VERSION = 3;
 static const int PRE_FILE_VERSION = SAS_FILE_VERSION;
 
+double get_passed_time(clock_t start) {
+    return static_cast<double>(clock() - start) / CLOCKS_PER_SEC;
+}
+
 
 void check_magic(istream &in, string magic) {
     string word;

@@ -1,6 +1,7 @@
 /* Implemented by Vidal Alcazar Saiz. */
 
 #include "h2_mutexes.h"
+#include "helper_functions.h"
 
 //#include "utilities.h"
 
@@ -37,10 +38,6 @@ Op_h2::Op_h2(const Operator &op,
     set_difference(del.begin(), del.end(), add.begin(), add.end(), back_inserter(aux));
     del.swap(aux);
     sort(del.begin(), del.end());
-}
-
-static double get_passed_time(clock_t start) {
-    return static_cast<double>(clock() - start) / CLOCKS_PER_SEC;
 }
 
 bool compute_h2_mutexes(const vector <Variable *> &variables,
@@ -92,16 +89,16 @@ bool compute_h2_mutexes(const vector <Variable *> &variables,
             else
                 total_mutexes_fw += mutexes_detected;
 
-            cout << "Detect unreachable fluents" << endl;
+            cout << "Detecting unreachable fluents..." << endl;
             int res_unreachable = h2.detect_unreachable_fluents(variables, initial_state, goals);
             if (res_unreachable == UNSOLVABLE)
                 return false;
             bool unreachable_detected = res_unreachable != 0;
-            cout << "Finished detecting unreachable fluents" << endl;
+            cout << "Finished detecting unreachable fluents." << endl;
 
-            cout << "Remove spurious operators" << endl;
+            cout << "Removing spurious operators..." << endl;
             bool spurious_detected = h2.remove_spurious_operators(operators);
-            cout << "Finished removing spurious operators" << endl;
+            cout << "Finished removing spurious operators." << endl;
 
             update_progression |= spurious_detected || unreachable_detected || (regression && mutexes_detected);
             update_regression |= spurious_detected || unreachable_detected || (!regression && mutexes_detected);
@@ -666,7 +663,7 @@ bool H2Mutexes::time_exceeded() {
     if (limit_seconds == -1) // no limit
         return false;
 
-    if (difftime(time(NULL), start) > limit_seconds) {
+    if (get_passed_time(start_time) > limit_seconds) {
         cout << "h^mutexes could not be computed (building time)" << endl;
         return true;
     }
