@@ -48,9 +48,10 @@ private:
         os << "[";
         std::string sep;
         Iterator pos = slice.begin();
-        while (pos < slice.end()) {
+        while (pos != slice.end()) {
             os << sep << *pos;
             sep = ", ";
+            ++pos;
         }
         return os << "]";
     }
