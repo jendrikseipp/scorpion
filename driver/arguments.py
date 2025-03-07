@@ -6,6 +6,7 @@ import sys
 from . import aliases
 from . import returncodes
 from . import util
+from .run_components import PREPROCESSED_OUTPUT
 
 
 DESCRIPTION = """Fast Downward driver script.
@@ -391,7 +392,9 @@ def parse_args():
         help="run translator component")
     components.add_argument(
         "--transform-task",
-        help='path to or name of external program that transforms output.sas (e.g. preprocess-h2)')
+        help="path to or name of external program that transforms output.sas "
+            f"into {PREPROCESSED_OUTPUT} (default: %(const)s)",
+        const="preprocess-h2", nargs="?")
     components.add_argument(
         "--search", action="store_true",
         help="run search component")
