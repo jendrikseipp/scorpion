@@ -48,7 +48,7 @@ exp.add_parser(custom_parser.get_parser())
 exp.add_suite(BENCHMARKS_DIR, SUITE)
 DRIVER_OPTIONS = [
     "--overall-time-limit",
-    "30m",
+    "5m",
     "--overall-memory-limit",
     "8G",
     "--transform-task",
