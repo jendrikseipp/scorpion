@@ -159,7 +159,7 @@ void generate_cpp_input(const vector<Variable *> &ordered_vars,
                         const vector<Operator> &operators,
                         const vector<Axiom> &axioms) {
     ofstream outfile;
-    outfile.open("output.sas", ios::out);
+    outfile.open("preprocessed-output.sas", ios::out);
 
     outfile << "begin_version" << endl;
     outfile << PRE_FILE_VERSION << endl;
@@ -209,7 +209,7 @@ void generate_cpp_input(const vector<Variable *> &ordered_vars,
 void generate_unsolvable_cpp_input() {
     cout << "Unsolvable task in preprocessor" << endl;
     ofstream outfile;
-    outfile.open("output.sas", ios::out);
+    outfile.open("preprocessed-output.sas", ios::out);
     outfile << "begin_version" << endl;
     outfile << PRE_FILE_VERSION << endl;
     outfile << "end_version" << endl;

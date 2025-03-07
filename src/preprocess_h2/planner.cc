@@ -1,10 +1,3 @@
-/* Main file, keeps all important variables.
- * Calls functions from "helper_functions" to read in input (variables, operators,
- * goals, initial state),
- * then calls functions to build causal graph and domain_transition_graphs
- * finally prints output to file "output.sas"
- */
-
 #include "helper_functions.h"
 #include "causal_graph.h"
 #include "state.h"

@@ -22,6 +22,8 @@ else:
 
 # TODO: We might want to turn translate into a module and call it with "python3 -m translate".
 REL_TRANSLATE_PATH = Path("translate") / "translate.py"
+# The output file is hardcoded in the preprocessor.
+PREPROCESSED_OUTPUT = Path("preprocessed-output.sas")
 REL_SEARCH_PATH = Path(f"downward{BINARY_EXT}")
 # Older versions of VAL use lower case, newer versions upper case. We prefer the
 # older version because this is what our build instructions recommend.
@@ -120,15 +122,15 @@ def transform_task(args):
             stdin=args.search_input,
             time_limit=time_limit,
             memory_limit=memory_limit)
-        # The output file is hardcoded in preprocess-h2
-        args.search_input = "output.sas"
     except subprocess.CalledProcessError as err:
         if err.returncode != -signal.SIGXCPU:
             returncodes.print_stderr(
                 f"Task transformation returned exit status {err.returncode}")
-        # If the task transformation failed, we proceed with the original task.
+        # If the preprocessing failed, we proceed with the original task.
         return (err.returncode, True)
     else:
+        # If the preprocessing succeeded, we use the preprocessed task.
+        args.search_input = PREPROCESSED_OUTPUT
         return (0, True)
 
 
