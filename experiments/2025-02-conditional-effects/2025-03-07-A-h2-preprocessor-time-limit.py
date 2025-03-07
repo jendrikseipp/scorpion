@@ -29,6 +29,7 @@ ATTRIBUTES = [
     "expansions_until_last_jump",
     "memory",
     "initial_h_value",
+    "preprocessor_time",
 ]
 
 if not project.REMOTE:
