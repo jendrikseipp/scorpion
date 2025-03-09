@@ -51,7 +51,7 @@ def main():
         else:
             assert False, f"Error: unhandled component: {component}"
         print(f"{component} exit code: {exitcode}")
-        print()
+        print(flush=True)
         if not continue_execution:
             print(f"Driver aborting after {component}")
             break
