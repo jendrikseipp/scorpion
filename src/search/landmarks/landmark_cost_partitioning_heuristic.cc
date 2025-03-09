@@ -62,9 +62,11 @@ void LandmarkCostPartitioningHeuristic::set_cost_partitioning_algorithm(
     } else if (cost_partitioning == CostPartitioningMethod::CANONICAL) {
         cost_partitioning_algorithm = utils::make_unique_ptr<LandmarkCanonicalHeuristic>(
             operator_costs, *lm_graph);
-    } else if (cost_partitioning == CostPartitioningMethod::PHO) {
+    } else if (cost_partitioning == CostPartitioningMethod::PHO ||
+               cost_partitioning == CostPartitioningMethod::SATURATED_PHO) {
+        bool saturated = cost_partitioning == CostPartitioningMethod::SATURATED_PHO;
         cost_partitioning_algorithm = utils::make_unique_ptr<LandmarkPhO>(
-            operator_costs, *lm_graph, lpsolver);
+            operator_costs, *lm_graph, saturated, lpsolver);
     } else {
         bool reuse_costs = false;
         bool greedy = false;
@@ -222,7 +224,9 @@ static plugins::TypedEnumPlugin<CostPartitioningMethod> _enum_plugin({
          "like greedy_zero_one, but reuse costs not consumed by earlier landmarks"},
         {"canonical",
          "canonical heuristic over landmarks"},
-        {"pho",
-         "post-hoc optimization over landmarks"}
+        {"posthoc_optimization",
+         "post-hoc optimization over landmarks"},
+        {"saturated_posthoc_optimization",
+         "saturated post-hoc optimization over landmarks"},
     });
 }

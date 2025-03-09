@@ -19,6 +19,7 @@ enum class CostPartitioningMethod {
     SATURATED,
     CANONICAL,
     PHO,
+    SATURATED_PHO,
 };
 
 class LandmarkCostPartitioningHeuristic : public LandmarkHeuristic {
