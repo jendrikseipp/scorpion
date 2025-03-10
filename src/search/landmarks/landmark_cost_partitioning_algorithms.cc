@@ -361,8 +361,10 @@ double LandmarkCanonicalHeuristic::get_cost_partitioned_heuristic_value(
 LandmarkPhO::LandmarkPhO(
     const vector<int> &operator_costs,
     const LandmarkGraph &graph,
+    bool saturate,
     lp::LPSolverType solver_type)
     : CostPartitioningAlgorithm(operator_costs, graph),
+      saturate(saturate),
       lp_solver(solver_type),
       lp(build_initial_lp()) {
 }
@@ -384,6 +386,11 @@ lp::LinearProgram LandmarkPhO::build_initial_lp() {
       a relevant achiever.
     */
     lp_constraints.resize(num_rows, lp::LPConstraint(-lp_solver.get_infinity(), 1.0));
+    if (saturate) {
+        for (int i = 0; i < num_rows; ++i) {
+            lp_constraints[i].set_upper_bound(operator_costs[i]);
+        }
+    }
 
     /* Coefficients of constraints will be updated and recreated in each state.
        We ignore them for the initial LP. */
@@ -443,15 +450,17 @@ double LandmarkPhO::get_cost_partitioned_heuristic_value(
         constraint.clear();
     }
     for (int lm_id = 0; lm_id < num_cols; ++lm_id) {
-        const LandmarkNode *lm = lm_graph.get_node(lm_id);
+        const LandmarkNode &lm = *lm_graph.get_node(lm_id);
         if (future.test(lm_id)) {
-            const unordered_set<int> &achievers = get_achievers(lm->get_landmark(), past.test(lm_id));
+            const unordered_set<int> &achievers = get_achievers(lm.get_landmark(), past.test(lm_id));
             if (achievers.empty()) {
                 return numeric_limits<double>::max();
             }
+            // The saturated costs are equal to the cost of the landmark.
+            double coeff = saturate ? lp.get_variables()[lm_id].objective_coefficient : 1.0;
             for (int op_id : achievers) {
                 assert(utils::in_bounds(op_id, lp_constraints));
-                lp_constraints[op_id].insert(lm_id, 1.0);
+                lp_constraints[op_id].insert(lm_id, coeff);
             }
         }
     }

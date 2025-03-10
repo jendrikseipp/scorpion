@@ -89,7 +89,8 @@ public:
 };
 
 class LandmarkPhO : public CostPartitioningAlgorithm {
-    // See comment for LandmarkEfficientOptimalSharedCostAssignment.
+    // See comment for OptimalCostPartitioningAlgorithm.
+    const bool saturate;
     lp::LPSolver lp_solver;
     std::vector<lp::LPConstraint> lp_constraints;
     lp::LinearProgram lp;
@@ -101,6 +102,7 @@ public:
     LandmarkPhO(
         const std::vector<int> &operator_costs,
         const LandmarkGraph &graph,
+        bool saturate,
         lp::LPSolverType solver_type);
 
     virtual double get_cost_partitioned_heuristic_value(
