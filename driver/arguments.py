@@ -102,7 +102,7 @@ Examples:
 {_format_examples(EXAMPLES)}
 """
 
-COMPONENTS_PLUS_OVERALL = ["translate", "transform", "search", "validate", "overall"]
+COMPONENTS_PLUS_OVERALL = ["translate", "preprocess", "search", "validate", "overall"]
 DEFAULT_SAS_FILE = Path("output.sas")
 
 
@@ -174,15 +174,15 @@ def _split_planner_args(parser, args):
     args.filenames, options = _split_off_filenames(args.planner_args)
 
     args.translate_options = []
-    args.transform_options = []
+    args.preprocess_options = []
     args.search_options = []
 
     curr_options = args.search_options
     for option in options:
         if option == "--translate-options":
             curr_options = args.translate_options
-        elif option == "--transform-options":
-            curr_options = args.transform_options
+        elif option == "--preprocess-options":
+            curr_options = args.preprocess_options
         elif option == "--search-options":
             curr_options = args.search_options
         else:
@@ -217,12 +217,12 @@ def _set_components_automatically(parser, args):
     2. Otherwise, run all components."""
 
     if len(args.filenames) == 1 and _looks_like_search_input(args.filenames[0]):
-        if args.transform_task:
-            args.components = ["transform", "search"]
+        if args.preprocess:
+            args.components = ["preprocess", "search"]
         else:
             args.components = ["search"]
-    elif args.transform_task:
-        args.components = ["translate", "transform", "search"]
+    elif args.preprocess:
+        args.components = ["translate", "preprocess", "search"]
     else:
         args.components = ["translate", "search"]
 
@@ -242,7 +242,7 @@ def _set_components_and_inputs(parser, args):
     if args.translate or args.run_all:
         args.components.append("translate")
     if args.run_all:
-        args.components.append("transform")
+        args.components.append("preprocess")
     if args.search or args.run_all:
         args.components.append("search")
 
@@ -268,7 +268,7 @@ def _set_components_and_inputs(parser, args):
             args.translate_inputs = []
         else:
             args.translate_inputs = _get_pddl_input_files(args, parser, "translator")
-    elif first == "transform" or first == "search":
+    elif first == "preprocess" or first == "search":
         if "--help" in args.search_options:
             args.search_input = None
         elif len(args.filenames) == 1:
@@ -391,7 +391,8 @@ def parse_args():
         "--translate", action="store_true",
         help="run translator component")
     components.add_argument(
-        "--transform-task",
+        "--preprocess",
+        "--transform-task",  # For backward compatibility.
         help="path to or name of external program that transforms output.sas "
             f"into {PREPROCESSED_OUTPUT} (default: %(const)s)",
         const="preprocess-h2", nargs="?")

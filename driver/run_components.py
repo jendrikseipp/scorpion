@@ -103,29 +103,29 @@ def run_translate(args):
         return (returncode, False)
 
 
-def transform_task(args):
-    logging.info("Run task transformation (%s)." % args.transform_task)
-    time_limit = limits.get_time_limit(args.transform_time_limit, args.overall_time_limit)
-    memory_limit = limits.get_memory_limit(args.transform_memory_limit, args.overall_memory_limit)
+def run_preprocess(args):
+    logging.info("Run preprocess (%s)." % args.preprocess)
+    time_limit = limits.get_time_limit(args.preprocess_time_limit, args.overall_time_limit)
+    memory_limit = limits.get_memory_limit(args.preprocess_memory_limit, args.overall_memory_limit)
 
-    if not shutil.which(args.transform_task):
+    if not shutil.which(args.preprocess):
         preprocessor_name = "preprocess-h2"
-        if args.transform_task != preprocessor_name:
-            sys.exit(f"Error: {args.transform_task} not found. Is it on the PATH?")
+        if args.preprocess != preprocessor_name:
+            sys.exit(f"Error: {args.preprocess} not found. Is it on the PATH?")
         # Check if executable exists in the "bin" directory.
-        args.transform_task = get_executable(args.build, preprocessor_name)
+        args.preprocess = get_executable(args.build, preprocessor_name)
 
     try:
         call.check_call(
-            "transform-task",
-            [args.transform_task] + args.transform_options,
+            "preprocess",
+            [args.preprocess] + args.preprocess_options,
             stdin=args.search_input,
             time_limit=time_limit,
             memory_limit=memory_limit)
     except subprocess.CalledProcessError as err:
         if err.returncode != -signal.SIGXCPU:
             returncodes.print_stderr(
-                f"Task transformation returned exit status {err.returncode}")
+                f"Preprocessor returned exit status {err.returncode}")
         # If the preprocessing failed, we proceed with the original task.
         return (err.returncode, True)
     else:
