@@ -36,20 +36,22 @@ def main():
     for component in args.components:
         if component == "translate":
             (exitcode, continue_execution) = run_components.run_translate(args)
-            if continue_execution and args.transform_task:
-                print()
-                (exitcode, continue_execution) = run_components.transform_task(args)
+        elif component == "preprocess":
+            (exitcode, continue_execution) = run_components.run_preprocess(args)
         elif component == "search":
             (exitcode, continue_execution) = run_components.run_search(args)
             if not args.keep_sas_file:
                 print(f"Remove intermediate file {args.sas_file}")
                 args.sas_file.unlink()
+                if run_components.PREPROCESSED_OUTPUT.exists():
+                    print(f"Remove intermediate file {run_components.PREPROCESSED_OUTPUT}")
+                    run_components.PREPROCESSED_OUTPUT.unlink()
         elif component == "validate":
             (exitcode, continue_execution) = run_components.run_validate(args)
         else:
             assert False, f"Error: unhandled component: {component}"
         print(f"{component} exit code: {exitcode}")
-        print()
+        print(flush=True)
         if not continue_execution:
             print(f"Driver aborting after {component}")
             break

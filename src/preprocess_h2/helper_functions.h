@@ -4,6 +4,7 @@
 #include "state.h"
 #include "variable.h"
 
+#include <ctime>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -14,6 +15,8 @@ class State;
 class MutexGroup;
 class Operator;
 class Axiom;
+
+extern double get_passed_time(clock_t start);
 
 //void read_everything
 void read_preprocessed_problem_description(istream & in,

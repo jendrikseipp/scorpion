@@ -18,6 +18,10 @@ using namespace std;
 static const int SAS_FILE_VERSION = 3;
 static const int PRE_FILE_VERSION = SAS_FILE_VERSION;
 
+double get_passed_time(clock_t start) {
+    return static_cast<double>(clock() - start) / CLOCKS_PER_SEC;
+}
+
 
 void check_magic(istream &in, string magic) {
     string word;
@@ -155,7 +159,7 @@ void generate_cpp_input(const vector<Variable *> &ordered_vars,
                         const vector<Operator> &operators,
                         const vector<Axiom> &axioms) {
     ofstream outfile;
-    outfile.open("output.sas", ios::out);
+    outfile.open("preprocessed-output.sas", ios::out);
 
     outfile << "begin_version" << endl;
     outfile << PRE_FILE_VERSION << endl;
@@ -203,8 +207,9 @@ void generate_cpp_input(const vector<Variable *> &ordered_vars,
     outfile.close();
 }
 void generate_unsolvable_cpp_input() {
+    cout << "Unsolvable task in preprocessor" << endl;
     ofstream outfile;
-    outfile.open("output.sas", ios::out);
+    outfile.open("preprocessed-output.sas", ios::out);
     outfile << "begin_version" << endl;
     outfile << PRE_FILE_VERSION << endl;
     outfile << "end_version" << endl;

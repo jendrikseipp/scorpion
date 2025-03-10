@@ -6,6 +6,7 @@ import sys
 from . import aliases
 from . import returncodes
 from . import util
+from .run_components import PREPROCESSED_OUTPUT
 
 
 DESCRIPTION = """Fast Downward driver script.
@@ -101,7 +102,7 @@ Examples:
 {_format_examples(EXAMPLES)}
 """
 
-COMPONENTS_PLUS_OVERALL = ["translate", "search", "validate", "overall"]
+COMPONENTS_PLUS_OVERALL = ["translate", "preprocess", "search", "validate", "overall"]
 DEFAULT_SAS_FILE = Path("output.sas")
 
 
@@ -173,12 +174,15 @@ def _split_planner_args(parser, args):
     args.filenames, options = _split_off_filenames(args.planner_args)
 
     args.translate_options = []
+    args.preprocess_options = []
     args.search_options = []
 
     curr_options = args.search_options
     for option in options:
         if option == "--translate-options":
             curr_options = args.translate_options
+        elif option == "--preprocess-options":
+            curr_options = args.preprocess_options
         elif option == "--search-options":
             curr_options = args.search_options
         else:
@@ -213,7 +217,12 @@ def _set_components_automatically(parser, args):
     2. Otherwise, run all components."""
 
     if len(args.filenames) == 1 and _looks_like_search_input(args.filenames[0]):
-        args.components = ["search"]
+        if args.preprocess:
+            args.components = ["preprocess", "search"]
+        else:
+            args.components = ["search"]
+    elif args.preprocess:
+        args.components = ["translate", "preprocess", "search"]
     else:
         args.components = ["translate", "search"]
 
@@ -232,6 +241,8 @@ def _set_components_and_inputs(parser, args):
     args.components = []
     if args.translate or args.run_all:
         args.components.append("translate")
+    if args.run_all:
+        args.components.append("preprocess")
     if args.search or args.run_all:
         args.components.append("search")
 
@@ -257,7 +268,7 @@ def _set_components_and_inputs(parser, args):
             args.translate_inputs = []
         else:
             args.translate_inputs = _get_pddl_input_files(args, parser, "translator")
-    elif first == "search":
+    elif first == "preprocess" or first == "search":
         if "--help" in args.search_options:
             args.search_input = None
         elif len(args.filenames) == 1:
@@ -380,6 +391,12 @@ def parse_args():
         "--translate", action="store_true",
         help="run translator component")
     components.add_argument(
+        "--preprocess",
+        "--transform-task",  # For backward compatibility.
+        help="path to or name of external program that transforms output.sas "
+            f"into {PREPROCESSED_OUTPUT} (default: %(const)s)",
+        const="preprocess-h2", nargs="?")
+    components.add_argument(
         "--search", action="store_true",
         help="run search component")
 
@@ -406,12 +423,6 @@ def parse_args():
     driver_other.add_argument(
         "--debug", action="store_true",
         help="alias for --build=debug --validate")
-    driver_other.add_argument(
-        "--transform-task",
-        help='path to or name of external program that transforms output.sas (e.g. h2-mutexes)')
-    driver_other.add_argument(
-        "--transform-task-options",
-        help='comma-separated list of key-value option pairs for task transformation (e.g. h2_time_limit,10)')
     driver_other.add_argument(
         "--validate", action="store_true",
         help='validate plans (implied by --debug); needs "validate" (VAL) on PATH')

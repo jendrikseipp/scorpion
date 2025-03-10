@@ -15,9 +15,6 @@
 #include "axiom.h"
 #include "mutex_group.h"
 
-
-using namespace std;
-
 enum Reachability {SPURIOUS, REACHED, NOT_REACHED};
 
 static const int UNSOLVABLE = -2;
@@ -62,8 +59,9 @@ class H2Mutexes {
     bool check_goal_state_is_unreachable(const vector<pair<Variable *, int>> &goal) const;
 public:
     H2Mutexes(int t = -1) : limit_seconds(t) {
-        if (limit_seconds != -1)
-            time(&start);
+        if (limit_seconds != -1) {
+            start_time = clock();
+        }
     }
     virtual ~H2Mutexes() {}
 
@@ -139,7 +137,7 @@ protected:
     void print_pair(unsigned pair);
 
     int limit_seconds;
-    time_t start;
+    clock_t start_time;
     bool time_exceeded();
 
     bool init_values_progression(const vector <Variable *> &variables,

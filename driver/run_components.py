@@ -22,6 +22,8 @@ else:
 
 # TODO: We might want to turn translate into a module and call it with "python3 -m translate".
 REL_TRANSLATE_PATH = Path("translate") / "translate.py"
+# The output file is hardcoded in the preprocessor.
+PREPROCESSED_OUTPUT = Path("preprocessed-output.sas")
 REL_SEARCH_PATH = Path(f"downward{BINARY_EXT}")
 # Older versions of VAL use lower case, newer versions upper case. We prefer the
 # older version because this is what our build instructions recommend.
@@ -101,38 +103,34 @@ def run_translate(args):
         return (returncode, False)
 
 
-def transform_task(args):
-    logging.info("Run task transformation (%s)." % args.transform_task)
-    time_limit = limits.get_time_limit(None, args.overall_time_limit)
-    memory_limit = limits.get_memory_limit(None, args.overall_memory_limit)
-    options = []
-    if args.transform_task_options:
-        options = args.transform_task_options.split(",")
-        for i, option in enumerate(options):
-            if i % 2 == 0:
-                options[i] = "--" + option
+def run_preprocess(args):
+    logging.info("Run preprocess (%s)." % args.preprocess)
+    time_limit = limits.get_time_limit(args.preprocess_time_limit, args.overall_time_limit)
+    memory_limit = limits.get_memory_limit(args.preprocess_memory_limit, args.overall_memory_limit)
 
-    if not shutil.which(args.transform_task):
+    if not shutil.which(args.preprocess):
         preprocessor_name = "preprocess-h2"
-        if args.transform_task != preprocessor_name:
-            sys.exit(f"Error: {args.transform_task} not found. Is it on the PATH?")
+        if args.preprocess != preprocessor_name:
+            sys.exit(f"Error: {args.preprocess} not found. Is it on the PATH?")
         # Check if executable exists in the "bin" directory.
-        args.transform_task = get_executable(args.build, preprocessor_name)
+        args.preprocess = get_executable(args.build, preprocessor_name)
 
     try:
         call.check_call(
-            "transform-task",
-            [args.transform_task] + options,
-            stdin=args.sas_file,
+            "preprocess",
+            [args.preprocess] + args.preprocess_options,
+            stdin=args.search_input,
             time_limit=time_limit,
             memory_limit=memory_limit)
     except subprocess.CalledProcessError as err:
         if err.returncode != -signal.SIGXCPU:
             returncodes.print_stderr(
-                f"Task transformation returned exit status {err.returncode}")
-        # If the task transformation failed, we proceed with the original task.
+                f"Preprocessor returned exit status {err.returncode}")
+        # If the preprocessing failed, we proceed with the original task.
         return (err.returncode, True)
     else:
+        # If the preprocessing succeeded, we use the preprocessed task.
+        args.search_input = PREPROCESSED_OUTPUT
         return (0, True)
 
 

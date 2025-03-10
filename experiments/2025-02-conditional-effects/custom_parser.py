@@ -148,6 +148,8 @@ def get_parser():
 
     parser.add_pattern("useful_abstractions_ratio", r"Useful abstractions: \d+/\d+ = (.+)\n", type=float)
 
+    parser.add_pattern("preprocessor_time", r"Preprocessor time: (.+)s", type=float)
+
     parser.add_function(find_cegar_termination_criterion)
     parser.add_function(add_scores)
 

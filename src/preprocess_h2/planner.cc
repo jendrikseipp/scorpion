@@ -1,10 +1,3 @@
-/* Main file, keeps all important variables.
- * Calls functions from "helper_functions" to read in input (variables, operators,
- * goals, initial state),
- * then calls functions to build causal graph and domain_transition_graphs
- * finally prints output to file "output.sas"
- */
-
 #include "helper_functions.h"
 #include "causal_graph.h"
 #include "state.h"
@@ -13,10 +6,11 @@
 #include "axiom.h"
 #include "h2_mutexes.h"
 #include "variable.h"
+#include <ctime>
 #include <iostream>
 using namespace std;
 
-int main(int argc, const char **argv) {
+void preprocess(int argc, const char **argv) {
     int h2_mutex_time = 300; // 5 minutes to compute mutexes by default
     bool include_augmented_preconditions = false;
     bool expensive_statistics = false;
@@ -59,7 +53,7 @@ int main(int argc, const char **argv) {
             expensive_statistics = true;
         } else {
             cerr << "unknown option " << arg << endl << endl;
-            cout << "Usage: ./preprocess [--no_rel] [--no_h2]  [--no_bw_h2] [--augmented_pre] [--stat] < output" << endl;
+            cout << "Usage: ./preprocess [--no_rel] [--h2_time_limit SECONDS] [--no_h2] [--no_bw_h2] [--augmented_pre] [--stat] < output" << endl;
             exit(2);
         }
     }
@@ -96,11 +90,8 @@ int main(int argc, const char **argv) {
         if (!compute_h2_mutexes(ordering, operators, axioms,
                                 mutexes, initial_state, goals,
                                 h2_mutex_time, disable_bw_h2)) {
-            // TODO: don't duplicate the code to return an unsolvable task, log and exit here
-            cout << "Unsolvable task in preprocessor" << endl;
             generate_unsolvable_cpp_input();
-            cout << "done" << endl;
-            return 0;
+            return;
         }
 
         //Update the causal graph and remove unneccessary variables
@@ -133,11 +124,8 @@ int main(int argc, const char **argv) {
         new_goals.swap(goals);
         cout << "Change id of initial state" << endl;
         if (initial_state.remove_unreachable_facts()) {
-            // TODO: don't duplicate the code to return an unsolvable task, log and exit here
-            cout << "Unsolvable task in preprocessor" << endl;
             generate_unsolvable_cpp_input();
-            cout << "done" << endl;
-            return 0;
+            return;
         }
 
         cout << "Remove unreachable facts from variables: " << ordering.size() << endl;
@@ -239,11 +227,18 @@ int main(int argc, const char **argv) {
 
     cout << "Writing output..." << endl;
     if (ordering.empty()) {
-        cout << "Unsolvable task in preprocessor" << endl;
         generate_unsolvable_cpp_input();
     } else {
         generate_cpp_input(
             ordering, metric, mutexes, initial_state, goals, operators, axioms);
     }
+}
+
+int main(int argc, const char **argv) {
+    clock_t start_time = clock();
+    preprocess(argc, argv);
+    double cpu_time_used = get_passed_time(start_time);
+    cout << "Preprocessor time: " << cpu_time_used << "s" << endl;
     cout << "done" << endl;
+    return 0;
 }
