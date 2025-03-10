@@ -1891,7 +1891,7 @@
 <li><code>debug</code>: like verbose with additional debug output</li>
 </ul>
 </li>
-<li><em>cost_partitioning</em> ({optimal, uniform, opportunistic_uniform, greedy_zero_one, saturated, canonical, pho}): strategy for partitioning operator costs among landmarks<ul>
+<li><em>cost_partitioning</em> ({optimal, uniform, opportunistic_uniform, greedy_zero_one, saturated, canonical, pho, saturated_pho}): strategy for partitioning operator costs among landmarks<ul>
 <li><code>optimal</code>: use optimal (LP-based) cost partitioning</li>
 <li><code>uniform</code>: partition operator costs uniformly among all landmarks achieved by that operator</li>
 <li><code>opportunistic_uniform</code>: like uniform, but order landmarks and reuse costs not consumed by earlier landmarks</li>
@@ -1899,6 +1899,7 @@
 <li><code>saturated</code>: like greedy_zero_one, but reuse costs not consumed by earlier landmarks</li>
 <li><code>canonical</code>: canonical heuristic over landmarks</li>
 <li><code>pho</code>: post-hoc optimization over landmarks</li>
+<li><code>saturated_pho</code>: saturated post-hoc optimization over landmarks</li>
 </ul>
 </li>
 <li><em>alm</em> (bool): use action landmarks</li>
