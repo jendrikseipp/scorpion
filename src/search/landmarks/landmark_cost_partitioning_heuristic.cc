@@ -224,9 +224,9 @@ static plugins::TypedEnumPlugin<CostPartitioningMethod> _enum_plugin({
          "like greedy_zero_one, but reuse costs not consumed by earlier landmarks"},
         {"canonical",
          "canonical heuristic over landmarks"},
-        {"posthoc_optimization",
+        {"pho",
          "post-hoc optimization over landmarks"},
-        {"saturated_posthoc_optimization",
+        {"saturated_pho",
          "saturated post-hoc optimization over landmarks"},
     });
 }

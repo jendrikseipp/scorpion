@@ -259,6 +259,7 @@ def configs_optimal_lp(lp_solver="cplex"):
             """astar(pho([projections(systematic(2))], saturated=true, max_orders=1))"""],
         "lm_ocp": _get_landmark_config(cost_partitioning="optimal", lpsolver=lp_solver),
         "lm_pho": _get_landmark_config(cost_partitioning="pho", lpsolver=lp_solver),
+        "lm_spho": _get_landmark_config(cost_partitioning="saturated_pho", lpsolver=lp_solver),
     }
 
 
