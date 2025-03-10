@@ -64,7 +64,7 @@ class CEGAR {
     void separate_facts_unreachable_before_goal() const;
 
     // Build abstraction.
-    void refinement_loop();
+    void refinement_loop(bool is_landmark_subtask);
 
     void dump_dot_graph() const;
     void print_statistics() const;

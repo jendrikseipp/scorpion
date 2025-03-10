@@ -7,6 +7,7 @@
 #include "utils.h"
 
 #include "../task_utils/task_properties.h"
+#include "../tasks/domain_abstracted_task.h"
 #include "../utils/logging.h"
 #include "../utils/memory.h"
 
@@ -62,7 +63,8 @@ CEGAR::CEGAR(
         log << "Maximum time: " << timer.get_remaining_time() << endl;
     }
 
-    refinement_loop();
+    bool is_landmark_subtask = dynamic_cast<extra_tasks::DomainAbstractedTask *>(task.get());
+    refinement_loop(is_landmark_subtask);
     if (log.is_at_least_normal()) {
         log << "Done building abstraction." << endl;
         log << "Time for building abstraction: " << timer.get_elapsed_time() << endl;
@@ -147,19 +149,17 @@ bool CEGAR::may_keep_refining() const {
     return true;
 }
 
-void CEGAR::refinement_loop() {
+void CEGAR::refinement_loop(bool is_landmark_subtask) {
     /*
       For landmark tasks we have to map all states in which the
       landmark might have been achieved to arbitrary abstract goal
-      states. For the other types of subtasks our method won't find
-      unreachable facts, but calling it unconditionally for subtasks
-      with one goal doesn't hurt and simplifies the implementation.
+      states.
 
       In any case, we separate all goal states from non-goal states
       to simplify the implementation. This way, we don't have to split
       goal states later.
     */
-    if (task_proxy.get_goals().size() == 1) {
+    if (is_landmark_subtask) {
         separate_facts_unreachable_before_goal();
     } else {
         // Iteratively split off the next goal fact from the current goal state.
