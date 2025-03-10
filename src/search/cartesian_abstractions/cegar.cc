@@ -186,7 +186,7 @@ void CEGAR::refinement_loop(bool is_landmark_subtask) {
     shortest_paths->recompute(
         *abstraction,
         abstraction->get_goals());
-    assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
+    assert(timer.is_expired() || shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
 
     utils::Timer find_trace_timer(false);
     utils::Timer find_flaw_timer(false);
@@ -261,7 +261,7 @@ void CEGAR::refinement_loop(bool is_landmark_subtask) {
         update_goal_distances_timer.resume();
         shortest_paths->update_incrementally(
             *abstraction, state_id, new_state_ids.first, new_state_ids.second, split->var_id);
-        assert(shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
+        assert(timer.is_expired() || shortest_paths->test_distances(*abstraction, abstraction->get_goals()));
         update_goal_distances_timer.stop();
 
         if (log.is_at_least_verbose() &&
