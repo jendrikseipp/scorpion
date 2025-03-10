@@ -232,6 +232,8 @@ Different cost partitioning algorithms for landmark heuristics:
   `landmark_cost_partitioning(..., cost_partitioning=canonical)`
 - Post-hoc optimization:
   `landmark_cost_partitioning(..., cost_partitioning=pho)`
+- Saturated post-hoc optimization:
+  `landmark_cost_partitioning(..., cost_partitioning=saturated_pho)`
 - Uniform cost partitioning:
   `landmark_cost_partitioning(..., cost_partitioning=uniform)`
 - Opportunistic uniform cost partitioning (also part of vanilla Fast Downward):
