@@ -199,7 +199,6 @@ bool H2Mutexes::set_unreachable(int var, int val, const vector <Variable *> &var
 bool H2Mutexes::remove_spurious_operators(vector<Operator> &operators) {
     int count = 0, totalCount = 0;
     bool spurious_detected = false;
-    int op_id = 0;
     for (Operator &op : operators) {
         if (!op.is_redundant()) {
             totalCount++;
@@ -209,12 +208,6 @@ bool H2Mutexes::remove_spurious_operators(vector<Operator> &operators) {
                 count++;
             }
         }
-        // Integer division is ~30x faster than calling clock().
-        if (op_id % 100 == 0 && time_exceeded()) {
-            cout << "Time limit reached while detecting spurious operators." << endl;
-            break;
-        }
-        ++op_id;
     }
     cout << count << " of " << totalCount << " operators detected as spurious" << endl;
     return spurious_detected;
