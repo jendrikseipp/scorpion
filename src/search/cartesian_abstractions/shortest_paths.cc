@@ -138,6 +138,7 @@ void ShortestPaths::recompute(
             }
         }
     }
+    assert(test_distances(abstraction, goals));
 }
 
 unique_ptr<Solution> ShortestPaths::extract_solution(
@@ -500,6 +501,7 @@ void ShortestPaths::update_incrementally(
             }
         }
     }
+    assert(test_distances(abstraction, abstraction.get_goals()));
 }
 
 Cost ShortestPaths::get_64bit_goal_distance(int abstract_state_id) const {
