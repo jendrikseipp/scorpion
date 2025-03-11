@@ -1142,14 +1142,13 @@ but will extend the support for other feature types in the future.</p>
     defined by <code>definition</code>.</li>
 </ul>
 <h3 id="variable_example">Variable Example<a class="headerlink" href="#variable_example" title="Permanent link">#</a></h3>
-<p>Suppose I want to run GBFS with the <code>lm_count</code> heuristic (the inadmissible
-version), and then run another GBFS search with an admissible <code>lm_count</code>
-heuristic, using the h^m landmarks without discovering the landmarks
-twice.</p>
-<div class="language-text highlight"><pre><span></span><code>--search &quot;let(lm, lm_hm(m=2), 
-              iterated([lazy_greedy(lmcount(lm)),
-                        lazy_greedy(lmcount(lm,admissible=true))]))&quot;
-</code></pre></div>
+<p>Suppose I want to run GBFS with the <code>landmark_sum</code> heuristic, and then run
+another GBFS search with the <code>landmark_cost_partitioning</code> heuristic, using the
+h^m landmarks without discovering the landmarks twice.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>--search &quot;let(lm, lm_hm(m=2), 
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>              iterated([lazy_greedy([landmark_sum(lm)]),
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>                        lazy_greedy([landmark_cost_partitioning(lm))]]))&quot;
+</span></code></pre></div>
 <h3 id="old-style_predefinitions">Old-style Predefinitions<a class="headerlink" href="#old-style_predefinitions" title="Permanent link">#</a></h3>
 <p>We still support but deprecate the use of "predefinitions" before the<code>--search</code>
 option. They are internally converted to <code>let</code>-expressions.</p>

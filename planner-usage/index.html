@@ -904,8 +904,8 @@ things. To see the complete list of options, run</p>
 <div class="language-text highlight"><pre><span></span><code>./fast-downward.py --help
 </code></pre></div>
 <p>If you want to run any of the planners based on Fast Downward that
-participated in IPC 2011, please also check
-<a href="IpcPlanners">IpcPlanners</a>.</p>
+participated in IPC 2011, please also check the page on
+<a href="../ipc-planners/">IPC planners</a>.</p>
 <h2 id="caveats">Caveats<a class="headerlink" href="#caveats" title="Permanent link">#</a></h2>
 <p>The <strong>search options</strong> are built with flexibility in mind, not ease of
 use. It is very easy to use option settings that look plausible, yet
@@ -956,28 +956,25 @@ for such cases.</p>
 <h3 id="lazy_greedy_best-first_search_with_preferred_operators_and_the_queue_alternation_method">Lazy greedy best-first search with preferred operators and the queue alternation method<a class="headerlink" href="#lazy_greedy_best-first_search_with_preferred_operators_and_the_queue_alternation_method" title="Permanent link">#</a></h3>
 <div class="language-text highlight"><pre><span></span><code>## using FF heuristic and context-enhanced additive heuristic (previously: &quot;fFyY&quot;)
  ./fast-downward.py domain.pddl task.pddl \
-    --evaluator &quot;hff=ff()&quot; --evaluator &quot;hcea=cea()&quot; \
-    --search &quot;lazy_greedy([hff, hcea], preferred=[hff, hcea])&quot; \
+    --search &quot;let(hff, ff(), let(hcea, cea(), lazy_greedy([hff, hcea], preferred=[hff, hcea])))&quot;
 
 
 ## using FF heuristic (previously: &quot;fF&quot;)
  ./fast-downward.py domain.pddl task.pddl \
-    --evaluator &quot;hff=ff()&quot; \
-    --search &quot;lazy_greedy([hff], preferred=[hff])&quot; \
+    --search &quot;let(hff, ff(), lazy_greedy([hff], preferred=[hff]))&quot;
 
 
 ## using context-enhanced additive heuristic (previously: &quot;yY&quot;)
  ./fast-downward.py domain.pddl task.pddl \
-    --evaluator &quot;hcea=cea()&quot; \
-    --search &quot;lazy_greedy([hcea], preferred=[hcea])&quot; \
+    --search &quot;let(hcea, cea(), lazy_greedy([hcea], preferred=[hcea]))&quot;
 </code></pre></div>
 <h3 id="lama_2011">LAMA 2011<a class="headerlink" href="#lama_2011" title="Permanent link">#</a></h3>
-<div class="language-text highlight"><pre><span></span><code> ./fast-downward.py --alias seq-sat-lama-2011 domain.pddl task.pddl
-</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>./fast-downward.py --alias seq-sat-lama-2011 domain.pddl task.pddl
+</span></code></pre></div>
 <p>runs the "LAMA 2011 configuration" of the planner. (Note that this is
 not really the same as "LAMA 2011" as it participated at IPC 2011
 because there have been bug fixes and other changes to the planner since
-2011. See <a href="IpcPlanners" title="wikilink">IpcPlanners</a> for more information.)
+2011. See <a href="../ipc-planners/">"IPC planners"</a> for more information.)
 To find out which actual search options the LAMA 2011 configuration
 corresponds to, check the source code of the <code>src/driver/aliases.py</code> module.</p>
 <h2 id="64-bit_mode">64-bit mode<a class="headerlink" href="#64-bit_mode" title="Permanent link">#</a></h2>

@@ -873,7 +873,7 @@
         
           <li class="md-nav__item">
   <a href="#translator_file_format_axiom_section" class="md-nav__link">
-    Translator file format: Axiom section
+    Translator file format: axiom section
   </a>
   
 </li>
@@ -990,7 +990,7 @@
         
           <li class="md-nav__item">
   <a href="#translator_file_format_axiom_section" class="md-nav__link">
-    Translator file format: Axiom section
+    Translator file format: axiom section
   </a>
   
 </li>
@@ -1477,7 +1477,7 @@ does not try to detect and simplify this effect pattern, which occurs
 quite commonly in some of the planning benchmarks.</p>
 <p>Finally, the 7 before the "end_operator" line indicates that this
 operator has a cost of 7.</p>
-<h3 id="translator_file_format_axiom_section">Translator file format: Axiom section<a class="headerlink" href="#translator_file_format_axiom_section" title="Permanent link">#</a></h3>
+<h3 id="translator_file_format_axiom_section">Translator file format: axiom section<a class="headerlink" href="#translator_file_format_axiom_section" title="Permanent link">#</a></h3>
 <p>The axiom section is similar in structure to the operator section, as
 axiom rules can be considered to be operators that are automatically
 executed whenever applicable. However, the section is somewhat simpler
@@ -1487,8 +1487,6 @@ variable.</p>
 containing the number of axiom rules. Following that line, each axiom
 rule is defined in sequence.</p>
 <p>An axiom rule is structured as follows:</p>
-<ul>
-<li>
 <ul>
 <li>The first line is "begin_rule"</li>
 <li>The second line contains a single number, denoting the number of
@@ -1503,8 +1501,6 @@ rule is defined in sequence.</p>
     to this variable. The variable and this latter value together
     form the "head" of the rule.</li>
 <li>The final line is "end_rule".</li>
-</ul>
-</li>
 </ul>
 <p>Variables appearing in the head of axiom rules (axiom variables) are
 disjoint from variables affected by operators. In the current version of
