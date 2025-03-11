@@ -212,7 +212,7 @@ void CEGAR::refinement_loop(bool is_landmark_subtask) {
         }
 
         find_flaw_timer.resume();
-
+        // split==nullptr iff we find a concrete solution or run out of time or memory.
         unique_ptr<Split> split;
         if (pick_flawed_abstract_state ==
             PickFlawedAbstractState::FIRST_ON_SHORTEST_PATH) {
@@ -220,14 +220,8 @@ void CEGAR::refinement_loop(bool is_landmark_subtask) {
         } else {
             split = flaw_search->get_split(timer);
         }
-
         find_flaw_timer.stop();
 
-        // Now split==nullptr iff we found a solution or ran out of time or memory.
-        // The assertion might fail if we run out of resources between the last check and the assertion.
-        assert((split && utils::extra_memory_padding_is_reserved() && !timer.is_expired()) ||
-               (!split && (!utils::extra_memory_padding_is_reserved() || timer.is_expired())) ||
-               (!split && utils::extra_memory_padding_is_reserved() && !timer.is_expired()));
 
         if (!utils::extra_memory_padding_is_reserved()) {
             log << "Reached memory limit in flaw search." << endl;

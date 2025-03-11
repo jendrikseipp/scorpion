@@ -33,10 +33,14 @@ Abstraction::Abstraction(
     initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
 
     if (transition_representation == TransitionRepresentation::STORE) {
-        log << "Store transitions." << endl;
+        if (log.is_at_least_normal()) {
+            log << "Store transitions." << endl;
+        }
         transition_system = utils::make_unique_ptr<TransitionSystem>(*transition_rewirer);
     } else {
-        log << "Create match tree." << endl;
+        if (log.is_at_least_normal()) {
+            log << "Create match tree." << endl;
+        }
         match_tree = utils::make_unique_ptr<MatchTree>(
             TaskProxy(*task).get_operators(),
             transition_rewirer->get_preconditions(),
