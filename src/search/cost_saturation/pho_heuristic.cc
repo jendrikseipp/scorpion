@@ -89,26 +89,27 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
 
     for (int i = 0; i < num_abstractions; ++i) {
         int h = h_values_by_abstraction[i][abstract_state_ids[i]];
+        if (h == INF) {
+            // State is unsolvable.
+            vector<int> zero_costs(num_operators, 0);
+            CostPartitioningHeuristic cp_heuristic;
+            for (int i = 0; i < num_abstractions; ++i) {
+                vector<int> h_values = abstractions[i]->compute_goal_distances(zero_costs);
+                cp_heuristic.add_h_values(i, move(h_values));
+            }
+            return cp_heuristic;
+        }
         lp_solver.set_objective_coefficient(i, h);
     }
+
     lp_solver.solve();
-
-    if (!lp_solver.has_optimal_solution()) {
-        // State is unsolvable.
-        vector<int> zero_costs(num_operators, 0);
-        CostPartitioningHeuristic cp_heuristic;
-        for (int i = 0; i < num_abstractions; ++i) {
-            vector<int> h_values = abstractions[i]->compute_goal_distances(zero_costs);
-            cp_heuristic.add_h_values(i, move(h_values));
-        }
-        return cp_heuristic;
-    }
-
+    assert(lp_solver.has_optimal_solution());
     vector<double> solution = lp_solver.extract_solution();
     if (log.is_at_least_debug()) {
         log << "Objective value: " << lp_solver.get_objective_value() << endl;
         log << "Solution: " << solution << endl;
     }
+
     CostPartitioningHeuristic cp_heuristic;
     for (int i = 0; i < num_abstractions; ++i) {
         double weight = solution[i];
