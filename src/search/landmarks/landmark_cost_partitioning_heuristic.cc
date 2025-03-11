@@ -57,15 +57,15 @@ void LandmarkCostPartitioningHeuristic::set_cost_partitioning_algorithm(
     vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
     if (cost_partitioning == CostPartitioningMethod::OPTIMAL) {
         cost_partitioning_algorithm =
-            utils::make_unique_ptr<OptimalCostPartitioningAlgorithm>(
+            make_unique<OptimalCostPartitioningAlgorithm>(
                 operator_costs, *lm_graph, lpsolver);
     } else if (cost_partitioning == CostPartitioningMethod::CANONICAL) {
-        cost_partitioning_algorithm = utils::make_unique_ptr<LandmarkCanonicalHeuristic>(
+        cost_partitioning_algorithm = make_unique<LandmarkCanonicalHeuristic>(
             operator_costs, *lm_graph);
     } else if (cost_partitioning == CostPartitioningMethod::PHO ||
                cost_partitioning == CostPartitioningMethod::SATURATED_PHO) {
         bool saturated = cost_partitioning == CostPartitioningMethod::SATURATED_PHO;
-        cost_partitioning_algorithm = utils::make_unique_ptr<LandmarkPhO>(
+        cost_partitioning_algorithm = make_unique<LandmarkPhO>(
             operator_costs, *lm_graph, saturated, lpsolver);
     } else {
         bool reuse_costs = false;
@@ -87,7 +87,7 @@ void LandmarkCostPartitioningHeuristic::set_cost_partitioning_algorithm(
         }
         shared_ptr<utils::RandomNumberGenerator> rng = utils::get_rng(random_seed);
         cost_partitioning_algorithm =
-            utils::make_unique_ptr<UniformCostPartitioningAlgorithm>(
+            make_unique<UniformCostPartitioningAlgorithm>(
                 operator_costs, *lm_graph, alm, reuse_costs, greedy, scoring_function, rng);
     }
 }

@@ -3,8 +3,6 @@
 #include "refinement_hierarchy.h"
 #include "utils.h"
 
-#include "../utils/memory.h"
-
 #include <algorithm>
 #include <cassert>
 #include <unordered_set>
@@ -100,6 +98,6 @@ NodeID AbstractState::get_node_id() const {
 
 unique_ptr<AbstractState> AbstractState::get_trivial_abstract_state(
     const CartesianSet &trivial_cartesian_set) {
-    return utils::make_unique_ptr<AbstractState>(0, 0, trivial_cartesian_set);
+    return make_unique<AbstractState>(0, 0, trivial_cartesian_set);
 }
 }

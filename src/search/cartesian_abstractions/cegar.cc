@@ -38,7 +38,7 @@ CEGAR::CEGAR(
           transition_representation == TransitionRepresentation::STORE ? max_transitions : INF),
       pick_flawed_abstract_state(pick_flawed_abstract_state),
       transition_rewirer(make_shared<TransitionRewirer>(task_proxy.get_operators())),
-      abstraction(utils::make_unique_ptr<Abstraction>(
+      abstraction(make_unique<Abstraction>(
                       task, transition_rewirer, transition_representation, log)),
       timer(max_time),
       log(log),
@@ -47,10 +47,10 @@ CEGAR::CEGAR(
     int max_cached_spt_parents = (transition_representation == TransitionRepresentation::STORE)
                                      ? 0
                                      : max_transitions;
-    shortest_paths = utils::make_unique_ptr<ShortestPaths>(
+    shortest_paths = make_unique<ShortestPaths>(
         *transition_rewirer, task_properties::get_operator_costs(task_proxy),
         max_cached_spt_parents, timer, log);
-    flaw_search = utils::make_unique_ptr<FlawSearch>(
+    flaw_search = make_unique<FlawSearch>(
         task, *abstraction, *shortest_paths, rng,
         pick_flawed_abstract_state, pick_split, tiebreak_split,
         max_concrete_states_per_abstract_state, max_state_expansions, log);

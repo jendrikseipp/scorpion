@@ -12,6 +12,7 @@
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/countdown_timer.h"
+#include "../utils/memory.h"
 #include "../utils/rng.h"
 
 using namespace std;

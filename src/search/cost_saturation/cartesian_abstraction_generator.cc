@@ -13,6 +13,7 @@
 #include "../cartesian_abstractions/transition_system.h"
 #include "../cartesian_abstractions/utils.h"
 #include "../plugins/plugin.h"
+#include "../utils/memory.h"
 #include "../utils/rng_options.h"
 
 using namespace std;

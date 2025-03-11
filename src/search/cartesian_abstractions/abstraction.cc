@@ -9,7 +9,6 @@
 
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
-#include "../utils/memory.h"
 
 #include <algorithm>
 #include <cassert>
@@ -27,7 +26,7 @@ Abstraction::Abstraction(
     : transition_rewirer(transition_rewirer),
       concrete_initial_state(TaskProxy(*task).get_initial_state()),
       goal_facts(task_properties::get_fact_pairs(TaskProxy(*task).get_goals())),
-      refinement_hierarchy(utils::make_unique_ptr<RefinementHierarchy>(task)),
+      refinement_hierarchy(make_unique<RefinementHierarchy>(task)),
       log(log),
       debug(log.is_at_least_debug()) {
     initialize_trivial_abstraction(get_domain_sizes(TaskProxy(*task)));
@@ -36,12 +35,12 @@ Abstraction::Abstraction(
         if (log.is_at_least_normal()) {
             log << "Store transitions." << endl;
         }
-        transition_system = utils::make_unique_ptr<TransitionSystem>(*transition_rewirer);
+        transition_system = make_unique<TransitionSystem>(*transition_rewirer);
     } else {
         if (log.is_at_least_normal()) {
             log << "Create match tree." << endl;
         }
-        match_tree = utils::make_unique_ptr<MatchTree>(
+        match_tree = make_unique<MatchTree>(
             TaskProxy(*task).get_operators(),
             transition_rewirer->get_preconditions(),
             transition_rewirer->get_postconditions(),
@@ -49,7 +48,7 @@ Abstraction::Abstraction(
     }
 #ifndef NDEBUG
     if (!transition_system && debug) {
-        transition_system = utils::make_unique_ptr<TransitionSystem>(*transition_rewirer);
+        transition_system = make_unique<TransitionSystem>(*transition_rewirer);
     }
 #endif
 }
@@ -165,7 +164,7 @@ void Abstraction::mark_all_states_as_goals() {
 
 void Abstraction::initialize_trivial_abstraction(const vector<int> &domain_sizes) {
     CartesianSet::set_static_members(domain_sizes);
-    cartesian_sets.push_back(utils::make_unique_ptr<CartesianSet>(domain_sizes));
+    cartesian_sets.push_back(make_unique<CartesianSet>(domain_sizes));
     unique_ptr<AbstractState> init_state =
         AbstractState::get_trivial_abstract_state(*cartesian_sets[0]);
     init_id = init_state->get_id();
@@ -214,13 +213,13 @@ pair<int, int> Abstraction::refine(
 
     this->cartesian_sets.resize(max(node_ids.first, node_ids.second) + 1);
     this->cartesian_sets[node_ids.first] =
-        utils::make_unique_ptr<CartesianSet>(move(v1_cartesian_set));
+        make_unique<CartesianSet>(move(v1_cartesian_set));
     this->cartesian_sets[node_ids.second] =
-        utils::make_unique_ptr<CartesianSet>(move(v2_cartesian_set));
+        make_unique<CartesianSet>(move(v2_cartesian_set));
 
-    unique_ptr<AbstractState> v1 = utils::make_unique_ptr<AbstractState>(
+    unique_ptr<AbstractState> v1 = make_unique<AbstractState>(
         v1_id, node_ids.first, *this->cartesian_sets[node_ids.first]);
-    unique_ptr<AbstractState> v2 = utils::make_unique_ptr<AbstractState>(
+    unique_ptr<AbstractState> v2 = make_unique<AbstractState>(
         v2_id, node_ids.second, *this->cartesian_sets[node_ids.second]);
     assert(state.includes(*v1));
     assert(state.includes(*v2));

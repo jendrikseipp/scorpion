@@ -7,7 +7,6 @@
 #include "../algorithms/priority_queues.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
-#include "../utils/memory.h"
 
 #include <cassert>
 #include <execution>
