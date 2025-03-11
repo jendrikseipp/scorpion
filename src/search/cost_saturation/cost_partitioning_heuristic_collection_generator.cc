@@ -11,7 +11,6 @@
 #include "../task_utils/sampling.h"
 #include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
-#include "../utils/memory.h"
 #include "../utils/rng_options.h"
 
 #include <cassert>
@@ -106,7 +105,7 @@ CostPartitioningHeuristicCollectionGenerator::generate_cost_partitionings(
     unique_ptr<Diversifier> diversifier;
     if (diversify) {
         double max_sampling_time = timer.get_remaining_time();
-        diversifier = utils::make_unique_ptr<Diversifier>(
+        diversifier = make_unique<Diversifier>(
             sample_states_and_return_abstract_state_ids(
                 task_proxy, abstractions, sampler, num_samples, init_h, is_dead_end, max_sampling_time));
     }

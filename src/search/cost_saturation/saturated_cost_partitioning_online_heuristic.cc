@@ -49,8 +49,8 @@ SaturatedCostPartitioningOnlineHeuristic::SaturatedCostPartitioningOnlineHeurist
     for (const auto &cp : cp_heuristics) {
         size_kb += cp.estimate_size_in_kb();
     }
-    improve_heuristic_timer = utils::make_unique_ptr<utils::Timer>(false);
-    select_state_timer = utils::make_unique_ptr<utils::Timer>(false);
+    improve_heuristic_timer = make_unique<utils::Timer>(false);
+    select_state_timer = make_unique<utils::Timer>(false);
 }
 
 SaturatedCostPartitioningOnlineHeuristic::~SaturatedCostPartitioningOnlineHeuristic() {
@@ -228,7 +228,7 @@ public:
     virtual shared_ptr<SaturatedCostPartitioningOnlineHeuristic> create_component(
         const plugins::Options &options) const override {
         shared_ptr<AbstractTask> task = options.get<shared_ptr<AbstractTask>>("transform");
-        unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
+        unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
         Abstractions abstractions = generate_abstractions(
             task,
             options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),

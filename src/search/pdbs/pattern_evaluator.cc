@@ -6,9 +6,6 @@
 #include "../algorithms/priority_queues.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/collections.h"
-#include "../utils/logging.h"
-#include "../utils/math.h"
-#include "../utils/memory.h"
 
 #include <cassert>
 #include <unordered_map>
@@ -149,8 +146,7 @@ PatternEvaluator::PatternEvaluator(
         pattern_domain_sizes.push_back(task_info.domain_sizes[var]);
     }
 
-    match_tree_backward = utils::make_unique_ptr<pdbs::MatchTree>(
-        task_proxy, projection);
+    match_tree_backward = make_unique<pdbs::MatchTree>(task_proxy, projection);
 
     vector<pair<int, int>> active_ops;
     for (const OperatorInfo &op : task_info.operator_infos) {

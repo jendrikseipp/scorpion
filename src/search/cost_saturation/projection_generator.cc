@@ -89,7 +89,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
                 task_proxy, pattern).convert_to_abstraction();
         } else {
             task_properties::verify_no_conditional_effects(task_proxy);
-            projection = utils::make_unique_ptr<Projection>(
+            projection = make_unique<Projection>(
                 task_proxy, task_info, pattern, combine_labels);
         }
 

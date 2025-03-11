@@ -8,11 +8,9 @@
 
 #include "../plugins/plugin.h"
 #include "../utils/logging.h"
-#include "../utils/memory.h"
 #include "../utils/rng.h"
 
 #include <cassert>
-#include <execution>
 #include <iostream>
 #include <limits>
 
@@ -66,7 +64,7 @@ SplitSelector::SplitSelector(
     if (first_pick == PickSplit::MIN_HADD || first_pick == PickSplit::MAX_HADD ||
         tiebreak_pick == PickSplit::MIN_HADD || tiebreak_pick == PickSplit::MAX_HADD) {
         additive_heuristic =
-            utils::make_unique_ptr<additive_heuristic::AdditiveHeuristic>(
+            make_unique<additive_heuristic::AdditiveHeuristic>(
                 tasks::AxiomHandlingType::APPROXIMATE_NEGATIVE, task,
                 false, "h^add within CEGAR abstractions",
                 utils::Verbosity::SILENT);

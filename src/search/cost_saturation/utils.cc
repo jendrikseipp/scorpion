@@ -226,7 +226,7 @@ shared_ptr<MaxCostPartitioningHeuristic> get_max_cp_heuristic(const plugins::Opt
     shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
-    unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
+    unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
     Abstractions abstractions = generate_abstractions(
         task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"), dead_ends.get());
     vector<CostPartitioningHeuristic> cp_heuristics =

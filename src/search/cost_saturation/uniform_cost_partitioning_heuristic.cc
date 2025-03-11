@@ -210,7 +210,7 @@ public:
         shared_ptr<AbstractTask> scaled_costs_task =
             get_scaled_costs_task(options.get<shared_ptr<AbstractTask>>("transform"));
 
-        unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
+        unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
         Abstractions abstractions = generate_abstractions(
             scaled_costs_task,
             options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),

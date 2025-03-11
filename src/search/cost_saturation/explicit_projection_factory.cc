@@ -7,7 +7,6 @@
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
-#include "../utils/memory.h"
 
 #include <numeric>
 
@@ -360,8 +359,8 @@ void ExplicitProjectionFactory::compute_transitions() {
 }
 
 unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {
-    return utils::make_unique_ptr<ExplicitAbstraction>(
-        utils::make_unique_ptr<ProjectionFunction>(pattern, move(hash_multipliers)),
+    return make_unique<ExplicitAbstraction>(
+        make_unique<ProjectionFunction>(pattern, move(hash_multipliers)),
         move(backward_graph),
         move(looping_operators),
         move(goal_states));

@@ -108,8 +108,7 @@ static unique_ptr<PatternCollection> get_patterns(
     utils::g_log << "Generate patterns for size " << pattern_size << endl;
     PatternCollectionGeneratorSystematic generator(
         pattern_size, pattern_type, utils::Verbosity::NORMAL);
-    unique_ptr<PatternCollection> patterns_ptr =
-        utils::make_unique_ptr<PatternCollection>();
+    unique_ptr<PatternCollection> patterns_ptr = make_unique<PatternCollection>();
     PatternCollection &patterns = *patterns_ptr;
     generator.generate(
         task, [pattern_size, &patterns, &timer](
@@ -431,7 +430,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
                 projection = cost_saturation::ExplicitProjectionFactory(
                     task_proxy, pattern).convert_to_abstraction();
             } else {
-                projection = utils::make_unique_ptr<cost_saturation::Projection>(
+                projection = make_unique<cost_saturation::Projection>(
                     task_proxy, task_info, pattern);
             }
             if (saturate) {
@@ -455,11 +454,11 @@ string PatternCollectionGeneratorSystematicSCP::name() const {
 PatternCollectionInformation PatternCollectionGeneratorSystematicSCP::compute_patterns(
     const shared_ptr<AbstractTask> &task) {
     utils::CountdownTimer timer(max_time);
-    pattern_computation_timer = utils::make_unique_ptr<utils::Timer>();
+    pattern_computation_timer = make_unique<utils::Timer>();
     pattern_computation_timer->stop();
-    projection_computation_timer = utils::make_unique_ptr<utils::Timer>();
+    projection_computation_timer = make_unique<utils::Timer>();
     projection_computation_timer->stop();
-    projection_evaluation_timer = utils::make_unique_ptr<utils::Timer>();
+    projection_evaluation_timer = make_unique<utils::Timer>();
     projection_evaluation_timer->stop();
     TaskProxy task_proxy(*task);
     task_properties::verify_no_axioms(task_proxy);

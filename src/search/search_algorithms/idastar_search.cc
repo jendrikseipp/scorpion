@@ -79,7 +79,7 @@ IDAstarSearch::IDAstarSearch(
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
     if (cache_size > 0) {
-        cache = utils::make_unique_ptr<FifoCache>(cache_size);
+        cache = make_unique<FifoCache>(cache_size);
     }
 }
 

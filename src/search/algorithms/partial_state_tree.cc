@@ -1,7 +1,5 @@
 #include "partial_state_tree.h"
 
-#include "../utils/memory.h"
-
 using namespace std;
 
 namespace partial_state_tree {
@@ -44,7 +42,7 @@ void PartialStateTreeNode::add(
           We create the pointers to child nodes, but create the nodes on demand.
         */
         var_id = uncovered_vars.back();
-        value_successors = utils::make_unique_ptr<vector<unique_ptr<PartialStateTreeNode>>>();
+        value_successors = make_unique<vector<unique_ptr<PartialStateTreeNode>>>();
         value_successors->resize(domain_sizes[var_id]);
     }
 
@@ -75,7 +73,7 @@ void PartialStateTreeNode::add(
       Since we generate nodes on demand, the successor might still be a nullptr.
     */
     if (!*successor) {
-        *successor = utils::make_unique_ptr<PartialStateTreeNode>();
+        *successor = make_unique<PartialStateTreeNode>();
     }
 
     (*successor)->add(partial_state, domain_sizes, uncovered_vars);

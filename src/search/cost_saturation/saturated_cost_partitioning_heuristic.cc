@@ -131,7 +131,7 @@ public:
         shared_ptr<AbstractTask> task = options.get<shared_ptr<AbstractTask>>("transform");
         TaskProxy task_proxy(*task);
         vector<int> costs = task_properties::get_operator_costs(task_proxy);
-        unique_ptr<DeadEnds> dead_ends = utils::make_unique_ptr<DeadEnds>();
+        unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
         Abstractions abstractions = generate_abstractions(
             task, options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"), dead_ends.get());
         CPFunction cp_function = get_cp_function_from_options(options);

@@ -10,7 +10,6 @@
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 #include "../utils/math.h"
-#include "../utils/memory.h"
 
 #include <cassert>
 #include <unordered_map>
@@ -268,8 +267,7 @@ Projection::Projection(
         }
     }
 
-    abstraction_function = utils::make_unique_ptr<ProjectionFunction>(
-        pattern, hash_multipliers);
+    abstraction_function = make_unique<ProjectionFunction>(pattern, hash_multipliers);
 
     VariablesProxy variables = task_proxy.get_variables();
     vector<int> variable_to_pattern_index(variables.size(), -1);
@@ -281,7 +279,7 @@ Projection::Projection(
         pattern_domain_sizes.push_back(variables[pattern_var].get_domain_size());
     }
 
-    match_tree_backward = utils::make_unique_ptr<pdbs::SlimMatchTree>(
+    match_tree_backward = make_unique<pdbs::SlimMatchTree>(
         task_proxy, pattern, hash_multipliers);
 
     OperatorGroups operator_groups;

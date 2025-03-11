@@ -139,8 +139,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         vector<int> goal_states(
             cartesian_abstraction->get_goals().begin(),
             cartesian_abstraction->get_goals().end());
-        auto abstraction = utils::make_unique_ptr<ExplicitAbstraction>(
-            utils::make_unique_ptr<CartesianAbstractionFunction>(
+        auto abstraction = make_unique<ExplicitAbstraction>(
+            make_unique<CartesianAbstractionFunction>(
                 cartesian_abstraction->extract_refinement_hierarchy()),
             move(backward_graph),
             cartesian_abstraction->get_looping_operators(),

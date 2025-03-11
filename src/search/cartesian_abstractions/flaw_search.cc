@@ -75,12 +75,12 @@ void FlawSearch::initialize() {
     best_flaw_h = (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) ? 0 : INF_COSTS;
     assert(open_list.empty());
     assert(flawed_states.empty());
-    state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
-    search_space = utils::make_unique_ptr<SearchSpace>(*state_registry, silent_log);
+    state_registry = make_unique<StateRegistry>(task_proxy);
+    search_space = make_unique<SearchSpace>(*state_registry, silent_log);
     const State &initial_state = state_registry->get_initial_state();
     SearchNode node = search_space->get_node(initial_state);
     node.open_initial();
-    cached_abstract_state_ids = utils::make_unique_ptr<PerStateInformation<int>>(MISSING);
+    cached_abstract_state_ids = make_unique<PerStateInformation<int>>(MISSING);
     (*cached_abstract_state_ids)[initial_state] = abstraction.get_initial_state().get_id();
     open_list.push(initial_state.get_id());
 }
@@ -359,7 +359,7 @@ unique_ptr<Split> FlawSearch::create_split(
     pick_split_timer.resume();
     Split split = split_selector.pick_split(abstract_state, move(splits), rng);
     pick_split_timer.stop();
-    return utils::make_unique_ptr<Split>(move(split));
+    return make_unique<Split>(move(split));
 }
 
 SearchStatus FlawSearch::search_for_flaws(const utils::CountdownTimer &cegar_timer) {
@@ -579,7 +579,7 @@ unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer
 }
 
 unique_ptr<Split> FlawSearch::get_split_legacy(const Solution &solution) {
-    state_registry = utils::make_unique_ptr<StateRegistry>(task_proxy);
+    state_registry = make_unique<StateRegistry>(task_proxy);
     bool debug = log.is_at_least_debug();
     if (debug)
         log << "Check solution:" << endl;
