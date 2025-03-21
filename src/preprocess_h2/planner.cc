@@ -24,6 +24,7 @@ void preprocess(int argc, const char **argv) {
     vector<MutexGroup> mutexes;
     vector<Operator> operators;
     vector<Axiom> axioms;
+    string outfile = "preprocessed-output.sas";
 
     for (int i = 1; i < argc; ++i) {
         string arg = string(argv[i]);
@@ -51,9 +52,17 @@ void preprocess(int argc, const char **argv) {
             disable_bw_h2 = true;
         } else if (arg.compare("--stat") == 0) {
             expensive_statistics = true;
+        } else if (arg.compare("--outfile") == 0) {
+            i++;
+            if (i < argc) {
+                outfile = string(argv[i]);
+            } else {
+                cerr << "please specify the output filename after --outfile" << endl;
+                exit(2);
+            }
         } else {
             cerr << "unknown option " << arg << endl << endl;
-            cout << "Usage: ./preprocess [--no_rel] [--h2_time_limit SECONDS] [--no_h2] [--no_bw_h2] [--augmented_pre] [--stat] < output" << endl;
+            cout << "Usage: ./preprocess-h2 [--no_rel] [--h2_time_limit SECONDS] [--no_h2] [--no_bw_h2] [--augmented_pre] [--stat] [--outfile OUTFILE] < output" << endl;
             exit(2);
         }
     }
@@ -90,7 +99,7 @@ void preprocess(int argc, const char **argv) {
         if (!compute_h2_mutexes(ordering, operators, axioms,
                                 mutexes, initial_state, goals,
                                 h2_mutex_time, disable_bw_h2)) {
-            generate_unsolvable_cpp_input();
+            generate_unsolvable_cpp_input(outfile);
             return;
         }
 
@@ -124,7 +133,7 @@ void preprocess(int argc, const char **argv) {
         new_goals.swap(goals);
         cout << "Change id of initial state" << endl;
         if (initial_state.remove_unreachable_facts()) {
-            generate_unsolvable_cpp_input();
+            generate_unsolvable_cpp_input(outfile);
             return;
         }
 
@@ -227,10 +236,10 @@ void preprocess(int argc, const char **argv) {
 
     cout << "Writing output..." << endl;
     if (ordering.empty()) {
-        generate_unsolvable_cpp_input();
+        generate_unsolvable_cpp_input(outfile);
     } else {
         generate_cpp_input(
-            ordering, metric, mutexes, initial_state, goals, operators, axioms);
+            ordering, metric, mutexes, initial_state, goals, operators, axioms, outfile);
     }
 }
 
