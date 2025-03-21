@@ -102,6 +102,7 @@ Examples:
 
 COMPONENTS_PLUS_OVERALL = ["translate", "preprocess", "search", "validate", "overall"]
 DEFAULT_SAS_FILE = Path("output.sas")
+DEFAULT_PREPROCESSED_SAS_FILE = DEFAULT_SAS_FILE.with_name("preprocessed-" + DEFAULT_SAS_FILE.name)
 
 
 """
@@ -438,6 +439,10 @@ def parse_args():
         help="intermediate file for storing the translator output "
             f"(implies --keep-sas-file, default: {DEFAULT_SAS_FILE})")
     driver_other.add_argument(
+        "--preprocessed-sas-file", metavar="FILE", type=Path,
+        help="intermediate file for storing the preprocessor output "
+            f"(implies --keep-sas-file, default: {DEFAULT_PREPROCESSED_SAS_FILE})")
+    driver_other.add_argument(
         "--keep-sas-file", action="store_true",
         help="keep translator output file (implied by --sas-file, default: "
             "delete file if translator and search component are active)")
@@ -473,7 +478,11 @@ def parse_args():
         args.keep_sas_file = True
     else:
         args.sas_file = DEFAULT_SAS_FILE
-    args.preprocessed_sas_file = args.sas_file.with_name("preprocessed-" + args.sas_file.name)
+
+    if args.preprocessed_sas_file:
+        args.keep_sas_file = True
+    else:
+        args.preprocessed_sas_file = DEFAULT_PREPROCESSED_SAS_FILE
 
     if args.build and args.debug:
         print_usage_and_exit_with_driver_input_error(
