@@ -22,8 +22,6 @@ else:
 
 # TODO: We might want to turn translate into a module and call it with "python3 -m translate".
 REL_TRANSLATE_PATH = Path("translate") / "translate.py"
-# The output file is hardcoded in the preprocessor.
-PREPROCESSED_OUTPUT = Path("preprocessed-output.sas")
 REL_SEARCH_PATH = Path(f"downward{BINARY_EXT}")
 # Older versions of VAL use lower case, newer versions upper case. We prefer the
 # older version because this is what our build instructions recommend.
@@ -115,6 +113,11 @@ def run_preprocess(args):
         # Check if executable exists in the "bin" directory.
         args.preprocess = get_executable(args.build, preprocessor_name)
 
+    if "--outfile" in args.preprocess_options:
+        returncodes.exit_with_driver_input_error(
+            "Error: --outfile option is reserved for the driver.")
+    args.preprocess_options = ["--outfile", args.preprocessed_sas_file] + args.preprocess_options
+
     try:
         call.check_call(
             "preprocess",
@@ -130,7 +133,7 @@ def run_preprocess(args):
         return (err.returncode, True)
     else:
         # If the preprocessing succeeded, we use the preprocessed task.
-        args.search_input = PREPROCESSED_OUTPUT
+        args.search_input = args.preprocessed_sas_file
         return (0, True)
 
 

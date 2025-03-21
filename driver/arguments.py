@@ -6,8 +6,6 @@ import sys
 from . import aliases
 from . import returncodes
 from . import util
-from .run_components import PREPROCESSED_OUTPUT
-
 
 DESCRIPTION = """Fast Downward driver script.
 
@@ -393,8 +391,8 @@ def parse_args():
     components.add_argument(
         "--preprocess",
         "--transform-task",  # For backward compatibility.
-        help="path to or name of external program that transforms output.sas "
-            f"into {PREPROCESSED_OUTPUT} (default: %(const)s)",
+        help="preprocess the translator output. Accepts optional external "
+            "preprocessing program (default: %(const)s)",
         const="preprocess-h2", nargs="?")
     components.add_argument(
         "--search", action="store_true",
@@ -475,6 +473,7 @@ def parse_args():
         args.keep_sas_file = True
     else:
         args.sas_file = DEFAULT_SAS_FILE
+    args.preprocessed_sas_file = args.sas_file.with_name("preprocessed-" + args.sas_file.name)
 
     if args.build and args.debug:
         print_usage_and_exit_with_driver_input_error(

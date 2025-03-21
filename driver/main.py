@@ -43,9 +43,9 @@ def main():
             if not args.keep_sas_file:
                 print(f"Remove intermediate file {args.sas_file}")
                 args.sas_file.unlink()
-                if run_components.PREPROCESSED_OUTPUT.exists():
-                    print(f"Remove intermediate file {run_components.PREPROCESSED_OUTPUT}")
-                    run_components.PREPROCESSED_OUTPUT.unlink()
+                if args.preprocessed_sas_file.exists():
+                    print(f"Remove intermediate file {args.preprocessed_sas_file}")
+                    args.preprocessed_sas_file.unlink()
         elif component == "validate":
             (exitcode, continue_execution) = run_components.run_validate(args)
         else:
