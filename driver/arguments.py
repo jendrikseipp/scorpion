@@ -216,12 +216,7 @@ def _set_components_automatically(parser, args):
     2. Otherwise, run all components."""
 
     if len(args.filenames) == 1 and _looks_like_search_input(args.filenames[0]):
-        if args.preprocess:
-            args.components = ["preprocess", "search"]
-        else:
-            args.components = ["search"]
-    elif args.preprocess:
-        args.components = ["translate", "preprocess", "search"]
+        args.components = ["search"]
     else:
         args.components = ["translate", "search"]
 
@@ -240,13 +235,18 @@ def _set_components_and_inputs(parser, args):
     args.components = []
     if args.translate or args.run_all:
         args.components.append("translate")
-    if args.run_all:
+    if args.preprocess or args.run_all:
         args.components.append("preprocess")
     if args.search or args.run_all:
         args.components.append("search")
 
     if not args.components:
         _set_components_automatically(parser, args)
+    elif args.components == ["preprocess"]:
+        if len(args.filenames) == 1 and _looks_like_search_input(args.filenames[0]):
+            args.components = ["preprocess", "search"]
+        else:
+            args.components = ["translate", "preprocess", "search"]
 
     # We implicitly activate validation in debug mode. However, for
     # validation we need the PDDL input files and a plan, therefore both
