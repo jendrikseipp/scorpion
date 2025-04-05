@@ -84,6 +84,8 @@ public:
 };
 
 extern int get_subtask_limit(int limit, int used, int remaining_subtasks);
+extern std::vector<int> compute_saturated_costs(
+    const Abstraction &abstraction, const std::vector<int> &h_values, bool use_general_costs);
 }
 
 #endif

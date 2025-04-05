@@ -77,6 +77,7 @@ const AbstractStates &Abstraction::get_states() const {
 }
 
 int Abstraction::get_abstract_state_id(const State &state) const {
+    assert(refinement_hierarchy);
     return refinement_hierarchy->get_abstract_state_id(state);
 }
 
@@ -208,6 +209,7 @@ pair<int, int> Abstraction::refine(
     }
 
     // Update refinement hierarchy.
+    assert(refinement_hierarchy);
     pair<NodeID, NodeID> node_ids = refinement_hierarchy->split(
         state.get_node_id(), var, v2_values, v1_id, v2_id);
 
@@ -296,7 +298,9 @@ void Abstraction::print_statistics() const {
         int num_cartesian_sets = cartesian_sets.size() - num_helper_nodes;
         log << "Cartesian helper nodes: " << num_helper_nodes << endl;
         log << "Cartesian sets: " << num_cartesian_sets << endl;
-        refinement_hierarchy->print_statistics(log);
+        if (refinement_hierarchy) {
+            refinement_hierarchy->print_statistics(log);
+        }
     }
 }
 }

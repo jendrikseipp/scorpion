@@ -1,5 +1,6 @@
 #include "cartesian_abstraction_generator.h"
 
+#include "cartesian_abstraction.h"
 #include "explicit_abstraction.h"
 #include "types.h"
 
@@ -19,21 +20,6 @@
 using namespace std;
 
 namespace cost_saturation {
-class CartesianAbstractionFunction : public AbstractionFunction {
-    unique_ptr<cartesian_abstractions::RefinementHierarchy> refinement_hierarchy;
-
-public:
-    explicit CartesianAbstractionFunction(
-        unique_ptr<cartesian_abstractions::RefinementHierarchy> refinement_hierarchy)
-        : refinement_hierarchy(move(refinement_hierarchy)) {
-    }
-
-    virtual int get_abstract_state_id(const State &concrete_state) const override {
-        return refinement_hierarchy->get_abstract_state_id(concrete_state);
-    }
-};
-
-
 static vector<vector<Successor>> get_backward_graph(
     const cartesian_abstractions::Abstraction &cartesian_abstraction,
     const vector<int> &h_values) {
@@ -122,6 +108,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
             dot_graph_verbosity);
         cout << endl;
         auto cartesian_abstraction = cegar->extract_abstraction();
+        // If the timer expired, the goal distances might only be lower bounds.
         vector<int> goal_distances = cegar->get_goal_distances();
         cegar.release();  // Release memory for shortest paths, flaw search, etc.
 
@@ -135,19 +122,23 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         int initial_state_id = cartesian_abstraction->get_initial_state().get_id();
         bool unsolvable = goal_distances[initial_state_id] == INF;
 
-        auto backward_graph = get_backward_graph(*cartesian_abstraction, goal_distances);
-        for (const auto &transitions : backward_graph) {
-            num_transitions += transitions.size();
+        unique_ptr<Abstraction> abstraction;
+        if (transition_representation == cartesian_abstractions::TransitionRepresentation::STORE) {
+            auto backward_graph = get_backward_graph(*cartesian_abstraction, goal_distances);
+            for (const auto &transitions : backward_graph) {
+                num_transitions += transitions.size();
+            }
+            abstraction = make_unique<ExplicitAbstraction>(
+                make_unique<CartesianAbstractionFunction>(
+                    cartesian_abstraction->extract_refinement_hierarchy()),
+                move(backward_graph),
+                cartesian_abstraction->get_looping_operators(),
+                vector<int>(
+                    cartesian_abstraction->get_goals().begin(),
+                    cartesian_abstraction->get_goals().end()));
+        } else {
+            abstraction = make_unique<CartesianAbstraction>(move(cartesian_abstraction));
         }
-        vector<int> goal_states(
-            cartesian_abstraction->get_goals().begin(),
-            cartesian_abstraction->get_goals().end());
-        auto abstraction = make_unique<ExplicitAbstraction>(
-            make_unique<CartesianAbstractionFunction>(
-                cartesian_abstraction->extract_refinement_hierarchy()),
-            move(backward_graph),
-            cartesian_abstraction->get_looping_operators(),
-            move(goal_states));
         abstractions.push_back(move(abstraction));
 
         if (has_reached_resource_limit(timer) || unsolvable) {

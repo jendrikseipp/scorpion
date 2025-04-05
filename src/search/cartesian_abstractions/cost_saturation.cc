@@ -23,7 +23,7 @@
 using namespace std;
 
 namespace cartesian_abstractions {
-static vector<int> compute_saturated_costs(
+vector<int> compute_saturated_costs(
     const Abstraction &abstraction,
     const vector<int> &h_values,
     bool use_general_costs) {

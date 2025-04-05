@@ -645,10 +645,10 @@ void ShortestPaths::print_statistics() const {
 vector<int> compute_goal_distances(
     const Abstraction &abstraction,
     const vector<int> &costs,
-    const unordered_set<int> &start_ids) {
+    const unordered_set<int> &goal_ids) {
     vector<int> distances(abstraction.get_num_states(), INF);
     priority_queues::AdaptiveQueue<int> open_queue;
-    for (int goal_id : start_ids) {
+    for (int goal_id : goal_ids) {
         distances[goal_id] = 0;
         open_queue.push(0, goal_id);
     }
