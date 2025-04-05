@@ -82,6 +82,8 @@ public:
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
         const std::shared_ptr<AbstractTask> &task);
 };
+
+extern int get_subtask_limit(int limit, int used, int remaining_subtasks);
 }
 
 #endif

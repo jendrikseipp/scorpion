@@ -106,8 +106,10 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
         auto cegar = make_unique<cartesian_abstractions::CEGAR>(
             subtask,
-            max(1, (max_states - num_states) / remaining_subtasks),
-            max(1, (max_transitions - num_transitions) / remaining_subtasks),
+            cartesian_abstractions::get_subtask_limit(
+                max_states, num_states, remaining_subtasks),
+            cartesian_abstractions::get_subtask_limit(
+                max_transitions, num_transitions, remaining_subtasks),
             timer.get_remaining_time() / remaining_subtasks,
             pick_flawed_abstract_state,
             pick_split,

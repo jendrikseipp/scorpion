@@ -193,12 +193,10 @@ void ShortestPaths::add_parent(int state, const Transition &new_parent) {
     assert(find(parents[state].begin(), parents[state].end(), new_parent) == parents[state].end());
     parents[state].push_back(new_parent);
     ++num_parents;
-    if (use_cache) {
-        Transitions &target_children = children[new_parent.target_id];
-        assert(find(target_children.begin(), target_children.end(),
-                    Transition(new_parent.op_id, state)) == target_children.end());
-        target_children.emplace_back(new_parent.op_id, state);
-    }
+    Transitions &target_children = children[new_parent.target_id];
+    assert(find(target_children.begin(), target_children.end(),
+                Transition(new_parent.op_id, state)) == target_children.end());
+    target_children.emplace_back(new_parent.op_id, state);
 }
 
 void ShortestPaths::remove_child(int state, const Transition &child) {
