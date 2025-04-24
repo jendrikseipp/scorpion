@@ -426,6 +426,9 @@ def parse_args():
         "--validate", action="store_true",
         help='validate plans (implied by --debug); needs "validate" (VAL) on PATH')
     driver_other.add_argument(
+        "--no-validate", action="store_false", dest="validate",
+        help='do not validate plans (default: validate if --debug or --validate is given)')
+    driver_other.add_argument(
         "--log-level", choices=["debug", "info", "warning"],
         default="info",
         help="set log level (most verbose: debug; least verbose: warning; default: %(default)s)")
