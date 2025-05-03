@@ -11,10 +11,6 @@ namespace lp {
 class LPConstraint;
 }
 
-namespace plugins {
-class Options;
-}
-
 namespace operator_counting {
 class PhOAbstractionConstraints : public ConstraintGenerator {
     const cost_saturation::AbstractionGenerators abstraction_generators;
@@ -25,7 +21,9 @@ class PhOAbstractionConstraints : public ConstraintGenerator {
     std::vector<int> constraint_ids_by_abstraction;
     std::vector<bool> useless_operators;
 public:
-    explicit PhOAbstractionConstraints(const plugins::Options &opts);
+    PhOAbstractionConstraints(
+        const std::vector<std::shared_ptr<cost_saturation::AbstractionGenerator>> &abstraction_generators,
+        bool saturated);
 
     virtual void initialize_constraints(
         const std::shared_ptr<AbstractTask> &task,

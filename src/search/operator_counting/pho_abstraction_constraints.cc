@@ -13,11 +13,11 @@
 using namespace std;
 
 namespace operator_counting {
-PhOAbstractionConstraints::PhOAbstractionConstraints(const plugins::Options &opts)
-    : abstraction_generators(
-          opts.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>(
-              "abstractions")),
-      saturated(opts.get<bool>("saturated")) {
+PhOAbstractionConstraints::PhOAbstractionConstraints(
+    const vector<shared_ptr<cost_saturation::AbstractionGenerator>> &abstraction_generators,
+    bool saturated)
+    : abstraction_generators(abstraction_generators),
+      saturated(saturated) {
 }
 
 void PhOAbstractionConstraints::initialize_constraints(
@@ -132,6 +132,13 @@ public:
             "saturated",
             "use saturated instead of full operator costs in constraints",
             "true");
+    }
+
+    virtual shared_ptr<PhOAbstractionConstraints> create_component(
+        const plugins::Options &options) const override {
+        return plugins::make_shared_from_arg_tuples<PhOAbstractionConstraints>(
+            options.get_list<shared_ptr<cost_saturation::AbstractionGenerator>>("abstractions"),
+            options.get<bool>("saturated"));
     }
 };
 
