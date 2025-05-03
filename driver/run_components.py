@@ -151,6 +151,9 @@ def run_search(args):
         single_plan=args.portfolio_single_plan)
     plan_manager.delete_existing_plans()
 
+    import shlex
+    logging.info(f"GDB call (needs --keep-sas-file): gdb -ex run -ex bt --args {executable} {' '.join(shlex.quote(x) for x in args.search_options)} < {args.search_input}")
+
     if args.portfolio:
         assert not args.search_options
         logging.info(f"search portfolio: {args.portfolio}")
