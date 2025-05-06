@@ -187,6 +187,8 @@ def configs_optimal_extended():
     }
     configs.update({f"astar_cegar_{tsr}": ["--search", f"astar(cegar(transition_representation={tsr}))"]
                     for tsr in ["store", "compute"]})
+    configs.update({f"astar_cartesian_{tsr}": ["--search", f"astar(scp_online([cartesian(transition_representation={tsr})]))"]
+                    for tsr in ["store", "compute"]})
     return configs
 
 

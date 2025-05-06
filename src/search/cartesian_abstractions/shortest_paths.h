@@ -179,7 +179,7 @@ public:
 extern std::vector<int> compute_goal_distances(
     const Abstraction &abstraction,
     const std::vector<int> &costs,
-    const std::unordered_set<int> &start_ids);
+    const std::unordered_set<int> &goal_ids);
 }
 
 #endif

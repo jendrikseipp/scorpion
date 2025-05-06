@@ -6,8 +6,6 @@ import sys
 from . import aliases
 from . import returncodes
 from . import util
-from .run_components import PREPROCESSED_OUTPUT
-
 
 DESCRIPTION = """Fast Downward driver script.
 
@@ -104,6 +102,7 @@ Examples:
 
 COMPONENTS_PLUS_OVERALL = ["translate", "preprocess", "search", "validate", "overall"]
 DEFAULT_SAS_FILE = Path("output.sas")
+DEFAULT_PREPROCESSED_SAS_FILE = DEFAULT_SAS_FILE.with_name("preprocessed-" + DEFAULT_SAS_FILE.name)
 
 
 """
@@ -217,12 +216,7 @@ def _set_components_automatically(parser, args):
     2. Otherwise, run all components."""
 
     if len(args.filenames) == 1 and _looks_like_search_input(args.filenames[0]):
-        if args.preprocess:
-            args.components = ["preprocess", "search"]
-        else:
-            args.components = ["search"]
-    elif args.preprocess:
-        args.components = ["translate", "preprocess", "search"]
+        args.components = ["search"]
     else:
         args.components = ["translate", "search"]
 
@@ -241,13 +235,18 @@ def _set_components_and_inputs(parser, args):
     args.components = []
     if args.translate or args.run_all:
         args.components.append("translate")
-    if args.run_all:
+    if args.preprocess or args.run_all:
         args.components.append("preprocess")
     if args.search or args.run_all:
         args.components.append("search")
 
     if not args.components:
         _set_components_automatically(parser, args)
+    elif args.components == ["preprocess"]:
+        if len(args.filenames) == 1 and _looks_like_search_input(args.filenames[0]):
+            args.components = ["preprocess", "search"]
+        else:
+            args.components = ["translate", "preprocess", "search"]
 
     # We implicitly activate validation in debug mode. However, for
     # validation we need the PDDL input files and a plan, therefore both
@@ -393,8 +392,8 @@ def parse_args():
     components.add_argument(
         "--preprocess",
         "--transform-task",  # For backward compatibility.
-        help="path to or name of external program that transforms output.sas "
-            f"into {PREPROCESSED_OUTPUT} (default: %(const)s)",
+        help="preprocess the translator output. Accepts optional external "
+            "preprocessing program (default: %(const)s)",
         const="preprocess-h2", nargs="?")
     components.add_argument(
         "--search", action="store_true",
@@ -427,6 +426,9 @@ def parse_args():
         "--validate", action="store_true",
         help='validate plans (implied by --debug); needs "validate" (VAL) on PATH')
     driver_other.add_argument(
+        "--no-validate", action="store_false", dest="validate",
+        help='do not validate plans (default: validate if --debug or --validate is given)')
+    driver_other.add_argument(
         "--log-level", choices=["debug", "info", "warning"],
         default="info",
         help="set log level (most verbose: debug; least verbose: warning; default: %(default)s)")
@@ -439,6 +441,10 @@ def parse_args():
         "--sas-file", metavar="FILE", type=Path,
         help="intermediate file for storing the translator output "
             f"(implies --keep-sas-file, default: {DEFAULT_SAS_FILE})")
+    driver_other.add_argument(
+        "--preprocessed-sas-file", metavar="FILE", type=Path,
+        help="intermediate file for storing the preprocessor output "
+            f"(implies --keep-sas-file, default: {DEFAULT_PREPROCESSED_SAS_FILE})")
     driver_other.add_argument(
         "--keep-sas-file", action="store_true",
         help="keep translator output file (implied by --sas-file, default: "
@@ -475,6 +481,11 @@ def parse_args():
         args.keep_sas_file = True
     else:
         args.sas_file = DEFAULT_SAS_FILE
+
+    if args.preprocessed_sas_file:
+        args.keep_sas_file = True
+    else:
+        args.preprocessed_sas_file = DEFAULT_PREPROCESSED_SAS_FILE
 
     if args.build and args.debug:
         print_usage_and_exit_with_driver_input_error(

@@ -157,31 +157,32 @@ void generate_cpp_input(const vector<Variable *> &ordered_vars,
                         const State &initial_state,
                         const vector<pair<Variable *, int>> &goals,
                         const vector<Operator> &operators,
-                        const vector<Axiom> &axioms) {
-    ofstream outfile;
-    outfile.open("preprocessed-output.sas", ios::out);
+                        const vector<Axiom> &axioms,
+                        const string &outfile) {
+    ofstream out;
+    out.open(outfile, ios::out);
 
-    outfile << "begin_version" << endl;
-    outfile << PRE_FILE_VERSION << endl;
-    outfile << "end_version" << endl;
+    out << "begin_version" << endl;
+    out << PRE_FILE_VERSION << endl;
+    out << "end_version" << endl;
 
-    outfile << "begin_metric" << endl;
-    outfile << metric << endl;
-    outfile << "end_metric" << endl;
+    out << "begin_metric" << endl;
+    out << metric << endl;
+    out << "end_metric" << endl;
 
     int num_vars = ordered_vars.size();
-    outfile << num_vars << endl;
+    out << num_vars << endl;
     for (Variable *var : ordered_vars)
-        var->generate_cpp_input(outfile);
+        var->generate_cpp_input(out);
 
-    outfile << mutexes.size() << endl;
+    out << mutexes.size() << endl;
     for (const MutexGroup &mutex : mutexes)
-        mutex.generate_cpp_input(outfile);
+        mutex.generate_cpp_input(out);
 
-    outfile << "begin_state" << endl;
+    out << "begin_state" << endl;
     for (Variable *var : ordered_vars)
-        outfile << initial_state[var] << endl;  // for axioms default value
-    outfile << "end_state" << endl;
+        out << initial_state[var] << endl;  // for axioms default value
+    out << "end_state" << endl;
 
     vector<int> ordered_goal_values;
     ordered_goal_values.resize(num_vars, -1);
@@ -189,54 +190,54 @@ void generate_cpp_input(const vector<Variable *> &ordered_vars,
         int var_index = goal.first->get_level();
         ordered_goal_values[var_index] = goal.second;
     }
-    outfile << "begin_goal" << endl;
-    outfile << goals.size() << endl;
+    out << "begin_goal" << endl;
+    out << goals.size() << endl;
     for (int i = 0; i < num_vars; i++)
         if (ordered_goal_values[i] != -1)
-            outfile << i << " " << ordered_goal_values[i] << endl;
-    outfile << "end_goal" << endl;
+            out << i << " " << ordered_goal_values[i] << endl;
+    out << "end_goal" << endl;
 
-    outfile << operators.size() << endl;
+    out << operators.size() << endl;
     for (const Operator &op : operators)
-        op.generate_cpp_input(outfile);
+        op.generate_cpp_input(out);
 
-    outfile << axioms.size() << endl;
+    out << axioms.size() << endl;
     for (const Axiom &axiom : axioms)
-        axiom.generate_cpp_input(outfile);
+        axiom.generate_cpp_input(out);
 
-    outfile.close();
+    out.close();
 }
-void generate_unsolvable_cpp_input() {
+void generate_unsolvable_cpp_input(const string &outfile) {
     cout << "Unsolvable task in preprocessor" << endl;
-    ofstream outfile;
-    outfile.open("preprocessed-output.sas", ios::out);
-    outfile << "begin_version" << endl;
-    outfile << PRE_FILE_VERSION << endl;
-    outfile << "end_version" << endl;
+    ofstream out;
+    out.open(outfile, ios::out);
+    out << "begin_version" << endl;
+    out << PRE_FILE_VERSION << endl;
+    out << "end_version" << endl;
 
-    outfile << "begin_metric" << endl << "1" << endl << "end_metric" << endl;
+    out << "begin_metric" << endl << "1" << endl << "end_metric" << endl;
 
     //variables
-    outfile << "1" << endl << "begin_variable" << endl
-            << "var0" << endl
-            << "-1" << endl
-            << "2" << endl
-            << "Atom dummy(val1)" << endl
-            << "Atom dummy(val2)" << endl
-            << "end_variable" << endl;
+    out << "1" << endl << "begin_variable" << endl
+        << "var0" << endl
+        << "-1" << endl
+        << "2" << endl
+        << "Atom dummy(val1)" << endl
+        << "Atom dummy(val2)" << endl
+        << "end_variable" << endl;
 
     //Mutexes
-    outfile << "0" << endl;
+    out << "0" << endl;
 
     //Initial state and goal
-    outfile << "begin_state" << endl << "0" << endl << "end_state" << endl;
-    outfile << "begin_goal" << endl << "1" << endl << "0 1" << endl << "end_goal" << endl;
+    out << "begin_state" << endl << "0" << endl << "end_state" << endl;
+    out << "begin_goal" << endl << "1" << endl << "0 1" << endl << "end_goal" << endl;
 
     //Operators
-    outfile << "0" << endl;
+    out << "0" << endl;
 
     //Axioms
-    outfile << "0" << endl;
+    out << "0" << endl;
 
-    outfile.close();
+    out.close();
 }

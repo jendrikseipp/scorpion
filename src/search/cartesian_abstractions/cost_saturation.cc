@@ -23,7 +23,7 @@
 using namespace std;
 
 namespace cartesian_abstractions {
-static vector<int> compute_saturated_costs(
+vector<int> compute_saturated_costs(
     const Abstraction &abstraction,
     const vector<int> &h_values,
     bool use_general_costs) {
@@ -197,7 +197,7 @@ bool CostSaturation::state_is_dead_end(const State &state) const {
     return false;
 }
 
-static int get_subtask_limit(int limit, int used, int remaining_subtasks) {
+int get_subtask_limit(int limit, int used, int remaining_subtasks) {
     if (limit == INF || limit == 0) {
         return limit;
     }

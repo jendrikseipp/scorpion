@@ -193,12 +193,10 @@ void ShortestPaths::add_parent(int state, const Transition &new_parent) {
     assert(find(parents[state].begin(), parents[state].end(), new_parent) == parents[state].end());
     parents[state].push_back(new_parent);
     ++num_parents;
-    if (use_cache) {
-        Transitions &target_children = children[new_parent.target_id];
-        assert(find(target_children.begin(), target_children.end(),
-                    Transition(new_parent.op_id, state)) == target_children.end());
-        target_children.emplace_back(new_parent.op_id, state);
-    }
+    Transitions &target_children = children[new_parent.target_id];
+    assert(find(target_children.begin(), target_children.end(),
+                Transition(new_parent.op_id, state)) == target_children.end());
+    target_children.emplace_back(new_parent.op_id, state);
 }
 
 void ShortestPaths::remove_child(int state, const Transition &child) {
@@ -647,10 +645,10 @@ void ShortestPaths::print_statistics() const {
 vector<int> compute_goal_distances(
     const Abstraction &abstraction,
     const vector<int> &costs,
-    const unordered_set<int> &start_ids) {
+    const unordered_set<int> &goal_ids) {
     vector<int> distances(abstraction.get_num_states(), INF);
     priority_queues::AdaptiveQueue<int> open_queue;
-    for (int goal_id : start_ids) {
+    for (int goal_id : goal_ids) {
         distances[goal_id] = 0;
         open_queue.push(0, goal_id);
     }
