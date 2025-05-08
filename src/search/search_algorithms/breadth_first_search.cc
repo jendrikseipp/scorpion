@@ -20,7 +20,8 @@ BreadthFirstSearch::BreadthFirstSearch(
     const string &description, utils::Verbosity verbosity)
     : SearchAlgorithm(
           ONE, numeric_limits<int>::max(),
-          numeric_limits<double>::infinity(), description, verbosity),
+          numeric_limits<double>::infinity(), description, StateRegistryType::PACKED,
+          verbosity),
       single_plan(single_plan),
       write_plan(write_plan),
       last_plan_cost(-1),
@@ -29,8 +30,8 @@ BreadthFirstSearch::BreadthFirstSearch(
 
 void BreadthFirstSearch::initialize() {
     utils::g_log << "Conducting breadth-first search" << endl;
-    assert(state_registry.size() <= 1);
-    State initial_state = state_registry.get_initial_state();
+    assert(state_registry->size() <= 1);
+    State initial_state = state_registry->get_initial_state();
     statistics.inc_generated();
     // The initial state has id 0, so we'll start there.
     current_state_id = 0;
@@ -48,11 +49,11 @@ void BreadthFirstSearch::print_statistics() const {
 }
 
 vector<OperatorID> BreadthFirstSearch::trace_path(const State &goal_state) const {
-    assert(goal_state.get_registry() == &state_registry);
+    assert(goal_state.get_registry() == state_registry.get());
     StateID current_state_id = goal_state.get_id();
     vector<OperatorID> path;
     for (;;) {
-        const Parent &parent = parents[state_registry.lookup_state(current_state_id)];
+        const Parent &parent = parents[state_registry->lookup_state(current_state_id)];
         if (parent.op_id == OperatorID::no_operator) {
             assert(parent.state_id == StateID::no_state);
             break;
@@ -66,7 +67,7 @@ vector<OperatorID> BreadthFirstSearch::trace_path(const State &goal_state) const
 }
 
 SearchStatus BreadthFirstSearch::step() {
-    if (current_state_id == static_cast<int>(state_registry.size())) {
+    if (current_state_id == static_cast<int>(state_registry->size())) {
         if (found_solution()) {
             utils::g_log << "Completely explored state space -- found solution." << endl;
             return SOLVED;
@@ -76,7 +77,7 @@ SearchStatus BreadthFirstSearch::step() {
         }
     }
 
-    State s = state_registry.lookup_state(StateID(current_state_id));
+    State s = state_registry->lookup_state(StateID(current_state_id));
     statistics.inc_expanded();
     /* Next time we'll look at the next state that was created in the registry.
        This results in a breadth-first order. */
@@ -102,10 +103,10 @@ SearchStatus BreadthFirstSearch::step() {
 
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_op_ids) {
-        int old_num_states = state_registry.size();
-        State succ_state = state_registry.get_successor_state(s, operators[op_id]);
+        int old_num_states = state_registry->size();
+        State succ_state = state_registry->get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
-        int new_num_states = state_registry.size();
+        int new_num_states = state_registry->size();
         bool is_new_state = (new_num_states > old_num_states);
         if (is_new_state && write_plan) {
             parents[succ_state] = Parent(s.get_id(), op_id);

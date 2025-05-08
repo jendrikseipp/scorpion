@@ -113,7 +113,7 @@ public:
     Entry &operator[](const State &state) {
         const StateRegistry *registry = state.get_registry();
         if (!registry) {
-            std::cerr << "Tried to access per-state information with an "
+            std::cerr << "1 Tried to access per-state information with an "
                       << "unregistered state." << std::endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
@@ -131,7 +131,7 @@ public:
     const Entry &operator[](const State &state) const {
         const StateRegistry *registry = state.get_registry();
         if (!registry) {
-            std::cerr << "Tried to access per-state information with an "
+            std::cerr << "2 Tried to access per-state information with an "
                       << "unregistered state." << std::endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }

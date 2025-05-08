@@ -116,7 +116,7 @@ void SearchNode::dump(const TaskProxy &task_proxy, utils::LogProxy &log) const {
     }
 }
 
-SearchSpace::SearchSpace(StateRegistry &state_registry, utils::LogProxy &log)
+SearchSpace::SearchSpace(std::shared_ptr<StateRegistry> &state_registry, utils::LogProxy &log)
     : state_registry(state_registry), log(log) {
 }
 
@@ -127,7 +127,7 @@ SearchNode SearchSpace::get_node(const State &state) {
 void SearchSpace::trace_path(const State &goal_state,
                              vector<OperatorID> &path) const {
     State current_state = goal_state;
-    assert(current_state.get_registry() == &state_registry);
+    assert(current_state.get_registry() == state_registry.get());
     assert(path.empty());
     for (;;) {
         const SearchNodeInfo &info = search_node_infos[current_state];
@@ -136,17 +136,18 @@ void SearchSpace::trace_path(const State &goal_state,
             break;
         }
         path.push_back(info.creating_operator);
-        current_state = state_registry.lookup_state(info.parent_state_id);
+        current_state = state_registry->lookup_state(info.parent_state_id);
     }
     reverse(path.begin(), path.end());
 }
 
 void SearchSpace::dump(const TaskProxy &task_proxy) const {
     OperatorsProxy operators = task_proxy.get_operators();
-    for (StateID id : state_registry) {
+    for (auto it = state_registry->begin(); it != state_registry->end(); it->operator++()) {
+        StateID id{**it};
         /* The body duplicates SearchNode::dump() but we cannot create
            a search node without discarding the const qualifier. */
-        State state = state_registry.lookup_state(id);
+        State state = state_registry->lookup_state(id);
         const SearchNodeInfo &node_info = search_node_infos[state];
         log << id << ": ";
         task_properties::dump_fdr(state);
@@ -162,5 +163,5 @@ void SearchSpace::dump(const TaskProxy &task_proxy) const {
 }
 
 void SearchSpace::print_statistics() const {
-    state_registry.print_statistics(log);
+    state_registry->print_statistics(log);
 }

@@ -26,9 +26,9 @@ EagerSearch::EagerSearch(
     const shared_ptr<PruningMethod> &pruning,
     const shared_ptr<Evaluator> &lazy_evaluator, OperatorCost cost_type,
     int bound, double max_time, const string &description,
-    utils::Verbosity verbosity)
+    StateRegistryType registry_type, utils::Verbosity verbosity)
     : SearchAlgorithm(
-          cost_type, bound, max_time, description, verbosity),
+          cost_type, bound, max_time, description, registry_type, verbosity),
       reopen_closed_nodes(reopen_closed),
       open_list(open->create_state_open_list()),
       f_evaluator(f_eval),     // default nullptr
@@ -78,7 +78,7 @@ void EagerSearch::initialize() {
 
     path_dependent_evaluators.assign(evals.begin(), evals.end());
 
-    State initial_state = state_registry.get_initial_state();
+    State initial_state = state_registry->get_initial_state();
     for (Evaluator *evaluator : path_dependent_evaluators) {
         evaluator->notify_initial_state(initial_state);
     }
@@ -122,7 +122,7 @@ SearchStatus EagerSearch::step() {
             return FAILED;
         }
         StateID id = open_list->remove_min();
-        State s = state_registry.lookup_state(id);
+        State s = state_registry->lookup_state(id);
         node.emplace(search_space.get_node(s));
 
         if (node->is_closed())
@@ -202,7 +202,7 @@ SearchStatus EagerSearch::step() {
         if ((node->get_real_g() + op.get_cost()) >= bound)
             continue;
 
-        State succ_state = state_registry.get_successor_state(s, op);
+        State succ_state = state_registry->get_successor_state(s, op);
         statistics.inc_generated();
         bool is_preferred = preferred_operators.contains(op_id);
 
@@ -319,7 +319,7 @@ void add_eager_search_options_to_feature(
 }
 
 tuple<shared_ptr<PruningMethod>, shared_ptr<Evaluator>, OperatorCost,
-      int, double, string, utils::Verbosity>
+      int, double, string, StateRegistryType, utils::Verbosity>
 get_eager_search_arguments_from_options(const plugins::Options &opts) {
     return tuple_cat(
         get_search_pruning_arguments_from_options(opts),

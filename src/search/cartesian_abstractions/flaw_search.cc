@@ -15,6 +15,8 @@
 #include "../utils/memory.h"
 #include "../utils/rng.h"
 
+#include "../state_registries/packed_state_registry.h"
+
 using namespace std;
 
 namespace cartesian_abstractions {
@@ -76,8 +78,8 @@ void FlawSearch::initialize() {
     best_flaw_h = (pick_flawed_abstract_state == PickFlawedAbstractState::MAX_H) ? 0 : INF_COSTS;
     assert(open_list.empty());
     assert(flawed_states.empty());
-    state_registry = make_unique<StateRegistry>(task_proxy);
-    search_space = make_unique<SearchSpace>(*state_registry, silent_log);
+    state_registry = make_shared<PackedStateRegistry>(task_proxy);
+    search_space = make_unique<SearchSpace>(state_registry, silent_log);
     const State &initial_state = state_registry->get_initial_state();
     SearchNode node = search_space->get_node(initial_state);
     node.open_initial();
@@ -580,7 +582,7 @@ unique_ptr<Split> FlawSearch::get_split(const utils::CountdownTimer &cegar_timer
 }
 
 unique_ptr<Split> FlawSearch::get_split_legacy(const Solution &solution) {
-    state_registry = make_unique<StateRegistry>(task_proxy);
+    state_registry = make_shared<PackedStateRegistry>(task_proxy);
     bool debug = log.is_at_least_debug();
     if (debug)
         log << "Check solution:" << endl;

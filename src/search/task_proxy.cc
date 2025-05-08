@@ -35,6 +35,31 @@ State::State(const AbstractTask &task, vector<int> &&values)
     assert(num_variables == task.get_num_variables());
 }
 
+
+State::State(const AbstractTask &task, const StateRegistry &registry,
+             StateID id, const PackedStateBin *buffer, StateValueReader get_variable_value,
+             void* reader_context)
+    : task(&task), registry(&registry), id(id), buffer(buffer), values(nullptr),
+      state_packer(&registry.get_state_packer()),
+      num_variables(registry.get_num_variables()) {
+    assert(id != StateID::no_state);
+    assert(buffer);
+    assert(num_variables == task.get_num_variables());
+    this->get_variable_value = get_variable_value;
+    this->reader_context = reader_context;
+}
+
+
+State::State(const AbstractTask &task, const StateRegistry &registry,
+             StateID id, const PackedStateBin *buffer,
+             vector<int> &&values, StateValueReader get_variable_value,
+             void* reader_context)
+    : State(task, registry, id, buffer, get_variable_value, reader_context) {
+    assert(num_variables == static_cast<int>(values.size()));
+    this->values = make_shared<vector<int>>(move(values));
+}
+
+
 State State::get_unregistered_successor(const OperatorProxy &op) const {
     assert(!op.is_axiom());
     assert(task_properties::is_applicable(op, *this));

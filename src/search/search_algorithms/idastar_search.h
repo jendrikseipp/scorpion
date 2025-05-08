@@ -64,7 +64,7 @@ public:
     IDAstarSearch(
         const std::shared_ptr<Evaluator> &h_evaluator, int initial_f_limit,
         int cache_size, bool single_plan, OperatorCost cost_type, int bound,
-        double max_time, const std::string &description, utils::Verbosity verbosity);
+        double max_time, const std::string &description, StateRegistryType registry_type, utils::Verbosity verbosity);
 
     void save_plan_if_necessary() override;
 

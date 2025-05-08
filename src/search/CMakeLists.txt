@@ -57,6 +57,16 @@ endif()
 # dependencies among each other.
 
 create_fast_downward_library(
+    NAME state_registries
+    HELP "State registry"
+    SOURCES
+        state_registry
+        state_registries/packed_state_registry
+        state_registries/unpacked_state_registry
+    CORE_LIBRARY
+)
+
+create_fast_downward_library(
     NAME core_sources
     HELP "Core source files"
     SOURCES
@@ -84,7 +94,6 @@ create_fast_downward_library(
         search_space
         search_statistics
         state_id
-        state_registry
         task_id
         task_proxy
     DEPENDS
@@ -96,8 +105,10 @@ create_fast_downward_library(
         subscriber
         successor_generator
         task_properties
+        state_registries
     CORE_LIBRARY
 )
+
 
 create_fast_downward_library(
     NAME plugins

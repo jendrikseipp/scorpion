@@ -43,7 +43,7 @@ protected:
 
     mutable utils::LogProxy log;
     PlanManager plan_manager;
-    StateRegistry state_registry;
+    std::shared_ptr<StateRegistry> state_registry;
     const successor_generator::SuccessorGenerator &successor_generator;
     SearchSpace search_space;
     SearchProgress search_progress;
@@ -62,7 +62,8 @@ protected:
 public:
     SearchAlgorithm(
         OperatorCost cost_type, int bound, double max_time,
-        const std::string &description, utils::Verbosity verbosity);
+        const std::string &description, StateRegistryType registry_type,
+        utils::Verbosity verbosity);
     explicit SearchAlgorithm(const plugins::Options &opts); // TODO options object is needed for iterated search, the prototype for issue559 resolves this
     virtual ~SearchAlgorithm();
     virtual void print_statistics() const = 0;
@@ -76,6 +77,8 @@ public:
     int get_bound() {return bound;}
     PlanManager &get_plan_manager() {return plan_manager;}
     std::string get_description() {return description;}
+
+
 };
 
 /*
@@ -90,6 +93,8 @@ extern void collect_preferred_operators(
 
 class PruningMethod;
 
+extern std::shared_ptr<StateRegistry> initialize_state_registry(
+    StateRegistryType state_registry_type, TaskProxy task_proxy);
 extern void add_search_pruning_options_to_feature(
     plugins::Feature &feature);
 extern std::tuple<std::shared_ptr<PruningMethod>>
@@ -97,7 +102,7 @@ get_search_pruning_arguments_from_options(const plugins::Options &opts);
 extern void add_search_algorithm_options_to_feature(
     plugins::Feature &feature, const std::string &description);
 extern std::tuple<
-    OperatorCost, int, double, std::string, utils::Verbosity>
+    OperatorCost, int, double, std::string, StateRegistryType, utils::Verbosity>
 get_search_algorithm_arguments_from_options(
     const plugins::Options &opts);
 extern void add_successors_order_options_to_feature(

@@ -552,7 +552,7 @@ public:
 
 bool does_fire(const EffectProxy &effect, const State &state);
 
-
+using StateValueReader = int(*)(const unsigned*, int, void*);
 class State {
     /*
       TODO: We want to try out two things:
@@ -581,6 +581,8 @@ class State {
     mutable std::shared_ptr<std::vector<int>> values;
     const int_packer::IntPacker *state_packer;
     int num_variables;
+    StateValueReader get_variable_value;
+    void* reader_context;
 public:
     using ItemType = FactProxy;
 
@@ -592,6 +594,13 @@ public:
           const PackedStateBin *buffer, std::vector<int> &&values);
     // Construct a state with only unpacked data.
     State(const AbstractTask &task, std::vector<int> &&values);
+
+    // But now with StateValueReader, for retrieving the value of a variable
+    State(const AbstractTask &task, const StateRegistry &registry, StateID id,
+        const PackedStateBin *buffer, StateValueReader get_variable_value, void* reader_context = nullptr);
+    State(const AbstractTask &task, const StateRegistry &registry, StateID id,
+          const PackedStateBin *buffer, std::vector<int> &&values, StateValueReader get_variable_value,
+          void* reader_context = nullptr);
 
     bool operator==(const State &other) const;
     bool operator!=(const State &other) const;
@@ -699,6 +708,22 @@ public:
         return State(*task, registry, id, buffer, std::move(state_values));
     }
 
+
+    // This method is meant to be called only by the state registry.
+    State create_state(
+        const StateRegistry &registry, StateID id,
+        const PackedStateBin *buffer, StateValueReader state_value_reader, void* context = nullptr) const {
+        return State(*task, registry, id, buffer, state_value_reader, context);
+    }
+
+    // This method is meant to be called only by the state registry.
+    State create_state(
+        const StateRegistry &registry, StateID id,
+        const PackedStateBin *buffer, std::vector<int> &&state_values,
+        StateValueReader state_value_reader, void* context = nullptr) const {
+        return State(*task, registry, id, buffer, std::move(state_values), state_value_reader, context);
+    }
+
     State get_initial_state() const {
         return create_state(task->get_initial_state_values());
     }
@@ -797,7 +822,7 @@ inline void State::unpack() const {
         */
         values = std::make_shared<std::vector<int>>(num_variables);
         for (int var = 0; var < num_variables; ++var) {
-            (*values)[var] = state_packer->get(buffer, var);
+            (*values)[var] = get_variable_value(buffer, var, reader_context);
         }
     }
 }
@@ -812,8 +837,8 @@ inline FactProxy State::operator[](std::size_t var_id) const {
         return FactProxy(*task, var_id, (*values)[var_id]);
     } else {
         assert(buffer);
-        assert(state_packer);
-        return FactProxy(*task, var_id, state_packer->get(buffer, var_id));
+        assert(get_variable_value);
+        return FactProxy(*task, var_id, get_variable_value(buffer, var_id, reader_context));
     }
 }
 

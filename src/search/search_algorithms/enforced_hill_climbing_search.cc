@@ -54,13 +54,14 @@ EnforcedHillClimbingSearch::EnforcedHillClimbingSearch(
     const shared_ptr<Evaluator> &h, PreferredUsage preferred_usage,
     const vector<shared_ptr<Evaluator>> &preferred,
     OperatorCost cost_type, int bound, double max_time,
-    const string &description, utils::Verbosity verbosity)
+    const string &description, StateRegistryType registry_type,
+    utils::Verbosity verbosity)
     : SearchAlgorithm(
-          cost_type, bound, max_time, description, verbosity),
+          cost_type, bound, max_time, description, registry_type, verbosity),
       evaluator(h),
       preferred_operator_evaluators(preferred),
       preferred_usage(preferred_usage),
-      current_eval_context(state_registry.get_initial_state(), &statistics),
+      current_eval_context(state_registry->get_initial_state(), &statistics),
       current_phase_start_g(-1),
       num_ehc_phases(0),
       last_num_expanded(-1) {
@@ -69,7 +70,7 @@ EnforcedHillClimbingSearch::EnforcedHillClimbingSearch(
     }
     evaluator->get_path_dependent_evaluators(path_dependent_evaluators);
 
-    State initial_state = state_registry.get_initial_state();
+    State initial_state = state_registry->get_initial_state();
     for (Evaluator *evaluator : path_dependent_evaluators) {
         evaluator->notify_initial_state(initial_state);
     }
@@ -187,7 +188,7 @@ SearchStatus EnforcedHillClimbingSearch::ehc() {
         OperatorID last_op_id = entry.second;
         OperatorProxy last_op = task_proxy.get_operators()[last_op_id];
 
-        State parent_state = state_registry.lookup_state(parent_state_id);
+        State parent_state = state_registry->lookup_state(parent_state_id);
         SearchNode parent_node = search_space.get_node(parent_state);
 
         // d: distance from initial node in this EHC phase
@@ -197,7 +198,7 @@ SearchStatus EnforcedHillClimbingSearch::ehc() {
         if (parent_node.get_real_g() + last_op.get_cost() >= bound)
             continue;
 
-        State state = state_registry.get_successor_state(parent_state, last_op);
+        State state = state_registry->get_successor_state(parent_state, last_op);
         statistics.inc_generated();
 
         SearchNode node = search_space.get_node(state);

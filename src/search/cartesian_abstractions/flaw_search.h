@@ -51,7 +51,7 @@ class FlawSearch {
 
     // Search data
     std::stack<StateID> open_list;
-    std::unique_ptr<StateRegistry> state_registry;
+    std::shared_ptr<StateRegistry> state_registry;
     std::unique_ptr<SearchSpace> search_space;
     std::unique_ptr<PerStateInformation<int>> cached_abstract_state_ids;
 
