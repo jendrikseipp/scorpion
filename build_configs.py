@@ -1,4 +1,4 @@
-release = ["-DCMAKE_BUILD_TYPE=Release"]
+release = ["-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"]
 debug = ["-DCMAKE_BUILD_TYPE=Debug"]
 release_no_lp = ["-DCMAKE_BUILD_TYPE=Release", "-DUSE_LP=NO"]
 # USE_GLIBCXX_DEBUG is not compatible with USE_LP (see issue983).

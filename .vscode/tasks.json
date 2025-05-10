@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run FD test (single file) -easy",
+      "type": "shell",
+      "command": "./build.py debug && ./fast-downward.py --debug --keep-sas-file ../benchmarks/gripper/prob01.pddl --search \"astar(scp([cartesian()], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))\"",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Run FD test (single file) -hard",
+      "type": "shell",
+      "command": "./build.py debug && ./fast-downward.py --debug --keep-sas-file ../benchmarks/gripper/prob20.pddl --search \"astar(scp([cartesian()], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))\"",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Run FD test (all problems)",
+      "type": "shell",
+      "command": "./build.py debug && for f in ../benchmarks/gripper/prob*.pddl; do ./fast-downward.py --debug --keep-sas-file \"$f\" --search \"astar(scp([cartesian()], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))\"; done",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}
