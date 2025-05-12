@@ -1,9 +1,11 @@
 #include "explicit_abstraction.h"
 
+#include "abstraction.h"
 #include "types.h"
 
 #include "../utils/collections.h"
 #include "../utils/strings.h"
+#include <cassert>
 
 using namespace std;
 
@@ -26,10 +28,17 @@ static void dijkstra_search(
         for (const Successor &transition : graph[state]) {
             int successor = transition.state;
             int op = transition.op;
-            assert(utils::in_bounds(op, costs));
-            int cost = costs[op];
-            assert(cost >= 0);
-            int successor_distance = (cost == INF) ? INF : state_distance + cost;
+            int op_cost;
+            if (op >= 0) {
+                assert(utils::in_bounds(op, costs));
+                op_cost = costs[op];
+            } else {
+                auto it = label_id_to_label.find(op);
+                assert(it != label_id_to_label.end());
+                op_cost = it->second.cost;
+            }
+            assert(op_cost >= 0);
+            int successor_distance = (op_cost == INF) ? INF : state_distance + op_cost;
             assert(successor_distance >= 0);
             if (distances[successor] > successor_distance) {
                 distances[successor] = successor_distance;
@@ -44,14 +53,24 @@ ostream &operator<<(ostream &os, const Successor &successor) {
     return os;
 }
 
-static vector<bool> get_active_operators_from_graph(
+static vector<bool> get_active_operators_from_graph( //Scanns bwgraph and marks each op/label as active
     const vector<vector<Successor>> &backward_graph, int num_ops) {
     vector<bool> active_operators(num_ops, false);
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
         for (const Successor &transition : backward_graph[target]) {
             int op_id = transition.op;
-            active_operators[op_id] = true;
+            if (op_id >= 0) {
+                assert(utils::in_bounds(op_id,active_operators));
+                active_operators[op_id] = true;
+            } else {
+                auto it = label_id_to_label.find(op_id);
+                assert(it != label_id_to_label.end());
+                for (int actual_op : it->second.operators) {
+                    assert(utils::in_bounds(actual_op,active_operators));
+                    active_operators[actual_op] = true;
+                }
+            }
         }
     }
     return active_operators;
@@ -123,7 +142,15 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
             }
 
             const int needed = src_h - target_h;
-            saturated_costs[op_id] = max(saturated_costs[op_id], needed);
+            if (op_id >= 0) {
+                saturated_costs[op_id] = max(saturated_costs[op_id], needed);
+            } else {
+                auto it = label_id_to_label.find(op_id);
+                assert(it != label_id_to_label.end());
+                for (int actual_op : it->second.operators) {
+                    saturated_costs[actual_op] = max(saturated_costs[actual_op], needed);
+                }
+            }
         }
     }
     return saturated_costs;
@@ -151,7 +178,15 @@ void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback
         for (const Successor &transition : backward_graph[target]) {
             int op_id = transition.op;
             int src = transition.state;
-            callback(Transition(src, op_id, target));
+            if (op_id >= 0) {
+                callback(Transition(src, op_id, target));
+            } else {
+                auto it = label_id_to_label.find(op_id);
+                assert(it != label_id_to_label.end());
+                for (int actual_op : it->second.operators) {
+                    callback(Transition(src, actual_op, target));
+                }
+            }
         }
     }
 }

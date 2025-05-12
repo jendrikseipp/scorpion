@@ -38,6 +38,8 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
 
     int num_states;
     int num_transitions;
+    int num_total_single_transitions;
+    int num_total_reused_labels;
 
     bool has_reached_resource_limit(const utils::CountdownTimer &timer) const;
 
