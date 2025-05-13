@@ -1,3 +1,4 @@
+#include "utils.h"
 #include "explicit_abstraction.h"
 
 #include "abstraction.h"
@@ -6,10 +7,24 @@
 #include "../utils/collections.h"
 #include "../utils/strings.h"
 #include <cassert>
+#include <cstddef>
 
 using namespace std;
 
 namespace cost_saturation {
+// Label maps
+phmap::flat_hash_map<std::vector<int>, int, VectorHash> ops_to_label_id;
+phmap::flat_hash_map<int, Label> label_id_to_label;
+int next_label_id = -1;
+
+// Tracking of some numbers
+int num_transitions_sub = 0;
+int num_single_transitions = 0;
+unordered_set<int> op_set;
+unordered_set<int> op_set_single;
+int num_label = 0;
+int num_new_label = 0;
+
 static void dijkstra_search(
     const vector<vector<Successor>> &graph,
     const vector<int> &costs,
@@ -53,7 +68,7 @@ ostream &operator<<(ostream &os, const Successor &successor) {
     return os;
 }
 
-static vector<bool> get_active_operators_from_graph( //Scanns bwgraph and marks each op/label as active
+static vector<bool> get_active_operators_from_graph(
     const vector<vector<Successor>> &backward_graph, int num_ops) {
     vector<bool> active_operators(num_ops, false);
     int num_states = backward_graph.size();
@@ -76,6 +91,63 @@ static vector<bool> get_active_operators_from_graph( //Scanns bwgraph and marks 
     return active_operators;
 }
 
+static std::vector<std::vector<Successor>> label_reduction(
+    std::vector<std::vector<Successor>> &graph, const std::vector<int> &costs) {
+    num_transitions_sub = 0;
+    num_single_transitions = 0;
+    op_set;
+    op_set_single;
+    num_label = 0;
+    num_new_label = 0;
+    // Retrieve non-looping transitions.
+    vector<vector<Successor>> new_graph(graph.size());
+    
+    // Map from (src, target) to list of operators
+    phmap::flat_hash_map<pair<int, int>, vector<int>> transition_groups;
+    for (std::size_t target = 0; target < graph.size(); ++target) {
+        for (const Successor &succ : graph[target]) {
+            num_transitions_sub++;
+            transition_groups[{succ.state, target}].push_back(succ.op);
+        }
+    }
+    for (const auto &[src_target, op_list] : transition_groups) {
+        const auto &[src, target] = src_target;
+        
+        vector<int> ops = op_list;
+        sort(ops.begin(), ops.end());
+        
+        int label_id;
+        if (ops.size() == 1) { // Param for min_label_size
+            label_id = ops[0];
+            num_single_transitions++;
+            op_set_single.insert(label_id);
+            op_set.insert(label_id);
+        } else {
+            num_label++;
+            if (ops_to_label_id.count(ops)) {
+                label_id = ops_to_label_id[ops];
+            } else {
+                label_id = next_label_id--;
+                int label_cost = INF;
+                for (int op_id : ops) {
+                    label_cost = min(label_cost, costs[op_id]); 
+                    op_set.insert(op_id);
+                }
+                assert(label_cost >= 0);
+                ops_to_label_id[ops] = label_id;
+                label_id_to_label[label_id] = Label(std::move(ops), label_cost);
+                num_new_label++;
+            }
+        }
+        new_graph[target].emplace_back(label_id, src);
+    }    
+    for (size_t target = 0; target < graph.size(); ++target) {
+        new_graph[target].shrink_to_fit();
+		cout << "Graph: " << target << new_graph[target] << endl;
+    }
+    return new_graph;
+}
+
 ExplicitAbstraction::ExplicitAbstraction(
     unique_ptr<AbstractionFunction> abstraction_function,
     vector<vector<Successor>> &&backward_graph_,
@@ -96,6 +168,31 @@ ExplicitAbstraction::ExplicitAbstraction(
         // Check that we don't store self-loops.
         assert(all_of(copied_transitions.begin(), copied_transitions.end(),
                       [target](const Successor &succ) {return succ.state != target;}));
+    }
+#endif
+}
+
+ExplicitAbstraction::ExplicitAbstraction(
+    unique_ptr<AbstractionFunction> abstraction_function,
+    vector<vector<Successor>> &&backward_graph_,
+    vector<bool> &&looping_operators,
+    vector<int> &&goal_states,
+    const vector<int> &costs)
+    : Abstraction(move(abstraction_function)),
+      backward_graph(move(label_reduction(backward_graph_, costs))),
+      active_operators(get_active_operators_from_graph(
+                           backward_graph, looping_operators.size())),
+      looping_operators(move(looping_operators)),
+      goal_states(move(goal_states)) {
+#ifndef NDEBUG
+    for (int target = 0; target < get_num_states(); ++target) {
+        // Check that no transition is stored multiple times.
+        vector<Successor> copied_transitions = this->backward_graph[target];
+        sort(copied_transitions.begin(), copied_transitions.end());
+        assert(utils::is_sorted_unique(copied_transitions));
+        // Check that we don't store self-loops.
+        assert(all_of(copied_transitions.begin(), copied_transitions.end(),
+                      [target](const Successor &succ) { return succ.state != target; }));
     }
 #endif
 }

@@ -1,3 +1,4 @@
+#include "utils.h"
 #include "cartesian_abstraction_generator.h"
 
 #include "cartesian_abstraction.h"
@@ -19,16 +20,10 @@
 #include "../task_utils/task_properties.h"
 #include <cassert>
 #include <cstddef>
-#include <parallel_hashmap/phmap.h>
-#include <unordered_set>
 
 using namespace std;
 
 namespace cost_saturation {
-phmap::flat_hash_map<vector<int>, int, VectorHash> ops_to_label_id;
-phmap::flat_hash_map<int, Label> label_id_to_label;
-int next_label_id = -1;
-
 static vector<vector<Successor>> get_backward_graph(
     const cartesian_abstractions::Abstraction &cartesian_abstraction,
     const vector<int> &h_values) {
@@ -48,69 +43,6 @@ static vector<vector<Successor>> get_backward_graph(
             }
             backward_graph[target].emplace_back(transition.op_id, src);
         }
-        backward_graph[target].shrink_to_fit();
-    }
-    return backward_graph;
-}
-
-static vector<vector<Successor>> get_backward_graph_w_lr(
-    const cartesian_abstractions::Abstraction &cartesian_abstraction,
-    const vector<int> &h_values,
-	const vector<int> &cost, int &num_transitions_sub, int &num_single_transitions, unordered_set<int> &op_set, unordered_set<int> &op_set_single, int &num_label, int &num_new_label) {
-    // Retrieve non-looping transitions.
-    vector<vector<Successor>> backward_graph(cartesian_abstraction.get_num_states());
-
-    // Map from (src, target) to list of operators
-    map<pair<int, int>, vector<int>> transition_groups;
-    for (int target = 0; target < cartesian_abstraction.get_num_states(); ++target) {
-        // Prune transitions *to* unsolvable states.
-        if (h_values[target] == INF) {
-            continue;
-        }
-        for (const cartesian_abstractions::Transition &transition :
-            cartesian_abstraction.get_incoming_transitions(target)) {
-            num_transitions_sub++;
-            int src = transition.target_id;
-            // Prune transitions *from* unsolvable states.
-            if (h_values[src] == INF) {
-                continue;
-            }
-            transition_groups[{src, target}].push_back(transition.op_id);
-        }
-    }
-    for (const auto &[src_target, op_list] : transition_groups) {
-        const auto &[src, target] = src_target;
-        
-        vector<int> ops = op_list;
-        sort(ops.begin(), ops.end());
-        
-        int label_id;
-        if (ops.size() == 1) { // Param for min_label_size
-            label_id = ops[0];
-            // cout << "Operator ID: " << label_id << endl;
-            num_single_transitions++;
-			op_set_single.insert(label_id);
-			op_set.insert(label_id);
-        } else {
-            num_label++;
-            if (ops_to_label_id.count(ops)) {
-                label_id = ops_to_label_id[ops];
-            } else {
-                label_id = next_label_id--;
-                int label_cost = INF;
-                for (int op_id : ops) {
-                    label_cost = min(label_cost, cost[op_id]); 
-					op_set.insert(op_id);
-                }
-                assert(label_cost >= 0);
-                label_id_to_label[label_id] = Label(move(ops), label_cost);
-                ops_to_label_id[ops] = label_id;
-                num_new_label++;
-            }
-        }
-        backward_graph[target].emplace_back(label_id, src);
-    }    
-    for (int target = 0; target < cartesian_abstraction.get_num_states(); ++target) {
         backward_graph[target].shrink_to_fit();
     }
     return backward_graph;
@@ -162,12 +94,6 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
 		log << "Abstraction===========================================================" << endl;
-		int num_transitions_sub = 0;
-		int num_single_transitions = 0;
-		unordered_set<int> op_set;
-		unordered_set<int> op_set_single;
-		int num_label = 0;
-		int num_new_label = 0;
         TaskProxy task_proxy(*subtask);
         vector<int> costs = task_properties::get_operator_costs(task_proxy);
         auto cegar = make_unique<cartesian_abstractions::CEGAR>(
@@ -205,8 +131,6 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         unique_ptr<Abstraction> abstraction;
         if (transition_representation == cartesian_abstractions::TransitionRepresentation::STORE) {
             auto backward_graph = get_backward_graph(*cartesian_abstraction, goal_distances);
-            // auto backward_graph = get_backward_graph_w_lr(*cartesian_abstraction, goal_distances, 
-				// costs, num_transitions_sub, num_single_transitions, op_set, op_set_single, num_label, num_new_label);
 				for (size_t target = 0; target < backward_graph.size(); ++target) {
 					log << "Graph: " << target << backward_graph[target] << endl;
 				}
@@ -220,7 +144,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
                 cartesian_abstraction->get_looping_operators(),
                 vector<int>(
                     cartesian_abstraction->get_goals().begin(),
-                    cartesian_abstraction->get_goals().end()));
+                    cartesian_abstraction->get_goals().end()),
+                    costs);
         } else {
 			abstraction = make_unique<CartesianAbstraction>(move(cartesian_abstraction));
         }

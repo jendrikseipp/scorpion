@@ -5,6 +5,8 @@
 
 #include <memory>
 #include <vector>
+#include <parallel_hashmap/phmap.h>
+#include <unordered_set>
 
 namespace cartesian_abstractions {
 class Abstraction;

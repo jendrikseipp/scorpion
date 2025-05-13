@@ -2,6 +2,7 @@
 #define COST_SATURATION_UTILS_H
 
 #include "abstraction.h"
+#include "parallel_hashmap/phmap.h"
 #include "types.h"
 
 #include <execution>
@@ -59,10 +60,38 @@ std::vector<int> get_abstract_state_ids(
         abstract_state_ids.begin(), get_abs_state_id);
     return abstract_state_ids;
 }
+struct VectorHash {
+    std::size_t operator()(const std::vector<int> &v) const {
+        std::size_t seed = v.size();
+        for (int i : v) {
+            seed ^= std::hash<int>{}(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
+struct Label {
+    std::vector<int> operators;
+    int cost;
+
+    Label() : operators(), cost(0) {}
+    
+    Label(std::vector<int> &&operators_, int cost_) : operators(std::move(operators_)), cost(cost_) {
+        std::sort(operators.begin(), operators.end());
+    } 
+
+    bool operator==(const Label &other) const {
+        return operators == other.operators;
+    }
+};
+
+extern phmap::flat_hash_map<std::vector<int>, int, VectorHash> ops_to_label_id;
+extern phmap::flat_hash_map<int, Label> label_id_to_label;
+extern int next_label_id;
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
-
+extern void reduce_label_costs(
+    std::vector<int> &remaining_costs);
 
 extern void add_order_options(plugins::Feature &feature);
 extern void add_options_for_cost_partitioning_heuristic(
