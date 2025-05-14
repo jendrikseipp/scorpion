@@ -143,7 +143,7 @@ static std::vector<std::vector<Successor>> label_reduction(
     }    
     for (size_t target = 0; target < graph.size(); ++target) {
         new_graph[target].shrink_to_fit();
-		cout << "Graph: " << target << new_graph[target] << endl;
+		// cout << "Graph: " << target << new_graph[target] << endl;
     }
     return new_graph;
 }

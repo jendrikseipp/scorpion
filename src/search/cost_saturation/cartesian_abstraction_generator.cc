@@ -131,9 +131,9 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         unique_ptr<Abstraction> abstraction;
         if (transition_representation == cartesian_abstractions::TransitionRepresentation::STORE) {
             auto backward_graph = get_backward_graph(*cartesian_abstraction, goal_distances);
-				for (size_t target = 0; target < backward_graph.size(); ++target) {
-					log << "Graph: " << target << backward_graph[target] << endl;
-				}
+				// for (size_t target = 0; target < backward_graph.size(); ++target) {
+				// 	log << "Graph: " << target << backward_graph[target] << endl;
+				// }
 				for (const auto &transitions : backward_graph) {
 					num_transitions += transitions.size();
 				}

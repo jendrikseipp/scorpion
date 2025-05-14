@@ -1058,3 +1058,6 @@ __pycache__/
 .cache/clangd/index/zero_one_pdbs_heuristic.h.B5996851AA7EC301.idx
 .cache/clangd/index/zero_one_pdbs.cc.B6C3E7B66BF02810.idx
 .cache/clangd/index/zero_one_pdbs.h.E73C05CD2D6A0D31.idx
+cachegrind.out
+callgrind.out
+massif.out

@@ -151,7 +151,7 @@ void reduce_label_costs(std::vector<int> &remaining_costs) {
         int label_cost = INF;
         for (int op_id : label.operators) {
             assert(utils::in_bounds(op_id, remaining_costs));
-            label_cost = min(label_cost, remaining_costs[op_id]); //Jendrik
+            label_cost = min(label_cost, remaining_costs[op_id]);
 		}
         label.cost = label_cost;
     }
