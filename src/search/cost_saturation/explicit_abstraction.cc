@@ -9,6 +9,8 @@
 #include <cassert>
 #include <cstddef>
 
+#include "../utils/logging.h"
+
 using namespace std;
 
 namespace cost_saturation {
@@ -212,7 +214,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     const vector<int> &h_values) const {
     int num_operators = get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
-    vector<int> saturated_label_costs(num_operators, -INF);
+    vector<int> saturated_label_costs(label_id_to_label.size(), -INF);
 
     /* To prevent negative cost cycles we ensure that all operators
        inducing self-loops have non-negative costs. */
@@ -253,10 +255,11 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         }
     }
     // unpack saturated_label_costs
-    for (auto &pair : label_id_to_label) {
-        Label &label = pair.second;
-        int label_cost = saturated_label_costs[-pair.first];
-        for (int op_id : label.operators) {
+    for (int i = 0; i < saturated_label_costs.size(); ++i) {
+        Label &label = label_id_to_label[-i];
+        assert(utils::in_bounds(i, saturated_label_costs));
+        int label_cost = saturated_label_costs[i];
+        for (int op_id : label.operators) { //?
             assert(utils::in_bounds(op_id, saturated_costs));
             saturated_costs[op_id] = max(saturated_costs[op_id], label_cost);
         }
