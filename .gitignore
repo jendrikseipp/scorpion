@@ -1061,3 +1061,7 @@ __pycache__/
 cachegrind.out
 callgrind.out
 massif.out
+.vscode/extensions.json
+experiments/atd/json
+experiments/atd/shutil
+experiments/atd/project
