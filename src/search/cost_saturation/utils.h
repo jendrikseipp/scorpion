@@ -90,8 +90,6 @@ extern int next_label_id;
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
-extern void reduce_label_costs(
-    std::vector<int> &remaining_costs);
 
 extern void add_order_options(plugins::Feature &feature);
 extern void add_options_for_cost_partitioning_heuristic(

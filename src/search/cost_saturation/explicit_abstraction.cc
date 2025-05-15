@@ -212,6 +212,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     const vector<int> &h_values) const {
     int num_operators = get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
+    vector<int> saturated_label_costs(num_operators, -INF);
 
     /* To prevent negative cost cycles we ensure that all operators
        inducing self-loops have non-negative costs. */
@@ -242,12 +243,22 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
             if (op_id >= 0) {
                 saturated_costs[op_id] = max(saturated_costs[op_id], needed);
             } else {
-                auto it = label_id_to_label.find(op_id);
-                assert(it != label_id_to_label.end());
-                for (int actual_op : it->second.operators) {
-                    saturated_costs[actual_op] = max(saturated_costs[actual_op], needed);
-                }
+                saturated_label_costs[-op_id] = max(saturated_label_costs[-op_id], needed);
+                // auto it = label_id_to_label.find(op_id);
+                // assert(it != label_id_to_label.end());
+                // for (int actual_op : it->second.operators) {
+                //     saturated_costs[actual_op] = max(saturated_costs[actual_op], needed);
+                // }
             }
+        }
+    }
+    // unpack saturated_label_costs
+    for (auto &pair : label_id_to_label) {
+        Label &label = pair.second;
+        int label_cost = saturated_label_costs[-pair.first];
+        for (int op_id : label.operators) {
+            assert(utils::in_bounds(op_id, saturated_costs));
+            saturated_costs[op_id] = max(saturated_costs[op_id], label_cost);
         }
     }
     return saturated_costs;

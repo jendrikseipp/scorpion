@@ -28,7 +28,6 @@ CostPartitioningHeuristic compute_saturated_cost_partitioning(
         vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
         cp_heuristic.add_h_values(pos, move(h_values));
         reduce_costs(remaining_costs, saturated_costs);
-        reduce_label_costs(remaining_costs);
     }
     return cp_heuristic;
 }

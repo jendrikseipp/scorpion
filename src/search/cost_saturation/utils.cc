@@ -143,16 +143,13 @@ void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_cos
         }
         assert(remaining >= 0);
     }
-}
-
-void reduce_label_costs(std::vector<int> &remaining_costs) {
     for (auto &pair : label_id_to_label) {
         Label &label = pair.second;
         int label_cost = INF;
         for (int op_id : label.operators) {
             assert(utils::in_bounds(op_id, remaining_costs));
             label_cost = min(label_cost, remaining_costs[op_id]);
-		}
+        }
         label.cost = label_cost;
     }
 }
