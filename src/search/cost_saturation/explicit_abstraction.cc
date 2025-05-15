@@ -255,7 +255,11 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         }
     }
     // unpack saturated_label_costs
-    for (int i = 0; i < saturated_label_costs.size(); ++i) {
+    for (int i = 0; i < saturated_label_costs.size(); ++i) { //man kann super viele skippen, da nicht immer alle labels in der jeweiligen abstraktion sind
+        if (saturated_label_costs[i] == -INF) {
+            continue;
+        }
+        assert(utils::in_bounds(i, label_id_to_label));
         Label &label = label_id_to_label[-i];
         assert(utils::in_bounds(i, saturated_label_costs));
         int label_cost = saturated_label_costs[i];
