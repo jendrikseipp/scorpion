@@ -229,16 +229,11 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         assert(utils::in_bounds(i, label_id_to_label));
         Label &label = label_id_to_label[-i];
         assert(utils::in_bounds(i, saturated_label_costs));
-        bool all_looping = true;
-        for (int op_id : label.operators) {
-            if (!looping_operators[op_id]) {
-                all_looping = false;
-                break;
+        if (!label.operators.empty()) {
+            int op_id = label.operators.front(); // or label.operators[0]
+            if (looping_operators[op_id]) {
+                saturated_label_costs[i] = 0;
             }
-        }
-
-        if (all_looping) {
-            saturated_label_costs[i] = 0;
         }
     }
 
