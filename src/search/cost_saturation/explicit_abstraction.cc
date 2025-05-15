@@ -8,6 +8,7 @@
 #include "../utils/strings.h"
 #include <cassert>
 #include <cstddef>
+#include <iterator>
 
 #include "../utils/logging.h"
 
@@ -221,6 +222,23 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     for (int op_id = 0; op_id < num_operators; ++op_id) {
         if (looping_operators[op_id]) {
             saturated_costs[op_id] = 0;
+        }
+    }
+    // prevent negative cost cycles for labels ...
+    for (int i = 0; i < saturated_label_costs.size(); ++i) {
+        assert(utils::in_bounds(i, label_id_to_label));
+        Label &label = label_id_to_label[-i];
+        assert(utils::in_bounds(i, saturated_label_costs));
+        bool all_looping = true;
+        for (int op_id : label.operators) {
+            if (!looping_operators[op_id]) {
+                all_looping = false;
+                break;
+            }
+        }
+
+        if (all_looping) {
+            saturated_label_costs[i] = 0;
         }
     }
 
