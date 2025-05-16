@@ -216,6 +216,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     int num_operators = get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
     vector<int> saturated_label_costs(label_id_to_label.size(), -INF);
+    vector<int> updated_label_indices;
 
     /* To prevent negative cost cycles we ensure that all operators
        inducing self-loops have non-negative costs. */
@@ -258,7 +259,12 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
             if (op_id >= 0) {
                 saturated_costs[op_id] = max(saturated_costs[op_id], needed);
             } else {
-                saturated_label_costs[-op_id] = max(saturated_label_costs[-op_id], needed);
+                // saturated_label_costs[-op_id] = max(saturated_label_costs[-op_id], needed);
+                int label_idx = -op_id;
+                if (saturated_label_costs[label_idx] < needed) {
+                    saturated_label_costs[label_idx] = needed;
+                    updated_label_indices.push_back(label_idx);
+                }
                 // auto it = label_id_to_label.find(op_id);
                 // assert(it != label_id_to_label.end());
                 // for (int actual_op : it->second.operators) {
@@ -268,15 +274,25 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         }
     }
     // unpack saturated_label_costs
-    for (int i = 0; i < saturated_label_costs.size(); ++i) { //man kann super viele skippen, da nicht immer alle labels in der jeweiligen abstraktion sind
-        if (saturated_label_costs[i] == -INF) {
-            continue;
-        }
-        assert(utils::in_bounds(i, label_id_to_label));
-        Label &label = label_id_to_label[-i];
-        assert(utils::in_bounds(i, saturated_label_costs));
-        int label_cost = saturated_label_costs[i];
-        for (int op_id : label.operators) { //?
+    // for (int i = 1; i < saturated_label_costs.size(); ++i) { //man kann super viele skippen, da nicht immer alle labels in der jeweiligen abstraktion sind
+    //     if (saturated_label_costs[i] == -INF) {
+    //         continue;
+    //     }
+    //     assert(utils::in_bounds(i, label_id_to_label));
+    //     Label &label = label_id_to_label[-i];
+    //     assert(utils::in_bounds(i, saturated_label_costs));
+    //     int label_cost = saturated_label_costs[i];
+    //     for (int op_id : label.operators) { //?
+    //         assert(utils::in_bounds(op_id, saturated_costs));
+    //         saturated_costs[op_id] = max(saturated_costs[op_id], label_cost); //l=01,02=1 02=3; 02=2 
+    //     }
+    // }
+    for (int idx : updated_label_indices) {
+        assert(utils::in_bounds(idx, label_id_to_label));
+        const Label &label = label_id_to_label[-idx];
+        assert(utils::in_bounds(idx, saturated_label_costs));
+        int label_cost = saturated_label_costs[idx];
+        for (int op_id : label.operators) {
             assert(utils::in_bounds(op_id, saturated_costs));
             saturated_costs[op_id] = max(saturated_costs[op_id], label_cost);
         }
