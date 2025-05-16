@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iterator>
 #include <ostream>
+#include <unordered_set>
 
 #include "../utils/logging.h"
 
@@ -218,7 +219,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     int num_operators = get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
     vector<int> saturated_label_costs(label_id_to_label.size() + 1, -INF);
-    vector<int> updated_label_indices;
+    unordered_set<int> updated_label_indices;
 
     /* To prevent negative cost cycles we ensure that all operators
        inducing self-loops have non-negative costs. */
@@ -262,7 +263,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
                 int label_idx = -op_id;
                 if (saturated_label_costs[label_idx] < needed) {
                     saturated_label_costs[label_idx] = needed;
-                    updated_label_indices.push_back(label_idx);
+                    updated_label_indices.insert(label_idx);
                 }
                 // auto it = label_id_to_label.find(op_id);
                 // assert(it != label_id_to_label.end());
