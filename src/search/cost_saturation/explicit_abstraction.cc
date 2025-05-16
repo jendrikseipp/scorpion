@@ -228,15 +228,14 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         }
     }
     // prevent negative cost cycles for labels ...
-    for (auto &[label_id, label] : label_id_to_label) {
-        int idx = -label_id;
-        if (!label.operators.empty()) {
-            int op_id = label.operators.front();
-            if (looping_operators[op_id]) {
-                saturated_label_costs[idx] = 0;
-            }
-        }
-    }
+    // for (auto &[label_id, label] : label_id_to_label) {
+    //     if (!label.operators.empty()) {
+    //         int op_id = label.operators.front();
+    //         if (looping_operators[op_id]) {
+    //             saturated_label_costs[-label_id] = 0;
+    //         }
+    //     }
+    // }
 
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
