@@ -293,8 +293,8 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         int label_id = idx - 1;
         assert(utils::in_bounds(idx, label_id_to_label));
         const Label &label = label_id_to_label[-label_id];
-        cout << "Label ID " << label_id << endl;
-        cout << saturated_label_costs << endl;
+        // cout << "Label ID " << label_id << endl;
+        // cout << saturated_label_costs << endl;
         assert(utils::in_bounds(label_id, saturated_label_costs));
         int label_cost = saturated_label_costs[label_id];
         for (int op_id : label.operators) {
