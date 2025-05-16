@@ -217,7 +217,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     const vector<int> &h_values) const {
     int num_operators = get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
-    vector<int> saturated_label_costs(label_id_to_label.size(), -INF);
+    vector<int> saturated_label_costs(label_id_to_label.size() + 1, -INF);
     vector<int> updated_label_indices;
 
     /* To prevent negative cost cycles we ensure that all operators
@@ -228,14 +228,12 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         }
     }
     // prevent negative cost cycles for labels ...
-    for (int i = 0; i < saturated_label_costs.size(); ++i) {
-        assert(utils::in_bounds(i, label_id_to_label));
-        Label &label = label_id_to_label[-i];
-        assert(utils::in_bounds(i, saturated_label_costs));
+    for (auto &[label_id, label] : label_id_to_label) {
+        int idx = -label_id;
         if (!label.operators.empty()) {
-            int op_id = label.operators.front(); // or label.operators[0]
+            int op_id = label.operators.front();
             if (looping_operators[op_id]) {
-                saturated_label_costs[i] = 0;
+                saturated_label_costs[idx] = 0;
             }
         }
     }
@@ -276,28 +274,13 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         }
     }
     // unpack saturated_label_costs
-    // for (int i = 1; i < saturated_label_costs.size(); ++i) { //man kann super viele skippen, da nicht immer alle labels in der jeweiligen abstraktion sind
-    //     if (saturated_label_costs[i] == -INF) {
-    //         continue;
-    //     }
-    //     assert(utils::in_bounds(i, label_id_to_label));
-    //     Label &label = label_id_to_label[-i];
-    //     assert(utils::in_bounds(i, saturated_label_costs));
-    //     int label_cost = saturated_label_costs[i];
-    //     for (int op_id : label.operators) { //?
-    //         assert(utils::in_bounds(op_id, saturated_costs));
-    //         saturated_costs[op_id] = max(saturated_costs[op_id], label_cost); //l=01,02=1 02=3; 02=2 
-    //     }
-    // }
     for (int idx : updated_label_indices) {
-        int label_id = idx - 1;
-        assert(utils::in_bounds(idx, label_id_to_label));
-        const Label &label = label_id_to_label[-label_id];
-        // cout << "Label ID " << label_id << endl;
-        // cout << saturated_label_costs << endl;
-        assert(utils::in_bounds(label_id, saturated_label_costs));
-        int label_cost = saturated_label_costs[label_id];
-        for (int op_id : label.operators) {
+        assert(utils::in_bounds(idx, saturated_label_costs));
+        int label_cost = saturated_label_costs[idx];
+
+        auto it = label_id_to_label.find(-idx);
+        assert(it != label_id_to_label.end());
+        for (int op_id : it->second.operators) {
             assert(utils::in_bounds(op_id, saturated_costs));
             saturated_costs[op_id] = max(saturated_costs[op_id], label_cost);
         }
