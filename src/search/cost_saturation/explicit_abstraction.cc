@@ -8,7 +8,9 @@
 #include "../utils/strings.h"
 #include <cassert>
 #include <cstddef>
+#include <iostream>
 #include <iterator>
+#include <ostream>
 
 #include "../utils/logging.h"
 
@@ -288,10 +290,13 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     //     }
     // }
     for (int idx : updated_label_indices) {
+        int label_id = idx - 1;
         assert(utils::in_bounds(idx, label_id_to_label));
-        const Label &label = label_id_to_label[-idx];
-        assert(utils::in_bounds(idx, saturated_label_costs));
-        int label_cost = saturated_label_costs[idx];
+        const Label &label = label_id_to_label[-label_id];
+        cout << "Label ID " << label_id << endl;
+        cout << saturated_label_costs << endl;
+        assert(utils::in_bounds(label_id, saturated_label_costs));
+        int label_cost = saturated_label_costs[label_id];
         for (int op_id : label.operators) {
             assert(utils::in_bounds(op_id, saturated_costs));
             saturated_costs[op_id] = max(saturated_costs[op_id], label_cost);
