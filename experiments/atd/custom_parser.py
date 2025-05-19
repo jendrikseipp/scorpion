@@ -9,8 +9,17 @@ class CommonParser(Parser):
     def __init__(self):
         super().__init__()
         self.add_bottom_up_pattern ( 
-            "num_total_reused_labels", r"Total number of reused labels in Cartesian abstractions: (\d+)", type=int
+            "num_transitions", r"Total number of transitions in Cartesian abstractions: (\d+)", type=int
         )
+        # self.add_bottom_up_pattern ( 
+        #     "num_single_transitions", r"Total number of single transitions in Cartesian abstractions: (\d+)", type=int
+        # )
+        # self.add_bottom_up_pattern ( 
+        #     "num_labels", r"Total number of labels in Cartesian abstractions: (\d+)", type=int
+        # )
+        # self.add_bottom_up_pattern ( 
+        #     "change_in_size", r"Total change in transitions ((#single transitions+#labels)/#transitions): (.+)s", type=float
+        # )
         # self.add_bottom_up_pattern(
         #     "num_abstractions", "Number of abstractions: (\d+)", type=int
         # )
