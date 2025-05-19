@@ -144,8 +144,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
                 cartesian_abstraction->get_looping_operators(),
                 vector<int>(
                     cartesian_abstraction->get_goals().begin(),
-                    cartesian_abstraction->get_goals().end()),
-                    costs);
+                    cartesian_abstraction->get_goals().end()));
         } else {
 			abstraction = make_unique<CartesianAbstraction>(move(cartesian_abstraction));
         }

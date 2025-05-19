@@ -56,7 +56,14 @@ static void dijkstra_search(
             } else {
                 auto it = label_id_to_label.find(op);
                 assert(it != label_id_to_label.end());
-                op_cost = it->second.cost;
+                // int label_cost = it->second.cost;
+                int label_cost = INF;
+                for (int op_id : it->second.operators) {
+                    assert(utils::in_bounds(op_id, costs));
+                    label_cost = min(label_cost, costs[op_id]);
+                }
+                op_cost = label_cost;
+                //it->second.cost = label_cost;
             }
             assert(op_cost >= 0);
             int successor_distance = (op_cost == INF) ? INF : state_distance + op_cost;
@@ -98,7 +105,7 @@ static vector<bool> get_active_operators_from_graph(
 }
 
 static std::vector<std::vector<Successor>> label_reduction(
-    std::vector<std::vector<Successor>> &graph, const std::vector<int> &costs) {
+    std::vector<std::vector<Successor>> &graph) {
     num_transitions_sub = 0;
     num_single_transitions = 0;
     op_set;
@@ -134,14 +141,8 @@ static std::vector<std::vector<Successor>> label_reduction(
                 label_id = ops_to_label_id[ops];
             } else {
                 label_id = next_label_id--;
-                int label_cost = INF;
-                for (int op_id : ops) {
-                    label_cost = min(label_cost, costs[op_id]); 
-                    op_set.insert(op_id);
-                }
-                assert(label_cost >= 0);
                 ops_to_label_id[ops] = label_id;
-                label_id_to_label[label_id] = Label(std::move(ops), label_cost);
+                label_id_to_label[label_id] = Label(std::move(ops), INF);
                 num_new_label++;
             }
         }
@@ -160,32 +161,7 @@ ExplicitAbstraction::ExplicitAbstraction(
     vector<bool> &&looping_operators,
     vector<int> &&goal_states)
     : Abstraction(move(abstraction_function)),
-      backward_graph(move(backward_graph_)),
-      active_operators(get_active_operators_from_graph(
-                           backward_graph, looping_operators.size())),
-      looping_operators(move(looping_operators)),
-      goal_states(move(goal_states)) {
-#ifndef NDEBUG
-    for (int target = 0; target < get_num_states(); ++target) {
-        // Check that no transition is stored multiple times.
-        vector<Successor> copied_transitions = this->backward_graph[target];
-        sort(copied_transitions.begin(), copied_transitions.end());
-        assert(utils::is_sorted_unique(copied_transitions));
-        // Check that we don't store self-loops.
-        assert(all_of(copied_transitions.begin(), copied_transitions.end(),
-                      [target](const Successor &succ) {return succ.state != target;}));
-    }
-#endif
-}
-
-ExplicitAbstraction::ExplicitAbstraction(
-    unique_ptr<AbstractionFunction> abstraction_function,
-    vector<vector<Successor>> &&backward_graph_,
-    vector<bool> &&looping_operators,
-    vector<int> &&goal_states,
-    const vector<int> &costs)
-    : Abstraction(move(abstraction_function)),
-      backward_graph(move(label_reduction(backward_graph_, costs))),
+      backward_graph(move(label_reduction(backward_graph_))),
       active_operators(get_active_operators_from_graph(
                            backward_graph, looping_operators.size())),
       looping_operators(move(looping_operators)),
@@ -228,15 +204,6 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
             saturated_costs[op_id] = 0;
         }
     }
-    // prevent negative cost cycles for labels ...
-    // for (auto &[label_id, label] : label_id_to_label) {
-    //     if (!label.operators.empty()) {
-    //         int op_id = label.operators.front();
-    //         if (looping_operators[op_id]) {
-    //             saturated_label_costs[-label_id] = 0;
-    //         }
-    //     }
-    // }
 
     int num_states = backward_graph.size();
     for (int target = 0; target < num_states; ++target) {
@@ -259,21 +226,15 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
             if (op_id >= 0) {
                 saturated_costs[op_id] = max(saturated_costs[op_id], needed);
             } else {
-                // saturated_label_costs[-op_id] = max(saturated_label_costs[-op_id], needed);
                 int label_idx = -op_id;
                 if (saturated_label_costs[label_idx] < needed) {
                     saturated_label_costs[label_idx] = needed;
                     updated_label_indices.insert(label_idx);
                 }
-                // auto it = label_id_to_label.find(op_id);
-                // assert(it != label_id_to_label.end());
-                // for (int actual_op : it->second.operators) {
-                //     saturated_costs[actual_op] = max(saturated_costs[actual_op], needed);
-                // }
             }
         }
     }
-    // unpack saturated_label_costs
+    // Unpack saturated_label_costs
     for (int idx : updated_label_indices) {
         assert(utils::in_bounds(idx, saturated_label_costs));
         int label_cost = saturated_label_costs[idx];

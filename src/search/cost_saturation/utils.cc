@@ -143,15 +143,15 @@ void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_cos
         }
         assert(remaining >= 0);
     }
-    for (auto &pair : label_id_to_label) {
-        Label &label = pair.second;
-        int label_cost = INF;
-        for (int op_id : label.operators) {
-            assert(utils::in_bounds(op_id, remaining_costs));
-            label_cost = min(label_cost, remaining_costs[op_id]);
-        }
-        label.cost = label_cost;
-    }
+    // for (auto &[label_id, label] : label_id_to_label) {
+    //     int label_cost = label.cost;
+    //     const auto &operators = label.operators;
+    //     for (int op_id : operators) {
+    //         assert(utils::in_bounds(op_id, remaining_costs));
+    //         label_cost = min(label_cost, remaining_costs[op_id]);
+    //     }
+    //     label.cost = label_cost;
+    // }
 }
 
 void add_order_options(plugins::Feature &feature) {
