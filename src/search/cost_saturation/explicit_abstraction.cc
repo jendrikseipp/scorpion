@@ -11,7 +11,6 @@
 #include <iostream>
 #include <iterator>
 #include <ostream>
-#include <unordered_set>
 
 #include "../utils/logging.h"
 
@@ -20,8 +19,9 @@ using namespace std;
 namespace cost_saturation {
 // Label maps
 phmap::flat_hash_map<std::vector<int>, int, VectorHash> ops_to_label_id;
-phmap::flat_hash_map<int, Label> label_id_to_label;
+phmap::flat_hash_map<int, std::vector<int>> label_id_to_ops;
 int next_label_id = -1;
+vector<int> rem_label_cost;
 
 // Tracking of some numbers
 int num_transitions_sub = 0;
@@ -54,16 +54,8 @@ static void dijkstra_search(
                 assert(utils::in_bounds(op, costs));
                 op_cost = costs[op];
             } else {
-                auto it = label_id_to_label.find(op);
-                assert(it != label_id_to_label.end());
-                // int label_cost = it->second.cost;
-                int label_cost = INF;
-                for (int op_id : it->second.operators) {
-                    assert(utils::in_bounds(op_id, costs));
-                    label_cost = min(label_cost, costs[op_id]);
-                }
-                op_cost = label_cost;
-                //it->second.cost = label_cost;
+                assert(utils::in_bounds(-op, rem_label_cost));
+                op_cost = rem_label_cost[-op];
             }
             assert(op_cost >= 0);
             int successor_distance = (op_cost == INF) ? INF : state_distance + op_cost;
@@ -92,9 +84,9 @@ static vector<bool> get_active_operators_from_graph(
                 assert(utils::in_bounds(op_id,active_operators));
                 active_operators[op_id] = true;
             } else {
-                auto it = label_id_to_label.find(op_id);
-                assert(it != label_id_to_label.end());
-                for (int actual_op : it->second.operators) {
+                auto it = label_id_to_ops.find(op_id);
+                assert(it != label_id_to_ops.end());
+                for (int actual_op : it->second) {
                     assert(utils::in_bounds(actual_op,active_operators));
                     active_operators[actual_op] = true;
                 }
@@ -142,7 +134,7 @@ static std::vector<std::vector<Successor>> label_reduction(
             } else {
                 label_id = next_label_id--;
                 ops_to_label_id[ops] = label_id;
-                label_id_to_label[label_id] = Label(std::move(ops), INF);
+                label_id_to_ops[label_id] = ops;
                 num_new_label++;
             }
         }
@@ -186,6 +178,17 @@ vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs
         goal_distances[goal_state] = 0;
         queue.push(0, goal_state);
     }
+    rem_label_cost = vector<int>(label_id_to_ops.size() + 1, INF);
+
+    for (const auto &[label_id, ops] : label_id_to_ops) {
+        int label_cost = INF;
+        for (int op_id : ops) {
+            assert(utils::in_bounds(op_id, costs));
+            label_cost = min(label_cost, costs[op_id]);
+        }
+        rem_label_cost[-label_id] = label_cost;
+    }
+
     dijkstra_search(backward_graph, costs, queue, goal_distances);
     return goal_distances;
 }
@@ -194,7 +197,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
     const vector<int> &h_values) const {
     int num_operators = get_num_operators();
     vector<int> saturated_costs(num_operators, -INF);
-    vector<int> saturated_label_costs(label_id_to_label.size() + 1, -INF);
+    vector<int> saturated_label_costs(label_id_to_ops.size() + 1, -INF);
     unordered_set<int> updated_label_indices;
 
     /* To prevent negative cost cycles we ensure that all operators
@@ -239,9 +242,9 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
         assert(utils::in_bounds(idx, saturated_label_costs));
         int label_cost = saturated_label_costs[idx];
 
-        auto it = label_id_to_label.find(-idx);
-        assert(it != label_id_to_label.end());
-        for (int op_id : it->second.operators) {
+        auto it = label_id_to_ops.find(-idx);
+        assert(it != label_id_to_ops.end());
+        for (int op_id : it->second) {
             assert(utils::in_bounds(op_id, saturated_costs));
             saturated_costs[op_id] = max(saturated_costs[op_id], label_cost);
         }
@@ -274,9 +277,9 @@ void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback
             if (op_id >= 0) {
                 callback(Transition(src, op_id, target));
             } else {
-                auto it = label_id_to_label.find(op_id);
-                assert(it != label_id_to_label.end());
-                for (int actual_op : it->second.operators) {
+                auto it = label_id_to_ops.find(op_id);
+                assert(it != label_id_to_ops.end());
+                for (int actual_op : it->second) {
                     callback(Transition(src, actual_op, target));
                 }
             }

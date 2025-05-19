@@ -69,23 +69,24 @@ struct VectorHash {
         return seed;
     }
 };
-struct Label {
-    std::vector<int> operators;
-    int cost;
+// struct Label {
+//     std::vector<int> operators;
+//     int cost;
 
-    Label() : operators(), cost(0) {}
+//     Label() : operators(), cost(0) {}
     
-    Label(std::vector<int> &&operators_, int cost_) : operators(std::move(operators_)), cost(cost_) {
-        std::sort(operators.begin(), operators.end());
-    } 
+//     Label(std::vector<int> &&operators_, int cost_) : operators(std::move(operators_)), cost(cost_) {
+//         std::sort(operators.begin(), operators.end());
+//     } 
 
-    bool operator==(const Label &other) const {
-        return operators == other.operators;
-    }
-};
-
+//     bool operator==(const Label &other) const {
+//         return operators == other.operators;
+//     }
+// };
+extern std::vector<int> rem_label_cost;
 extern phmap::flat_hash_map<std::vector<int>, int, VectorHash> ops_to_label_id;
-extern phmap::flat_hash_map<int, Label> label_id_to_label;
+// extern phmap::flat_hash_map<int, Label> label_id_to_label;
+extern phmap::flat_hash_map<int, std::vector<int>> label_id_to_ops;
 extern int next_label_id;
 
 extern void reduce_costs(
