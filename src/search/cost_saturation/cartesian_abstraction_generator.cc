@@ -166,15 +166,15 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
 		// }
 		// log << "] (cost = " << label.cost << ")" << endl;
 		// }
-		log << "Number of transitions: " << num_transitions_sub << endl;
-		log << "Number of single transitions: " << num_single_transitions << endl;
-		log << "Number of unique operators: " << op_set.size() << endl;
-		log << "Number of unique, single operators: " << op_set_single.size() << endl;
-		log << "Number of labels: " << num_label << endl;
-		log << "Number of globally new labels: " << num_new_label << endl;
-		log << "Number of locally reused labels: " << num_label - num_new_label << endl;
-		log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
-		static_cast<double>(num_single_transitions+num_label)/num_transitions_sub << endl;
+		// log << "Number of transitions: " << num_transitions_sub << endl;
+		// log << "Number of single transitions: " << num_single_transitions << endl;
+		// log << "Number of unique operators: " << op_set.size() << endl;
+		// log << "Number of unique, single operators: " << op_set_single.size() << endl;
+		// log << "Number of labels: " << num_label << endl;
+		// log << "Number of globally new labels: " << num_new_label << endl;
+		// log << "Number of locally reused labels: " << num_label - num_new_label << endl;
+		// log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
+		// static_cast<double>(num_single_transitions+num_label)/num_transitions_sub << endl;
 
 		num_total_single_transitions+=num_single_transitions;
 		num_total_reused_labels+=num_label - num_new_label;
@@ -214,38 +214,38 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     log << "Total number of transitions in Cartesian abstractions: " << num_transitions << endl;
     log << "After label reduction: " << endl;
     log << "Total number of transitions in Cartesian abstractions: " << num_total_single_transitions + label_id_to_ops.size() << endl;
-    log << "Total number of single transitions in Cartesian abstractions: " << num_total_single_transitions << endl;
-    log << "Total number of operators in Cartesian abstractions: "
-    << task->get_num_operators() << endl;
-    log << "Total number of labels in Cartesian abstractions: " << label_id_to_ops.size() << endl;
-    log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_labels << endl;
-    log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
-	static_cast<double>(num_total_single_transitions+label_id_to_ops.size())/num_transitions << endl;
-    if (!label_id_to_ops.empty()) {
-        int min_size = 2;
-        int max_size = 2;
-        int total_size = 0;
-        map<int, int> label_size_counts;
+    // log << "Total number of single transitions in Cartesian abstractions: " << num_total_single_transitions << endl;
+    // log << "Total number of operators in Cartesian abstractions: "
+    // << task->get_num_operators() << endl;
+    // log << "Total number of labels in Cartesian abstractions: " << label_id_to_ops.size() << endl;
+    // log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_labels << endl;
+    // log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
+	// static_cast<double>(num_total_single_transitions+label_id_to_ops.size())/num_transitions << endl;
+    // if (!label_id_to_ops.empty()) {
+    //     int min_size = 2;
+    //     int max_size = 2;
+    //     int total_size = 0;
+    //     map<int, int> label_size_counts;
     
-        for (const auto&[label_id, ops]: label_id_to_ops) {
-            int label_size = ops.size();
-            min_size = min(min_size, label_size);
-            max_size = max(max_size, label_size);
-            total_size += label_size;
-            label_size_counts[label_size]++;
-        }
+    //     for (const auto&[label_id, ops]: label_id_to_ops) {
+    //         int label_size = ops.size();
+    //         min_size = min(min_size, label_size);
+    //         max_size = max(max_size, label_size);
+    //         total_size += label_size;
+    //         label_size_counts[label_size]++;
+    //     }
 
-        double average_size = static_cast<double>(total_size) / label_id_to_ops.size();
+    //     double average_size = static_cast<double>(total_size) / label_id_to_ops.size();
     
-        log << "Label sizes: min = " << min_size 
-                << ", max = " << max_size
-                << ", avg = " << average_size 
-                << endl;
+    //     log << "Label sizes: min = " << min_size 
+    //             << ", max = " << max_size
+    //             << ", avg = " << average_size 
+    //             << endl;
 
-        for (const auto &[size, count] : label_size_counts) {
-            log << "Labels of size " << size << ": " << count << std::endl;
-        }       
-    }
+    //     for (const auto &[size, count] : label_size_counts) {
+    //         log << "Labels of size " << size << ": " << count << std::endl;
+    //     }       
+    // }
     return abstractions;
 }
 

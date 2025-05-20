@@ -20,7 +20,7 @@ User = namedtuple("User", ["scp_login", "remote_repo"])
 
 dfsplan = User(
     scp_login="x_winph@tetralith.nsc.liu.se",
-    remote_repo="/proj/dfsplan/users/x_winph",
+    remote_repo="/home/x_winph/downward-projects",
 )
 
 report_names = {
