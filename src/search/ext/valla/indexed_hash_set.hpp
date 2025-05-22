@@ -20,7 +20,7 @@
 
 #include "valla/declarations.hpp"
 
-#include <absl/container/flat_hash_map.h>
+#include <parallel_hashmap/phmap.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -71,7 +71,7 @@ public:
     }
 
 private:
-    absl::flat_hash_map<Slot, Index> m_slot_to_index;
+    phmap::flat_hash_map<Slot, Index> m_slot_to_index;
     std::vector<Slot> m_index_to_slot;
 };
 }

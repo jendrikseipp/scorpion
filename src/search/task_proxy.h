@@ -577,7 +577,7 @@ class State {
       const here to mean "const from the perspective of the state space
       semantics of the state".
     */
-    mutable std::shared_ptr<std::vector<int>> values;
+    mutable std::vector<int> values;
     const int_packer::IntPacker *state_packer;
     int num_variables;
     void* reader_context;
@@ -768,9 +768,7 @@ inline bool State::operator==(const State &other) const {
         return id == other.id;
     } else {
         // Both states are unregistered.
-        assert(values);
-        assert(other.values);
-        return *values == *other.values;
+        return std::equal(values.begin(), values.end(), other.values.begin());
     }
 }
 
@@ -779,7 +777,7 @@ inline bool State::operator!=(const State &other) const {
 }
 
 inline void State::unpack() const {
-    if (!values) {
+    if (values.size() == 0) {
         /*
           A micro-benchmark in issue348 showed that constructing the vector
           in the required size and then assigning values was faster than the
@@ -791,7 +789,7 @@ inline void State::unpack() const {
           structures that exploit sequentially unpacking each entry, by doing
           things bin by bin.)
         */
-        values = std::make_shared<std::vector<int>>(get_variable_value(id));
+        values = get_variable_value(id);
     }
 }
 
@@ -802,9 +800,9 @@ inline std::size_t State::size() const {
 inline FactProxy State::operator[](std::size_t var_id) const {
     assert(var_id < size());
 
-    if (!values) unpack();
+    if (values.size() == 0) unpack();
 
-    return FactProxy(*task, var_id, (*values)[var_id]);
+    return FactProxy(*task, var_id, values[var_id]);
 }
 
 inline FactProxy State::operator[](VariableProxy var) const {
@@ -839,13 +837,7 @@ inline const PackedStateBin *State::get_buffer() const {
 }
 
 inline const std::vector<int> &State::get_unpacked_values() const {
-    if (!values) {
-        std::cerr << "Accessing the unpacked values of a state without "
-                  << "unpacking them first is treated as an error. Please "
-                  << "use State::unpack first."
-                  << std::endl;
-        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
-    }
-    return *values;
+    if (values.size() == 0) unpack();
+    return values;
 }
 #endif

@@ -10,9 +10,6 @@
 
 using namespace std;
 
-// constexpr int unpacked_state_variable_reader(const unsigned *buf, int var, void*) noexcept {
-//     return buf[var];
-// }
 
 UnpackedStateRegistry::UnpackedStateRegistry(const TaskProxy &task_proxy)
     : IStateRegistry(task_proxy), state_packer(task_properties::g_state_packers[task_proxy]),
@@ -26,12 +23,12 @@ UnpackedStateRegistry::UnpackedStateRegistry(const TaskProxy &task_proxy)
 
     State::get_variable_value =
         [this](const StateID& id) {
-            std::vector<int> state_data(get_bins_per_state());
+            std::vector<int> state_data(num_variables);
             const unsigned *buffer = state_data_pool[id.value];
             for (int i = 0; i < num_variables; ++i) {
                 state_data[i] = buffer[i];
             }
-            return std::move(state_data);
+            return state_data;
     };
 }
 
@@ -91,8 +88,6 @@ const State &UnpackedStateRegistry::get_initial_state() {
 //     out of the PackedStateRegistry. This could for example be done by global functions
 //     operating on state buffers (unsigned *).
 State UnpackedStateRegistry::get_successor_state(const State &predecessor, const OperatorProxy &op) {
-    assert(!op.is_axiom());
-
     std::vector<unsigned> state_values;
 
     predecessor.unpack();

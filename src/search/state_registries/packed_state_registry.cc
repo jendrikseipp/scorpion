@@ -25,12 +25,12 @@ PackedStateRegistry::PackedStateRegistry(const TaskProxy &task_proxy)
 
     State::get_variable_value =
         [this](const StateID& id) {
-            std::vector<int> state_data(get_bins_per_state());
+            std::vector<int> state_data(num_variables);
             const unsigned *buffer = state_data_pool[id.value];
             for (int i = 0; i < num_variables; ++i) {
                 state_data[i] = state_packer.get(buffer, i);
             }
-            return std::move(state_data);
+            return state_data;
         };
 }
 
@@ -52,13 +52,7 @@ StateID PackedStateRegistry::insert_id_or_pop_state() {
 }
 
 State PackedStateRegistry::lookup_state(StateID id) const {
-    const PackedStateBin *buffer = state_data_pool[id.value];
-
-    std::vector<int> values(num_variables);
-    for (int i = 0; i < num_variables; ++i) {
-        values[i] = state_packer.get(buffer, i);
-    }
-    return task_proxy.create_state(*this, id, std::move(values));
+    return task_proxy.create_state(*this, id);
 }
 
 State PackedStateRegistry::lookup_state(
@@ -95,43 +89,29 @@ State PackedStateRegistry::get_successor_state(const State &predecessor, const O
       buffer becoming a dangling pointer. This used to be a bug before being
       fixed in https://issues.fast-downward.org/issue1115.
     */
-    state_data_pool.push_back(predecessor.get_buffer());
+    int num_bins = get_bins_per_state();
+    unique_ptr<PackedStateBin[]> tmp(new PackedStateBin[num_bins]);
+    // Avoid garbage values in half-full bins.
+    fill_n(tmp.get(), num_bins, 0);
+    state_data_pool.push_back(tmp.get());
     PackedStateBin *buffer = state_data_pool[state_data_pool.size() - 1];
-    /* Experiments for issue348 showed that for tasks with axioms it's faster
-       to compute successor states using unpacked data. */
-    if (task_properties::has_axioms(task_proxy)) {
-        predecessor.unpack();
-        vector<int> new_values = predecessor.get_unpacked_values();
-        for (EffectProxy effect : op.get_effects()) {
-            if (does_fire(effect, predecessor)) {
-                FactPair effect_pair = effect.get_fact().get_pair();
-                new_values[effect_pair.var] = effect_pair.value;
-            }
-        }
-        axiom_evaluator.evaluate(new_values);
-        for (size_t i = 0; i < new_values.size(); ++i) {
-            state_packer.set(buffer, i, new_values[i]);
-        }
-        /*
-          NOTE: insert_id_or_pop_state possibly invalidates buffer, hence
-          we use lookup_state to retrieve the state using the correct buffer.
-        */
-        StateID id = insert_id_or_pop_state();
-        return lookup_state(id, move(new_values));
-    } else {
-        for (EffectProxy effect : op.get_effects()) {
-            if (does_fire(effect, predecessor)) {
-                FactPair effect_pair = effect.get_fact().get_pair();
-                state_packer.set(buffer, effect_pair.var, effect_pair.value);
-            }
-        }
-        /*
-          NOTE: insert_id_or_pop_state possibly invalidates buffer, hence
-          we use lookup_state to retrieve the state using the correct buffer.
-        */
-        StateID id = insert_id_or_pop_state();
-        return lookup_state(id);
+
+    vector<int> new_values = predecessor.get_unpacked_values();
+    for (size_t i = 0; i < predecessor.size(); ++i) {
+        state_packer.set(buffer, i, new_values[i]);
     }
+    for (EffectProxy effect : op.get_effects()) {
+        if (does_fire(effect, predecessor)) {
+            FactPair effect_pair = effect.get_fact().get_pair();
+            state_packer.set(buffer, effect_pair.var, effect_pair.value);
+        }
+    }
+    /*
+      NOTE: insert_id_or_pop_state possibly invalidates buffer, hence
+      we use lookup_state to retrieve the state using the correct buffer.
+    */
+    StateID id = insert_id_or_pop_state();
+    return lookup_state(id, move(new_values));
 }
 
 int PackedStateRegistry::get_bins_per_state() const {
