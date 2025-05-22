@@ -8,10 +8,10 @@
 
 using namespace std;
 
-int packed_state_variable_reader(const unsigned *buf, int var, void* context) {
-    auto* state_packer = static_cast<int_packer::IntPacker*>(context);
-    return state_packer->get(buf, var);
-}
+// int packed_state_variable_reader(const int index, void* context) {
+//     auto* state_packer = static_cast<int_packer::IntPacker*>(context);
+//     return state_packer->get(registered_states, var);
+// }
 
 PackedStateRegistry::PackedStateRegistry(const TaskProxy &task_proxy)
     : IStateRegistry(task_proxy), state_packer(task_properties::g_state_packers[task_proxy]),
@@ -22,6 +22,16 @@ PackedStateRegistry::PackedStateRegistry(const TaskProxy &task_proxy)
           0,
           StateIDSemanticHash(state_data_pool, get_bins_per_state()),
           StateIDSemanticEqual(state_data_pool, get_bins_per_state())) {
+
+    State::get_variable_value =
+        [this](const StateID& id) {
+            std::vector<int> state_data(get_bins_per_state());
+            const unsigned *buffer = state_data_pool[id.value];
+            for (int i = 0; i < num_variables; ++i) {
+                state_data[i] = state_packer.get(buffer, i);
+            }
+            return std::move(state_data);
+        };
 }
 
 StateID PackedStateRegistry::insert_id_or_pop_state() {
@@ -43,15 +53,17 @@ StateID PackedStateRegistry::insert_id_or_pop_state() {
 
 State PackedStateRegistry::lookup_state(StateID id) const {
     const PackedStateBin *buffer = state_data_pool[id.value];
-    return task_proxy.create_state(*this, id, buffer,
-        packed_state_variable_reader, &state_packer);
+
+    std::vector<int> values(num_variables);
+    for (int i = 0; i < num_variables; ++i) {
+        values[i] = state_packer.get(buffer, i);
+    }
+    return task_proxy.create_state(*this, id, std::move(values));
 }
 
 State PackedStateRegistry::lookup_state(
     StateID id, vector<int> &&state_values) const {
-    const PackedStateBin *buffer = state_data_pool[id.value];
-    return task_proxy.create_state(*this, id, buffer, move(state_values),
-        packed_state_variable_reader, &state_packer);
+    return task_proxy.create_state(*this, id, std::move(state_values));
 }
 
 const State &PackedStateRegistry::get_initial_state() {

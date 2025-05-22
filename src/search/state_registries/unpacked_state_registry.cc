@@ -10,9 +10,9 @@
 
 using namespace std;
 
-constexpr int unpacked_state_variable_reader(const unsigned *buf, int var, void*) noexcept {
-    return buf[var];
-}
+// constexpr int unpacked_state_variable_reader(const unsigned *buf, int var, void*) noexcept {
+//     return buf[var];
+// }
 
 UnpackedStateRegistry::UnpackedStateRegistry(const TaskProxy &task_proxy)
     : IStateRegistry(task_proxy), state_packer(task_properties::g_state_packers[task_proxy]),
@@ -24,6 +24,15 @@ UnpackedStateRegistry::UnpackedStateRegistry(const TaskProxy &task_proxy)
           StateIDSemanticHash(state_data_pool, num_variables),
           StateIDSemanticEqual(state_data_pool, num_variables)) {
 
+    State::get_variable_value =
+        [this](const StateID& id) {
+            std::vector<int> state_data(get_bins_per_state());
+            const unsigned *buffer = state_data_pool[id.value];
+            for (int i = 0; i < num_variables; ++i) {
+                state_data[i] = buffer[i];
+            }
+            return std::move(state_data);
+    };
 }
 
 StateID UnpackedStateRegistry::insert_id_or_pop_state() {
@@ -44,15 +53,20 @@ StateID UnpackedStateRegistry::insert_id_or_pop_state() {
 }
 
 State UnpackedStateRegistry::lookup_state(StateID id) const {
-    const unsigned *buffer = state_data_pool[id.value];
-    return task_proxy.create_state(*this, id, buffer, unpacked_state_variable_reader);
+    const PackedStateBin *buffer = state_data_pool[id.value];
+
+    std::vector<int> values(num_variables);
+    for (int i = 0; i < num_variables; ++i) {
+        values[i] = buffer[i];
+    }
+    return task_proxy.create_state(*this, id, std::move(values));
 }
 
 State UnpackedStateRegistry::lookup_state(
     StateID id, vector<int> &&state_values) const {
-    const unsigned *buffer = state_data_pool[id.value];
-    return task_proxy.create_state(*this, id, buffer, move(state_values), unpacked_state_variable_reader);
+    return task_proxy.create_state(*this, id, std::move(state_values));
 }
+
 
 const State &UnpackedStateRegistry::get_initial_state() {
     if (!cached_initial_state) {
