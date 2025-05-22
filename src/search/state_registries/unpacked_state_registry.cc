@@ -102,13 +102,13 @@ State UnpackedStateRegistry::get_successor_state(const State &predecessor, const
             FactPair effect_pair = effect.get_fact().get_pair();
             buffer[effect_pair.var] = effect_pair.value;
         }
+    }
         /*
           NOTE: insert_id_or_pop_state possibly invalidates buffer, hence
           we use lookup_state to retrieve the state using the correct buffer.
         */
         StateID id = insert_id_or_pop_state();
         return lookup_state(id);
-    }
 }
 
 int UnpackedStateRegistry::get_state_size_in_bytes() const {
