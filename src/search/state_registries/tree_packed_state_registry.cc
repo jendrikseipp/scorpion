@@ -83,8 +83,7 @@ const State &TreePackedStateRegistry::get_initial_state() {
         for (auto i = 0; i < num_variables; ++i) {
             state_packer.set(buffer.data(), i, tmp[i]);
         }
-        auto [index, _] = vs::static_tree::insert(std::vector<vs::Index>{buffer.begin(), buffer.end()},
-                                                  tree_table, root_table);
+        auto [index, _] = vs::static_tree::insert(buffer, tree_table, root_table);
         StateID id = StateID(index);
         cached_initial_state = make_unique<State>(lookup_state(id));
 
@@ -107,22 +106,26 @@ State TreePackedStateRegistry::get_successor_state(const State &predecessor, con
 
     /* Experiments for issue348 showed that for tasks with axioms it's faster
        to compute successor states using unpacked data. */
+
+    utils::g_log << "Predecessor: " << tmp << endl;
     for (EffectProxy effect : op.get_effects()) {
         if (does_fire(effect, predecessor)) {
             FactPair effect_pair = effect.get_fact().get_pair();
+            utils::g_log << "Effect: " << effect_pair.var  << " : " << new_state_values[effect_pair.var] << " -> " << effect_pair.value << endl;
             new_state_values[effect_pair.var] = effect_pair.value;
         }
     }
+    utils::g_log << "Successor: " << new_state_values << endl;
 
-    std::vector<PackedStateBin> buffer(get_bins_per_state());
+    std::vector<vs::Index> buffer(get_bins_per_state());
     for (auto i = 0; i < num_variables; ++i) {
         state_packer.set(buffer.data(), i, new_state_values[i]);
     }
     auto [index, inserted] = vs::static_tree::insert(buffer, tree_table, root_table);
-
+    utils::g_log << "Inserted: " << inserted << ", Index: " << index << endl;
     if (!inserted) {
         auto it = std::find(root_table.begin(), root_table.end(), index);
-        return lookup_state(StateID(it - root_table.begin()));
+        return lookup_state(StateID(std::distance(root_table.begin(), it)));
     }
 
     return lookup_state(StateID(index), {new_state_values.begin(), new_state_values.end()});
