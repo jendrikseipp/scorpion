@@ -18,6 +18,7 @@
 #include <limits>
 
 #include "state_registries/packed_state_registry.h"
+#include "state_registries/tree_unpacked_state_registry.h"
 #include "state_registries/unpacked_state_registry.h"
 
 using namespace std;
@@ -186,7 +187,9 @@ std::shared_ptr<StateRegistry> initialize_state_registry(StateRegistryType state
         case TREE_PACKED:
             break;
         case TREE_UNPACKED:
-            break;
+            return std::make_shared<TreeUnpackedStateRegistry>(task_proxy);
+        default:
+            return std::make_shared<PackedStateRegistry>(task_proxy);
     }
 }
 

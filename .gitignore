@@ -9,3 +9,5 @@ __pycache__/
 /misc/autodoc/downward-xmlrpc.secret
 /src/cmake-build-debug
 /.idea
+/src/search/cmake-build-debug
+/src/search/cmake-build-debug

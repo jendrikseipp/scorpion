@@ -89,17 +89,10 @@ State PackedStateRegistry::get_successor_state(const State &predecessor, const O
       buffer becoming a dangling pointer. This used to be a bug before being
       fixed in https://issues.fast-downward.org/issue1115.
     */
-    int num_bins = get_bins_per_state();
-    unique_ptr<PackedStateBin[]> tmp(new PackedStateBin[num_bins]);
-    // Avoid garbage values in half-full bins.
-    fill_n(tmp.get(), num_bins, 0);
-    state_data_pool.push_back(tmp.get());
+    auto packed_pred = state_data_pool[predecessor.get_id().value];
+    state_data_pool.push_back(packed_pred);
     PackedStateBin *buffer = state_data_pool[state_data_pool.size() - 1];
 
-    vector<int> new_values = predecessor.get_unpacked_values();
-    for (size_t i = 0; i < predecessor.size(); ++i) {
-        state_packer.set(buffer, i, new_values[i]);
-    }
     for (EffectProxy effect : op.get_effects()) {
         if (does_fire(effect, predecessor)) {
             FactPair effect_pair = effect.get_fact().get_pair();
@@ -111,7 +104,7 @@ State PackedStateRegistry::get_successor_state(const State &predecessor, const O
       we use lookup_state to retrieve the state using the correct buffer.
     */
     StateID id = insert_id_or_pop_state();
-    return lookup_state(id, move(new_values));
+    return lookup_state(id);
 }
 
 int PackedStateRegistry::get_bins_per_state() const {

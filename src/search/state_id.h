@@ -22,6 +22,7 @@ class StateID {
     friend class PackedStateRegistry;
     friend class UnpackedStateRegistry;
     friend class TreeUnpackedStateRegistry;
+    friend class TreePackedStateRegistry;
 
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template<typename>
@@ -50,6 +51,8 @@ public:
     bool operator!=(const StateID &other) const {
         return !(*this == other);
     }
+
+
 };
 
 
