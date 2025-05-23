@@ -163,6 +163,12 @@ inline void read_state(Index tree_index, size_t size, const IndexedHashSet& tree
     if (size == 0)  ///< Special case for empty state.
         return;
 
+    if (size == 1)
+    {
+        out_state.push_back(read_slot(tree_table.get_slot(tree_index)).first);
+        return;
+    }
+
 
     read_state_recursively(tree_index, size, tree_table, out_state);
 }
