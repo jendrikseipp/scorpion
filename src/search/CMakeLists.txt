@@ -64,6 +64,7 @@ create_fast_downward_library(
         state_registries/packed_state_registry
         state_registries/unpacked_state_registry
         state_registries/tree_unpacked_state_registry
+        state_registries/tree_packed_state_registry
     CORE_LIBRARY
 )
 
