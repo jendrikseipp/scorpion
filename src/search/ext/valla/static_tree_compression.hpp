@@ -69,7 +69,7 @@ template<std::forward_iterator Iterator>
 inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator end, size_t size, IndexedHashSet& table)
 {
     if (size == 1)
-        return std::pair{static_cast<size_t>(*it), true};
+        return std::pair{static_cast<size_t>(*it), false};
 
     if (size == 2){
         auto [iter, inserted] = table.insert_slot(make_slot(*it, *(it + 1)));
@@ -106,6 +106,10 @@ auto insert(const Range& state, IndexedHashSet& tree_table, RootIndices& root_ta
     if (size == 0)                                                     ///< Special case for empty state.
         return std::pair{root_table.size(), false};  ///< Len 0 marks the empty state, the tree index can be arbitrary so we set it to 0.
 
+    if (size == 1) {
+        auto [iter, inserted] = tree_table.insert_slot(make_slot(state[0], 0));
+        return std::pair{static_cast<size_t>(iter->second), inserted};
+    }
 
     auto [index, inserted] = emplace_recursively(state.begin(), state.end(), size, tree_table);
     if (!inserted && size >= 2)
@@ -158,6 +162,7 @@ inline void read_state(Index tree_index, size_t size, const IndexedHashSet& tree
 
     if (size == 0)  ///< Special case for empty state.
         return;
+
 
     read_state_recursively(tree_index, size, tree_table, out_state);
 }
