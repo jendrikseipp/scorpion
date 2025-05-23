@@ -56,16 +56,21 @@ StateID TreePackedStateRegistry::insert_id_or_pop_state() {
 }
 
 State TreePackedStateRegistry::lookup_state(StateID id) const {
-    std::vector<vs::Index> tmp(get_bins_per_state());
-    vs::static_tree::read_state(id.value, get_bins_per_state(), tree_table, root_table, tmp);
-    std::vector<int> state_values{tmp.begin(), tmp.end()};
+    std::vector<vs::Index> buffer(get_bins_per_state());
+    vs::static_tree::read_state(id.value, get_bins_per_state(), tree_table, root_table, buffer);
+
+    std::vector<int> state_values(num_variables);
+    for (int i = 0; i < num_variables; ++i) {
+        state_values[i] = state_packer.get(buffer.data(), i);
+    }
+
 
     return task_proxy.create_state(*this, id, move(state_values));
 }
 
 State TreePackedStateRegistry::lookup_state(
     StateID id, vector<int> &&state_values) const {
-    return lookup_state(id);
+    return task_proxy.create_state(*this, id, move(state_values));
 }
 
 const State &TreePackedStateRegistry::get_initial_state() {
