@@ -23,6 +23,7 @@ class ExplicitProjectionFactory {
     std::vector<std::vector<Successor>> backward_graph;
     std::vector<bool> looping_operators;
     std::vector<int> goal_states;
+    int min_ops_per_label;
 
     // size of the PDB
     int num_states;

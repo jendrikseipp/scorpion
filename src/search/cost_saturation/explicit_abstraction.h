@@ -52,6 +52,8 @@ class ExplicitAbstraction : public Abstraction {
 
     std::vector<int> goal_states;
 
+    int min_ops_per_label;
+
     mutable priority_queues::AdaptiveQueue<int> queue;
 
 public:
@@ -59,7 +61,8 @@ public:
         std::unique_ptr<AbstractionFunction> abstraction_function,
         std::vector<std::vector<Successor>> &&backward_graph,
         std::vector<bool> &&looping_operators,
-        std::vector<int> &&goal_states);
+        std::vector<int> &&goal_states, 
+        int min_ops_per_label);
 
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;

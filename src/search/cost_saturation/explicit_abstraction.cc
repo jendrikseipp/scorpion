@@ -6,6 +6,7 @@
 
 #include "../utils/collections.h"
 #include "../utils/strings.h"
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <iostream>
@@ -97,7 +98,7 @@ static vector<bool> get_active_operators_from_graph(
 }
 
 static std::vector<std::vector<Successor>> label_reduction(
-    std::vector<std::vector<Successor>> &graph) {
+    std::vector<std::vector<Successor>> &graph, int min_ops_per_label) {
     num_transitions_sub = 0;
     num_single_transitions = 0;
     op_set;
@@ -121,13 +122,15 @@ static std::vector<std::vector<Successor>> label_reduction(
         vector<int> ops = op_list;
         sort(ops.begin(), ops.end());
         
-        int label_id;
-        if (ops.size() == 1) { // Param for min_label_size
-            label_id = ops[0];
-            num_single_transitions++;
-            op_set_single.insert(label_id);
-            op_set.insert(label_id);
+        if (ops.size() < min_ops_per_label) {
+            for (int op : ops) {
+                num_single_transitions++;
+                op_set_single.insert(op);
+                op_set.insert(op);
+                new_graph[target].emplace_back(op, src);
+            }
         } else {
+            int label_id;
             num_label++;
             if (ops_to_label_id.count(ops)) {
                 label_id = ops_to_label_id[ops];
@@ -137,9 +140,9 @@ static std::vector<std::vector<Successor>> label_reduction(
                 label_id_to_ops[label_id] = ops;
                 num_new_label++;
             }
+            new_graph[target].emplace_back(label_id, src);
         }
-        new_graph[target].emplace_back(label_id, src);
-    }    
+    }
     for (size_t target = 0; target < graph.size(); ++target) {
         new_graph[target].shrink_to_fit();
 		// cout << "Graph: " << target << new_graph[target] << endl;
@@ -151,13 +154,15 @@ ExplicitAbstraction::ExplicitAbstraction(
     unique_ptr<AbstractionFunction> abstraction_function,
     vector<vector<Successor>> &&backward_graph_,
     vector<bool> &&looping_operators,
-    vector<int> &&goal_states)
+    vector<int> &&goal_states,
+    int min_ops_per_label)
     : Abstraction(move(abstraction_function)),
-      backward_graph(move(label_reduction(backward_graph_))),
+      backward_graph(move(label_reduction(backward_graph_, min_ops_per_label))),
       active_operators(get_active_operators_from_graph(
                            backward_graph, looping_operators.size())),
       looping_operators(move(looping_operators)),
-      goal_states(move(goal_states)) {
+      goal_states(move(goal_states)),
+      min_ops_per_label(min_ops_per_label) {
 #ifndef NDEBUG
     for (int target = 0; target < get_num_states(); ++target) {
         // Check that no transition is stored multiple times.

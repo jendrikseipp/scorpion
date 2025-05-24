@@ -35,6 +35,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
     const int extra_memory_padding_mb;
+    const int min_ops_per_label;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
     const cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity;
 
@@ -59,7 +60,7 @@ public:
         cartesian_abstractions::PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state, int max_state_expansions,
         cartesian_abstractions::TransitionRepresentation transition_representation,
-        int memory_padding, int random_seed,
+        int memory_padding, int min_ops_per_label, int random_seed,
         cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
         utils::Verbosity verbosity);
 

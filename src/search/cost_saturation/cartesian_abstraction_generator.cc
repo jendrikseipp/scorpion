@@ -56,7 +56,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
     cartesian_abstractions::PickSplit tiebreak_split,
     int max_concrete_states_per_abstract_state, int max_state_expansions,
     cartesian_abstractions::TransitionRepresentation transition_representation,
-    int memory_padding, int random_seed,
+    int memory_padding, int min_ops_per_label, int random_seed,
     cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
     utils::Verbosity verbosity)
     : AbstractionGenerator(verbosity),
@@ -71,6 +71,7 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
       max_state_expansions(max_state_expansions),
       extra_memory_padding_mb(memory_padding),
+      min_ops_per_label(min_ops_per_label),
       rng(utils::get_rng(random_seed)),
       dot_graph_verbosity(dot_graph_verbosity),
       num_states(0),
@@ -144,7 +145,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
                 cartesian_abstraction->get_looping_operators(),
                 vector<int>(
                     cartesian_abstraction->get_goals().begin(),
-                    cartesian_abstraction->get_goals().end()));
+                    cartesian_abstraction->get_goals().end()),
+                min_ops_per_label);
         } else {
 			abstraction = make_unique<CartesianAbstraction>(move(cartesian_abstraction));
         }
@@ -221,31 +223,41 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     // log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_labels << endl;
     // log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
 	// static_cast<double>(num_total_single_transitions+label_id_to_ops.size())/num_transitions << endl;
-    // if (!label_id_to_ops.empty()) {
-    //     int min_size = 2;
-    //     int max_size = 2;
-    //     int total_size = 0;
-    //     map<int, int> label_size_counts;
+    if (!label_id_to_ops.empty()) {
+        // int min_size = 2;
+        // int max_size = 2;
+        // int total_size = 0;
+        map<int, int> label_size_counts;
     
-    //     for (const auto&[label_id, ops]: label_id_to_ops) {
-    //         int label_size = ops.size();
-    //         min_size = min(min_size, label_size);
-    //         max_size = max(max_size, label_size);
-    //         total_size += label_size;
-    //         label_size_counts[label_size]++;
-    //     }
+        for (const auto&[label_id, ops]: label_id_to_ops) {
+            int label_size = ops.size();
+            // min_size = min(min_size, label_size);
+            // max_size = max(max_size, label_size);
+            // total_size += label_size;
+            label_size_counts[label_size]++;
+        }
 
-    //     double average_size = static_cast<double>(total_size) / label_id_to_ops.size();
+        // double average_size = static_cast<double>(total_size) / label_id_to_ops.size();
     
-    //     log << "Label sizes: min = " << min_size 
-    //             << ", max = " << max_size
-    //             << ", avg = " << average_size 
-    //             << endl;
+        // log << "Label sizes: min = " << min_size 
+        //         << ", max = " << max_size
+        //         << ", avg = " << average_size 
+        //         << endl;
 
-    //     for (const auto &[size, count] : label_size_counts) {
-    //         log << "Labels of size " << size << ": " << count << std::endl;
-    //     }       
-    // }
+        log << "Label size counts: {";
+
+        bool first = true;
+        for (const auto &[size, count] : label_size_counts) {
+            if (!first) {
+                log << ", ";
+            }
+            log << "\"" << size << "\": " << count;
+            first = false;
+        }
+
+        log << "}" << std::endl;
+
+    }
     return abstractions;
 }
 
@@ -255,6 +267,11 @@ public:
     CartesianAbstractionGeneratorFeature() : TypedFeature("cartesian") {
         document_title("Cartesian abstraction generator");
         cartesian_abstractions::add_common_cegar_options(*this);
+        add_option<int>(
+        "min_ops_per_label",
+        "minimum number of operators a label must have",
+        "infinity",
+        plugins::Bounds("1", "infinity"));
         utils::add_log_options_to_feature(*this);
     }
 
@@ -274,6 +291,7 @@ public:
             opts.get<int>("max_state_expansions"),
             opts.get<cartesian_abstractions::TransitionRepresentation>("transition_representation"),
             opts.get<int>("memory_padding"),
+            opts.get<int>("min_ops_per_label"),
             utils::get_rng_arguments_from_options(opts),
             opts.get<cartesian_abstractions::DotGraphVerbosity>("dot_graph_verbosity"),
             opts.get<utils::Verbosity>("verbosity"));

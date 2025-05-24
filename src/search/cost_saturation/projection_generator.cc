@@ -20,11 +20,13 @@ ProjectionGenerator::ProjectionGenerator(
     bool dominance_pruning,
     bool combine_labels,
     bool create_complete_transition_system,
+    int min_ops_per_label,
     utils::Verbosity verbosity)
     : AbstractionGenerator(verbosity),
       pattern_generator(patterns),
       dominance_pruning(dominance_pruning),
       combine_labels(combine_labels),
+      min_ops_per_label(min_ops_per_label),
       create_complete_transition_system(create_complete_transition_system) {
 }
 
@@ -144,6 +146,11 @@ public:
             "create_complete_transition_system",
             "create explicit transition system",
             "false");
+        add_option<int>(
+            "min_ops_per_label",
+            "minimum number of operators a label must have",
+            "infinity",
+            plugins::Bounds("1", "infinity"));
         add_abstraction_generator_arguments_to_feature(*this);
     }
 
@@ -154,6 +161,7 @@ public:
             options.get<bool>("dominance_pruning"),
             options.get<bool>("combine_labels"),
             options.get<bool>("create_complete_transition_system"),
+            options.get<int>("min_ops_per_label"),
             get_abstraction_generator_arguments_from_options(options));
     }
 };

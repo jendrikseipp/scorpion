@@ -13,6 +13,7 @@ class ProjectionGenerator : public AbstractionGenerator {
     const bool dominance_pruning;
     const bool combine_labels;
     const bool create_complete_transition_system;
+    const int min_ops_per_label;
 
 public:
     ProjectionGenerator(
@@ -20,6 +21,7 @@ public:
         bool dominance_pruning,
         bool combine_labels,
         bool create_complete_transition_system,
+        int min_ops_per_label,
         utils::Verbosity verbosity);
 
     virtual Abstractions generate_abstractions(

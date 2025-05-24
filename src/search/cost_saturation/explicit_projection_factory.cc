@@ -363,6 +363,7 @@ unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {
         make_unique<ProjectionFunction>(pattern, move(hash_multipliers)),
         move(backward_graph),
         move(looping_operators),
-        move(goal_states));
+        move(goal_states),
+        min_ops_per_label);
 }
 }
