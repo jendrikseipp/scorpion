@@ -20,6 +20,7 @@
 
 #include "valla/declarations.hpp"
 #include "valla/indexed_hash_set.hpp"
+#include "valla/root_indexed_hash_set.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -31,6 +32,11 @@
 
 namespace valla::static_tree
 {
+
+    inline auto calc_mid(size_t size)
+    {
+        return size / 2 + (size % 2);
+    }
 
 /// @brief Recursively insert the elements from `it` until `end` into the `table`.
 /// @param it points to the first element.
@@ -49,7 +55,7 @@ inline Index insert_recursively(Iterator it, Iterator end, size_t size, IndexedH
         return table.insert_slot(make_slot(*it, *(it + 1))).first->second;
 
     /* Divide */
-    const auto mid = std::bit_floor(size - 1);
+    const auto mid = calc_mid(size);
 
     /* Conquer */
     const auto mid_it = it + mid;
@@ -77,7 +83,7 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
     }
 
     /* Divide */
-    const auto mid = std::bit_floor(size - 1);
+    const auto mid = calc_mid(size);
 
     /* Conquer */
     const auto mid_it = it + mid;
@@ -98,7 +104,7 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
 /// @return A pair (it, bool) where it points to the entry in the root table and bool is true if and only if the state was newly inserted.
 template<std::ranges::forward_range Range>
     requires std::same_as<std::ranges::range_value_t<Range>, Index>
-auto insert(const Range& state, IndexedHashSet& tree_table, RootIndices& root_table)
+auto insert(const Range& state, IndexedHashSet& tree_table, RootIndexedHashSet& root_table)
 {
     // Note: O(1) for random access iterators, and O(N) otherwise by repeatedly calling operator++.
     const auto size = static_cast<size_t>(std::distance(state.begin(), state.end()));
@@ -112,15 +118,13 @@ auto insert(const Range& state, IndexedHashSet& tree_table, RootIndices& root_ta
         if (!inserted)
             return std::pair{static_cast<size_t>(iter->second), false};  ///< The state already exists.
 
-        root_table.emplace_back(iter->second);
+        root_table.insert_slot(iter->second);
         return std::pair{root_table.size()-1, true};
     }
 
     auto [index, inserted] = emplace_recursively(state.begin(), state.end(), size, tree_table);
-    if (!inserted && size >= 2)
-        return std::pair{index, false};  ///< The state already exists.
-    root_table.emplace_back(index);
-    return std::pair{root_table.size()-1, inserted};
+    auto [it, exists] = root_table.insert_slot(index);
+    return std::pair{static_cast<size_t>(it->second), !exists};  ///< The state already exists.
 }
 
 /// @brief Recursively reads the state from the tree induced by the given `index` and the `len`.
@@ -148,7 +152,7 @@ inline void read_state_recursively(Index index, size_t size, const IndexedHashSe
     }
 
     /* Divide */
-    const auto mid = std::bit_floor(size - 1);
+    const auto mid = calc_mid(size);
 
     /* Conquer */
     read_state_recursively(left_index, mid, tree_table, ref_state);
@@ -182,10 +186,10 @@ inline void read_state(Index tree_index, size_t size, const IndexedHashSet& tree
 /// @param tree_table is the tree table.
 /// @param root_table is the root table.
 /// @param out_state is the output state.
-inline void read_state(Index root_index, size_t size, const IndexedHashSet& tree_table, const RootIndices& root_table, State& out_state)
+inline void read_state(Index root_index, size_t size, const IndexedHashSet& tree_table, const RootIndexedHashSet& root_table, State& out_state)
 {
     /* Observe: a root slot wraps the root tree_index together with the length that defines the tree structure! */
-    const auto tree_index = root_table[root_index];
+    const auto tree_index = root_table.get_slot(root_index);
 
     read_state(tree_index, size, tree_table, out_state);
 }
@@ -222,7 +226,7 @@ private:
 
             const auto [left, right] = read_slot(m_tree_table->get_slot(entry.m_index));
 
-            Index mid = std::bit_floor(entry.m_size - 1);
+            Index mid = calc_mid(entry.m_size);
 
             // Emplace right first to ensure left is visited first in dfs.
             m_stack.emplace(right, entry.m_size - mid);

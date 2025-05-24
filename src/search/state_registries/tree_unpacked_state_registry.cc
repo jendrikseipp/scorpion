@@ -89,21 +89,19 @@ State TreeUnpackedStateRegistry::get_successor_state(const State &predecessor, c
     auto& tmp = predecessor.get_unpacked_values();
     std::vector<vs::Index> new_state_values(tmp.begin(), tmp.end());
 
+    utils::g_log << "Predecessor: " << tmp << endl;
     /* Experiments for issue348 showed that for tasks with axioms it's faster
        to compute successor states using unpacked data. */
     for (EffectProxy effect : op.get_effects()) {
         if (does_fire(effect, predecessor)) {
             FactPair effect_pair = effect.get_fact().get_pair();
+            utils::g_log << "Effect: " << effect_pair.var  << " : " << new_state_values[effect_pair.var] << " -> " << effect_pair.value << endl;
             new_state_values[effect_pair.var] = effect_pair.value;
         }
     }
+    utils::g_log << "Successor: " << new_state_values << endl;
 
-    auto [index, inserted] = vs::static_tree::insert(new_state_values, tree_table, root_table);
-
-    if (!inserted) {
-        auto it = std::find(root_table.begin(), root_table.end(), index);
-        return lookup_state(StateID(it - root_table.begin()));
-    }
+    auto [index, _] = vs::static_tree::insert(new_state_values, tree_table, root_table);
 
     return lookup_state(StateID(index), {new_state_values.begin(), new_state_values.end()});
 }
@@ -118,6 +116,5 @@ int TreeUnpackedStateRegistry::get_bins_per_state() const {
 void TreeUnpackedStateRegistry::print_statistics(utils::LogProxy &log) const {
 
     log << "Number of registered states: " << size() << endl;
-    log << "Closed list load factor: " << root_table.size()
-        << "/" << root_table.capacity() << endl;
+    log << "Closed list load factor: " << root_table.size() << endl;
 }

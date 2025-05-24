@@ -114,7 +114,7 @@ class TreePackedStateRegistry :
     public IStateRegistry {
 
     vs::IndexedHashSet tree_table = vs::IndexedHashSet();
-    vs::RootIndices root_table    = vs::RootIndices();
+    vs::RootIndexedHashSet root_table = vs::RootIndexedHashSet();
 
     const int_packer::IntPacker &state_packer;
     AxiomEvaluator &axiom_evaluator;
