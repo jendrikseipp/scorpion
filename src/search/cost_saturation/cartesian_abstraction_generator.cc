@@ -245,7 +245,6 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         //         << endl;
 
         log << "Label size counts: {";
-
         bool first = true;
         for (const auto &[size, count] : label_size_counts) {
             if (!first) {
@@ -254,7 +253,6 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
             log << "\"" << size << "\": " << count;
             first = false;
         }
-
         log << "}" << std::endl;
 
     }

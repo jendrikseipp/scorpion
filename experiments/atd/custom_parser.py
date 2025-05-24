@@ -11,6 +11,11 @@ class CommonParser(Parser):
         self.add_bottom_up_pattern ( 
             "num_transitions", r"Total number of transitions in Cartesian abstractions: (\d+)", type=int
         )
+        self.add_pattern(
+            "label_size_counts",
+            "Label size counts: (\d+)",
+            type=int,
+        )
         # self.add_bottom_up_pattern ( 
         #     "num_single_transitions", r"Total number of single transitions in Cartesian abstractions: (\d+)", type=int
         # )
