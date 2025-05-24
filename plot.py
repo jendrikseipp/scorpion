@@ -4,7 +4,7 @@ import os
 import numpy as np
 from matplotlib.ticker import ScalarFormatter, LogLocator
 
-properties_dir = "experiments/atd/data/2025-05-13-labelreduction-eval/"
+properties_dir = "experiments/atd/data/2025-05-13-labelreduction-cluster-eval/"
 
 # Load the data from the JSON file
 with open(properties_dir + "properties", "r") as f:
@@ -44,10 +44,10 @@ for key, values in grouped.items():
 # Write results to a formatted table
 output_file = "ratio.txt"
 with open(properties_dir + output_file, "w") as file:
-    file.write(f"{'Key':<50} {'With Label':>15} {'Without Label':>15} {'Ratio':>10}\n")
+    file.write(f"{'Key':<50} {'Without Label':>15} {'With Label':>15} {'Ratio':>10}\n")
     file.write("-" * 90 + "\n")
-    for key, w_val, wo_val, ratio in zip(labels, with_vals, without_vals, ratios):
-        file.write(f"{key:<50} {w_val:>15d} {wo_val:>15d} {ratio:>10.3f}\n")
+    for key, wo_val, w_val, ratio in zip(labels, without_vals, with_vals, ratios):
+        file.write(f"{key:<50} {wo_val:>15d} {w_val:>15d} {ratio:>10.3f}\n")
 
 print(f"Table written to {os.path.abspath(output_file)}")
 #---------------------------------------------------------------------------------------------------
