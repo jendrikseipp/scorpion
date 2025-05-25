@@ -216,13 +216,13 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     log << "Total number of transitions in Cartesian abstractions: " << num_transitions << endl;
     log << "After label reduction: " << endl;
     log << "Total number of transitions in Cartesian abstractions: " << num_total_single_transitions + label_id_to_ops.size() << endl;
-    // log << "Total number of single transitions in Cartesian abstractions: " << num_total_single_transitions << endl;
+    log << "Total number of single transitions in Cartesian abstractions: " << num_total_single_transitions << endl;
     // log << "Total number of operators in Cartesian abstractions: "
     // << task->get_num_operators() << endl;
-    // log << "Total number of labels in Cartesian abstractions: " << label_id_to_ops.size() << endl;
-    // log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_labels << endl;
-    // log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
-	// static_cast<double>(num_total_single_transitions+label_id_to_ops.size())/num_transitions << endl;
+    log << "Total number of labels in Cartesian abstractions: " << label_id_to_ops.size() << endl;
+    log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_labels << endl;
+    log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
+	static_cast<double>(num_total_single_transitions+label_id_to_ops.size())/num_transitions << endl;
     if (!label_id_to_ops.empty()) {
         // int min_size = 2;
         // int max_size = 2;
