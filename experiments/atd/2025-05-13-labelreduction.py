@@ -21,7 +21,7 @@ from custom_parser import CommonParser
 
 USER = project.dfsplan
 
-BUILD = ["debug"]
+BUILD = [] #debug
 GENERATION_TIME = 100
 REVISION_CACHE = project.DIR / "data" / "revision-cache"
 REPO = project.get_repo_base()
@@ -44,9 +44,9 @@ else:
     MIN = 1
     TIME_LIMIT = int(HOURS * 60 + MIN)
     MEMORY_LIMIT = "3G"
-    # SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_GRIPPER
+    SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_GRIPPER
     #SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG
-    SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_EXTENDED 
+    #SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_EXTENDED 
     GENERATION_TIME = 10
     BUILD += ["-j8"] # core angabe
 
@@ -54,8 +54,8 @@ DRIVER = [
     "--overall-time-limit",
     f"{TIME_LIMIT}m",
     "--overall-memory-limit",
-    MEMORY_LIMIT,
-    "--debug"
+    MEMORY_LIMIT
+    # "--debug"
 ]
 
 
@@ -72,7 +72,7 @@ def add_search_started(run):
     return run
 
 
-GIT_REV_WLR = "3d9cd67640c6db516862f1760724f26d682a024f"
+GIT_REV_WLR = "baacead7e5f3522404c313312945079a1f9634f9"
 GIT_REV_WOLR = "bbb134d94c4c59c2a09e4077b4e31c0006bf5d71"
 exp = FastDownwardExperiment(environment=ENV)
 exp.add_parser(FastDownwardExperiment.EXITCODE_PARSER)
@@ -90,7 +90,7 @@ exp.add_resource("", "project.py")
 exp.add_algorithm(
     f"without label reduction",
     project.SCORPION_DIR,
-    GIT_REV_WOLR,
+    GIT_REV_WLR,
     [
         "--search",
         f"astar(scp([cartesian()], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
@@ -99,12 +99,100 @@ exp.add_algorithm(
     driver_options=DRIVER,
 )
 exp.add_algorithm(
-    f"with label reduction",
+    f"with label reduction (min_ops_per_label=1)",
     project.SCORPION_DIR,
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian()], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=1)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=2)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=2)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=3)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=3)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=4)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=4)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=5)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=5)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=10)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=10)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=20)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=20)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=50)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=50)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=100)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=100)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -132,10 +220,14 @@ ATTRIBUTES = [ #schaue mal durch
     "evaluations",
     "expansions",
     "expansions_until_last_jump",
-    "h_values",
-    "search_start_memory",
+    # "h_values",
+    # "search_start_memory",
     "search_time",
     "num_transitions",
+    "num_single_transitions",
+    "num_labels",
+    "change_in_size",
+    "cp_time",
 ]
 
 project.add_report(

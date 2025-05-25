@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+import json
 from lab.parser import Parser
 import re
 import logging
@@ -9,110 +9,21 @@ class CommonParser(Parser):
     def __init__(self):
         super().__init__()
         self.add_bottom_up_pattern ( 
-            "num_transitions", r"Total number of transitions in Cartesian abstractions: (\d+)", type=int
+            "num_transitions", r"Total number of transitions in Cartesian abstractions \(after label reduction\): (\d+)", type=int
         )
-        self.add_pattern(
-            "label_size_counts",
-            "Label size counts: (\d+)",
-            type=int,
+        self.add_bottom_up_pattern ( 
+            "num_single_transitions", r"Total number of single transitions in Cartesian abstractions: (\d+)", type=int
         )
-        # self.add_bottom_up_pattern ( 
-        #     "num_single_transitions", r"Total number of single transitions in Cartesian abstractions: (\d+)", type=int
-        # )
-        # self.add_bottom_up_pattern ( 
-        #     "num_labels", r"Total number of labels in Cartesian abstractions: (\d+)", type=int
-        # )
-        # self.add_bottom_up_pattern ( 
-        #     "change_in_size", r"Total change in transitions ((#single transitions+#labels)/#transitions): (.+)s", type=float
-        # )
-        # self.add_bottom_up_pattern(
-        #     "num_abstractions", "Number of abstractions: (\d+)", type=int
-        # )
-        # self.add_bottom_up_pattern(
-        #     "tree_generation_time", r"Time to generate tree: (.+)s", type=float
-        # )
-        # self.add_bottom_up_pattern("tree_depth", "Depth of tree: (\d+)", type=int)
-        # self.add_bottom_up_pattern(
-        #     "num_generated_nodes", "Generated nodes: (\d+)", type=int
-        # )
-        # self.add_bottom_up_pattern(
-        #     "num_generated_sum_nodes", "Generated sum nodes: (\d+)", type=int
-        # )
-        # self.add_bottom_up_pattern(
-        #     "num_generated_nontrivial_sum_nodes",
-        #     "Generated nontrivial sum nodes: (\d+)",
-        #     type=int,
-        # )
-        # self.add_bottom_up_pattern(
-        #     "num_generated_max_nodes", "Generated max nodes: (\d+)", type=int
-        # )
-        # self.add_bottom_up_pattern("num_nodes", "Reachable nodes: (\d+)", type=int)
-        # self.add_bottom_up_pattern(
-        #     "num_sum_nodes", "Reachable sum nodes: (\d+)", type=int
-        # )
-        # self.add_bottom_up_pattern(
-        #     "num_nontrivial_sum_nodes",
-        #     "Reachable nontrivial sum nodes: (\d+)",
-        #     type=int,
-        # )
-        # self.add_bottom_up_pattern(
-        #     "num_max_nodes", "Reachable max nodes: (\d+)", type=int
-        # )
-        # self.add_bottom_up_pattern(
-        #     "num_lookup_tables",
-        #     "Initializing structured SCP order heuristic with (\d+) values to lookup",
-        #     type=int,
-        # )
-        # self.add_pattern( #top down
-        #     "instructions",
-        #     "Initializing structured SCP order heuristic with (\d+) compositional instructions",
-        #     type=int,
-        # )
-        # self.add_pattern(
-        #     "post_pruned_orders",
-        #     "Post pruning removed: (\d+) orders",
-        #     type=int,
-        # )
-        # self.add_pattern(
-        #     "dead_end_tables",
-        #     "dead end tables: (\d+)",
-        #     type=int,
-        # )
-        # self.add_pattern(
-        #     "num_orders",
-        #     r"Number of orders: (\d+)",
-        #     type=int,
-        # )
-        # self.add_pattern(
-        #     "unsolvability_heuristic",
-        #     r"unsolvability: (\d+)",
-        #     type=int,
-        # )
-        # self.add_pattern(
-        #     "max_lookup_cache_size",
-        #     r"max lookup table entries: (\d+.\d+)",
-        #     type=float,
-        # )
-        # self.add_pattern(
-        #     "recomputed_lookup_tables",
-        #     r"recomputed lookup tables: (\d+)",
-        #     type=int,
-        # )
-        # self.add_pattern(
-        #     "lookup_cache_hits",
-        #     r"lookup table cache hits: (\d+)",
-        #     type=int,
-        # )
-        # self.add_pattern(
-        #     "lookup_cache_size",
-        #     r"lookup table cache size: (\d+)",
-        #     type=int,
-        # )
-        # self.add_pattern(
-        #     "stored_cost_functions",
-        #     r"stored cost functions: (\d+)",
-        #     type=int,
-        # )
+        self.add_bottom_up_pattern ( 
+            "num_labels", r"Total number of labels in Cartesian abstractions: (\d+)", type=int
+        )
+        self.add_bottom_up_pattern ( 
+            "change_in_size", r"Total change in transitions \(\(#single transitions\+#labels\)/#transitions\): ([\d\.]+)", type=float
+        )
+        self.add_function(self.extract_label_size_counts_json)
+        self.add_bottom_up_pattern ( 
+            "cp_time", r"Time for computing cost partitionings: (.+)s", type=float
+        )
         self.add_function(self.search_started)
 
     def _get_flags(self, flags_string):
@@ -133,6 +44,16 @@ class CommonParser(Parser):
                 props[name] = type(match.group(1))
 
         self.add_function(search_from_bottom, file=file)
+
+    def extract_label_size_counts_json(self, content, props):
+        match = re.search(r'Label size counts: (\{.*?\})', content)
+        if match:
+            try:
+                parsed = json.loads(match.group(1))
+                for k, v in parsed.items():
+                    props[f"label_size_{k}"] = v
+            except json.JSONDecodeError as e:
+                logging.error(f"Failed to parse label size JSON: {e}")
 
     def search_started(self, content, props):
         props["search_started"] = int("g=0, 1 evaluated, 0 expanded" in content)
