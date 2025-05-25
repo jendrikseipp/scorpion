@@ -20,6 +20,7 @@
 #include "../task_utils/task_properties.h"
 #include <cassert>
 #include <cstddef>
+#include <vector>
 
 using namespace std;
 
@@ -95,8 +96,6 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
 		log << "Abstraction===========================================================" << endl;
-        TaskProxy task_proxy(*subtask);
-        vector<int> costs = task_properties::get_operator_costs(task_proxy);
         auto cegar = make_unique<cartesian_abstractions::CEGAR>(
             subtask,
             cartesian_abstractions::get_subtask_limit(
@@ -132,9 +131,6 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         unique_ptr<Abstraction> abstraction;
         if (transition_representation == cartesian_abstractions::TransitionRepresentation::STORE) {
             auto backward_graph = get_backward_graph(*cartesian_abstraction, goal_distances);
-				// for (size_t target = 0; target < backward_graph.size(); ++target) {
-				// 	log << "Graph: " << target << backward_graph[target] << endl;
-				// }
 				for (const auto &transitions : backward_graph) {
 					num_transitions += transitions.size();
 				}
@@ -159,16 +155,17 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         --remaining_subtasks;
 		// for (const auto &pair : label_id_to_ops) {
 		// 	int label_id = pair.first;
-		// 	const Label &label = pair.second;
+		// 	const vector<int> ops = pair.second;
 		// 	log << "Label ID " << label_id << ": [";
-		// 	for (size_t i = 0; i < label.operators.size(); ++i) {
-		// 		log << label.operators[i];
-		// 		if (i < label.operators.size() - 1)
+		// 	for (size_t i = 0; i < ops.size(); ++i) {
+		// 		log << ops[i];
+		// 		if (i < ops.size() - 1)
 		// 		log << ", ";
+        //     }
+        //     log << "] (cost = " << rem_label_cost[-label_id] << ")" << endl;
 		// }
-		// log << "] (cost = " << label.cost << ")" << endl;
-		// }
-		// log << "Number of transitions: " << num_transitions_sub << endl;
+		// log << "Number of transitions (before label reduction): " << num_transitions_sub << endl;
+		// log << "Number of transitions (after label reduction): " << num_single_transitions + num_label << endl;
 		// log << "Number of single transitions: " << num_single_transitions << endl;
 		// log << "Number of unique operators: " << op_set.size() << endl;
 		// log << "Number of unique, single operators: " << op_set_single.size() << endl;
@@ -180,6 +177,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
 
 		num_total_single_transitions+=num_single_transitions;
 		num_total_reused_labels+=num_label - num_new_label;
+        num_total_labels+=num_label;
     }
 }
 
@@ -213,16 +211,15 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     log << "Time for building Cartesian abstractions: "
         << timer.get_elapsed_time() << endl;
     log << "Total number of Cartesian states: " << num_states << endl;
-    log << "Total number of transitions in Cartesian abstractions: " << num_transitions << endl;
-    log << "After label reduction: " << endl;
-    log << "Total number of transitions in Cartesian abstractions: " << num_total_single_transitions + label_id_to_ops.size() << endl;
+    log << "Total number of transitions in Cartesian abstractions (before label reduction): " << num_transitions << endl;
+    log << "Total number of transitions in Cartesian abstractions (after label reduction): " << num_total_single_transitions + num_total_labels << endl;
     log << "Total number of single transitions in Cartesian abstractions: " << num_total_single_transitions << endl;
     // log << "Total number of operators in Cartesian abstractions: "
     // << task->get_num_operators() << endl;
     log << "Total number of labels in Cartesian abstractions: " << label_id_to_ops.size() << endl;
     log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_labels << endl;
     log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
-	static_cast<double>(num_total_single_transitions+label_id_to_ops.size())/num_transitions << endl;
+	static_cast<double>(num_total_single_transitions+num_total_labels)/num_transitions << endl;
     if (!label_id_to_ops.empty()) {
         // int min_size = 2;
         // int max_size = 2;
