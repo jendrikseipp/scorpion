@@ -143,6 +143,32 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
                     cartesian_abstraction->get_goals().begin(),
                     cartesian_abstraction->get_goals().end()),
                 min_ops_per_label);
+                // for (const auto &pair : label_id_to_ops) {
+                // 	int label_id = pair.first;
+                // 	const vector<int> ops = pair.second;
+                // 	log << "Label ID " << label_id << ": [";
+                // 	for (size_t i = 0; i < ops.size(); ++i) {
+                // 		log << ops[i];
+                // 		if (i < ops.size() - 1)
+                // 		log << ", ";
+                //     }
+                //     log << "] (cost = " << rem_label_cost[-label_id] << ")" << endl;
+                // }
+                // log << "Number of transitions (before label reduction): " << num_transitions_sub << endl;
+                // log << "Number of transitions (after label reduction): " << num_single_transitions + num_label << endl;
+                // log << "Number of transitions (after label reduction)2: " << num_transitions_after_label_reduction << endl;
+                // log << "Number of single transitions: " << num_single_transitions << endl;
+                // log << "Number of unique operators: " << op_set.size() << endl;
+                // log << "Number of unique, single operators: " << op_set_single.size() << endl;
+                // log << "Number of labels: " << num_label << endl;
+                // log << "Number of globally new labels: " << num_new_label << endl;
+                // log << "Number of locally reused labels: " << num_label - num_new_label << endl;
+                // log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
+                // static_cast<double>(num_single_transitions+num_label)/num_transitions_sub << endl;
+        
+                num_total_single_transitions+=num_single_transitions;
+                num_total_reused_labels+=num_label - num_new_label;
+                num_total_labels+=num_label;
         } else {
 			abstraction = make_unique<CartesianAbstraction>(move(cartesian_abstraction));
         }
@@ -151,33 +177,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         if (has_reached_resource_limit(timer) || unsolvable) {
 			break;
         }
-		
         --remaining_subtasks;
-		// for (const auto &pair : label_id_to_ops) {
-		// 	int label_id = pair.first;
-		// 	const vector<int> ops = pair.second;
-		// 	log << "Label ID " << label_id << ": [";
-		// 	for (size_t i = 0; i < ops.size(); ++i) {
-		// 		log << ops[i];
-		// 		if (i < ops.size() - 1)
-		// 		log << ", ";
-        //     }
-        //     log << "] (cost = " << rem_label_cost[-label_id] << ")" << endl;
-		// }
-		// log << "Number of transitions (before label reduction): " << num_transitions_sub << endl;
-		// log << "Number of transitions (after label reduction): " << num_single_transitions + num_label << endl;
-		// log << "Number of single transitions: " << num_single_transitions << endl;
-		// log << "Number of unique operators: " << op_set.size() << endl;
-		// log << "Number of unique, single operators: " << op_set_single.size() << endl;
-		// log << "Number of labels: " << num_label << endl;
-		// log << "Number of globally new labels: " << num_new_label << endl;
-		// log << "Number of locally reused labels: " << num_label - num_new_label << endl;
-		// log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
-		// static_cast<double>(num_single_transitions+num_label)/num_transitions_sub << endl;
-
-		num_total_single_transitions+=num_single_transitions;
-		num_total_reused_labels+=num_label - num_new_label;
-        num_total_labels+=num_label;
     }
 }
 
