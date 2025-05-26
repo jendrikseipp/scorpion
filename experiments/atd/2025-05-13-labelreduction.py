@@ -44,8 +44,8 @@ else:
     MIN = 1
     TIME_LIMIT = int(HOURS * 60 + MIN)
     MEMORY_LIMIT = "3G"
-    SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_GRIPPER
-    #SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG
+    # SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_GRIPPER
+    SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG
     #SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_EXTENDED 
     GENERATION_TIME = 10
     BUILD += ["-j8"] # core angabe
@@ -72,7 +72,7 @@ def add_search_started(run):
     return run
 
 
-GIT_REV_WLR = "baacead7e5f3522404c313312945079a1f9634f9"
+GIT_REV_WLR = "5fa4f144914de37b0c78d85b549f32a24ab359f6"
 GIT_REV_WOLR = "bbb134d94c4c59c2a09e4077b4e31c0006bf5d71"
 exp = FastDownwardExperiment(environment=ENV)
 exp.add_parser(FastDownwardExperiment.EXITCODE_PARSER)
@@ -226,6 +226,7 @@ ATTRIBUTES = [ #schaue mal durch
     "num_transitions",
     "num_single_transitions",
     "num_labels",
+    "num_reused_labels",
     "change_in_size",
     "cp_time",
 ]

@@ -18,6 +18,9 @@ class CommonParser(Parser):
             "num_labels", r"Total number of labels in Cartesian abstractions: (\d+)", type=int
         )
         self.add_bottom_up_pattern ( 
+            "num_reused_labels", r"Total number of reused labels in Cartesian abstractions: (\d+)", type=int
+        )
+        self.add_bottom_up_pattern ( 
             "change_in_size", r"Total change in transitions \(\(#single transitions\+#labels\)/#transitions\): ([\d\.]+)", type=float
         )
         self.add_function(self.extract_label_size_counts_json)
