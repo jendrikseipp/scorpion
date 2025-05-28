@@ -22,7 +22,6 @@ namespace cost_saturation {
 phmap::flat_hash_map<std::vector<int>, int, VectorHash> ops_to_label_id;
 phmap::flat_hash_map<int, std::vector<int>> label_id_to_ops;
 int next_label_id = -1;
-vector<int> rem_label_cost;
 
 // Tracking of some numbers
 int num_transitions_sub = 0;
@@ -55,8 +54,14 @@ static void dijkstra_search(
                 assert(utils::in_bounds(op, costs));
                 op_cost = costs[op];
             } else {
-                assert(utils::in_bounds(-op, rem_label_cost));
-                op_cost = rem_label_cost[-op];
+                auto it = label_id_to_ops.find(op);
+                assert(it != label_id_to_ops.end());
+                int label_cost = INF;
+                for (int op_id : it->second) {
+                    assert(utils::in_bounds(op_id, costs));
+                    label_cost = min(label_cost, costs[op_id]);
+                }
+                op_cost = label_cost;
             }
             assert(op_cost >= 0);
             int successor_distance = (op_cost == INF) ? INF : state_distance + op_cost;
@@ -183,17 +188,6 @@ vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs
         goal_distances[goal_state] = 0;
         queue.push(0, goal_state);
     }
-    rem_label_cost = vector<int>(label_id_to_ops.size() + 1, INF);
-
-    for (const auto &[label_id, ops] : label_id_to_ops) {
-        int label_cost = INF;
-        for (int op_id : ops) {
-            assert(utils::in_bounds(op_id, costs));
-            label_cost = min(label_cost, costs[op_id]);
-        }
-        rem_label_cost[-label_id] = label_cost;
-    }
-
     dijkstra_search(backward_graph, costs, queue, goal_distances);
     return goal_distances;
 }

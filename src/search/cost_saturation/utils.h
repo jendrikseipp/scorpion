@@ -70,7 +70,6 @@ struct VectorHash {
     }
 };
 
-extern std::vector<int> rem_label_cost;
 extern phmap::flat_hash_map<std::vector<int>, int, VectorHash> ops_to_label_id;
 extern phmap::flat_hash_map<int, std::vector<int>> label_id_to_ops;
 extern int next_label_id;

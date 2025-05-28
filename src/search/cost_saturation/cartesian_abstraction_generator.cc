@@ -95,7 +95,6 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         << timer.get_remaining_time() << endl;
     int remaining_subtasks = subtasks.size();
     for (const shared_ptr<AbstractTask> &subtask : subtasks) {
-		log << "Abstraction===========================================================" << endl;
         auto cegar = make_unique<cartesian_abstractions::CEGAR>(
             subtask,
             cartesian_abstractions::get_subtask_limit(
