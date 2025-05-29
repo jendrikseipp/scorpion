@@ -153,26 +153,11 @@ SUITE_OPTIMAL_STRIPS = [
 ]
 
 SUITE_OPTIMAL_STRIPS_DEBUG_GRIPPER = [
-    "gripper:prob01.pddl",
-    "gripper:prob02.pddl",
-    "gripper:prob03.pddl",
-    "gripper:prob04.pddl",
-    "gripper:prob05.pddl",
-    "gripper:prob06.pddl",
-    "gripper:prob07.pddl",
-    "gripper:prob08.pddl",
-    "gripper:prob09.pddl",
-    "gripper:prob10.pddl",
-    "gripper:prob11.pddl",
-    "gripper:prob12.pddl",
-    "gripper:prob13.pddl",
-    "gripper:prob14.pddl",
-    "gripper:prob15.pddl",
-    "gripper:prob16.pddl",
-    "gripper:prob17.pddl",
-    "gripper:prob18.pddl",
-    "gripper:prob19.pddl",
-    "gripper:prob20.pddl",
+    "gripper",
+]
+
+SUITE_OPTIMAL_STRIPS_DEBUG_FREECELL = [
+    "freecell",
 ]
 
 SUITE_OPTIMAL_STRIPS_DEBUG = [
