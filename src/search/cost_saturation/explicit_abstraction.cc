@@ -6,14 +6,6 @@
 
 #include "../utils/collections.h"
 #include "../utils/strings.h"
-#include <algorithm>
-#include <cassert>
-#include <cstddef>
-#include <iostream>
-#include <iterator>
-#include <ostream>
-
-#include "../utils/logging.h"
 
 using namespace std;
 
@@ -37,6 +29,7 @@ static void dijkstra_search(
     priority_queues::AdaptiveQueue<int> &queue,
     vector<int> &distances) {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
+    vector<int> label_to_cost(label_id_to_ops.size() + 1, -1);
     while (!queue.empty()) {
         pair<int, int> top_pair = queue.pop();
         int distance = top_pair.first;
@@ -57,10 +50,14 @@ static void dijkstra_search(
                 auto it = label_id_to_ops.find(op);
                 assert(it != label_id_to_ops.end());
                 int label_cost = INF;
-                for (int op_id : it->second) {
-                    assert(utils::in_bounds(op_id, costs));
-                    label_cost = min(label_cost, costs[op_id]);
-                }
+                if (label_to_cost[-op] != -1) {
+                    label_cost= label_to_cost[-op];
+                } else {
+                    for (int op_id : it->second) {
+                        assert(utils::in_bounds(op_id, costs));
+                        label_cost = min(label_cost, costs[op_id]);
+                    }
+                    label_to_cost[-op] = label_cost;                }
                 op_cost = label_cost;
             }
             assert(op_cost >= 0);
@@ -127,7 +124,7 @@ static std::vector<std::vector<Successor>> label_reduction(
         vector<int> ops = op_list;
         sort(ops.begin(), ops.end());
         
-        if (ops.size() < min_ops_per_label) {
+        if (static_cast<int>(ops.size()) < min_ops_per_label) {
             for (int op : ops) {
                 num_single_transitions++;
                 op_set_single.insert(op);

@@ -17,10 +17,6 @@
 #include "../plugins/plugin.h"
 #include "../utils/memory.h"
 #include "../utils/rng_options.h"
-#include "../task_utils/task_properties.h"
-#include <cassert>
-#include <cstddef>
-#include <vector>
 
 using namespace std;
 
@@ -151,7 +147,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
                 // 		if (i < ops.size() - 1)
                 // 		log << ", ";
                 //     }
-                //     log << "] (cost = " << rem_label_cost[-label_id] << ")" << endl;
+                //     log << "]" << endl;
                 // }
                 // log << "Number of transitions (before label reduction): " << num_transitions_sub << endl;
                 // log << "Number of transitions (after label reduction): " << num_single_transitions + num_label << endl;

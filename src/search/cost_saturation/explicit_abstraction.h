@@ -9,9 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include <parallel_hashmap/phmap.h>
-#include <unordered_set>
-
 namespace cost_saturation {
 struct Successor {
     int op;
