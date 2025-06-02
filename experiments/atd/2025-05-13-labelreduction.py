@@ -72,7 +72,7 @@ def add_search_started(run):
     return run
 
 
-GIT_REV_WLR = "5de57c80f33da72d99bcec3d4912aa410a67a467"
+GIT_REV_WLR = "38312cd2acd2bfb12404002de64e8f375a39e980"
 GIT_REV_WOLR = "bbb134d94c4c59c2a09e4077b4e31c0006bf5d71"
 exp = FastDownwardExperiment(environment=ENV)
 exp.add_parser(FastDownwardExperiment.EXITCODE_PARSER)
@@ -193,6 +193,28 @@ exp.add_algorithm(
     [
         "--search",
         f"astar(scp([cartesian(min_ops_per_label=100)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=500)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=500)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+    ],
+    build_options=BUILD,
+    driver_options=DRIVER,
+)
+exp.add_algorithm(
+    f"with label reduction (min_ops_per_label=1000)",
+    project.SCORPION_DIR,
+    GIT_REV_WLR,
+    [
+        "--search",
+        f"astar(scp([cartesian(min_ops_per_label=1000)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
