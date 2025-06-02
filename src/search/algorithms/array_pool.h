@@ -33,6 +33,8 @@ public:
         assert(first + index < last);
         return *(first + index);
     }
+
+    size_t size() const { return last-first; }
 private:
     friend class ArrayPool<Value>;
 
@@ -84,6 +86,12 @@ public:
             std::make_move_iterator(vec.begin()),
             std::make_move_iterator(vec.end()));
         positions.push_back(data.size());
+    }
+
+    void pop_back() {
+        assert(size() > 0);
+        data.resize(data.size() - (positions[size() - 1] - positions[size() - 2]));
+        positions.pop_back();
     }
 
     ArrayPoolSlice<Value> get_slice(int index) const {

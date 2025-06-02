@@ -4,9 +4,12 @@
 #include "abstraction.h"
 #include "parallel_hashmap/phmap.h"
 #include "types.h"
+#include "../algorithms/array_pool.h"
+#include "../algorithms/segmented_vector.h"
 
 #include <execution>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 class AbstractTask;
@@ -70,8 +73,24 @@ struct VectorHash {
     }
 };
 
-extern phmap::flat_hash_map<std::vector<int>, int, VectorHash> ops_to_label_id;
-extern phmap::flat_hash_map<int, std::vector<int>> label_id_to_ops;
+
+using OpsPool = segmented_vector::SegmentedVector<std::vector<int>>;
+
+struct OpsPtrHash {
+    std::size_t operator()(const std::vector<int>* v) const {
+        return VectorHash{}(*v);
+    }
+};
+
+struct OpsPtrEqualTo {
+    bool operator()(const std::vector<int>* lhs, const std::vector<int>* rhs) const {
+        return *lhs == *rhs;
+    }
+};
+
+extern OpsPool ops_pool;
+extern phmap::flat_hash_map<std::vector<int>*, int, OpsPtrHash, OpsPtrEqualTo> ops_to_label_id;
+extern phmap::flat_hash_map<int, std::vector<int>*> label_id_to_ops;
 extern int next_label_id;
 
 extern void reduce_costs(

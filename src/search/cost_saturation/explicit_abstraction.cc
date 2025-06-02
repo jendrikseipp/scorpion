@@ -6,13 +6,15 @@
 
 #include "../utils/collections.h"
 #include "../utils/strings.h"
+#include <memory>
 
 using namespace std;
 
 namespace cost_saturation {
 // Label maps
-phmap::flat_hash_map<std::vector<int>, int, VectorHash> ops_to_label_id;
-phmap::flat_hash_map<int, std::vector<int>> label_id_to_ops;
+OpsPool ops_pool;
+phmap::flat_hash_map<std::vector<int>*, int, OpsPtrHash, OpsPtrEqualTo> ops_to_label_id;
+phmap::flat_hash_map<int, std::vector<int>*> label_id_to_ops;
 int next_label_id = -1;
 
 // Tracking of some numbers
@@ -53,7 +55,7 @@ static void dijkstra_search(
                 if (label_to_cost[-op] != -1) {
                     label_cost= label_to_cost[-op];
                 } else {
-                    for (int op_id : it->second) {
+                    for (int op_id : *it->second) {
                         assert(utils::in_bounds(op_id, costs));
                         label_cost = min(label_cost, costs[op_id]);
                     }
@@ -89,7 +91,7 @@ static vector<bool> get_active_operators_from_graph(
             } else {
                 auto it = label_id_to_ops.find(op_id);
                 assert(it != label_id_to_ops.end());
-                for (int actual_op : it->second) {
+                for (int actual_op : *it->second) {
                     assert(utils::in_bounds(actual_op,active_operators));
                     active_operators[actual_op] = true;
                 }
@@ -111,18 +113,18 @@ static std::vector<std::vector<Successor>> label_reduction(
     vector<vector<Successor>> new_graph(graph.size());
     
     // Map from (src, target) to list of operators
-    phmap::flat_hash_map<pair<int, int>, vector<int>> transition_groups;
+    auto transition_groups = phmap::flat_hash_map<pair<int, int>, vector<int>>{}; //szudzik hash
     for (std::size_t target = 0; target < graph.size(); ++target) {
         for (const Successor &succ : graph[target]) {
             num_transitions_sub++;
             transition_groups[{succ.state, target}].push_back(succ.op);
         }
     }
-    for (const auto &[src_target, op_list] : transition_groups) {
+    for (auto &[src_target, op_list] : transition_groups) {
         const auto &[src, target] = src_target;
         
-        vector<int> ops = op_list;
-        sort(ops.begin(), ops.end());
+        auto& ops = op_list;
+        sort(ops.begin(), ops.end()); //check if sorted already
         
         if (static_cast<int>(ops.size()) < min_ops_per_label) {
             for (int op : ops) {
@@ -134,14 +136,18 @@ static std::vector<std::vector<Successor>> label_reduction(
         } else {
             int label_id;
             num_label++;
-            if (ops_to_label_id.count(ops)) {
-                label_id = ops_to_label_id[ops];
-            } else {
-                label_id = next_label_id--;
-                ops_to_label_id[ops] = label_id;
-                label_id_to_ops[label_id] = ops;
+            const auto ops_index = ops_pool.size();
+            ops_pool.push_back(std::move(ops));
+            auto& ops_slice = ops_pool[ops_index];
+            const auto [it, inserted] = ops_to_label_id.emplace(&ops_slice, next_label_id);
+            if (inserted) {
+                --next_label_id;
+                label_id_to_ops.emplace(it->second, it->first);
                 num_new_label++;
+            } else {
+                ops_pool.pop_back();
             }
+            label_id = it->second;
             new_graph[target].emplace_back(label_id, src);
         }
     }
@@ -240,7 +246,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
 
         auto it = label_id_to_ops.find(-idx);
         assert(it != label_id_to_ops.end());
-        for (int op_id : it->second) {
+        for (int op_id : *it->second) {
             assert(utils::in_bounds(op_id, saturated_costs));
             saturated_costs[op_id] = max(saturated_costs[op_id], label_cost);
         }
@@ -275,7 +281,7 @@ void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback
             } else {
                 auto it = label_id_to_ops.find(op_id);
                 assert(it != label_id_to_ops.end());
-                for (int actual_op : it->second) {
+                for (int actual_op : *it->second) {
                     callback(Transition(src, actual_op, target));
                 }
             }
