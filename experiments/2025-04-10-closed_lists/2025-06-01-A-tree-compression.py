@@ -25,14 +25,19 @@ if project.REMOTE:
     )
     TIME_LIMIT = 15 * 60
     MEMORY_LIMIT = "8G"
-    SUITE = build_suite(
-        os.environ.get("DOWNWARD_BENCHMARKS"),
-        SUITE_HTG +
-        SUITE_MINEPDDL +
-        SUITE_PUSHWORLD +
-        SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC +
-        SUITE_AUTOSCALE_OPTIMAL_STRIPS
-    )
+    base_path = Path(os.environ.get("DOWNWARD_BENCHMARKS")) / "pddl-benchmarks"
+
+    SUITE_SPECS = [
+        ("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS),
+        ("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
+        ("htg-domains", SUITE_HTG),
+        ("mine-pddl", SUITE_MINEPDDL),
+        ("pushworld", SUITE_PUSHWORLD),
+    ]
+
+    SUITE = []
+    for rel_path, suite in SUITE_SPECS:
+        SUITE += list(build_suite(base_path / rel_path, suite))
 else:
     ENV = LocalEnvironment(processes=8)
     MEMORY_LIMIT = "4G"
