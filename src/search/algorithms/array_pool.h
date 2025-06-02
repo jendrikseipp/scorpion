@@ -88,10 +88,14 @@ public:
         positions.push_back(data.size());
     }
 
-    void pop_back() {
+    void push_back(ArrayPoolSlice<Value> slice) {
+        data.insert(data.end(), slice.begin(), slice.end());
+        positions.push_back(data.size());
+    }
+
+    ArrayPoolSlice<Value> back() const {
         assert(size() > 0);
-        data.resize(data.size() - (positions[size() - 1] - positions[size() - 2]));
-        positions.pop_back();
+        return get_slice(size() - 1);
     }
 
     ArrayPoolSlice<Value> get_slice(int index) const {

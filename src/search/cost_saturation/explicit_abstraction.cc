@@ -13,8 +13,8 @@ using namespace std;
 namespace cost_saturation {
 // Label maps
 OpsPool ops_pool;
-phmap::flat_hash_map<std::vector<int>*, int, OpsPtrHash, OpsPtrEqualTo> ops_to_label_id;
-phmap::flat_hash_map<int, std::vector<int>*> label_id_to_ops;
+OpsToLabelId ops_to_label_id;
+LabelIdToOps label_id_to_ops;
 int next_label_id = -1;
 
 // Tracking of some numbers
@@ -55,7 +55,7 @@ static void dijkstra_search(
                 if (label_to_cost[-op] != -1) {
                     label_cost= label_to_cost[-op];
                 } else {
-                    for (int op_id : *it->second) {
+                    for (int op_id : it->second) {
                         assert(utils::in_bounds(op_id, costs));
                         label_cost = min(label_cost, costs[op_id]);
                     }
@@ -91,7 +91,7 @@ static vector<bool> get_active_operators_from_graph(
             } else {
                 auto it = label_id_to_ops.find(op_id);
                 assert(it != label_id_to_ops.end());
-                for (int actual_op : *it->second) {
+                for (int actual_op : it->second) {
                     assert(utils::in_bounds(actual_op,active_operators));
                     active_operators[actual_op] = true;
                 }
@@ -105,10 +105,7 @@ static std::vector<std::vector<Successor>> label_reduction(
     std::vector<std::vector<Successor>> &graph, int min_ops_per_label) {
     num_transitions_sub = 0;
     num_single_transitions = 0;
-    op_set;
-    op_set_single;
-    num_label = 0;
-    num_new_label = 0;
+
     // Retrieve non-looping transitions.
     vector<vector<Successor>> new_graph(graph.size());
     
@@ -120,6 +117,7 @@ static std::vector<std::vector<Successor>> label_reduction(
             transition_groups[{succ.state, target}].push_back(succ.op);
         }
     }
+
     for (auto &[src_target, op_list] : transition_groups) {
         const auto &[src, target] = src_target;
         
@@ -134,23 +132,22 @@ static std::vector<std::vector<Successor>> label_reduction(
                 new_graph[target].emplace_back(op, src);
             }
         } else {
-            int label_id;
-            num_label++;
-            const auto ops_index = ops_pool.size();
             ops_pool.push_back(std::move(ops));
-            auto& ops_slice = ops_pool[ops_index];
-            const auto [it, inserted] = ops_to_label_id.emplace(&ops_slice, next_label_id);
+
+            const auto ops_slice = ops_pool.back();
+            const auto [it, inserted] = ops_to_label_id.emplace(ops_slice, next_label_id);
             if (inserted) {
-                --next_label_id;
                 label_id_to_ops.emplace(it->second, it->first);
-                num_new_label++;
+                --next_label_id;
             } else {
                 ops_pool.pop_back();
             }
-            label_id = it->second;
-            new_graph[target].emplace_back(label_id, src);
+            
+            new_graph[target].emplace_back(it->second, src);
+    
         }
     }
+
     for (size_t target = 0; target < graph.size(); ++target) {
         new_graph[target].shrink_to_fit();
 		// cout << "Graph: " << target << new_graph[target] << endl;
@@ -246,7 +243,7 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
 
         auto it = label_id_to_ops.find(-idx);
         assert(it != label_id_to_ops.end());
-        for (int op_id : *it->second) {
+        for (int op_id : it->second) {
             assert(utils::in_bounds(op_id, saturated_costs));
             saturated_costs[op_id] = max(saturated_costs[op_id], label_cost);
         }
@@ -281,7 +278,7 @@ void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback
             } else {
                 auto it = label_id_to_ops.find(op_id);
                 assert(it != label_id_to_ops.end());
-                for (int actual_op : *it->second) {
+                for (int actual_op : it->second) {
                     callback(Transition(src, actual_op, target));
                 }
             }

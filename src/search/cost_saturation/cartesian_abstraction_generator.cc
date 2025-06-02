@@ -222,7 +222,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         map<int, int> label_size_counts;
     
         for (const auto&[label_id, ops]: label_id_to_ops) {
-            int label_size = ops->size();
+            int label_size = ops.size();
             // min_size = min(min_size, label_size);
             // max_size = max(max_size, label_size);
             // total_size += label_size;
@@ -248,6 +248,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         log << "}" << std::endl;
 
     }
+
     return abstractions;
 }
 

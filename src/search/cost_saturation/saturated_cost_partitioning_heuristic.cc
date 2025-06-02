@@ -22,6 +22,11 @@ CostPartitioningHeuristic compute_saturated_cost_partitioning(
     const vector<int> &) {
     assert(abstractions.size() == order.size());
     CostPartitioningHeuristic cp_heuristic;
+
+    // Swap tmp into local variables to enfore destruction at the end of the scope.
+    auto empty_ops_to_label_id = OpsToLabelId();
+    std::swap(ops_to_label_id, empty_ops_to_label_id);
+
     for (int pos : order) {
         const Abstraction &abstraction = *abstractions[pos];
         vector<int> h_values = abstraction.compute_goal_distances(remaining_costs);

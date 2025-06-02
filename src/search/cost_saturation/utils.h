@@ -4,7 +4,7 @@
 #include "abstraction.h"
 #include "parallel_hashmap/phmap.h"
 #include "types.h"
-#include "../algorithms/array_pool.h"
+#include "../algorithms/segmented_array_pool.h"
 #include "../algorithms/segmented_vector.h"
 
 #include <execution>
@@ -74,23 +74,35 @@ struct VectorHash {
 };
 
 
-using OpsPool = segmented_vector::SegmentedVector<std::vector<int>>;
+using OpsPool = segmented_array_pool_template::ArrayPool<int>;
+using OpsSlice = segmented_array_pool_template::ArrayPoolSlice<int>;
 
-struct OpsPtrHash {
-    std::size_t operator()(const std::vector<int>* v) const {
-        return VectorHash{}(*v);
+struct OpsSliceHash {
+    std::size_t operator()(OpsSlice v) const {
+        std::size_t seed = v.size();
+        for (int i : v) {
+            seed ^= std::hash<int>{}(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
     }
 };
 
-struct OpsPtrEqualTo {
-    bool operator()(const std::vector<int>* lhs, const std::vector<int>* rhs) const {
-        return *lhs == *rhs;
+struct OpsSliceEqualTo {
+    bool operator()(OpsSlice lhs, OpsSlice rhs) const {
+        if (lhs.size() != rhs.size()) {
+            return false;
+        }
+
+        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
     }
 };
+
+using OpsToLabelId = phmap::flat_hash_map<OpsSlice, int, OpsSliceHash, OpsSliceEqualTo>;
+using LabelIdToOps = phmap::flat_hash_map<int, OpsSlice>;
 
 extern OpsPool ops_pool;
-extern phmap::flat_hash_map<std::vector<int>*, int, OpsPtrHash, OpsPtrEqualTo> ops_to_label_id;
-extern phmap::flat_hash_map<int, std::vector<int>*> label_id_to_ops;
+extern OpsToLabelId ops_to_label_id;
+extern LabelIdToOps label_id_to_ops;
 extern int next_label_id;
 
 extern void reduce_costs(
