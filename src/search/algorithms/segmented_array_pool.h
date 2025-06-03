@@ -72,7 +72,8 @@ class ArrayPool {
         const auto segment_space = m_data[m_cur_segment].size() - m_cur_pos;
 
         if (segment_space < size) {
-            const auto new_segment_size = std::max(static_cast<size_t>(std::pow(m_data[m_cur_segment].size(), 2)), size); 
+            const auto new_segment_size = std::max(m_data[m_cur_segment].size() * 2, size);
+
             m_data.push_back(std::vector<Value>(new_segment_size));
             ++m_cur_segment;
             m_cur_pos = 0;
@@ -80,7 +81,7 @@ class ArrayPool {
     }
 
 public:
-    ArrayPool() : m_data(1, std::vector<int>(1)), m_cur_segment(0), m_cur_pos(0), m_prev_pos(0), m_size(0) {  }
+    ArrayPool() : m_data(1, std::vector<int>(1024)), m_cur_segment(0), m_cur_pos(0), m_prev_pos(0), m_size(0) {  }
 
     void push_back(const std::vector<Value>& vec) {
         resize_to_fit(vec.size());
