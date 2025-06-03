@@ -114,7 +114,6 @@ class TreeUnpackedStateRegistry :
     public IStateRegistry {
 
     vs::IndexedHashSet tree_table = vs::IndexedHashSet();
-    vs::RootIndexedHashSet root_table = vs::RootIndexedHashSet();
 
     const int_packer::IntPacker &state_packer;
     AxiomEvaluator &axiom_evaluator;
@@ -126,6 +125,8 @@ class TreeUnpackedStateRegistry :
     StateID insert_id_or_pop_state();
     int get_bins_per_state() const;
 
+    std::vector<int> shuffled_var_indices;
+    std::vector<int> inv_shuffled_var_indices;
 public:
     explicit TreeUnpackedStateRegistry(const TaskProxy &task_proxy);
 
@@ -171,7 +172,7 @@ public:
       Returns the number of states registered so far.
     */
     size_t size() const override {
-        return root_table.size();
+        return tree_table.size();
     }
 
     int get_state_size_in_bytes() const;

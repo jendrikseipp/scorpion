@@ -281,6 +281,7 @@ SearchStatus EagerSearch::step() {
             */
         }
     }
+
     return IN_PROGRESS;
 }
 

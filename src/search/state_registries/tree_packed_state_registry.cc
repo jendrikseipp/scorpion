@@ -25,7 +25,7 @@ TreePackedStateRegistry::TreePackedStateRegistry(const TaskProxy &task_proxy)
 
     State::get_variable_value = [this](const StateID& id) {
             std::vector<vs::Index> buffer(get_bins_per_state());
-            vs::static_tree::read_state(id.value, get_bins_per_state(), tree_table, root_table, buffer);
+            vs::static_tree::read_state(id.value, get_bins_per_state(), tree_table, buffer);
 
             std::vector<int> state_data(num_variables);
             for (int i = 0; i < num_variables; ++i) {
@@ -57,7 +57,7 @@ StateID TreePackedStateRegistry::insert_id_or_pop_state() {
 
 State TreePackedStateRegistry::lookup_state(StateID id) const {
     std::vector<vs::Index> buffer(get_bins_per_state());
-    vs::static_tree::read_state(id.value, get_bins_per_state(), tree_table, root_table, buffer);
+    vs::static_tree::read_state(id.value, get_bins_per_state(), tree_table, buffer);
 
     std::vector<int> state_values(num_variables);
     for (int i = 0; i < num_variables; ++i) {
@@ -83,7 +83,7 @@ const State &TreePackedStateRegistry::get_initial_state() {
         for (auto i = 0; i < num_variables; ++i) {
             state_packer.set(buffer.data(), i, tmp[i]);
         }
-        auto [index, _] = vs::static_tree::insert(buffer, tree_table, root_table);
+        auto [index, _] = vs::static_tree::insert(buffer, tree_table);
         StateID id = StateID(index);
         cached_initial_state = make_unique<State>(lookup_state(id));
 
@@ -118,13 +118,13 @@ State TreePackedStateRegistry::get_successor_state(const State &predecessor, con
     for (auto i = 0; i < num_variables; ++i) {
         state_packer.set(buffer.data(), i, new_state_values[i]);
     }
-    auto [index, inserted] = vs::static_tree::insert(buffer, tree_table, root_table);
+    auto [index, inserted] = vs::static_tree::insert(buffer, tree_table);
 
     return lookup_state(StateID(index), {new_state_values.begin(), new_state_values.end()});
 }
 
 int TreePackedStateRegistry::get_state_size_in_bytes() const {
-    return num_variables * sizeof(unsigned);
+    return get_bins_per_state() * sizeof(unsigned);
 }
 
 int TreePackedStateRegistry::get_bins_per_state() const {
@@ -133,5 +133,8 @@ int TreePackedStateRegistry::get_bins_per_state() const {
 void TreePackedStateRegistry::print_statistics(utils::LogProxy &log) const {
 
     log << "Number of registered states: " << size() << endl;
-    log << "Closed list load factor: " << root_table.size() << endl;
+    log << "Closed list load factor: " << tree_table.size() << endl;
+    log << "State size in bytes: " << get_state_size_in_bytes() << endl;
+    log << "State set size: " << tree_table.get_memory_usage() / 1024 << " KB" << endl;
+
 }

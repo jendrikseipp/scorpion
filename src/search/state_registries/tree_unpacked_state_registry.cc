@@ -2,105 +2,133 @@
 
 #include "../per_state_information.h"
 #include "../task_proxy.h"
-
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
 
+#include <vector>
+#include <random>
+#include <algorithm>
+#include <cassert>
 #include <iostream>
+#include <memory>
 
 using namespace std;
 
-//constexpr std::vector<int> unpacked_state_variable_reader(const int index, void* context) noexcept {
-//    auto root_table = reinterpret_cast<const vs::RootIndices *>(context);
-//    std::vector<int> state_values;
-//    vs::static_tree::read_state(index, size, *root_table, state_values);
-//    return std::move();
-//}
+namespace {
+/// Utility to generate a shuffled vector of indices 0..n-1
+template<std::integral Index = std::size_t,
+         std::uniform_random_bit_generator F = std::mt19937>
+[[nodiscard]]
+inline std::vector<Index> shuffled_indices(Index n, F&& rng = F{std::random_device{}()}) {
+    std::vector<Index> indices(n);
+    for (Index i = 0; i < n; ++i) {
+        indices[i] = i;
+    }
+    std::shuffle(indices.begin(), indices.end(), rng);
+    return indices;
+}
+}
 
 TreeUnpackedStateRegistry::TreeUnpackedStateRegistry(const TaskProxy &task_proxy)
-    : IStateRegistry(task_proxy), state_packer(task_properties::g_state_packers[task_proxy]),
+    : IStateRegistry(task_proxy),
+      state_packer(task_properties::g_state_packers[task_proxy]),
       axiom_evaluator(g_axiom_evaluators[task_proxy]),
-      num_variables(task_proxy.get_variables().size()) {
+      num_variables(task_proxy.get_variables().size()),
+      shuffled_var_indices(shuffled_indices(num_variables)) // <-- CREATE SHUFFLED INDEX VECTOR
+{
+    // Compute the inverse permutation so we can reconstruct the original order
+    inv_shuffled_var_indices.resize(num_variables);
+    for (int i = 0; i < num_variables; ++i) {
+        inv_shuffled_var_indices[shuffled_var_indices[i]] = i;
+    }
 
-
+    // Provide a getter that returns in original order, but reads storage in shuffled order
     State::get_variable_value = [this](const StateID& id) {
-            std::vector<vs::Index> state_data(num_variables);
-            vs::static_tree::read_state(id.value, num_variables, tree_table, root_table, state_data);
-            return std::vector<int>{state_data.begin(), state_data.end()};
-    };
+        // Read stored in shuffled order:
+        std::vector<vs::Index> stored(num_variables);
+        vs::static_tree::read_state(id.value, num_variables, tree_table, stored);
 
+        // Revert to natural order
+        std::vector<int> state_values(num_variables);
+        for (int i = 0; i < num_variables; ++i)
+            state_values[i] = stored[inv_shuffled_var_indices[i]];
+        return state_values;
+    };
 }
 
 StateID TreeUnpackedStateRegistry::insert_id_or_pop_state() {
-    /*
-      Attempt to insert a StateID for the last state of state_data_pool
-      if none is present yet. If this fails (another entry for this state
-      is present), we have to remove the duplicate entry from the
-      state data pool.
-    */
-//    StateID id(state_data_pool.size() - 1);
-//    auto result = registered_states.insert(id.value);
-//    bool is_new_entry = result.second;
-//    if (!is_new_entry) {
-//        state_data_pool.pop_back();
-//    }
-//    assert(registered_states.size() == state_data_pool.size());
-//    return StateID(*result.first);
+    // TODO: Implement per original logic, here just stub as in original
     return StateID(0);
 }
 
 State TreeUnpackedStateRegistry::lookup_state(StateID id) const {
-    std::vector<vs::Index> tmp(num_variables);
-    vs::static_tree::read_state(id.value, num_variables, tree_table, root_table, tmp);
-    std::vector<int> state_values{tmp.begin(), tmp.end()};
-    return task_proxy.create_state(*this, id, move(state_values));
+    // Read in shuffled index order from storage
+    std::vector<vs::Index> stored(num_variables);
+    vs::static_tree::read_state(id.value, num_variables, tree_table, stored);
+
+    // Restore to natural order for external interface
+    std::vector<int> state_values(num_variables);
+    for (int i = 0; i < num_variables; ++i)
+        state_values[i] = stored[inv_shuffled_var_indices[i]];
+
+    return task_proxy.create_state(*this, id, std::move(state_values));
 }
 
 State TreeUnpackedStateRegistry::lookup_state(
-    StateID id, vector<int> &&state_values) const {
+    StateID id, vector<int> &&state_values) const
+{
+    // This implementation always reconstructs state from id.
     return lookup_state(id);
 }
 
 const State &TreeUnpackedStateRegistry::get_initial_state() {
     if (!cached_initial_state) {
         State initial_state = task_proxy.get_initial_state();
+        const auto& natural_order = initial_state.get_unpacked_values();
 
+        // Permute initial state into shuffled order for insertion
+        std::vector<vs::Index> shuffled_state(num_variables);
+        for (int i = 0; i < num_variables; ++i)
+            shuffled_state[i] = natural_order[shuffled_var_indices[i]];
 
-        auto &tmp = initial_state.get_unpacked_values();
-        auto [index, _] = vs::static_tree::insert(std::vector<vs::Index>{tmp.begin(), tmp.end()},
-                                                  tree_table, root_table);
+        // Insert into tree & get new id
+        auto [index, _] = vs::static_tree::insert(shuffled_state, tree_table);
         StateID id = StateID(index);
-        cached_initial_state = make_unique<State>(lookup_state(id));
 
+        // Create state in original (natural) order for user interface
+        cached_initial_state = make_unique<State>(lookup_state(id));
         cached_initial_state->unpack();
     }
     return *cached_initial_state;
 }
 
-//TODO it would be nice to move the actual state creation (and operator application)
-//     out of the PackedStateRegistry. This could for example be done by global functions
-//     operating on state buffers (unsigned *).
-State TreeUnpackedStateRegistry::get_successor_state(const State &predecessor, const OperatorProxy &op) {
+State TreeUnpackedStateRegistry::get_successor_state(
+    const State &predecessor, const OperatorProxy &op)
+{
     assert(!op.is_axiom());
-
-    std::vector<unsigned> state_values;
-
     predecessor.unpack();
-    auto& tmp = predecessor.get_unpacked_values();
-    std::vector<vs::Index> new_state_values(tmp.begin(), tmp.end());
+    const auto& prev_values = predecessor.get_unpacked_values();
 
-    /* Experiments for issue348 showed that for tasks with axioms it's faster
-       to compute successor states using unpacked data. */
+    // Start from natural-order predecessor, apply effects, then shuffle for insertion
+    std::vector<vs::Index> successor_values{prev_values.begin(), prev_values.end()};
+
     for (EffectProxy effect : op.get_effects()) {
         if (does_fire(effect, predecessor)) {
-            FactPair effect_pair = effect.get_fact().get_pair();
-            new_state_values[effect_pair.var] = effect_pair.value;
+            FactPair e = effect.get_fact().get_pair();
+            successor_values[e.var] = e.value;
         }
     }
 
-    auto [index, _] = vs::static_tree::insert(new_state_values, tree_table, root_table);
+    // Permute to shuffled order for storage
+    std::vector<vs::Index> shuffled_state(num_variables);
+    for (int i = 0; i < num_variables; ++i)
+        shuffled_state[i] = successor_values[shuffled_var_indices[i]];
 
-    return lookup_state(StateID(index), {new_state_values.begin(), new_state_values.end()});
+    // Insert in shuffled order, as in storage
+    auto [index, _] = vs::static_tree::insert(shuffled_state, tree_table);
+
+    // External state is restored to natural order using lookup_state
+    return lookup_state(StateID(index), {shuffled_state.begin(), shuffled_state.end()});
 }
 
 int TreeUnpackedStateRegistry::get_state_size_in_bytes() const {
@@ -110,8 +138,10 @@ int TreeUnpackedStateRegistry::get_state_size_in_bytes() const {
 int TreeUnpackedStateRegistry::get_bins_per_state() const {
     return state_packer.get_num_bins();
 }
-void TreeUnpackedStateRegistry::print_statistics(utils::LogProxy &log) const {
 
+void TreeUnpackedStateRegistry::print_statistics(utils::LogProxy &log) const {
     log << "Number of registered states: " << size() << endl;
-    log << "Closed list load factor: " << root_table.size() << endl;
+    log << "Closed list load factor: " << tree_table.size() << endl;
+    log << "State size in bytes: " << get_state_size_in_bytes() << endl;
+    log << "State set size: " << tree_table.get_memory_usage() / 1024 << " KB" << endl;
 }

@@ -63,6 +63,8 @@ public:
         size_t usage = 0;
 
         usage += m_slot_to_index.capacity() * (sizeof(Slot) + sizeof(Index));
+        usage += 2 * m_slot_to_index.bucket_count();
+
         usage += m_slot_to_index.capacity();
 
         usage += m_index_to_slot.capacity() * sizeof(Slot);

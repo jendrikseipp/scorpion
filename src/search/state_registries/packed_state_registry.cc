@@ -120,4 +120,6 @@ void PackedStateRegistry::print_statistics(utils::LogProxy &log) const {
     log << "Closed list load factor: " << registered_states.size()
         << "/" << registered_states.capacity() << " = "
         << registered_states.load_factor() << endl;
+    log << "State size in bytes: " << get_state_size_in_bytes() << endl;
+    log << "State set size: " << (state_data_pool.size() * get_state_size_in_bytes()) / 1024 << " KB" << endl;
 }
