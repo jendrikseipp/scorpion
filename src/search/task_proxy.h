@@ -577,10 +577,9 @@ class State {
       const here to mean "const from the perspective of the state space
       semantics of the state".
     */
-    mutable std::vector<int> values;
+    mutable std::shared_ptr<std::vector<int>> values;
     const int_packer::IntPacker *state_packer;
     int num_variables;
-    void* reader_context;
 public:
     using ItemType = FactProxy;
     static StateValueReader get_variable_value;
@@ -598,6 +597,7 @@ public:
     /* Generate unpacked data if it is not available yet. Calling the function
        on a state that already has unpacked data has no effect. */
     void unpack() const;
+    void clear_data() const;
 
     std::size_t size() const;
     FactProxy operator[](std::size_t var_id) const;
@@ -768,7 +768,7 @@ inline bool State::operator==(const State &other) const {
         return id == other.id;
     } else {
         // Both states are unregistered.
-        return std::equal(values.begin(), values.end(), other.values.begin());
+        return std::equal(values->begin(), values->end(), other.values->begin());
     }
 }
 
@@ -777,7 +777,7 @@ inline bool State::operator!=(const State &other) const {
 }
 
 inline void State::unpack() const {
-    if (values.size() == 0) {
+    if (!values) {
         /*
           A micro-benchmark in issue348 showed that constructing the vector
           in the required size and then assigning values was faster than the
@@ -789,7 +789,15 @@ inline void State::unpack() const {
           structures that exploit sequentially unpacking each entry, by doing
           things bin by bin.)
         */
-        values = get_variable_value(id);
+        values = std::make_shared<std::vector<int>>(get_variable_value(id));
+    }
+}
+
+inline void State::clear_data() const {
+    if (values) {
+        // Clear the unpacked values.
+        values->clear();
+        values.reset();
     }
 }
 
@@ -800,9 +808,9 @@ inline std::size_t State::size() const {
 inline FactProxy State::operator[](std::size_t var_id) const {
     assert(var_id < size());
 
-    if (values.size() == 0) unpack();
+    if (!values) unpack();
 
-    return FactProxy(*task, var_id, values[var_id]);
+    return FactProxy(*task, var_id, values->operator[](var_id));
 }
 
 inline FactProxy State::operator[](VariableProxy var) const {
@@ -837,7 +845,7 @@ inline const PackedStateBin *State::get_buffer() const {
 }
 
 inline const std::vector<int> &State::get_unpacked_values() const {
-    if (values.size() == 0) unpack();
-    return values;
+    if (!values) unpack();
+    return *values;
 }
 #endif
