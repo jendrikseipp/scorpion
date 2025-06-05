@@ -72,7 +72,7 @@ def add_search_started(run):
     return run
 
 
-GIT_REV_WLR = "45f1adb977bed6e008305630aa152b35f636e6c9"
+GIT_REV_WLR = "ebc5c9517313a29fba86b44b63e3d700053b1055"
 GIT_REV_WOLR = "bbb134d94c4c59c2a09e4077b4e31c0006bf5d71"
 exp = FastDownwardExperiment(environment=ENV)
 exp.add_parser(FastDownwardExperiment.EXITCODE_PARSER)
@@ -93,7 +93,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian()], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]), 
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -104,7 +107,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=1)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=1,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -115,7 +121,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=2)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=2,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -126,7 +135,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=3)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=3,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -137,7 +149,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=4)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=4,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -148,7 +163,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=5)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=5,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -159,7 +177,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=10)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=10,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -170,7 +191,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=20)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=20,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -181,7 +205,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=50)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=50,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -192,7 +219,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=100)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=100,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -203,7 +233,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=500)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=500,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -214,7 +247,10 @@ exp.add_algorithm(
     GIT_REV_WLR,
     [
         "--search",
-        f"astar(scp([cartesian(min_ops_per_label=1000)], max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        f"astar(scp([cartesian(min_ops_per_label=1000,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
+        cartesian(subtasks=[goals(order=random,random_seed=0)]),
+        projections(systematic(2), create_complete_transition_system=true)],
+        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
     ],
     build_options=BUILD,
     driver_options=DRIVER,
@@ -251,6 +287,8 @@ ATTRIBUTES = [ #schaue mal durch
     "num_reused_labels",
     "change_in_size",
     "cp_time",
+    "search_start_time",
+    "search_start_memory"
 ]
 
 project.add_report(

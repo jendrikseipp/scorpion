@@ -8,6 +8,12 @@ import logging
 class CommonParser(Parser):
     def __init__(self):
         super().__init__()
+        self.add_pattern (
+        "search_start_time", r"\[t=(.+)s, \d+ KB\] g=0, 1 evaluated, 0 expanded", type=float,
+        )
+        self.add_pattern (
+        "search_start_memory", r"\[t=.+s, (\d+) KB\] g=0, 1 evaluated, 0 expanded", type=int,
+        )
         self.add_bottom_up_pattern ( 
             "num_transitions", r"Total number of transitions in Cartesian abstractions \(after label reduction\): (\d+)", type=int
         )
@@ -34,6 +40,11 @@ class CommonParser(Parser):
         for char in flags_string:
             flags |= getattr(re, char)
         return flags
+
+    # def add_pattern(self, name, regex, file="run.log", required=False, type=int, flags="M"):
+    #     Parser.add_pattern(
+    #         self, name, regex, file=file, required=required, type=type, flags=flags
+    #     )
 
     def add_bottom_up_pattern(
         self, name, regex, file="run.log", required=False, type=int, flags=""
