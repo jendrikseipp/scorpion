@@ -105,7 +105,10 @@ static std::vector<std::vector<Successor>> label_reduction(
     std::vector<std::vector<Successor>> &graph, int min_ops_per_label) {
     num_transitions_sub = 0;
     num_single_transitions = 0;
-
+    op_set;
+    op_set_single;
+    num_label = 0;
+    num_new_label = 0;
     // Retrieve non-looping transitions.
     vector<vector<Successor>> new_graph(graph.size());
     
@@ -133,12 +136,13 @@ static std::vector<std::vector<Successor>> label_reduction(
             }
         } else {
             ops_pool.push_back(std::move(ops));
-
+            num_label++;
             const auto ops_slice = ops_pool.back();
             const auto [it, inserted] = ops_to_label_id.emplace(ops_slice, next_label_id);
             if (inserted) {
                 label_id_to_ops.emplace(it->second, it->first);
                 --next_label_id;
+                num_new_label++;
             } else {
                 ops_pool.pop_back();
             }
