@@ -4,6 +4,7 @@
 #include "abstraction.h"
 
 #include "../algorithms/priority_queues.h"
+#include "parallel_hashmap/phmap.h"
 
 #include <memory>
 #include <utility>
@@ -30,13 +31,10 @@ struct Successor {
 
 std::ostream &operator<<(std::ostream &os, const Successor &successor);
 
-extern int num_transitions_sub;
 extern int num_single_transitions;
-extern std::unordered_set<int> op_set;
-extern std::unordered_set<int> op_set_single;
 extern int num_label;
 extern int num_new_label;
-
+extern phmap::flat_hash_map<int,int> reused_label_ids;
 class ExplicitAbstraction : public Abstraction {
     // State-changing transitions.
     std::vector<std::vector<Successor>> backward_graph;

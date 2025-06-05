@@ -18,12 +18,9 @@ LabelIdToOps label_id_to_ops;
 int next_label_id = -1;
 
 // Tracking of some numbers
-int num_transitions_sub = 0;
-int num_single_transitions = 0;
-unordered_set<int> op_set;
-unordered_set<int> op_set_single;
-int num_label = 0;
-int num_new_label = 0;
+int num_single_transitions;
+int num_label;
+int num_new_label;
 
 static void dijkstra_search(
     const vector<vector<Successor>> &graph,
@@ -103,10 +100,7 @@ static vector<bool> get_active_operators_from_graph(
 
 static std::vector<std::vector<Successor>> label_reduction(
     std::vector<std::vector<Successor>> &graph, int min_ops_per_label) {
-    num_transitions_sub = 0;
     num_single_transitions = 0;
-    op_set;
-    op_set_single;
     num_label = 0;
     num_new_label = 0;
     // Retrieve non-looping transitions.
@@ -116,7 +110,6 @@ static std::vector<std::vector<Successor>> label_reduction(
     auto transition_groups = phmap::flat_hash_map<pair<int, int>, vector<int>>{}; //szudzik hash
     for (std::size_t target = 0; target < graph.size(); ++target) {
         for (const Successor &succ : graph[target]) {
-            num_transitions_sub++;
             transition_groups[{succ.state, target}].push_back(succ.op);
         }
     }
@@ -130,8 +123,6 @@ static std::vector<std::vector<Successor>> label_reduction(
         if (static_cast<int>(ops.size()) < min_ops_per_label) {
             for (int op : ops) {
                 num_single_transitions++;
-                op_set_single.insert(op);
-                op_set.insert(op);
                 new_graph[target].emplace_back(op, src);
             }
         } else {
@@ -145,6 +136,7 @@ static std::vector<std::vector<Successor>> label_reduction(
                 num_new_label++;
             } else {
                 ops_pool.pop_back();
+                reused_label_ids[it->second]++;;
             }
             
             new_graph[target].emplace_back(it->second, src);
