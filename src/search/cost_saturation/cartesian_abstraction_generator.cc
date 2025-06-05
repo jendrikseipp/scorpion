@@ -157,7 +157,7 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
             // log << "Number of globally new labels: " << num_new_label << endl;
             // log << "Number of locally reused labels: " << num_label - num_new_label << endl;
             // log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
-            static_cast<double>(num_single_transitions+num_label)/num_transitions_per_abstraction << endl;
+            // static_cast<double>(num_single_transitions+num_label)/num_transitions_per_abstraction << endl;
     
             num_total_single_transitions+=num_single_transitions;
             num_total_reused_labels+=num_label - num_new_label;
@@ -182,6 +182,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     num_transitions = 0;
 	num_total_single_transitions = 0;
 	num_total_reused_labels = 0;
+    num_total_labels = 0;
     log << "Build Cartesian abstractions" << endl << endl;
 
     // The CEGAR code expects that some extra memory is reserved.
