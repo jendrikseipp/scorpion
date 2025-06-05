@@ -124,9 +124,6 @@ class TreeUnpackedStateRegistry :
 
     StateID insert_id_or_pop_state();
     int get_bins_per_state() const;
-
-    std::vector<int> shuffled_var_indices;
-    std::vector<int> inv_shuffled_var_indices;
 public:
     explicit TreeUnpackedStateRegistry(const TaskProxy &task_proxy);
 

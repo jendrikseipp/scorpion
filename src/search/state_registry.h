@@ -20,7 +20,9 @@ enum StateRegistryType {
     PACKED = 0,
     UNPACKED = 1,
     TREE_PACKED = 2,
-    TREE_UNPACKED = 3
+    TREE_UNPACKED = 3,
+    FIXED_TREE_UNPACKED = 4,
+    FIXED_TREE_PACKED = 5
 };
 
 class StateRegistry : public subscriber::SubscriberService<StateRegistry>{

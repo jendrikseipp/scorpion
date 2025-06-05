@@ -1,5 +1,5 @@
-#ifndef TREE_PACKED_STATE_REGISTRY_H
-#define TREE_PACKED_STATE_REGISTRY_H
+#ifndef FIXED_TREE_PACKED_STATE_REGISTRY_H
+#define FIXED_TREE_PACKED_STATE_REGISTRY_H
 
 #include "../abstract_task.h"
 #include "../axioms.h"
@@ -18,12 +18,17 @@
 
 #include <set>
 
+#include "fixed_tree_unpacked_state_registry.h"
+#include "valla/fixed_hash_set.hpp"
+#include "valla/fixed_tree_compression.hpp"
+
+
 /*
   Overview of classes relevant to storing and working with registered states.
 
   State
     Objects of this class can represent registered or unregistered states.
-    Registered states contain a pointer to the TreePackedStateRegistry that created them
+    Registered states contain a pointer to the FixedTreePackedStateRegistry that created them
     and the ID they have there. Using this data, states can be used to index
     PerStateInformation objects.
     In addition, registered states have a pointer to the packed data of a state
@@ -45,10 +50,10 @@
 
   -------------
 
-  TreePackedStateRegistry
-    The TreePackedStateRegistry allows to create states giving them an ID. IDs from
+  FixedTreePackedStateRegistry
+    The FixedTreePackedStateRegistry allows to create states giving them an ID. IDs from
     different state registries must not be mixed.
-    The TreePackedStateRegistry also stores the actual state data in a memory friendly way.
+    The FixedTreePackedStateRegistry also stores the actual state data in a memory friendly way.
     It uses the following class:
 
   SegmentedArrayVector<std::vector<int>>
@@ -57,7 +62,7 @@
     The index within this vector corresponds to the ID of the state.
 
   PerStateInformation<T>
-    Associates a value of type T with every state in a given TreePackedStateRegistry.
+    Associates a value of type T with every state in a given FixedTreePackedStateRegistry.
     Can be thought of as a very compactly implemented map from State to T.
     References stay valid as long as the state registry exists. Memory usage is
     essentially the same as a vector<T> whose size is the number of states in
@@ -104,16 +109,23 @@
 */
 
 namespace vs = valla;
+namespace vst = valla::fixed_tree;
 namespace utils {
 class LogProxy;
 }
 
 
+
 using IStateRegistry = StateRegistry;
-class TreePackedStateRegistry :
+class FixedTreePackedStateRegistry :
     public IStateRegistry {
 
-    vs::IndexedHashSet tree_table = vs::IndexedHashSet();
+
+    const int cap = entries_for_mb(100, sizeof(vst::IndexSlot));
+
+    vst::FixedHashSetSlot tree_table = vst::FixedHashSetSlot(cap,
+                                                  vst::Hasher(),
+                                                  vst::SlotEqual());
 
     const int_packer::IntPacker &state_packer;
     AxiomEvaluator &axiom_evaluator;
@@ -125,7 +137,7 @@ class TreePackedStateRegistry :
     StateID insert_id_or_pop_state();
     int get_bins_per_state() const;
 public:
-    explicit TreePackedStateRegistry(const TaskProxy &task_proxy);
+    explicit FixedTreePackedStateRegistry(const TaskProxy &task_proxy);
 
     const TaskProxy &get_task_proxy() const override {
         return task_proxy;
@@ -190,11 +202,11 @@ public:
           this, in which case we will add the missing methods.
         */
 
-        friend class TreePackedStateRegistry;
-        const TreePackedStateRegistry &registry;
+        friend class FixedTreePackedStateRegistry;
+        const FixedTreePackedStateRegistry &registry;
         StateID pos;
 
-        const_iterator(const TreePackedStateRegistry &registry, size_t start)
+        const_iterator(const FixedTreePackedStateRegistry &registry, size_t start)
             : registry(registry), pos(start) {
             utils::unused_variable(this->registry);
         }
@@ -222,10 +234,10 @@ public:
         }
     };
     class iterator_impl : public IStateRegistry::const_iterator {
-        const TreePackedStateRegistry *registry_;
+        const FixedTreePackedStateRegistry *registry_;
         size_t idx_;
     public:
-        iterator_impl(const TreePackedStateRegistry *reg, size_t i) : registry_(reg), idx_(i) {}
+        iterator_impl(const FixedTreePackedStateRegistry *reg, size_t i) : registry_(reg), idx_(i) {}
         StateID operator*() const override { return StateID(idx_); }
         const_iterator &operator++() override { ++idx_; return *this; }
         bool operator==(const const_iterator &other) const override {

@@ -1,4 +1,4 @@
-#include "tree_unpacked_state_registry.h"
+#include "fixed_tree_unpacked_state_registry.h"
 
 #include "../per_state_information.h"
 #include "../task_proxy.h"
@@ -14,22 +14,7 @@
 
 using namespace std;
 
-namespace {
-/// Utility to generate a shuffled vector of indices 0..n-1
-template<std::integral Index = std::size_t,
-         std::uniform_random_bit_generator F = std::mt19937>
-[[nodiscard]]
-inline std::vector<Index> shuffled_indices(Index n, F&& rng = F{std::random_device{}()}) {
-    std::vector<Index> indices(n);
-    for (Index i = 0; i < n; ++i) {
-        indices[i] = i;
-    }
-    std::shuffle(indices.begin(), indices.end(), rng);
-    return indices;
-}
-}
-
-TreeUnpackedStateRegistry::TreeUnpackedStateRegistry(const TaskProxy &task_proxy)
+FixedTreeUnpackedStateRegistry::FixedTreeUnpackedStateRegistry(const TaskProxy &task_proxy)
     : IStateRegistry(task_proxy),
       state_packer(task_properties::g_state_packers[task_proxy]),
       axiom_evaluator(g_axiom_evaluators[task_proxy]),
@@ -39,37 +24,37 @@ TreeUnpackedStateRegistry::TreeUnpackedStateRegistry(const TaskProxy &task_proxy
     State::get_variable_value = [this](const StateID& id) {
         // Read stored in shuffled order:
         std::vector<vs::Index> state_data(num_variables);
-        vs::static_tree::read_state(id.value, num_variables, tree_table, state_data);
+        vst::read_state(id.get_value(), num_variables, tree_table, state_data);
         return std::vector<int>{state_data.begin(), state_data.end()};
 
     };
 }
 
-StateID TreeUnpackedStateRegistry::insert_id_or_pop_state() {
+StateID FixedTreeUnpackedStateRegistry::insert_id_or_pop_state() {
     // TODO: Implement per original logic, here just stub as in original
     return StateID(0);
 }
 
-State TreeUnpackedStateRegistry::lookup_state(StateID id) const {
+State FixedTreeUnpackedStateRegistry::lookup_state(StateID id) const {
     // Read in shuffled index order from storage
     std::vector<vs::Index> tmp(num_variables);
-    vs::static_tree::read_state(id.value, num_variables, tree_table, tmp);
+    vst::read_state(id.get_value(), num_variables, tree_table, tmp);
     std::vector<int> state_values{tmp.begin(), tmp.end()};
     return task_proxy.create_state(*this, id, std::move(state_values));
 }
 
-State TreeUnpackedStateRegistry::lookup_state(
+State FixedTreeUnpackedStateRegistry::lookup_state(
     StateID id, vector<int> &&state_values) const
 {
     // This implementation always reconstructs state from id.
     return lookup_state(id);
 }
 
-const State &TreeUnpackedStateRegistry::get_initial_state() {
+const State &FixedTreeUnpackedStateRegistry::get_initial_state() {
     if (!cached_initial_state) {
         State initial_state = task_proxy.get_initial_state();
         auto &tmp = initial_state.get_unpacked_values();
-        auto [index, _] = vs::static_tree::insert(std::vector<vs::Index>{tmp.begin(), tmp.end()},
+        auto [index, _] = vst::insert(std::vector<vs::Index>{tmp.begin(), tmp.end()},
                                                   tree_table);
 
         StateID id = StateID(index);
@@ -79,7 +64,7 @@ const State &TreeUnpackedStateRegistry::get_initial_state() {
     return *cached_initial_state;
 }
 
-State TreeUnpackedStateRegistry::get_successor_state(
+State FixedTreeUnpackedStateRegistry::get_successor_state(
     const State &predecessor, const OperatorProxy &op)
 {
     assert(!op.is_axiom());
@@ -96,20 +81,20 @@ State TreeUnpackedStateRegistry::get_successor_state(
         }
     }
 
-    auto [index, _] = vs::static_tree::insert(successor_values, tree_table);
+    auto [index, _] = vst::insert(successor_values, tree_table);
 
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});
 }
 
-int TreeUnpackedStateRegistry::get_state_size_in_bytes() const {
+int FixedTreeUnpackedStateRegistry::get_state_size_in_bytes() const {
     return num_variables * sizeof(unsigned);
 }
 
-int TreeUnpackedStateRegistry::get_bins_per_state() const {
+int FixedTreeUnpackedStateRegistry::get_bins_per_state() const {
     return state_packer.get_num_bins();
 }
 
-void TreeUnpackedStateRegistry::print_statistics(utils::LogProxy &log) const {
+void FixedTreeUnpackedStateRegistry::print_statistics(utils::LogProxy &log) const {
     log << "Number of registered states: " << size() << endl;
     log << "Closed list load factor: " << tree_table.size() << endl;
     log << "State size in bytes: " << get_state_size_in_bytes() << endl;
