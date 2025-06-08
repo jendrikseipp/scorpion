@@ -121,7 +121,7 @@ class FixedTreePackedStateRegistry :
     public IStateRegistry {
 
 
-    const int cap = entries_for_mb(100, sizeof(vst::IndexSlot));
+    const int cap = entries_for_mb(700, sizeof(vst::IndexSlot));
 
     vst::FixedHashSetSlot tree_table = vst::FixedHashSetSlot(cap,
                                                   vst::Hasher(),
