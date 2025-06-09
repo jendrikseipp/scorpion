@@ -15,6 +15,12 @@ class ProjectionGenerator : public AbstractionGenerator {
     const bool create_complete_transition_system;
     const int min_ops_per_label;
 
+    int num_transitions;
+    int num_total_single_transitions;
+    int num_total_reused_label_transitions;
+    int num_total_label_transitions;
+
+
 public:
     ProjectionGenerator(
         const std::shared_ptr<pdbs::PatternCollectionGenerator> &patterns,

@@ -151,17 +151,17 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
             //             log << "]" << endl;
             //         }
             // log << "Number of transitions (before label reduction): " << num_transitions_per_abstraction << endl;
-            // log << "Number of transitions (after label reduction): " << num_single_transitions + num_label << endl;
+            // log << "Number of transitions (after label reduction): " << num_single_transitions + num_label_transitions<< endl;
             // log << "Number of single transitions: " << num_single_transitions << endl;
-            // log << "Number of labels: " << num_label << endl;
+            // log << "Number of labels: " << num_label_transitions<< endl;
             // log << "Number of globally new labels: " << num_new_label << endl;
-            // log << "Number of locally reused labels: " << num_label - num_new_label << endl;
+            // log << "Number of locally reused labels: " << num_label_transitions- num_new_label << endl;
             // log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
             // static_cast<double>(num_single_transitions+num_label)/num_transitions_per_abstraction << endl;
     
             num_total_single_transitions+=num_single_transitions;
-            num_total_reused_labels+=num_label - num_new_label;
-            num_total_labels+=num_label;
+            num_total_reused_label_transitions+=num_label_transition - num_new_label;
+            num_total_label_transitions+=num_label_transition;
         } else {
 			abstraction = make_unique<CartesianAbstraction>(move(cartesian_abstraction));
         }
@@ -181,8 +181,8 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     num_states = 0;
     num_transitions = 0;
 	num_total_single_transitions = 0;
-	num_total_reused_labels = 0;
-    num_total_labels = 0;
+	num_total_reused_label_transitions = 0;
+    num_total_label_transitions = 0;
     log << "Build Cartesian abstractions" << endl << endl;
 
     // The CEGAR code expects that some extra memory is reserved.
@@ -206,14 +206,14 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         << timer.get_elapsed_time() << endl;
     log << "Total number of Cartesian states: " << num_states << endl;
     log << "Total number of transitions in Cartesian abstractions (before label reduction): " << num_transitions << endl;
-    log << "Total number of transitions in Cartesian abstractions (after label reduction): " << num_total_single_transitions + num_total_labels << endl;
+    log << "Total number of transitions in Cartesian abstractions (after label reduction): " << num_total_single_transitions + num_total_label_transitions << endl;
     log << "Total number of single transitions in Cartesian abstractions: " << num_total_single_transitions << endl;
     // log << "Total number of operators in Cartesian abstractions: "
     // << task->get_num_operators() << endl;
     log << "Total number of labels in Cartesian abstractions: " << label_id_to_ops.size() << endl;
-    log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_labels << endl;
+    log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_label_transitions << endl;
     log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
-	static_cast<double>(num_total_single_transitions+num_total_labels)/num_transitions << endl;
+	static_cast<double>(num_total_single_transitions+num_total_label_transitions)/num_transitions << endl;
     if (!label_id_to_ops.empty()) {
         map<int, int> label_size_counts;
         map<int, int> reused_label_size_counts;
