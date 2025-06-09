@@ -41,6 +41,7 @@ class FixedHashSet {
     std::size_t initial_cap_ = 0;
     std::size_t resize_at_ = 0;
     std::size_t size_ = 0;
+    std::size_t _max_grow_size = 1 << 20;
     Hash hash_;
     Equal eq_;
 
@@ -238,8 +239,9 @@ public:
 
 private:
     void do_grow() {
-        table_.emplace_back(Segment(total_capacity_, EmptySentinel));
-        total_capacity_ *= 2;
+        auto grower_not_shower = std::max(total_capacity_, _max_grow_size);
+        table_.emplace_back(Segment(grower_not_shower, EmptySentinel));
+        total_capacity_ += grower_not_shower;
         resize_at_ = static_cast<std::size_t>(total_capacity_ * load_factor_);
     }
 };
