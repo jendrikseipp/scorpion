@@ -205,13 +205,13 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     log << "Time for building Cartesian abstractions: "
         << timer.get_elapsed_time() << endl;
     log << "Total number of Cartesian states: " << num_states << endl;
-    log << "Total number of transitions in Cartesian abstractions (before label reduction): " << num_transitions << endl;
-    log << "Total number of transitions in Cartesian abstractions (after label reduction): " << num_total_single_transitions + num_total_label_transitions << endl;
-    log << "Total number of single transitions in Cartesian abstractions: " << num_total_single_transitions << endl;
-    // log << "Total number of operators in Cartesian abstractions: "
+    log << "Total number of transitions in Abstractions (before label reduction): " << num_transitions << endl;
+    log << "Total number of transitions in Abstractions (after label reduction): " << num_total_single_transitions + num_total_label_transitions << endl;
+    log << "Total number of single transitions in Abstractions: " << num_total_single_transitions << endl;
+    // log << "Total number of operators in Abstractions: "
     // << task->get_num_operators() << endl;
-    log << "Total number of labels in Cartesian abstractions: " << label_id_to_ops.size() << endl;
-    log << "Total number of reused labels in Cartesian abstractions: " << num_total_reused_label_transitions << endl;
+    log << "Total number of labels in Abstractions: " << label_id_to_ops.size() << endl;
+    log << "Total number of reused labels in Abstractions: " << num_total_reused_label_transitions << endl;
     log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
 	static_cast<double>(num_total_single_transitions+num_total_label_transitions)/num_transitions << endl;
     if (!label_id_to_ops.empty()) {

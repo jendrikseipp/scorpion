@@ -138,11 +138,11 @@ Abstractions ProjectionGenerator::generate_abstractions(
         abstraction->for_each_transition(
             [this] (const Transition &) { ++num_transitions; });
     }
-    log << "Total Number of transitions in projections (before label reduction): " << num_transitions << endl;
-    log << "Total number of transitions in projections (after label reduction): " << num_total_single_transitions + num_total_label_transitions << endl;
-    log << "Total number of single transitions in projections: " << num_total_single_transitions << endl;
-    log << "Total number of labels in projections: " << label_id_to_ops.size() << endl;
-    log << "Total number of reused labels in projections: " << num_total_reused_label_transitions << endl;
+    log << "Total Number of transitions in Abstractions (before label reduction): " << num_transitions << endl;
+    log << "Total number of transitions in Abstractions (after label reduction): " << num_total_single_transitions + num_total_label_transitions << endl;
+    log << "Total number of single transitions in Abstractions: " << num_total_single_transitions << endl;
+    log << "Total number of labels in Abstractions: " << label_id_to_ops.size() << endl;
+    log << "Total number of reused labels in Abstractions: " << num_total_reused_label_transitions << endl;
     log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
 	static_cast<double>(num_total_single_transitions+num_total_label_transitions)/num_transitions << endl;
     if (!label_id_to_ops.empty()) {

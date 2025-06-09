@@ -44,7 +44,7 @@ else:
     MIN = 1
     TIME_LIMIT = int(HOURS * 60 + MIN)
     MEMORY_LIMIT = "3G"
-    SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_FREECELL
+    SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_GRIPPER
     # SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG
     # SUITE = project.SUITE_OPTIMAL_STRIPS_DEBUG_EXTENDED 
     GENERATION_TIME = 10
@@ -101,160 +101,25 @@ exp.add_algorithm(
     build_options=BUILD,
     driver_options=DRIVER,
 )
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=1)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=1,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=2)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=2,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=3)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=3,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=4)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=4,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=5)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=5,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=10)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=10,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=20)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=20,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=50)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=50,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=100)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=100,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=500)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=500,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
-exp.add_algorithm(
-    f"with label reduction (min_ops_per_label=1000)",
-    project.SCORPION_DIR,
-    GIT_REV_WLR,
-    [
-        "--search",
-        f"astar(scp([cartesian(min_ops_per_label=1000,subtasks=[landmarks(order=random,random_seed=0)],random_seed=0),
-        cartesian(subtasks=[goals(order=random,random_seed=0)]),
-        projections(systematic(2), create_complete_transition_system=true)],
-        max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
-    ],
-    build_options=BUILD,
-    driver_options=DRIVER,
-)
+
+MIN_OPS_PER_LABEL_VALUES = [1, 2, 3, 4, 5, 10, 20, 50, 100, 500, 1000]
+
+for min_ops in MIN_OPS_PER_LABEL_VALUES:
+    exp.add_algorithm(
+        f"with label reduction (min_ops_per_label={min_ops})",
+        project.SCORPION_DIR,
+        GIT_REV_WLR,
+        [
+            "--search",
+            f"astar(scp([cartesian(subtasks=[landmarks(order=random,random_seed=0)],random_seed=0, 
+            min_ops_per_label={min_ops}),
+            cartesian(subtasks=[goals(order=random,random_seed=0)], min_ops_per_label={min_ops}),
+            projections(systematic(2), create_complete_transition_system=true, min_ops_per_label={min_ops})],
+            max_orders=1K, diversify=false, max_time=infinity, max_optimization_time=0))",
+        ],
+        build_options=BUILD,
+        driver_options=DRIVER,
+    )
 
 exp.add_suite(project.DOMAINS_DIR, SUITE)
 
@@ -279,13 +144,26 @@ ATTRIBUTES = [ #schaue mal durch
     "expansions",
     "expansions_until_last_jump",
     # "h_values",
-    # "search_start_memory",
+    "search_start_time",
+    "search_start_memory",
     "search_time",
     "num_transitions",
     "num_single_transitions",
     "num_labels",
     "num_reused_labels",
-    "change_in_size",
+    "num_transitions_cartesian1",
+    "num_single_transitions_cartesian1",
+    "num_labels_cartesian1",
+    "num_reused_labels_cartesian1",
+    "num_transitions_cartesian2",
+    "num_single_transitions_cartesian2",
+    "num_labels_cartesian2",
+    "num_reused_labels_cartesian2",
+    "num_transitions_projection",
+    "num_single_transitions_projection",
+    "num_labels_projection",
+    "num_reused_labels_projection",
+    # "change_in_size",
     "cp_time",
     "search_start_time",
     "search_start_memory"
