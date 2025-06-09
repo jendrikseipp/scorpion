@@ -19,8 +19,8 @@ int next_label_id = -1;
 
 // Tracking of some numbers
 int num_single_transitions;
-int num_label_transition;
-int num_new_label;
+int num_label_transitions;
+int num_new_labels;
 
 static void dijkstra_search(
     const vector<vector<Successor>> &graph,
@@ -101,8 +101,8 @@ static vector<bool> get_active_operators_from_graph(
 static std::vector<std::vector<Successor>> label_reduction(
     std::vector<std::vector<Successor>> &graph, int min_ops_per_label) {
     num_single_transitions = 0;
-    num_label_transition = 0;
-    num_new_label = 0;
+    num_label_transitions = 0;
+    num_new_labels = 0;
     // Retrieve non-looping transitions.
     vector<vector<Successor>> new_graph(graph.size());
     
@@ -127,13 +127,13 @@ static std::vector<std::vector<Successor>> label_reduction(
             }
         } else {
             ops_pool.push_back(std::move(ops));
-            num_label_transition++;
+            num_label_transitions++;
             const auto ops_slice = ops_pool.back();
             const auto [it, inserted] = ops_to_label_id.emplace(ops_slice, next_label_id);
             if (inserted) {
                 label_id_to_ops.emplace(it->second, it->first);
                 --next_label_id;
-                num_new_label++;
+                num_new_labels++;
             } else {
                 ops_pool.pop_back();
                 reused_label_ids[it->second]++;;
@@ -146,8 +146,8 @@ static std::vector<std::vector<Successor>> label_reduction(
 
     for (size_t target = 0; target < graph.size(); ++target) {
         new_graph[target].shrink_to_fit();
-		cout << "Old Graph: " << target << graph[target] << endl;
-		cout << "New Graph: " << target << new_graph[target] << endl;
+		// cout << "Old Graph: " << target << graph[target] << endl;
+		// cout << "New Graph: " << target << new_graph[target] << endl;
     }
     return new_graph;
 }

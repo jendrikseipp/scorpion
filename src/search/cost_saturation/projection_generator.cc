@@ -103,16 +103,16 @@ Abstractions ProjectionGenerator::generate_abstractions(
             //             log << "]" << endl;
             //         }
             // log << "Number of transitions (before label reduction): " << num_transitions_per_abstraction << endl;
-            log << "Number of transitions (after label reduction): " << num_single_transitions + num_label_transition << endl;
+            log << "Number of transitions (after label reduction): " << num_single_transitions + num_label_transitions << endl;
             log << "Number of single transitions: " << num_single_transitions << endl;
-            log << "Number of labels: " << num_label_transition << endl;
-            log << "Number of globally new labels: " << num_new_label << endl;
-            log << "Number of locally reused labels: " << num_label_transition - num_new_label << endl;
+            log << "Number of labels: " << num_label_transitions << endl;
+            log << "Number of globally new labels: " << num_new_labels << endl;
+            log << "Number of locally reused labels: " << num_label_transitions - num_new_labels << endl;
             // log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
-            // static_cast<double>(num_single_transitions+num_label_transition)/num_transitions_per_abstraction << endl;
+            // static_cast<double>(num_single_transitions+num_label_transitions)/num_transitions_per_abstraction << endl;
             num_total_single_transitions+=num_single_transitions;
-            num_total_reused_label_transitions+=num_label_transition - num_new_label;
-            num_total_label_transitions+=num_label_transition;        
+            num_total_reused_label_transitions+=num_label_transitions - num_new_labels;
+            num_total_label_transitions+=num_label_transitions;        
         } else {
             task_properties::verify_no_conditional_effects(task_proxy);
             projection = make_unique<Projection>(

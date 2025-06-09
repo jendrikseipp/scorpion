@@ -32,8 +32,8 @@ struct Successor {
 std::ostream &operator<<(std::ostream &os, const Successor &successor);
 
 extern int num_single_transitions;
-extern int num_label_transition;
-extern int num_new_label;
+extern int num_label_transitions;
+extern int num_new_labels;
 extern phmap::flat_hash_map<int,int> reused_label_ids;
 class ExplicitAbstraction : public Abstraction {
     // State-changing transitions.
