@@ -183,6 +183,13 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
 	num_total_single_transitions = 0;
 	num_total_reused_label_transitions = 0;
     num_total_label_transitions = 0;
+    // Reset global label mapping state:
+    label_id_to_ops.clear();
+    // ops_pool.clear();
+    ops_to_label_id.clear();
+    next_label_id = -1;
+    reused_label_ids.clear();
+
     log << "Build Cartesian abstractions" << endl << endl;
 
     // The CEGAR code expects that some extra memory is reserved.
@@ -257,7 +264,7 @@ public:
         "min_ops_per_label",
         "minimum number of operators a label must have",
         "infinity",
-        plugins::Bounds("1", "infinity"));
+        plugins::Bounds("0", "infinity"));
         utils::add_log_options_to_feature(*this);
     }
 

@@ -98,49 +98,102 @@ static vector<bool> get_active_operators_from_graph(
     return active_operators;
 }
 
-static std::vector<std::vector<Successor>> label_reduction(
-    std::vector<std::vector<Successor>> &graph, int min_ops_per_label) {
+static vector<vector<Successor>> label_reduction(
+    vector<vector<Successor>> &graph, int min_ops_per_label) {
     num_single_transitions = 0;
     num_label_transitions = 0;
     num_new_labels = 0;
     // Retrieve non-looping transitions.
     vector<vector<Successor>> new_graph(graph.size());
     
-    // Map from (src, target) to list of operators
-    auto transition_groups = phmap::flat_hash_map<pair<int, int>, vector<int>>{}; //szudzik hash
-    for (std::size_t target = 0; target < graph.size(); ++target) {
-        for (const Successor &succ : graph[target]) {
-            transition_groups[{succ.state, target}].push_back(succ.op);
-        }
-    }
+    if (min_ops_per_label == 0) {
+        // Equivalence-based grouping: group by (op_id -> list of (src,target))
+        phmap::flat_hash_map<vector<pair<int, int>>, vector<int>, PairVectorHash> equivalence_groups;
+        phmap::flat_hash_map<int, vector<pair<int, int>>> op_to_transitions;
 
-    for (auto &[src_target, op_list] : transition_groups) {
-        const auto &[src, target] = src_target;
-        
-        auto& ops = op_list;
-        sort(ops.begin(), ops.end()); //check if sorted already
-        
-        if (static_cast<int>(ops.size()) < min_ops_per_label) {
-            for (int op : ops) {
-                num_single_transitions++;
-                new_graph[target].emplace_back(op, src);
+        // Collect transitions per op_id
+        for (size_t target = 0; target < graph.size(); ++target) {
+            for (const Successor &succ : graph[target]) {
+                op_to_transitions[succ.op].emplace_back(succ.state, (int)target);
             }
-        } else {
-            ops_pool.push_back(std::move(ops));
-            num_label_transitions++;
-            const auto ops_slice = ops_pool.back();
-            const auto [it, inserted] = ops_to_label_id.emplace(ops_slice, next_label_id);
-            if (inserted) {
-                label_id_to_ops.emplace(it->second, it->first);
-                --next_label_id;
-                num_new_labels++;
+        }
+
+        // Group by unique list of transitions (canonical form)
+        for (const auto &entry : op_to_transitions) {
+            int op = entry.first;
+            auto transitions = entry.second;
+            sort(transitions.begin(), transitions.end());  // canonical form
+            equivalence_groups[transitions].push_back(op);
+        }
+
+        // Emit labels or single transitions
+        for (const auto &[transitions, ops] : equivalence_groups) {
+            if (ops.size() == 1) {
+                // Single operator -> insert normally
+                int op = ops[0];
+                for (const auto &[src, target] : transitions) {
+                    num_single_transitions++;
+                    new_graph[target].emplace_back(op, src);
+                }
             } else {
-                ops_pool.pop_back();
-                reused_label_ids[it->second]++;;
+                // Multiple equivalent operators -> label
+                auto ops_sorted = ops;
+                sort(ops_sorted.begin(), ops_sorted.end());
+                ops_pool.push_back(std::move(ops_sorted));
+                num_label_transitions++;
+
+                const auto ops_slice = ops_pool.back();
+                const auto [it, inserted] = ops_to_label_id.emplace(ops_slice, next_label_id);
+                if (inserted) {
+                    label_id_to_ops.emplace(it->second, it->first);
+                    --next_label_id;
+                    num_new_labels++;
+                } else {
+                    ops_pool.pop_back();
+                    reused_label_ids[it->second]++;
+                }
+
+                for (const auto &[src, target] : transitions) {
+                    new_graph[target].emplace_back(it->second, src);
+                }
             }
+        }
+    } else {
+        // Map from (src, target) to list of operators
+        auto transition_groups = phmap::flat_hash_map<pair<int, int>, vector<int>, SzudzikPairHash>{};
+        for (std::size_t target = 0; target < graph.size(); ++target) {
+            for (const Successor &succ : graph[target]) {
+                transition_groups[{succ.state, target}].push_back(succ.op);
+            }
+        }
+
+        for (auto &[src_target, op_list] : transition_groups) {
+            const auto &[src, target] = src_target;
             
-            new_graph[target].emplace_back(it->second, src);
-    
+            auto& ops = op_list;
+            sort(ops.begin(), ops.end()); //check if sorted already
+            
+            if (static_cast<int>(ops.size()) < min_ops_per_label) {
+                for (int op : ops) {
+                    num_single_transitions++;
+                    new_graph[target].emplace_back(op, src);
+                }
+            } else {
+                ops_pool.push_back(std::move(ops));
+                num_label_transitions++;
+                const auto ops_slice = ops_pool.back();
+                const auto [it, inserted] = ops_to_label_id.emplace(ops_slice, next_label_id);
+                if (inserted) {
+                    label_id_to_ops.emplace(it->second, it->first);
+                    --next_label_id;
+                    num_new_labels++;
+                } else {
+                    ops_pool.pop_back();
+                    reused_label_ids[it->second]++;;
+                }
+                
+                new_graph[target].emplace_back(it->second, src);
+            }
         }
     }
 

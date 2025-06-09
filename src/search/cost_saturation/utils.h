@@ -73,6 +73,36 @@ struct VectorHash {
     }
 };
 
+struct PairVectorHash {
+    std::size_t operator()(const std::vector<std::pair<int, int>> &v) const {
+        std::size_t seed = 0;
+        for (const auto &p : v) {
+            std::size_t h1 = std::hash<int>()(p.first);
+            std::size_t h2 = std::hash<int>()(p.second);
+            seed ^= h1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
+
+struct SzudzikPairHash {
+    size_t operator()(const std::pair<int, int> &p) const {
+        uint64_t a = static_cast<uint64_t>(p.first);
+        uint64_t b = static_cast<uint64_t>(p.second);
+        uint64_t combined;
+
+        if (a >= b) {
+            combined = a * a + a + b;
+        } else {
+            combined = b * b + a;
+        }
+
+        // Finally hash the combined value — std::hash<uint64_t> is fast and good.
+        return std::hash<uint64_t>()(combined);
+    }
+};
+
 
 using OpsPool = segmented_array_pool_template::ArrayPool<int>;
 using OpsSlice = segmented_array_pool_template::ArrayPoolSlice<int>;
