@@ -284,6 +284,7 @@ PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP
     bool ignore_useless_patterns,
     bool store_dead_ends,
     PatternOrder order,
+    int min_ops_per_label,
     int random_seed,
     utils::Verbosity verbosity)
     : PatternCollectionGenerator(verbosity),
@@ -301,6 +302,7 @@ PatternCollectionGeneratorSystematicSCP::PatternCollectionGeneratorSystematicSCP
       ignore_useless_patterns(ignore_useless_patterns),
       store_dead_ends(store_dead_ends),
       pattern_order(order),
+      min_ops_per_label(min_ops_per_label),
       rng(utils::get_rng(random_seed)) {
 }
 
@@ -392,7 +394,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             projection_evaluation_timer->resume();
             if (create_complete_transition_system) {
                 unique_ptr<cost_saturation::Abstraction> projection =
-                    cost_saturation::ExplicitProjectionFactory(task_proxy, pattern).convert_to_abstraction();
+                    cost_saturation::ExplicitProjectionFactory(task_proxy, pattern, min_ops_per_label).convert_to_abstraction();
                 // TODO: return true as soon as first settled state has positive costs.
                 select_pattern = contains_positive_finite_value(projection->compute_goal_distances(costs));
             } else {
@@ -428,7 +430,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             unique_ptr<cost_saturation::Abstraction> projection;
             if (create_complete_transition_system) {
                 projection = cost_saturation::ExplicitProjectionFactory(
-                    task_proxy, pattern).convert_to_abstraction();
+                    task_proxy, pattern, min_ops_per_label).convert_to_abstraction();
             } else {
                 projection = make_unique<cost_saturation::Projection>(
                     task_proxy, task_info, pattern);
@@ -621,6 +623,11 @@ public:
             "in projection, active operators or position of the pattern variables "
             "in the partial ordering of the causal graph)",
             "cg_down");
+        add_option<int>(
+        "min_ops_per_label",
+        "minimum number of operators a label must have",
+        "infinity",
+        plugins::Bounds("1", "infinity"));
         utils::add_rng_options_to_feature(*this);
         add_generator_options_to_feature(*this);
     }
@@ -642,6 +649,7 @@ public:
             opts.get<bool>("ignore_useless_patterns"),
             opts.get<bool>("store_dead_ends"),
             opts.get<PatternOrder>("order"),
+            opts.get<int>("min_ops_per_label"),
             utils::get_rng_arguments_from_options(opts),
             get_generator_arguments_from_options(opts)
             );

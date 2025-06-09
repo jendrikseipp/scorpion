@@ -64,9 +64,11 @@ struct ProjectedEffect {
 
 ExplicitProjectionFactory::ExplicitProjectionFactory(
     const TaskProxy &task_proxy,
-    const pdbs::Pattern &pattern)
+    const pdbs::Pattern &pattern,
+    const int min_ops_per_label)
     : task_proxy(task_proxy),
       pattern(pattern),
+      min_ops_per_label(min_ops_per_label),
       looping_operators(task_proxy.get_operators().size(), false) {
     assert(utils::is_sorted_unique(pattern));
 

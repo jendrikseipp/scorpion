@@ -92,7 +92,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
             projection = move((*projections)[abstractions.size()]);
         } else if (create_complete_transition_system) {
             projection = ExplicitProjectionFactory(
-                task_proxy, pattern).convert_to_abstraction();
+                task_proxy, pattern, min_ops_per_label).convert_to_abstraction();
             // for (const auto &[label_id, ops] : label_id_to_ops) {
             //         log << "Label ID " << label_id << ": [";
             //         for (size_t i = 0; i < ops.size(); ++i) {
@@ -102,12 +102,17 @@ Abstractions ProjectionGenerator::generate_abstractions(
             //             }
             //             log << "]" << endl;
             //         }
+            int num_transitions_per_abstraction = 0;
+            projection->for_each_transition(
+                [&num_transitions_per_abstraction] (const Transition &) {
+                    ++num_transitions_per_abstraction;
+                });
             // log << "Number of transitions (before label reduction): " << num_transitions_per_abstraction << endl;
-            log << "Number of transitions (after label reduction): " << num_single_transitions + num_label_transitions << endl;
-            log << "Number of single transitions: " << num_single_transitions << endl;
-            log << "Number of labels: " << num_label_transitions << endl;
-            log << "Number of globally new labels: " << num_new_labels << endl;
-            log << "Number of locally reused labels: " << num_label_transitions - num_new_labels << endl;
+            // log << "Number of transitions (after label reduction): " << num_single_transitions + num_label_transitions << endl;
+            // log << "Number of single transitions: " << num_single_transitions << endl;
+            // log << "Number of labels: " << num_label_transitions << endl;
+            // log << "Number of globally new labels: " << num_new_labels << endl;
+            // log << "Number of locally reused labels: " << num_label_transitions - num_new_labels << endl;
             // log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
             // static_cast<double>(num_single_transitions+num_label_transitions)/num_transitions_per_abstraction << endl;
             num_total_single_transitions+=num_single_transitions;

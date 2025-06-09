@@ -239,38 +239,38 @@ for min_ops in [1, 2, 3, 4, 5, 10, 20, 50, 100]:
         plt.close()
         print(f"Saved cp_time histogram: {hist_file}")
 
-    if cp_time_ratios and ratio_for_cp:
-        plt.figure(figsize=(10, 6))
-        scatter = plt.scatter(ratio_for_cp, cp_time_ratios, c=cp_time_ratios,
-                            cmap='plasma', edgecolor='k', alpha=0.75)
+    # if cp_time_ratios and ratio_for_cp:
+    #     plt.figure(figsize=(10, 6))
+    #     scatter = plt.scatter(ratio_for_cp, cp_time_ratios, c=cp_time_ratios,
+    #                         cmap='plasma', edgecolor='k', alpha=0.75)
 
-        # Regression line (optional)
-        from scipy.stats import linregress
-        log_x = np.log10(ratio_for_cp)
-        log_y = np.log10(cp_time_ratios)
-        slope, intercept, r_value, _, _ = linregress(log_x, log_y)
-        reg_x = np.linspace(min(log_x), max(log_x), 100)
-        reg_y = slope * reg_x + intercept
-        plt.plot(10**reg_x, 10**reg_y, color='black', linestyle='--', label=f'Fit (r={r_value:.2f})')
+    #     # Regression line (optional)
+    #     from scipy.stats import linregress
+    #     log_x = np.log10(ratio_for_cp)
+    #     log_y = np.log10(cp_time_ratios)
+    #     slope, intercept, r_value, _, _ = linregress(log_x, log_y)
+    #     reg_x = np.linspace(min(log_x), max(log_x), 100)
+    #     reg_y = slope * reg_x + intercept
+    #     plt.plot(10**reg_x, 10**reg_y, color='black', linestyle='--', label=f'Fit (r={r_value:.2f})')
 
-        # Add vertical and horizontal lines at ratio = 1 (10^0)
-        plt.axvline(x=1, color='red', linestyle=':', linewidth=1)
-        plt.axhline(y=1, color='red', linestyle=':', linewidth=1)
+    #     # Add vertical and horizontal lines at ratio = 1 (10^0)
+    #     plt.axvline(x=1, color='red', linestyle=':', linewidth=1)
+    #     plt.axhline(y=1, color='red', linestyle=':', linewidth=1)
 
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.xlabel('num_transitions Ratio (With / Without)', fontsize=12)
-        plt.ylabel('cp_time Ratio (With / Without)', fontsize=12)
-        plt.title(f'Correlation: num_transitions vs cp_time Ratio (min_ops={min_ops})\n(Filtered: cp_time ≥ 1s)', fontsize=14)
-        plt.grid(True, which="both", linestyle='--', linewidth=0.5)
-        cbar = plt.colorbar(scatter, label='cp_time Ratio')
-        plt.legend()
-        plt.tight_layout()
+    #     plt.xscale('log')
+    #     plt.yscale('log')
+    #     plt.xlabel('num_transitions Ratio (With / Without)', fontsize=12)
+    #     plt.ylabel('cp_time Ratio (With / Without)', fontsize=12)
+    #     plt.title(f'Correlation: num_transitions vs cp_time Ratio (min_ops={min_ops})\n(Filtered: cp_time ≥ 1s)', fontsize=14)
+    #     plt.grid(True, which="both", linestyle='--', linewidth=0.5)
+    #     cbar = plt.colorbar(scatter, label='cp_time Ratio')
+    #     plt.legend()
+    #     plt.tight_layout()
 
-        corr_plot_file = f"correlation_cp_time_vs_num_transitions_min_ops_{min_ops}.png"
-        plt.savefig(properties_dir + corr_plot_file, dpi=300)
-        plt.close()
-        print(f"Saved correlation plot: {corr_plot_file}")
+    #     corr_plot_file = f"correlation_cp_time_vs_num_transitions_min_ops_{min_ops}.png"
+    #     plt.savefig(properties_dir + corr_plot_file, dpi=300)
+    #     plt.close()
+    #     print(f"Saved correlation plot: {corr_plot_file}")
 
     # Scatter plot cp_time with vs without label reduction (filtered cp_time >=1)
     if cp_time_ratios:

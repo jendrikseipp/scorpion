@@ -54,6 +54,7 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
     const bool ignore_useless_patterns;
     const bool store_dead_ends;
     const PatternOrder pattern_order;
+    const int min_ops_per_label;
     const std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     std::vector<std::vector<int>> relevant_operators_per_variable;
@@ -96,6 +97,7 @@ public:
         bool ignore_useless_patterns,
         bool store_dead_ends,
         PatternOrder order,
+        int min_ops_per_label,
         int random_seed,
         utils::Verbosity verbosity);
 };
