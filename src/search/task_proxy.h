@@ -650,6 +650,7 @@ inline void feed(HashState &hash_state, const State &state) {
 
 
 class TaskProxy {
+    friend class HuffmanTreeStateRegistry;
     const AbstractTask *task;
 public:
     explicit TaskProxy(const AbstractTask &task)

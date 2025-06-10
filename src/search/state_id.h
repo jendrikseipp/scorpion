@@ -25,6 +25,7 @@ class StateID {
     friend class TreePackedStateRegistry;
     friend class FixedTreeUnpackedStateRegistry;
     friend class FixedTreePackedStateRegistry;
+    friend class HuffmanTreeStateRegistry;
 
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template<typename>

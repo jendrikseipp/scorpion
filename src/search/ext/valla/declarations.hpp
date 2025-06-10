@@ -28,6 +28,8 @@
 #include <utility>
 #include <vector>
 
+#include "fixed_hash_set.hpp"
+
 namespace valla
 {
 // Observe: there is no sentinel value requires in constrast to several other tree compression data structures.
@@ -51,6 +53,36 @@ inline Index read_pos(Slot slot, size_t pos)
 
 using State = std::vector<Index>;
 using RootIndices = std::vector<Index>;
+
+
+    template<typename LHS, typename RHS>
+    struct SlotStruct {
+        LHS lhs;
+        RHS rhs;
+        constexpr bool operator==(const SlotStruct&) const = default;
+    };
+    constexpr SlotStruct SlotSentinel{std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()};
+
+
+    using IndexSlot = SlotStruct<uint32_t, uint32_t>;
+
+    struct Hasher {
+        std::size_t operator()(const IndexSlot& slot) const {
+            utils::HashState hash_state;
+            hash_state.feed(slot.lhs);
+            hash_state.feed(slot.rhs);
+            return hash_state.get_hash64();
+        }
+    };
+
+    struct SlotEqual {
+        bool operator()(const IndexSlot& lhs, const IndexSlot& rhs) const {
+            return lhs.lhs == rhs.lhs && lhs.rhs == rhs.rhs;
+        }
+    };
+
+    using FixedHashSetSlot = FixedHashSet<IndexSlot, SlotSentinel, Hasher, SlotEqual>;
+
 
 }
 

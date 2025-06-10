@@ -236,6 +236,10 @@ public:
     std::size_t get_memory_usage() const {
         return total_capacity_ * sizeof(T);
     }
+    // Report memory usage (elements only, not including indirection)
+    std::size_t get_occupied_memory_usage() const {
+        return size_ * sizeof(T);
+    }
 
 private:
     void do_grow() {

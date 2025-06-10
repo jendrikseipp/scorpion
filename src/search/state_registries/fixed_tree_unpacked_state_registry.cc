@@ -99,4 +99,5 @@ void FixedTreeUnpackedStateRegistry::print_statistics(utils::LogProxy &log) cons
     log << "Closed list load factor: " << tree_table.size() << endl;
     log << "State size in bytes: " << get_state_size_in_bytes() << endl;
     log << "State set size: " << tree_table.get_memory_usage() / 1024 << " KB" << endl;
+    log << "Occupied State set size: " << tree_table.get_occupied_memory_usage() / 1024 << " KB" << endl;
 }

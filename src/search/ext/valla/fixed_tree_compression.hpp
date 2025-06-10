@@ -41,34 +41,6 @@ namespace valla::fixed_tree
         return size / 2 + (size % 2);
     }
 
-    template<typename LHS, typename RHS>
-    struct Slot {
-        LHS lhs;
-        RHS rhs;
-        constexpr bool operator==(const Slot&) const = default;
-    };
-    constexpr Slot SlotSentinel{std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()};
-
-
-    using IndexSlot = Slot<uint32_t, uint32_t>;
-
-    struct Hasher {
-        std::size_t operator()(const IndexSlot& slot) const {
-            utils::HashState hash_state;
-            hash_state.feed(slot.lhs);
-            hash_state.feed(slot.rhs);
-            return hash_state.get_hash64();
-        }
-    };
-
-    struct SlotEqual {
-        bool operator()(const IndexSlot& lhs, const IndexSlot& rhs) const {
-            return lhs.lhs == rhs.lhs && lhs.rhs == rhs.rhs;
-        }
-    };
-
-    using FixedHashSetSlot = FixedHashSet<IndexSlot, SlotSentinel, Hasher, SlotEqual>;
-
 /// @brief Recursively insert the elements from `it` until `end` into the `table`.
 /// @param it points to the first element.
 /// @param end points after the last element.

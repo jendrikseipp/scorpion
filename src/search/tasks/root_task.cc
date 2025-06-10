@@ -54,6 +54,7 @@ struct ExplicitOperator {
 
 class RootTask : public AbstractTask {
     vector<ExplicitVariable> variables;
+    vector<unsigned int> variable_order;
     // TODO: think about using hash sets here.
     vector<vector<set<FactPair>>> mutexes;
     vector<ExplicitOperator> operators;
@@ -66,6 +67,8 @@ class RootTask : public AbstractTask {
     const ExplicitOperator &get_operator_or_axiom(int index, bool is_axiom) const;
 
 public:
+    void reorder(const std::vector<unsigned int> &order);
+
     explicit RootTask(istream &in);
 
     virtual int get_num_variables() const override;
@@ -279,6 +282,7 @@ static vector<vector<set<FactPair>>> read_mutexes(istream &in, const vector<Expl
             in >> var >> value;
             invariant_group.emplace_back(var, value);
         }
+
         check_magic(in, "end_mutex_group");
         for (const FactPair &fact1 : invariant_group) {
             for (const FactPair &fact2 : invariant_group) {
@@ -293,6 +297,7 @@ static vector<vector<set<FactPair>>> read_mutexes(istream &in, const vector<Expl
                        can of course generate mutex groups which lead
                        to *some* redundant mutexes, where some but not
                        all facts talk about the same variable. */
+
                     inconsistent_facts[fact1.var][fact1.value].insert(fact2);
                 }
             }
@@ -326,10 +331,89 @@ static vector<ExplicitOperator> read_actions(
     return actions;
 }
 
+
+void RootTask::reorder(const std::vector<unsigned int> &order) {
+    // --- 0. Build old-to-new index map
+    std::vector<int> old_to_new(order.size());
+    for (std::size_t new_idx = 0; new_idx < order.size(); ++new_idx) {
+        old_to_new[order[new_idx]] = static_cast<int>(new_idx);
+    }
+
+    // --- 1. Reorder variables
+    {
+        std::vector<ExplicitVariable> new_variables;
+        for (std::size_t i = 0; i < order.size(); ++i)
+            new_variables.emplace_back(variables[order[i]]);
+
+        variables = std::move(new_variables);
+    }
+
+    // --- 2. Remap mutexes (fact pairs inside sets and axis reorder)
+    {
+        std::vector<std::vector<std::set<FactPair>>> new_mutexes(variables.size());
+        for (std::size_t new_var = 0; new_var < order.size(); ++new_var) {
+            auto old_var = order[new_var];
+            new_mutexes[new_var].resize(mutexes[old_var].size());
+            for (std::size_t val = 0; val < mutexes[old_var].size(); ++val) {
+                std::set<FactPair> new_set;
+                for (const auto &fp : mutexes[old_var][val]) {
+                    FactPair remapped = fp;
+                    remapped.var = old_to_new.at(fp.var);
+                    new_set.insert(remapped);
+                }
+                new_mutexes[new_var][val] = std::move(new_set);
+            }
+        }
+        mutexes = std::move(new_mutexes);
+    }
+
+    // --- 3. Remap initial state
+    {
+        std::vector<int> new_init(variables.size());
+        for (std::size_t new_var = 0; new_var < order.size(); ++new_var) {
+            new_init[new_var] = initial_state_values[order[new_var]];
+        }
+        initial_state_values = std::move(new_init);
+    }
+
+    // --- 4. Remap goals
+    for (auto &fact : goals) {
+        fact.var = old_to_new.at(fact.var);
+    }
+
+    // --- 5. Remap operators and axioms (all FactPair appearances)
+    auto remap_factpair_vec = [&](std::vector<FactPair> &facts) {
+        for (auto &fact : facts)
+            fact.var = old_to_new.at(fact.var);
+    };
+    auto remap_effect = [&](ExplicitEffect &effect) {
+        effect.fact.var = old_to_new.at(effect.fact.var);
+        remap_factpair_vec(effect.conditions);
+    };
+    auto remap_operator = [&](ExplicitOperator &op) {
+        remap_factpair_vec(op.preconditions);
+        for (auto &eff : op.effects)
+            remap_effect(eff);
+    };
+    for (auto &op : operators)
+        remap_operator(op);
+    for (auto &ax : axioms)
+        remap_operator(ax);
+
+    // --- 6. Update variables' axiom_default_value from new initial state
+    for (std::size_t new_var = 0; new_var < variables.size(); ++new_var) {
+        variables[new_var].axiom_default_value = initial_state_values[new_var];
+    }
+}
+
+
+
 RootTask::RootTask(istream &in) {
     read_and_verify_version(in);
     bool use_metric = read_metric(in);
+
     variables = read_variables(in);
+
     int num_variables = variables.size();
 
     mutexes = read_mutexes(in, variables);
@@ -351,6 +435,7 @@ RootTask::RootTask(istream &in) {
     axioms = read_actions(in, true, use_metric, variables);
     /* TODO: We should be stricter here and verify that we
        have reached the end of "in". */
+
 
     /*
       HACK: We use a TaskProxy to access g_axiom_evaluators here which assumes

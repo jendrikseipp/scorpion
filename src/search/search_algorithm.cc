@@ -19,6 +19,7 @@
 
 #include "state_registries/fixed_tree_packed_state_registry.h"
 #include "state_registries/fixed_tree_unpacked_state_registry.h"
+#include "state_registries/huffman_tree_state_registry.h"
 #include "state_registries/packed_state_registry.h"
 #include "state_registries/tree_packed_state_registry.h"
 #include "state_registries/tree_unpacked_state_registry.h"
@@ -195,6 +196,8 @@ std::shared_ptr<StateRegistry> initialize_state_registry(StateRegistryType state
             return std::make_shared<FixedTreeUnpackedStateRegistry>(task_proxy);
         case FIXED_TREE_PACKED:
             return std::make_shared<FixedTreePackedStateRegistry>(task_proxy);
+        case HOFFMAN_TREE_PACKED:
+            return std::make_shared<HuffmanTreeStateRegistry>(task_proxy);
         default:
             return std::make_shared<PackedStateRegistry>(task_proxy);
     }
