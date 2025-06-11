@@ -18,7 +18,11 @@ template<typename T>
 concept TrivialCopyable = std::is_trivially_copyable_v<T> && std::copyable<T>;
 
 // Tune how many slots per segment get scanned per pass
-constexpr std::size_t PROBE_STRIDE = 8;  // Adjust based on cache line size and performance testing
+using PROBE_TYPE = uint8_t;
+
+constexpr std::size_t PROBE_STRIDE = 16;  // Adjust based on cache line size and performance testing
+constexpr std::size_t MAX_SEG = 32;
+
 
 /*
  * Segmented, dynamically growing, stable-index FixedHashSet (optimized):
@@ -59,13 +63,13 @@ class FixedHashSet {
         return ((1ULL << seg) - 1) * initial_cap_ + idx;
     }
 
-    [[nodiscard]] static size_t probe_vec(size_t base, size_t probe, size_t size) noexcept {
+    [[nodiscard]] static uint32_t probe_vec(size_t base, PROBE_TYPE probe, size_t size) noexcept {
         return (base + probe) % size;
     }
 
-    [[nodiscard]] std::vector<size_t> calculate_initial_offsets(size_t h) const {
-        std::vector<size_t> segment_offsets(table_.size());
-        for (auto i = 0u; i < segment_offsets.size(); ++i) {
+    [[nodiscard]] std::array<uint32_t, MAX_SEG>  calculate_initial_offsets(size_t h) const {
+        std::array<uint32_t, MAX_SEG>  segment_offsets{0};
+        for (auto i = 0u; i < table_.size(); ++i) {
             segment_offsets[i] = h % table_[i].size();
         }
         return segment_offsets;
@@ -97,10 +101,11 @@ public:
         if(size_ + 1 > resize_at_) do_grow();
 
         auto h = hash_(value);
-        std::vector<size_t> probe(table_.size(), 0);
+        std::array<PROBE_TYPE, MAX_SEG> probe{0};
         auto segment_offsets = calculate_initial_offsets(h);
+        auto insertion_idx = 0u;
+        auto inserted = false;
 
-        // Probe order: new segments first (most likely to succeed!).
         for (std::size_t cycle = 0; cycle < total_capacity_; ++cycle) {
             for (std::size_t seg_rev = 0; seg_rev < table_.size(); ++seg_rev) {
                 std::size_t seg = table_.size() - 1 - seg_rev;
@@ -108,14 +113,7 @@ public:
                 for (std::size_t stride = 0; stride < PROBE_STRIDE; ++stride) {
                     std::size_t offset = probe_vec(segment_offsets[seg], probe[seg], table_[seg].size());
                     T& slot = table_[seg][offset];
-
-                    // Prefetch next slot in same segment (if safe)
-                    if constexpr (PROBE_STRIDE > 1) {
-                        if(stride + 1 < PROBE_STRIDE) {
-                            auto prefetch_idx = probe_vec(segment_offsets[seg], probe[seg]+1, table_[seg].size());
-                            VALLA_PREFETCH(&table_[seg][prefetch_idx]);
-                        }
-                    }
+                    insertion_idx |= slot == EmptySentinel;
 
                     if(slot == EmptySentinel) {
                         slot = value;
@@ -125,7 +123,7 @@ public:
                     if(eq_(slot, value))
                         return {segment_to_logical(seg, offset), false};
 
-                    ++probe[seg];
+                    probe[seg] = static_cast<PROBE_TYPE>(probe[seg] + 1);
                 }
             }
         }
@@ -140,7 +138,7 @@ public:
 
         auto h = hash_(value);
         auto segment_offsets = calculate_initial_offsets(h);
-        std::vector<size_t> probe(table_.size(), 0);
+        std::array<PROBE_TYPE, MAX_SEG> probe{0};
 
         // Adaptive: check newest segment first for locality
         for (std::size_t cycle = 0; cycle < total_capacity_; ++cycle) {
@@ -173,7 +171,7 @@ public:
 
         auto h = hash_(value);
         auto segment_offsets = calculate_initial_offsets(h);
-        std::vector<size_t> probe(table_.size(), 0);
+        std::array<PROBE_TYPE, MAX_SEG> probe{0};
 
         for (std::size_t cycle = 0; cycle < total_capacity_; ++cycle) {
             for (std::size_t seg_rev = 0; seg_rev < table_.size(); ++seg_rev) {

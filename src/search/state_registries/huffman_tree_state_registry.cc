@@ -23,41 +23,22 @@ HuffmanTreeStateRegistry::HuffmanTreeStateRegistry(const TaskProxy &task_proxy)
       axiom_evaluator(g_axiom_evaluators[task_proxy]),
       num_variables(task_proxy.get_variables().size()),
       merge_schedule_(
-          vsf::compute_merge_schedule(get_domain_sizes(task_proxy))){
+          vsf::compute_merge_schedule(get_domain_sizes(task_proxy))) {
+    log_merge_schedule(task_proxy);
 
-    utils::g_log << "HuffmanTreeStateRegistry::Traversal_Bits" << std::endl;
-    for (auto i = 0; i < merge_schedule_.traversal.size(); i++) {
-        utils::g_log << merge_schedule_.traversal[i];
-    }
-    utils::g_log << std::endl;
+    tasks::g_root_task->reorder(merge_schedule_.variable_order);
 
-    utils::g_log << "HuffmanTreeStateRegistry::Variable_Order" << std::endl;
-    utils::g_log << "Reordered variables: ";
-    for (auto i = 0; i < merge_schedule_.variable_order.size(); i++) {
-        auto var_name = tasks::g_root_task->get_variable_name(i);
-        auto order = merge_schedule_.variable_order[i];
-
-        if (var_name.size() > 3 && std::stoi(var_name.substr(3)) != order)
-            utils::g_log << var_name << " -> " << order
-                << "[" << task_proxy.get_variables()[order].get_domain_size() << "]" << " | ";
-    }
-    utils::g_log << std::endl;
-
-    std::vector<unsigned int> var_order(merge_schedule_.variable_order.begin(), merge_schedule_.variable_order.end());
-    tasks::g_root_task->reorder(var_order);
-
-    State::get_variable_value = [this](const StateID& id) {
+    State::get_variable_value = [this](const StateID &id) {
         std::vector<vs::Index> state_data(num_variables);
-        vsf::read_state(id.get_value(), num_variables, merge_schedule_.traversal_splits, tree_table, state_data);
+        vsf::read_state(id.get_value(), num_variables, merge_schedule_, tree_table, state_data);
         return std::vector<int>{state_data.begin(), state_data.end()};
     };
-
 }
 
 std::vector<size_t> HuffmanTreeStateRegistry::get_domain_sizes(const TaskProxy &task_proxy) const {
     std::vector<size_t> domain_sizes;
     domain_sizes.reserve(num_variables);
-    for (const auto &var : task_proxy.get_variables()) {
+    for (const auto &var: task_proxy.get_variables()) {
         domain_sizes.push_back(var.get_domain_size());
     }
     return domain_sizes;
@@ -70,21 +51,21 @@ StateID HuffmanTreeStateRegistry::insert_id_or_pop_state() {
       is present), we have to remove the duplicate entry from the
       state data pool.
     */
-//    StateID id(state_data_pool.size() - 1);
-//    auto result = registered_states.insert(id.value);
-//    bool is_new_entry = result.second;
-//    if (!is_new_entry) {
-//        state_data_pool.pop_back();
-//    }
-//    assert(registered_states.size() == state_data_pool.size());
-//    return StateID(*result.first);
+    //    StateID id(state_data_pool.size() - 1);
+    //    auto result = registered_states.insert(id.value);
+    //    bool is_new_entry = result.second;
+    //    if (!is_new_entry) {
+    //        state_data_pool.pop_back();
+    //    }
+    //    assert(registered_states.size() == state_data_pool.size());
+    //    return StateID(*result.first);
     return StateID(0);
 }
 
 State HuffmanTreeStateRegistry::lookup_state(StateID id) const {
     // Read in shuffled index order from storage
     std::vector<vs::Index> tmp(num_variables);
-    vsf::read_state(id.get_value(), num_variables, merge_schedule_.traversal_splits, tree_table, tmp);
+    vsf::read_state(id.get_value(), num_variables, merge_schedule_, tree_table, tmp);
     std::vector<int> state_values{tmp.begin(), tmp.end()};
     return task_proxy.create_state(*this, id, std::move(state_values));
 }
@@ -99,7 +80,7 @@ const State &HuffmanTreeStateRegistry::get_initial_state() {
         State initial_state = task_proxy.get_initial_state();
         auto &tmp = initial_state.get_unpacked_values();
         auto state = std::vector<vs::Index>{tmp.begin(), tmp.end()};
-        auto [index, _] = vsf::insert(state,merge_schedule_.traversal_splits, tree_table);
+        auto [index, _] = vsf::insert(state, merge_schedule_, tree_table);
         StateID id = StateID(index);
         cached_initial_state = make_unique<State>(lookup_state(id));
         cached_initial_state->unpack();
@@ -113,19 +94,19 @@ const State &HuffmanTreeStateRegistry::get_initial_state() {
 State HuffmanTreeStateRegistry::get_successor_state(const State &predecessor, const OperatorProxy &op) {
     assert(!op.is_axiom());
     predecessor.unpack();
-    const auto& prev_values = predecessor.get_unpacked_values();
+    const auto &prev_values = predecessor.get_unpacked_values();
 
     // Start from natural-order predecessor, apply effects, then shuffle for insertion
     std::vector<vs::Index> successor_values{prev_values.begin(), prev_values.end()};
 
-    for (EffectProxy effect : op.get_effects()) {
+    for (EffectProxy effect: op.get_effects()) {
         if (does_fire(effect, predecessor)) {
             FactPair e = effect.get_fact().get_pair();
             successor_values[e.var] = e.value;
         }
     }
 
-    auto [index, _] = vsf::insert(successor_values, merge_schedule_.traversal_splits, tree_table);
+    auto [index, _] = vsf::insert(successor_values, merge_schedule_, tree_table);
 
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});
 }
@@ -137,12 +118,32 @@ int HuffmanTreeStateRegistry::get_state_size_in_bytes() const {
 int HuffmanTreeStateRegistry::get_bins_per_state() const {
     return state_packer.get_num_bins();
 }
-void HuffmanTreeStateRegistry::print_statistics(utils::LogProxy &log) const {
 
+void HuffmanTreeStateRegistry::print_statistics(utils::LogProxy &log) const {
     log << "Number of registered states: " << size() << endl;
     log << "Closed list load factor: " << tree_table.size() << endl;
     log << "State size in bytes: " << get_state_size_in_bytes() << endl;
     log << "State set size: " << tree_table.get_memory_usage() / 1024 << " KB" << endl;
     log << "Occupied State set size: " << tree_table.get_occupied_memory_usage() / 1024 << " KB" << endl;
+}
 
+
+void HuffmanTreeStateRegistry::log_merge_schedule(const TaskProxy &task_proxy) {
+    utils::g_log << "HuffmanTreeStateRegistry::Traversal_Bits" << std::endl;
+    for (auto i = 0; i < merge_schedule_.traversal.size(); i++) {
+        utils::g_log << merge_schedule_.traversal[i];
+    }
+    utils::g_log << std::endl;
+
+    utils::g_log << "HuffmanTreeStateRegistry::Variable_Order" << std::endl;
+    utils::g_log << "Reordered variables: ";
+    for (auto i = 0; i < merge_schedule_.variable_order.size(); i++) {
+        auto var_name = tasks::g_root_task->get_variable_name(i);
+        auto order = merge_schedule_.variable_order[i];
+
+        if (var_name.size() > 3 && std::stoi(var_name.substr(3)) != order)
+            utils::g_log << var_name << " -> " << order
+                    << "[" << task_proxy.get_variables()[order].get_domain_size() << "]" << " | ";
+    }
+    utils::g_log << std::endl;
 }

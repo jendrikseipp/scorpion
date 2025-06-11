@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "fixed_hash_set.hpp"
+#include "dynamic_bitset.h"
 
 namespace valla
 {
@@ -83,6 +84,26 @@ using RootIndices = std::vector<Index>;
 
     using FixedHashSetSlot = FixedHashSet<IndexSlot, SlotSentinel, Hasher, SlotEqual>;
 
+    struct SubtreeSplitInfo {
+        size_t var_lhs;
+        size_t rhs_index;
+    };
+
+    struct MergeSchedule {
+        std::vector<unsigned int> variable_order;    // Canonical order for leaf variables
+        dynamic_bitset::DynamicBitset<> traversal;  // Preorder: 1=merge, 0=leaf
+        std::vector<SubtreeSplitInfo> traversal_splits;  // Preorder: 1=merge, 0=leaf
+        size_t bit_size() const {
+            return traversal.size();
+        }
+        size_t num_variables() const {
+            return variable_order.size();
+        }
+
+        operator const std::vector<SubtreeSplitInfo>&() const { return traversal_splits; }
+        operator const dynamic_bitset::DynamicBitset<>&() const { return traversal; }
+
+    };
 
 }
 

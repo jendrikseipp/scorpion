@@ -126,6 +126,7 @@ class HuffmanTreeStateRegistry :
     vs::FixedHashSetSlot tree_table = vs::FixedHashSetSlot(cap,
                                                   vs::Hasher(),
                                                   vs::SlotEqual());
+    const vs::MergeSchedule merge_schedule_;
 
     const int_packer::IntPacker &state_packer;
     AxiomEvaluator &axiom_evaluator;
@@ -133,11 +134,14 @@ class HuffmanTreeStateRegistry :
 
     std::unique_ptr<State> cached_initial_state;
 
-    const vsf::MergeSchedule merge_schedule_;
 
     StateID insert_id_or_pop_state();
     int get_bins_per_state() const;
+
+
 public:
+    void log_merge_schedule(const TaskProxy &task_proxy);
+
     explicit HuffmanTreeStateRegistry(const TaskProxy &task_proxy);
 
     std::vector<size_t> get_domain_sizes(const TaskProxy &task_proxy) const;
