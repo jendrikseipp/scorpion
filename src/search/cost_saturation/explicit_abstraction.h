@@ -4,6 +4,7 @@
 #include "abstraction.h"
 
 #include "../algorithms/priority_queues.h"
+#include "../algorithms/segmented_array_pool.h"
 #include "parallel_hashmap/phmap.h"
 
 #include <memory>
@@ -31,23 +32,52 @@ struct Successor {
 
 std::ostream &operator<<(std::ostream &os, const Successor &successor);
 
-extern int num_single_transitions;
+extern int num_non_label_transitions;
 extern int num_label_transitions;
 extern int num_new_labels;
-extern phmap::flat_hash_map<int,int> reused_label_ids;
+
+using OpsPool = segmented_array_pool_template::ArrayPool<int>;
+using OpsSlice = segmented_array_pool_template::ArrayPoolSlice<int>;
+
+struct OpsSliceHash {
+    std::size_t operator()(OpsSlice v) const {
+        std::size_t seed = v.size();
+        for (int i : v) {
+            seed ^= std::hash<int>{}(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
+
+struct OpsSliceEqualTo {
+    bool operator()(OpsSlice lhs, OpsSlice rhs) const {
+        if (lhs.size() != rhs.size()) {
+            return false;
+        }
+
+        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    }
+};
+
+using OpsToLabelId = phmap::flat_hash_map<OpsSlice, int, OpsSliceHash, OpsSliceEqualTo>;
+using LabelIdToOps = phmap::flat_hash_map<int, OpsSlice>;
 class ExplicitAbstraction : public Abstraction {
+    OpsPool ops_pool;
+    OpsToLabelId ops_to_label_id;
+    LabelIdToOps label_id_to_ops;
+    int next_label_id;
+    phmap::flat_hash_map<int,int> reused_label_ids;
+
     // State-changing transitions.
     std::vector<std::vector<Successor>> backward_graph;
-
+    
     // Operators inducing state-changing transitions.
     std::vector<bool> active_operators;
-
+    
     // Operators inducing self-loops.
     std::vector<bool> looping_operators;
-
+    
     std::vector<int> goal_states;
-
-    int min_ops_per_label;
 
     mutable priority_queues::AdaptiveQueue<int> queue;
 
@@ -58,7 +88,9 @@ public:
         std::vector<bool> &&looping_operators,
         std::vector<int> &&goal_states, 
         int min_ops_per_label);
-
+    
+    std::vector<std::vector<Successor>> label_reduction(
+        std::vector<std::vector<Successor>> &graph, int min_ops_per_label);
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;
     virtual std::vector<int> compute_saturated_costs(

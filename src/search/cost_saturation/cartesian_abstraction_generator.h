@@ -5,7 +5,6 @@
 
 #include <memory>
 #include <vector>
-#include <parallel_hashmap/phmap.h>
 namespace cartesian_abstractions {
 class Abstraction;
 enum class DotGraphVerbosity;
@@ -39,7 +38,7 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
 
     int num_states;
     int num_transitions;
-    int num_total_single_transitions;
+    int num_total_non_label_transitions;
     int num_total_reused_label_transitions;
     int num_total_label_transitions;
 

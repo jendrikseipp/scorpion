@@ -21,7 +21,6 @@
 using namespace std;
 
 namespace cost_saturation {
-    phmap::flat_hash_map<int,int> reused_label_ids;
 static vector<vector<Successor>> get_backward_graph(
     const cartesian_abstractions::Abstraction &cartesian_abstraction,
     const vector<int> &h_values) {
@@ -73,7 +72,10 @@ CartesianAbstractionGenerator::CartesianAbstractionGenerator(
       rng(utils::get_rng(random_seed)),
       dot_graph_verbosity(dot_graph_verbosity),
       num_states(0),
-      num_transitions(0) {
+      num_transitions(0),
+      num_total_non_label_transitions(0),
+      num_total_reused_label_transitions(0),
+      num_total_label_transitions(0) {
 }
 
 bool CartesianAbstractionGenerator::has_reached_resource_limit(
@@ -127,10 +129,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
         unique_ptr<Abstraction> abstraction;
         if (transition_representation == cartesian_abstractions::TransitionRepresentation::STORE) {
             auto backward_graph = get_backward_graph(*cartesian_abstraction, goal_distances);
-            int num_transitions_per_abstraction = 0;
             for (const auto &transitions : backward_graph) {
                 num_transitions += transitions.size();
-                num_transitions_per_abstraction += transitions.size();
             }
             abstraction = make_unique<ExplicitAbstraction>(
                 make_unique<CartesianAbstractionFunction>(
@@ -141,25 +141,8 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
                 cartesian_abstraction->get_goals().begin(),
                 cartesian_abstraction->get_goals().end()),
                 min_ops_per_label);
-            // for (const auto &[label_id, ops] : label_id_to_ops) {
-            //         log << "Label ID " << label_id << ": [";
-            //         for (size_t i = 0; i < ops.size(); ++i) {
-            //                 log << ops[i];
-            //                 if (i < ops.size() - 1)
-            //                 log << ", ";
-            //             }
-            //             log << "]" << endl;
-            //         }
-            // log << "Number of transitions (before label reduction): " << num_transitions_per_abstraction << endl;
-            // log << "Number of transitions (after label reduction): " << num_single_transitions + num_label_transitions<< endl;
-            // log << "Number of single transitions: " << num_single_transitions << endl;
-            // log << "Number of labels: " << num_label_transitions<< endl;
-            // log << "Number of globally new labels: " << num_new_label << endl;
-            // log << "Number of locally reused labels: " << num_label_transitions- num_new_label << endl;
-            // log << "Change in transitions ((#single transitions+#labels)/#transitions): " << 
-            // static_cast<double>(num_single_transitions+num_label)/num_transitions_per_abstraction << endl;
-    
-            num_total_single_transitions+=num_single_transitions;
+
+            num_total_non_label_transitions+=num_non_label_transitions;
             num_total_reused_label_transitions+=num_label_transitions - num_new_labels;
             num_total_label_transitions+=num_label_transitions;
         } else {
@@ -180,15 +163,9 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     utils::CountdownTimer timer(max_time);
     num_states = 0;
     num_transitions = 0;
-	num_total_single_transitions = 0;
+	num_total_non_label_transitions = 0;
 	num_total_reused_label_transitions = 0;
     num_total_label_transitions = 0;
-    // Reset global label mapping state:
-    label_id_to_ops.clear();
-    // ops_pool.clear();
-    ops_to_label_id.clear();
-    next_label_id = -1;
-    reused_label_ids.clear();
 
     log << "Build Cartesian abstractions" << endl << endl;
 
@@ -213,44 +190,44 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
         << timer.get_elapsed_time() << endl;
     log << "Total number of Cartesian states: " << num_states << endl;
     log << "Total number of transitions in Abstractions (before label reduction): " << num_transitions << endl;
-    log << "Total number of transitions in Abstractions (after label reduction): " << num_total_single_transitions + num_total_label_transitions << endl;
-    log << "Total number of single transitions in Abstractions: " << num_total_single_transitions << endl;
-    // log << "Total number of operators in Abstractions: "
-    // << task->get_num_operators() << endl;
-    log << "Total number of labels in Abstractions: " << label_id_to_ops.size() << endl;
-    log << "Total number of reused labels in Abstractions: " << num_total_reused_label_transitions << endl;
+    log << "Total number of transitions in Abstractions (after label reduction): " << num_total_non_label_transitions + num_total_label_transitions << endl;
     log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
-	static_cast<double>(num_total_single_transitions+num_total_label_transitions)/num_transitions << endl;
-    if (!label_id_to_ops.empty()) {
-        map<int, int> label_size_counts;
-        map<int, int> reused_label_size_counts;
-        for (const auto& [label_id, ops] : label_id_to_ops) {
-            int label_size = ops.size();
-            label_size_counts[label_size]++;
+	static_cast<double>(num_total_non_label_transitions+num_total_label_transitions)/num_transitions << endl;
+    log << "Total number of non-label transitions in Abstractions: " << num_total_non_label_transitions << endl;
+    log << "Total number of label transitions in Abstractions: " << num_total_label_transitions << endl;
+    // log << "Total number of labels in Abstractions: " << label_id_to_ops.size() << endl;
+    log << "Total number of labels in Abstractions: " << num_total_label_transitions - num_total_reused_label_transitions << endl;
+    log << "Total number of reused labels in Abstractions: " << num_total_reused_label_transitions << endl;
+    // if (!label_id_to_ops.empty()) {
+    //     map<int, int> label_size_counts;
+    //     map<int, int> reused_label_size_counts;
+    //     for (const auto& [label_id, ops] : label_id_to_ops) {
+    //         int label_size = ops.size();
+    //         label_size_counts[label_size]++;
 
-            // Count reuses
-            if (auto it = reused_label_ids.find(label_id); it != reused_label_ids.end()) {
-                reused_label_size_counts[label_size] += it->second;
-            }
-        }
-        log << "Label size counts: {";
-        bool first = true;
-        for (const auto& [size, count] : label_size_counts) {
-            if (!first) log << ", ";
-            log << "\"" << size << "\": " << count;
-            first = false;
-        }
-        log << "}" << std::endl;
+    //         // Count reuses
+    //         if (auto it = reused_label_ids.find(label_id); it != reused_label_ids.end()) {
+    //             reused_label_size_counts[label_size] += it->second;
+    //         }
+    //     }
+    //     log << "Label size counts: {";
+    //     bool first = true;
+    //     for (const auto& [size, count] : label_size_counts) {
+    //         if (!first) log << ", ";
+    //         log << "\"" << size << "\": " << count;
+    //         first = false;
+    //     }
+    //     log << "}" << std::endl;
 
-        log << "Reused label size counts: {";
-        first = true;
-        for (const auto& [size, count] : reused_label_size_counts) {
-            if (!first) log << ", ";
-            log << "\"" << size << "\": " << count;
-            first = false;
-        }
-        log << "}" << std::endl;
-    }
+    //     log << "Reused label size counts: {";
+    //     first = true;
+    //     for (const auto& [size, count] : reused_label_size_counts) {
+    //         if (!first) log << ", ";
+    //         log << "\"" << size << "\": " << count;
+    //         first = false;
+    //     }
+    //     log << "}" << std::endl;
+    // }
     return abstractions;
 }
 

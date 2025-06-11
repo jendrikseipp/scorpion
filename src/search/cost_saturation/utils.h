@@ -2,14 +2,10 @@
 #define COST_SATURATION_UTILS_H
 
 #include "abstraction.h"
-#include "parallel_hashmap/phmap.h"
 #include "types.h"
-#include "../algorithms/segmented_array_pool.h"
-#include "../algorithms/segmented_vector.h"
 
 #include <execution>
 #include <iostream>
-#include <memory>
 #include <vector>
 
 class AbstractTask;
@@ -63,7 +59,7 @@ std::vector<int> get_abstract_state_ids(
         abstract_state_ids.begin(), get_abs_state_id);
     return abstract_state_ids;
 }
-struct VectorHash {
+struct VectorHash { //currently not used, but might be useful in the future
     std::size_t operator()(const std::vector<int> &v) const {
         std::size_t seed = v.size();
         for (int i : v) {
@@ -102,38 +98,6 @@ struct SzudzikPairHash {
         return std::hash<uint64_t>()(combined);
     }
 };
-
-
-using OpsPool = segmented_array_pool_template::ArrayPool<int>;
-using OpsSlice = segmented_array_pool_template::ArrayPoolSlice<int>;
-
-struct OpsSliceHash {
-    std::size_t operator()(OpsSlice v) const {
-        std::size_t seed = v.size();
-        for (int i : v) {
-            seed ^= std::hash<int>{}(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        }
-        return seed;
-    }
-};
-
-struct OpsSliceEqualTo {
-    bool operator()(OpsSlice lhs, OpsSlice rhs) const {
-        if (lhs.size() != rhs.size()) {
-            return false;
-        }
-
-        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
-    }
-};
-
-using OpsToLabelId = phmap::flat_hash_map<OpsSlice, int, OpsSliceHash, OpsSliceEqualTo>;
-using LabelIdToOps = phmap::flat_hash_map<int, OpsSlice>;
-
-extern OpsPool ops_pool;
-extern OpsToLabelId ops_to_label_id;
-extern LabelIdToOps label_id_to_ops;
-extern int next_label_id;
 
 extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);

@@ -16,7 +16,7 @@ class ProjectionGenerator : public AbstractionGenerator {
     const int min_ops_per_label;
 
     int num_transitions;
-    int num_total_single_transitions;
+    int num_total_non_label_transitions;
     int num_total_reused_label_transitions;
     int num_total_label_transitions;
 
