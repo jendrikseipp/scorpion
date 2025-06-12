@@ -203,12 +203,12 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     log << "Total number of Cartesian states: " << num_states << endl;
     log << "Total number of transitions in Abstractions (before label reduction): " << num_transitions << endl;
     log << "Total number of transitions in Abstractions (after label reduction): " << num_total_non_label_transitions + num_total_label_transitions << endl;
-    log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
+    log << "Total change in transitions ((#non-label transitions+#label transitions)/#transitions): " << 
 	static_cast<double>(num_total_non_label_transitions+num_total_label_transitions)/num_transitions << endl;
     log << "Total number of non-label transitions in Abstractions: " << num_total_non_label_transitions << endl;
     log << "Total number of label transitions in Abstractions: " << num_total_label_transitions << endl;
     log << "Total number of labels in Abstractions: " << num_total_labels << endl;
-    log << "Label size counts: {";
+    log << "Total label size counts: {";
     bool first = true;
     for (const auto& [size, count] : total_label_size_counts) {
         if (!first) log << ", ";
@@ -218,7 +218,7 @@ Abstractions CartesianAbstractionGenerator::generate_abstractions(
     log << "}" << std::endl;
     
     log << "Total number of reused label transitions in Abstractions: " << num_total_reused_label_transitions << endl;
-    log << "Reused label size counts: {";
+    log << "Total reused label size counts: {";
     first = true;
     for (const auto& [size, count] : total_reused_label_size_counts) {
         if (!first) log << ", ";

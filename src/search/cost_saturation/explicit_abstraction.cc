@@ -204,7 +204,7 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
         }
     g_log << "Number of transitions (before label reduction): " << num_transitions_per_abstraction << endl;
     g_log << "Number of transitions (after label reduction): " << num_non_label_transitions + num_label_transitions<< endl;
-    g_log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
+    g_log << "Change in transitions ((#non-label transitions+#label transitions)/#transitions): " << 
     static_cast<double>(num_non_label_transitions+num_label_transitions)/num_transitions_per_abstraction << endl;
     g_log << "Number of non-label transitions: " << num_non_label_transitions << endl;
     g_log << "Number of label transitions: " << num_label_transitions<< endl;
