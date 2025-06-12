@@ -9,10 +9,6 @@ class CommonParser(Parser):
     def __init__(self):
         super().__init__()
 
-        self.num_labels_values = []
-        self.label_size_counts_values = []
-        self.reused_label_size_counts_values = []
-
         self.add_pattern (
         "search_start_time", r"\[t=(.+)s, \d+ KB\] g=0, 1 evaluated, 0 expanded", type=float,
         )
@@ -29,16 +25,34 @@ class CommonParser(Parser):
             ]
         )
         self.add_indexed_pattern_mapping(
-            r"Total number of single transitions in Abstractions: (\d+)",
+            r"Total number of non-label transitions in Abstractions: (\d+)",
             type=int,
             name_mapping=[
-                (0, "cartesian1_num_single_transitions"),
-                (1, "cartesian2_num_single_transitions"),
-                (-1, "projection_num_single_transitions"),
+                (0, "cartesian1_num_non_label_transitions"),
+                (1, "cartesian2_num_non_label_transitions"),
+                (-1, "projection_num_non_label_transitions"),
             ]
         )
         self.add_indexed_pattern_mapping(
-            r"Total number of reused labels in Abstractions: (\d+)",
+            r"Total number of label transitions in Abstractions: (\d+)",
+            type=int,
+            name_mapping=[
+                (0, "cartesian1_num_label_transitions"),
+                (1, "cartesian2_num_label_transitions"),
+                (-1, "projection_num_label_transitions"),
+            ]
+        )
+        self.add_indexed_pattern_mapping(
+            r"Total number of labels in Abstractions: (\d+)",
+            type=int,
+            name_mapping=[
+                (0, "cartesian1_num_labels"),
+                (1, "cartesian2_num_labels"),
+                (-1, "projection_num_labels"),
+            ]
+        )
+        self.add_indexed_pattern_mapping(
+            r"Total number of reused label transitions in Abstractions: (\d+)",
             type=int,
             name_mapping=[
                 (0, "cartesian1_num_reused_labels"),
@@ -49,18 +63,42 @@ class CommonParser(Parser):
         self.add_sum_pattern ( 
             "num_transitions", r"Total number of transitions in Abstractions \(after label reduction\): (\d+)", type=int
         )
-        self.add_sum_pattern ( 
-            "num_single_transitions", r"Total number of single transitions in Abstractions: (\d+)", type=int
+        self.add_bottom_up_pattern ( 
+            "change_in_size", r"Total change in transitions \(\(#non-label transitions\+#label transitions\)/#transitions\): ([\d\.]+)", type=float
         )
-        self.add_pattern(None, r"Total number of labels in Abstractions: (\d+)", self.handle_num_labels)
+        self.add_sum_pattern ( 
+            "num_non_label_transitions", r"Total number of non_label transitions in Abstractions: (\d+)", type=int
+        )
+        self.add_sum_pattern ( 
+            "num_label_transitions", r"Total number of label transitions in Abstractions: (\d+)", type=int
+        )
+        self.add_sum_pattern ( 
+            "num_labels", r"Total number of labels in Abstractions: (\d+)", type=int
+        )
         self.add_sum_pattern ( 
             "num_reused_labels", r"Total number of reused labels in Abstractions: (\d+)", type=int
         )
-        # self.add_bottom_up_pattern ( 
-        #     "change_in_size", r"Total change in transitions \(\(#single transitions\+#labels\)/#transitions\): ([\d\.]+)", type=float
-        # )
-        self.add_function(self.extract_label_size_counts_json)
-        self.add_function(self.extract_reused_label_size_counts_json)
+        self.add_label_size_counts_sum_dict()
+        self.add_indexed_json_pattern_mapping(
+            r'Total label size counts: (\{.*?\})',
+            name_mapping=[
+                (0, "cartesian1_label_size_counts"),
+                (1, "cartesian2_label_size_counts"),
+                (-1, "projection_label_size_counts"),
+            ]
+        )
+        self.add_label_size_counts_sum_dict(
+            name="reused_label_size_counts",
+            regex=r'Total reused label size counts: (\{.*?\})'
+        )
+        self.add_indexed_json_pattern_mapping(
+            r'Total reused label size counts: (\{.*?\})',
+            name_mapping=[
+                (0, "cartesian1_reused_label_size_counts"),
+                (1, "cartesian2_reused_label_size_counts"),
+                (-1, "projection_reused_label_size_counts"),
+            ]
+        )
         self.add_sum_pattern ( 
             "cp_time", r"Time for computing cost partitionings: (.+)s", type=float
         )
@@ -97,30 +135,20 @@ class CommonParser(Parser):
             props[name] = total
         self.add_function(sum_matches, file=file)
 
-     ### --- num_labels logic ---
-    def handle_num_labels(self, match, props):
-        value = int(match.group(1))
-        self.num_labels_values.append(value)
-
-    ### --- label size counts ---
-    def extract_label_size_counts_json(self, content, props):
-        matches = list(re.finditer(r'Label size counts: (\{.*?\})', content))
-        for match in matches:
-            try:
-                parsed = json.loads(match.group(1))
-                self.label_size_counts_values.append(parsed)
-            except json.JSONDecodeError as e:
-                logging.error(f"Failed to parse label size JSON: {e}")
-
-    ### --- reused label size counts ---
-    def extract_reused_label_size_counts_json(self, content, props):
-        matches = list(re.finditer(r'Reused label size counts: (\{.*?\})', content))
-        for match in matches:
-            try:
-                parsed = json.loads(match.group(1))
-                self.reused_label_size_counts_values.append(parsed)
-            except json.JSONDecodeError as e:
-                logging.error(f"Failed to parse reused label size JSON: {e}")
+    def add_label_size_counts_sum_dict(self, name="label_size_counts", regex=r'Total label size counts: (\{.*?\})', file="run.log"):
+        def sum_label_size_dicts(content, props):
+            matches = list(re.finditer(regex, content))
+            total_counts = {}
+            for match in matches:
+                try:
+                    parsed = json.loads(match.group(1))
+                    for key, value in parsed.items():
+                        key = int(key)  # ensure keys are ints
+                        total_counts[key] = total_counts.get(key, 0) + value
+                except json.JSONDecodeError as e:
+                    logging.error(f"Failed to parse label size JSON: {e}")
+            props[name] = total_counts
+        self.add_function(sum_label_size_dicts, file=file)
 
     def add_indexed_pattern_mapping(
         self, regex, file="run.log", type=int, flags="", name_mapping=None
@@ -138,58 +166,24 @@ class CommonParser(Parser):
                     )
 
         self.add_function(extract_and_map, file=file)
+    def add_indexed_json_pattern_mapping(
+        self, regex, file="run.log", flags="", name_mapping=None
+    ):
+        def extract_and_map_json(content, props):
+            matches = list(re.finditer(regex, content, flags=self._get_flags(flags)))
+            for index, prop_name in name_mapping:
+                try:
+                    match = matches[index]
+                    parsed = json.loads(match.group(1))
+                    props[prop_name] = parsed
+                except IndexError:
+                    logging.warning(
+                        f"Not enough matches for pattern '{regex}' to extract index {index} ({prop_name})"
+                    )
+                except json.JSONDecodeError as e:
+                    logging.error(f"Failed to parse JSON for pattern '{regex}': {e}")
 
-    def finalize(self, props):
-        # Handle num_labels
-        values = self.num_labels_values
-        if len(values) >= 1:
-            props["num_labels_cartesian1"] = values[0]
-        if len(values) >= 2:
-            props["num_labels_cartesian2"] = values[1] - values[0]
-        if len(values) >= 3:
-            props["num_labels_projection"] = values[2] - values[1]
-        if values:
-            props["num_labels"] = values[-1]  # Total value
-
-        # Handle label_size_counts → per phase
-        size_values = self.label_size_counts_values
-        if len(size_values) >= 1:
-            for k, v in size_values[0].items():
-                props[f"cartesian1_label_size_{k}"] = v
-        if len(size_values) >= 2:
-            for k in size_values[1].keys():
-                prev = size_values[0].get(k, 0)
-                diff = size_values[1][k] - prev
-                props[f"cartesian2_label_size_{k}"] = diff
-        if len(size_values) >= 3:
-            for k in size_values[2].keys():
-                prev = size_values[1].get(k, 0)
-                diff = size_values[2][k] - prev
-                props[f"projection_label_size_{k}"] = diff
-        if size_values:
-            last_values = size_values[-1]
-            for k, v in last_values.items():
-                props[f"label_size_{k}"] = v
-
-        # Handle reused_label_size_counts → per phase
-        reused_values = self.reused_label_size_counts_values
-        if len(reused_values) >= 1:
-            for k, v in reused_values[0].items():
-                props[f"cartesian1_reused_label_size_{k}"] = v
-        if len(reused_values) >= 2:
-            for k in reused_values[1].keys():
-                prev = reused_values[0].get(k, 0)
-                diff = reused_values[1][k] - prev
-                props[f"cartesian2_reused_label_size_{k}"] = diff
-        if len(reused_values) >= 3:
-            for k in reused_values[2].keys():
-                prev = reused_values[1].get(k, 0)
-                diff = reused_values[2][k] - prev
-                props[f"projection_reused_label_size_{k}"] = diff
-        if reused_values:
-            last_values = reused_values[-1]
-            for k, v in last_values.items():
-                props[f"reused_label_size_{k}"] = v
+        self.add_function(extract_and_map_json, file=file)
 
     def search_started(self, content, props):
         props["search_started"] = int("g=0, 1 evaluated, 0 expanded" in content)
