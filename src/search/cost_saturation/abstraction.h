@@ -64,6 +64,12 @@ public:
         const std::vector<int> &h_values) const = 0;
 
     virtual int get_num_operators() const = 0;
+    virtual int get_num_non_label_transitions() const { return 0;}
+    virtual int get_num_label_transitions() const { return 0; }
+    virtual int get_num_new_labels() const { return 0; }
+    // virtual LabelIdToOps &get_label_id_to_ops() {
+    //     throw std::runtime_error("This abstraction does not support labels.");
+    // }
 
     // Return true iff operator induces a state-changing transition.
     virtual bool operator_is_active(int op_id) const = 0;

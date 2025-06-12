@@ -32,10 +32,6 @@ struct Successor {
 
 std::ostream &operator<<(std::ostream &os, const Successor &successor);
 
-extern int num_non_label_transitions;
-extern int num_label_transitions;
-extern int num_new_labels;
-
 using OpsPool = segmented_array_pool_template::ArrayPool<int>;
 using OpsSlice = segmented_array_pool_template::ArrayPoolSlice<int>;
 
@@ -62,11 +58,14 @@ struct OpsSliceEqualTo {
 using OpsToLabelId = phmap::flat_hash_map<OpsSlice, int, OpsSliceHash, OpsSliceEqualTo>;
 using LabelIdToOps = phmap::flat_hash_map<int, OpsSlice>;
 class ExplicitAbstraction : public Abstraction {
+    int num_non_label_transitions;
+    int num_label_transitions;
+    int num_new_labels;
     OpsPool ops_pool;
     OpsToLabelId ops_to_label_id;
-    LabelIdToOps label_id_to_ops;
+    LabelIdToOps label_id_to_ops; //this
     int next_label_id;
-    phmap::flat_hash_map<int,int> reused_label_ids;
+    phmap::flat_hash_map<int,int> reused_label_ids; //this
 
     // State-changing transitions.
     std::vector<std::vector<Successor>> backward_graph;
@@ -89,6 +88,9 @@ public:
         std::vector<int> &&goal_states, 
         int min_ops_per_label);
     
+    virtual int get_num_non_label_transitions() const override { return num_non_label_transitions; }
+    virtual int get_num_label_transitions() const override { return num_label_transitions; }
+    virtual int get_num_new_labels() const override { return num_new_labels; }
     std::vector<std::vector<Successor>> label_reduction(
         std::vector<std::vector<Successor>> &graph, int min_ops_per_label);
     virtual std::vector<int> compute_goal_distances(

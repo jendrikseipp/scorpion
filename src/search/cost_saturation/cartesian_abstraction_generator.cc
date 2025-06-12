@@ -142,9 +142,10 @@ void CartesianAbstractionGenerator::build_abstractions_for_subtasks(
                 cartesian_abstraction->get_goals().end()),
                 min_ops_per_label);
 
-            num_total_non_label_transitions+=num_non_label_transitions;
-            num_total_reused_label_transitions+=num_label_transitions - num_new_labels;
-            num_total_label_transitions+=num_label_transitions;
+            num_total_non_label_transitions += abstraction->get_num_non_label_transitions();
+            num_total_reused_label_transitions += 
+            abstraction->get_num_label_transitions() - abstraction->get_num_new_labels();
+            num_total_label_transitions += abstraction->get_num_label_transitions();
         } else {
 			abstraction = make_unique<CartesianAbstraction>(move(cartesian_abstraction));
         }

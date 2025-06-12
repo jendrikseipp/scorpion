@@ -12,11 +12,6 @@ using namespace std;
 using namespace utils;
 
 namespace cost_saturation {
-// Tracking of some numbers
-int num_non_label_transitions;
-int num_label_transitions;
-int num_new_labels;
-
 static void dijkstra_search(
     const vector<vector<Successor>> &graph,
     const vector<int> &costs,
@@ -24,7 +19,7 @@ static void dijkstra_search(
     vector<int> &distances,
     const LabelIdToOps &label_id_to_ops) {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
-    vector<int> label_to_cost(label_id_to_ops.size() + 1, INF);
+    vector<int> label_to_cost(label_id_to_ops.size() + 1, -1);
     // for (const auto &[id, ops]: label_id_to_ops) {
     //     for (int op_id : ops) {
     //         assert(in_bounds(op_id, costs));
@@ -265,6 +260,9 @@ ExplicitAbstraction::ExplicitAbstraction(
     vector<int> &&goal_states,
     int min_ops_per_label)
     : Abstraction(move(abstraction_function)),
+      num_non_label_transitions(0),
+      num_label_transitions(0),
+      num_new_labels(0),
       ops_pool(),
       ops_to_label_id(),
       label_id_to_ops(),
