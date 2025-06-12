@@ -27,7 +27,7 @@ static void dijkstra_search(
             label_to_cost[-id]= min(label_to_cost[-id], costs[op_id]);
         }
     }
-    
+
     while (!queue.empty()) {
         pair<int, int> top_pair = queue.pop();
         int distance = top_pair.first;
@@ -91,7 +91,7 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
     vector<vector<Successor>> &graph, int min_ops_per_label) {
     num_non_label_transitions = 0;
     num_label_transitions = 0;
-    num_new_labels = 0;
+    num_labels = 0;
     int num_transitions_per_abstraction = 0;
     // Retrieve non-looping transitions.
     vector<vector<Successor>> new_graph(graph.size());
@@ -138,7 +138,7 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
                 if (inserted) {
                     this->label_id_to_ops.emplace(it->second, it->first);
                     --next_label_id;
-                    num_new_labels++;
+                    num_labels++;
                 } else {
                     this->ops_pool.pop_back();
                     reused_label_ids[it->second]++;
@@ -177,7 +177,7 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
                 if (inserted) {
                     this->label_id_to_ops.emplace(it->second, it->first);
                     --next_label_id;
-                    num_new_labels++;
+                    num_labels++;
                 } else {
                     this->ops_pool.pop_back();
                     reused_label_ids[it->second]++;;
@@ -208,38 +208,34 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
     static_cast<double>(num_non_label_transitions+num_label_transitions)/num_transitions_per_abstraction << endl;
     g_log << "Number of non-label transitions: " << num_non_label_transitions << endl;
     g_log << "Number of label transitions: " << num_label_transitions<< endl;
-    g_log << "Number of labels: " << num_new_labels << endl; // or label_id_to_ops.size()
-    g_log << "Number of reused labels: " << num_label_transitions - num_new_labels << endl;
-    if (!label_id_to_ops.empty()) {
-        map<int, int> label_size_counts;
-        map<int, int> reused_label_size_counts;
-        for (const auto& [label_id, ops] : label_id_to_ops) {
-            int label_size = ops.size();
-            label_size_counts[label_size]++;
-
-            // Count reuses
-            if (auto it = reused_label_ids.find(label_id); it != reused_label_ids.end()) {
-                reused_label_size_counts[label_size] += it->second;
-            }
+    g_log << "Number of labels: " << num_labels << endl;
+    for (const auto& [label_id, ops] : label_id_to_ops) {
+        int label_size = ops.size();
+        label_size_counts[label_size]++;
+        
+        // Count reuses
+        if (auto it = reused_label_ids.find(label_id); it != reused_label_ids.end()) {
+            reused_label_size_counts[label_size] += it->second;
         }
-        g_log << "Label size counts: {";
-        bool first = true;
-        for (const auto& [size, count] : label_size_counts) {
-            if (!first) g_log << ", ";
-            g_log << "\"" << size << "\": " << count;
-            first = false;
-        }
-        g_log << "}" << std::endl;
-
-        g_log << "Reused label size counts: {";
-        first = true;
-        for (const auto& [size, count] : reused_label_size_counts) {
-            if (!first) g_log << ", ";
-            g_log << "\"" << size << "\": " << count;
-            first = false;
-        }
-        g_log << "}" << std::endl;
     }
+    g_log << "Label size counts: {";
+    bool first = true;
+    for (const auto& [size, count] : label_size_counts) {
+        if (!first) g_log << ", ";
+        g_log << "\"" << size << "\": " << count;
+        first = false;
+    }
+    g_log << "}" << std::endl;
+
+    g_log << "Number of reused labels: " << num_label_transitions - num_labels << endl;
+    g_log << "Reused label size counts: {";
+    first = true;
+    for (const auto& [size, count] : reused_label_size_counts) {
+        if (!first) g_log << ", ";
+        g_log << "\"" << size << "\": " << count;
+        first = false;
+    }
+    g_log << "}" << std::endl;
     return new_graph;
 }
 
@@ -252,7 +248,10 @@ ExplicitAbstraction::ExplicitAbstraction(
     : Abstraction(move(abstraction_function)),
       num_non_label_transitions(0),
       num_label_transitions(0),
-      num_new_labels(0),
+      num_labels(0),
+      label_size_counts(),
+      reused_label_ids(),
+      reused_label_size_counts(),
       ops_pool(),
       ops_to_label_id(),
       label_id_to_ops(),
@@ -331,10 +330,8 @@ vector<int> ExplicitAbstraction::compute_saturated_costs(
             }
         }
     }
-    // Unpack saturated_label_costs
-    // g_log << saturated_label_costs << endl;
+
     for (int idx : updated_label_indices) {
-        // g_log << "Label index: " << idx << endl;
         assert(in_bounds(idx, saturated_label_costs));
         int label_cost = saturated_label_costs[idx];
 

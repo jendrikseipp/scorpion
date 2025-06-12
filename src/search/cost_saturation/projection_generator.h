@@ -17,8 +17,11 @@ class ProjectionGenerator : public AbstractionGenerator {
 
     int num_transitions;
     int num_total_non_label_transitions;
-    int num_total_reused_label_transitions;
     int num_total_label_transitions;
+    int num_total_labels;
+    phmap::flat_hash_map<int, int> total_label_size_counts;
+    int num_total_reused_label_transitions;
+    phmap::flat_hash_map<int, int> total_reused_label_size_counts;
 
 
 public:

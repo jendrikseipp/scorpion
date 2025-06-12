@@ -34,12 +34,15 @@ std::ostream &operator<<(std::ostream &os, const Successor &successor);
 class ExplicitAbstraction : public Abstraction {
     int num_non_label_transitions;
     int num_label_transitions;
-    int num_new_labels;
+    int num_labels;
+    phmap::flat_hash_map<int, int> label_size_counts;
+    phmap::flat_hash_map<int,int> reused_label_ids;
+    phmap::flat_hash_map<int, int> reused_label_size_counts;
+
     OpsPool ops_pool;
     OpsToLabelId ops_to_label_id;
-    LabelIdToOps label_id_to_ops; //this
+    LabelIdToOps label_id_to_ops;
     int next_label_id;
-    phmap::flat_hash_map<int,int> reused_label_ids; //this
 
     // State-changing transitions.
     std::vector<std::vector<Successor>> backward_graph;
@@ -64,8 +67,10 @@ public:
     
     virtual int get_num_non_label_transitions() const override { return num_non_label_transitions; }
     virtual int get_num_label_transitions() const override { return num_label_transitions; }
-    virtual int get_num_new_labels() const override { return num_new_labels; }
-    std::vector<std::vector<Successor>> label_reduction(
+    virtual int get_num_labels() const override { return num_labels; }
+    virtual phmap::flat_hash_map<int, int> get_label_size_counts() const override { return label_size_counts; }
+    virtual phmap::flat_hash_map<int, int> get_reused_label_size_counts() const override { return reused_label_size_counts; };
+    virtual std::vector<std::vector<Successor>> label_reduction(
         std::vector<std::vector<Successor>> &graph, int min_ops_per_label);
     virtual std::vector<int> compute_goal_distances(
         const std::vector<int> &costs) const override;

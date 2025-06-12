@@ -28,7 +28,12 @@ ProjectionGenerator::ProjectionGenerator(
       dominance_pruning(dominance_pruning),
       combine_labels(combine_labels),
       create_complete_transition_system(create_complete_transition_system),
-      min_ops_per_label(min_ops_per_label) {
+      min_ops_per_label(min_ops_per_label),
+      num_transitions(0),
+      num_total_non_label_transitions(0),
+      num_total_label_transitions(0),
+      num_total_labels(0),
+      num_total_reused_label_transitions(0) {
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
@@ -94,10 +99,17 @@ Abstractions ProjectionGenerator::generate_abstractions(
             projection = ExplicitProjectionFactory(
                 task_proxy, pattern, min_ops_per_label).convert_to_abstraction();
 
+            for (const auto &[label_size,counts] : projection->get_label_size_counts()) {
+                total_label_size_counts[label_size] += counts;
+            }
+            for (const auto &[label_size,counts] : projection->get_reused_label_size_counts()) {
+                total_reused_label_size_counts[label_size] += counts;
+            }
             num_total_non_label_transitions += projection->get_num_non_label_transitions();
+            num_total_label_transitions += projection->get_num_label_transitions();
             num_total_reused_label_transitions += 
-            projection->get_num_label_transitions() - projection->get_num_new_labels();
-            num_total_label_transitions += projection->get_num_label_transitions();        
+            projection->get_num_label_transitions() - projection->get_num_labels();
+            num_total_labels += projection->get_num_labels();        
         } else {
             task_properties::verify_no_conditional_effects(task_proxy);
             projection = make_unique<Projection>(
@@ -121,40 +133,29 @@ Abstractions ProjectionGenerator::generate_abstractions(
     log << "Total Number of transitions in Abstractions (before label reduction): " << num_transitions << endl;
     log << "Total number of transitions in Abstractions (after label reduction): " << num_total_non_label_transitions + num_total_label_transitions << endl;
     log << "Total number of single transitions in Abstractions: " << num_total_non_label_transitions << endl;
-    // log << "Total number of labels in Abstractions: " << label_id_to_ops.size() << endl;
-    // log << "Total number of reused labels in Abstractions: " << num_total_reused_label_transitions << endl;
-    // log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
-	// static_cast<double>(num_total_single_transitions+num_total_label_transitions)/num_transitions << endl;
-    // if (!label_id_to_ops.empty()) {
-    //     map<int, int> label_size_counts;
-    //     map<int, int> reused_label_size_counts;
-    //     for (const auto& [label_id, ops] : label_id_to_ops) {
-    //         int label_size = ops.size();
-    //         label_size_counts[label_size]++;
-
-    //         // Count reuses
-    //         if (auto it = reused_label_ids.find(label_id); it != reused_label_ids.end()) {
-    //             reused_label_size_counts[label_size] += it->second;
-    //         }
-    //     }
-    //     log << "Label size counts: {";
-    //     bool first = true;
-    //     for (const auto& [size, count] : label_size_counts) {
-    //         if (!first) log << ", ";
-    //         log << "\"" << size << "\": " << count;
-    //         first = false;
-    //     }
-    //     log << "}" << std::endl;
-
-    //     log << "Reused label size counts: {";
-    //     first = true;
-    //     for (const auto& [size, count] : reused_label_size_counts) {
-    //         if (!first) log << ", ";
-    //         log << "\"" << size << "\": " << count;
-    //         first = false;
-    //     }
-    //     log << "}" << std::endl;
-    // }
+    log << "Total change in transitions ((#single transitions+#labels)/#transitions): " << 
+	static_cast<double>(num_total_non_label_transitions+num_total_label_transitions)/num_transitions << endl;
+    log << "Total number of non-label transitions in Abstractions: " << num_total_non_label_transitions << endl;
+    log << "Total number of label transitions in Abstractions: " << num_total_label_transitions << endl;
+    log << "Total number of labels in Abstractions: " << num_total_labels << endl;
+    log << "Label size counts: {";
+    bool first = true;
+    for (const auto& [size, count] : total_label_size_counts) {
+        if (!first) log << ", ";
+        log << "\"" << size << "\": " << count;
+        first = false;
+    }
+    log << "}" << std::endl;
+    
+    log << "Total number of reused label transitions in Abstractions: " << num_total_reused_label_transitions << endl;
+    log << "Reused label size counts: {";
+    first = true;
+    for (const auto& [size, count] : total_reused_label_size_counts) {
+        if (!first) log << ", ";
+        log << "\"" << size << "\": " << count;
+        first = false;
+    }
+    log << "}" << std::endl;
     log << "Time for building projections: " << pdbs_timer << endl;
     log << "Number of projections: " << abstractions.size() << endl;
     log << "Number of states in projections: " << collection_size << endl;
