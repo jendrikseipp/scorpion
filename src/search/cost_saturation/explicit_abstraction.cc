@@ -89,10 +89,7 @@ static vector<bool> get_active_operators_from_graph(
 
 vector<vector<Successor>> ExplicitAbstraction::label_reduction(
     vector<vector<Successor>> &graph, int min_ops_per_label) {
-    num_non_label_transitions = 0;
-    num_label_transitions = 0;
-    num_labels = 0;
-    int num_transitions_per_abstraction = 0;
+    int num_transitions_before_lr = 0;
     // Retrieve non-looping transitions.
     vector<vector<Successor>> new_graph(graph.size());
     
@@ -104,7 +101,7 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
         // Collect transitions per op_id
         for (size_t target = 0; target < graph.size(); ++target) {
             for (const Successor &succ : graph[target]) {
-                num_transitions_per_abstraction++;
+                num_transitions_before_lr++;
                 op_to_transitions[succ.op].emplace_back(succ.state, (int)target);
             }
         }
@@ -154,7 +151,7 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
         auto transition_groups = phmap::flat_hash_map<pair<int, int>, vector<int>, SzudzikPairHash>{};
         for (std::size_t target = 0; target < graph.size(); ++target) {
             for (const Successor &succ : graph[target]) {
-                num_transitions_per_abstraction++;
+                num_transitions_before_lr++;
                 transition_groups[{succ.state, target}].push_back(succ.op);
             }
         }
@@ -202,10 +199,10 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
             }
             g_log << "]" << endl;
         }
-    g_log << "Number of transitions (before label reduction): " << num_transitions_per_abstraction << endl;
+    g_log << "Number of transitions (before label reduction): " << num_transitions_before_lr << endl;
     g_log << "Number of transitions (after label reduction): " << num_non_label_transitions + num_label_transitions<< endl;
     g_log << "Change in transitions ((#non-label transitions+#label transitions)/#transitions): " << 
-    static_cast<double>(num_non_label_transitions+num_label_transitions)/num_transitions_per_abstraction << endl;
+    static_cast<double>(num_non_label_transitions+num_label_transitions)/num_transitions_before_lr << endl;
     g_log << "Number of non-label transitions: " << num_non_label_transitions << endl;
     g_log << "Number of label transitions: " << num_label_transitions<< endl;
     g_log << "Number of labels: " << num_labels << endl;

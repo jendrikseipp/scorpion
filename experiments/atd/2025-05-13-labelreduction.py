@@ -102,7 +102,7 @@ exp.add_algorithm(
     driver_options=DRIVER,
 )
 
-MIN_OPS_PER_LABEL_VALUES = [1, 2, 3, 4, 5, 10, 20, 50, 100, 500, 1000]
+MIN_OPS_PER_LABEL_VALUES = [0, 1, 2, 3, 4, 5, 10, 20, 50, 100, 500, 1000]
 
 for min_ops in MIN_OPS_PER_LABEL_VALUES:
     exp.add_algorithm(
