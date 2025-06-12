@@ -19,14 +19,15 @@ static void dijkstra_search(
     vector<int> &distances,
     const LabelIdToOps &label_id_to_ops) {
     assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
-    vector<int> label_to_cost(label_id_to_ops.size() + 1, -1);
-    // for (const auto &[id, ops]: label_id_to_ops) {
-    //     for (int op_id : ops) {
-    //         assert(in_bounds(op_id, costs));
-    //         assert(in_bounds(-id, label_to_cost));
-    //         label_to_cost[-id]= min(label_to_cost[-id], costs[op_id]);
-    //     }
-    // }
+    vector<int> label_to_cost(label_id_to_ops.size() + 1, INF);
+    for (const auto &[id, ops]: label_id_to_ops) {
+        for (int op_id : ops) {
+            assert(in_bounds(op_id, costs));
+            assert(in_bounds(-id, label_to_cost));
+            label_to_cost[-id]= min(label_to_cost[-id], costs[op_id]);
+        }
+    }
+    
     while (!queue.empty()) {
         pair<int, int> top_pair = queue.pop();
         int distance = top_pair.first;
@@ -36,7 +37,6 @@ static void dijkstra_search(
         if (state_distance < distance) {
             continue;
         }
-        // vorher label_cost ausrechnen
         for (const Successor &transition : graph[state]) {
             int successor = transition.state;
             int op = transition.op;
@@ -45,18 +45,8 @@ static void dijkstra_search(
                 assert(in_bounds(op, costs));
                 op_cost = costs[op];
             } else {
-                auto it = label_id_to_ops.find(op);
-                assert(it != label_id_to_ops.end());
-                int label_cost = INF;
-                if (label_to_cost[-op] != -1) {
-                    label_cost= label_to_cost[-op];
-                } else {
-                    for (int op_id : it->second) {
-                        assert(in_bounds(op_id, costs));
-                        label_cost = min(label_cost, costs[op_id]);
-                    }
-                    label_to_cost[-op] = label_cost;                }
-                op_cost = label_cost;
+                assert(in_bounds(-op, label_to_cost));
+                op_cost = label_to_cost[-op];
             }
             assert(op_cost >= 0);
             int successor_distance = (op_cost == INF) ? INF : state_distance + op_cost;
