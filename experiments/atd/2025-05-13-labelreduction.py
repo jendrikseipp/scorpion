@@ -72,7 +72,7 @@ def add_search_started(run):
     return run
 
 
-GIT_REV_WLR = "c66cc523e34ed7bf29708ac6da1c45457aa7eeb0"
+GIT_REV_WLR = "2169d97f45504767fb01ef344c299ebe44614ad8"
 GIT_REV_WOLR = "bbb134d94c4c59c2a09e4077b4e31c0006bf5d71"
 exp = FastDownwardExperiment(environment=ENV)
 exp.add_parser(FastDownwardExperiment.EXITCODE_PARSER)
