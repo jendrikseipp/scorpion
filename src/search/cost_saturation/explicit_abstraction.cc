@@ -188,51 +188,51 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
     for (size_t target = 0; target < graph.size(); ++target) {
         new_graph[target].shrink_to_fit();
 		// g_log << "Old Graph: " << target << graph[target] << endl;
-		g_log << "New Graph: " << target << new_graph[target] << endl;
+		// g_log << "New Graph: " << target << new_graph[target] << endl;
     }
-    for (const auto &[label_id, ops] : label_id_to_ops) {
-        g_log << "Label ID " << label_id << ": [";
-        for (size_t i = 0; i < ops.size(); ++i) {
-                g_log << ops[i];
-                if (i < ops.size() - 1)
-                g_log << ", ";
-            }
-            g_log << "]" << endl;
-        }
-    g_log << "Number of transitions (before label reduction): " << num_transitions_before_lr << endl;
-    g_log << "Number of transitions (after label reduction): " << num_non_label_transitions + num_label_transitions<< endl;
-    g_log << "Change in transitions ((#non-label transitions+#label transitions)/#transitions): " << 
-    static_cast<double>(num_non_label_transitions+num_label_transitions)/num_transitions_before_lr << endl;
-    g_log << "Number of non-label transitions: " << num_non_label_transitions << endl;
-    g_log << "Number of label transitions: " << num_label_transitions<< endl;
-    g_log << "Number of labels: " << num_labels << endl;
-    for (const auto& [label_id, ops] : label_id_to_ops) {
-        int label_size = ops.size();
-        label_size_counts[label_size]++;
+    // for (const auto &[label_id, ops] : label_id_to_ops) {
+    //     g_log << "Label ID " << label_id << ": [";
+    //     for (size_t i = 0; i < ops.size(); ++i) {
+    //             g_log << ops[i];
+    //             if (i < ops.size() - 1)
+    //             g_log << ", ";
+    //         }
+    //         g_log << "]" << endl;
+    //     }
+    // g_log << "Number of transitions (before label reduction): " << num_transitions_before_lr << endl;
+    // g_log << "Number of transitions (after label reduction): " << num_non_label_transitions + num_label_transitions<< endl;
+    // g_log << "Change in transitions ((#non-label transitions+#label transitions)/#transitions): " << 
+    // static_cast<double>(num_non_label_transitions+num_label_transitions)/num_transitions_before_lr << endl;
+    // g_log << "Number of non-label transitions: " << num_non_label_transitions << endl;
+    // g_log << "Number of label transitions: " << num_label_transitions<< endl;
+    // g_log << "Number of labels: " << num_labels << endl;
+    // for (const auto& [label_id, ops] : label_id_to_ops) {
+    //     int label_size = ops.size();
+    //     label_size_counts[label_size]++;
         
-        // Count reuses
-        if (auto it = reused_label_ids.find(label_id); it != reused_label_ids.end()) {
-            reused_label_size_counts[label_size] += it->second;
-        }
-    }
-    g_log << "Label size counts: {";
-    bool first = true;
-    for (const auto& [size, count] : label_size_counts) {
-        if (!first) g_log << ", ";
-        g_log << "\"" << size << "\": " << count;
-        first = false;
-    }
-    g_log << "}" << std::endl;
+    //     // Count reuses
+    //     if (auto it = reused_label_ids.find(label_id); it != reused_label_ids.end()) {
+    //         reused_label_size_counts[label_size] += it->second;
+    //     }
+    // }
+    // g_log << "Label size counts: {";
+    // bool first = true;
+    // for (const auto& [size, count] : label_size_counts) {
+    //     if (!first) g_log << ", ";
+    //     g_log << "\"" << size << "\": " << count;
+    //     first = false;
+    // }
+    // g_log << "}" << std::endl;
 
-    g_log << "Number of reused labels: " << num_label_transitions - num_labels << endl;
-    g_log << "Reused label size counts: {";
-    first = true;
-    for (const auto& [size, count] : reused_label_size_counts) {
-        if (!first) g_log << ", ";
-        g_log << "\"" << size << "\": " << count;
-        first = false;
-    }
-    g_log << "}" << std::endl;
+    // g_log << "Number of reused labels: " << num_label_transitions - num_labels << endl;
+    // g_log << "Reused label size counts: {";
+    // first = true;
+    // for (const auto& [size, count] : reused_label_size_counts) {
+    //     if (!first) g_log << ", ";
+    //     g_log << "\"" << size << "\": " << count;
+    //     first = false;
+    // }
+    // g_log << "}" << std::endl;
     return new_graph;
 }
 
