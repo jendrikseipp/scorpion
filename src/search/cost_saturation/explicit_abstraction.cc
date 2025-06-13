@@ -159,24 +159,23 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
             }
         }
 
-        // Group by unique list of transitions (canonical form)
-        for (auto &[op, transitions] : op_to_transitions) {
-            sort(transitions.begin(), transitions.end());
+        // Group by unique list of transitions
+        for (const auto &[op, transitions] : op_to_transitions) {
+            assert(is_sorted(transitions.begin(), transitions.end()));
+            // sort(transitions.begin(), transitions.end());
             equivalence_groups[transitions].push_back(op);
         }
 
-        // Emit labels or single transitions
         for (auto &[transitions, ops] : equivalence_groups) {
             if (ops.size() == 1) {
-                // Single operator -> insert normally
                 int op = ops[0];
                 for (const auto &[src, target] : transitions) {
                     num_non_label_transitions++;
                     new_graph[target].emplace_back(op, src);
                 }
             } else {
-                // Multiple equivalent operators -> label
-                sort(ops.begin(), ops.end());
+                assert(is_sorted(ops.begin(), ops.end()));
+                // sort(ops.begin(), ops.end());
                 int label_id = create_or_reuse_label(move(ops));
 
                 for (const auto &[src, target] : transitions) {
@@ -198,7 +197,8 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
         for (auto &[src_target, ops] : transition_groups) {
             const auto &[src, target] = src_target;
             
-            sort(ops.begin(), ops.end()); //check if sorted already
+            assert(is_sorted(ops.begin(), ops.end()));
+            // sort(ops.begin(), ops.end()); //check if sorted already
             if (static_cast<int>(ops.size()) < min_ops_per_label) {
                 for (int op : ops) {
                     num_non_label_transitions++;
