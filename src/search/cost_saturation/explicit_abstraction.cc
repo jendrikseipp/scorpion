@@ -135,9 +135,12 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
                     this->label_id_to_ops.emplace(it->second, it->first);
                     --next_label_id;
                     num_labels++;
+
+                    label_size_counts[ops_slice.size()]++;
                 } else {
                     this->ops_pool.pop_back();
-                    reused_label_ids[it->second]++;
+
+                    reused_label_size_counts[it->first.size()]++;
                 }
 
                 for (const auto &[src, target] : transitions) {
@@ -175,9 +178,12 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
                     this->label_id_to_ops.emplace(it->second, it->first);
                     --next_label_id;
                     num_labels++;
+
+                    label_size_counts[ops_slice.size()]++;
                 } else {
                     this->ops_pool.pop_back();
-                    reused_label_ids[it->second]++;;
+
+                    reused_label_size_counts[it->first.size()]++;
                 }
                 
                 new_graph[target].emplace_back(it->second, src);
@@ -191,15 +197,6 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
 		g_log << "Old Graph: " << target << graph[target] << endl;
 		g_log << "New Graph: " << target << new_graph[target] << endl;
 #endif
-    }
-    for (const auto& [label_id, ops] : label_id_to_ops) {
-        int label_size = ops.size();
-        label_size_counts[label_size]++;
-        
-        // Count reuses
-        if (auto it = reused_label_ids.find(label_id); it != reused_label_ids.end()) {
-            reused_label_size_counts[label_size] += it->second;
-        }
     }
 
 #ifndef NDEBUG
@@ -253,7 +250,6 @@ ExplicitAbstraction::ExplicitAbstraction(
       num_label_transitions(0),
       num_labels(0),
       label_size_counts(),
-      reused_label_ids(),
       reused_label_size_counts(),
       ops_pool(),
       ops_to_label_id(),

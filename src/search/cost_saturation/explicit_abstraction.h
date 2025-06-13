@@ -36,7 +36,6 @@ class ExplicitAbstraction : public Abstraction {
     int num_label_transitions;
     int num_labels;
     phmap::flat_hash_map<int, int> label_size_counts;
-    phmap::flat_hash_map<int,int> reused_label_ids;
     phmap::flat_hash_map<int, int> reused_label_size_counts;
 
     OpsPool ops_pool;
