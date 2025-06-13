@@ -87,6 +87,59 @@ static vector<bool> get_active_operators_from_graph(
     return active_operators;
 }
 
+ExplicitAbstraction::ExplicitAbstraction(
+    unique_ptr<AbstractionFunction> abstraction_function,
+    vector<vector<Successor>> &&backward_graph_,
+    vector<bool> &&looping_operators,
+    vector<int> &&goal_states,
+    int min_ops_per_label)
+    : Abstraction(move(abstraction_function)),
+      num_non_label_transitions(0),
+      num_label_transitions(0),
+      num_labels(0),
+      label_size_counts(),
+      reused_label_size_counts(),
+      ops_pool(),
+      ops_to_label_id(),
+      label_id_to_ops(),
+      next_label_id(-1),
+      backward_graph(move(label_reduction(backward_graph_, min_ops_per_label))),
+      active_operators(get_active_operators_from_graph(
+                           backward_graph, looping_operators.size(), label_id_to_ops)),
+      looping_operators(move(looping_operators)),
+      goal_states(move(goal_states)) {
+
+#ifndef NDEBUG
+    for (int target = 0; target < get_num_states(); ++target) {
+        // Check that no transition is stored multiple times.
+        vector<Successor> copied_transitions = this->backward_graph[target];
+        sort(copied_transitions.begin(), copied_transitions.end());
+        assert(is_sorted_unique(copied_transitions));
+        // Check that we don't store self-loops.
+        assert(all_of(copied_transitions.begin(), copied_transitions.end(),
+                      [target](const Successor &succ) { return succ.state != target; }));
+    }
+#endif
+}
+
+int ExplicitAbstraction::create_or_reuse_label(vector<int> &&ops_sorted) {
+    this->ops_pool.push_back(move(ops_sorted));
+    const auto &ops_slice = this->ops_pool.back();
+    const auto [it, inserted] = this->ops_to_label_id.emplace(ops_slice, next_label_id);
+    if (inserted) {
+        this->label_id_to_ops.emplace(it->second, it->first);
+        --next_label_id;
+        num_labels++;
+
+        label_size_counts[ops_slice.size()]++;
+    } else {
+        this->ops_pool.pop_back();
+
+        reused_label_size_counts[it->first.size()]++;
+    }
+    return it->second;
+}
+
 vector<vector<Successor>> ExplicitAbstraction::label_reduction(
     vector<vector<Successor>> &graph, int min_ops_per_label) {
     int num_transitions_before_lr = 0;
@@ -107,15 +160,13 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
         }
 
         // Group by unique list of transitions (canonical form)
-        for (const auto &entry : op_to_transitions) {
-            int op = entry.first;
-            auto transitions = entry.second;
-            sort(transitions.begin(), transitions.end());  // canonical form
+        for (auto &[op, transitions] : op_to_transitions) {
+            sort(transitions.begin(), transitions.end());
             equivalence_groups[transitions].push_back(op);
         }
 
         // Emit labels or single transitions
-        for (const auto &[transitions, ops] : equivalence_groups) {
+        for (auto &[transitions, ops] : equivalence_groups) {
             if (ops.size() == 1) {
                 // Single operator -> insert normally
                 int op = ops[0];
@@ -125,44 +176,28 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
                 }
             } else {
                 // Multiple equivalent operators -> label
-                auto ops_sorted = ops;
-                sort(ops_sorted.begin(), ops_sorted.end());
-                this->ops_pool.push_back(std::move(ops_sorted));
-
-                const auto ops_slice = this->ops_pool.back();
-                const auto [it, inserted] = this->ops_to_label_id.emplace(ops_slice, next_label_id);
-                if (inserted) {
-                    this->label_id_to_ops.emplace(it->second, it->first);
-                    --next_label_id;
-                    num_labels++;
-
-                    label_size_counts[ops_slice.size()]++;
-                } else {
-                    this->ops_pool.pop_back();
-
-                    reused_label_size_counts[it->first.size()]++;
-                }
+                sort(ops.begin(), ops.end());
+                int label_id = create_or_reuse_label(move(ops));
 
                 for (const auto &[src, target] : transitions) {
                     num_label_transitions++;
-                    new_graph[target].emplace_back(it->second, src);
+                    new_graph[target].emplace_back(label_id, src);
                 }
             }
         }
     } else {
         // Map from (src, target) to list of operators
         auto transition_groups = phmap::flat_hash_map<pair<int, int>, vector<int>, SzudzikPairHash>{};
-        for (std::size_t target = 0; target < graph.size(); ++target) {
+        for (size_t target = 0; target < graph.size(); ++target) {
             for (const Successor &succ : graph[target]) {
                 num_transitions_before_lr++;
                 transition_groups[{succ.state, target}].push_back(succ.op);
             }
         }
 
-        for (auto &[src_target, op_list] : transition_groups) {
+        for (auto &[src_target, ops] : transition_groups) {
             const auto &[src, target] = src_target;
             
-            auto& ops = op_list;
             sort(ops.begin(), ops.end()); //check if sorted already
             if (static_cast<int>(ops.size()) < min_ops_per_label) {
                 for (int op : ops) {
@@ -170,23 +205,9 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
                     new_graph[target].emplace_back(op, src);
                 }
             } else {
-                this->ops_pool.push_back(std::move(ops));
+                int label_id = create_or_reuse_label(move(ops));
                 num_label_transitions++;
-                const auto ops_slice = this->ops_pool.back();
-                const auto [it, inserted] = this->ops_to_label_id.emplace(ops_slice, next_label_id);
-                if (inserted) {
-                    this->label_id_to_ops.emplace(it->second, it->first);
-                    --next_label_id;
-                    num_labels++;
-
-                    label_size_counts[ops_slice.size()]++;
-                } else {
-                    this->ops_pool.pop_back();
-
-                    reused_label_size_counts[it->first.size()]++;
-                }
-                
-                new_graph[target].emplace_back(it->second, src);
+                new_graph[target].emplace_back(label_id, src);
             }
         }
     }
@@ -223,7 +244,7 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
         g_log << "\"" << size << "\": " << count;
         first = false;
     }
-    g_log << "}" << std::endl;
+    g_log << "}" << endl;
 
     g_log << "Number of reused labels: " << num_label_transitions - num_labels << endl;
     g_log << "Reused label size counts: {";
@@ -233,45 +254,10 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
         g_log << "\"" << size << "\": " << count;
         first = false;
     }
-    g_log << "}" << std::endl;
+    g_log << "}" << endl;
 #endif
 
     return new_graph;
-}
-
-ExplicitAbstraction::ExplicitAbstraction(
-    unique_ptr<AbstractionFunction> abstraction_function,
-    vector<vector<Successor>> &&backward_graph_,
-    vector<bool> &&looping_operators,
-    vector<int> &&goal_states,
-    int min_ops_per_label)
-    : Abstraction(move(abstraction_function)),
-      num_non_label_transitions(0),
-      num_label_transitions(0),
-      num_labels(0),
-      label_size_counts(),
-      reused_label_size_counts(),
-      ops_pool(),
-      ops_to_label_id(),
-      label_id_to_ops(),
-      next_label_id(-1),
-      backward_graph(move(label_reduction(backward_graph_, min_ops_per_label))),
-      active_operators(get_active_operators_from_graph(
-                           backward_graph, looping_operators.size(), label_id_to_ops)),
-      looping_operators(move(looping_operators)),
-      goal_states(move(goal_states)) {
-
-#ifndef NDEBUG
-    for (int target = 0; target < get_num_states(); ++target) {
-        // Check that no transition is stored multiple times.
-        vector<Successor> copied_transitions = this->backward_graph[target];
-        sort(copied_transitions.begin(), copied_transitions.end());
-        assert(is_sorted_unique(copied_transitions));
-        // Check that we don't store self-loops.
-        assert(all_of(copied_transitions.begin(), copied_transitions.end(),
-                      [target](const Successor &succ) { return succ.state != target; }));
-    }
-#endif
 }
 
 vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs) const {
