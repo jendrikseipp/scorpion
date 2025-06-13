@@ -132,7 +132,6 @@ Abstractions ProjectionGenerator::generate_abstractions(
     }
     log << "Total Number of transitions in Abstractions (before label reduction): " << num_transitions << endl;
     log << "Total number of transitions in Abstractions (after label reduction): " << num_total_non_label_transitions + num_total_label_transitions << endl;
-    log << "Total number of single transitions in Abstractions: " << num_total_non_label_transitions << endl;
     log << "Total change in transitions ((#non-label transitions+#label transitions)/#transitions): " << 
 	static_cast<double>(num_total_non_label_transitions+num_total_label_transitions)/num_transitions << endl;
     log << "Total number of non-label transitions in Abstractions: " << num_total_non_label_transitions << endl;

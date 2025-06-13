@@ -67,7 +67,7 @@ class CommonParser(Parser):
             "change_in_size", r"Total change in transitions \(\(#non-label transitions\+#label transitions\)/#transitions\): ([\d\.]+)", type=float
         )
         self.add_sum_pattern ( 
-            "num_non_label_transitions", r"Total number of non_label transitions in Abstractions: (\d+)", type=int
+            "num_non_label_transitions", r"Total number of non-label transitions in Abstractions: (\d+)", type=int
         )
         self.add_sum_pattern ( 
             "num_label_transitions", r"Total number of label transitions in Abstractions: (\d+)", type=int
@@ -76,7 +76,7 @@ class CommonParser(Parser):
             "num_labels", r"Total number of labels in Abstractions: (\d+)", type=int
         )
         self.add_sum_pattern ( 
-            "num_reused_labels", r"Total number of reused labels in Abstractions: (\d+)", type=int
+            "num_reused_labels", r"Total number of reused label transitions in Abstractions: (\d+)", type=int
         )
         self.add_label_size_counts_sum_dict()
         self.add_indexed_json_pattern_mapping(
