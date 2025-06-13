@@ -29,7 +29,7 @@ REPO = project.get_repo_base()
 if project.REMOTE:
     ENV = TetralithEnvironment(
         email="windy.phung@liu.se",
-        extra_options="#SBATCH -A naiss2024-5-421",
+        extra_options="#SBATCH -A naiss2024-5-421", #naiss2024-5-404
         memory_per_cpu="9G",
     )
     HOURS = 0
@@ -72,7 +72,7 @@ def add_search_started(run):
     return run
 
 
-GIT_REV_WLR = "2169d97f45504767fb01ef344c299ebe44614ad8"
+GIT_REV_WLR = "ef09336620f6cf8b69e3299d51e509f288858e52"
 GIT_REV_WOLR = "bbb134d94c4c59c2a09e4077b4e31c0006bf5d71"
 exp = FastDownwardExperiment(environment=ENV)
 exp.add_parser(FastDownwardExperiment.EXITCODE_PARSER)
