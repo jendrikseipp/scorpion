@@ -128,7 +128,6 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
                 auto ops_sorted = ops;
                 sort(ops_sorted.begin(), ops_sorted.end());
                 this->ops_pool.push_back(std::move(ops_sorted));
-                num_label_transitions++;
 
                 const auto ops_slice = this->ops_pool.back();
                 const auto [it, inserted] = this->ops_to_label_id.emplace(ops_slice, next_label_id);
@@ -142,6 +141,7 @@ vector<vector<Successor>> ExplicitAbstraction::label_reduction(
                 }
 
                 for (const auto &[src, target] : transitions) {
+                    num_label_transitions++;
                     new_graph[target].emplace_back(it->second, src);
                 }
             }
