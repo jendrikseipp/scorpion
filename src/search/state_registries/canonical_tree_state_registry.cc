@@ -1,4 +1,7 @@
 #include "canonical_tree_state_registry.h"
+
+#include <fstream>
+
 #include "../per_state_information.h"
 #include "../task_proxy.h"
 #include "../task_utils/task_properties.h"
@@ -74,10 +77,23 @@ CanonicalTreeStateRegistry::CanonicalTreeStateRegistry(const TaskProxy &task_pro
     };
 }
 
+
+inline size_t get_peak_vm_kb() {
+    std::ifstream status("/proc/self/status");
+    std::string line;
+    while (std::getline(status, line)) {
+        if (line.rfind("VmPeak:", 0) == 0) {
+            size_t kb = 0;
+            sscanf(line.c_str(), "VmPeak: %zu kB", &kb);
+            return kb;
+        }
+    }
+    return 0;
+}
 std::vector<size_t>
 CanonicalTreeStateRegistry::get_domain_sizes(const TaskProxy &task_proxy) const {
     std::vector<size_t> domain_sizes;
-    domain_sizes.reserve(num_variables);
+    domain_sizes.reserve(task_proxy.get_variables().size());
     for (const auto &var : task_proxy.get_variables())
         domain_sizes.push_back(var.get_domain_size());
     return domain_sizes;

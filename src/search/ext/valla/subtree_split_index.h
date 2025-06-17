@@ -181,13 +181,13 @@ namespace valla {
         return std::move(const_cast<PQElem &>(pq.top()));
     }
 
-
     /// Compute optimal merge schedule (based on domain size cost)
     /// @param domain_sizes: domain size for each variable, already sorted
+    /// @param merge_strategy Function to determine merge order (default: default_merge_strategy).
     /// @returns MergeSchedule: plan to combine nodes, canonical variable order, bitvector
     inline MergeSchedule compute_merge_schedule(const std::vector<std::size_t> &domain_sizes,
         const MergeStrategy &merge_strategy = default_merge_strategy) {
-        auto merge_tree = compute_merge_tree(domain_sizes);
+        auto merge_tree = compute_merge_tree(domain_sizes, merge_strategy);
         const auto &[variable_order_, traversal_bits_] = recursive_tree_dfs(merge_tree.get());
 
 
