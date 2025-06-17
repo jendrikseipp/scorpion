@@ -120,7 +120,7 @@ using IStateRegistry = StateRegistry;
 class CanonicalTreeStateRegistry :
     public IStateRegistry {
 
-    const int cap = entries_for_mb(70, sizeof(vs::IndexSlot));
+    const int cap = entries_for_mb(500, sizeof(vs::IndexSlot));
 
     vs::FixedHashSetSlot root_table = vs::FixedHashSetSlot(cap,
                                                     vs::Hasher(),
