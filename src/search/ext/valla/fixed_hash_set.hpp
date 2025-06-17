@@ -7,245 +7,203 @@
 #include <algorithm>
 
 #if defined(__GNUC__) || defined(__clang__)
-    #define VALLA_PREFETCH(addr) __builtin_prefetch((addr))
+#define VALLA_PREFETCH(addr) __builtin_prefetch((addr))
 #else
     #define VALLA_PREFETCH(addr) do {} while(0)
 #endif
 
 namespace valla {
-
-template<typename T>
-concept TrivialCopyable = std::is_trivially_copyable_v<T> && std::copyable<T>;
-
-// Tune how many slots per segment get scanned per pass
-using PROBE_TYPE = uint8_t;
-
-constexpr std::size_t PROBE_STRIDE = 16;  // Adjust based on cache line size and performance testing
-constexpr std::size_t MAX_SEG = 32;
-
-
-/*
- * Segmented, dynamically growing, stable-index FixedHashSet (optimized):
- * - Probes several slots per segment before switching (cache-locality improvement)
- * - Newest segment probed first (adaptive/temporal locality)
- * - Prefetches next slot to mitigate memory stalls
- */
-template<
-    TrivialCopyable T,
-    T EmptySentinel,
-    typename Hash,
-    typename Equal
->
-class FixedHashSet {
-    static constexpr double load_factor_ = 0.75;
-
-    using Segment = std::vector<T>;
-    std::vector<Segment> table_;
-    std::size_t total_capacity_ = 0;
-    std::size_t initial_cap_ = 0;
-    std::size_t resize_at_ = 0;
-    std::size_t size_ = 0;
-    std::size_t _max_grow_size = 1 << 20;
-    Hash hash_;
-    Equal eq_;
-
-    static constexpr std::size_t ILLEGAL_INDEX = static_cast<std::size_t>(-1);
-
-    // Map logical index to (segment, local index) pair
-    [[nodiscard]] std::pair<size_t, size_t> logical_to_segment(std::size_t idx) const {
-        assert(idx < total_capacity_);
-        auto segment_index = std::bit_width(idx / initial_cap_);
-        auto offset = initial_cap_ * ((1ULL << segment_index) - 1);
-        return {segment_index, idx - offset};
-    }
-
-    [[nodiscard]] size_t segment_to_logical(size_t seg, size_t idx) const {
-        return ((1ULL << seg) - 1) * initial_cap_ + idx;
-    }
-
-    [[nodiscard]] static uint32_t probe_vec(size_t base, PROBE_TYPE probe, size_t size) noexcept {
-        return (base + probe) % size;
-    }
-
-    [[nodiscard]] std::array<uint32_t, MAX_SEG>  calculate_initial_offsets(size_t h) const {
-        std::array<uint32_t, MAX_SEG>  segment_offsets{0};
-        for (auto i = 0u; i < table_.size(); ++i) {
-            segment_offsets[i] = h % table_[i].size();
-        }
-        return segment_offsets;
-    }
-
-public:
-    FixedHashSet(
-        std::size_t initial_cap,
-        Hash hash,
-        Equal eq)
-        : total_capacity_(initial_cap),
-          initial_cap_(initial_cap),
-          resize_at_(static_cast<std::size_t>(initial_cap * load_factor_)),
-          hash_(std::move(hash)),
-          eq_(std::move(eq))
+    template<typename T>
+    concept HasEmptySentinel = requires
     {
-        table_.emplace_back(Segment(initial_cap, EmptySentinel));
-    }
+        { T::EmptySentinel } -> std::convertible_to<T>;
+    };
 
-    [[nodiscard]] std::size_t size() const noexcept { return size_; }
-    [[nodiscard]] std::size_t capacity() const noexcept { return total_capacity_; }
-    [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
+    template<typename T>
+    concept TrivialCopyable = std::is_trivially_copyable_v<T> && std::copyable<T>;
 
-    // Insert; returns {idx, true} if inserted; {idx, false} if already present.
-    std::pair<std::size_t, bool> insert(const T& value) {
-        assert(value != EmptySentinel);
+    // Tune how many slots per segment get scanned per pass
+    using PROBE_TYPE = uint8_t;
+    using INDEX_TYPE = uint32_t;
 
-        // If load-factor exceeded, grow before inserting
-        if(size_ + 1 > resize_at_) do_grow();
+    constexpr std::size_t PROBE_STRIDE = 32; // Adjust based on cache line size and performance testing
+    constexpr std::size_t MAX_SEG = 32;
 
-        auto h = hash_(value);
-        std::array<PROBE_TYPE, MAX_SEG> probe{0};
-        auto segment_offsets = calculate_initial_offsets(h);
-        auto insertion_idx = 0u;
-        auto inserted = false;
 
-        for (std::size_t cycle = 0; cycle < total_capacity_; ++cycle) {
-            for (std::size_t seg_rev = 0; seg_rev < table_.size(); ++seg_rev) {
-                std::size_t seg = table_.size() - 1 - seg_rev;
+    /*
+     * Segmented, dynamically growing, stable-index FixedHashSet (optimized):
+     * - Probes several slots per segment before switching (cache-locality improvement)
+     * - Newest segment probed first (adaptive/temporal locality)
+     * - Prefetches next slot to mitigate memory stalls
+     */
+    template<
+        HasEmptySentinel T,
+        typename Hash,
+        typename Equal
+    >
+    class FixedHashSet {
+        static constexpr double load_factor_ = 0.75;
 
-                for (std::size_t stride = 0; stride < PROBE_STRIDE; ++stride) {
-                    std::size_t offset = probe_vec(segment_offsets[seg], probe[seg], table_[seg].size());
-                    T& slot = table_[seg][offset];
-                    insertion_idx |= slot == EmptySentinel;
+        using Segment = std::vector<T>;
+        std::vector<Segment> table_;
+        INDEX_TYPE initial_cap_ = 0;
+        INDEX_TYPE total_capacity_ = 0;
+        INDEX_TYPE resize_at_ = 0;
+        INDEX_TYPE size_ = 0;
+        INDEX_TYPE _grow_size = 1 << 20;
+        std::uint8_t n_seg = 1;
+        Hash hash_;
+        Equal eq_;
 
-                    if(slot == EmptySentinel) {
-                        slot = value;
-                        ++size_;
-                        return {segment_to_logical(seg, offset), true};
+        static constexpr INDEX_TYPE ILLEGAL_INDEX = static_cast<INDEX_TYPE>(-1);
+
+        constexpr std::pair<INDEX_TYPE, INDEX_TYPE> logical_to_segment(INDEX_TYPE idx) const noexcept {
+            // is_large = 1 if idx >= initial_cap_, else 0
+            const bool is_large = (idx >= initial_cap_);
+
+            const uint8_t seg = is_large * (1 + ((idx - initial_cap_) >> __builtin_ctzll(_grow_size)));
+            const INDEX_TYPE offset = (!is_large) * idx
+                                       + is_large * ((idx - initial_cap_) & (_grow_size - 1));
+            return {seg, offset};
+        }
+
+        constexpr INDEX_TYPE segment_to_logical(uint8_t seg, INDEX_TYPE idx) const noexcept {
+            return idx + (seg != 0) * (initial_cap_ + (seg - 1) * _grow_size);
+        }
+
+        constexpr INDEX_TYPE probe_vec(INDEX_TYPE base, PROBE_TYPE probe, INDEX_TYPE size) noexcept {
+            // since size is def. power of 2
+            return (base + probe) & (size - 1);
+        }
+
+
+        constexpr INDEX_TYPE calculate_initial_offsets(const INDEX_TYPE h, const uint8_t seg) const {
+            return seg == 0 ? h & (initial_cap_ - 1) : h & (_grow_size - 1);
+        }
+
+        constexpr INDEX_TYPE get_size(const uint8_t seg) const {
+            return seg == 0 ? initial_cap_ : _grow_size;
+        }
+
+    public:
+        FixedHashSet(
+            INDEX_TYPE initial_cap,
+            Hash hash,
+            Equal eq)
+            : initial_cap_(std::bit_ceil(initial_cap)),
+              total_capacity_(initial_cap_),
+              resize_at_(static_cast<INDEX_TYPE>(total_capacity_ * load_factor_)),
+              hash_(std::move(hash)),
+              eq_(std::move(eq)) {
+            table_.emplace_back(Segment(initial_cap_, T::EmptySentinel));
+        }
+
+        [[nodiscard]] INDEX_TYPE size() const noexcept { return size_; }
+        [[nodiscard]] INDEX_TYPE capacity() const noexcept { return total_capacity_; }
+        [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
+
+        std::pair<INDEX_TYPE, bool> insert(const T &value) {
+            assert(value != T::EmptySentinel);
+            if (size_ + 1 > resize_at_) do_grow();
+
+            const auto h = hash_(value);
+            std::optional<std::pair<INDEX_TYPE, INDEX_TYPE> > first_empty;
+
+            for (int8_t seg = n_seg - 1; seg >= 0; --seg) {
+                const auto initial_offset = calculate_initial_offsets(h, seg);
+                const auto seg_size = get_size(seg);
+                for (uint8_t stride = 0; stride < PROBE_STRIDE; ++stride) {
+                    INDEX_TYPE offset = probe_vec(initial_offset, stride, seg_size);
+                    T &slot = table_[seg][offset];
+
+                    if (slot == T::EmptySentinel) {
+                        first_empty = std::make_pair(seg, offset);
+                        break;
                     }
-                    if(eq_(slot, value))
-                        return {segment_to_logical(seg, offset), false};
+                    if (eq_(slot, value))
+                        return {segment_to_logical(seg, offset), false}; // Already present!
 
-                    probe[seg] = static_cast<PROBE_TYPE>(probe[seg] + 1);
                 }
             }
+
+            if (first_empty) {
+                auto [seg, offset] = *first_empty;
+                table_[seg][offset] = value;
+                ++size_;
+                return {segment_to_logical(seg, offset), true};
+            }
+
+            utils::g_log << "Insertion failed, no empty slot found for value. Growing." << std::endl;
+
+            do_grow();
+
+            return insert(value); // Retry insertion after growing
         }
-        // Should be unreachable if max load respected
-        assert(false && "HashSet insertion failed: table full?");
-        return {ILLEGAL_INDEX, false};
-    }
 
-    // Lookup: true if present
-    bool contains(const T& value) const {
-        assert(value != EmptySentinel);
+        // Lookup: true if present
+        bool contains(const T &value) const {
+            assert(value != T::EmptySentinel);
 
-        auto h = hash_(value);
-        auto segment_offsets = calculate_initial_offsets(h);
-        std::array<PROBE_TYPE, MAX_SEG> probe{0};
+            const auto h = hash_(value);
+            for (int8_t seg = n_seg - 1; seg >= 0; --seg) {
+                const auto initial_offset = calculate_initial_offsets(h, seg);
+                const auto seg_size = get_size(seg);
+                for (uint8_t stride = 0; stride < PROBE_STRIDE; ++stride) {
+                    INDEX_TYPE offset = probe_vec(initial_offset, stride, seg_size);
+                    const T &slot = table_[seg][offset];
 
-        // Adaptive: check newest segment first for locality
-        for (std::size_t cycle = 0; cycle < total_capacity_; ++cycle) {
-            for (std::size_t seg_rev = 0; seg_rev < table_.size(); ++seg_rev) {
-                std::size_t seg = table_.size() - 1 - seg_rev;
 
-                for (std::size_t stride = 0; stride < PROBE_STRIDE; ++stride) {
-                    std::size_t offset = probe_vec(segment_offsets[seg], probe[seg], table_[seg].size());
-                    const T& slot = table_[seg][offset];
-                    // Prefetch next, as in insert
-                    if constexpr (PROBE_STRIDE > 1) {
-                        if(stride + 1 < PROBE_STRIDE) {
-                            auto prefetch_idx = probe_vec(segment_offsets[seg], probe[seg]+1, table_[seg].size());
-                            VALLA_PREFETCH(&table_[seg][prefetch_idx]);
-                        }
-                    }
-
-                    if(slot == EmptySentinel) break; // End-of-chain for this segment
-                    if(eq_(slot, value)) return true;
-                    ++probe[seg];
+                    if (slot == T::EmptySentinel) break; // End-of-chain for this segment
+                    if (eq_(slot, value)) return true;
                 }
             }
+            return false;
         }
-        return false;
-    }
 
-    // Find: same as contains, but returns first location or ILLEGAL_INDEX
-    std::pair<std::size_t, bool> find(const T& value) const {
-        assert(value != EmptySentinel);
+        // Find: same as contains, but returns first location or ILLEGAL_INDEX
+        std::pair<INDEX_TYPE, bool> find(const T &value) const {
+            assert(value != T::EmptySentinel);
 
-        auto h = hash_(value);
-        auto segment_offsets = calculate_initial_offsets(h);
-        std::array<PROBE_TYPE, MAX_SEG> probe{0};
+            const auto h = hash_(value);
+            for (int8_t seg = n_seg - 1; seg >= 0; --seg) {
+                const auto initial_offset = calculate_initial_offsets(h, seg);
+                const auto seg_size = get_size(seg);
+                for (uint8_t stride = 0; stride < PROBE_STRIDE; ++stride) {
+                    INDEX_TYPE offset = probe_vec(initial_offset, stride, seg_size);
+                    const T &slot = table_[seg][offset];
 
-        for (std::size_t cycle = 0; cycle < total_capacity_; ++cycle) {
-            for (std::size_t seg_rev = 0; seg_rev < table_.size(); ++seg_rev) {
-                std::size_t seg = table_.size() - 1 - seg_rev;
-                for (std::size_t stride = 0; stride < PROBE_STRIDE; ++stride) {
-                    std::size_t offset = probe_vec(segment_offsets[seg], probe[seg], table_[seg].size());
-                    const T& slot = table_[seg][offset];
-                    // Prefetch as above
-                    if constexpr (PROBE_STRIDE > 1) {
-                        if(stride + 1 < PROBE_STRIDE) {
-                            auto prefetch_idx = probe_vec(segment_offsets[seg], probe[seg]+1, table_[seg].size());
-                            VALLA_PREFETCH(&table_[seg][prefetch_idx]);
-                        }
-                    }
-
-                    if(slot == EmptySentinel) return {ILLEGAL_INDEX, false};
-                    if(eq_(slot, value)) return {segment_to_logical(seg, offset), true};
-                    ++probe[seg];
+                    if (slot == T::EmptySentinel) return {ILLEGAL_INDEX, false};
+                    if (eq_(slot, value)) return {segment_to_logical(seg, offset), true};
                 }
             }
+            return {ILLEGAL_INDEX, false};
         }
-        return {ILLEGAL_INDEX, false};
-    }
 
-    // Get by stable logical index
-    T get(std::size_t idx) const {
-        assert(idx < total_capacity_);
-        auto [seg, local] = logical_to_segment(idx);
-        return table_[seg][local];
-    }
-
-    // Erase; returns true if erased
-    bool erase(const T& value) {
-        assert(value != EmptySentinel);
-        auto h = hash_(value);
-
-        for (std::size_t seg_rev = 0; seg_rev < table_.size(); ++seg_rev) {
-            std::size_t seg = table_.size() - 1 - seg_rev;
-            std::size_t seg_cap = table_[seg].size();
-            for(std::size_t probe_idx = 0; probe_idx < seg_cap; ++probe_idx) {
-                std::size_t idx = (h + probe_idx) % seg_cap;
-                T& slot = table_[seg][idx];
-                if(slot == EmptySentinel) break;
-                if(eq_(slot, value)) {
-                    slot = EmptySentinel; --size_;
-                    return true;
-                }
-            }
+        // Get by stable logical index
+        T get(INDEX_TYPE idx) const {
+            assert(idx != T::EmptySentinel.lhs && "Cannot get EmptySentinel");
+            assert(idx < total_capacity_);
+            auto [seg, local] = logical_to_segment(idx);
+            return table_[seg][local];
         }
-        return false;
-    }
 
-    void clear() {
-        for (auto& seg : table_)
-            std::fill(seg.begin(), seg.end(), EmptySentinel);
-        size_ = 0;
-    }
+        // Report memory usage (elements only, not including indirection)
+        std::size_t get_memory_usage() const {
+            return total_capacity_ * sizeof(T);
+        }
 
-    // Report memory usage (elements only, not including indirection)
-    std::size_t get_memory_usage() const {
-        return total_capacity_ * sizeof(T);
-    }
-    // Report memory usage (elements only, not including indirection)
-    std::size_t get_occupied_memory_usage() const {
-        return size_ * sizeof(T);
-    }
+        // Report memory usage (elements only, not including indirection)
+        std::size_t get_occupied_memory_usage() const {
+            return size_ * sizeof(T);
+        }
 
-private:
-    void do_grow() {
-        auto grower_not_shower = std::max(total_capacity_, _max_grow_size);
-        table_.emplace_back(Segment(grower_not_shower, EmptySentinel));
-        total_capacity_ += grower_not_shower;
-        resize_at_ = static_cast<std::size_t>(total_capacity_ * load_factor_);
-    }
-};
-
+    private:
+        void do_grow() {
+            //auto grow_size = std::min(total_capacity_, _max_grow_size);
+            table_.emplace_back(Segment(_grow_size, T::EmptySentinel));
+            total_capacity_ += _grow_size;
+            resize_at_ = static_cast<INDEX_TYPE>(static_cast<double>(total_capacity_) * load_factor_);
+            ++n_seg;
+        }
+    };
 } // namespace valla

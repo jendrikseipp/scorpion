@@ -10,5 +10,6 @@ static plugins::TypedEnumPlugin<StateRegistryType> _enum_plugin({
     {"fixed_tree_unpacked", "state variables are stored in a tree structure with fixed size"},
     {"fixed_tree_packed", "state variables are stored in a tree structure with fixed size"},
     {"huffman", "state variables are stored in a tree structure with fixed size, inserted in a huffman tree fashion"},
+    {"canonical", "state variables are stored in a tree structure with fixed size, inserted in a canonical fashion"},
 });
 

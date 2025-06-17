@@ -38,7 +38,7 @@ namespace valla
 using Index = uint32_t;  ///< Enough space for 4,294,967,295 indices
 using Slot = uint64_t;   ///< A slot is made up of two indices.
 
-static constexpr const Slot EMPTY_ROOT_SLOT = Slot(0);  ///< represents the empty state.
+static constexpr Slot EMPTY_ROOT_SLOT = Slot(0);  ///< represents the empty state.
 
 /// @brief Pack two uint32_t into a uint64_t.
 inline Slot make_slot(Index lhs, Index rhs) { return Slot(lhs) << 32 | rhs; }
@@ -56,23 +56,73 @@ using State = std::vector<Index>;
 using RootIndices = std::vector<Index>;
 
 
-    template<typename LHS, typename RHS>
-    struct SlotStruct {
+    using State = std::vector<Index>;
+    using RootIndices = std::vector<Index>;
+
+    /**
+     * Printing
+     */
+
+    inline std::ostream& operator<<(std::ostream& out, const State& state)
+    {
+        out << "[";
+        for (const auto x : state)
+        {
+            out << x << ", ";
+        }
+        out << "]";
+
+        return out;
+    }
+
+    /**
+     * Hashing
+     */
+
+    template<typename T>
+    inline void hash_combine(size_t& seed, const T& value)
+    {
+        seed ^= std::hash<std::decay_t<T>> {}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+
+    inline uint64_t cantor_pair(uint64_t a, uint64_t b) { return (((a + b) * (a + b + 1)) >> 1) + b; }
+
+    struct SlotHash
+    {
+        size_t operator()(Slot el) const { return cantor_pair(read_pos(el, 0), read_pos(el, 1)); }
+    };
+
+
+
+    template<typename LHS = uint32_t, typename RHS = uint32_t, typename ALIGNMENT = uint64_t>
+    struct alignas(ALIGNMENT) SlotStruct {
         LHS lhs;
         RHS rhs;
-        constexpr bool operator==(const SlotStruct&) const = default;
+
+        bool operator==(const SlotStruct& other) const {
+            return *reinterpret_cast<const ALIGNMENT*>(this) == *reinterpret_cast<const ALIGNMENT*>(&other);
+        }
+
+        static constexpr SlotStruct<LHS, RHS, ALIGNMENT> EmptySentinel{
+            std::numeric_limits<LHS>::max(), std::numeric_limits<RHS>::max()
+        };
+
+        operator std::pair<LHS, RHS>() const {
+            return {lhs, rhs};
+        }
+
+        constexpr SlotStruct(const LHS lhs, const RHS rhs) : lhs(lhs), rhs(rhs) {}
+        constexpr SlotStruct(const std::pair<LHS, RHS>& p) : lhs(p.first), rhs(p.second) {}
     };
-    constexpr SlotStruct SlotSentinel{std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()};
+    static_assert(sizeof(SlotStruct<uint32_t, uint32_t, uint64_t>) == sizeof(uint64_t));
+    static_assert(alignof(SlotStruct<uint32_t, uint32_t, uint64_t>) == alignof(uint64_t));
 
 
     using IndexSlot = SlotStruct<uint32_t, uint32_t>;
 
     struct Hasher {
-        std::size_t operator()(const IndexSlot& slot) const {
-            utils::HashState hash_state;
-            hash_state.feed(slot.lhs);
-            hash_state.feed(slot.rhs);
-            return hash_state.get_hash64();
+        constexpr std::uint32_t operator()(const IndexSlot& slot) const {
+            return (slot.lhs * 0x9e3779b9u) ^ slot.rhs;
         }
     };
 
@@ -82,28 +132,7 @@ using RootIndices = std::vector<Index>;
         }
     };
 
-    using FixedHashSetSlot = FixedHashSet<IndexSlot, SlotSentinel, Hasher, SlotEqual>;
-
-    struct SubtreeSplitInfo {
-        size_t var_lhs;
-        size_t rhs_index;
-    };
-
-    struct MergeSchedule {
-        std::vector<unsigned int> variable_order;    // Canonical order for leaf variables
-        dynamic_bitset::DynamicBitset<> traversal;  // Preorder: 1=merge, 0=leaf
-        std::vector<SubtreeSplitInfo> traversal_splits;  // Preorder: 1=merge, 0=leaf
-        size_t bit_size() const {
-            return traversal.size();
-        }
-        size_t num_variables() const {
-            return variable_order.size();
-        }
-
-        operator const std::vector<SubtreeSplitInfo>&() const { return traversal_splits; }
-        operator const dynamic_bitset::DynamicBitset<>&() const { return traversal; }
-
-    };
+    using FixedHashSetSlot = FixedHashSet<IndexSlot, Hasher, SlotEqual>;
 
 }
 

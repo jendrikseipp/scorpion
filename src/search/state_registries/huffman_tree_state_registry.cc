@@ -23,14 +23,14 @@ HuffmanTreeStateRegistry::HuffmanTreeStateRegistry(const TaskProxy &task_proxy)
       axiom_evaluator(g_axiom_evaluators[task_proxy]),
       num_variables(task_proxy.get_variables().size()),
       merge_schedule_(
-          vsf::compute_merge_schedule(get_domain_sizes(task_proxy))) {
+          vs::compute_merge_schedule(get_domain_sizes(task_proxy))) {
     log_merge_schedule(task_proxy);
 
     tasks::g_root_task->reorder(merge_schedule_.variable_order);
 
     State::get_variable_value = [this](const StateID &id) {
         std::vector<vs::Index> state_data(num_variables);
-        vsf::read_state(id.get_value(), num_variables, merge_schedule_, tree_table, state_data);
+        vsh::read_state(id.get_value(), num_variables, merge_schedule_.traversal_splits, tree_table, state_data);
         return std::vector<int>{state_data.begin(), state_data.end()};
     };
 }
@@ -65,7 +65,7 @@ StateID HuffmanTreeStateRegistry::insert_id_or_pop_state() {
 State HuffmanTreeStateRegistry::lookup_state(StateID id) const {
     // Read in shuffled index order from storage
     std::vector<vs::Index> tmp(num_variables);
-    vsf::read_state(id.get_value(), num_variables, merge_schedule_, tree_table, tmp);
+    vsh::read_state(id.get_value(), num_variables, merge_schedule_.traversal_splits, tree_table, tmp);
     std::vector<int> state_values{tmp.begin(), tmp.end()};
     return task_proxy.create_state(*this, id, std::move(state_values));
 }
@@ -80,7 +80,7 @@ const State &HuffmanTreeStateRegistry::get_initial_state() {
         State initial_state = task_proxy.get_initial_state();
         auto &tmp = initial_state.get_unpacked_values();
         auto state = std::vector<vs::Index>{tmp.begin(), tmp.end()};
-        auto [index, _] = vsf::insert(state, merge_schedule_, tree_table);
+        auto [index, _] = vsh::insert(state, merge_schedule_.traversal_splits, tree_table);
         StateID id = StateID(index);
         cached_initial_state = make_unique<State>(lookup_state(id));
         cached_initial_state->unpack();
@@ -106,7 +106,7 @@ State HuffmanTreeStateRegistry::get_successor_state(const State &predecessor, co
         }
     }
 
-    auto [index, _] = vsf::insert(successor_values, merge_schedule_, tree_table);
+    auto [index, _] = vsh::insert(successor_values, merge_schedule_.traversal_splits, tree_table);
 
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});
 }

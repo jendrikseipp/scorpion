@@ -10,6 +10,7 @@
 #include "../algorithms/segmented_vector.h"
 #include "../algorithms/subscriber.h"
 #include "../utils/hash.h"
+#include "../utils/storage_calc.h"
 
 #include <valla/declarations.hpp>
 #include <valla/static_tree_compression.hpp>
@@ -112,9 +113,6 @@ namespace utils {
 class LogProxy;
 }
 
-constexpr size_t entries_for_mb(size_t limit_mb, size_t type_size) {
-    return (limit_mb * 1024 * 1024) / type_size;
-}
 
 using IStateRegistry = StateRegistry;
 using FixedHashSet = vs::FixedHashSetSlot;

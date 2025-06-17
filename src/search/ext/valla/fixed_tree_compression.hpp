@@ -76,10 +76,10 @@ inline Index insert_recursively(Iterator it, Iterator end, size_t size,
 /// @return the index of the slot at the root.
 template< std::forward_iterator Iterator>
     requires std::same_as<std::iter_value_t<Iterator>, Index>
-inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator end, size_t size, FixedHashSetSlot& table)
+inline auto emplace_recursively(Iterator it, Iterator end, size_t size, FixedHashSetSlot& table)
 {
     if (size == 1)
-        return std::pair{static_cast<size_t>(*it), false};
+        return std::pair{static_cast<uint32_t>(*it), false};
 
     if (size == 2){
         auto [idx, inserted] = table.insert({*it, *(it + 1)});
