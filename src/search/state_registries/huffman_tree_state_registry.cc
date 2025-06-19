@@ -11,19 +11,29 @@
 
 using namespace std;
 
-//constexpr std::vector<int> unpacked_state_variable_reader(const int index, void* context) noexcept {
-//    auto root_table = reinterpret_cast<const vs::RootIndices *>(context);
-//    std::vector<int> state_values;
-//    vst::read_state(index, size, *root_table, state_values);
-//    return std::move();
-//}
+
+constexpr auto binary_merge_strategy = [](auto a, auto b) {
+    // prefers powers of two, as they can be neatly represented by the canonical tree
+    const auto is_pow2 = [](size_t n) {return (n & (n - 1)) == 0;};
+    if (is_pow2(a->cost) && !is_pow2(b->cost)) {
+        return false;
+    }
+    if (a->is_leaf && !b->is_leaf) {
+        return false;
+    }
+    if (a->cost == b->cost) {
+        return a->idx > b->idx;
+    }
+    return a->cost > b->cost;
+};
+
 
 HuffmanTreeStateRegistry::HuffmanTreeStateRegistry(const TaskProxy &task_proxy)
     : IStateRegistry(task_proxy), state_packer(task_properties::g_state_packers[task_proxy]),
       axiom_evaluator(g_axiom_evaluators[task_proxy]),
       num_variables(task_proxy.get_variables().size()),
       merge_schedule_(
-          vs::compute_merge_schedule(get_domain_sizes(task_proxy))) {
+          vs::compute_merge_schedule(get_domain_sizes(task_proxy), binary_merge_strategy)) {
     log_merge_schedule(task_proxy);
 
     tasks::g_root_task->reorder(merge_schedule_.variable_order);

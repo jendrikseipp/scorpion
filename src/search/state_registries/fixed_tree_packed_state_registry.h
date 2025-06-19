@@ -121,12 +121,13 @@ class FixedTreePackedStateRegistry :
     public IStateRegistry {
 
 
-    const int cap = entries_for_mb(700, sizeof(vs::IndexSlot));
+    const size_t cap = entries_for_mb(4000, sizeof(vs::IndexSlot));
+    const size_t grow = entries_for_mb(500, sizeof(vs::IndexSlot));
 
     vs::FixedHashSetSlot tree_table = vs::FixedHashSetSlot(cap,
                                                   vs::Hasher(),
-                                                  vs::SlotEqual());
-
+                                                  vs::SlotEqual(),
+                                                  grow);
     const int_packer::IntPacker &state_packer;
     AxiomEvaluator &axiom_evaluator;
     const int num_variables;

@@ -120,10 +120,19 @@ using RootIndices = std::vector<Index>;
 
     using IndexSlot = SlotStruct<uint32_t, uint32_t>;
 
+    constexpr uint64_t murmur3_64_finalizer(uint64_t x) noexcept {
+        x ^= x >> 33;
+        x *= 0xff51afd7ed558ccdULL;
+        x ^= x >> 33;
+        x *= 0xc4ceb9fe1a85ec53ULL;
+        x ^= x >> 33;
+        return x;
+    }
     struct Hasher {
-        constexpr std::uint32_t operator()(const IndexSlot& slot) const {
-            return (slot.lhs * 0x9e3779b9u) ^ slot.rhs;
-        }
+        std::size_t operator()(const IndexSlot& slot) const {
+                // Compose two 32-bit fields into 64 bits in a portable way
+                return murmur3_64_finalizer((uint64_t(slot.rhs) << 32) | slot.lhs);
+            }
     };
 
     struct SlotEqual {

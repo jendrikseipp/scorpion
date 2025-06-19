@@ -119,11 +119,14 @@ using FixedHashSet = vs::FixedHashSetSlot;
 class FixedTreeUnpackedStateRegistry :
     public IStateRegistry {
 
-    const int cap = entries_for_mb(700, sizeof(vs::IndexSlot));
+
+    const size_t cap = entries_for_mb(4000, sizeof(vs::IndexSlot));
+    const size_t grow = entries_for_mb(500, sizeof(vs::IndexSlot));
 
     FixedHashSet tree_table = FixedHashSet(cap,
         vs::Hasher(),
-        vs::SlotEqual());
+        vs::SlotEqual(),
+        grow);
 
     const int_packer::IntPacker &state_packer;
     AxiomEvaluator &axiom_evaluator;

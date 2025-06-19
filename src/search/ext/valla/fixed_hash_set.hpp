@@ -26,7 +26,7 @@ namespace valla {
     using PROBE_TYPE = uint8_t;
     using INDEX_TYPE = uint32_t;
 
-    constexpr std::size_t PROBE_STRIDE = 32; // Adjust based on cache line size and performance testing
+    constexpr std::size_t PROBE_STRIDE = 16; // Adjust based on cache line size and performance testing
     constexpr std::size_t MAX_SEG = 32;
 
 
@@ -50,7 +50,7 @@ namespace valla {
         INDEX_TYPE total_capacity_ = 0;
         INDEX_TYPE resize_at_ = 0;
         INDEX_TYPE size_ = 0;
-        INDEX_TYPE _grow_size = 1 << 20;
+        INDEX_TYPE _grow_size = 0;
         std::uint8_t n_seg = 1;
         Hash hash_;
         Equal eq_;
@@ -58,27 +58,30 @@ namespace valla {
         static constexpr INDEX_TYPE ILLEGAL_INDEX = static_cast<INDEX_TYPE>(-1);
 
         constexpr std::pair<INDEX_TYPE, INDEX_TYPE> logical_to_segment(INDEX_TYPE idx) const noexcept {
-            // is_large = 1 if idx >= initial_cap_, else 0
-            const bool is_large = (idx >= initial_cap_);
-
-            const uint8_t seg = is_large * (1 + ((idx - initial_cap_) >> __builtin_ctzll(_grow_size)));
-            const INDEX_TYPE offset = (!is_large) * idx
-                                       + is_large * ((idx - initial_cap_) & (_grow_size - 1));
-            return {seg, offset};
+            if (idx < initial_cap_) {
+                return {0, idx};
+            } else {
+                INDEX_TYPE seg = 1 + (idx - initial_cap_) / _grow_size;
+                INDEX_TYPE offset = (idx - initial_cap_) % _grow_size;
+                return {seg, offset};
+            }
         }
-
         constexpr INDEX_TYPE segment_to_logical(uint8_t seg, INDEX_TYPE idx) const noexcept {
-            return idx + (seg != 0) * (initial_cap_ + (seg - 1) * _grow_size);
+            if (seg == 0) {
+                return idx;
+            } else {
+                return initial_cap_ + (seg-1)*_grow_size + idx;
+            }
         }
 
         constexpr INDEX_TYPE probe_vec(INDEX_TYPE base, PROBE_TYPE probe, INDEX_TYPE size) noexcept {
             // since size is def. power of 2
-            return (base + probe) & (size - 1);
+            return (base + probe) % size;
         }
 
 
         constexpr INDEX_TYPE calculate_initial_offsets(const INDEX_TYPE h, const uint8_t seg) const {
-            return seg == 0 ? h & (initial_cap_ - 1) : h & (_grow_size - 1);
+            return seg == 0 ? h % initial_cap_: h % _grow_size;
         }
 
         constexpr INDEX_TYPE get_size(const uint8_t seg) const {
@@ -89,14 +92,25 @@ namespace valla {
         FixedHashSet(
             INDEX_TYPE initial_cap,
             Hash hash,
-            Equal eq)
+            Equal eq,
+            INDEX_TYPE grow_size = 1 << 20)
             : initial_cap_(std::bit_ceil(initial_cap)),
               total_capacity_(initial_cap_),
               resize_at_(static_cast<INDEX_TYPE>(total_capacity_ * load_factor_)),
               hash_(std::move(hash)),
-              eq_(std::move(eq)) {
+              eq_(std::move(eq)),
+              _grow_size(grow_size) {
             table_.emplace_back(Segment(initial_cap_, T::EmptySentinel));
         }
+
+        ~FixedHashSet() {
+            utils::g_log << "FixedHashSet destroyed, size: " << size_ << " entries"<< std::endl;
+            utils::g_log << "FixedHashSet destroyed, capacity: " << total_capacity_ << " entries" << std::endl;
+            utils::g_log << "FixedHashSet destroyed, segments: " << static_cast<size_t>(n_seg) << " segs" << std::endl;
+            utils::g_log << "FixedHashSet destroyed, byte size: " << size_ * sizeof(T) / 1024 << "KB" << std::endl;
+            utils::g_log << "FixedHashSet destroyed, byte capacity: " << total_capacity_ * sizeof(T) / 1024 << "KB" << std::endl;
+            utils::g_log << "FixedHashSet destroyed, load: " << static_cast<long double>(size_) / total_capacity_ * 100 << "%" << std::endl;
+        };
 
         [[nodiscard]] INDEX_TYPE size() const noexcept { return size_; }
         [[nodiscard]] INDEX_TYPE capacity() const noexcept { return total_capacity_; }
