@@ -120,8 +120,8 @@ State HuffmanTreeStateRegistry::get_successor_state(const State &predecessor, co
         }
     }
 
-    auto [index, inserted] = vsh::insert(successor_values, merge_schedule_.traversal_splits, tree_table);
-    _registered_states += inserted;
+    auto [index, exists] = vsh::insert(successor_values, merge_schedule_.traversal_splits, tree_table);
+    _registered_states += !exists;
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});
 }
 

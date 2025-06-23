@@ -118,8 +118,8 @@ State FixedTreePackedStateRegistry::get_successor_state(const State &predecessor
     for (auto i = 0; i < num_variables; ++i) {
         state_packer.set(buffer.data(), i, new_state_values[i]);
     }
-    auto [index, inserted] = vst::insert(buffer, tree_table);
-    _registered_states += inserted;
+    auto [index, exists] = vst::insert(buffer, tree_table);
+    _registered_states += !exists;
 
     return lookup_state(StateID(index), {new_state_values.begin(), new_state_values.end()});
 }
