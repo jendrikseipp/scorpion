@@ -122,4 +122,8 @@ namespace tasks {
     void DelegatingTask::reorder(const std::vector<unsigned int> &order) {
         parent->reorder(order);
     }
+    void DelegatingTask::subscribe_to_reorder(
+        const std::function<void()> &callback) {
+        parent->subscribe_to_reorder(callback);
+    }
 }

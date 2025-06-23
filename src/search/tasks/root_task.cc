@@ -62,13 +62,16 @@ class RootTask : public AbstractTask {
     vector<int> initial_state_values;
     vector<FactPair> goals;
 
+    vector<std::function<void()>> reorder_callbacks;
+
     const ExplicitVariable &get_variable(int var) const;
     const ExplicitEffect &get_effect(int op_id, int effect_id, bool is_axiom) const;
     const ExplicitOperator &get_operator_or_axiom(int index, bool is_axiom) const;
 
 public:
-    void reorder(const std::vector<unsigned int> &order);
-
+    void reorder(const std::vector<unsigned int> &order) override;
+    void subscribe_to_reorder(
+        const std::function<void()> &callback) override;
     explicit RootTask(istream &in);
 
     virtual int get_num_variables() const override;
@@ -404,8 +407,15 @@ void RootTask::reorder(const std::vector<unsigned int> &order) {
     for (std::size_t new_var = 0; new_var < variables.size(); ++new_var) {
         variables[new_var].axiom_default_value = initial_state_values[new_var];
     }
+
+    for (auto &callback : reorder_callbacks) {
+        callback();
+    }
 }
 
+void RootTask::subscribe_to_reorder(const std::function<void()> &callback) {
+    reorder_callbacks.emplace_back(callback);
+}
 
 
 RootTask::RootTask(istream &in) {

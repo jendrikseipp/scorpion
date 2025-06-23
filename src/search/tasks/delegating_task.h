@@ -49,7 +49,9 @@ public:
         return index;
     }
     void reorder(
-        const std::vector<unsigned int> &order);
+    const std::vector<unsigned int> &order) override;
+    void subscribe_to_reorder(
+    const std::function<void()> &callback) override;
 
     virtual int get_num_axioms() const override;
 

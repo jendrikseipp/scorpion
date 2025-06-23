@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../tasks/root_task.h"
+
 using namespace std;
 
 namespace relaxation_heuristic {
@@ -57,10 +59,47 @@ RelaxationHeuristic::RelaxationHeuristic(
     : Heuristic(tasks::get_default_value_axioms_task_if_needed(
                     transform, axioms),
                 cache_estimates, description, verbosity) {
+    initialize_heuristic();
+
+    tasks::g_root_task->subscribe_to_reorder(
+        [this]() {
+            initialize_heuristic();
+        });
+}
+
+bool RelaxationHeuristic::dead_ends_are_reliable() const {
+    return !task_properties::has_axioms(task_proxy);
+}
+
+PropID RelaxationHeuristic::get_prop_id(int var, int value) const {
+    return proposition_offsets[var] + value;
+}
+
+PropID RelaxationHeuristic::get_prop_id(const FactProxy &fact) const {
+    return get_prop_id(fact.get_variable().get_id(), fact.get_value());
+}
+
+const Proposition *RelaxationHeuristic::get_proposition(
+    int var, int value) const {
+    return &propositions[get_prop_id(var, value)];
+}
+
+Proposition *RelaxationHeuristic::get_proposition(int var, int value) {
+    return &propositions[get_prop_id(var, value)];
+}
+
+Proposition *RelaxationHeuristic::get_proposition(const FactProxy &fact) {
+    return get_proposition(fact.get_variable().get_id(), fact.get_value());
+}
+
+void RelaxationHeuristic::initialize_heuristic() {
+
     // Build propositions.
+    propositions.clear();
     propositions.resize(task_properties::get_num_facts(task_proxy));
 
     // Build proposition offsets.
+    proposition_offsets.clear();
     VariablesProxy variables = task_proxy.get_variables();
     proposition_offsets.reserve(variables.size());
     PropID offset = 0;
@@ -71,6 +110,7 @@ RelaxationHeuristic::RelaxationHeuristic(
     assert(offset == static_cast<int>(propositions.size()));
 
     // Build goal propositions.
+    goal_propositions.clear();
     GoalsProxy goals = task_proxy.get_goals();
     goal_propositions.reserve(goals.size());
     for (FactProxy goal : goals) {
@@ -80,6 +120,9 @@ RelaxationHeuristic::RelaxationHeuristic(
     }
 
     // Build unary operators for operators and axioms.
+    unary_operators.clear();
+    preconditions_pool.clear();
+    precondition_of_pool.clear();
     unary_operators.reserve(
         task_properties::get_num_total_effects(task_proxy));
     for (OperatorProxy op : task_proxy.get_operators())
@@ -110,31 +153,6 @@ RelaxationHeuristic::RelaxationHeuristic(
             precondition_of_pool.append(precondition_of_vec);
         propositions[prop_id].num_precondition_occurences = precondition_of_vec.size();
     }
-}
-
-bool RelaxationHeuristic::dead_ends_are_reliable() const {
-    return !task_properties::has_axioms(task_proxy);
-}
-
-PropID RelaxationHeuristic::get_prop_id(int var, int value) const {
-    return proposition_offsets[var] + value;
-}
-
-PropID RelaxationHeuristic::get_prop_id(const FactProxy &fact) const {
-    return get_prop_id(fact.get_variable().get_id(), fact.get_value());
-}
-
-const Proposition *RelaxationHeuristic::get_proposition(
-    int var, int value) const {
-    return &propositions[get_prop_id(var, value)];
-}
-
-Proposition *RelaxationHeuristic::get_proposition(int var, int value) {
-    return &propositions[get_prop_id(var, value)];
-}
-
-Proposition *RelaxationHeuristic::get_proposition(const FactProxy &fact) {
-    return get_proposition(fact.get_variable().get_id(), fact.get_value());
 }
 
 void RelaxationHeuristic::build_unary_operators(const OperatorProxy &op) {

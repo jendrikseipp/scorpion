@@ -11,6 +11,7 @@ from lab.environments import TetralithEnvironment, LocalEnvironment
 from benchmarks import *
 import custom_parser
 import project
+from itertools import product
 
 REVISION_CACHE = (
         os.environ.get("DOWNWARD_REVISION_CACHE") or project.DIR / "data" / "revision-cache"
@@ -29,7 +30,7 @@ if project.REMOTE:
     SUITE = build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), SUITE_IPC_OPTIMAL_STRIPS)
 else:
     ENV = LocalEnvironment(processes=1)
-    MEMORY_LIMIT = "8G"
+    MEMORY_LIMIT = "6G"
     TIME_LIMIT = 5 * 60
     SUITE = build_suite(
          os.environ.get("DOWNWARD_BENCHMARKS"),
@@ -43,14 +44,19 @@ DRIVER_OPTIONS = [
     "--overall-memory-limit",
     MEMORY_LIMIT,
     ]
+state_registries = [
+                ("pck", "packed"),
+                ("fixed_packed", "fixed_tree_packed"),
+                ("huffman_tree", "huffman"),
+            ]
+heuristics = [
+                ("blind", "blind()"),
+                ("ff", "ff()"),
+            ]
 CONFIGS = [
-    (f"{index:02d}-{h_nick}", ["--search", f"astar(blind(), state_registry={h})"])
-    for index, (h_nick, h) in enumerate(
-        [
-            ("pck", "packed"),
-            ("fixed_packed", "fixed_tree_packed"),
-            ("huffman_tree", "huffman"),
-        ],
+    (f"{index:02d}-{h_nick}-{s_nick}", ["--search", f"astar({h}, state_registry={s})"])
+    for index, ((s_nick, s), (h_nick, h)) in enumerate(
+        product(state_registries, heuristics),
         start=1,
     )
 ]

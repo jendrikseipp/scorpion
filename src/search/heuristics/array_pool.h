@@ -70,6 +70,11 @@ public:
                index.position + size <= static_cast<int>(data.size()));
         return ArrayPoolSlice(data.begin() + index.position, data.begin() + index.position + size);
     }
+
+    ArrayPool clear() {
+        data.clear();
+        return *this;
+    }
 };
 }
 

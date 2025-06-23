@@ -144,13 +144,13 @@ namespace valla {
         // Priority queue comparison
         using PQElem = std::unique_ptr<QueueElem>;
         struct Compare {
-            const std::function<bool(const QueueElem *, const QueueElem *)> &merge_strategy;
+            const std::function<bool(const QueueElem *, const QueueElem *)> &ms;
 
-            Compare(const std::function<bool(const QueueElem *, const QueueElem *)> &ms) : merge_strategy(ms) {
+            Compare(const std::function<bool(const QueueElem *, const QueueElem *)> &ms) : ms(ms) {
             }
 
             bool operator()(const PQElem &a, const PQElem &b) const {
-                return merge_strategy(a.get(), b.get());
+                return ms(a.get(), b.get());
             }
         };
 

@@ -1,6 +1,8 @@
 #ifndef ABSTRACT_TASK_H
 #define ABSTRACT_TASK_H
 
+#include <functional>
+
 #include "operator_id.h"
 
 #include "algorithms/subscriber.h"
@@ -62,9 +64,11 @@ public:
     virtual FactPair get_operator_effect_condition(
         int op_index, int eff_index, int cond_index, bool is_axiom) const = 0;
     virtual FactPair get_operator_effect(
-        int op_index, int eff_index, bool is_axiom) const = 0;
+    int op_index, int eff_index, bool is_axiom) const = 0;
     virtual void reorder(
-        const std::vector<unsigned int> &order) = 0;
+    const std::vector<unsigned int> &order) = 0;
+    virtual void subscribe_to_reorder(
+        const std::function<void()> &callback) = 0;
 
     /*
       Convert an operator index from this task, C (child), into an operator index
