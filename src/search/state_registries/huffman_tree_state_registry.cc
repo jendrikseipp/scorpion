@@ -91,6 +91,7 @@ const State &HuffmanTreeStateRegistry::get_initial_state() {
         auto &tmp = initial_state.get_unpacked_values();
         auto state = std::vector<vs::Index>{tmp.begin(), tmp.end()};
         auto [index, _] = vsh::insert(state, merge_schedule_.traversal_splits, tree_table);
+        ++_registered_states;
         StateID id = StateID(index);
         cached_initial_state = make_unique<State>(lookup_state(id));
         cached_initial_state->unpack();
@@ -116,8 +117,8 @@ State HuffmanTreeStateRegistry::get_successor_state(const State &predecessor, co
         }
     }
 
-    auto [index, _] = vsh::insert(successor_values, merge_schedule_.traversal_splits, tree_table);
-
+    auto [index, inserted] = vsh::insert(successor_values, merge_schedule_.traversal_splits, tree_table);
+    _registered_states += inserted;
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});
 }
 

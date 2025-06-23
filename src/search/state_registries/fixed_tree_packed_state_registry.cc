@@ -84,6 +84,7 @@ const State &FixedTreePackedStateRegistry::get_initial_state() {
             state_packer.set(buffer.data(), i, tmp[i]);
         }
         auto [index, _] = vst::insert(buffer, tree_table);
+        _registered_states++;
         StateID id = StateID(index);
         cached_initial_state = make_unique<State>(lookup_state(id));
 
@@ -99,7 +100,6 @@ State FixedTreePackedStateRegistry::get_successor_state(const State &predecessor
     assert(!op.is_axiom());
 
     std::vector<unsigned> state_values;
-
     predecessor.unpack();
     auto& tmp = predecessor.get_unpacked_values();
     std::vector<vs::Index> new_state_values(tmp.begin(), tmp.end());
@@ -119,6 +119,7 @@ State FixedTreePackedStateRegistry::get_successor_state(const State &predecessor
         state_packer.set(buffer.data(), i, new_state_values[i]);
     }
     auto [index, inserted] = vst::insert(buffer, tree_table);
+    _registered_states += inserted;
 
     return lookup_state(StateID(index), {new_state_values.begin(), new_state_values.end()});
 }

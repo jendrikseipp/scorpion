@@ -120,7 +120,7 @@ using IStateRegistry = StateRegistry;
 class FixedTreePackedStateRegistry :
     public IStateRegistry {
 
-
+    size_t _registered_states = 0;
     const size_t cap = entries_for_mb(4000, sizeof(vs::IndexSlot));
     const size_t grow = entries_for_mb(500, sizeof(vs::IndexSlot));
 
@@ -182,7 +182,7 @@ public:
       Returns the number of states registered so far.
     */
     size_t size() const override {
-        return tree_table.size();
+        return _registered_states;
     }
 
     int get_state_size_in_bytes() const;
