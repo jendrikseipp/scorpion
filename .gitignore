@@ -11,3 +11,4 @@ __pycache__/
 /.idea
 /src/search/cmake-build-debug
 /src/search/cmake-build-debug
+perf.data
