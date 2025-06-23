@@ -8,6 +8,8 @@
 
 #include "../tasks/root_task.h"
 #include <iostream>
+#include <fstream>
+#include <string>
 
 using namespace std;
 
@@ -26,6 +28,7 @@ constexpr auto binary_merge_strategy = [](auto a, auto b) {
     }
     return a->cost > b->cost;
 };
+
 
 
 HuffmanTreeStateRegistry::HuffmanTreeStateRegistry(const TaskProxy &task_proxy)
@@ -47,7 +50,7 @@ HuffmanTreeStateRegistry::HuffmanTreeStateRegistry(const TaskProxy &task_proxy)
 
 std::vector<size_t> HuffmanTreeStateRegistry::get_domain_sizes(const TaskProxy &task_proxy) const {
     std::vector<size_t> domain_sizes;
-    domain_sizes.reserve(num_variables);
+    domain_sizes.reserve(task_proxy.get_variables().size());
     for (const auto &var: task_proxy.get_variables()) {
         domain_sizes.push_back(var.get_domain_size());
     }

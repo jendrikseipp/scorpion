@@ -9,7 +9,7 @@ from downward.cached_revision import CachedFastDownwardRevision
 from lab.experiment import Experiment
 from lab.environments import TetralithEnvironment, LocalEnvironment
 from benchmarks import *
-
+import custom_parser
 import project
 
 REVISION_CACHE = (
@@ -26,18 +26,10 @@ if project.REMOTE:
     TIME_LIMIT = 15 * 60
     MEMORY_LIMIT = "8G"
 
-    SUITE_SPECS = [
-        ("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS),
-        ("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
-        ("htg-domains", SUITE_HTG),
-        ("mine-pddl", SUITE_MINEPDDL),
-        ("pushworld", SUITE_PUSHWORLD),
-    ]
-
     SUITE = build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), SUITE_IPC_OPTIMAL_STRIPS)
 else:
     ENV = LocalEnvironment(processes=1)
-    MEMORY_LIMIT = "6G"
+    MEMORY_LIMIT = "8G"
     TIME_LIMIT = 5 * 60
     SUITE = build_suite(
          os.environ.get("DOWNWARD_BENCHMARKS"),
@@ -62,7 +54,7 @@ CONFIGS = [
         start=1,
     )
 ]
-REV_NICKS = [("valla", "")]
+REV_NICKS = [("valla", ""), ]
 ATTRIBUTES = [
     "coverage",
     "error",
@@ -77,6 +69,10 @@ ATTRIBUTES = [
     "total_time",
     "translator_memory",
     "translator_time_done",
+    "num_slots",
+    "num_variables",
+    "registered_states",
+    "avg_num_var",
 ]
 
 exp = Experiment(environment=ENV)
@@ -85,6 +81,7 @@ for rev, rev_nick in REV_NICKS:
     cached_rev.cache()
     exp.add_resource("", cached_rev.path, cached_rev.get_relative_exp_path())
     for config_nick, config in CONFIGS:
+        print(rev_nick)
         algo_name = f"{rev_nick}-{config_nick}" if rev_nick else config_nick
 
         bounds = {}
@@ -102,6 +99,7 @@ exp.add_parser(FastDownwardExperiment.EXITCODE_PARSER)
 exp.add_parser(FastDownwardExperiment.TRANSLATOR_PARSER)
 exp.add_parser(FastDownwardExperiment.SINGLE_SEARCH_PARSER)
 exp.add_parser(FastDownwardExperiment.PLANNER_PARSER)
+exp.add_parser(custom_parser.get_parser())
 
 exp.add_step("build", exp.build)
 exp.add_step("start", exp.start_runs)
