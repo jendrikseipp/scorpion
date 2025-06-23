@@ -9,8 +9,9 @@ from lab.parser import Parser
 def retrieve_avg_num_var(content, props):
     if "num_slots" in props:
         props["avg_num_var"] = float((props["num_slots"] * 2)) / props["registered_states"]
-    else:
+    elif "num_variables" in props:
         props["avg_num_var"] = float(props["num_variables"])
+
 
 class CommonParser(Parser):
     def add_repeated_pattern(
