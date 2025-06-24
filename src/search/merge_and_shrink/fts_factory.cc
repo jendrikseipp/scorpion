@@ -280,6 +280,10 @@ void FTSFactory::build_transitions_for_operator(OperatorProxy op) {
     for (FactProxy precondition : op.get_preconditions())
         handle_operator_precondition(op, precondition, has_effect_on_var, transitions_by_var);
 
+    for (const auto &transitions : transitions_by_var) {
+        cout << "transitions: " << transitions << endl;
+    }
+
     int label = op.get_id();
     int label_cost = op.get_cost();
     for (int var_id = 0; var_id < num_variables; ++var_id) {
