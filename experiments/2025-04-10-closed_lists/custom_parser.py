@@ -6,9 +6,13 @@ import re
 from lab.parser import Parser
 
 
-def retrieve_avg_num_var(content, props):
+def retrieve_avg_num_var(content, props):   
+    if "memory_error" in props:
+        return
+
     if "num_slots" in props:
         props["avg_num_var"] = float((props["num_slots"] * 2)) / props["registered_states"]
+
     elif "num_variables" in props:
         props["avg_num_var"] = float(props["num_variables"])
 
@@ -53,6 +57,11 @@ def get_parser():
         "registered_states",
         r"\[t=.+s, \d+ KB\] Number of registered states: (\d+)",
         type=int)
+    parser.add_pattern(
+        "memory_error",
+        r"(Failed to allocate memory)",
+        type=bool,
+    )
 
     parser.add_function(retrieve_avg_num_var)
     return parser

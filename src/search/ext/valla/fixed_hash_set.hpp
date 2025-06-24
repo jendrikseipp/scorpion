@@ -51,6 +51,7 @@ namespace valla {
         INDEX_TYPE resize_at_ = 0;
         INDEX_TYPE size_ = 0;
         INDEX_TYPE _grow_size = 0;
+        INDEX_TYPE grow_size_log2_ = 0; // log2 of grow size, used for segment calculations
         std::uint8_t n_seg = 1;
         Hash hash_;
         Equal eq_;
@@ -58,25 +59,20 @@ namespace valla {
         static constexpr INDEX_TYPE ILLEGAL_INDEX = static_cast<INDEX_TYPE>(-1);
 
         constexpr std::pair<INDEX_TYPE, INDEX_TYPE> logical_to_segment(INDEX_TYPE idx) const noexcept {
-            if (idx < initial_cap_) {
-                return {0, idx};
-            } else {
-                INDEX_TYPE seg = 1 + (idx - initial_cap_) / _grow_size;
-                INDEX_TYPE offset = (idx - initial_cap_) % _grow_size;
-                return {seg, offset};
-            }
+            const bool in_growth = idx >= initial_cap_;
+            INDEX_TYPE x = idx - initial_cap_;
+
+            INDEX_TYPE seg = 1 + (x >> grow_size_log2_);      // division
+            INDEX_TYPE offset = x & (_grow_size - 1);         // modulo
+            return {in_growth * seg,  in_growth * offset + !in_growth * idx};
+
         }
         constexpr INDEX_TYPE segment_to_logical(uint8_t seg, INDEX_TYPE idx) const noexcept {
-            if (seg == 0) {
-                return idx;
-            } else {
-                return initial_cap_ + (seg-1)*_grow_size + idx;
-            }
+            return (seg > 0) * (initial_cap_ + (seg - 1) * _grow_size) + idx;
         }
 
-        constexpr INDEX_TYPE probe_vec(INDEX_TYPE base, PROBE_TYPE probe, INDEX_TYPE size) noexcept {
-            // since size is def. power of 2
-            return (base + probe) % size;
+        static constexpr INDEX_TYPE probe_vec(INDEX_TYPE base, PROBE_TYPE probe, INDEX_TYPE size) noexcept {
+            return (base + probe) & (size - 1);
         }
 
 
@@ -94,13 +90,14 @@ namespace valla {
             Hash hash,
             Equal eq,
             INDEX_TYPE grow_size = 1 << 20)
-            : initial_cap_(std::bit_ceil(initial_cap)),
+            : initial_cap_(std::bit_floor(initial_cap)),
               total_capacity_(initial_cap_),
               resize_at_(static_cast<INDEX_TYPE>(total_capacity_ * load_factor_)),
               hash_(std::move(hash)),
               eq_(std::move(eq)),
-              _grow_size(grow_size) {
-            table_.emplace_back(Segment(initial_cap_, T::EmptySentinel));
+              _grow_size(std::bit_floor(grow_size)),
+              grow_size_log2_(std::countr_zero(_grow_size)) {
+            table_.emplace_back(initial_cap_, T::EmptySentinel);
         }
 
         ~FixedHashSet() {

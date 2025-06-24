@@ -40,6 +40,7 @@ HuffmanTreeStateRegistry::HuffmanTreeStateRegistry(const TaskProxy &task_proxy)
     log_merge_schedule(task_proxy);
 
     tasks::g_root_task->reorder(merge_schedule_.variable_order);
+    tmp_state_values.reserve(num_variables);
 
     State::get_variable_value = [this](const StateID &id) {
         std::vector<vs::Index> state_data(num_variables);
@@ -77,9 +78,8 @@ StateID HuffmanTreeStateRegistry::insert_id_or_pop_state() {
 
 State HuffmanTreeStateRegistry::lookup_state(StateID id) const {
     // Read in shuffled index order from storage
-    std::vector<vs::Index> tmp(num_variables);
-    vsh::read_state(id.get_value(), num_variables, merge_schedule_.traversal_splits, tree_table, tmp);
-    std::vector<int> state_values{tmp.begin(), tmp.end()};
+    vsh::read_state(id.get_value(), num_variables, merge_schedule_.traversal_splits, tree_table, tmp_state_values);
+    std::vector<int> state_values{tmp_state_values.begin(), tmp_state_values.end()};
     return task_proxy.create_state(*this, id, std::move(state_values));
 }
 

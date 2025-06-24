@@ -136,7 +136,7 @@ class HuffmanTreeStateRegistry :
     const int num_variables;
 
     std::unique_ptr<State> cached_initial_state;
-
+    mutable std::vector<vs::Index> tmp_state_values;
 
     StateID insert_id_or_pop_state();
     int get_bins_per_state() const;
