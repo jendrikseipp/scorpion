@@ -946,11 +946,11 @@
 <p>A landmark factory specification is either a newly created instance or a landmark factory that has been defined previously. This page describes how one can specify a new landmark factory instance. For re-using landmark factories, see OptionSyntax#Landmark_Predefinitions.</p>
 <p>This feature type can be bound to variables using <code>let(variable_name, variable_definition, expression)</code> where <code>expression</code> can use <code>variable_name</code>. Predefinitions using <code>--evaluator</code>, <code>--heuristic</code>, and <code>--landmarks</code> are automatically transformed into <code>let</code>-expressions but are deprecated.</p>
 <h2 id="exhaustive_landmarks">Exhaustive Landmarks<a class="headerlink" href="#exhaustive_landmarks" title="Permanent link">#</a></h2>
-<p>Exhaustively checks for each fact if it is a landmark.This check is done using relaxed planning.
+<p>Exhaustively checks for each atom if it is a landmark.This check is done using relaxed planning.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>lm_exhaust(use_unary_relaxation=false, verbosity=normal)
 </span></code></pre></div></p>
 <ul>
-<li><em>use_unary_relaxation</em> (bool): compute landmarks of the unary relaxation, i.e., landmarks for the delete relaxation of a task transformation such that each operator is split into one operator for each of its effects. This kind of landmark was previously known as "causal landmarks". Setting the option to true can reduce the overall number of landmarks, which can make the search more memory-efficient but potentially less informative.</li>
+<li><em>use_unary_relaxation</em> (bool): compute landmarks of the unary relaxation, i.e., landmarks for the delete relaxation of a task transformation such that each operator is split into one operator for each of its effects. This kind of landmarks was previously known as "causal landmarks". Setting the option to true can reduce the overall number of landmarks, which can make the search more memory-efficient but potentially less informative.</li>
 <li><em>verbosity</em> ({silent, normal, verbose, debug}): Option to specify the verbosity level.<ul>
 <li><code>silent</code>: only the most basic output</li>
 <li><code>normal</code>: relevant information to monitor progress</li>
@@ -964,9 +964,14 @@
 <li><strong>conditional_effects:</strong> ignored, i.e. not supported</li>
 </ul>
 <h2 id="hm_landmarks">h^m Landmarks<a class="headerlink" href="#hm_landmarks" title="Permanent link">#</a></h2>
-<p>The landmark generation method introduced by Keyder, Richter &amp; Helmert (ECAI 2010).
+<p>The landmark generation method introduced in the following paper</p>
+<ul>
+<li>Emil Keyder, Silvia Richter and Malte Helmert.<br />
+ <a href="https://ai.dmi.unibas.ch/papers/keyder-et-al-ecai2010.pdf">Sound and Complete Landmarks for And/Or Graphs</a>.<br />
+ In <em>Proceedings of the 19th European Conference on Artificial Intelligence (ECAI 2010)</em>, pp. 335-340. IOS Press, 2010.</li>
+</ul>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>lm_hm(m=2, conjunctive_landmarks=true, use_orders=true, verbosity=normal)
-</span></code></pre></div></p>
+</span></code></pre></div>
 <ul>
 <li><em>m</em> (int): subset size (if unsure, use the default of 2)</li>
 <li><em>conjunctive_landmarks</em> (bool): keep conjunctive landmarks</li>
@@ -1022,7 +1027,7 @@
 </ul>
 </li>
 </ul>
-<p><strong>Obedient-reasonable orders:</strong> Hoffmann et al. (2004) suggest obedient-reasonable orders in addition to reasonable orders. Obedient-reasonable orders were later also used by the LAMA planner (Richter and Westphal, 2010). They are "reasonable orders" under the assumption that all (non-obedient) reasonable orders are actually "natural", i.e., every plan obeys the reasonable orders. We observed experimentally that obedient-reasonable orders have minimal effect on the performance of LAMA (Büchner et al., 2023) and decided to remove them in issue1089.</p>
+<p><strong>Obedient-reasonable orders:</strong> Hoffmann et al. (2004) suggest obedient-reasonable orderings in addition to reasonable orders. Obedient-reasonable orders were later also used by the LAMA planner (Richter and Westphal, 2010). They are "reasonable orders" under the assumption that all (non-obedient) reasonable orders are actually "natural", i.e., every plan obeys the reasonable orders. We observed experimentally that obedient-reasonable orders have minimal effect on the performance of LAMA (Büchner et al., 2023) and decided to remove them in issue1089.</p>
 <p>Supported language features:</p>
 <ul>
 <li><strong>conditional_effects:</strong> supported if subcomponent supports them</li>

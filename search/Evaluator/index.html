@@ -1967,7 +1967,7 @@
 </ul>
 <p><strong>Note on performance for satisficing planning:</strong> The cost of a landmark is based on the cost of the operators that achieve it. For satisficing search this can be counterproductive since it is often better to focus on distance from goal (i.e. length of the plan) rather than cost. In experiments we achieved the best performance using the option 'transform=adapt_costs(one)' to enforce unit costs.</p>
 <p><strong>Preferred operators:</strong> Computing preferred operators is <em>only enabled</em> when setting pref=true because it has a nontrivial runtime cost. Using the heuristic for preferred operators without setting pref=true has no effect.
-Our implementation to compute preferred operators based on landmarks differs from the description in the literature (see reference above).The original implementation computes two kinds of preferred operators:</p>
+Our implementation to compute preferred operators based on landmarks differs from the description in the literature (see reference above). The original implementation computes two kinds of preferred operators:</p>
 <ol>
 <li>If there is an applicable operator that reaches a landmark, all such operators are preferred.</li>
 <li>If no such operators exist, perform an FF-style relaxed exploration towards the nearest landmarks (according to the landmark orderings) and use the preferred operators of this exploration.</li>

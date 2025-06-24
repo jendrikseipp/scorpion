@@ -570,8 +570,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#merge_strategy_sscs" class="md-nav__link">
-    Merge strategy SSCs
+  <a href="#merge_strategy_sccs" class="md-nav__link">
+    Merge strategy SCCs
   </a>
   
 </li>
@@ -868,8 +868,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#merge_strategy_sscs" class="md-nav__link">
-    Merge strategy SSCs
+  <a href="#merge_strategy_sccs" class="md-nav__link">
+    Merge strategy SCCs
   </a>
   
 </li>
@@ -919,14 +919,14 @@
 <p><strong>Note:</strong> An example of a precomputed merge startegy is a linear merge strategy, which can be obtained using:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>merge_strategy=merge_precomputed(merge_tree=linear(&lt;variable_order&gt;))
 </span></code></pre></div></p>
-<h2 id="merge_strategy_sscs">Merge strategy SSCs<a class="headerlink" href="#merge_strategy_sscs" title="Permanent link">#</a></h2>
+<h2 id="merge_strategy_sccs">Merge strategy SCCs<a class="headerlink" href="#merge_strategy_sccs" title="Permanent link">#</a></h2>
 <p>This merge strategy implements the algorithm described in the paper </p>
 <ul>
 <li>Silvan Sievers, Martin Wehrle and Malte Helmert.<br />
  <a href="https://ai.dmi.unibas.ch/papers/sievers-et-al-icaps2016.pdf">An Analysis of Merge Strategies for Merge-and-Shrink Heuristics</a>.<br />
  In <em>Proceedings of the 26th International Conference on Planning and Scheduling (ICAPS 2016)</em>, pp. 2358-2366. AAAI Press, 2016.</li>
 </ul>
-<p>In a nutshell, it computes the maximal SCCs of the causal graph, obtaining a partitioning of the task's variables. Every such partition is then merged individually, using the specified fallback merge strategy, considering the SCCs in a configurable order. Afterwards, all resulting composite abstractions are merged to form the final abstraction, again using the specified fallback merge strategy and the configurable order of the SCCs.
+<p>In a nutshell, it computes the maximal strongly connected components (SCCs) of the causal graph, obtaining a partitioning of the task's variables. Every such partition is then merged individually, using the specified fallback merge strategy, considering the SCCs in a configurable order. Afterwards, all resulting composite abstractions are merged to form the final abstraction, again using the specified fallback merge strategy and the configurable order of the SCCs.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>merge_sccs(order_of_sccs=topological, merge_selector, verbosity=normal)
 </span></code></pre></div></p>
 <ul>
