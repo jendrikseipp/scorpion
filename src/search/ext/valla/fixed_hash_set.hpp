@@ -47,41 +47,92 @@ namespace valla {
         using Segment = std::vector<T>;
         std::vector<Segment> table_;
         INDEX_TYPE initial_cap_ = 0;
+        INDEX_TYPE initial_cap_log2_ = 0;
+        INDEX_TYPE max_grow_size_ = 0;
+        INDEX_TYPE max_grow_size_log2 = 0;
         INDEX_TYPE total_capacity_ = 0;
         INDEX_TYPE resize_at_ = 0;
         INDEX_TYPE size_ = 0;
-        INDEX_TYPE _grow_size = 0;
-        INDEX_TYPE grow_size_log2_ = 0; // log2 of grow size, used for segment calculations
+        INDEX_TYPE _dseg = 0;
+        INDEX_TYPE _thresh = 0;
+        int _thresh_log2 = 0;
         std::uint8_t n_seg = 1;
         Hash hash_;
         Equal eq_;
 
         static constexpr INDEX_TYPE ILLEGAL_INDEX = static_cast<INDEX_TYPE>(-1);
 
-        constexpr std::pair<INDEX_TYPE, INDEX_TYPE> logical_to_segment(INDEX_TYPE idx) const noexcept {
-            const bool in_growth = idx >= initial_cap_;
-            INDEX_TYPE x = idx - initial_cap_;
 
-            INDEX_TYPE seg = 1 + (x >> grow_size_log2_);      // division
-            INDEX_TYPE offset = x & (_grow_size - 1);         // modulo
-            return {in_growth * seg,  in_growth * offset + !in_growth * idx};
-
+        constexpr static INDEX_TYPE doubling_segs(INDEX_TYPE ic, INDEX_TYPE mg) noexcept {
+            return std::countr_zero(mg) - std::countr_zero(ic);
         }
-        constexpr INDEX_TYPE segment_to_logical(uint8_t seg, INDEX_TYPE idx) const noexcept {
-            return (seg > 0) * (initial_cap_ + (seg - 1) * _grow_size) + idx;
+        constexpr static INDEX_TYPE double_threshold(INDEX_TYPE ic, INDEX_TYPE doubling_segs) noexcept {
+            return ic * ((1ULL << doubling_segs) - 1);
+        }
+        // // Maps global index to (segment index, index within segment)
+        // constexpr std::pair<INDEX_TYPE, INDEX_TYPE>
+        // logical_to_segment(INDEX_TYPE idx) const noexcept {
+        //     // Everything up to (but not including) _thresh is the doubling region
+        //     if (idx < initial_cap_) {
+        //         return {0, idx};
+        //     }
+        //     if (idx < _thresh) {
+        //         // For doubling segments after the first
+        //         // Find seg such that: start = initial_cap_ << (seg-1)
+        //         // Essentially seg = 1 + floor(log2(idx / initial_cap_))
+        //         INDEX_TYPE seg = 1 + (std::bit_width(idx) - std::bit_width(initial_cap_));
+        //         INDEX_TYPE seg_start = initial_cap_ << (seg - 1);
+        //         return {seg, idx - seg_start};
+        //     }
+        //     // Fixed-size segments after threshold
+        //     INDEX_TYPE fixed_idx = idx - _thresh;
+        //     INDEX_TYPE seg = _dseg + (fixed_idx / max_grow_size_);
+        //     INDEX_TYPE offset = fixed_idx % max_grow_size_;
+        //     return {seg, offset};
+        // }
+        // Maps global index to (segment index, index within segment)
+        constexpr std::pair<INDEX_TYPE, INDEX_TYPE>
+        logical_to_segment(INDEX_TYPE idx) const noexcept {
+            // Everything up to (but not including) _thresh is the doubling region
+            const auto out_initial = (idx >= initial_cap_);
+            if (idx < _thresh) {
+                // For doubling segments after the first
+                // Find seg such that: start = initial_cap_ << (seg-1)
+                // Essentially seg = 1 + floor(log2(idx / initial_cap_))
+                INDEX_TYPE seg = std::bit_width(idx) - initial_cap_log2_;
+                INDEX_TYPE seg_start = initial_cap_ << (seg - 1);
+                return {out_initial * seg, idx - out_initial * seg_start};
+            }
+            // Fixed-size segments after threshold
+            INDEX_TYPE fixed_idx = idx - _thresh;
+            INDEX_TYPE seg = _dseg + (fixed_idx / max_grow_size_);
+            INDEX_TYPE offset = fixed_idx % max_grow_size_;
+            return {seg, offset};
         }
 
-        static constexpr INDEX_TYPE probe_vec(INDEX_TYPE base, PROBE_TYPE probe, INDEX_TYPE size) noexcept {
-            return (base + probe) & (size - 1);
+        // Maps (segment index, index within segment) to global logical index
+        constexpr INDEX_TYPE
+        segment_to_logical(uint8_t seg, INDEX_TYPE idx) const noexcept {
+            const bool out_initial = seg != 0;
+            const bool in_doubling_region = seg < _dseg;
+            return (out_initial) * (
+                !in_doubling_region * (_thresh + (seg - _dseg) * max_grow_size_) +
+                in_doubling_region * (initial_cap_ << (seg - 1))) + idx;
+        }
+
+        static constexpr INDEX_TYPE probe_vec(INDEX_TYPE base, PROBE_TYPE probe, INDEX_TYPE mask) noexcept {
+            return (base + probe) & mask;
         }
 
 
-        constexpr INDEX_TYPE calculate_initial_offsets(const INDEX_TYPE h, const uint8_t seg) const {
-            return seg == 0 ? h % initial_cap_: h % _grow_size;
+        static constexpr INDEX_TYPE calculate_initial_offset(const INDEX_TYPE h, const INDEX_TYPE mask) {
+            assert(mask == (std::bit_ceil(mask) - 1) && "Size must be a power of two");
+            return h & mask;
         }
 
-        constexpr INDEX_TYPE get_size(const uint8_t seg) const {
-            return seg == 0 ? initial_cap_ : _grow_size;
+        constexpr INDEX_TYPE get_mask(const uint8_t seg) const {
+            // Apply the Max Grow size mask, as well as the current bit mask. The most restrictive wins.
+            return (max_grow_size_ - 1) & ((initial_cap_ << (seg - (seg != 0))) - 1);
         }
 
     public:
@@ -89,14 +140,29 @@ namespace valla {
             INDEX_TYPE initial_cap,
             Hash hash,
             Equal eq,
-            INDEX_TYPE grow_size = 1 << 20)
+            INDEX_TYPE max_grow_size = 1 << 22)
             : initial_cap_(std::bit_floor(initial_cap)),
+              initial_cap_log2_(std::countr_zero(initial_cap_)),
+              max_grow_size_(std::bit_floor(max_grow_size)),
+              max_grow_size_log2(std::countr_zero(max_grow_size)),
               total_capacity_(initial_cap_),
               resize_at_(static_cast<INDEX_TYPE>(total_capacity_ * load_factor_)),
               hash_(std::move(hash)),
               eq_(std::move(eq)),
-              _grow_size(std::bit_floor(grow_size)),
-              grow_size_log2_(std::countr_zero(_grow_size)) {
+              _dseg(doubling_segs(initial_cap_, max_grow_size)),
+              _thresh(double_threshold(initial_cap_, _dseg)),
+              _thresh_log2(std::countr_zero(_thresh))
+        {
+
+            assert(initial_cap_ >= 2 && "Initial cap too small");
+            assert((initial_cap_ & (initial_cap_ - 1)) == 0 && "initial_cap_ must be power of two");
+            assert((max_grow_size_ & (max_grow_size_ - 1)) == 0 && "max_grow_size must be power of two");
+            assert(max_grow_size >= initial_cap_);
+            assert(std::bit_ceil(initial_cap_) == initial_cap_ && "initial_cap_ must be power of two");
+            assert(std::bit_ceil(max_grow_size_) == max_grow_size_ && "max_grow_size must be power of two");
+            assert(_dseg > 0 && "There must be at least 1 doubling segment");
+            assert(_thresh > 0);
+
             table_.emplace_back(initial_cap_, T::EmptySentinel);
         }
 
@@ -121,13 +187,13 @@ namespace valla {
             std::optional<std::pair<INDEX_TYPE, INDEX_TYPE> > first_empty;
 
             for (int8_t seg = n_seg - 1; seg >= 0; --seg) {
-                const auto initial_offset = calculate_initial_offsets(h, seg);
-                const auto seg_size = get_size(seg);
+                const auto seg_mask = get_mask(seg);
+                assert(std::countr_one(seg_mask) == std::bit_width(seg_mask) && "Mask must be a power of two minus one");
                 for (uint8_t stride = 0; stride < PROBE_STRIDE; ++stride) {
-                    INDEX_TYPE offset = probe_vec(initial_offset, stride, seg_size);
+                    const INDEX_TYPE offset = probe_vec(h, stride, seg_mask);
                     T &slot = table_[seg][offset];
 
-                    if (slot == T::EmptySentinel) {
+                    if (slot == T::EmptySentinel && !first_empty) {
                         first_empty = std::make_pair(seg, offset);
                         break;
                     }
@@ -144,7 +210,20 @@ namespace valla {
                 return {segment_to_logical(seg, offset), true};
             }
 
-            utils::g_log << "Insertion failed, no empty slot found for value. Growing." << std::endl;
+            utils::g_log << "Insertion failed, no empty slot found for value (Load " <<
+                static_cast<double>(size())/total_capacity_ * 100<< "%). Growing." << std::endl;
+
+            // std::size_t non_empty = 0;
+            // for (auto i = 0; i < total_capacity_; ++i) {
+            //     const auto [seg, idx] = logical_to_segment(i);
+            //     if (table_[seg][idx] != T::EmptySentinel) ++non_empty;
+            //
+            //     if (i % 100 == 0) {
+            //         utils::g_log << "Non-empty entries: " << non_empty << std::endl;
+            //         non_empty = 0;
+            //         }
+            //     }
+            //
 
             do_grow();
 
@@ -157,10 +236,9 @@ namespace valla {
 
             const auto h = hash_(value);
             for (int8_t seg = n_seg - 1; seg >= 0; --seg) {
-                const auto initial_offset = calculate_initial_offsets(h, seg);
-                const auto seg_size = get_size(seg);
+                const auto seg_mask = get_mask(seg);
                 for (uint8_t stride = 0; stride < PROBE_STRIDE; ++stride) {
-                    INDEX_TYPE offset = probe_vec(initial_offset, stride, seg_size);
+                    INDEX_TYPE offset = probe_vec(h, stride, seg_mask);
                     const T &slot = table_[seg][offset];
 
 
@@ -177,10 +255,9 @@ namespace valla {
 
             const auto h = hash_(value);
             for (int8_t seg = n_seg - 1; seg >= 0; --seg) {
-                const auto initial_offset = calculate_initial_offsets(h, seg);
-                const auto seg_size = get_size(seg);
+                const auto seg_mask = get_mask(seg);
                 for (uint8_t stride = 0; stride < PROBE_STRIDE; ++stride) {
-                    INDEX_TYPE offset = probe_vec(initial_offset, stride, seg_size);
+                    INDEX_TYPE offset = probe_vec(h, stride, seg_mask);
                     const T &slot = table_[seg][offset];
 
                     if (slot == T::EmptySentinel) return {ILLEGAL_INDEX, false};
@@ -192,9 +269,10 @@ namespace valla {
 
         // Get by stable logical index
         T get(INDEX_TYPE idx) const {
-            assert(idx != T::EmptySentinel.lhs && "Cannot get EmptySentinel");
+            assert(idx != ILLEGAL_INDEX && "Cannot get ILLEGAL_INDEX");
             assert(idx < total_capacity_);
             auto [seg, local] = logical_to_segment(idx);
+            assert(table_[seg][local] != T::EmptySentinel && "Cannot get EmptySentinel");
             return table_[seg][local];
         }
 
@@ -211,8 +289,9 @@ namespace valla {
     private:
         void do_grow() {
             //auto grow_size = std::min(total_capacity_, _max_grow_size);
-            table_.emplace_back(Segment(_grow_size, T::EmptySentinel));
-            total_capacity_ += _grow_size;
+            const auto grow_size = std::min(total_capacity_, max_grow_size_);
+            table_.emplace_back(Segment(grow_size, T::EmptySentinel));
+            total_capacity_ += grow_size;
             resize_at_ = static_cast<INDEX_TYPE>(static_cast<double>(total_capacity_) * load_factor_);
             ++n_seg;
         }

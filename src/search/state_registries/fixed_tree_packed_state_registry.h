@@ -121,9 +121,9 @@ class FixedTreePackedStateRegistry :
     public IStateRegistry {
 
     size_t _registered_states = 0;
-    const size_t cap = entries_for_mb(4000, sizeof(vs::IndexSlot));
-    const size_t grow = entries_for_mb(500, sizeof(vs::IndexSlot));
 
+    const size_t cap = entries_for_mb(70, sizeof(vs::IndexSlot));
+    const size_t grow = entries_for_mb(1100, sizeof(vs::IndexSlot));
     vs::FixedHashSetSlot tree_table = vs::FixedHashSetSlot(cap,
                                                   vs::Hasher(),
                                                   vs::SlotEqual(),
@@ -133,6 +133,7 @@ class FixedTreePackedStateRegistry :
     const int num_variables;
 
     std::unique_ptr<State> cached_initial_state;
+    mutable std::vector<vs::Index> tmp_state_values;
 
 
     StateID insert_id_or_pop_state();
