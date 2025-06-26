@@ -35,7 +35,7 @@ namespace valla::static_tree
 
     inline auto calc_mid(size_t size)
     {
-        return size / 2 + (size % 2);
+        return size / 2;
     }
 
 /// @brief Recursively insert the elements from `it` until `end` into the `table`.
@@ -58,9 +58,9 @@ inline Index insert_recursively(Iterator it, Iterator end, size_t size, IndexedH
     const auto mid = calc_mid(size);
 
     /* Conquer */
-    const auto mid_it = it + mid;
-    const auto left_index = insert_recursively(it, mid_it, mid, table);
-    const auto right_index = insert_recursively(mid_it, end, size - mid, table);
+    const auto mid_it = end - mid;
+    const auto left_index = insert_recursively(it, mid_it, size - mid, table);
+    const auto right_index = insert_recursively(mid_it, end, mid, table);
 
     return table.insert_slot(make_slot(left_index, right_index)).first->second;
 }
@@ -86,9 +86,9 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
     const auto mid = calc_mid(size);
 
     /* Conquer */
-    const auto mid_it = it + mid;
-    const auto [left_index, left_inserted] = emplace_recursively(it, mid_it, mid, table);
-    const auto [right_index, right_inserted] = emplace_recursively(mid_it, end, size - mid, table);
+    const auto mid_it = end - mid;
+    const auto [left_index, left_inserted] = emplace_recursively(it, mid_it, size - mid, table);
+    const auto [right_index, right_inserted] = emplace_recursively(mid_it, end, mid, table);
 
     auto [iter, inserted] = table.insert_slot(make_slot(left_index, right_index));
 
@@ -180,8 +180,8 @@ inline void read_state_recursively(Index index, size_t size, const IndexedHashSe
     const auto mid = calc_mid(size);
 
     /* Conquer */
-    read_state_recursively(left_index, mid, tree_table, ref_state);
-    read_state_recursively(right_index, size - mid, tree_table, ref_state);
+    read_state_recursively(left_index, size - mid, tree_table, ref_state);
+    read_state_recursively(right_index, mid, tree_table, ref_state);
 }
 
 /// @brief Read the `out_state` from the given `tree_index` from the `tree_table`.
@@ -254,8 +254,8 @@ private:
             Index mid = calc_mid(entry.m_size);
 
             // Emplace right first to ensure left is visited first in dfs.
-            m_stack.emplace(right, entry.m_size - mid);
-            m_stack.emplace(left, mid);
+            m_stack.emplace(right, mid);
+            m_stack.emplace(left, entry.m_size - mid);
         }
 
         m_value = END_POS;
