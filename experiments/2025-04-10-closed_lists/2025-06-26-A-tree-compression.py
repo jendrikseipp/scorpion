@@ -24,7 +24,7 @@ if project.REMOTE:
         extra_options="#SBATCH -A naiss2024-5-421",
         memory_per_cpu="9G",
     )
-    TIME_LIMIT = 15 * 60
+    TIME_LIMIT = 30 * 60
     MEMORY_LIMIT = "8G"
 
 #    SUITE = build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), SUITE_IPC_OPTIMAL_STRIPS)
