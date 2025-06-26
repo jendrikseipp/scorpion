@@ -99,11 +99,54 @@ namespace valla {
                 !in_doubling_region * (_thresh + (seg - _dseg) * max_grow_size_) +
                 in_doubling_region * (initial_cap_ << (seg - 1))) + idx;
         }
+        // // Maps global index to (segment index, index within segment)
+        // constexpr std::pair<INDEX_TYPE, INDEX_TYPE>
+        // logical_to_segment(INDEX_TYPE idx) const noexcept {
+        //     // Everything up to (but not including) _thresh is the doubling region
+        //     if (idx < initial_cap_) {
+        //         return {0, idx};
+        //     }
+        //     if (idx < _thresh) {
+        //         // For doubling segments after the first
+        //         // Find seg such that: start = initial_cap_ << (seg-1)
+        //         // Essentially seg = 1 + floor(log2(idx / initial_cap_))
+        //         INDEX_TYPE seg = 1 + (std::bit_width(idx) - std::bit_width(initial_cap_));
+        //         INDEX_TYPE seg_start = initial_cap_ << (seg - 1);
+        //         return {seg, idx - seg_start};
+        //     }
+        //     // Fixed-size segments after threshold
+        //     INDEX_TYPE fixed_idx = idx - _thresh;
+        //     INDEX_TYPE seg = _dseg + (fixed_idx / max_grow_size_);
+        //     INDEX_TYPE offset = fixed_idx % max_grow_size_;
+        //     return {seg, offset};
+        // }
+        // Maps global index to (segment index, index within segment)
+        constexpr std::pair<INDEX_TYPE, INDEX_TYPE>
+        logical_to_segment(INDEX_TYPE idx) const noexcept {
+            // Everything up to (but not including) _thresh is the doubling region
+            const auto out_initial = (idx >= initial_cap_);
+            if (idx < _thresh) {
+                // For doubling segments after the first
+                // Find seg such that: start = initial_cap_ << (seg-1)
+                // Essentially seg = 1 + floor(log2(idx / initial_cap_))
+                INDEX_TYPE seg = std::bit_width(idx) - initial_cap_log2_;
+                INDEX_TYPE seg_start = initial_cap_ << (seg - 1);
+                return {out_initial * seg, idx - out_initial * seg_start};
+            }
+            // Fixed-size segments after threshold
+            INDEX_TYPE fixed_idx = idx - _thresh;
+            INDEX_TYPE seg = _dseg + (fixed_idx / max_grow_size_);
+            INDEX_TYPE offset = fixed_idx % max_grow_size_;
+            return {seg, offset};
+        }
 
         static constexpr INDEX_TYPE probe_vec(INDEX_TYPE base, PROBE_TYPE probe, INDEX_TYPE mask) noexcept {
             return (base + probe) & mask;
         }
 
+        static constexpr INDEX_TYPE probe_vec(INDEX_TYPE base, PROBE_TYPE probe, INDEX_TYPE mask) noexcept {
+            return (base + probe) & mask;
+        }
 
         static constexpr INDEX_TYPE calculate_initial_offset(const INDEX_TYPE h, const INDEX_TYPE mask) {
             assert(mask == (std::bit_ceil(mask) - 1) && "Size must be a power of two");
