@@ -122,8 +122,8 @@ class HuffmanTreeStateRegistry :
 
     size_t _registered_states = 0;
 
-    const size_t cap = entries_for_mb(4000, sizeof(vs::IndexSlot));
-    const size_t grow = entries_for_mb(500, sizeof(vs::IndexSlot));
+    const size_t cap = entries_for_mb(70, sizeof(vs::IndexSlot));
+    const size_t grow = entries_for_mb(1100, sizeof(vs::IndexSlot));
 
     vs::FixedHashSetSlot tree_table = vs::FixedHashSetSlot(cap,
                                                   vs::Hasher(),

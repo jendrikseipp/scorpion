@@ -27,7 +27,8 @@ if project.REMOTE:
     TIME_LIMIT = 15 * 60
     MEMORY_LIMIT = "8G"
 
-    SUITE = build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), SUITE_IPC_OPTIMAL_STRIPS)
+#    SUITE = build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), SUITE_IPC_OPTIMAL_STRIPS)
+    SUITE = build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC)
 else:
     ENV = LocalEnvironment(processes=1)
     MEMORY_LIMIT = "6G"
@@ -45,13 +46,18 @@ DRIVER_OPTIONS = [
     MEMORY_LIMIT,
     ]
 state_registries = [
+                ("unpck", "unpacked"),
                 ("pck", "packed"),
-                ("fixed_packed", "fixed_tree_packed"),
+                ("static_unpck", "tree_unpacked"),
+                ("static_pck", "tree_packed"),
+                ("fixed_unpck", "fixed_tree_unpacked"),
+                ("fixed_pck", "fixed_tree_packed"),
                 ("huffman_tree", "huffman"),
+
             ]
 heuristics = [
                 ("blind", "blind()"),
-                ("ff", "ff()"),
+                #("ff", "ff()"),
             ]
 CONFIGS = [
     (f"{index:02d}-{h_nick}-{s_nick}", ["--search", f"astar({h}, state_registry={s})"])
@@ -76,9 +82,12 @@ ATTRIBUTES = [
     "translator_memory",
     "translator_time_done",
     "num_slots",
-    "num_variables",
+    "num_atoms",
     "registered_states",
-    "avg_edges_per_state"
+    "avg_edges_per_state",
+    "state_set_occupied_tree",
+    "state_set_allocated_tree",
+    "state_set_size",
 ]
 
 exp = Experiment(environment=ENV)

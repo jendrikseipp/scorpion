@@ -12,3 +12,5 @@ __pycache__/
 /src/search/cmake-build-debug
 /src/search/cmake-build-debug
 perf.data
+
+perf.data.old

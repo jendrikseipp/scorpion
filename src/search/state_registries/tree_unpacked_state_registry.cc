@@ -73,6 +73,7 @@ const State &TreeUnpackedStateRegistry::get_initial_state() {
                                                   tree_table);
 
         StateID id = StateID(index);
+        ++_registered_states;
         cached_initial_state = make_unique<State>(lookup_state(id));
         cached_initial_state->unpack();
     }
@@ -96,8 +97,8 @@ State TreeUnpackedStateRegistry::get_successor_state(
         }
     }
 
-    auto [index, _] = vs::static_tree::insert(successor_values, tree_table);
-
+    auto [index, exists] = vs::static_tree::insert(successor_values, tree_table);
+    _registered_states += !exists;
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});
 }
 

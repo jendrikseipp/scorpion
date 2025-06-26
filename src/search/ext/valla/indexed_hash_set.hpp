@@ -62,15 +62,31 @@ public:
     {
         size_t usage = 0;
 
-        usage += m_slot_to_index.capacity() * (sizeof(Slot) + sizeof(Index));
-        usage += 2 * m_slot_to_index.bucket_count();
-
-        usage += m_slot_to_index.capacity();
+        usage += m_slot_to_index.bucket_count() * (1 + sizeof(Slot) + sizeof(Index));
 
         usage += m_index_to_slot.capacity() * sizeof(Slot);
 
         return usage;
     }
+
+    size_t get_occupied_memory_usage() const
+    {
+        size_t usage = 0;
+
+        usage += m_slot_to_index.size() * (1 + sizeof(Slot) + sizeof(Index));
+
+        usage += m_index_to_slot.size() * sizeof(Slot);
+
+        return usage;
+    }
+
+    ~IndexedHashSet() {
+        utils::g_log << "State set destroyed, size: " << size() << " entries"<< std::endl;
+        utils::g_log << "State set destroyed, size per entry: " << 2 << " blocks"<< std::endl;
+        utils::g_log << "State set destroyed, capacity: " << m_slot_to_index.capacity() << " entries" << std::endl;
+        utils::g_log << "State set destroyed, byte size: " << static_cast<double>(get_occupied_memory_usage()) / (1024 * 1024) << "MB" << std::endl;
+        utils::g_log << "State set destroyed, byte capacity: " << static_cast<double>(get_memory_usage()) / (1024 * 1024) << "MB" << std::endl;
+    };
 
 private:
     phmap::flat_hash_map<Slot, Index> m_slot_to_index;

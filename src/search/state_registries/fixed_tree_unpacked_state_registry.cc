@@ -56,7 +56,7 @@ const State &FixedTreeUnpackedStateRegistry::get_initial_state() {
         auto &tmp = initial_state.get_unpacked_values();
         auto [index, _] = vst::insert(std::vector<vs::Index>{tmp.begin(), tmp.end()},
                                                   tree_table);
-
+        ++_registered_states;
         StateID id = StateID(index);
         cached_initial_state = make_unique<State>(lookup_state(id));
         cached_initial_state->unpack();
@@ -81,8 +81,8 @@ State FixedTreeUnpackedStateRegistry::get_successor_state(
         }
     }
 
-    auto [index, _] = vst::insert(successor_values, tree_table);
-
+    auto [index, exists] = vst::insert(successor_values, tree_table);
+    _registered_states += !exists;
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});
 }
 

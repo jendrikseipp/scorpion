@@ -121,7 +121,7 @@ class TreeUnpackedStateRegistry :
 
     std::unique_ptr<State> cached_initial_state;
 
-
+    size_t _registered_states = 0;
     StateID insert_id_or_pop_state();
     int get_bins_per_state() const;
 public:
@@ -169,7 +169,7 @@ public:
       Returns the number of states registered so far.
     */
     size_t size() const override {
-        return tree_table.size();
+        return _registered_states;
     }
 
     int get_state_size_in_bytes() const;

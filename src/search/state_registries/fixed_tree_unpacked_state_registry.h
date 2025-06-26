@@ -120,13 +120,14 @@ class FixedTreeUnpackedStateRegistry :
     public IStateRegistry {
 
 
-    const size_t cap = entries_for_mb(4000, sizeof(vs::IndexSlot));
-    const size_t grow = entries_for_mb(500, sizeof(vs::IndexSlot));
 
-    FixedHashSet tree_table = FixedHashSet(cap,
-        vs::Hasher(),
-        vs::SlotEqual(),
-        grow);
+    size_t _registered_states = 0;
+    const size_t cap = entries_for_mb(70, sizeof(vs::IndexSlot));
+    const size_t grow = entries_for_mb(1100, sizeof(vs::IndexSlot));
+    vs::FixedHashSetSlot tree_table = vs::FixedHashSetSlot(cap,
+                                                  vs::Hasher(),
+                                                  vs::SlotEqual(),
+                                                  grow);
 
     const int_packer::IntPacker &state_packer;
     AxiomEvaluator &axiom_evaluator;
@@ -182,7 +183,7 @@ public:
       Returns the number of states registered so far.
     */
     size_t size() const override {
-        return tree_table.size();
+        return _registered_states;
     }
 
     int get_state_size_in_bytes() const;

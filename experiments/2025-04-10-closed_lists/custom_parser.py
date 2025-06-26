@@ -10,12 +10,11 @@ def retrieve_avg_num_var(content, props):
     if "memory_error" in props:
         return
 
-    if "num_slots" in props:
-        props["avg_num_var"] = float((props["num_slots"] * 2)) / props["registered_states"]
+    if "state_set_size" in props and "size_per_entry" in props:
+        props["avg_edges_per_state"] = float((props["state_set_size"] * props["size_per_entry"])) / props["registered_states"]
 
-    elif "num_variables" in props:
-        props["avg_num_var"] = float(props["num_variables"])
-
+    if "root_table_size" in props:
+        pass
 
 class CommonParser(Parser):
     def add_repeated_pattern(
@@ -46,12 +45,24 @@ class CommonParser(Parser):
 def get_parser():
     parser = CommonParser()
     parser.add_pattern(
-        "num_slots",
-        r"\[t=.+s, \d+ KB\] FixedHashSet destroyed, size: (\d+) entries",
+        "state_set_size",
+        r"\[t=.+s, \d+ KB\] State set destroyed, size: (\d+) entries",
         type=int)
     parser.add_pattern(
-        "num_variables",
-        r"\[t=.+s, \d+ KB\] Variables: (\d+)",
+        "size_per_entry",
+        r"\[t=.+s, \d+ KB\] State set destroyed, size per entry: (\d+) blocks",
+        type=int)
+    parser.add_pattern(
+        "state_set_occupied_tree",
+        r"\[t=.+s, \d+ KB\] State set destroyed, byte size: (\d+\.\d+)MB",
+        type=float)
+    parser.add_pattern(
+        "state_set_allocated_tree",
+        r"\[t=.+s, \d+ KB\] State set destroyed, byte capacity: (\d+\.\d+)MB",
+        type=float)
+    parser.add_pattern(
+        "num_atoms",
+        r"Translator variables: (\d+)",
         type=int)
     parser.add_pattern(
         "registered_states",

@@ -115,6 +115,26 @@ int UnpackedStateRegistry::get_state_size_in_bytes() const {
     return num_variables * sizeof(unsigned);
 }
 
+
+size_t UnpackedStateRegistry::get_memory_usage() const
+{
+    size_t usage = 0;
+
+    usage += state_data_pool.size() * get_state_size_in_bytes();
+    usage += registered_states.capacity() * (sizeof(int) + 1);
+
+    return usage;
+}
+
+size_t UnpackedStateRegistry::get_occupied_memory_usage() const {
+    size_t usage = 0;
+
+    usage += state_data_pool.size() * get_state_size_in_bytes();
+    usage += registered_states.size() * (sizeof(int) + 1);
+
+    return usage;
+}
+
 int UnpackedStateRegistry::get_bins_per_state() const {
     return state_packer.get_num_bins();
 }
@@ -125,6 +145,9 @@ void UnpackedStateRegistry::print_statistics(utils::LogProxy &log) const {
         << "/" << registered_states.capacity() << " = "
         << registered_states.load_factor() << endl;
     log << "State size in bytes: " << get_state_size_in_bytes() << endl;
-    log << "State set size: " << (state_data_pool.size() * get_state_size_in_bytes()) / 1024 << " KB" << endl;
+    utils::g_log << "State set destroyed, size: " << size() << " entries"<< std::endl;
+    utils::g_log << "State set destroyed, size per entry: " << num_variables << " blocks"<< std::endl;
+    utils::g_log << "State set destroyed, byte size: " << static_cast<double>(get_memory_usage()) / (1024 * 1024) << "MB" << std::endl;
+    utils::g_log << "State set destroyed, byte capacity: " << static_cast<double>(get_memory_usage()) / (1024 * 1024) << "MB" << std::endl;
 
 }

@@ -225,6 +225,10 @@ public:
 
     int get_state_size_in_bytes() const;
 
+    size_t get_memory_usage() const;
+
+    size_t get_occupied_memory_usage() const;
+
     void print_statistics(utils::LogProxy &log) const override;
 
     class const_iterator {
