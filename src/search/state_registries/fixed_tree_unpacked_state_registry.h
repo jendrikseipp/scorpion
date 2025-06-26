@@ -129,13 +129,6 @@ class FixedTreeUnpackedStateRegistry :
                                                   vs::SlotEqual(),
                                                   grow);
 
-    const size_t cap = entries_for_mb(70, sizeof(vs::IndexSlot));
-    const size_t grow = entries_for_mb(1100, sizeof(vs::IndexSlot));
-    vs::FixedHashSetSlot tree_table = vs::FixedHashSetSlot(cap,
-                                                  vs::Hasher(),
-                                                  vs::SlotEqual(),
-                                                  grow);
-
     const int_packer::IntPacker &state_packer;
     AxiomEvaluator &axiom_evaluator;
     const int num_variables;
