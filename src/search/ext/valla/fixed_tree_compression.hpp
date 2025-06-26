@@ -38,7 +38,7 @@ namespace valla::fixed_tree
 
     inline auto calc_mid(size_t size)
     {
-        return size / 2;
+        return std::bit_floor(size - 1);;
     }
 
 /// @brief Recursively insert the elements from `it` until `end` into the `table`.
@@ -62,9 +62,9 @@ inline Index insert_recursively(Iterator it, Iterator end, size_t size,
     const auto mid = calc_mid(size);
 
     /* Conquer */
-    const auto mid_it = end - mid;
-    const auto left_index = insert_recursively(it, mid_it, size - mid, table);
-    const auto right_index = insert_recursively(mid_it, end, mid, table);
+    const auto mid_it = it + mid;
+    const auto left_index = insert_recursively(it, mid_it, mid, table);
+    const auto right_index = insert_recursively(mid_it, end, size - mid, table);
 
     return table.insert({left_index, right_index}).first;
 }
@@ -90,9 +90,9 @@ inline auto emplace_recursively(Iterator it, Iterator end, size_t size, FixedHas
     const auto mid = calc_mid(size);
 
     /* Conquer */
-    const auto mid_it = end - mid;
-    const auto [left_index, left_inserted] = emplace_recursively(it, mid_it, size - mid, table);
-    const auto [right_index, right_inserted] = emplace_recursively(mid_it, end, mid, table);
+    const auto mid_it = it + mid;
+    const auto [left_index, left_inserted] = emplace_recursively(it, mid_it, mid, table);
+    const auto [right_index, right_inserted] = emplace_recursively(mid_it, end, size - mid, table);
 
     auto [idx, inserted] = table.insert({left_index, right_index});
 
@@ -155,8 +155,8 @@ inline void read_state_recursively(Index index, size_t size, const FixedHashSetS
     const auto mid = calc_mid(size);
 
     /* Conquer */
-    read_state_recursively(left_index, size - mid, tree_table, ref_state);
-    read_state_recursively(right_index, mid, tree_table, ref_state);
+    read_state_recursively(left_index, mid, tree_table, ref_state);
+    read_state_recursively(right_index, size - mid, tree_table, ref_state);
 }
 
 /// @brief Read the `out_state` from the given `tree_index` from the `tree_table`.
