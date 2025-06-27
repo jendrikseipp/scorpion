@@ -31,7 +31,7 @@ if project.REMOTE:
 
     SUITE_SPECS = [
         #("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS),
-        ("beluga2025/scalability-deterministic", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
+        ("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
         ("pushworld", SUITE_PUSHWORLD),
         ("mine-pddl", SUITE_MINEPDDL),
         ("htg-domains", SUITE_HTG),
@@ -46,7 +46,7 @@ if project.REMOTE:
     for rel_path, suite in SUITE_SPECS:
         SUITE += list(build_suite(base_path / rel_path, suite))
     for rel_path, suite in BASE_SUITES:
-        SUITE += list(build_suite(base_path, suite))
+        SUITE += list(build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), suite))
 else:
     ENV = LocalEnvironment(processes=1)
     MEMORY_LIMIT = "6G"

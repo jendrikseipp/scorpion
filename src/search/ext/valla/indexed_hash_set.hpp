@@ -37,9 +37,29 @@ namespace valla
 class IndexedHashSet
 {
 public:
+
+    // Custom hash functor using phmap::HashState (phmap's preferred idiom)
+    struct SetHash {
+        std::size_t operator()(const std::tuple<Index, Index, Index>& t) const noexcept {
+            auto combined = make_slot(std::get<0>(t), std::get<1>(t));
+            // phmap hashers: combine seed with argument(s)
+            return phmap::HashState().combine(0, combined);
+        }
+    };
+
+    // Equality functor: compare only the first two indices
+    struct SetEq {
+        bool operator()(const std::tuple<Index, Index, Index>& a,
+                        const std::tuple<Index, Index, Index>& b) const noexcept {
+            return make_slot(std::get<0>(a), std::get<1>(a)) ==
+                   make_slot(std::get<0>(b), std::get<1>(b));
+        }
+    };
+
     auto insert_slot(Slot slot)
     {
-        const auto result = m_slot_to_index.emplace(slot, m_slot_to_index.size());
+        const auto [first, second] = read_slot(slot);
+        const auto result = m_slot_to_index.emplace(first, second, m_slot_to_index.size());
 
         if (result.second)
         {
@@ -62,7 +82,7 @@ public:
     {
         size_t usage = 0;
 
-        usage += m_slot_to_index.bucket_count() * (1 + sizeof(Slot) + sizeof(Index));
+        usage += m_slot_to_index.bucket_count() * (1 + 3 * sizeof(Index));
 
         usage += m_index_to_slot.capacity() * sizeof(Slot);
 
@@ -73,7 +93,7 @@ public:
     {
         size_t usage = 0;
 
-        usage += m_slot_to_index.size() * (1 + sizeof(Slot) + sizeof(Index));
+        usage += m_slot_to_index.size() * (1 + 3 * sizeof(Index));
 
         usage += m_index_to_slot.size() * sizeof(Slot);
 
@@ -89,7 +109,10 @@ public:
     };
 
 private:
-    phmap::flat_hash_map<Slot, Index> m_slot_to_index;
+    phmap::flat_hash_set<
+        std::tuple<Index, Index, Index>,
+        SetHash,
+        SetEq> m_slot_to_index;
     std::vector<Slot> m_index_to_slot;
 };
 }

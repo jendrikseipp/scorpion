@@ -60,7 +60,7 @@ CONFIGS = [
         start=1,
     )
 ]
-REV_NICKS = [("valla", ""), ]
+REV_NICKS = [("pow2-valla", ""), ]
 ATTRIBUTES = [
     "coverage",
     "error",

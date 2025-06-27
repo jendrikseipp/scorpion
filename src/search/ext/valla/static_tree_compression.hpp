@@ -38,7 +38,7 @@ namespace valla::static_tree
         return std::bit_floor(size - 1);
     }
 
-/// @brief Recursively insert the elements from `it` until `end` into the `table`.
+    /// @brief Recursively insert the elements from `it` until `end` into the `table`.
 /// @param it points to the first element.
 /// @param end points after the last element.
 /// @param table is the table to uniquely insert the slots.
@@ -51,8 +51,10 @@ inline Index insert_recursively(Iterator it, Iterator end, size_t size, IndexedH
     if (size == 1)
         return *it;  ///< Skip node creation
 
-    if (size == 2)
-        return table.insert_slot(make_slot(*it, *(it + 1))).first->second;
+    if (size == 2) {
+        const auto result = table.insert_slot(make_slot(*it, *(it + 1))).first;
+        return make_slot(result[0], result[1]);
+    }
 
     /* Divide */
     const auto mid = calc_mid(size);
@@ -62,7 +64,8 @@ inline Index insert_recursively(Iterator it, Iterator end, size_t size, IndexedH
     const auto left_index = insert_recursively(it, mid_it, mid, table);
     const auto right_index = insert_recursively(mid_it, end, size - mid, table);
 
-    return table.insert_slot(make_slot(left_index, right_index)).first->second;
+    const auto result = table.insert_slot(make_slot(left_index, right_index)).first;
+    return make_slot(result[0], result[1]);
 }
 
 /// @brief Recursively insert the elements from `it` until `end` into the `table`.
@@ -79,7 +82,7 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
 
     if (size == 2){
         auto [iter, inserted] = table.insert_slot(make_slot(*it, *(it + 1)));
-        return std::pair{iter->second, inserted};
+        return std::pair{std::get<2>(*iter), inserted};
     }
 
     /* Divide */
@@ -92,7 +95,7 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
 
     auto [iter, inserted] = table.insert_slot(make_slot(left_index, right_index));
 
-    return std::pair{iter->second, left_inserted || right_inserted || inserted};
+    return std::pair{std::get<2>(*iter), left_inserted || right_inserted || inserted};
 
 
 }
@@ -116,15 +119,15 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
         {
             auto [iter, inserted] = tree_table.insert_slot(make_slot(*state.begin(), 0));
             if (!inserted)
-                return std::pair{static_cast<size_t>(iter->second), false};  ///< The state already exists.
+                return std::pair{static_cast<size_t>(iter[2]), false};  ///< The state already exists.
 
-            root_table.insert_slot(iter->second);
+            root_table.insert_slot(iter[2]);
             return std::pair{root_table.size()-1, true};
         }
 
         auto [index, inserted] = emplace_recursively(state.begin(), state.end(), size, tree_table);
         auto [it, exists] = root_table.insert_slot(index);
-        return std::pair{static_cast<size_t>(it->second), !exists};  ///< The state already exists.
+        return std::pair{static_cast<size_t>(it[2]), !exists};  ///< The state already exists.
     }
 
     /// @brief Inserts the elements from the given `state` into the `tree_table` and the `root_table`.
@@ -145,7 +148,7 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
         if (size == 1)  ///< Special case for singletons.
         {
             auto [iter, inserted] = tree_table.insert_slot(make_slot(*state.begin(), 0));
-            return std::pair{static_cast<size_t>(iter->second), !inserted};  ///< The state already exists.
+            return std::pair{static_cast<size_t>(std::get<2>(*iter)), !inserted};  ///< The state already exists.
         }
 
         auto [index, inserted] = emplace_recursively(state.begin(), state.end(), size, tree_table);
