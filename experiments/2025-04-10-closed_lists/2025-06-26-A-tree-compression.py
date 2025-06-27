@@ -27,8 +27,26 @@ if project.REMOTE:
     TIME_LIMIT = 30 * 60
     MEMORY_LIMIT = "8G"
 
-#    SUITE = build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), SUITE_IPC_OPTIMAL_STRIPS)
-    SUITE = build_suite(os.environ.get("DOWNWARD_BENCHMARKS"), SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC)
+    base_path = Path(os.environ.get("DOWNWARD_BENCHMARKS")) / "pddl-benchmarks"
+
+    SUITE_SPECS = [
+        #("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS),
+        ("beluga2025/scalability-deterministic", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
+        ("pushworld", SUITE_PUSHWORLD),
+        ("mine-pddl", SUITE_MINEPDDL),
+        ("htg-domains", SUITE_HTG),
+    ]
+
+    BASE_SUITES = [
+        ("ipc2024-optimal-strips", SUITE_IPC_OPTIMAL_STRIPS),
+        ("ipc2024-optimal-adl", SUITE_IPC_OPTIMAL_ADL),
+    ]
+
+    SUITE = []
+    for rel_path, suite in SUITE_SPECS:
+        SUITE += list(build_suite(base_path / rel_path, suite))
+    for rel_path, suite in BASE_SUITES:
+        SUITE += list(build_suite(base_path, suite))
 else:
     ENV = LocalEnvironment(processes=1)
     MEMORY_LIMIT = "6G"
