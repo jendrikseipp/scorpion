@@ -97,6 +97,9 @@ State TreeUnpackedStateRegistry::get_successor_state(
         }
     }
 
+    if (task_properties::has_axioms(task_proxy))
+        axiom_evaluator.evaluate(reinterpret_cast<std::vector<int> &>(successor_values));
+
     auto [index, exists] = vs::static_tree::insert(successor_values, tree_table);
     _registered_states += !exists;
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});

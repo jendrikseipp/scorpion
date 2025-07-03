@@ -103,6 +103,14 @@ State UnpackedStateRegistry::get_successor_state(const State &predecessor, const
             buffer[effect_pair.var] = effect_pair.value;
         }
     }
+    if (task_properties::has_axioms(task_proxy)) {
+        std::vector<int> buffer_values(buffer, buffer + num_variables);
+        axiom_evaluator.evaluate(buffer_values);
+        for (size_t i = 0; i < buffer_values.size(); ++i) {
+            buffer[i] = buffer_values[i];
+        }
+
+    }
         /*
           NOTE: insert_id_or_pop_state possibly invalidates buffer, hence
           we use lookup_state to retrieve the state using the correct buffer.

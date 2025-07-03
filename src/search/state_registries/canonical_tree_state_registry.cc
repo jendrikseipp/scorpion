@@ -160,6 +160,10 @@ State CanonicalTreeStateRegistry::get_successor_state(
         }
     }
 
+    if (task_properties::has_axioms(task_proxy))
+        axiom_evaluator.evaluate(reinterpret_cast<std::vector<int> &>(successor_values));
+
+
     StateID result_id = insert_state(successor_values);
     return lookup_state(result_id, {successor_values.begin(), successor_values.end()});
 }

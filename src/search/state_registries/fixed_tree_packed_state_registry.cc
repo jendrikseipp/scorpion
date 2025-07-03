@@ -114,10 +114,14 @@ State FixedTreePackedStateRegistry::get_successor_state(const State &predecessor
         }
     }
 
+    if (task_properties::has_axioms(task_proxy))
+        axiom_evaluator.evaluate(reinterpret_cast<std::vector<int> &>(new_state_values));
+
     std::vector<vs::Index> buffer(get_bins_per_state());
     for (auto i = 0; i < num_variables; ++i) {
         state_packer.set(buffer.data(), i, new_state_values[i]);
     }
+
     auto [index, exists] = vst::insert(buffer, tree_table);
     _registered_states += !exists;
 

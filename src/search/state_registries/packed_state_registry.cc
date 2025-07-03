@@ -93,18 +93,37 @@ State PackedStateRegistry::get_successor_state(const State &predecessor, const O
     state_data_pool.push_back(packed_pred);
     PackedStateBin *buffer = state_data_pool[state_data_pool.size() - 1];
 
-    for (EffectProxy effect : op.get_effects()) {
-        if (does_fire(effect, predecessor)) {
-            FactPair effect_pair = effect.get_fact().get_pair();
-            state_packer.set(buffer, effect_pair.var, effect_pair.value);
+    /* Experiments for issue348 showed that for tasks with axioms it's faster
+       to compute successor states using unpacked data. */
+    if (task_properties::has_axioms(task_proxy)) {
+        predecessor.unpack();
+        vector<int> new_values = predecessor.get_unpacked_values();
+        for (EffectProxy effect : op.get_effects()) {
+            if (does_fire(effect, predecessor)) {
+                FactPair effect_pair = effect.get_fact().get_pair();
+                new_values[effect_pair.var] = effect_pair.value;
+            }
         }
+        axiom_evaluator.evaluate(new_values);
+        for (size_t i = 0; i < new_values.size(); ++i) {
+            state_packer.set(buffer, i, new_values[i]);
+        }
+        /*
+          NOTE: insert_id_or_pop_state possibly invalidates buffer, hence
+          we use lookup_state to retrieve the state using the correct buffer.
+        */
+        StateID id = insert_id_or_pop_state();
+        return lookup_state(id, move(new_values));
+    } else {
+        for (EffectProxy effect : op.get_effects()) {
+            if (does_fire(effect, predecessor)) {
+                FactPair effect_pair = effect.get_fact().get_pair();
+                state_packer.set(buffer, effect_pair.var, effect_pair.value);
+            }
+        }
+        StateID id = insert_id_or_pop_state();
+        return lookup_state(id);
     }
-    /*
-      NOTE: insert_id_or_pop_state possibly invalidates buffer, hence
-      we use lookup_state to retrieve the state using the correct buffer.
-    */
-    StateID id = insert_id_or_pop_state();
-    return lookup_state(id);
 }
 
 int PackedStateRegistry::get_bins_per_state() const {

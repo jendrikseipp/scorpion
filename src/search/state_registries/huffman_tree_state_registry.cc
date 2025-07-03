@@ -120,6 +120,9 @@ State HuffmanTreeStateRegistry::get_successor_state(const State &predecessor, co
         }
     }
 
+    if (task_properties::has_axioms(task_proxy))
+        axiom_evaluator.evaluate(reinterpret_cast<std::vector<int> &>(successor_values));
+
     auto [index, exists] = vsh::insert(successor_values, merge_schedule_.traversal_splits, tree_table);
     _registered_states += !exists;
     return lookup_state(StateID(index), {successor_values.begin(), successor_values.end()});
