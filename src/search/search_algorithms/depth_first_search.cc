@@ -17,8 +17,8 @@ static const int INF = numeric_limits<int>::max();
 
 DepthFirstSearch::DepthFirstSearch(
     bool single_plan, OperatorCost cost_type, int bound, double max_time,
-    const string &description, utils::Verbosity verbosity)
-    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+    const string &description, StateRegistryType registry_type, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, registry_type, verbosity),
       single_plan(single_plan),
       max_depth(0),
       cheapest_plan_cost(INF) {

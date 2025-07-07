@@ -17,7 +17,17 @@ class ExhaustiveSearch;
 class StateID {
     friend class breadth_first_search::BreadthFirstSearch;
     friend class exhaustive_search::ExhaustiveSearch;
+
     friend class StateRegistry;
+    friend class PackedStateRegistry;
+    friend class UnpackedStateRegistry;
+    friend class TreeUnpackedStateRegistry;
+    friend class TreePackedStateRegistry;
+    friend class FixedTreeUnpackedStateRegistry;
+    friend class FixedTreePackedStateRegistry;
+    friend class HuffmanTreeStateRegistry;
+    friend class CanonicalTreeStateRegistry;
+
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template<typename>
     friend class PerStateInformation;
@@ -45,6 +55,12 @@ public:
     bool operator!=(const StateID &other) const {
         return !(*this == other);
     }
+
+    int get_value() const {
+        return value;
+    }
+
+
 };
 
 

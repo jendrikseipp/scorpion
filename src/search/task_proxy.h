@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 
-
 class AxiomsProxy;
 class ConditionsProxy;
 class EffectProxy;
@@ -556,7 +555,7 @@ public:
 
 bool does_fire(const EffectProxy &effect, const State &state);
 
-
+using StateValueReader = std::function<std::vector<int>(StateID)>;
 class State {
     /*
       TODO: We want to try out two things:
@@ -587,13 +586,12 @@ class State {
     int num_variables;
 public:
     using ItemType = FactProxy;
+    static StateValueReader get_variable_value;
 
     // Construct a registered state with only packed data.
-    State(const AbstractTask &task, const StateRegistry &registry, StateID id,
-          const PackedStateBin *buffer);
+    State(const AbstractTask &task, const StateRegistry &registry, StateID id);
     // Construct a registered state with packed and unpacked data.
-    State(const AbstractTask &task, const StateRegistry &registry, StateID id,
-          const PackedStateBin *buffer, std::vector<int> &&values);
+    State(const AbstractTask &task, const StateRegistry &registry, StateID id, std::vector<int> &&values);
     // Construct a state with only unpacked data.
     State(const AbstractTask &task, std::vector<int> &&values);
 
@@ -603,6 +601,7 @@ public:
     /* Generate unpacked data if it is not available yet. Calling the function
        on a state that already has unpacked data has no effect. */
     void unpack() const;
+    void clear_data() const;
 
     std::size_t size() const;
     FactProxy operator[](std::size_t var_id) const;
@@ -655,6 +654,7 @@ inline void feed(HashState &hash_state, const State &state) {
 
 
 class TaskProxy {
+    friend class HuffmanTreeStateRegistry;
     const AbstractTask *task;
 public:
     explicit TaskProxy(const AbstractTask &task)
@@ -691,16 +691,14 @@ public:
 
     // This method is meant to be called only by the state registry.
     State create_state(
-        const StateRegistry &registry, StateID id,
-        const PackedStateBin *buffer) const {
-        return State(*task, registry, id, buffer);
+        const StateRegistry &registry, StateID id) const {
+        return State(*task, registry, id);
     }
 
     // This method is meant to be called only by the state registry.
     State create_state(
-        const StateRegistry &registry, StateID id,
-        const PackedStateBin *buffer, std::vector<int> &&state_values) const {
-        return State(*task, registry, id, buffer, std::move(state_values));
+        const StateRegistry &registry, StateID id, std::vector<int> &&state_values) const {
+        return State(*task, registry, id, std::move(state_values));
     }
 
     State get_initial_state() const {
@@ -775,9 +773,7 @@ inline bool State::operator==(const State &other) const {
         return id == other.id;
     } else {
         // Both states are unregistered.
-        assert(values);
-        assert(other.values);
-        return *values == *other.values;
+        return std::equal(values->begin(), values->end(), other.values->begin());
     }
 }
 
@@ -787,7 +783,6 @@ inline bool State::operator!=(const State &other) const {
 
 inline void State::unpack() const {
     if (!values) {
-        int num_variables = size();
         /*
           A micro-benchmark in issue348 showed that constructing the vector
           in the required size and then assigning values was faster than the
@@ -799,10 +794,15 @@ inline void State::unpack() const {
           structures that exploit sequentially unpacking each entry, by doing
           things bin by bin.)
         */
-        values = std::make_shared<std::vector<int>>(num_variables);
-        for (int var = 0; var < num_variables; ++var) {
-            (*values)[var] = state_packer->get(buffer, var);
-        }
+        values = std::make_shared<std::vector<int>>(get_variable_value(id));
+    }
+}
+
+inline void State::clear_data() const {
+    if (values) {
+        // Clear the unpacked values.
+        values->clear();
+        values.reset();
     }
 }
 
@@ -812,13 +812,10 @@ inline std::size_t State::size() const {
 
 inline FactProxy State::operator[](std::size_t var_id) const {
     assert(var_id < size());
-    if (values) {
-        return FactProxy(*task, var_id, (*values)[var_id]);
-    } else {
-        assert(buffer);
-        assert(state_packer);
-        return FactProxy(*task, var_id, state_packer->get(buffer, var_id));
-    }
+
+    if (!values) unpack();
+
+    return FactProxy(*task, var_id, values->operator[](var_id));
 }
 
 inline FactProxy State::operator[](VariableProxy var) const {
@@ -853,13 +850,7 @@ inline const PackedStateBin *State::get_buffer() const {
 }
 
 inline const std::vector<int> &State::get_unpacked_values() const {
-    if (!values) {
-        std::cerr << "Accessing the unpacked values of a state without "
-                  << "unpacking them first is treated as an error. Please "
-                  << "use State::unpack first."
-                  << std::endl;
-        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
-    }
+    if (!values) unpack();
     return *values;
 }
 #endif

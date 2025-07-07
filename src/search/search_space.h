@@ -58,10 +58,10 @@ public:
 class SearchSpace {
     PerStateInformation<SearchNodeInfo> search_node_infos;
 
-    StateRegistry &state_registry;
+    std::shared_ptr<StateRegistry> state_registry;
     utils::LogProxy &log;
 public:
-    SearchSpace(StateRegistry &state_registry, utils::LogProxy &log);
+    SearchSpace(std::shared_ptr<StateRegistry> &state_registry, utils::LogProxy &log);
 
     SearchNode get_node(const State &state);
     void trace_path(const State &goal_state,

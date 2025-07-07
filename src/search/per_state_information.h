@@ -1,162 +1,124 @@
-#ifndef PER_STATE_INFORMATION_H
-#define PER_STATE_INFORMATION_H
+#pragma once
 
 #include "state_registry.h"
-
-#include "algorithms/segmented_vector.h"
 #include "algorithms/subscriber.h"
 #include "utils/collections.h"
-
 #include <cassert>
 #include <iostream>
 #include <unordered_map>
+#include <list>
+#include <tuple>
 
 /*
-  PerStateInformation is used to associate information with states.
-  PerStateInformation<Entry> logically behaves somewhat like an unordered map
-  from states to objects of class Entry. However, lookup of unknown states is
-  supported and leads to insertion of a default value (similar to the
-  defaultdict class in Python).
+  PerStateInformation: Key-value variant, value references are stable for object lifetime.
 
-  For example, search algorithms can use it to associate g values or create
-  operators with a state.
-
-  Implementation notes: PerStateInformation is essentially implemented as a
-  kind of two-level map:
-    1. Find the correct SegmentedVector for the registry of the given state.
-    2. Look up the associated entry in the SegmentedVector based on the ID of
-       the state.
-  It is common in many use cases that we look up information for states from
-  the same registry in sequence. Therefore, to make step 1. more efficient, we
-  remember (in "cached_registry" and "cached_entries") the results of the
-  previous lookup and reuse it on consecutive lookups for the same registry.
-
-  A PerStateInformation object subscribes to every StateRegistry for which it
-  stores information. Once a StateRegistry is destroyed, it notifies all
-  subscribed objects, which in turn destroy all information stored for states
-  in that registry.
+  We keep per-registry hash tables StateID → iterator-into-list-of-Entries,
+  and all entries in a std::list for reference/pointer stability.
 */
 template<class Entry>
 class PerStateInformation : public subscriber::Subscriber<StateRegistry> {
-    const Entry default_value;
-    using EntryVectorMap = std::unordered_map<const StateRegistry *,
-                                              segmented_vector::SegmentedVector<Entry> * >;
-    EntryVectorMap entries_by_registry;
+    using StateKey = std::pair<const StateRegistry*, int>; // registry*, state id value
+    using EntryList = std::list<Entry>;
+    using EntryIter = typename EntryList::iterator;
+    using StateIdToIter = std::unordered_map<int, EntryIter>; // state id value → Entry
+    using RegistryMap = std::unordered_map<const StateRegistry*, StateIdToIter>;
 
-    mutable const StateRegistry *cached_registry;
-    mutable segmented_vector::SegmentedVector<Entry> *cached_entries;
+    Entry default_value;
+    RegistryMap reg_to_map; ///< Per-registry state id → entry iterator
+    EntryList all_entries;  ///< Storage: references never invalidated.
 
-    /*
-      Returns the SegmentedVector associated with the given StateRegistry.
-      If no vector is associated with this registry yet, an empty one is created.
-      Both the registry and the returned vector are cached to speed up
-      consecutive calls with the same registry.
-    */
-    segmented_vector::SegmentedVector<Entry> *get_entries(const StateRegistry *registry) {
-        if (cached_registry != registry) {
-            cached_registry = registry;
-            auto it = entries_by_registry.find(registry);
-            if (it == entries_by_registry.end()) {
-                cached_entries = new segmented_vector::SegmentedVector<Entry>();
-                entries_by_registry[registry] = cached_entries;
-                registry->subscribe(this);
-            } else {
-                cached_entries = it->second;
-            }
+    mutable const StateRegistry *cached_registry = nullptr;
+    mutable StateIdToIter* cached_map = nullptr;
+
+    // Utility: get state id (as int) from "State"
+    static int state_id_value(const State& state) { return state.get_id().get_value(); }
+
+    // Get map for registry; create if missing. Set cache.
+    StateIdToIter& get_map(const StateRegistry* reg) {
+        if (cached_registry != reg) {
+            cached_registry = reg;
+            auto [it,emplaced] = reg_to_map.try_emplace(reg);
+            if (emplaced) reg->subscribe(this);
+            cached_map = &it->second;
         }
-        assert(cached_registry == registry && cached_entries == entries_by_registry[registry]);
-        return cached_entries;
+        return *cached_map;
     }
 
-    /*
-      Returns the SegmentedVector associated with the given StateRegistry.
-      Returns nullptr, if no vector is associated with this registry yet.
-      Otherwise, both the registry and the returned vector are cached to speed
-      up consecutive calls with the same registry.
-    */
-    const segmented_vector::SegmentedVector<Entry> *get_entries(const StateRegistry *registry) const {
-        if (cached_registry != registry) {
-            const auto it = entries_by_registry.find(registry);
-            if (it == entries_by_registry.end()) {
-                return nullptr;
-            } else {
-                cached_registry = registry;
-                cached_entries = const_cast<segmented_vector::SegmentedVector<Entry> *>(it->second);
-            }
+    // Get map for registry; const view. (null if not present)
+    const StateIdToIter* get_map(const StateRegistry* reg) const {
+        if (cached_registry != reg) {
+            auto it = reg_to_map.find(reg);
+            if (it == reg_to_map.end()) return nullptr;
+            cached_registry = reg;
+            cached_map = const_cast<StateIdToIter*>(&it->second);
         }
-        assert(cached_registry == registry);
-        return cached_entries;
+        return cached_map;
     }
 
 public:
     PerStateInformation()
-        : default_value(),
-          cached_registry(nullptr),
-          cached_entries(nullptr) {
-    }
+      : default_value() {}
 
-    explicit PerStateInformation(const Entry &default_value_)
-        : default_value(default_value_),
-          cached_registry(nullptr),
-          cached_entries(nullptr) {
-    }
+    explicit PerStateInformation(const Entry& def)
+      : default_value(def) {}
 
-    PerStateInformation(const PerStateInformation<Entry> &) = delete;
-    PerStateInformation &operator=(const PerStateInformation<Entry> &) = delete;
+    PerStateInformation(const PerStateInformation<Entry>&) = delete;
+    PerStateInformation& operator=(const PerStateInformation<Entry>&) = delete;
 
     virtual ~PerStateInformation() override {
-        for (auto it : entries_by_registry) {
-            delete it.second;
-        }
+        // (Lists/maps auto-release. No heap pointer management.)
     }
 
     Entry &operator[](const State &state) {
-        const StateRegistry *registry = state.get_registry();
-        if (!registry) {
+        const StateRegistry* reg = state.get_registry();
+        if (!reg) {
             std::cerr << "Tried to access per-state information with an "
                       << "unregistered state." << std::endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
-        segmented_vector::SegmentedVector<Entry> *entries = get_entries(registry);
-        int state_id = state.get_id().value;
-        assert(state.get_id() != StateID::no_state);
-        size_t virtual_size = registry->size();
-        assert(utils::in_bounds(state_id, *registry));
-        if (entries->size() < virtual_size) {
-            entries->resize(virtual_size, default_value);
+        int sid = state_id_value(state);
+
+        StateIdToIter& idmap = get_map(reg);
+        auto it = idmap.find(sid);
+        if (it == idmap.end()) {
+            // Insert new entry in list, stash its iterator
+            all_entries.emplace_back(default_value);
+            auto entry_it = std::prev(all_entries.end());
+            idmap.emplace(sid, entry_it);
+            return *entry_it;
         }
-        return (*entries)[state_id];
+        return *it->second;
     }
 
-    const Entry &operator[](const State &state) const {
-        const StateRegistry *registry = state.get_registry();
-        if (!registry) {
+    const Entry& operator[](const State& state) const {
+        const StateRegistry* reg = state.get_registry();
+        if (!reg) {
             std::cerr << "Tried to access per-state information with an "
                       << "unregistered state." << std::endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
-        const segmented_vector::SegmentedVector<Entry> *entries = get_entries(registry);
-        if (!entries) {
-            return default_value;
-        }
-        int state_id = state.get_id().value;
-        assert(state.get_id() != StateID::no_state);
-        assert(utils::in_bounds(state_id, *registry));
-        int num_entries = entries->size();
-        if (state_id >= num_entries) {
-            return default_value;
-        }
-        return (*entries)[state_id];
+        int sid = state_id_value(state);
+
+        const StateIdToIter* idmap = get_map(reg);
+        if (!idmap) return default_value;
+        auto it = idmap->find(sid);
+        if (it == idmap->end()) return default_value;
+        return *(it->second);
     }
 
-    virtual void notify_service_destroyed(const StateRegistry *registry) override {
-        delete entries_by_registry[registry];
-        entries_by_registry.erase(registry);
+    virtual void notify_service_destroyed(const StateRegistry* registry) override {
+        // Remove all entries belonging to this registry (walk idmap, remove from all_entries)
+        auto it = reg_to_map.find(registry);
+        if (it != reg_to_map.end()) {
+            for (auto& [sid, liter] : it->second)
+                all_entries.erase(liter);
+            reg_to_map.erase(it);
+        }
+        // Clear cache if the destroyed registry was cached
         if (registry == cached_registry) {
             cached_registry = nullptr;
-            cached_entries = nullptr;
+            cached_map = nullptr;
         }
     }
 };
 
-#endif

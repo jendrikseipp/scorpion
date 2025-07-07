@@ -129,7 +129,7 @@ public:
     ArrayView<Element> operator[](const State &state) {
         const StateRegistry *registry = state.get_registry();
         if (!registry) {
-            std::cerr << "Tried to access per-state array with an unregistered "
+            std::cerr << "3 Tried to access per-state array with an unregistered "
                       << "state." << std::endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
@@ -147,7 +147,7 @@ public:
     ConstArrayView<Element> operator[](const State &state) const {
         const StateRegistry *registry = state.get_registry();
         if (!registry) {
-            std::cerr << "Tried to access per-state array with an unregistered "
+            std::cerr << "4 Tried to access per-state array with an unregistered "
                       << "state." << std::endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }

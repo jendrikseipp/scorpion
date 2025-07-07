@@ -87,6 +87,10 @@ public:
         }
     }
 
+    bool is_subscribed(Subscriber<T> *subscriber) const {
+        return subscribers.find(subscriber) != subscribers.end();
+    }
+
     void subscribe(Subscriber<T> *subscriber) const {
         assert(subscribers.find(subscriber) == subscribers.end());
         subscribers.insert(subscriber);

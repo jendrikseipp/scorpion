@@ -64,8 +64,8 @@ void FifoCache::clear() {
 IDAstarSearch::IDAstarSearch(
     const shared_ptr<Evaluator> &h_evaluator, int initial_f_limit, int cache_size,
     bool single_plan, OperatorCost cost_type, int bound, double max_time,
-    const string &description, utils::Verbosity verbosity)
-    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+    const string &description, StateRegistryType registry_type, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, registry_type, verbosity),
       h_evaluator(h_evaluator),
       single_plan(single_plan),
       iteration(0),

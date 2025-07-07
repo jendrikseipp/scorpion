@@ -48,6 +48,10 @@ public:
     virtual int convert_operator_index_to_parent(int index) const {
         return index;
     }
+    void reorder(
+    const std::vector<unsigned int> &order) override;
+    void subscribe_to_reorder(
+    const std::function<void()> &callback) override;
 
     virtual int get_num_axioms() const override;
 
@@ -61,6 +65,8 @@ public:
         const AbstractTask *ancestor_task) const final override;
     virtual bool does_convert_ancestor_state_values(
         const AbstractTask *ancestor_task) const override;
+
+
     virtual void convert_state_values_from_parent(std::vector<int> &) const {
     }
 };

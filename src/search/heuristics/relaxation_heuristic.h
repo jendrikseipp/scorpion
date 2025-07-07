@@ -111,6 +111,8 @@ protected:
     Proposition *get_proposition(int var, int value);
     Proposition *get_proposition(const FactProxy &fact);
 public:
+    void initialize_heuristic();
+
     RelaxationHeuristic(
         tasks::AxiomHandlingType axioms,
         const std::shared_ptr<AbstractTask> &transform,

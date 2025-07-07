@@ -14,8 +14,8 @@ using namespace std;
 namespace iterative_deepening_search {
 IterativeDeepeningSearch::IterativeDeepeningSearch(
     bool single_plan, OperatorCost cost_type, int bound, double max_time,
-    const string &description, utils::Verbosity verbosity)
-    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+    const string &description, StateRegistryType registry_type, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, registry_type, verbosity),
       single_plan(single_plan),
       sg(task_proxy),
       last_plan_cost(-1) {

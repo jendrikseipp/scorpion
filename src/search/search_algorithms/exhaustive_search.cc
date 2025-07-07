@@ -42,7 +42,7 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
 ExhaustiveSearch::ExhaustiveSearch()
     : SearchAlgorithm(
           ONE, numeric_limits<int>::max(), numeric_limits<double>::infinity(),
-          "dump_reachable_search_space", utils::Verbosity::NORMAL) {
+          "dump_reachable_search_space", StateRegistryType::PACKED, utils::Verbosity::NORMAL) {
 }
 
 void ExhaustiveSearch::initialize() {
@@ -53,8 +53,8 @@ void ExhaustiveSearch::initialize() {
     cout << "# T (transition): [source state ID] [target state ID]" << endl;
     cout << "# The initial state has ID 0." << endl;
     fact_mapping = construct_and_dump_fact_mapping(task_proxy);
-    assert(state_registry.size() <= 1);
-    State initial_state = state_registry.get_initial_state();
+    assert(state_registry->size() <= 1);
+    State initial_state = state_registry->get_initial_state();
     statistics.inc_generated();
     // The initial state has id 0, so we'll start there.
     current_state_id = 0;
@@ -79,12 +79,12 @@ void ExhaustiveSearch::dump_state(const State &state) const {
 }
 
 SearchStatus ExhaustiveSearch::step() {
-    if (current_state_id == static_cast<int>(state_registry.size())) {
+    if (current_state_id == static_cast<int>(state_registry->size())) {
         utils::g_log << "Finished dumping the reachable state space." << endl;
         return SOLVED;
     }
 
-    State s = state_registry.lookup_state(StateID(current_state_id));
+    State s = state_registry->lookup_state(StateID(current_state_id));
     statistics.inc_expanded();
     dump_state(s);
 
@@ -98,7 +98,7 @@ SearchStatus ExhaustiveSearch::step() {
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_op_ids) {
         // Add successor states to registry.
-        State succ_state = state_registry.get_successor_state(s, operators[op_id]);
+        State succ_state = state_registry->get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
         cout << "T " << s.get_id().value << " " << succ_state.get_id().value << endl;
     }

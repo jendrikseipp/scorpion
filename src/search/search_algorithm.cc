@@ -17,6 +17,15 @@
 #include <iostream>
 #include <limits>
 
+#include "state_registries/canonical_tree_state_registry.h"
+#include "state_registries/fixed_tree_packed_state_registry.h"
+#include "state_registries/fixed_tree_unpacked_state_registry.h"
+#include "state_registries/huffman_tree_state_registry.h"
+#include "state_registries/packed_state_registry.h"
+#include "state_registries/tree_packed_state_registry.h"
+#include "state_registries/tree_unpacked_state_registry.h"
+#include "state_registries/unpacked_state_registry.h"
+
 using namespace std;
 using utils::ExitCode;
 
@@ -41,14 +50,14 @@ static successor_generator::SuccessorGenerator &get_successor_generator(
 
 SearchAlgorithm::SearchAlgorithm(
     OperatorCost cost_type, int bound, double max_time,
-    const string &description, utils::Verbosity verbosity)
+    const string &description, StateRegistryType registry_type, utils::Verbosity verbosity)
     : description(description),
       status(IN_PROGRESS),
       solution_found(false),
       task(tasks::g_root_task),
       task_proxy(*task),
       log(utils::get_log_for_verbosity(verbosity)),
-      state_registry(task_proxy),
+      state_registry(initialize_state_registry(registry_type, task_proxy)),
       successor_generator(get_successor_generator(task_proxy, log)),
       search_space(state_registry, log),
       statistics(log),
@@ -71,7 +80,7 @@ SearchAlgorithm::SearchAlgorithm(const plugins::Options &opts) // TODO options o
       task_proxy(*task),
       log(utils::get_log_for_verbosity(
               opts.get<utils::Verbosity>("verbosity"))),
-      state_registry(task_proxy),
+      state_registry(initialize_state_registry(opts.get<StateRegistryType>("state_registry"), task_proxy)),
       successor_generator(get_successor_generator(task_proxy, log)),
       search_space(state_registry, log),
       statistics(log),
@@ -174,12 +183,35 @@ void add_search_pruning_options_to_feature(plugins::Feature &feature) {
         "that are considered.",
         "null()");
 }
+std::shared_ptr<StateRegistry> initialize_state_registry(StateRegistryType state_registry_type, TaskProxy task_proxy) {
+    switch (state_registry_type) {
+        case PACKED:
+            return std::make_shared<PackedStateRegistry>(task_proxy);
+        case UNPACKED:
+            return std::make_shared<UnpackedStateRegistry>(task_proxy);
+        case TREE_PACKED:
+            return std::make_shared<TreePackedStateRegistry>(task_proxy);
+        case TREE_UNPACKED:
+            return std::make_shared<TreeUnpackedStateRegistry>(task_proxy);
+        case FIXED_TREE_UNPACKED:
+            return std::make_shared<FixedTreeUnpackedStateRegistry>(task_proxy);
+        case FIXED_TREE_PACKED:
+            return std::make_shared<FixedTreePackedStateRegistry>(task_proxy);
+        case HUFFMAN_TREE:
+            return std::make_shared<HuffmanTreeStateRegistry>(task_proxy);
+        case CANONICAL_TREE:
+            return std::make_shared<CanonicalTreeStateRegistry>(task_proxy);
+        default:
+            return std::make_shared<PackedStateRegistry>(task_proxy);
+    }
+}
 
 tuple<shared_ptr<PruningMethod>>
 get_search_pruning_arguments_from_options(
     const plugins::Options &opts) {
     return make_tuple(opts.get<shared_ptr<PruningMethod>>("pruning"));
 }
+
 
 void add_search_algorithm_options_to_feature(
     plugins::Feature &feature, const string &description) {
@@ -201,10 +233,14 @@ void add_search_algorithm_options_to_feature(
         "description",
         "description used to identify search algorithm in logs",
         "\"" + description + "\"");
+    feature.add_option<StateRegistryType>(
+        "state_registry",
+        "state registry used to store states",
+        "packed");
     utils::add_log_options_to_feature(feature);
 }
 
-tuple<OperatorCost, int, double, string, utils::Verbosity>
+tuple<OperatorCost, int, double, string, StateRegistryType, utils::Verbosity>
 get_search_algorithm_arguments_from_options(
     const plugins::Options &opts) {
     return tuple_cat(
@@ -212,7 +248,8 @@ get_search_algorithm_arguments_from_options(
         make_tuple(
             opts.get<int>("bound"),
             opts.get<double>("max_time"),
-            opts.get<string>("description")
+            opts.get<string>("description"),
+            opts.get<StateRegistryType>("state_registry")
             ),
         utils::get_log_arguments_from_options(opts)
         );

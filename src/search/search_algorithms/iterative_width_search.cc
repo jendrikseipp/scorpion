@@ -12,15 +12,15 @@ using namespace std;
 namespace iterative_width_search {
 IterativeWidthSearch::IterativeWidthSearch(
     int width, OperatorCost cost_type, int bound, double max_time,
-    const string &description, utils::Verbosity verbosity)
-    : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
+    const string &description, StateRegistryType registry_type, utils::Verbosity verbosity)
+    : SearchAlgorithm(cost_type, bound, max_time, description, registry_type, verbosity),
       novelty_table(task_proxy, width) {
     utils::g_log << "Setting up iterative width search." << endl;
 }
 
 void IterativeWidthSearch::initialize() {
     utils::g_log << "Starting iterative width search." << endl;
-    State initial_state = state_registry.get_initial_state();
+    State initial_state = state_registry->get_initial_state();
     statistics.inc_generated();
     SearchNode node = search_space.get_node(initial_state);
     node.open_initial();
@@ -51,7 +51,7 @@ SearchStatus IterativeWidthSearch::step() {
     }
     StateID id = open_list.front();
     open_list.pop_front();
-    State state = state_registry.lookup_state(id);
+    State state = state_registry->lookup_state(id);
     SearchNode node = search_space.get_node(state);
     node.close();
     assert(!node.is_dead_end());
@@ -69,7 +69,7 @@ SearchStatus IterativeWidthSearch::step() {
             continue;
         }
 
-        State succ_state = state_registry.get_successor_state(state, op);
+        State succ_state = state_registry->get_successor_state(state, op);
         statistics.inc_generated();
 
         bool novel = is_novel(op, succ_state);

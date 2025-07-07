@@ -44,7 +44,8 @@ public:
         const std::shared_ptr<PruningMethod> &pruning,
         const std::shared_ptr<Evaluator> &lazy_evaluator,
         OperatorCost cost_type, int bound, double max_time,
-        const std::string &description, utils::Verbosity verbosity);
+        const std::string &description, StateRegistryType registry_type,
+        utils::Verbosity verbosity);
 
     virtual void print_statistics() const override;
 
@@ -55,7 +56,7 @@ extern void add_eager_search_options_to_feature(
     plugins::Feature &feature, const std::string &description);
 extern std::tuple<std::shared_ptr<PruningMethod>,
                   std::shared_ptr<Evaluator>, OperatorCost, int, double,
-                  std::string, utils::Verbosity>
+                  std::string, StateRegistryType, utils::Verbosity>
 get_eager_search_arguments_from_options(const plugins::Options &opts);
 }
 
