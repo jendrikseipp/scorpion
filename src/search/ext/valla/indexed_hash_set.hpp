@@ -20,56 +20,43 @@
 
 #include "valla/declarations.hpp"
 
-#include <parallel_hashmap/phmap.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <stack>
 
 namespace valla
 {
 /// @brief `IndexedHashSet` encapsulates a bijective function f : Slot -> Index with inverse mapping f^{-1} : Index -> Slot
 /// where the indices in the image are enumerated 0,1,2,... and so on.
-///
-/// TODO: think more about how to implement this using a Cleary table!
-/// Current understanding: reduces current memory overhead from 5/2 to 1 at the cost of a bidirectional probing search!!!
-/// Found some code on this: https://github.com/DaanWoltgens/ClearyCuckooParallel/tree/main
 class IndexedHashSet
 {
 public:
+    IndexedHashSet() : m_index_to_slot(), m_uniqueness(0, IndexReferencedSlotHash(m_index_to_slot), IndexReferencedSlotEqualTo(m_index_to_slot)) {}
+    // Uncopieable and unmoveable to avoid dangling references of m_index_to_slot in hash and equal_to.
+    IndexedHashSet(const IndexedHashSet& other) = delete;
+    IndexedHashSet& operator=(const IndexedHashSet& other) = delete;
+    IndexedHashSet(IndexedHashSet&& other) = delete;
+    IndexedHashSet& operator=(IndexedHashSet&& other) = delete;
 
-    // Custom hash functor using phmap::HashState (phmap's preferred idiom)
-    struct SetHash {
-        std::size_t operator()(const std::tuple<Index, Index, Index>& t) const noexcept {
-            auto combined = make_slot(std::get<0>(t), std::get<1>(t));
-            // phmap hashers: combine seed with argument(s)
-            return phmap::HashState().combine(0, combined);
-        }
-    };
-
-    // Equality functor: compare only the first two indices
-    struct SetEq {
-        bool operator()(const std::tuple<Index, Index, Index>& a,
-                        const std::tuple<Index, Index, Index>& b) const noexcept {
-            return make_slot(std::get<0>(a), std::get<1>(a)) ==
-                   make_slot(std::get<0>(b), std::get<1>(b));
-        }
-    };
-
-    auto insert_slot(Slot slot)
+    auto insert(SlotStruct<> slot)
     {
-        const auto [first, second] = read_slot(slot);
-        const auto result = m_slot_to_index.emplace(first, second, m_slot_to_index.size());
+        assert(m_uniqueness.size() != std::numeric_limits<Index>::max() && "IndexedHashSet: Index overflow! The maximum number of slots reached.");
 
-        if (result.second)
-        {
-            m_index_to_slot.push_back(slot);
-        }
+        Index index = m_index_to_slot.size();
+
+        m_index_to_slot.push_back(slot);
+
+        const auto result = m_uniqueness.emplace(index);
+
+        if (!result.second)
+            m_index_to_slot.pop_back();
 
         return result;
     }
 
-    Slot get_slot(Index index) const
+    SlotStruct<> operator[](Index index) const
     {
         assert(index < m_index_to_slot.size() && "Index out of bounds");
 
@@ -82,7 +69,7 @@ public:
     {
         size_t usage = 0;
 
-        usage += m_slot_to_index.bucket_count() * (1 + 3 * sizeof(Index));
+        usage += m_uniqueness.bucket_count() * (1 + sizeof(Index));
 
         usage += m_index_to_slot.capacity() * sizeof(Slot);
 
@@ -93,7 +80,7 @@ public:
     {
         size_t usage = 0;
 
-        usage += m_slot_to_index.size() * (1 + 3 * sizeof(Index));
+        usage += m_uniqueness.size() * (1 + sizeof(Index));
 
         usage += m_index_to_slot.size() * sizeof(Slot);
 
@@ -103,18 +90,15 @@ public:
     ~IndexedHashSet() {
         utils::g_log << "State set destroyed, size: " << size() << " entries"<< std::endl;
         utils::g_log << "State set destroyed, size per entry: " << 2 << " blocks"<< std::endl;
-        utils::g_log << "State set destroyed, capacity: " << m_slot_to_index.capacity() << " entries" << std::endl;
+        utils::g_log << "State set destroyed, capacity: " << m_uniqueness.capacity() << " entries" << std::endl;
         utils::g_log << "State set destroyed, byte size: " << static_cast<double>(get_occupied_memory_usage()) / (1024 * 1024) << "MB" << std::endl;
         utils::g_log << "State set destroyed, byte capacity: " << static_cast<double>(get_memory_usage()) / (1024 * 1024) << "MB" << std::endl;
     };
-
 private:
-    phmap::flat_hash_set<
-        std::tuple<Index, Index, Index>,
-        SetHash,
-        SetEq> m_slot_to_index;
-    std::vector<Slot> m_index_to_slot;
+    std::vector<SlotStruct<>> m_index_to_slot;
+    phmap::flat_hash_set<Index, IndexReferencedSlotHash, IndexReferencedSlotEqualTo> m_uniqueness;
 };
+
 }
 
 #endif

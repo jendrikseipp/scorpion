@@ -87,10 +87,6 @@ using RootIndices = std::vector<Index>;
 
     inline uint64_t cantor_pair(uint64_t a, uint64_t b) { return (((a + b) * (a + b + 1)) >> 1) + b; }
 
-    struct SlotHash
-    {
-        size_t operator()(Slot el) const { return cantor_pair(read_pos(el, 0), read_pos(el, 1)); }
-    };
 
 
 
@@ -128,10 +124,13 @@ using RootIndices = std::vector<Index>;
         x ^= x >> 33;
         return x;
     }
+    constexpr uint64_t murmur3_64_finalizer(uint32_t x, uint32_t y) noexcept {
+        return murmur3_64_finalizer((uint64_t(x) << 32) | y);
+    }
     struct Hasher {
         std::size_t operator()(const IndexSlot& slot) const {
                 // Compose two 32-bit fields into 64 bits in a portable way
-                return murmur3_64_finalizer((uint64_t(slot.rhs) << 32) | slot.lhs);
+                return murmur3_64_finalizer(slot.rhs, slot.lhs);
             }
     };
 
@@ -143,6 +142,44 @@ using RootIndices = std::vector<Index>;
 
     using FixedHashSetSlot = FixedHashSet<IndexSlot, Hasher, SlotEqual>;
 
+
+    struct SlotHash
+    {
+        size_t operator()(SlotStruct<> el) const {
+            return murmur3_64_finalizer(el.lhs, el.rhs);
+        }
+    };
+
+    // Instead of additionally storing the size in the unstable_to_stable mapping,
+    // we reference to stable_to_unstable to access this piece of information.
+    struct IndexReferencedSlotHash
+    {
+        const std::vector<SlotStruct<>>& stable_to_unstable;
+
+        IndexReferencedSlotHash(const std::vector<SlotStruct<>>& stable_to_unstable) : stable_to_unstable(stable_to_unstable) {}
+
+        size_t operator()(Index el) const
+        {
+            assert(el < stable_to_unstable.size());
+            return SlotHash {}(stable_to_unstable[el]);
+        }
+    };
+
+    struct IndexReferencedSlotEqualTo
+    {
+        const std::vector<SlotStruct<>>& stable_to_unstable;
+
+        IndexReferencedSlotEqualTo(const std::vector<SlotStruct<>>& stable_to_unstable) : stable_to_unstable(stable_to_unstable) {}
+
+        size_t operator()(Index lhs, Index rhs) const
+        {
+            assert(lhs < stable_to_unstable.size());
+            assert(rhs < stable_to_unstable.size());
+            return stable_to_unstable[lhs] == stable_to_unstable[rhs];
+        }
+    };
+
 }
+
 
 #endif
