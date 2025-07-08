@@ -1188,7 +1188,7 @@ apptainer pull scorpion.sif oras://ghcr.io/jendrikseipp/scorpion:latest
 apptainer build scorpion.sif Apptainer
 
 # Then run the recommended configuration (for solving STRIPS tasks optimally).
-./scorpion.sif --transform-task preprocess-h2 --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
+./scorpion.sif --preprocess --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
 </code></pre></div>
 <h3 id="manual_compilation">Manual compilation<a class="headerlink" href="#manual_compilation" title="Permanent link">#</a></h3>
 <p>Install the dependencies (the table below lists which versions are tested):</p>
@@ -1209,12 +1209,10 @@ available (heuristics, search algorithms, etc.) and how to use them.</p>
 <h3 id="recommended_configurations">Recommended configurations<a class="headerlink" href="#recommended_configurations" title="Permanent link">#</a></h3>
 <p>In case you want to <strong>solve tasks quickly</strong> and do <strong>not require optimality</strong>,
 we recommend using <a href="https://mrlab.ai/papers/correa-seipp-icaps2025.pdf">NOLAN</a>:</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --transform-task preprocess-h2 --alias nolan [DOMAIN_FILE] PROBLEM_FILE
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --preprocess --alias nolan [DOMAIN_FILE] PROBLEM_FILE
 </code></pre></div>
 <p>which is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py \
-  --transform-task preprocess-h2 \
-  [DOMAIN_FILE] PROBLEM_FILE \
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --preprocess [DOMAIN_FILE] PROBLEM_FILE \
   --evaluator &quot;hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one), pref=false)&quot; \
   --evaluator &quot;hff=ff(transform=adapt_costs(one))&quot; \
   --search &quot;lazy(alt([single(hff), single(hff, pref_only=true), single(hlm, pref_only=true),
@@ -1222,19 +1220,17 @@ we recommend using <a href="https://mrlab.ai/papers/correa-seipp-icaps2025.pdf">
     preferred=[hff, hlm], cost_type=one, reopen_closed=false)&quot;
 </code></pre></div>
 <p>For solving <strong>STRIPS tasks optimally</strong>, we recommend using the <code>--alias scorpion</code> shortcut</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --transform-task preprocess-h2 --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --preprocess --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
 </code></pre></div>
 <p>which is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py \
-  --transform-task preprocess-h2 \
-  [DOMAIN_FILE] PROBLEM_FILE \
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --preprocess [DOMAIN_FILE] PROBLEM_FILE \
   --search &quot;astar(scp_online([
       projections(sys_scp(max_time=100, max_time_per_restart=10)),
       cartesian()],
       saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
       pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))&quot;
 </code></pre></div>
-<p>The <code>preprocess-h2</code> call prunes irrelevant operators in a preprocessing
+<p>The <code>--preprocess</code> parameter uses h² to prune irrelevant operators and atoms in a preprocessing
 step. The search configuration uses <a href="https://ojs.aaai.org/index.php/SOCS/article/view/18535">partial order
 reduction</a> and
 maximizes over
@@ -1247,12 +1243,10 @@ databases</a> and <a href="https://jair.org/index.php/jair/article/view/11217">C
 abstractions</a>.</p>
 <p>(In <a href="https://lab.readthedocs.io/">Downward Lab</a> you can use
 <code>add_algorithm(name="scorpion", repo="path/to/repo", rev="scorpion",
-component_options=[], driver_options=["--transform-task", "preprocess-h2",
+component_options=[], driver_options=["--preprocess",
 "--alias", "scorpion"]</code> to run the recommended Scorpion configuration.)</p>
 <p>For solving <strong>tasks with conditional effects optimally</strong>, we recommend using</p>
-<div class="language-text highlight"><pre><span></span><code>./fast-downward.py \
-  --transform-task preprocess-h2 \
-  [DOMAIN_FILE] PROBLEM_FILE \
+<div class="language-text highlight"><pre><span></span><code>./fast-downward.py --preprocess [DOMAIN_FILE] PROBLEM_FILE \
   --search &quot;astar(scp_online([projections(sys_scp(
         max_time=100, max_time_per_restart=10, max_pdb_size=2M, max_collection_size=20M,
         pattern_type=interesting_non_negative, create_complete_transition_system=true),
@@ -1272,8 +1266,8 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion</p>
 <li>Scorpion comes with the
   <a href="https://ojs.aaai.org/index.php/ICAPS/article/view/13708">h²-preprocessor</a>
   by Vidal Alcázar and Álvaro Torralba that prunes irrelevant operators.
-  Pass <code>--transform-task preprocess-h2</code> to use it.</li>
-<li>The <code>--transform-task</code> command allows you to run arbitrary preprocessing
+  Pass <code>--preprocess</code> to use it.</li>
+<li>The <code>--preprocess=CMD</code> switch allows you to run arbitrary preprocessing
   commands that transform the SAS+ output from the translator before
   passing it to the search.</li>
 <li>Scorpion uses <a href="https://ojs.aaai.org/index.php/ICAPS/article/view/6667">incremental search for Cartesian abstraction

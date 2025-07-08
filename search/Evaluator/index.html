@@ -2096,7 +2096,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><strong>preferred operators:</strong> no</li>
 </ul>
 <h2 id="novelty_evaluator">Novelty evaluator<a class="headerlink" href="#novelty_evaluator" title="Permanent link">#</a></h2>
-<p>Computes the novelty w(s) of a state s given the partition functionsevals=⟨h_1, ..., h_n⟩ as the size of the smallest set of atoms A suchthat s is the first evaluated state that subsumes A, amongall states s' visited before s for which h_i(s) = h_i(s') for 1 ≤ i ≤ n.Best-First Width Search (BFWS) was introduced in </p>
+<p>Computes the novelty w(s) of a state s given the partition functions evals=⟨h_1, ..., h_n⟩ as the size of the smallest set of atoms A such that s is the first evaluated state that subsumes A, among all states s' visited before s for which h_i(s) = h_i(s') for 1 ≤ i ≤ n. Best-First Width Search (BFWS) was introduced in </p>
 <ul>
 <li>Nir Lipovetzky and Hector Geffner.<br />
  <a href="https://ojs.aaai.org/index.php/AAAI/article/view/11027/10886">Best-First Width Search: Exploration and Exploitation in Classical Planning</a>.<br />
@@ -2108,7 +2108,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
  <a href="https://mrlab.ai/papers/correa-seipp-icaps2025.pdf">Alternation-Based Novelty Search</a>.<br />
  In <em>Proceedings of the 35th International Conference on Automated Planning and Scheduling (ICAPS 2025)</em>, pp. to appear. AAAI Press, 2025.</li>
 </ul>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>novelty(width=2, evals=[const()], consider_only_novel_states=true, max_variables_for_width2=infinity, transform=no_transform(), cache_estimates=true, description=&quot;novelty&quot;, verbosity=normal)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>novelty(width=2, evals=[const()], consider_only_novel_states=true, max_variables_for_width2=100, transform=no_transform(), cache_estimates=true, description=&quot;novelty&quot;, verbosity=normal)
 </span></code></pre></div>
 <ul>
 <li><em>width</em> (int [1, 2]): maximum conjunction size</li>
