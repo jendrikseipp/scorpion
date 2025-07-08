@@ -110,10 +110,10 @@ public:
     NoveltyEvaluatorFeature() : TypedFeature("novelty") {
         document_title("Novelty evaluator");
         document_synopsis(
-            "Computes the novelty w(s) of a state s given the partition functions"
-            "evals=⟨h_1, ..., h_n⟩ as the size of the smallest set of atoms A such"
-            "that s is the first evaluated state that subsumes A, among"
-            "all states s' visited before s for which h_i(s) = h_i(s') for 1 ≤ i ≤ n."
+            "Computes the novelty w(s) of a state s given the partition functions "
+            "evals=⟨h_1, ..., h_n⟩ as the size of the smallest set of atoms A such "
+            "that s is the first evaluated state that subsumes A, among "
+            "all states s' visited before s for which h_i(s) = h_i(s') for 1 ≤ i ≤ n. "
             "Best-First Width Search (BFWS) was introduced in " +
             utils::format_conference_reference(
                 {"Nir Lipovetzky", "Hector Geffner"},
@@ -146,7 +146,7 @@ public:
         add_option<int>(
             "max_variables_for_width2",
             "if there are more variables, use width=1",
-            "infinity",
+            "100",
             plugins::Bounds("0", "infinity"));
 
         add_heuristic_options_to_feature(*this, "novelty");
