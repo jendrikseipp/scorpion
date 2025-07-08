@@ -5,7 +5,6 @@
 #include "../utils/logging.h"
 
 #include <cassert>
-#include <cstdlib>
 
 using namespace std;
 
@@ -14,7 +13,8 @@ IterativeWidthSearch::IterativeWidthSearch(
     int width, OperatorCost cost_type, int bound, double max_time,
     const string &description, utils::Verbosity verbosity)
     : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
-      novelty_table(task_proxy, width) {
+      task_info(task_proxy),
+      novelty_table(width, task_info) {
     utils::g_log << "Setting up iterative width search." << endl;
 }
 
@@ -31,15 +31,17 @@ void IterativeWidthSearch::initialize() {
 }
 
 bool IterativeWidthSearch::is_novel(const State &state) {
+    state.unpack();
     return novelty_table.compute_novelty_and_update_table(state) < 3;
 }
 
-bool IterativeWidthSearch::is_novel(const OperatorProxy &op, const State &succ_state) {
-    return novelty_table.compute_novelty_and_update_table(op, succ_state) < 3;
+bool IterativeWidthSearch::is_novel(const State &parent_state, const OperatorProxy &op, const State &succ_state) {
+    parent_state.unpack();
+    succ_state.unpack();
+    return novelty_table.compute_novelty_and_update_table(parent_state, op.get_id(), succ_state) < 3;
 }
 
 void IterativeWidthSearch::print_statistics() const {
-    novelty_table.print_statistics();
     statistics.print_detailed_statistics();
     search_space.print_statistics();
 }
@@ -72,7 +74,7 @@ SearchStatus IterativeWidthSearch::step() {
         State succ_state = state_registry.get_successor_state(state, op);
         statistics.inc_generated();
 
-        bool novel = is_novel(op, succ_state);
+        bool novel = is_novel(state, op, succ_state);
 
         if (!novel) {
             continue;

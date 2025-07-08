@@ -61,6 +61,7 @@ PERMANENT_EXCEPTIONS = [
     "dump_reachable_search_space",
     "gzocp",
     "idastar",
+    "novelty",
     "ocp",
     "pho",
     "pho_abstraction_constraints",

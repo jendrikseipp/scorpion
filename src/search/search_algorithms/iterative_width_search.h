@@ -11,10 +11,11 @@
 namespace iterative_width_search {
 class IterativeWidthSearch : public SearchAlgorithm {
     std::deque<StateID> open_list;
+    novelty::TaskInfo task_info;
     novelty::NoveltyTable novelty_table;
 
     bool is_novel(const State &state);
-    bool is_novel(const OperatorProxy &op, const State &succ_state);
+    bool is_novel(const State &parent_state, const OperatorProxy &op, const State &succ_state);
 
 protected:
     virtual void initialize() override;

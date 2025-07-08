@@ -60,21 +60,24 @@ available (heuristics, search algorithms, etc.) and how to use them.
 ### Recommended configurations
 
 In case you want to **solve tasks quickly** and do **not require optimality**,
-we recommend using the first iteration of
-[LAMA](https://www.jair.org/index.php/jair/article/view/10667) with an added
-[type-based open list](https://ojs.aaai.org/index.php/AAAI/article/view/9036/):
+we recommend using [NOLAN](https://mrlab.ai/papers/correa-seipp-icaps2025.pdf):
+
+    ./fast-downward.py --transform-task preprocess-h2 --alias nolan [DOMAIN_FILE] PROBLEM_FILE
+
+which is equivalent to
 
     ./fast-downward.py \
       --transform-task preprocess-h2 \
       [DOMAIN_FILE] PROBLEM_FILE \
-      --search "let(hlm, landmark_sum(lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one)),
-        let(hff, ff(transform=adapt_costs(one)),
-        lazy(alt([single(hff), single(hff, pref_only=true), single(hlm), single(hlm, pref_only=true),
-        type_based([hff, g()])], boost=1000), preferred=[hff, hlm], cost_type=one)))"
+      --evaluator "hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one), pref=false)" \
+      --evaluator "hff=ff(transform=adapt_costs(one))" \
+      --search "lazy(alt([single(hff), single(hff, pref_only=true), single(hlm, pref_only=true),
+        tiebreaking([novelty(width=2, evals=[hlm]), hlm, g()])], boost=1000),
+        preferred=[hff, hlm], cost_type=one, reopen_closed=false)"
 
 For solving **STRIPS tasks optimally**, we recommend using the `--alias scorpion` shortcut
 
-    ./fast-downward.py --transform-task preprocess-h2 --alias scorpion PROBLEM_FILE
+    ./fast-downward.py --transform-task preprocess-h2 --alias scorpion [DOMAIN_FILE] PROBLEM_FILE
 
 which is equivalent to
 
@@ -242,6 +245,12 @@ Different cost partitioning algorithms for landmark heuristics:
   `landmark_cost_partitioning(..., cost_partitioning=greedy_zero_one, scoring_function=max_heuristic)`
 - Saturated cost partitioning:
   `landmark_cost_partitioning(..., cost_partitioning=saturated, scoring_function=max_heuristic_per_stolen_costs)`
+
+
+## New evaluators
+
+- Novelty evaluator:
+  `novelty(width=2, evals=[hlm])`
 
 
 ## New search engines

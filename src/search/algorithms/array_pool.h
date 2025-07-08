@@ -102,6 +102,11 @@ public:
         positions.reserve(num_vectors + 1);
     }
 
+    void shrink_to_fit() {
+        data.shrink_to_fit();
+        positions.shrink_to_fit();
+    }
+
     int size() const {
         return positions.size() - 1;
     }

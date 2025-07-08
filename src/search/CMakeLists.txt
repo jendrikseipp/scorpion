@@ -739,6 +739,7 @@ create_fast_downward_library(
     NAME novelty
     HELP "Novelty-based algorithms"
     SOURCES
+        novelty/novelty_evaluator
         novelty/novelty_table
     DEPENDS
         task_properties

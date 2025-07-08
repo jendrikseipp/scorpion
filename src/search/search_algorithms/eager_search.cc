@@ -6,6 +6,7 @@
 #include "../pruning_method.h"
 
 #include "../algorithms/ordered_set.h"
+#include "../novelty/novelty_evaluator.h"
 #include "../plugins/options.h"
 #include "../task_utils/successor_generator.h"
 #include "../utils/logging.h"
@@ -77,6 +78,9 @@ void EagerSearch::initialize() {
     }
 
     path_dependent_evaluators.assign(evals.begin(), evals.end());
+
+    // HACK: we need to notify landmark heuristics before evaluating the novelty heuristics that depend on them.
+    sort(path_dependent_evaluators.begin(), path_dependent_evaluators.end(), novelty::OrderNoveltyEvaluatorsLastHack());
 
     State initial_state = state_registry.get_initial_state();
     for (Evaluator *evaluator : path_dependent_evaluators) {

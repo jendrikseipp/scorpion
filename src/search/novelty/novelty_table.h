@@ -3,10 +3,9 @@
 
 #include "../task_proxy.h"
 
-#include "../utils/timer.h"
+#include "../algorithms/array_pool.h"
 
 #include <cassert>
-#include <memory>
 #include <vector>
 
 namespace novelty {
@@ -17,20 +16,31 @@ namespace novelty {
     1=1: 2=0 2=1
     1=2: 2=0 2=1
 */
-class FactIndexer {
+class TaskInfo {
+    std::vector<int> primary_variables;
+    array_pool_template::ArrayPool<FactPair> effects_by_operator;
     std::vector<int> fact_offsets;
-    std::vector<int> pair_offsets;
+    std::vector<int64_t> pair_offsets;
+    bool has_axioms;
     int num_facts;
-    int num_pairs;
+    int64_t num_pairs;
 
 public:
-    explicit FactIndexer(const TaskProxy &task_proxy);
+    explicit TaskInfo(const TaskProxy &task_proxy);
 
-    int get_fact_id(FactPair fact) const {
+    const std::vector<int> &get_primary_variables() const {
+        return primary_variables;
+    }
+
+    array_pool_template::ArrayPoolSlice<FactPair> get_effects(int op_id) const {
+        return effects_by_operator[op_id];
+    }
+
+    int64_t get_fact_id(FactPair fact) const {
         return fact_offsets[fact.var] + fact.value;
     }
 
-    int get_pair_id(FactPair fact1, FactPair fact2) const {
+    int64_t get_pair_id(FactPair fact1, FactPair fact2) const {
         assert(fact1.var != fact2.var);
         if (!(fact1 < fact2)) {
             std::swap(fact1, fact2);
@@ -44,36 +54,31 @@ public:
         return num_facts;
     }
 
-    int get_num_pairs() const {
+    int64_t get_num_pairs() const {
         return num_pairs;
     }
+
+    void dump() const;
 };
 
 class NoveltyTable {
-    const int width;
+    int width;
+    bool debug;
 
-    std::shared_ptr<FactIndexer> fact_indexer;
+    const TaskInfo &task_info;
     std::vector<bool> seen_facts;
     std::vector<bool> seen_fact_pairs;
 
-    utils::Timer compute_novelty_timer;
-
-    void dump_state_and_novelty(const State &state, int novelty) const;
-
 public:
-    NoveltyTable(
-        const TaskProxy &task_proxy,
-        int width,
-        const std::shared_ptr<FactIndexer> &fact_indexer = nullptr);
+    NoveltyTable(int width, const TaskInfo &task_info);
 
     static const int UNKNOWN_NOVELTY = 3;
 
     int compute_novelty_and_update_table(const State &state);
     int compute_novelty_and_update_table(
-        const OperatorProxy &op, const State &succ_state);
+        const State &parent_state, int op_id, const State &succ_state);
     void reset();
-
-    void print_statistics() const;
+    void dump();
 };
 }
 
