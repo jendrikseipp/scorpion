@@ -63,7 +63,6 @@ public:
 
 class NoveltyTable {
     int width;
-    bool debug;
 
     const TaskInfo &task_info;
     std::vector<bool> seen_facts;

@@ -107,7 +107,6 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) :
 
 NoveltyTable::NoveltyTable(int width, const TaskInfo &task_info)
     : width(width),
-      debug(false),
       task_info(task_info) {
     reset();
 }
