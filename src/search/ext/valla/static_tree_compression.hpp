@@ -38,35 +38,6 @@ namespace valla::static_tree
         return std::bit_floor(size - 1);
     }
 
-    /// @brief Recursively insert the elements from `it` until `end` into the `table`.
-/// @param it points to the first element.
-/// @param end points after the last element.
-/// @param table is the table to uniquely insert the slots.
-/// @return the index of the slot at the root.
-template<std::forward_iterator Iterator>
-    requires std::same_as<std::iter_value_t<Iterator>, Index>
-inline Index insert_recursively(Iterator it, Iterator end, size_t size, IndexedHashSet& table)
-{
-    /* Base cases */
-    if (size == 1)
-        return *it;  ///< Skip node creation
-
-    if (size == 2) {
-        const auto result = table.insert_slot(make_slot(*it, *(it + 1))).first;
-        return make_slot(result[0], result[1]);
-    }
-
-    /* Divide */
-    const auto mid = calc_mid(size);
-
-    /* Conquer */
-    const auto mid_it = it + mid;
-    const auto left_index = insert_recursively(it, mid_it, mid, table);
-    const auto right_index = insert_recursively(mid_it, end, size - mid, table);
-
-    const auto result = table.insert_slot(make_slot(left_index, right_index)).first;
-    return make_slot(result[0], result[1]);
-}
 
 /// @brief Recursively insert the elements from `it` until `end` into the `table`.
 /// @param it points to the first element.
@@ -81,8 +52,8 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
         return std::pair{static_cast<size_t>(*it), false};
 
     if (size == 2){
-        auto [iter, inserted] = table.insert_slot(make_slot(*it, *(it + 1)));
-        return std::pair{std::get<2>(*iter), inserted};
+        auto [iter, inserted] = table.insert({*it, *(it + 1)});
+        return std::pair{static_cast<size_t>(*iter), inserted};
     }
 
     /* Divide */
@@ -93,9 +64,9 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
     const auto [left_index, left_inserted] = emplace_recursively(it, mid_it, mid, table);
     const auto [right_index, right_inserted] = emplace_recursively(mid_it, end, size - mid, table);
 
-    auto [iter, inserted] = table.insert_slot(make_slot(left_index, right_index));
+    auto [iter, inserted] = table.insert({left_index, right_index});
 
-    return std::pair{std::get<2>(*iter), left_inserted || right_inserted || inserted};
+    return std::pair{static_cast<size_t>(*iter), left_inserted || right_inserted || inserted};
 
 
 }
@@ -117,7 +88,7 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
 
         if (size == 1)  ///< Special case for singletons.
         {
-            auto [iter, inserted] = tree_table.insert_slot(make_slot(*state.begin(), 0));
+            auto [iter, inserted] = tree_table.insert({*state.begin(), 0});
             if (!inserted)
                 return std::pair{static_cast<size_t>(iter[2]), false};  ///< The state already exists.
 
@@ -147,8 +118,8 @@ inline std::pair<unsigned long, bool> emplace_recursively(Iterator it, Iterator 
 
         if (size == 1)  ///< Special case for singletons.
         {
-            auto [iter, inserted] = tree_table.insert_slot(make_slot(*state.begin(), 0));
-            return std::pair{static_cast<size_t>(std::get<2>(*iter)), !inserted};  ///< The state already exists.
+            auto [iter, inserted] = tree_table.insert({*state.begin(), 0});
+            return std::pair{static_cast<size_t>(*iter), !inserted};  ///< The state already exists.
         }
 
         auto [index, inserted] = emplace_recursively(state.begin(), state.end(), size, tree_table);
@@ -169,7 +140,7 @@ inline void read_state_recursively(Index index, size_t size, const IndexedHashSe
         return;
     }
 
-    const auto [left_index, right_index] = read_slot(tree_table.get_slot(index));
+    const auto [left_index, right_index] = tree_table[index];
 
     /* Base case */
     if (size == 2)
@@ -202,7 +173,7 @@ inline void read_state(Index tree_index, size_t size, const IndexedHashSet& tree
 
     if (size == 1)  ///< Special case for singletons.
     {
-        out_state.push_back(read_slot(tree_table.get_slot(tree_index)).first);
+        out_state.push_back(tree_table[tree_index].lhs);
         return;
     }
 
@@ -252,7 +223,7 @@ private:
                 return;
             }
 
-            const auto [left, right] = read_slot(m_tree_table->get_slot(entry.m_index));
+            const auto [left, right] = m_tree_table->operator[](entry.m_index);
 
             Index mid = calc_mid(entry.m_size);
 

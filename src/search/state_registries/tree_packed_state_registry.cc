@@ -84,6 +84,7 @@ const State &TreePackedStateRegistry::get_initial_state() {
             state_packer.set(buffer.data(), i, tmp[i]);
         }
         auto [index, _] = vs::static_tree::insert(buffer, tree_table);
+        ++_registered_states;
         StateID id = StateID(index);
         cached_initial_state = make_unique<State>(lookup_state(id));
 
@@ -121,7 +122,8 @@ State TreePackedStateRegistry::get_successor_state(const State &predecessor, con
     for (auto i = 0; i < num_variables; ++i) {
         state_packer.set(buffer.data(), i, new_state_values[i]);
     }
-    auto [index, inserted] = vs::static_tree::insert(buffer, tree_table);
+    auto [index, exists] = vs::static_tree::insert(buffer, tree_table);
+    _registered_states += !exists;
 
     return lookup_state(StateID(index), {new_state_values.begin(), new_state_values.end()});
 }
@@ -135,7 +137,7 @@ int TreePackedStateRegistry::get_bins_per_state() const {
 }
 void TreePackedStateRegistry::print_statistics(utils::LogProxy &log) const {
 
-    log << "Number of registered states: " << size() << endl;
+    log << "Number of registered states: " << _registered_states << endl;
     log << "Closed list load factor: " << tree_table.size() << endl;
     log << "State size in bytes: " << get_state_size_in_bytes() << endl;
     log << "State set size: " << tree_table.get_memory_usage() / 1024 << " KB" << endl;

@@ -119,6 +119,7 @@ class TreePackedStateRegistry :
     AxiomEvaluator &axiom_evaluator;
     const int num_variables;
 
+    size_t _registered_states = 0;
     std::unique_ptr<State> cached_initial_state;
 
 
@@ -169,8 +170,9 @@ public:
       Returns the number of states registered so far.
     */
     size_t size() const override {
-        return tree_table.size();
+        return _registered_states;
     }
+
 
     int get_state_size_in_bytes() const;
 
