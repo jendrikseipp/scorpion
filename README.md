@@ -247,7 +247,7 @@ Different cost partitioning algorithms for landmark heuristics:
   `novelty(width=2, evals=[hlm])`
 
 
-## New search engines
+## New search algorithms
 
 - Breadth-first search (without overhead of the more general `eager()` search):
   `brfs()`
