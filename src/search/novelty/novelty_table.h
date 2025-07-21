@@ -46,7 +46,7 @@ public:
             std::swap(fact1, fact2);
         }
         assert(fact1 < fact2);
-        assert(utils::in_bounds(get_fact_id(fact1), pair_offsets));
+        assert(utils::in_bounds(static_cast<long>(get_fact_id(fact1)), pair_offsets));
         return pair_offsets[get_fact_id(fact1)] + get_fact_id(fact2);
     }
 
