@@ -4,17 +4,27 @@ import logging
 import re
 
 from lab.parser import Parser
-
+from lab import tools
 
 def retrieve_avg_num_var(content, props):   
     if "memory_error" in props:
         return
 
     if "state_set_size" in props and "size_per_entry" in props:
-        props["avg_edges_per_state"] = float((props["state_set_size"] * props["size_per_entry"])) / props["registered_states"]
+        props["avg_edges_per_state"] = float((float(props["state_set_size"]) * float(props["size_per_entry"]))) / float(props["registered_states"])
 
     if "root_table_size" in props:
         pass
+
+def add_planner_memory_score(content, props):
+    success = props["coverage"] or props["unsolvable"]
+    memory_limit_kb = 8388608  # 8 GB in KB
+    props["score_planner_memory"] = tools.compute_log_score(
+        success,
+        props.get("planner_memory"),
+        lower_bound=2000,
+        upper_bound=memory_limit_kb,
+        )
 
 class CommonParser(Parser):
     def add_repeated_pattern(
@@ -44,6 +54,7 @@ class CommonParser(Parser):
 
 def get_parser():
     parser = CommonParser()
+    parser.add_function(add_planner_memory_score)
     parser.add_pattern(
         "state_set_size",
         r"\[t=.+s, \d+ KB\] State set destroyed, size: (\d+) entries",

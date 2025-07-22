@@ -68,9 +68,9 @@ state_registries = [
                 ("pck", "packed"),
                 ("static_unpck", "tree_unpacked"),
                 ("static_pck", "tree_packed"),
-                ("fixed_unpck", "fixed_tree_unpacked"),
-                ("fixed_pck", "fixed_tree_packed"),
-                ("huffman_tree", "huffman"),
+               # ("fixed_unpck", "fixed_tree_unpacked"),
+               # ("fixed_pck", "fixed_tree_packed"),
+               # ("huffman_tree", "huffman"),
 
             ]
 heuristics = [
@@ -84,7 +84,7 @@ CONFIGS = [
         start=1,
     )
 ]
-REV_NICKS = [("valla", ""), ]
+REV_NICKS = [("valla", "224096c41a42a967f317cacbe100f3f959fcca24"), ]
 ATTRIBUTES = [
     "coverage",
     "error",
@@ -106,6 +106,7 @@ ATTRIBUTES = [
     "state_set_occupied_tree",
     "state_set_allocated_tree",
     "state_set_size",
+    "score_planner_memory"
 ]
 
 exp = Experiment(environment=ENV)
