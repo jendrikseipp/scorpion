@@ -54,11 +54,11 @@ def get_parser():
         type=int)
     parser.add_pattern(
         "state_set_occupied_tree",
-        r"\[t=.+s, \d+ KB\] State set destroyed, byte size: (\d+\.\d+)MB",
+        r"\[t=.+s, \d+ KB\] State set destroyed, byte size: (\d+\.\d+)B",
         type=float)
     parser.add_pattern(
         "state_set_allocated_tree",
-        r"\[t=.+s, \d+ KB\] State set destroyed, byte capacity: (\d+\.\d+)MB",
+        r"\[t=.+s, \d+ KB\] State set destroyed, byte capacity: (\d+\.\d+)B",
         type=float)
     parser.add_pattern(
         "num_atoms",

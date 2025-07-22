@@ -69,7 +69,7 @@ public:
     {
         size_t usage = 0;
 
-        usage += m_uniqueness.bucket_count() * (1 + sizeof(Index));
+        usage += m_uniqueness.capacity() * (1 + sizeof(Index));
 
         usage += m_index_to_slot.capacity() * sizeof(Slot);
 
@@ -91,8 +91,8 @@ public:
         utils::g_log << "State set destroyed, size: " << size() << " entries"<< std::endl;
         utils::g_log << "State set destroyed, size per entry: " << 2 << " blocks"<< std::endl;
         utils::g_log << "State set destroyed, capacity: " << m_uniqueness.capacity() << " entries" << std::endl;
-        utils::g_log << "State set destroyed, byte size: " << static_cast<double>(get_occupied_memory_usage()) / (1024 * 1024) << "MB" << std::endl;
-        utils::g_log << "State set destroyed, byte capacity: " << static_cast<double>(get_memory_usage()) / (1024 * 1024) << "MB" << std::endl;
+        utils::g_log << "State set destroyed, byte size: " << static_cast<double>(get_occupied_memory_usage()) << "B" << std::endl;
+        utils::g_log << "State set destroyed, byte capacity: " << static_cast<double>(get_memory_usage()) << "B" << std::endl;
     };
 private:
     std::vector<SlotStruct<>> m_index_to_slot;
