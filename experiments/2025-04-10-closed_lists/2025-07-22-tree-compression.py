@@ -84,7 +84,7 @@ CONFIGS = [
         start=1,
     )
 ]
-REV_NICKS = [("valla", ""]
+REV_NICKS = [("valla", "")]
 ATTRIBUTES = [
     "coverage",
     "error",
