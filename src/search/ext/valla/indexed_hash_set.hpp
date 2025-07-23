@@ -91,8 +91,8 @@ public:
         utils::g_log << "State set destroyed, size: " << size() << " entries"<< std::endl;
         utils::g_log << "State set destroyed, size per entry: " << 2 << " blocks"<< std::endl;
         utils::g_log << "State set destroyed, capacity: " << m_uniqueness.capacity() << " entries" << std::endl;
-        utils::g_log << "State set destroyed, byte size: " << static_cast<double>(get_occupied_memory_usage()) << "B" << std::endl;
-        utils::g_log << "State set destroyed, byte capacity: " << static_cast<double>(get_memory_usage()) << "B" << std::endl;
+        utils::g_log << "State set destroyed, byte size: " << get_occupied_memory_usage() << "B" << std::endl;
+        utils::g_log << "State set destroyed, byte capacity: " << get_memory_usage() << "B" << std::endl;
     };
 private:
     std::vector<SlotStruct<>> m_index_to_slot;

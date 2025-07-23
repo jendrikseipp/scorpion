@@ -151,8 +151,8 @@ namespace valla {
             utils::g_log << "State set destroyed, size per entry: " << 2 << " blocks"<< std::endl;
             utils::g_log << "State set destroyed, capacity: " << total_capacity_ << " entries" << std::endl;
             utils::g_log << "State set destroyed, segments: " << static_cast<size_t>(n_seg) << " segs" << std::endl;
-            utils::g_log << "State set destroyed, byte size: " << static_cast<double>(size_ * sizeof(T)) << "B" << std::endl;
-            utils::g_log << "State set destroyed, byte capacity: " << static_cast<double>(total_capacity_ * sizeof(T)) << "B" << std::endl;
+            utils::g_log << "State set destroyed, byte size: " << size_ * sizeof(T) << "B" << std::endl;
+            utils::g_log << "State set destroyed, byte capacity: " << total_capacity_ * sizeof(T) << "B" << std::endl;
             utils::g_log << "State set destroyed, load: " << static_cast<long double>(size_) / total_capacity_ * 100 << "%" << std::endl;
         };
 

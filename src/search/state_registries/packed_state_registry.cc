@@ -161,6 +161,6 @@ void PackedStateRegistry::print_statistics(utils::LogProxy &log) const {
     log << "State size in bytes: " << get_state_size_in_bytes() << endl;
     utils::g_log << "State set destroyed, size: " << size() << " entries"<< std::endl;
     utils::g_log << "State set destroyed, size per entry: " << get_bins_per_state() << " blocks"<< std::endl;
-    utils::g_log << "State set destroyed, byte size: " << static_cast<double>(get_memory_usage()) << "B" << std::endl;
-    utils::g_log << "State set destroyed, byte capacity: " << static_cast<double>(get_memory_usage()) << "B" << std::endl;
+    utils::g_log << "State set destroyed, byte size: " << get_occupied_memory_usage() << "B" << std::endl;
+    utils::g_log << "State set destroyed, byte capacity: " << get_memory_usage() << "B" << std::endl;
 }
