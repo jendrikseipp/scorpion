@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 
+#include "../utils/logging.h"
+
 /*
   SegmentedVector is a vector-like class with the following advantages over
   vector:
@@ -199,6 +201,7 @@ public:
     }
 
     ~SegmentedArrayVector() {
+
         for (size_t i = 0; i < the_size; ++i) {
             for (size_t offset = 0; offset < elements_per_array; ++offset) {
                 std::allocator_traits<ElementAllocator>::destroy(element_allocator, operator[](i) + offset);
@@ -225,6 +228,10 @@ public:
 
     size_t size() const {
         return the_size;
+    }
+
+    size_t capactity() const {
+        return segments.size() * elements_per_segment;
     }
 
     void push_back(const Element *entry) {

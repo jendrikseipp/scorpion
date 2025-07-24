@@ -137,7 +137,7 @@ size_t UnpackedStateRegistry::get_memory_usage() const
 size_t UnpackedStateRegistry::get_occupied_memory_usage() const {
     size_t usage = 0;
 
-    usage += state_data_pool.size() * get_state_size_in_bytes();
+    usage += state_data_pool.capactity() * get_state_size_in_bytes();
     usage += registered_states.size() * (sizeof(int) + 1);
 
     return usage;
