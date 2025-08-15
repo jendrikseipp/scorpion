@@ -20,7 +20,8 @@ class SlimMatchTree;
 }
 
 namespace cost_saturation {
-/* Precompute and store information about a task that is useful for projections. */
+/* Precompute and store information about a task that is useful for projections.
+ */
 class TaskInfo {
     int num_variables;
     int num_operators;
@@ -47,7 +48,8 @@ public:
     const std::vector<FactPair> &get_goals() const;
     int get_num_operators() const;
     bool operator_mentions_variable(int op_id, int var) const;
-    bool operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const;
+    bool operator_induces_self_loop(
+        const pdbs::Pattern &pattern, int op_id) const;
     bool operator_is_active(const pdbs::Pattern &pattern, int op_id) const;
 };
 
@@ -64,15 +66,13 @@ struct RankedOperator {
     }
 };
 
-
 class ProjectionFunction : public AbstractionFunction {
     struct VariableAndMultiplier {
         int pattern_var;
         int hash_multiplier;
 
         VariableAndMultiplier(int pattern_var, int hash_multiplier)
-            : pattern_var(pattern_var),
-              hash_multiplier(hash_multiplier) {
+            : pattern_var(pattern_var), hash_multiplier(hash_multiplier) {
         }
     };
     std::vector<VariableAndMultiplier> variables_and_multipliers;
@@ -81,14 +81,14 @@ public:
     ProjectionFunction(
         const pdbs::Pattern &pattern, const std::vector<int> &hash_multipliers);
 
-    virtual int get_abstract_state_id(const State &concrete_state) const override;
+    virtual int get_abstract_state_id(
+        const State &concrete_state) const override;
 };
-
 
 class Projection : public Abstraction {
     using Facts = std::vector<FactPair>;
-    using OperatorCallback =
-        std::function<void (Facts &, Facts &, Facts &, const std::vector<int> &)>;
+    using OperatorCallback = std::function<void(
+        Facts &, Facts &, Facts &, const std::vector<int> &)>;
 
     std::shared_ptr<TaskInfo> task_info;
     pdbs::Pattern pattern;
@@ -130,11 +130,13 @@ class Projection : public Abstraction {
 
         for (const RankedOperator &ranked_operator : ranked_operators) {
             // Choose any operator covered by the label.
-            int concrete_op_id = *label_to_operators.get_slice(ranked_operator.label).begin();
+            int concrete_op_id =
+                *label_to_operators.get_slice(ranked_operator.label).begin();
             abstract_facts.clear();
             for (size_t i = 0; i < pattern.size(); ++i) {
                 int var = pattern[i];
-                if (!task_info->operator_mentions_variable(concrete_op_id, var)) {
+                if (!task_info->operator_mentions_variable(
+                        concrete_op_id, var)) {
                     abstract_facts.emplace_back(i, 0);
                 }
             }
@@ -145,9 +147,9 @@ class Projection : public Abstraction {
                 for (const FactPair &fact : abstract_facts) {
                     state += hash_multipliers[fact.var] * fact.value;
                 }
-                callback(Transition(state,
-                                    ranked_operator.label,
-                                    state + ranked_operator.hash_effect));
+                callback(Transition(
+                    state, ranked_operator.label,
+                    state + ranked_operator.hash_effect));
                 has_next_match = increment_to_next_state(abstract_facts);
             }
         }
@@ -161,10 +163,8 @@ class Projection : public Abstraction {
       abstract operator with a concrete value (!= -1) is computed.
     */
     void multiply_out(
-        int pos,
-        std::vector<FactPair> &prev_pairs,
-        std::vector<FactPair> &pre_pairs,
-        std::vector<FactPair> &eff_pairs,
+        int pos, std::vector<FactPair> &prev_pairs,
+        std::vector<FactPair> &pre_pairs, std::vector<FactPair> &eff_pairs,
         const std::vector<FactPair> &effects_without_pre,
         const VariablesProxy &variables,
         const OperatorCallback &callback) const;
@@ -186,15 +186,12 @@ class Projection : public Abstraction {
       Return true iff all abstract facts hold in the given state.
     */
     bool is_consistent(
-        int state_index,
-        const std::vector<FactPair> &abstract_facts) const;
+        int state_index, const std::vector<FactPair> &abstract_facts) const;
 
 public:
     Projection(
-        const TaskProxy &task_proxy,
-        const std::shared_ptr<TaskInfo> &task_info,
-        const pdbs::Pattern &pattern,
-        bool combine_labels = true);
+        const TaskProxy &task_proxy, const std::shared_ptr<TaskInfo> &task_info,
+        const pdbs::Pattern &pattern, bool combine_labels = true);
     virtual ~Projection() override;
 
     virtual std::vector<int> compute_goal_distances(
@@ -204,7 +201,8 @@ public:
     virtual int get_num_operators() const override;
     virtual bool operator_is_active(int op_id) const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
-    virtual void for_each_transition(const TransitionCallback &callback) const override;
+    virtual void for_each_transition(
+        const TransitionCallback &callback) const override;
     virtual int get_num_states() const override;
     virtual const std::vector<int> &get_goal_states() const override;
 

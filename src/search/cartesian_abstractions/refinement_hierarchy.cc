@@ -18,10 +18,12 @@ Node::Node(int state_id)
 }
 
 bool Node::information_is_valid() const {
-    bool not_split = (left_child == UNDEFINED && right_child == UNDEFINED &&
-                      var == UNDEFINED);
-    bool split = (left_child != UNDEFINED && right_child != UNDEFINED &&
-                  var != UNDEFINED);
+    bool not_split =
+        (left_child == UNDEFINED && right_child == UNDEFINED &&
+         var == UNDEFINED);
+    bool split =
+        (left_child != UNDEFINED && right_child != UNDEFINED &&
+         var != UNDEFINED);
     return (not_split ^ split) && value != UNDEFINED;
 }
 
@@ -38,16 +40,15 @@ void Node::split(int var, int value, NodeID left_child, NodeID right_child) {
     assert(is_split());
 }
 
-
 ostream &operator<<(ostream &os, const Node &node) {
     if (node.is_split()) {
         return os << "<Leaf Node: state=" << node.value << ">";
     } else {
         return os << "<Inner Node: var=" << node.var << " value=" << node.value
-                  << " left=" << node.left_child << " right=" << node.right_child << ">";
+                  << " left=" << node.left_child
+                  << " right=" << node.right_child << ">";
     }
 }
-
 
 RefinementHierarchy::RefinementHierarchy(const shared_ptr<AbstractTask> &task)
     : task(task) {
@@ -69,7 +70,8 @@ NodeID RefinementHierarchy::get_node_id(const State &state) const {
 }
 
 pair<NodeID, NodeID> RefinementHierarchy::split(
-    NodeID node_id, int var, const vector<int> &values, int left_state_id, int right_state_id) {
+    NodeID node_id, int var, const vector<int> &values, int left_state_id,
+    int right_state_id) {
     NodeID helper_id = node_id;
     NodeID right_child_id = add_node(right_state_id);
     for (int value : values) {

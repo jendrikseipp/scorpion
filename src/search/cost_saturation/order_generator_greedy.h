@@ -1,8 +1,8 @@
 #ifndef COST_SATURATION_ORDER_GENERATOR_GREEDY_H
 #define COST_SATURATION_ORDER_GENERATOR_GREEDY_H
 
-#include "order_generator.h"
 #include "greedy_order_utils.h"
+#include "order_generator.h"
 
 namespace cost_saturation {
 class OrderGeneratorGreedy : public OrderGenerator {
@@ -13,8 +13,7 @@ class OrderGeneratorGreedy : public OrderGenerator {
     std::vector<int> stolen_costs_by_abstraction;
 
     double rate_abstraction(
-        const std::vector<int> &abstract_state_ids,
-        int abs_id) const;
+        const std::vector<int> &abstract_state_ids, int abs_id) const;
 
 public:
     OrderGeneratorGreedy(ScoringFunction scoring_function, int random_seed);
@@ -24,8 +23,7 @@ public:
         const std::vector<int> &costs) override;
 
     virtual Order compute_order_for_state(
-        const std::vector<int> &abstract_state_ids,
-        bool verbose) override;
+        const std::vector<int> &abstract_state_ids, bool verbose) override;
 };
 }
 

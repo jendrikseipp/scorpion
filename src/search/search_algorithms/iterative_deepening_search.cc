@@ -3,7 +3,6 @@
 #include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
-
 #include "../utils/logging.h"
 
 #include <cassert>
@@ -20,20 +19,23 @@ IterativeDeepeningSearch::IterativeDeepeningSearch(
       sg(task_proxy),
       last_plan_cost(-1) {
     if (!task_properties::is_unit_cost(task_proxy)) {
-        cerr << "Iterative deepening search only supports unit-cost tasks." << endl;
+        cerr << "Iterative deepening search only supports unit-cost tasks."
+             << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 }
 
 void IterativeDeepeningSearch::initialize() {
-    utils::g_log << "Conducting iterative deepening search, (real) bound = " << bound << endl;
+    utils::g_log << "Conducting iterative deepening search, (real) bound = "
+                 << bound << endl;
 }
 
 void IterativeDeepeningSearch::print_statistics() const {
     statistics.print_detailed_statistics();
 }
 
-void IterativeDeepeningSearch::recursive_search(const State &state, int depth_limit) {
+void IterativeDeepeningSearch::recursive_search(
+    const State &state, int depth_limit) {
     if (task_properties::is_goal_state(task_proxy, state)) {
         int plan_cost = calculate_plan_cost(operator_sequence, task_proxy);
         if (plan_cost > last_plan_cost) {
@@ -55,7 +57,10 @@ void IterativeDeepeningSearch::recursive_search(const State &state, int depth_li
         for (OperatorID op_id : applicable_ops) {
             old_ops.insert(op_id.get_index());
         }
-        assert(unordered_set<int>(applicable_operators.begin(), applicable_operators.end()) == old_ops);
+        assert(
+            unordered_set<int>(
+                applicable_operators.begin(), applicable_operators.end()) ==
+            old_ops);
 #endif
         for (int op_id : applicable_operators) {
             OperatorProxy op = operators[op_id];
@@ -89,17 +94,19 @@ SearchStatus IterativeDeepeningSearch::step() {
 }
 
 void IterativeDeepeningSearch::save_plan_if_necessary() {
-    // We don't need to save here, as we automatically save plans when we find them.
+    // We don't need to save here, as we automatically save plans when we find
+    // them.
 }
 
 class IterativeDeepeningSearchFeature
-    : public plugins::TypedFeature<SearchAlgorithm, iterative_deepening_search::IterativeDeepeningSearch> {
+    : public plugins::TypedFeature<
+          SearchAlgorithm,
+          iterative_deepening_search::IterativeDeepeningSearch> {
 public:
     IterativeDeepeningSearchFeature() : TypedFeature("ids") {
         document_title("Iterative deepening search");
         add_option<bool>(
-            "single_plan",
-            "stop after finding the first (shortest) plan",
+            "single_plan", "stop after finding the first (shortest) plan",
             "true");
         add_search_algorithm_options_to_feature(*this, "ids");
     }

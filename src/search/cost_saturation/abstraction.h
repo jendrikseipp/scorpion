@@ -11,17 +11,14 @@ class State;
 
 namespace cost_saturation {
 struct Transition;
-using TransitionCallback = std::function<void (const Transition &)>;
+using TransitionCallback = std::function<void(const Transition &)>;
 
 struct Transition {
     int src;
     int op;
     int target;
 
-    Transition(int src, int op, int target)
-        : src(src),
-          op(op),
-          target(target) {
+    Transition(int src, int op, int target) : src(src), op(op), target(target) {
         assert(src != target);
     }
 
@@ -30,9 +27,8 @@ struct Transition {
     }
 
     bool operator<(const Transition &other) const {
-        return src < other.src
-               || (src == other.src && op < other.op)
-               || (src == other.src && op == other.op && target < other.target);
+        return src < other.src || (src == other.src && op < other.op) ||
+               (src == other.src && op == other.op && target < other.target);
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Transition &t) {
@@ -40,20 +36,19 @@ struct Transition {
     }
 };
 
-
 class AbstractionFunction {
 public:
     virtual ~AbstractionFunction() = default;
     virtual int get_abstract_state_id(const State &concrete_state) const = 0;
 };
 
-
 class Abstraction {
 protected:
     std::unique_ptr<AbstractionFunction> abstraction_function;
 
 public:
-    explicit Abstraction(std::unique_ptr<AbstractionFunction> abstraction_function);
+    explicit Abstraction(
+        std::unique_ptr<AbstractionFunction> abstraction_function);
     virtual ~Abstraction() = default;
 
     Abstraction(const Abstraction &) = delete;
@@ -73,7 +68,8 @@ public:
     virtual bool operator_induces_self_loop(int op_id) const = 0;
 
     // Call a function for each state-changing transition.
-    virtual void for_each_transition(const TransitionCallback &callback) const = 0;
+    virtual void for_each_transition(
+        const TransitionCallback &callback) const = 0;
 
     virtual int get_num_states() const = 0;
     virtual const std::vector<int> &get_goal_states() const = 0;

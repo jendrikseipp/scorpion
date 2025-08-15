@@ -9,20 +9,18 @@ using namespace std;
 
 namespace cost_saturation {
 static void log_better_order(const vector<int> &order, int h, int i, int j) {
-    utils::g_log << "Switch positions " << i << " and " << j << " (abstractions "
-                 << order[j] << ", " << order[i] << "): h=" << h << endl;
-    utils::g_log << "Found improving order with h=" << h << ": " << order << endl;
+    utils::g_log << "Switch positions " << i << " and " << j
+                 << " (abstractions " << order[j] << ", " << order[i]
+                 << "): h=" << h << endl;
+    utils::g_log << "Found improving order with h=" << h << ": " << order
+                 << endl;
 }
 
 static bool search_improving_successor(
-    CPFunction const &cp_function,
-    const utils::CountdownTimer &timer,
-    const Abstractions &abstractions,
-    const vector<int> &costs,
-    const vector<int> &abstract_state_ids,
-    vector<int> &incumbent_order,
-    CostPartitioningHeuristic &incumbent_cp,
-    int &incumbent_h_value,
+    CPFunction const &cp_function, const utils::CountdownTimer &timer,
+    const Abstractions &abstractions, const vector<int> &costs,
+    const vector<int> &abstract_state_ids, vector<int> &incumbent_order,
+    CostPartitioningHeuristic &incumbent_cp, int &incumbent_h_value,
     bool verbose) {
     int num_abstractions = abstractions.size();
     for (int i = 0; i < num_abstractions && !timer.is_expired(); ++i) {
@@ -30,8 +28,9 @@ static bool search_improving_successor(
             swap(incumbent_order[i], incumbent_order[j]);
 
             vector<int> remaining_costs = costs;
-            CostPartitioningHeuristic neighbor_cp =
-                cp_function(abstractions, incumbent_order, remaining_costs, abstract_state_ids);
+            CostPartitioningHeuristic neighbor_cp = cp_function(
+                abstractions, incumbent_order, remaining_costs,
+                abstract_state_ids);
 
             int h = neighbor_cp.compute_heuristic(abstract_state_ids);
             if (h > incumbent_h_value) {
@@ -50,16 +49,11 @@ static bool search_improving_successor(
     return false;
 }
 
-
 void optimize_order_with_hill_climbing(
-    const CPFunction &cp_function,
-    const utils::CountdownTimer &timer,
-    const Abstractions &abstractions,
-    const vector<int> &costs,
-    const vector<int> &abstract_state_ids,
-    vector<int> &incumbent_order,
-    CostPartitioningHeuristic &incumbent_cp,
-    int incumbent_h_value,
+    const CPFunction &cp_function, const utils::CountdownTimer &timer,
+    const Abstractions &abstractions, const vector<int> &costs,
+    const vector<int> &abstract_state_ids, vector<int> &incumbent_order,
+    CostPartitioningHeuristic &incumbent_cp, int incumbent_h_value,
     bool verbose) {
     if (verbose) {
         utils::g_log << "Incumbent h value: " << incumbent_h_value << endl;

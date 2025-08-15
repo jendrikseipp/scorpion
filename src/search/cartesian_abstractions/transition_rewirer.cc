@@ -18,15 +18,15 @@ static vector<vector<FactPair>> get_preconditions_by_operator(
     vector<vector<FactPair>> preconditions_by_operator;
     preconditions_by_operator.reserve(ops.size());
     for (OperatorProxy op : ops) {
-        vector<FactPair> preconditions = task_properties::get_fact_pairs(op.get_preconditions());
+        vector<FactPair> preconditions =
+            task_properties::get_fact_pairs(op.get_preconditions());
         sort(preconditions.begin(), preconditions.end());
         preconditions_by_operator.push_back(move(preconditions));
     }
     return preconditions_by_operator;
 }
 
-static vector<FactPair> get_postconditions(
-    const OperatorProxy &op) {
+static vector<FactPair> get_postconditions(const OperatorProxy &op) {
     // Use map to obtain sorted postconditions.
     map<int, int> var_to_post;
     for (FactProxy fact : op.get_preconditions()) {
@@ -70,15 +70,23 @@ static void remove_transitions_with_given_target(
     Transitions &transitions, int state_id) {
     auto new_end = remove_if(
         transitions.begin(), transitions.end(),
-        [state_id](const Transition &t) {return t.target_id == state_id;});
+        [state_id](const Transition &t) { return t.target_id == state_id; });
     assert(new_end != transitions.end());
     transitions.erase(new_end, transitions.end());
 }
 
-static void add_transition(deque<Transitions> &incoming, deque<Transitions> &outgoing, int src, int op, int dest) {
+static void add_transition(
+    deque<Transitions> &incoming, deque<Transitions> &outgoing, int src, int op,
+    int dest) {
     assert(src != dest);
-    assert(find(outgoing[src].begin(), outgoing[src].end(), Transition(op, dest)) == outgoing[src].end());
-    assert(find(incoming[dest].begin(), incoming[dest].end(), Transition(op, src)) == incoming[dest].end());
+    assert(
+        find(
+            outgoing[src].begin(), outgoing[src].end(), Transition(op, dest)) ==
+        outgoing[src].end());
+    assert(
+        find(
+            incoming[dest].begin(), incoming[dest].end(),
+            Transition(op, src)) == incoming[dest].end());
     outgoing[src].emplace_back(op, dest);
     incoming[dest].emplace_back(op, src);
 }
@@ -88,7 +96,6 @@ static void add_loop(deque<Loops> &loops, int state_id, int op_id) {
     loops[state_id].push_back(op_id);
 }
 
-
 TransitionRewirer::TransitionRewirer(const OperatorsProxy &ops)
     : preconditions_by_operator(get_preconditions_by_operator(ops)),
       postconditions_by_operator(get_postconditions_by_operator(ops)) {
@@ -96,16 +103,16 @@ TransitionRewirer::TransitionRewirer(const OperatorsProxy &ops)
 
 void TransitionRewirer::rewire_transitions(
     deque<Transitions> &incoming, deque<Transitions> &outgoing,
-    const AbstractStates &states, int v_id,
-    const AbstractState &v1, const AbstractState &v2, int var) const {
+    const AbstractStates &states, int v_id, const AbstractState &v1,
+    const AbstractState &v2, int var) const {
     rewire_incoming_transitions(incoming, outgoing, states, v_id, v1, v2, var);
     rewire_outgoing_transitions(incoming, outgoing, states, v_id, v1, v2, var);
 }
 
 void TransitionRewirer::rewire_incoming_transitions(
     deque<Transitions> &incoming, deque<Transitions> &outgoing,
-    const AbstractStates &states, int v_id,
-    const AbstractState &v1, const AbstractState &v2, int var) const {
+    const AbstractStates &states, int v_id, const AbstractState &v1,
+    const AbstractState &v2, int var) const {
     /* State v has been split into v1 and v2. Now for all transitions
        u->v we need to add transitions u->v1, u->v2, or both. */
     int v1_id = v1.get_id();
@@ -151,8 +158,8 @@ void TransitionRewirer::rewire_incoming_transitions(
 
 void TransitionRewirer::rewire_outgoing_transitions(
     deque<Transitions> &incoming, deque<Transitions> &outgoing,
-    const AbstractStates &states, int v_id,
-    const AbstractState &v1, const AbstractState &v2, int var) const {
+    const AbstractStates &states, int v_id, const AbstractState &v1,
+    const AbstractState &v2, int var) const {
     /* State v has been split into v1 and v2. Now for all transitions
        v->w we need to add transitions v1->w, v2->w, or both. */
     int v1_id = v1.get_id();
@@ -203,8 +210,9 @@ void TransitionRewirer::rewire_outgoing_transitions(
 }
 
 void TransitionRewirer::rewire_loops(
-    deque<Loops> &loops, deque<Transitions> &incoming, deque<Transitions> &outgoing,
-    int v_id, const AbstractState &v1, const AbstractState &v2, int var) const {
+    deque<Loops> &loops, deque<Transitions> &incoming,
+    deque<Transitions> &outgoing, int v_id, const AbstractState &v1,
+    const AbstractState &v2, int var) const {
     Loops old_loops = move(loops[v_id]);
     assert(loops[v_id].empty());
     /* State v has been split into v1 and v2. Now for all self-loops

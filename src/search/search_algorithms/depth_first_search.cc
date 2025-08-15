@@ -3,7 +3,6 @@
 #include "../plugins/plugin.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
-
 #include "../utils/logging.h"
 
 #include <cassert>
@@ -13,7 +12,6 @@ using namespace std;
 
 namespace depth_first_search {
 static const int INF = numeric_limits<int>::max();
-
 
 DepthFirstSearch::DepthFirstSearch(
     bool single_plan, OperatorCost cost_type, int bound, double max_time,
@@ -29,8 +27,8 @@ DepthFirstSearch::DepthFirstSearch(
 }
 
 void DepthFirstSearch::initialize() {
-    utils::g_log << "Conducting depth-first search, exclusive bound = "
-                 << bound << endl;
+    utils::g_log << "Conducting depth-first search, exclusive bound = " << bound
+                 << endl;
 }
 
 void DepthFirstSearch::print_statistics() const {
@@ -107,11 +105,13 @@ SearchStatus DepthFirstSearch::step() {
 }
 
 void DepthFirstSearch::save_plan_if_necessary() {
-    // We don't need to save here, as we automatically save plans when we find them.
+    // We don't need to save here, as we automatically save plans when we find
+    // them.
 }
 
 class DepthFirstSearchFeature
-    : public plugins::TypedFeature<SearchAlgorithm, depth_first_search::DepthFirstSearch> {
+    : public plugins::TypedFeature<
+          SearchAlgorithm, depth_first_search::DepthFirstSearch> {
 public:
     DepthFirstSearchFeature() : TypedFeature("dfs") {
         document_title("Depth-first search");
@@ -120,9 +120,7 @@ public:
             "skipping states s that are already visited earlier on the path to s. "
             "Doing so, the search becomes complete.");
         add_option<bool>(
-            "single_plan",
-            "stop after finding the first plan",
-            "false");
+            "single_plan", "stop after finding the first plan", "false");
         add_search_algorithm_options_to_feature(*this, "dfs");
     }
 

@@ -5,13 +5,11 @@
 
 #include <vector>
 
-
 class BitsetMath {
 public:
     using Block = unsigned char;
     static_assert(
-        !std::numeric_limits<Block>::is_signed,
-        "Block type must be unsigned");
+        !std::numeric_limits<Block>::is_signed, "Block type must be unsigned");
 
     static const Block zeros = Block(0);
     // MSVC's bitwise negation always returns a signed type.
@@ -23,7 +21,6 @@ public:
     static std::size_t bit_index(std::size_t pos);
     static Block bit_mask(std::size_t pos);
 };
-
 
 class ConstBitsetView {
     ConstArrayView<BitsetMath::Block> data;
@@ -41,7 +38,8 @@ public:
     bool is_subset_of(const ConstBitsetView &other) const;
     int size() const;
 
-    friend std::ostream &operator<<(std::ostream &os, const ConstBitsetView &view) {
+    friend std::ostream &operator<<(
+        std::ostream &os, const ConstBitsetView &view) {
         for (int index = 0; index < view.num_bits; ++index) {
             os << view.test(index);
         }
@@ -49,16 +47,15 @@ public:
     }
 };
 
-
 class BitsetView {
     ArrayView<BitsetMath::Block> data;
     int num_bits;
 
     void zero_unused_bits();
 public:
-    BitsetView(ArrayView<BitsetMath::Block> data, int num_bits) :
-        data(data), num_bits(num_bits) {}
-
+    BitsetView(ArrayView<BitsetMath::Block> data, int num_bits)
+        : data(data), num_bits(num_bits) {
+    }
 
     BitsetView(const BitsetView &other) = default;
     BitsetView &operator=(const BitsetView &other) = default;
@@ -83,7 +80,6 @@ public:
         return os;
     }
 };
-
 
 class PerStateBitset {
     int num_bits_per_entry;

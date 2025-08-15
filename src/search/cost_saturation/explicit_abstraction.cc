@@ -9,11 +9,9 @@ using namespace std;
 
 namespace cost_saturation {
 static void dijkstra_search(
-    const vector<vector<Successor>> &graph,
-    const vector<int> &costs,
-    priority_queues::AdaptiveQueue<int> &queue,
-    vector<int> &distances) {
-    assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
+    const vector<vector<Successor>> &graph, const vector<int> &costs,
+    priority_queues::AdaptiveQueue<int> &queue, vector<int> &distances) {
+    assert(all_of(costs.begin(), costs.end(), [](int c) { return c >= 0; }));
     while (!queue.empty()) {
         pair<int, int> top_pair = queue.pop();
         int distance = top_pair.first;
@@ -29,7 +27,8 @@ static void dijkstra_search(
             assert(utils::in_bounds(op, costs));
             int cost = costs[op];
             assert(cost >= 0);
-            int successor_distance = (cost == INF) ? INF : state_distance + cost;
+            int successor_distance =
+                (cost == INF) ? INF : state_distance + cost;
             assert(successor_distance >= 0);
             if (distances[successor] > successor_distance) {
                 distances[successor] = successor_distance;
@@ -60,12 +59,11 @@ static vector<bool> get_active_operators_from_graph(
 ExplicitAbstraction::ExplicitAbstraction(
     unique_ptr<AbstractionFunction> abstraction_function,
     vector<vector<Successor>> &&backward_graph_,
-    vector<bool> &&looping_operators,
-    vector<int> &&goal_states)
+    vector<bool> &&looping_operators, vector<int> &&goal_states)
     : Abstraction(move(abstraction_function)),
       backward_graph(move(backward_graph_)),
       active_operators(get_active_operators_from_graph(
-                           backward_graph, looping_operators.size())),
+          backward_graph, looping_operators.size())),
       looping_operators(move(looping_operators)),
       goal_states(move(goal_states)) {
 #ifndef NDEBUG
@@ -75,14 +73,16 @@ ExplicitAbstraction::ExplicitAbstraction(
         sort(copied_transitions.begin(), copied_transitions.end());
         assert(utils::is_sorted_unique(copied_transitions));
         // Check that we don't store self-loops.
-        assert(all_of(copied_transitions.begin(), copied_transitions.end(),
-                      [target](const Successor &succ) {return succ.state != target;}));
+        assert(all_of(
+            copied_transitions.begin(), copied_transitions.end(),
+            [target](const Successor &succ) { return succ.state != target; }));
     }
 #endif
     dump();
 }
 
-vector<int> ExplicitAbstraction::compute_goal_distances(const vector<int> &costs) const {
+vector<int> ExplicitAbstraction::compute_goal_distances(
+    const vector<int> &costs) const {
     vector<int> goal_distances(get_num_states(), INF);
     queue.clear();
     for (int goal_state : goal_states) {
@@ -146,7 +146,8 @@ bool ExplicitAbstraction::operator_induces_self_loop(int op_id) const {
     return looping_operators[op_id];
 }
 
-void ExplicitAbstraction::for_each_transition(const TransitionCallback &callback) const {
+void ExplicitAbstraction::for_each_transition(
+    const TransitionCallback &callback) const {
     int num_states = get_num_states();
     for (int target = 0; target < num_states; ++target) {
         for (const Successor &transition : backward_graph[target]) {
@@ -167,9 +168,11 @@ void ExplicitAbstraction::dump() const {
     cout << "States: " << num_states << endl;
     cout << "Goal states: " << goal_states.size() << endl;
     cout << "Operators inducing state-changing transitions: "
-         << count(active_operators.begin(), active_operators.end(), true) << endl;
+         << count(active_operators.begin(), active_operators.end(), true)
+         << endl;
     cout << "Operators inducing self-loops: "
-         << count(looping_operators.begin(), looping_operators.end(), true) << endl;
+         << count(looping_operators.begin(), looping_operators.end(), true)
+         << endl;
 
     vector<bool> is_goal(num_states, false);
     for (int goal : goal_states) {
@@ -191,8 +194,8 @@ void ExplicitAbstraction::dump() const {
         for (const auto &pair : parallel_transitions) {
             int src = pair.first;
             const vector<int> &operators = pair.second;
-            cout << "    " << src << " -> " << target
-                 << " [label = \"" << utils::join(operators, "_") << "\"];" << endl;
+            cout << "    " << src << " -> " << target << " [label = \""
+                 << utils::join(operators, "_") << "\"];" << endl;
         }
     }
     cout << "}" << endl;

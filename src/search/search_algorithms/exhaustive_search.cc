@@ -25,7 +25,8 @@ static vector<vector<int>> construct_and_dump_fact_mapping(
         int domain_size = task_proxy.get_variables()[var].get_domain_size();
         mapping[var].resize(domain_size);
         for (int val = 0; val < domain_size; ++val) {
-            string fact_name = task_proxy.get_variables()[var].get_fact(val).get_name();
+            string fact_name =
+                task_proxy.get_variables()[var].get_fact(val).get_name();
             if (is_strips_fact(fact_name)) {
                 mapping[var][val] = next_atom_index;
                 cout << "F " << next_atom_index << " "
@@ -48,8 +49,11 @@ ExhaustiveSearch::ExhaustiveSearch()
 void ExhaustiveSearch::initialize() {
     utils::g_log << "Dumping the reachable state space..." << endl;
     cout << "# F (fact): [fact ID] [name]" << endl;
-    cout << "# G (goal state): [goal state ID] [fact ID 1] [fact ID 2] ..." << endl;
-    cout << "# N (non-goal state): [non-goal state ID] [fact ID 1] [fact ID 2] ..." << endl;
+    cout << "# G (goal state): [goal state ID] [fact ID 1] [fact ID 2] ..."
+         << endl;
+    cout
+        << "# N (non-goal state): [non-goal state ID] [fact ID 1] [fact ID 2] ..."
+        << endl;
     cout << "# T (transition): [source state ID] [target state ID]" << endl;
     cout << "# The initial state has ID 0." << endl;
     fact_mapping = construct_and_dump_fact_mapping(task_proxy);
@@ -66,7 +70,8 @@ void ExhaustiveSearch::print_statistics() const {
 }
 
 void ExhaustiveSearch::dump_state(const State &state) const {
-    char state_type = (task_properties::is_goal_state(task_proxy, state)) ? 'G' : 'N';
+    char state_type =
+        (task_properties::is_goal_state(task_proxy, state)) ? 'G' : 'N';
     cout << state_type << " " << state.get_id().value;
     for (FactProxy fact_proxy : state) {
         FactPair fact = fact_proxy.get_pair();
@@ -98,9 +103,11 @@ SearchStatus ExhaustiveSearch::step() {
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_op_ids) {
         // Add successor states to registry.
-        State succ_state = state_registry.get_successor_state(s, operators[op_id]);
+        State succ_state =
+            state_registry.get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
-        cout << "T " << s.get_id().value << " " << succ_state.get_id().value << endl;
+        cout << "T " << s.get_id().value << " " << succ_state.get_id().value
+             << endl;
     }
     return IN_PROGRESS;
 }

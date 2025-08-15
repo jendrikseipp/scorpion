@@ -71,18 +71,13 @@ class CEGAR {
 
 public:
     CEGAR(
-        const std::shared_ptr<AbstractTask> &task,
-        int max_states,
-        int max_transitions,
-        double max_time,
+        const std::shared_ptr<AbstractTask> &task, int max_states,
+        int max_transitions, double max_time,
         PickFlawedAbstractState pick_flawed_abstract_state,
-        PickSplit pick_split,
-        PickSplit tiebreak_split,
-        int max_concrete_states_per_abstract_state,
-        int max_state_expansions,
+        PickSplit pick_split, PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state, int max_state_expansions,
         TransitionRepresentation transition_representation,
-        utils::RandomNumberGenerator &rng,
-        utils::LogProxy &log,
+        utils::RandomNumberGenerator &rng, utils::LogProxy &log,
         DotGraphVerbosity dot_graph_verbosity);
     ~CEGAR();
 

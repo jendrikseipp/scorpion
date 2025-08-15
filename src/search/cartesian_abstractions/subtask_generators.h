@@ -28,7 +28,6 @@ enum class FactOrder {
     HADD_DOWN
 };
 
-
 /*
   Create focused subtasks.
 */
@@ -39,7 +38,6 @@ public:
         utils::LogProxy &log) const = 0;
     virtual ~SubtaskGenerator() = default;
 };
-
 
 /*
   Return copies of the original task.
@@ -55,7 +53,6 @@ public:
         utils::LogProxy &log) const override;
 };
 
-
 /*
   Use ModifiedGoalsTask to return a subtask for each goal fact.
 */
@@ -70,7 +67,6 @@ public:
         const std::shared_ptr<AbstractTask> &task,
         utils::LogProxy &log) const override;
 };
-
 
 /*
   Nest ModifiedGoalsTask and DomainAbstractedTask to return subtasks
@@ -88,9 +84,8 @@ class LandmarkDecomposition : public SubtaskGenerator {
         const landmarks::LandmarkNode *node) const;
 
 public:
-    explicit LandmarkDecomposition(FactOrder order,
-                                   int random_seed,
-                                   bool combine_facts);
+    explicit LandmarkDecomposition(
+        FactOrder order, int random_seed, bool combine_facts);
 
     virtual SharedTasks get_subtasks(
         const std::shared_ptr<AbstractTask> &task,

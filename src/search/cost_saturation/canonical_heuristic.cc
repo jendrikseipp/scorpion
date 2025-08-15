@@ -4,8 +4,8 @@
 #include "max_cost_partitioning_heuristic.h"
 #include "utils.h"
 
-#include "../algorithms/max_cliques.h"
 #include "../algorithms/dynamic_bitset.h"
+#include "../algorithms/max_cliques.h"
 #include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
@@ -59,7 +59,8 @@ CanonicalHeuristic::CanonicalHeuristic(
     : Heuristic(transform, cache_estimates, description, verbosity) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
 
-    Abstractions abstractions = generate_abstractions(task, abstraction_generators);
+    Abstractions abstractions =
+        generate_abstractions(task, abstraction_generators);
 
     utils::g_log << "Compute abstract goal distances" << endl;
     for (const auto &abstraction : abstractions) {
@@ -71,7 +72,8 @@ CanonicalHeuristic::CanonicalHeuristic(
     max_additive_subsets = compute_max_additive_subsets(abstractions);
 
     for (const auto &abstraction : abstractions) {
-        abstraction_functions.push_back(abstraction->extract_abstraction_function());
+        abstraction_functions.push_back(
+            abstraction->extract_abstraction_function());
     }
 }
 
@@ -113,7 +115,8 @@ public:
         document_subcategory("heuristics_cost_partitioning");
         document_title("Canonical heuristic over abstractions");
         document_synopsis("Shuffle abstractions randomly.");
-        add_options_for_cost_partitioning_heuristic(*this, "canonical_heuristic");
+        add_options_for_cost_partitioning_heuristic(
+            *this, "canonical_heuristic");
     }
 
     virtual shared_ptr<CanonicalHeuristic> create_component(

@@ -25,15 +25,19 @@ Abstractions generate_abstractions(
     DeadEnds *dead_ends) {
     Abstractions abstractions;
     vector<int> abstractions_per_generator;
-    for (const shared_ptr<AbstractionGenerator> &generator : abstraction_generators) {
+    for (const shared_ptr<AbstractionGenerator> &generator :
+         abstraction_generators) {
         int abstractions_before = abstractions.size();
-        for (auto &abstraction : generator->generate_abstractions(task, dead_ends)) {
+        for (auto &abstraction :
+             generator->generate_abstractions(task, dead_ends)) {
             abstractions.push_back(move(abstraction));
         }
-        abstractions_per_generator.push_back(abstractions.size() - abstractions_before);
+        abstractions_per_generator.push_back(
+            abstractions.size() - abstractions_before);
     }
     utils::g_log << "Abstractions: " << abstractions.size() << endl;
-    utils::g_log << "Abstractions per generator: " << abstractions_per_generator << endl;
+    utils::g_log << "Abstractions per generator: " << abstractions_per_generator
+                 << endl;
     return abstractions;
 }
 
@@ -68,7 +72,8 @@ AbstractionFunctions extract_abstraction_functions_from_useful_abstractions(
     int num_useful_abstractions = num_abstractions - num_useless_abstractions;
     utils::g_log << "Useful abstractions: " << num_useful_abstractions << "/"
                  << num_abstractions << " = "
-                 << static_cast<double>(num_useful_abstractions) / num_abstractions
+                 << static_cast<double>(num_useful_abstractions) /
+                        num_abstractions
                  << endl;
 
     return abstraction_functions;
@@ -97,8 +102,7 @@ int left_addition(int a, int b) {
 }
 
 int compute_max_h(
-    const CPHeuristics &cp_heuristics,
-    const vector<int> &abstract_state_ids,
+    const CPHeuristics &cp_heuristics, const vector<int> &abstract_state_ids,
     vector<int> *num_best_order) {
     int max_h = 0;
     int best_id = -1;
@@ -126,7 +130,8 @@ int compute_max_h(
     return max_h;
 }
 
-void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_costs) {
+void reduce_costs(
+    vector<int> &remaining_costs, const vector<int> &saturated_costs) {
     assert(remaining_costs.size() == saturated_costs.size());
     for (size_t i = 0; i < remaining_costs.size(); ++i) {
         int &remaining = remaining_costs[i];
@@ -147,23 +152,15 @@ void reduce_costs(vector<int> &remaining_costs, const vector<int> &saturated_cos
 
 void add_order_options(plugins::Feature &feature) {
     feature.add_option<shared_ptr<OrderGenerator>>(
-        "orders",
-        "order generator",
-        "greedy_orders()");
+        "orders", "order generator", "greedy_orders()");
     feature.add_option<int>(
-        "max_orders",
-        "maximum number of orders",
-        "infinity",
+        "max_orders", "maximum number of orders", "infinity",
         plugins::Bounds("0", "infinity"));
     feature.add_option<int>(
-        "max_size",
-        "maximum heuristic size in KiB",
-        "infinity",
+        "max_size", "maximum heuristic size in KiB", "infinity",
         plugins::Bounds("0", "infinity"));
     feature.add_option<double>(
-        "max_time",
-        "maximum time in seconds for finding orders",
-        "200",
+        "max_time", "maximum time in seconds for finding orders", "200",
         plugins::Bounds("0", "infinity"));
     feature.add_option<bool>(
         "diversify",
@@ -171,28 +168,24 @@ void add_order_options(plugins::Feature &feature) {
         "orders for any of the samples",
         "true");
     feature.add_option<int>(
-        "samples",
-        "number of samples for diversification",
-        "1000",
+        "samples", "number of samples for diversification", "1000",
         plugins::Bounds("1", "infinity"));
     feature.add_option<double>(
         "max_optimization_time",
         "maximum time in seconds for optimizing each order with hill climbing",
-        "2",
-        plugins::Bounds("0", "infinity"));
+        "2", plugins::Bounds("0", "infinity"));
     utils::add_rng_options_to_feature(feature);
 }
 
 shared_ptr<CostPartitioningHeuristicCollectionGenerator>
-get_cp_heuristic_collection_generator_from_options(const plugins::Options &opts) {
-    return plugins::make_shared_from_arg_tuples<CostPartitioningHeuristicCollectionGenerator>(
+get_cp_heuristic_collection_generator_from_options(
+    const plugins::Options &opts) {
+    return plugins::make_shared_from_arg_tuples<
+        CostPartitioningHeuristicCollectionGenerator>(
         opts.get<shared_ptr<OrderGenerator>>("orders"),
-        opts.get<int>("max_orders"),
-        opts.get<int>("max_size"),
-        opts.get<double>("max_time"),
-        opts.get<bool>("diversify"),
-        opts.get<int>("samples"),
-        opts.get<double>("max_optimization_time"),
+        opts.get<int>("max_orders"), opts.get<int>("max_size"),
+        opts.get<double>("max_time"), opts.get<bool>("diversify"),
+        opts.get<int>("samples"), opts.get<double>("max_optimization_time"),
         utils::get_rng_arguments_from_options(opts));
 }
 
@@ -213,29 +206,29 @@ void add_options_for_cost_partitioning_heuristic(
     feature.document_property("preferred operators", "no");
 
     feature.add_list_option<shared_ptr<AbstractionGenerator>>(
-        "abstractions",
-        "abstraction generators",
+        "abstractions", "abstraction generators",
         "[projections(hillclimbing(max_time=60)), "
         "projections(systematic(2)), "
         "cartesian()]");
     add_heuristic_options_to_feature(feature, description);
 }
 
-
-shared_ptr<MaxCostPartitioningHeuristic> get_max_cp_heuristic(const plugins::Options &opts, const CPFunction &cp_function) {
-    shared_ptr<AbstractTask> task = opts.get<shared_ptr<AbstractTask>>("transform");
+shared_ptr<MaxCostPartitioningHeuristic> get_max_cp_heuristic(
+    const plugins::Options &opts, const CPFunction &cp_function) {
+    shared_ptr<AbstractTask> task =
+        opts.get<shared_ptr<AbstractTask>>("transform");
     TaskProxy task_proxy(*task);
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
     Abstractions abstractions = generate_abstractions(
-        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"), dead_ends.get());
+        task, opts.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+        dead_ends.get());
     vector<CostPartitioningHeuristic> cp_heuristics =
-        get_cp_heuristic_collection_generator_from_options(opts)->generate_cost_partitionings(
-            task_proxy, abstractions, costs, cp_function);
+        get_cp_heuristic_collection_generator_from_options(opts)
+            ->generate_cost_partitionings(
+                task_proxy, abstractions, costs, cp_function);
     return plugins::make_shared_from_arg_tuples<MaxCostPartitioningHeuristic>(
-        move(abstractions),
-        move(cp_heuristics),
-        move(dead_ends),
+        move(abstractions), move(cp_heuristics), move(dead_ends),
         get_heuristic_arguments_from_options(opts));
 }
 }

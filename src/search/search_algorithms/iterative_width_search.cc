@@ -35,10 +35,13 @@ bool IterativeWidthSearch::is_novel(const State &state) {
     return novelty_table.compute_novelty_and_update_table(state) < 3;
 }
 
-bool IterativeWidthSearch::is_novel(const State &parent_state, const OperatorProxy &op, const State &succ_state) {
+bool IterativeWidthSearch::is_novel(
+    const State &parent_state, const OperatorProxy &op,
+    const State &succ_state) {
     parent_state.unpack();
     succ_state.unpack();
-    return novelty_table.compute_novelty_and_update_table(parent_state, op.get_id(), succ_state) < 3;
+    return novelty_table.compute_novelty_and_update_table(
+               parent_state, op.get_id(), succ_state) < 3;
 }
 
 void IterativeWidthSearch::print_statistics() const {
@@ -48,7 +51,8 @@ void IterativeWidthSearch::print_statistics() const {
 
 SearchStatus IterativeWidthSearch::step() {
     if (open_list.empty()) {
-        utils::g_log << "Completely explored state space -- no solution!" << endl;
+        utils::g_log << "Completely explored state space -- no solution!"
+                     << endl;
         return FAILED;
     }
     StateID id = open_list.front();
@@ -94,12 +98,14 @@ void IterativeWidthSearch::dump_search_space() const {
 }
 
 class IterativeWidthSearchFeature
-    : public plugins::TypedFeature<SearchAlgorithm, iterative_width_search::IterativeWidthSearch> {
+    : public plugins::TypedFeature<
+          SearchAlgorithm, iterative_width_search::IterativeWidthSearch> {
 public:
     IterativeWidthSearchFeature() : TypedFeature("iw") {
         document_title("Iterated width search");
         add_option<int>(
-            "width", "maximum conjunction size", "2", plugins::Bounds("1", "2"));
+            "width", "maximum conjunction size", "2",
+            plugins::Bounds("1", "2"));
         add_search_algorithm_options_to_feature(*this, "iw");
     }
 

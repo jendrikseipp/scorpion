@@ -12,14 +12,10 @@ struct Transition {
     int op_id;
     int target_id;
 
-    Transition()
-        : op_id(UNDEFINED),
-          target_id(UNDEFINED) {
+    Transition() : op_id(UNDEFINED), target_id(UNDEFINED) {
     }
 
-    Transition(int op_id, int target_id)
-        : op_id(op_id),
-          target_id(target_id) {
+    Transition(int op_id, int target_id) : op_id(op_id), target_id(target_id) {
     }
 
     bool is_defined() const {
@@ -35,8 +31,8 @@ struct Transition {
     }
 
     bool operator<(const Transition &other) const {
-        return std::tie(op_id, target_id)
-               < std::tie(other.op_id, other.target_id);
+        return std::tie(op_id, target_id) <
+               std::tie(other.op_id, other.target_id);
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Transition &t) {
@@ -46,7 +42,8 @@ struct Transition {
 }
 
 namespace utils {
-inline void feed(HashState &hash_state, const cartesian_abstractions::Transition &tr) {
+inline void feed(
+    HashState &hash_state, const cartesian_abstractions::Transition &tr) {
     feed(hash_state, tr.op_id);
     feed(hash_state, tr.target_id);
 }

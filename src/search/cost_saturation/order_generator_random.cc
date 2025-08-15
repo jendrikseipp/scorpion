@@ -9,20 +9,17 @@
 using namespace std;
 
 namespace cost_saturation {
-OrderGeneratorRandom::OrderGeneratorRandom(int random_seed) :
-    OrderGenerator(random_seed) {
+OrderGeneratorRandom::OrderGeneratorRandom(int random_seed)
+    : OrderGenerator(random_seed) {
 }
 
 void OrderGeneratorRandom::initialize(
-    const Abstractions &abstractions,
-    const vector<int> &) {
+    const Abstractions &abstractions, const vector<int> &) {
     utils::g_log << "Initialize random order generator" << endl;
     random_order = get_default_order(abstractions.size());
 }
 
-Order OrderGeneratorRandom::compute_order_for_state(
-    const vector<int> &,
-    bool) {
+Order OrderGeneratorRandom::compute_order_for_state(const vector<int> &, bool) {
     rng->shuffle(random_order);
     return random_order;
 }

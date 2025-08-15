@@ -22,25 +22,25 @@ class TransitionRewirer {
 
     void rewire_incoming_transitions(
         std::deque<Transitions> &incoming, std::deque<Transitions> &outgoing,
-        const AbstractStates &states, int v_id,
-        const AbstractState &v1, const AbstractState &v2, int var) const;
+        const AbstractStates &states, int v_id, const AbstractState &v1,
+        const AbstractState &v2, int var) const;
     void rewire_outgoing_transitions(
         std::deque<Transitions> &incoming, std::deque<Transitions> &outgoing,
-        const AbstractStates &states, int v_id,
-        const AbstractState &v1, const AbstractState &v2, int var) const;
+        const AbstractStates &states, int v_id, const AbstractState &v1,
+        const AbstractState &v2, int var) const;
 
 public:
     explicit TransitionRewirer(const OperatorsProxy &ops);
 
     void rewire_transitions(
         std::deque<Transitions> &incoming, std::deque<Transitions> &outgoing,
-        const AbstractStates &states, int v_id,
-        const AbstractState &v1, const AbstractState &v2, int var) const;
+        const AbstractStates &states, int v_id, const AbstractState &v1,
+        const AbstractState &v2, int var) const;
 
     void rewire_loops(
-        std::deque<Loops> &loops,
-        std::deque<Transitions> &incoming, std::deque<Transitions> &outgoing,
-        int v_id, const AbstractState &v1, const AbstractState &v2, int var) const;
+        std::deque<Loops> &loops, std::deque<Transitions> &incoming,
+        std::deque<Transitions> &outgoing, int v_id, const AbstractState &v1,
+        const AbstractState &v2, int var) const;
 
     const std::vector<FactPair> &get_preconditions(int op_id) const {
         assert(utils::in_bounds(op_id, preconditions_by_operator));

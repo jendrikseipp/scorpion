@@ -11,24 +11,27 @@ using namespace std;
 
 namespace cost_saturation {
 MaxHeuristic::MaxHeuristic(
-    Abstractions &&abstractions,
-    const shared_ptr<AbstractTask> &transform, bool cache_estimates,
-    const string &description, utils::Verbosity verbosity)
+    Abstractions &&abstractions, const shared_ptr<AbstractTask> &transform,
+    bool cache_estimates, const string &description, utils::Verbosity verbosity)
     : Heuristic(transform, cache_estimates, description, verbosity) {
     vector<int> costs = task_properties::get_operator_costs(task_proxy);
     for (auto &abstraction : abstractions) {
-        h_values_by_abstraction.push_back(abstraction->compute_goal_distances(costs));
-        abstraction_functions.push_back(abstraction->extract_abstraction_function());
+        h_values_by_abstraction.push_back(
+            abstraction->compute_goal_distances(costs));
+        abstraction_functions.push_back(
+            abstraction->extract_abstraction_function());
     }
 }
 
 int MaxHeuristic::compute_heuristic(const State &ancestor_state) {
     assert(!task_proxy.needs_to_convert_ancestor_state(ancestor_state));
-    // The conversion is unneeded but it results in an unpacked state, which is faster.
+    // The conversion is unneeded but it results in an unpacked state, which is
+    // faster.
     State state = convert_ancestor_state(ancestor_state);
     int max_h = 0;
     for (size_t i = 0; i < abstraction_functions.size(); ++i) {
-        int local_state_id = abstraction_functions[i]->get_abstract_state_id(state);
+        int local_state_id =
+            abstraction_functions[i]->get_abstract_state_id(state);
         int h = h_values_by_abstraction[i][local_state_id];
         assert(h >= 0);
         if (h == INF) {

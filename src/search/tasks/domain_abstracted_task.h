@@ -24,8 +24,7 @@ class ValueMap {
 
 public:
     ValueMap(
-        const AbstractTask &task,
-        const AbstractTask &parent_task,
+        const AbstractTask &task, const AbstractTask &parent_task,
         std::vector<std::vector<int>> &&value_map);
     void convert(std::vector<int> &state_values) const;
     FactPair convert(const FactPair &fact) const;
@@ -48,8 +47,7 @@ class DomainAbstractedTask : public tasks::DelegatingTask {
 public:
     DomainAbstractedTask(
         const std::shared_ptr<AbstractTask> &parent,
-        std::vector<int> &&domain_size,
-        std::vector<int> &&initial_state_values,
+        std::vector<int> &&domain_size, std::vector<int> &&initial_state_values,
         std::vector<FactPair> &&goals,
         std::vector<std::vector<std::string>> &&fact_names,
         std::vector<std::vector<int>> &&value_map);

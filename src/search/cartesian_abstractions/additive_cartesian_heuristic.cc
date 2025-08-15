@@ -16,33 +16,24 @@ using namespace std;
 
 namespace cartesian_abstractions {
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
-    const vector<shared_ptr<SubtaskGenerator>> &subtasks,
-    int max_states, int max_transitions, double max_time,
-    PickFlawedAbstractState pick_flawed_abstract_state,
-    PickSplit pick_split, PickSplit tiebreak_split,
-    int max_concrete_states_per_abstract_state, int max_state_expansions,
-    TransitionRepresentation transition_representation,
-    int memory_padding, int random_seed, DotGraphVerbosity dot_graph_verbosity,
+    const vector<shared_ptr<SubtaskGenerator>> &subtasks, int max_states,
+    int max_transitions, double max_time,
+    PickFlawedAbstractState pick_flawed_abstract_state, PickSplit pick_split,
+    PickSplit tiebreak_split, int max_concrete_states_per_abstract_state,
+    int max_state_expansions,
+    TransitionRepresentation transition_representation, int memory_padding,
+    int random_seed, DotGraphVerbosity dot_graph_verbosity,
     bool use_general_costs, const shared_ptr<AbstractTask> &transform,
     bool cache_estimates, const string &description, utils::Verbosity verbosity)
     : Heuristic(transform, cache_estimates, description, verbosity) {
     CostSaturation cost_saturation(
-        subtasks,
-        max_states,
-        max_transitions,
-        max_time,
-        use_general_costs,
-        pick_flawed_abstract_state,
-        pick_split,
-        tiebreak_split,
-        max_concrete_states_per_abstract_state,
-        max_state_expansions,
-        transition_representation,
-        memory_padding,
-        *utils::get_rng(random_seed),
-        log,
-        dot_graph_verbosity);
-    heuristic_functions = cost_saturation.generate_heuristic_functions(transform);
+        subtasks, max_states, max_transitions, max_time, use_general_costs,
+        pick_flawed_abstract_state, pick_split, tiebreak_split,
+        max_concrete_states_per_abstract_state, max_state_expansions,
+        transition_representation, memory_padding, *utils::get_rng(random_seed),
+        log, dot_graph_verbosity);
+    heuristic_functions =
+        cost_saturation.generate_heuristic_functions(transform);
 }
 
 int AdditiveCartesianHeuristic::compute_heuristic(const State &ancestor_state) {
@@ -73,9 +64,7 @@ public:
                 "https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2013.pdf",
                 "Proceedings of the 23rd International Conference on Automated "
                 "Planning and Scheduling (ICAPS 2013)",
-                "347-351",
-                "AAAI Press",
-                "2013") +
+                "347-351", "AAAI Press", "2013") +
             "and the paper showing how to make the abstractions additive:" +
             utils::format_conference_reference(
                 {"Jendrik Seipp", "Malte Helmert"},
@@ -83,9 +72,7 @@ public:
                 "https://ai.dmi.unibas.ch/papers/seipp-helmert-icaps2014.pdf",
                 "Proceedings of the 24th International Conference on "
                 "Automated Planning and Scheduling (ICAPS 2014)",
-                "289-297",
-                "AAAI Press",
-                "2014") +
+                "289-297", "AAAI Press", "2014") +
             "For more details on Cartesian CEGAR and saturated cost partitioning, "
             "see the journal paper" +
             utils::format_journal_reference(
@@ -93,9 +80,7 @@ public:
                 "Counterexample-Guided Cartesian Abstraction Refinement for "
                 "Classical Planning",
                 "https://ai.dmi.unibas.ch/papers/seipp-helmert-jair2018.pdf",
-                "Journal of Artificial Intelligence Research",
-                "62",
-                "535-577",
+                "Journal of Artificial Intelligence Research", "62", "535-577",
                 "2018") +
             "For a description of the incremental search, see the paper" +
             utils::format_conference_reference(
@@ -104,9 +89,7 @@ public:
                 "https://ai.dmi.unibas.ch/papers/seipp-et-al-icaps2020.pdf",
                 "Proceedings of the 30th International Conference on "
                 "Automated Planning and Scheduling (ICAPS 2020)",
-                "244-248",
-                "AAAI Press",
-                "2020") +
+                "244-248", "AAAI Press", "2020") +
             "Finally, we describe advanced flaw selection strategies here:" +
             utils::format_conference_reference(
                 {"David Speck", "Jendrik Seipp"},
@@ -114,14 +97,11 @@ public:
                 "https://jendrikseipp.com/papers/speck-seipp-icaps2022.pdf",
                 "Proceedings of the 32nd International Conference on "
                 "Automated Planning and Scheduling (ICAPS 2022)",
-                "to appear",
-                "AAAI Press",
-                "2022"));
+                "to appear", "AAAI Press", "2022"));
 
         add_common_cegar_options(*this);
         add_option<bool>(
-            "use_general_costs",
-            "allow negative costs in cost partitioning",
+            "use_general_costs", "allow negative costs in cost partitioning",
             "true");
         add_heuristic_options_to_feature(*this, "cegar");
 
@@ -140,8 +120,7 @@ public:
         g_hacked_sort_transitions = opts.get<bool>("sort_transitions");
         return plugins::make_shared_from_arg_tuples<AdditiveCartesianHeuristic>(
             opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks"),
-            opts.get<int>("max_states"),
-            opts.get<int>("max_transitions"),
+            opts.get<int>("max_states"), opts.get<int>("max_transitions"),
             opts.get<double>("max_time"),
             opts.get<PickFlawedAbstractState>("pick_flawed_abstract_state"),
             opts.get<PickSplit>("pick_split"),

@@ -1,4 +1,5 @@
 #include "cost_partitioning_heuristic.h"
+
 #include "utils.h"
 
 #include "../utils/collections.h"
@@ -8,7 +9,8 @@
 using namespace std;
 
 namespace cost_saturation {
-int CostPartitioningHeuristic::get_lookup_table_index(int abstraction_id) const {
+int CostPartitioningHeuristic::get_lookup_table_index(
+    int abstraction_id) const {
     for (size_t i = 0; i < lookup_tables.size(); ++i) {
         const LookupTable &table = lookup_tables[i];
         if (table.abstraction_id == abstraction_id) {
@@ -20,14 +22,16 @@ int CostPartitioningHeuristic::get_lookup_table_index(int abstraction_id) const 
 
 void CostPartitioningHeuristic::add_h_values(
     int abstraction_id, vector<int> &&h_values) {
-    if (any_of(h_values.begin(), h_values.end(), [](int h) {return h > 0;})) {
+    if (any_of(h_values.begin(), h_values.end(), [](int h) { return h > 0; })) {
         lookup_tables.emplace_back(abstraction_id, move(h_values));
     }
 }
 
 void CostPartitioningHeuristic::merge_h_values(
     int abstraction_id, vector<int> &&h_values) {
-    if (any_of(h_values.begin(), h_values.end(), [](int h) {return h > 0 && h != INF;})) {
+    if (any_of(h_values.begin(), h_values.end(), [](int h) {
+            return h > 0 && h != INF;
+        })) {
         int lookup_table_id = get_lookup_table_index(abstraction_id);
         if (lookup_table_id == -1) {
             // There is no lookup table for this abstraction, yet.
@@ -54,14 +58,11 @@ void CostPartitioningHeuristic::add(CostPartitioningHeuristic &&other) {
 int CostPartitioningHeuristic::compute_heuristic(
     const vector<int> &abstract_state_ids) const {
     return transform_reduce(
-        execution::unseq,
-        lookup_tables.cbegin(), lookup_tables.cend(),
-        0,
-        [](int h1, int h2) {
-            return (h1 == INF || h2 == INF) ? INF : h1 + h2;
-        },
+        execution::unseq, lookup_tables.cbegin(), lookup_tables.cend(), 0,
+        [](int h1, int h2) { return (h1 == INF || h2 == INF) ? INF : h1 + h2; },
         [&abstract_state_ids](const LookupTable &lookup_table) {
-            assert(utils::in_bounds(lookup_table.abstraction_id, abstract_state_ids));
+            assert(utils::in_bounds(
+                lookup_table.abstraction_id, abstract_state_ids));
             int state_id = abstract_state_ids[lookup_table.abstraction_id];
             assert(utils::in_bounds(state_id, lookup_table.h_values));
             return lookup_table.h_values[state_id];
@@ -82,13 +83,15 @@ int CostPartitioningHeuristic::get_num_heuristic_values() const {
 
 int CostPartitioningHeuristic::estimate_size_in_kb() const {
     return (get_num_heuristic_values() * sizeof(int) +
-            lookup_tables.size() * sizeof(vector<int>)) / 1024;
+            lookup_tables.size() * sizeof(vector<int>)) /
+           1024;
 }
 
 void CostPartitioningHeuristic::mark_useful_abstractions(
     vector<bool> &useful_abstractions) const {
     for (const auto &lookup_table : lookup_tables) {
-        assert(utils::in_bounds(lookup_table.abstraction_id, useful_abstractions));
+        assert(
+            utils::in_bounds(lookup_table.abstraction_id, useful_abstractions));
         useful_abstractions[lookup_table.abstraction_id] = true;
     }
 }

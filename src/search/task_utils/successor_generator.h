@@ -32,7 +32,8 @@ public:
     void generate_applicable_ops(
         const State &state, std::vector<OperatorID> &applicable_ops) const;
     void generate_applicable_ops(
-        const cartesian_abstractions::AbstractState &state, std::vector<OperatorID> &applicable_ops) const;
+        const cartesian_abstractions::AbstractState &state,
+        std::vector<OperatorID> &applicable_ops) const;
 };
 
 extern PerTaskInformation<SuccessorGenerator> g_successor_generators;

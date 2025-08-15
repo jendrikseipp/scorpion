@@ -55,21 +55,20 @@ class PatternCollectionGeneratorSystematic : public PatternCollectionGenerator {
     const size_t max_pattern_size;
     const PatternType pattern_type;
     std::shared_ptr<PatternCollection> patterns;
-    PatternSet pattern_set;  // Cleared after pattern computation.
+    PatternSet pattern_set; // Cleared after pattern computation.
 
     void enqueue_pattern_if_new(const Pattern &pattern);
-    void compute_eff_pre_neighbors(const causal_graph::CausalGraph &cg,
-                                   const Pattern &pattern,
-                                   std::vector<int> &result) const;
+    void compute_eff_pre_neighbors(
+        const causal_graph::CausalGraph &cg, const Pattern &pattern,
+        std::vector<int> &result) const;
     std::vector<int> compute_variables_with_precondition_path_to_goal(
         const TaskProxy &task_proxy, const causal_graph::CausalGraph &cg) const;
-    void compute_connection_points(const causal_graph::CausalGraph &cg,
-                                   const Pattern &pattern,
-                                   std::vector<int> &result) const;
+    void compute_connection_points(
+        const causal_graph::CausalGraph &cg, const Pattern &pattern,
+        std::vector<int> &result) const;
 
     void build_sga_patterns(
-        const TaskProxy &task_proxy,
-        const causal_graph::CausalGraph &cg);
+        const TaskProxy &task_proxy, const causal_graph::CausalGraph &cg);
     void build_patterns(
         const TaskProxy &task_proxy,
         const utils::CountdownTimer *timer = nullptr);

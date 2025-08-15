@@ -52,15 +52,12 @@ class OptimalCostPartitioningHeuristic : public Heuristic {
 
     void generate_lp(const Abstractions &abstractions);
     void add_abstraction_variables(
-        const Abstraction &abstraction,
-        int abstraction_id,
+        const Abstraction &abstraction, int abstraction_id,
         LPVariables &lp_variables);
     void add_abstraction_constraints(
-        const Abstraction &abstraction,
-        int abstraction_id,
+        const Abstraction &abstraction, int abstraction_id,
         LPConstraints &lp_constraints);
-    void add_operator_cost_constraints(
-        LPConstraints &lp_constraints);
+    void add_operator_cost_constraints(LPConstraints &lp_constraints);
     void release_memory();
 
 protected:
@@ -68,11 +65,11 @@ protected:
 
 public:
     OptimalCostPartitioningHeuristic(
-        const std::vector<std::shared_ptr<AbstractionGenerator>> &abstraction_generators,
+        const std::vector<std::shared_ptr<AbstractionGenerator>>
+            &abstraction_generators,
         bool allow_negative_costs, lp::LPSolverType lpsolver,
-        const std::shared_ptr<AbstractTask> &transform,
-        bool cache_estimates, const std::string &description,
-        utils::Verbosity verbosity);
+        const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
+        const std::string &description, utils::Verbosity verbosity);
 };
 }
 

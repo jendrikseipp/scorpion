@@ -20,14 +20,12 @@ enum class Saturator {
 };
 
 extern CostPartitioningHeuristic compute_saturated_cost_partitioning(
-    const Abstractions &abstractions,
-    const std::vector<int> &order,
+    const Abstractions &abstractions, const std::vector<int> &order,
     std::vector<int> &remaining_costs,
     const std::vector<int> &abstract_state_ids);
 
 extern CostPartitioningHeuristic compute_perim_saturated_cost_partitioning(
-    const Abstractions &abstractions,
-    const std::vector<int> &order,
+    const Abstractions &abstractions, const std::vector<int> &order,
     std::vector<int> &remaining_costs,
     const std::vector<int> &abstract_state_ids);
 

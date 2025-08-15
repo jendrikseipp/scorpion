@@ -6,13 +6,11 @@ namespace partial_state_tree {
 static const int DEAD_END_LEAF = -2;
 static const int REGULAR_LEAF = -1;
 
-PartialStateTreeNode::PartialStateTreeNode()
-    : var_id(REGULAR_LEAF) {
+PartialStateTreeNode::PartialStateTreeNode() : var_id(REGULAR_LEAF) {
 }
 
 void PartialStateTreeNode::add(
-    const vector<FactPair> &partial_state,
-    const vector<int> &domain_sizes,
+    const vector<FactPair> &partial_state, const vector<int> &domain_sizes,
     vector<int> &uncovered_vars) {
     assert(is_sorted(partial_state.begin(), partial_state.end()));
     if (uncovered_vars.empty()) {
@@ -42,7 +40,8 @@ void PartialStateTreeNode::add(
           We create the pointers to child nodes, but create the nodes on demand.
         */
         var_id = uncovered_vars.back();
-        value_successors = make_unique<vector<unique_ptr<PartialStateTreeNode>>>();
+        value_successors =
+            make_unique<vector<unique_ptr<PartialStateTreeNode>>>();
         value_successors->resize(domain_sizes[var_id]);
     }
 
@@ -56,8 +55,8 @@ void PartialStateTreeNode::add(
         if (fact.var == var_id) {
             successor = &(*value_successors)[fact.value];
             /*
-              var_id is a variable of the partial state, remove it from uncovered
-              since we will cover it in this step.
+              var_id is a variable of the partial state, remove it from
+              uncovered since we will cover it in this step.
             */
             uncovered_vars.erase(
                 remove(uncovered_vars.begin(), uncovered_vars.end(), fact.var),
@@ -79,7 +78,8 @@ void PartialStateTreeNode::add(
     (*successor)->add(partial_state, domain_sizes, uncovered_vars);
 }
 
-bool PartialStateTreeNode::contains(const vector<FactPair> &partial_state) const {
+bool PartialStateTreeNode::contains(
+    const vector<FactPair> &partial_state) const {
     assert(is_sorted(partial_state.begin(), partial_state.end()));
     if (var_id == DEAD_END_LEAF) {
         return true;
@@ -115,7 +115,8 @@ bool PartialStateTreeNode::contains(const State &state) const {
         return false;
     }
 
-    const auto &value_successor = (*value_successors)[state[var_id].get_value()];
+    const auto &value_successor =
+        (*value_successors)[state[var_id].get_value()];
     return (value_successor && value_successor->contains(state)) ||
            (ignore_successor && ignore_successor->contains(state));
 }
@@ -123,7 +124,8 @@ bool PartialStateTreeNode::contains(const State &state) const {
 int PartialStateTreeNode::get_num_nodes() const {
     int num_nodes = 1;
     if (value_successors) {
-        for (const unique_ptr<PartialStateTreeNode> &successor : *value_successors) {
+        for (const unique_ptr<PartialStateTreeNode> &successor :
+             *value_successors) {
             if (successor) {
                 num_nodes += successor->get_num_nodes();
             }
@@ -135,9 +137,7 @@ int PartialStateTreeNode::get_num_nodes() const {
     return num_nodes;
 }
 
-
-PartialStateTree::PartialStateTree()
-    : num_partial_states(0) {
+PartialStateTree::PartialStateTree() : num_partial_states(0) {
 }
 
 void PartialStateTree::add(

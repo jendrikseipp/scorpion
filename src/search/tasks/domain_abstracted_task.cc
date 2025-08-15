@@ -27,13 +27,13 @@ static bool has_conditional_effects(const AbstractTask &task) {
 }
 
 ValueMap::ValueMap(
-    const AbstractTask &task,
-    const AbstractTask &parent_task,
+    const AbstractTask &task, const AbstractTask &parent_task,
     vector<vector<int>> &&value_map)
     : variable_to_pool_index(task.get_num_variables(), -1) {
     // Only store value mappings for abstracted variables.
     for (int var = 0; var < task.get_num_variables(); ++var) {
-        if (task.get_variable_domain_size(var) < parent_task.get_variable_domain_size(var)) {
+        if (task.get_variable_domain_size(var) <
+            parent_task.get_variable_domain_size(var)) {
             variable_to_pool_index[var] = abstracted_variables.size();
             abstracted_variables.push_back({var, variable_to_pool_index[var]});
             new_values.push_back(move(value_map[var]));
@@ -55,7 +55,8 @@ FactPair ValueMap::convert(const FactPair &fact) const {
         // This is the common case.
         return fact;
     } else {
-        return FactPair(fact.var, new_values[variable_to_pool_index[fact.var]][fact.value]);
+        return FactPair(
+            fact.var, new_values[variable_to_pool_index[fact.var]][fact.value]);
     }
 }
 
@@ -63,14 +64,10 @@ bool ValueMap::does_convert_values() const {
     return !abstracted_variables.empty();
 }
 
-
 DomainAbstractedTask::DomainAbstractedTask(
-    const shared_ptr<AbstractTask> &parent,
-    vector<int> &&domain_size,
-    vector<int> &&initial_state_values,
-    vector<FactPair> &&goals,
-    vector<vector<string>> &&fact_names,
-    vector<vector<int>> &&value_map)
+    const shared_ptr<AbstractTask> &parent, vector<int> &&domain_size,
+    vector<int> &&initial_state_values, vector<FactPair> &&goals,
+    vector<vector<string>> &&fact_names, vector<vector<int>> &&value_map)
     : DelegatingTask(parent),
       domain_size(move(domain_size)),
       initial_state_values(move(initial_state_values)),
@@ -93,7 +90,8 @@ string DomainAbstractedTask::get_fact_name(const FactPair &fact) const {
     return fact_names[fact.var][fact.value];
 }
 
-bool DomainAbstractedTask::are_facts_mutex(const FactPair &, const FactPair &) const {
+bool DomainAbstractedTask::are_facts_mutex(
+    const FactPair &, const FactPair &) const {
     ABORT("DomainAbstractedTask doesn't support querying mutexes.");
 }
 

@@ -14,11 +14,12 @@ class LogProxy;
 
 namespace pdbs {
 /*
-  Successor Generator for abstract operators, with fewer member variables than MatchTree.
+  Successor Generator for abstract operators, with fewer member variables than
+  MatchTree.
 
-  NOTE: SlimMatchTree keeps a reference to the task proxy passed to the constructor.
-  Therefore, users of the class must ensure that the task lives at least as long
-  as the match tree.
+  NOTE: SlimMatchTree keeps a reference to the task proxy passed to the
+  constructor. Therefore, users of the class must ensure that the task lives at
+  least as long as the match tree.
 */
 
 class SlimMatchTree {
@@ -29,22 +30,22 @@ class SlimMatchTree {
     Pattern pattern;
     std::vector<int> hash_multipliers;
     Node *root;
-    void insert_recursive(int op_id,
-                          const std::vector<FactPair> &regression_preconditions,
-                          int pre_index,
-                          Node **edge_from_parent);
+    void insert_recursive(
+        int op_id, const std::vector<FactPair> &regression_preconditions,
+        int pre_index, Node **edge_from_parent);
     void get_applicable_operator_ids_recursive(
         Node *node, int state_index, std::vector<int> &operator_ids) const;
     void dump_recursive(Node *node, utils::LogProxy &log) const;
 public:
     // Initialize an empty match tree.
-    SlimMatchTree(const TaskProxy &task_proxy,
-                  const Pattern &pattern,
-                  const std::vector<int> &hash_multipliers);
+    SlimMatchTree(
+        const TaskProxy &task_proxy, const Pattern &pattern,
+        const std::vector<int> &hash_multipliers);
     ~SlimMatchTree();
     /* Insert an abstract operator into the match tree, creating or
        enlarging it. */
-    void insert(int op_id, const std::vector<FactPair> &regression_preconditions);
+    void insert(
+        int op_id, const std::vector<FactPair> &regression_preconditions);
 
     /*
       Extracts all IDs of applicable abstract operators for the abstract state

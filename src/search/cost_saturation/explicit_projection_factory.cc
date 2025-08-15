@@ -14,7 +14,8 @@ using namespace std;
 
 namespace cost_saturation {
 static int get_pattern_index(const pdbs::Pattern &pattern, int var_id) {
-    for (size_t pattern_index = 0; pattern_index < pattern.size(); ++pattern_index) {
+    for (size_t pattern_index = 0; pattern_index < pattern.size();
+         ++pattern_index) {
         if (pattern[pattern_index] == var_id) {
             return pattern_index;
         }
@@ -33,12 +34,12 @@ static vector<FactPair> get_projected_conditions(
         }
     }
     sort(relevant_conditions.begin(), relevant_conditions.end());
-    relevant_conditions.erase(unique(relevant_conditions.begin(), relevant_conditions.end()),
-                              relevant_conditions.end());
+    relevant_conditions.erase(
+        unique(relevant_conditions.begin(), relevant_conditions.end()),
+        relevant_conditions.end());
     assert(utils::is_sorted_unique(relevant_conditions));
     return relevant_conditions;
 }
-
 
 struct ProjectedEffect {
     FactPair fact;
@@ -46,8 +47,7 @@ struct ProjectedEffect {
     bool conditions_covered_by_pattern;
 
     ProjectedEffect(
-        const FactPair &projected_fact,
-        vector<FactPair> &&conditions,
+        const FactPair &projected_fact, vector<FactPair> &&conditions,
         bool conditions_covered_by_pattern)
         : fact(projected_fact),
           conditions(move(conditions)),
@@ -61,10 +61,8 @@ struct ProjectedEffect {
     }
 };
 
-
 ExplicitProjectionFactory::ExplicitProjectionFactory(
-    const TaskProxy &task_proxy,
-    const pdbs::Pattern &pattern)
+    const TaskProxy &task_proxy, const pdbs::Pattern &pattern)
     : task_proxy(task_proxy),
       pattern(pattern),
       looping_operators(task_proxy.get_operators().size(), false) {
@@ -113,14 +111,19 @@ void ExplicitProjectionFactory::multiply_out_aux(
     const function<void(const UnrankedState &)> &callback) const {
     if (state_pos == static_cast<int>(pattern.size())) {
         callback(state);
-    } else if (partial_state_pos < static_cast<int>(partial_state.size()) &&
-               partial_state[partial_state_pos].var == state_pos) {
+    } else if (
+        partial_state_pos < static_cast<int>(partial_state.size()) &&
+        partial_state[partial_state_pos].var == state_pos) {
         state[state_pos] = partial_state[partial_state_pos].value;
-        multiply_out_aux(partial_state, partial_state_pos + 1, state, state_pos + 1, callback);
+        multiply_out_aux(
+            partial_state, partial_state_pos + 1, state, state_pos + 1,
+            callback);
     } else {
         for (int value = 0; value < domain_sizes[state_pos]; ++value) {
             state[state_pos] = value;
-            multiply_out_aux(partial_state, partial_state_pos, state, state_pos + 1, callback);
+            multiply_out_aux(
+                partial_state, partial_state_pos, state, state_pos + 1,
+                callback);
         }
     }
 }
@@ -155,8 +158,8 @@ vector<int> ExplicitProjectionFactory::rank_goal_states() const {
     } else {
         sort(abstract_goals.begin(), abstract_goals.end());
         multiply_out(abstract_goals, [&](const UnrankedState &state) {
-                         goal_states.push_back(rank(state));
-                     });
+            goal_states.push_back(rank(state));
+        });
     }
     return goal_states;
 }
@@ -169,36 +172,40 @@ vector<ProjectedEffect> ExplicitProjectionFactory::get_projected_effects(
         int pattern_index = variable_to_pattern_index[effect_fact.var];
         if (pattern_index != -1) {
             EffectConditionsProxy original_conditions = effect.get_conditions();
-            vector<FactPair> projected_conditions = get_projected_conditions(
-                original_conditions, pattern);
+            vector<FactPair> projected_conditions =
+                get_projected_conditions(original_conditions, pattern);
             assert(projected_conditions.size() <= original_conditions.size());
-            bool conditions_covered_by_pattern = (
-                projected_conditions.size() == original_conditions.size());
+            bool conditions_covered_by_pattern =
+                (projected_conditions.size() == original_conditions.size());
             projected_effects.emplace_back(
                 FactPair(pattern_index, effect_fact.value),
-                move(projected_conditions),
-                conditions_covered_by_pattern);
+                move(projected_conditions), conditions_covered_by_pattern);
         }
     }
     sort(projected_effects.begin(), projected_effects.end());
-    projected_effects.erase(unique(projected_effects.begin(), projected_effects.end()),
-                            projected_effects.end());
+    projected_effects.erase(
+        unique(projected_effects.begin(), projected_effects.end()),
+        projected_effects.end());
     assert(utils::is_sorted_unique(projected_effects));
     return projected_effects;
 }
 
 bool ExplicitProjectionFactory::conditions_are_satisfied(
-    const vector<FactPair> &conditions, const UnrankedState &state_values) const {
-    return all_of(conditions.begin(), conditions.end(), [&state_values](const FactPair &precondition) {
-                      return state_values[precondition.var] == precondition.value;
-                  });
+    const vector<FactPair> &conditions,
+    const UnrankedState &state_values) const {
+    return all_of(
+        conditions.begin(), conditions.end(),
+        [&state_values](const FactPair &precondition) {
+            return state_values[precondition.var] == precondition.value;
+        });
 }
 
 void ExplicitProjectionFactory::add_transition(
     int src_rank, int op_id, const UnrankedState &dest_values, bool debug) {
     int dest_rank = rank(dest_values);
     if (debug) {
-        cout << "Add transition from " << src_rank << " to " << dest_rank << endl;
+        cout << "Add transition from " << src_rank << " to " << dest_rank
+             << endl;
     }
     if (dest_rank == src_rank) {
         looping_operators[op_id] = true;
@@ -208,8 +215,7 @@ void ExplicitProjectionFactory::add_transition(
 }
 
 void ExplicitProjectionFactory::add_transitions(
-    const UnrankedState &src_values,
-    int op_id,
+    const UnrankedState &src_values, int op_id,
     const vector<ProjectedEffect> &effects) {
     const bool debug = false;
     int src_rank = rank(src_values);
@@ -255,7 +261,8 @@ void ExplicitProjectionFactory::add_transitions(
         }
     }
     if (debug) {
-        cout << "variables with possible effects: " << possible_effects.size() << endl;
+        cout << "variables with possible effects: " << possible_effects.size()
+             << endl;
         cout << "base dest values: " << base_dest_values << endl;
     }
 
@@ -266,7 +273,8 @@ void ExplicitProjectionFactory::add_transitions(
                 // Swap current fact with the last fact.
                 *it = facts.back();
                 facts.pop_back();
-                // Do not increment the iterator, as we need to check the swapped-in fact.
+                // Do not increment the iterator, as we need to check the
+                // swapped-in fact.
             } else {
                 ++it;
             }
@@ -297,7 +305,8 @@ void ExplicitProjectionFactory::add_transitions(
         return;
     }
 
-    // Apply all combinations of possible effects per variable and add transitions.
+    // Apply all combinations of possible effects per variable and add
+    // transitions.
     vector<vector<FactPair>::iterator> iterators;
     iterators.reserve(possible_effects.size());
     for (auto &facts : possible_effects) {
@@ -326,7 +335,8 @@ void ExplicitProjectionFactory::add_transitions(
 
         // Increment the "counter" by 1.
         ++iterators[k - 1];
-        for (int i = k - 1; (i > 0) && (iterators[i] == possible_effects[i].end()); --i) {
+        for (int i = k - 1;
+             (i > 0) && (iterators[i] == possible_effects[i].end()); --i) {
             iterators[i] = possible_effects[i].begin();
             ++iterators[i - 1];
         }
@@ -337,15 +347,16 @@ void ExplicitProjectionFactory::compute_transitions() {
     backward_graph.resize(num_states);
     for (OperatorProxy op : task_proxy.get_operators()) {
         int op_id = op.get_id();
-        auto preconditions = get_projected_conditions(op.get_preconditions(), pattern);
+        auto preconditions =
+            get_projected_conditions(op.get_preconditions(), pattern);
         auto effects = get_projected_effects(op);
 
         if (effects.empty()) {
             looping_operators[op_id] = true;
         } else {
             multiply_out(preconditions, [&](const UnrankedState &state) {
-                             add_transitions(state, op_id, effects);
-                         });
+                add_transitions(state, op_id, effects);
+            });
         }
     }
 
@@ -361,8 +372,6 @@ void ExplicitProjectionFactory::compute_transitions() {
 unique_ptr<Abstraction> ExplicitProjectionFactory::convert_to_abstraction() {
     return make_unique<ExplicitAbstraction>(
         make_unique<ProjectionFunction>(pattern, move(hash_multipliers)),
-        move(backward_graph),
-        move(looping_operators),
-        move(goal_states));
+        move(backward_graph), move(looping_operators), move(goal_states));
 }
 }

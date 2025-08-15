@@ -68,27 +68,29 @@ static vector<int> get_operator_costs(const OperatorsProxy &operators) {
     return costs;
 }
 
-
 MatchTree::MatchTree(
-    const OperatorsProxy &ops,
-    const vector<Facts> &preconditions_by_operator,
+    const OperatorsProxy &ops, const vector<Facts> &preconditions_by_operator,
     const vector<Facts> &postconditions_by_operator,
     const RefinementHierarchy &refinement_hierarchy,
-    const CartesianSets &cartesian_sets,
-    bool debug)
-    : num_variables(refinement_hierarchy.get_task_proxy().get_variables().size()),
+    const CartesianSets &cartesian_sets, bool debug)
+    : num_variables(
+          refinement_hierarchy.get_task_proxy().get_variables().size()),
       preconditions(preconditions_by_operator),
       effects(get_effects_by_operator(ops)),
       postconditions(postconditions_by_operator),
-      effect_vars_without_preconditions(get_effect_vars_without_preconditions_by_operator(ops)),
+      effect_vars_without_preconditions(
+          get_effect_vars_without_preconditions_by_operator(ops)),
       operator_costs(get_operator_costs(ops)),
       refinement_hierarchy(refinement_hierarchy),
       cartesian_sets(cartesian_sets),
-      inverted_task(make_shared<extra_tasks::InvertedTask>(refinement_hierarchy.get_task())),
+      inverted_task(make_shared<extra_tasks::InvertedTask>(
+          refinement_hierarchy.get_task())),
       forward_successor_generator(
-          successor_generator::g_successor_generators[refinement_hierarchy.get_task_proxy()]),
+          successor_generator::g_successor_generators[refinement_hierarchy
+                                                          .get_task_proxy()]),
       backward_successor_generator(
-          successor_generator::g_successor_generators[TaskProxy(*inverted_task)]),
+          successor_generator::g_successor_generators[TaskProxy(
+              *inverted_task)]),
       debug(debug) {
     utils::Timer layer_timer;
 }
@@ -98,13 +100,16 @@ int MatchTree::get_state_id(NodeID node_id) const {
 }
 
 #ifndef NDEBUG
-static bool contains_all_facts(const CartesianSet &set, const vector<FactPair> &facts) {
-    return all_of(facts.begin(), facts.end(),
-                  [&](const FactPair &fact) {return set.test(fact.var, fact.value);});
+static bool contains_all_facts(
+    const CartesianSet &set, const vector<FactPair> &facts) {
+    return all_of(facts.begin(), facts.end(), [&](const FactPair &fact) {
+        return set.test(fact.var, fact.value);
+    });
 }
 #endif
 
-bool MatchTree::incoming_operator_only_loops(const AbstractState &state, int op_id) const {
+bool MatchTree::incoming_operator_only_loops(
+    const AbstractState &state, int op_id) const {
     for (const FactPair &fact : preconditions[op_id]) {
         if (!state.contains(fact.var, fact.value)) {
             return false;
@@ -124,9 +129,11 @@ Operators MatchTree::get_incoming_operators(const AbstractState &state) const {
     backward_successor_generator.generate_applicable_ops(state, operator_ids);
     for (OperatorID op_id : operator_ids) {
         int op = op_id.get_index();
-        assert(contains_all_facts(state.get_cartesian_set(), postconditions[op]));
+        assert(
+            contains_all_facts(state.get_cartesian_set(), postconditions[op]));
         // Ignore operators with infinite cost and operators that only loop.
-        if (operator_costs[op] != INF && !incoming_operator_only_loops(state, op)) {
+        if (operator_costs[op] != INF &&
+            !incoming_operator_only_loops(state, op)) {
             operators.push_back(op);
         }
     }
@@ -144,15 +151,19 @@ Operators MatchTree::get_outgoing_operators(const AbstractState &state) const {
     forward_successor_generator.generate_applicable_ops(state, operator_ids);
     for (OperatorID op_id : operator_ids) {
         int op = op_id.get_index();
-        assert(contains_all_facts(state.get_cartesian_set(), preconditions[op]));
+        assert(
+            contains_all_facts(state.get_cartesian_set(), preconditions[op]));
         /*
           Ignore operators with infinite cost and filter self-loops. An
           operator loops iff state contains all its effects, since then the
           resulting Cartesian set is a subset of state.
         */
         if (operator_costs[op] != INF &&
-            any_of(effects[op].begin(), effects[op].end(),
-                   [&state](const FactPair &fact) {return !state.contains(fact.var, fact.value);})) {
+            any_of(
+                effects[op].begin(), effects[op].end(),
+                [&state](const FactPair &fact) {
+                    return !state.contains(fact.var, fact.value);
+                })) {
             operators.push_back(op);
         }
     }
@@ -184,8 +195,7 @@ Matcher MatchTree::get_outgoing_matcher(int op_id) const {
 }
 
 Transitions MatchTree::get_incoming_transitions(
-    const AbstractState &state,
-    const vector<int> &incoming_operators) const {
+    const AbstractState &state, const vector<int> &incoming_operators) const {
     Transitions transitions;
     for (int op_id : incoming_operators) {
         CartesianSet tmp_cartesian_set = state.get_cartesian_set();
@@ -208,13 +218,13 @@ Transitions MatchTree::get_incoming_transitions(
     return transitions;
 }
 
-Transitions MatchTree::get_incoming_transitions(const AbstractState &state) const {
+Transitions MatchTree::get_incoming_transitions(
+    const AbstractState &state) const {
     return get_incoming_transitions(state, get_incoming_operators(state));
 }
 
 Transitions MatchTree::get_outgoing_transitions(
-    const AbstractState &state,
-    const vector<int> &outgoing_operators) const {
+    const AbstractState &state, const vector<int> &outgoing_operators) const {
     Transitions transitions;
     for (int op_id : outgoing_operators) {
         CartesianSet tmp_cartesian_set = state.get_cartesian_set();
@@ -232,7 +242,8 @@ Transitions MatchTree::get_outgoing_transitions(
     return transitions;
 }
 
-Transitions MatchTree::get_outgoing_transitions(const AbstractState &state) const {
+Transitions MatchTree::get_outgoing_transitions(
+    const AbstractState &state) const {
     return get_outgoing_transitions(state, get_outgoing_operators(state));
 }
 
@@ -240,10 +251,11 @@ bool MatchTree::is_applicable(const AbstractState &src, int op_id) const {
 #ifdef NDEBUG
     ABORT("MatchTree::is_applicable() should only be called in debug mode.");
 #endif
-    return all_of(preconditions[op_id].begin(), preconditions[op_id].end(),
-                  [&src](const FactPair &pre) {
-                      return src.contains(pre.var, pre.value);
-                  });
+    return all_of(
+        preconditions[op_id].begin(), preconditions[op_id].end(),
+        [&src](const FactPair &pre) {
+            return src.contains(pre.var, pre.value);
+        });
 }
 
 bool MatchTree::has_transition(
@@ -270,26 +282,31 @@ bool MatchTree::has_transition(
     return true;
 }
 
-vector<bool> MatchTree::get_looping_operators(const AbstractStates &states) const {
-    /* TODO: Is it faster to consider each op, use the refinement hierarchy to get
-       the set of states op is applicable in and check whether it loops for one of them? */
+vector<bool> MatchTree::get_looping_operators(
+    const AbstractStates &states) const {
+    /* TODO: Is it faster to consider each op, use the refinement hierarchy to
+       get the set of states op is applicable in and check whether it loops for
+       one of them? */
     vector<bool> looping(preconditions.size(), false);
     vector<OperatorID> applicable_ops;
     for (auto &state : states) {
         applicable_ops.clear();
-        forward_successor_generator.generate_applicable_ops(*state, applicable_ops);
+        forward_successor_generator.generate_applicable_ops(
+            *state, applicable_ops);
         for (OperatorID op_id : applicable_ops) {
             int op = op_id.get_index();
             if (looping[op]) {
                 continue;
             }
-            assert(contains_all_facts(state->get_cartesian_set(), preconditions[op]));
+            assert(contains_all_facts(
+                state->get_cartesian_set(), preconditions[op]));
             // An operator loops iff state contains all its effects,
             // since then the resulting Cartesian set is a subset of state.
-            if (all_of(effects[op].begin(), effects[op].end(),
-                       [&state](const FactPair &fact) {
-                           return state->contains(fact.var, fact.value);
-                       })) {
+            if (all_of(
+                    effects[op].begin(), effects[op].end(),
+                    [&state](const FactPair &fact) {
+                        return state->contains(fact.var, fact.value);
+                    })) {
                 looping[op] = true;
             }
         }

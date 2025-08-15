@@ -36,22 +36,22 @@ class TransitionSystem {
     void add_loops_in_trivial_abstraction();
 
     void rewire_incoming_transitions(
-        const Transitions &old_incoming, const AbstractStates &states,
-        int v_id, const AbstractState &v1, const AbstractState &v2, int var);
-    void rewire_outgoing_transitions(
-        const Transitions &old_outgoing, const AbstractStates &states,
-        int v_id, const AbstractState &v1, const AbstractState &v2, int var);
-    void rewire_loops(
-        const Loops &old_loops,
+        const Transitions &old_incoming, const AbstractStates &states, int v_id,
         const AbstractState &v1, const AbstractState &v2, int var);
+    void rewire_outgoing_transitions(
+        const Transitions &old_outgoing, const AbstractStates &states, int v_id,
+        const AbstractState &v1, const AbstractState &v2, int var);
+    void rewire_loops(
+        const Loops &old_loops, const AbstractState &v1,
+        const AbstractState &v2, int var);
 
 public:
     explicit TransitionSystem(const TransitionRewirer &rewirer);
 
     // Update transition system after v has been split for var into v1 and v2.
     void rewire(
-        const AbstractStates &states, int v_id,
-        const AbstractState &v1, const AbstractState &v2, int var);
+        const AbstractStates &states, int v_id, const AbstractState &v1,
+        const AbstractState &v2, int var);
 
     const std::deque<Transitions> &get_incoming_transitions() const;
     const std::deque<Transitions> &get_outgoing_transitions() const;

@@ -19,8 +19,8 @@ BreadthFirstSearch::BreadthFirstSearch(
     bool single_plan, bool write_plan, const shared_ptr<PruningMethod> &pruning,
     const string &description, utils::Verbosity verbosity)
     : SearchAlgorithm(
-          ONE, numeric_limits<int>::max(),
-          numeric_limits<double>::infinity(), description, verbosity),
+          ONE, numeric_limits<int>::max(), numeric_limits<double>::infinity(),
+          description, verbosity),
       single_plan(single_plan),
       write_plan(write_plan),
       last_plan_cost(-1),
@@ -47,12 +47,14 @@ void BreadthFirstSearch::print_statistics() const {
     pruning_method->print_statistics();
 }
 
-vector<OperatorID> BreadthFirstSearch::trace_path(const State &goal_state) const {
+vector<OperatorID> BreadthFirstSearch::trace_path(
+    const State &goal_state) const {
     assert(goal_state.get_registry() == &state_registry);
     StateID current_state_id = goal_state.get_id();
     vector<OperatorID> path;
     for (;;) {
-        const Parent &parent = parents[state_registry.lookup_state(current_state_id)];
+        const Parent &parent =
+            parents[state_registry.lookup_state(current_state_id)];
         if (parent.op_id == OperatorID::no_operator) {
             assert(parent.state_id == StateID::no_state);
             break;
@@ -68,10 +70,12 @@ vector<OperatorID> BreadthFirstSearch::trace_path(const State &goal_state) const
 SearchStatus BreadthFirstSearch::step() {
     if (current_state_id == static_cast<int>(state_registry.size())) {
         if (found_solution()) {
-            utils::g_log << "Completely explored state space -- found solution." << endl;
+            utils::g_log << "Completely explored state space -- found solution."
+                         << endl;
             return SOLVED;
         } else {
-            utils::g_log << "Completely explored state space -- no solution!" << endl;
+            utils::g_log << "Completely explored state space -- no solution!"
+                         << endl;
             return UNSOLVABLE;
         }
     }
@@ -103,7 +107,8 @@ SearchStatus BreadthFirstSearch::step() {
     OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_op_ids) {
         int old_num_states = state_registry.size();
-        State succ_state = state_registry.get_successor_state(s, operators[op_id]);
+        State succ_state =
+            state_registry.get_successor_state(s, operators[op_id]);
         statistics.inc_generated();
         int new_num_states = state_registry.size();
         bool is_new_state = (new_num_states > old_num_states);
@@ -115,7 +120,8 @@ SearchStatus BreadthFirstSearch::step() {
 }
 
 void BreadthFirstSearch::save_plan_if_necessary() {
-    // We don't need to save here, as we automatically save plans when we find them.
+    // We don't need to save here, as we automatically save plans when we find
+    // them.
 }
 
 class BreadthFirstSearchFeature
@@ -126,8 +132,7 @@ public:
         document_synopsis("Breadth-first graph search.");
         add_option<bool>(
             "single_plan",
-            "Stop search after finding the first (shortest) plan.",
-            "true");
+            "Stop search after finding the first (shortest) plan.", "true");
         add_option<bool>(
             "write_plan",
             "Store the necessary information during search for writing plans once "
@@ -149,8 +154,7 @@ public:
     virtual shared_ptr<BreadthFirstSearch> create_component(
         const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<BreadthFirstSearch>(
-            options.get<bool>("single_plan"),
-            options.get<bool>("write_plan"),
+            options.get<bool>("single_plan"), options.get<bool>("write_plan"),
             options.get<shared_ptr<PruningMethod>>("pruning"),
             options.get<string>("description"),
             utils::get_log_arguments_from_options(options));

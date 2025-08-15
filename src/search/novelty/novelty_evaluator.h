@@ -13,7 +13,9 @@ class NoveltyEvaluator : public Heuristic {
     const std::vector<std::shared_ptr<Evaluator>> evals;
     const TaskInfo task_info;
 
-    std::unordered_map<std::vector<int>, NoveltyTable, utils::Hash<std::vector<int>>> novelty_tables;
+    std::unordered_map<
+        std::vector<int>, NoveltyTable, utils::Hash<std::vector<int>>>
+        novelty_tables;
     std::vector<int> novelty_to_num_states;
 
     void set_novelty(const State &state, int novelty);
@@ -38,7 +40,8 @@ public:
     virtual bool dead_ends_are_reliable() const override;
 };
 
-// HACK: we need to notify landmark heuristics before evaluating the novelty heuristics that depend on them.
+// HACK: we need to notify landmark heuristics before evaluating the novelty
+// heuristics that depend on them.
 struct OrderNoveltyEvaluatorsLastHack {
     bool operator()(const Evaluator *lhs, const Evaluator *rhs) const {
         if (dynamic_cast<const novelty::NoveltyEvaluator *>(lhs) != nullptr &&

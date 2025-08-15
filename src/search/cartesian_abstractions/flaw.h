@@ -23,15 +23,12 @@ struct FlawedState {
     std::vector<StateID> concrete_states;
 
     FlawedState(int abs_id, Cost h, std::vector<StateID> &&concrete_states)
-        : abs_id(abs_id),
-          h(h),
-          concrete_states(move(concrete_states)) {
+        : abs_id(abs_id), h(h), concrete_states(move(concrete_states)) {
     }
 
     bool operator==(const FlawedState &other) const {
-        return abs_id == other.abs_id
-               && h == other.h
-               && concrete_states == other.concrete_states;
+        return abs_id == other.abs_id && h == other.h &&
+               concrete_states == other.concrete_states;
     }
 
     bool operator!=(const FlawedState &other) const {
@@ -46,7 +43,6 @@ struct FlawedState {
     static const FlawedState no_state;
 };
 
-
 class FlawedStates {
     utils::HashMap<int, std::vector<StateID>> flawed_states;
     HeapQueue flawed_states_queue;
@@ -56,7 +52,8 @@ class FlawedStates {
 public:
     void add_state(int abs_id, const State &conc_state, Cost h);
     FlawedState pop_flawed_state_with_min_h();
-    FlawedState pop_random_flawed_state_and_clear(utils::RandomNumberGenerator &rng);
+    FlawedState pop_random_flawed_state_and_clear(
+        utils::RandomNumberGenerator &rng);
     int num_abstract_states() const;
     int num_concrete_states(int abs_id) const;
     void clear();

@@ -21,8 +21,7 @@ namespace cartesian_abstractions {
 Abstraction::Abstraction(
     const shared_ptr<AbstractTask> &task,
     const shared_ptr<TransitionRewirer> &transition_rewirer,
-    TransitionRepresentation transition_representation,
-    utils::LogProxy &log)
+    TransitionRepresentation transition_representation, utils::LogProxy &log)
     : transition_rewirer(transition_rewirer),
       concrete_initial_state(TaskProxy(*task).get_initial_state()),
       goal_facts(task_properties::get_fact_pairs(TaskProxy(*task).get_goals())),
@@ -43,8 +42,8 @@ Abstraction::Abstraction(
         match_tree = make_unique<MatchTree>(
             TaskProxy(*task).get_operators(),
             transition_rewirer->get_preconditions(),
-            transition_rewirer->get_postconditions(),
-            *refinement_hierarchy, cartesian_sets, debug);
+            transition_rewirer->get_postconditions(), *refinement_hierarchy,
+            cartesian_sets, debug);
     }
 #ifndef NDEBUG
     if (!transition_system && debug) {
@@ -99,9 +98,10 @@ int Abstraction::get_num_stored_transitions() const {
 }
 
 Transitions Abstraction::get_incoming_transitions(int state_id) const {
-    Transitions transitions = transition_system
-        ? transition_system->get_incoming_transitions()[state_id]
-        : match_tree->get_incoming_transitions(*states[state_id]);
+    Transitions transitions =
+        transition_system
+            ? transition_system->get_incoming_transitions()[state_id]
+            : match_tree->get_incoming_transitions(*states[state_id]);
 
     if (g_hacked_sort_transitions) {
         sort(execution::unseq, transitions.begin(), transitions.end());
@@ -110,9 +110,10 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
 }
 
 Transitions Abstraction::get_outgoing_transitions(int state_id) const {
-    Transitions transitions = transition_system
-        ? transition_system->get_outgoing_transitions()[state_id]
-        : match_tree->get_outgoing_transitions(*states[state_id]);
+    Transitions transitions =
+        transition_system
+            ? transition_system->get_outgoing_transitions()[state_id]
+            : match_tree->get_outgoing_transitions(*states[state_id]);
 
     if (g_hacked_sort_transitions) {
         sort(execution::unseq, transitions.begin(), transitions.end());
@@ -125,13 +126,19 @@ bool Abstraction::has_transition(int src, int op_id, int dest) const {
     ABORT("Abstraction::has_transition() should only be called in debug mode.");
 #endif
     if (transition_system) {
-        const Transitions &transitions = transition_system->get_outgoing_transitions()[src];
-        return find(transitions.begin(), transitions.end(), Transition(op_id, dest)) != transitions.end();
+        const Transitions &transitions =
+            transition_system->get_outgoing_transitions()[src];
+        return find(
+                   transitions.begin(), transitions.end(),
+                   Transition(op_id, dest)) != transitions.end();
     } else {
-        bool valid = match_tree->has_transition(*states[src], op_id, *states[dest]);
+        bool valid =
+            match_tree->has_transition(*states[src], op_id, *states[dest]);
 #ifndef NDEBUG
         Transitions out = match_tree->get_outgoing_transitions(*states[src]);
-        assert(count(out.begin(), out.end(), Transition(op_id, dest)) == static_cast<int>(valid));
+        assert(
+            count(out.begin(), out.end(), Transition(op_id, dest)) ==
+            static_cast<int>(valid));
 #endif
         return valid;
     }
@@ -141,8 +148,9 @@ bool Abstraction::has_transition(int src, int op_id, int dest) const {
 vector<bool> Abstraction::get_looping_operators() const {
 #ifndef NDEBUG
     if (match_tree && transition_system) {
-        assert(match_tree->get_looping_operators(states) ==
-               transition_system->get_looping_operators());
+        assert(
+            match_tree->get_looping_operators(states) ==
+            transition_system->get_looping_operators());
     }
 #endif
     if (match_tree) {
@@ -163,7 +171,8 @@ void Abstraction::mark_all_states_as_goals() {
     }
 }
 
-void Abstraction::initialize_trivial_abstraction(const vector<int> &domain_sizes) {
+void Abstraction::initialize_trivial_abstraction(
+    const vector<int> &domain_sizes) {
     CartesianSet::set_static_members(domain_sizes);
     cartesian_sets.push_back(make_unique<CartesianSet>(domain_sizes));
     unique_ptr<AbstractState> init_state =
@@ -254,23 +263,27 @@ pair<int, int> Abstraction::refine(
     if (match_tree && transition_system) {
         for (int state_id : {v1_id, v2_id}) {
             const AbstractState &s = *states[state_id];
-            Transitions ts_out = transition_system->get_outgoing_transitions()[state_id];
+            Transitions ts_out =
+                transition_system->get_outgoing_transitions()[state_id];
             Transitions mt_out = match_tree->get_outgoing_transitions(s);
             sort(ts_out.begin(), ts_out.end());
             sort(mt_out.begin(), mt_out.end());
             if (ts_out != mt_out) {
-                cout << "State " << state_id << ", node: " << s.get_node_id() << endl;
+                cout << "State " << state_id << ", node: " << s.get_node_id()
+                     << endl;
                 cout << "  TS out: " << ts_out << endl;
                 cout << "  MT out: " << mt_out << endl;
             }
             assert(ts_out == mt_out);
 
-            Transitions ts_in = transition_system->get_incoming_transitions()[state_id];
+            Transitions ts_in =
+                transition_system->get_incoming_transitions()[state_id];
             Transitions mt_in = match_tree->get_incoming_transitions(s);
             sort(ts_in.begin(), ts_in.end());
             sort(mt_in.begin(), mt_in.end());
             if (ts_in != mt_in) {
-                cout << "State " << state_id << ", node: " << s.get_node_id() << endl;
+                cout << "State " << state_id << ", node: " << s.get_node_id()
+                     << endl;
                 cout << "  TS in: " << ts_in << endl;
                 cout << "  MT in: " << mt_in << endl;
             }
@@ -279,9 +292,7 @@ pair<int, int> Abstraction::refine(
     }
 #endif
 
-    return {
-        v1_id, v2_id
-    };
+    return {v1_id, v2_id};
 }
 
 void Abstraction::print_statistics() const {
@@ -294,7 +305,8 @@ void Abstraction::print_statistics() const {
         if (match_tree) {
             match_tree->print_statistics();
         }
-        int num_helper_nodes = count(cartesian_sets.begin(), cartesian_sets.end(), nullptr);
+        int num_helper_nodes =
+            count(cartesian_sets.begin(), cartesian_sets.end(), nullptr);
         int num_cartesian_sets = cartesian_sets.size() - num_helper_nodes;
         log << "Cartesian helper nodes: " << num_helper_nodes << endl;
         log << "Cartesian sets: " << num_cartesian_sets << endl;

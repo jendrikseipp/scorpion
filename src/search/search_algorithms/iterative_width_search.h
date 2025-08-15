@@ -15,7 +15,9 @@ class IterativeWidthSearch : public SearchAlgorithm {
     novelty::NoveltyTable novelty_table;
 
     bool is_novel(const State &state);
-    bool is_novel(const State &parent_state, const OperatorProxy &op, const State &succ_state);
+    bool is_novel(
+        const State &parent_state, const OperatorProxy &op,
+        const State &succ_state);
 
 protected:
     virtual void initialize() override;

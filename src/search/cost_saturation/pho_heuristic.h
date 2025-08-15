@@ -15,16 +15,12 @@ class PhO {
     utils::LogProxy log;
 
 public:
-    PhO(
-        const Abstractions &abstractions,
-        const std::vector<int> &costs,
-        lp::LPSolverType solver_type,
-        bool saturated,
+    PhO(const Abstractions &abstractions, const std::vector<int> &costs,
+        lp::LPSolverType solver_type, bool saturated,
         const utils::LogProxy &log);
 
     CostPartitioningHeuristic compute_cost_partitioning(
-        const Abstractions &abstractions,
-        const std::vector<int> &order,
+        const Abstractions &abstractions, const std::vector<int> &order,
         const std::vector<int> &costs,
         const std::vector<int> &abstract_state_ids);
 };

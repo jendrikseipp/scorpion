@@ -21,7 +21,8 @@ class UnsolvabilityHeuristic {
         int abstraction_id;
         std::vector<bool> unsolvable_states;
 
-        UnsolvabilityInfo(int abstraction_id, std::vector<bool> &&unsolvable_states)
+        UnsolvabilityInfo(
+            int abstraction_id, std::vector<bool> &&unsolvable_states)
             : abstraction_id(abstraction_id),
               unsolvable_states(move(unsolvable_states)) {
         }
@@ -30,7 +31,8 @@ class UnsolvabilityHeuristic {
     std::vector<UnsolvabilityInfo> unsolvability_infos;
 
 public:
-    UnsolvabilityHeuristic(const Abstractions &abstractions, CPHeuristics &cp_heuristics);
+    UnsolvabilityHeuristic(
+        const Abstractions &abstractions, CPHeuristics &cp_heuristics);
 
     bool is_unsolvable(const std::vector<int> &abstract_state_ids) const;
     void mark_useful_abstractions(std::vector<bool> &useful_abstractions) const;

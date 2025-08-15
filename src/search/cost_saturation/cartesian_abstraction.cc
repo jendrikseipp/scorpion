@@ -11,21 +11,25 @@ using namespace std;
 namespace cost_saturation {
 CartesianAbstraction::CartesianAbstraction(
     unique_ptr<cartesian_abstractions::Abstraction> &&abstraction_)
-    : Abstraction(make_unique<CartesianAbstractionFunction>(abstraction_->extract_refinement_hierarchy())),
+    : Abstraction(make_unique<CartesianAbstractionFunction>(
+          abstraction_->extract_refinement_hierarchy())),
       abstraction(move(abstraction_)),
       looping_operators(abstraction->get_looping_operators()),
-      goal_states(abstraction->get_goals().begin(), abstraction->get_goals().end()) {
+      goal_states(
+          abstraction->get_goals().begin(), abstraction->get_goals().end()) {
     active_operators.resize(abstraction->get_num_operators(), false);
     for (int src = 0; src < abstraction->get_num_states(); ++src) {
         assert(abstraction->get_states()[src]->get_id() == src);
-        for (const auto &transition : abstraction->get_outgoing_transitions(src)) {
+        for (const auto &transition :
+             abstraction->get_outgoing_transitions(src)) {
             assert(src != transition.target_id);
             active_operators[transition.op_id] = true;
         }
     }
 }
 
-vector<int> CartesianAbstraction::compute_goal_distances(const vector<int> &costs) const {
+vector<int> CartesianAbstraction::compute_goal_distances(
+    const vector<int> &costs) const {
     return cartesian_abstractions::compute_goal_distances(
         *abstraction, costs, abstraction->get_goals());
 }
@@ -33,7 +37,8 @@ vector<int> CartesianAbstraction::compute_goal_distances(const vector<int> &cost
 vector<int> CartesianAbstraction::compute_saturated_costs(
     const vector<int> &h_values) const {
     bool use_general_costs = true;
-    return cartesian_abstractions::compute_saturated_costs(*abstraction, h_values, use_general_costs);
+    return cartesian_abstractions::compute_saturated_costs(
+        *abstraction, h_values, use_general_costs);
 }
 
 int CartesianAbstraction::get_num_operators() const {
@@ -52,9 +57,11 @@ bool CartesianAbstraction::operator_induces_self_loop(int op_id) const {
     return looping_operators[op_id];
 }
 
-void CartesianAbstraction::for_each_transition(const TransitionCallback &callback) const {
+void CartesianAbstraction::for_each_transition(
+    const TransitionCallback &callback) const {
     for (int src = 0; src < get_num_states(); ++src) {
-        for (const auto &transition : abstraction->get_outgoing_transitions(src)) {
+        for (const auto &transition :
+             abstraction->get_outgoing_transitions(src)) {
             callback(Transition(src, transition.op_id, transition.target_id));
         }
     }

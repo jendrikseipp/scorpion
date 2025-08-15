@@ -16,15 +16,15 @@ class OrderGeneratorDynamicGreedy : public OrderGenerator {
         std::vector<int> remaining_costs) const;
 
 public:
-    OrderGeneratorDynamicGreedy(ScoringFunction scoring_function, int random_seed);
+    OrderGeneratorDynamicGreedy(
+        ScoringFunction scoring_function, int random_seed);
 
     virtual void initialize(
         const Abstractions &abstractions,
         const std::vector<int> &costs) override;
 
     virtual Order compute_order_for_state(
-        const std::vector<int> &abstract_state_ids,
-        bool verbose) override;
+        const std::vector<int> &abstract_state_ids, bool verbose) override;
 };
 }
 

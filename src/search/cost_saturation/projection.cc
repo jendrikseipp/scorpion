@@ -18,8 +18,7 @@ using namespace std;
 
 namespace cost_saturation {
 static vector<int> get_abstract_preconditions(
-    const vector<FactPair> &prev_pairs,
-    const vector<FactPair> &pre_pairs,
+    const vector<FactPair> &prev_pairs, const vector<FactPair> &pre_pairs,
     const vector<int> &hash_multipliers) {
     vector<int> abstract_preconditions(hash_multipliers.size(), -1);
     for (const FactPair &fact : prev_pairs) {
@@ -34,8 +33,7 @@ static vector<int> get_abstract_preconditions(
 }
 
 static int compute_hash_effect(
-    const vector<FactPair> &preconditions,
-    const vector<FactPair> &effects,
+    const vector<FactPair> &preconditions, const vector<FactPair> &effects,
     const vector<int> &hash_multipliers) {
     int hash_effect = 0;
     assert(preconditions.size() == effects.size());
@@ -102,7 +100,8 @@ struct OperatorGroup {
     }
 };
 
-using OperatorIDsByPreEffMap = utils::HashMap<pair<vector<FactPair>, vector<FactPair>>, vector<int>>;
+using OperatorIDsByPreEffMap =
+    utils::HashMap<pair<vector<FactPair>, vector<FactPair>>, vector<int>>;
 using OperatorGroups = vector<OperatorGroup>;
 
 static OperatorGroups group_equivalent_operators(
@@ -114,7 +113,8 @@ static OperatorGroups group_equivalent_operators(
     for (OperatorProxy op : task_proxy.get_operators()) {
         effects.clear();
         for (EffectProxy eff : op.get_effects()) {
-            if (variable_to_pattern_index[eff.get_fact().get_pair().var] != -1) {
+            if (variable_to_pattern_index[eff.get_fact().get_pair().var] !=
+                -1) {
                 effects.push_back(eff.get_fact().get_pair());
             }
         }
@@ -133,7 +133,8 @@ static OperatorGroups group_equivalent_operators(
         }
         sort(preconditions.begin(), preconditions.end());
 
-        grouped_operator_ids[make_pair(move(preconditions), move(effects))].push_back(op.get_id());
+        grouped_operator_ids[make_pair(move(preconditions), move(effects))]
+            .push_back(op.get_id());
     }
     OperatorGroups groups;
     for (auto &[pre_eff, operator_ids] : grouped_operator_ids) {
@@ -150,11 +151,13 @@ static OperatorGroups group_equivalent_operators(
     return groups;
 }
 
-static OperatorGroups get_singleton_operator_groups(const TaskProxy &task_proxy) {
+static OperatorGroups get_singleton_operator_groups(
+    const TaskProxy &task_proxy) {
     OperatorGroups groups;
     for (OperatorProxy op : task_proxy.get_operators()) {
         OperatorGroup group;
-        group.preconditions = task_properties::get_fact_pairs(op.get_preconditions());
+        group.preconditions =
+            task_properties::get_fact_pairs(op.get_preconditions());
         sort(group.preconditions.begin(), group.preconditions.end());
         group.effects.reserve(op.get_effects().size());
         for (EffectProxy eff : op.get_effects()) {
@@ -166,7 +169,6 @@ static OperatorGroups get_singleton_operator_groups(const TaskProxy &task_proxy)
     }
     return groups;
 }
-
 
 TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     num_variables = task_proxy.get_variables().size();
@@ -201,8 +203,10 @@ bool TaskInfo::operator_mentions_variable(int op_id, int var) const {
     return mentioned_variables[get_index(op_id, var)];
 }
 
-bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_id) const {
-    // Return false iff the operator has a precondition and effect for a pattern variable.
+bool TaskInfo::operator_induces_self_loop(
+    const pdbs::Pattern &pattern, int op_id) const {
+    // Return false iff the operator has a precondition and effect for a pattern
+    // variable.
     for (int var : pattern) {
         if (pre_eff_variables[get_index(op_id, var)]) {
             return false;
@@ -211,7 +215,8 @@ bool TaskInfo::operator_induces_self_loop(const pdbs::Pattern &pattern, int op_i
     return true;
 }
 
-bool TaskInfo::operator_is_active(const pdbs::Pattern &pattern, int op_id) const {
+bool TaskInfo::operator_is_active(
+    const pdbs::Pattern &pattern, int op_id) const {
     for (int var : pattern) {
         if (effect_variables[get_index(op_id, var)]) {
             return true;
@@ -219,7 +224,6 @@ bool TaskInfo::operator_is_active(const pdbs::Pattern &pattern, int op_id) const
     }
     return false;
 }
-
 
 ProjectionFunction::ProjectionFunction(
     const pdbs::Pattern &pattern, const vector<int> &hash_multipliers) {
@@ -230,20 +234,19 @@ ProjectionFunction::ProjectionFunction(
     }
 }
 
-int ProjectionFunction::get_abstract_state_id(const State &concrete_state) const {
+int ProjectionFunction::get_abstract_state_id(
+    const State &concrete_state) const {
     int index = 0;
     for (const VariableAndMultiplier &pair : variables_and_multipliers) {
-        index += pair.hash_multiplier * concrete_state[pair.pattern_var].get_value();
+        index +=
+            pair.hash_multiplier * concrete_state[pair.pattern_var].get_value();
     }
     return index;
 }
 
-
 Projection::Projection(
-    const TaskProxy &task_proxy,
-    const shared_ptr<TaskInfo> &task_info,
-    const pdbs::Pattern &pattern,
-    bool combine_labels)
+    const TaskProxy &task_proxy, const shared_ptr<TaskInfo> &task_info,
+    const pdbs::Pattern &pattern, bool combine_labels)
     : Abstraction(nullptr),
       task_info(task_info),
       pattern(pattern),
@@ -257,8 +260,9 @@ Projection::Projection(
     for (int pattern_var_id : pattern) {
         hash_multipliers.push_back(num_states);
         VariableProxy var = task_proxy.get_variables()[pattern_var_id];
-        if (utils::is_product_within_limit(num_states, var.get_domain_size(),
-                                           numeric_limits<int>::max())) {
+        if (utils::is_product_within_limit(
+                num_states, var.get_domain_size(),
+                numeric_limits<int>::max())) {
             num_states *= var.get_domain_size();
         } else {
             cerr << "Given pattern is too large! (Overflow occured): " << endl;
@@ -267,7 +271,8 @@ Projection::Projection(
         }
     }
 
-    abstraction_function = make_unique<ProjectionFunction>(pattern, hash_multipliers);
+    abstraction_function =
+        make_unique<ProjectionFunction>(pattern, hash_multipliers);
 
     VariablesProxy variables = task_proxy.get_variables();
     vector<int> variable_to_pattern_index(variables.size(), -1);
@@ -276,15 +281,17 @@ Projection::Projection(
     }
     pattern_domain_sizes.reserve(pattern.size());
     for (int pattern_var : pattern) {
-        pattern_domain_sizes.push_back(variables[pattern_var].get_domain_size());
+        pattern_domain_sizes.push_back(
+            variables[pattern_var].get_domain_size());
     }
 
-    match_tree_backward = make_unique<pdbs::SlimMatchTree>(
-        task_proxy, pattern, hash_multipliers);
+    match_tree_backward =
+        make_unique<pdbs::SlimMatchTree>(task_proxy, pattern, hash_multipliers);
 
     OperatorGroups operator_groups;
     if (combine_labels) {
-        operator_groups = group_equivalent_operators(task_proxy, variable_to_pattern_index);
+        operator_groups =
+            group_equivalent_operators(task_proxy, variable_to_pattern_index);
     } else {
         operator_groups = get_singleton_operator_groups(task_proxy);
     }
@@ -292,7 +299,8 @@ Projection::Projection(
     for (const auto &group : operator_groups) {
         num_ops_covered_by_labels += group.operator_ids.size();
     }
-    label_to_operators.reserve(operator_groups.size(), num_ops_covered_by_labels);
+    label_to_operators.reserve(
+        operator_groups.size(), num_ops_covered_by_labels);
     for (OperatorGroup &group : operator_groups) {
         const vector<FactPair> &preconditions = group.preconditions;
         const vector<FactPair> &effects = group.effects;
@@ -309,10 +317,14 @@ Projection::Projection(
                 const vector<int> &hash_multipliers_) {
                 vector<FactPair> regression_preconditions = prevail;
                 regression_preconditions.insert(
-                    regression_preconditions.end(), effects_.begin(), effects_.end());
-                sort(regression_preconditions.begin(), regression_preconditions.end());
+                    regression_preconditions.end(), effects_.begin(),
+                    effects_.end());
+                sort(
+                    regression_preconditions.begin(),
+                    regression_preconditions.end());
                 int ranked_op_id = ranked_operators.size();
-                match_tree_backward->insert(ranked_op_id, regression_preconditions);
+                match_tree_backward->insert(
+                    ranked_op_id, regression_preconditions);
 
                 vector<int> abstract_preconditions = get_abstract_preconditions(
                     prevail, preconditions_, hash_multipliers_);
@@ -325,9 +337,9 @@ Projection::Projection(
                 }
 
                 ranked_operators.emplace_back(
-                    label_id,
-                    precondition_hash,
-                    compute_hash_effect(preconditions_, effects_, hash_multipliers_));
+                    label_id, precondition_hash,
+                    compute_hash_effect(
+                        preconditions_, effects_, hash_multipliers_));
             });
     }
     ranked_operators.shrink_to_fit();
@@ -369,13 +381,10 @@ vector<int> Projection::compute_goal_states(
     return goals;
 }
 
-void Projection::multiply_out(int pos,
-                              vector<FactPair> &prev_pairs,
-                              vector<FactPair> &pre_pairs,
-                              vector<FactPair> &eff_pairs,
-                              const vector<FactPair> &effects_without_pre,
-                              const VariablesProxy &variables,
-                              const OperatorCallback &callback) const {
+void Projection::multiply_out(
+    int pos, vector<FactPair> &prev_pairs, vector<FactPair> &pre_pairs,
+    vector<FactPair> &eff_pairs, const vector<FactPair> &effects_without_pre,
+    const VariablesProxy &variables, const OperatorCallback &callback) const {
     if (pos == static_cast<int>(effects_without_pre.size())) {
         // All effects without precondition have been checked.
         if (!eff_pairs.empty()) {
@@ -394,8 +403,9 @@ void Projection::multiply_out(int pos,
             } else {
                 prev_pairs.emplace_back(var_id, i);
             }
-            multiply_out(pos + 1, prev_pairs, pre_pairs, eff_pairs,
-                         effects_without_pre, variables, callback);
+            multiply_out(
+                pos + 1, prev_pairs, pre_pairs, eff_pairs, effects_without_pre,
+                variables, callback);
             if (i != eff) {
                 pre_pairs.pop_back();
                 eff_pairs.pop_back();
@@ -407,11 +417,9 @@ void Projection::multiply_out(int pos,
 }
 
 void Projection::build_ranked_operators(
-    const vector<FactPair> &preconditions,
-    const vector<FactPair> &effects,
+    const vector<FactPair> &preconditions, const vector<FactPair> &effects,
     const vector<int> &variable_to_pattern_index,
-    const VariablesProxy &variables,
-    const OperatorCallback &callback) const {
+    const VariablesProxy &variables, const OperatorCallback &callback) const {
     // All variable value pairs that are a prevail condition
     vector<FactPair> prev_pairs;
     // All variable value pairs that are a precondition (value != -1)
@@ -451,13 +459,13 @@ void Projection::build_ranked_operators(
             }
         }
     }
-    multiply_out(0, prev_pairs, pre_pairs, eff_pairs,
-                 effects_without_pre, variables, callback);
+    multiply_out(
+        0, prev_pairs, pre_pairs, eff_pairs, effects_without_pre, variables,
+        callback);
 }
 
 bool Projection::is_consistent(
-    int state_index,
-    const vector<FactPair> &abstract_facts) const {
+    int state_index, const vector<FactPair> &abstract_facts) const {
     for (const FactPair &abstract_goal : abstract_facts) {
         int pattern_var_id = abstract_goal.var;
         int temp = state_index / hash_multipliers[pattern_var_id];
@@ -501,7 +509,8 @@ vector<int> Projection::compute_saturated_costs(
     for (int label_id = 0; label_id < num_labels; ++label_id) {
         int saturated_label_cost = saturated_label_costs[label_id];
         for (int op_id : label_to_operators.get_slice(label_id)) {
-            saturated_costs[op_id] = max(saturated_costs[op_id], saturated_label_cost);
+            saturated_costs[op_id] =
+                max(saturated_costs[op_id], saturated_label_cost);
         }
     }
 
@@ -512,8 +521,11 @@ int Projection::get_num_operators() const {
     return task_info->get_num_operators();
 }
 
-vector<int> Projection::compute_goal_distances(const vector<int> &operator_costs) const {
-    assert(all_of(operator_costs.begin(), operator_costs.end(), [](int c) {return c >= 0;}));
+vector<int> Projection::compute_goal_distances(
+    const vector<int> &operator_costs) const {
+    assert(all_of(operator_costs.begin(), operator_costs.end(), [](int c) {
+        return c >= 0;
+    }));
 
     // Assign each label the cost of cheapest operator that the label covers.
     int num_labels = label_to_operators.size();
@@ -557,8 +569,10 @@ vector<int> Projection::compute_goal_distances(const vector<int> &operator_costs
             const RankedOperator &op = ranked_operators[ranked_op_id];
             int predecessor = state_index - op.hash_effect;
             assert(utils::in_bounds(op.label, label_costs));
-            int alternative_cost = (label_costs[op.label] == INF) ?
-                INF : distances[state_index] + label_costs[op.label];
+            int alternative_cost =
+                (label_costs[op.label] == INF)
+                    ? INF
+                    : distances[state_index] + label_costs[op.label];
             assert(utils::in_bounds(predecessor, distances));
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
@@ -582,12 +596,11 @@ bool Projection::operator_induces_self_loop(int op_id) const {
 }
 
 void Projection::for_each_transition(const TransitionCallback &callback) const {
-    return for_each_label_transition(
-        [this, &callback](const Transition &t) {
-            for (int op_id : label_to_operators.get_slice(t.op)) {
-                callback(Transition(t.src, op_id, t.target));
-            }
-        });
+    return for_each_label_transition([this, &callback](const Transition &t) {
+        for (int op_id : label_to_operators.get_slice(t.op)) {
+            callback(Transition(t.src, op_id, t.target));
+        }
+    });
 }
 
 const vector<int> &Projection::get_goal_states() const {

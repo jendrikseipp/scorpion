@@ -12,8 +12,7 @@ using namespace std;
 namespace cost_saturation {
 static CostPartitioningHeuristic compute_zero_one_cost_partitioning(
     const vector<unique_ptr<Abstraction>> &abstractions,
-    const vector<int> &order,
-    vector<int> &remaining_costs,
+    const vector<int> &order, vector<int> &remaining_costs,
     const vector<int> &) {
     assert(abstractions.size() == order.size());
     bool debug = false;
@@ -48,7 +47,8 @@ public:
 
     virtual shared_ptr<MaxCostPartitioningHeuristic> create_component(
         const plugins::Options &options) const override {
-        return get_max_cp_heuristic(options, compute_zero_one_cost_partitioning);
+        return get_max_cp_heuristic(
+            options, compute_zero_one_cost_partitioning);
     }
 };
 

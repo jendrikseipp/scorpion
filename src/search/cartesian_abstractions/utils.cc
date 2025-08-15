@@ -91,21 +91,17 @@ vector<int> get_domain_sizes(const TaskProxy &task) {
     return domain_sizes;
 }
 
-static void add_pick_flawed_abstract_state_strategies(plugins::Feature &feature) {
+static void add_pick_flawed_abstract_state_strategies(
+    plugins::Feature &feature) {
     feature.add_option<cartesian_abstractions::PickFlawedAbstractState>(
-        "pick_flawed_abstract_state",
-        "flaw-selection strategy",
-        "batch_min_h");
+        "pick_flawed_abstract_state", "flaw-selection strategy", "batch_min_h");
 }
 
 static void add_pick_split_strategies(plugins::Feature &feature) {
     feature.add_option<PickSplit>(
-        "pick_split",
-        "split-selection strategy",
-        "max_cover");
+        "pick_split", "split-selection strategy", "max_cover");
     feature.add_option<PickSplit>(
-        "tiebreak_split",
-        "split-selection strategy for breaking ties",
+        "tiebreak_split", "split-selection strategy for breaking ties",
         "max_refined");
 }
 
@@ -119,25 +115,23 @@ static void add_memory_padding_option(plugins::Feature &feature) {
         "etc.) often can't be reused for things that require big continuous "
         "blocks of memory. It is for this reason that we require a rather "
         "large amount of memory padding by default.",
-        "500",
-        plugins::Bounds("0", "infinity"));
+        "500", plugins::Bounds("0", "infinity"));
 }
 
 static void add_dot_graph_verbosity(plugins::Feature &feature) {
     feature.add_option<DotGraphVerbosity>(
-        "dot_graph_verbosity",
-        "verbosity of printing/writing dot graphs",
+        "dot_graph_verbosity", "verbosity of printing/writing dot graphs",
         "silent");
 }
 
 static void add_transition_representation_option(plugins::Feature &feature) {
     feature.add_option<TransitionRepresentation>(
         "transition_representation",
-        "how to compute transitions between abstract states",
-        "store");
+        "how to compute transitions between abstract states", "store");
 }
 
-string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstraction) {
+string create_dot_graph(
+    const TaskProxy &task_proxy, const Abstraction &abstraction) {
     ostringstream oss;
     int num_states = abstraction.get_num_states();
     oss << "digraph transition_system";
@@ -153,7 +147,8 @@ string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstract
     }
     for (int state_id = 0; state_id < num_states; ++state_id) {
         map<int, vector<int>> parallel_transitions;
-        for (const Transition &t : abstraction.get_outgoing_transitions(state_id)) {
+        for (const Transition &t :
+             abstraction.get_outgoing_transitions(state_id)) {
             parallel_transitions[t.target_id].push_back(t.op_id);
         }
         for (auto &pair : parallel_transitions) {
@@ -163,7 +158,8 @@ string create_dot_graph(const TaskProxy &task_proxy, const Abstraction &abstract
             vector<string> operator_names;
             operator_names.reserve(operators.size());
             for (int op_id : operators) {
-                operator_names.push_back(task_proxy.get_operators()[op_id].get_name());
+                operator_names.push_back(
+                    task_proxy.get_operators()[op_id].get_name());
             }
             oss << "    " << state_id << " -> " << target << " [label = \""
                 << utils::join(operator_names, ", ") << "\"];" << endl;
@@ -188,27 +184,21 @@ void write_to_file(const string &file_name, const string &content) {
 
 void add_common_cegar_options(plugins::Feature &feature) {
     feature.add_list_option<shared_ptr<SubtaskGenerator>>(
-        "subtasks",
-        "subtask generators",
+        "subtasks", "subtask generators",
         "[landmarks(order=random), goals(order=random)]");
     feature.add_option<int>(
-        "max_states",
-        "maximum sum of abstract states over all abstractions",
-        "infinity",
-        plugins::Bounds("1", "infinity"));
+        "max_states", "maximum sum of abstract states over all abstractions",
+        "infinity", plugins::Bounds("1", "infinity"));
     feature.add_option<int>(
         "max_transitions",
         "If transition_representation=store, this value limits the maximum sum of "
         "state-changing transitions (excluding self-loops) over all abstractions. "
         "Otherwise, this value limits the number of cached transitions in the "
         "shortest path tree of each abstraction individually.",
-        "1M",
-        plugins::Bounds("0", "infinity"));
+        "1M", plugins::Bounds("0", "infinity"));
     feature.add_option<double>(
-        "max_time",
-        "maximum time in seconds for building abstractions",
-        "infinity",
-        plugins::Bounds("0.0", "infinity"));
+        "max_time", "maximum time in seconds for building abstractions",
+        "infinity", plugins::Bounds("0.0", "infinity"));
     feature.add_option<bool>(
         "sort_transitions",
         "sort transitions to ensure the different transition system representations "
@@ -221,25 +211,22 @@ void add_common_cegar_options(plugins::Feature &feature) {
     feature.add_option<int>(
         "max_concrete_states_per_abstract_state",
         "maximum number of flawed concrete states stored per abstract state",
-        "infinity",
-        plugins::Bounds("1", "infinity"));
+        "infinity", plugins::Bounds("1", "infinity"));
     feature.add_option<int>(
         "max_state_expansions",
         "maximum number of state expansions per flaw search if a flaw has already been found",
-        "1M",
-        plugins::Bounds("1", "infinity"));
+        "1M", plugins::Bounds("1", "infinity"));
     add_memory_padding_option(feature);
     utils::add_rng_options_to_feature(feature);
     add_dot_graph_verbosity(feature);
 }
 
-static plugins::TypedEnumPlugin<DotGraphVerbosity> _enum_plugin_dot_graph_verbosity({
-        {"silent", ""},
-        {"write_to_console", ""},
-        {"write_to_file", ""}
-    });
+static plugins::TypedEnumPlugin<DotGraphVerbosity>
+    _enum_plugin_dot_graph_verbosity(
+        {{"silent", ""}, {"write_to_console", ""}, {"write_to_file", ""}});
 
-static plugins::TypedEnumPlugin<TransitionRepresentation> _enum_plugin_transition_representation({
+static plugins::TypedEnumPlugin<TransitionRepresentation>
+    _enum_plugin_transition_representation({
         {"store", "store transitions"},
         {"compute", "efficiently compute transitions on demand"},
     });

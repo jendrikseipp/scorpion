@@ -24,8 +24,7 @@ using namespace std;
 
 namespace cartesian_abstractions {
 vector<int> compute_saturated_costs(
-    const Abstraction &abstraction,
-    const vector<int> &h_values,
+    const Abstraction &abstraction, const vector<int> &h_values,
     bool use_general_costs) {
     const int min_cost = use_general_costs ? -INF : 0;
     vector<int> saturated_costs(abstraction.get_num_operators(), min_cost);
@@ -47,8 +46,8 @@ vector<int> compute_saturated_costs(
         /*
           No need to maintain goal distances of dead end states (h == INF).
 
-          We could also ignore unreachable states (g == INF), but we'd first need
-          to compute the g values.
+          We could also ignore unreachable states (g == INF), but we'd first
+          need to compute the g values.
 
           Note that the "succ_h == INF" test below is sufficient for
           ignoring dead end states. The "h == INF" test is a speed
@@ -57,7 +56,7 @@ vector<int> compute_saturated_costs(
         if (h == INF)
             continue;
 
-        for (const Transition &transition:
+        for (const Transition &transition :
              abstraction.get_outgoing_transitions(state_id)) {
             int op_id = transition.op_id;
             int succ_id = transition.target_id;
@@ -73,22 +72,14 @@ vector<int> compute_saturated_costs(
     return saturated_costs;
 }
 
-
 CostSaturation::CostSaturation(
     const vector<shared_ptr<SubtaskGenerator>> &subtask_generators,
-    int max_states,
-    int max_transitions,
-    double max_time,
-    bool use_general_costs,
-    PickFlawedAbstractState pick_flawed_abstract_state,
-    PickSplit pick_split,
-    PickSplit tiebreak_split,
-    int max_concrete_states_per_abstract_state,
-    int max_state_expansions,
-    TransitionRepresentation transition_representation,
-    int memory_padding_mb,
-    utils::RandomNumberGenerator &rng,
-    utils::LogProxy &log,
+    int max_states, int max_transitions, double max_time,
+    bool use_general_costs, PickFlawedAbstractState pick_flawed_abstract_state,
+    PickSplit pick_split, PickSplit tiebreak_split,
+    int max_concrete_states_per_abstract_state, int max_state_expansions,
+    TransitionRepresentation transition_representation, int memory_padding_mb,
+    utils::RandomNumberGenerator &rng, utils::LogProxy &log,
     DotGraphVerbosity dot_graph_verbosity)
     : subtask_generators(subtask_generators),
       max_states(max_states),
@@ -98,7 +89,8 @@ CostSaturation::CostSaturation(
       pick_flawed_abstract_state(pick_flawed_abstract_state),
       pick_split(pick_split),
       tiebreak_split(tiebreak_split),
-      max_concrete_states_per_abstract_state(max_concrete_states_per_abstract_state),
+      max_concrete_states_per_abstract_state(
+          max_concrete_states_per_abstract_state),
       max_state_expansions(max_state_expansions),
       transition_representation(transition_representation),
       memory_padding_mb(memory_padding_mb),
@@ -126,15 +118,13 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
 
     State initial_state = TaskProxy(*task).get_initial_state();
 
-    function<bool()> should_abort =
-        [&] () {
-            return num_states >= max_states ||
-                   num_transitions >= max_transitions ||
-                   timer.is_expired() ||
-                   state_is_dead_end(initial_state);
-        };
+    function<bool()> should_abort = [&]() {
+        return num_states >= max_states || num_transitions >= max_transitions ||
+               timer.is_expired() || state_is_dead_end(initial_state);
+    };
 
-    for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
+    for (const shared_ptr<SubtaskGenerator> &subtask_generator :
+         subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task, log);
         log << "Build abstractions for " << subtasks.size() << " subtasks in "
             << timer.get_remaining_time() << endl;
@@ -144,7 +134,9 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
             break;
     }
     if (utils::extra_memory_padding_is_reserved()) {
-        utils::g_log << "Done building abstractions --> release extra memory padding." << endl;
+        utils::g_log
+            << "Done building abstractions --> release extra memory padding."
+            << endl;
         utils::release_extra_memory_padding();
     }
     set_new_handler(fast_downward_new_handler);
@@ -207,8 +199,7 @@ int get_subtask_limit(int limit, int used, int remaining_subtasks) {
 
 void CostSaturation::build_abstractions(
     const vector<shared_ptr<AbstractTask>> &subtasks,
-    const utils::CountdownTimer &timer,
-    const function<bool()> &should_abort) {
+    const utils::CountdownTimer &timer, const function<bool()> &should_abort) {
     utils::Timer scf_timer(false);
     int rem_subtasks = subtasks.size();
     for (shared_ptr<AbstractTask> subtask : subtasks) {
@@ -216,34 +207,31 @@ void CostSaturation::build_abstractions(
         assert(num_states < max_states);
 
         if (!utils::extra_memory_padding_is_reserved()) {
-            utils::g_log << "Reserve extra memory padding for the next abstraction" << endl;
-            // Unset new-handler so that a failed allocation throws std::bad_alloc.
+            utils::g_log
+                << "Reserve extra memory padding for the next abstraction"
+                << endl;
+            // Unset new-handler so that a failed allocation throws
+            // std::bad_alloc.
             set_new_handler(nullptr);
             try {
                 utils::reserve_extra_memory_padding(memory_padding_mb);
             } catch (const bad_alloc &) {
                 set_new_handler(fast_downward_new_handler);
-                utils::g_log << "Failed to reserve extra memory padding for the next "
-                    "abstraction. --> Stop building new abstractions." << endl;
+                utils::g_log
+                    << "Failed to reserve extra memory padding for the next "
+                       "abstraction. --> Stop building new abstractions."
+                    << endl;
                 break;
             }
         }
 
         double time_limit = timer.get_remaining_time() / rem_subtasks;
         CEGAR cegar(
-            subtask,
-            get_subtask_limit(max_states, num_states, rem_subtasks),
+            subtask, get_subtask_limit(max_states, num_states, rem_subtasks),
             get_subtask_limit(max_transitions, num_transitions, rem_subtasks),
-            time_limit,
-            pick_flawed_abstract_state,
-            pick_split,
-            tiebreak_split,
-            max_concrete_states_per_abstract_state,
-            max_state_expansions,
-            transition_representation,
-            rng,
-            log,
-            dot_graph_verbosity);
+            time_limit, pick_flawed_abstract_state, pick_split, tiebreak_split,
+            max_concrete_states_per_abstract_state, max_state_expansions,
+            transition_representation, rng, log, dot_graph_verbosity);
         // Reset new-handler if we ran out of memory.
         if (!utils::extra_memory_padding_is_reserved()) {
             set_new_handler(fast_downward_new_handler);
@@ -256,7 +244,8 @@ void CostSaturation::build_abstractions(
 
         vector<int> goal_distances = cegar.get_goal_distances();
         if (subtask_generators.size() == 1 && subtasks.size() == 1) {
-            log << "There is only one abstraction --> skip computing saturated costs." << endl;
+            log << "There is only one abstraction --> skip computing saturated costs."
+                << endl;
         } else {
             scf_timer.resume();
             vector<int> saturated_costs = compute_saturated_costs(
@@ -265,22 +254,24 @@ void CostSaturation::build_abstractions(
             reduce_remaining_costs(saturated_costs);
         }
 
-        int num_unsolvable_states = count(execution::unseq, goal_distances.begin(), goal_distances.end(), INF);
+        int num_unsolvable_states = count(
+            execution::unseq, goal_distances.begin(), goal_distances.end(),
+            INF);
         log << "Unsolvable Cartesian states: " << num_unsolvable_states << endl;
         log << "Initial h value: "
-            << goal_distances[abstraction->get_initial_state().get_id()]
-            << endl << endl;
+            << goal_distances[abstraction->get_initial_state().get_id()] << endl
+            << endl;
 
         heuristic_functions.emplace_back(
-            abstraction->extract_refinement_hierarchy(),
-            move(goal_distances));
+            abstraction->extract_refinement_hierarchy(), move(goal_distances));
         --rem_subtasks;
 
         if (should_abort()) {
             break;
         }
     }
-    utils::g_log << "Time for computing saturated cost functions: " << scf_timer << endl;
+    utils::g_log << "Time for computing saturated cost functions: " << scf_timer
+                 << endl;
 }
 
 void CostSaturation::print_statistics(utils::Duration init_time) const {
@@ -290,7 +281,8 @@ void CostSaturation::print_statistics(utils::Duration init_time) const {
             << init_time << endl;
         log << "Cartesian abstractions: " << heuristic_functions.size() << endl;
         log << "Total number of Cartesian states: " << num_states << endl;
-        log << "Total number of non-looping transitions: " << num_transitions << endl;
+        log << "Total number of non-looping transitions: " << num_transitions
+            << endl;
         log << endl;
     }
 }

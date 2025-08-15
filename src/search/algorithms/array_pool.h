@@ -39,12 +39,11 @@ private:
     Iterator first;
     Iterator last;
 
-    ArrayPoolSlice(Iterator first, Iterator last)
-        : first(first),
-          last(last) {
+    ArrayPoolSlice(Iterator first, Iterator last) : first(first), last(last) {
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const ArrayPoolSlice<Value> &slice) {
+    friend std::ostream &operator<<(
+        std::ostream &os, const ArrayPoolSlice<Value> &slice) {
         os << "[";
         std::string sep;
         Iterator pos = slice.begin();
@@ -63,8 +62,7 @@ class ArrayPool {
     // First indices of all stored vectors plus first index for the next vector.
     std::vector<int> positions;
 public:
-    ArrayPool()
-        : positions({0}) {
+    ArrayPool() : positions({0}) {
     }
 
     void extend(std::vector<std::vector<Value>> &&vecs) {
@@ -80,16 +78,17 @@ public:
 
     void push_back(std::vector<Value> &&vec) {
         data.insert(
-            data.end(),
-            std::make_move_iterator(vec.begin()),
+            data.end(), std::make_move_iterator(vec.begin()),
             std::make_move_iterator(vec.end()));
         positions.push_back(data.size());
     }
 
     ArrayPoolSlice<Value> get_slice(int index) const {
         assert(index >= 0 && index < size());
-        typename ArrayPoolSlice<Value>::Iterator first = data.begin() + positions[index];
-        typename ArrayPoolSlice<Value>::Iterator last = data.begin() + positions[index + 1];
+        typename ArrayPoolSlice<Value>::Iterator first =
+            data.begin() + positions[index];
+        typename ArrayPoolSlice<Value>::Iterator last =
+            data.begin() + positions[index + 1];
         return ArrayPoolSlice<Value>(first, last);
     }
 

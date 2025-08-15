@@ -26,8 +26,7 @@ class StateID {
     friend class PerStateBitset;
 
     int value;
-    explicit StateID(int value_)
-        : value(value_) {
+    explicit StateID(int value_) : value(value_) {
     }
 
     // No implementation to prevent default construction
@@ -46,6 +45,5 @@ public:
         return !(*this == other);
     }
 };
-
 
 #endif

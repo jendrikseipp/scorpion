@@ -63,9 +63,9 @@ bool SlimMatchTree::Node::is_leaf_node() const {
     return var_id == LEAF_NODE;
 }
 
-SlimMatchTree::SlimMatchTree(const TaskProxy &task_proxy,
-                             const Pattern &pattern,
-                             const vector<int> &hash_multipliers)
+SlimMatchTree::SlimMatchTree(
+    const TaskProxy &task_proxy, const Pattern &pattern,
+    const vector<int> &hash_multipliers)
     : task_proxy(task_proxy),
       pattern(pattern),
       hash_multipliers(hash_multipliers),
@@ -77,8 +77,8 @@ SlimMatchTree::~SlimMatchTree() {
 }
 
 void SlimMatchTree::insert_recursive(
-    int op_id, const vector<FactPair> &regression_preconditions,
-    int pre_index, Node **edge_from_parent) {
+    int op_id, const vector<FactPair> &regression_preconditions, int pre_index,
+    Node **edge_from_parent) {
     if (*edge_from_parent == nullptr) {
         // We don't exist yet: create a new node.
         *edge_from_parent = new Node();
@@ -124,11 +124,13 @@ void SlimMatchTree::insert_recursive(
             edge_to_child = &node->star_successor;
         }
 
-        insert_recursive(op_id, regression_preconditions, pre_index, edge_to_child);
+        insert_recursive(
+            op_id, regression_preconditions, pre_index, edge_to_child);
     }
 }
 
-void SlimMatchTree::insert(int op_id, const vector<FactPair> &regression_preconditions) {
+void SlimMatchTree::insert(
+    int op_id, const vector<FactPair> &regression_preconditions) {
     insert_recursive(op_id, regression_preconditions, 0, &root);
 }
 
@@ -141,9 +143,9 @@ void SlimMatchTree::get_applicable_operator_ids_recursive(
       some informal experiments.
      */
 
-    operator_ids.insert(operator_ids.end(),
-                        node->applicable_operator_ids.begin(),
-                        node->applicable_operator_ids.end());
+    operator_ids.insert(
+        operator_ids.end(), node->applicable_operator_ids.begin(),
+        node->applicable_operator_ids.end());
 
     if (node->is_leaf_node())
         return;
@@ -190,11 +192,11 @@ void SlimMatchTree::dump_recursive(Node *node, utils::LogProxy &log) const {
         } else {
             for (int val = 0; val < node->var_domain_size; ++val) {
                 if (node->successors[val]) {
-                    log << "recursive call for child with value " << val << endl;
+                    log << "recursive call for child with value " << val
+                        << endl;
                     dump_recursive(node->successors[val], log);
                     log << "back from recursive call (for successors[" << val
-                        << "]) to node with var_id = " << node->var_id
-                        << endl;
+                        << "]) to node with var_id = " << node->var_id << endl;
                 } else {
                     log << "no child for value " << val << endl;
                 }

@@ -18,7 +18,8 @@ namespace cost_saturation {
   To save space, we only store lookup tables that contain positive estimates.
 */
 class CostPartitioningHeuristic {
-    // Allow this class to extract and compress information about unsolvable states.
+    // Allow this class to extract and compress information about unsolvable
+    // states.
     friend class UnsolvabilityHeuristic;
 
     struct LookupTable {
@@ -28,8 +29,7 @@ class CostPartitioningHeuristic {
         std::vector<int> h_values;
 
         LookupTable(int abstraction_id, std::vector<int> &&h_values)
-            : abstraction_id(abstraction_id),
-              h_values(move(h_values)) {
+            : abstraction_id(abstraction_id), h_values(move(h_values)) {
         }
     };
 

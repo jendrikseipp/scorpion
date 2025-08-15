@@ -89,7 +89,8 @@ class RefinementHierarchy {
         NodeID possibly_intersecting_child;
 
         Children(NodeID correct_child, NodeID other_child)
-            : intersecting_child(correct_child), possibly_intersecting_child(other_child) {
+            : intersecting_child(correct_child),
+              possibly_intersecting_child(other_child) {
         }
     };
 
@@ -98,10 +99,12 @@ class RefinementHierarchy {
       children under the given node, out of which one (intersecting_child) is
       guaranteed to intersect with cartesian_set.
     */
-    Children get_real_children(NodeID node_id, const CartesianSet &cartesian_set) const {
+    Children get_real_children(
+        NodeID node_id, const CartesianSet &cartesian_set) const {
         const Node &node = nodes[node_id];
         assert(node.is_split());
-        bool follow_right_child = cartesian_set.test(node.get_var(), node.value);
+        bool follow_right_child =
+            cartesian_set.test(node.get_var(), node.value);
         // Traverse helper nodes.
         NodeID helper = node.left_child;
         while (nodes[helper].right_child == node.right_child) {
@@ -112,9 +115,8 @@ class RefinementHierarchy {
             helper = nodes[helper].left_child;
         }
 
-        return follow_right_child
-                ? Children(node.right_child, helper)
-                : Children(helper, node.right_child);
+        return follow_right_child ? Children(node.right_child, helper)
+                                  : Children(helper, node.right_child);
     }
 
 public:
@@ -140,8 +142,9 @@ public:
     // Call callback for each leaf node that intersects with cartesian_set.
     template<typename Callback>
     void for_each_leaf(
-        const CartesianSets &all_cartesian_sets, const CartesianSet &cartesian_set,
-        const Matcher &matcher, const Callback &callback) const;
+        const CartesianSets &all_cartesian_sets,
+        const CartesianSet &cartesian_set, const Matcher &matcher,
+        const Callback &callback) const;
 
     TaskProxy get_task_proxy() const;
     std::shared_ptr<AbstractTask> get_task() const;
@@ -167,10 +170,11 @@ void RefinementHierarchy::for_each_leaf(
             stack.push(children.intersecting_child);
             // Now test the other child.
             int var = nodes[node_id].var;
-            if ((matcher[var] != MatcherVariable::SINGLE_VALUE) && (
-                    matcher[var] == MatcherVariable::FULL_DOMAIN ||
-                    cartesian_set.intersects(
-                        *all_cartesian_sets[children.possibly_intersecting_child], var))) {
+            if ((matcher[var] != MatcherVariable::SINGLE_VALUE) &&
+                (matcher[var] == MatcherVariable::FULL_DOMAIN ||
+                 cartesian_set.intersects(
+                     *all_cartesian_sets[children.possibly_intersecting_child],
+                     var))) {
                 stack.push(children.possibly_intersecting_child);
             }
         } else {

@@ -23,7 +23,7 @@ class RandomNumberGenerator;
 }
 
 namespace pdbs {
-using PatternHandler = std::function<bool (const Pattern &)>;
+using PatternHandler = std::function<bool(const Pattern &)>;
 class PatternCollectionGenerator {
     virtual std::string name() const = 0;
     virtual PatternCollectionInformation compute_patterns(
@@ -58,8 +58,8 @@ public:
 };
 
 extern void add_generator_options_to_feature(plugins::Feature &feature);
-extern std::tuple<utils::Verbosity>
-get_generator_arguments_from_options(const plugins::Options &opts);
+extern std::tuple<utils::Verbosity> get_generator_arguments_from_options(
+    const plugins::Options &opts);
 }
 
 #endif

@@ -8,12 +8,9 @@ struct DFSNode {
     State state;
     int g;
 
-    DFSNode(const State &state, int g)
-        : state(state),
-          g(g) {
+    DFSNode(const State &state, int g) : state(state), g(g) {
     }
 };
-
 
 class DepthFirstSearch : public SearchAlgorithm {
     const bool single_plan;

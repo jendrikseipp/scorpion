@@ -10,9 +10,7 @@ using namespace std;
 
 namespace cartesian_abstractions {
 TransitionSystem::TransitionSystem(const TransitionRewirer &rewirer)
-    : rewirer(rewirer),
-      num_non_loops(0),
-      num_loops(0) {
+    : rewirer(rewirer), num_non_loops(0), num_loops(0) {
     add_loops_in_trivial_abstraction();
 }
 
@@ -34,8 +32,8 @@ void TransitionSystem::add_loops_in_trivial_abstraction() {
 }
 
 void TransitionSystem::rewire(
-    const AbstractStates &states, int v_id,
-    const AbstractState &v1, const AbstractState &v2, int var) {
+    const AbstractStates &states, int v_id, const AbstractState &v1,
+    const AbstractState &v2, int var) {
     enlarge_vectors_by_one();
 
     num_non_loops -= (incoming[v_id].size() + outgoing[v_id].size());
@@ -43,18 +41,19 @@ void TransitionSystem::rewire(
     rewirer.rewire_transitions(incoming, outgoing, states, v_id, v1, v2, var);
     int v1_id = v1.get_id();
     int v2_id = v2.get_id();
-    num_non_loops +=
-        incoming[v1_id].size() + incoming[v2_id].size() +
-        outgoing[v1_id].size() + outgoing[v2_id].size();
+    num_non_loops += incoming[v1_id].size() + incoming[v2_id].size() +
+                     outgoing[v1_id].size() + outgoing[v2_id].size();
 
     int num_parent_loops = loops[v_id].size();
     rewirer.rewire_loops(loops, incoming, outgoing, v_id, v1, v2, var);
     int num_children_loops = loops[v1_id].size() + loops[v2_id].size();
     int num_transitions_between_children =
-        count_if(outgoing[v1_id].begin(), outgoing[v1_id].end(),
-                 [v2_id](const Transition &t) {return t.target_id == v2_id;}) +
-        count_if(outgoing[v2_id].begin(), outgoing[v2_id].end(),
-                 [v1_id](const Transition &t) {return t.target_id == v1_id;});
+        count_if(
+            outgoing[v1_id].begin(), outgoing[v1_id].end(),
+            [v2_id](const Transition &t) { return t.target_id == v2_id; }) +
+        count_if(
+            outgoing[v2_id].begin(), outgoing[v2_id].end(),
+            [v1_id](const Transition &t) { return t.target_id == v1_id; });
 
     num_non_loops += num_transitions_between_children;
     num_loops += num_children_loops - num_parent_loops;
@@ -115,7 +114,8 @@ void TransitionSystem::print_statistics(utils::LogProxy &log) const {
         assert(get_num_loops() == total_loops);
         assert(get_num_non_loops() == total_outgoing_transitions);
         log << "Looping transitions: " << total_loops << endl;
-        log << "Non-looping transitions: " << total_outgoing_transitions << endl;
+        log << "Non-looping transitions: " << total_outgoing_transitions
+            << endl;
     }
 }
 

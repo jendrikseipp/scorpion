@@ -19,7 +19,8 @@ class IncrementalSuccessorGenerator {
     std::vector<int> operators_without_preconditions;
 
     std::vector<int> num_unsatisfied_preconditions;
-    // For each operator store its position (or -1) in applicable_operators vector.
+    // For each operator store its position (or -1) in applicable_operators
+    // vector.
     std::vector<int> applicable_operators_position;
     std::vector<int> applicable_operators;
 

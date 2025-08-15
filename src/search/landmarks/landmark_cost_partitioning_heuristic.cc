@@ -17,14 +17,12 @@ using namespace std;
 
 namespace landmarks {
 LandmarkCostPartitioningHeuristic::LandmarkCostPartitioningHeuristic(
-    const shared_ptr<LandmarkFactory> &lm_factory, bool pref,
-    bool prog_goal, bool prog_gn, bool prog_r,
-    const shared_ptr<AbstractTask> &transform, bool cache_estimates,
-    const string &description, utils::Verbosity verbosity,
+    const shared_ptr<LandmarkFactory> &lm_factory, bool pref, bool prog_goal,
+    bool prog_gn, bool prog_r, const shared_ptr<AbstractTask> &transform,
+    bool cache_estimates, const string &description, utils::Verbosity verbosity,
     CostPartitioningMethod cost_partitioning, bool alm,
     lp::LPSolverType lpsolver,
-    cost_saturation::ScoringFunction scoring_function,
-    int random_seed)
+    cost_saturation::ScoringFunction scoring_function, int random_seed)
     : LandmarkHeuristic(
           pref, transform, cache_estimates, description, verbosity) {
     if (log.is_at_least_normal()) {
@@ -43,8 +41,8 @@ void LandmarkCostPartitioningHeuristic::check_unsupported_features(
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
 
-    if (!landmark_factory->supports_conditional_effects()
-        && task_properties::has_conditional_effects(task_proxy)) {
+    if (!landmark_factory->supports_conditional_effects() &&
+        task_properties::has_conditional_effects(task_proxy)) {
         cerr << "Conditional effects not supported by the landmark "
              << "generation method." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
@@ -53,8 +51,10 @@ void LandmarkCostPartitioningHeuristic::check_unsupported_features(
 
 void LandmarkCostPartitioningHeuristic::set_cost_partitioning_algorithm(
     CostPartitioningMethod cost_partitioning, lp::LPSolverType lpsolver,
-    bool use_action_landmarks, cost_saturation::ScoringFunction scoring_function, int random_seed) {
-    vector<int> operator_costs = task_properties::get_operator_costs(task_proxy);
+    bool use_action_landmarks,
+    cost_saturation::ScoringFunction scoring_function, int random_seed) {
+    vector<int> operator_costs =
+        task_properties::get_operator_costs(task_proxy);
     if (cost_partitioning == CostPartitioningMethod::OPTIMAL) {
         cost_partitioning_algorithm =
             make_unique<OptimalCostPartitioningAlgorithm>(
@@ -62,9 +62,11 @@ void LandmarkCostPartitioningHeuristic::set_cost_partitioning_algorithm(
     } else if (cost_partitioning == CostPartitioningMethod::CANONICAL) {
         cost_partitioning_algorithm = make_unique<LandmarkCanonicalHeuristic>(
             operator_costs, *landmark_graph);
-    } else if (cost_partitioning == CostPartitioningMethod::PHO ||
-               cost_partitioning == CostPartitioningMethod::SATURATED_PHO) {
-        bool saturated = cost_partitioning == CostPartitioningMethod::SATURATED_PHO;
+    } else if (
+        cost_partitioning == CostPartitioningMethod::PHO ||
+        cost_partitioning == CostPartitioningMethod::SATURATED_PHO) {
+        bool saturated =
+            cost_partitioning == CostPartitioningMethod::SATURATED_PHO;
         cost_partitioning_algorithm = make_unique<LandmarkPhO>(
             operator_costs, *landmark_graph, saturated, lpsolver);
     } else {
@@ -73,10 +75,13 @@ void LandmarkCostPartitioningHeuristic::set_cost_partitioning_algorithm(
         if (cost_partitioning == CostPartitioningMethod::UNIFORM) {
             reuse_costs = false;
             greedy = false;
-        } else if (cost_partitioning == CostPartitioningMethod::OPPORTUNISTIC_UNIFORM) {
+        } else if (
+            cost_partitioning ==
+            CostPartitioningMethod::OPPORTUNISTIC_UNIFORM) {
             reuse_costs = true;
             greedy = false;
-        } else if (cost_partitioning == CostPartitioningMethod::GREEDY_ZERO_ONE) {
+        } else if (
+            cost_partitioning == CostPartitioningMethod::GREEDY_ZERO_ONE) {
             reuse_costs = false;
             greedy = true;
         } else if (cost_partitioning == CostPartitioningMethod::SATURATED) {
@@ -85,10 +90,12 @@ void LandmarkCostPartitioningHeuristic::set_cost_partitioning_algorithm(
         } else {
             ABORT("Unknown cost partitioning strategy");
         }
-        shared_ptr<utils::RandomNumberGenerator> rng = utils::get_rng(random_seed);
+        shared_ptr<utils::RandomNumberGenerator> rng =
+            utils::get_rng(random_seed);
         cost_partitioning_algorithm =
             make_unique<UniformCostPartitioningAlgorithm>(
-                operator_costs, *landmark_graph, use_action_landmarks, reuse_costs, greedy, scoring_function, rng);
+                operator_costs, *landmark_graph, use_action_landmarks,
+                reuse_costs, greedy, scoring_function, rng);
     }
 }
 
@@ -111,9 +118,11 @@ bool LandmarkCostPartitioningHeuristic::dead_ends_are_reliable() const {
 }
 
 class LandmarkCostPartitioningHeuristicFeature
-    : public plugins::TypedFeature<Evaluator, LandmarkCostPartitioningHeuristic> {
+    : public plugins::TypedFeature<
+          Evaluator, LandmarkCostPartitioningHeuristic> {
 public:
-    LandmarkCostPartitioningHeuristicFeature() : TypedFeature("landmark_cost_partitioning") {
+    LandmarkCostPartitioningHeuristicFeature()
+        : TypedFeature("landmark_cost_partitioning") {
         document_title("Landmark cost partitioning heuristic");
         document_synopsis(
             "Formerly known as the admissible landmark heuristic.\n"
@@ -124,9 +133,7 @@ public:
                 "https://www.ijcai.org/Proceedings/09/Papers/288.pdf",
                 "Proceedings of the 21st International Joint Conference on "
                 "Artificial Intelligence (IJCAI 2009)",
-                "1728-1733",
-                "AAAI Press",
-                "2009") +
+                "1728-1733", "AAAI Press", "2009") +
             "and" +
             utils::format_conference_reference(
                 {"Emil Keyder and Silvia Richter and Malte Helmert"},
@@ -134,9 +141,7 @@ public:
                 "https://ai.dmi.unibas.ch/papers/keyder-et-al-ecai2010.pdf",
                 "Proceedings of the 19th European Conference on Artificial "
                 "Intelligence (ECAI 2010)",
-                "335-340",
-                "IOS Press",
-                "2010"));
+                "335-340", "IOS Press", "2010"));
 
         /*
           We usually have the options of base classes behind the options
@@ -191,43 +196,38 @@ public:
         document_language_support("axioms", "not allowed");
 
         document_property("admissible", "yes");
-        document_property("consistent",
-                          "no; see document note about consistency");
+        document_property(
+            "consistent", "no; see document note about consistency");
         document_property("safe", "yes");
     }
 
-    virtual shared_ptr<LandmarkCostPartitioningHeuristic>
-    create_component(const plugins::Options &opts) const override {
-        return plugins::make_shared_from_arg_tuples<LandmarkCostPartitioningHeuristic>(
+    virtual shared_ptr<LandmarkCostPartitioningHeuristic> create_component(
+        const plugins::Options &opts) const override {
+        return plugins::make_shared_from_arg_tuples<
+            LandmarkCostPartitioningHeuristic>(
             get_landmark_heuristic_arguments_from_options(opts),
             opts.get<CostPartitioningMethod>("cost_partitioning"),
             opts.get<bool>("alm"),
             lp::get_lp_solver_arguments_from_options(opts),
             opts.get<cost_saturation::ScoringFunction>("scoring_function"),
-            utils::get_rng_arguments_from_options(opts)
-            );
+            utils::get_rng_arguments_from_options(opts));
     }
 };
 
 static plugins::FeaturePlugin<LandmarkCostPartitioningHeuristicFeature> _plugin;
 
 static plugins::TypedEnumPlugin<CostPartitioningMethod> _enum_plugin({
-        {"optimal",
-         "use optimal (LP-based) cost partitioning"},
-        {"uniform",
-         "partition operator costs uniformly among all landmarks "
-         "achieved by that operator"},
-        {"opportunistic_uniform",
-         "like uniform, but order landmarks and reuse costs not consumed by earlier landmarks"},
-        {"greedy_zero_one",
-         "order landmarks and give each landmark the costs of all the operators it contains"},
-        {"saturated",
-         "like greedy_zero_one, but reuse costs not consumed by earlier landmarks"},
-        {"canonical",
-         "canonical heuristic over landmarks"},
-        {"pho",
-         "post-hoc optimization over landmarks"},
-        {"saturated_pho",
-         "saturated post-hoc optimization over landmarks"},
-    });
+    {"optimal", "use optimal (LP-based) cost partitioning"},
+    {"uniform", "partition operator costs uniformly among all landmarks "
+                "achieved by that operator"},
+    {"opportunistic_uniform",
+     "like uniform, but order landmarks and reuse costs not consumed by earlier landmarks"},
+    {"greedy_zero_one",
+     "order landmarks and give each landmark the costs of all the operators it contains"},
+    {"saturated",
+     "like greedy_zero_one, but reuse costs not consumed by earlier landmarks"},
+    {"canonical", "canonical heuristic over landmarks"},
+    {"pho", "post-hoc optimization over landmarks"},
+    {"saturated_pho", "saturated post-hoc optimization over landmarks"},
+});
 }

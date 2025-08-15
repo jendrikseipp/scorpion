@@ -39,7 +39,8 @@ enum class PatternOrder {
     CG_DOWN,
 };
 
-class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerator {
+class PatternCollectionGeneratorSystematicSCP
+    : public PatternCollectionGenerator {
     const int max_pattern_size;
     const int max_pdb_size;
     const int max_collection_size;
@@ -72,31 +73,20 @@ class PatternCollectionGeneratorSystematicSCP : public PatternCollectionGenerato
         priority_queues::AdaptiveQueue<int> &pq,
         const std::shared_ptr<PatternCollection> &patterns,
         const std::shared_ptr<ProjectionCollection> &projections,
-        PatternSet &pattern_set,
-        PatternSet &patterns_checked_for_dead_ends,
-        int64_t &collection_size,
-        double overall_remaining_time);
+        PatternSet &pattern_set, PatternSet &patterns_checked_for_dead_ends,
+        int64_t &collection_size, double overall_remaining_time);
 
     virtual std::string name() const override;
     virtual PatternCollectionInformation compute_patterns(
         const std::shared_ptr<AbstractTask> &task) override;
 public:
     PatternCollectionGeneratorSystematicSCP(
-        int max_pattern_size,
-        int max_pdb_size,
-        int max_collection_size,
-        int max_patterns,
-        double max_time,
-        double max_time_per_restart,
-        int max_evaluations_per_restart,
-        int max_total_evaluations,
-        bool saturate,
-        bool create_complete_transition_system,
-        PatternType pattern_type,
-        bool ignore_useless_patterns,
-        bool store_dead_ends,
-        PatternOrder order,
-        int random_seed,
+        int max_pattern_size, int max_pdb_size, int max_collection_size,
+        int max_patterns, double max_time, double max_time_per_restart,
+        int max_evaluations_per_restart, int max_total_evaluations,
+        bool saturate, bool create_complete_transition_system,
+        PatternType pattern_type, bool ignore_useless_patterns,
+        bool store_dead_ends, PatternOrder order, int random_seed,
         utils::Verbosity verbosity);
 };
 }

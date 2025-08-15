@@ -23,8 +23,8 @@ namespace cartesian_abstractions {
 class Abstraction;
 class ShortestPaths;
 
-// Variants from ICAPS 2022 paper (in order): FIRST, MIN_H, MAX_H, MIN_H, BATCH_MIN_H.
-// See bottom of .cc file for documentation.
+// Variants from ICAPS 2022 paper (in order): FIRST, MIN_H, MAX_H, MIN_H,
+// BATCH_MIN_H. See bottom of .cc file for documentation.
 enum class PickFlawedAbstractState {
     FIRST,
     FIRST_ON_SHORTEST_PATH,
@@ -45,7 +45,7 @@ class FlawSearch {
     const int max_concrete_states_per_abstract_state;
     const int max_state_expansions;
     mutable utils::LogProxy log;
-    mutable utils::LogProxy silent_log;  // For concrete search space.
+    mutable utils::LogProxy silent_log; // For concrete search space.
 
     static const int MISSING = -1;
 
@@ -81,20 +81,19 @@ class FlawSearch {
         const std::vector<StateID> &state_ids, int abstract_state_id);
 
     FlawedState get_flawed_state_with_min_h();
-    std::unique_ptr<Split> get_single_split(const utils::CountdownTimer &cegar_timer);
-    std::unique_ptr<Split> get_min_h_batch_split(const utils::CountdownTimer &cegar_timer);
+    std::unique_ptr<Split> get_single_split(
+        const utils::CountdownTimer &cegar_timer);
+    std::unique_ptr<Split> get_min_h_batch_split(
+        const utils::CountdownTimer &cegar_timer);
 
 public:
     FlawSearch(
         const std::shared_ptr<AbstractTask> &task,
-        const Abstraction &abstraction,
-        const ShortestPaths &shortest_paths,
+        const Abstraction &abstraction, const ShortestPaths &shortest_paths,
         utils::RandomNumberGenerator &rng,
         PickFlawedAbstractState pick_flawed_abstract_state,
-        PickSplit pick_split,
-        PickSplit tiebreak_split,
-        int max_concrete_states_per_abstract_state,
-        int max_state_expansions,
+        PickSplit pick_split, PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state, int max_state_expansions,
         const utils::LogProxy &log);
 
     std::unique_ptr<Split> get_split(const utils::CountdownTimer &cegar_timer);

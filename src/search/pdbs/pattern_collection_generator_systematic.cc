@@ -44,22 +44,21 @@ static void compute_union_pattern(
     const Pattern &pattern1, const Pattern &pattern2, Pattern &result) {
     result.clear();
     result.reserve(pattern1.size() + pattern2.size());
-    set_union(pattern1.begin(), pattern1.end(),
-              pattern2.begin(), pattern2.end(),
-              back_inserter(result));
+    set_union(
+        pattern1.begin(), pattern1.end(), pattern2.begin(), pattern2.end(),
+        back_inserter(result));
 }
 
-
 PatternCollectionGeneratorSystematic::PatternCollectionGeneratorSystematic(
-    int pattern_max_size, PatternType pattern_type,
-    utils::Verbosity verbosity)
+    int pattern_max_size, PatternType pattern_type, utils::Verbosity verbosity)
     : PatternCollectionGenerator(verbosity),
       max_pattern_size(pattern_max_size),
       pattern_type(pattern_type) {
 }
 
 void PatternCollectionGeneratorSystematic::compute_eff_pre_neighbors(
-    const causal_graph::CausalGraph &cg, const Pattern &pattern, vector<int> &result) const {
+    const causal_graph::CausalGraph &cg, const Pattern &pattern,
+    vector<int> &result) const {
     /*
       Compute all variables that are reachable from pattern by an
       (eff, pre) arc and are not already contained in the pattern.
@@ -80,8 +79,10 @@ void PatternCollectionGeneratorSystematic::compute_eff_pre_neighbors(
     result.assign(candidates.begin(), candidates.end());
 }
 
-vector<int> PatternCollectionGeneratorSystematic::compute_variables_with_precondition_path_to_goal(
-    const TaskProxy &task_proxy, const causal_graph::CausalGraph &cg) const {
+vector<int> PatternCollectionGeneratorSystematic::
+    compute_variables_with_precondition_path_to_goal(
+        const TaskProxy &task_proxy,
+        const causal_graph::CausalGraph &cg) const {
     int num_variables = task_proxy.get_variables().size();
     vector<bool> marked_variables(num_variables, false);
     stack<int> open_list;
@@ -109,7 +110,8 @@ vector<int> PatternCollectionGeneratorSystematic::compute_variables_with_precond
 }
 
 void PatternCollectionGeneratorSystematic::compute_connection_points(
-    const causal_graph::CausalGraph &cg, const Pattern &pattern, vector<int> &result) const {
+    const causal_graph::CausalGraph &cg, const Pattern &pattern,
+    vector<int> &result) const {
     /*
       The "connection points" of a pattern are those variables of which
       one must be contained in an SGA pattern that can be attached to this
@@ -162,8 +164,7 @@ void PatternCollectionGeneratorSystematic::enqueue_pattern_if_new(
 }
 
 void PatternCollectionGeneratorSystematic::build_sga_patterns(
-    const TaskProxy &task_proxy,
-    const causal_graph::CausalGraph &cg) {
+    const TaskProxy &task_proxy, const causal_graph::CausalGraph &cg) {
     assert(max_pattern_size >= 1);
     assert(pattern_set.empty());
     assert(patterns && patterns->empty());
@@ -189,7 +190,8 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
             enqueue_pattern_if_new({var_id});
         }
     } else if (pattern_type == PatternType::INTERESTING_GENERAL) {
-        // Build atomic patterns for variables with a precondition path to a goal.
+        // Build atomic patterns for variables with a precondition path to a
+        // goal.
         vector<int> goal_reaching_variables =
             compute_variables_with_precondition_path_to_goal(task_proxy, cg);
         for (int var : goal_reaching_variables) {
@@ -204,7 +206,8 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
       the patterns vectors grows during the computation.
     */
     for (size_t pattern_no = 0; pattern_no < patterns->size(); ++pattern_no) {
-        // We must copy the pattern because references to patterns can be invalidated.
+        // We must copy the pattern because references to patterns can be
+        // invalidated.
         Pattern pattern = (*patterns)[pattern_no];
         if (pattern.size() == max_pattern_size)
             break;
@@ -225,8 +228,7 @@ void PatternCollectionGeneratorSystematic::build_sga_patterns(
 }
 
 void PatternCollectionGeneratorSystematic::build_patterns(
-    const TaskProxy &task_proxy,
-    const utils::CountdownTimer *timer) {
+    const TaskProxy &task_proxy, const utils::CountdownTimer *timer) {
     int num_variables = task_proxy.get_variables().size();
     const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
 
@@ -257,7 +259,6 @@ void PatternCollectionGeneratorSystematic::build_patterns(
     }
     assert(pattern_set.size() == patterns->size());
 
-
     if (log.is_at_least_normal()) {
         log << "Found " << sga_patterns.size() << " SGA patterns." << endl;
     }
@@ -271,7 +272,8 @@ void PatternCollectionGeneratorSystematic::build_patterns(
         if (timer && timer->is_expired())
             break;
 
-        // We must copy the pattern because references to patterns can be invalidated.
+        // We must copy the pattern because references to patterns can be
+        // invalidated.
         Pattern pattern1 = (*patterns)[pattern_no];
 
         vector<int> neighbors;
@@ -282,7 +284,7 @@ void PatternCollectionGeneratorSystematic::build_patterns(
             for (const Pattern *p_pattern2 : candidates) {
                 const Pattern &pattern2 = *p_pattern2;
                 if (pattern1.size() + pattern2.size() > max_pattern_size)
-                    break;  // All remaining candidates are too large.
+                    break; // All remaining candidates are too large.
                 if (patterns_are_disjoint(pattern1, pattern2)) {
                     Pattern new_pattern;
                     compute_union_pattern(pattern1, pattern2, new_pattern);
@@ -299,8 +301,7 @@ void PatternCollectionGeneratorSystematic::build_patterns(
 }
 
 void PatternCollectionGeneratorSystematic::build_patterns_naive(
-    const TaskProxy &task_proxy,
-    const utils::CountdownTimer *) {
+    const TaskProxy &task_proxy, const utils::CountdownTimer *) {
     int num_variables = task_proxy.get_variables().size();
     PatternCollection current_patterns(1);
     PatternCollection next_patterns;
@@ -338,7 +339,8 @@ string PatternCollectionGeneratorSystematic::name() const {
     return "systematic pattern collection generator";
 }
 
-PatternCollectionInformation PatternCollectionGeneratorSystematic::compute_patterns(
+PatternCollectionInformation
+PatternCollectionGeneratorSystematic::compute_patterns(
     const shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
     patterns = make_shared<PatternCollection>();
@@ -352,8 +354,7 @@ PatternCollectionInformation PatternCollectionGeneratorSystematic::compute_patte
 }
 
 void PatternCollectionGeneratorSystematic::generate(
-    const shared_ptr<AbstractTask> &task,
-    const PatternHandler &handle_pattern,
+    const shared_ptr<AbstractTask> &task, const PatternHandler &handle_pattern,
     const utils::CountdownTimer &timer) {
     this->handle_pattern = handle_pattern;
     TaskProxy task_proxy(*task);
@@ -366,7 +367,8 @@ void PatternCollectionGeneratorSystematic::generate(
             build_patterns(task_proxy, &timer);
         }
     } catch (const Timeout &) {
-        cout << "Reached time limit while generating systematic patterns." << endl;
+        cout << "Reached time limit while generating systematic patterns."
+             << endl;
     }
     // Release memory.
     PatternSet().swap(pattern_set);
@@ -375,28 +377,26 @@ void PatternCollectionGeneratorSystematic::generate(
 
 void add_pattern_type_option(plugins::Feature &feature) {
     feature.add_option<PatternType>(
-        "pattern_type",
-        "type of patterns",
-        "interesting_non_negative");
+        "pattern_type", "type of patterns", "interesting_non_negative");
 }
 
 class PatternCollectionGeneratorSystematicFeature
-    : public plugins::TypedFeature<PatternCollectionGenerator, PatternCollectionGeneratorSystematic> {
+    : public plugins::TypedFeature<
+          PatternCollectionGenerator, PatternCollectionGeneratorSystematic> {
 public:
     PatternCollectionGeneratorSystematicFeature() : TypedFeature("systematic") {
         document_title("Systematically generated patterns");
         document_synopsis(
             "Generates all (interesting) patterns with up to pattern_max_size "
             "variables. "
-            "For details, see" + utils::format_conference_reference(
+            "For details, see" +
+            utils::format_conference_reference(
                 {"Florian Pommerening", "Gabriele Roeger", "Malte Helmert"},
                 "Getting the Most Out of Pattern Databases for Classical Planning",
                 "https://ai.dmi.unibas.ch/papers/pommerening-et-al-ijcai2013.pdf",
                 "Proceedings of the Twenty-Third International Joint"
                 " Conference on Artificial Intelligence (IJCAI 2013)",
-                "2357-2364",
-                "AAAI Press",
-                "2013") +
+                "2357-2364", "AAAI Press", "2013") +
             "The pattern_type=interesting_general setting was introduced in" +
             utils::format_conference_reference(
                 {"Florian Pommerening", "Thomas Keller", "Valentina Halasi",
@@ -405,37 +405,35 @@ public:
                 "https://ai.dmi.unibas.ch/papers/pommerening-et-al-icaps2021.pdf",
                 "Proceedings of the 31st International Conference on Automated "
                 "Planning and Scheduling (ICAPS 2021)",
-                "271-280",
-                "AAAI Press",
-                "2021"));
+                "271-280", "AAAI Press", "2021"));
 
         add_option<int>(
-            "pattern_max_size",
-            "max number of variables per pattern",
-            "1",
+            "pattern_max_size", "max number of variables per pattern", "1",
             plugins::Bounds("1", "infinity"));
         add_pattern_type_option(*this);
         add_generator_options_to_feature(*this);
     }
 
-    virtual shared_ptr<PatternCollectionGeneratorSystematic>
-    create_component(const plugins::Options &opts) const override {
-        return plugins::make_shared_from_arg_tuples<PatternCollectionGeneratorSystematic>(
+    virtual shared_ptr<PatternCollectionGeneratorSystematic> create_component(
+        const plugins::Options &opts) const override {
+        return plugins::make_shared_from_arg_tuples<
+            PatternCollectionGeneratorSystematic>(
             opts.get<int>("pattern_max_size"),
             opts.get<PatternType>("pattern_type"),
-            get_generator_arguments_from_options(opts)
-            );
+            get_generator_arguments_from_options(opts));
     }
 };
 
-static plugins::FeaturePlugin<PatternCollectionGeneratorSystematicFeature> _plugin;
+static plugins::FeaturePlugin<PatternCollectionGeneratorSystematicFeature>
+    _plugin;
 
 static plugins::TypedEnumPlugin<PatternType> _enum_plugin({
-        {"naive", "all patterns up to the given size"},
-        {"interesting_general",
-         "only consider the union of two disjoint patterns if the union has "
-         "more information than the individual patterns under a general cost "
-         "partitioning"},
-        {"interesting_non_negative", "like interesting_general, but considering non-negative cost partitioning"},
-    });
+    {"naive", "all patterns up to the given size"},
+    {"interesting_general",
+     "only consider the union of two disjoint patterns if the union has "
+     "more information than the individual patterns under a general cost "
+     "partitioning"},
+    {"interesting_non_negative",
+     "like interesting_general, but considering non-negative cost partitioning"},
+});
 }

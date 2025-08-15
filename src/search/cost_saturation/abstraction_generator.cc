@@ -18,11 +18,13 @@ tuple<utils::Verbosity> get_abstraction_generator_arguments_from_options(
     return tuple_cat(utils::get_log_arguments_from_options(opts));
 }
 
-static class AbstractionGeneratorCategoryPlugin : public plugins::TypedCategoryPlugin<AbstractionGenerator> {
+static class AbstractionGeneratorCategoryPlugin
+    : public plugins::TypedCategoryPlugin<AbstractionGenerator> {
 public:
-    AbstractionGeneratorCategoryPlugin() : TypedCategoryPlugin("AbstractionGenerator") {
-        document_synopsis("Create abstractions for cost partitioning heuristics.");
+    AbstractionGeneratorCategoryPlugin()
+        : TypedCategoryPlugin("AbstractionGenerator") {
+        document_synopsis(
+            "Create abstractions for cost partitioning heuristics.");
     }
-}
-_category_plugin;
+} _category_plugin;
 }

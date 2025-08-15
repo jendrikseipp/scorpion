@@ -20,7 +20,6 @@ struct VariableInfo {
     }
 };
 
-
 /*
   For each variable store a subset of its domain.
 
@@ -37,16 +36,14 @@ class CartesianSet {
             ArrayView<BitsetMath::Block>(
                 domains.data() + var_infos[var].block_index,
                 var_infos[var].num_blocks),
-            var_infos[var].domain_size
-        };
+            var_infos[var].domain_size};
     }
     ConstBitsetView get_view(int var) const {
         return {
             ConstArrayView<BitsetMath::Block>(
                 domains.data() + var_infos[var].block_index,
                 var_infos[var].num_blocks),
-            var_infos[var].domain_size
-        };
+            var_infos[var].domain_size};
     }
 
 public:
@@ -60,9 +57,11 @@ public:
     void add_all(int var);
     void remove_all(int var);
 
-    // This method is called extremely often, so we optimize it as much as possible.
+    // This method is called extremely often, so we optimize it as much as
+    // possible.
     bool test(int var, int value) const {
-        // std::div is slower than consecutive / and %, since compilers merge them.
+        // std::div is slower than consecutive / and %, since compilers merge
+        // them.
         // (https://www.codeproject.com/Tips/1274380/Cplusplus11-std-div-Benchmark).
         int block_index = value / BitsetMath::bits_per_block;
         int bit_index = value % BitsetMath::bits_per_block;

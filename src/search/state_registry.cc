@@ -15,8 +15,7 @@ StateRegistry::StateRegistry(const TaskProxy &task_proxy)
       num_variables(task_proxy.get_variables().size()),
       state_data_pool(get_bins_per_state()),
       registered_states(
-          0,
-          StateIDSemanticHash(state_data_pool, get_bins_per_state()),
+          0, StateIDSemanticHash(state_data_pool, get_bins_per_state()),
           StateIDSemanticEqual(state_data_pool, get_bins_per_state())) {
 }
 
@@ -66,10 +65,12 @@ const State &StateRegistry::get_initial_state() {
     return *cached_initial_state;
 }
 
-//TODO it would be nice to move the actual state creation (and operator application)
-//     out of the StateRegistry. This could for example be done by global functions
-//     operating on state buffers (PackedStateBin *).
-State StateRegistry::get_successor_state(const State &predecessor, const OperatorProxy &op) {
+// TODO it would be nice to move the actual state creation (and operator
+// application)
+//      out of the StateRegistry. This could for example be done by global
+//      functions operating on state buffers (PackedStateBin *).
+State StateRegistry::get_successor_state(
+    const State &predecessor, const OperatorProxy &op) {
     assert(!op.is_axiom());
     /*
       TODO: ideally, we would not modify state_data_pool here and in
@@ -126,7 +127,7 @@ int StateRegistry::get_state_size_in_bytes() const {
 
 void StateRegistry::print_statistics(utils::LogProxy &log) const {
     log << "Number of registered states: " << size() << endl;
-    log << "Closed list load factor: " << registered_states.size()
-        << "/" << registered_states.capacity() << " = "
+    log << "Closed list load factor: " << registered_states.size() << "/"
+        << registered_states.capacity() << " = "
         << registered_states.load_factor() << endl;
 }

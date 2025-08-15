@@ -17,10 +17,8 @@ using namespace std;
 namespace cost_saturation {
 ProjectionGenerator::ProjectionGenerator(
     const shared_ptr<pdbs::PatternCollectionGenerator> &patterns,
-    bool dominance_pruning,
-    bool combine_labels,
-    bool create_complete_transition_system,
-    utils::Verbosity verbosity)
+    bool dominance_pruning, bool combine_labels,
+    bool create_complete_transition_system, utils::Verbosity verbosity)
     : AbstractionGenerator(verbosity),
       pattern_generator(patterns),
       dominance_pruning(dominance_pruning),
@@ -29,8 +27,7 @@ ProjectionGenerator::ProjectionGenerator(
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
-    const shared_ptr<AbstractTask> &task,
-    DeadEnds *dead_ends) {
+    const shared_ptr<AbstractTask> &task, DeadEnds *dead_ends) {
     utils::Timer patterns_timer;
     TaskProxy task_proxy(*task);
 
@@ -38,8 +35,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
     if (!create_complete_transition_system &&
         task_properties::has_conditional_effects(task_proxy)) {
         cerr << "Error: configuration doesn't support conditional effects. "
-            "Use projections(..., create_complete_transition_system=true) "
-            "to build projections that support conditional effects."
+                "Use projections(..., create_complete_transition_system=true) "
+                "to build projections that support conditional effects."
              << endl;
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
@@ -55,7 +52,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
 
     int max_pattern_size = 0;
     for (const pdbs::Pattern &pattern : *patterns) {
-        max_pattern_size = max(max_pattern_size, static_cast<int>(pattern.size()));
+        max_pattern_size =
+            max(max_pattern_size, static_cast<int>(pattern.size()));
     }
 
     log << "Number of patterns: " << patterns->size() << endl;
@@ -67,11 +65,9 @@ Abstractions ProjectionGenerator::generate_abstractions(
         shared_ptr<vector<PatternClique>> pattern_cliques =
             pattern_collection_info.get_pattern_cliques();
         prune_dominated_cliques(
-            *patterns,
-            *pdbs,
-            *pattern_cliques, task_proxy.get_variables().size(),
-            numeric_limits<double>::infinity(),
-            log);
+            *patterns, *pdbs, *pattern_cliques,
+            task_proxy.get_variables().size(),
+            numeric_limits<double>::infinity(), log);
     }
 
     log << "Build projections" << endl;
@@ -85,8 +81,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
             // Projections have already been computed by the generator.
             projection = move((*projections)[abstractions.size()]);
         } else if (create_complete_transition_system) {
-            projection = ExplicitProjectionFactory(
-                task_proxy, pattern).convert_to_abstraction();
+            projection = ExplicitProjectionFactory(task_proxy, pattern)
+                             .convert_to_abstraction();
         } else {
             task_properties::verify_no_conditional_effects(task_proxy);
             projection = make_unique<Projection>(
@@ -94,8 +90,8 @@ Abstractions ProjectionGenerator::generate_abstractions(
         }
 
         if (log.is_at_least_debug()) {
-            log << "Pattern " << abstractions.size() + 1 << ": "
-                << pattern << endl;
+            log << "Pattern " << abstractions.size() + 1 << ": " << pattern
+                << endl;
             projection->dump();
         }
         abstractions.push_back(move(projection));
@@ -114,7 +110,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
     uint64_t num_transitions = 0;
     for (auto &abstraction : abstractions) {
         abstraction->for_each_transition(
-            [&num_transitions] (const Transition &) {++num_transitions;});
+            [&num_transitions](const Transition &) { ++num_transitions; });
     }
     log << "Number of transitions in projections: " << num_transitions << endl;
 #endif
@@ -129,28 +125,24 @@ public:
         document_title("");
         document_synopsis("Projection generator");
         add_option<shared_ptr<pdbs::PatternCollectionGenerator>>(
-            "patterns",
-            "pattern generation method",
+            "patterns", "pattern generation method",
             plugins::ArgumentInfo::NO_DEFAULT);
         add_option<bool>(
-            "dominance_pruning",
-            "prune dominated patterns",
-            "false");
+            "dominance_pruning", "prune dominated patterns", "false");
         add_option<bool>(
             "combine_labels",
-            "group labels that only induce parallel transitions",
-            "true");
+            "group labels that only induce parallel transitions", "true");
         add_option<bool>(
             "create_complete_transition_system",
-            "create explicit transition system",
-            "false");
+            "create explicit transition system", "false");
         add_abstraction_generator_arguments_to_feature(*this);
     }
 
     virtual shared_ptr<ProjectionGenerator> create_component(
         const plugins::Options &options) const override {
         return plugins::make_shared_from_arg_tuples<ProjectionGenerator>(
-            options.get<shared_ptr<pdbs::PatternCollectionGenerator>>("patterns"),
+            options.get<shared_ptr<pdbs::PatternCollectionGenerator>>(
+                "patterns"),
             options.get<bool>("dominance_pruning"),
             options.get<bool>("combine_labels"),
             options.get<bool>("create_complete_transition_system"),

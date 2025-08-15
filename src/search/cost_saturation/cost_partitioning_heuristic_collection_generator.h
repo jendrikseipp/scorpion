@@ -28,20 +28,13 @@ class CostPartitioningHeuristicCollectionGenerator {
 
 public:
     CostPartitioningHeuristicCollectionGenerator(
-        const std::shared_ptr<OrderGenerator> &order_generator,
-        int max_orders,
-        int max_size_kb,
-        double max_time,
-        bool diversify,
-        int num_samples,
-        double max_optimization_time,
-        int random_seed);
+        const std::shared_ptr<OrderGenerator> &order_generator, int max_orders,
+        int max_size_kb, double max_time, bool diversify, int num_samples,
+        double max_optimization_time, int random_seed);
 
     std::vector<CostPartitioningHeuristic> generate_cost_partitionings(
-        const TaskProxy &task_proxy,
-        const Abstractions &abstractions,
-        const std::vector<int> &costs,
-        const CPFunction &cp_function) const;
+        const TaskProxy &task_proxy, const Abstractions &abstractions,
+        const std::vector<int> &costs, const CPFunction &cp_function) const;
 };
 }
 

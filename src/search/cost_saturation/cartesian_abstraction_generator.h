@@ -22,12 +22,15 @@ class RandomNumberGenerator;
 
 namespace cost_saturation {
 class CartesianAbstractionGenerator : public AbstractionGenerator {
-    const std::vector<std::shared_ptr<cartesian_abstractions::SubtaskGenerator>> subtask_generators;
+    const std::vector<std::shared_ptr<cartesian_abstractions::SubtaskGenerator>>
+        subtask_generators;
     const int max_states;
     const int max_transitions;
     const double max_time;
-    const cartesian_abstractions::TransitionRepresentation transition_representation;
-    const cartesian_abstractions::PickFlawedAbstractState pick_flawed_abstract_state;
+    const cartesian_abstractions::TransitionRepresentation
+        transition_representation;
+    const cartesian_abstractions::PickFlawedAbstractState
+        pick_flawed_abstract_state;
     const cartesian_abstractions::PickSplit pick_split;
     const cartesian_abstractions::PickSplit tiebreak_split;
     const int max_concrete_states_per_abstract_state;
@@ -43,18 +46,21 @@ class CartesianAbstractionGenerator : public AbstractionGenerator {
 
     void build_abstractions_for_subtasks(
         const std::vector<std::shared_ptr<AbstractTask>> &subtasks,
-        const utils::CountdownTimer &timer,
-        Abstractions &abstractions);
+        const utils::CountdownTimer &timer, Abstractions &abstractions);
 
 public:
     CartesianAbstractionGenerator(
-        const std::vector<std::shared_ptr<cartesian_abstractions::SubtaskGenerator>> &subtasks,
+        const std::vector<
+            std::shared_ptr<cartesian_abstractions::SubtaskGenerator>>
+            &subtasks,
         int max_states, int max_transitions, double max_time,
-        cartesian_abstractions::PickFlawedAbstractState pick_flawed_abstract_state,
+        cartesian_abstractions::PickFlawedAbstractState
+            pick_flawed_abstract_state,
         cartesian_abstractions::PickSplit pick_split,
         cartesian_abstractions::PickSplit tiebreak_split,
         int max_concrete_states_per_abstract_state, int max_state_expansions,
-        cartesian_abstractions::TransitionRepresentation transition_representation,
+        cartesian_abstractions::TransitionRepresentation
+            transition_representation,
         int memory_padding, int random_seed,
         cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity,
         utils::Verbosity verbosity);

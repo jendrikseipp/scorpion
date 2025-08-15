@@ -63,21 +63,16 @@ class CostSaturation {
 
 public:
     CostSaturation(
-        const std::vector<std::shared_ptr<SubtaskGenerator>> &subtask_generators,
-        int max_states,
-        int max_transitions,
-        double max_time,
+        const std::vector<std::shared_ptr<SubtaskGenerator>>
+            &subtask_generators,
+        int max_states, int max_transitions, double max_time,
         bool use_general_costs,
         PickFlawedAbstractState pick_flawed_abstract_state,
-        PickSplit pick_split,
-        PickSplit tiebreak_split,
-        int max_concrete_states_per_abstract_state,
-        int max_state_expansions,
+        PickSplit pick_split, PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state, int max_state_expansions,
         TransitionRepresentation transition_representation,
-        int memory_padding_mb,
-        utils::RandomNumberGenerator &rng,
-        utils::LogProxy &log,
-        DotGraphVerbosity dot_graph_verbosity);
+        int memory_padding_mb, utils::RandomNumberGenerator &rng,
+        utils::LogProxy &log, DotGraphVerbosity dot_graph_verbosity);
 
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
         const std::shared_ptr<AbstractTask> &task);
@@ -85,7 +80,8 @@ public:
 
 extern int get_subtask_limit(int limit, int used, int remaining_subtasks);
 extern std::vector<int> compute_saturated_costs(
-    const Abstraction &abstraction, const std::vector<int> &h_values, bool use_general_costs);
+    const Abstraction &abstraction, const std::vector<int> &h_values,
+    bool use_general_costs);
 }
 
 #endif

@@ -19,10 +19,8 @@ using AbstractOperatorSet = utils::HashMap<vector<FactPair>, PreconditionsTree>;
 static const int INF = numeric_limits<int>::max();
 
 static int compute_hash_effect(
-    const vector<FactPair> &preconditions,
-    const vector<FactPair> &effects,
-    const vector<int> &hash_multipliers,
-    bool forward) {
+    const vector<FactPair> &preconditions, const vector<FactPair> &effects,
+    const vector<int> &hash_multipliers, bool forward) {
     int hash_effect = 0;
     assert(preconditions.size() == effects.size());
     for (size_t i = 0; i < preconditions.size(); ++i) {
@@ -70,7 +68,8 @@ TaskInfo::TaskInfo(const TaskProxy &task_proxy) {
     variable_effects.resize(num_operators * num_variables, false);
     for (const OperatorInfo &op : operator_infos) {
         for (const FactPair &effect : op.effects) {
-            variable_effects[op.concrete_operator_id * num_variables + effect.var] = true;
+            variable_effects
+                [op.concrete_operator_id * num_variables + effect.var] = true;
         }
     }
 }
@@ -83,10 +82,8 @@ int TaskInfo::get_num_variables() const {
     return num_variables;
 }
 
-
 static bool operator_is_subsumed(
-    const OperatorInfo &op,
-    const vector<int> &variable_to_pattern_index,
+    const OperatorInfo &op, const vector<int> &variable_to_pattern_index,
     const vector<int> &pattern_domain_sizes,
     AbstractOperatorSet &seen_abstract_ops) {
     vector<FactPair> abstract_preconditions;
@@ -105,7 +102,8 @@ static bool operator_is_subsumed(
         }
     }
 
-    assert(is_sorted(abstract_preconditions.begin(), abstract_preconditions.end()));
+    assert(is_sorted(
+        abstract_preconditions.begin(), abstract_preconditions.end()));
     assert(is_sorted(abstract_effects.begin(), abstract_effects.end()));
 
     auto it = seen_abstract_ops.find(abstract_effects);
@@ -124,12 +122,9 @@ static bool operator_is_subsumed(
     return false;
 }
 
-
 PatternEvaluator::PatternEvaluator(
-    const TaskProxy &task_proxy,
-    const TaskInfo &task_info,
-    const pdbs::Pattern &pattern,
-    const vector<int> &costs)
+    const TaskProxy &task_proxy, const TaskInfo &task_info,
+    const pdbs::Pattern &pattern, const vector<int> &costs)
     : task_info(task_info) {
     pdbs::Projection projection(task_proxy, pattern);
     hash_multipliers = projection.get_hash_multipliers();
@@ -150,8 +145,9 @@ PatternEvaluator::PatternEvaluator(
 
     vector<pair<int, int>> active_ops;
     for (const OperatorInfo &op : task_info.operator_infos) {
-        if (costs[op.concrete_operator_id] != INF
-            && task_info.operator_affects_pattern(pattern, op.concrete_operator_id)) {
+        if (costs[op.concrete_operator_id] != INF &&
+            task_info.operator_affects_pattern(
+                pattern, op.concrete_operator_id)) {
             int num_preconditions = 0;
             for (const FactPair &pre : op.preconditions) {
                 if (variable_to_pattern_index[pre.var] != -1) {
@@ -162,19 +158,23 @@ PatternEvaluator::PatternEvaluator(
         }
     }
     // Sort by increasing cost and precondition size.
-    sort(active_ops.begin(), active_ops.end(),
-         [&costs](pair<int, int> f1, pair<int, int> f2) {
-             return make_pair(costs[f1.first], f1.second)
-             < make_pair(costs[f2.first], f2.second);
-         });
+    sort(
+        active_ops.begin(), active_ops.end(),
+        [&costs](pair<int, int> f1, pair<int, int> f2) {
+            return make_pair(costs[f1.first], f1.second) <
+                   make_pair(costs[f2.first], f2.second);
+        });
 
     AbstractOperatorSet seen_abstract_ops;
     for (pair<int, int> op_and_num_preconditions : active_ops) {
-        const OperatorInfo &op = task_info.operator_infos[op_and_num_preconditions.first];
+        const OperatorInfo &op =
+            task_info.operator_infos[op_and_num_preconditions.first];
         if (!operator_is_subsumed(
-                op, variable_to_pattern_index, pattern_domain_sizes, seen_abstract_ops)) {
+                op, variable_to_pattern_index, pattern_domain_sizes,
+                seen_abstract_ops)) {
             build_abstract_operators(
-                hash_multipliers, op, variable_to_pattern_index, pattern_domain_sizes);
+                hash_multipliers, op, variable_to_pattern_index,
+                pattern_domain_sizes);
         }
     }
     abstract_backward_operators.shrink_to_fit();
@@ -196,13 +196,15 @@ vector<int> PatternEvaluator::compute_goal_states(
     vector<FactPair> abstract_goals;
     for (const FactPair &goal : task_info.goals) {
         if (variable_to_pattern_index[goal.var] != -1) {
-            abstract_goals.emplace_back(variable_to_pattern_index[goal.var], goal.value);
+            abstract_goals.emplace_back(
+                variable_to_pattern_index[goal.var], goal.value);
         }
     }
 
     for (int state_index = 0; state_index < num_states; ++state_index) {
         if (is_consistent(
-                hash_multipliers, pattern_domain_sizes, state_index, abstract_goals)) {
+                hash_multipliers, pattern_domain_sizes, state_index,
+                abstract_goals)) {
             goal_states.push_back(state_index);
         }
     }
@@ -211,13 +213,9 @@ vector<int> PatternEvaluator::compute_goal_states(
 }
 
 void PatternEvaluator::multiply_out(
-    const vector<int> &hash_multipliers,
-    int pos,
-    int conc_op_id,
-    vector<FactPair> &prevails,
-    vector<FactPair> &preconditions,
-    vector<FactPair> &effects,
-    const vector<FactPair> &effects_without_pre,
+    const vector<int> &hash_multipliers, int pos, int conc_op_id,
+    vector<FactPair> &prevails, vector<FactPair> &preconditions,
+    vector<FactPair> &effects, const vector<FactPair> &effects_without_pre,
     const vector<int> &pattern_domain_sizes) {
     if (pos == static_cast<int>(effects_without_pre.size())) {
         // All effects without precondition have been checked: insert op.
@@ -225,11 +223,14 @@ void PatternEvaluator::multiply_out(
             int abs_op_id = abstract_backward_operators.size();
             abstract_backward_operators.emplace_back(
                 conc_op_id,
-                compute_hash_effect(preconditions, effects, hash_multipliers, false));
+                compute_hash_effect(
+                    preconditions, effects, hash_multipliers, false));
             vector<FactPair> regression_preconditions = prevails;
             regression_preconditions.insert(
                 regression_preconditions.end(), effects.begin(), effects.end());
-            sort(regression_preconditions.begin(), regression_preconditions.end());
+            sort(
+                regression_preconditions.begin(),
+                regression_preconditions.end());
             match_tree_backward->insert(abs_op_id, regression_preconditions);
         }
     } else {
@@ -244,9 +245,9 @@ void PatternEvaluator::multiply_out(
             } else {
                 prevails.emplace_back(var_id, i);
             }
-            multiply_out(hash_multipliers, pos + 1, conc_op_id,
-                         prevails, preconditions, effects,
-                         effects_without_pre, pattern_domain_sizes);
+            multiply_out(
+                hash_multipliers, pos + 1, conc_op_id, prevails, preconditions,
+                effects, effects_without_pre, pattern_domain_sizes);
             if (i != eff) {
                 preconditions.pop_back();
                 effects.pop_back();
@@ -258,8 +259,7 @@ void PatternEvaluator::multiply_out(
 }
 
 void PatternEvaluator::build_abstract_operators(
-    const vector<int> &hash_multipliers,
-    const OperatorInfo &op,
+    const vector<int> &hash_multipliers, const OperatorInfo &op,
     const vector<int> &variable_to_index,
     const vector<int> &pattern_domain_sizes) {
     // All variable value pairs that are a prevail condition
@@ -316,8 +316,7 @@ void PatternEvaluator::build_abstract_operators(
 
 bool PatternEvaluator::is_consistent(
     const vector<int> &hash_multipliers,
-    const vector<int> &pattern_domain_sizes,
-    int state_index,
+    const vector<int> &pattern_domain_sizes, int state_index,
     const vector<FactPair> &abstract_facts) const {
     for (const FactPair &abstract_goal : abstract_facts) {
         int pattern_var_id = abstract_goal.var;
@@ -331,8 +330,7 @@ bool PatternEvaluator::is_consistent(
 }
 
 void PatternEvaluator::store_new_dead_ends(
-    const Pattern &pattern,
-    const vector<int> &distances,
+    const Pattern &pattern, const vector<int> &distances,
     DeadEnds &dead_ends) const {
     int pattern_size = hash_multipliers.size();
     for (size_t index = 0; index < distances.size(); ++index) {
@@ -356,11 +354,9 @@ void PatternEvaluator::store_new_dead_ends(
 }
 
 bool PatternEvaluator::is_useful(
-    const Pattern &pattern,
-    priority_queues::AdaptiveQueue<int> &pq,
-    DeadEnds *dead_ends,
-    const vector<int> &costs) const {
-    assert(all_of(costs.begin(), costs.end(), [](int c) {return c >= 0;}));
+    const Pattern &pattern, priority_queues::AdaptiveQueue<int> &pq,
+    DeadEnds *dead_ends, const vector<int> &costs) const {
+    assert(all_of(costs.begin(), costs.end(), [](int c) { return c >= 0; }));
     vector<int> distances(num_states, INF);
     int num_settled = 0;
 
@@ -394,14 +390,18 @@ bool PatternEvaluator::is_useful(
 
         // Regress abstract state.
         applicable_operators.clear();
-        match_tree_backward->get_applicable_operator_ids(state_index, applicable_operators);
+        match_tree_backward->get_applicable_operator_ids(
+            state_index, applicable_operators);
         for (int abs_op_id : applicable_operators) {
-            const AbstractBackwardOperator &op = abstract_backward_operators[abs_op_id];
+            const AbstractBackwardOperator &op =
+                abstract_backward_operators[abs_op_id];
             int predecessor = state_index + op.hash_effect;
             int conc_op_id = op.concrete_operator_id;
             assert(utils::in_bounds(conc_op_id, costs));
-            int alternative_cost = (costs[conc_op_id] == INF) ?
-                INF : distances[state_index] + costs[conc_op_id];
+            int alternative_cost =
+                (costs[conc_op_id] == INF)
+                    ? INF
+                    : distances[state_index] + costs[conc_op_id];
             assert(utils::in_bounds(predecessor, distances));
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
@@ -411,8 +411,10 @@ bool PatternEvaluator::is_useful(
     }
 
     bool has_dead_end = (num_settled < num_states);
-    assert(has_dead_end ==
-           any_of(distances.begin(), distances.end(), [](int d) {return d == INF;}));
+    assert(
+        has_dead_end == any_of(distances.begin(), distances.end(), [](int d) {
+            return d == INF;
+        }));
     if (dead_ends && has_dead_end) {
         // Add new dead ends to database.
         store_new_dead_ends(pattern, distances, *dead_ends);

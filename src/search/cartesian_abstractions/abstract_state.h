@@ -26,7 +26,8 @@ class AbstractState {
     const CartesianSet &cartesian_set;
 
 public:
-    AbstractState(int state_id, NodeID node_id, const CartesianSet &cartesian_set);
+    AbstractState(
+        int state_id, NodeID node_id, const CartesianSet &cartesian_set);
 
     AbstractState(const AbstractState &) = delete;
 
@@ -60,7 +61,8 @@ public:
         return cartesian_set;
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const AbstractState &state) {
+    friend std::ostream &operator<<(
+        std::ostream &os, const AbstractState &state) {
         return os << "#" << state.get_id() << state.cartesian_set;
     }
 

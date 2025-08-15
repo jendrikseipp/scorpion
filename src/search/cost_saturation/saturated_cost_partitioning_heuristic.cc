@@ -16,16 +16,16 @@ using namespace std;
 
 namespace cost_saturation {
 CostPartitioningHeuristic compute_saturated_cost_partitioning(
-    const Abstractions &abstractions,
-    const vector<int> &order,
-    vector<int> &remaining_costs,
-    const vector<int> &) {
+    const Abstractions &abstractions, const vector<int> &order,
+    vector<int> &remaining_costs, const vector<int> &) {
     assert(abstractions.size() == order.size());
     CostPartitioningHeuristic cp_heuristic;
     for (int pos : order) {
         const Abstraction &abstraction = *abstractions[pos];
-        vector<int> h_values = abstraction.compute_goal_distances(remaining_costs);
-        vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
+        vector<int> h_values =
+            abstraction.compute_goal_distances(remaining_costs);
+        vector<int> saturated_costs =
+            abstraction.compute_saturated_costs(h_values);
         cp_heuristic.add_h_values(pos, move(h_values));
         reduce_costs(remaining_costs, saturated_costs);
     }
@@ -42,18 +42,18 @@ static void cap_h_values(int h_cap, vector<int> &h_values) {
 }
 
 CostPartitioningHeuristic compute_perim_saturated_cost_partitioning(
-    const Abstractions &abstractions,
-    const vector<int> &order,
-    vector<int> &remaining_costs,
-    const vector<int> &abstract_state_ids) {
+    const Abstractions &abstractions, const vector<int> &order,
+    vector<int> &remaining_costs, const vector<int> &abstract_state_ids) {
     assert(abstractions.size() == order.size());
     CostPartitioningHeuristic cp_heuristic;
     for (int pos : order) {
         const Abstraction &abstraction = *abstractions[pos];
-        vector<int> h_values = abstraction.compute_goal_distances(remaining_costs);
+        vector<int> h_values =
+            abstraction.compute_goal_distances(remaining_costs);
         int h_cap = h_values[abstract_state_ids[pos]];
         cap_h_values(h_cap, h_values);
-        vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
+        vector<int> saturated_costs =
+            abstraction.compute_saturated_costs(h_values);
         cp_heuristic.add_h_values(pos, move(h_values));
         reduce_costs(remaining_costs, saturated_costs);
     }
@@ -61,22 +61,18 @@ CostPartitioningHeuristic compute_perim_saturated_cost_partitioning(
 }
 
 static CostPartitioningHeuristic compute_perimstar_saturated_cost_partitioning(
-    const Abstractions &abstractions,
-    const vector<int> &order,
-    vector<int> &remaining_costs,
-    const vector<int> &abstract_state_ids) {
+    const Abstractions &abstractions, const vector<int> &order,
+    vector<int> &remaining_costs, const vector<int> &abstract_state_ids) {
     CostPartitioningHeuristic cp = compute_perim_saturated_cost_partitioning(
         abstractions, order, remaining_costs, abstract_state_ids);
     cp.add(compute_saturated_cost_partitioning(
-               abstractions, order, remaining_costs, abstract_state_ids));
+        abstractions, order, remaining_costs, abstract_state_ids));
     return cp;
 }
 
 void add_saturator_option(plugins::Feature &feature) {
     feature.add_option<Saturator>(
-        "saturator",
-        "function that computes saturated cost functions",
-        "all");
+        "saturator", "function that computes saturated cost functions", "all");
 }
 
 CPFunction get_cp_function_from_options(const plugins::Options &options) {
@@ -107,9 +103,7 @@ public:
                 {"Jendrik Seipp", "Thomas Keller", "Malte Helmert"},
                 "Saturated Cost Partitioning for Optimal Classical Planning",
                 "https://ai.dmi.unibas.ch/papers/seipp-et-al-jair2020.pdf",
-                "Journal of Artificial Intelligence Research",
-                "67",
-                "129-167",
+                "Journal of Artificial Intelligence Research", "67", "129-167",
                 "2020"));
         document_note(
             "Difference to cegar()",
@@ -128,29 +122,33 @@ public:
 
     virtual shared_ptr<MaxCostPartitioningHeuristic> create_component(
         const plugins::Options &options) const override {
-        shared_ptr<AbstractTask> task = options.get<shared_ptr<AbstractTask>>("transform");
+        shared_ptr<AbstractTask> task =
+            options.get<shared_ptr<AbstractTask>>("transform");
         TaskProxy task_proxy(*task);
         vector<int> costs = task_properties::get_operator_costs(task_proxy);
         unique_ptr<DeadEnds> dead_ends = make_unique<DeadEnds>();
         Abstractions abstractions = generate_abstractions(
-            task, options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"), dead_ends.get());
+            task,
+            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"),
+            dead_ends.get());
         CPFunction cp_function = get_cp_function_from_options(options);
         vector<CostPartitioningHeuristic> cp_heuristics =
-            get_cp_heuristic_collection_generator_from_options(options)->generate_cost_partitionings(
-                task_proxy, abstractions, costs, cp_function);
-        return plugins::make_shared_from_arg_tuples<MaxCostPartitioningHeuristic>(
-            move(abstractions),
-            move(cp_heuristics),
-            move(dead_ends),
+            get_cp_heuristic_collection_generator_from_options(options)
+                ->generate_cost_partitionings(
+                    task_proxy, abstractions, costs, cp_function);
+        return plugins::make_shared_from_arg_tuples<
+            MaxCostPartitioningHeuristic>(
+            move(abstractions), move(cp_heuristics), move(dead_ends),
             get_heuristic_arguments_from_options(options));
     }
 };
 
-static plugins::FeaturePlugin<SaturatedCostPartitioningHeuristicFeature> _plugin;
+static plugins::FeaturePlugin<SaturatedCostPartitioningHeuristicFeature>
+    _plugin;
 
 static plugins::TypedEnumPlugin<Saturator> _enum_plugin({
-        {"all", "preserve estimates of all states"},
-        {"perim", "preserve estimates of states in perimeter around goal"},
-        {"perimstar", "compute 'perim' first and then 'all' with remaining costs"},
-    });
+    {"all", "preserve estimates of all states"},
+    {"perim", "preserve estimates of states in perimeter around goal"},
+    {"perimstar", "compute 'perim' first and then 'all' with remaining costs"},
+});
 }

@@ -4,10 +4,9 @@
 #include <deque>
 #include <limits>
 #include <memory>
+#include <parallel_hashmap/phmap.h>
 #include <unordered_set>
 #include <vector>
-
-#include <parallel_hashmap/phmap.h>
 
 struct FactPair;
 
@@ -32,7 +31,8 @@ enum class MatcherVariable : char {
     SINGLE_VALUE,
     FULL_DOMAIN,
 };
-static_assert(sizeof(MatcherVariable) == 1, "MatcherVariable has unexpected size");
+static_assert(
+    sizeof(MatcherVariable) == 1, "MatcherVariable has unexpected size");
 
 using AbstractStates = std::deque<std::unique_ptr<AbstractState>>;
 using CartesianSets = std::vector<std::unique_ptr<CartesianSet>>;

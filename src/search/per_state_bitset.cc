@@ -4,7 +4,6 @@
 
 using namespace std;
 
-
 int BitsetMath::compute_num_blocks(size_t num_bits) {
     return (num_bits + bits_per_block - 1) / bits_per_block;
 }
@@ -20,7 +19,6 @@ size_t BitsetMath::bit_index(size_t pos) {
 BitsetMath::Block BitsetMath::bit_mask(size_t pos) {
     return Block(1) << bit_index(pos);
 }
-
 
 void BitsetView::zero_unused_bits() {
     int bits_in_last_block = BitsetMath::bit_index(num_bits);
@@ -82,9 +80,10 @@ int BitsetView::size() const {
     return num_bits;
 }
 
-
-ConstBitsetView::ConstBitsetView(ConstArrayView<BitsetMath::Block> data, int num_bits) :
-    data(data), num_bits(num_bits) {}
+ConstBitsetView::ConstBitsetView(
+    ConstArrayView<BitsetMath::Block> data, int num_bits)
+    : data(data), num_bits(num_bits) {
+}
 
 bool ConstBitsetView::test() const {
     assert(data.size() > 0);
@@ -100,10 +99,11 @@ bool ConstBitsetView::test() const {
     if (bits_in_last_block == 0) {
         bits_in_last_block = BitsetMath::bits_per_block;
     }
-    int empty_positions_in_last_block = BitsetMath::bits_per_block - bits_in_last_block;
-    return data[data.size() - 1] == (BitsetMath::ones >> empty_positions_in_last_block);
+    int empty_positions_in_last_block =
+        BitsetMath::bits_per_block - bits_in_last_block;
+    return data[data.size() - 1] ==
+           (BitsetMath::ones >> empty_positions_in_last_block);
 }
-
 
 bool ConstBitsetView::test(int index) const {
     assert(index >= 0 && index < num_bits);
@@ -143,12 +143,12 @@ int ConstBitsetView::size() const {
     return num_bits;
 }
 
-
 static vector<BitsetMath::Block> pack_bit_vector(const vector<bool> &bits) {
     int num_bits = bits.size();
     int num_blocks = BitsetMath::compute_num_blocks(num_bits);
     vector<BitsetMath::Block> packed_bits(num_blocks, 0);
-    BitsetView bitset_view(ArrayView<BitsetMath::Block>(packed_bits.data(), num_blocks), num_bits);
+    BitsetView bitset_view(
+        ArrayView<BitsetMath::Block>(packed_bits.data(), num_blocks), num_bits);
     for (int i = 0; i < num_bits; ++i) {
         if (bits[i]) {
             bitset_view.set(i);
@@ -156,7 +156,6 @@ static vector<BitsetMath::Block> pack_bit_vector(const vector<bool> &bits) {
     }
     return packed_bits;
 }
-
 
 PerStateBitset::PerStateBitset(const vector<bool> &default_bits)
     : num_bits_per_entry(default_bits.size()),

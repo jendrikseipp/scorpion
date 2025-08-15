@@ -1,8 +1,8 @@
 #include "pho_heuristic.h"
 
 #include "abstraction.h"
-#include "cost_partitioning_heuristic_collection_generator.h"
 #include "cost_partitioning_heuristic.h"
+#include "cost_partitioning_heuristic_collection_generator.h"
 #include "max_cost_partitioning_heuristic.h"
 #include "uniform_cost_partitioning_heuristic.h"
 #include "utils.h"
@@ -22,13 +22,9 @@ namespace cost_saturation {
   a state.
 */
 PhO::PhO(
-    const Abstractions &abstractions,
-    const vector<int> &costs,
-    lp::LPSolverType solver_type,
-    bool saturated,
-    const utils::LogProxy &log)
-    : lp_solver(solver_type),
-      log(log) {
+    const Abstractions &abstractions, const vector<int> &costs,
+    lp::LPSolverType solver_type, bool saturated, const utils::LogProxy &log)
+    : lp_solver(solver_type), log(log) {
     double infinity = lp_solver.get_infinity();
     int num_abstractions = abstractions.size();
     int num_operators = costs.size();
@@ -39,7 +35,8 @@ PhO::PhO(
     for (int i = 0; i < num_abstractions; ++i) {
         const Abstraction &abstraction = *abstractions[i];
         vector<int> h_values = abstraction.compute_goal_distances(costs);
-        vector<int> saturated_costs = abstraction.compute_saturated_costs(h_values);
+        vector<int> saturated_costs =
+            abstraction.compute_saturated_costs(h_values);
         h_values_by_abstraction.push_back(move(h_values));
         saturated_costs_by_abstraction.push_back(move(saturated_costs));
     }
@@ -65,7 +62,9 @@ PhO::PhO(
                 if (scf_h != 0) {
                     constraint.insert(i, scf_h);
                 }
-            } else if (abstractions[i]->operator_is_active(op_id) && costs[op_id] != 0) {
+            } else if (
+                abstractions[i]->operator_is_active(op_id) &&
+                costs[op_id] != 0) {
                 constraint.insert(i, costs[op_id]);
             }
         }
@@ -74,16 +73,15 @@ PhO::PhO(
         }
     }
 
-    lp::LinearProgram lp(lp::LPObjectiveSense::MAXIMIZE, move(variables), move(constraints),
-                         lp_solver.get_infinity());
+    lp::LinearProgram lp(
+        lp::LPObjectiveSense::MAXIMIZE, move(variables), move(constraints),
+        lp_solver.get_infinity());
     lp_solver.load_problem(lp);
 }
 
 CostPartitioningHeuristic PhO::compute_cost_partitioning(
-    const Abstractions &abstractions,
-    const vector<int> &,
-    const vector<int> &costs,
-    const vector<int> &abstract_state_ids) {
+    const Abstractions &abstractions, const vector<int> &,
+    const vector<int> &costs, const vector<int> &abstract_state_ids) {
     int num_abstractions = abstractions.size();
     int num_operators = costs.size();
 
@@ -94,7 +92,8 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
             vector<int> zero_costs(num_operators, 0);
             CostPartitioningHeuristic cp_heuristic;
             for (int i = 0; i < num_abstractions; ++i) {
-                vector<int> h_values = abstractions[i]->compute_goal_distances(zero_costs);
+                vector<int> h_values =
+                    abstractions[i]->compute_goal_distances(zero_costs);
                 cp_heuristic.add_h_values(i, move(h_values));
             }
             return cp_heuristic;
@@ -121,12 +120,14 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
         weighted_h_values.reserve(h_values_by_abstraction[i].size());
         for (int h : h_values_by_abstraction[i]) {
             assert(weight > 0.0);
-            weighted_h_values.push_back(h == INF ? INF : static_cast<int>(weight * h));
+            weighted_h_values.push_back(
+                h == INF ? INF : static_cast<int>(weight * h));
         }
         cp_heuristic.add_h_values(i, move(weighted_h_values));
     }
     if (log.is_at_least_debug()) {
-        log << "CP value: " << cp_heuristic.compute_heuristic(abstract_state_ids) << endl;
+        log << "CP value: "
+            << cp_heuristic.compute_heuristic(abstract_state_ids) << endl;
     }
     return cp_heuristic;
 }
@@ -148,32 +149,38 @@ public:
 
     virtual shared_ptr<ScaledCostPartitioningHeuristic> create_component(
         const plugins::Options &options) const override {
-        shared_ptr<AbstractTask> scaled_costs_task =
-            get_scaled_costs_task(options.get<shared_ptr<AbstractTask>>("transform"));
+        shared_ptr<AbstractTask> scaled_costs_task = get_scaled_costs_task(
+            options.get<shared_ptr<AbstractTask>>("transform"));
 
         TaskProxy task_proxy(*scaled_costs_task);
         vector<int> costs = task_properties::get_operator_costs(task_proxy);
         Abstractions abstractions = generate_abstractions(
-            scaled_costs_task, options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
-        PhO pho(abstractions, costs, options.get<lp::LPSolverType>("lpsolver"),
-                options.get<bool>("saturated"),
-                utils::get_log_for_verbosity(options.get<utils::Verbosity>("verbosity")));
-        CPFunction cp_function = [&pho](const Abstractions &abstractions_,
-                                        const vector<int> &order_,
-                                        const vector<int> &costs_,
-                                        const vector<int> &abstract_state_ids) {
-                return pho.compute_cost_partitioning(abstractions_, order_, costs_, abstract_state_ids);
-            };
+            scaled_costs_task,
+            options.get_list<shared_ptr<AbstractionGenerator>>("abstractions"));
+        PhO pho(
+            abstractions, costs, options.get<lp::LPSolverType>("lpsolver"),
+            options.get<bool>("saturated"),
+            utils::get_log_for_verbosity(
+                options.get<utils::Verbosity>("verbosity")));
+        CPFunction cp_function = [&pho](
+                                     const Abstractions &abstractions_,
+                                     const vector<int> &order_,
+                                     const vector<int> &costs_,
+                                     const vector<int> &abstract_state_ids) {
+            return pho.compute_cost_partitioning(
+                abstractions_, order_, costs_, abstract_state_ids);
+        };
         vector<CostPartitioningHeuristic> cp_heuristics =
-            get_cp_heuristic_collection_generator_from_options(options)->generate_cost_partitionings(
-                task_proxy, abstractions, costs, cp_function);
-        return plugins::make_shared_from_arg_tuples<ScaledCostPartitioningHeuristic>(
-            move(abstractions),
-            move(cp_heuristics),
+            get_cp_heuristic_collection_generator_from_options(options)
+                ->generate_cost_partitionings(
+                    task_proxy, abstractions, costs, cp_function);
+        return plugins::make_shared_from_arg_tuples<
+            ScaledCostPartitioningHeuristic>(
+            move(abstractions), move(cp_heuristics),
             // TODO: extract dead ends.
-            nullptr,
-            scaled_costs_task, options.get<bool>("cache_estimates"),
-            options.get<string>("description"), options.get<utils::Verbosity>("verbosity"));
+            nullptr, scaled_costs_task, options.get<bool>("cache_estimates"),
+            options.get<string>("description"),
+            options.get<utils::Verbosity>("verbosity"));
     }
 };
 

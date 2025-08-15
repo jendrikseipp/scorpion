@@ -42,7 +42,8 @@ class MatchTree {
     int get_state_id(NodeID node_id) const;
 
     bool is_applicable(const AbstractState &src, int op_id) const;
-    bool incoming_operator_only_loops(const AbstractState &state, int op_id) const;
+    bool incoming_operator_only_loops(
+        const AbstractState &state, int op_id) const;
     Matcher get_incoming_matcher(int op_id) const;
     Matcher get_outgoing_matcher(int op_id) const;
     void order_operators(std::vector<int> &operators) const;
@@ -53,8 +54,7 @@ public:
         const std::vector<Facts> &preconditions_by_operator,
         const std::vector<Facts> &postconditions_by_operator,
         const RefinementHierarchy &refinement_hierarchy,
-        const CartesianSets &cartesian_sets,
-        bool debug);
+        const CartesianSets &cartesian_sets, bool debug);
 
     // Update match tree after v has been split for var.
     void split(const AbstractState &v, int var);

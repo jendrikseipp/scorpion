@@ -84,22 +84,17 @@ public:
     }
 };
 
-
 struct StateInfo {
     Cost goal_distance;
     bool dirty_candidate;
     bool dirty;
 
-    StateInfo()
-        : goal_distance(0),
-          dirty_candidate(false),
-          dirty(false) {
+    StateInfo() : goal_distance(0), dirty_candidate(false), dirty(false) {
     }
 };
 static_assert(
     sizeof(StateInfo) == sizeof(Cost) + sizeof(void *),
     "StateInfo has unexpected size");
-
 
 class ShortestPaths {
     static const Cost INF_COSTS;
@@ -120,7 +115,8 @@ class ShortestPaths {
 
     std::deque<StateInfo> states;
 
-    // Store all shortest paths for all states in both directions if use_cache=true.
+    // Store all shortest paths for all states in both directions if
+    // use_cache=true.
     std::deque<Transitions> children;
     std::deque<Transitions> parents;
     int num_parents;
@@ -144,23 +140,17 @@ class ShortestPaths {
 
 public:
     ShortestPaths(
-        const TransitionRewirer &rewirer,
-        const std::vector<int> &costs,
-        int max_cached_parents,
-        const utils::CountdownTimer &timer,
+        const TransitionRewirer &rewirer, const std::vector<int> &costs,
+        int max_cached_parents, const utils::CountdownTimer &timer,
         utils::LogProxy &log);
 
     // Use Dijkstra's algorithm to compute the shortest path tree from scratch.
-    void recompute(
-        const Abstraction &abstraction,
-        const Goals &goals);
+    void recompute(const Abstraction &abstraction, const Goals &goals);
     // Reflect the split of v into v1 and v2.
     void update_incrementally(
         const Abstraction &abstraction, int v, int v1, int v2, int var);
     // Extract solution from shortest path tree.
-    std::unique_ptr<Solution> extract_solution(
-        int init_id,
-        const Goals &goals);
+    std::unique_ptr<Solution> extract_solution(int init_id, const Goals &goals);
 
     std::vector<int> get_goal_distances() const;
 
@@ -177,8 +167,7 @@ public:
 };
 
 extern std::vector<int> compute_goal_distances(
-    const Abstraction &abstraction,
-    const std::vector<int> &costs,
+    const Abstraction &abstraction, const std::vector<int> &costs,
     const std::unordered_set<int> &goal_ids);
 }
 

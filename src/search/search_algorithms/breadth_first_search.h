@@ -13,9 +13,7 @@ struct Parent {
     StateID state_id;
     OperatorID op_id;
 
-    Parent()
-        : state_id(StateID::no_state),
-          op_id(OperatorID::no_operator) {
+    Parent() : state_id(StateID::no_state), op_id(OperatorID::no_operator) {
     }
 
     Parent(StateID state_id, OperatorID op_id)
@@ -44,7 +42,8 @@ protected:
 
 public:
     BreadthFirstSearch(
-        bool single_plan, bool write_plan, const std::shared_ptr<PruningMethod> &pruning,
+        bool single_plan, bool write_plan,
+        const std::shared_ptr<PruningMethod> &pruning,
         const std::string &description, utils::Verbosity verbosity);
 
     virtual void save_plan_if_necessary() override;

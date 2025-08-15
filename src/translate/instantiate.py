@@ -4,11 +4,11 @@
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-import build_model
-import options
-import pddl_to_prolog
-import pddl
-import timers
+from translate import build_model
+from translate import pddl_to_prolog
+from translate import pddl
+from translate import timers
+from translate.options import get_options
 
 STATIC_ATOMS_FILE = "static-atoms.txt"
 
@@ -163,14 +163,17 @@ def instantiate(task: pddl.Task, model: Any) -> Tuple[
 def explore(task):
     prog = pddl_to_prolog.translate(task)
     model = build_model.compute_model(prog)
-    if options.dump_static_atoms:
+    if get_options().dump_static_atoms:
         dump_static_atoms(task, model)
     with timers.timing("Completing instantiation"):
         return instantiate(task, model)
 
 
 if __name__ == "__main__":
-    import pddl_parser
+    from translate import pddl_parser
+    from translate.options import set_options
+
+    set_options() # use command line options
     task = pddl_parser.open()
     relaxed_reachable, atoms, actions, goals, axioms, _ = explore(task)
     print("goal relaxed reachable: %s" % relaxed_reachable)
