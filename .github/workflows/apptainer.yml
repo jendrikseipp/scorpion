@@ -1,10 +1,12 @@
 name: Apptainer
-# Run for all pushes to the scorpion branch and for all pull requests.
+# Run for all pushes to the scorpion branch and for all pull requests targeting the scorpion branch.
 on:
   push:
     branches:
       - scorpion
-  pull_request: []
+  pull_request:
+    branches:
+      - scorpion
 
 jobs:
   build-image:
