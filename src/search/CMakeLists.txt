@@ -64,7 +64,7 @@ if(GIT_REVISION_EXITCODE EQUAL 0)
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if(NOT GIT_DIFF_EXITCODE EQUAL 0)
-        message(WARNING "Building from a repository with uncommited changes.")
+        message(NOTICE "Building from a repository with uncommited changes.")
         set(GIT_REVISION "${GIT_REVISION}-dirty")
     endif()
 else()
