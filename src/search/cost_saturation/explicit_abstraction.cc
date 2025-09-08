@@ -78,7 +78,6 @@ ExplicitAbstraction::ExplicitAbstraction(
             [target](const Successor &succ) { return succ.state != target; }));
     }
 #endif
-    dump();
 }
 
 vector<int> ExplicitAbstraction::compute_goal_distances(
