@@ -130,9 +130,6 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
   [h²-preprocessor](https://ojs.aaai.org/index.php/ICAPS/article/view/13708)
   by Vidal Alcázar and Álvaro Torralba that prunes irrelevant operators.
   Pass `--preprocess` to use it.
-- The `--preprocess=CMD` switch allows you to run arbitrary preprocessing
-  commands that transform the SAS+ output from the translator before
-  passing it to the search.
 - Scorpion uses [incremental search for Cartesian abstraction
   refinement](https://ojs.aaai.org/index.php/ICAPS/article/view/6667).
 - Scorpion uses a

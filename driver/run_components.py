@@ -116,16 +116,11 @@ def run_translate(args):
 
 
 def run_preprocess(args):
-    logging.info("Run preprocess (%s)." % args.preprocess)
+    logging.info("Run preprocess.")
     time_limit = limits.get_time_limit(args.preprocess_time_limit, args.overall_time_limit)
     memory_limit = limits.get_memory_limit(args.preprocess_memory_limit, args.overall_memory_limit)
 
-    if not shutil.which(args.preprocess):
-        preprocessor_name = "preprocess-h2"
-        if args.preprocess != preprocessor_name:
-            sys.exit(f"Error: {args.preprocess} not found. Is it on the PATH?")
-        # Check if executable exists in the "bin" directory.
-        args.preprocess = get_executable(args.build, preprocessor_name)
+    executable = get_executable(args.build, Path("preprocess-h2"))
 
     if "--outfile" in args.preprocess_options:
         returncodes.exit_with_driver_input_error(
@@ -135,7 +130,7 @@ def run_preprocess(args):
     try:
         call.check_call(
             "preprocess",
-            [args.preprocess] + args.preprocess_options,
+            [executable] + args.preprocess_options,
             stdin=args.search_input,
             time_limit=time_limit,
             memory_limit=memory_limit)

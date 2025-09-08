@@ -391,10 +391,9 @@ def parse_args():
         help="run translator component")
     components.add_argument(
         "--preprocess",
-        "--transform-task",  # For backward compatibility.
-        help="preprocess the translator output. Accepts optional external "
-            "preprocessing program (default: %(const)s)",
-        const="preprocess-h2", nargs="?")
+        "--transform-task",  # Legacy alias retained.
+        action="store_true",
+        help="preprocess the translator output (uses built-in 'preprocess-h2')")
     components.add_argument(
         "--search", action="store_true",
         help="run search component")
@@ -476,27 +475,6 @@ def parse_args():
     # --help" passes "--help" to the search code.
 
     args = parser.parse_args()
-
-    # Backwards compatibility fix:
-    # Historically, users called the driver with "--preprocess" as a simple
-    # flag followed by the (domain) input file, e.g.:
-    #   fast-downward.py --preprocess domain.pddl problem.pddl ...
-    # After introducing an optional PROGRAM argument for --preprocess
-    # (nargs="?"), argparse started interpreting the first filename
-    # (e.g. domain.pddl) as the PROGRAM argument, which removed it from the
-    # list of input files and forced users to write
-    #   --preprocess preprocess-h2 domain.pddl problem.pddl
-    # Detect this situation heuristically and repair it by restoring the
-    # filename and setting the preprocessor program to the default.
-    if args.preprocess and args.preprocess != "preprocess-h2":
-        token = args.preprocess
-        # Heuristic: treat captured token as misparsed filename if it looks
-        # like a common input file (PDDL or SAS) and exists as a regular file.
-        if token.endswith(('.pddl', '.sas')) and Path(token).is_file():
-            # Restore filename order (put back in front of remaining args).
-            args.planner_args = [token] + args.planner_args
-            # Reset to default program name.
-            args.preprocess = "preprocess-h2"
 
     if args.sas_file:
         args.keep_sas_file = True
