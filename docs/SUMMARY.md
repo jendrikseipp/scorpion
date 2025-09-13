@@ -1,6 +1,6 @@
 This file controls the navigation below "documentation" on the website.
 
-  -  [README](README.md)
+  -  [README](readme.md)
   -  [Build instructions](BUILD.md)
   -  [Search plugins](search/)
   -  [Syntax for search plugins](search-plugin-syntax.md)
