@@ -141,6 +141,36 @@ void SearchSpace::trace_path(
     reverse(path.begin(), path.end());
 }
 
+vector<State> SearchSpace::trace_states(const State &goal_state) const {
+    vector<State> states;
+    State current_state = goal_state;
+    assert(current_state.get_registry() == &state_registry);
+    // Collect states from goal to initial by following parent_state_id.
+    for (;;) {
+        const SearchNodeInfo &info = search_node_infos[current_state];
+        states.push_back(current_state);
+        if (info.parent_state_id == StateID::no_state) {
+            break;
+        }
+        current_state = state_registry.lookup_state(info.parent_state_id);
+    }
+    // We collected in reverse; put in start->...->goal order.
+    reverse(states.begin(), states.end());
+    return states;
+}
+
+bool SearchSpace::verify_creating_operators(
+    const vector<State> &states, const vector<OperatorID> &plan) const {
+    if (states.size() != plan.size() + 1)
+        return false;
+    for (size_t i = 0; i < plan.size(); ++i) {
+        const SearchNodeInfo &info = search_node_infos[states[i + 1]];
+        if (info.creating_operator != plan[i])
+            return false;
+    }
+    return true;
+}
+
 void SearchSpace::dump(const TaskProxy &task_proxy) const {
     OperatorsProxy operators = task_proxy.get_operators();
     for (StateID id : state_registry) {
