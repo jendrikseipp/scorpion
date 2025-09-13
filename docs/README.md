@@ -3,8 +3,6 @@
 This website contains the documentation for the Scorpion planner. Since Scorpion is based on [Fast Downward](https://fast-downward.org/), the documentation is mostly the same as the Fast Downward documentation.
 
   -  The [README](readme.md) shows how to run Scorpion and lists the differences to Fast Downward.
-  -  [Planner usage](planner-usage.md) explains ways of invoking the
-     planner. For setting up the planner see [Getting started](quick-start.md).
   -  [Search plugins](search/index.md) documents the different ingredients for the
      search configuration, such as [search algorithms](search/SearchAlgorithm.md) and [heuristics](search/Evaluator.md).
   -  [Syntax for search plugins](search-plugin-syntax.md) defines the syntax for configuring the search

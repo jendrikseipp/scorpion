@@ -2,7 +2,6 @@ This file controls the navigation below "documentation" on the website.
 
   -  [README](README.md)
   -  [Build instructions](BUILD.md)
-  -  [Planner usage](planner-usage.md)
   -  [Search plugins](search/)
   -  [Syntax for search plugins](search-plugin-syntax.md)
   -  [Exit codes](exit-codes.md)
