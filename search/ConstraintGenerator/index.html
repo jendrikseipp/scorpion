@@ -214,7 +214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../readme/" class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -252,11 +252,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pddl-support/" class="md-nav__link">
+      <a href="../../planner-usage/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    PDDL support
+    Planner usage
   </span>
   
 
@@ -844,6 +844,25 @@
   
   
     <li class="md-nav__item">
+      <a href="../../pddl-support/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PDDL support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../translator-output-format/" class="md-nav__link">
         
   
@@ -943,6 +962,7 @@
 
   <h1>ConstraintGenerator</h1>
 
+<p>This page describes different types of constraints and their corresponding generator. Operator-counting constraints are linear constraints that are satisfied by all plans. They are defined over variables that represent the number of times each operator is used.  An operator-counting heuristic minimizes the total cost of used operators subject to a set of such constraints</p>
 <h2 id="delete_relaxation_constraints_from_imai_and_fukunaga">Delete relaxation constraints from Imai and Fukunaga<a class="headerlink" href="#delete_relaxation_constraints_from_imai_and_fukunaga" title="Permanent link">#</a></h2>
 <p>Operator-counting constraints based on the delete relaxation. By default the constraints encode an easy-to-compute relaxation of h^+^. With the right settings, these constraints can be used to compute the optimal delete-relaxation heuristic h^+^ (see example below). For details, see</p>
 <ul>
@@ -957,7 +977,9 @@
 <li><em>use_integer_vars</em> (bool): restrict auxiliary variables to integer values. These variables encode whether operators are used, facts are reached, which operator first achieves which fact, and in which order the operators are used. Restricting them to integers generally improves the heuristic value at the cost of increased runtime.</li>
 </ul>
 <p><strong>Example:</strong> To compute the optimal delete-relaxation heuristic h^+^, use
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>operatorcounting([delete_relaxation_if_constraints(use_time_vars=true, use_integer_vars=true)], use_integer_operator_counts=true))
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>operatorcounting(
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>   [delete_relaxation_if_constraints(use_time_vars=true,use_integer_vars=true)],
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>   use_integer_operator_counts=true)
 </span></code></pre></div></p>
 <p><strong>Note:</strong> For best performance we recommend using the alternative formulation by Rankooh and Rintanen, accessible through the option <code>delete_relaxation_rr_constraints</code>.</p>
 <h2 id="delete_relaxation_constraints_from_rankooh_and_rintanen">Delete relaxation constraints from Rankooh and Rintanen<a class="headerlink" href="#delete_relaxation_constraints_from_rankooh_and_rintanen" title="Permanent link">#</a></h2>
@@ -979,7 +1001,10 @@
 <li><em>use_integer_vars</em> (bool): restrict auxiliary variables to integer values. These variables encode whether facts are reached, which operator first achieves which fact, and (depending on the acyclicity_type) in which order the operators are used. Restricting them to integers generally improves the heuristic value at the cost of increased runtime.</li>
 </ul>
 <p><strong>Example:</strong> To compute the optimal delete-relaxation heuristic h^+^, useinteger variables and some way of enforcing acyclicity (other than "none"). For example
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>operatorcounting([delete_relaxation_rr_constraints(acyclicity_type=vertex_elimination, use_integer_vars=true)], use_integer_operator_counts=true))
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>operatorcounting(
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>   [delete_relaxation_rr_constraints(acyclicity_type=vertex_elimination,
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>                                     use_integer_vars=true)],
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>   use_integer_operator_counts=true)
 </span></code></pre></div></p>
 <p><strong>Note:</strong> While the delete-relaxation constraints by Imai and Fukunaga (accessible via option <code>delete_relaxation_if_constraints</code>) serve a similar purpose to the constraints implemented here, we recommend using this formulation as it can generally be solved more efficiently, in particular in case of the h^+^ configuration, and some relaxations offer tighter bounds.</p>
 <h2 id="lm-cut_landmark_constraints">LM-cut landmark constraints<a class="headerlink" href="#lm-cut_landmark_constraints" title="Permanent link">#</a></h2>

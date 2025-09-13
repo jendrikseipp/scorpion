@@ -214,7 +214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../readme/" class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -252,11 +252,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pddl-support/" class="md-nav__link">
+      <a href="../../planner-usage/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    PDDL support
+    Planner usage
   </span>
   
 
@@ -959,6 +959,25 @@
   
   
     <li class="md-nav__item">
+      <a href="../../pddl-support/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PDDL support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../translator-output-format/" class="md-nav__link">
         
   
@@ -1173,6 +1192,7 @@
 
   <h1>SearchAlgorithm</h1>
 
+<p>This page describes the supported search algorithms.</p>
 <h2 id="a_search_eager">A* search (eager)<a class="headerlink" href="#a_search_eager" title="Permanent link">#</a></h2>
 <p>A* is a special case of eager best first search that uses g+h as f-function. We break ties using the evaluator. Closed nodes are re-opened.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>astar(eval, lazy_evaluator=&lt;none&gt;, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, description=&quot;astar&quot;, verbosity=normal)
@@ -1200,12 +1220,12 @@
 </ul>
 <p><strong>lazy_evaluator:</strong> When a state s is taken out of the open list, the lazy evaluator h re-evaluates s. If h(s) changes (for example because h is path-dependent), s is not expanded, but instead reinserted into the open list. This option is currently only present for the A* algorithm.</p>
 <h3 id="equivalent_statements_using_general_eager_search">Equivalent statements using general eager search<a class="headerlink" href="#equivalent_statements_using_general_eager_search" title="Permanent link">#</a></h3>
-<div class="language-text highlight"><pre><span></span><code>--search astar(evaluator)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;astar(evaluator)&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h=evaluator
---search eager(tiebreaking([sum([g(), h]), h], unsafe_pruning=false),
-               reopen_closed=true, f_eval=sum([g(), h]))
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h, evaluator, 
+              eager(tiebreaking([sum([g(), h]), h], unsafe_pruning=false),
+                    reopen_closed=true, f_eval=sum([g(), h])))&quot;
 </code></pre></div>
 <h2 id="breadth-first_search">Breadth-first search<a class="headerlink" href="#breadth-first_search" title="Permanent link">#</a></h2>
 <p>Breadth-first graph search.
@@ -1305,35 +1325,32 @@
 <p><strong>Open list:</strong> In most cases, eager greedy best first search uses an alternation open list with one queue for each evaluator. If preferred operator evaluators are used, it adds an extra queue for each of these evaluators that includes only the nodes that are generated with a preferred operator. If only one evaluator and no preferred operator evaluator is used, the search does not use an alternation open list but a standard open list with only one queue.</p>
 <p><strong>Closed nodes:</strong> Closed node are not re-opened</p>
 <h3 id="equivalent_statements_using_general_eager_search_1">Equivalent statements using general eager search<a class="headerlink" href="#equivalent_statements_using_general_eager_search_1" title="Permanent link">#</a></h3>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h2=eval2
---search eager_greedy([eval1, h2], preferred=[h2], boost=100)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h2, eval2, eager_greedy([eval1, h2], preferred=[h2], boost=100))&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h1=eval1 --heuristic h2=eval2
---search eager(alt([single(h1), single(h1, pref_only=true), single(h2), 
-                    single(h2, pref_only=true)], boost=100),
-               preferred=[h2])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h1, eval1, let(h2, eval2,
+              eager(alt([single(h1), single(h1, pref_only=true), 
+                         single(h2), single(h2, pref_only=true)], boost=100),
+                    preferred=[h2])))&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--search eager_greedy([eval1, eval2])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;eager_greedy([eval1, eval2])&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search eager(alt([single(eval1), single(eval2)]))
+<div class="language-text highlight"><pre><span></span><code>--search &quot;eager(alt([single(eval1), single(eval2)]))&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--evaluator h1=eval1
---search eager_greedy([h1], preferred=[h1])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h1, eval1, eager_greedy([h1], preferred=[h1]))&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h1=eval1
---search eager(alt([single(h1), single(h1, pref_only=true)]),
-               preferred=[h1])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h1, eval1, eager(alt([single(h1), single(h1, pref_only=true)]),
+                               preferred=[h1]))&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--search eager_greedy([eval1])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;eager_greedy([eval1])&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search eager(single(eval1))
+<div class="language-text highlight"><pre><span></span><code>--search &quot;eager(single(eval1))&quot;
 </code></pre></div>
 <h2 id="eager_weighted_a_search">Eager weighted A* search<a class="headerlink" href="#eager_weighted_a_search" title="Permanent link">#</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>eager_wastar(evals, preferred=[], reopen_closed=true, boost=0, w=1, pruning=null(), cost_type=normal, bound=infinity, max_time=infinity, description=&quot;eager_wastar&quot;, verbosity=normal)
@@ -1364,10 +1381,10 @@
 </ul>
 <p><strong>Open lists and equivalent statements using general eager search:</strong> See corresponding notes for "(Weighted) A* search (lazy)"</p>
 <p><strong>Note:</strong> Eager weighted A<em> search uses an alternation open list while A</em> search uses a tie-breaking open list. Consequently, </p>
-<div class="language-text highlight"><pre><span></span><code>--search eager_wastar([h()], w=1)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;eager_wastar([h()], w=1)&quot;
 </code></pre></div>
 <p>is <strong>not</strong> equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search astar(h())
+<div class="language-text highlight"><pre><span></span><code>--search &quot;astar(h())&quot;
 </code></pre></div>
 <h2 id="lazy_enforced_hill-climbing">Lazy enforced hill-climbing<a class="headerlink" href="#lazy_enforced_hill-climbing" title="Permanent link">#</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ehc(h, preferred_usage=prune_by_preferred, preferred=[], cost_type=normal, bound=infinity, max_time=infinity, description=&quot;ehc&quot;, verbosity=normal)
@@ -1473,11 +1490,15 @@
 </ul>
 <p><strong>Note 1:</strong> We don't cache heuristic values between search iterations at the moment. If you perform a LAMA-style iterative search, heuristic values and other per-state information will be computed multiple times.</p>
 <p><strong>Note 2:</strong> The configuration</p>
-<div class="language-text highlight"><pre><span></span><code>--search &quot;iterated([lazy_wastar([ipdb()],w=10), lazy_wastar([ipdb()],w=5), lazy_wastar([ipdb()],w=3), lazy_wastar([ipdb()],w=2), lazy_wastar([ipdb()],w=1)])&quot;
+<div class="language-text highlight"><pre><span></span><code>--search &quot;iterated([lazy_wastar([ipdb()],w=10), lazy_wastar([ipdb()],w=5),
+                    lazy_wastar([ipdb()],w=3), lazy_wastar([ipdb()],w=2),
+                    lazy_wastar([ipdb()],w=1)])&quot;
 </code></pre></div>
 <p>would perform the preprocessing phase of the ipdb heuristic 5 times (once before each iteration).</p>
 <p>To avoid this, use heuristic predefinition, which avoids duplicate preprocessing, as follows:</p>
-<div class="language-text highlight"><pre><span></span><code>&quot;let(h,ipdb(),iterated([lazy_wastar([h],w=10), lazy_wastar([h],w=5), lazy_wastar([h],w=3), lazy_wastar([h],w=2), lazy_wastar([h],w=1)]))&quot;
+<div class="language-text highlight"><pre><span></span><code>&quot;let(h,ipdb(),iterated([lazy_wastar([h],w=10), lazy_wastar([h],w=5),
+                        lazy_wastar([h],w=3), lazy_wastar([h],w=2),
+                        lazy_wastar([h],w=1)]))&quot;
 </code></pre></div>
 <h2 id="iterated_width_search">Iterated width search<a class="headerlink" href="#iterated_width_search" title="Permanent link">#</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>iw(width=2, cost_type=normal, bound=infinity, max_time=infinity, description=&quot;iw&quot;, verbosity=normal)
@@ -1560,35 +1581,33 @@
 <p><strong>Successor ordering:</strong> When using randomize_successors=true and preferred_successors_first=true, randomization happens before preferred operators are moved to the front.</p>
 <p><strong>Open lists:</strong> In most cases, lazy greedy best first search uses an alternation open list with one queue for each evaluator. If preferred operator evaluators are used, it adds an extra queue for each of these evaluators that includes only the nodes that are generated with a preferred operator. If only one evaluator and no preferred operator evaluator is used, the search does not use an alternation open list but a standard open list with only one queue.</p>
 <h3 id="equivalent_statements_using_general_lazy_search">Equivalent statements using general lazy search<a class="headerlink" href="#equivalent_statements_using_general_lazy_search" title="Permanent link">#</a></h3>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h2=eval2
---search lazy_greedy([eval1, h2], preferred=[h2], boost=100)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h2, eval2, lazy_greedy([eval1, h2], preferred=[h2], boost=100))&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h1=eval1 --heuristic h2=eval2
---search lazy(alt([single(h1), single(h1, pref_only=true), single(h2),
-                  single(h2, pref_only=true)], boost=100),
-              preferred=[h2])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h1, eval1, let(h2, eval2,
+              lazy(alt([single(h1), single(h1, pref_only=true),
+                        single(h2), single(h2, pref_only=true)], boost=100),
+                   preferred=[h2])))&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--search lazy_greedy([eval1, eval2], boost=100)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy_greedy([eval1, eval2], boost=100)&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search lazy(alt([single(eval1), single(eval2)], boost=100))
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy(alt([single(eval1), single(eval2)], boost=100))&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--evaluator h1=eval1
---search lazy_greedy([h1], preferred=[h1])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h1, eval1, lazy_greedy([h1], preferred=[h1]))&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h1=eval1
---search lazy(alt([single(h1), single(h1, pref_only=true)], boost=1000),
-              preferred=[h1])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h1, eval1,
+              lazy(alt([single(h1), single(h1, pref_only=true)], boost=1000),
+                   preferred=[h1]))&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--search lazy_greedy([eval1])
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy_greedy([eval1])&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search lazy(single(eval1))
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy(single(eval1))&quot;
 </code></pre></div>
 <h2 id="weighted_a_search_lazy">(Weighted) A* search (lazy)<a class="headerlink" href="#weighted_a_search_lazy" title="Permanent link">#</a></h2>
 <p>Weighted A* is a special case of lazy best first search.
@@ -1623,41 +1642,38 @@
 <p><strong>Successor ordering:</strong> When using randomize_successors=true and preferred_successors_first=true, randomization happens before preferred operators are moved to the front.</p>
 <p><strong>Open lists:</strong> In the general case, it uses an alternation open list with one queue for each evaluator h that ranks the nodes by g + w * h. If preferred operator evaluators are used, it adds for each of the evaluators another such queue that only inserts nodes that are generated by preferred operators. In the special case with only one evaluator and no preferred operator evaluators, it uses a single queue that is ranked by g + w * h. </p>
 <h3 id="equivalent_statements_using_general_lazy_search_1">Equivalent statements using general lazy search<a class="headerlink" href="#equivalent_statements_using_general_lazy_search_1" title="Permanent link">#</a></h3>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h1=eval1
---search lazy_wastar([h1, eval2], w=2, preferred=h1,
-                     bound=100, boost=500)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h1, eval1,
+              lazy_wastar([h1, eval2], w=2, preferred=h1, bound=100, boost=500))&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--evaluator h1=eval1 --heuristic h2=eval2
---search lazy(alt([single(sum([g(), weight(h1, 2)])),
-                   single(sum([g(), weight(h1, 2)]), pref_only=true),
-                   single(sum([g(), weight(h2, 2)])),
-                   single(sum([g(), weight(h2, 2)]), pref_only=true)],
-                  boost=500),
-              preferred=h1, reopen_closed=true, bound=100)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;let(h1, eval1, let(h2, eval2,
+              lazy(alt([single(sum([g(), weight(h1, 2)])),
+                        single(sum([g(), weight(h1, 2)]), pref_only=true),
+                        single(sum([g(), weight(h2, 2)])),
+                        single(sum([g(), weight(h2, 2)]), pref_only=true)],
+                       boost=500),
+                    preferred=h1, reopen_closed=true, bound=100)))&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--search lazy_wastar([eval1, eval2], w=2, bound=100)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy_wastar([eval1, eval2], w=2, bound=100)&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search lazy(alt([single(sum([g(), weight(eval1, 2)])),
-                   single(sum([g(), weight(eval2, 2)]))],
-                  boost=1000),
-              reopen_closed=true, bound=100)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy(alt([single(sum([g(), weight(eval1, 2)])),
+                    single(sum([g(), weight(eval2, 2)]))], boost=1000),
+               reopen_closed=true, bound=100)&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--search lazy_wastar([eval1, eval2], bound=100, boost=0)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy_wastar([eval1, eval2], bound=100, boost=0)&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search lazy(alt([single(sum([g(), eval1])),
-                   single(sum([g(), eval2]))])
-              reopen_closed=true, bound=100)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy(alt([single(sum([g(), eval1])), single(sum([g(), eval2]))])
+               reopen_closed=true, bound=100)&quot;
 </code></pre></div>
 <hr />
-<div class="language-text highlight"><pre><span></span><code>--search lazy_wastar(eval1, w=2)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy_wastar(eval1, w=2)&quot;
 </code></pre></div>
 <p>is equivalent to</p>
-<div class="language-text highlight"><pre><span></span><code>--search lazy(single(sum([g(), weight(eval1, 2)])), reopen_closed=true)
+<div class="language-text highlight"><pre><span></span><code>--search &quot;lazy(single(sum([g(), weight(eval1, 2)])), reopen_closed=true)&quot;
 </code></pre></div>
 
 

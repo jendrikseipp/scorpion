@@ -214,7 +214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../readme/" class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -252,11 +252,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pddl-support/" class="md-nav__link">
+      <a href="../../planner-usage/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    PDDL support
+    Planner usage
   </span>
   
 
@@ -837,6 +837,25 @@
   
   
     <li class="md-nav__item">
+      <a href="../../pddl-support/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PDDL support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../translator-output-format/" class="md-nav__link">
         
   
@@ -940,7 +959,17 @@
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dfp()
 </span></code></pre></div>
 <p><strong>Note:</strong> To obtain the configurations called DFP-B-50K described in the paper, use the following configuration of the merge-and-shrink heuristic and adapt the tie-breaking criteria of <code>total_order</code> as desired:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>merge_and_shrink(merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=true)])),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>merge_and_shrink(
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>   merge_strategy=merge_stateless(
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>       merge_selector=score_based_filtering(
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>           scoring_functions=[goal_relevance,dfp,
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>                              total_order(atomic_ts_order=reverse_level,
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>                                          product_ts_order=new_to_old,
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>                                          atomic_before_product=true)])),
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>   shrink_strategy=shrink_bisimulation(greedy=false),
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>   label_reduction=exact(before_shrinking=true, before_merging=false),
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>   max_states=50000,
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>   threshold_before_merge=1)
 </span></code></pre></div></p>
 <h2 id="goal_relevance_scoring">Goal relevance scoring<a class="headerlink" href="#goal_relevance_scoring" title="Permanent link">#</a></h2>
 <p>This scoring function assigns a merge candidate a value of 0 iff at least one of the two transition systems of the merge candidate is goal relevant in the sense that there is an abstract non-goal state. All other candidates get a score of positive infinity.
@@ -963,7 +992,19 @@
 <li><em>use_caching</em> (bool): Cache scores for merge candidates. IMPORTANT! This only works under the assumption that the merge-and-shrink algorithm only uses exact label reduction and does not (non-exactly) shrink factors other than those being merged in the current iteration. In this setting, the MIASM score of a merge candidate is constant over merge-and-shrink iterations. If caching is enabled, only the scores for the new merge candidates need to be computed.</li>
 </ul>
 <p><strong>Note:</strong> To obtain the configurations called dyn-MIASM described in the paper, use the following configuration of the merge-and-shrink heuristic and adapt the tie-breaking criteria of <code>total_order</code> as desired:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>merge_and_shrink(merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=50000,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=true)])),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>merge_and_shrink(
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>   merge_strategy=merge_stateless(
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>       merge_selector=score_based_filtering(
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>           scoring_functions=[
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>               sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>                        max_states=50000,threshold_before_merge=1),
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>               total_order(atomic_ts_order=reverse_level,
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>                           product_ts_order=new_to_old,
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>                           atomic_before_product=true)])),
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>   shrink_strategy=shrink_bisimulation(greedy=false),
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>   label_reduction=exact(before_shrinking=true,before_merging=false),
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>   max_states=50000,
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>   threshold_before_merge=1)
 </span></code></pre></div></p>
 <p><strong>Note:</strong> Unless you know what you are doing, we recommend using the same options related to shrinking for <code>sf_miasm</code> as for <code>merge_and_shrink</code>, i.e. the options <code>shrink_strategy</code>, <code>max_states</code>, and <code>threshold_before_merge</code> should be set identically. Furthermore, as this scoring function maximizes the amount of possible pruning, merge-and-shrink should be configured to use full pruning, i.e. <code>prune_unreachable_states=true</code> and <code>prune_irrelevant_states=true</code> (the default).</p>
 <h2 id="single_random">Single random<a class="headerlink" href="#single_random" title="Permanent link">#</a></h2>

@@ -65,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#goals" class="md-skip">
+        <a href="#abstraction_by_goals" class="md-skip">
           Skip to content
         </a>
       
@@ -214,7 +214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../readme/" class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -252,11 +252,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pddl-support/" class="md-nav__link">
+      <a href="../../planner-usage/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    PDDL support
+    Planner usage
   </span>
   
 
@@ -743,22 +743,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#goals" class="md-nav__link">
-    goals
+  <a href="#abstraction_by_goals" class="md-nav__link">
+    Abstraction by goals
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#landmarks" class="md-nav__link">
-    landmarks
+  <a href="#abstraction_by_landmarks" class="md-nav__link">
+    Abstraction by landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#original" class="md-nav__link">
-    original
+  <a href="#no_abstraction" class="md-nav__link">
+    No abstraction
   </a>
   
 </li>
@@ -823,6 +823,25 @@
   
   
     <li class="md-nav__item">
+      <a href="../../pddl-support/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PDDL support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../translator-output-format/" class="md-nav__link">
         
   
@@ -861,22 +880,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#goals" class="md-nav__link">
-    goals
+  <a href="#abstraction_by_goals" class="md-nav__link">
+    Abstraction by goals
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#landmarks" class="md-nav__link">
-    landmarks
+  <a href="#abstraction_by_landmarks" class="md-nav__link">
+    Abstraction by landmarks
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#original" class="md-nav__link">
-    original
+  <a href="#no_abstraction" class="md-nav__link">
+    No abstraction
   </a>
   
 </li>
@@ -901,10 +920,11 @@
 
   <h1>SubtaskGenerator</h1>
 
-<p>Subtask generator (used by the CEGAR heuristic).</p>
-<h2 id="goals">goals<a class="headerlink" href="#goals" title="Permanent link">#</a></h2>
+<p>This page describes different subtask (abstraction) generators. They are used by the <a href="../Evaluator/#additive_cartesian_cegar_heuristic">additive cartesian cegar heuristic</a> .</p>
+<h2 id="abstraction_by_goals">Abstraction by goals<a class="headerlink" href="#abstraction_by_goals" title="Permanent link">#</a></h2>
+<p>For each goal atom of the original task one subproblem is generated having only the atom as its goal.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>goals(order=hadd_down, random_seed=-1)
-</span></code></pre></div>
+</span></code></pre></div></p>
 <ul>
 <li><em>order</em> ({original, random, hadd_up, hadd_down}): ordering of goal or landmark facts<ul>
 <li><code>original</code>: according to their (internal) variable index</li>
@@ -915,9 +935,10 @@
 </li>
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 </ul>
-<h2 id="landmarks">landmarks<a class="headerlink" href="#landmarks" title="Permanent link">#</a></h2>
+<h2 id="abstraction_by_landmarks">Abstraction by landmarks<a class="headerlink" href="#abstraction_by_landmarks" title="Permanent link">#</a></h2>
+<p>For each fact landmark of the delete relaxation of the original task one subproblem is generated having only the landmark as goal. This is a generalization of abstractions by goals.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>landmarks(order=hadd_down, random_seed=-1, combine_facts=true)
-</span></code></pre></div>
+</span></code></pre></div></p>
 <ul>
 <li><em>order</em> ({original, random, hadd_up, hadd_down}): ordering of goal or landmark facts<ul>
 <li><code>original</code>: according to their (internal) variable index</li>
@@ -929,9 +950,10 @@
 <li><em>random_seed</em> (int [-1, infinity]): Set to -1 (default) to use the global random number generator. Set to any other value to use a local random number generator with the given seed.</li>
 <li><em>combine_facts</em> (bool): combine landmark facts with domain abstraction</li>
 </ul>
-<h2 id="original">original<a class="headerlink" href="#original" title="Permanent link">#</a></h2>
+<h2 id="no_abstraction">No abstraction<a class="headerlink" href="#no_abstraction" title="Permanent link">#</a></h2>
+<p>Copies of the original task are used as subproblems.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>original(copies=1)
-</span></code></pre></div>
+</span></code></pre></div></p>
 <ul>
 <li><em>copies</em> (int [1, infinity]): number of task copies</li>
 </ul>

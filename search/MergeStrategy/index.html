@@ -214,7 +214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../readme/" class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -252,11 +252,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pddl-support/" class="md-nav__link">
+      <a href="../../planner-usage/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    PDDL support
+    Planner usage
   </span>
   
 
@@ -823,6 +823,25 @@
   
   
     <li class="md-nav__item">
+      <a href="../../pddl-support/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PDDL support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../translator-output-format/" class="md-nav__link">
         
   
@@ -961,10 +980,15 @@
 </li>
 </ul>
 <p><strong>Note:</strong> Examples include the DFP merge strategy, which can be obtained using:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order(&lt;order_option&gt;))]))
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>merge_strategy=merge_stateless(
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>   merge_selector=score_based_filtering(
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>       scoring_functions=[goal_relevance,dfp,total_order(&lt;order_option&gt;))]))
 </span></code></pre></div>
 and the (dynamic/score-based) MIASM strategy, which can be obtained using:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[sf_miasm(&lt;shrinking_options&gt;),total_order(&lt;order_option&gt;)]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>merge_strategy=merge_stateless(
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>   merge_selector=score_based_filtering(
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>       scoring_functions=[sf_miasm(&lt;shrinking_options&gt;),
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                          total_order(&lt;order_option&gt;)]))
 </span></code></pre></div></p>
 
 

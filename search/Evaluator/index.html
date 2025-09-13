@@ -214,7 +214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../readme/" class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -252,11 +252,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pddl-support/" class="md-nav__link">
+      <a href="../../planner-usage/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    PDDL support
+    Planner usage
   </span>
   
 
@@ -569,10 +569,10 @@
       
         <li class="md-nav__item">
   <a href="#basic_evaluators" class="md-nav__link">
-    Basic Evaluators
+    Basic evaluators
   </a>
   
-    <nav class="md-nav" aria-label="Basic Evaluators">
+    <nav class="md-nav" aria-label="Basic evaluators">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -693,10 +693,10 @@
       
         <li class="md-nav__item">
   <a href="#pattern_database_heuristics" class="md-nav__link">
-    Pattern Database Heuristics
+    Pattern database heuristics
   </a>
   
-    <nav class="md-nav" aria-label="Pattern Database Heuristics">
+    <nav class="md-nav" aria-label="Pattern database heuristics">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -716,7 +716,7 @@
         
           <li class="md-nav__item">
   <a href="#implementation_notes" class="md-nav__link">
-    Implementation Notes
+    Implementation notes
   </a>
   
 </li>
@@ -747,10 +747,10 @@
       
         <li class="md-nav__item">
   <a href="#potential_heuristics" class="md-nav__link">
-    Potential Heuristics
+    Potential heuristics
   </a>
   
-    <nav class="md-nav" aria-label="Potential Heuristics">
+    <nav class="md-nav" aria-label="Potential heuristics">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1126,6 +1126,25 @@
   
   
     <li class="md-nav__item">
+      <a href="../../pddl-support/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PDDL support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../translator-output-format/" class="md-nav__link">
         
   
@@ -1270,10 +1289,10 @@
       
         <li class="md-nav__item">
   <a href="#basic_evaluators" class="md-nav__link">
-    Basic Evaluators
+    Basic evaluators
   </a>
   
-    <nav class="md-nav" aria-label="Basic Evaluators">
+    <nav class="md-nav" aria-label="Basic evaluators">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1394,10 +1413,10 @@
       
         <li class="md-nav__item">
   <a href="#pattern_database_heuristics" class="md-nav__link">
-    Pattern Database Heuristics
+    Pattern database heuristics
   </a>
   
-    <nav class="md-nav" aria-label="Pattern Database Heuristics">
+    <nav class="md-nav" aria-label="Pattern database heuristics">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1417,7 +1436,7 @@
         
           <li class="md-nav__item">
   <a href="#implementation_notes" class="md-nav__link">
-    Implementation Notes
+    Implementation notes
   </a>
   
 </li>
@@ -1448,10 +1467,10 @@
       
         <li class="md-nav__item">
   <a href="#potential_heuristics" class="md-nav__link">
-    Potential Heuristics
+    Potential heuristics
   </a>
   
-    <nav class="md-nav" aria-label="Potential Heuristics">
+    <nav class="md-nav" aria-label="Potential heuristics">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1505,15 +1524,15 @@
   
 
 
-<p>An evaluator specification is either a newly created evaluator instance or an evaluator that has been defined previously. This page describes how one can specify a new evaluator instance. For re-using evaluators, see OptionSyntax#Evaluator_Predefinitions.</p>
-<p>If the evaluator is a heuristic, definitions of <em>properties</em> in the descriptions below:</p>
+<p>An evaluator specification is either a newly created evaluator instance or an evaluator that has been <a href="../../search-plugin-syntax/#variables_as_parameters">defined previously</a>. This page describes how one can specify a new evaluator instance.</p>
+<p>For evaluators that are heuristic, it is stated which of the following properties hold:</p>
 <ul>
 <li><strong>admissible:</strong> h(s) &lt;= h*(s) for all states s</li>
 <li><strong>consistent:</strong> h(s) &lt;= c(s, s') + h(s') for all states s connected to states s' by an action with cost c(s, s')</li>
 <li><strong>safe:</strong> h(s) = infinity is only true for states with h*(s) = infinity</li>
-<li><strong>preferred operators:</strong> this heuristic identifies preferred operators</li>
+<li><strong>preferred operators:</strong> this heuristic identifies preferred operators </li>
 </ul>
-<p>This feature type can be bound to variables using <code>let(variable_name, variable_definition, expression)</code> where <code>expression</code> can use <code>variable_name</code>. Predefinitions using <code>--evaluator</code>, <code>--heuristic</code>, and <code>--landmarks</code> are automatically transformed into <code>let</code>-expressions but are deprecated.</p>
+<p>This feature type can be bound to variables using <code>let(variable_name, variable_definition, expression)</code> where <code>expression</code> can use <code>variable_name</code>. Predefinitions using <code>--evaluator</code>, <code>--heuristic</code>, and <code>--landmarks</code> are automatically transformed into <code>let</code>-expressions but are deprecated. (See <a href="../../search-plugin-syntax/#variables_as_parameters">search plugin syntax</a>)</p>
 <h2 id="additive_heuristic">Additive heuristic<a class="headerlink" href="#additive_heuristic" title="Permanent link">#</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>add(axioms=approximate_negative_cycles, transform=no_transform(), cache_estimates=true, description=&quot;add&quot;, verbosity=normal)
 </span></code></pre></div>
@@ -2080,7 +2099,15 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <p><strong>Note:</strong> When pruning unreachable states, admissibility and consistency is only guaranteed for reachable states and transitions between reachable states. While this does not impact regular A* search which will never encounter any unreachable state, it impacts techniques like symmetry-based pruning: a reachable state which is mapped to an unreachable symmetric state (which hence is pruned) would falsely be considered a dead-end and also be pruned, thus violating optimality of the search.</p>
 <p><strong>Note:</strong> When using a time limit on the main loop of the merge-and-shrink algorithm, the heuristic will compute the maximum over all heuristics induced by the remaining factors if terminating the merge-and-shrink algorithm early. Exception: if there is an unsolvable factor, it will be used as the exclusive heuristic since the problem is unsolvable.</p>
 <p><strong>Note:</strong> A currently recommended good configuration uses bisimulation based shrinking, the merge strategy SCC-DFP, and the appropriate label reduction setting (max_states has been altered to be between 10k and 200k in the literature). As merge-and-shrink heuristics can be expensive to compute, we also recommend limiting time by setting <code>main_loop_max_time</code> to a finite value. A sensible value would be half of the time allocated for the planner.
-<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order()])),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50k,threshold_before_merge=1)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>merge_and_shrink(
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>   merge_strategy=merge_sccs(
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>       order_of_sccs=topological,
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>       merge_selector=score_based_filtering(
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>           scoring_functions=[goal_relevance(),dfp(),total_order()])),
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>   shrink_strategy=shrink_bisimulation(greedy=false),
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>   label_reduction=exact(before_shrinking=true,before_merging=false),
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>   max_states=50k,
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>   threshold_before_merge=1)
 </span></code></pre></div></p>
 <p>Supported language features:</p>
 <ul>
@@ -2181,7 +2208,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> no</li>
 </ul>
-<h1 id="basic_evaluators">Basic Evaluators<a class="headerlink" href="#basic_evaluators" title="Permanent link">#</a></h1>
+<h1 id="basic_evaluators">Basic evaluators<a class="headerlink" href="#basic_evaluators" title="Permanent link">#</a></h1>
 <h2 id="constant_evaluator">Constant evaluator<a class="headerlink" href="#constant_evaluator" title="Permanent link">#</a></h2>
 <p>Returns a constant value.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>const(value=1, description=&quot;const&quot;, verbosity=normal)
@@ -2592,7 +2619,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 <li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> no</li>
 </ul>
-<h1 id="pattern_database_heuristics">Pattern Database Heuristics<a class="headerlink" href="#pattern_database_heuristics" title="Permanent link">#</a></h1>
+<h1 id="pattern_database_heuristics">Pattern database heuristics<a class="headerlink" href="#pattern_database_heuristics" title="Permanent link">#</a></h1>
 <h2 id="canonical_pdb">Canonical PDB<a class="headerlink" href="#canonical_pdb" title="Permanent link">#</a></h2>
 <p>The canonical pattern database heuristic is calculated as follows. For a given pattern collection C, the value of the canonical heuristic function is the maximum over all maximal additive subsets A in C, where the value for one subset S in A is the sum of the heuristic values for all patterns in S for a given state.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>cpdbs(patterns=systematic(1), max_time_dominance_pruning=infinity, transform=no_transform(), cache_estimates=true, description=&quot;cpdbs&quot;, verbosity=normal)
@@ -2661,7 +2688,7 @@ Our implementation to compute preferred operators based on landmarks differs fro
 </ul>
 <p><strong>Note:</strong> The pattern collection created by the algorithm will always contain all patterns consisting of a single goal variable, even if this violates the pdb_max_size or collection_max_size limits.</p>
 <p><strong>Note:</strong> This pattern generation method generates patterns optimized for use with the canonical pattern database heuristic.</p>
-<h3 id="implementation_notes">Implementation Notes<a class="headerlink" href="#implementation_notes" title="Permanent link">#</a></h3>
+<h3 id="implementation_notes">Implementation notes<a class="headerlink" href="#implementation_notes" title="Permanent link">#</a></h3>
 <p>The following will very briefly describe the algorithm and explain the differences between the original implementation from 2007 and the new one in Fast Downward.</p>
 <p>The aim of the algorithm is to output a pattern collection for which the <a href="./#canonical_pdb">Canonical PDB</a> yields the best heuristic estimates.</p>
 <p>The algorithm is basically a local search (hill climbing) which searches the "pattern neighbourhood" (starting initially with a pattern for each goal variable) for improving the pattern collection. This is done as described in the section "pattern construction as search" in the paper, except for the corrected search neighbourhood discussed below. For evaluating the neighbourhood, the "counting approximation" as introduced in the paper was implemented. An important difference however consists in the fact that this implementation computes all pattern databases for each candidate pattern rather than using A* search to compute the heuristic values only for the sample states for each pattern.</p>
@@ -2752,7 +2779,7 @@ The search is ended if there is no more improvement (or the improvement is small
 <li><strong>safe:</strong> yes</li>
 <li><strong>preferred operators:</strong> no</li>
 </ul>
-<h1 id="potential_heuristics">Potential Heuristics<a class="headerlink" href="#potential_heuristics" title="Permanent link">#</a></h1>
+<h1 id="potential_heuristics">Potential heuristics<a class="headerlink" href="#potential_heuristics" title="Permanent link">#</a></h1>
 <h2 id="potential_heuristic_optimized_for_all_states">Potential heuristic optimized for all states<a class="headerlink" href="#potential_heuristic_optimized_for_all_states" title="Permanent link">#</a></h2>
 <p>The algorithm is based on</p>
 <ul>
