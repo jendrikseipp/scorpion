@@ -133,44 +133,10 @@ bool SearchAlgorithm::check_goal_and_set_plan(const State &state) {
     if (task_properties::is_goal_state(task_proxy, state)) {
         log << "Solution found!" << endl;
         utils::Timer recompute_timer;
-
-        // 1) Collect states on the path from start to goal without using
-        // creating_operator.
-        vector<State> states_on_path = search_space.trace_states(state);
-
-        // 2) Recompute operators on the path by applicability: for each state
-        // i, generate applicable ops and pick the one that leads to state i+1.
-        Plan plan;
-        OperatorsProxy operators = task_proxy.get_operators();
-        for (size_t i = 0; i + 1 < states_on_path.size(); ++i) {
-            const State &s = states_on_path[i];
-            const State &next = states_on_path[i + 1];
-            vector<OperatorID> applicable_op_ids;
-            successor_generator.generate_applicable_ops(s, applicable_op_ids);
-
-            bool found = false;
-            for (OperatorID op_id : applicable_op_ids) {
-                State succ = state_registry.get_successor_state(s, operators[op_id]);
-                if (succ == next) {
-                    plan.push_back(op_id);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                cerr << "Error: couldn't recompute operator from state "
-                     << s.get_id() << " to next state " << next.get_id() << "." << endl;
-                utils::exit_with(ExitCode::SEARCH_CRITICAL_ERROR);
-            }
-        }
+        Plan plan = search_space.trace_path(
+            task_proxy, successor_generator, state);
         recompute_timer.stop();
         log << "Time for recomputing plan: " << recompute_timer << endl;
-
-        // 3) Verify each step's creating_operator matches the recomputed one.
-        if (!search_space.verify_creating_operators(states_on_path, plan)) {
-            cerr << "Error: recomputed plan does not match stored creating_operator sequence." << endl;
-            utils::exit_with(ExitCode::SEARCH_CRITICAL_ERROR);
-        }
         set_plan(plan);
         return true;
     }
