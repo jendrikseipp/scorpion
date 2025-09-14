@@ -43,23 +43,16 @@ int SearchNode::get_g() const {
     return info.g;
 }
 
-int SearchNode::get_real_g() const {
-    return info.real_g;
-}
-
 void SearchNode::open_initial() {
     assert(info.status == SearchNodeInfo::NEW);
     info.status = SearchNodeInfo::OPEN;
     info.g = 0;
-    info.real_g = 0;
     info.parent_state_id = StateID::no_state;
 }
 
 void SearchNode::update_parent(
-    const SearchNode &parent_node, const OperatorProxy &parent_op,
-    int adjusted_cost) {
+    const SearchNode &parent_node, const OperatorProxy &, int adjusted_cost) {
     info.g = parent_node.info.g + adjusted_cost;
-    info.real_g = parent_node.info.real_g + parent_op.get_cost();
     info.parent_state_id = parent_node.get_state().get_id();
 }
 

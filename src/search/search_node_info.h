@@ -17,13 +17,8 @@ struct SearchNodeInfo {
     unsigned int status : 2;
     int g : 30;
     StateID parent_state_id;
-    int real_g;
 
-    SearchNodeInfo()
-        : status(NEW),
-          g(-1),
-          parent_state_id(StateID::no_state),
-          real_g(-1) {
+    SearchNodeInfo() : status(NEW), g(-1), parent_state_id(StateID::no_state) {
     }
 };
 

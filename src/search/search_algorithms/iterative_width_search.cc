@@ -24,6 +24,7 @@ void IterativeWidthSearch::initialize() {
     statistics.inc_generated();
     SearchNode node = search_space.get_node(initial_state);
     node.open_initial();
+    set_real_g(initial_state, 0);
     open_list.push_back(initial_state.get_id());
     bool novel = is_novel(initial_state);
     utils::unused_variable(novel);
@@ -71,7 +72,7 @@ SearchStatus IterativeWidthSearch::step() {
     successor_generator.generate_applicable_ops(state, applicable_ops);
     for (OperatorID op_id : applicable_ops) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
-        if (node.get_real_g() + op.get_cost() >= bound) {
+        if (!check_bound(state, op.get_cost())) {
             continue;
         }
 
@@ -87,6 +88,7 @@ SearchStatus IterativeWidthSearch::step() {
         SearchNode succ_node = search_space.get_node(succ_state);
         assert(succ_node.is_new());
         succ_node.open_new_node(node, op, get_adjusted_cost(op));
+        set_real_g(state, op, succ_state);
         open_list.push_back(succ_state.get_id());
     }
 

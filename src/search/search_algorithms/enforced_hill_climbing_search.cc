@@ -114,6 +114,7 @@ void EnforcedHillClimbingSearch::initialize() {
 
     SearchNode node = search_space.get_node(current_eval_context.get_state());
     node.open_initial();
+    set_real_g(current_eval_context.get_state(), 0);
 
     current_phase_start_g = 0;
 }
@@ -194,7 +195,7 @@ SearchStatus EnforcedHillClimbingSearch::ehc() {
         int d = parent_node.get_g() - current_phase_start_g +
                 get_adjusted_cost(last_op);
 
-        if (parent_node.get_real_g() + last_op.get_cost() >= bound)
+        if (!check_bound(parent_state, last_op.get_cost()))
             continue;
 
         State state = state_registry.get_successor_state(parent_state, last_op);
@@ -216,6 +217,7 @@ SearchStatus EnforcedHillClimbingSearch::ehc() {
             int h = eval_context.get_evaluator_value(evaluator.get());
             node.open_new_node(
                 parent_node, last_op, get_adjusted_cost(last_op));
+            set_real_g(parent_state, last_op, state);
 
             if (h < current_eval_context.get_evaluator_value(evaluator.get())) {
                 ++num_ehc_phases;
