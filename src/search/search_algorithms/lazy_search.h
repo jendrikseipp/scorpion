@@ -34,7 +34,6 @@ protected:
     StateID current_predecessor_id;
     OperatorID current_operator_id;
     int current_g;
-    int current_real_g;
     EvaluationContext current_eval_context;
 
     virtual void initialize() override;

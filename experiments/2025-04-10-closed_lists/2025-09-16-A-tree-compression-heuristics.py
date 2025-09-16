@@ -75,8 +75,10 @@ state_registries = [
             ]
 heuristics = [
                 ("blind", "blind()"),
-                ("ff", "ff()"),
-                ("scp", "scp_online([projections(sys_scp(max_time=100, max_time_per_restart=10, max_pdb_size=2M, max_collection_size=20M, pattern_type=interesting_non_negative, create_complete_transition_system=true), create_complete_transition_system=true)],saturator=perimstar, max_time=100, max_size=1M, interval=10K, orders=greedy_orders())")
+                ("blind_no_cache", "blind(cache_estimates=false)"),
+             
+            #    ("ff", "ff()"),
+              #  ("scp", "scp_online([projections(sys_scp(max_time=100, max_time_per_restart=10, max_pdb_size=2M, max_collection_size=20M, pattern_type=interesting_non_negative, create_complete_transition_system=true), create_complete_transition_system=true)],saturator=perimstar, max_time=100, max_size=1M, interval=10K, orders=greedy_orders())")
             ]
 CONFIGS = [
     (f"{index:02d}-{h_nick}-{s_nick}", ["--search", f"astar({h}, state_registry={s})"])

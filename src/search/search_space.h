@@ -7,6 +7,8 @@
 
 #include <vector>
 
+#include "task_utils/successor_generator.h"
+
 class OperatorProxy;
 class State;
 class TaskProxy;
@@ -20,8 +22,7 @@ class SearchNode {
     SearchNodeInfo &info;
 
     void update_parent(const SearchNode &parent_node,
-                       const OperatorProxy &parent_op,
-                       int adjusted_cost);
+                       const OperatorProxy &parent_op, int adjusted_cost);
 public:
     SearchNode(const State &state, SearchNodeInfo &info);
 
@@ -33,21 +34,16 @@ public:
     bool is_dead_end() const;
 
     int get_g() const;
-    int get_real_g() const;
 
     void open_initial();
     void open_new_node(const SearchNode &parent_node,
-                       const OperatorProxy &parent_op,
-                       int adjusted_cost);
+                       const OperatorProxy &parent_op, int adjusted_cost);
     void reopen_closed_node(const SearchNode &parent_node,
-                            const OperatorProxy &parent_op,
-                            int adjusted_cost);
+                            const OperatorProxy &parent_op, int adjusted_cost);
     void update_open_node_parent(const SearchNode &parent_node,
-                                 const OperatorProxy &parent_op,
-                                 int adjusted_cost);
+                                 const OperatorProxy &parent_op, int adjusted_cost);
     void update_closed_node_parent(const SearchNode &parent_node,
-                                   const OperatorProxy &parent_op,
-                                   int adjusted_cost);
+                                   const OperatorProxy &parent_op, int adjusted_cost);
     void close();
     void mark_as_dead_end();
 
@@ -64,8 +60,11 @@ public:
     SearchSpace(std::shared_ptr<StateRegistry> &state_registry, utils::LogProxy &log);
 
     SearchNode get_node(const State &state);
-    void trace_path(const State &goal_state,
-                    std::vector<OperatorID> &path) const;
+
+    std::vector<State> trace_states(const State &goal_state) const;
+
+    std::vector<OperatorID> trace_path(const TaskProxy &task_proxy, const successor_generator::SuccessorGenerator &successor_generator, const State &
+                                       goal_state) const;
 
     void dump(const TaskProxy &task_proxy) const;
     void print_statistics() const;

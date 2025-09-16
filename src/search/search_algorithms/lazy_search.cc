@@ -36,7 +36,6 @@ LazySearch::LazySearch(
       current_predecessor_id(StateID::no_state),
       current_operator_id(OperatorID::no_operator),
       current_g(0),
-      current_real_g(0),
       current_eval_context(current_state, 0, true, &statistics) {
     /*
       We initialize current_eval_context in such a way that the initial node
@@ -106,10 +105,9 @@ void LazySearch::generate_successors() {
 
     for (OperatorID op_id : successor_operators) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
-        int new_g = current_g + get_adjusted_cost(op);
-        int new_real_g = current_real_g + op.get_cost();
+        int new_g = current_g + op.get_cost();
         bool is_preferred = preferred_operators.contains(op_id);
-        if (new_real_g < bound) {
+        if (new_g < bound) {
             EvaluationContext new_eval_context(
                 current_eval_context, new_g, is_preferred, nullptr);
             open_list->insert(new_eval_context, make_pair(current_state.get_id(), op_id));
@@ -133,8 +131,7 @@ SearchStatus LazySearch::fetch_next_state() {
     current_state = state_registry->get_successor_state(current_predecessor, current_operator);
 
     SearchNode pred_node = search_space.get_node(current_predecessor);
-    current_g = pred_node.get_g() + get_adjusted_cost(current_operator);
-    current_real_g = pred_node.get_real_g() + current_operator.get_cost();
+    current_g = pred_node.get_g() + current_operator.get_cost();
 
     /*
       Note: We mark the node in current_eval_context as "preferred"
@@ -183,13 +180,10 @@ SearchStatus LazySearch::step() {
                 SearchNode parent_node = search_space.get_node(parent_state);
                 OperatorProxy current_operator = task_proxy.get_operators()[current_operator_id];
                 if (reopen) {
-                    node.reopen_closed_node(parent_node, current_operator,
-                                            get_adjusted_cost(
-                                                current_operator));
+                    node.reopen_closed_node(parent_node, current_operator, get_adjusted_cost(current_operator));
                     statistics.inc_reopened();
                 } else {
-                    node.open_new_node(parent_node, current_operator,
-                                       get_adjusted_cost(current_operator));
+                    node.open_new_node(parent_node, current_operator, get_adjusted_cost(current_operator));
                 }
             }
             node.close();

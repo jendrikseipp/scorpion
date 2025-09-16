@@ -65,9 +65,6 @@ SearchStatus IterativeWidthSearch::step() {
     successor_generator.generate_applicable_ops(state, applicable_ops);
     for (OperatorID op_id : applicable_ops) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
-        if (node.get_real_g() + op.get_cost() >= bound) {
-            continue;
-        }
 
         State succ_state = state_registry->get_successor_state(state, op);
         statistics.inc_generated();
