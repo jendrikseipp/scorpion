@@ -21,7 +21,7 @@ if project.REMOTE:
     ENV = TetralithEnvironment(
         setup=TetralithEnvironment.DEFAULT_SETUP,
         email="olijo92@liu.se",
-        extra_options="#SBATCH -A naiss2024-5-421",
+        extra_options="#SBATCH -A naiss2025-5-382",
         memory_per_cpu="9G",
     )
     TIME_LIMIT = 30 * 60
@@ -87,7 +87,7 @@ CONFIGS = [
         start=1,
     )
 ]
-REV_NICKS = [("valla", "")]
+REV_NICKS = [("reduces_search_node", "")]
 ATTRIBUTES = [
     "coverage",
     "error",
