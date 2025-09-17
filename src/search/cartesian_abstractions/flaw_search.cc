@@ -444,9 +444,10 @@ unique_ptr<Split> FlawSearch::get_single_split(
         StateID state_id = *rng.choose(flawed_state.concrete_states);
 
         if (log.is_at_least_debug()) {
-            vector<OperatorID> trace;
-            search_space->trace_path(
-                state_registry->lookup_state(state_id), trace);
+            vector<OperatorID> trace = search_space->trace_path(
+                task_proxy,
+                successor_generator::g_successor_generators[task_proxy],
+                state_registry->lookup_state(state_id));
             vector<string> operator_names;
             operator_names.reserve(trace.size());
             for (OperatorID op_id : trace) {

@@ -3,6 +3,7 @@
 
 #include "operator_cost.h"
 #include "operator_id.h"
+#include "per_state_information.h"
 #include "plan_manager.h"
 #include "search_progress.h"
 #include "search_space.h"
@@ -60,6 +61,10 @@ protected:
     bool is_unit_cost;
     double max_time;
 
+    // Optional per-state storage for real g-values (sum of real action costs).
+    // Only initialized when bound is finite.
+    std::unique_ptr<PerStateInformation<int>> real_g_values;
+
     virtual void initialize() {
     }
     virtual SearchStatus step() = 0;
@@ -67,6 +72,17 @@ protected:
     void set_plan(const Plan &plan);
     bool check_goal_and_set_plan(const State &state);
     int get_adjusted_cost(const OperatorProxy &op) const;
+
+    // Check if taking an operator with given real cost from the given state
+    // would respect the (exclusive) real-g bound. Returns true if allowed or
+    // if no bound is active.
+    bool check_bound(const State &state, int op_real_cost) const;
+    // Update the per-state real_g value if the store is active; no-op if not.
+    void set_real_g(const State &state, int new_real_g);
+    // Convenience overload.
+    void set_real_g(
+        const State &parent_state, const OperatorProxy &op,
+        const State &child_state);
 public:
     SearchAlgorithm(
         OperatorCost cost_type, int bound, double max_time,
@@ -86,7 +102,14 @@ public:
         return statistics;
     }
     void set_bound(int b) {
+        assert(
+            statistics.get_expanded() == 0 &&
+            "Cannot change bound after search has started.");
         bound = b;
+
+        if (bound != std::numeric_limits<int>::max() && !real_g_values) {
+            real_g_values = std::make_unique<PerStateInformation<int>>(-1);
+        }
     }
     int get_bound() {
         return bound;
@@ -100,7 +123,8 @@ public:
 };
 
 /*
-  Print evaluator values of all evaluators evaluated in the evaluation context.
+  Print evaluator values of all evaluators evaluated in the evaluation
+  context.
 */
 extern void print_initial_evaluator_values(
     const EvaluationContext &eval_context);

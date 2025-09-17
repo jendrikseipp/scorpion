@@ -16,6 +16,7 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
+#include <memory>
 
 using namespace std;
 using utils::ExitCode;
@@ -59,6 +60,10 @@ SearchAlgorithm::SearchAlgorithm(
         cerr << "error: negative cost bound " << bound << endl;
         utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
     }
+    // Track real_g values only when the bound is finite.
+    if (bound != numeric_limits<int>::max()) {
+        real_g_values = make_unique<PerStateInformation<int>>(-1);
+    }
     task_properties::print_variable_statistics(task_proxy);
 }
 
@@ -85,6 +90,10 @@ SearchAlgorithm::SearchAlgorithm(
         utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
     }
     bound = opts.get<int>("bound");
+    // Track real_g values only when the bound is finite.
+    if (bound != numeric_limits<int>::max()) {
+        real_g_values = make_unique<PerStateInformation<int>>(-1);
+    }
     task_properties::print_variable_statistics(task_proxy);
 }
 
@@ -132,8 +141,11 @@ void SearchAlgorithm::search() {
 bool SearchAlgorithm::check_goal_and_set_plan(const State &state) {
     if (task_properties::is_goal_state(task_proxy, state)) {
         log << "Solution found!" << endl;
-        Plan plan;
-        search_space.trace_path(state, plan);
+        utils::Timer recompute_timer;
+        Plan plan =
+            search_space.trace_path(task_proxy, successor_generator, state);
+        recompute_timer.stop();
+        log << "Time for recomputing plan: " << recompute_timer << endl;
         set_plan(plan);
         return true;
     }
@@ -148,6 +160,30 @@ void SearchAlgorithm::save_plan_if_necessary() {
 
 int SearchAlgorithm::get_adjusted_cost(const OperatorProxy &op) const {
     return get_adjusted_action_cost(op, cost_type, is_unit_cost);
+}
+
+bool SearchAlgorithm::check_bound(const State &state, int op_real_cost) const {
+    if (!real_g_values)
+        return true; // unbounded
+    int real_g = (*real_g_values)[state];
+    // Exclusive bound: prune when real_g + cost >= bound
+    return (real_g + op_real_cost) < bound;
+}
+
+void SearchAlgorithm::set_real_g(const State &state, int new_real_g) {
+    if (real_g_values) {
+        (*real_g_values)[state] = new_real_g;
+    }
+}
+
+void SearchAlgorithm::set_real_g(
+    const State &parent_state, const OperatorProxy &op,
+    const State &child_state) {
+    if (!real_g_values)
+        return;
+    int parent_real_g = (*real_g_values)[parent_state];
+    int child_real_g = parent_real_g + op.get_cost();
+    (*real_g_values)[child_state] = child_real_g;
 }
 
 void print_initial_evaluator_values(const EvaluationContext &eval_context) {
