@@ -1,8 +1,8 @@
 import logging
-import math
 import re
 
 from lab.parser import Parser
+from lab import tools
 
 
 class CommonParser(Parser):
@@ -60,23 +60,14 @@ def add_scores(content, props):
     performance is counted as 0.
 
     """
-
-    def log_score(value, min_bound, max_bound):
-        if value is None:
-            return 0
-        value = max(value, min_bound)
-        value = min(value, max_bound)
-        raw_score = math.log(value) - math.log(max_bound)
-        best_raw_score = math.log(min_bound) - math.log(max_bound)
-        return raw_score / best_raw_score
-
     try:
         max_time = props["limit_search_time"]
     except KeyError:
         print("search time limit missing -> can't compute time scores")
     else:
-        props["search_start_time_score"] = log_score(
-            props.get("search_start_time"), min_bound=1.0, max_bound=max_time
+        props["search_start_time_score"] = tools.compute_log_score(
+            props.get("coverage", 0), props.get("search_start_time"),
+            min_bound=1.0, max_bound=max_time
         )
 
     try:
@@ -84,8 +75,9 @@ def add_scores(content, props):
     except KeyError:
         print("search memory limit missing -> can't compute memory score")
     else:
-        props["search_start_memory_score"] = log_score(
-            props.get("search_start_memory"), min_bound=2000, max_bound=max_memory_kb
+        props["search_start_memory_score"] = tools.compute_log_score(
+            props.get("coverage", 0), props.get("search_start_memory"),
+            min_bound=2000, max_bound=max_memory_kb
         )
 
 
