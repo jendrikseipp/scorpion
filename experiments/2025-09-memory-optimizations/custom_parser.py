@@ -67,7 +67,7 @@ def add_scores(content, props):
     else:
         props["search_start_time_score"] = tools.compute_log_score(
             props.get("coverage", 0), props.get("search_start_time"),
-            min_bound=1.0, max_bound=max_time
+            lower_bound=1.0, upper_bound=max_time
         )
 
     try:
@@ -77,7 +77,7 @@ def add_scores(content, props):
     else:
         props["search_start_memory_score"] = tools.compute_log_score(
             props.get("coverage", 0), props.get("search_start_memory"),
-            min_bound=2000, max_bound=max_memory_kb
+            lower_bound=2000, upper_bound=max_memory_kb
         )
 
 
