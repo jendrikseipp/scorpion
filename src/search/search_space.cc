@@ -167,7 +167,7 @@ vector<State> SearchSpace::trace_states(const State &goal_state) const {
     return states;
 }
 
-void SearchSpace::dump(const TaskProxy &task_proxy) const {
+void SearchSpace::dump(const TaskProxy &) const {
     for (StateID id : state_registry) {
         /* The body duplicates parts of SearchNode::dump() but we cannot create
            a search node without discarding the const qualifier. */
