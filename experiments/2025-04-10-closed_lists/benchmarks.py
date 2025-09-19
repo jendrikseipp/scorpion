@@ -303,6 +303,18 @@ SUITE_IPC_SATISFICING_STRIPS = [
     "woodworking-sat11-strips", 
     "zenotravel",
 ]
+SUITE_IPC_LEARNING = [
+    "blocksworld_ipc2023_learning",
+    "childsnack_ipc2023_learning",
+    "ferry_ipc2023_learning",
+    "floortile_ipc2023_learning",
+    "miconic_ipc2023_learning",
+    "rovers_ipc2023_learning",
+    "satellite_ipc2023_learning",
+    "sokoban_ipc2023_learning",
+    "spanner_ipc2023_learning",
+    "transport_ipc2023_learning"
+]
 
 TEST_SUITE_IPC_SATISFICING_STRIPS = [
     "agricola-sat18-strips:p01.pddl", 
@@ -369,4 +381,8 @@ TEST_SUITE_IPC_SATISFICING_STRIPS = [
     "woodworking-sat08-strips:p01.pddl", 
     "woodworking-sat11-strips:p01.pddl", 
     "zenotravel:p01.pddl"
+]
+
+SUITE_IPC_LEARNING = [
+
 ]
