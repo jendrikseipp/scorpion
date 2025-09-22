@@ -59,11 +59,11 @@ void EagerSearch::initialize() {
         evaluator->get_path_dependent_evaluators(evals);
     }
 
-    /*
-      Collect path-dependent evaluators that are used in the f_evaluator.
-      They are usually also used in the open list and will hence already be
-      included, but we want to be sure.
-    */
+    // /*
+    //   Collect path-dependent evaluators that are used in the f_evaluator.
+    //   They are usually also used in the open list and will hence already be
+    //   included, but we want to be sure.
+    // */
     if (f_evaluator) {
         f_evaluator->get_path_dependent_evaluators(evals);
     }
@@ -96,7 +96,7 @@ void EagerSearch::initialize() {
     } else {
         if (search_progress.check_progress(eval_context))
             statistics.print_checkpoint_line(0);
-        start_f_value_statistics(eval_context);
+        // start_f_value_statistics(eval_context);
         SearchNode node = search_space.get_node(initial_state);
         node.open_initial();
 
@@ -170,7 +170,7 @@ SearchStatus EagerSearch::step() {
 
         node->close();
         assert(!node->is_dead_end());
-        update_f_value_statistics(eval_context);
+        // update_f_value_statistics(eval_context);
         statistics.inc_expanded();
         break;
     }
@@ -294,19 +294,19 @@ void EagerSearch::dump_search_space() const {
 }
 
 void EagerSearch::start_f_value_statistics(EvaluationContext &eval_context) {
-    if (f_evaluator) {
-        int f_value = eval_context.get_evaluator_value(f_evaluator.get());
-        statistics.report_f_value_progress(f_value);
-    }
+    // if (f_evaluator) {
+    //     int f_value = eval_context.get_evaluator_value(f_evaluator.get());
+    //     statistics.report_f_value_progress(f_value);
+    // }
 }
 
 /* TODO: HACK! This is very inefficient for simply looking up an h value.
    Also, if h values are not saved it would recompute h for each and every state. */
 void EagerSearch::update_f_value_statistics(EvaluationContext &eval_context) {
-    if (f_evaluator) {
-        int f_value = eval_context.get_evaluator_value(f_evaluator.get());
-        statistics.report_f_value_progress(f_value);
-    }
+    // if (f_evaluator) {
+    //     int f_value = eval_context.get_evaluator_value(f_evaluator.get());
+    //     statistics.report_f_value_progress(f_value);
+    // }
 }
 
 void add_eager_search_options_to_feature(
