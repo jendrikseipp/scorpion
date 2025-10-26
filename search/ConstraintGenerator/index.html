@@ -981,7 +981,7 @@
 </li>
 <li><em>use_integer_vars</em> (bool): restrict auxiliary variables to integer values. These variables encode whether facts are reached, which operator first achieves which fact, and (depending on the acyclicity_type) in which order the operators are used. Restricting them to integers generally improves the heuristic value at the cost of increased runtime.</li>
 </ul>
-<p><strong>Example:</strong> To compute the optimal delete-relaxation heuristic h^+^, useinteger variables and some way of enforcing acyclicity (other than "none"). For example
+<p><strong>Example:</strong> To compute the optimal delete-relaxation heuristic h^+^, use integer variables and some way of enforcing acyclicity (other than "none"). For example
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>operatorcounting(
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>   [delete_relaxation_rr_constraints(acyclicity_type=vertex_elimination,
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>                                     use_integer_vars=true)],
