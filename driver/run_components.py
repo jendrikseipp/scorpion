@@ -25,8 +25,9 @@ REL_TRANSLATE_PATH = Path("translate")
 REL_SEARCH_PATH = Path(f"downward{BINARY_EXT}")
 # Older versions of VAL use lower case, newer versions upper case. We prefer the
 # older version because this is what our build instructions recommend.
-_VALIDATE_NAME = (shutil.which(f"validate{BINARY_EXT}") or
-                  shutil.which(f"Validate{BINARY_EXT}"))
+_VALIDATE_NAME = shutil.which(f"validate{BINARY_EXT}") or shutil.which(
+    f"Validate{BINARY_EXT}"
+)
 VALIDATE = Path(_VALIDATE_NAME) if _VALIDATE_NAME else None
 
 
@@ -37,30 +38,36 @@ class IncompleteBuildError(Exception):
 def try_get_executable(build: str, rel_path: Path):
     build_dir = util.BUILDS_DIR / build / "bin"
     if not build_dir.exists():
-        raise IncompleteBuildError(
-            f"Could not find build '{build}' at {build_dir}.")
+        raise IncompleteBuildError(f"Could not find build '{build}' at {build_dir}.")
 
     path = build_dir / rel_path
     if not path.exists():
-        raise IncompleteBuildError(
-            f"Could not find '{rel_path}' in build '{build}'.")
+        raise IncompleteBuildError(f"Could not find '{rel_path}' in build '{build}'.")
 
     return path
+
 
 def get_executable(build: str, rel_path: Path):
     try:
         return try_get_executable(build, rel_path)
     except IncompleteBuildError as err:
-        returncodes.exit_with_driver_input_error(f"{err} Please run './build.py {build}'.")
+        returncodes.exit_with_driver_input_error(
+            f"{err} Please run './build.py {build}'."
+        )
+
 
 def report_version(build: str):
     print(f"Fast Downward {__version__}")
     try:
         executable = try_get_executable(build, REL_SEARCH_PATH)
-        search_git_revision = subprocess.check_output([executable, "--internal-git-revision"])
+        search_git_revision = subprocess.check_output(
+            [executable, "--internal-git-revision"]
+        )
         print(f"git revision [{build}]: {search_git_revision.decode().strip()}")
     except IncompleteBuildError:
-        print(f"git revision [{build}]: Build not found. Please run './build.py {build}'.")
+        print(
+            f"git revision [{build}]: Build not found. Please run './build.py {build}'."
+        )
     except subprocess.CalledProcessError as err:
         print(f"Cannot determine git revision of search binary. {err}")
 
@@ -68,22 +75,30 @@ def report_version(build: str):
 def run_translate(args):
     logging.info("Running translator.")
     time_limit = limits.get_time_limit(
-        args.translate_time_limit, args.overall_time_limit)
+        args.translate_time_limit, args.overall_time_limit
+    )
     memory_limit = limits.get_memory_limit(
-        args.translate_memory_limit, args.overall_memory_limit)
+        args.translate_memory_limit, args.overall_memory_limit
+    )
 
     # Check existence of translate in build.
     translate = get_executable(args.build, REL_TRANSLATE_PATH)
 
     assert sys.executable, "Path to interpreter could not be found"
-    cmd = [sys.executable] + ["-m", "translate"] + args.translate_inputs + args.translate_options
+    cmd = (
+        [sys.executable]
+        + ["-m", "translate"]
+        + args.translate_inputs
+        + args.translate_options
+    )
 
     stderr, returncode = call.get_error_output_and_returncode(
         "translator",
         cmd,
         time_limit=time_limit,
         memory_limit=memory_limit,
-        prepend_to_python_path=translate.parent)
+        prepend_to_python_path=translate.parent,
+    )
 
     # We collect stderr of the translator and print it here, unless
     # the translator ran out of memory and all output in stderr is
@@ -117,15 +132,23 @@ def run_translate(args):
 
 def run_preprocess(args):
     logging.info("Run preprocess.")
-    time_limit = limits.get_time_limit(args.preprocess_time_limit, args.overall_time_limit)
-    memory_limit = limits.get_memory_limit(args.preprocess_memory_limit, args.overall_memory_limit)
+    time_limit = limits.get_time_limit(
+        args.preprocess_time_limit, args.overall_time_limit
+    )
+    memory_limit = limits.get_memory_limit(
+        args.preprocess_memory_limit, args.overall_memory_limit
+    )
 
     executable = get_executable(args.build, Path("preprocess-h2"))
 
     if "--outfile" in args.preprocess_options:
         returncodes.exit_with_driver_input_error(
-            "Error: --outfile option is reserved for the driver.")
-    args.preprocess_options = ["--outfile", args.preprocessed_sas_file] + args.preprocess_options
+            "Error: --outfile option is reserved for the driver."
+        )
+    args.preprocess_options = [
+        "--outfile",
+        args.preprocessed_sas_file,
+    ] + args.preprocess_options
 
     try:
         call.check_call(
@@ -133,11 +156,16 @@ def run_preprocess(args):
             [executable] + args.preprocess_options,
             stdin=args.search_input,
             time_limit=time_limit,
-            memory_limit=memory_limit)
+            memory_limit=memory_limit,
+        )
     except subprocess.CalledProcessError as err:
         if err.returncode != -signal.SIGXCPU:
             returncodes.print_stderr(
-                f"Preprocessor returned exit status {err.returncode}")
+                f"Preprocessor returned exit status {err.returncode}"
+            )
+        # Exit code 2 indicates a usage error, so we should exit immediately.
+        if err.returncode == 2:
+            return (err.returncode, False)
         # If the preprocessing failed, we proceed with the original task.
         return (err.returncode, True)
     else:
@@ -148,31 +176,41 @@ def run_preprocess(args):
 
 def run_search(args):
     logging.info("Running search (%s)." % args.build)
-    time_limit = limits.get_time_limit(
-        args.search_time_limit, args.overall_time_limit)
+    time_limit = limits.get_time_limit(args.search_time_limit, args.overall_time_limit)
     memory_limit = limits.get_memory_limit(
-        args.search_memory_limit, args.overall_memory_limit)
+        args.search_memory_limit, args.overall_memory_limit
+    )
     executable = get_executable(args.build, REL_SEARCH_PATH)
 
     plan_manager = PlanManager(
         args.plan_file,
         portfolio_bound=args.portfolio_bound,
-        single_plan=args.portfolio_single_plan)
+        single_plan=args.portfolio_single_plan,
+    )
     plan_manager.delete_existing_plans()
 
     import shlex
-    logging.info(f"GDB call (needs --keep-sas-file): gdb -ex run -ex bt --args {executable} {' '.join(shlex.quote(x) for x in args.search_options)} < {args.search_input}")
+
+    logging.info(
+        f"GDB call (needs --keep-sas-file): gdb -ex run -ex bt --args {executable} {' '.join(shlex.quote(x) for x in args.search_options)} < {args.search_input}"
+    )
 
     if args.portfolio:
         assert not args.search_options
         logging.info(f"search portfolio: {args.portfolio}")
         return portfolio_runner.run(
-            args.portfolio, executable, args.search_input, plan_manager,
-            time_limit, memory_limit)
+            args.portfolio,
+            executable,
+            args.search_input,
+            plan_manager,
+            time_limit,
+            memory_limit,
+        )
     else:
         if not args.search_options:
             returncodes.exit_with_driver_input_error(
-                "search needs --alias, --portfolio, or search options")
+                "search needs --alias, --portfolio, or search options"
+            )
         if "--help" not in args.search_options:
             args.search_options.extend(["--internal-plan-file", args.plan_file])
         try:
@@ -181,14 +219,17 @@ def run_search(args):
                 [executable] + args.search_options,
                 stdin=args.search_input,
                 time_limit=time_limit,
-                memory_limit=memory_limit)
+                memory_limit=memory_limit,
+            )
         except subprocess.CalledProcessError as err:
             # TODO: if we ever add support for SEARCH_PLAN_FOUND_AND_* directly
             # in the planner, this assertion no longer holds. Furthermore, we
             # would need to return (err.returncode, True) if the returncode is
             # in [0..10].
             # Negative exit codes are allowed for passing out signals.
-            assert err.returncode >= 10 or err.returncode < 0, "got returncode < 10: {}".format(err.returncode)
+            assert (
+                err.returncode >= 10 or err.returncode < 0
+            ), "got returncode < 10: {}".format(err.returncode)
             return (err.returncode, False)
         else:
             return (0, True)
@@ -197,7 +238,8 @@ def run_search(args):
 def run_validate(args):
     if not VALIDATE:
         returncodes.exit_with_driver_input_error(
-            "Error: Trying to run validate but it was not found on the PATH.")
+            "Error: Trying to run validate but it was not found on the PATH."
+        )
 
     logging.info("Running validate.")
     plan_files = list(PlanManager(args.plan_file).get_existing_plans())
@@ -210,7 +252,8 @@ def run_validate(args):
             "validate",
             [VALIDATE] + args.validate_inputs + plan_files,
             time_limit=args.validate_time_limit,
-            memory_limit=args.validate_memory_limit)
+            memory_limit=args.validate_memory_limit,
+        )
     except OSError as err:
         returncodes.exit_with_driver_critical_error(err)
     else:
