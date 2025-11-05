@@ -150,6 +150,28 @@ void reduce_costs(
     }
 }
 
+bool use_explicit_transitions(
+    TransitionSystemType transition_type, const TaskProxy &task_proxy) {
+    if (transition_type == TransitionSystemType::EXPLICIT) {
+        return true;
+    } else if (transition_type == TransitionSystemType::IMPLICIT) {
+        return false;
+    } else {
+        assert(transition_type == TransitionSystemType::AUTO);
+        return task_properties::has_conditional_effects(task_proxy);
+    }
+}
+
+void add_transition_type_option(plugins::Feature &feature) {
+    feature.add_option<TransitionSystemType>(
+        "transitions",
+        "type of transition system to create: "
+        "explicit stores transitions explicitly (supports conditional effects), "
+        "implicit uses a match tree to generate transitions on demand (does not support conditional effects), "
+        "auto uses explicit if the task has conditional effects and implicit otherwise",
+        "auto");
+}
+
 void add_order_options(plugins::Feature &feature) {
     feature.add_option<shared_ptr<OrderGenerator>>(
         "orders", "order generator", "greedy_orders()");

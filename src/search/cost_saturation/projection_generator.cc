@@ -2,6 +2,7 @@
 
 #include "explicit_projection_factory.h"
 #include "projection.h"
+#include "utils.h"
 
 #include "../pdbs/dominance_pruning.h"
 #include "../pdbs/pattern_generator.h"
@@ -18,12 +19,12 @@ namespace cost_saturation {
 ProjectionGenerator::ProjectionGenerator(
     const shared_ptr<pdbs::PatternCollectionGenerator> &patterns,
     bool dominance_pruning, bool combine_labels,
-    bool create_complete_transition_system, utils::Verbosity verbosity)
+    TransitionSystemType transition_type, utils::Verbosity verbosity)
     : AbstractionGenerator(verbosity),
       pattern_generator(patterns),
       dominance_pruning(dominance_pruning),
       combine_labels(combine_labels),
-      create_complete_transition_system(create_complete_transition_system) {
+      transition_type(transition_type) {
 }
 
 Abstractions ProjectionGenerator::generate_abstractions(
@@ -32,10 +33,13 @@ Abstractions ProjectionGenerator::generate_abstractions(
     TaskProxy task_proxy(*task);
 
     task_properties::verify_no_axioms(task_proxy);
-    if (!create_complete_transition_system &&
+
+    bool use_explicit = use_explicit_transitions(transition_type, task_proxy);
+
+    if (!use_explicit &&
         task_properties::has_conditional_effects(task_proxy)) {
         cerr << "Error: configuration doesn't support conditional effects. "
-                "Use projections(..., create_complete_transition_system=true) "
+                "Use projections(..., transitions=explicit) or transitions=auto "
                 "to build projections that support conditional effects."
              << endl;
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
@@ -80,7 +84,7 @@ Abstractions ProjectionGenerator::generate_abstractions(
         if (projections) {
             // Projections have already been computed by the generator.
             projection = move((*projections)[abstractions.size()]);
-        } else if (create_complete_transition_system) {
+        } else if (use_explicit) {
             projection = ExplicitProjectionFactory(task_proxy, pattern)
                              .convert_to_abstraction();
         } else {
@@ -132,9 +136,7 @@ public:
         add_option<bool>(
             "combine_labels",
             "group labels that only induce parallel transitions", "true");
-        add_option<bool>(
-            "create_complete_transition_system",
-            "create explicit transition system", "false");
+        add_transition_type_option(*this);
         add_abstraction_generator_arguments_to_feature(*this);
     }
 
@@ -145,10 +147,16 @@ public:
                 "patterns"),
             options.get<bool>("dominance_pruning"),
             options.get<bool>("combine_labels"),
-            options.get<bool>("create_complete_transition_system"),
+            options.get<TransitionSystemType>("transitions"),
             get_abstraction_generator_arguments_from_options(options));
     }
 };
 
 static plugins::FeaturePlugin<ProjectionGeneratorFeature> _plugin;
+
+static plugins::TypedEnumPlugin<TransitionSystemType> _enum_plugin({
+    {"explicit", "create explicit transition system (supports conditional effects)"},
+    {"implicit", "create compact implicit transition system (does not support conditional effects)"},
+    {"auto", "explicit if task has conditional effects, implicit otherwise"},
+});
 }

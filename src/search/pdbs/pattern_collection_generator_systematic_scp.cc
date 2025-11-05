@@ -265,7 +265,7 @@ PatternCollectionGeneratorSystematicSCP::
         int max_pattern_size, int max_pdb_size, int max_collection_size,
         int max_patterns, double max_time, double max_time_per_restart,
         int max_evaluations_per_restart, int max_total_evaluations,
-        bool saturate, bool create_complete_transition_system,
+        bool saturate, cost_saturation::TransitionSystemType transition_type,
         PatternType pattern_type, bool ignore_useless_patterns,
         bool store_dead_ends, PatternOrder order, int random_seed,
         utils::Verbosity verbosity)
@@ -279,7 +279,7 @@ PatternCollectionGeneratorSystematicSCP::
       max_evaluations_per_restart(max_evaluations_per_restart),
       max_total_evaluations(max_total_evaluations),
       saturate(saturate),
-      create_complete_transition_system(create_complete_transition_system),
+      transition_type(transition_type),
       pattern_type(pattern_type),
       ignore_useless_patterns(ignore_useless_patterns),
       store_dead_ends(store_dead_ends),
@@ -373,10 +373,13 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
             continue;
         }
 
+        bool use_explicit = cost_saturation::use_explicit_transitions(
+            transition_type, task_proxy);
+
         bool select_pattern = true;
         if (saturate) {
             projection_evaluation_timer->resume();
-            if (create_complete_transition_system) {
+            if (use_explicit) {
                 unique_ptr<cost_saturation::Abstraction> projection =
                     cost_saturation::ExplicitProjectionFactory(
                         task_proxy, pattern)
@@ -421,7 +424,7 @@ bool PatternCollectionGeneratorSystematicSCP::select_systematic_patterns(
                 log << "Add pattern " << pattern << endl;
             }
             unique_ptr<cost_saturation::Abstraction> projection;
-            if (create_complete_transition_system) {
+            if (use_explicit) {
                 projection = cost_saturation::ExplicitProjectionFactory(
                                  task_proxy, pattern)
                                  .convert_to_abstraction();
@@ -460,10 +463,14 @@ PatternCollectionGeneratorSystematicSCP::compute_patterns(
     projection_evaluation_timer->stop();
     TaskProxy task_proxy(*task);
     task_properties::verify_no_axioms(task_proxy);
-    if (!create_complete_transition_system &&
+
+    bool use_explicit = cost_saturation::use_explicit_transitions(
+        transition_type, task_proxy);
+
+    if (!use_explicit &&
         task_properties::has_conditional_effects(task_proxy)) {
         cerr << "Error: configuration doesn't support conditional effects. "
-                "Use sys_scp(..., create_complete_transition_system=true) "
+                "Use sys_scp(..., transitions=explicit) or transitions=auto "
                 "for tasks with conditional effects."
              << endl;
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
@@ -589,10 +596,7 @@ public:
             "saturate",
             "only select patterns useful in saturated cost partitionings",
             "true");
-        add_option<bool>(
-            "create_complete_transition_system",
-            "create explicit transition system (necessary for tasks with conditional effects)",
-            "false");
+        cost_saturation::add_transition_type_option(*this);
         add_pattern_type_option(*this);
         add_option<bool>(
             "ignore_useless_patterns",
@@ -622,7 +626,7 @@ public:
             opts.get<double>("max_time_per_restart"),
             opts.get<int>("max_evaluations_per_restart"),
             opts.get<int>("max_total_evaluations"), opts.get<bool>("saturate"),
-            opts.get<bool>("create_complete_transition_system"),
+            opts.get<cost_saturation::TransitionSystemType>("transitions"),
             opts.get<PatternType>("pattern_type"),
             opts.get<bool>("ignore_useless_patterns"),
             opts.get<bool>("store_dead_ends"), opts.get<PatternOrder>("order"),

@@ -11,6 +11,7 @@
 class AbstractTask;
 class Evaluator;
 class State;
+class TaskProxy;
 
 namespace plugins {
 class Feature;
@@ -67,6 +68,13 @@ std::vector<int> get_abstract_state_ids(
 extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
 
+// Determine whether to use explicit transitions based on the transition type
+// and task properties. AUTO mode uses explicit transitions if the task has
+// conditional effects, implicit otherwise.
+extern bool use_explicit_transitions(
+    TransitionSystemType transition_type, const TaskProxy &task_proxy);
+
+extern void add_transition_type_option(plugins::Feature &feature);
 extern void add_order_options(plugins::Feature &feature);
 extern void add_options_for_cost_partitioning_heuristic(
     plugins::Feature &feature, const std::string &description,

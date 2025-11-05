@@ -19,6 +19,12 @@ class CostPartitioningHeuristic;
 // Positive infinity. The name "INFINITY" is taken by an ISO C99 macro.
 const int INF = std::numeric_limits<int>::max();
 
+enum class TransitionSystemType {
+    EXPLICIT,
+    IMPLICIT,
+    AUTO,
+};
+
 using Abstractions = std::vector<std::unique_ptr<Abstraction>>;
 using AbstractionFunctions = std::vector<std::unique_ptr<AbstractionFunction>>;
 using AbstractionGenerators =

@@ -9,6 +9,7 @@
 
 namespace cost_saturation {
 class TaskInfo;
+enum class TransitionSystemType;
 }
 
 namespace plugins {
@@ -50,7 +51,7 @@ class PatternCollectionGeneratorSystematicSCP
     const int max_evaluations_per_restart;
     const int max_total_evaluations;
     const bool saturate;
-    const bool create_complete_transition_system;
+    const cost_saturation::TransitionSystemType transition_type;
     const PatternType pattern_type;
     const bool ignore_useless_patterns;
     const bool store_dead_ends;
@@ -84,7 +85,7 @@ public:
         int max_pattern_size, int max_pdb_size, int max_collection_size,
         int max_patterns, double max_time, double max_time_per_restart,
         int max_evaluations_per_restart, int max_total_evaluations,
-        bool saturate, bool create_complete_transition_system,
+        bool saturate, cost_saturation::TransitionSystemType transition_type,
         PatternType pattern_type, bool ignore_useless_patterns,
         bool store_dead_ends, PatternOrder order, int random_seed,
         utils::Verbosity verbosity);
