@@ -1,18 +1,21 @@
-#include "helper_functions.h"
+#include "axiom.h"
 #include "causal_graph.h"
-#include "state.h"
+#include "h2_mutexes.h"
+#include "helper_functions.h"
 #include "mutex_group.h"
 #include "operator.h"
-#include "axiom.h"
-#include "h2_mutexes.h"
+#include "state.h"
 #include "variable.h"
+
 #include <ctime>
 #include <iostream>
+#include <unordered_set>
 using namespace std;
 
 void preprocess(int argc, const char **argv) {
     int h2_mutex_time = 300; // 5 minutes to compute mutexes by default
     bool include_augmented_preconditions = false;
+    bool include_augmented_goals = false;
     bool expensive_statistics = false;
     bool disable_bw_h2 = false;
 
@@ -36,18 +39,24 @@ void preprocess(int argc, const char **argv) {
             if (i < argc) {
                 try {
                     h2_mutex_time = atoi(argv[i]);
-                }catch (std::invalid_argument &) {
-                    cerr << "please specify the number of seconds after --h2_time_limit" << endl;
+                } catch (std::invalid_argument &) {
+                    cerr
+                        << "please specify the number of seconds after --h2_time_limit"
+                        << endl;
                     exit(2);
                 }
             } else {
-                cerr << "please specify the number of seconds after --h2_time_limit" << endl;
+                cerr
+                    << "please specify the number of seconds after --h2_time_limit"
+                    << endl;
                 exit(2);
             }
         } else if (arg.compare("--no_h2") == 0) {
             h2_mutex_time = 0;
         } else if (arg.compare("--augmented_pre") == 0) {
             include_augmented_preconditions = true;
+        } else if (arg.compare("--augmented_goal") == 0) {
+            include_augmented_goals = true;
         } else if (arg.compare("--no_bw_h2") == 0) {
             disable_bw_h2 = true;
         } else if (arg.compare("--stat") == 0) {
@@ -57,20 +66,24 @@ void preprocess(int argc, const char **argv) {
             if (i < argc) {
                 outfile = string(argv[i]);
             } else {
-                cerr << "please specify the output filename after --outfile" << endl;
+                cerr << "please specify the output filename after --outfile"
+                     << endl;
                 exit(2);
             }
         } else {
             cerr << "unknown option " << arg << endl << endl;
-            cout << "Usage: ./preprocess-h2 [--no_rel] [--h2_time_limit SECONDS] [--no_h2] [--no_bw_h2] [--augmented_pre] [--stat] [--outfile OUTFILE] < output" << endl;
+            cout
+                << "Usage: ./preprocess-h2 [--no_rel] [--h2_time_limit SECONDS] [--no_h2] [--no_bw_h2] [--augmented_pre] [--augmented_goal] [--stat] [--outfile OUTFILE] < output"
+                << endl;
             exit(2);
         }
     }
 
-    read_preprocessed_problem_description
-        (cin, metric, internal_variables, variables, mutexes, initial_state, goals, operators, axioms);
-    //dump_preprocessed_problem_description
-    //  (variables, initial_state, goals, operators, axioms);
+    read_preprocessed_problem_description(
+        cin, metric, internal_variables, variables, mutexes, initial_state,
+        goals, operators, axioms);
+    // dump_preprocessed_problem_description
+    //   (variables, initial_state, goals, operators, axioms);
 
     cout << "Building causal graph..." << endl;
     CausalGraph causal_graph(variables, operators, axioms, goals);
@@ -84,7 +97,9 @@ void preprocess(int argc, const char **argv) {
 
     // compute h2 mutexes
     if (axioms.size() > 0) {
-        cout << "Disabling h2 analysis because it does not currently support axioms" << endl;
+        cout
+            << "Disabling h2 analysis because it does not currently support axioms"
+            << endl;
     } else if (h2_mutex_time) {
         bool conditional_effects = false;
         for (const Operator &op : operators) {
@@ -96,21 +111,22 @@ void preprocess(int argc, const char **argv) {
         if (conditional_effects)
             disable_bw_h2 = true;
 
-        if (!compute_h2_mutexes(ordering, operators, axioms,
-                                mutexes, initial_state, goals,
-                                h2_mutex_time, disable_bw_h2)) {
+        if (!compute_h2_mutexes(
+                ordering, operators, axioms, mutexes, initial_state, goals,
+                h2_mutex_time, disable_bw_h2)) {
             generate_unsolvable_cpp_input(outfile);
             return;
         }
 
-        //Update the causal graph and remove unneccessary variables
+        // Update the causal graph and remove unneccessary variables
         strip_mutexes(mutexes);
         strip_operators(operators);
         strip_axioms(axioms);
 
         cout << "Change id of operators: " << operators.size() << endl;
-        // 1) Change id of values in operators and axioms to remove unreachable facts from variables
-        for (Operator &op: operators) {
+        // 1) Change id of values in operators and axioms to remove unreachable
+        // facts from variables
+        for (Operator &op : operators) {
             op.remove_unreachable_facts(ordering);
         }
         // TODO: Activate this if axioms get supported by the h2 heuristic
@@ -137,7 +153,8 @@ void preprocess(int argc, const char **argv) {
             return;
         }
 
-        cout << "Remove unreachable facts from variables: " << ordering.size() << endl;
+        cout << "Remove unreachable facts from variables: " << ordering.size()
+             << endl;
         // 2)Remove unreachable facts from variables
         for (Variable *var : ordering) {
             if (var->is_necessary()) {
@@ -170,7 +187,7 @@ void preprocess(int argc, const char **argv) {
     cout << "Preprocessor mutex groups: " << mutexes.size() << endl;
 
     if (expensive_statistics) {
-        //Count potential preconditions
+        // Count potential preconditions
         int num_total_augmented = 0;
         int num_op_augmented = 0;
         int num_total_potential = 0;
@@ -197,11 +214,15 @@ void preprocess(int argc, const char **argv) {
         }
 
         cout << "Augmented preconditions: " << num_total_augmented << endl;
-        cout << "Ops with augmented preconditions: " << num_op_augmented << endl;
+        cout << "Ops with augmented preconditions: " << num_op_augmented
+             << endl;
         cout << "Potential preconditions: " << num_total_potential << endl;
-        cout << "Ops with potential preconditions: " << num_op_potential << endl;
-        cout << "Potential preconditions contradict effects: " << num_total_potential_noeff << endl;
-        cout << "Ops with potential preconditions contradict effects: " << num_op_potential_noeff << endl;
+        cout << "Ops with potential preconditions: " << num_op_potential
+             << endl;
+        cout << "Potential preconditions contradict effects: "
+             << num_total_potential_noeff << endl;
+        cout << "Ops with potential preconditions contradict effects: "
+             << num_op_potential_noeff << endl;
         set<vector<int>> mutexes_fw, mutexes_bw;
         for (MutexGroup &mutex : mutexes) {
             if (!mutex.is_redundant()) {
@@ -218,6 +239,93 @@ void preprocess(int argc, const char **argv) {
     if (include_augmented_preconditions) {
         for (Operator &op : operators) {
             op.include_augmented_preconditions();
+        }
+    }
+
+    if (include_augmented_goals) {
+        // Augment goals with facts that must be true due to mutex constraints
+        // For each variable not in the goal, if only one value is not mutex
+        // with all goal facts, add it as an augmented goal
+
+        // Build vector indexed by variable level: -1 if not in goal, goal value
+        // otherwise
+        vector<int> goal_facts(ordering.size(), -1);
+        for (const auto &[var, val] : goals) {
+            goal_facts[var->get_level()] = val;
+        }
+
+        // Pre-filter mutexes: keep only non-redundant ones that contain at
+        // least one goal fact
+        vector<const MutexGroup *> relevant_mutexes;
+        for (const MutexGroup &mutex : mutexes) {
+            if (mutex.is_redundant())
+                continue;
+
+            // Check if this mutex contains any goal fact
+            bool contains_goal = false;
+            for (const auto &[var, val] : goals) {
+                if (mutex.hasPair(var->get_level(), val)) {
+                    contains_goal = true;
+                    break;
+                }
+            }
+            if (contains_goal) {
+                relevant_mutexes.push_back(&mutex);
+            }
+        }
+
+        vector<pair<Variable *, int>> augmented_goals;
+
+        for (Variable *var : ordering) {
+            if (!var->is_necessary())
+                continue;
+
+            int var_level = var->get_level();
+
+            // Skip variables already in the goal.
+            if (goal_facts[var_level] != -1)
+                continue;
+
+            int compatible_count = 0;
+            int compatible_val = -1;
+
+            // Check each reachable value for compatibility with goals
+            for (int val = 0; val < var->get_range(); val++) {
+                if (!var->is_reachable(val))
+                    continue;
+
+                // Check if this value conflicts with any goal via mutexes
+                bool is_compatible = true;
+                for (const MutexGroup *mutex : relevant_mutexes) {
+                    if (mutex->hasPair(var_level, val)) {
+                        // This value is in a mutex that contains a goal fact
+                        is_compatible = false;
+                        break;
+                    }
+                }
+
+                if (is_compatible) {
+                    compatible_count++;
+                    compatible_val = val;
+                    // Early exit if more than one compatible value found
+                    if (compatible_count > 1)
+                        break;
+                }
+            }
+
+            // If exactly one compatible value found, add it as an augmented
+            // goal
+            if (compatible_count == 1) {
+                augmented_goals.emplace_back(var, compatible_val);
+                goal_facts[var_level] = compatible_val;
+            }
+        }
+
+        if (!augmented_goals.empty()) {
+            cout << "Augmented " << augmented_goals.size() << " goal facts"
+                 << endl;
+            goals.insert(
+                goals.end(), augmented_goals.begin(), augmented_goals.end());
         }
     }
     // Calculate the problem size
@@ -239,7 +347,8 @@ void preprocess(int argc, const char **argv) {
         generate_unsolvable_cpp_input(outfile);
     } else {
         generate_cpp_input(
-            ordering, metric, mutexes, initial_state, goals, operators, axioms, outfile);
+            ordering, metric, mutexes, initial_state, goals, operators, axioms,
+            outfile);
     }
 }
 
