@@ -464,11 +464,10 @@ PatternCollectionGeneratorSystematicSCP::compute_patterns(
     TaskProxy task_proxy(*task);
     task_properties::verify_no_axioms(task_proxy);
 
-    bool use_explicit = cost_saturation::use_explicit_transitions(
-        transition_type, task_proxy);
+    bool use_explicit =
+        cost_saturation::use_explicit_transitions(transition_type, task_proxy);
 
-    if (!use_explicit &&
-        task_properties::has_conditional_effects(task_proxy)) {
+    if (!use_explicit && task_properties::has_conditional_effects(task_proxy)) {
         cerr << "Error: configuration doesn't support conditional effects. "
                 "Use sys_scp(..., transitions=explicit) or transitions=auto "
                 "for tasks with conditional effects."

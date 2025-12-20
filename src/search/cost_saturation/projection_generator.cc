@@ -36,12 +36,12 @@ Abstractions ProjectionGenerator::generate_abstractions(
 
     bool use_explicit = use_explicit_transitions(transition_type, task_proxy);
 
-    if (!use_explicit &&
-        task_properties::has_conditional_effects(task_proxy)) {
-        cerr << "Error: configuration doesn't support conditional effects. "
-                "Use projections(..., transitions=explicit) or transitions=auto "
-                "to build projections that support conditional effects."
-             << endl;
+    if (!use_explicit && task_properties::has_conditional_effects(task_proxy)) {
+        cerr
+            << "Error: configuration doesn't support conditional effects. "
+               "Use projections(..., transitions=explicit) or transitions=auto "
+               "to build projections that support conditional effects."
+            << endl;
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
 
@@ -155,8 +155,10 @@ public:
 static plugins::FeaturePlugin<ProjectionGeneratorFeature> _plugin;
 
 static plugins::TypedEnumPlugin<TransitionSystemType> _enum_plugin({
-    {"explicit", "create explicit transition system (supports conditional effects)"},
-    {"implicit", "create compact implicit transition system (does not support conditional effects)"},
+    {"explicit",
+     "create explicit transition system (supports conditional effects)"},
+    {"implicit",
+     "create compact implicit transition system (does not support conditional effects)"},
     {"auto", "explicit if task has conditional effects, implicit otherwise"},
 });
 }

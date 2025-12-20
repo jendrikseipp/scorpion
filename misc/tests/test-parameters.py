@@ -66,8 +66,10 @@ PERMANENT_EXCEPTIONS = [
     "ocp",
     "pho",
     "pho_abstraction_constraints",
+    "projections",
     "scp",
     "scp_online",
+    "sys_scp",
     "ucp",
 ]
 
