@@ -258,7 +258,7 @@ def configs_optimal_lp(lp_solver="cplex"):
             f"""astar(operatorcounting([pho_abstraction_constraints([projections(systematic(2))], saturated=true)], lpsolver={lp_solver}))"""],
         "spho_offline": [
             "--search",
-            """astar(pho([projections(systematic(2))], saturated=true, max_orders=1))"""],
+            f"""astar(pho([projections(systematic(2))], saturated=true, max_orders=1, lpsolver={lp_solver}))"""],
         "lm_ocp": _get_landmark_config(cost_partitioning="optimal", lpsolver=lp_solver),
         "lm_pho": _get_landmark_config(cost_partitioning="pho", lpsolver=lp_solver),
         "lm_spho": _get_landmark_config(cost_partitioning="saturated_pho", lpsolver=lp_solver),
