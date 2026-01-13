@@ -61,9 +61,7 @@ CEGAR::CEGAR(
         log << "Maximum time: " << timer.get_remaining_time() << endl;
     }
 
-    bool is_landmark_subtask =
-        dynamic_cast<extra_tasks::DomainAbstractedTask *>(task.get());
-    refinement_loop(is_landmark_subtask);
+    refinement_loop();
     if (log.is_at_least_normal()) {
         log << "Done building abstraction." << endl;
         log << "Time for building abstraction: " << timer.get_elapsed_time()
@@ -154,7 +152,7 @@ bool CEGAR::may_keep_refining() const {
     return true;
 }
 
-void CEGAR::refinement_loop(bool is_landmark_subtask) {
+void CEGAR::refinement_loop() {
     /*
       For landmark tasks we have to map all states in which the
       landmark might have been achieved to arbitrary abstract goal
@@ -164,7 +162,7 @@ void CEGAR::refinement_loop(bool is_landmark_subtask) {
       to simplify the implementation. This way, we don't have to split
       goal states later.
     */
-    if (is_landmark_subtask) {
+    if (task_proxy.get_goals().size() == 1) {
         separate_facts_unreachable_before_goal();
     } else {
         // Iteratively split off the next goal fact from the current goal state.
