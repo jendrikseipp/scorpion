@@ -10,6 +10,7 @@
 #include "utils/system.h"
 
 #include <cassert>
+#include <limits>
 
 using namespace std;
 
@@ -130,21 +131,25 @@ vector<OperatorID> SearchSpace::trace_path(
         const State &next = states[i + 1];
         vector<OperatorID> applicable_op_ids;
         successor_generator.generate_applicable_ops(s, applicable_op_ids);
-        bool found = false;
+        OperatorID best_op_id = OperatorID::no_operator;
+        int best_cost = numeric_limits<int>::max();
         for (OperatorID op_id : applicable_op_ids) {
             State succ = registry->get_successor_state(s, operators[op_id]);
             if (succ == next) {
-                path.push_back(op_id);
-                found = true;
-                break;
+                int cost = operators[op_id].get_cost();
+                if (cost < best_cost) {
+                    best_cost = cost;
+                    best_op_id = op_id;
+                }
             }
         }
-        if (!found) {
+        if (best_op_id == OperatorID::no_operator) {
             cerr << "Internal error: couldn't recompute operator from state "
                  << s.get_id() << " to next state " << next.get_id() << "."
                  << endl;
             utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
+        path.push_back(best_op_id);
     }
     return path;
 }
