@@ -2,47 +2,52 @@
 #define VARIABLE_H
 
 #include <iostream>
+#include <string>
 #include <vector>
-using namespace std;
 
 class Variable {
-    vector<string> values;
-    string name;
+    std::vector<std::string> values;
+    std::string name;
     int layer;
     int level;
-    bool necessary;
-    vector<bool> reachable; //atorralba: added to prune unreachable values
+    std::vector<bool> reachable; // Added to prune unreachable values.
     int reachable_values;
+    // Cached prefix sums for O(1) get_new_id.
+    mutable std::vector<int> prefix_sum;
+    mutable bool prefix_sum_valid = false;
 public:
-    Variable(istream &in);
-    void set_level(int level);
-    void set_necessary();
-    void reset_necessary(){necessary= false;}
+    explicit Variable(std::istream &in);
     int get_level() const;
+    void set_level(int level);
     bool is_necessary() const;
     int get_range() const;
-    string get_name() const;
-    int get_layer() const {return layer; }
-    bool is_derived() const {return layer != -1; }
-    void generate_cpp_input(ofstream &outfile) const;
+    std::string get_name() const;
+    int get_layer() const {
+        return layer;
+    }
+    bool is_derived() const {
+        return layer != -1;
+    }
+    void generate_cpp_input(std::ofstream &outfile) const;
     void dump() const;
 
-    string get_fact_name(int value) const {
+    const std::string &get_atom_name(int value) const {
         return values[value];
     }
 
-    inline void set_unreachable(int value) {
+    void set_unreachable(int value) {
         if (reachable[value]) {
             reachable[value] = false;
             reachable_values--;
+            prefix_sum_valid = false; // Invalidate cache.
         }
     }
 
-    inline bool is_reachable(int value) const {
+    bool is_reachable(int value) const {
         return reachable[value];
     }
 
-    void remove_unreachable_facts();
+    void remove_unreachable_atoms();
     int get_new_id(int value) const;
 };
 

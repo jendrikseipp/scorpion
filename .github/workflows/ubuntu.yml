@@ -128,7 +128,7 @@ jobs:
 
       - name: Delete artifact (ignore if not found)
         uses: geekyeggo/delete-artifact@v2
-        continue-on-error: true  
+        continue-on-error: true
         with:
           name: compiled-planner-${{ matrix.version.ubuntu }}
 
@@ -164,7 +164,7 @@ jobs:
       - name: Run driver, translator and search tests
         run: |
           cd misc/
-          tox -e driver,translator,search,parameters,generate-docs
+          tox -e driver,translator,preprocessing,search,parameters,generate-docs
 
       - name: Run CPLEX tests
         if: ${{ env.CPLEX_URL != 0 }}

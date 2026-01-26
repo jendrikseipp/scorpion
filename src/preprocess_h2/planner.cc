@@ -7,13 +7,54 @@
 #include "state.h"
 #include "variable.h"
 
+#include <algorithm>
 #include <ctime>
 #include <iostream>
+#include <string_view>
 #include <unordered_set>
+
 using namespace std;
 
+static void print_usage(const char *program_name) {
+    cout
+        << "Usage: " << program_name << " [OPTIONS] < input.sas\n"
+        << "\n"
+        << "Preprocessor for the Fast Downward planning system.\n"
+        << "Reads SAS+ output from translator and produces preprocessed output.\n"
+        << "\n"
+        << "Options:\n"
+        << "  -h, --help                       Show this help message and exit\n"
+        << "  --outfile FILE                   Write output to FILE (default: preprocessed-output.sas)\n"
+        << "  --h2-time-limit SECONDS          Time limit for h^2 mutex computation in seconds (default: 300)\n"
+        << "  --no-h2                          Disable h^2 mutex computation\n"
+        << "  --no-backward-h2                 Disable backward h^2 mutex computation\n"
+        << "  --keep-unimportant-variables     Do not perform relevance analysis\n"
+        << "  --add-implied-preconditions      Include augmented preconditions\n"
+        << "  --add-implied-goals              Include augmented goals\n"
+        << "  --show-expensive-statistics      Compute expensive statistics\n"
+        << endl;
+}
+
+static void parse_error(const char *program_name, const string &message) {
+    cerr << "Error: " << message << "\n\n";
+    print_usage(program_name);
+    exit(2);
+}
+
+static void strip_goals(vector<pair<Variable *, int>> &goals) {
+    size_t new_index = 0;
+    for (size_t i = 0; i < goals.size(); ++i) {
+        if (goals[i].first->is_necessary()) {
+            if (new_index != i)
+                goals[new_index] = goals[i];
+            ++new_index;
+        }
+    }
+    goals.erase(goals.begin() + new_index, goals.end());
+}
+
 void preprocess(int argc, const char **argv) {
-    int h2_mutex_time = 300; // 5 minutes to compute mutexes by default
+    int h2_mutex_time = 300; // 5 minutes to compute mutexes by default.
     bool include_augmented_preconditions = false;
     bool include_augmented_goals = false;
     bool expensive_statistics = false;
@@ -30,60 +71,57 @@ void preprocess(int argc, const char **argv) {
     string outfile = "preprocessed-output.sas";
 
     for (int i = 1; i < argc; ++i) {
-        string arg = string(argv[i]);
-        if (arg.compare("--no_rel") == 0) {
-            cout << "*** do not perform relevance analysis ***" << endl;
+        const string_view arg = argv[i];
+
+        if (arg == "-h" || arg == "--help") {
+            print_usage(argv[0]);
+            exit(0);
+        } else if (arg == "--keep-unimportant-variables") {
+            cout << "Disabling relevance analysis" << endl;
             g_do_not_prune_variables = true;
-        } else if (arg.compare("--h2_time_limit") == 0) {
-            i++;
-            if (i < argc) {
-                try {
-                    h2_mutex_time = atoi(argv[i]);
-                } catch (std::invalid_argument &) {
-                    cerr
-                        << "please specify the number of seconds after --h2_time_limit"
-                        << endl;
-                    exit(2);
+        } else if (arg == "--h2-time-limit") {
+            if (++i >= argc) {
+                parse_error(argv[0], "--h2-time-limit requires an argument");
+            }
+            try {
+                h2_mutex_time = stoi(argv[i]);
+                if (h2_mutex_time < 0) {
+                    parse_error(
+                        argv[0], "--h2-time-limit must be non-negative");
                 }
-            } else {
-                cerr
-                    << "please specify the number of seconds after --h2_time_limit"
-                    << endl;
-                exit(2);
+            } catch (const invalid_argument &) {
+                parse_error(
+                    argv[0],
+                    string("invalid argument for --h2-time-limit: ") + argv[i]);
+            } catch (const out_of_range &) {
+                parse_error(
+                    argv[0],
+                    string("argument for --h2-time-limit out of range: ") +
+                        argv[i]);
             }
-        } else if (arg.compare("--no_h2") == 0) {
+        } else if (arg == "--no-h2") {
             h2_mutex_time = 0;
-        } else if (arg.compare("--augmented_pre") == 0) {
-            include_augmented_preconditions = true;
-        } else if (arg.compare("--augmented_goal") == 0) {
-            include_augmented_goals = true;
-        } else if (arg.compare("--no_bw_h2") == 0) {
+        } else if (arg == "--no-backward-h2") {
             disable_bw_h2 = true;
-        } else if (arg.compare("--stat") == 0) {
+        } else if (arg == "--add-implied-preconditions") {
+            include_augmented_preconditions = true;
+        } else if (arg == "--add-implied-goals") {
+            include_augmented_goals = true;
+        } else if (arg == "--show-expensive-statistics") {
             expensive_statistics = true;
-        } else if (arg.compare("--outfile") == 0) {
-            i++;
-            if (i < argc) {
-                outfile = string(argv[i]);
-            } else {
-                cerr << "please specify the output filename after --outfile"
-                     << endl;
-                exit(2);
+        } else if (arg == "--outfile") {
+            if (++i >= argc) {
+                parse_error(argv[0], "--outfile requires an argument");
             }
+            outfile = argv[i];
         } else {
-            cerr << "unknown option " << arg << endl << endl;
-            cout
-                << "Usage: ./preprocess-h2 [--no_rel] [--h2_time_limit SECONDS] [--no_h2] [--no_bw_h2] [--augmented_pre] [--augmented_goal] [--stat] [--outfile OUTFILE] < output"
-                << endl;
-            exit(2);
+            parse_error(argv[0], string("unknown option: ") + string(arg));
         }
     }
 
     read_preprocessed_problem_description(
         cin, metric, internal_variables, variables, mutexes, initial_state,
         goals, operators, axioms);
-    // dump_preprocessed_problem_description
-    //   (variables, initial_state, goals, operators, axioms);
 
     cout << "Building causal graph..." << endl;
     CausalGraph causal_graph(variables, operators, axioms, goals);
@@ -95,39 +133,36 @@ void preprocess(int argc, const char **argv) {
     strip_operators(operators);
     strip_axioms(axioms);
 
-    // compute h2 mutexes
+    // Compute h2 mutexes.
+    H2Mutexes h2(h2_mutex_time);
     if (axioms.size() > 0) {
         cout
             << "Disabling h2 analysis because it does not currently support axioms"
             << endl;
     } else if (h2_mutex_time) {
-        bool conditional_effects = false;
-        for (const Operator &op : operators) {
-            if (op.has_conditional_effects()) {
-                conditional_effects = true;
-                break;
-            }
-        }
-        if (conditional_effects)
+        if (std::any_of(
+                operators.cbegin(), operators.cend(),
+                [](const auto &op) { return op.has_conditional_effects(); })) {
             disable_bw_h2 = true;
+        }
 
         if (!compute_h2_mutexes(
-                ordering, operators, axioms, mutexes, initial_state, goals,
-                h2_mutex_time, disable_bw_h2)) {
+                ordering, operators, axioms, mutexes, initial_state, goals, h2,
+                disable_bw_h2)) {
             generate_unsolvable_cpp_input(outfile);
             return;
         }
 
-        // Update the causal graph and remove unneccessary variables
+        // Update the causal graph and remove unnecessary variables.
         strip_mutexes(mutexes);
         strip_operators(operators);
         strip_axioms(axioms);
 
         cout << "Change id of operators: " << operators.size() << endl;
         // 1) Change id of values in operators and axioms to remove unreachable
-        // facts from variables
+        // atoms from variables.
         for (Operator &op : operators) {
-            op.remove_unreachable_facts(ordering);
+            op.remove_unreachable_atoms(ordering);
         }
         // TODO: Activate this if axioms get supported by the h2 heuristic
         // cout << "Change id of axioms: " << axioms.size() << endl;
@@ -136,40 +171,44 @@ void preprocess(int argc, const char **argv) {
         // }
         cout << "Change id of mutexes" << endl;
         for (MutexGroup &mutex : mutexes) {
-            mutex.remove_unreachable_facts();
+            mutex.remove_unreachable_atoms();
         }
         cout << "Change id of goals" << endl;
-        vector<pair<Variable *, int>> new_goals;
-        for (pair<Variable *, int> &goal : goals) {
-            if (goal.first->is_necessary()) {
-                goal.second = goal.first->get_new_id(goal.second);
-                new_goals.push_back(goal);
-            }
+        for (auto &[goal_var, goal_val] : goals) {
+            goal_val = goal_var->get_new_id(goal_val);
         }
-        new_goals.swap(goals);
+        strip_goals(goals);
         cout << "Change id of initial state" << endl;
-        if (initial_state.remove_unreachable_facts()) {
+        if (initial_state.remove_unreachable_atoms()) {
             generate_unsolvable_cpp_input(outfile);
             return;
         }
 
-        cout << "Remove unreachable facts from variables: " << ordering.size()
+        cout << "Remove unreachable atoms from variables: " << ordering.size()
              << endl;
-        // 2)Remove unreachable facts from variables
+        // 2) Remove unreachable atoms from variables.
         for (Variable *var : ordering) {
             if (var->is_necessary()) {
-                var->remove_unreachable_facts();
+                var->remove_unreachable_atoms();
             }
         }
 
+        // Strip after removing unreachable atoms from variables
         strip_mutexes(mutexes);
         strip_operators(operators);
         strip_axioms(axioms);
 
+        // Update causal graph: removes unnecessary variables and updates
+        // levels. NOTE: this invalidates all data structures that use variable
+        // levels as indices.
         causal_graph.update();
+
+        // Strip again: operators/mutexes/goals may have become redundant due to
+        // variables being removed or variable levels changing
         strip_mutexes(mutexes);
         strip_operators(operators);
         strip_axioms(axioms);
+        strip_goals(goals);
     }
 
     // Output some task statistics
@@ -223,7 +262,7 @@ void preprocess(int argc, const char **argv) {
              << num_total_potential_noeff << endl;
         cout << "Ops with potential preconditions contradict effects: "
              << num_op_potential_noeff << endl;
-        set<vector<int>> mutexes_fw, mutexes_bw;
+        unordered_set<vector<int>> mutexes_fw, mutexes_bw;
         for (MutexGroup &mutex : mutexes) {
             if (!mutex.is_redundant()) {
                 if (mutex.is_fw())
@@ -240,6 +279,9 @@ void preprocess(int argc, const char **argv) {
         for (Operator &op : operators) {
             op.include_augmented_preconditions();
         }
+        // Strip operators again as augmented preconditions may reference
+        // removed variables
+        strip_operators(operators);
     }
 
     if (include_augmented_goals) {
@@ -261,15 +303,11 @@ void preprocess(int argc, const char **argv) {
             if (mutex.is_redundant())
                 continue;
 
-            // Check if this mutex contains any goal fact
-            bool contains_goal = false;
-            for (const auto &[var, val] : goals) {
-                if (mutex.hasPair(var->get_level(), val)) {
-                    contains_goal = true;
-                    break;
-                }
-            }
-            if (contains_goal) {
+            if (std::any_of(
+                    goals.cbegin(), goals.cend(), [&](const auto &goal) {
+                        return mutex.has_atom(
+                            goal.first->get_level(), goal.second);
+                    })) {
                 relevant_mutexes.push_back(&mutex);
             }
         }
@@ -294,17 +332,11 @@ void preprocess(int argc, const char **argv) {
                 if (!var->is_reachable(val))
                     continue;
 
-                // Check if this value conflicts with any goal via mutexes
-                bool is_compatible = true;
-                for (const MutexGroup *mutex : relevant_mutexes) {
-                    if (mutex->hasPair(var_level, val)) {
-                        // This value is in a mutex that contains a goal fact
-                        is_compatible = false;
-                        break;
-                    }
-                }
-
-                if (is_compatible) {
+                if (std::none_of(
+                        relevant_mutexes.cbegin(), relevant_mutexes.cend(),
+                        [&](const auto &mutex) {
+                            return mutex->has_atom(var_level, val);
+                        })) {
                     compatible_count++;
                     compatible_val = val;
                     // Early exit if more than one compatible value found
@@ -357,6 +389,10 @@ int main(int argc, const char **argv) {
     preprocess(argc, argv);
     double cpu_time_used = get_passed_time(start_time);
     cout << "Preprocessor time: " << cpu_time_used << "s" << endl;
+    int peak_memory = get_peak_memory_in_kb();
+    if (peak_memory != -1) {
+        cout << "Preprocessor peak memory: " << peak_memory << " KB" << endl;
+    }
     cout << "done" << endl;
     return 0;
 }

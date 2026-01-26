@@ -92,4 +92,4 @@ def get_error_output_and_returncode(nick, cmd, time_limit=None,
     p = subprocess.Popen(cmd, preexec_fn=preexec_fn, stderr=subprocess.PIPE,
                          env=env)
     (stdout, stderr) = p.communicate()
-    return stderr, p.returncode
+    return stderr.decode(), p.returncode

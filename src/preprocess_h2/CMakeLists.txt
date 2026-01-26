@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.3)
 project(preprocess-h2 LANGUAGES CXX)
 
 set(PREPROCESS_SOURCES
@@ -74,7 +75,7 @@ macro(fast_downward_set_compiler_flags)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4458") # declaration hides class member
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267") # conversion from size_t to int with possible loss of data
 
-        # The following are disabled because of what seems to be compiler bugs.
+        # The following are disabled because of what seems to be a compiler bugs.
         # "unreferenced local function has been removed";
         # see http://stackoverflow.com/questions/3051992/compiler-warning-at-c-template-base-class
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4505")

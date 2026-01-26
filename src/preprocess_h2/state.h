@@ -2,22 +2,21 @@
 #define STATE_H
 
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <vector>
-using namespace std;
 
 class Variable;
 
 class State {
-    map<Variable *, int> values;
+    std::unordered_map<Variable *, int> values;
 public:
-    State() {} // TODO: Entfernen (erfordert kleines Redesign)
-    State(istream &in, const vector<Variable *> &variables);
+    State() = default;
+    State(std::istream &in, const std::vector<Variable *> &variables);
 
     int operator[](Variable *var) const;
     void dump() const;
-    // Returns true, if the state contains an unreachable fact
-    bool remove_unreachable_facts();
+    // Returns true if the state contains an unreachable atom.
+    bool remove_unreachable_atoms();
 };
 
 #endif

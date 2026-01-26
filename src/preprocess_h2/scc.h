@@ -19,24 +19,25 @@
 */
 
 #include <vector>
-using namespace std;
 
 class SCC {
-    const vector<vector<int>> &graph;
+    const std::vector<std::vector<int>> &graph;
 
     // The following three are indexed by vertex number.
-    vector<int> dfs_numbers;
-    vector<int> dfs_minima;
-    vector<int> stack_indices;
+    std::vector<int> dfs_numbers;
+    std::vector<int> dfs_minima;
+    std::vector<int> stack_indices;
 
-    vector<int> stack; // This is indexed by the level of recursion.
-    vector<vector<int>> sccs;
+    std::vector<int> stack; // Indexed by the level of recursion.
+    std::vector<std::vector<int>> sccs;
 
     int current_dfs_number;
 
     void dfs(int vertex);
 public:
-    SCC(const vector<vector<int>> &theGraph) : graph(theGraph) {}
-    vector<vector<int>> get_result();
+    explicit SCC(const std::vector<std::vector<int>> &theGraph)
+        : graph(theGraph) {
+    }
+    std::vector<std::vector<int>> get_result();
 };
 #endif

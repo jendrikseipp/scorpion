@@ -1,6 +1,9 @@
+callgrind.out.*
+*.sas
 __pycache__/
 /docs/search/*.md
 /output.sas
+/preprocessed-output.sas
 /sas_plan
 /sas_plan.*
 /builds/

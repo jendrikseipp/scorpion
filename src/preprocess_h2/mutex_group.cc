@@ -6,68 +6,72 @@
 #include <fstream>
 #include <iostream>
 
-MutexGroup::MutexGroup(istream &in, const vector<Variable *> &variables) : dir(FW) {
-    //Mutex groups detected in the translator are "fw" mutexes
+using namespace std;
+
+MutexGroup::MutexGroup(istream &in, const vector<Variable *> &variables)
+    : direction(FW) {
+    // Mutex groups detected in the translator are "fw" mutexes.
     int size;
     check_magic(in, "begin_mutex_group");
     in >> size;
+    facts.reserve(size);
     for (int i = 0; i < size; ++i) {
         int var_no, value;
         in >> var_no >> value;
-        facts.push_back(make_pair(variables[var_no], value));
+        facts.emplace_back(variables[var_no], value);
     }
     check_magic(in, "end_mutex_group");
 }
-MutexGroup::MutexGroup(const vector<pair<int, int>> &f,
-                       const vector<Variable *> &variables,
-                       bool regression) {
+MutexGroup::MutexGroup(
+    const vector<Atom> &atoms_, const vector<Variable *> &variables,
+    bool regression) {
     if (regression) {
-        dir = BW;
+        direction = BW;
     } else {
-        dir = FW;
+        direction = FW;
     }
-    for (size_t i = 0; i < f.size(); ++i) {
-        int var_no = f[i].first;
-        int value = f[i].second;
-        facts.push_back(make_pair(variables[var_no], value));
+    facts.reserve(atoms_.size());
+    for (const auto &atom : atoms_) {
+        facts.emplace_back(variables[atom.var], atom.value);
     }
 }
 
-MutexGroup::MutexGroup(const Variable *var) : dir(FW) {
+MutexGroup::MutexGroup(const Variable *var) : direction(FW) {
+    facts.reserve(var->get_range());
     for (int i = 0; i < var->get_range(); ++i) {
-        facts.push_back(make_pair(var, i));
+        facts.emplace_back(var, i);
     }
 }
 
 int MutexGroup::get_encoding_size() const {
-    return facts.size();
+    return static_cast<int>(facts.size());
 }
 
 void MutexGroup::dump() const {
     cout << "mutex group of size " << facts.size() << ":" << endl;
-    for (const auto &fact : facts) {
-        const Variable *var = fact.first;
-        int value = fact.second;
-        cout << "   " << var->get_name() << " = " << value
-             << " (" << var->get_fact_name(value) << ")" << endl;
+    for (const auto &[var, value] : facts) {
+        cout << "   " << var->get_name() << " = " << value << " ("
+             << var->get_atom_name(value) << ")" << endl;
     }
 }
 
 void MutexGroup::generate_cpp_input(ofstream &outfile) const {
-    outfile << "begin_mutex_group" << endl
-            << facts.size() << endl;
-    for (const auto &fact : facts) {
-        outfile << fact.first->get_level()
-                << " " << fact.second << endl;
+    outfile << "begin_mutex_group" << endl << facts.size() << endl;
+    for (const auto &[var, value] : facts) {
+        outfile << var->get_level() << " " << value << endl;
     }
     outfile << "end_mutex_group" << endl;
 }
 
-void MutexGroup::strip_unimportant_facts() {
-    int new_index = 0;
-    for (const auto &fact : facts) {
-        if (fact.first->get_level() != -1 && fact.first->is_necessary())
-            facts[new_index++] = fact;
+void MutexGroup::strip_unimportant_atoms() {
+    size_t new_index = 0;
+    for (size_t i = 0; i < facts.size(); ++i) {
+        if (facts[i].first->get_level() != -1 &&
+            facts[i].first->is_necessary()) {
+            if (new_index != i)
+                facts[new_index] = facts[i];
+            ++new_index;
+        }
     }
     facts.erase(facts.begin() + new_index, facts.end());
 }
@@ -75,7 +79,7 @@ void MutexGroup::strip_unimportant_facts() {
 bool MutexGroup::is_redundant() const {
     // Only mutex groups that talk about two or more different
     // finite-domain variables are interesting.
-    int num_facts = facts.size();
+    int num_facts = static_cast<int>(facts.size());
     for (int i = 1; i < num_facts; ++i)
         if (facts[i].first != facts[i - 1].first)
             return false;
@@ -83,44 +87,68 @@ bool MutexGroup::is_redundant() const {
 }
 
 void strip_mutexes(vector<MutexGroup> &mutexes) {
-    int old_count = mutexes.size();
-    int new_index = 0;
-    for (MutexGroup &mutex : mutexes) {
-        mutex.strip_unimportant_facts();
-        if (!mutex.is_redundant())
-            mutexes[new_index++] = mutex;
-    }
-    mutexes.erase(mutexes.begin() + new_index, mutexes.end());
-    cout << mutexes.size() << " of " << old_count
-         << " mutex groups necessary." << endl;
-}
-
-void MutexGroup::remove_unreachable_facts() {
-    vector<pair<const Variable *, int>> newfacts;
-    for (const pair<const Variable *, int> &fact : facts) {
-        if (fact.first->is_necessary() && fact.first->is_reachable(fact.second)) {
-            newfacts.push_back(make_pair(fact.first, fact.first->get_new_id(fact.second)));
+    int old_count = static_cast<int>(mutexes.size());
+    size_t new_index = 0;
+    for (size_t i = 0; i < mutexes.size(); ++i) {
+        mutexes[i].strip_unimportant_atoms();
+        if (!mutexes[i].is_redundant()) {
+            if (new_index != i)
+                mutexes[new_index] = std::move(mutexes[i]);
+            ++new_index;
         }
     }
-    newfacts.swap(facts);
+    mutexes.erase(mutexes.begin() + new_index, mutexes.end());
+    cout << mutexes.size() << " of " << old_count << " mutex groups necessary."
+         << endl;
 }
 
-
-
-void MutexGroup::get_mutex_group(vector<pair<int, int>> &invariant_group) const {
-    invariant_group.reserve(facts.size());
-    for (size_t j = 0; j < facts.size(); ++j) {
-        int var = facts[j].first->get_level();
-        int val = facts[j].second;
-        invariant_group.push_back(make_pair(var, val));
+void MutexGroup::remove_unreachable_atoms() {
+    vector<pair<const Variable *, int>> newfacts;
+    newfacts.reserve(facts.size());
+    for (const auto &[var, value] : facts) {
+        if (var->is_necessary() && var->is_reachable(value)) {
+            newfacts.emplace_back(var, var->get_new_id(value));
+        }
     }
+    facts = std::move(newfacts);
 }
 
-bool MutexGroup::hasPair(int var, int val) const {
-    for (const pair<const Variable *, int> &fact : facts) {
-        if (fact.first->get_level() == var && fact.second == val) {
+vector<Atom> MutexGroup::get_mutex_group() const {
+    vector<Atom> invariant_group;
+    invariant_group.reserve(facts.size());
+    for (const auto &[var, value] : facts) {
+        invariant_group.emplace_back(var->get_level(), value);
+    }
+    return invariant_group;
+}
+
+bool MutexGroup::has_atom(int var, int val) const {
+    for (const auto &[variable, value] : facts) {
+        if (variable->get_level() == var && value == val) {
             return true;
         }
     }
     return false;
+}
+
+void MutexGroup::add_tuples(unordered_set<vector<int>> &tuples) const {
+    vector<Atom> atoms = get_mutex_group();
+    for (size_t i = 0; i < atoms.size(); ++i) {
+        int v1 = atoms[i].var;
+        int a1 = atoms[i].value;
+
+        for (size_t j = i + 1; j < atoms.size(); ++j) {
+            int v2 = atoms[j].var;
+            int a2 = atoms[j].value;
+
+            if (v1 == v2)
+                continue;
+
+            if (v2 < v1) {
+                tuples.emplace(vector<int>{v2, a2, v1, a1});
+            } else {
+                tuples.emplace(vector<int>{v1, a1, v2, a2});
+            }
+        }
+    }
 }

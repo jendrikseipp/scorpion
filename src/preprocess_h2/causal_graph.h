@@ -2,54 +2,59 @@
 #define CAUSAL_GRAPH_H
 
 #include <iosfwd>
-#include <vector>
 #include <map>
-using namespace std;
+#include <unordered_set>
+#include <vector>
 
 class Operator;
 class Axiom;
 class Variable;
 
 class CausalGraph {
-    const vector<Variable *> &variables;
-    const vector<Operator> &operators;
-    const vector<Axiom> &axioms;
-    const vector<pair<Variable *, int>> &goals;
+    const std::vector<Variable *> &variables;
+    const std::vector<Operator> &operators;
+    const std::vector<Axiom> &axioms;
+    const std::vector<std::pair<Variable *, int>> &goals;
 
-    typedef map<Variable *, int> WeightedSuccessors;
-    typedef map<Variable *, WeightedSuccessors> WeightedGraph;
+    typedef std::map<Variable *, int> WeightedSuccessors;
+    typedef std::map<Variable *, WeightedSuccessors> WeightedGraph;
     WeightedGraph weighted_graph;
-    typedef map<Variable *, int> Predecessors;
-    typedef map<Variable *, Predecessors> PredecessorGraph;
-    // predecessor_graph is weighted_graph with edges turned around
+    typedef std::map<Variable *, int> Predecessors;
+    typedef std::map<Variable *, Predecessors> PredecessorGraph;
+    // predecessor_graph is weighted_graph with edges turned around.
     PredecessorGraph predecessor_graph;
 
-    typedef vector<vector<Variable *>> Partition;
-    typedef vector<Variable *> Ordering;
+    typedef std::vector<std::vector<Variable *>> Partition;
+    typedef std::vector<Variable *> Ordering;
     Ordering ordering;
     bool acyclic;
 
-    void weigh_graph_from_ops(const vector<Variable *> &variables,
-                              const vector<Operator> &operators,
-                              const vector<pair<Variable *, int>> &goals);
-    void weigh_graph_from_axioms(const vector<Variable *> &variables,
-                                 const vector<Axiom> &axioms,
-                                 const vector<pair<Variable *, int>> &goals);
-    void get_strongly_connected_components(const vector<Variable *> &variables, Partition &sccs);
+    void weigh_graph_from_ops(
+        const std::vector<Variable *> &variables,
+        const std::vector<Operator> &operators,
+        const std::vector<std::pair<Variable *, int>> &goals);
+    void weigh_graph_from_axioms(
+        const std::vector<Variable *> &variables,
+        const std::vector<Axiom> &axioms,
+        const std::vector<std::pair<Variable *, int>> &goals);
+    void get_strongly_connected_components(
+        const std::vector<Variable *> &variables, Partition &sccs);
     void calculate_topological_pseudo_sort(const Partition &sccs);
     void calculate_important_vars();
-    void dfs(Variable *from);
+    void dfs(Variable *from, std::unordered_set<Variable *> &necessary_vars);
 public:
-    CausalGraph(const vector<Variable *> &variables,
-                const vector<Operator> &operators,
-                const vector<Axiom> &axioms,
-                const vector<pair<Variable *, int>> &the_goals);
-    ~CausalGraph() {}
-    const vector<Variable *> &get_variable_ordering() const;
+    CausalGraph(
+        const std::vector<Variable *> &variables,
+        const std::vector<Operator> &operators,
+        const std::vector<Axiom> &axioms,
+        const std::vector<std::pair<Variable *, int>> &the_goals);
+    ~CausalGraph() = default;
+    const std::vector<Variable *> &get_variable_ordering() const;
     bool is_acyclic() const;
     void dump() const;
-    void generate_cpp_input(ofstream &outfile,
-                            const vector<Variable *> &ordered_vars) const;
+    void generate_cpp_input(
+        std::ofstream &outfile,
+        const std::vector<Variable *> &ordered_vars) const;
     void update();
 };
 

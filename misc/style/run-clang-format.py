@@ -14,6 +14,7 @@ import utils
 DIR = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(DIR))
 SEARCH_DIR = os.path.join(REPO, "src", "search")
+PREPROCESS_DIR = os.path.join(REPO, "src", "preprocess_h2")
 
 
 def parse_args():
@@ -29,9 +30,9 @@ def parse_args():
 
 def search_files_are_dirty():
     if os.path.exists(os.path.join(REPO, ".git")):
-        cmd = ["git", "status", "--porcelain", SEARCH_DIR]
+        cmd = ["git", "status", "--porcelain", SEARCH_DIR, PREPROCESS_DIR]
     elif os.path.exists(os.path.join(REPO, ".hg")):
-        cmd = ["hg", "status", SEARCH_DIR]
+        cmd = ["hg", "status", SEARCH_DIR, PREPROCESS_DIR]
     else:
         sys.exit("Error: repo must contain a .git or .hg directory.")
     return bool(subprocess.check_output(cmd, cwd=REPO))
@@ -42,6 +43,7 @@ def main():
     if not args.force and args.modify and search_files_are_dirty():
         sys.exit(f"Error: {SEARCH_DIR} has uncommited changes.")
     src_files = utils.get_src_files(SEARCH_DIR, (".h", ".cc"), ("ext",))
+    src_files += utils.get_src_files(PREPROCESS_DIR, (".h", ".cc"), ("ext",))
     print(f"Checking {len(src_files)} files with clang-format.")
     config_file = os.path.join(REPO, ".clang-format")
     executable = "clang-format-18"

@@ -1,20 +1,22 @@
-#include "helper_functions.h"
 #include "axiom.h"
+
+#include "helper_functions.h"
 #include "variable.h"
 
-#include <iostream>
-#include <fstream>
 #include <cassert>
+#include <fstream>
+#include <iostream>
 using namespace std;
 
 Axiom::Axiom(istream &in, const vector<Variable *> &variables) {
     check_magic(in, "begin_rule");
     int count; // number of conditions
     in >> count;
+    conditions.reserve(count);
     for (int i = 0; i < count; i++) {
         int varNo, val;
         in >> varNo >> val;
-        conditions.push_back(Condition(variables[varNo], val));
+        conditions.emplace_back(variables[varNo], val);
     }
     int varNo, oldVal, newVal;
     in >> varNo >> oldVal >> newVal;
@@ -29,13 +31,18 @@ bool Axiom::is_redundant() const {
 }
 
 void strip_axioms(vector<Axiom> &axioms) {
-    int old_count = axioms.size();
-    int new_index = 0;
-    for (const Axiom &axiom : axioms)
-        if (!axiom.is_redundant())
-            axioms[new_index++] = axiom;
+    int old_count = static_cast<int>(axioms.size());
+    size_t new_index = 0;
+    for (size_t i = 0; i < axioms.size(); ++i) {
+        if (!axioms[i].is_redundant()) {
+            if (new_index != i)
+                axioms[new_index] = std::move(axioms[i]);
+            ++new_index;
+        }
+    }
     axioms.erase(axioms.begin() + new_index, axioms.end());
-    cout << axioms.size() << " of " << old_count << " axiom rules necessary." << endl;
+    cout << axioms.size() << " of " << old_count << " axiom rules necessary."
+         << endl;
 }
 
 void Axiom::dump() const {
@@ -50,7 +57,7 @@ void Axiom::dump() const {
 }
 
 int Axiom::get_encoding_size() const {
-    return 1 + conditions.size();
+    return 1 + static_cast<int>(conditions.size());
 }
 
 void Axiom::generate_cpp_input(ofstream &outfile) const {
@@ -61,6 +68,7 @@ void Axiom::generate_cpp_input(ofstream &outfile) const {
         assert(condition.var->get_level() != -1);
         outfile << condition.var->get_level() << " " << condition.cond << endl;
     }
-    outfile << effect_var->get_level() << " " << old_val << " " << effect_val << endl;
+    outfile << effect_var->get_level() << " " << old_val << " " << effect_val
+            << endl;
     outfile << "end_rule" << endl;
 }
