@@ -742,6 +742,10 @@ def main():
     if get_options().dump_predicates:
         dump_predicates(task, "predicates.txt")
 
+    if get_options().stop_after_parsing_pddl:
+        print("Done! %s" % timer)
+        return
+
     with timers.timing("Normalizing task"):
         normalize.normalize(task)
 

@@ -89,6 +89,9 @@ def parse_args(args=None):
         help="How to assign layers to derived variables. 'min' attempts to put as "
         "many variables into the same layer as possible, while 'max' puts each variable "
         "into its own layer unless it is part of a cycle.")
+    argparser.add_argument(
+        "--stop-after-parsing-pddl", action="store_true",
+        help="exit after parsing PDDL files (PDDL linting mode)")
     return argparser.parse_args(args)
 
 
