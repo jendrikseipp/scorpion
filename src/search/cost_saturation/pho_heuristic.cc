@@ -32,11 +32,13 @@ PhO::PhO(
     vector<vector<int>> saturated_costs_by_abstraction;
     saturated_costs_by_abstraction.reserve(num_abstractions);
     h_values_by_abstraction.reserve(num_abstractions);
+    abstraction_has_dead_ends = vector<bool>(abstractions.size(), false);
     for (int i = 0; i < num_abstractions; ++i) {
         const Abstraction &abstraction = *abstractions[i];
         vector<int> h_values = abstraction.compute_goal_distances(costs);
         vector<int> saturated_costs =
             abstraction.compute_saturated_costs(h_values);
+        abstraction_has_dead_ends[i] = any_of(execution::unseq, h_values.begin(), h_values.end(), [](int x) {return x == cost_saturation::INF;});
         h_values_by_abstraction.push_back(move(h_values));
         saturated_costs_by_abstraction.push_back(move(saturated_costs));
     }
@@ -112,7 +114,7 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
     CostPartitioningHeuristic cp_heuristic;
     for (int i = 0; i < num_abstractions; ++i) {
         double weight = solution[i];
-        if (weight == 0.0) {
+        if (weight == 0.0 && !abstraction_has_dead_ends[i]) {
             // This abstraction is assigned a weight of zero, so we can skip it.
             continue;
         }
