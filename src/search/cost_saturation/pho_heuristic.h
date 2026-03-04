@@ -12,6 +12,7 @@ namespace cost_saturation {
 class PhO {
     lp::LPSolver lp_solver;
     std::vector<std::vector<int>> h_values_by_abstraction;
+    std::vector<bool> abstraction_has_unsolvable_states;
     utils::LogProxy log;
 
 public:

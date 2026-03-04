@@ -24,7 +24,9 @@ namespace cost_saturation {
 PhO::PhO(
     const Abstractions &abstractions, const vector<int> &costs,
     lp::LPSolverType solver_type, bool saturated, const utils::LogProxy &log)
-    : lp_solver(solver_type), log(log) {
+    : lp_solver(solver_type),
+      abstraction_has_unsolvable_states(abstractions.size(), false),
+      log(log) {
     double infinity = lp_solver.get_infinity();
     int num_abstractions = abstractions.size();
     int num_operators = costs.size();
@@ -35,6 +37,9 @@ PhO::PhO(
     for (int i = 0; i < num_abstractions; ++i) {
         const Abstraction &abstraction = *abstractions[i];
         vector<int> h_values = abstraction.compute_goal_distances(costs);
+        abstraction_has_unsolvable_states[i] = any_of(
+            execution::unseq, h_values.begin(), h_values.end(),
+            [](int x) { return x == cost_saturation::INF; });
         vector<int> saturated_costs =
             abstraction.compute_saturated_costs(h_values);
         h_values_by_abstraction.push_back(move(h_values));
@@ -112,8 +117,9 @@ CostPartitioningHeuristic PhO::compute_cost_partitioning(
     CostPartitioningHeuristic cp_heuristic;
     for (int i = 0; i < num_abstractions; ++i) {
         double weight = solution[i];
-        if (weight == 0.0) {
-            // This abstraction is assigned a weight of zero, so we can skip it.
+        if (weight == 0.0 && !abstraction_has_unsolvable_states[i]) {
+            // This abstraction is assigned a weight of zero and has no
+            // unsolvable states, so we can skip it.
             continue;
         }
         vector<int> weighted_h_values;
