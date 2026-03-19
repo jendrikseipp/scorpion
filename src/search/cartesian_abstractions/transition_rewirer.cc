@@ -68,11 +68,9 @@ static int lookup_value(const vector<FactPair> &facts, int var) {
 
 static void remove_transitions_with_given_target(
     Transitions &transitions, int state_id) {
-    auto new_end = remove_if(
-        transitions.begin(), transitions.end(),
-        [state_id](const Transition &t) { return t.target_id == state_id; });
-    assert(new_end != transitions.end());
-    transitions.erase(new_end, transitions.end());
+    erase_if(transitions, [state_id](const Transition &t) {
+        return t.target_id == state_id;
+    });
 }
 
 static void add_transition(
