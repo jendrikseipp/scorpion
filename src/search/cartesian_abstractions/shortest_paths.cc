@@ -351,21 +351,17 @@ void ShortestPaths::update_incrementally(
         if (use_cache) {
             // Remove invalid transitions from children and parents vectors.
             int num_parents_before = parents[state].size();
-            parents[state].erase(
-                remove_if(
-                    parents[state].begin(), parents[state].end(),
-                    [&](const Transition &parent) {
-                        assert(abstraction.has_transition(
-                            state, parent.op_id, parent.target_id));
-                        bool valid_parent = !states[parent.target_id].dirty;
-                        if (!valid_parent) {
-                            remove_child(
-                                parent.target_id,
-                                Transition(parent.op_id, state));
-                        }
-                        return !valid_parent;
-                    }),
-                parents[state].end());
+            erase_if(parents[state], [&](const Transition &parent) {
+                assert(abstraction.has_transition(
+                    state, parent.op_id, parent.target_id));
+                bool valid_parent = !states[parent.target_id].dirty;
+                if (!valid_parent) {
+                    remove_child(
+                        parent.target_id,
+                        Transition(parent.op_id, state));
+                }
+                return !valid_parent;
+            });
             int num_parents_after = parents[state].size();
             num_parents += num_parents_after - num_parents_before;
             reconnected = !parents[state].empty();
