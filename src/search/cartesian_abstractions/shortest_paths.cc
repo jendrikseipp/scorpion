@@ -357,8 +357,7 @@ void ShortestPaths::update_incrementally(
                 bool valid_parent = !states[parent.target_id].dirty;
                 if (!valid_parent) {
                     remove_child(
-                        parent.target_id,
-                        Transition(parent.op_id, state));
+                        parent.target_id, Transition(parent.op_id, state));
                 }
                 return !valid_parent;
             });
