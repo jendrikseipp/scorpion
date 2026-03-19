@@ -136,26 +136,26 @@ void strip_operators(vector<Operator> &operators) {
 }
 
 void Operator::generate_cpp_input(ofstream &outfile) const {
-    outfile << "begin_operator" << endl;
-    outfile << name << endl;
+    outfile << "begin_operator\n";
+    outfile << name << '\n';
 
-    outfile << prevail.size() << endl;
+    outfile << prevail.size() << '\n';
     for (const auto &prev : prevail) {
         assert(prev.var->get_level() != -1);
-        outfile << prev.var->get_level() << " " << prev.prev << endl;
+        outfile << prev.var->get_level() << " " << prev.prev << '\n';
     }
 
-    outfile << pre_post.size() << endl;
+    outfile << pre_post.size() << '\n';
     for (const auto &eff : pre_post) {
         assert(eff.var->get_level() != -1);
         outfile << eff.effect_conds.size();
         for (const auto &cond : eff.effect_conds)
             outfile << " " << cond.var->get_level() << " " << cond.cond;
         outfile << " " << eff.var->get_level() << " " << eff.pre << " "
-                << eff.post << endl;
+                << eff.post << '\n';
     }
-    outfile << cost << endl;
-    outfile << "end_operator" << endl;
+    outfile << cost << '\n';
+    outfile << "end_operator\n";
 }
 
 // Removes ambiguity in the preconditions,

@@ -56,11 +56,11 @@ void MutexGroup::dump() const {
 }
 
 void MutexGroup::generate_cpp_input(ofstream &outfile) const {
-    outfile << "begin_mutex_group" << endl << facts.size() << endl;
+    outfile << "begin_mutex_group\n" << facts.size() << '\n';
     for (const auto &[var, value] : facts) {
-        outfile << var->get_level() << " " << value << endl;
+        outfile << var->get_level() << " " << value << '\n';
     }
-    outfile << "end_mutex_group" << endl;
+    outfile << "end_mutex_group\n";
 }
 
 void MutexGroup::strip_unimportant_atoms() {

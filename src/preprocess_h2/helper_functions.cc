@@ -181,27 +181,27 @@ void generate_cpp_input(
     ofstream out;
     out.open(outfile, ios::out);
 
-    out << "begin_version" << endl;
-    out << PRE_FILE_VERSION << endl;
-    out << "end_version" << endl;
+    out << "begin_version\n";
+    out << PRE_FILE_VERSION << '\n';
+    out << "end_version\n";
 
-    out << "begin_metric" << endl;
-    out << metric << endl;
-    out << "end_metric" << endl;
+    out << "begin_metric\n";
+    out << metric << '\n';
+    out << "end_metric\n";
 
     int num_vars = ordered_vars.size();
-    out << num_vars << endl;
+    out << num_vars << '\n';
     for (Variable *var : ordered_vars)
         var->generate_cpp_input(out);
 
-    out << mutexes.size() << endl;
+    out << mutexes.size() << '\n';
     for (const MutexGroup &mutex : mutexes)
         mutex.generate_cpp_input(out);
 
-    out << "begin_state" << endl;
+    out << "begin_state\n";
     for (Variable *var : ordered_vars)
-        out << initial_state[var] << endl; // for axioms default value
-    out << "end_state" << endl;
+        out << initial_state[var] << '\n'; // for axioms default value
+    out << "end_state\n";
 
     vector<int> ordered_goal_values;
     ordered_goal_values.resize(num_vars, -1);
@@ -210,18 +210,18 @@ void generate_cpp_input(
         assert(var_index >= 0 && var_index < num_vars);
         ordered_goal_values[var_index] = val;
     }
-    out << "begin_goal" << endl;
-    out << goals.size() << endl;
+    out << "begin_goal\n";
+    out << goals.size() << '\n';
     for (int i = 0; i < num_vars; i++)
         if (ordered_goal_values[i] != -1)
-            out << i << " " << ordered_goal_values[i] << endl;
-    out << "end_goal" << endl;
+            out << i << " " << ordered_goal_values[i] << '\n';
+    out << "end_goal\n";
 
-    out << operators.size() << endl;
+    out << operators.size() << '\n';
     for (const Operator &op : operators)
         op.generate_cpp_input(out);
 
-    out << axioms.size() << endl;
+    out << axioms.size() << '\n';
     for (const Axiom &axiom : axioms)
         axiom.generate_cpp_input(out);
 
@@ -231,37 +231,37 @@ void generate_unsolvable_cpp_input(const string &outfile) {
     cout << "Unsolvable task in preprocessor" << endl;
     ofstream out;
     out.open(outfile, ios::out);
-    out << "begin_version" << endl;
-    out << PRE_FILE_VERSION << endl;
-    out << "end_version" << endl;
+    out << "begin_version\n";
+    out << PRE_FILE_VERSION << '\n';
+    out << "end_version\n";
 
-    out << "begin_metric" << endl << "1" << endl << "end_metric" << endl;
+    out << "begin_metric\n1\nend_metric\n";
 
     // variables
-    out << "1" << endl
-        << "begin_variable" << endl
-        << "var0" << endl
-        << "-1" << endl
-        << "2" << endl
-        << "Atom dummy(val1)" << endl
-        << "Atom dummy(val2)" << endl
-        << "end_variable" << endl;
+    out << "1\n"
+        << "begin_variable\n"
+        << "var0\n"
+        << "-1\n"
+        << "2\n"
+        << "Atom dummy(val1)\n"
+        << "Atom dummy(val2)\n"
+        << "end_variable\n";
 
     // Mutexes
-    out << "0" << endl;
+    out << "0\n";
 
     // Initial state and goal
-    out << "begin_state" << endl << "0" << endl << "end_state" << endl;
-    out << "begin_goal" << endl
-        << "1" << endl
-        << "0 1" << endl
-        << "end_goal" << endl;
+    out << "begin_state\n0\nend_state\n";
+    out << "begin_goal\n"
+        << "1\n"
+        << "0 1\n"
+        << "end_goal\n";
 
     // Operators
-    out << "0" << endl;
+    out << "0\n";
 
     // Axioms
-    out << "0" << endl;
+    out << "0\n";
 
     out.close();
 }

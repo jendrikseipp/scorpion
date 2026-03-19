@@ -62,13 +62,13 @@ int Axiom::get_encoding_size() const {
 
 void Axiom::generate_cpp_input(ofstream &outfile) const {
     assert(effect_var->get_level() != -1);
-    outfile << "begin_rule" << endl;
-    outfile << conditions.size() << endl;
+    outfile << "begin_rule\n";
+    outfile << conditions.size() << '\n';
     for (const Condition &condition : conditions) {
         assert(condition.var->get_level() != -1);
-        outfile << condition.var->get_level() << " " << condition.cond << endl;
+        outfile << condition.var->get_level() << " " << condition.cond << '\n';
     }
     outfile << effect_var->get_level() << " " << old_val << " " << effect_val
-            << endl;
-    outfile << "end_rule" << endl;
+            << '\n';
+    outfile << "end_rule\n";
 }

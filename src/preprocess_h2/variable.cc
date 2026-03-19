@@ -55,14 +55,14 @@ void Variable::dump() const {
 }
 
 void Variable::generate_cpp_input(ofstream &outfile) const {
-    outfile << "begin_variable" << endl
-            << name << endl
-            << layer << endl
-            << reachable_values << endl;
+    outfile << "begin_variable\n"
+            << name << '\n'
+            << layer << '\n'
+            << reachable_values << '\n';
     for (size_t i = 0; i < values.size(); ++i)
         if (reachable[i])
-            outfile << values[i] << endl;
-    outfile << "end_variable" << endl;
+            outfile << values[i] << '\n';
+    outfile << "end_variable\n";
 }
 
 void Variable::remove_unreachable_atoms() {
