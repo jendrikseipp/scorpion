@@ -34,11 +34,9 @@ class SortFactsByIncreasingHaddValues {
 public:
     explicit SortFactsByIncreasingHaddValues(
         const shared_ptr<AbstractTask> &task)
-        : hadd(
-              make_unique<additive_heuristic::AdditiveHeuristic>(
-                  tasks::AxiomHandlingType::APPROXIMATE_NEGATIVE, task, false,
-                  "h^add within CEGAR abstractions",
-                  utils::Verbosity::SILENT)) {
+        : hadd(make_unique<additive_heuristic::AdditiveHeuristic>(
+              tasks::AxiomHandlingType::APPROXIMATE_NEGATIVE, task, false,
+              "h^add within CEGAR abstractions", utils::Verbosity::SILENT)) {
         TaskProxy task_proxy(*task);
         hadd->compute_heuristic_for_cegar(task_proxy.get_initial_state());
     }

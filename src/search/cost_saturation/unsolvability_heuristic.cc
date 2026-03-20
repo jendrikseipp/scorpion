@@ -44,11 +44,12 @@ UnsolvabilityHeuristic::UnsolvabilityHeuristic(
     // Remove lookup tables that only contain entries equal to 0 or infinity.
     for (auto &cp : cp_heuristics) {
         auto &tables = cp.lookup_tables;
-        erase_if(tables, [](const CostPartitioningHeuristic::LookupTable &table) {
-            return all_of(
-                table.h_values.begin(), table.h_values.end(),
-                [](int h) { return h == 0 || h == INF; });
-        });
+        erase_if(
+            tables, [](const CostPartitioningHeuristic::LookupTable &table) {
+                return all_of(
+                    table.h_values.begin(), table.h_values.end(),
+                    [](int h) { return h == 0 || h == INF; });
+            });
         tables.shrink_to_fit();
     }
 }
