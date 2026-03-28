@@ -3,5 +3,5 @@ name = "myproject"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "lab>=8.6",
+    "lab==8.9",
 ]

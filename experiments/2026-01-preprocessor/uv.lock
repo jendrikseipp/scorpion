@@ -192,16 +192,16 @@ wheels = [
 
 [[package]]
 name = "lab"
-version = "8.6"
+version = "8.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib" },
     { name = "simplejson" },
     { name = "txt2tags" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/12/744864211980217c009f9f7e5cf75a0da305025839b30837d153f758aaa6/lab-8.6.tar.gz", hash = "sha256:a3521ba55964719b0c5512b6dc5344201251071c6ec839b7157d15953f705959", size = 518089, upload-time = "2025-12-03T13:23:45.381Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9e/b4/47b8c5fd1af5d93bc0ed47c5a30830078cffc7ed0d798e7a1bbf0331b10b/lab-8.9.tar.gz", hash = "sha256:d2e955879595a9e19c70fed246e07ed3c7ab5a8d9798ade6b7457bbeec781d2e", size = 448121, upload-time = "2026-02-25T08:36:56.531Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/28/0c/e8e51301d2726aeb144bd0420be2049f886580e7a0a4cf899c79c882d04b/lab-8.6-py3-none-any.whl", hash = "sha256:f1c3066481a715ca7d49e0f60419ceab40d489443938ae1328815be03631f017", size = 94028, upload-time = "2025-12-03T13:23:44.138Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/a8/926793dc2a5dbeb5c9ef8a86ff86a14b497afafa56aa8e8a99e839c03188/lab-8.9-py3-none-any.whl", hash = "sha256:2f59f577df8928185540dcda0047e6362257b1ed7c62bfe48a06affa3ac0d980", size = 95547, upload-time = "2026-02-25T08:36:55.392Z" },
 ]
 
 [[package]]
@@ -267,7 +267,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "lab", specifier = ">=8.6" }]
+requires-dist = [{ name = "lab", specifier = "==8.9" }]
 
 [[package]]
 name = "numpy"

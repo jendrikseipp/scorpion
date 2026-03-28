@@ -114,6 +114,16 @@ SUITE_OPTIMAL_STRIPS = [
     "woodworking-opt08-strips", "woodworking-opt11-strips", "zenotravel",
 ]
 
+SUITE_AUTOSCALE = [
+    "agricola", "airport", "barman", "blocksworld", "childsnack", "data-network",
+    "depots", "driverlog", "elevators", "floortile", "freecell", "ged", "grid",
+    "gripper", "hiking", "logistics", "miconic", "mprime", "nomystery", "openstacks",
+    "organic-synthesis-split", "parcprinter", "parking", "pathways", "pegsol",
+    "pipesworld-notankage", "pipesworld-tankage", "rovers", "satellite", "scanalyzer",
+    "snake", "sokoban", "storage", "termes", "tetris", "thoughtful", "tidybot", "tpp",
+    "transport", "visitall", "woodworking", "zenotravel",
+]
+
 
 DOMAIN_GROUPS = {
     "airport": ["airport"],
