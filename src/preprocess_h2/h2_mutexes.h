@@ -73,7 +73,7 @@ class H2Mutexes {
     std::vector<std::vector<bool>> unreachable;
     std::vector<std::vector<std::unordered_set<Atom>>> inconsistent_atoms;
 
-    unsigned num_atoms;
+    size_t num_atoms;
     // Reachability status for atom pairs and individual atoms (diagonal).
     // Stores full upper triangle including diagonal: num_atoms * (num_atoms +
     // 1) / 2.

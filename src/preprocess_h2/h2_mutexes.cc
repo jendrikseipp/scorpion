@@ -290,7 +290,7 @@ bool H2Mutexes::initialize(
             int atom1_id = atom_index[var][val1];
             for (int val2 = val1 + 1; val2 < domain_sizes[var]; ++val2) {
                 int atom2_id = atom_index[var][val2];
-                int pos = get_atom_pair_id(atom1_id, atom2_id);
+                unsigned pos = get_atom_pair_id(atom1_id, atom2_id);
                 mutex_status[pos] = SPURIOUS;
             }
         }
