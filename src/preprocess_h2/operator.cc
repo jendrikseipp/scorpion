@@ -4,9 +4,11 @@
 #include "helper_functions.h"
 #include "variable.h"
 
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <unordered_set>
 
 using namespace std;
 
@@ -133,6 +135,69 @@ void strip_operators(vector<Operator> &operators) {
     operators.erase(operators.begin() + new_index, operators.end());
     cout << operators.size() << " of " << old_count << " operators necessary."
          << endl;
+}
+
+vector<int> Operator::get_signature() const {
+    vector<int> sig;
+    sig.push_back(cost);
+
+    // Add sorted prevail conditions
+    vector<pair<int, int>> prevail_pairs;
+    prevail_pairs.reserve(prevail.size());
+    for (const auto &p : prevail) {
+        prevail_pairs.emplace_back(p.var->get_level(), p.prev);
+    }
+    sort(prevail_pairs.begin(), prevail_pairs.end());
+    for (const auto &[var, val] : prevail_pairs) {
+        sig.push_back(var);
+        sig.push_back(val);
+    }
+    sig.push_back(-1); // separator
+
+    // Add sorted pre_post conditions
+    vector<vector<int>> pp_sigs;
+    pp_sigs.reserve(pre_post.size());
+    for (const auto &pp : pre_post) {
+        vector<int> pp_sig;
+        pp_sig.push_back(pp.var->get_level());
+        pp_sig.push_back(pp.pre);
+        pp_sig.push_back(pp.post);
+        vector<pair<int, int>> ec_pairs;
+        ec_pairs.reserve(pp.effect_conds.size());
+        for (const auto &ec : pp.effect_conds) {
+            ec_pairs.emplace_back(ec.var->get_level(), ec.cond);
+        }
+        sort(ec_pairs.begin(), ec_pairs.end());
+        for (const auto &[var, val] : ec_pairs) {
+            pp_sig.push_back(var);
+            pp_sig.push_back(val);
+        }
+        pp_sigs.push_back(move(pp_sig));
+    }
+    sort(pp_sigs.begin(), pp_sigs.end());
+    for (const auto &pp_sig : pp_sigs) {
+        sig.insert(sig.end(), pp_sig.begin(), pp_sig.end());
+        sig.push_back(-2); // separator between effects
+    }
+
+    return sig;
+}
+
+void remove_duplicate_operators(vector<Operator> &operators) {
+    int old_count = static_cast<int>(operators.size());
+    unordered_set<vector<int>> seen;
+    size_t new_index = 0;
+    for (size_t i = 0; i < operators.size(); ++i) {
+        if (seen.insert(operators[i].get_signature()).second) {
+            if (new_index != i)
+                operators[new_index] = move(operators[i]);
+            ++new_index;
+        }
+    }
+    operators.erase(operators.begin() + new_index, operators.end());
+    int removed = old_count - static_cast<int>(operators.size());
+    cout << "Removed " << removed << " duplicate operators ("
+         << operators.size() << " of " << old_count << " remaining)." << endl;
 }
 
 void Operator::generate_cpp_input(ofstream &outfile) const {

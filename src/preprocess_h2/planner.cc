@@ -32,6 +32,7 @@ static void print_usage(const char *program_name) {
         << "  --add-implied-preconditions      Include augmented preconditions\n"
         << "  --add-implied-goals              Include augmented goals\n"
         << "  --show-expensive-statistics      Compute expensive statistics\n"
+        << "  --keep-duplicate-operators       Do not remove duplicate operators\n"
         << endl;
 }
 
@@ -59,6 +60,7 @@ void preprocess(int argc, const char **argv) {
     bool include_augmented_goals = false;
     bool expensive_statistics = false;
     bool disable_bw_h2 = false;
+    bool keep_duplicate_operators = false;
 
     bool metric;
     vector<Variable *> variables;
@@ -109,6 +111,8 @@ void preprocess(int argc, const char **argv) {
             include_augmented_goals = true;
         } else if (arg == "--show-expensive-statistics") {
             expensive_statistics = true;
+        } else if (arg == "--keep-duplicate-operators") {
+            keep_duplicate_operators = true;
         } else if (arg == "--outfile") {
             if (++i >= argc) {
                 parse_error(argv[0], "--outfile requires an argument");
@@ -209,6 +213,10 @@ void preprocess(int argc, const char **argv) {
         strip_operators(operators);
         strip_axioms(axioms);
         strip_goals(goals);
+    }
+
+    if (!keep_duplicate_operators) {
+        remove_duplicate_operators(operators);
     }
 
     // Output some task statistics

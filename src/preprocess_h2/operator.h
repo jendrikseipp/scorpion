@@ -143,8 +143,11 @@ public:
     void remove_ambiguity(const H2Mutexes &h2);
 
     void remove_unreachable_atoms(const std::vector<Variable *> &variables);
+
+    std::vector<int> get_signature() const;
 };
 
 extern void strip_operators(std::vector<Operator> &operators);
+extern void remove_duplicate_operators(std::vector<Operator> &operators);
 
 #endif
