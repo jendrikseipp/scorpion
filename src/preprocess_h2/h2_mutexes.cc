@@ -269,11 +269,22 @@ bool H2Mutexes::initialize(
     // Store full upper triangle including diagonal: num_atoms * (num_atoms + 1)
     // / 2 Diagonal entries represent individual atoms, off-diagonal represent
     // pairs.
-    mutex_status.resize(num_atoms * (num_atoms + 1) / 2, NOT_REACHED);
+    size_t mutex_status_size = num_atoms * (num_atoms + 1) / 2;
+    // The 4 GiB limit keeps mutex_status_size within the unsigned 32-bit range
+    // (so pair IDs fit in unsigned).
+    constexpr size_t MAX_MUTEX_STATUS_BYTES = size_t(4) * 1024 * 1024 * 1024;
+    if (mutex_status_size > MAX_MUTEX_STATUS_BYTES) {
+        cerr << "h^2 mutex table would require " << (mutex_status_size >> 30)
+             << " GiB for " << num_atoms
+             << " fluents, which exceeds the 4 GiB limit. "
+             << "Skipping h^2 mutex computation." << endl;
+        return false;
+    }
+    mutex_status.resize(mutex_status_size, NOT_REACHED);
 
     // Precompute offsets for fast pair index lookup including diagonal.
     atom_pair_offsets.reserve(num_atoms);
-    unsigned current_offset = 0;
+    size_t current_offset = 0;
     for (unsigned atom1 = 0; atom1 < num_atoms; ++atom1) {
         // Offset needs adjustment: subtract atom1 to account for atom2
         // starting at atom1 (including diagonal)
