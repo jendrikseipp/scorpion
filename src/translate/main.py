@@ -757,6 +757,11 @@ def main():
                     del action.effects[index]
 
     sas_task = pddl_to_sas(task)
+    if not get_options().keep_duplicate_operators:
+        original_num_operators = len(sas_task.operators)
+        with timers.timing("Removing duplicate operators"):
+            removed = sas_task.remove_duplicate_operators()
+        print(f"Removed {removed} duplicate operators ({len(sas_task.operators)} of {original_num_operators} remaining).")
     dump_statistics(sas_task)
 
     with timers.timing("Writing output"):

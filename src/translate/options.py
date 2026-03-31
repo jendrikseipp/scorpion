@@ -76,6 +76,9 @@ def parse_args(args=None):
         "--keep-no-ops", action="store_true",
         help="keep operators without effects in the output")
     argparser.add_argument(
+        "--keep-duplicate-operators", action="store_true",
+        help="keep operators with identical preconditions, effects and cost")
+    argparser.add_argument(
         "--dump-task", action="store_true",
         help="dump human-readable SAS+ representation of the task")
     argparser.add_argument(
