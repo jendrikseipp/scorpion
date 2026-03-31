@@ -335,7 +335,7 @@ bool H2Mutexes::initialize(
 
 bool H2Mutexes::init_values_progression(
     const vector<Variable *> &variables, const State &initial_state) {
-    int num_spurious = 0, num_reached = 0, num_not_reached = 0;
+    size_t num_spurious = 0, num_reached = 0, num_not_reached = 0;
 
     for (Reachability &status : mutex_status) {
         if (status == SPURIOUS) {
@@ -465,7 +465,7 @@ bool H2Mutexes::init_values_regression(
         }
     }
 
-    int num_spurious = 0, num_reached = 0, num_not_reached = 0;
+    size_t num_spurious = 0, num_reached = 0, num_not_reached = 0;
     for (const Reachability &status : mutex_status) {
         if (status == REACHED) {
             num_reached++;
