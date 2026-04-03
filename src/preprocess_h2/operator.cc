@@ -172,7 +172,7 @@ vector<int> Operator::get_signature() const {
             pp_sig.push_back(var);
             pp_sig.push_back(val);
         }
-        pp_sigs.push_back(move(pp_sig));
+        pp_sigs.push_back(std::move(pp_sig));
     }
     sort(pp_sigs.begin(), pp_sigs.end());
     for (const auto &pp_sig : pp_sigs) {
@@ -190,7 +190,7 @@ void remove_duplicate_operators(vector<Operator> &operators) {
     for (size_t i = 0; i < operators.size(); ++i) {
         if (seen.insert(operators[i].get_signature()).second) {
             if (new_index != i)
-                operators[new_index] = move(operators[i]);
+                operators[new_index] = std::move(operators[i]);
             ++new_index;
         }
     }
