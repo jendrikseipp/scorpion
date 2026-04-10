@@ -25,7 +25,10 @@ def infer_prog():
         return Path(sys.argv[0]).name
 
 
-def parse_args(args=None):
+def get_arg_parser():
+    # This function used to be part of "parse_args". We separated it
+    # out for uses cases that want to hook into the argument parsing
+    # process (issue1217).
     argparser = argparse.ArgumentParser(prog=infer_prog())
     argparser.add_argument(
         "domain", help="path to domain pddl file")
@@ -95,7 +98,11 @@ def parse_args(args=None):
     argparser.add_argument(
         "--stop-after-parsing-pddl", action="store_true",
         help="exit after parsing PDDL files (PDDL linting mode)")
-    return argparser.parse_args(args)
+    return argparser
+
+
+def parse_args(args=None):
+    return get_arg_parser().parse_args(args)
 
 
 def get_options():
