@@ -306,16 +306,30 @@ Output unchanged on all six instances.
 ### Cumulative impact (after O1–O5)
 
 Best of 3 runs per instance, post-optimization measurements taken
-after commit `f19aec569` (dead-code cleanup; no behavior change):
+after commit `455bc9abf` (O6):
 
 | Instance | Pre-O1 wall | Final wall | Δ vs. pre-O1 | Pre-O1 RSS | Final RSS |
 |---|--:|--:|--:|--:|--:|
-| logistics/p01 | 3.98 s | **2.13 s** | **−46 %** | 316.2 MB | 316.6 MB |
-| satellite/p25-HC-pfile5 | 0.51 s | **0.44 s** | **−14 %** | 79.4 MB | 79.6 MB |
-| gripper/prob01 | < 0.01 s | < 0.01 s | flat | 4.9 MB | 5.1 MB |
-| miconic/s1-0 | < 0.01 s | < 0.01 s | flat | 5.0 MB | 4.7 MB |
+| logistics/p01 | 3.98 s | **2.09 s** | **−47 %** | 316.2 MB | 317.3 MB |
+| satellite/p25-HC-pfile5 | 0.51 s | **0.43 s** | **−16 %** | 79.4 MB | 80.7 MB |
+| gripper/prob01 | < 0.01 s | < 0.01 s | flat | 4.9 MB | 4.8 MB |
+| miconic/s1-0 | < 0.01 s | < 0.01 s | flat | 5.0 MB | 4.8 MB |
 | miconic-simpleadl/s1-0 | < 0.01 s | < 0.01 s | flat | 4.7 MB | 5.0 MB |
 | philosophers/p01-phil2 | 0.01 s | 0.01 s | flat | 5.7 MB | 5.7 MB |
+
+Final phase breakdown on logistics/p01 (2.09 s total):
+
+| Phase | Time | Share |
+|---|--:|--:|
+| compute_model | 0.61 s | 29 % |
+| instantiate | 0.53 s | 25 % |
+| translate_strips_operators | 0.38 s | 18 % |
+| write | 0.11 s | 5 % |
+| simplify | 0.10 s | 5 % |
+| fact_groups | 0.08 s | 4 % |
+| handle_axioms | 0.05 s | 2 % |
+| variable_order | 0.03 s | 2 % |
+| parse + normalize + build_program + split | ~0.01 s | < 1 % |
 
 Logistics — the only instance whose runtime is dominated by C++
 inefficiency rather than translator algorithm work — is now nearly
