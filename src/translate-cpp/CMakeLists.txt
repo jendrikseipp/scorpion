@@ -31,6 +31,15 @@ set(TRANSLATE_SOURCES
     utils/strings.cc
     utils/system.cc
     utils/timer.cc
+
+    pddl/types.cc
+    pddl/predicate.cc
+    pddl/condition.cc
+    pddl/f_expression.cc
+    pddl/effect.cc
+    pddl/action.cc
+    pddl/axiom.cc
+    pddl/task.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})
