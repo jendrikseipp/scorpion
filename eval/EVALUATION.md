@@ -243,3 +243,24 @@ total. These are the next optimization targets.
 
 Correctness: all six bundled instances produce the same `output.sas`
 as before; logistics/p01 still hashes to `f821ead3…`.
+
+### O3 — Move-enqueue in semi-naive evaluator (`786884734`)
+
+Diagnosis: in `compute_model`'s hot inner loop, each emitted atom was
+copied twice (`eff_args` -> local `args` -> the queue's `Atom`). For
+satellite/p25 alone that's ~96 000 push calls.
+
+Fix: change `BuildRule::fire`'s `enqueue` callback signature from
+`const std::vector<Arg>&` to `std::vector<Arg>&&`. The callers move
+the args along, and `AtomQueue::push` now moves into `Atom`. Project
+rules go from 1 copy to 0 copies per emit; join rules go from 2
+copies to 1; product rules still copy once because the args vector is
+mutated across cartesian-product iterations.
+
+| Instance | Wall before | Wall after | Δ wall |
+|---|--:|--:|--:|
+| logistics/p01 | 2.26 s | **2.22 s** | −2 % |
+| satellite/p25-HC-pfile5 | 0.48 s | **0.47 s** | −2 % |
+
+`compute_model` phase on logistics: 0.62 s → 0.60 s. Output bytes
+unchanged.
