@@ -49,6 +49,40 @@ PropositionalAction::PropositionalAction(
     }
 }
 
+Action::Action(std::string name_, std::vector<TypedObject> parameters_,
+               int n, ConditionPtr precondition_,
+               std::vector<Effect> effects_, std::shared_ptr<Increase> cost_)
+    : name(std::move(name_)),
+      parameters(std::move(parameters_)),
+      num_external_parameters(n),
+      precondition(std::move(precondition_)),
+      effects(std::move(effects_)),
+      cost(std::move(cost_)) {
+    uniquify_variables();
+}
+
+void Action::uniquify_variables() {
+    type_map.clear();
+    for (const auto &p : parameters)
+        type_map[p.name] = p.type_name;
+    std::unordered_map<std::string, std::string> empty_renamings;
+    if (precondition)
+        precondition = precondition->uniquify_variables(type_map,
+                                                        empty_renamings);
+    for (auto &e : effects) {
+        // Effect parameters (universal-effect bound vars) need fresh names.
+        std::unordered_map<std::string, std::string> renamings;
+        for (auto &par : e.parameters)
+            par = pddl::uniquify_name(par, type_map, renamings);
+        if (e.condition)
+            e.condition = e.condition->uniquify_variables(type_map, renamings);
+        if (e.literal) {
+            const auto &lit = static_cast<const Literal &>(*e.literal);
+            e.literal = lit.rename_variables(renamings);
+        }
+    }
+}
+
 void Action::dump(std::ostream &os) const {
     os << name << "(";
     for (std::size_t i = 0; i < parameters.size(); ++i) {

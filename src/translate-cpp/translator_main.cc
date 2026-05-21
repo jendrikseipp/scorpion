@@ -1,3 +1,4 @@
+#include "normalize/normalize.h"
 #include "parser/lisp_parser.h"
 #include "parser/parser.h"
 #include "translate_options.h"
@@ -37,10 +38,16 @@ int main(int argc, const char **argv) {
         utils::log() << "  actions:    " << task.actions.size() << std::endl;
         utils::log() << "  axioms:     " << task.axioms.size() << std::endl;
 
+        utils::log() << "Normalizing task..." << std::endl;
+        normalize::normalize(task);
+        utils::log() << "After normalization:" << std::endl;
+        utils::log() << "  actions:    " << task.actions.size() << std::endl;
+        utils::log() << "  axioms:     " << task.axioms.size() << std::endl;
+
         if (opts.dump_task)
             task.dump(utils::log());
 
-        utils::log() << "Translator pipeline beyond parsing is not yet "
+        utils::log() << "Translator pipeline beyond normalization is not yet "
                      << "implemented." << std::endl;
         utils::log() << "Total time: " << utils::elapsed_seconds() << "s"
                      << std::endl;

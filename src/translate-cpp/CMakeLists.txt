@@ -45,6 +45,8 @@ set(TRANSLATE_SOURCES
 
     parser/lisp_parser.cc
     parser/parser.cc
+
+    normalize/normalize.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})

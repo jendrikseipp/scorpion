@@ -66,6 +66,13 @@ public:
     // collapse single-element junctions). Mirrors Python's Condition.simplified.
     virtual ConditionPtr simplified() const = 0;
 
+    // Return a clone of this condition with its children replaced by
+    // `new_parts`. Constants and literals ignore `new_parts` and return a
+    // copy of themselves; junctors rebuild with the new children; quantifiers
+    // keep their parameter list and replace the body.
+    virtual ConditionPtr change_parts(
+        std::vector<ConditionPtr> new_parts) const = 0;
+
     /*
       Make all quantifier-bound variable names globally unique. `type_map`
       accumulates (name -> type_name) bindings; `renamings` is a fresh map
@@ -101,6 +108,9 @@ public:
     void dump(std::ostream &os, int indent) const override;
     ConditionPtr negate() const override;
     ConditionPtr simplified() const override;
+    ConditionPtr change_parts(std::vector<ConditionPtr>) const override {
+        return std::make_shared<Truth>();
+    }
 };
 
 class Falsity final : public Condition {
@@ -113,6 +123,9 @@ public:
     void dump(std::ostream &os, int indent) const override;
     ConditionPtr negate() const override;
     ConditionPtr simplified() const override;
+    ConditionPtr change_parts(std::vector<ConditionPtr>) const override {
+        return std::make_shared<Falsity>();
+    }
 };
 
 /*
@@ -143,6 +156,7 @@ public:
         std::unordered_map<std::string, std::string> &type_map,
         const std::unordered_map<std::string, std::string> &renamings)
         const override;
+    ConditionPtr change_parts(std::vector<ConditionPtr>) const override;
 
     // Return a new literal with each occurrence of an argument name replaced
     // according to `renamings`. Used by Action::uniquify_variables, etc.
@@ -192,6 +206,10 @@ public:
     Kind kind() const override { return Kind::CONJUNCTION; }
     ConditionPtr negate() const override;
     ConditionPtr simplified() const override;
+    ConditionPtr change_parts(std::vector<ConditionPtr> new_parts)
+        const override {
+        return std::make_shared<Conjunction>(std::move(new_parts));
+    }
 };
 
 class Disjunction final : public JunctorCondition {
@@ -202,6 +220,10 @@ public:
     ConditionPtr negate() const override;
     bool has_disjunction() const override { return true; }
     ConditionPtr simplified() const override;
+    ConditionPtr change_parts(std::vector<ConditionPtr> new_parts)
+        const override {
+        return std::make_shared<Disjunction>(std::move(new_parts));
+    }
 };
 
 class QuantifiedCondition : public Condition {
@@ -236,6 +258,11 @@ public:
     Kind kind() const override { return Kind::UNIVERSAL; }
     ConditionPtr negate() const override;
     bool has_universal_part() const override { return true; }
+    ConditionPtr change_parts(std::vector<ConditionPtr> new_parts)
+        const override {
+        return std::make_shared<UniversalCondition>(parameters,
+                                                    std::move(new_parts));
+    }
 };
 
 class ExistentialCondition final : public QuantifiedCondition {
@@ -247,6 +274,11 @@ public:
     Kind kind() const override { return Kind::EXISTENTIAL; }
     ConditionPtr negate() const override;
     bool has_existential_part() const override { return true; }
+    ConditionPtr change_parts(std::vector<ConditionPtr> new_parts)
+        const override {
+        return std::make_shared<ExistentialCondition>(parameters,
+                                                      std::move(new_parts));
+    }
 };
 
 // Convenience factories.

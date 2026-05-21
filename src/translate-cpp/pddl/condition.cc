@@ -306,37 +306,26 @@ ConditionPtr QuantifiedCondition::simplified() const {
 ConditionPtr Condition::uniquify_variables(
     std::unordered_map<std::string, std::string> &type_map,
     const std::unordered_map<std::string, std::string> &renamings) const {
-    // Default: recurse over children, returning a clone of this with new
-    // parts. Only Conditions that have children use this (junctors);
-    // literals and quantifiers override.
-    const auto &kids = parts();
-    if (kids.empty()) {
-        // Constant conditions: return as-is via a clone factory by kind.
-        switch (kind()) {
-            case Kind::TRUTH:   return std::make_shared<Truth>();
-            case Kind::FALSITY: return std::make_shared<Falsity>();
-            default:            break;
-        }
-    }
+    // Default: recurse over children and rebuild via change_parts.
+    // Literals and quantifiers override this method.
     std::vector<ConditionPtr> new_parts;
+    const auto &kids = parts();
     new_parts.reserve(kids.size());
     for (const auto &p : kids)
         new_parts.push_back(p->uniquify_variables(type_map, renamings));
-    switch (kind()) {
-        case Kind::CONJUNCTION:
-            return std::make_shared<Conjunction>(std::move(new_parts));
-        case Kind::DISJUNCTION:
-            return std::make_shared<Disjunction>(std::move(new_parts));
-        default:
-            // Quantified conditions override this method.
-            return std::make_shared<Conjunction>(std::move(new_parts));
-    }
+    return change_parts(std::move(new_parts));
 }
 
 ConditionPtr Literal::uniquify_variables(
     std::unordered_map<std::string, std::string> &/*type_map*/,
     const std::unordered_map<std::string, std::string> &renamings) const {
     return rename_variables(renamings);
+}
+
+ConditionPtr Literal::change_parts(std::vector<ConditionPtr>) const {
+    if (negated())
+        return std::make_shared<NegatedAtom>(predicate, args);
+    return std::make_shared<Atom>(predicate, args);
 }
 
 ConditionPtr Literal::rename_variables(

@@ -5,6 +5,7 @@
 
 #include <ostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace translate::pddl {
@@ -15,13 +16,14 @@ public:
     int num_external_parameters; // always equals arity of derived predicate
     ConditionPtr condition;
 
+    // Populated by uniquify_variables(); like Action::type_map.
+    std::unordered_map<std::string, std::string> type_map;
+
     Axiom() : num_external_parameters(0) {}
     Axiom(std::string name, std::vector<TypedObject> parameters,
-          int num_external_parameters, ConditionPtr condition)
-        : name(std::move(name)),
-          parameters(std::move(parameters)),
-          num_external_parameters(num_external_parameters),
-          condition(std::move(condition)) {}
+          int num_external_parameters, ConditionPtr condition);
+
+    void uniquify_variables();
 
     void dump(std::ostream &os) const;
 };
