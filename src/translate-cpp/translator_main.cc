@@ -59,12 +59,16 @@ int main(int argc, const char **argv) {
 
         utils::log() << "Fast Downward translator (C++ port)" << std::endl;
         utils::log() << "Parsing..." << std::endl;
+        utils::Timer t;
         auto domain_sexpr = parser::parse_pddl_file("domain", opts.domain);
         auto task_sexpr = parser::parse_pddl_file("task", opts.task);
         auto task = parser::parse_task(domain_sexpr, task_sexpr);
+        utils::log() << "  [parse] " << t.seconds() << "s" << std::endl;
 
         utils::log() << "Normalizing task..." << std::endl;
+        t.reset();
         normalize::normalize(task);
+        utils::log() << "  [normalize] " << t.seconds() << "s" << std::endl;
 
         if (opts.generate_relaxed_task) {
             for (auto &action : task.actions) {
@@ -83,15 +87,20 @@ int main(int argc, const char **argv) {
         if (opts.dump_task) task.dump(utils::log());
 
         utils::log() << "Translating to SAS+..." << std::endl;
+        t.reset();
         auto sas_task = pipeline::pddl_to_sas(task);
+        utils::log() << "  [pddl_to_sas total] " << t.seconds() << "s"
+                     << std::endl;
         dump_statistics(sas_task);
 
         utils::log() << "Writing output..." << std::endl;
+        t.reset();
         std::ofstream out(opts.sas_file);
         if (!out)
             utils::exit_with(utils::ExitCode::TRANSLATE_CRITICAL_ERROR,
                              "Could not open output file: " + opts.sas_file);
         sas_task.output(out);
+        utils::log() << "  [write] " << t.seconds() << "s" << std::endl;
         utils::log() << "Done! " << utils::elapsed_seconds() << "s"
                      << std::endl;
         return 0;

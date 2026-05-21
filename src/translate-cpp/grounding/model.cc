@@ -273,10 +273,14 @@ public:
         by_predicate[condition.predicate].push_back(std::move(ref));
     }
 
-    std::vector<std::pair<int, int>> unify(const Atom &atom) const {
-        std::vector<std::pair<int, int>> out;
+    // Fill `out` with (rule_index, cond_index) matches for `atom`. Caller
+    // owns `out` and clears it before each call; this lets the inner
+    // vector storage be reused across the entire model build, avoiding
+    // an allocation per atom.
+    void unify(const Atom &atom,
+               std::vector<std::pair<int, int>> &out) const {
         auto it = by_predicate.find(atom.predicate);
-        if (it == by_predicate.end()) return out;
+        if (it == by_predicate.end()) return;
         for (const auto &ref : it->second) {
             bool ok = true;
             for (const auto &[p, v] : ref.constants) {
@@ -287,7 +291,6 @@ public:
             }
             if (ok) out.emplace_back(ref.rule_index, ref.cond_index);
         }
-        return out;
     }
 };
 
@@ -337,11 +340,13 @@ std::vector<Atom> compute_model(const Program &prog) {
     std::cout << "Generated " << rules.size() << " rules." << std::endl;
     std::cout << "Computing model..." << std::endl;
     std::size_t relevant = 0, auxiliary = 0;
+    std::vector<std::pair<int, int>> matches;
     while (!queue.empty()) {
         Atom next = queue.pop();
         if (next.predicate.find('$') != std::string::npos) ++auxiliary;
         else ++relevant;
-        auto matches = unifier.unify(next);
+        matches.clear();
+        unifier.unify(next, matches);
         for (const auto &[ri, ci] : matches) {
             rules[ri]->update_index(next, ci);
             rules[ri]->fire(next, ci,

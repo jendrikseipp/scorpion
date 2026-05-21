@@ -477,9 +477,11 @@ SASTask pddl_to_sas(Task &task) {
     }
 
     // Process axioms and compute axiom layers.
-    auto axiom_layering = axioms::handle_axioms(
-        inst.instantiated_actions, inst.instantiated_axioms,
-        *inst.instantiated_goal, get_options().layer_strategy);
+    auto axiom_layering = phase("handle_axioms", [&] {
+        return axioms::handle_axioms(
+            inst.instantiated_actions, inst.instantiated_axioms,
+            *inst.instantiated_goal, get_options().layer_strategy);
+    });
 
     // Build operators.
     std::vector<SASOperator> sas_operators;
@@ -545,6 +547,7 @@ SASTask pddl_to_sas(Task &task) {
 
     if (get_options().filter_unreachable_facts) {
         std::cout << "Detecting unreachable propositions..." << std::endl;
+        utils::Timer simplify_t;
         try {
             simplify::filter_unreachable_propositions(sas_task);
         } catch (const simplify::Impossible &) {
@@ -554,13 +557,16 @@ SASTask pddl_to_sas(Task &task) {
             std::cout << "Simplified to empty goal!" << std::endl;
             return trivial_task(true);
         }
+        std::cout << "  [simplify] " << simplify_t.seconds() << "s" << std::endl;
     }
     if (get_options().reorder_variables ||
         get_options().filter_unimportant_vars) {
         std::cout << "Reordering and filtering variables..." << std::endl;
+        utils::Timer vo_t;
         simplify::find_and_apply_variable_order(
             sas_task, get_options().reorder_variables,
             get_options().filter_unimportant_vars);
+        std::cout << "  [variable_order] " << vo_t.seconds() << "s" << std::endl;
     }
     return sas_task;
 }
