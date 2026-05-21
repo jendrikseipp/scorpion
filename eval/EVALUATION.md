@@ -162,3 +162,46 @@ FD_TRANSLATE_CPP=/path/to/translate ./fast-downward.py --translate <domain> <pro
 Future cluster-scale runs should preserve the same per-run limits (120
 s wall, 2 GiB virtual memory) and the same canonical-diff invocation
 so that results are directly comparable to the numbers above.
+
+## Optimization log
+
+Each entry records a C++-level optimization, the wall-time and
+peak-RSS impact on the test suite, and confirmation that correctness
+(byte-identical to Python on logistics/p01, semantically equivalent
+elsewhere) is preserved.
+
+### O1 — Replace O(n²) `std::remove_if` in `choose_groups` with an atom→group index (`dadfa4179`)
+
+Diagnosis: phase timers showed `choose_groups` (inside `fact_groups`)
+took 1.86 s of logistics/p01's 3.95 s total. The Python translator
+shrinks groups by removing covered atoms in-place; the C++ port did
+this via `std::remove_if` with `ConditionPtrEqual` for each (chosen
+atom, other group) pair, which compares string predicates and arg
+vectors — quadratic in (#groups × atoms-per-group).
+
+Fix: build an `atom -> [group indices]` index once, maintain per-group
+counters of uncovered atoms, and update them in O(1) per affected
+(atom, group) pair when a group is picked. `argmax` over groups is a
+single linear scan per pick.
+
+| Instance | Wall before | Wall after | Δ wall | Peak RSS before | Peak RSS after | Δ RSS |
+|---|--:|--:|--:|--:|--:|--:|
+| gripper/prob01 | < 0.01 s | < 0.01 s | flat | 4.9 MB | 4.7 MB | flat |
+| logistics/p01 | 3.98 s | **2.26 s** | **−43%** | 316.2 MB | 316.5 MB | flat |
+| miconic/s1-0 | < 0.01 s | < 0.01 s | flat | 5.0 MB | 4.7 MB | flat |
+| miconic-simpleadl/s1-0 | < 0.01 s | < 0.01 s | flat | 4.7 MB | 4.9 MB | flat |
+| philosophers/p01-phil2 | 0.01 s | 0.01 s | flat | 5.7 MB | 5.9 MB | flat |
+| satellite/p25-HC-pfile5 | 0.51 s | 0.47 s | −8% | 79.4 MB | 79.5 MB | flat |
+
+Inner-phase breakdown on logistics/p01:
+- `choose_groups`: 1.860 s → 0.018 s (~100×).
+- `fact_groups` overall: 1.920 s → 0.088 s (~22×).
+
+Correctness: `output.sas` md5 on logistics/p01 still
+`f821ead3a3282ec5929c338ab4fdd499` (matches Python). All other
+instances unchanged from their previous semantic-equivalence state.
+
+Also added: phase timers in `pipeline::pddl_to_sas` and
+`fact_groups::compute_groups` (printed on stdout; never written to
+`output.sas`) so future optimization candidates can be triaged
+quickly.
