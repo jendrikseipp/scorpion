@@ -7,6 +7,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -59,6 +60,20 @@ public:
     virtual bool has_disjunction() const;
     virtual bool has_existential_part() const;
     virtual bool has_universal_part() const;
+
+    // Returns a structurally simplified equivalent condition (flatten nested
+    // junctors, drop Truth from conjunctions / Falsity from disjunctions,
+    // collapse single-element junctions). Mirrors Python's Condition.simplified.
+    virtual ConditionPtr simplified() const = 0;
+
+    /*
+      Make all quantifier-bound variable names globally unique. `type_map`
+      accumulates (name -> type_name) bindings; `renamings` is a fresh map
+      per quantifier scope (copied across nested quantifiers).
+    */
+    virtual ConditionPtr uniquify_variables(
+        std::unordered_map<std::string, std::string> &type_map,
+        const std::unordered_map<std::string, std::string> &renamings) const;
 };
 
 struct ConditionPtrHash {
@@ -85,6 +100,7 @@ public:
     }
     void dump(std::ostream &os, int indent) const override;
     ConditionPtr negate() const override;
+    ConditionPtr simplified() const override;
 };
 
 class Falsity final : public Condition {
@@ -96,6 +112,7 @@ public:
     }
     void dump(std::ostream &os, int indent) const override;
     ConditionPtr negate() const override;
+    ConditionPtr simplified() const override;
 };
 
 /*
@@ -121,6 +138,16 @@ public:
     void dump(std::ostream &os, int indent) const override;
     std::unordered_set<std::string> free_variables() const override;
     virtual bool negated() const = 0;
+    ConditionPtr simplified() const override; // identity (literals don't simplify)
+    ConditionPtr uniquify_variables(
+        std::unordered_map<std::string, std::string> &type_map,
+        const std::unordered_map<std::string, std::string> &renamings)
+        const override;
+
+    // Return a new literal with each occurrence of an argument name replaced
+    // according to `renamings`. Used by Action::uniquify_variables, etc.
+    ConditionPtr rename_variables(
+        const std::unordered_map<std::string, std::string> &renamings) const;
 };
 
 class Atom final : public Literal {
@@ -164,6 +191,7 @@ public:
         : JunctorCondition(std::move(children), Kind::CONJUNCTION) {}
     Kind kind() const override { return Kind::CONJUNCTION; }
     ConditionPtr negate() const override;
+    ConditionPtr simplified() const override;
 };
 
 class Disjunction final : public JunctorCondition {
@@ -173,6 +201,7 @@ public:
     Kind kind() const override { return Kind::DISJUNCTION; }
     ConditionPtr negate() const override;
     bool has_disjunction() const override { return true; }
+    ConditionPtr simplified() const override;
 };
 
 class QuantifiedCondition : public Condition {
@@ -191,6 +220,11 @@ public:
     bool equals(const Condition &other) const override;
     void dump(std::ostream &os, int indent) const override;
     std::unordered_set<std::string> free_variables() const override;
+    ConditionPtr simplified() const override;
+    ConditionPtr uniquify_variables(
+        std::unordered_map<std::string, std::string> &type_map,
+        const std::unordered_map<std::string, std::string> &renamings)
+        const override;
 };
 
 class UniversalCondition final : public QuantifiedCondition {

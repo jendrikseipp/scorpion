@@ -26,7 +26,9 @@ endif()
 
 set(TRANSLATE_SOURCES
     translator_main.cc
+    translate_options.cc
 
+    utils/graph.cc
     utils/logging.cc
     utils/strings.cc
     utils/system.cc
@@ -40,6 +42,9 @@ set(TRANSLATE_SOURCES
     pddl/action.cc
     pddl/axiom.cc
     pddl/task.cc
+
+    parser/lisp_parser.cc
+    parser/parser.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})

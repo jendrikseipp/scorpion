@@ -4,6 +4,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace translate::pddl {
@@ -19,6 +20,8 @@ class Type {
 public:
     std::string name;
     std::optional<std::string> basetype_name;
+    // Populated by set_supertypes() after the full type list has been parsed.
+    std::vector<std::string> supertype_names;
 
     Type(std::string name, std::optional<std::string> basetype_name = {})
         : name(std::move(name)), basetype_name(std::move(basetype_name)) {}
@@ -54,8 +57,8 @@ std::ostream &operator<<(std::ostream &os, const TypedObject &o);
 // Mirrors Python's TypedObject.uniquify_name.
 TypedObject uniquify_name(
     const TypedObject &obj,
-    std::vector<std::pair<std::string, std::string>> &type_map,
-    std::vector<std::pair<std::string, std::string>> &renamings);
+    std::unordered_map<std::string, std::string> &type_map,
+    std::unordered_map<std::string, std::string> &renamings);
 }
 
 #endif

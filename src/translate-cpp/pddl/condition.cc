@@ -225,4 +225,149 @@ ConditionPtr ExistentialCondition::negate() const {
     return std::make_shared<UniversalCondition>(parameters,
                                                 std::move(negated_body));
 }
+
+// -- simplified() ------------------------------------------------------------
+
+ConditionPtr Truth::simplified() const { return std::make_shared<Truth>(); }
+ConditionPtr Falsity::simplified() const { return std::make_shared<Falsity>(); }
+ConditionPtr Literal::simplified() const {
+    if (negated())
+        return std::make_shared<NegatedAtom>(predicate, args);
+    return std::make_shared<Atom>(predicate, args);
+}
+
+ConditionPtr Conjunction::simplified() const {
+    std::vector<ConditionPtr> result;
+    result.reserve(children.size());
+    for (const auto &child : children) {
+        ConditionPtr s = child->simplified();
+        switch (s->kind()) {
+            case Kind::CONJUNCTION: {
+                const auto &c = static_cast<const Conjunction &>(*s);
+                for (const auto &p : c.children)
+                    result.push_back(p);
+                break;
+            }
+            case Kind::FALSITY:
+                return std::make_shared<Falsity>();
+            case Kind::TRUTH:
+                break;
+            default:
+                result.push_back(std::move(s));
+        }
+    }
+    if (result.empty()) return std::make_shared<Truth>();
+    if (result.size() == 1) return result.front();
+    return std::make_shared<Conjunction>(std::move(result));
+}
+
+ConditionPtr Disjunction::simplified() const {
+    std::vector<ConditionPtr> result;
+    result.reserve(children.size());
+    for (const auto &child : children) {
+        ConditionPtr s = child->simplified();
+        switch (s->kind()) {
+            case Kind::DISJUNCTION: {
+                const auto &d = static_cast<const Disjunction &>(*s);
+                for (const auto &p : d.children)
+                    result.push_back(p);
+                break;
+            }
+            case Kind::TRUTH:
+                return std::make_shared<Truth>();
+            case Kind::FALSITY:
+                break;
+            default:
+                result.push_back(std::move(s));
+        }
+    }
+    if (result.empty()) return std::make_shared<Falsity>();
+    if (result.size() == 1) return result.front();
+    return std::make_shared<Disjunction>(std::move(result));
+}
+
+ConditionPtr QuantifiedCondition::simplified() const {
+    // Python: if the simplified body is a constant condition, return it.
+    ConditionPtr simplified_body = body[0]->simplified();
+    if (simplified_body->kind() == Kind::TRUTH ||
+        simplified_body->kind() == Kind::FALSITY) {
+        return simplified_body;
+    }
+    std::vector<ConditionPtr> new_body = {simplified_body};
+    if (kind() == Kind::UNIVERSAL)
+        return std::make_shared<UniversalCondition>(parameters,
+                                                    std::move(new_body));
+    return std::make_shared<ExistentialCondition>(parameters,
+                                                  std::move(new_body));
+}
+
+// -- uniquify_variables() ----------------------------------------------------
+
+ConditionPtr Condition::uniquify_variables(
+    std::unordered_map<std::string, std::string> &type_map,
+    const std::unordered_map<std::string, std::string> &renamings) const {
+    // Default: recurse over children, returning a clone of this with new
+    // parts. Only Conditions that have children use this (junctors);
+    // literals and quantifiers override.
+    const auto &kids = parts();
+    if (kids.empty()) {
+        // Constant conditions: return as-is via a clone factory by kind.
+        switch (kind()) {
+            case Kind::TRUTH:   return std::make_shared<Truth>();
+            case Kind::FALSITY: return std::make_shared<Falsity>();
+            default:            break;
+        }
+    }
+    std::vector<ConditionPtr> new_parts;
+    new_parts.reserve(kids.size());
+    for (const auto &p : kids)
+        new_parts.push_back(p->uniquify_variables(type_map, renamings));
+    switch (kind()) {
+        case Kind::CONJUNCTION:
+            return std::make_shared<Conjunction>(std::move(new_parts));
+        case Kind::DISJUNCTION:
+            return std::make_shared<Disjunction>(std::move(new_parts));
+        default:
+            // Quantified conditions override this method.
+            return std::make_shared<Conjunction>(std::move(new_parts));
+    }
+}
+
+ConditionPtr Literal::uniquify_variables(
+    std::unordered_map<std::string, std::string> &/*type_map*/,
+    const std::unordered_map<std::string, std::string> &renamings) const {
+    return rename_variables(renamings);
+}
+
+ConditionPtr Literal::rename_variables(
+    const std::unordered_map<std::string, std::string> &renamings) const {
+    std::vector<std::string> new_args;
+    new_args.reserve(args.size());
+    for (const auto &a : args) {
+        auto it = renamings.find(a);
+        new_args.push_back(it == renamings.end() ? a : it->second);
+    }
+    if (negated())
+        return std::make_shared<NegatedAtom>(predicate, std::move(new_args));
+    return std::make_shared<Atom>(predicate, std::move(new_args));
+}
+
+ConditionPtr QuantifiedCondition::uniquify_variables(
+    std::unordered_map<std::string, std::string> &type_map,
+    const std::unordered_map<std::string, std::string> &renamings) const {
+    std::unordered_map<std::string, std::string> local_renamings = renamings;
+    std::vector<TypedObject> new_params;
+    new_params.reserve(parameters.size());
+    for (const auto &par : parameters)
+        new_params.push_back(pddl::uniquify_name(par, type_map, local_renamings));
+    std::vector<ConditionPtr> new_body;
+    new_body.reserve(body.size());
+    for (const auto &b : body)
+        new_body.push_back(b->uniquify_variables(type_map, local_renamings));
+    if (kind() == Kind::UNIVERSAL)
+        return std::make_shared<UniversalCondition>(std::move(new_params),
+                                                    std::move(new_body));
+    return std::make_shared<ExistentialCondition>(std::move(new_params),
+                                                  std::move(new_body));
+}
 }

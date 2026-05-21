@@ -27,7 +27,14 @@ public:
     virtual ~AnyEffect() = default;
     virtual Kind kind() const = 0;
     virtual void dump(std::ostream &os, int indent = 0) const = 0;
+
+    // Convert the raw parse tree to the canonical "outer Conjunctive, then
+    // Universal, then Conditional, then Simple/Cost" form. Mirrors Python's
+    // AnyEffect.normalize().
+    virtual AnyEffectPtr normalize() const = 0;
 };
+
+class CostEffect;
 
 class SimpleEffect final : public AnyEffect {
 public:
@@ -36,6 +43,7 @@ public:
     explicit SimpleEffect(ConditionPtr literal) : literal(std::move(literal)) {}
     Kind kind() const override { return Kind::SIMPLE; }
     void dump(std::ostream &os, int indent) const override;
+    AnyEffectPtr normalize() const override;
 };
 
 class ConjunctiveEffect final : public AnyEffect {
@@ -45,6 +53,7 @@ public:
     explicit ConjunctiveEffect(std::vector<AnyEffectPtr> effects);
     Kind kind() const override { return Kind::CONJUNCTIVE; }
     void dump(std::ostream &os, int indent) const override;
+    AnyEffectPtr normalize() const override;
 };
 
 class ConditionalEffect final : public AnyEffect {
@@ -55,6 +64,7 @@ public:
     ConditionalEffect(ConditionPtr condition, AnyEffectPtr effect);
     Kind kind() const override { return Kind::CONDITIONAL; }
     void dump(std::ostream &os, int indent) const override;
+    AnyEffectPtr normalize() const override;
 };
 
 class UniversalEffect final : public AnyEffect {
@@ -65,6 +75,7 @@ public:
     UniversalEffect(std::vector<TypedObject> parameters, AnyEffectPtr effect);
     Kind kind() const override { return Kind::UNIVERSAL; }
     void dump(std::ostream &os, int indent) const override;
+    AnyEffectPtr normalize() const override;
 };
 
 class CostEffect final : public AnyEffect {
@@ -75,7 +86,15 @@ public:
         : effect(std::move(effect)) {}
     Kind kind() const override { return Kind::COST; }
     void dump(std::ostream &os, int indent) const override;
+    AnyEffectPtr normalize() const override;
 };
+
+/*
+  Separate out the CostEffect from a (post-normalize) effect tree.
+  Returns (cost_effect, rest_effect). Either may be null.
+*/
+std::pair<std::shared_ptr<CostEffect>, AnyEffectPtr> extract_cost(
+    const AnyEffectPtr &effect);
 
 /*
   Normalized effect: forall `parameters`, if `condition` holds, apply
@@ -94,6 +113,7 @@ public:
           literal(std::move(literal)) {}
 
     void dump(std::ostream &os, int indent = 0) const;
+    bool equals(const Effect &other) const;
 };
 }
 
