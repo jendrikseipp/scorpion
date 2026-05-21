@@ -285,3 +285,37 @@ formatter for any debug callers.
 
 Byte-identical output on all six instances (logistics/p01 still md5
 `f821ead3…`).
+
+### O5 — Move `args` into `reachable_action_parameters` (`3fb603f13`)
+
+In `instantiate::instantiate`, each model atom corresponding to an
+action built an `args` vector, push-back-copied it into
+`reachable_action_parameters`, and then passed it (const ref) to
+`instantiate_action`. Reorder the two calls so `args` is moved into
+`reachable_action_parameters` after `instantiate_action` finishes,
+removing one `vector<string>` copy per action atom (~45 k copies on
+logistics/p01).
+
+| Instance | Wall before | Wall after | Δ wall |
+|---|--:|--:|--:|
+| logistics/p01 | 2.17 s | **2.14 s** | −1.5 % |
+| satellite/p25-HC-pfile5 | 0.45 s | 0.45 s | flat |
+
+Output unchanged on all six instances.
+
+### Cumulative impact (after O1–O5)
+
+| Instance | Pre-O1 wall | Post-O5 wall | Δ vs. pre-O1 | Pre-O1 RSS | Post-O5 RSS |
+|---|--:|--:|--:|--:|--:|
+| logistics/p01 | 3.98 s | **2.14 s** | **−46 %** | 316.2 MB | 316.5 MB |
+| satellite/p25-HC-pfile5 | 0.51 s | **0.45 s** | **−12 %** | 79.4 MB | 79.6 MB |
+| gripper/prob01 | < 0.01 s | < 0.01 s | flat | 4.9 MB | 4.7 MB |
+| miconic/s1-0 | < 0.01 s | < 0.01 s | flat | 5.0 MB | 4.7 MB |
+| miconic-simpleadl/s1-0 | < 0.01 s | < 0.01 s | flat | 4.7 MB | 4.9 MB |
+| philosophers/p01-phil2 | 0.01 s | 0.01 s | flat | 5.7 MB | 5.9 MB |
+
+The big speedup is on logistics, the only instance where the
+quadratic `choose_groups` blow-up bit; the smaller instances are
+dominated by sub-millisecond cold-start work and don't move
+measurably. Memory is essentially flat (a 0.3-MB drift on logistics
+is run-to-run jitter).
