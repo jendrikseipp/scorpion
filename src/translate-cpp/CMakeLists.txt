@@ -63,6 +63,8 @@ set(TRANSLATE_SOURCES
 
     utils/sccs.cc
     axioms/axiom_rules.cc
+
+    sas/sas_task.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})
