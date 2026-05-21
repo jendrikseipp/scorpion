@@ -60,6 +60,9 @@ set(TRANSLATE_SOURCES
     invariants/invariant_finder.cc
 
     fact_groups/fact_groups.cc
+
+    utils/sccs.cc
+    axioms/axiom_rules.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})
