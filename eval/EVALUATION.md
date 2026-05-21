@@ -324,6 +324,30 @@ floored by process cold-start; their absolute numbers don't move
 even when the underlying work gets cheaper. Memory is essentially
 flat (< 1 MB drift, attributable to run-to-run jitter).
 
+### O6 — `simplify::translate_operator` without unordered containers (`455bc9abf`)
+
+The per-operator translation built a fresh
+`std::unordered_map<int,int>` (`conditions_dict`) and
+`std::unordered_set<int>` (`prevail_vars`) from a small (~5-entry)
+already-sorted `applicability` vector. For logistics/p01 those
+containers were allocated 115 000 times.
+
+Replace both with operations on the sorted `applicability` vector:
+
+- `conditions_dict.find(cv)` becomes a `lower_bound` over
+  `applicability` (binary search of ~5 entries).
+- `prevail_vars` membership is replaced by collecting `pp_vars` (the
+  vars that became `pre_post` entries) into a sorted vector, then
+  using `std::binary_search` once per applicability entry at the end
+  to decide which entries stay in `prevail`.
+
+| Instance | Simplify before | Simplify after | Δ phase | Wall delta |
+|---|--:|--:|--:|--:|
+| logistics/p01 | 130 ms | **96 ms** | −26 % | within noise (~2.13 s) |
+
+Phase win is clean; the overall wall stays in the same band because
+other phases dominate. Output bytes unchanged on all six instances.
+
 Versus the Python translator (where comparable), on the largest two
 instances:
 
