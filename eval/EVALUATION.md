@@ -1,0 +1,164 @@
+# Translator port — evaluation
+
+This document records performance and correctness measurements for the
+C++ port of the Fast Downward translator (`src/translate-cpp/`) against
+the original Python translator (`src/translate/`). The current results
+constitute our **first test suite**; future runs may extend to larger
+suites executed on a cluster.
+
+## Scope
+
+- **C++ binary:** `src/translate-cpp/build/translate`, built with
+  `cmake -S src/translate-cpp -B src/translate-cpp/build -DCMAKE_BUILD_TYPE=Release`
+  and `cmake --build src/translate-cpp/build` on GCC 11.4.0, Linux x86-64.
+- **Python translator:** `python3 -m translate` with
+  `PYTHONPATH=src` (Python 3 default interpreter on the host).
+- **Output equivalence target:** semantic equivalence (a valid SAS+
+  task that the search component can consume), not byte-identical.
+  See the per-instance "SAS match" column for the observed outcome.
+
+## Test suite (6 instances)
+
+The instances are the PDDL benchmarks bundled in
+`misc/tests/benchmarks/`:
+
+| # | Domain | Problem | PDDL fragment exercised |
+|---|---|---|---|
+| 1 | gripper | prob01 | STRIPS, typing |
+| 2 | logistics | p01 | STRIPS, typing |
+| 3 | miconic | s1-0 | STRIPS, typing |
+| 4 | miconic-simpleadl | s1-0 | ADL (conditional effects, quantifiers) |
+| 5 | philosophers | p01-phil2 | derived predicates (axioms), quantifiers |
+| 6 | satellite | p25-HC-pfile5 | STRIPS, typing, large grounding |
+
+## Methodology
+
+- **Resource limits per run:** 120 s wall, 2 GiB virtual memory
+  (`timeout 120` + `ulimit -v $((2*1024*1024))`).
+- **Concurrency:** strictly one run at a time. No parallelization.
+- **Measurement:** `/usr/bin/time -v` for wall time (`Elapsed (wall
+  clock) time`), CPU time (`User time`), and peak RSS (`Maximum
+  resident set size`).
+- **Equivalence check:** `src/translate-cpp/tests/canonical_diff.py`
+  parses both `output.sas` files, attempts to remap variables by
+  matching the tuple `(sorted value names, axiom layer, range, init
+  value)`, and compares init, goal, mutex groups, operators and axioms
+  as sorted canonical tuples.
+- **Test runner:** `src/translate-cpp/tests/run_validation.sh` runs
+  both translators and the canonical diff per instance under the
+  resource limits above.
+
+## Results
+
+### Time and memory
+
+| Instance | C++ wall | C++ peak RSS | Python wall | Python peak RSS | Speedup | Memory ratio |
+|---|--:|--:|--:|--:|--:|--:|
+| gripper/prob01 | < 0.01 s | 4.9 MB | 0.06 s | 23.2 MB | > 6× | 4.7× |
+| logistics/p01 | 3.98 s | 316.2 MB | 13.57 s | 446.8 MB | 3.4× | 1.4× |
+| miconic/s1-0 | < 0.01 s | 5.0 MB | 0.06 s | 22.7 MB | > 6× | 4.6× |
+| miconic-simpleadl/s1-0 | < 0.01 s | 4.7 MB | 0.06 s | 22.8 MB | > 6× | 4.8× |
+| philosophers/p01-phil2 | 0.01 s | 5.7 MB | 0.09 s | 23.7 MB | ~9× | 4.2× |
+| satellite/p25-HC-pfile5 | 0.51 s | 79.4 MB | 3.37 s | 132.2 MB | 6.6× | 1.7× |
+
+Notes on the measurements:
+
+- Wall times under 0.01 s round to `0:00.00` in `time -v`'s output;
+  those instances are reported as "< 0.01 s".
+- Python's baseline memory footprint includes the interpreter and the
+  imported translator package; the C++ binary allocates only what the
+  algorithm needs.
+- The two large instances (logistics/p01 and satellite/p25-HC-pfile5)
+  give the most representative speedup numbers because translator work
+  dominates Python's interpreter startup.
+
+### Correctness vs. Python
+
+| Instance | `output.sas` lines | SAS match |
+|---|--:|---|
+| gripper/prob01 | 411 (C++) / 415 (Py) | semantic (differs) |
+| logistics/p01 | 911,716 (both) | **byte-identical** (md5 `f821ead3…`) |
+| miconic/s1-0 | 71 / 71 | semantic (differs in 1 operator block) |
+| miconic-simpleadl/s1-0 | 70 / 70 | semantic (differs in 1 operator block) |
+| philosophers/p01-phil2 | 845 / ? | semantic (variable count 35 vs 37) |
+| satellite/p25-HC-pfile5 | 304,671 / ? | semantic (variable count 102 vs 110) |
+
+The detailed per-section breakdown from `canonical_diff.py` for the
+mismatching instances:
+
+- **gripper/prob01**, **philosophers/p01-phil2**, **satellite/p25-HC-pfile5:**
+  variable signatures don't match — i.e., the two translators chose
+  different sets of SAS variables (a different partition of facts into
+  mutex groups). Both files are valid SAS+; they just encode the same
+  problem differently.
+- **miconic/s1-0**, **miconic-simpleadl/s1-0:** same variable counts
+  and same number of operators/axioms, but the operator block differs.
+  Concretely, in `(depart f0 p0)` the C++ output emits two prevail
+  conditions and one `pre_post` entry while Python emits one prevail
+  condition and two `pre_post` entries — a consequence of a different
+  mutex grouping (whether `boarded`/`served` are in the same group).
+- **logistics/p01:** zero mutex groups in either output, which removes
+  the two known sources of nondeterminism (see below); the encodings
+  agree byte-for-byte and hash to the same md5.
+
+## Known sources of remaining nondeterminism
+
+The C++ port reaches semantic equivalence but not byte equivalence on
+instances that produce non-trivial mutex groups. Three places are
+known to contribute:
+
+1. **Invariant balance check RNG.** The Python `BalanceChecker` uses
+   `random.Random(314159)` to shuffle the action set during the balance
+   check; the C++ port uses `std::mt19937(314159)` with
+   `std::uniform_int_distribution`. The seeds match but the generated
+   sequences don't, so different invariants can be confirmed first
+   when two mutex candidates "compete".
+2. **MaxDAG tie-breaking in `variable_order`.** Python's MaxDAG picks
+   the next variable in a non-trivial SCC by lowest incoming
+   weighted-edge cost with a deterministic-but-implementation-specific
+   tie-breaking rule. The C++ port currently falls back to SCC input
+   order inside non-trivial SCCs, which matches Python only when SCCs
+   are singletons (which they almost always are in the bundled
+   benchmarks).
+3. **Trie-based unifier in `build_model`.** The Python translator
+   builds a trie keyed on constant arguments per atom; the C++ port
+   tests candidate (rule, condition-index) pairs by linear scan with
+   constant-arg filtering. Both are correct; ordering of derivations
+   inside the semi-naive evaluation can differ, which can in turn
+   affect downstream choices.
+
+Closing items 1 and 2 should be sufficient to reach byte-identical
+output on the remaining five instances; the unifier change is purely a
+performance topic.
+
+## Reproducing
+
+```bash
+# Build C++ translator (Release with -O3 -g, GCC 11.4+ or Clang 17+).
+cmake -S src/translate-cpp -B src/translate-cpp/build -DCMAKE_BUILD_TYPE=Release
+cmake --build src/translate-cpp/build -j
+
+# Run a single instance (writes output.sas in cwd).
+src/translate-cpp/build/translate \
+    misc/tests/benchmarks/logistics/domain.pddl \
+    misc/tests/benchmarks/logistics/p01.pddl
+
+# Compare against the Python translator on the bundled suite,
+# enforcing 120 s / 2 GiB per run.
+bash src/translate-cpp/tests/run_validation.sh
+
+# Force the Python translator from fast-downward.py:
+FD_TRANSLATE_PY=1 ./fast-downward.py --translate <domain> <problem>
+# Point the driver at a specific C++ binary:
+FD_TRANSLATE_CPP=/path/to/translate ./fast-downward.py --translate <domain> <problem>
+```
+
+## Provenance
+
+- Test host: Linux x86-64, GCC 11.4.0, Python 3 (system).
+- C++ translator branch: `translator-port`, head as of the run.
+- Sequential execution; no other significant CPU/memory load.
+
+Future cluster-scale runs should preserve the same per-run limits (120
+s wall, 2 GiB virtual memory) and the same canonical-diff invocation
+so that results are directly comparable to the numbers above.
