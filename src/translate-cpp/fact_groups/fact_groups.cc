@@ -140,11 +140,13 @@ std::vector<std::vector<ConditionPtr>> choose_groups(
         // Mark used facts and (if partial encoding) remove them from
         // other groups.
         if (use_partial) {
+            ConditionPtrEqual eq;
             for (const auto &a : chosen) {
                 for (std::size_t j = 0; j < groups.size(); ++j) {
                     if (j == best) continue;
-                    auto it = std::remove(groups[j].begin(),
-                                           groups[j].end(), a);
+                    auto it = std::remove_if(
+                        groups[j].begin(), groups[j].end(),
+                        [&](const ConditionPtr &p) { return eq(p, a); });
                     if (it != groups[j].end()) {
                         remaining_size[j] -= std::distance(it, groups[j].end());
                         groups[j].erase(it, groups[j].end());

@@ -68,6 +68,8 @@ set(TRANSLATE_SOURCES
 
     simplify/simplify.cc
     simplify/variable_order.cc
+
+    pipeline/translate.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})
