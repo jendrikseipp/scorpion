@@ -1,6 +1,7 @@
 #include "graph.h"
 
 #include <algorithm>
+#include <numeric>
 #include <set>
 
 namespace translate::utils {
@@ -23,5 +24,36 @@ std::vector<std::pair<std::string, std::string>> transitive_closure(
         }
     }
     return {result.begin(), result.end()};
+}
+
+namespace {
+int find_root(std::vector<int> &parent, int x) {
+    while (parent[x] != x) {
+        parent[x] = parent[parent[x]];
+        x = parent[x];
+    }
+    return x;
+}
+}
+
+std::vector<int> connected_components(
+    std::size_t num_nodes, const std::vector<std::pair<int, int>> &edges) {
+    std::vector<int> parent(num_nodes);
+    std::iota(parent.begin(), parent.end(), 0);
+    for (const auto &[u, v] : edges) {
+        int ru = find_root(parent, u);
+        int rv = find_root(parent, v);
+        if (ru != rv) parent[ru] = rv;
+    }
+    // Re-number roots to small consecutive ids.
+    std::vector<int> id(num_nodes, -1);
+    int next_id = 0;
+    std::vector<int> result(num_nodes);
+    for (std::size_t i = 0; i < num_nodes; ++i) {
+        int r = find_root(parent, static_cast<int>(i));
+        if (id[r] == -1) id[r] = next_id++;
+        result[i] = id[r];
+    }
+    return result;
 }
 }

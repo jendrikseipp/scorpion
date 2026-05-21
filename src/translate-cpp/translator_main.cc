@@ -1,3 +1,5 @@
+#include "grounding/build.h"
+#include "grounding/program.h"
 #include "normalize/normalize.h"
 #include "parser/lisp_parser.h"
 #include "parser/parser.h"
@@ -47,8 +49,13 @@ int main(int argc, const char **argv) {
         if (opts.dump_task)
             task.dump(utils::log());
 
-        utils::log() << "Translator pipeline beyond normalization is not yet "
-                     << "implemented." << std::endl;
+        auto prog = grounding::build_program(task);
+        utils::log() << "Datalog program:" << std::endl;
+        utils::log() << "  facts: " << prog.facts.size() << std::endl;
+        utils::log() << "  rules: " << prog.rules.size() << std::endl;
+
+        utils::log() << "Translator pipeline beyond Datalog program-build "
+                     << "is not yet implemented." << std::endl;
         utils::log() << "Total time: " << utils::elapsed_seconds() << "s"
                      << std::endl;
         return static_cast<int>(utils::ExitCode::TRANSLATE_UNSUPPORTED);

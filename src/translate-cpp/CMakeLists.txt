@@ -47,6 +47,9 @@ set(TRANSLATE_SOURCES
     parser/parser.cc
 
     normalize/normalize.cc
+
+    grounding/program.cc
+    grounding/build.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})
