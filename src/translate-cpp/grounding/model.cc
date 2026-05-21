@@ -96,9 +96,12 @@ class JoinRuleB : public BuildRule {
 public:
     // Positions of common variable args in each of the two conditions.
     std::array<std::vector<int>, 2> common_positions;
-    // For each side: key (tuple of common-arg values) -> list of atoms.
-    std::array<std::unordered_map<std::string, std::vector<Atom>>, 2>
-        atoms_by_key;
+    // For each side: key (tuple of common-arg values) -> list of args
+    // vectors. We only need the args during fire (the predicate is fixed
+    // by the rule's other condition), so storing just args saves the
+    // per-stored-atom predicate-string copy.
+    std::array<std::unordered_map<std::string, std::vector<std::vector<Arg>>>,
+               2> atoms_by_key;
 
     JoinRuleB(Atom e, std::vector<Atom> c)
         : BuildRule(std::move(e), std::move(c)) {
@@ -147,7 +150,7 @@ public:
 
     void update_index(const Atom &new_atom, int cond_index) override {
         std::string k = key_of(new_atom, common_positions[cond_index]);
-        atoms_by_key[cond_index][k].push_back(new_atom);
+        atoms_by_key[cond_index][k].push_back(new_atom.args);
     }
 
     void fire(const Atom &new_atom, int cond_index,
@@ -160,11 +163,11 @@ public:
         auto it = atoms_by_key[other].find(k);
         if (it == atoms_by_key[other].end()) return;
         const auto &other_cond = conditions[other];
-        for (const auto &atom : it->second) {
+        for (const auto &stored_args : it->second) {
             auto args = eff_args;
             for (std::size_t i = 0; i < other_cond.args.size(); ++i) {
                 if (auto *p = std::get_if<int>(&other_cond.args[i]))
-                    args[*p] = atom.args[i];
+                    args[*p] = stored_args[i];
             }
             enqueue(effect.predicate, std::move(args));
         }
