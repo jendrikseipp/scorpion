@@ -264,3 +264,24 @@ mutated across cartesian-product iterations.
 
 `compute_model` phase on logistics: 0.62 s → 0.60 s. Output bytes
 unchanged.
+
+### O4 — Fast SAS+ output via `std::to_chars` and single `write()` (`3fc470689`)
+
+Diagnosis: phase timers showed `write` taking 0.15 s on logistics/p01.
+At 10 MB output that's ~66 MB/s — typical for libstdc++ `operator<<`,
+which routes every integer through the locale-aware `num_put` facet.
+
+Fix: introduce a `FastWriter` that appends to a single `std::string`
+buffer (reserve 1 MB up front), formats integers with locale-free
+`std::to_chars`, and dumps the buffer with one `ofstream::write` at
+the end of `SASTask::output`. Per-element methods
+(`SASVariables::output(ostream&)`, etc.) route through the same
+formatter for any debug callers.
+
+| Instance | Wall before | Wall after | Δ wall | Write phase |
+|---|--:|--:|--:|--:|
+| logistics/p01 | 2.22 s | **2.17 s** | −2 % | 150 ms → 100 ms |
+| satellite/p25-HC-pfile5 | 0.47 s | **0.45 s** | −4 % | (smaller share) |
+
+Byte-identical output on all six instances (logistics/p01 still md5
+`f821ead3…`).
