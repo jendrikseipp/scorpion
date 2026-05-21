@@ -103,6 +103,12 @@ public:
         const std::unordered_map<std::string, std::string> &renamings) const;
 };
 
+/*
+  A non-owning view of an Atom (predicate name + argument list). Used as
+  a lookup key against AtomSet without allocating a shared_ptr<Atom>.
+  The hashing recipe is bit-for-bit identical to Literal's cached_hash
+  computation so view-based lookups match owned-atom entries.
+*/
 struct ConditionPtrHash {
     std::size_t operator()(const ConditionPtr &c) const noexcept {
         return c ? c->hash() : 0;

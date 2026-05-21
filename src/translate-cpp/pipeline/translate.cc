@@ -12,6 +12,7 @@
 #include "../simplify/simplify.h"
 #include "../simplify/variable_order.h"
 #include "../translate_options.h"
+#include "../utils/timer.h"
 
 #include <algorithm>
 #include <iostream>
@@ -394,11 +395,20 @@ SASTask trivial_task(bool solvable) {
 }
 
 SASTask pddl_to_sas(Task &task) {
+    auto phase = [](const char *label, auto fn) {
+        utils::Timer t;
+        auto v = fn();
+        std::cout << "  [" << label << "] " << t.seconds() << "s" << std::endl;
+        return v;
+    };
     std::cout << "Instantiating..." << std::endl;
-    grounding::Program prog = grounding::build_program(task);
-    grounding::split_rules(prog);
-    auto model = grounding::compute_model(prog);
-    auto inst = instantiate::instantiate(task, model);
+    auto prog = phase("build_program",
+                      [&] { return grounding::build_program(task); });
+    phase("split_rules", [&] { grounding::split_rules(prog); return 0; });
+    auto model = phase("compute_model",
+                       [&] { return grounding::compute_model(prog); });
+    auto inst = phase("instantiate",
+                      [&] { return instantiate::instantiate(task, model); });
 
     if (!inst.relaxed_reachable) {
         std::cout << "No relaxed solution! Generating unsolvable task..."
@@ -421,9 +431,11 @@ SASTask pddl_to_sas(Task &task) {
     }
 
     std::cout << "Computing fact groups..." << std::endl;
-    auto groups = fact_groups::compute_groups(task, inst.fluent_facts,
-                                              &inst.reachable_action_parameters,
-                                              negative_in_goal);
+    auto groups = phase("fact_groups", [&] {
+        return fact_groups::compute_groups(
+            task, inst.fluent_facts, &inst.reachable_action_parameters,
+            negative_in_goal);
+    });
 
     bool use_partial = get_options().use_partial_encoding;
     auto strips_to_sas = build_dictionary(groups.groups, use_partial);
@@ -471,14 +483,16 @@ SASTask pddl_to_sas(Task &task) {
 
     // Build operators.
     std::vector<SASOperator> sas_operators;
-    for (const auto &op : inst.instantiated_actions) {
-        if (!op) continue;
-        auto sub = translate_strips_operator(*op, strips_to_sas.dict,
-                                             strips_to_sas.ranges,
-                                             mutex_dict.dict,
-                                             mutex_dict.ranges);
-        for (auto &o : sub) sas_operators.push_back(std::move(o));
-    }
+    phase("translate_strips_operators", [&] {
+        for (const auto &op : inst.instantiated_actions) {
+            if (!op) continue;
+            auto sub = translate_strips_operator(
+                *op, strips_to_sas.dict, strips_to_sas.ranges,
+                mutex_dict.dict, mutex_dict.ranges);
+            for (auto &o : sub) sas_operators.push_back(std::move(o));
+        }
+        return 0;
+    });
     // Build SAS axioms from the simplified axiom list.
     std::vector<SASAxiom> sas_axioms;
     for (const auto &ax : axiom_layering.axioms) {

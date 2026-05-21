@@ -2,6 +2,7 @@
 
 #include "../invariants/invariant_finder.h"
 #include "../translate_options.h"
+#include "../utils/timer.h"
 
 #include <algorithm>
 #include <iostream>
@@ -115,55 +116,65 @@ std::vector<std::vector<ConditionPtr>> choose_groups(
             if (!negative_in_goal.count(a)) filtered.push_back(a);
         groups.push_back(std::move(filtered));
     }
-    // Greedy set-cover by largest group first.
-    std::vector<std::size_t> remaining_size(groups.size());
-    for (std::size_t i = 0; i < groups.size(); ++i)
-        remaining_size[i] = groups[i].size();
-    std::vector<std::vector<ConditionPtr>> result;
-    AtomSet uncovered = atoms;
 
-    bool use_partial = get_options().use_partial_encoding;
+    const int n = static_cast<int>(groups.size());
+    const bool use_partial = get_options().use_partial_encoding;
+
+    // Greedy set-cover. We avoid the O(N^2) std::remove_if per pick by
+    // maintaining an atom->containing-groups index and per-group counters
+    // of uncovered atoms. Picking a group marks its uncovered atoms as
+    // covered and (under partial encoding) decrements the counters of
+    // every other containing group in O(1) per affected (atom, group)
+    // pair instead of scanning each group.
+    std::unordered_map<ConditionPtr, std::vector<int>,
+                       ConditionPtrHash, ConditionPtrEqual> atom_to_groups;
+    if (use_partial) {
+        for (int i = 0; i < n; ++i)
+            for (const auto &a : groups[i])
+                atom_to_groups[a].push_back(i);
+    }
+
+    std::vector<int> remaining(n);
+    for (int i = 0; i < n; ++i)
+        remaining[i] = static_cast<int>(groups[i].size());
+
+    AtomSet covered;
+    std::vector<std::vector<ConditionPtr>> result;
+
     while (true) {
-        std::size_t best = 0;
-        bool found_any = false;
-        for (std::size_t i = 0; i < groups.size(); ++i) {
-            if (remaining_size[i] > remaining_size[best]) { best = i; found_any = true; }
-            else if (!found_any && remaining_size[i] > 1) {
-                best = i; found_any = true;
-            }
+        int best = -1;
+        int best_size = 1; // strict >; we only pick multi-element groups
+        for (int i = 0; i < n; ++i) {
+            if (remaining[i] > best_size) { best = i; best_size = remaining[i]; }
         }
-        if (!found_any || remaining_size[best] < 2) break;
-        // Materialize the chosen group from the remaining set.
+        if (best < 0) break;
+
         std::vector<ConditionPtr> chosen;
-        for (const auto &a : groups[best])
-            if (a) chosen.push_back(a);
-        // Mark used facts and (if partial encoding) remove them from
-        // other groups.
-        if (use_partial) {
-            ConditionPtrEqual eq;
-            for (const auto &a : chosen) {
-                for (std::size_t j = 0; j < groups.size(); ++j) {
-                    if (j == best) continue;
-                    auto it = std::remove_if(
-                        groups[j].begin(), groups[j].end(),
-                        [&](const ConditionPtr &p) { return eq(p, a); });
-                    if (it != groups[j].end()) {
-                        remaining_size[j] -= std::distance(it, groups[j].end());
-                        groups[j].erase(it, groups[j].end());
-                    }
-                }
+        chosen.reserve(best_size);
+        for (const auto &a : groups[best]) {
+            if (covered.find(a) == covered.end()) chosen.push_back(a);
+        }
+        for (const auto &a : chosen) {
+            covered.insert(a);
+            if (use_partial) {
+                auto it = atom_to_groups.find(a);
+                if (it != atom_to_groups.end())
+                    for (int g : it->second) --remaining[g];
+            } else {
+                --remaining[best];
             }
         }
-        // Update uncovered with the chosen facts.
-        for (const auto &a : chosen) uncovered.erase(a);
-        groups[best].clear();
-        remaining_size[best] = 0;
         result.push_back(std::move(chosen));
     }
+
+    // Singletons for remaining uncovered atoms.
+    std::vector<ConditionPtr> uncovered;
+    uncovered.reserve(atoms.size());
+    for (const auto &a : atoms)
+        if (covered.find(a) == covered.end()) uncovered.push_back(a);
     std::cout << uncovered.size() << " uncovered facts" << std::endl;
-    std::vector<ConditionPtr> rem(uncovered.begin(), uncovered.end());
-    std::sort(rem.begin(), rem.end(), atom_less);
-    for (const auto &a : rem) result.push_back({a});
+    std::sort(uncovered.begin(), uncovered.end(), atom_less);
+    for (const auto &a : uncovered) result.push_back({a});
     return result;
 }
 
@@ -192,13 +203,31 @@ ComputedGroups compute_groups(
     const std::vector<std::vector<std::vector<std::string>>>
         *reachable_action_parameters,
     const AtomSet &negative_in_goal) {
+    utils::Timer t;
     auto raw = invariants::get_groups(task, reachable_action_parameters);
+    std::cout << "    [fg.get_groups] " << t.seconds() << "s" << std::endl;
+    t.reset();
     auto instantiated = instantiate_groups(raw, task, atoms);
+    std::cout << "    [fg.instantiate_groups] " << t.seconds() << "s ("
+              << raw.size() << " groups)" << std::endl;
+    t.reset();
     auto sorted = sort_groups(std::move(instantiated));
+    std::cout << "    [fg.sort_groups1] " << t.seconds() << "s" << std::endl;
+    t.reset();
     ComputedGroups out;
     out.mutex_groups = collect_all_mutex_groups(sorted, atoms);
-    out.groups = sort_groups(choose_groups(sorted, atoms, negative_in_goal));
+    std::cout << "    [fg.collect_mutex_groups] " << t.seconds() << "s "
+              << "(" << out.mutex_groups.size() << " groups)" << std::endl;
+    t.reset();
+    auto chosen = choose_groups(sorted, atoms, negative_in_goal);
+    std::cout << "    [fg.choose_groups] " << t.seconds() << "s "
+              << "(" << chosen.size() << " groups)" << std::endl;
+    t.reset();
+    out.groups = sort_groups(std::move(chosen));
+    std::cout << "    [fg.sort_groups2] " << t.seconds() << "s" << std::endl;
+    t.reset();
     out.translation_key = build_translation_key(out.groups);
+    std::cout << "    [fg.translation_key] " << t.seconds() << "s" << std::endl;
     return out;
 }
 }
