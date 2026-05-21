@@ -338,11 +338,15 @@ Result instantiate(const Task &task,
                 else
                     args.push_back(std::to_string(std::get<int>(atom.args[i])));
             }
-            out.reachable_action_parameters[action_idx].push_back(args);
             auto inst = instantiate_action(action, args, init_facts,
                                            init_assignments, out.fluent_facts,
                                            objects_by_type,
                                            task.use_min_cost_metric);
+            // Move args into reachable_action_parameters after the
+            // instantiate_action call, saving one vector<string> copy
+            // per processed model atom.
+            out.reachable_action_parameters[action_idx].push_back(
+                std::move(args));
             if (inst) out.instantiated_actions.push_back(std::move(inst));
             continue;
         }
