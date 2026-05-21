@@ -71,11 +71,32 @@ def run_translate(args):
     memory_limit = limits.get_memory_limit(
         args.translate_memory_limit, args.overall_memory_limit)
 
-    # Check existence of translate in build.
-    translate = get_executable(args.build, REL_TRANSLATE_PATH)
+    # Prefer the C++ port if it has been built (src/translate-cpp).
+    # The FD_TRANSLATE_CPP env var can override the binary location;
+    # FD_TRANSLATE_PY=1 forces use of the Python translator.
+    cpp_binary_env = os.environ.get("FD_TRANSLATE_CPP")
+    force_python = os.environ.get("FD_TRANSLATE_PY") == "1"
+    cpp_binary = None
+    if not force_python:
+        if cpp_binary_env:
+            candidate = Path(cpp_binary_env)
+            if candidate.exists():
+                cpp_binary = candidate
+        else:
+            here = Path(__file__).resolve().parent.parent
+            candidate = here / "src" / "translate-cpp" / "build" / "translate"
+            if candidate.exists():
+                cpp_binary = candidate
 
-    assert sys.executable, "Path to interpreter could not be found"
-    cmd = [sys.executable] + ["-m", "translate"] + args.translate_inputs + args.translate_options
+    if cpp_binary is not None:
+        cmd = [str(cpp_binary)] + args.translate_inputs + args.translate_options
+        translate = cpp_binary
+    else:
+        # Check existence of translate in build.
+        translate = get_executable(args.build, REL_TRANSLATE_PATH)
+
+        assert sys.executable, "Path to interpreter could not be found"
+        cmd = [sys.executable] + ["-m", "translate"] + args.translate_inputs + args.translate_options
 
     stderr, returncode = call.get_error_output_and_returncode(
         "translator",
