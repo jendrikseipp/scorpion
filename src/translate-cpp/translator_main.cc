@@ -3,6 +3,7 @@
 #include "grounding/program.h"
 #include "grounding/split.h"
 #include "instantiate/instantiate.h"
+#include "invariants/invariant_finder.h"
 #include "normalize/normalize.h"
 #include "parser/lisp_parser.h"
 #include "parser/parser.h"
@@ -79,7 +80,12 @@ int main(int argc, const char **argv) {
                          " literals" : "impossible")
                      << std::endl;
 
-        utils::log() << "Translator pipeline beyond instantiation "
+        utils::log() << "Finding mutex groups..." << std::endl;
+        auto groups = invariants::get_groups(task,
+                                             &inst.reachable_action_parameters);
+        utils::log() << "  mutex groups: " << groups.size() << std::endl;
+
+        utils::log() << "Translator pipeline beyond invariants "
                      << "is not yet implemented." << std::endl;
         utils::log() << "Total time: " << utils::elapsed_seconds() << "s"
                      << std::endl;

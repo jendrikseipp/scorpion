@@ -54,6 +54,10 @@ set(TRANSLATE_SOURCES
     grounding/model.cc
 
     instantiate/instantiate.cc
+
+    invariants/constraints.cc
+    invariants/invariants.cc
+    invariants/invariant_finder.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})
