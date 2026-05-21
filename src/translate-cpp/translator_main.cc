@@ -13,16 +13,8 @@ using namespace translate;
 
 int main(int argc, const char **argv) {
     try {
-        if (argc < 3) {
-            utils::log() << "usage: " << argv[0]
-                         << " <domain.pddl> <problem.pddl> [options]"
-                         << std::endl;
-            utils::exit_with(utils::ExitCode::TRANSLATE_INPUT_ERROR);
-        }
-
-        Options &opts = get_options();
-        opts.domain = argv[1];
-        opts.task = argv[2];
+        parse_options(argc, argv);
+        const Options &opts = get_options();
 
         utils::log() << "Fast Downward translator (C++ port)" << std::endl;
         utils::log() << "Domain file:  " << opts.domain << std::endl;
