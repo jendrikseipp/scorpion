@@ -205,3 +205,41 @@ Also added: phase timers in `pipeline::pddl_to_sas` and
 `fact_groups::compute_groups` (printed on stdout; never written to
 `output.sas`) so future optimization candidates can be triaged
 quickly.
+
+### O2 — Pipeline phase timers and allocation-free `Unifier::unify` (`12e86bd32`)
+
+Two small follow-ups to set up further optimization passes:
+
+- Added wall-clock phase timers in `translator_main` (`parse`,
+  `normalize`, `pddl_to_sas total`, `write`) and in `pipeline::pddl_to_sas`
+  (`handle_axioms`, `simplify`, `variable_order`) so future
+  optimization candidates can be triaged without re-instrumenting.
+- `grounding::Unifier::unify` now writes its matches into a
+  caller-owned output vector instead of returning a fresh
+  `std::vector<std::pair<int,int>>` per atom. The main `compute_model`
+  loop reuses one buffer across the entire model build, removing one
+  allocation per atom from the inner loop.
+
+Wall time is within noise on the bundled suite, but the new phase
+breakdown (logistics/p01, post-O1) makes the remaining hot spots
+visible:
+
+| Phase | Time | Share |
+|---|--:|--:|
+| parse | 0.003 s | < 1 % |
+| normalize | ~0 s | < 1 % |
+| compute_model | **0.62 s** | **27 %** |
+| instantiate | **0.54 s** | **24 %** |
+| fact_groups | 0.08 s | 3 % |
+| handle_axioms | 0.05 s | 2 % |
+| translate_strips_operators | **0.38 s** | **17 %** |
+| simplify | 0.13 s | 6 % |
+| variable_order | 0.03 s | 1 % |
+| write | 0.15 s | 7 % |
+
+The top three (`compute_model`, `instantiate`,
+`translate_strips_operators`) together account for ~67 % of the
+total. These are the next optimization targets.
+
+Correctness: all six bundled instances produce the same `output.sas`
+as before; logistics/p01 still hashes to `f821ead3…`.
