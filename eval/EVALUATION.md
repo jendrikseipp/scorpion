@@ -305,17 +305,70 @@ Output unchanged on all six instances.
 
 ### Cumulative impact (after O1–O5)
 
-| Instance | Pre-O1 wall | Post-O5 wall | Δ vs. pre-O1 | Pre-O1 RSS | Post-O5 RSS |
-|---|--:|--:|--:|--:|--:|
-| logistics/p01 | 3.98 s | **2.14 s** | **−46 %** | 316.2 MB | 316.5 MB |
-| satellite/p25-HC-pfile5 | 0.51 s | **0.45 s** | **−12 %** | 79.4 MB | 79.6 MB |
-| gripper/prob01 | < 0.01 s | < 0.01 s | flat | 4.9 MB | 4.7 MB |
-| miconic/s1-0 | < 0.01 s | < 0.01 s | flat | 5.0 MB | 4.7 MB |
-| miconic-simpleadl/s1-0 | < 0.01 s | < 0.01 s | flat | 4.7 MB | 4.9 MB |
-| philosophers/p01-phil2 | 0.01 s | 0.01 s | flat | 5.7 MB | 5.9 MB |
+Best of 3 runs per instance, post-optimization measurements taken
+after commit `f19aec569` (dead-code cleanup; no behavior change):
 
-The big speedup is on logistics, the only instance where the
-quadratic `choose_groups` blow-up bit; the smaller instances are
-dominated by sub-millisecond cold-start work and don't move
-measurably. Memory is essentially flat (a 0.3-MB drift on logistics
-is run-to-run jitter).
+| Instance | Pre-O1 wall | Final wall | Δ vs. pre-O1 | Pre-O1 RSS | Final RSS |
+|---|--:|--:|--:|--:|--:|
+| logistics/p01 | 3.98 s | **2.13 s** | **−46 %** | 316.2 MB | 316.6 MB |
+| satellite/p25-HC-pfile5 | 0.51 s | **0.44 s** | **−14 %** | 79.4 MB | 79.6 MB |
+| gripper/prob01 | < 0.01 s | < 0.01 s | flat | 4.9 MB | 5.1 MB |
+| miconic/s1-0 | < 0.01 s | < 0.01 s | flat | 5.0 MB | 4.7 MB |
+| miconic-simpleadl/s1-0 | < 0.01 s | < 0.01 s | flat | 4.7 MB | 5.0 MB |
+| philosophers/p01-phil2 | 0.01 s | 0.01 s | flat | 5.7 MB | 5.7 MB |
+
+Logistics — the only instance whose runtime is dominated by C++
+inefficiency rather than translator algorithm work — is now nearly
+twice as fast. The smaller instances run well under 0.01 s and are
+floored by process cold-start; their absolute numbers don't move
+even when the underlying work gets cheaper. Memory is essentially
+flat (< 1 MB drift, attributable to run-to-run jitter).
+
+Versus the Python translator (where comparable), on the largest two
+instances:
+
+| Instance | Python wall | C++ wall (pre-O1) | C++ wall (final) | Final speedup |
+|---|--:|--:|--:|--:|
+| logistics/p01 | 13.57 s | 3.98 s | **2.13 s** | **6.4×** |
+| satellite/p25-HC-pfile5 | 3.37 s | 0.51 s | **0.44 s** | **7.7×** |
+
+### Things that did not pan out
+
+For reproducibility's sake, the following changes were tried during
+the iteration and rolled back because they did not measurably improve
+wall time on the bundled suite (and in some cases made it slightly
+worse):
+
+- Heterogeneous lookup (`AtomView`) in `pddl::AtomSet` to avoid
+  `make_shared<Atom>` in `Condition::instantiate`. Within noise (or
+  slight regression) because the savings (~1 alloc per call) were
+  offset by the extra hash-compute work, even after caching the hash
+  on the view. The alloc savings are real but small for the typical
+  per-call atom size.
+- Caching `cached_hash` on `grounding::Atom` to skip re-hashing in
+  `AtomQueue::seen`. Each Atom is hashed ~once on the hot path, so
+  caching paid for itself only when re-hashing during rehashes;
+  measured impact was within noise.
+- Switching `pipeline::AtomToVarVals` from `unordered_map<std::string, …>`
+  to `unordered_map<ConditionPtr, …>` with `ConditionPtrHash/Equal`.
+  Marginal regression (around 1–2 %) on logistics — likely because
+  the virtual `c->hash()` indirection and the slightly larger key
+  hurt more than the avoided `atom_key` string concat helped.
+- Replacing `CondMap`'s `std::set<int>` with `std::vector<int>` (sorted)
+  in `translate_strips_conditions_aux`. Wall time unchanged; the
+  per-var set rarely had more than one element so RB-tree overhead
+  was not the bottleneck.
+- Replacing the nested `std::map<int, std::map<int, …>>` inside
+  `translate_strips_operator_aux` with `std::unordered_map`. Within
+  noise; the maps are small and tree iteration order is not
+  load-bearing here.
+- `AtomQueue::pop()` returning by `std::move`. Catastrophic regression
+  to a trivial 184-byte output (queue.items is reused as the model
+  output at end of `compute_model`, so moving out of slots produces
+  empty atoms). Reverted; would need a re-architecture of the
+  queue/items split to be safe.
+
+Lesson: at this stage, the obvious "C++ idiom" wins — eliminating an
+allocation in a hot loop, moving instead of copying — only pay off
+when the targeted call site is genuinely hot. Phase timers were the
+critical tool for picking real targets and avoiding wasteful churn.
