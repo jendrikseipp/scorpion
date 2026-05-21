@@ -1,6 +1,7 @@
 #include "condition.h"
 
 #include <functional>
+#include <stdexcept>
 
 namespace translate::pddl {
 namespace {
@@ -215,6 +216,98 @@ ConditionPtr UniversalCondition::negate() const {
         negated_body.push_back(b->negate());
     return std::make_shared<ExistentialCondition>(parameters,
                                                   std::move(negated_body));
+}
+
+// -- instantiate() -----------------------------------------------------------
+
+void Condition::instantiate(
+    const std::unordered_map<std::string, std::string> &,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &,
+    std::vector<ConditionPtr> &) const {
+    throw std::runtime_error("Cannot instantiate condition: not normalized");
+}
+
+void Falsity::instantiate(
+    const std::unordered_map<std::string, std::string> &,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &,
+    std::vector<ConditionPtr> &) const {
+    throw Impossible();
+}
+
+namespace {
+std::vector<std::string> resolve_args(
+    const std::vector<std::string> &args,
+    const std::unordered_map<std::string, std::string> &m) {
+    std::vector<std::string> out;
+    out.reserve(args.size());
+    for (const auto &a : args) {
+        auto it = m.find(a);
+        out.push_back(it == m.end() ? a : it->second);
+    }
+    return out;
+}
+}
+
+void Atom::instantiate(
+    const std::unordered_map<std::string, std::string> &var_mapping,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &init_facts,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &fluent_facts,
+    std::vector<ConditionPtr> &result) const {
+    auto args_resolved = resolve_args(args, var_mapping);
+    auto ground = std::make_shared<Atom>(predicate, args_resolved);
+    if (fluent_facts.find(ground) != fluent_facts.end()) {
+        result.push_back(ground);
+    } else if (init_facts.find(ground) == init_facts.end()) {
+        throw Impossible();
+    }
+}
+
+void NegatedAtom::instantiate(
+    const std::unordered_map<std::string, std::string> &var_mapping,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &init_facts,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &fluent_facts,
+    std::vector<ConditionPtr> &result) const {
+    auto args_resolved = resolve_args(args, var_mapping);
+    auto ground = std::make_shared<Atom>(predicate, args_resolved);
+    if (fluent_facts.find(ground) != fluent_facts.end()) {
+        result.push_back(
+            std::make_shared<NegatedAtom>(predicate, args_resolved));
+    } else if (init_facts.find(ground) != init_facts.end()) {
+        throw Impossible();
+    }
+}
+
+void Conjunction::instantiate(
+    const std::unordered_map<std::string, std::string> &var_mapping,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &init_facts,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &fluent_facts,
+    std::vector<ConditionPtr> &result) const {
+    for (const auto &p : children) {
+        if (p) p->instantiate(var_mapping, init_facts, fluent_facts, result);
+    }
+}
+
+void ExistentialCondition::instantiate(
+    const std::unordered_map<std::string, std::string> &var_mapping,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &init_facts,
+    const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                             ConditionPtrEqual> &fluent_facts,
+    std::vector<ConditionPtr> &result) const {
+    if (!body.empty() && body[0])
+        body[0]->instantiate(var_mapping, init_facts, fluent_facts, result);
 }
 
 ConditionPtr ExistentialCondition::negate() const {

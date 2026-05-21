@@ -28,6 +28,9 @@ namespace translate::pddl {
 class Condition;
 using ConditionPtr = std::shared_ptr<const Condition>;
 
+struct ConditionPtrHash;
+struct ConditionPtrEqual;
+
 class Condition {
 public:
     enum class Kind {
@@ -74,6 +77,23 @@ public:
         std::vector<ConditionPtr> new_parts) const = 0;
 
     /*
+      Instantiate this (normalized) condition under `var_mapping`,
+      appending ground literals (positive Atom or NegatedAtom) to
+      `result`. Throws Impossible if the condition is provably false.
+
+      Default implementation throws std::runtime_error: only Truth,
+      Falsity, Conjunction, ExistentialCondition, Atom and NegatedAtom
+      can appear in normalized conditions, and each overrides this.
+    */
+    virtual void instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &init_facts,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const;
+
+    /*
       Make all quantifier-bound variable names globally unique. `type_map`
       accumulates (name -> type_name) bindings; `renamings` is a fresh map
       per quantifier scope (copied across nested quantifiers).
@@ -98,6 +118,10 @@ struct ConditionPtrEqual {
     }
 };
 
+// Set of ground atoms (used by Condition::instantiate, instantiate.cc).
+using AtomSet =
+    std::unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>;
+
 class Truth final : public Condition {
 public:
     Kind kind() const override { return Kind::TRUTH; }
@@ -111,6 +135,13 @@ public:
     ConditionPtr change_parts(std::vector<ConditionPtr>) const override {
         return std::make_shared<Truth>();
     }
+    void instantiate(
+        const std::unordered_map<std::string, std::string> &,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &,
+        std::vector<ConditionPtr> &) const override {}
 };
 
 class Falsity final : public Condition {
@@ -126,6 +157,13 @@ public:
     ConditionPtr change_parts(std::vector<ConditionPtr>) const override {
         return std::make_shared<Falsity>();
     }
+    [[noreturn]] void instantiate(
+        const std::unordered_map<std::string, std::string> &,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &,
+        std::vector<ConditionPtr> &) const override;
 };
 
 /*
@@ -172,6 +210,13 @@ public:
     bool equals(const Condition &other) const override;
     ConditionPtr negate() const override;
     bool negated() const override { return false; }
+    void instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &init_facts,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const override;
 };
 
 class NegatedAtom final : public Literal {
@@ -182,6 +227,13 @@ public:
     bool equals(const Condition &other) const override;
     ConditionPtr negate() const override;
     bool negated() const override { return true; }
+    void instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &init_facts,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const override;
 };
 
 class JunctorCondition : public Condition {
@@ -210,6 +262,13 @@ public:
         const override {
         return std::make_shared<Conjunction>(std::move(new_parts));
     }
+    void instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &init_facts,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const override;
 };
 
 class Disjunction final : public JunctorCondition {
@@ -279,6 +338,13 @@ public:
         return std::make_shared<ExistentialCondition>(parameters,
                                                       std::move(new_parts));
     }
+    void instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &init_facts,
+        const std::unordered_set<ConditionPtr, ConditionPtrHash,
+                                 ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const override;
 };
 
 // Convenience factories.

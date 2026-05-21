@@ -86,7 +86,20 @@ std::vector<Atom> condition_to_rule_body(
     return result;
 }
 
-Atom action_head(const Action &action) {
+/*
+  Datalog head predicate names. Python uses the Action/Axiom object as
+  the predicate; in C++ we encode the (action/axiom) index so the
+  instantiate pass can map back to the source action/axiom even when
+  multiple actions share a name (e.g., after split_disjunctions).
+*/
+std::string action_head_predicate(int action_index) {
+    return "@a$" + std::to_string(action_index);
+}
+std::string axiom_head_predicate(int axiom_index) {
+    return "@x$" + std::to_string(axiom_index);
+}
+
+Atom action_head(const Action &action, int action_index) {
     std::vector<Arg> variables;
     variables.reserve(action.parameters.size());
     for (const auto &p : action.parameters) variables.emplace_back(p.name);
@@ -96,10 +109,10 @@ Atom action_head(const Action &action) {
             static_cast<const ExistentialCondition &>(*action.precondition);
         for (const auto &p : q.parameters) variables.emplace_back(p.name);
     }
-    return Atom(action.name, std::move(variables));
+    return Atom(action_head_predicate(action_index), std::move(variables));
 }
 
-Atom axiom_head(const Axiom &axiom) {
+Atom axiom_head(const Axiom &axiom, int axiom_index) {
     std::vector<Arg> variables;
     variables.reserve(axiom.parameters.size());
     for (const auto &p : axiom.parameters) variables.emplace_back(p.name);
@@ -109,7 +122,7 @@ Atom axiom_head(const Axiom &axiom) {
             static_cast<const ExistentialCondition &>(*axiom.condition);
         for (const auto &p : q.parameters) variables.emplace_back(p.name);
     }
-    return Atom(axiom.name, std::move(variables));
+    return Atom(axiom_head_predicate(axiom_index), std::move(variables));
 }
 
 void add_typed_object(Program &prog, const TypedObject &obj,
@@ -155,8 +168,9 @@ void translate_facts(Program &prog, const Task &task) {
 }
 
 void build_exploration_rules(Program &prog, const Task &task) {
-    for (const auto &action : task.actions) {
-        Atom head = action_head(action);
+    for (std::size_t i = 0; i < task.actions.size(); ++i) {
+        const Action &action = task.actions[i];
+        Atom head = action_head(action, static_cast<int>(i));
         const PrimitiveNumericExpression *pne = nullptr;
         if (action.cost && action.cost->expression &&
             action.cost->expression->kind() ==
@@ -182,15 +196,16 @@ void build_exploration_rules(Program &prog, const Task &task) {
                                                std::move(eff_args))});
         }
     }
-    for (const auto &axiom : task.axioms) {
-        Atom app_head = axiom_head(axiom);
+    for (std::size_t i = 0; i < task.axioms.size(); ++i) {
+        const Axiom &axiom = task.axioms[i];
+        Atom app_head = axiom_head(axiom, static_cast<int>(i));
         auto app_body = condition_to_rule_body(axiom.parameters,
                                                axiom.condition, nullptr);
         prog.add_rule(Rule{app_body, app_head});
         // External params head.
         std::vector<Arg> eff_args;
-        for (int i = 0; i < axiom.num_external_parameters; ++i)
-            eff_args.emplace_back(axiom.parameters[i].name);
+        for (int j = 0; j < axiom.num_external_parameters; ++j)
+            eff_args.emplace_back(axiom.parameters[j].name);
         Atom eff_head(axiom.name, std::move(eff_args));
         prog.add_rule(Rule{{app_head}, eff_head});
     }

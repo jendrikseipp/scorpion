@@ -2,6 +2,7 @@
 #include "grounding/model.h"
 #include "grounding/program.h"
 #include "grounding/split.h"
+#include "instantiate/instantiate.h"
 #include "normalize/normalize.h"
 #include "parser/lisp_parser.h"
 #include "parser/parser.h"
@@ -62,7 +63,23 @@ int main(int argc, const char **argv) {
         utils::log() << "Model size: " << model.size() << " atoms"
                      << std::endl;
 
-        utils::log() << "Translator pipeline beyond grounding "
+        utils::log() << "Instantiating..." << std::endl;
+        auto inst = instantiate::instantiate(task, model);
+        utils::log() << "  relaxed_reachable: "
+                     << (inst.relaxed_reachable ? "yes" : "no") << std::endl;
+        utils::log() << "  fluent_facts: " << inst.fluent_facts.size()
+                     << std::endl;
+        utils::log() << "  instantiated_actions: "
+                     << inst.instantiated_actions.size() << std::endl;
+        utils::log() << "  instantiated_axioms: "
+                     << inst.instantiated_axioms.size() << std::endl;
+        utils::log() << "  goal: "
+                     << (inst.instantiated_goal ?
+                         std::to_string(inst.instantiated_goal->size()) +
+                         " literals" : "impossible")
+                     << std::endl;
+
+        utils::log() << "Translator pipeline beyond instantiation "
                      << "is not yet implemented." << std::endl;
         utils::log() << "Total time: " << utils::elapsed_seconds() << "s"
                      << std::endl;
