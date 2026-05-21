@@ -58,6 +58,8 @@ set(TRANSLATE_SOURCES
     invariants/constraints.cc
     invariants/invariants.cc
     invariants/invariant_finder.cc
+
+    fact_groups/fact_groups.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})
