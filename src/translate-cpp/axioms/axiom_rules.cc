@@ -23,10 +23,6 @@ std::string atom_key(const Atom &atom) {
 }
 
 namespace {
-const Atom &as_atom(const Condition &c) {
-    return static_cast<const Atom &>(c);
-}
-
 std::string literal_atom_key(const Literal &lit) {
     std::string k = lit.predicate;
     for (const auto &a : lit.args) { k.push_back('\x1f'); k += a; }
@@ -172,25 +168,6 @@ struct AxiomCluster {
     std::set<int> negative_children;
     int layer = 0;
 };
-
-bool less_than_axiom(const PropositionalAxiom &a, const PropositionalAxiom &b) {
-    if (a.name != b.name) return a.name < b.name;
-    if (a.condition.size() != b.condition.size())
-        return a.condition.size() < b.condition.size();
-    for (std::size_t i = 0; i < a.condition.size(); ++i) {
-        const auto &la = static_cast<const Literal &>(*a.condition[i]);
-        const auto &lb = static_cast<const Literal &>(*b.condition[i]);
-        if (la.predicate != lb.predicate) return la.predicate < lb.predicate;
-        if (la.args != lb.args) return la.args < lb.args;
-        if (la.negated() != lb.negated()) return la.negated() < lb.negated();
-    }
-    if (a.effect && b.effect) {
-        if (a.effect->predicate != b.effect->predicate)
-            return a.effect->predicate < b.effect->predicate;
-        return a.effect->args < b.effect->args;
-    }
-    return false;
-}
 
 std::vector<std::shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
     std::vector<std::shared_ptr<PropositionalAxiom>> axioms) {

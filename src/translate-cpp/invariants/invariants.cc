@@ -225,12 +225,6 @@ void ensure_inequality(ConstraintSystem &system,
     }
 }
 
-void ensure_cover(ConstraintSystem &system, const Literal &lit,
-                  const Invariant &inv) {
-    auto cover = inv.get_parameters(lit); // dummy call to keep linkage
-    (void)cover;
-}
-
 void ensure_conjunction_sat(ConstraintSystem &system,
                             std::initializer_list<std::vector<const Literal *>>
                                 groups) {

@@ -39,18 +39,6 @@ using sas::SASVariables;
 using sas::VarVal;
 
 namespace {
-std::string atom_string(const Literal &lit) {
-    std::ostringstream os;
-    if (lit.negated()) os << "Negated";
-    os << "Atom " << lit.predicate << "(";
-    for (std::size_t i = 0; i < lit.args.size(); ++i) {
-        if (i) os << ", ";
-        os << lit.args[i];
-    }
-    os << ")";
-    return os.str();
-}
-
 std::string atom_key(const Atom &atom) {
     std::string k = atom.predicate;
     for (const auto &a : atom.args) { k.push_back('\x1f'); k += a; }
