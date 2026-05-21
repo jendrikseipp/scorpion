@@ -192,7 +192,13 @@ void apply_to_goal(const Renaming &r, SASGoal &goal) {
 
 std::optional<SASOperator> translate_operator(const Renaming &r,
                                               const SASOperator &op) {
-    // Build applicability conditions (prevail + pre).
+    // Build applicability conditions (prevail + pre). Sorted by var; each
+    // var appears at most once (preconditions can't conflict with
+    // prevails, and SASOperator::validate guarantees pre uniqueness per
+    // var). We use the sorted vector directly as the lookup table:
+    // binary search is fast for ~5 entries and avoids the per-operator
+    // unordered_map/unordered_set allocations that dominated this loop
+    // on operator-heavy tasks (115 k operators on logistics/p01).
     std::vector<VarVal> applicability = op.prevail;
     for (const auto &[v, pre, post, cond] : op.pre_post) {
         if (pre != -1) applicability.emplace_back(v, pre);
@@ -200,10 +206,17 @@ std::optional<SASOperator> translate_operator(const Renaming &r,
     std::sort(applicability.begin(), applicability.end());
     if (!convert_pairs(r, applicability))
         return std::nullopt;
-    std::unordered_map<int, int> conditions_dict;
-    for (const auto &[v, val] : applicability) conditions_dict[v] = val;
-    std::unordered_set<int> prevail_vars;
-    for (const auto &[v, _] : applicability) prevail_vars.insert(v);
+
+    auto find_app = [&](int var) -> int {
+        auto it = std::lower_bound(
+            applicability.begin(), applicability.end(), var,
+            [](const VarVal &p, int v) { return p.first < v; });
+        if (it != applicability.end() && it->first == var) return it->second;
+        return -1;
+    };
+
+    std::vector<int> pp_vars;
+    pp_vars.reserve(op.pre_post.size());
     std::vector<std::tuple<int, int, int, std::vector<VarVal>>> new_pre_post;
     for (const auto &[var_no, pre, post, cond] : op.pre_post) {
         auto [new_var_no, new_post] = r.translate(var_no, post);
@@ -222,22 +235,26 @@ std::optional<SASOperator> translate_operator(const Renaming &r,
         if (!convert_pairs(r, new_cond)) continue;
         bool incompat = false;
         for (const auto &[cv, cval] : new_cond) {
-            auto it = conditions_dict.find(cv);
-            if (it != conditions_dict.end() && it->second != cval) {
-                incompat = true; break;
-            }
+            int prev = find_app(cv);
+            if (prev != -1 && prev != cval) { incompat = true; break; }
         }
         if (incompat) continue;
         new_pre_post.emplace_back(new_var_no, new_pre, new_post,
                                   std::move(new_cond));
-        prevail_vars.erase(new_var_no);
+        pp_vars.push_back(new_var_no);
     }
     if (new_pre_post.empty() && !get_options().keep_no_ops)
         return std::nullopt;
+
+    std::sort(pp_vars.begin(), pp_vars.end());
+    pp_vars.erase(std::unique(pp_vars.begin(), pp_vars.end()), pp_vars.end());
+
     std::vector<VarVal> new_prevail;
-    for (const auto &[v, val] : applicability)
-        if (prevail_vars.count(v)) new_prevail.emplace_back(v, val);
-    std::sort(new_prevail.begin(), new_prevail.end());
+    new_prevail.reserve(applicability.size());
+    for (const auto &[v, val] : applicability) {
+        if (!std::binary_search(pp_vars.begin(), pp_vars.end(), v))
+            new_prevail.emplace_back(v, val);
+    }
     SASOperator out;
     out.name = op.name;
     out.prevail = std::move(new_prevail);
