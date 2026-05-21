@@ -57,9 +57,13 @@ public:
     BuildRule(Atom e, std::vector<Atom> c)
         : effect(std::move(e)), conditions(std::move(c)) {}
     virtual void update_index(const Atom &new_atom, int cond_index) = 0;
+    /*
+      `enqueue` takes args by rvalue so each emitted atom can be moved
+      into the queue's seen-set construction instead of copied.
+    */
     virtual void fire(const Atom &new_atom, int cond_index,
                       const std::function<void(const std::string &,
-                                               const std::vector<Arg> &)>
+                                               std::vector<Arg> &&)>
                           &enqueue) = 0;
 
 protected:
@@ -81,10 +85,10 @@ public:
     void update_index(const Atom &, int) override {}
     void fire(const Atom &new_atom, int cond_index,
               const std::function<void(const std::string &,
-                                       const std::vector<Arg> &)>
+                                       std::vector<Arg> &&)>
                   &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
-        enqueue(effect.predicate, eff_args);
+        enqueue(effect.predicate, std::move(eff_args));
     }
 };
 
@@ -148,7 +152,7 @@ public:
 
     void fire(const Atom &new_atom, int cond_index,
               const std::function<void(const std::string &,
-                                       const std::vector<Arg> &)>
+                                       std::vector<Arg> &&)>
                   &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
         std::string k = key_of(new_atom, common_positions[cond_index]);
@@ -162,7 +166,7 @@ public:
                 if (auto *p = std::get_if<int>(&other_cond.args[i]))
                     args[*p] = atom.args[i];
             }
-            enqueue(effect.predicate, args);
+            enqueue(effect.predicate, std::move(args));
         }
     }
 };
@@ -184,7 +188,7 @@ public:
 
     void fire(const Atom &new_atom, int cond_index,
               const std::function<void(const std::string &,
-                                       const std::vector<Arg> &)>
+                                       std::vector<Arg> &&)>
                   &enqueue) override {
         if (empty_index_count > 0) return;
         // Bindings from the new_atom for cond_index already applied via
@@ -199,7 +203,8 @@ public:
         std::function<void(std::size_t, std::vector<Arg> &)> recurse =
             [&](std::size_t k, std::vector<Arg> &args) {
                 if (k == positions.size()) {
-                    enqueue(effect.predicate, args);
+                    auto copy = args;
+                    enqueue(effect.predicate, std::move(copy));
                     return;
                 }
                 int p = positions[k];
@@ -313,9 +318,9 @@ public:
         }
     }
     bool empty() const { return pos >= items.size(); }
-    void push(const std::string &pred, const std::vector<Arg> &args) {
+    void push(const std::string &pred, std::vector<Arg> &&args) {
         ++pushes;
-        Atom a(pred, args);
+        Atom a(pred, std::move(args));
         if (seen.insert(a).second)
             items.push_back(std::move(a));
     }
@@ -351,8 +356,8 @@ std::vector<Atom> compute_model(const Program &prog) {
             rules[ri]->update_index(next, ci);
             rules[ri]->fire(next, ci,
                             [&](const std::string &p,
-                                const std::vector<Arg> &args) {
-                                queue.push(p, args);
+                                std::vector<Arg> &&args) {
+                                queue.push(p, std::move(args));
                             });
         }
     }
