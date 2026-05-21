@@ -1,5 +1,7 @@
 #include "grounding/build.h"
+#include "grounding/model.h"
 #include "grounding/program.h"
+#include "grounding/split.h"
 #include "normalize/normalize.h"
 #include "parser/lisp_parser.h"
 #include "parser/parser.h"
@@ -53,8 +55,14 @@ int main(int argc, const char **argv) {
         utils::log() << "Datalog program:" << std::endl;
         utils::log() << "  facts: " << prog.facts.size() << std::endl;
         utils::log() << "  rules: " << prog.rules.size() << std::endl;
+        grounding::split_rules(prog);
+        utils::log() << "After rule splitting: " << prog.rules.size()
+                     << " rules" << std::endl;
+        auto model = grounding::compute_model(prog);
+        utils::log() << "Model size: " << model.size() << " atoms"
+                     << std::endl;
 
-        utils::log() << "Translator pipeline beyond Datalog program-build "
+        utils::log() << "Translator pipeline beyond grounding "
                      << "is not yet implemented." << std::endl;
         utils::log() << "Total time: " << utils::elapsed_seconds() << "s"
                      << std::endl;

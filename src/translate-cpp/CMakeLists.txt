@@ -50,6 +50,8 @@ set(TRANSLATE_SOURCES
 
     grounding/program.cc
     grounding/build.cc
+    grounding/split.cc
+    grounding/model.cc
 )
 
 add_executable(translate ${TRANSLATE_SOURCES})
