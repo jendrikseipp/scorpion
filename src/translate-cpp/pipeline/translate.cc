@@ -240,6 +240,34 @@ std::optional<SASOperator> build_sas_operator(
         for (auto &[post, eff_conds] : effects_on_var) {
             int pre = orig_pre;
             if (pre == post) continue;
+            /*
+              prune_stupid_effect_conditions for binary variables.
+              If `var` has range 2 and no effect produces the dual value
+              (1 - post), then any condition entry on (var, 1 - post) is
+              redundant: when the effect fires it must be because the var
+              currently has the dual value (otherwise it would already be
+              at `post`). Mirrors Python's prune_stupid_effect_conditions
+              and is required for matching Python's operator encoding on
+              binary-var-heavy domains (satellite, airport, miconic-adl).
+            */
+            if (ranges[var] == 2 &&
+                effects_on_var.count(1 - post) == 0) {
+                int dual_val = 1 - post;
+                bool sweep_to_empty = false;
+                for (auto &eff_cond : eff_conds) {
+                    auto it = eff_cond.find(var);
+                    if (it != eff_cond.end() && it->second == dual_val)
+                        eff_cond.erase(it);
+                    if (eff_cond.empty()) {
+                        sweep_to_empty = true;
+                        break;
+                    }
+                }
+                if (sweep_to_empty) {
+                    eff_conds.clear();
+                    eff_conds.emplace_back();
+                }
+            }
             for (auto &eff_cond : eff_conds) {
                 std::vector<VarVal> filtered;
                 bool contradict = false;
@@ -261,7 +289,6 @@ std::optional<SASOperator> build_sas_operator(
         }
         if (added) condition.erase(var);
     }
-    (void)ranges;
     if (pre_post.empty() && !get_options().keep_no_ops) return std::nullopt;
     SASOperator op;
     op.name = name;
