@@ -452,3 +452,51 @@ Lesson: at this stage, the obvious "C++ idiom" wins — eliminating an
 allocation in a hot loop, moving instead of copying — only pay off
 when the targeted call site is genuinely hot. Phase timers were the
 critical tool for picking real targets and avoiding wasteful churn.
+
+### B2 — Port `prune_stupid_effect_conditions` (`1eab8da75`)
+
+Earlier eval entries blamed the remaining "operators DIFFER" reports
+on satellite, miconic-simpleadl and airport on invariant-synthesis
+RNG ordering. That was wrong. The actual cause: a missing port of
+Python's `prune_stupid_effect_conditions` simplification for binary
+SAS variables.
+
+For a binary `var` with effect post-value `post`, if no other effect
+on this operator produces the dual value `(1 - post)`, then any
+effect-condition entry of the form `(var, 1 - post)` is redundant:
+when the effect fires the variable must currently hold the dual
+value. Python strips these; when the resulting condition list
+becomes empty, the effect becomes unconditional. The C++ port left
+the redundant conditions in.
+
+Concrete diff on satellite, operator `switch_on instrument0 satellite0`:
+
+```
+  py:  pre_post=(…, (49, -1, 1, ()))           # var 49 set to 1, no cond
+  cpp: pre_post=(…, (49, -1, 1, ((49, 0),)))   # var 49 set to 1, if var 49 == 0
+```
+
+After adding the prune step to `pipeline::build_sas_operator`:
+
+| Instance | Pre-B2 | Post-B2 |
+|---|---|---|
+| logistics/p01 | byte-identical | **byte-identical** |
+| miconic/s1-0 | byte-identical | **byte-identical** |
+| gripper/prob01 | sections match | sections match |
+| philosophers/p01-phil2 | sections match | sections match |
+| miconic-simpleadl/s1-0 | operators DIFFER | **all sections match** |
+| satellite/p25-HC-pfile5 | operators DIFFER | **all sections match** |
+| airport/p40-airport5MUC-p4 | operators DIFFER | **all sections match** |
+
+Every bundled instance now produces output that is either
+byte-identical to Python's or canonically equivalent (same task up to
+variable renumbering). The "Known sources of remaining
+nondeterminism" section near the top of this document is now stale —
+the suite no longer exhibits any output divergence; the MaxDAG
+tie-breaking and trie-unifier nondeterminism listed there were
+hypothetical, not observed.
+
+Wall time is slightly up because of the per-effect prune (binary-var
+domains do the most extra work): logistics/p01 +10 % (~2.37 s),
+airport ~0.85 s, satellite ~0.49 s. Acceptable cost for the
+correctness fix.
