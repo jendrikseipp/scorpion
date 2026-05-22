@@ -186,11 +186,23 @@ negate_and_translate_condition(
     const AtomToVarVals &mutex_dict,
     const std::vector<int> &mutex_ranges) {
     std::vector<std::unordered_map<int, int>> negation;
+    // An empty group inside `condition` means "always satisfied" — the
+    // negation is unsatisfiable. (Matches Python's `if [] in condition`.)
     for (const auto &group : condition)
         if (group.empty()) return std::nullopt;
+    /*
+      No add-effect conditions at all means there is no condition under
+      which an add fires, so the "no-add-fires" disjunction is vacuously
+      true. Python returns `[{}]` (a single empty assignment) in this
+      case; we must do the same so that del effects without a matching
+      add still produce a none-of-those transition.
+    */
+    if (condition.empty()) {
+        negation.emplace_back();
+        return negation;
+    }
     // Iterate over the cartesian product of literals.
     std::vector<std::size_t> idx(condition.size(), 0);
-    if (condition.empty()) return std::nullopt;
     while (true) {
         std::vector<ConditionPtr> combination;
         for (std::size_t i = 0; i < condition.size(); ++i)
