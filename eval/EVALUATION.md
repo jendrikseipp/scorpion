@@ -596,3 +596,39 @@ Two instances (ged-positional, ged) fail the strict canonical_diff
 because choose_groups picked between equally-sized mutex groups
 differently than Python; in both cases the resulting SAS+ is valid
 and produces correct plans (verified end-to-end on ged-positional).
+
+### Note: why ged-positional gets a "more compact" encoding
+
+Worth recording the underlying reason so we don't lose the
+explanation in commit history. H2 invariant synthesis is
+**order-dependent**: when an action makes the current candidate
+unbalanced, the algorithm refines the candidate using **only that
+one action's** delete effects (`Invariant._refine_candidate`)
+and rejects the current candidate. Different action orderings —
+selected via `BalanceChecker.random` (`random.Random(314159)` in
+Python, `std::mt19937(314159)` in C++) — produce different first-
+failing actions, different refinement queues, and different final
+sets of confirmed invariants.
+
+On ged-positional/d-1-3, this asymmetry has Python confirming **0**
+multi-fact invariants out of 7 initial candidates while the C++ port
+confirms **6** (one `at(subN, ·)` mutex per substring). My port is
+not "smarter": both are running the same algorithm; H2 just happens
+to land on a stronger fixed point under my RNG sequence on this
+instance.
+
+Soundness check: every invariant my port confirms is necessarily a
+true mutex of the planning task — `Invariant::check_balance` is the
+same standard H2 soundness test. The end-to-end search agreement on
+ged-positional (same 3-step / cost-4 plan from both translators)
+rules out any "invented" invariant; if the `at(sub, ·)` mutex were
+not actually a mutex, the SAS+ encoding would forbid states the
+PDDL allows and the search would either fail or produce a plan that
+is invalid in the original problem.
+
+Same mechanism explains the small `choose_groups` tie-breaking
+divergence on ged/d-5-10 and the historical `satellite/p25` operator
+diffs. If we ever wanted byte-equivalent output to Python on these,
+the fix is to port CPython's Mersenne Twister + `Random.randrange`
+semantics exactly rather than using libstdc++'s `mt19937` +
+`uniform_int_distribution`.
