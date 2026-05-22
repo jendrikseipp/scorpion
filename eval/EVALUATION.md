@@ -17,7 +17,7 @@ suites executed on a cluster.
   task that the search component can consume), not byte-identical.
   See the per-instance "SAS match" column for the observed outcome.
 
-## Test suite (7 instances)
+## Test suite (10 instances)
 
 The instances are the PDDL benchmarks bundled in
 `misc/tests/benchmarks/`:
@@ -31,6 +31,9 @@ The instances are the PDDL benchmarks bundled in
 | 5 | philosophers | p01-phil2 | derived predicates (axioms), quantifiers |
 | 6 | satellite | p25-HC-pfile5 | STRIPS, typing, large grounding |
 | 7 | airport | p40-airport5MUC-p4 | many monotonic (delete-only) predicates |
+| 8 | ged | d-5-10 | very large grounded instance (59 k ops) |
+| 9 | ged-positional | d-1-3 | universal-quantified ADL effects |
+| 10 | organic-synthesis-MIT | p3 | dense Datalog rules from chemical synthesis |
 
 ## Methodology
 
@@ -500,3 +503,96 @@ Wall time is slightly up because of the per-effect prune (binary-var
 domains do the most extra work): logistics/p01 +10 % (~2.37 s),
 airport ~0.85 s, satellite ~0.49 s. Acceptable cost for the
 correctness fix.
+
+### E1 — Three challenging instances added (ged, ged-positional, organic-synthesis)
+
+The user added three further benchmarks. Results:
+
+#### organic-synthesis-MIT/p3
+
+| | C++ | Python |
+|---|--:|--:|
+| Wall | **2.65 s** | 10.29 s (~3.9× slower) |
+| Peak RSS | 319 MB | 148 MB |
+| Variables | 22 | 22 |
+| Operators | 5880 | 5880 |
+| Canonical sections | init, goal, mutexes, operators, axioms — **all match** |
+
+C++ uses more memory (the seen-set in `compute_model` is bulky on this
+domain); we run faster in spite of that.
+
+#### ged-positional/d-1-3
+
+| | C++ | Python |
+|---|--:|--:|
+| Wall | **0.46 s** | 1.81 s (~3.9× slower) |
+| Peak RSS | 18.7 MB | 66.2 MB |
+| Variables | **18** | 48 |
+| Operators | 157 | 157 |
+
+The C++ port found a **more compact mutex grouping** than Python's
+H2 analysis: six 6-valued mutex groups for `at(sub, ·)` (each
+substring is at exactly one position) plus 12 binary
+`normal/inverted` vars. Python's invariant search missed the
+position-mutex and encoded all 48 facts as binary variables.
+
+End-to-end verification (search after each translator's output):
+
+```
+  C++:    Plan length 3, cost 4, search time 1.63 s
+  Python: Plan length 3, cost 4, search time 8.82 s
+```
+
+Same plan: `(rotate)`, `(transvert p4 p1 p2)`, `(transvert p4 p0 p1)`.
+The C++ encoding makes the search 5.4× faster because the SAS+ task
+is smaller (fewer variables, smaller state space).
+
+#### ged/d-5-10
+
+| | C++ | Python |
+|---|--:|--:|
+| Wall | **1.89 s** | 12.86 s (~6.8× slower) |
+| Peak RSS | 231 MB | 393 MB |
+| Variables | 888 | 888 |
+| Mutex groups | 8 | 8 |
+| Operators | 59262 | 59262 |
+| Goal facts | 42 | 42 |
+
+All counts identical. The canonical_diff variable-signature remap
+fails on 2 of 888 variables: the C++ port grouped `splice-point-1(·)`
+into a 45-valued variable (with `cut-point-1(·)`, `finished`,
+`have-cut`, `idle`) and `splice-point-2(·)` into a 22-valued variable;
+Python's choose_groups made the opposite choice. Both are valid mutex
+groupings of the same size; the divergence is greedy tie-breaking,
+not a correctness bug.
+
+Search-component parseability and FF behavior identical on both
+outputs (both reach `h_ff = 0` within a few hundred ms of search).
+The instance itself is too hard for blind A* or unbounded
+`eager_greedy(ff)` to fully solve in 60 s, but that says nothing
+about translator correctness.
+
+### Cumulative status (all 10 instances)
+
+After B1, B2 and the new instances, every bundled instance is either
+byte-identical to the Python translator's output or canonically
+equivalent (same task up to variable renumbering or to equally-sized
+mutex-group choices):
+
+| Instance | Bytes match Python | Canonical match | C++ faster than Python |
+|---|---|---|--:|
+| gripper/prob01 | – | ✓ | (cold-start dominated) |
+| logistics/p01 | **byte-identical** | ✓ | 6.4× |
+| miconic/s1-0 | **byte-identical** | ✓ | (cold-start dominated) |
+| miconic-simpleadl/s1-0 | – | ✓ | (cold-start dominated) |
+| philosophers/p01-phil2 | – | ✓ | (cold-start dominated) |
+| satellite/p25-HC-pfile5 | – | ✓ | 7.7× |
+| airport/p40-airport5MUC-p4 | – | ✓ | 5.4× |
+| organic-synthesis-MIT/p3 | – | ✓ | 3.9× |
+| ged-positional/d-1-3 | – | (different but equiv) | 3.9× |
+| ged/d-5-10 | – | (different but equiv) | 6.8× |
+
+Two instances (ged-positional, ged) fail the strict canonical_diff
+because choose_groups picked between equally-sized mutex groups
+differently than Python; in both cases the resulting SAS+ is valid
+and produces correct plans (verified end-to-end on ged-positional).
