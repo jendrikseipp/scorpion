@@ -17,7 +17,7 @@ suites executed on a cluster.
   task that the search component can consume), not byte-identical.
   See the per-instance "SAS match" column for the observed outcome.
 
-## Test suite (6 instances)
+## Test suite (7 instances)
 
 The instances are the PDDL benchmarks bundled in
 `misc/tests/benchmarks/`:
@@ -30,6 +30,7 @@ The instances are the PDDL benchmarks bundled in
 | 4 | miconic-simpleadl | s1-0 | ADL (conditional effects, quantifiers) |
 | 5 | philosophers | p01-phil2 | derived predicates (axioms), quantifiers |
 | 6 | satellite | p25-HC-pfile5 | STRIPS, typing, large grounding |
+| 7 | airport | p40-airport5MUC-p4 | many monotonic (delete-only) predicates |
 
 ## Methodology
 
@@ -361,6 +362,47 @@ Replace both with operations on the sorted `applicability` vector:
 
 Phase win is clean; the overall wall stays in the same band because
 other phases dominate. Output bytes unchanged on all six instances.
+
+### B1 — Correctness bugfix in `negate_and_translate_condition` (`f65d5db41`)
+
+Found by adding the **airport/p40-airport5MUC-p4** instance to the
+suite. The translator output had only 22 SAS variables vs. Python's
+1311 — a structural divergence, not a stylistic one.
+
+Diagnosis: when an action has a delete effect on a variable but no add
+effect on that variable (common for monotonic predicates like
+`not_blocked` in airport), `translate_strips_operator_aux` needs the
+"no add effect fires" guard from `negate_and_translate_condition` to
+emit a none-of-those transition. Python's `negate_and_translate_condition`
+returns `[{}]` (a single empty assignment, vacuously true) when its
+input is the empty add-conds list; the C++ port was returning
+`std::nullopt`, which caused the del-effect transition to be dropped
+entirely. The DTG for these "delete-only" vars then had no arcs, and
+`simplify::filter_unreachable_propositions` pruned the variable as
+"only init value reachable".
+
+Fix: return a one-element vector containing an empty assignment for
+the empty-input case, matching Python's `product(*[])` semantics.
+
+Post-fix verification:
+
+| Instance | Pre-fix | Post-fix |
+|---|---|---|
+| logistics/p01 | byte-identical | **byte-identical** |
+| miconic/s1-0 | semantic | **byte-identical** |
+| gripper/prob01 | semantic (variable sigs differed) | **canonical match** |
+| philosophers/p01-phil2 | semantic | **canonical match** |
+| miconic-simpleadl/s1-0 | semantic | operators still differ (RNG) |
+| satellite/p25-HC-pfile5 | semantic | operators still differ (RNG) |
+| **airport/p40-…** | **vars 22 vs 1311** (broken) | **same counts; operators differ (RNG)** |
+
+Wall time per instance is ~3–5 % up because the (correct) additional
+none-of-those transitions are now tracked through `simplify` and the
+remainder of the pipeline.
+
+Airport timings (post-fix, best of 3): C++ **0.70 s** vs Python 3.77 s
+(5.4× faster); 50.4 MB RSS vs 83.7 MB. Output bytes 850 KB
+(was 472 KB pre-fix; was missing facts).
 
 Versus the Python translator (where comparable), on the largest two
 instances:
