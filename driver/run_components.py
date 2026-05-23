@@ -72,10 +72,20 @@ def run_translate(args):
         args.translate_memory_limit, args.overall_memory_limit)
 
     # Prefer the C++ port if it has been built (src/translate-cpp).
-    # The FD_TRANSLATE_CPP env var can override the binary location;
-    # FD_TRANSLATE_PY=1 forces use of the Python translator.
+    # --translator=cpp|py takes precedence over the env vars
+    # (FD_TRANSLATE_CPP / FD_TRANSLATE_PY=1) which take precedence over
+    # auto-detection.
+    translator_choice = getattr(args, "translator", None)
     cpp_binary_env = os.environ.get("FD_TRANSLATE_CPP")
-    force_python = os.environ.get("FD_TRANSLATE_PY") == "1"
+    force_python = (
+        translator_choice == "py" or
+        os.environ.get("FD_TRANSLATE_PY") == "1")
+    if translator_choice == "cpp" and not cpp_binary_env:
+        # Default to the in-tree binary; the existence check below decides
+        # whether we actually use it.
+        cpp_binary_env = str(
+            Path(__file__).resolve().parent.parent /
+            "src" / "translate-cpp" / "build" / "translate")
     cpp_binary = None
     if not force_python:
         if cpp_binary_env:
