@@ -21,6 +21,7 @@ else:
     returncodes.exit_with_driver_unsupported_error("Unsupported OS: " + os.name)
 
 REL_TRANSLATE_PATH = Path("translate")
+REL_TRANSLATE_CPP_PATH = Path(f"translate-cpp{BINARY_EXT}")
 REL_SEARCH_PATH = Path(f"downward{BINARY_EXT}")
 # Older versions of VAL use lower case, newer versions upper case. We prefer the
 # older version because this is what our build instructions recommend.
@@ -93,10 +94,21 @@ def run_translate(args):
             if candidate.exists():
                 cpp_binary = candidate
         else:
-            here = Path(__file__).resolve().parent.parent
-            candidate = here / "src" / "translate-cpp" / "build" / "translate"
-            if candidate.exists():
-                cpp_binary = candidate
+            # Two search locations, in order:
+            #   1) builds/<build>/bin/translate-cpp (what
+            #      `./build.py --with-translate-cpp` installs; also where
+            #      Lab's CachedFastDownwardRevision keeps the binary
+            #      because builds/*/bin/ is preserved by cache cleanup).
+            #   2) src/translate-cpp/build/translate (local-dev shortcut
+            #      for users who built the standalone cmake project
+            #      directly without going through build.py).
+            try:
+                cpp_binary = try_get_executable(args.build, REL_TRANSLATE_CPP_PATH)
+            except IncompleteBuildError:
+                here = Path(__file__).resolve().parent.parent
+                candidate = here / "src" / "translate-cpp" / "build" / "translate"
+                if candidate.exists():
+                    cpp_binary = candidate
 
     if cpp_binary is not None:
         cmd = [str(cpp_binary)] + args.translate_inputs + args.translate_options

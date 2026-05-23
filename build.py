@@ -2,6 +2,7 @@
 
 import errno
 import os
+import shutil
 import subprocess
 import sys
 
@@ -51,6 +52,12 @@ Build configurations
 
 --all         Alias to build all build configurations.
 --debug       Alias to build the default debug build configuration.
+--with-translate-cpp
+              In addition to the search component, build the C++
+              translator port (src/translate-cpp/) and install its
+              binary at builds/<config>/bin/translate -- alongside the
+              search binary, so Lab's CachedFastDownwardRevision keeps
+              it across cache cleanup. Off by default.
 --help        Print this message and exit.
 
 Make options
@@ -114,9 +121,48 @@ def build(config_name, configure_parameters, build_parameters):
     print(f"Built configuration {config_name} successfully.")
 
 
+def build_translate_cpp(config_name):
+    """Build the C++ translator port (src/translate-cpp/) and install
+    its binary at builds/<config>/bin/translate-cpp.
+
+    The install path is chosen so the binary sits alongside the search
+    component's `downward` binary; Lab's CachedFastDownwardRevision
+    cleanup only keeps `builds/*/bin/`, so this is the location both
+    interactive and Lab-cached runs can find it at. We use the name
+    `translate-cpp` (not `translate`) to avoid colliding with the
+    Python translator package that the standard build already drops
+    at `builds/<config>/bin/translate/`.
+    """
+    print(f"Building C++ translator for configuration {config_name}.")
+
+    translate_src = os.path.join(get_src_path(), "translate-cpp")
+    translate_build = os.path.join(get_build_path(config_name), "translate-cpp")
+
+    generator_cmd = [
+        CMAKE, "-S", translate_src, "-B", translate_build,
+        "-DCMAKE_BUILD_TYPE=Release",
+    ]
+    if CMAKE_GENERATOR:
+        generator_cmd += ["-G", CMAKE_GENERATOR]
+    try_run(generator_cmd)
+
+    build_cmd = [CMAKE, "--build", translate_build]
+    if NUM_CPUS:
+        build_cmd += ["-j", f"{NUM_CPUS}"]
+    try_run(build_cmd)
+
+    bin_src = os.path.join(translate_build, "translate")
+    bin_dst_dir = os.path.join(get_build_path(config_name), "bin")
+    os.makedirs(bin_dst_dir, exist_ok=True)
+    bin_dst = os.path.join(bin_dst_dir, "translate-cpp")
+    shutil.copy2(bin_src, bin_dst)
+    print(f"Installed C++ translator at {bin_dst}.")
+
+
 def main():
     config_names = []
     build_parameters = []
+    with_translate_cpp = False
     for arg in sys.argv[1:]:
         if arg == "--help" or arg == "-h":
             print_usage()
@@ -125,6 +171,8 @@ def main():
             config_names.append(DEBUG_CONFIG_NAME)
         elif arg == "--all":
             config_names.extend(sorted(CONFIGS.keys()))
+        elif arg == "--with-translate-cpp":
+            with_translate_cpp = True
         elif arg in CONFIGS:
             config_names.append(arg)
         else:
@@ -133,6 +181,8 @@ def main():
         config_names.append(DEFAULT_CONFIG_NAME)
     for config_name in config_names:
         build(config_name, CONFIGS[config_name], build_parameters)
+        if with_translate_cpp:
+            build_translate_cpp(config_name)
 
 
 if __name__ == "__main__":
