@@ -72,36 +72,36 @@ def run_translate(args):
     memory_limit = limits.get_memory_limit(
         args.translate_memory_limit, args.overall_memory_limit)
 
-    # Prefer the C++ port if it has been built (src/translate-cpp).
-    # --translator=cpp|py takes precedence over the env vars
-    # (FD_TRANSLATE_CPP / FD_TRANSLATE_PY=1) which take precedence over
-    # auto-detection.
+    # Selection rules for the translator backend:
+    #
+    #   1. --translator=py  or FD_TRANSLATE_PY=1   -> force Python.
+    #   2. FD_TRANSLATE_CPP=<path>                 -> use that path
+    #      (path must exist; otherwise we fall through to (3)).
+    #   3. builds/<args.build>/bin/translate-cpp   -> the location that
+    #      `./build.py --with-translate-cpp` installs to, and that
+    #      Lab's CachedFastDownwardRevision preserves (only
+    #      `builds/*/bin/` survives cache cleanup).
+    #   4. src/translate-cpp/build/translate       -> local-dev shortcut
+    #      for users who built the standalone cmake project directly
+    #      without going through build.py.
+    #   5. otherwise                               -> fall back to the
+    #      Python translator.
+    #
+    # --translator=cpp doesn't add a new lookup path; it just makes
+    # falling all the way through to (5) an error rather than a silent
+    # fallback (because the user explicitly asked for the C++ port).
     translator_choice = getattr(args, "translator", None)
     cpp_binary_env = os.environ.get("FD_TRANSLATE_CPP")
     force_python = (
         translator_choice == "py" or
         os.environ.get("FD_TRANSLATE_PY") == "1")
-    if translator_choice == "cpp" and not cpp_binary_env:
-        # Default to the in-tree binary; the existence check below decides
-        # whether we actually use it.
-        cpp_binary_env = str(
-            Path(__file__).resolve().parent.parent /
-            "src" / "translate-cpp" / "build" / "translate")
     cpp_binary = None
     if not force_python:
         if cpp_binary_env:
             candidate = Path(cpp_binary_env)
             if candidate.exists():
                 cpp_binary = candidate
-        else:
-            # Two search locations, in order:
-            #   1) builds/<build>/bin/translate-cpp (what
-            #      `./build.py --with-translate-cpp` installs; also where
-            #      Lab's CachedFastDownwardRevision keeps the binary
-            #      because builds/*/bin/ is preserved by cache cleanup).
-            #   2) src/translate-cpp/build/translate (local-dev shortcut
-            #      for users who built the standalone cmake project
-            #      directly without going through build.py).
+        if cpp_binary is None:
             try:
                 cpp_binary = try_get_executable(args.build, REL_TRANSLATE_CPP_PATH)
             except IncompleteBuildError:
@@ -109,6 +109,13 @@ def run_translate(args):
                 candidate = here / "src" / "translate-cpp" / "build" / "translate"
                 if candidate.exists():
                     cpp_binary = candidate
+        if cpp_binary is None and translator_choice == "cpp":
+            returncodes.exit_with_driver_input_error(
+                "--translator cpp was requested but no C++ translator "
+                "binary was found. Looked for FD_TRANSLATE_CPP, "
+                f"builds/{args.build}/bin/translate-cpp, and "
+                "src/translate-cpp/build/translate. Run "
+                "`./build.py --with-translate-cpp`.")
 
     if cpp_binary is not None:
         cmd = [str(cpp_binary)] + args.translate_inputs + args.translate_options
