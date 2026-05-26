@@ -379,19 +379,22 @@ std::pair<std::string, int> get_predicate_id_and_arity(
     return {the_type->get_predicate_name(), 1};
 }
 
+// Validate a predicate-name + term-list. Previously this took a
+// pre-built `unordered_set<std::string>` of valid predicate names, but
+// callers were rebuilding that 464K-entry set from `predicate_dict`
+// for every literal -- the dominant parse-time cost on pre-grounded
+// large domains like trucks-strips/p29. We just consult
+// `predicate_dict` directly now.
 void check_predicate_and_terms_existence(
     Context &ctx, const std::string &predicate_name,
     const SexprList &terms,
-    const std::unordered_set<std::string> &valid_predicate_names,
+    const PredicateMap &predicate_dict,
     const std::unordered_set<std::string> &valid_term_names) {
-    if (valid_predicate_names.find(predicate_name) ==
-        valid_predicate_names.end()) {
+    if (predicate_dict.find(predicate_name) == predicate_dict.end())
         ctx.error("Undefined predicate", nullptr, predicate_name.c_str());
-    }
     for (const auto &term : terms) {
-        if (!term.is_atom()) {
+        if (!term.is_atom())
             ctx.error("Argument must be a word.", &term);
-        }
         const std::string &t = term.atom();
         if (valid_term_names.find(t) == valid_term_names.end()) {
             const char *kind = (starts_with_qmark(t)) ? "variable" : "object";
@@ -430,11 +433,8 @@ ConditionPtr parse_literal(
     std::string predicate_name = current[0].atom();
     SexprList terms(current.begin() + 1, current.end());
 
-    std::unordered_set<std::string> valid_predicates;
-    valid_predicates.reserve(predicate_dict.size());
-    for (const auto &[k, _] : predicate_dict) valid_predicates.insert(k);
     check_predicate_and_terms_existence(ctx, predicate_name, terms,
-                                        valid_predicates, term_names);
+                                        predicate_dict, term_names);
     auto [pred_id, arity] =
         get_predicate_id_and_arity(ctx, predicate_name, type_dict,
                                    predicate_dict);
@@ -808,7 +808,7 @@ std::shared_ptr<Increase> parse_effects(
 std::optional<Action> parse_action(
     Context &ctx, const SexprList &alist, const TypeMap &type_dict,
     const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &constant_names) {
+    std::unordered_set<std::string> &constant_names) {
     std::string name;
     {
         auto l = ctx.layer("Parsing action name");
@@ -844,16 +844,37 @@ std::optional<Action> parse_action(
             ++idx;
         }
     }
-    std::unordered_set<std::string> term_names = constant_names;
-    for (const auto &p : parameters) term_names.insert(p.name);
+    /*
+      Use the caller's `constant_names` set as the term-name scope and
+      push the action's parameters into it for the duration of parsing
+      the precondition/effect, then erase them. This avoids copying
+      the full constant set per action, which was the dominant cost on
+      pre-grounded large domains (trucks-strips/p29 has 56 770 actions
+      and a 12 MB domain file -- the wholesale copy was ~27 % of
+      runtime per perf record).
+    */
+    std::unordered_set<std::string> &term_names = constant_names;
+    std::vector<std::string> pushed_params;
+    pushed_params.reserve(parameters.size());
+    for (const auto &p : parameters) {
+        if (term_names.insert(p.name).second)
+            pushed_params.push_back(p.name);
+    }
+    auto pop_params = [&]() {
+        for (const auto &n : pushed_params) term_names.erase(n);
+    };
     {
         auto l = ctx.layer("Parsing precondition");
-        if (idx >= alist.size())
+        if (idx >= alist.size()) {
+            pop_params();
             ctx.error("Missing fields. Expecting " + std::string(SYNTAX_ACTION));
+        }
         if (alist[idx].is_atom() && alist[idx].atom() == ":precondition") {
             ++idx;
-            if (idx >= alist.size())
+            if (idx >= alist.size()) {
+                pop_params();
                 ctx.error("Missing precondition.", nullptr, SYNTAX_ACTION);
+            }
             check_list(ctx, alist[idx], "Precondition", SYNTAX_ACTION);
             precondition = parse_condition(ctx, alist[idx], type_dict,
                                            predicate_dict, term_names);
@@ -865,15 +886,20 @@ std::optional<Action> parse_action(
     }
     {
         auto l = ctx.layer("Parsing effect");
-        if (idx >= alist.size())
+        if (idx >= alist.size()) {
+            pop_params();
             ctx.error("Missing fields. Expecting " + std::string(SYNTAX_ACTION));
+        }
         if (!alist[idx].is_atom() || alist[idx].atom() != ":effect") {
+            pop_params();
             ctx.error("Effect tag is expected to be ':effect'", &alist[idx],
                       SYNTAX_ACTION);
         }
         ++idx;
-        if (idx >= alist.size())
+        if (idx >= alist.size()) {
+            pop_params();
             ctx.error("Missing effect.", nullptr, SYNTAX_ACTION);
+        }
         check_list(ctx, alist[idx], "Effect", SYNTAX_ACTION);
         if (!alist[idx].list().empty()) {
             cost = parse_effects(ctx, alist[idx], effects, type_dict,
@@ -881,6 +907,7 @@ std::optional<Action> parse_action(
         }
         ++idx;
     }
+    pop_params();
     if (idx != alist.size())
         ctx.error("Too many fields. Expecting " + std::string(SYNTAX_ACTION));
     if (!effects.empty() || get_options().keep_no_ops) {
@@ -893,7 +920,7 @@ std::optional<Action> parse_action(
 
 Axiom parse_axiom(Context &ctx, const SexprList &alist,
                   const TypeMap &type_dict, const PredicateMap &predicate_dict,
-                  const std::unordered_set<std::string> &constant_names) {
+                  std::unordered_set<std::string> &constant_names) {
     Predicate predicate;
     {
         auto l = ctx.layer("Parsing derived predicate");
@@ -912,10 +939,17 @@ Axiom parse_axiom(Context &ctx, const SexprList &alist,
         ctx.error("The second argument (CONDITION) is expected to be a "
                   "block.", nullptr, SYNTAX_AXIOM);
     }
-    std::unordered_set<std::string> term_names = constant_names;
-    for (const auto &a : predicate.arguments) term_names.insert(a.name);
+    // Same push/pop trick as parse_action -- avoid copying the
+    // potentially-large constant_names set per axiom.
+    std::unordered_set<std::string> &term_names = constant_names;
+    std::vector<std::string> pushed;
+    pushed.reserve(predicate.arguments.size());
+    for (const auto &a : predicate.arguments) {
+        if (term_names.insert(a.name).second) pushed.push_back(a.name);
+    }
     auto condition = parse_condition(ctx, alist[2], type_dict, predicate_dict,
                                      term_names);
+    for (const auto &n : pushed) term_names.erase(n);
     int arity = static_cast<int>(predicate.arguments.size());
     return Axiom(predicate.name, std::move(predicate.arguments), arity,
                  std::move(condition));
@@ -924,7 +958,7 @@ Axiom parse_axiom(Context &ctx, const SexprList &alist,
 void parse_axioms_and_actions(Context &ctx, const std::vector<Sexpr> &entries,
                               const TypeMap &type_dict,
                               const PredicateMap &predicate_dict,
-                              const std::unordered_set<std::string> &constant_names,
+                              std::unordered_set<std::string> &constant_names,
                               std::vector<Axiom> &axioms,
                               std::vector<Action> &actions) {
     int no = 1;
@@ -1046,11 +1080,8 @@ std::vector<pddl::InitElement> parse_init(
         }
         const std::string &pname = atom_list[0].atom();
         SexprList terms(atom_list.begin() + 1, atom_list.end());
-        std::unordered_set<std::string> valid_preds;
-        valid_preds.reserve(predicate_dict.size());
-        for (const auto &[k2, _] : predicate_dict) valid_preds.insert(k2);
         check_predicate_and_terms_existence(ctx, pname, terms,
-                                            valid_preds, term_names);
+                                            predicate_dict, term_names);
         auto pred_it = predicate_dict.find(pname);
         int expected_arity = pred_it->second->get_arity();
         int got_arity = static_cast<int>(terms.size());
