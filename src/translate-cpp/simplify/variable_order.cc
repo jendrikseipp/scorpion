@@ -4,12 +4,14 @@
 #include "../utils/sccs.h"
 
 #include <algorithm>
+#include <deque>
 #include <iostream>
 #include <map>
 #include <queue>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace translate::simplify {
@@ -77,13 +79,127 @@ public:
         for (const auto &scc : sccs) {
             if (scc.size() == 1) {
                 order.push_back(scc.front());
-            } else {
-                // Simple heuristic: include in the SCC's input order.
-                // MaxDAG-faithful tie-breaking can be added later.
-                for (int v : scc) order.push_back(v);
+                continue;
             }
+            // Build the subgraph induced by `scc`. For each edge into a
+            // goal var, emit *two* edges: one tagged with +100000 (so
+            // the goal node accumulates a large "incoming" weight and
+            // is therefore picked last by MaxDAG), plus the unboosted
+            // edge for the actual decrement bookkeeping. Mirrors the
+            // construction in src/translate/variable_order.py.
+            std::unordered_set<int> scc_set(scc.begin(), scc.end());
+            std::unordered_map<int, std::vector<std::pair<int, int>>>
+                subgraph;
+            for (int var : scc) {
+                auto &edges = subgraph[var];
+                // weighted_graph[var] is a std::map<int,int> -> already
+                // sorted by target id, matching Python's
+                // sorted(items()).
+                for (const auto &[tgt, cost] : weighted_graph[var]) {
+                    if (!scc_set.count(tgt)) continue;
+                    if (goal_map.count(tgt))
+                        edges.emplace_back(tgt, 100000 + cost);
+                    edges.emplace_back(tgt, cost);
+                }
+            }
+            auto sub_order = max_dag_order(subgraph, scc);
+            order.insert(order.end(), sub_order.begin(), sub_order.end());
         }
         return order;
+    }
+
+    /*
+      Greedy variable ordering for one SCC of the (weighted) causal
+      graph -- the C++ port of MaxDAG.get_result() in
+      src/translate/variable_order.py.
+
+      We pick repeatedly the node with the smallest cumulated weight of
+      *remaining* incoming edges, breaking ties by the input order
+      (which the caller passes as the SCC's original order). Goal vars
+      get a +100000 boost per incoming edge so they're picked last,
+      matching the Python tie-breaking.
+
+      The data structures mirror Python's heapq + defaultdict(deque)
+      with lazy deletion. We need exactly the same outcome as Python
+      because LAMA-first's landmark / FF heuristic is extremely
+      sensitive to the variable ordering chosen here -- a different
+      (but legal) order can cause search to explore 20-70x more states
+      on parking-sat14-strips.
+    */
+    static std::vector<int> max_dag_order(
+        const std::unordered_map<int, std::vector<std::pair<int, int>>>
+            &subgraph,
+        const std::vector<int> &input_order) {
+        std::unordered_map<int, int> incoming_weights;
+        for (const auto &[_src, edges] : subgraph) {
+            for (const auto &[tgt, w] : edges)
+                incoming_weights[tgt] += w;
+        }
+
+        // weight -> nodes with that current incoming weight, FIFO in
+        // input order.
+        std::unordered_map<int, std::deque<int>> weight_to_nodes;
+        for (int node : input_order) {
+            int w = incoming_weights[node]; // 0 if not seen
+            weight_to_nodes[w].push_back(node);
+        }
+
+        // Min-heap of distinct weight values (lazy deletion: we never
+        // remove eagerly, only the bucket-empty case).
+        std::priority_queue<int, std::vector<int>, std::greater<int>>
+            weights;
+        {
+            std::unordered_set<int> seen;
+            for (const auto &[w, _] : weight_to_nodes)
+                if (seen.insert(w).second) weights.push(w);
+        }
+
+        std::unordered_set<int> done;
+        std::vector<int> result;
+        result.reserve(input_order.size());
+        while (!weights.empty()) {
+            int min_key = weights.top();
+            // `weight_to_nodes[min_key]` may create an empty deque if
+            // min_key was previously erased -- that's intentional and
+            // matches Python's defaultdict.
+            auto &entries = weight_to_nodes[min_key];
+            int min_elem = -1;
+            bool elem_found = false;
+            while (!entries.empty() &&
+                   (!elem_found || done.count(min_elem) ||
+                    min_key > incoming_weights[min_elem])) {
+                min_elem = entries.front();
+                entries.pop_front();
+                elem_found = true;
+            }
+            if (entries.empty()) {
+                weight_to_nodes.erase(min_key);
+                weights.pop();
+            }
+            if (!elem_found || done.count(min_elem) ||
+                min_key > incoming_weights[min_elem]) {
+                continue;
+            }
+
+            done.insert(min_elem);
+            result.push_back(min_elem);
+            auto sit = subgraph.find(min_elem);
+            if (sit == subgraph.end()) continue;
+            for (const auto &[target, w] : sit->second) {
+                if (done.count(target)) continue;
+                int decrement = w % 100000;
+                if (decrement == 0) continue;
+                int old_iw = incoming_weights[target];
+                int new_iw = old_iw - decrement;
+                incoming_weights[target] = new_iw;
+                // Lazy heap entry: only push the weight if no bucket
+                // yet exists for it.
+                if (weight_to_nodes.find(new_iw) == weight_to_nodes.end())
+                    weights.push(new_iw);
+                weight_to_nodes[new_iw].push_back(target);
+            }
+        }
+        return result;
     }
 
     std::unordered_set<int> important_vars(const SASGoal &goal) const {
