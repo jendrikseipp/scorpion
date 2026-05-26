@@ -7,12 +7,52 @@
 #include "utils/system.h"
 #include "utils/timer.h"
 
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <new>
 #include <string>
+#include <unistd.h>
 
 using namespace translate;
+
+namespace {
+/*
+  Match the Python translator's signal/error handling so the driver
+  reports the canonical translator exit codes (see
+  src/translate/__main__.py and driver/returncodes.py) rather than
+  shell-mangled signal-killed codes like 232 (= 256 + (-24) for a
+  process killed by SIGXCPU).
+*/
+extern "C" void handle_sigxcpu(int) {
+    static const char msg[] = "\nTranslator hit the time limit\n";
+    // async-signal-safe path: write() + _exit() are; printf/exit are not.
+    ssize_t r = write(STDERR_FILENO, msg, sizeof(msg) - 1);
+    (void)r;
+    _exit(static_cast<int>(utils::ExitCode::TRANSLATE_OUT_OF_TIME));
+}
+
+void handle_bad_alloc() {
+    std::cerr << "\nTranslator ran out of memory" << std::endl;
+    std::_Exit(static_cast<int>(utils::ExitCode::TRANSLATE_OUT_OF_MEMORY));
+}
+
+void install_signal_and_error_handlers() {
+    // SIGXCPU: driver/limits.py setrlimit(RLIMIT_CPU, ...). Default
+    // action would terminate the process and the driver would report
+    // a negative returncode (visible as 232 in shell wrappers).
+    struct sigaction sa{};
+    sa.sa_handler = handle_sigxcpu;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESETHAND;
+    sigaction(SIGXCPU, &sa, nullptr);
+    // std::bad_alloc: matches Python's MemoryError -> exit(20).
+    std::set_new_handler(handle_bad_alloc);
+}
+}
 
 namespace {
 void dump_statistics(const sas::SASTask &task) {
@@ -53,6 +93,7 @@ void dump_statistics(const sas::SASTask &task) {
 }
 
 int main(int argc, const char **argv) {
+    install_signal_and_error_handlers();
     try {
         parse_options(argc, argv);
         const Options &opts = get_options();
@@ -109,6 +150,9 @@ int main(int argc, const char **argv) {
         return static_cast<int>(utils::ExitCode::TRANSLATE_INPUT_ERROR);
     } catch (const utils::ExitException &e) {
         return static_cast<int>(e.get_exit_code());
+    } catch (const std::bad_alloc &) {
+        std::cerr << "\nTranslator ran out of memory" << std::endl;
+        return static_cast<int>(utils::ExitCode::TRANSLATE_OUT_OF_MEMORY);
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return static_cast<int>(utils::ExitCode::TRANSLATE_CRITICAL_ERROR);
