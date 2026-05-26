@@ -127,6 +127,15 @@ def run_translate(args):
         memory_limit=memory_limit,
         prepend_to_python_path=translate.parent)
 
+    # subprocess.Popen captures stderr as bytes; decode for string
+    # comparisons / printing. Without this the `"MemoryError" not in
+    # line` check below raises TypeError ("bytes-like required, not
+    # str") whenever the translator exits with code 20 and writes
+    # anything to stderr -- exactly the case our C++ translator's
+    # std::bad_alloc handler triggers.
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+
     # We collect stderr of the translator and print it here, unless
     # the translator ran out of memory and all output in stderr is
     # related to MemoryError.
