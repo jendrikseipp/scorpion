@@ -51,14 +51,25 @@ struct TarjanState {
                 int cur = f.v;
                 work.pop_back();
                 if (lowlink[cur] == index[cur]) {
-                    std::vector<int> scc;
+                    /*
+                      Python's sccs.py extracts the SCC as
+                      `stack[stack_index:]`, giving the nodes in
+                      forward DFS visit order. Mirror that here so
+                      MaxDAG's input_order tie-breaking matches Python
+                      byte-for-byte; previously we pushed back-to-front
+                      and produced reverse order, which led to
+                      different variable numbering downstream.
+                    */
+                    std::size_t scc_begin = stack.size();
                     int top;
                     do {
-                        top = stack.back();
-                        stack.pop_back();
-                        stack_idx[top] = -1;
-                        scc.push_back(top);
+                        --scc_begin;
+                        top = stack[scc_begin];
                     } while (top != cur);
+                    std::vector<int> scc(stack.begin() + scc_begin,
+                                         stack.end());
+                    for (int n : scc) stack_idx[n] = -1;
+                    stack.resize(scc_begin);
                     sccs.push_back(std::move(scc));
                 }
                 if (!work.empty())
