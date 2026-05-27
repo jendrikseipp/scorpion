@@ -143,9 +143,21 @@ std::vector<std::vector<ConditionPtr>> choose_groups(
 
     while (true) {
         int best = -1;
-        int best_size = 1; // strict >; we only pick multi-element groups
+        int best_size = 1; // we only pick multi-element groups
+        /*
+          Tie-breaking direction matters: Python's GroupCoverQueue pops
+          from the back of `groups_by_size[max_size]` (LIFO over the
+          input order). Use `>=` here so that among ties, the *last*
+          index wins -- matches Python's "pop from end" behaviour and
+          flips us from cpp's previous "first-of-tied" picking. On
+          blocks/probBLOCKS-4-0 this single-character change makes
+          cpp pick the "where is X" mutex grouping that Python prefers
+          rather than "what's on top of X".
+        */
         for (int i = 0; i < n; ++i) {
-            if (remaining[i] > best_size) { best = i; best_size = remaining[i]; }
+            if (remaining[i] >= best_size && remaining[i] > 1) {
+                best = i; best_size = remaining[i];
+            }
         }
         if (best < 0) break;
 
