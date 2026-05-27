@@ -255,6 +255,11 @@ std::optional<SASOperator> translate_operator(const Renaming &r,
         if (!std::binary_search(pp_vars.begin(), pp_vars.end(), v))
             new_prevail.emplace_back(v, val);
     }
+    // Canonical sort+uniq so the post-simplify operator stays in
+    // Python-canonical pre_post order all the way to output.
+    std::sort(new_pre_post.begin(), new_pre_post.end());
+    new_pre_post.erase(std::unique(new_pre_post.begin(), new_pre_post.end()),
+                       new_pre_post.end());
     SASOperator out;
     out.name = op.name;
     out.prevail = std::move(new_prevail);

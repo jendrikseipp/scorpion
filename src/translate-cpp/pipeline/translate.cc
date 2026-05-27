@@ -290,6 +290,19 @@ std::optional<SASOperator> build_sas_operator(
         if (added) condition.erase(var);
     }
     if (pre_post.empty() && !get_options().keep_no_ops) return std::nullopt;
+    /*
+      Canonicalize pre_post: sort by (var, pre, post, cond) and dedupe.
+      Matches Python's SASOperator._canonical_pre_post. We do this once
+      at construction; downstream simplify and variable_order remaps
+      preserve the order without re-sorting, and SASOperator::output
+      writes in whatever order is current. This keeps byte-level
+      compatibility with the Python translator's output -- previously
+      output re-sorted by post-remap variable numbers, which produced
+      a different ordering than Python's canonical-then-remap flow.
+    */
+    std::sort(pre_post.begin(), pre_post.end());
+    pre_post.erase(std::unique(pre_post.begin(), pre_post.end()),
+                   pre_post.end());
     SASOperator op;
     op.name = name;
     for (const auto &[v, val] : condition) op.prevail.emplace_back(v, val);
@@ -563,6 +576,19 @@ SASTask pddl_to_sas(Task &task) {
         }
     }
 
+    // Sort operators by (name, prevail, pre_post) at SAS construction
+    // time -- before simplify and variable_order touch the task. That
+    // matches Python's SASTask.__init__ ordering exactly. variable_order's
+    // remap then renames var numbers without resorting, so the final
+    // operator order in the output reflects the pre-remap canonical sort
+    // rather than a post-remap one (which is what SASOperator::output
+    // used to do).
+    std::sort(sas_operators.begin(), sas_operators.end(),
+              [](const SASOperator &a, const SASOperator &b) {
+                  if (a.name != b.name) return a.name < b.name;
+                  if (a.prevail != b.prevail) return a.prevail < b.prevail;
+                  return a.pre_post < b.pre_post;
+              });
     SASTask sas_task;
     sas_task.variables = std::move(sas_vars);
     sas_task.mutexes = std::move(sas_mutexes);

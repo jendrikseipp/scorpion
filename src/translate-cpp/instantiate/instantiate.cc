@@ -191,9 +191,16 @@ std::shared_ptr<PropositionalAction> instantiate_action(
         var_mapping[action.parameters[i].name] = args[i];
 
     // Build the grounded name using only external parameters.
-    std::string name = "(" + action.name;
+    //
+    // We mirror Python's `"(%s %s)" % (action.name, " ".join(args))`
+    // exactly -- that format always emits a space after action.name,
+    // even when the args list is empty, producing "(name )" (with a
+    // space before the close paren). After SAS-output paren-stripping
+    // this becomes a trailing-space in the operator name, which is
+    // load-bearing for byte-identical output and stable sort key.
+    std::string name = "(" + action.name + " ";
     for (int i = 0; i < action.num_external_parameters; ++i) {
-        name.push_back(' ');
+        if (i > 0) name.push_back(' ');
         name += args[i];
     }
     name.push_back(')');

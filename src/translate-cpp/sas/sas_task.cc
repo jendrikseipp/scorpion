@@ -77,25 +77,24 @@ void write_operator(FastWriter &w, const SASOperator &op) {
     if (clean.size() >= 2 && clean.front() == '(' && clean.back() == ')')
         clean = clean.substr(1, clean.size() - 2);
 
-    // Sort prevail and pre_post for determinism.
-    auto prevail_sorted = op.prevail;
-    std::sort(prevail_sorted.begin(), prevail_sorted.end());
-
-    auto pp_sorted = op.pre_post;
-    for (auto &[v, pre, post, cond] : pp_sorted)
-        std::sort(cond.begin(), cond.end());
-    std::sort(pp_sorted.begin(), pp_sorted.end());
-    pp_sorted.erase(std::unique(pp_sorted.begin(), pp_sorted.end()),
-                    pp_sorted.end());
-
+    /*
+      Emit pre_post and prevail in whatever order they currently have.
+      Canonicalization (sort + uniq) is now done once at construction
+      in pipeline::build_sas_operator and simplify::translate_operator,
+      so that variable_order's remap reshuffles the canonical order
+      without re-sorting -- matching the Python translator's
+      SASOperator._canonical_pre_post-then-remap flow. Re-sorting here
+      would put pre_post in ascending post-remap-var order, which is
+      a different (but valid) order from Python's.
+    */
     w.put(std::string_view("begin_operator")); w.nl();
     w.put(clean); w.nl();
-    w.put(prevail_sorted.size()); w.nl();
-    for (const auto &[v, val] : prevail_sorted) {
+    w.put(op.prevail.size()); w.nl();
+    for (const auto &[v, val] : op.prevail) {
         w.put(v); w.put(' '); w.put(val); w.nl();
     }
-    w.put(pp_sorted.size()); w.nl();
-    for (const auto &[v, pre, post, cond] : pp_sorted) {
+    w.put(op.pre_post.size()); w.nl();
+    for (const auto &[v, pre, post, cond] : op.pre_post) {
         w.put(cond.size());
         for (const auto &[cv, cval] : cond) {
             w.put(' '); w.put(cv); w.put(' '); w.put(cval);
@@ -181,15 +180,13 @@ void SASTask::output(std::ostream &os) const {
     write_init(w, init);
     write_goal(w, goal);
 
-    auto ops = operators;
-    std::sort(ops.begin(), ops.end(),
-              [](const SASOperator &a, const SASOperator &b) {
-                  if (a.name != b.name) return a.name < b.name;
-                  if (a.prevail != b.prevail) return a.prevail < b.prevail;
-                  return a.pre_post < b.pre_post;
-              });
-    w.put(ops.size()); w.nl();
-    for (const auto &op : ops) write_operator(w, op);
+    // Emit operators and axioms in their current list order.
+    // Canonical sorting is done once at SASTask construction in
+    // pipeline::pddl_to_sas (before simplify/variable_order), matching
+    // Python's SASTask.__init__. Re-sorting here would use post-remap
+    // variable numbers and produce a different (but valid) order.
+    w.put(operators.size()); w.nl();
+    for (const auto &op : operators) write_operator(w, op);
 
     auto axs = axioms;
     std::sort(axs.begin(), axs.end(),
