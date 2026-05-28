@@ -305,27 +305,61 @@ public:
 /*
   Queue of unique atoms (deduplicated via (predicate, args) hash).
 */
+/*
+  The semi-naive evaluator keeps every derived atom in `items` (this is
+  the model we return) and needs a dedup set so each atom is enqueued at
+  most once. Storing a *second* full Atom copy in the dedup set doubles
+  peak memory, which is the dominant cost on huge groundings -- e.g.
+  rovers-large-simple grounds to ~10M atoms and the duplicate storage
+  pushed us past 8 GB while the Python translator fits in ~4 GB.
+
+  Instead the dedup set stores 4-byte indices into `items`, with a hash
+  and equality that dereference `items`. To test/insert a candidate we
+  tentatively append it to `items`, try to insert its index, and roll
+  back the append if an equal atom was already present. `items` only
+  ever grows (pop just advances `pos`), so stored indices stay valid;
+  reallocation moves the buffer but the index->Atom mapping is unchanged.
+*/
 class AtomQueue {
 public:
     std::vector<Atom> items;
     std::size_t pos = 0;
-    std::unordered_set<Atom, AtomHash> seen;
     std::size_t pushes = 0;
 
-    explicit AtomQueue(std::vector<Atom> initial) {
-        for (auto &a : initial) {
-            if (seen.insert(a).second) {
-                items.push_back(std::move(a));
-                ++pushes;
-            }
+private:
+    struct IdxHash {
+        const std::vector<Atom> *items;
+        std::size_t operator()(int i) const noexcept {
+            return AtomHash{}((*items)[i]);
         }
+    };
+    struct IdxEq {
+        const std::vector<Atom> *items;
+        bool operator()(int a, int b) const noexcept {
+            return (*items)[a] == (*items)[b];
+        }
+    };
+    std::unordered_set<int, IdxHash, IdxEq> seen;
+
+    // Append `a` to items, keep it only if not already seen.
+    void insert_if_new(Atom &&a) {
+        items.push_back(std::move(a));
+        int idx = static_cast<int>(items.size()) - 1;
+        if (!seen.insert(idx).second)
+            items.pop_back();
+    }
+
+public:
+    explicit AtomQueue(std::vector<Atom> initial)
+        : seen(0, IdxHash{&items}, IdxEq{&items}) {
+        // Matches Python's `num_pushes = len(atoms)` initial count.
+        pushes = initial.size();
+        for (auto &a : initial) insert_if_new(std::move(a));
     }
     bool empty() const { return pos >= items.size(); }
     void push(const std::string &pred, std::vector<Arg> &&args) {
-        ++pushes;
-        Atom a(pred, std::move(args));
-        if (seen.insert(a).second)
-            items.push_back(std::move(a));
+        ++pushes; // count every push attempt, like Python's queue.push
+        insert_if_new(Atom(pred, std::move(args)));
     }
     Atom pop() { return items[pos++]; }
 };
