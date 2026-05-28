@@ -56,12 +56,24 @@ public:
     virtual ~BuildRule() = default;
     BuildRule(Atom e, std::vector<Atom> c)
         : effect(std::move(e)), conditions(std::move(c)) {}
-    virtual void update_index(const Atom &new_atom, int cond_index) = 0;
+    /*
+      `atom_index` is the position of `new_atom` in the model's `items`
+      vector. Join/product rules store that index (4 bytes) rather than
+      a copy of the atom's args, and look the args back up via `items`
+      in fire(). This keeps the per-rule join indexes from duplicating
+      every atom's args -- the dominant remaining memory cost on huge
+      groundings (rovers-large-simple: the join index held ~9.7M args
+      copies, ~2.7 GB).
+    */
+    virtual void update_index(const Atom &new_atom, int atom_index,
+                              int cond_index) = 0;
     /*
       `enqueue` takes args by rvalue so each emitted atom can be moved
-      into the queue's seen-set construction instead of copied.
+      into the queue's seen-set construction instead of copied. `items`
+      is the model vector, used to dereference stored atom indices.
     */
     virtual void fire(const Atom &new_atom, int cond_index,
+                      const std::vector<Atom> &items,
                       const std::function<void(const std::string &,
                                                std::vector<Arg> &&)>
                           &enqueue) = 0;
@@ -82,8 +94,9 @@ protected:
 class ProjectRuleB : public BuildRule {
 public:
     using BuildRule::BuildRule;
-    void update_index(const Atom &, int) override {}
+    void update_index(const Atom &, int, int) override {}
     void fire(const Atom &new_atom, int cond_index,
+              const std::vector<Atom> &,
               const std::function<void(const std::string &,
                                        std::vector<Arg> &&)>
                   &enqueue) override {
@@ -96,12 +109,12 @@ class JoinRuleB : public BuildRule {
 public:
     // Positions of common variable args in each of the two conditions.
     std::array<std::vector<int>, 2> common_positions;
-    // For each side: key (tuple of common-arg values) -> list of args
-    // vectors. We only need the args during fire (the predicate is fixed
-    // by the rule's other condition), so storing just args saves the
-    // per-stored-atom predicate-string copy.
-    std::array<std::unordered_map<std::string, std::vector<std::vector<Arg>>>,
-               2> atoms_by_key;
+    // For each side: key (tuple of common-arg values) -> list of indices
+    // into the model's `items` vector. We dereference items[idx].args in
+    // fire(); storing indices instead of args copies keeps the join
+    // index from duplicating every atom's args.
+    std::array<std::unordered_map<std::string, std::vector<int>>, 2>
+        atoms_by_key;
 
     JoinRuleB(Atom e, std::vector<Atom> c)
         : BuildRule(std::move(e), std::move(c)) {
@@ -148,12 +161,14 @@ public:
         return k;
     }
 
-    void update_index(const Atom &new_atom, int cond_index) override {
+    void update_index(const Atom &new_atom, int atom_index,
+                      int cond_index) override {
         std::string k = key_of(new_atom, common_positions[cond_index]);
-        atoms_by_key[cond_index][k].push_back(new_atom.args);
+        atoms_by_key[cond_index][k].push_back(atom_index);
     }
 
     void fire(const Atom &new_atom, int cond_index,
+              const std::vector<Atom> &items,
               const std::function<void(const std::string &,
                                        std::vector<Arg> &&)>
                   &enqueue) override {
@@ -163,7 +178,8 @@ public:
         auto it = atoms_by_key[other].find(k);
         if (it == atoms_by_key[other].end()) return;
         const auto &other_cond = conditions[other];
-        for (const auto &stored_args : it->second) {
+        for (int stored_idx : it->second) {
+            const auto &stored_args = items[stored_idx].args;
             auto args = eff_args;
             for (std::size_t i = 0; i < other_cond.args.size(); ++i) {
                 if (auto *p = std::get_if<int>(&other_cond.args[i]))
@@ -176,7 +192,8 @@ public:
 
 class ProductRuleB : public BuildRule {
 public:
-    std::vector<std::vector<Atom>> atoms_by_index;
+    // Per condition: indices into the model's `items` vector.
+    std::vector<std::vector<int>> atoms_by_index;
     int empty_index_count;
 
     ProductRuleB(Atom e, std::vector<Atom> c)
@@ -184,12 +201,15 @@ public:
           atoms_by_index(conditions.size()),
           empty_index_count(static_cast<int>(conditions.size())) {}
 
-    void update_index(const Atom &new_atom, int cond_index) override {
+    void update_index(const Atom &new_atom, int atom_index,
+                      int cond_index) override {
+        (void)new_atom;
         if (atoms_by_index[cond_index].empty()) --empty_index_count;
-        atoms_by_index[cond_index].push_back(new_atom);
+        atoms_by_index[cond_index].push_back(atom_index);
     }
 
     void fire(const Atom &new_atom, int cond_index,
+              const std::vector<Atom> &items,
               const std::function<void(const std::string &,
                                        std::vector<Arg> &&)>
                   &enqueue) override {
@@ -212,11 +232,12 @@ public:
                 }
                 int p = positions[k];
                 const auto &cond = conditions[p];
-                for (const auto &atom : atoms_by_index[p]) {
+                for (int stored_idx : atoms_by_index[p]) {
+                    const auto &atom_args = items[stored_idx].args;
                     auto next_args = args;
                     for (std::size_t i = 0; i < cond.args.size(); ++i) {
                         if (auto *pp = std::get_if<int>(&cond.args[i]))
-                            next_args[*pp] = atom.args[i];
+                            next_args[*pp] = atom_args[i];
                     }
                     recurse(k + 1, next_args);
                 }
@@ -384,14 +405,16 @@ std::vector<Atom> compute_model(const Program &prog) {
     std::size_t relevant = 0, auxiliary = 0;
     std::vector<std::pair<int, int>> matches;
     while (!queue.empty()) {
+        // Index of the atom in queue.items, captured before pop advances.
+        int idx = static_cast<int>(queue.pos);
         Atom next = queue.pop();
         if (next.predicate.find('$') != std::string::npos) ++auxiliary;
         else ++relevant;
         matches.clear();
         unifier.unify(next, matches);
         for (const auto &[ri, ci] : matches) {
-            rules[ri]->update_index(next, ci);
-            rules[ri]->fire(next, ci,
+            rules[ri]->update_index(next, idx, ci);
+            rules[ri]->fire(next, ci, queue.items,
                             [&](const std::string &p,
                                 std::vector<Arg> &&args) {
                                 queue.push(p, std::move(args));
