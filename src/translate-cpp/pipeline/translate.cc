@@ -435,19 +435,23 @@ SASTask trivial_task(bool solvable) {
 }
 
 SASTask pddl_to_sas(Task &task) {
+    // Label each phase with the Python translator's wording and print
+    // the "[%.3fs CPU, %.3fs wall-clock]" suffix so Lab's stock
+    // translator parser captures them as translator_time_<label>.
     auto phase = [](const char *label, auto fn) {
-        utils::Timer t;
+        utils::PhaseTimer t;
         auto v = fn();
-        std::cout << "  [" << label << "] " << t.seconds() << "s" << std::endl;
+        std::cout << label << ": " << t.str() << std::endl;
         return v;
     };
     std::cout << "Instantiating..." << std::endl;
-    auto prog = phase("build_program",
+    auto prog = phase("Generating Datalog program",
                       [&] { return grounding::build_program(task); });
-    phase("split_rules", [&] { grounding::split_rules(prog); return 0; });
-    auto model = phase("compute_model",
+    phase("Normalizing Datalog program",
+          [&] { grounding::split_rules(prog); return 0; });
+    auto model = phase("Computing model",
                        [&] { return grounding::compute_model(prog); });
-    auto inst = phase("instantiate",
+    auto inst = phase("Completing instantiation",
                       [&] { return instantiate::instantiate(task, model); });
 
     if (!inst.relaxed_reachable) {
@@ -471,7 +475,7 @@ SASTask pddl_to_sas(Task &task) {
     }
 
     std::cout << "Computing fact groups..." << std::endl;
-    auto groups = phase("fact_groups", [&] {
+    auto groups = phase("Computing fact groups", [&] {
         return fact_groups::compute_groups(
             task, inst.fluent_facts, &inst.reachable_action_parameters,
             negative_in_goal);
@@ -517,7 +521,7 @@ SASTask pddl_to_sas(Task &task) {
     }
 
     // Process axioms and compute axiom layers.
-    auto axiom_layering = phase("handle_axioms", [&] {
+    auto axiom_layering = phase("Processing axioms", [&] {
         return axioms::handle_axioms(
             inst.instantiated_actions, inst.instantiated_axioms,
             *inst.instantiated_goal, get_options().layer_strategy);
@@ -525,7 +529,7 @@ SASTask pddl_to_sas(Task &task) {
 
     // Build operators.
     std::vector<SASOperator> sas_operators;
-    phase("translate_strips_operators", [&] {
+    phase("Translating task", [&] {
         for (const auto &op : inst.instantiated_actions) {
             if (!op) continue;
             auto sub = translate_strips_operator(
@@ -600,7 +604,7 @@ SASTask pddl_to_sas(Task &task) {
 
     if (get_options().filter_unreachable_facts) {
         std::cout << "Detecting unreachable propositions..." << std::endl;
-        utils::Timer simplify_t;
+        utils::PhaseTimer simplify_t;
         try {
             simplify::filter_unreachable_propositions(sas_task);
         } catch (const simplify::Impossible &) {
@@ -610,16 +614,18 @@ SASTask pddl_to_sas(Task &task) {
             std::cout << "Simplified to empty goal!" << std::endl;
             return trivial_task(true);
         }
-        std::cout << "  [simplify] " << simplify_t.seconds() << "s" << std::endl;
+        std::cout << "Detecting unreachable propositions: " << simplify_t.str()
+                  << std::endl;
     }
     if (get_options().reorder_variables ||
         get_options().filter_unimportant_vars) {
         std::cout << "Reordering and filtering variables..." << std::endl;
-        utils::Timer vo_t;
+        utils::PhaseTimer vo_t;
         simplify::find_and_apply_variable_order(
             sas_task, get_options().reorder_variables,
             get_options().filter_unimportant_vars);
-        std::cout << "  [variable_order] " << vo_t.seconds() << "s" << std::endl;
+        std::cout << "Reordering and filtering variables: " << vo_t.str()
+                  << std::endl;
     }
     return sas_task;
 }

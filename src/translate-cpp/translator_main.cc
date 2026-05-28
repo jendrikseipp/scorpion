@@ -15,6 +15,7 @@
 #include <iostream>
 #include <new>
 #include <string>
+#include <sys/resource.h>
 #include <unistd.h>
 
 using namespace translate;
@@ -99,17 +100,20 @@ int main(int argc, const char **argv) {
         const Options &opts = get_options();
 
         utils::log() << "Fast Downward translator (C++ port)" << std::endl;
+        // Phase log lines use the Python translator's wording and
+        // "[%.3fs CPU, %.3fs wall-clock]" format so Lab's stock
+        // translator parser captures them as translator_time_<phase>.
         utils::log() << "Parsing..." << std::endl;
-        utils::Timer t;
+        utils::PhaseTimer parse_t;
         auto domain_sexpr = parser::parse_pddl_file("domain", opts.domain);
         auto task_sexpr = parser::parse_pddl_file("task", opts.task);
         auto task = parser::parse_task(domain_sexpr, task_sexpr);
-        utils::log() << "  [parse] " << t.seconds() << "s" << std::endl;
+        utils::log() << "Parsing: " << parse_t.str() << std::endl;
 
         utils::log() << "Normalizing task..." << std::endl;
-        t.reset();
+        utils::PhaseTimer normalize_t;
         normalize::normalize(task);
-        utils::log() << "  [normalize] " << t.seconds() << "s" << std::endl;
+        utils::log() << "Normalizing task: " << normalize_t.str() << std::endl;
 
         if (opts.generate_relaxed_task) {
             for (auto &action : task.actions) {
@@ -127,22 +131,25 @@ int main(int argc, const char **argv) {
         }
         if (opts.dump_task) task.dump(utils::log());
 
-        utils::log() << "Translating to SAS+..." << std::endl;
-        t.reset();
         auto sas_task = pipeline::pddl_to_sas(task);
-        utils::log() << "  [pddl_to_sas total] " << t.seconds() << "s"
-                     << std::endl;
         dump_statistics(sas_task);
 
         utils::log() << "Writing output..." << std::endl;
-        t.reset();
+        utils::PhaseTimer write_t;
         std::ofstream out(opts.sas_file);
         if (!out)
             utils::exit_with(utils::ExitCode::TRANSLATE_CRITICAL_ERROR,
                              "Could not open output file: " + opts.sas_file);
         sas_task.output(out);
-        utils::log() << "  [write] " << t.seconds() << "s" << std::endl;
-        utils::log() << "Done! " << utils::elapsed_seconds() << "s"
+        utils::log() << "Writing output: " << write_t.str() << std::endl;
+
+        struct rusage ru;
+        getrusage(RUSAGE_SELF, &ru);
+        utils::log() << "Translator peak memory: " << ru.ru_maxrss << " KB"
+                     << std::endl;
+        utils::log() << "Done! "
+                     << utils::format_timing(utils::cpu_seconds(),
+                                             utils::elapsed_seconds())
                      << std::endl;
         return 0;
     } catch (const parser::ParseError &e) {
