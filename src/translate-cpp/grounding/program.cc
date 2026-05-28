@@ -4,20 +4,14 @@
 #include <iostream>
 
 namespace translate::grounding {
+SymbolTable &symbols() {
+    static SymbolTable table;
+    return table;
+}
+
 namespace {
 inline void hash_combine(std::size_t &seed, std::size_t v) {
     seed ^= v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
-}
-
-std::size_t hash_arg(const Arg &a) {
-    if (auto *s = std::get_if<std::string>(&a))
-        return std::hash<std::string>{}(*s);
-    return std::hash<int>{}(std::get<int>(a)) ^ 0xdeadbeef;
-}
-
-std::string arg_to_string(const Arg &a) {
-    if (auto *s = std::get_if<std::string>(&a)) return *s;
-    return std::to_string(std::get<int>(a));
 }
 }
 
@@ -35,7 +29,7 @@ bool Atom::operator<(const Atom &other) const {
 std::size_t AtomHash::operator()(const Atom &a) const noexcept {
     std::size_t h = std::hash<std::string>{}(a.predicate);
     for (const auto &x : a.args)
-        hash_combine(h, hash_arg(x));
+        hash_combine(h, std::hash<int>{}(x.v));
     return h;
 }
 
@@ -43,8 +37,8 @@ std::ostream &operator<<(std::ostream &os, const Atom &a) {
     os << a.predicate << "(";
     for (std::size_t i = 0; i < a.args.size(); ++i) {
         if (i) os << ", ";
-        if (auto *s = std::get_if<std::string>(&a.args[i])) os << *s;
-        else os << std::get<int>(a.args[i]);
+        if (a.args[i].is_symbol()) os << a.args[i].name();
+        else os << a.args[i].position();
     }
     os << ")";
     return os;
@@ -61,8 +55,8 @@ std::ostream &operator<<(std::ostream &os, const Rule &r) {
 
 void Program::add_fact(Atom atom) {
     for (const auto &a : atom.args) {
-        if (auto *s = std::get_if<std::string>(&a))
-            objects.insert(*s);
+        if (a.is_symbol())
+            objects.insert(a.name());
     }
     facts.push_back(std::move(atom));
 }
@@ -78,9 +72,11 @@ std::string Program::new_predicate_name() {
 std::unordered_set<std::string> get_variables(const Atom &atom) {
     std::unordered_set<std::string> out;
     for (const auto &a : atom.args) {
-        if (auto *s = std::get_if<std::string>(&a))
-            if (!s->empty() && s->front() == '?')
-                out.insert(*s);
+        if (a.is_symbol()) {
+            const std::string &s = a.name();
+            if (!s.empty() && s.front() == '?')
+                out.insert(s);
+        }
     }
     return out;
 }
@@ -98,16 +94,17 @@ bool Rule::rename_duplicate_variables() {
     auto rename = [](Atom &atom, std::vector<Atom> &extra) {
         std::unordered_set<std::string> seen;
         for (std::size_t i = 0; i < atom.args.size(); ++i) {
-            auto *s = std::get_if<std::string>(&atom.args[i]);
-            if (!s || s->empty() || s->front() != '?') continue;
-            if (seen.count(*s)) {
-                std::string new_name = *s + "@" + std::to_string(extra.size());
-                std::string old_name = *s;
+            if (!atom.args[i].is_symbol()) continue;
+            // Copy: assigning a new (interned) name below may realloc the
+            // symbol table and invalidate a reference into it.
+            std::string s = atom.args[i].name();
+            if (s.empty() || s.front() != '?') continue;
+            if (seen.count(s)) {
+                std::string new_name = s + "@" + std::to_string(extra.size());
                 atom.args[i] = new_name;
-                extra.push_back(
-                    Atom("=", {Arg(old_name), Arg(new_name)}));
+                extra.push_back(Atom("=", {Arg(s), Arg(new_name)}));
             } else {
-                seen.insert(*s);
+                seen.insert(s);
             }
         }
     };

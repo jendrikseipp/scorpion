@@ -632,3 +632,69 @@ diffs. If we ever wanted byte-equivalent output to Python on these,
 the fix is to port CPython's Mersenne Twister + `Random.randrange`
 semantics exactly rather than using libstdc++'s `mt19937` +
 `uniform_int_distribution`.
+
+## Memory optimization log
+
+The hard-to-ground (HTG) suite stresses the grounder, not the search:
+some instances derive ~10 M Datalog atoms in `compute_model`. There
+the C++ port was *memory*-bound, not time-bound, and on the worst
+instance (`rovers-large-simple/p-r1-w1000-o1-1-g8-goal-8`) it peaked
+well above the Python translator. Three changes closed the gap, each
+verified output-neutral (cpp-vs-cpp byte-identical across the bundled
+suite) and against Python (byte-identical except the two known
+H2-RNG instances).
+
+### M1 — Index-based dedup set in the semi-naive evaluator (`542223da7`)
+
+`AtomQueue` kept every derived atom in `items` (the model we return)
+*and* a second full `Atom` copy in the dedup set — doubling peak. The
+set now stores 4-byte indices into `items` with a hash/eq that
+dereference `items`; to test a candidate we tentatively append it,
+try to insert its index, and pop on collision. `items` only grows
+(pop advances a cursor), so stored indices stay valid across
+reallocation.
+
+### M2 — Index-based join/product indexes (`20a05d76f`)
+
+`JoinRuleB`/`ProductRuleB` had stored copies of every matched atom's
+args inside their per-rule lookup tables (~2.7 GB on rovers). They now
+store the atom's `items` index and dereference `items[idx].args` in
+`fire()`.
+
+### M3 — Argument interning (this change)
+
+The remaining hog was the atom representation itself. Each argument
+was a `std::variant<std::string,int>` (~40 B) and `Atom::args` a heap
+`std::vector` of them; with ~10 M atoms (plus the transient arg/effect
+copies churned during evaluation) this dominated peak RSS.
+
+Constants and variable names are now interned once into a process-wide
+`SymbolTable` (`grounding/symbols.h`) and `Arg` becomes a single
+4-byte id: non-negative values are symbol ids, negative values encode
+argument positions (`-(p+1)`, used only inside rule conditions after
+`variables_to_numbers`). The predicate stays a `std::string` (SSO, no
+heap for the short names that dominate).
+
+Byte-for-byte equivalence is preserved by construction: equality and
+hashing compare ids directly (equal names always intern to the same
+id), while the one ordering site that must match Python — the initial
+fact sort via `Atom::operator<` — resolves ids back to names through
+the table. The hot `Unifier::unify` constant check also switched from
+a per-arg string compare to an int compare on interned ids.
+
+Clean A/B on `rovers-large-simple/...w1000-o1-1-g8` (`/usr/bin/time
+-v`, translate only), output md5 `9a2ad9eca93a786bf7600d2f0b84e0b5`
+identical before and after and identical to Python:
+
+| | Peak RSS | Wall |
+|---|--:|--:|
+| Before M3 (after M1+M2) | 4.64 GB | 26.7 s |
+| After M3 | **2.04 GB** | **17.6 s** |
+| Δ | **−56 %** | **−34 %** |
+
+The win is larger than the static per-atom size delta alone would
+suggest: every transient `eff_args`/`args` copy made while firing
+rules shrank from 40-byte variants to 4-byte ints, which also cuts
+allocation churn — hence the time drop falls out for free. This puts
+the C++ port comfortably below the Python translator's footprint on
+the instance that previously exceeded it.

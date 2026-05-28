@@ -59,10 +59,8 @@ AtomSet build_atom_set(const std::vector<grounding::Atom> &model,
         if (!fluent_preds.count(a.predicate)) continue;
         std::vector<std::string> args;
         args.reserve(a.args.size());
-        for (const auto &x : a.args) {
-            if (auto *s = std::get_if<std::string>(&x)) args.push_back(*s);
-            else args.push_back(std::to_string(std::get<int>(x)));
-        }
+        for (const auto &x : a.args)
+            args.push_back(grounding::arg_to_string(x));
         out.insert(std::make_shared<const Atom>(a.predicate, std::move(args)));
     }
     return out;
@@ -339,12 +337,8 @@ Result instantiate(const Task &task,
             if (atom.args.size() < action.parameters.size()) continue;
             std::vector<std::string> args;
             args.reserve(action.parameters.size());
-            for (std::size_t i = 0; i < action.parameters.size(); ++i) {
-                if (auto *s = std::get_if<std::string>(&atom.args[i]))
-                    args.push_back(*s);
-                else
-                    args.push_back(std::to_string(std::get<int>(atom.args[i])));
-            }
+            for (std::size_t i = 0; i < action.parameters.size(); ++i)
+                args.push_back(grounding::arg_to_string(atom.args[i]));
             auto inst = instantiate_action(action, args, init_facts,
                                            init_assignments, out.fluent_facts,
                                            objects_by_type,
@@ -364,12 +358,8 @@ Result instantiate(const Task &task,
             if (atom.args.size() < axiom.parameters.size()) continue;
             std::vector<std::string> args;
             args.reserve(axiom.parameters.size());
-            for (std::size_t i = 0; i < axiom.parameters.size(); ++i) {
-                if (auto *s = std::get_if<std::string>(&atom.args[i]))
-                    args.push_back(*s);
-                else
-                    args.push_back(std::to_string(std::get<int>(atom.args[i])));
-            }
+            for (std::size_t i = 0; i < axiom.parameters.size(); ++i)
+                args.push_back(grounding::arg_to_string(atom.args[i]));
             auto inst = instantiate_axiom(axiom, args, init_facts,
                                           out.fluent_facts);
             if (inst) out.instantiated_axioms.push_back(std::move(inst));

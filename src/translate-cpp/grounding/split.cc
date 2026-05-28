@@ -23,9 +23,11 @@ std::vector<std::vector<Atom>> get_connected_conditions(
     std::unordered_map<std::string, std::vector<int>> var_to_conds;
     for (std::size_t i = 0; i < conditions.size(); ++i) {
         for (const auto &arg : conditions[i].args) {
-            if (auto *s = std::get_if<std::string>(&arg))
-                if (!s->empty() && s->front() == '?')
-                    var_to_conds[*s].push_back(static_cast<int>(i));
+            if (arg.is_symbol()) {
+                const std::string &s = arg.name();
+                if (!s.empty() && s.front() == '?')
+                    var_to_conds[s].push_back(static_cast<int>(i));
+            }
         }
     }
     std::vector<std::pair<int, int>> edges;
@@ -68,11 +70,13 @@ public:
     std::unordered_map<std::string, int> occ;
     void update(const Atom &a, int delta) {
         for (const auto &arg : a.args) {
-            if (auto *s = std::get_if<std::string>(&arg))
-                if (!s->empty() && s->front() == '?') {
-                    occ[*s] += delta;
-                    if (occ[*s] == 0) occ.erase(*s);
+            if (arg.is_symbol()) {
+                const std::string &s = arg.name();
+                if (!s.empty() && s.front() == '?') {
+                    occ[s] += delta;
+                    if (occ[s] == 0) occ.erase(s);
                 }
+            }
         }
     }
     std::unordered_set<std::string> variables() const {
@@ -187,8 +191,10 @@ std::vector<Rule> split_rule(const Rule &rule, Program &prog) {
     for (const auto &c : rule.conditions) {
         bool has_var = false;
         for (const auto &a : c.args) {
-            if (auto *s = std::get_if<std::string>(&a))
-                if (!s->empty() && s->front() == '?') { has_var = true; break; }
+            if (a.is_symbol()) {
+                const std::string &s = a.name();
+                if (!s.empty() && s.front() == '?') { has_var = true; break; }
+            }
         }
         (has_var ? important : trivial).push_back(c);
     }

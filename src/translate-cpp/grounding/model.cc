@@ -21,9 +21,10 @@ std::pair<Atom, std::vector<Atom>> variables_to_numbers(
     std::unordered_map<std::string, int> rename;
     std::vector<Arg> new_eff_args = effect.args;
     for (std::size_t i = 0; i < effect.args.size(); ++i) {
-        if (auto *s = std::get_if<std::string>(&effect.args[i])) {
-            if (!s->empty() && s->front() == '?') {
-                rename[*s] = static_cast<int>(i);
+        if (effect.args[i].is_symbol()) {
+            const std::string &s = effect.args[i].name();
+            if (!s.empty() && s.front() == '?') {
+                rename[s] = static_cast<int>(i);
                 new_eff_args[i] = Arg(static_cast<int>(i));
             }
         }
@@ -35,8 +36,8 @@ std::pair<Atom, std::vector<Atom>> variables_to_numbers(
         std::vector<Arg> new_args;
         new_args.reserve(c.args.size());
         for (const auto &a : c.args) {
-            if (auto *s = std::get_if<std::string>(&a)) {
-                auto it = rename.find(*s);
+            if (a.is_symbol()) {
+                auto it = rename.find(a.name());
                 if (it != rename.end()) {
                     new_args.emplace_back(it->second);
                     continue;
@@ -84,8 +85,8 @@ protected:
         std::vector<Arg> eff_args = effect.args;
         const auto &cond = conditions[cond_index];
         for (std::size_t i = 0; i < cond.args.size(); ++i) {
-            if (auto *pos = std::get_if<int>(&cond.args[i]))
-                eff_args[*pos] = new_atom.args[i];
+            if (cond.args[i].is_position())
+                eff_args[cond.args[i].position()] = new_atom.args[i];
         }
         return eff_args;
     }
@@ -122,9 +123,9 @@ public:
         const auto &ra = conditions[1].args;
         std::vector<int> lvars, rvars;
         for (const auto &a : la)
-            if (auto *p = std::get_if<int>(&a)) lvars.push_back(*p);
+            if (a.is_position()) lvars.push_back(a.position());
         for (const auto &a : ra)
-            if (auto *p = std::get_if<int>(&a)) rvars.push_back(*p);
+            if (a.is_position()) rvars.push_back(a.position());
         std::sort(lvars.begin(), lvars.end());
         std::sort(rvars.begin(), rvars.end());
         std::vector<int> common;
@@ -135,12 +136,9 @@ public:
             const auto &args = conditions[side].args;
             for (int var : common) {
                 for (std::size_t i = 0; i < args.size(); ++i) {
-                    if (auto *p = std::get_if<int>(&args[i])) {
-                        if (*p == var) {
-                            common_positions[side].push_back(
-                                static_cast<int>(i));
-                            break;
-                        }
+                    if (args[i].is_position() && args[i].position() == var) {
+                        common_positions[side].push_back(static_cast<int>(i));
+                        break;
                     }
                 }
             }
@@ -150,13 +148,10 @@ public:
     static std::string key_of(const Atom &atom, const std::vector<int> &pos) {
         std::string k;
         for (int p : pos) {
-            if (auto *s = std::get_if<std::string>(&atom.args[p])) {
-                k.append(*s);
-                k.push_back('\x1f');
-            } else {
-                k += std::to_string(std::get<int>(atom.args[p]));
-                k.push_back('\x1f');
-            }
+            const Arg &a = atom.args[p];
+            if (a.is_symbol()) k.append(a.name());
+            else k += std::to_string(a.position());
+            k.push_back('\x1f');
         }
         return k;
     }
@@ -182,8 +177,8 @@ public:
             const auto &stored_args = items[stored_idx].args;
             auto args = eff_args;
             for (std::size_t i = 0; i < other_cond.args.size(); ++i) {
-                if (auto *p = std::get_if<int>(&other_cond.args[i]))
-                    args[*p] = stored_args[i];
+                if (other_cond.args[i].is_position())
+                    args[other_cond.args[i].position()] = stored_args[i];
             }
             enqueue(effect.predicate, std::move(args));
         }
@@ -236,8 +231,8 @@ public:
                     const auto &atom_args = items[stored_idx].args;
                     auto next_args = args;
                     for (std::size_t i = 0; i < cond.args.size(); ++i) {
-                        if (auto *pp = std::get_if<int>(&cond.args[i]))
-                            next_args[*pp] = atom_args[i];
+                        if (cond.args[i].is_position())
+                            next_args[cond.args[i].position()] = atom_args[i];
                     }
                     recurse(k + 1, next_args);
                 }
@@ -281,8 +276,10 @@ std::vector<std::unique_ptr<BuildRule>> convert_rules(const Program &prog) {
 struct CondRef {
     int rule_index;
     int cond_index;
-    // (position, value) pairs that must match the incoming atom.
-    std::vector<std::pair<int, std::string>> constants;
+    // (position, symbol id) pairs that must match the incoming atom.
+    // Comparing interned ids avoids a string compare per constant in the
+    // hot unify loop; equal names always intern to the same id.
+    std::vector<std::pair<int, int>> constants;
 };
 
 class Unifier {
@@ -294,9 +291,11 @@ public:
         ref.rule_index = rule_index;
         ref.cond_index = cond_index;
         for (std::size_t i = 0; i < condition.args.size(); ++i) {
-            if (auto *s = std::get_if<std::string>(&condition.args[i])) {
-                if (!s->empty() && s->front() != '?')
-                    ref.constants.emplace_back(static_cast<int>(i), *s);
+            const Arg &a = condition.args[i];
+            if (a.is_symbol()) {
+                const std::string &s = a.name();
+                if (!s.empty() && s.front() != '?')
+                    ref.constants.emplace_back(static_cast<int>(i), a.v);
             }
         }
         by_predicate[condition.predicate].push_back(std::move(ref));
@@ -314,9 +313,8 @@ public:
             bool ok = true;
             for (const auto &[p, v] : ref.constants) {
                 if (p >= static_cast<int>(atom.args.size())) { ok = false; break; }
-                if (auto *s = std::get_if<std::string>(&atom.args[p])) {
-                    if (*s != v) { ok = false; break; }
-                } else { ok = false; break; }
+                const Arg &a = atom.args[p];
+                if (!a.is_symbol() || a.v != v) { ok = false; break; }
             }
             if (ok) out.emplace_back(ref.rule_index, ref.cond_index);
         }
