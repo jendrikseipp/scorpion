@@ -5,15 +5,18 @@
 
 namespace translate::pddl {
 namespace {
-// Combine hashes (boost::hash_combine style).
-inline void hash_combine(std::size_t &seed, std::size_t value) {
-    seed ^= value + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
-}
+using detail::hash_combine;
 
 template<class T>
 std::size_t hash_value(const T &v) {
     return std::hash<T>{}(v);
 }
+}
+
+bool ConditionPtrEqual::matches(const ConditionPtr &c, const AtomView &v) {
+    if (!c || c->kind() != Condition::Kind::ATOM) return false;
+    const auto &lit = static_cast<const Literal &>(*c);
+    return lit.predicate == v.predicate && lit.args == v.args;
 }
 
 std::unordered_set<std::string> Condition::free_variables() const {
@@ -67,12 +70,8 @@ ConditionPtr Falsity::negate() const { return std::make_shared<Truth>(); }
 // -- Literal -----------------------------------------------------------------
 
 Literal::Literal(std::string predicate, std::vector<std::string> args)
-    : predicate(std::move(predicate)), args(std::move(args)), cached_hash(0) {
-    std::size_t h = hash_value<std::string>(this->predicate);
-    for (const auto &a : this->args)
-        hash_combine(h, hash_value<std::string>(a));
-    cached_hash = h;
-}
+    : predicate(std::move(predicate)), args(std::move(args)),
+      cached_hash(detail::literal_hash(this->predicate, this->args)) {}
 
 void Literal::dump(std::ostream &os, int indent) const {
     os << std::string(indent * 2, ' ');
@@ -262,10 +261,13 @@ void Atom::instantiate(
                              ConditionPtrEqual> &fluent_facts,
     std::vector<ConditionPtr> &result) const {
     auto args_resolved = resolve_args(args, var_mapping);
-    auto ground = std::make_shared<Atom>(predicate, args_resolved);
-    if (fluent_facts.find(ground) != fluent_facts.end()) {
-        result.push_back(ground);
-    } else if (init_facts.find(ground) == init_facts.end()) {
+    AtomView view(predicate, args_resolved);
+    // Probe via the view (no allocation). On a hit, reuse the canonical
+    // owned fluent atom instead of minting a fresh equal one.
+    auto it = fluent_facts.find(view);
+    if (it != fluent_facts.end()) {
+        result.push_back(*it);
+    } else if (init_facts.find(view) == init_facts.end()) {
         throw Impossible();
     }
 }
@@ -278,11 +280,11 @@ void NegatedAtom::instantiate(
                              ConditionPtrEqual> &fluent_facts,
     std::vector<ConditionPtr> &result) const {
     auto args_resolved = resolve_args(args, var_mapping);
-    auto ground = std::make_shared<Atom>(predicate, args_resolved);
-    if (fluent_facts.find(ground) != fluent_facts.end()) {
+    AtomView view(predicate, args_resolved);
+    if (fluent_facts.find(view) != fluent_facts.end()) {
         result.push_back(
-            std::make_shared<NegatedAtom>(predicate, args_resolved));
-    } else if (init_facts.find(ground) != init_facts.end()) {
+            std::make_shared<NegatedAtom>(predicate, std::move(args_resolved)));
+    } else if (init_facts.find(view) != init_facts.end()) {
         throw Impossible();
     }
 }

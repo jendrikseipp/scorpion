@@ -103,25 +103,65 @@ public:
         const std::unordered_map<std::string, std::string> &renamings) const;
 };
 
+namespace detail {
+// boost::hash_combine-style mixing, shared by all condition hashers.
+inline void hash_combine(std::size_t &seed, std::size_t value) noexcept {
+    seed ^= value + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+}
+// Hash recipe for a (positive or negated) literal. Centralised here so
+// Literal's cached_hash and AtomView below stay bit-for-bit identical.
+inline std::size_t literal_hash(const std::string &predicate,
+                                const std::vector<std::string> &args) noexcept {
+    std::size_t h = std::hash<std::string>{}(predicate);
+    for (const auto &a : args) hash_combine(h, std::hash<std::string>{}(a));
+    return h;
+}
+}
+
 /*
-  A non-owning view of an Atom (predicate name + argument list). Used as
-  a lookup key against AtomSet without allocating a shared_ptr<Atom>.
-  The hashing recipe is bit-for-bit identical to Literal's cached_hash
-  computation so view-based lookups match owned-atom entries.
+  A non-owning view of a positive ground atom (predicate name + already
+  resolved argument list). Used as a heterogeneous lookup key against an
+  AtomSet so instantiate() can probe init/fluent facts without allocating
+  a shared_ptr<Atom>. The hash is bit-for-bit identical to Literal's
+  cached_hash so view-based lookups land in the same bucket as the owned
+  Atom entries.
 */
+struct AtomView {
+    const std::string &predicate;
+    const std::vector<std::string> &args;
+    std::size_t cached_hash;
+    AtomView(const std::string &p, const std::vector<std::string> &a)
+        : predicate(p), args(a), cached_hash(detail::literal_hash(p, a)) {}
+};
+
 struct ConditionPtrHash {
+    using is_transparent = void;
     std::size_t operator()(const ConditionPtr &c) const noexcept {
         return c ? c->hash() : 0;
+    }
+    std::size_t operator()(const AtomView &v) const noexcept {
+        return v.cached_hash;
     }
 };
 
 struct ConditionPtrEqual {
+    using is_transparent = void;
     bool operator()(const ConditionPtr &a, const ConditionPtr &b) const {
         if (a.get() == b.get()) return true;
         if (!a || !b) return false;
         if (a->kind() != b->kind()) return false;
         return a->equals(*b);
     }
+    // Match a stored condition against a positive-atom view.
+    bool operator()(const ConditionPtr &c, const AtomView &v) const {
+        return matches(c, v);
+    }
+    bool operator()(const AtomView &v, const ConditionPtr &c) const {
+        return matches(c, v);
+    }
+
+private:
+    static bool matches(const ConditionPtr &c, const AtomView &v);
 };
 
 // Set of ground atoms (used by Condition::instantiate, instantiate.cc).
