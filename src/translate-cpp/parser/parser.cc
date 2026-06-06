@@ -390,13 +390,13 @@ void check_predicate_and_terms_existence(
     const SexprList &terms,
     const PredicateMap &predicate_dict,
     const std::unordered_set<std::string> &valid_term_names) {
-    if (predicate_dict.find(predicate_name) == predicate_dict.end())
+    if (!predicate_dict.contains(predicate_name))
         ctx.error("Undefined predicate", nullptr, predicate_name.c_str());
     for (const auto &term : terms) {
         if (!term.is_atom())
             ctx.error("Argument must be a word.", &term);
         const std::string &t = term.atom();
-        if (valid_term_names.find(t) == valid_term_names.end()) {
+        if (!valid_term_names.contains(t)) {
             const char *kind = (starts_with_qmark(t)) ? "variable" : "object";
             ctx.error(std::string("Undefined ") + kind, nullptr, t.c_str());
         }
@@ -512,8 +512,8 @@ ConditionPtr parse_condition_aux(
         }
         parameters = parse_typed_list(ctx, alist[1].list());
         args.push_back(alist[2]);
-    } else if (predicate_dict.find(tag) != predicate_dict.end() ||
-               type_dict.find(tag) != type_dict.end()) {
+    } else if (predicate_dict.contains(tag) ||
+               type_dict.contains(tag)) {
         return parse_literal(ctx, alist, type_dict, predicate_dict,
                              term_names, negated);
     } else {

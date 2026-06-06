@@ -19,13 +19,13 @@ TypedObject uniquify_name(
     const TypedObject &obj,
     std::unordered_map<std::string, std::string> &type_map,
     std::unordered_map<std::string, std::string> &renamings) {
-    if (type_map.find(obj.name) == type_map.end()) {
+    if (!type_map.contains(obj.name)) {
         type_map.emplace(obj.name, obj.type_name);
         return obj;
     }
     for (int counter = 1;; ++counter) {
         std::string new_name = obj.name + std::to_string(counter);
-        if (type_map.find(new_name) == type_map.end()) {
+        if (!type_map.contains(new_name)) {
             renamings.emplace(obj.name, new_name);
             type_map.emplace(new_name, obj.type_name);
             return TypedObject(new_name, obj.type_name);

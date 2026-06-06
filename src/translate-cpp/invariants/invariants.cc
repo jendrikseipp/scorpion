@@ -301,7 +301,7 @@ bool Invariant::operator_too_heavy(const Action &h_action) const {
         if (!eff.literal) continue;
         const auto &lit = static_cast<const Literal &>(*eff.literal);
         if (!lit.negated() &&
-            predicate_to_part_.find(lit.predicate) != predicate_to_part_.end())
+            predicate_to_part_.contains(lit.predicate))
             add_effects.push_back(&eff);
     }
     if (add_effects.size() <= 1) return false;
@@ -337,7 +337,7 @@ bool Invariant::operator_unbalanced(
     for (const auto &eff : action.effects) {
         if (!eff.literal) continue;
         const auto &lit = static_cast<const Literal &>(*eff.literal);
-        if (predicate_to_part_.find(lit.predicate) == predicate_to_part_.end())
+        if (!predicate_to_part_.contains(lit.predicate))
             continue;
         (lit.negated() ? del_effects : add_effects).push_back(&eff);
     }
@@ -460,7 +460,7 @@ void Invariant::refine_candidate(
         if (!del_eff.literal) continue;
         const auto &lit = static_cast<const Literal &>(*del_eff.literal);
         if (!lit.negated()) continue;
-        if (predicate_to_part_.find(lit.predicate) != predicate_to_part_.end())
+        if (predicate_to_part_.contains(lit.predicate))
             continue;
         std::vector<InvariantPart> matches;
         part.possible_matches(add_lit, lit, matches);

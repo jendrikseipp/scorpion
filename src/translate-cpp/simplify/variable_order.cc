@@ -194,7 +194,7 @@ public:
                 incoming_weights[target] = new_iw;
                 // Lazy heap entry: only push the weight if no bucket
                 // yet exists for it.
-                if (weight_to_nodes.find(new_iw) == weight_to_nodes.end())
+                if (!weight_to_nodes.contains(new_iw))
                     weights.push(new_iw);
                 weight_to_nodes[new_iw].push_back(target);
             }

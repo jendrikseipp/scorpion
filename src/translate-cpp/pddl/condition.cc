@@ -270,7 +270,7 @@ void Atom::instantiate(
     auto it = fluent_facts.find(view);
     if (it != fluent_facts.end()) {
         result.push_back(*it);
-    } else if (init_facts.find(view) == init_facts.end()) {
+    } else if (!init_facts.contains(view)) {
         throw Impossible();
     }
 }
@@ -285,9 +285,9 @@ void NegatedAtom::instantiate(
     static thread_local std::vector<std::string> scratch;
     resolve_args_into(scratch, args, var_mapping);
     AtomView view(predicate, scratch);
-    if (fluent_facts.find(view) != fluent_facts.end()) {
+    if (fluent_facts.contains(view)) {
         result.push_back(std::make_shared<NegatedAtom>(predicate, scratch));
-    } else if (init_facts.find(view) != init_facts.end()) {
+    } else if (init_facts.contains(view)) {
         throw Impossible();
     }
 }
