@@ -46,7 +46,7 @@ struct UnionFind {
             parent.emplace(x, x);
             return parent[x];
         }
-        if (TermHash{}(it->second) == TermHash{}(x) && it->second == x)
+        if (it->second == x)
             return it->second;
         Term root = find(it->second);
         parent[x] = root;
