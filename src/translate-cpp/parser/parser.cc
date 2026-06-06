@@ -150,7 +150,7 @@ void check_named_block(Context &ctx, const Sexpr &alist,
                        const char *syntax = nullptr) {
     bool ok = alist.is_list() && !alist.list().empty() &&
               alist.list()[0].is_atom() &&
-              std::find(names.begin(), names.end(),
+              std::ranges::find(names,
                         alist.list()[0].atom()) != names.end();
     if (!ok) {
         std::string msg = "Expected a non-empty block starting with any of "
@@ -779,7 +779,7 @@ void add_effect(const pddl::AnyEffectPtr &tmp_effect,
             return;
         }
         // The new effect is positive; remove the existing negative.
-        auto it = std::find_if(result.begin(), result.end(),
+        auto it = std::ranges::find_if(result,
                                [&](const Effect &e) {
                                    return e.equals(contradiction);
                                });
@@ -1194,22 +1194,22 @@ DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
         for (const auto &n : action_axiom) allowed.push_back(n);
         check_named_block(ctx, top[idx], allowed);
         const std::string &field = top[idx].list()[0].atom();
-        if (std::find(correct_order.begin(), correct_order.end(), field) ==
+        if (std::ranges::find(correct_order, field) ==
             correct_order.end()) {
             entries.push_back(top[idx]);
             first_action_seen = true;
             ++idx;
             break;
         }
-        if (std::find(seen_fields.begin(), seen_fields.end(), field) !=
+        if (std::ranges::find(seen_fields, field) !=
             seen_fields.end()) {
             ctx.error("Error in domain specification\nReason: two '" + field +
                       "' specifications.");
         }
         if (!seen_fields.empty()) {
-            auto a = std::find(correct_order.begin(), correct_order.end(),
+            auto a = std::ranges::find(correct_order,
                                seen_fields.back());
-            auto b = std::find(correct_order.begin(), correct_order.end(),
+            auto b = std::ranges::find(correct_order,
                                field);
             if (a > b) {
                 print_warning(field +

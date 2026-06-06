@@ -77,7 +77,7 @@ bool is_literal(const Condition &c) {
 std::vector<std::string> sorted_free_variables(const Condition &c) {
     auto fv = c.free_variables();
     std::vector<std::string> sorted(fv.begin(), fv.end());
-    std::sort(sorted.begin(), sorted.end());
+    std::ranges::sort(sorted);
     return sorted;
 }
 

@@ -126,8 +126,8 @@ public:
             if (a.is_position()) lvars.push_back(a.position());
         for (const auto &a : ra)
             if (a.is_position()) rvars.push_back(a.position());
-        std::sort(lvars.begin(), lvars.end());
-        std::sort(rvars.begin(), rvars.end());
+        std::ranges::sort(lvars);
+        std::ranges::sort(rvars);
         std::vector<int> common;
         std::set_intersection(lvars.begin(), lvars.end(),
                               rvars.begin(), rvars.end(),

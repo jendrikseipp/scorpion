@@ -60,7 +60,7 @@ void instantiate_factored_mapping(
     if (depth == pairs.size()) { emit(current); return; }
     const auto &[preimg, img] = pairs[depth];
     std::vector<int> perm = img;
-    std::sort(perm.begin(), perm.end());
+    std::ranges::sort(perm);
     do {
         std::size_t added = preimg.size();
         for (std::size_t i = 0; i < preimg.size(); ++i)

@@ -44,7 +44,7 @@ std::vector<std::vector<Atom>> get_connected_conditions(
     // Sort each component by atom for deterministic output.
     for (auto &c : result)
         std::sort(c.begin(), c.end());
-    std::sort(result.begin(), result.end());
+    std::ranges::sort(result);
     return result;
 }
 
@@ -55,7 +55,7 @@ Rule project_rule(const Atom &target_effect,
     std::vector<std::string> retained;
     for (const auto &v : eff_vars)
         if (cond_vars.contains(v)) retained.push_back(v);
-    std::sort(retained.begin(), retained.end());
+    std::ranges::sort(retained);
     std::vector<Arg> args;
     args.reserve(retained.size());
     for (const auto &v : retained) args.emplace_back(v);
@@ -144,7 +144,7 @@ std::vector<Rule> greedy_join(const Rule &rule, Program &prog) {
             if (retained == jv) return joinee;
             std::vector<std::string> sorted_ret(retained.begin(),
                                                 retained.end());
-            std::sort(sorted_ret.begin(), sorted_ret.end());
+            std::ranges::sort(sorted_ret);
             std::vector<Arg> args;
             args.reserve(sorted_ret.size());
             for (const auto &v : sorted_ret) args.emplace_back(v);
@@ -158,7 +158,7 @@ std::vector<Rule> greedy_join(const Rule &rule, Program &prog) {
 
         std::vector<std::string> sorted_eff(effect_vars.begin(),
                                             effect_vars.end());
-        std::sort(sorted_eff.begin(), sorted_eff.end());
+        std::ranges::sort(sorted_eff);
         std::vector<Arg> join_args;
         join_args.reserve(sorted_eff.size());
         for (const auto &v : sorted_eff) join_args.emplace_back(v);

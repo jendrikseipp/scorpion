@@ -155,7 +155,7 @@ translate_strips_conditions_aux(
     // Multiply-out the condition.
     std::vector<std::pair<int, std::set<int>>> sorted_conds(
         condition.begin(), condition.end());
-    std::sort(sorted_conds.begin(), sorted_conds.end(),
+    std::ranges::sort(sorted_conds,
               [](const auto &a, const auto &b) {
                   return a.second.size() < b.second.size();
               });
@@ -295,7 +295,7 @@ std::optional<SASOperator> build_sas_operator(
                     }
                 }
                 if (contradict) continue;
-                std::sort(filtered.begin(), filtered.end());
+                std::ranges::sort(filtered);
                 pre_post.emplace_back(var, pre, post, std::move(filtered));
                 added = true;
             }
@@ -313,13 +313,13 @@ std::optional<SASOperator> build_sas_operator(
       output re-sorted by post-remap variable numbers, which produced
       a different ordering than Python's canonical-then-remap flow.
     */
-    std::sort(pre_post.begin(), pre_post.end());
+    std::ranges::sort(pre_post);
     pre_post.erase(std::unique(pre_post.begin(), pre_post.end()),
                    pre_post.end());
     SASOperator op;
     op.name = name;
     for (const auto &[v, val] : condition) op.prevail.emplace_back(v, val);
-    std::sort(op.prevail.begin(), op.prevail.end());
+    std::ranges::sort(op.prevail);
     op.pre_post = std::move(pre_post);
     op.cost = cost;
     return op;
@@ -430,7 +430,7 @@ std::vector<SASAxiom> translate_strips_axiom(
     for (const auto &c : *conds) {
         SASAxiom sa;
         for (const auto &[v, val] : c) sa.condition.emplace_back(v, val);
-        std::sort(sa.condition.begin(), sa.condition.end());
+        std::ranges::sort(sa.condition);
         sa.effect = eff;
         out.push_back(std::move(sa));
     }
@@ -529,7 +529,7 @@ SASTask pddl_to_sas(Task &task) {
     SASGoal sas_goal;
     for (const auto &[v, val] : goal_conds->front())
         sas_goal.pairs.emplace_back(v, val);
-    std::sort(sas_goal.pairs.begin(), sas_goal.pairs.end());
+    std::ranges::sort(sas_goal.pairs);
     if (sas_goal.pairs.empty()) {
         std::cout << "Empty goal! Generating solvable task..." << std::endl;
         return trivial_task(true);
@@ -602,7 +602,7 @@ SASTask pddl_to_sas(Task &task) {
     // operator order in the output reflects the pre-remap canonical sort
     // rather than a post-remap one (which is what SASOperator::output
     // used to do).
-    std::sort(sas_operators.begin(), sas_operators.end(),
+    std::ranges::sort(sas_operators,
               [](const SASOperator &a, const SASOperator &b) {
                   if (a.name != b.name) return a.name < b.name;
                   if (a.prevail != b.prevail) return a.prevail < b.prevail;

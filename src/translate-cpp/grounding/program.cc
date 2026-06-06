@@ -136,7 +136,7 @@ void Program::normalize() {
             must_add_predicate = true;
             std::vector<std::string> sorted_unbound(unbound.begin(),
                                                     unbound.end());
-            std::sort(sorted_unbound.begin(), sorted_unbound.end());
+            std::ranges::sort(sorted_unbound);
             for (const auto &v : sorted_unbound)
                 r.conditions.emplace_back("@object", std::vector<Arg>{Arg(v)});
         }

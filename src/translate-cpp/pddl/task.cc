@@ -7,8 +7,7 @@ namespace translate::pddl {
 Requirements::Requirements(std::vector<std::string> reqs)
     : requirements(std::move(reqs)) {
     for (const auto &r : requirements) {
-        auto it = std::find(REQUIREMENT_LABELS.begin(),
-                            REQUIREMENT_LABELS.end(), r);
+        auto it = std::ranges::find(REQUIREMENT_LABELS, r);
         if (it == REQUIREMENT_LABELS.end())
             throw std::runtime_error("Invalid requirement: " + r);
     }

@@ -203,7 +203,7 @@ std::optional<SASOperator> translate_operator(const Renaming &r,
     for (const auto &[v, pre, post, cond] : op.pre_post) {
         if (pre != -1) applicability.emplace_back(v, pre);
     }
-    std::sort(applicability.begin(), applicability.end());
+    std::ranges::sort(applicability);
     if (!convert_pairs(r, applicability))
         return std::nullopt;
 
@@ -246,7 +246,7 @@ std::optional<SASOperator> translate_operator(const Renaming &r,
     if (new_pre_post.empty() && !get_options().keep_no_ops)
         return std::nullopt;
 
-    std::sort(pp_vars.begin(), pp_vars.end());
+    std::ranges::sort(pp_vars);
     pp_vars.erase(std::unique(pp_vars.begin(), pp_vars.end()), pp_vars.end());
 
     std::vector<VarVal> new_prevail;
@@ -257,7 +257,7 @@ std::optional<SASOperator> translate_operator(const Renaming &r,
     }
     // Canonical sort+uniq so the post-simplify operator stays in
     // Python-canonical pre_post order all the way to output.
-    std::sort(new_pre_post.begin(), new_pre_post.end());
+    std::ranges::sort(new_pre_post);
     new_pre_post.erase(std::unique(new_pre_post.begin(), new_pre_post.end()),
                        new_pre_post.end());
     SASOperator out;

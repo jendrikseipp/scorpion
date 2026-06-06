@@ -69,7 +69,7 @@ public:
         std::vector<std::vector<int>> adj(num_variables);
         for (int s = 0; s < num_variables; ++s)
             for (const auto &[t, _] : weighted_graph[s]) adj[s].push_back(t);
-        for (auto &v : adj) std::sort(v.begin(), v.end());
+        for (auto &v : adj) std::ranges::sort(v);
         return utils::get_sccs_adjacency_list(adj);
     }
 
@@ -249,7 +249,7 @@ public:
             auto it = new_var.find(v);
             if (it != new_var.end()) new_goal.emplace_back(it->second, val);
         }
-        std::sort(new_goal.begin(), new_goal.end());
+        std::ranges::sort(new_goal);
         task.goal.pairs = std::move(new_goal);
         // Mutexes.
         std::vector<SASMutexGroup> new_mutexes;
