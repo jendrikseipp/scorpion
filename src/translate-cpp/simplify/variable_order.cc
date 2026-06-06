@@ -96,8 +96,8 @@ public:
                 // sorted by target id, matching Python's
                 // sorted(items()).
                 for (const auto &[tgt, cost] : weighted_graph[var]) {
-                    if (!scc_set.count(tgt)) continue;
-                    if (goal_map.count(tgt))
+                    if (!scc_set.contains(tgt)) continue;
+                    if (goal_map.contains(tgt))
                         edges.emplace_back(tgt, 100000 + cost);
                     edges.emplace_back(tgt, cost);
                 }
@@ -166,7 +166,7 @@ public:
             int min_elem = -1;
             bool elem_found = false;
             while (!entries.empty() &&
-                   (!elem_found || done.count(min_elem) ||
+                   (!elem_found || done.contains(min_elem) ||
                     min_key > incoming_weights[min_elem])) {
                 min_elem = entries.front();
                 entries.pop_front();
@@ -176,7 +176,7 @@ public:
                 weight_to_nodes.erase(min_key);
                 weights.pop();
             }
-            if (!elem_found || done.count(min_elem) ||
+            if (!elem_found || done.contains(min_elem) ||
                 min_key > incoming_weights[min_elem]) {
                 continue;
             }
@@ -186,7 +186,7 @@ public:
             auto sit = subgraph.find(min_elem);
             if (sit == subgraph.end()) continue;
             for (const auto &[target, w] : sit->second) {
-                if (done.count(target)) continue;
+                if (done.contains(target)) continue;
                 int decrement = w % 100000;
                 if (decrement == 0) continue;
                 int old_iw = incoming_weights[target];
@@ -336,7 +336,7 @@ void find_and_apply_variable_order(SASTask &task, bool reorder_vars,
         std::cout << necessary.size() << " of " << order.size()
                   << " variables necessary." << std::endl;
         std::vector<int> filtered;
-        for (int v : order) if (necessary.count(v)) filtered.push_back(v);
+        for (int v : order) if (necessary.contains(v)) filtered.push_back(v);
         order = std::move(filtered);
     }
     VariableOrder vo(std::move(order));

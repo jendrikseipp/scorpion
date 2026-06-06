@@ -56,7 +56,7 @@ AtomSet build_atom_set(const std::vector<grounding::Atom> &model,
                        const std::unordered_set<std::string> &fluent_preds) {
     AtomSet out;
     for (const auto &a : model) {
-        if (!fluent_preds.count(a.predicate)) continue;
+        if (!fluent_preds.contains(a.predicate)) continue;
         std::vector<std::string> args;
         args.reserve(a.args.size());
         for (const auto &x : a.args)

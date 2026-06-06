@@ -135,7 +135,7 @@ std::vector<const Predicate *> get_fluents(const Task &task) {
         }
     std::vector<const Predicate *> out;
     for (const auto &p : task.predicates)
-        if (fluent_names.count(p.name)) out.push_back(&p);
+        if (fluent_names.contains(p.name)) out.push_back(&p);
     return out;
 }
 

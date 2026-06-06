@@ -105,7 +105,7 @@ struct Renaming {
             std::vector<int> nv(old_size, ALWAYS_FALSE);
             int counter = 0;
             for (int v = 0; v < old_size; ++v) {
-                if (new_domain.count(v)) nv[v] = counter++;
+                if (new_domain.contains(v)) nv[v] = counter++;
                 else ++num_removed_values;
             }
             new_var_nos.push_back(new_var_count);

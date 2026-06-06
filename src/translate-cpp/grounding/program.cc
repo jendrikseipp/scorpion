@@ -99,7 +99,7 @@ bool Rule::rename_duplicate_variables() {
             // symbol table and invalidate a reference into it.
             std::string s = atom.args[i].name();
             if (s.empty() || s.front() != '?') continue;
-            if (seen.count(s)) {
+            if (seen.contains(s)) {
                 std::string new_name = s + "@" + std::to_string(extra.size());
                 atom.args[i] = new_name;
                 extra.push_back(Atom("=", {Arg(s), Arg(new_name)}));
@@ -122,7 +122,7 @@ bool has_unbound_effect_vars(const Rule &r,
     auto cond_vars = get_variables(r.conditions);
     out.clear();
     for (const auto &v : eff_vars)
-        if (!cond_vars.count(v)) out.insert(v);
+        if (!cond_vars.contains(v)) out.insert(v);
     return !out.empty();
 }
 }

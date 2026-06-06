@@ -405,7 +405,7 @@ void verify_axiom_predicates(const Task &task) {
     for (const auto &i : task.init) {
         if (std::holds_alternative<std::shared_ptr<const Atom>>(i)) {
             const auto &atom = std::get<std::shared_ptr<const Atom>>(i);
-            if (atom && axiom_names.count(atom->predicate)) {
+            if (atom && axiom_names.contains(atom->predicate)) {
                 throw std::runtime_error(
                     "error: derived predicate '" + atom->predicate +
                     "' appears in :init fact");
@@ -416,7 +416,7 @@ void verify_axiom_predicates(const Task &task) {
         for (const auto &e : a.effects) {
             if (!e.literal) continue;
             const auto &lit = static_cast<const Literal &>(*e.literal);
-            if (axiom_names.count(lit.predicate)) {
+            if (axiom_names.contains(lit.predicate)) {
                 throw std::runtime_error(
                     "error: derived predicate '" + lit.predicate +
                     "' appears in effect of action '" + a.name + "'");

@@ -54,7 +54,7 @@ Rule project_rule(const Atom &target_effect,
     auto eff_vars = get_variables(target_effect);
     std::vector<std::string> retained;
     for (const auto &v : eff_vars)
-        if (cond_vars.count(v)) retained.push_back(v);
+        if (cond_vars.contains(v)) retained.push_back(v);
     std::sort(retained.begin(), retained.end());
     std::vector<Arg> args;
     args.reserve(retained.size());
@@ -93,7 +93,7 @@ Cost compute_join_cost(const Atom &left, const Atom &right) {
     auto rv = get_variables(right);
     if (lv.size() > rv.size()) std::swap(lv, rv);
     int common = 0;
-    for (const auto &v : lv) if (rv.count(v)) ++common;
+    for (const auto &v : lv) if (rv.contains(v)) ++common;
     return {static_cast<int>(lv.size()) - common,
             static_cast<int>(rv.size()) - common,
             -common};
@@ -127,19 +127,19 @@ std::vector<Rule> greedy_join(const Rule &rule, Program &prog) {
         auto lv = get_variables(left);
         auto rv = get_variables(right);
         std::unordered_set<std::string> common_vars;
-        for (const auto &v : lv) if (rv.count(v)) common_vars.insert(v);
+        for (const auto &v : lv) if (rv.contains(v)) common_vars.insert(v);
         std::unordered_set<std::string> condition_vars = lv;
         for (const auto &v : rv) condition_vars.insert(v);
         auto live = occ.variables();
         std::unordered_set<std::string> effect_vars;
         for (const auto &v : live)
-            if (condition_vars.count(v)) effect_vars.insert(v);
+            if (condition_vars.contains(v)) effect_vars.insert(v);
 
         auto maybe_project = [&](const Atom &joinee) -> Atom {
             auto jv = get_variables(joinee);
             std::unordered_set<std::string> retained;
             for (const auto &v : jv)
-                if (effect_vars.count(v) || common_vars.count(v))
+                if (effect_vars.contains(v) || common_vars.contains(v))
                     retained.insert(v);
             if (retained == jv) return joinee;
             std::vector<std::string> sorted_ret(retained.begin(),

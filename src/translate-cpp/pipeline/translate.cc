@@ -108,7 +108,7 @@ translate_strips_conditions_aux(
         for (const auto &[var, val] : it->second) {
             auto cit = condition.find(var);
             if (cit != condition.end()) {
-                if (!cit->second.count(val)) return std::nullopt;
+                if (!cit->second.contains(val)) return std::nullopt;
                 cit->second = {val};
             } else {
                 condition[var] = {val};
@@ -135,7 +135,7 @@ translate_strips_conditions_aux(
                 done = true;
                 std::set<int> intersection;
                 for (int v : cit->second)
-                    if (poss_vals.count(v)) intersection.insert(v);
+                    if (poss_vals.contains(v)) intersection.insert(v);
                 if (intersection.empty()) return std::nullopt;
                 cit->second = std::move(intersection);
             }
@@ -264,7 +264,7 @@ std::optional<SASOperator> build_sas_operator(
               binary-var-heavy domains (satellite, airport, miconic-adl).
             */
             if (ranges[var] == 2 &&
-                effects_on_var.count(1 - post) == 0) {
+                !effects_on_var.contains(1 - post)) {
                 int dual_val = 1 - post;
                 bool sweep_to_empty = false;
                 for (auto &eff_cond : eff_conds) {

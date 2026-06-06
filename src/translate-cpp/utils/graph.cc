@@ -17,9 +17,9 @@ std::vector<std::pair<std::string, std::string>> transitive_closure(
     // Warshall over the node set.
     for (const auto &k : nodes) {
         for (const auto &i : nodes) {
-            if (result.count({i, k}) == 0) continue;
+            if (!result.contains({i, k})) continue;
             for (const auto &j : nodes)
-                if (result.count({k, j}))
+                if (result.contains({k, j}))
                     result.insert({i, j});
         }
     }
