@@ -184,7 +184,12 @@ std::shared_ptr<PropositionalAction> instantiate_action(
     bool use_metric) {
     if (args.size() != action.parameters.size())
         return nullptr;
-    std::unordered_map<std::string, std::string> var_mapping;
+    // Reused across ground actions (instantiate_action is never re-entrant):
+    // clearing keeps the bucket array, avoiding a fresh map allocation per
+    // ground action in the dominant instantiation phase. Parameterised
+    // effects still take their own copy before binding extra parameters.
+    static thread_local std::unordered_map<std::string, std::string> var_mapping;
+    var_mapping.clear();
     for (std::size_t i = 0; i < action.parameters.size(); ++i)
         var_mapping[action.parameters[i].name] = args[i];
 
