@@ -240,16 +240,18 @@ void Falsity::instantiate(
 }
 
 namespace {
-std::vector<std::string> resolve_args(
-    const std::vector<std::string> &args,
-    const std::unordered_map<std::string, std::string> &m) {
-    std::vector<std::string> out;
+// Resolve `args` under `m` into the caller-owned `out` buffer. Callers
+// pass a reused scratch vector so probing init/fluent facts during
+// instantiation does not heap-allocate a fresh vector per literal.
+void resolve_args_into(std::vector<std::string> &out,
+                       const std::vector<std::string> &args,
+                       const std::unordered_map<std::string, std::string> &m) {
+    out.clear();
     out.reserve(args.size());
     for (const auto &a : args) {
         auto it = m.find(a);
         out.push_back(it == m.end() ? a : it->second);
     }
-    return out;
 }
 }
 
@@ -260,8 +262,9 @@ void Atom::instantiate(
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &fluent_facts,
     std::vector<ConditionPtr> &result) const {
-    auto args_resolved = resolve_args(args, var_mapping);
-    AtomView view(predicate, args_resolved);
+    static thread_local std::vector<std::string> scratch;
+    resolve_args_into(scratch, args, var_mapping);
+    AtomView view(predicate, scratch);
     // Probe via the view (no allocation). On a hit, reuse the canonical
     // owned fluent atom instead of minting a fresh equal one.
     auto it = fluent_facts.find(view);
@@ -279,11 +282,11 @@ void NegatedAtom::instantiate(
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &fluent_facts,
     std::vector<ConditionPtr> &result) const {
-    auto args_resolved = resolve_args(args, var_mapping);
-    AtomView view(predicate, args_resolved);
+    static thread_local std::vector<std::string> scratch;
+    resolve_args_into(scratch, args, var_mapping);
+    AtomView view(predicate, scratch);
     if (fluent_facts.find(view) != fluent_facts.end()) {
-        result.push_back(
-            std::make_shared<NegatedAtom>(predicate, std::move(args_resolved)));
+        result.push_back(std::make_shared<NegatedAtom>(predicate, scratch));
     } else if (init_facts.find(view) != init_facts.end()) {
         throw Impossible();
     }
