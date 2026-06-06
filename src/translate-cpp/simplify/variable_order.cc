@@ -7,6 +7,7 @@
 #include <deque>
 #include <iostream>
 #include <map>
+#include <numeric>
 #include <queue>
 #include <set>
 #include <unordered_map>
@@ -329,8 +330,12 @@ void find_and_apply_variable_order(SASTask &task, bool reorder_vars,
     if (!reorder_vars && !filter_unimportant_vars) return;
     CausalGraph cg(task);
     std::vector<int> order;
-    if (reorder_vars) order = cg.get_ordering();
-    else for (int i = 0; i < cg.num_variables; ++i) order.push_back(i);
+    if (reorder_vars) {
+        order = cg.get_ordering();
+    } else {
+        order.resize(cg.num_variables);
+        std::iota(order.begin(), order.end(), 0);
+    }
     if (filter_unimportant_vars) {
         auto necessary = cg.important_vars(task.goal);
         std::cout << necessary.size() << " of " << order.size()

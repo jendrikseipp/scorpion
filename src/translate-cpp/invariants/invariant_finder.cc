@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
+#include <numeric>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -145,8 +146,7 @@ std::vector<Invariant> initial_invariants(const Task &task, int limit) {
     for (const auto *p : fluents) {
         if (static_cast<int>(result.size()) >= limit) break;
         std::vector<int> all_args(p->arguments.size());
-        for (std::size_t i = 0; i < all_args.size(); ++i)
-            all_args[i] = static_cast<int>(i);
+        std::iota(all_args.begin(), all_args.end(), 0);
         result.push_back(Invariant({InvariantPart(p->name, all_args, -1)}));
         for (std::size_t omitted = 0; omitted < p->arguments.size();
              ++omitted) {
