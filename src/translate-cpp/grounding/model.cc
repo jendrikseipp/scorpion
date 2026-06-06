@@ -196,9 +196,8 @@ public:
           atoms_by_index(conditions.size()),
           empty_index_count(static_cast<int>(conditions.size())) {}
 
-    void update_index(const Atom &new_atom, int atom_index,
+    void update_index([[maybe_unused]] const Atom &new_atom, int atom_index,
                       int cond_index) override {
-        (void)new_atom;
         if (atoms_by_index[cond_index].empty()) --empty_index_count;
         atoms_by_index[cond_index].push_back(atom_index);
     }

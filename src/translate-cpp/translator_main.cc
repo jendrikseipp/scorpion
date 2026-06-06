@@ -117,16 +117,12 @@ int main(int argc, const char **argv) {
 
         if (opts.generate_relaxed_task) {
             for (auto &action : task.actions) {
-                auto &effs = action.effects;
-                effs.erase(std::remove_if(effs.begin(), effs.end(),
-                                          [](const pddl::Effect &e) {
-                                              if (!e.literal) return false;
-                                              const auto &lit =
-                                                  static_cast<const pddl::Literal &>(
-                                                      *e.literal);
-                                              return lit.negated();
-                                          }),
-                           effs.end());
+                std::erase_if(action.effects, [](const pddl::Effect &e) {
+                    if (!e.literal) return false;
+                    const auto &lit =
+                        static_cast<const pddl::Literal &>(*e.literal);
+                    return lit.negated();
+                });
             }
         }
         if (opts.dump_task) task.dump(utils::log());
