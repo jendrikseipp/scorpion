@@ -214,10 +214,18 @@ std::shared_ptr<PropositionalAction> instantiate_action(
 
     std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>> effects;
     for (const auto &eff : action.effects) {
-        std::unordered_map<std::string, std::string> local_mapping =
-            var_mapping;
-        instantiate_effect(eff, local_mapping, init_facts, fluent_facts,
-                           objects_by_type, effects);
+        if (eff.parameters.empty()) {
+            // A parameterless effect adds no bindings, and instantiate()
+            // only reads var_mapping, so share the action's mapping
+            // directly instead of copying the whole map per effect.
+            instantiate_effect(eff, var_mapping, init_facts, fluent_facts,
+                               objects_by_type, effects);
+        } else {
+            std::unordered_map<std::string, std::string> local_mapping =
+                var_mapping;
+            instantiate_effect(eff, local_mapping, init_facts, fluent_facts,
+                               objects_by_type, effects);
+        }
     }
     if (!effects.empty() || get_options().keep_no_ops) {
         long long cost = 1;
