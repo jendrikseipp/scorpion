@@ -45,6 +45,20 @@ std::string atom_key(const Atom &atom) {
     return k;
 }
 
+// Same key as atom_key(), but written into a reused thread-local buffer and
+// returned by reference, so the hot per-literal dict lookups in the
+// "Translating task" phase don't heap-allocate a key string each time. The
+// returned reference is only valid until the next call; callers use it
+// immediately for a single find(). Negation does not affect the key, so this
+// also lets negated-literal lookups skip building a temporary positive Atom.
+const std::string &atom_key_scratch(const std::string &predicate,
+                                    const std::vector<std::string> &args) {
+    static thread_local std::string buf;
+    buf.assign(predicate);
+    for (const auto &a : args) { buf.push_back('\x1f'); buf += a; }
+    return buf;
+}
+
 using AtomToVarVals =
     std::unordered_map<std::string, std::vector<VarVal>>;
 
@@ -89,7 +103,7 @@ translate_strips_conditions_aux(
         if (!c) continue;
         const auto &lit = static_cast<const Literal &>(*c);
         if (lit.negated()) continue;
-        auto it = dict.find(atom_key(static_cast<const Atom &>(lit)));
+        auto it = dict.find(atom_key_scratch(lit.predicate, lit.args));
         if (it == dict.end()) continue; // static
         for (const auto &[var, val] : it->second) {
             auto cit = condition.find(var);
@@ -106,8 +120,7 @@ translate_strips_conditions_aux(
         if (!c) continue;
         const auto &lit = static_cast<const Literal &>(*c);
         if (!lit.negated()) continue;
-        Atom positive(lit.predicate, lit.args);
-        auto it = dict.find(atom_key(positive));
+        auto it = dict.find(atom_key_scratch(lit.predicate, lit.args));
         if (it == dict.end()) continue;
         bool done = false;
         CondMap new_condition;
@@ -327,7 +340,8 @@ std::optional<SASOperator> translate_strips_operator_aux(
             translate_strips_conditions(conds, dict, ranges, mutex_dict,
                                         mutex_ranges);
         if (!eff_cond_list) continue;
-        auto it = dict.find(atom_key(static_cast<const Atom &>(*fact)));
+        const auto &flit = static_cast<const Literal &>(*fact);
+        auto it = dict.find(atom_key_scratch(flit.predicate, flit.args));
         if (it == dict.end()) continue;
         for (const auto &[var, val] : it->second) {
             for (const auto &ec : *eff_cond_list)
@@ -343,7 +357,8 @@ std::optional<SASOperator> translate_strips_operator_aux(
             translate_strips_conditions(conds, dict, ranges, mutex_dict,
                                         mutex_ranges);
         if (!eff_cond_list) continue;
-        auto it = dict.find(atom_key(static_cast<const Atom &>(*fact)));
+        const auto &flit = static_cast<const Literal &>(*fact);
+        auto it = dict.find(atom_key_scratch(flit.predicate, flit.args));
         if (it == dict.end()) continue;
         for (const auto &[var, val] : it->second) {
             for (const auto &ec : *eff_cond_list)
