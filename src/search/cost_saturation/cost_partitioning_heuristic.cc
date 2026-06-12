@@ -9,6 +9,25 @@
 using namespace std;
 
 namespace cost_saturation {
+#ifdef _LIBCPP_VERSION
+/*
+  libc++ (macOS) implements the parallel <algorithm> execution-policy overloads
+  but not the <numeric> ones, so transform_reduce(execution::unseq, ...) does not
+  compile. Provide a serial fallback with the same signature; since unseq is only
+  a vectorization hint this is semantically identical. On Linux/libstdc++ this
+  block is skipped and the standard parallel overload is used.
+*/
+namespace {
+template <typename InputIt, typename T, typename BinaryOp, typename UnaryOp>
+T transform_reduce(
+    const execution::unsequenced_policy &, InputIt first, InputIt last, T init,
+    BinaryOp binary_op, UnaryOp unary_op) {
+    return std::transform_reduce(
+        first, last, std::move(init), binary_op, unary_op);
+}
+}
+#endif
+
 int CostPartitioningHeuristic::get_lookup_table_index(
     int abstraction_id) const {
     for (size_t i = 0; i < lookup_tables.size(); ++i) {

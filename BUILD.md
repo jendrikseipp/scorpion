@@ -84,6 +84,44 @@ This creates the default build `release` in the directory `builds`. For informat
 `./build.py --help`. [Our website](https://www.fast-downward.org/latest/for-developers/cmake/) has details on how to set up development builds.
 
 
+### Compiling on macOS
+
+Apple's Clang (the default `/usr/bin/clang++`) ships a libc++ that does **not**
+implement the C++17 parallel `<execution>` policies. Because Scorpion uses
+`std::execution::unseq` in several algorithms, the stock `./build.py` fails with
+errors such as `no member named 'unseq' in namespace 'std::execution'`.
+
+To build, use Homebrew's LLVM toolchain (which provides the parallel STL behind
+`-fexperimental-library`) together with Intel TBB, the backend it relies on:
+
+```bash
+brew install llvm tbb
+```
+
+Then set the required environment variables and run `build.py` from the
+top-level directory:
+
+```bash
+export CC=$(brew --prefix llvm)/bin/clang
+export CXX=$(brew --prefix llvm)/bin/clang++
+export CXXFLAGS="-fexperimental-library"
+export LDFLAGS="-L$(brew --prefix tbb)/lib -ltbb -Wl,-rpath,$(brew --prefix tbb)/lib"
+./build.py
+```
+
+**Notes:**
+
+* CMake records the compiler in the build directory on the first configure. If
+  you previously attempted a build with Apple Clang, delete the stale build
+  directory (e.g. `rm -rf builds/release`) before rebuilding, otherwise the new
+  toolchain is ignored.
+* libc++'s parallel STL implements the `<algorithm>` execution-policy overloads
+  but not the `<numeric>` ones, so a small `#ifdef _LIBCPP_VERSION` shim in
+  `src/search/cost_saturation/cost_partitioning_heuristic.cc` provides a serial
+  fallback for `transform_reduce`. This block is compiled out on Linux, where the
+  standard overload is used.
+
+
 ### Compiling on Windows
 
 Windows does not interpret the shebang in Python files, so you have to call `build.py` as `python3 build.py` (make sure `python3` is on your `PATH`). Also note that options are passed without `--`, e.g., `python3 build.py build=debug`.
