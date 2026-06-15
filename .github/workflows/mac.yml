@@ -9,8 +9,6 @@ on:
 
 jobs:
   test:
-    # AppleClang doesn't support std::execution, so Scorpion skips the workflow.
-    if: github.repository == 'aibasel/downward'
     name: Compile and test planner
     timeout-minutes: 60
     runs-on: ${{ matrix.version.macos }}
@@ -28,9 +26,21 @@ jobs:
         with:
           python-version: ${{ matrix.version.python }}
 
+      - name: Install LLVM and TBB
+        run: |
+          # Apple Clang's libc++ does not implement the parallel <execution>
+          # policies that Scorpion uses, so build with Homebrew's LLVM instead.
+          brew install llvm tbb
+
       - name: Compile planner
         run: |
-          export CXXFLAGS="-Werror" # Treat compilation warnings as errors.
+          export CC=$(brew --prefix llvm)/bin/clang
+          export CXX=$(brew --prefix llvm)/bin/clang++
+          # -fexperimental-library enables libc++'s parallel STL (linked against
+          # TBB). -Wno-pass-failed silences libc++'s "loop not vectorized"
+          # remarks so they do not trip -Werror.
+          export CXXFLAGS="-fexperimental-library -Wno-pass-failed -Werror"
+          export LDFLAGS="-L$(brew --prefix tbb)/lib -ltbb -Wl,-rpath,$(brew --prefix tbb)/lib"
           ./build.py
           ./build.py --debug
 

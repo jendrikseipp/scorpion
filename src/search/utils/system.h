@@ -21,6 +21,31 @@
 #include <iostream>
 #include <stdlib.h>
 
+/*
+  macOS builds use libc++ (via Homebrew's LLVM and -fexperimental-library). Its
+  parallel STL implements the <algorithm> execution-policy overloads but not the
+  <numeric> ones, so transform_reduce(std::execution::unseq, ...) does not
+  compile. We provide a serial fallback overload with the same signature here so
+  that existing call sites work unchanged. Since unseq is only a vectorization
+  hint, the serial fallback is semantically identical. The overload lives in the
+  global namespace so that unqualified calls find it, and is only defined for
+  libc++; on libstdc++ (Linux) the block is skipped and the standard parallel
+  overload is used.
+*/
+#ifdef _LIBCPP_VERSION
+#include <execution>
+#include <numeric>
+#include <utility>
+
+template<typename InputIt, typename T, typename BinaryOp, typename UnaryOp>
+T transform_reduce(
+    const std::execution::unsequenced_policy &, InputIt first, InputIt last,
+    T init, BinaryOp binary_op, UnaryOp unary_op) {
+    return std::transform_reduce(
+        first, last, std::move(init), binary_op, unary_op);
+}
+#endif
+
 #define ABORT(msg) \
     ((std::cerr << "Critical error in file " << __FILE__ << ", line " \
                 << __LINE__ << ": " << std::endl \
