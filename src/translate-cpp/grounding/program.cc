@@ -19,9 +19,20 @@ bool Atom::operator<(const Atom &other) const {
     if (predicate != other.predicate) return predicate < other.predicate;
     if (args.size() != other.args.size()) return args.size() < other.args.size();
     for (std::size_t i = 0; i < args.size(); ++i) {
-        const std::string a = arg_to_string(args[i]);
-        const std::string b = arg_to_string(other.args[i]);
-        if (a != b) return a < b;
+        const Arg &a = args[i];
+        const Arg &b = other.args[i];
+        // Fast path: both symbols (the case for ground atoms) compares the
+        // interned names by reference, avoiding the per-element heap
+        // allocation that arg_to_string would incur in the sort comparator.
+        if (a.is_symbol() && b.is_symbol()) {
+            const std::string &an = a.name();
+            const std::string &bn = b.name();
+            if (an != bn) return an < bn;
+        } else {
+            const std::string as = arg_to_string(a);
+            const std::string bs = arg_to_string(b);
+            if (as != bs) return as < bs;
+        }
     }
     return false;
 }
