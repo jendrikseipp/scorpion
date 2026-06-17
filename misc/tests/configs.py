@@ -237,6 +237,46 @@ def configs_satisficing_extended():
         "dfs": ["--search", "dfs()"],
         "ids": ["--search", "ids()"],
         "iw": ["--search", "iw(2)"],
+        # Best-First Width Search (Lipovetzky and Geffner, AAAI 2017): the six
+        # partition functions f1-f6, realized as lexicographic tiebreaking open
+        # lists inside greedy best-first search (eager search without g).
+        # w_{X} = novelty(width=2, evals=[X]); #g = goalcount(); #r =
+        # subgoal_counting(); h_L = landmark_sum(...); help = pref().
+        # f1 = <h_add, w_{h_add}>
+        "bfws_f1": [
+            "--evaluator", "hadd=add()",
+            "--search",
+            "eager(tiebreaking([hadd, novelty(width=2, evals=[hadd])]))"],
+        # f2 = <w_{h_add}, h_add>
+        "bfws_f2": [
+            "--evaluator", "hadd=add()",
+            "--search",
+            "eager(tiebreaking([novelty(width=2, evals=[hadd]), hadd]))"],
+        # f3 = <h_L, h_ff>
+        "bfws_f3": [
+            "--evaluator", "hff=ff()",
+            "--evaluator", "hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
+            "--search",
+            "eager(tiebreaking([hlm, hff]))"],
+        # f4 = <w_{h_L,h_ff}, h_L, h_ff>
+        "bfws_f4": [
+            "--evaluator", "hff=ff()",
+            "--evaluator", "hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
+            "--search",
+            "eager(tiebreaking([novelty(width=2, evals=[hlm, hff]), hlm, hff]))"],
+        # f5 = <w_{#g,#r}, #g>
+        "bfws_f5": [
+            "--evaluator", "hg=goalcount()",
+            "--evaluator", "hr=subgoal_counting()",
+            "--search",
+            "eager(tiebreaking([novelty(width=2, evals=[hg, hr]), hg]))"],
+        # f6 = <w_{h_L,h_ff}, help, h_L, w'_{h_ff}, h_ff>
+        "bfws_f6": [
+            "--evaluator", "hff=ff()",
+            "--evaluator", "hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false)",
+            "--search",
+            "eager(tiebreaking([novelty(width=2, evals=[hlm, hff]), pref(), hlm,"
+            "novelty(width=2, evals=[hff]), hff]), preferred=[hff])"],
     }
 
 

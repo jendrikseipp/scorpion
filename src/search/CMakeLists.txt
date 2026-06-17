@@ -773,7 +773,9 @@ create_fast_downward_library(
     SOURCES
         novelty/novelty_evaluator
         novelty/novelty_table
+        novelty/subgoal_counting_heuristic
     DEPENDS
+        ff_heuristic
         task_properties
     DEPENDENCY_ONLY
 )
