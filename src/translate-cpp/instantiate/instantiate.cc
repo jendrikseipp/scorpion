@@ -56,12 +56,13 @@ AtomSet build_atom_set(const std::vector<grounding::Atom> &model,
                        const std::unordered_set<std::string> &fluent_preds) {
     AtomSet out;
     for (const auto &a : model) {
-        if (!fluent_preds.contains(a.predicate)) continue;
+        if (!fluent_preds.contains(a.predicate_name())) continue;
         std::vector<std::string> args;
         args.reserve(a.args.size());
         for (const auto &x : a.args)
             args.push_back(grounding::arg_to_string(x));
-        out.insert(std::make_shared<const Atom>(a.predicate, std::move(args)));
+        out.insert(std::make_shared<const Atom>(a.predicate_name(),
+                                                std::move(args)));
     }
     return out;
 }
@@ -324,11 +325,11 @@ Result instantiate(const Task &task,
     auto objects_by_type = get_objects_by_type(task);
 
     for (const auto &atom : model) {
-        if (atom.predicate == GOAL_REACHABLE) {
+        if (atom.predicate_name() == GOAL_REACHABLE) {
             out.relaxed_reachable = true;
             continue;
         }
-        int action_idx = try_extract_index(atom.predicate, ACTION_PREFIX);
+        int action_idx = try_extract_index(atom.predicate_name(), ACTION_PREFIX);
         if (action_idx >= 0 &&
             action_idx < static_cast<int>(task.actions.size())) {
             const Action &action = task.actions[action_idx];
@@ -349,7 +350,7 @@ Result instantiate(const Task &task,
             if (inst) out.instantiated_actions.push_back(std::move(inst));
             continue;
         }
-        int axiom_idx = try_extract_index(atom.predicate, AXIOM_PREFIX);
+        int axiom_idx = try_extract_index(atom.predicate_name(), AXIOM_PREFIX);
         if (axiom_idx >= 0 &&
             axiom_idx < static_cast<int>(task.axioms.size())) {
             const Axiom &axiom = task.axioms[axiom_idx];

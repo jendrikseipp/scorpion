@@ -75,7 +75,7 @@ public:
     */
     virtual void fire(const Atom &new_atom, int cond_index,
                       const std::vector<Atom> &items,
-                      const std::function<void(const std::string &,
+                      const std::function<void(int,
                                                std::vector<Arg> &&)>
                           &enqueue) = 0;
 
@@ -98,7 +98,7 @@ public:
     void update_index(const Atom &, int, int) override {}
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &,
-              const std::function<void(const std::string &,
+              const std::function<void(int,
                                        std::vector<Arg> &&)>
                   &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
@@ -164,7 +164,7 @@ public:
 
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &items,
-              const std::function<void(const std::string &,
+              const std::function<void(int,
                                        std::vector<Arg> &&)>
                   &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
@@ -204,7 +204,7 @@ public:
 
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &items,
-              const std::function<void(const std::string &,
+              const std::function<void(int,
                                        std::vector<Arg> &&)>
                   &enqueue) override {
         if (empty_index_count > 0) return;
@@ -283,7 +283,7 @@ struct CondRef {
 
 class Unifier {
 public:
-    std::unordered_map<std::string, std::vector<CondRef>> by_predicate;
+    std::unordered_map<int, std::vector<CondRef>> by_predicate;
 
     void insert(int rule_index, int cond_index, const Atom &condition) {
         CondRef ref;
@@ -379,7 +379,7 @@ public:
         for (auto &a : initial) insert_if_new(std::move(a));
     }
     bool empty() const { return pos >= items.size(); }
-    void push(const std::string &pred, std::vector<Arg> &&args) {
+    void push(int pred, std::vector<Arg> &&args) {
         ++pushes; // count every push attempt, like Python's queue.push
         insert_if_new(Atom(pred, std::move(args)));
     }
@@ -409,15 +409,14 @@ std::vector<Atom> compute_model(const Program &prog) {
         // Index of the atom in queue.items, captured before pop advances.
         int idx = static_cast<int>(queue.pos);
         Atom next = queue.pop();
-        if (next.predicate.find('$') != std::string::npos) ++auxiliary;
+        if (next.predicate_name().find('$') != std::string::npos) ++auxiliary;
         else ++relevant;
         matches.clear();
         unifier.unify(next, matches);
         for (const auto &[ri, ci] : matches) {
             rules[ri]->update_index(next, idx, ci);
             rules[ri]->fire(next, ci, queue.items,
-                            [&](const std::string &p,
-                                std::vector<Arg> &&args) {
+                            [&](int p, std::vector<Arg> &&args) {
                                 queue.push(p, std::move(args));
                             });
         }

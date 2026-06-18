@@ -60,12 +60,19 @@ inline bool is_constant(const Arg &a) {
 inline bool is_int(const Arg &a) { return a.is_position(); }
 
 struct Atom {
-    std::string predicate;
+    // Interned predicate-name id (shares symbols() with Arg). Interning makes
+    // the per-atom hash/equality used by the grounding dedup an int compare
+    // and avoids copying the predicate string into every ground atom.
+    int predicate = 0;
     std::vector<Arg> args;
 
     Atom() = default;
-    Atom(std::string predicate, std::vector<Arg> args)
-        : predicate(std::move(predicate)), args(std::move(args)) {}
+    Atom(int predicate, std::vector<Arg> args)
+        : predicate(predicate), args(std::move(args)) {}
+    Atom(const std::string &predicate, std::vector<Arg> args)
+        : predicate(symbols().intern(predicate)), args(std::move(args)) {}
+
+    const std::string &predicate_name() const { return symbols().name(predicate); }
 
     bool operator==(const Atom &other) const {
         return predicate == other.predicate && args == other.args;

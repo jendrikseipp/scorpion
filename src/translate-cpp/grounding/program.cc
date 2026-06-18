@@ -16,7 +16,10 @@ inline void hash_combine(std::size_t &seed, std::size_t v) {
 }
 
 bool Atom::operator<(const Atom &other) const {
-    if (predicate != other.predicate) return predicate < other.predicate;
+    // Compare by predicate *name* (not interned id) so the model/atom order
+    // stays byte-compatible with Python regardless of interning order.
+    if (predicate != other.predicate)
+        return predicate_name() < other.predicate_name();
     if (args.size() != other.args.size()) return args.size() < other.args.size();
     for (std::size_t i = 0; i < args.size(); ++i) {
         const Arg &a = args[i];
@@ -38,14 +41,14 @@ bool Atom::operator<(const Atom &other) const {
 }
 
 std::size_t AtomHash::operator()(const Atom &a) const noexcept {
-    std::size_t h = std::hash<std::string>{}(a.predicate);
+    std::size_t h = std::hash<int>{}(a.predicate);
     for (const auto &x : a.args)
         hash_combine(h, std::hash<int>{}(x.v));
     return h;
 }
 
 std::ostream &operator<<(std::ostream &os, const Atom &a) {
-    os << a.predicate << "(";
+    os << a.predicate_name() << "(";
     for (std::size_t i = 0; i < a.args.size(); ++i) {
         if (i) os << ", ";
         if (a.args[i].is_symbol()) os << a.args[i].name();
