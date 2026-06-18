@@ -627,6 +627,9 @@ SASTask pddl_to_sas(Task &task) {
         std::cout << "Reordering and filtering variables: " << vo_t.str()
                   << std::endl;
     }
+    // Axioms are emitted in canonical (condition, effect) order by
+    // SASTask::output (post-remap), matching the Python translator's final
+    // axiom sort.
     return sas_task;
 }
 }

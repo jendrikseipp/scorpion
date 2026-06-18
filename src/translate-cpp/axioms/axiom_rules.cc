@@ -54,7 +54,7 @@ struct AxiomDependencies {
                 if (!lit_cond) continue;
                 const auto &lit = static_cast<const Literal &>(*lit_cond);
                 std::string body_key = literal_atom_key(lit);
-                if (derived_variables.count(body_key)) {
+                if (derived_variables.contains(body_key)) {
                     if (lit.negated())
                         negative_dependencies[head].insert(body_key);
                     else
@@ -68,7 +68,7 @@ struct AxiomDependencies {
         const std::unordered_set<std::string> &necessary) {
         std::unordered_set<std::string> kept;
         for (const auto &v : derived_variables) {
-            if (necessary.count(v)) kept.insert(v);
+            if (necessary.contains(v)) kept.insert(v);
             else {
                 positive_dependencies.erase(v);
                 negative_dependencies.erase(v);
@@ -87,7 +87,7 @@ std::unordered_set<std::string> compute_necessary_atoms(
         if (!g) continue;
         const auto &lit = static_cast<const Literal &>(*g);
         std::string key = literal_atom_key(lit);
-        if (deps.derived_variables.count(key)) necessary.insert(key);
+        if (deps.derived_variables.contains(key)) necessary.insert(key);
     }
     for (const auto &op : operators) {
         if (!op) continue;
@@ -95,7 +95,7 @@ std::unordered_set<std::string> compute_necessary_atoms(
             if (!pre) continue;
             const auto &lit = static_cast<const Literal &>(*pre);
             std::string key = literal_atom_key(lit);
-            if (deps.derived_variables.count(key)) necessary.insert(key);
+            if (deps.derived_variables.contains(key)) necessary.insert(key);
         }
         auto walk = [&](const auto &effects) {
             for (const auto &[conds, _] : effects) {
@@ -103,7 +103,7 @@ std::unordered_set<std::string> compute_necessary_atoms(
                     if (!c) continue;
                     const auto &lit = static_cast<const Literal &>(*c);
                     std::string key = literal_atom_key(lit);
-                    if (deps.derived_variables.count(key))
+                    if (deps.derived_variables.contains(key))
                         necessary.insert(key);
                 }
             }
@@ -132,7 +132,7 @@ std::vector<std::vector<std::string>> compute_sccs(
     const AxiomDependencies &deps) {
     std::vector<std::string> sorted_vars(deps.derived_variables.begin(),
                                          deps.derived_variables.end());
-    std::sort(sorted_vars.begin(), sorted_vars.end());
+    std::ranges::sort(sorted_vars);
     std::unordered_map<std::string, int> idx;
     for (std::size_t i = 0; i < sorted_vars.size(); ++i)
         idx[sorted_vars[i]] = static_cast<int>(i);
@@ -172,56 +172,56 @@ struct AxiomCluster {
 std::vector<std::shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
     std::vector<std::shared_ptr<PropositionalAxiom>> axioms) {
     if (axioms.empty()) return axioms;
-    // Deduplicate condition entries within each axiom.
+    // Strict-weak order on condition literals by (predicate, args, negated).
+    auto lit_less = [](const ConditionPtr &x, const ConditionPtr &y) {
+        const auto &lx = static_cast<const Literal &>(*x);
+        const auto &ly = static_cast<const Literal &>(*y);
+        if (lx.predicate != ly.predicate) return lx.predicate < ly.predicate;
+        if (lx.args != ly.args) return lx.args < ly.args;
+        return lx.negated() < ly.negated();
+    };
+    // Deduplicate condition entries within each axiom; leaves each
+    // axiom's condition sorted by `lit_less`.
     for (auto &ax : axioms) {
         std::vector<ConditionPtr> uniq = ax->condition;
-        std::sort(uniq.begin(), uniq.end(),
-                  [](const ConditionPtr &x, const ConditionPtr &y) {
-                      const auto &lx = static_cast<const Literal &>(*x);
-                      const auto &ly = static_cast<const Literal &>(*y);
-                      if (lx.predicate != ly.predicate)
-                          return lx.predicate < ly.predicate;
-                      if (lx.args != ly.args) return lx.args < ly.args;
-                      return lx.negated() < ly.negated();
-                  });
-        uniq.erase(std::unique(uniq.begin(), uniq.end(),
-                               [](const ConditionPtr &x,
-                                  const ConditionPtr &y) {
-                                   const auto &lx =
-                                       static_cast<const Literal &>(*x);
-                                   const auto &ly =
-                                       static_cast<const Literal &>(*y);
-                                   return lx.predicate == ly.predicate &&
-                                          lx.args == ly.args &&
-                                          lx.negated() == ly.negated();
-                               }),
+        std::ranges::sort(uniq, lit_less);
+        uniq.erase(std::ranges::begin(std::ranges::unique(
+                       uniq, [&](const ConditionPtr &x, const ConditionPtr &y) {
+                           return !lit_less(x, y) && !lit_less(y, x);
+                       })),
                    uniq.end());
         ax->condition = std::move(uniq);
     }
-    // Remove dominated axioms (naive O(n^2)).
     std::vector<bool> skip(axioms.size(), false);
+    // Drop axioms whose (positive) effect atom occurs in their own condition:
+    // such a rule can only fire when its head already holds, so it is
+    // redundant. Matches Python's `if axiom.effect in axiom.condition` in
+    // compute_simplified_axioms. These are also excluded as dominators below
+    // (Python never adds them to axioms_by_literal).
     for (std::size_t i = 0; i < axioms.size(); ++i) {
+        const auto &eff = *axioms[i]->effect;
+        for (const auto &c : axioms[i]->condition) {
+            const auto &l = static_cast<const Literal &>(*c);
+            if (!l.negated() && l.predicate == eff.predicate &&
+                l.args == eff.args) {
+                skip[i] = true;
+                break;
+            }
+        }
+    }
+    // Remove dominated axioms: i dominates j iff i's condition is a subset
+    // of j's. Both conditions are sorted by `lit_less`, so the subset test
+    // is a single linear merge via std::ranges::includes (O(|ci|+|cj|))
+    // rather than a nested scan (O(|ci|*|cj|)). A skipped axiom never acts as
+    // a dominator (matches Python skipping ids in axioms_to_skip).
+    for (std::size_t i = 0; i < axioms.size(); ++i) {
+        if (skip[i]) continue;
         for (std::size_t j = 0; j < axioms.size(); ++j) {
             if (i == j || skip[j]) continue;
-            // i dominates j iff i's condition is a subset of j's condition.
             const auto &ci = axioms[i]->condition;
             const auto &cj = axioms[j]->condition;
             if (ci.size() > cj.size()) continue;
-            bool subset = true;
-            for (const auto &lit_i : ci) {
-                bool found = false;
-                const auto &li = static_cast<const Literal &>(*lit_i);
-                for (const auto &lit_j : cj) {
-                    const auto &lj = static_cast<const Literal &>(*lit_j);
-                    if (li.predicate == lj.predicate &&
-                        li.args == lj.args &&
-                        li.negated() == lj.negated()) {
-                        found = true; break;
-                    }
-                }
-                if (!found) { subset = false; break; }
-            }
-            if (subset) skip[j] = true;
+            if (std::ranges::includes(cj, ci, lit_less)) skip[j] = true;
         }
     }
     std::vector<std::shared_ptr<PropositionalAxiom>> out;

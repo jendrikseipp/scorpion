@@ -109,7 +109,7 @@ void write_operator(FastWriter &w, const SASOperator &op) {
 
 void write_axiom(FastWriter &w, const SASAxiom &ax) {
     auto cond = ax.condition;
-    std::sort(cond.begin(), cond.end());
+    std::ranges::sort(cond);
     w.put(std::string_view("begin_rule")); w.nl();
     w.put(cond.size()); w.nl();
     for (const auto &[v, val] : cond) {
@@ -134,7 +134,7 @@ int SASVariables::get_encoding_size() const {
     return size;
 }
 SASMutexGroup::SASMutexGroup(std::vector<VarVal> f) : facts(std::move(f)) {
-    std::sort(facts.begin(), facts.end());
+    std::ranges::sort(facts);
 }
 void SASMutexGroup::output(std::ostream &os) const {
     std::string buf; FastWriter w(buf); write_mutex(w, *this);
@@ -145,7 +145,7 @@ void SASInit::output(std::ostream &os) const {
     os.write(buf.data(), static_cast<std::streamsize>(buf.size()));
 }
 SASGoal::SASGoal(std::vector<VarVal> p) : pairs(std::move(p)) {
-    std::sort(pairs.begin(), pairs.end());
+    std::ranges::sort(pairs);
 }
 void SASGoal::output(std::ostream &os) const {
     std::string buf; FastWriter w(buf); write_goal(w, *this);
@@ -189,7 +189,12 @@ void SASTask::output(std::ostream &os) const {
     for (const auto &op : operators) write_operator(w, op);
 
     auto axs = axioms;
-    std::sort(axs.begin(), axs.end(),
+    // Canonicalize within-rule condition order (by final variable number)
+    // before ordering the rules, so both the rule sort key and the emitted
+    // conditions use the same order -- matching the Python translator, whose
+    // final axiom sort also operates on per-rule-sorted conditions.
+    for (auto &a : axs) std::ranges::sort(a.condition);
+    std::ranges::sort(axs,
               [](const SASAxiom &a, const SASAxiom &b) {
                   if (a.condition != b.condition) return a.condition < b.condition;
                   return a.effect < b.effect;
