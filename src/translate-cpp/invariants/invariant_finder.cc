@@ -23,7 +23,7 @@ BalanceChecker::BalanceChecker(
     const Task &task,
     const std::vector<std::vector<std::vector<std::string>>>
         *reachable_action_parameters)
-    : random_(314159) {
+    : random_(314159), cpython_random_(314159) {
     patched_actions_.reserve(task.actions.size());
     heavy_actions_.reserve(task.actions.size());
     for (std::size_t i = 0; i < task.actions.size(); ++i) {
@@ -104,6 +104,12 @@ const Action *BalanceChecker::get_heavy_action(const Action *action) const {
 }
 
 int BalanceChecker::next_index(std::size_t upper_bound) {
+    // Default: CPython-compatible randrange(upper_bound) so the balance
+    // checker visits actions in the same order as the Python translator and
+    // yields byte-identical invariants. --no-cpython-rng restores the legacy
+    // std::mt19937 path (a valid but different mutex grouping).
+    if (get_options().cpython_rng)
+        return static_cast<int>(cpython_random_.randbelow(upper_bound));
     std::uniform_int_distribution<int> dist(
         0, static_cast<int>(upper_bound) - 1);
     return dist(random_);

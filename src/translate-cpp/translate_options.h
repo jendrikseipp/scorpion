@@ -25,6 +25,11 @@ struct Options {
     // Invariant generation.
     int invariant_generation_max_candidates = 100000;
     int invariant_generation_max_time = 300;
+    // Use the CPython-compatible RNG (utils/cpython_random.h) for the
+    // invariant balance checker so the C++ translator draws the same
+    // sequence as the Python translator and matches its output byte-for-byte.
+    // --no-cpython-rng falls back to std::mt19937 (the legacy behaviour).
+    bool cpython_rng = true;
 
     // Preconditions.
     bool add_implied_preconditions = false;

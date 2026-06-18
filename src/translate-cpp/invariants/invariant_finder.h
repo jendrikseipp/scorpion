@@ -4,6 +4,7 @@
 #include "../pddl/action.h"
 #include "../pddl/condition.h"
 #include "../pddl/task.h"
+#include "../utils/cpython_random.h"
 #include "invariants.h"
 
 #include <random>
@@ -29,7 +30,8 @@ private:
         predicates_to_add_actions_;
     std::unordered_map<const pddl::Action *, const pddl::Action *>
         action_to_heavy_;
-    std::mt19937 random_;
+    std::mt19937 random_;                       // legacy RNG (--no-cpython-rng)
+    utils::CPythonRandom cpython_random_;       // default: matches Python
     std::vector<const pddl::Action *> empty_;
 };
 
