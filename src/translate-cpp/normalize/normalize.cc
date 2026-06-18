@@ -114,7 +114,7 @@ struct AxiomKeyEqual {
 
 ConditionPtr remove_universal_recurse(
     Task &task, const TypeMap &type_map,
-    std::unordered_map<AxiomKey, Axiom *, AxiomKeyHash, AxiomKeyEqual>
+    std::unordered_map<AxiomKey, std::string, AxiomKeyHash, AxiomKeyEqual>
         &memo,
     const ConditionPtr &condition) {
     if (condition->kind() == Condition::Kind::UNIVERSAL) {
@@ -129,26 +129,27 @@ ConditionPtr remove_universal_recurse(
         }
         AxiomKey key{axiom_condition, typed_params};
         auto memo_it = memo.find(key);
-        Axiom *axiom = (memo_it != memo.end()) ? memo_it->second : nullptr;
-        if (!axiom) {
+        // Cache the axiom *name* (a stable std::string), not an Axiom*:
+        // task.add_axiom appends to a std::vector<Axiom> and may reallocate,
+        // which would dangle any cached Axiom* and corrupt axiom->name.
+        std::string axiom_name =
+            (memo_it != memo.end()) ? memo_it->second : std::string();
+        if (axiom_name.empty()) {
             ConditionPtr inner_processed = remove_universal_recurse(
                 task, type_map, memo, axiom_condition);
-            // task.add_axiom may invalidate previous Axiom* pointers
-            // (we don't dereference them after this point).
             std::vector<TypedObject> params_copy = typed_params;
-            Axiom *new_axiom =
-                task.add_axiom(std::move(params_copy), inner_processed);
+            axiom_name =
+                task.add_axiom(std::move(params_copy), inner_processed)->name;
             // Re-key memo entry. Since AxiomKey uses condition+params, it
             // remains stable across vector reallocation.
-            memo.emplace(AxiomKey{inner_processed, typed_params},
-                         new_axiom);
+            memo.emplace(AxiomKey{inner_processed, typed_params}, axiom_name);
             // Use the original key as well so identical condition+params
             // map to the same axiom.
-            memo[key] = new_axiom;
-            axiom = new_axiom;
+            memo[key] = axiom_name;
         }
         std::vector<std::string> arg_names = params_names;
-        return std::make_shared<NegatedAtom>(axiom->name, std::move(arg_names));
+        return std::make_shared<NegatedAtom>(std::move(axiom_name),
+                                             std::move(arg_names));
     }
     // Recurse over children and rebuild via change_parts.
     std::vector<ConditionPtr> new_parts;
@@ -160,7 +161,7 @@ ConditionPtr remove_universal_recurse(
 }
 
 void remove_universal_quantifiers(Task &task) {
-    std::unordered_map<AxiomKey, Axiom *, AxiomKeyHash, AxiomKeyEqual> memo;
+    std::unordered_map<AxiomKey, std::string, AxiomKeyHash, AxiomKeyEqual> memo;
     for_each_condition(task,
         [&](auto get_tm, auto get_c, auto set_c) {
             auto c = get_c();
