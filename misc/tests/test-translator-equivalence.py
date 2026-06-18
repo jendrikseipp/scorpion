@@ -14,12 +14,12 @@ This checks only py-vs-cpp equivalence. Determinism of each translator is
 checked separately by test-translator.py (pass --translator cpp for the C++
 variant).
 
-By default the bundled suite under misc/tests/benchmarks is used -- it has one
-task per benchmark family, including the families that exposed past py-vs-cpp
-divergences (assembly, freecell, psr-middle, psr-large, settlers-sat18-adl,
-thoughtful-sat14-strips, trucks-strips). Any other benchmark directory can be
-passed instead. Tasks are discovered recursively, so both the flat
-domain/problem layout and nested layouts are handled.
+By default only a small, fast regression set is checked: the smallest task
+from each family that exposed a past py-vs-cpp divergence (assembly, freecell,
+psr-large, psr-middle, settlers-sat18-adl, thoughtful-sat14-strips,
+trucks-strips). Pass an explicit suite ("all" or "first") and/or a different
+benchmark directory to check more; tasks are discovered recursively, so both
+the flat domain/problem layout and nested layouts are handled.
 
 Requires the C++ translator to be built:
     ./build.py release --with-translate-cpp
@@ -31,7 +31,9 @@ Examples:
 """
 
 import argparse
+import concurrent.futures
 import filecmp
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -41,9 +43,20 @@ import time
 DIR = Path(__file__).resolve().parent
 REPO = DIR.parents[1]
 DRIVER = REPO / "fast-downward.py"
-# One-task-per-family suite (includes every family that exposed a past
-# py-vs-cpp divergence); used as the default equivalence set.
 DEFAULT_BENCHMARKS = REPO / "misc" / "tests" / "benchmarks"
+
+# Default task set: the smallest task from each family that exposed a past
+# py-vs-cpp divergence (the regression set). Kept small so the check is fast;
+# pass an explicit suite ("all", "first", or "<family>:<problem>") to override.
+DEFAULT_TASKS = [
+    "assembly:prob01.pddl",
+    "freecell:p01.pddl",
+    "psr-large:p27-s172-n25-l2-f10.pddl",
+    "psr-middle:p03-s28-n2-l5-f10.pddl",
+    "settlers-sat18-adl:p01.pddl",
+    "thoughtful-sat14-strips:bootstrap-typed-01.pddl",
+    "trucks-strips:p05.pddl",
+]
 
 
 def is_domain_file(path):
@@ -113,15 +126,43 @@ def translate(translator, domain, problem, cwd):
     return proc.returncode, time.perf_counter() - start
 
 
+def check_one(domain, problem):
+    """Translate one task with both variants and compare. Returns
+    (name, status, py_time, cpp_time, detail); status in ok/differ/error."""
+    name = f"{problem.parent.name}:{problem.name}"
+    with tempfile.TemporaryDirectory() as tmp:
+        pyd, cppd = Path(tmp) / "py", Path(tmp) / "cpp"
+        pyd.mkdir(); cppd.mkdir()
+        rc_py, py_time = translate("py", domain, problem, pyd)
+        rc_cpp, cpp_time = translate("cpp", domain, problem, cppd)
+        py_sas, cpp_sas = pyd / "output.sas", cppd / "output.sas"
+        if rc_py != 0 or not py_sas.exists():
+            status, detail = "error", "py failed"
+        elif rc_cpp != 0 or not cpp_sas.exists():
+            status, detail = "error", "cpp failed"
+        elif filecmp.cmp(py_sas, cpp_sas, shallow=False):
+            status, detail = "ok", ""
+        else:
+            status, detail = "differ", ""
+    return name, status, py_time, cpp_time, detail
+
+
 def main():
     p = argparse.ArgumentParser(
         description=HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("benchmarks_dir", nargs="?", default=str(DEFAULT_BENCHMARKS),
                    help="benchmark directory (default: "
                         "misc/tests/benchmarks)")
-    p.add_argument("suite", nargs="*", default=["all"],
-                   help='"all" (default), "first" (first task per domain), '
-                        'or "<domain>:<problem>" entries')
+    p.add_argument("suite", nargs="*", default=DEFAULT_TASKS,
+                   help='task selection (default: the small per-family '
+                        'regression set). "all", "first" (first task per '
+                        'domain), or "<domain>:<problem>" entries.')
+    p.add_argument("-j", "--jobs", type=int,
+                   default=min(os.cpu_count() or 4, 8),
+                   help="number of tasks to translate in parallel "
+                        "(default: min(cpu_count, 8)). Note: per-task times "
+                        "are wall-clock and inflate under parallelism; the "
+                        "elapsed line reflects the real speedup.")
     args = p.parse_args()
     benchmarks_dir = Path(args.benchmarks_dir).resolve()
     if not benchmarks_dir.is_dir():
@@ -131,46 +172,42 @@ def main():
     if not tasks:
         sys.exit(f"No tasks found under {benchmarks_dir}")
 
+    jobs = max(1, min(args.jobs, len(tasks)))
     print(f"Comparing py vs cpp translator output on {len(tasks)} task(s) "
-          f"from {benchmarks_dir}\n")
+          f"from {benchmarks_dir} ({jobs} parallel job(s))\n")
     identical, mismatch, errors = [], [], []
     py_total = cpp_total = 0.0
-    for domain, problem in tasks:
-        name = f"{problem.parent.name}:{problem.name}"
-        with tempfile.TemporaryDirectory() as tmp:
-            pyd, cppd = Path(tmp) / "py", Path(tmp) / "cpp"
-            pyd.mkdir(); cppd.mkdir()
-            rc_py, py_time = translate("py", domain, problem, pyd)
-            rc_cpp, cpp_time = translate("cpp", domain, problem, cppd)
+    start = time.perf_counter()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as ex:
+        futures = [ex.submit(check_one, d, p) for d, p in tasks]
+        for fut in concurrent.futures.as_completed(futures):
+            name, status, py_time, cpp_time, detail = fut.result()
             py_total += py_time
             cpp_total += cpp_time
             timing = f"py {py_time:6.2f}s  cpp {cpp_time:6.2f}s"
-            py_sas, cpp_sas = pyd / "output.sas", cppd / "output.sas"
-            if rc_py != 0 or not py_sas.exists():
-                errors.append((name, "py failed"))
-                print(f"ERROR  {name} (py)  [{timing}]")
-            elif rc_cpp != 0 or not cpp_sas.exists():
-                errors.append((name, "cpp failed"))
-                print(f"ERROR  {name} (cpp)  [{timing}]")
-            elif filecmp.cmp(py_sas, cpp_sas, shallow=False):
+            if status == "ok":
                 identical.append(name)
-                print(f"ok     {name}  [{timing}]")
-            else:
+                print(f"ok     {name}  [{timing}]", flush=True)
+            elif status == "differ":
                 mismatch.append(name)
-                print(f"DIFFER {name}  [{timing}]")
+                print(f"DIFFER {name}  [{timing}]", flush=True)
+            else:
+                errors.append((name, detail))
+                print(f"ERROR  {name} ({detail})  [{timing}]", flush=True)
+    elapsed = time.perf_counter() - start
 
     speedup = (py_total / cpp_total) if cpp_total else float("nan")
-    print(f"\ntotal translate wall-clock: py {py_total:.2f}s, "
-          f"cpp {cpp_total:.2f}s ({speedup:.2f}x)")
+    print(f"\nsummed translate time (per-task wall-clock): py {py_total:.2f}s, "
+          f"cpp {cpp_total:.2f}s ({speedup:.2f}x); elapsed {elapsed:.2f}s")
     print(f"summary: {len(identical)} identical, {len(mismatch)} differ, "
           f"{len(errors)} error(s) of {len(tasks)} tasks")
     if mismatch:
         print("byte-differing tasks:")
-        for n in mismatch:
+        for n in sorted(mismatch):
             print(f"  {n}")
     if errors:
         print("errored tasks:")
-        for n, why in errors:
+        for n, why in sorted(errors):
             print(f"  {n}: {why}")
     sys.exit(1 if (mismatch or errors) else 0)
 

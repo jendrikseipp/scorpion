@@ -21,18 +21,33 @@ import sys
 DIR = Path(__file__).resolve().parent
 REPO = DIR.parents[1]
 DRIVER = REPO / "fast-downward.py"
+DEFAULT_BENCHMARKS = DIR / "benchmarks"
+
+# Default task set: the smallest task from each family that exposed a past
+# py-vs-cpp divergence (the regression set). Kept small so the check is fast;
+# these stress the determinism-prone code (invariant synthesis, axioms, fact
+# groups). Pass an explicit suite to override.
+DEFAULT_TASKS = [
+    "assembly:prob01.pddl",
+    "freecell:p01.pddl",
+    "psr-large:p27-s172-n25-l2-f10.pddl",
+    "psr-middle:p03-s28-n2-l5-f10.pddl",
+    "settlers-sat18-adl:p01.pddl",
+    "thoughtful-sat14-strips:bootstrap-typed-01.pddl",
+    "trucks-strips:p05.pddl",
+]
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description=HELP)
     parser.add_argument(
-        "benchmarks_dir",
-        help="path to benchmark directory")
+        "benchmarks_dir", nargs="?", default=str(DEFAULT_BENCHMARKS),
+        help="path to benchmark directory (default: misc/tests/benchmarks)")
     parser.add_argument(
-        "suite", nargs="*", default=["first"],
-        help='Use "all" to test all benchmarks, '
-             '"first" to test the first task of each domain (default), '
-             'or "<domain>:<problem>" to test individual tasks')
+        "suite", nargs="*", default=DEFAULT_TASKS,
+        help='task selection (default: the small per-family regression set). '
+             'Use "all" to test all benchmarks, "first" to test the first task '
+             'of each domain, or "<domain>:<problem>" for individual tasks')
     parser.add_argument(
         "--runs-per-task",
         help="translate each task this many times and compare the outputs",
@@ -89,12 +104,16 @@ def _get_all_tasks_by_domain(benchmarks_dir):
         domain_dir for domain_dir in benchmarks_dir.iterdir()
         if domain_dir.is_dir() and
         not str(domain_dir.name).startswith((".", "_", "unofficial")) and
-        str(domain_dir.name) not in blacklisted_domains]
+        str(domain_dir.name) not in blacklisted_domains and
+        # Skip container dirs (e.g. autoresearch/) that hold sub-suites rather
+        # than problem files directly.
+        any(f.is_file() and f.suffix == ".pddl" for f in domain_dir.iterdir())]
     for domain in domains:
         path = benchmarks_dir / domain
         tasks[domain] = [
             benchmarks_dir / domain / f
-            for f in sorted(path.iterdir()) if "domain" not in str(f)]
+            for f in sorted(path.iterdir())
+            if f.is_file() and "domain" not in str(f)]
     return sorted(tasks.values())
 
 

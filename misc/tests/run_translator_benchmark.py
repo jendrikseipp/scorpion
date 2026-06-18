@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Benchmark the C++ translator directly (no driver) on the benchmark suite.
+"""Benchmark the C++ translator directly (no driver) on the autoresearch suite.
 
 Runs `translate-cpp DOMAIN.pddl PROBLEM.pddl` once per task, measuring the
 translator's own CPU time (user+system) via os.wait4 rusage -- this excludes
@@ -26,7 +26,7 @@ from pathlib import Path
 
 DIR = Path(__file__).resolve().parent
 REPO = DIR.parents[1]
-DEFAULT_BENCH = DIR / "benchmarks"
+DEFAULT_BENCH = DIR / "benchmarks" / "autoresearch"
 DEFAULT_BIN = REPO / "builds" / "release" / "bin" / "translate-cpp"
 
 

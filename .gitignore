@@ -11,4 +11,4 @@ __pycache__/
 
 # autoresearch: generated reference SAS outputs (regenerate with
 # `python3 misc/tests/run_translator_benchmark.py --save-sas <dir>`)
-/misc/tests/benchmarks-refs/
+/misc/tests/benchmarks/autoresearch-refs/
