@@ -345,11 +345,12 @@ public:
     std::size_t pushes = 0;
 
 private:
+    // Hash of items[i], cached so the dedup set never recomputes AtomHash
+    // (which hashes the predicate string + args) when it rehashes on growth.
+    std::vector<std::size_t> hashes;
     struct IdxHash {
-        const std::vector<Atom> *items;
-        std::size_t operator()(int i) const noexcept {
-            return AtomHash{}((*items)[i]);
-        }
+        const std::vector<std::size_t> *hashes;
+        std::size_t operator()(int i) const noexcept { return (*hashes)[i]; }
     };
     struct IdxEq {
         const std::vector<Atom> *items;
@@ -361,15 +362,18 @@ private:
 
     // Append `a` to items, keep it only if not already seen.
     void insert_if_new(Atom &&a) {
+        hashes.push_back(AtomHash{}(a));
         items.push_back(std::move(a));
         int idx = static_cast<int>(items.size()) - 1;
-        if (!seen.insert(idx).second)
+        if (!seen.insert(idx).second) {
             items.pop_back();
+            hashes.pop_back();
+        }
     }
 
 public:
     explicit AtomQueue(std::vector<Atom> initial)
-        : seen(0, IdxHash{&items}, IdxEq{&items}) {
+        : seen(0, IdxHash{&hashes}, IdxEq{&items}) {
         // Matches Python's `num_pushes = len(atoms)` initial count.
         pushes = initial.size();
         for (auto &a : initial) insert_if_new(std::move(a));
