@@ -219,7 +219,7 @@ ConditionPtr UniversalCondition::negate() const {
 
 // -- instantiate() -----------------------------------------------------------
 
-void Condition::instantiate(
+bool Condition::instantiate(
     const std::unordered_map<std::string, std::string> &,
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &,
@@ -229,14 +229,14 @@ void Condition::instantiate(
     throw std::runtime_error("Cannot instantiate condition: not normalized");
 }
 
-void Falsity::instantiate(
+bool Falsity::instantiate(
     const std::unordered_map<std::string, std::string> &,
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &,
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &,
     std::vector<ConditionPtr> &) const {
-    throw Impossible();
+    return false;
 }
 
 namespace {
@@ -255,7 +255,7 @@ void resolve_args_into(std::vector<std::string> &out,
 }
 }
 
-void Atom::instantiate(
+bool Atom::instantiate(
     const std::unordered_map<std::string, std::string> &var_mapping,
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &init_facts,
@@ -271,11 +271,12 @@ void Atom::instantiate(
     if (it != fluent_facts.end()) {
         result.push_back(*it);
     } else if (!init_facts.contains(view)) {
-        throw Impossible();
+        return false;
     }
+    return true;
 }
 
-void NegatedAtom::instantiate(
+bool NegatedAtom::instantiate(
     const std::unordered_map<std::string, std::string> &var_mapping,
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &init_facts,
@@ -288,11 +289,12 @@ void NegatedAtom::instantiate(
     if (fluent_facts.contains(view)) {
         result.push_back(std::make_shared<NegatedAtom>(predicate, scratch));
     } else if (init_facts.contains(view)) {
-        throw Impossible();
+        return false;
     }
+    return true;
 }
 
-void Conjunction::instantiate(
+bool Conjunction::instantiate(
     const std::unordered_map<std::string, std::string> &var_mapping,
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &init_facts,
@@ -300,11 +302,13 @@ void Conjunction::instantiate(
                              ConditionPtrEqual> &fluent_facts,
     std::vector<ConditionPtr> &result) const {
     for (const auto &p : children) {
-        if (p) p->instantiate(var_mapping, init_facts, fluent_facts, result);
+        if (p && !p->instantiate(var_mapping, init_facts, fluent_facts, result))
+            return false;
     }
+    return true;
 }
 
-void ExistentialCondition::instantiate(
+bool ExistentialCondition::instantiate(
     const std::unordered_map<std::string, std::string> &var_mapping,
     const std::unordered_set<ConditionPtr, ConditionPtrHash,
                              ConditionPtrEqual> &init_facts,
@@ -312,7 +316,9 @@ void ExistentialCondition::instantiate(
                              ConditionPtrEqual> &fluent_facts,
     std::vector<ConditionPtr> &result) const {
     if (!body.empty() && body[0])
-        body[0]->instantiate(var_mapping, init_facts, fluent_facts, result);
+        return body[0]->instantiate(var_mapping, init_facts, fluent_facts,
+                                    result);
+    return true;
 }
 
 ConditionPtr ExistentialCondition::negate() const {

@@ -79,13 +79,14 @@ public:
     /*
       Instantiate this (normalized) condition under `var_mapping`,
       appending ground literals (positive Atom or NegatedAtom) to
-      `result`. Throws Impossible if the condition is provably false.
+      `result`. Returns false if the condition is provably false in this
+      context (the caller then drops the action/axiom); true otherwise.
 
       Default implementation throws std::runtime_error: only Truth,
       Falsity, Conjunction, ExistentialCondition, Atom and NegatedAtom
       can appear in normalized conditions, and each overrides this.
     */
-    virtual void instantiate(
+    virtual bool instantiate(
         const std::unordered_map<std::string, std::string> &var_mapping,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &init_facts,
@@ -181,13 +182,13 @@ public:
     ConditionPtr change_parts(std::vector<ConditionPtr>) const override {
         return std::make_shared<Truth>();
     }
-    void instantiate(
+    bool instantiate(
         const std::unordered_map<std::string, std::string> &,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &,
-        std::vector<ConditionPtr> &) const override {}
+        std::vector<ConditionPtr> &) const override { return true; }
 };
 
 class Falsity final : public Condition {
@@ -203,22 +204,13 @@ public:
     ConditionPtr change_parts(std::vector<ConditionPtr>) const override {
         return std::make_shared<Falsity>();
     }
-    [[noreturn]] void instantiate(
+    bool instantiate(
         const std::unordered_map<std::string, std::string> &,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &,
         std::vector<ConditionPtr> &) const override;
-};
-
-/*
-  Used during instantiation to abort processing of an action/axiom whose
-  precondition is provably false in the given context.
-*/
-class Impossible : public std::exception {
-public:
-    const char *what() const noexcept override { return "Impossible"; }
 };
 
 class Literal : public Condition {
@@ -256,7 +248,7 @@ public:
     bool equals(const Condition &other) const override;
     ConditionPtr negate() const override;
     bool negated() const override { return false; }
-    void instantiate(
+    bool instantiate(
         const std::unordered_map<std::string, std::string> &var_mapping,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &init_facts,
@@ -273,7 +265,7 @@ public:
     bool equals(const Condition &other) const override;
     ConditionPtr negate() const override;
     bool negated() const override { return true; }
-    void instantiate(
+    bool instantiate(
         const std::unordered_map<std::string, std::string> &var_mapping,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &init_facts,
@@ -308,7 +300,7 @@ public:
         const override {
         return std::make_shared<Conjunction>(std::move(new_parts));
     }
-    void instantiate(
+    bool instantiate(
         const std::unordered_map<std::string, std::string> &var_mapping,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &init_facts,
@@ -384,7 +376,7 @@ public:
         return std::make_shared<ExistentialCondition>(parameters,
                                                       std::move(new_parts));
     }
-    void instantiate(
+    bool instantiate(
         const std::unordered_map<std::string, std::string> &var_mapping,
         const std::unordered_set<ConditionPtr, ConditionPtrHash,
                                  ConditionPtrEqual> &init_facts,

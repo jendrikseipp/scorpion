@@ -138,21 +138,15 @@ void instantiate_effect(
     std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>> &result) {
     auto inst_once = [&]() {
         std::vector<ConditionPtr> condition;
-        try {
-            if (eff.condition)
-                eff.condition->instantiate(var_mapping, init_facts,
-                                           fluent_facts, condition);
-        } catch (const Impossible &) {
+        if (eff.condition &&
+            !eff.condition->instantiate(var_mapping, init_facts,
+                                        fluent_facts, condition))
             return;
-        }
         std::vector<ConditionPtr> lit_out;
-        try {
-            if (eff.literal)
-                eff.literal->instantiate(var_mapping, init_facts, fluent_facts,
-                                         lit_out);
-        } catch (const Impossible &) {
+        if (eff.literal &&
+            !eff.literal->instantiate(var_mapping, init_facts, fluent_facts,
+                                      lit_out))
             return;
-        }
         if (!lit_out.empty()) {
             result.emplace_back(std::move(condition), std::move(lit_out[0]));
         }
@@ -209,13 +203,10 @@ std::shared_ptr<PropositionalAction> instantiate_action(
     name.push_back(')');
 
     std::vector<ConditionPtr> precondition;
-    try {
-        if (action.precondition)
-            action.precondition->instantiate(var_mapping, init_facts,
-                                             fluent_facts, precondition);
-    } catch (const Impossible &) {
+    if (action.precondition &&
+        !action.precondition->instantiate(var_mapping, init_facts,
+                                          fluent_facts, precondition))
         return nullptr;
-    }
 
     std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>> effects;
     for (const auto &eff : action.effects) {
@@ -293,13 +284,10 @@ std::shared_ptr<PropositionalAxiom> instantiate_axiom(
     name.push_back(')');
 
     std::vector<ConditionPtr> condition;
-    try {
-        if (axiom.condition)
-            axiom.condition->instantiate(var_mapping, init_facts,
-                                         fluent_facts, condition);
-    } catch (const Impossible &) {
+    if (axiom.condition &&
+        !axiom.condition->instantiate(var_mapping, init_facts,
+                                      fluent_facts, condition))
         return nullptr;
-    }
 
     std::vector<std::string> eff_args;
     eff_args.reserve(axiom.num_external_parameters);
@@ -319,11 +307,8 @@ std::optional<std::vector<ConditionPtr>> instantiate_goal(
     const AtomSet &fluent_facts) {
     std::vector<ConditionPtr> result;
     std::unordered_map<std::string, std::string> empty;
-    try {
-        if (goal) goal->instantiate(empty, init_facts, fluent_facts, result);
-    } catch (const Impossible &) {
+    if (goal && !goal->instantiate(empty, init_facts, fluent_facts, result))
         return std::nullopt;
-    }
     return result;
 }
 }
