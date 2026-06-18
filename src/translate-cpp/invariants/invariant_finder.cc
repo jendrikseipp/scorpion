@@ -75,7 +75,16 @@ BalanceChecker::BalanceChecker(
             }
         }
         Action heavy = patched;
-        if (any_universal) heavy.effects = std::move(heavy_effects);
+        if (any_universal) {
+            heavy.effects = std::move(heavy_effects);
+            // Mirror Python: building the heavy action via the Action
+            // constructor re-uniquifies all variables, so the duplicated
+            // universal effects get disjoint quantified-variable names.
+            // Without this, operator_too_heavy compares an add effect with an
+            // identically-named copy of itself (inequality is unsatisfiable)
+            // and never fires, wrongly confirming counter-style invariants.
+            heavy.uniquify_variables();
+        }
         heavy_actions_.push_back(std::move(heavy));
     }
     for (std::size_t i = 0; i < patched_actions_.size(); ++i) {

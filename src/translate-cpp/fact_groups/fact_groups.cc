@@ -29,14 +29,14 @@ std::vector<ConditionPtr> expand_group(
         const auto &atom = static_cast<const Atom &>(*fact);
         int pos = find_placeholder(atom);
         if (pos < 0) {
-            if (reachable_facts.count(fact)) result.push_back(fact);
+            if (reachable_facts.contains(fact)) result.push_back(fact);
         } else {
             for (const auto &obj : task.objects) {
                 auto new_args = atom.args;
                 new_args[pos] = obj.name;
                 auto candidate = std::make_shared<const Atom>(
                     atom.predicate, std::move(new_args));
-                if (reachable_facts.count(candidate))
+                if (reachable_facts.contains(candidate))
                     result.push_back(candidate);
             }
         }
@@ -78,8 +78,8 @@ bool atom_less(const ConditionPtr &a, const ConditionPtr &b) {
 
 std::vector<std::vector<ConditionPtr>> sort_groups(
     std::vector<std::vector<ConditionPtr>> groups) {
-    for (auto &g : groups) std::sort(g.begin(), g.end(), atom_less);
-    std::sort(groups.begin(), groups.end(),
+    for (auto &g : groups) std::ranges::sort(g, atom_less);
+    std::ranges::sort(groups,
               [](const std::vector<ConditionPtr> &a,
                  const std::vector<ConditionPtr> &b) {
                   return std::lexicographical_compare(
@@ -98,7 +98,7 @@ std::vector<std::vector<ConditionPtr>> collect_all_mutex_groups(
         result.push_back(g);
     }
     std::vector<ConditionPtr> remaining(uncovered.begin(), uncovered.end());
-    std::sort(remaining.begin(), remaining.end(), atom_less);
+    std::ranges::sort(remaining, atom_less);
     for (const auto &a : remaining)
         result.push_back({a});
     return result;
@@ -113,80 +113,84 @@ std::vector<std::vector<ConditionPtr>> choose_groups(
     for (const auto &g : groups_in) {
         std::vector<ConditionPtr> filtered;
         for (const auto &a : g)
-            if (!negative_in_goal.count(a)) filtered.push_back(a);
+            if (!negative_in_goal.contains(a)) filtered.push_back(a);
         groups.push_back(std::move(filtered));
     }
-
     const int n = static_cast<int>(groups.size());
     const bool use_partial = get_options().use_partial_encoding;
 
-    // Greedy set-cover. We avoid the O(N^2) std::remove_if per pick by
-    // maintaining an atom->containing-groups index and per-group counters
-    // of uncovered atoms. Picking a group marks its uncovered atoms as
-    // covered and (under partial encoding) decrements the counters of
-    // every other containing group in O(1) per affected (atom, group)
-    // pair instead of scanning each group.
+    /*
+      Faithful port of Python's GroupCoverQueue (fact_groups.py): greedily pick
+      the largest remaining group and, under partial encoding, remove its facts
+      from every other group (shrinking them). Reproducing Python's exact pop
+      order is required for byte-identical selection on tasks with several
+      equal-size candidate groups (e.g. freecell, where each card admits a
+      "bottomcol ..." and a "clear ..." grouping of the same size).
+
+      The order is LIFO within a size bucket over the input order, and a group
+      shrunk by removal is lazily re-bucketed to the *back* of its new (smaller)
+      bucket, so it is reconsidered before originally-smaller groups. We track
+      live sizes with an int-counter array plus an atom->containing-groups index
+      (rather than a hash set per group) to keep this O(sum of group sizes).
+    */
     std::unordered_map<ConditionPtr, std::vector<int>,
                        ConditionPtrHash, ConditionPtrEqual> atom_to_groups;
-    if (use_partial) {
+    if (use_partial)
         for (int i = 0; i < n; ++i)
-            for (const auto &a : groups[i])
-                atom_to_groups[a].push_back(i);
-    }
+            for (const auto &a : groups[i]) atom_to_groups[a].push_back(i);
 
     std::vector<int> remaining(n);
-    for (int i = 0; i < n; ++i)
+    int max_size = 0;
+    for (int i = 0; i < n; ++i) {
         remaining[i] = static_cast<int>(groups[i].size());
+        max_size = std::max(max_size, remaining[i]);
+    }
+    std::vector<std::vector<int>> groups_by_size(max_size + 1);
+    for (int i = 0; i < n; ++i)
+        groups_by_size[remaining[i]].push_back(i);
+
+    // Returns the next group to select (largest, LIFO, with lazy re-bucketing
+    // of groups that shrank below their current bucket), or -1 when none with
+    // more than one element remains.
+    auto next_top = [&]() -> int {
+        while (max_size > 1) {
+            auto &bucket = groups_by_size[max_size];
+            while (!bucket.empty()) {
+                int cand = bucket.back();
+                bucket.pop_back();
+                if (remaining[cand] == max_size) return cand;
+                groups_by_size[remaining[cand]].push_back(cand);
+            }
+            --max_size;
+        }
+        return -1;
+    };
 
     AtomSet covered;
     std::vector<std::vector<ConditionPtr>> result;
-
-    while (true) {
-        int best = -1;
-        int best_size = 1; // we only pick multi-element groups
-        /*
-          Tie-breaking direction matters: Python's GroupCoverQueue pops
-          from the back of `groups_by_size[max_size]` (LIFO over the
-          input order). Use `>=` here so that among ties, the *last*
-          index wins -- matches Python's "pop from end" behaviour and
-          flips us from cpp's previous "first-of-tied" picking. On
-          blocks/probBLOCKS-4-0 this single-character change makes
-          cpp pick the "where is X" mutex grouping that Python prefers
-          rather than "what's on top of X".
-        */
-        for (int i = 0; i < n; ++i) {
-            if (remaining[i] >= best_size && remaining[i] > 1) {
-                best = i; best_size = remaining[i];
-            }
-        }
-        if (best < 0) break;
-
+    for (int top = next_top(); top >= 0; top = next_top()) {
         std::vector<ConditionPtr> chosen;
-        chosen.reserve(best_size);
-        for (const auto &a : groups[best]) {
-            if (covered.find(a) == covered.end()) chosen.push_back(a);
-        }
-        for (const auto &a : chosen) {
-            covered.insert(a);
-            if (use_partial) {
-                auto it = atom_to_groups.find(a);
-                if (it != atom_to_groups.end())
-                    for (int g : it->second) --remaining[g];
-            } else {
-                --remaining[best];
+        if (use_partial) {
+            // The live members of `top` are its still-uncovered atoms.
+            for (const auto &a : groups[top])
+                if (!covered.contains(a)) chosen.push_back(a);
+            for (const auto &a : chosen) {
+                covered.insert(a);
+                for (int g : atom_to_groups[a]) --remaining[g];
             }
+        } else {
+            chosen = groups[top];
         }
         result.push_back(std::move(chosen));
     }
 
-    // Singletons for remaining uncovered atoms.
-    std::vector<ConditionPtr> uncovered;
-    uncovered.reserve(atoms.size());
-    for (const auto &a : atoms)
-        if (covered.find(a) == covered.end()) uncovered.push_back(a);
-    std::cout << uncovered.size() << " uncovered facts" << std::endl;
-    std::sort(uncovered.begin(), uncovered.end(), atom_less);
-    for (const auto &a : uncovered) result.push_back({a});
+    AtomSet uncovered = atoms;
+    for (const auto &g : result)
+        for (const auto &a : g) uncovered.erase(a);
+    std::vector<ConditionPtr> singles(uncovered.begin(), uncovered.end());
+    std::cout << singles.size() << " uncovered facts" << std::endl;
+    std::ranges::sort(singles, atom_less);
+    for (const auto &a : singles) result.push_back({a});
     return result;
 }
 
