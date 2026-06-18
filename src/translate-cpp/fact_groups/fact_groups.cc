@@ -2,7 +2,6 @@
 
 #include "../invariants/invariant_finder.h"
 #include "../translate_options.h"
-#include "../utils/timer.h"
 
 #include <algorithm>
 #include <iostream>
@@ -219,31 +218,14 @@ ComputedGroups compute_groups(
     const std::vector<std::vector<std::vector<std::string>>>
         *reachable_action_parameters,
     const AtomSet &negative_in_goal) {
-    utils::Timer t;
     auto raw = invariants::get_groups(task, reachable_action_parameters);
-    std::cout << "    [fg.get_groups] " << t.seconds() << "s" << std::endl;
-    t.reset();
     auto instantiated = instantiate_groups(raw, task, atoms);
-    std::cout << "    [fg.instantiate_groups] " << t.seconds() << "s ("
-              << raw.size() << " groups)" << std::endl;
-    t.reset();
     auto sorted = sort_groups(std::move(instantiated));
-    std::cout << "    [fg.sort_groups1] " << t.seconds() << "s" << std::endl;
-    t.reset();
     ComputedGroups out;
     out.mutex_groups = collect_all_mutex_groups(sorted, atoms);
-    std::cout << "    [fg.collect_mutex_groups] " << t.seconds() << "s "
-              << "(" << out.mutex_groups.size() << " groups)" << std::endl;
-    t.reset();
     auto chosen = choose_groups(sorted, atoms, negative_in_goal);
-    std::cout << "    [fg.choose_groups] " << t.seconds() << "s "
-              << "(" << chosen.size() << " groups)" << std::endl;
-    t.reset();
     out.groups = sort_groups(std::move(chosen));
-    std::cout << "    [fg.sort_groups2] " << t.seconds() << "s" << std::endl;
-    t.reset();
     out.translation_key = build_translation_key(out.groups);
-    std::cout << "    [fg.translation_key] " << t.seconds() << "s" << std::endl;
     return out;
 }
 }

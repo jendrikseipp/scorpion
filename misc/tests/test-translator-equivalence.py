@@ -4,37 +4,45 @@ HELP = """\
 Check byte-for-byte equivalence of the two translator variants.
 
 For every task in a benchmark suite, run the Python translator
-(src/translate/, --translator py) and the C++ translator
-(src/translate-cpp/, --translator cpp) and compare their output.sas
-byte-for-byte. With the C++ translator's default CPython-compatible RNG
-(see src/translate-cpp/utils/cpython_random.h) the two should produce
-identical output on every task; any mismatch is reported and fails the run.
+(src/translate/, --translator py) and the C++ translator (src/translate-cpp/,
+--translator cpp) and compare their output.sas byte-for-byte. With the C++
+translator's default CPython-compatible RNG (see
+src/translate-cpp/utils/cpython_random.h) the two produce identical output on
+every task; any mismatch is reported and fails the run.
 
-By default the bundled tasks under misc/tests/benchmarks are used, but any
-other benchmark directory can be passed (e.g. downward-benchmarks). Tasks are
-discovered recursively, so both the flat domain/problem layout and nested
-layouts (e.g. the autoresearch subset) are handled.
+This checks only py-vs-cpp equivalence. Determinism of each translator is
+checked separately by test-translator.py (pass --translator cpp for the C++
+variant).
+
+By default the bundled suite under misc/tests/benchmarks is used -- it has one
+task per benchmark family, including the families that exposed past py-vs-cpp
+divergences (assembly, freecell, psr-middle, psr-large, settlers-sat18-adl,
+thoughtful-sat14-strips, trucks-strips). Any other benchmark directory can be
+passed instead. Tasks are discovered recursively, so both the flat
+domain/problem layout and nested layouts are handled.
 
 Requires the C++ translator to be built:
     ./build.py release --with-translate-cpp
 
 Examples:
     ./test-translator-equivalence.py
-    ./test-translator-equivalence.py /path/to/downward-benchmarks gripper:prob01.pddl
     ./test-translator-equivalence.py misc/tests/benchmarks all
+    ./test-translator-equivalence.py /path/to/downward-benchmarks gripper:prob01.pddl
 """
 
 import argparse
 import filecmp
-import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 
 DIR = Path(__file__).resolve().parent
 REPO = DIR.parents[1]
 DRIVER = REPO / "fast-downward.py"
+# One-task-per-family suite (includes every family that exposed a past
+# py-vs-cpp divergence); used as the default equivalence set.
 DEFAULT_BENCHMARKS = REPO / "misc" / "tests" / "benchmarks"
 
 
@@ -96,18 +104,21 @@ def select(tasks, suite, benchmarks_dir):
 
 
 def translate(translator, domain, problem, cwd):
+    """Run one translator; return (returncode, wall-clock seconds)."""
     cmd = [sys.executable, str(DRIVER), "--translator", translator,
            "--translate", str(domain), str(problem)]
+    start = time.perf_counter()
     proc = subprocess.run(cmd, cwd=cwd, stdout=subprocess.DEVNULL,
                           stderr=subprocess.PIPE, encoding="utf-8")
-    return proc.returncode, proc.stderr
+    return proc.returncode, time.perf_counter() - start
 
 
 def main():
     p = argparse.ArgumentParser(
         description=HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("benchmarks_dir", nargs="?", default=str(DEFAULT_BENCHMARKS),
-                   help="benchmark directory (default: misc/tests/benchmarks)")
+                   help="benchmark directory (default: "
+                        "misc/tests/benchmarks)")
     p.add_argument("suite", nargs="*", default=["all"],
                    help='"all" (default), "first" (first task per domain), '
                         'or "<domain>:<problem>" entries')
@@ -123,24 +134,35 @@ def main():
     print(f"Comparing py vs cpp translator output on {len(tasks)} task(s) "
           f"from {benchmarks_dir}\n")
     identical, mismatch, errors = [], [], []
+    py_total = cpp_total = 0.0
     for domain, problem in tasks:
         name = f"{problem.parent.name}:{problem.name}"
         with tempfile.TemporaryDirectory() as tmp:
             pyd, cppd = Path(tmp) / "py", Path(tmp) / "cpp"
             pyd.mkdir(); cppd.mkdir()
-            rc_py, err_py = translate("py", domain, problem, pyd)
-            rc_cpp, err_cpp = translate("cpp", domain, problem, cppd)
+            rc_py, py_time = translate("py", domain, problem, pyd)
+            rc_cpp, cpp_time = translate("cpp", domain, problem, cppd)
+            py_total += py_time
+            cpp_total += cpp_time
+            timing = f"py {py_time:6.2f}s  cpp {cpp_time:6.2f}s"
             py_sas, cpp_sas = pyd / "output.sas", cppd / "output.sas"
             if rc_py != 0 or not py_sas.exists():
-                errors.append((name, "py failed")); print(f"ERROR  {name} (py)")
+                errors.append((name, "py failed"))
+                print(f"ERROR  {name} (py)  [{timing}]")
             elif rc_cpp != 0 or not cpp_sas.exists():
-                errors.append((name, "cpp failed")); print(f"ERROR  {name} (cpp)")
+                errors.append((name, "cpp failed"))
+                print(f"ERROR  {name} (cpp)  [{timing}]")
             elif filecmp.cmp(py_sas, cpp_sas, shallow=False):
-                identical.append(name); print(f"ok     {name}")
+                identical.append(name)
+                print(f"ok     {name}  [{timing}]")
             else:
-                mismatch.append(name); print(f"DIFFER {name}")
+                mismatch.append(name)
+                print(f"DIFFER {name}  [{timing}]")
 
-    print(f"\nsummary: {len(identical)} identical, {len(mismatch)} differ, "
+    speedup = (py_total / cpp_total) if cpp_total else float("nan")
+    print(f"\ntotal translate wall-clock: py {py_total:.2f}s, "
+          f"cpp {cpp_total:.2f}s ({speedup:.2f}x)")
+    print(f"summary: {len(identical)} identical, {len(mismatch)} differ, "
           f"{len(errors)} error(s) of {len(tasks)} tasks")
     if mismatch:
         print("byte-differing tasks:")

@@ -1,7 +1,14 @@
 __pycache__/
 /output.sas
+# stray translator artifacts written by misc/tests/test-translator.py
+/misc/tests/output.sas
+/misc/tests/translator-output-*.txt
 /sas_plan
 /sas_plan.*
 /builds/
 /misc/.tox/
 /misc/autodoc/downward-xmlrpc.secret
+
+# autoresearch: generated reference SAS outputs (regenerate with
+# `python3 misc/tests/run_translator_benchmark.py --save-sas <dir>`)
+/misc/tests/benchmarks-refs/

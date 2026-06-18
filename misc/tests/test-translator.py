@@ -37,6 +37,10 @@ def parse_args():
         "--runs-per-task",
         help="translate each task this many times and compare the outputs",
         type=int, default=3)
+    parser.add_argument(
+        "--translator", choices=["py", "cpp"], default=None,
+        help="which translator to test (default: the driver's default). "
+             "Use 'cpp' to check determinism of the C++ translator.")
     args = parser.parse_args()
     args.benchmarks_dir = Path(args.benchmarks_dir).resolve()
     return args
@@ -46,10 +50,13 @@ def get_task_name(path):
     return "-".join(str(path).split("/")[-2:])
 
 
-def translate_task(task_file):
+def translate_task(task_file, translator=None):
     print(f"Translate {get_task_name(task_file)}", flush=True)
     sys.stdout.flush()
-    cmd = [sys.executable, str(DRIVER), "--translate", str(task_file)]
+    cmd = [sys.executable, str(DRIVER)]
+    if translator:
+        cmd += ["--translator", translator]
+    cmd += ["--translate", str(task_file)]
     try:
         output = subprocess.check_output(cmd, encoding=sys.getfilesystemencoding())
     except OSError as err:
@@ -113,8 +120,8 @@ def cleanup():
         f.unlink()
 
 
-def write_combined_output(output_file, task):
-    log = translate_task(task)
+def write_combined_output(output_file, task, translator=None):
+    log = translate_task(task, translator)
     with open(output_file, "w") as combined_output:
         combined_output.write(log)
         with open("output.sas") as output_sas:
@@ -127,10 +134,10 @@ def main():
     cleanup()
     for task in get_tasks(args):
         base_file = "translator-output-0.txt"
-        write_combined_output(base_file, task)
+        write_combined_output(base_file, task, args.translator)
         for i in range(1, args.runs_per_task):
             compared_file = f"translator-output-{i}.txt"
-            write_combined_output(compared_file, task)
+            write_combined_output(compared_file, task, args.translator)
             files = [base_file, compared_file]
             try:
                 subprocess.check_call(["diff", "-q"] + files)
