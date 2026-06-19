@@ -14,15 +14,19 @@ This checks only py-vs-cpp equivalence. Determinism of each translator is
 checked separately by test-translator.py (pass --translator cpp for the C++
 variant).
 
-By default only a small, fast regression set is checked: the smallest task
-from each family that exposed a past py-vs-cpp divergence -- assembly, freecell,
-psr-large, psr-middle, settlers-sat18-adl, thoughtful-sat14-strips and
-trucks-strips (axiom/mutex/sort divergences fixed during cleanup), plus
-ged-positional and philosophers (invariant-RNG path) and miconic and logistics
-(MaxDAG variable ordering) fixed during the port. Pass an explicit suite ("all"
-or "first") and/or a different benchmark directory to check more; tasks are
-discovered recursively, so both the flat domain/problem layout and nested
-layouts are handled.
+By default only a small, fast regression set is checked: a task from each
+family that exposed a past py-vs-cpp divergence --
+  - assembly, freecell, psr-large, psr-middle, settlers-sat18-adl,
+    thoughtful-sat14-strips, trucks-strips: axiom/mutex/sort divergences;
+  - ged-positional, philosophers: invariant-finder RNG-driven exploration;
+  - miconic, logistics: MaxDAG variable ordering in multi-variable SCCs;
+  - pathways, sokoban-sat11-strips: SCC DFS visit order;
+  - blocks: GroupCoverQueue mutex tie-break direction;
+  - storage: SCC-order-dependent variable numbering;
+  - parking-sat14-strips: MaxDAG cyclic-SCC variable ordering.
+Pass an explicit suite ("all" or "first") and/or a different benchmark
+directory to check more; tasks are discovered recursively, so both the flat
+domain/problem layout and nested layouts are handled.
 
 Requires the C++ translator to be built:
     ./build.py release --with-translate-cpp
@@ -53,14 +57,19 @@ DEFAULT_BENCHMARKS = REPO / "misc" / "tests" / "benchmarks"
 # pass an explicit suite ("all", "first", or "<family>:<problem>") to override.
 DEFAULT_TASKS = [
     "assembly:prob01.pddl",
+    "blocks:probBLOCKS-4-0.pddl",
     "freecell:p01.pddl",
     "ged-positional:d-1-3.pddl",
     "logistics:p01.pddl",
     "miconic:s1-0.pddl",
+    "parking-sat14-strips:p_28_2.pddl",
+    "pathways:p12.pddl",
     "philosophers:p01-phil2.pddl",
     "psr-large:p27-s172-n25-l2-f10.pddl",
     "psr-middle:p03-s28-n2-l5-f10.pddl",
     "settlers-sat18-adl:p01.pddl",
+    "sokoban-sat11-strips:p18.pddl",
+    "storage:p23.pddl",
     "thoughtful-sat14-strips:bootstrap-typed-01.pddl",
     "trucks-strips:p05.pddl",
 ]
