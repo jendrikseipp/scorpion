@@ -38,7 +38,7 @@ std::vector<Atom> condition_to_rule_body(
     for (const auto &par : parameters) {
         result.emplace_back(
             type_predicate_name(par.type_name),
-            std::vector<Arg>{Arg(par.name)});
+            ArgList{Arg(par.name)});
     }
     if (condition && condition->kind() != Condition::Kind::TRUTH) {
         ConditionPtr cur = condition;
@@ -48,7 +48,7 @@ std::vector<Atom> condition_to_rule_body(
             for (const auto &par : q.parameters) {
                 result.emplace_back(
                     type_predicate_name(par.type_name),
-                    std::vector<Arg>{Arg(par.name)});
+                    ArgList{Arg(par.name)});
             }
             cur = q.body[0];
         }
@@ -69,7 +69,7 @@ std::vector<Atom> condition_to_rule_body(
             }
             const auto &lit = static_cast<const Literal &>(*part);
             if (!lit.negated()) {
-                std::vector<Arg> args;
+                ArgList args;
                 args.reserve(lit.args.size());
                 for (const auto &a : lit.args) args.emplace_back(a);
                 result.emplace_back(lit.predicate, std::move(args));
@@ -78,7 +78,7 @@ std::vector<Atom> condition_to_rule_body(
     }
     if (pne) {
         // @def-<symbol>(pne.args...)
-        std::vector<Arg> args;
+        ArgList args;
         args.reserve(pne->args.size());
         for (const auto &a : pne->args) args.emplace_back(a);
         result.emplace_back("@def-" + pne->symbol, std::move(args));
@@ -100,7 +100,7 @@ std::string axiom_head_predicate(int axiom_index) {
 }
 
 Atom action_head(const Action &action, int action_index) {
-    std::vector<Arg> variables;
+    ArgList variables;
     variables.reserve(action.parameters.size());
     for (const auto &p : action.parameters) variables.emplace_back(p.name);
     if (action.precondition &&
@@ -113,7 +113,7 @@ Atom action_head(const Action &action, int action_index) {
 }
 
 Atom axiom_head(const Axiom &axiom, int axiom_index) {
-    std::vector<Arg> variables;
+    ArgList variables;
     variables.reserve(axiom.parameters.size());
     for (const auto &p : axiom.parameters) variables.emplace_back(p.name);
     if (axiom.condition &&
@@ -136,7 +136,7 @@ void add_typed_object(Program &prog, const TypedObject &obj,
             chain.push_back(sup);
     for (const auto &t : chain) {
         prog.add_fact(Atom(type_predicate_name(t),
-                           std::vector<Arg>{Arg(obj.name)}));
+                           ArgList{Arg(obj.name)}));
     }
 }
 
@@ -149,14 +149,14 @@ void translate_facts(Program &prog, const Task &task) {
         if (auto *atom =
                 std::get_if<std::shared_ptr<const pddl::Atom>>(&elem)) {
             if (*atom) {
-                std::vector<Arg> args;
+                ArgList args;
                 args.reserve((*atom)->args.size());
                 for (const auto &a : (*atom)->args) args.emplace_back(a);
                 prog.add_fact(Atom((*atom)->predicate, std::move(args)));
             }
         } else if (auto *as = std::get_if<std::shared_ptr<Assign>>(&elem)) {
             if (*as && (*as)->fluent) {
-                std::vector<Arg> args;
+                ArgList args;
                 args.reserve((*as)->fluent->args.size());
                 for (const auto &a : (*as)->fluent->args)
                     args.emplace_back(a);
@@ -189,7 +189,7 @@ void build_exploration_rules(Program &prog, const Task &task) {
             std::vector<Atom> rule_body = {head};
             auto sub = condition_to_rule_body({}, eff.condition, nullptr);
             for (auto &c : sub) rule_body.push_back(std::move(c));
-            std::vector<Arg> eff_args;
+            ArgList eff_args;
             eff_args.reserve(lit.args.size());
             for (const auto &a : lit.args) eff_args.emplace_back(a);
             prog.add_rule(Rule{rule_body, Atom(lit.predicate,
@@ -203,7 +203,7 @@ void build_exploration_rules(Program &prog, const Task &task) {
                                                axiom.condition, nullptr);
         prog.add_rule(Rule{app_body, app_head});
         // External params head.
-        std::vector<Arg> eff_args;
+        ArgList eff_args;
         for (int j = 0; j < axiom.num_external_parameters; ++j)
             eff_args.emplace_back(axiom.parameters[j].name);
         Atom eff_head(axiom.name, std::move(eff_args));

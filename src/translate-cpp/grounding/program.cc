@@ -152,7 +152,7 @@ void Program::normalize() {
                                                     unbound.end());
             std::ranges::sort(sorted_unbound);
             for (const auto &v : sorted_unbound)
-                r.conditions.emplace_back("@object", std::vector<Arg>{Arg(v)});
+                r.conditions.emplace_back("@object", ArgList{Arg(v)});
         }
     }
     if (must_add_predicate) {
@@ -161,7 +161,7 @@ void Program::normalize() {
         // Snapshot objects to avoid invalidating during add_fact.
         std::vector<std::string> objs(objects.begin(), objects.end());
         for (const auto &o : objs)
-            add_fact(Atom("@object", std::vector<Arg>{Arg(o)}));
+            add_fact(Atom("@object", ArgList{Arg(o)}));
     }
     // split_duplicate_arguments
     bool printed = false;

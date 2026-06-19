@@ -3,6 +3,8 @@
 
 #include "symbols.h"
 
+#include "algorithms/small_vector.h"
+
 #include <cstddef>
 #include <functional>
 #include <ostream>
@@ -44,6 +46,15 @@ struct Arg {
     bool operator==(const Arg &o) const noexcept { return v == o.v; }
 };
 
+/*
+  Argument lists for grounding atoms. Predicate/rule arities are almost always
+  tiny (<= 4), but the model build creates millions of ground atoms, so a
+  std::vector here means millions of heap allocations. SmallVector keeps the
+  arguments inline for the common small case while staying the same size as a
+  std::vector, so it spills to the heap only for the rare high-arity atom.
+*/
+using ArgList = small_vector::SmallVector<Arg, 4>;
+
 inline std::string arg_to_string(const Arg &a) {
     return a.is_symbol() ? a.name() : std::to_string(a.position());
 }
@@ -64,12 +75,12 @@ struct Atom {
     // the per-atom hash/equality used by the grounding dedup an int compare
     // and avoids copying the predicate string into every ground atom.
     int predicate = 0;
-    std::vector<Arg> args;
+    ArgList args;
 
     Atom() = default;
-    Atom(int predicate, std::vector<Arg> args)
+    Atom(int predicate, ArgList args)
         : predicate(predicate), args(std::move(args)) {}
-    Atom(const std::string &predicate, std::vector<Arg> args)
+    Atom(const std::string &predicate, ArgList args)
         : predicate(symbols().intern(predicate)), args(std::move(args)) {}
 
     const std::string &predicate_name() const { return symbols().name(predicate); }

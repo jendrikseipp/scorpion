@@ -56,7 +56,7 @@ Rule project_rule(const Atom &target_effect,
     for (const auto &v : eff_vars)
         if (cond_vars.contains(v)) retained.push_back(v);
     std::ranges::sort(retained);
-    std::vector<Arg> args;
+    ArgList args;
     args.reserve(retained.size());
     for (const auto &v : retained) args.emplace_back(v);
     Atom effect(prog.new_predicate_name(), std::move(args));
@@ -145,7 +145,7 @@ std::vector<Rule> greedy_join(const Rule &rule, Program &prog) {
             std::vector<std::string> sorted_ret(retained.begin(),
                                                 retained.end());
             std::ranges::sort(sorted_ret);
-            std::vector<Arg> args;
+            ArgList args;
             args.reserve(sorted_ret.size());
             for (const auto &v : sorted_ret) args.emplace_back(v);
             Atom effect(prog.new_predicate_name(), std::move(args));
@@ -159,7 +159,7 @@ std::vector<Rule> greedy_join(const Rule &rule, Program &prog) {
         std::vector<std::string> sorted_eff(effect_vars.begin(),
                                             effect_vars.end());
         std::ranges::sort(sorted_eff);
-        std::vector<Arg> join_args;
+        ArgList join_args;
         join_args.reserve(sorted_eff.size());
         for (const auto &v : sorted_eff) join_args.emplace_back(v);
         Atom join_effect(prog.new_predicate_name(), std::move(join_args));

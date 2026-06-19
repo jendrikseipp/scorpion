@@ -20,7 +20,7 @@ namespace {
 std::pair<Atom, std::vector<Atom>> variables_to_numbers(
     const Atom &effect, const std::vector<Atom> &conditions) {
     std::unordered_map<std::string, int> rename;
-    std::vector<Arg> new_eff_args = effect.args;
+    ArgList new_eff_args = effect.args;
     for (std::size_t i = 0; i < effect.args.size(); ++i) {
         if (effect.args[i].is_symbol()) {
             const std::string &s = effect.args[i].name();
@@ -34,7 +34,7 @@ std::pair<Atom, std::vector<Atom>> variables_to_numbers(
     std::vector<Atom> new_conds;
     new_conds.reserve(conditions.size());
     for (const auto &c : conditions) {
-        std::vector<Arg> new_args;
+        ArgList new_args;
         new_args.reserve(c.args.size());
         for (const auto &a : c.args) {
             if (a.is_symbol()) {
@@ -77,13 +77,13 @@ public:
     virtual void fire(const Atom &new_atom, int cond_index,
                       const std::vector<Atom> &items,
                       const std::function<void(int,
-                                               std::vector<Arg> &&)>
+                                               ArgList &&)>
                           &enqueue) = 0;
 
 protected:
     // Compute effect args using one new condition match.
-    std::vector<Arg> prepare_effect(const Atom &new_atom, int cond_index) {
-        std::vector<Arg> eff_args = effect.args;
+    ArgList prepare_effect(const Atom &new_atom, int cond_index) {
+        ArgList eff_args = effect.args;
         const auto &cond = conditions[cond_index];
         for (std::size_t i = 0; i < cond.args.size(); ++i) {
             if (cond.args[i].is_position())
@@ -100,7 +100,7 @@ public:
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &,
               const std::function<void(int,
-                                       std::vector<Arg> &&)>
+                                       ArgList &&)>
                   &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
         enqueue(effect.predicate, std::move(eff_args));
@@ -166,7 +166,7 @@ public:
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &items,
               const std::function<void(int,
-                                       std::vector<Arg> &&)>
+                                       ArgList &&)>
                   &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
         std::string k = key_of(new_atom, common_positions[cond_index]);
@@ -206,7 +206,7 @@ public:
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &items,
               const std::function<void(int,
-                                       std::vector<Arg> &&)>
+                                       ArgList &&)>
                   &enqueue) override {
         if (empty_index_count > 0) return;
         // Bindings from the new_atom for cond_index already applied via
@@ -218,8 +218,8 @@ public:
             if (p != cond_index) positions.push_back(p);
 
         // Recurse over positions, building eff_args.
-        std::function<void(std::size_t, std::vector<Arg> &)> recurse =
-            [&](std::size_t k, std::vector<Arg> &args) {
+        std::function<void(std::size_t, ArgList &)> recurse =
+            [&](std::size_t k, ArgList &args) {
                 if (k == positions.size()) {
                     auto copy = args;
                     enqueue(effect.predicate, std::move(copy));
@@ -385,7 +385,7 @@ public:
         for (auto &a : initial) insert_if_new(std::move(a));
     }
     bool empty() const { return pos >= items.size(); }
-    void push(int pred, std::vector<Arg> &&args) {
+    void push(int pred, ArgList &&args) {
         ++pushes; // count every push attempt, like Python's queue.push
         insert_if_new(Atom(pred, std::move(args)));
     }
@@ -422,7 +422,7 @@ std::vector<Atom> compute_model(const Program &prog) {
         for (const auto &[ri, ci] : matches) {
             rules[ri]->update_index(next, idx, ci);
             rules[ri]->fire(next, ci, queue.items,
-                            [&](int p, std::vector<Arg> &&args) {
+                            [&](int p, ArgList &&args) {
                                 queue.push(p, std::move(args));
                             });
         }

@@ -74,4 +74,8 @@ set(TRANSLATE_SOURCES
 
 add_executable(translate ${TRANSLATE_SOURCES})
 
-target_include_directories(translate PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(translate PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    # Reusable header-only data structures shared with the search component
+    # (e.g. algorithms/small_vector.h).
+    ${CMAKE_CURRENT_SOURCE_DIR}/../search)
