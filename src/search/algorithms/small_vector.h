@@ -28,6 +28,10 @@
   short sequences (the motivating use is per-atom argument lists during
   grounding), so 2^32 elements is far more than enough and keeps the header
   small.
+
+  The interface is intentionally minimal (just what callers need). As with a
+  bare-bones vector, do not pass a reference to an existing element into
+  push_back/emplace_back: a reallocation would invalidate it mid-call.
 */
 
 namespace small_vector {
@@ -37,10 +41,12 @@ class SmallVector {
 
     std::uint32_t size_ = 0;
     std::uint32_t capacity_ = N;
+    // Inline storage and the heap pointer overlap; capacity_ tells them apart.
+    // Both members are trivial, so the union's default constructor is implicit
+    // and leaves the bytes uninitialized (we never read them before writing).
     union Storage {
         alignas(T) std::byte inline_buffer[N * sizeof(T)];
         T *heap;
-        Storage() noexcept {}
     } storage_;
 
     bool is_inline() const noexcept { return capacity_ <= N; }
@@ -79,13 +85,11 @@ class SmallVector {
         capacity_ = static_cast<std::uint32_t>(new_cap);
     }
 
-    // Move elements out of o assuming *this is freshly default-constructed
-    // (empty, inline). Leaves o empty and inline.
+    // Move elements out of o assuming *this is empty and inline (capacity_ == N,
+    // so data_ptr() refers to our inline buffer). Leaves o empty and inline.
     void move_from(SmallVector &&o) noexcept {
         if (o.is_inline()) {
-            std::uninitialized_move(o.begin(), o.end(),
-                                    std::launder(reinterpret_cast<T *>(
-                                        storage_.inline_buffer)));
+            std::uninitialized_move(o.begin(), o.end(), data_ptr());
             size_ = o.size_;
             std::destroy(o.begin(), o.end());
             o.size_ = 0;

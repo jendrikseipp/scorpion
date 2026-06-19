@@ -76,9 +76,7 @@ public:
     */
     virtual void fire(const Atom &new_atom, int cond_index,
                       const std::vector<Atom> &items,
-                      const std::function<void(int,
-                                               ArgList &&)>
-                          &enqueue) = 0;
+                      const std::function<void(int, ArgList &&)> &enqueue) = 0;
 
 protected:
     // Compute effect args using one new condition match.
@@ -99,9 +97,7 @@ public:
     void update_index(const Atom &, int, int) override {}
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &,
-              const std::function<void(int,
-                                       ArgList &&)>
-                  &enqueue) override {
+              const std::function<void(int, ArgList &&)> &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
         enqueue(effect.predicate, std::move(eff_args));
     }
@@ -165,9 +161,7 @@ public:
 
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &items,
-              const std::function<void(int,
-                                       ArgList &&)>
-                  &enqueue) override {
+              const std::function<void(int, ArgList &&)> &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
         std::string k = key_of(new_atom, common_positions[cond_index]);
         int other = 1 - cond_index;
@@ -205,9 +199,7 @@ public:
 
     void fire(const Atom &new_atom, int cond_index,
               const std::vector<Atom> &items,
-              const std::function<void(int,
-                                       ArgList &&)>
-                  &enqueue) override {
+              const std::function<void(int, ArgList &&)> &enqueue) override {
         if (empty_index_count > 0) return;
         // Bindings from the new_atom for cond_index already applied via
         // prepare_effect.
