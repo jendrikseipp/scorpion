@@ -4,6 +4,7 @@
 #include <climits>
 #include <iostream>
 #include <memory>
+#include <memory_resource>
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
@@ -358,7 +359,12 @@ private:
             return (*items)[a] == (*items)[b];
         }
     };
-    std::unordered_set<int, IdxHash, IdxEq> seen;
+    // The dedup set only ever grows, so allocate its nodes from a monotonic
+    // arena (bump-allocate, freed all at once on destruction) instead of a
+    // per-node malloc/free. This removes the allocator churn that dominated
+    // grounding. `pool` must be declared before `seen` so it outlives it.
+    std::pmr::monotonic_buffer_resource pool;
+    std::pmr::unordered_set<int, IdxHash, IdxEq> seen;
 
     // Append `a` to items, keep it only if not already seen.
     void insert_if_new(Atom &&a) {
@@ -373,7 +379,7 @@ private:
 
 public:
     explicit AtomQueue(std::vector<Atom> initial)
-        : seen(0, IdxHash{&hashes}, IdxEq{&items}) {
+        : seen(0, IdxHash{&hashes}, IdxEq{&items}, &pool) {
         // Matches Python's `num_pushes = len(atoms)` initial count.
         pushes = initial.size();
         for (auto &a : initial) insert_if_new(std::move(a));
