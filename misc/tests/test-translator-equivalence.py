@@ -15,11 +15,14 @@ checked separately by test-translator.py (pass --translator cpp for the C++
 variant).
 
 By default only a small, fast regression set is checked: the smallest task
-from each family that exposed a past py-vs-cpp divergence (assembly, freecell,
-psr-large, psr-middle, settlers-sat18-adl, thoughtful-sat14-strips,
-trucks-strips). Pass an explicit suite ("all" or "first") and/or a different
-benchmark directory to check more; tasks are discovered recursively, so both
-the flat domain/problem layout and nested layouts are handled.
+from each family that exposed a past py-vs-cpp divergence -- assembly, freecell,
+psr-large, psr-middle, settlers-sat18-adl, thoughtful-sat14-strips and
+trucks-strips (axiom/mutex/sort divergences fixed during cleanup), plus
+ged-positional and philosophers (invariant-RNG path) and miconic and logistics
+(MaxDAG variable ordering) fixed during the port. Pass an explicit suite ("all"
+or "first") and/or a different benchmark directory to check more; tasks are
+discovered recursively, so both the flat domain/problem layout and nested
+layouts are handled.
 
 Requires the C++ translator to be built:
     ./build.py release --with-translate-cpp
@@ -51,6 +54,10 @@ DEFAULT_BENCHMARKS = REPO / "misc" / "tests" / "benchmarks"
 DEFAULT_TASKS = [
     "assembly:prob01.pddl",
     "freecell:p01.pddl",
+    "ged-positional:d-1-3.pddl",
+    "logistics:p01.pddl",
+    "miconic:s1-0.pddl",
+    "philosophers:p01-phil2.pddl",
     "psr-large:p27-s172-n25-l2-f10.pddl",
     "psr-middle:p03-s28-n2-l5-f10.pddl",
     "settlers-sat18-adl:p01.pddl",
