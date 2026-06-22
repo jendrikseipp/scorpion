@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <sstream>
@@ -422,8 +423,18 @@ std::optional<SASOperator> translate_strips_operator_aux(
             add_conds_by_var[var].push_back(conds);
         }
     }
-    std::map<int, std::map<int, std::vector<std::unordered_map<int, int>>>>
-        del_effects_by_var;
+    // Collect del effects. Python stores the translated effect-condition dicts
+    // by reference and shares the SAME dict objects across all full-encoding
+    // representations of a deleted fact (list.extend of the same objects). The
+    // none-of-those loop below then mutates them in place (cond[var] = val), so
+    // the "deleted value was true" guard ACCUMULATES across a fact's
+    // representations in the order the variables are first encountered. We
+    // reproduce this exactly with shared condition maps processed in insertion
+    // order; the accumulation is what makes the encoding byte-identical to
+    // Python under --full-encoding (e.g. cavediving-14-adl).
+    using CondPtr = std::shared_ptr<std::unordered_map<int, int>>;
+    std::vector<int> del_var_order;
+    std::unordered_map<int, std::vector<std::pair<int, CondPtr>>> del_by_var;
     for (const auto &[conds, fact] : op.del_effects) {
         if (!fact) continue;
         auto eff_cond_list =
@@ -433,37 +444,43 @@ std::optional<SASOperator> translate_strips_operator_aux(
         const auto &flit = static_cast<const Literal &>(*fact);
         auto it = dict.find(atom_key_scratch(flit.predicate, flit.args));
         if (it == dict.end()) continue;
+        // One shared condition object per translated effect-condition, reused
+        // across every representation of this deleted fact.
+        std::vector<CondPtr> shared;
+        shared.reserve(eff_cond_list->size());
+        for (const auto &ec : *eff_cond_list)
+            shared.push_back(std::make_shared<std::unordered_map<int, int>>(ec));
         for (const auto &[var, val] : it->second) {
-            for (const auto &ec : *eff_cond_list)
-                del_effects_by_var[var][val].push_back(ec);
+            if (!del_by_var.contains(var)) del_var_order.push_back(var);
+            for (const auto &sp : shared)
+                del_by_var[var].emplace_back(val, sp);
         }
     }
-    // For each del-effect var, compute "no add effect triggers" and add
-    // none-of-those.
-    for (auto &[var, vals] : del_effects_by_var) {
+    // For each del-effect var (in insertion order), add the var=none_of_those
+    // effect guarded by "the deleted value held and no add effect triggers".
+    for (int var : del_var_order) {
         auto no_add = negate_and_translate_condition(
             add_conds_by_var[var], dict, ranges, mutex_dict, mutex_ranges);
         if (!no_add) continue;
         int none_of_those = ranges[var] - 1;
-        for (auto &[val, conds] : vals) {
-            for (auto &cond : conds) {
-                auto cit = cond.find(var);
-                if (cit != cond.end() && cit->second != val) continue;
-                cond[var] = val;
-                for (const auto &no_add_cond : *no_add) {
-                    std::unordered_map<int, int> new_cond = cond;
-                    bool bad = false;
-                    for (const auto &[cv, cval] : no_add_cond) {
-                        auto pit = new_cond.find(cv);
-                        if (pit != new_cond.end() && pit->second != cval) {
-                            bad = true; break;
-                        }
-                        new_cond[cv] = cval;
+        for (auto &[val, cond_ptr] : del_by_var[var]) {
+            auto &cond = *cond_ptr;
+            auto cit = cond.find(var);
+            if (cit != cond.end() && cit->second != val) continue;
+            cond[var] = val;  // mutate the shared condition (guards accumulate)
+            for (const auto &no_add_cond : *no_add) {
+                std::unordered_map<int, int> new_cond = cond;
+                bool bad = false;
+                for (const auto &[cv, cval] : no_add_cond) {
+                    auto pit = new_cond.find(cv);
+                    if (pit != new_cond.end() && pit->second != cval) {
+                        bad = true; break;
                     }
-                    if (!bad)
-                        effects_by_variable[var][none_of_those].push_back(
-                            std::move(new_cond));
+                    new_cond[cv] = cval;
                 }
+                if (!bad)
+                    effects_by_variable[var][none_of_those].push_back(
+                        std::move(new_cond));
             }
         }
     }
