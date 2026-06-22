@@ -3,7 +3,6 @@
 #include "helper_functions.h"
 
 #include <algorithm>
-#include <iterator>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -23,31 +22,52 @@ using Reachability::SPURIOUS;
 
 Op_h2::Op_h2(
     const Operator &op, const vector<vector<unsigned>> &atom_index,
-    const vector<vector<unordered_set<Atom>>> &inconsistent_atoms,
+    const vector<vector<vector<unsigned>>> &inconsistent_atom_indices,
     bool regression) {
     if (op.is_redundant()) {
         triggered = SPURIOUS;
-    } else {
-        triggered = NOT_REACHED;
+        return;
     }
+    triggered = NOT_REACHED;
+
+    // Compute total atoms for bitset sizing
+    unsigned total_atoms = 0;
+    for (const auto &var_atoms : atom_index)
+        total_atoms += var_atoms.size();
+
+    pre.reserve(
+        op.get_prevail().size() + op.get_pre_post().size() +
+        op.get_augmented_preconditions().size());
+    add.reserve(
+        op.get_pre_post().size() + op.get_potential_preconditions().size());
 
     if (regression) {
-        instantiate_operator_backward(op, atom_index, inconsistent_atoms);
+        instantiate_operator_backward(
+            op, atom_index, inconsistent_atom_indices);
     } else {
-        instantiate_operator_forward(op, atom_index, inconsistent_atoms);
+        instantiate_operator_forward(
+            op, atom_index, inconsistent_atom_indices);
     }
 
+    // Sort pre and add by atom id. run_fixpoint's precondition check assumes
+    // pre is in increasing order (so pair offsets need no min/max), and the
+    // output is canonical.
     sort(pre.begin(), pre.end());
     sort(add.begin(), add.end());
-    sort(del.begin(), del.end());
 
-    // Remove add atoms from delete list.
-    vector<unsigned int> temp_deletes;
+    // instantiate_operator_* appended (possibly duplicate) del candidates to
+    // `del`. Sort + unique them, then drop any atom that is also added.
+    sort(del.begin(), del.end());
+    del.erase(unique(del.begin(), del.end()), del.end());
+    vector<unsigned> kept_del;
+    kept_del.reserve(del.size());
     set_difference(
         del.begin(), del.end(), add.begin(), add.end(),
-        back_inserter(temp_deletes));
-    del.swap(temp_deletes);
-    sort(del.begin(), del.end());
+        back_inserter(kept_del));
+    del.swap(kept_del);
+
+    if (pre.empty())
+        triggered = REACHED;
 }
 
 bool compute_h2_mutexes(
@@ -78,63 +98,66 @@ bool compute_h2_mutexes(
             } else {
                 update_progression = false;
             }
-            if (regression && disable_bw_h2)
-                continue;
+            if (!(regression && disable_bw_h2)) {
+                cout << "Running " << (regression ? "backward" : "forward")
+                     << " mutex detection and operator pruning..." << endl;
+                int mutexes_detected;
+                try {
+                    mutexes_detected = h2.compute(
+                        variables, operators, axioms, initial_state, goals, mutexes,
+                        regression);
+                } catch (const TimeoutException &) {
+                    mutexes_detected = TIMEOUT;
+                }
+                if (mutexes_detected == TIMEOUT) {
+                    break;
+                } else if (mutexes_detected == UNSOLVABLE) {
+                    return false;
+                }
+                cout << "  Mutexes detected ("
+                     << (regression ? "backward" : "forward")
+                     << "): " << mutexes_detected << endl;
 
-            cout << "Running " << (regression ? "backward" : "forward")
-                 << " mutex detection and operator pruning..." << endl;
-            int mutexes_detected;
-            try {
-                mutexes_detected = h2.compute(
-                    variables, operators, axioms, initial_state, goals, mutexes,
-                    regression);
-            } catch (const TimeoutException &) {
-                mutexes_detected = TIMEOUT;
-            }
-            if (mutexes_detected == TIMEOUT) {
-                break;
-            } else if (mutexes_detected == UNSOLVABLE) {
-                return false;
-            }
-            cout << "  Mutexes detected ("
-                 << (regression ? "backward" : "forward")
-                 << "): " << mutexes_detected << endl;
+                if (regression)
+                    total_mutexes_bw += mutexes_detected;
+                else
+                    total_mutexes_fw += mutexes_detected;
 
-            if (regression)
-                total_mutexes_bw += mutexes_detected;
-            else
-                total_mutexes_fw += mutexes_detected;
+                int unreachable_result = 0;
+                if (mutexes_detected) {
+                    cout << "  Detecting unreachable fluents..." << endl;
+                    try {
+                        unreachable_result = h2.detect_unreachable_atoms(
+                            variables, initial_state, goals);
+                    } catch (const TimeoutException &) {
+                        unreachable_result = TIMEOUT;
+                    }
+                    if (unreachable_result == TIMEOUT) {
+                        break;
+                    } else if (unreachable_result == UNSOLVABLE) {
+                        return false;
+                    }
+                    cout << "  Unreachable fluents found: " << unreachable_result
+                         << endl;
+                } else {
+                    cout << "  Skipping unreachable-fluent detection (no new h2 facts)." << endl;
+                }
+                bool unreachable_detected = unreachable_result != 0;
 
-            cout << "  Detecting unreachable fluents..." << endl;
-            int unreachable_result;
-            try {
-                unreachable_result = h2.detect_unreachable_atoms(
-                    variables, initial_state, goals);
-            } catch (const TimeoutException &) {
-                unreachable_result = TIMEOUT;
-            }
-            if (unreachable_result == TIMEOUT) {
-                break;
-            } else if (unreachable_result == UNSOLVABLE) {
-                return false;
-            }
-            bool unreachable_detected = unreachable_result != 0;
-            cout << "  Unreachable fluents found: " << unreachable_result
-                 << endl;
+                bool spurious_detected = false;
+                cout << "  Removing spurious operators..." << endl;
+                try {
+                    spurious_detected = h2.remove_spurious_operators(operators);
+                } catch (const TimeoutException &) {
+                    break;
+                }
+                cout << "  Spurious operators removed." << endl;
 
-            cout << "  Removing spurious operators..." << endl;
-            bool spurious_detected;
-            try {
-                spurious_detected = h2.remove_spurious_operators(operators);
-            } catch (const TimeoutException &) {
-                break;
+                update_progression |= spurious_detected || unreachable_detected ||
+                                      (regression && mutexes_detected);
+                update_regression |= spurious_detected || unreachable_detected ||
+                                     (!regression && mutexes_detected);
             }
-            cout << "  Spurious operators removed." << endl;
-
-            update_progression |= spurious_detected || unreachable_detected ||
-                                  (regression && mutexes_detected);
-            update_regression |= spurious_detected || unreachable_detected ||
-                                 (!regression && mutexes_detected);
         }
         regression = !regression;
         cout << "Time after iteration " << num_iterations << ": "
@@ -156,26 +179,29 @@ int H2Mutexes::detect_unreachable_atoms(
     do {
         new_unreachable = false;
         for (int i = 0; i < num_vars; i++) {
-            int count = 0;
-            Atom static_fluent = Atom::no_atom;
-            for (int j = 0; count < 2 && j < domain_sizes[i]; j++) {
-                if (!is_unreachable(i, j)) {
-                    count++;
-                    static_fluent = Atom{i, j};
+            if (domain_sizes[i] - num_unreachable_by_var[i] != 1)
+                continue;
+
+            int static_value = -1;
+            for (int j = 0; j < domain_sizes[i]; j++) {
+                if (!is_unreachable_by_id(atom_index[i][j])) {
+                    static_value = j;
+                    break;
                 }
             }
             // If there is only one possible fluent, this fluent is static.
-            if (count == 1) {
+            if (static_value != -1) {
+                unsigned static_atom_id = atom_index[i][static_value];
                 // If it was not detected as static before.
-                if (!static_atoms.count(static_fluent)) {
-                    static_atoms.insert(static_fluent);
+                if (!static_atoms[static_atom_id]) {
+                    static_atoms[static_atom_id] = 1;
 
                     // Set inconsistent with everything else.
-                    const unordered_set<Atom> &inconsistent =
-                        inconsistent_atoms[static_fluent.var]
-                                          [static_fluent.value];
-                    for (const auto &it : inconsistent) {
-                        if (!is_unreachable(it.var, it.value)) {
+                    const vector<unsigned> &inconsistent_ids =
+                        inconsistent_atom_indices[i][static_value];
+                    for (unsigned atom_id : inconsistent_ids) {
+                        const Atom &it = atom_index_reverse[atom_id];
+                        if (!is_unreachable_by_id(atom_id)) {
                             if (!set_unreachable(
                                     it.var, it.value, variables, initial_state,
                                     goals))
@@ -201,7 +227,8 @@ bool H2Mutexes::set_unreachable(
         if (goal_var == variables[var] && goal_val == val)
             return false;
 
-    unreachable[var][val] = true;
+    unreachable_atoms[atom_index[var][val]] = 1;
+    ++num_unreachable_by_var[var];
     if (variables[var]->is_reachable(val)) {
         cout << "  Marking unreachable: " << variables[var]->get_atom_name(val)
              << endl;
@@ -255,15 +282,19 @@ bool H2Mutexes::initialize(
         }
     }
 
-    unreachable.resize(num_vars);
-    for (int i = 0; i < num_vars; i++) {
-        unreachable[i].resize(domain_sizes[i], false);
-    }
+    static_atoms.assign(num_atoms, 0);
+    unreachable_atoms.assign(num_atoms, 0);
+    num_unreachable_by_var.assign(num_vars, 0);
 
-    inconsistent_atoms.resize(num_vars);
+    inconsistent_atom_indices.resize(num_vars);
     for (int i = 0; i < num_vars; i++) {
-        inconsistent_atoms[i].resize(domain_sizes[i]);
-        //  cout << i << "-" << num_vals[i] << endl;
+        inconsistent_atom_indices[i].resize(domain_sizes[i]);
+        // Each value gets at least the D-1 same-variable mutexes, plus slack
+        // for cross-variable ones.
+        size_t index_capacity =
+            (domain_sizes[i] > 0 ? domain_sizes[i] - 1 : 0) + 8;
+        for (int j = 0; j < domain_sizes[i]; ++j)
+            inconsistent_atom_indices[i][j].reserve(index_capacity);
     }
     // Initialize everything to NOT_REACHED (mutexes will be set to spurious).
     // Store full upper triangle including diagonal: num_atoms * (num_atoms + 1)
@@ -295,14 +326,18 @@ bool H2Mutexes::initialize(
     }
     assert(atom_pair_offsets.size() == num_atoms);
 
-    // Set to spurious variables with themselves.
+    // Different values of the same variable are always mutex. Record them in
+    // inconsistent_atom_indices so the hot paths iterate one combined mutex
+    // list. (Cross-variable mutexes are added later from the input mutex
+    // groups and during collect_mutexes.)
     for (int var = 0; var < num_vars; ++var) {
         for (int val1 = 0; val1 < domain_sizes[var]; ++val1) {
             int atom1_id = atom_index[var][val1];
             for (int val2 = val1 + 1; val2 < domain_sizes[var]; ++val2) {
                 int atom2_id = atom_index[var][val2];
-                unsigned pos = get_atom_pair_id(atom1_id, atom2_id);
-                mutex_status[pos] = SPURIOUS;
+                mutex_status[get_atom_pair_id(atom1_id, atom2_id)] = SPURIOUS;
+                inconsistent_atom_indices[var][val1].push_back(atom2_id);
+                inconsistent_atom_indices[var][val2].push_back(atom1_id);
             }
         }
     }
@@ -327,13 +362,19 @@ bool H2Mutexes::initialize(
                        groups which lead to *some* redundant mutexes,
                        where some but not all atoms talk about the
                        same variable. */
-                    inconsistent_atoms[atom1.var][atom1.value].insert(atom2);
-                    inconsistent_atoms[atom2.var][atom2.value].insert(atom1);
+                    unsigned atom1_id = atom_index[atom1.var][atom1.value];
+                    unsigned atom2_id = atom_index[atom2.var][atom2.value];
+                    // Use mutex_status as the dedup oracle: a pair may appear in
+                    // several mutex groups, so only record it the first time.
+                    unsigned pair = get_atom_pair_id(atom1_id, atom2_id);
+                    if (mutex_status[pair] != SPURIOUS) {
+                        inconsistent_atom_indices[atom1.var][atom1.value]
+                            .push_back(atom2_id);
+                        inconsistent_atom_indices[atom2.var][atom2.value]
+                            .push_back(atom1_id);
+                        mutex_status[pair] = SPURIOUS;
+                    }
 
-                    // Set the pairs that are mutex as spurious.
-                    mutex_status[get_atom_pair_id(
-                        atom_index[atom1.var][atom1.value],
-                        atom_index[atom2.var][atom2.value])] = SPURIOUS;
                 }
             }
         }
@@ -396,31 +437,6 @@ bool H2Mutexes::init_values_progression(
     return true;
 }
 
-bool H2Mutexes::check_initial_state_is_dead_end(
-    const vector<Variable *> &variables, const State &initial_state) const {
-    // Pre-compute fluent indices once
-    vector<unsigned> initial_fluents;
-    initial_fluents.reserve(variables.size());
-    for (unsigned i = 0; i < variables.size(); i++) {
-        int var = variables[i]->get_level();
-        initial_fluents.push_back(atom_index[var][initial_state[variables[i]]]);
-    }
-
-    // Check with cached position calculations
-    for (unsigned i = 0; i < initial_fluents.size(); i++) {
-        unsigned fluent1 = initial_fluents[i];
-        for (unsigned j = 0; j < initial_fluents.size(); j++) {
-            if (i == j)
-                continue;
-            unsigned pos = get_atom_pair_id(fluent1, initial_fluents[j]);
-            if (mutex_status[pos] == SPURIOUS) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 bool H2Mutexes::check_goal_state_is_unreachable(
     const vector<pair<Variable *, int>> &goal) const {
     // Pre-compute goal fluent indices once
@@ -459,19 +475,51 @@ bool H2Mutexes::init_values_regression(
         }
     }
 
-    // The things that are mutex with the goal are not reached.
+    // Collect all atom IDs that should be NOT_REACHED, then apply them in one
+    // sequential sweep through mutex_status below. The sweep visits every pair
+    // (~num_atoms^2/2 entries), which is more work than touching just the
+    // affected pairs, but it stays cache-friendly instead of scattering random
+    // writes across mutex_status -- and a full scan over mutex_status follows
+    // immediately anyway.
+    vector<bool> should_be_not_reached(num_atoms, false);
+    bool any_not_reached = false;
+
     for (const auto &[var_ptr, val] : goal) {
         int goal_var = var_ptr->get_level();
         int goal_val = val;
 
-        const unordered_set<Atom> &goal_mutexes =
-            inconsistent_atoms[goal_var][goal_val];
-        for (const auto &it : goal_mutexes) {
-            set_atom_not_reached(atom_index[it.var][it.value]);
+        for (unsigned aid : inconsistent_atom_indices[goal_var][goal_val]) {
+            if (!should_be_not_reached[aid]) {
+                should_be_not_reached[aid] = true;
+                any_not_reached = true;
+            }
         }
         for (int val1 = 0; val1 < domain_sizes[goal_var]; val1++) {
             if (val1 != goal_val) {
-                set_atom_not_reached(atom_index[goal_var][val1]);
+                unsigned aid = atom_index[goal_var][val1];
+                if (!should_be_not_reached[aid]) {
+                    should_be_not_reached[aid] = true;
+                    any_not_reached = true;
+                }
+            }
+        }
+    }
+
+    if (any_not_reached) {
+        // Single sequential sweep through mutex_status to apply all not-reached markers
+        for (unsigned atom1 = 0; atom1 < num_atoms; atom1++) {
+            bool snr1 = should_be_not_reached[atom1];
+            // Diagonal entry
+            unsigned diag = get_atom_pair_id(atom1, atom1);
+            if (snr1 && mutex_status[diag] == REACHED)
+                mutex_status[diag] = NOT_REACHED;
+            // Off-diagonal entries (atom1, atom2) for atom2 > atom1
+            unsigned pair_id = atom_pair_offsets[atom1] + atom1 + 1;
+            for (unsigned atom2 = atom1 + 1; atom2 < num_atoms; atom2++, pair_id++) {
+                if ((snr1 || should_be_not_reached[atom2]) &&
+                    mutex_status[pair_id] == REACHED) {
+                    mutex_status[pair_id] = NOT_REACHED;
+                }
             }
         }
     }
@@ -521,7 +569,7 @@ void H2Mutexes::init_h2_operators(
             check_timeout();
         }
         h2_ops.emplace_back(
-            operators[i], atom_index, inconsistent_atoms, regression);
+            operators[i], atom_index, inconsistent_atom_indices, regression);
     }
 
     if (!axioms.empty()) {
@@ -530,120 +578,216 @@ void H2Mutexes::init_h2_operators(
     }
 }
 
-// Apply a single operator and update reachability.
-// Returns true if any new pairs were marked as reachable.
-bool H2Mutexes::apply_operator(unsigned op_id, vector<bool> &in_add_or_del) {
-    bool updated = false;
-
-    // Skip spurious operators
-    if (h2_ops[op_id].triggered == SPURIOUS)
-        return false;
-
-    // Check if preconditions are met
-    if ((h2_ops[op_id].triggered != REACHED) &&
-        ((h2_ops[op_id].triggered = evaluate_atoms(h2_ops[op_id].pre)) !=
-         REACHED))
-        return false;
-
-    const vector<unsigned> &op_add = h2_ops[op_id].add;
-    const vector<unsigned> &op_del = h2_ops[op_id].del;
-    const vector<unsigned> &op_pre = h2_ops[op_id].pre;
-
-    // Build lookup table for O(1) membership test
-    for (unsigned atom_id : op_add) {
-        in_add_or_del[atom_id] = true;
-    }
-    for (unsigned atom_id : op_del) {
-        in_add_or_del[atom_id] = true;
-    }
-
-    // First pass: update individual atoms and pairs within add effects
-    for (unsigned add_i = 0; add_i < op_add.size(); add_i++) {
-        unsigned p = op_add[add_i];
-
-        // Mark individual atom as reached (diagonal entry)
-        unsigned diag_p = get_atom_pair_id(p, p);
-        if (mutex_status[diag_p] == NOT_REACHED) {
-            mutex_status[diag_p] = REACHED;
-            updated = true;
-        }
-
-        for (unsigned add_j = add_i + 1; add_j < op_add.size(); add_j++) {
-            unsigned q = op_add[add_j];
-            unsigned pos_pq = get_atom_pair_id(p, q);
-            if (mutex_status[pos_pq] == NOT_REACHED) {
-                mutex_status[pos_pq] = REACHED;
-                updated = true;
-            }
-        }
-    }
-
-    // Second pass: check all atoms and pair with add effects
-    size_t cache_base = op_id * num_atoms;
-    for (unsigned atom_i = 0; atom_i < num_atoms; atom_i++) {
-        if (operator_atom_cache[cache_base + atom_i])
-            continue;
-
-        // Check if individual atom is reached (diagonal entry)
-        unsigned diag_atom_i = get_atom_pair_id(atom_i, atom_i);
-        if (mutex_status[diag_atom_i] != REACHED)
-            continue;
-
-        if (in_add_or_del[atom_i])
-            continue;
-
-        // Check preconditions with atom_i
-        bool satisfied = true;
-        for (unsigned pre_i = 0; satisfied && pre_i < op_pre.size(); pre_i++) {
-            unsigned pre_atom = op_pre[pre_i];
-            satisfied =
-                (mutex_status[get_atom_pair_id(atom_i, pre_atom)] == REACHED);
-        }
-
-        if (satisfied) {
-            operator_atom_cache[cache_base + atom_i] = true;
-
-            for (unsigned add_i = 0; add_i < op_add.size(); add_i++) {
-                unsigned p = op_add[add_i];
-                if (atom_i == p)
-                    continue;
-                unsigned pos = get_atom_pair_id(p, atom_i);
-                if (mutex_status[pos] == NOT_REACHED) {
-                    mutex_status[pos] = REACHED;
-                    updated = true;
-                }
-            }
-        }
-    }
-
-    // Reset lookup table
-    for (unsigned atom_id : op_add) {
-        in_add_or_del[atom_id] = false;
-    }
-    for (unsigned atom_id : op_del) {
-        in_add_or_del[atom_id] = false;
-    }
-
-    return updated;
-}
+// run_fixpoint inlines the operator application logic for better delta tracking.
 
 // Run the fixpoint computation to determine reachable atom pairs.
 // Throws TimeoutException if time limit exceeded.
 void H2Mutexes::run_fixpoint() {
-    vector<bool> in_add_or_del(num_atoms, false);
+    // Precompute which atoms are individually reached (diagonal entry)
+    // and maintain a list of reached atom IDs for efficient iteration.
+    vector<unsigned> reached_atoms;
+    reached_atoms.reserve(num_atoms);
+    for (unsigned a = 0; a < num_atoms; a++) {
+        if (mutex_status[atom_pair_offsets[a] + a] == REACHED) {
+            reached_atoms.push_back(a);
+        }
+    }
+
+    vector<uint8_t> in_add_or_del(num_atoms, 0);
+
+    // Track per-operator: was it already triggered in a previous iteration?
+    vector<uint8_t> was_triggered(h2_ops.size(), 0);
+    // Per-operator: index into reached_atoms up to which atoms have been checked
+    vector<size_t> op_checked_up_to(h2_ops.size(), 0);
+    // Per-operator: list of atoms that failed precondition check, and for each
+    // the precondition atom that blocked it (mutex_status[blocker, atom] was
+    // not REACHED). mutex_status is monotone, so on recheck we first test just
+    // that one pair (O(1)) and only re-scan all preconditions if it flipped.
+    vector<vector<unsigned>> op_failed_atoms(h2_ops.size());
+    vector<vector<unsigned>> op_failed_blocker(h2_ops.size());
 
     bool updated;
     do {
         updated = false;
         for (unsigned op_id = 0; op_id < h2_ops.size(); op_id++) {
-            // Check timeout every 1000 operators for fine-grained control
             if (op_id % 1000 == 0) {
                 check_timeout();
             }
 
-            updated |= apply_operator(op_id, in_add_or_del);
+            if (h2_ops[op_id].triggered == SPURIOUS)
+                continue;
+
+            // Check if preconditions are met. Inline the check so diagonal
+            // atom reachability can use the local is_reached array instead of
+            // re-reading diagonal entries from mutex_status.
+            bool was_already_triggered = was_triggered[op_id];
+            const vector<unsigned> &op_pre = h2_ops[op_id].pre;
+            if (h2_ops[op_id].triggered != REACHED) {
+                bool pre_reached = true;
+                for (unsigned pre_i = 0; pre_reached && pre_i < op_pre.size();
+                     pre_i++) {
+                    unsigned atom_i = op_pre[pre_i];
+                    unsigned atom_i_row = atom_pair_offsets[atom_i];
+                    if (mutex_status[atom_i_row + atom_i] != REACHED) {
+                        pre_reached = false;
+                        break;
+                    }
+                    for (unsigned pre_j = pre_i + 1;
+                         pre_reached && pre_j < op_pre.size(); pre_j++) {
+                        pre_reached =
+                            (mutex_status[atom_i_row + op_pre[pre_j]] ==
+                             REACHED);
+                    }
+                }
+                if (!pre_reached)
+                    continue;
+                h2_ops[op_id].triggered = REACHED;
+            }
+
+            // Skip if nothing to do
+            if (was_already_triggered &&
+                op_checked_up_to[op_id] >= reached_atoms.size() &&
+                op_failed_atoms[op_id].empty()) {
+                continue;
+            }
+
+            was_triggered[op_id] = 1;
+
+            const vector<unsigned> &op_add = h2_ops[op_id].add;
+            const vector<unsigned> &op_del = h2_ops[op_id].del;
+            // Returns the first precondition atom whose pair with atom_i is not
+            // REACHED (the "blocker"), or ~0u if all preconditions are met.
+            const auto find_blocker = [&](unsigned atom_i) -> unsigned {
+                unsigned atom_i_row = atom_pair_offsets[atom_i];
+                for (unsigned pre_atom : op_pre) {
+                    unsigned pos =
+                        (pre_atom < atom_i)
+                            ? (atom_pair_offsets[pre_atom] + atom_i)
+                            : (atom_i_row + pre_atom);
+                    if (mutex_status[pos] != REACHED)
+                        return pre_atom;
+                }
+                return ~0u;
+            };
+            const auto mark_pairs_with_add = [&](unsigned atom_i) {
+                unsigned atom_i_row = atom_pair_offsets[atom_i];
+                for (unsigned p : op_add) {
+                    if (atom_i == p)
+                        continue;
+                    unsigned pos =
+                        (p < atom_i) ? (atom_pair_offsets[p] + atom_i)
+                                     : (atom_i_row + p);
+                    if (mutex_status[pos] == NOT_REACHED) {
+                        mutex_status[pos] = REACHED;
+                        updated = true;
+                    }
+                }
+            };
+
+            // Build lookup table for O(1) membership test
+            for (unsigned atom_id : op_add)
+                in_add_or_del[atom_id] = 1;
+            for (unsigned atom_id : op_del)
+                in_add_or_del[atom_id] = 1;
+
+            // First pass: update individual atoms and pairs within add effects
+            for (unsigned add_i = 0; add_i < op_add.size(); add_i++) {
+                unsigned p = op_add[add_i];
+                unsigned p_row = atom_pair_offsets[p];
+                unsigned diag_p = p_row + p;
+                if (mutex_status[diag_p] == NOT_REACHED) {
+                    mutex_status[diag_p] = REACHED;
+                    reached_atoms.push_back(p);
+                    updated = true;
+                }
+                for (unsigned add_j = add_i + 1; add_j < op_add.size(); add_j++) {
+                    unsigned q = op_add[add_j];
+                    unsigned pos_pq = p_row + q;
+                    if (mutex_status[pos_pq] == NOT_REACHED) {
+                        mutex_status[pos_pq] = REACHED;
+                        updated = true;
+                    }
+                }
+            }
+
+            if (!was_already_triggered) {
+                // Newly triggered: check all reached atoms
+                vector<unsigned> new_failed;
+                vector<unsigned> new_blocker;
+                for (size_t ri = 0; ri < reached_atoms.size(); ri++) {
+                    unsigned atom_i = reached_atoms[ri];
+                    if (in_add_or_del[atom_i])
+                        continue;
+
+                    unsigned blk = find_blocker(atom_i);
+                    if (blk == ~0u) {
+                        mark_pairs_with_add(atom_i);
+                    } else {
+                        new_failed.push_back(atom_i);
+                        new_blocker.push_back(blk);
+                    }
+                }
+                op_checked_up_to[op_id] = reached_atoms.size();
+                op_failed_atoms[op_id] = std::move(new_failed);
+                op_failed_blocker[op_id] = std::move(new_blocker);
+            } else {
+                // Already triggered: re-check failed atoms + check new atoms
+                vector<unsigned> &failed = op_failed_atoms[op_id];
+                vector<unsigned> &blocker = op_failed_blocker[op_id];
+                size_t write_idx = 0;
+                for (size_t fi = 0; fi < failed.size(); fi++) {
+                    unsigned atom_i = failed[fi];
+                    if (in_add_or_del[atom_i])
+                        continue;
+
+                    // Fast path: if the cached blocking pair is still not
+                    // REACHED, atom_i is still blocked (mutex_status monotone).
+                    unsigned b = blocker[fi];
+                    unsigned bpos = (b < atom_i)
+                                        ? (atom_pair_offsets[b] + atom_i)
+                                        : (atom_pair_offsets[atom_i] + b);
+                    if (mutex_status[bpos] != REACHED) {
+                        failed[write_idx] = atom_i;
+                        blocker[write_idx] = b;
+                        write_idx++;
+                        continue;
+                    }
+
+                    unsigned blk = find_blocker(atom_i);
+                    if (blk == ~0u) {
+                        mark_pairs_with_add(atom_i);
+                    } else {
+                        failed[write_idx] = atom_i;
+                        blocker[write_idx] = blk;
+                        write_idx++;
+                    }
+                }
+                failed.resize(write_idx);
+                blocker.resize(write_idx);
+
+                size_t start = op_checked_up_to[op_id];
+                for (size_t ri = start; ri < reached_atoms.size(); ri++) {
+                    unsigned atom_i = reached_atoms[ri];
+                    if (in_add_or_del[atom_i])
+                        continue;
+
+                    unsigned blk = find_blocker(atom_i);
+                    if (blk == ~0u) {
+                        mark_pairs_with_add(atom_i);
+                    } else {
+                        failed.push_back(atom_i);
+                        blocker.push_back(blk);
+                    }
+                }
+                op_checked_up_to[op_id] = reached_atoms.size();
+            }
+
+            // Reset lookup table
+            for (unsigned atom_id : op_add)
+                in_add_or_del[atom_id] = 0;
+            for (unsigned atom_id : op_del)
+                in_add_or_del[atom_id] = 0;
         }
-        // Also check after each iteration
         check_timeout();
     } while (updated);
 }
@@ -678,7 +822,7 @@ int H2Mutexes::collect_mutexes(
         unsigned diag_pos = get_atom_pair_id(atom1_id, atom1_id);
         if (mutex_status[diag_pos] == NOT_REACHED) {
             Atom atom = atom_index_reverse[atom1_id];
-            if (!is_unreachable(atom.var, atom.value)) {
+            if (!is_unreachable_by_id(atom1_id)) {
                 num_unreachable++;
                 if (!set_unreachable(
                         atom.var, atom.value, variables, initial_state, goal)) {
@@ -710,10 +854,12 @@ int H2Mutexes::collect_mutexes(
                             mutexes.emplace_back(
                                 mut_group, variables, regression);
                         }
-                        inconsistent_atoms[atom1.var][atom1.value].insert(
-                            atom2);
-                        inconsistent_atoms[atom2.var][atom2.value].insert(
-                            atom1);
+                        // This pair transitions NOT_REACHED->SPURIOUS exactly
+                        // once, so no dedup is needed.
+                        inconsistent_atom_indices[atom1.var][atom1.value]
+                            .push_back(atom2_id);
+                        inconsistent_atom_indices[atom2.var][atom2.value]
+                            .push_back(atom1_id);
                     }
                 }
             }
@@ -750,8 +896,7 @@ int H2Mutexes::compute(
     cout << "Computing " << (regression ? "backward" : "forward")
          << " h^2 mutexes..." << endl;
 
-    // Initialize operator-atom cache
-    operator_atom_cache.assign(h2_ops.size() * num_atoms, false);
+    // Initialize operator-atom cache (no longer used - delta tracking replaces it)
 
     // Run fixpoint computation (may throw TimeoutException)
     run_fixpoint();
@@ -783,23 +928,6 @@ int H2Mutexes::compute(
     return new_mutexes;
 }
 
-Reachability H2Mutexes::evaluate_atoms(const vector<unsigned> &atoms) {
-    // Process each atom's diagonal entry and pairs sequentially in memory
-    for (unsigned i = 0; i < atoms.size(); i++) {
-        unsigned atom_i = atoms[i];
-        // Check individual atom reachability (diagonal entry)
-        unsigned diag_pos = get_atom_pair_id(atom_i, atom_i);
-        if (mutex_status[diag_pos] == NOT_REACHED)
-            return NOT_REACHED;
-        // Check pairs with remaining atoms (cache-friendly: sequential access)
-        for (unsigned j = i + 1; j < atoms.size(); j++) {
-            if (mutex_status[get_atom_pair_id(atom_i, atoms[j])] == NOT_REACHED)
-                return NOT_REACHED;
-        }
-    }
-    return REACHED;
-}
-
 void H2Mutexes::check_timeout() {
     if (limit_seconds == -1) // no limit
         return;
@@ -814,8 +942,8 @@ void H2Mutexes::check_timeout() {
 
 void Op_h2::instantiate_operator_forward(
     const Operator &op, const vector<vector<unsigned>> &atom_index,
-    const vector<vector<unordered_set<Atom>>> &inconsistent_atoms) {
-    vector<bool> prepost_var(inconsistent_atoms.size(), false);
+    const vector<vector<vector<unsigned>>> &inconsistent_atom_indices) {
+    vector<bool> prepost_var(atom_index.size(), false);
 
     const vector<Operator::Prevail> &prevail = op.get_prevail();
     for (unsigned j = 0; j < prevail.size(); j++)
@@ -829,74 +957,44 @@ void Op_h2::instantiate_operator_forward(
         push_add(atom_index, pre_post[j].var, pre_post[j].post);
         prepost_var[pre_post[j].var->get_level()] = true;
     }
-    // fluents mutex with prevails are e-deleted: add as negative effect
     for (unsigned j = 0; j < prevail.size(); j++) {
         int var = prevail[j].var->get_level();
         int prev = prevail[j].prev;
         if (var == -1)
             continue;
 
-        // fluents that belong to the same variable
-        for (int k = 0; k < static_cast<int>(atom_index[var].size()); k++)
-            if (k != prev)
-                del.push_back(atom_index[var][k]);
-
-        // fluents mutex with the prevail
-        const unordered_set<Atom> prev_mutexes = inconsistent_atoms[var][prev];
-        for (const auto &it : prev_mutexes)
-            del.push_back(atom_index[it.var][it.value]);
+        del.insert(del.end(), inconsistent_atom_indices[var][prev].begin(), inconsistent_atom_indices[var][prev].end());
     }
 
-    // Fluents mutex with adds are e-deleted: add as negative effect.
     for (unsigned j = 0; j < pre_post.size(); j++) {
         int var = pre_post[j].var->get_level();
         int post = pre_post[j].post;
 
-        if (pre_post[j].is_conditional_effect) {
+        if (pre_post[j].is_conditional_effect)
             continue;
-        }
-
         if (var == -1)
             continue;
 
-        // Fluents that belong to the same variable.
-        for (int k = 0; k < static_cast<int>(atom_index[var].size()); k++) {
-            if (k != post) {
-                del.push_back(atom_index[var][k]);
-            }
-        }
-
-        // Fluents mutex with the add.
-        const unordered_set<Atom> prev_mutexes = inconsistent_atoms[var][post];
-        for (const auto &it : prev_mutexes)
-            del.push_back(atom_index[it.var][it.value]);
+        del.insert(del.end(), inconsistent_atom_indices[var][post].begin(), inconsistent_atom_indices[var][post].end());
     }
 
-    // Augmented preconditions from the disambiguation.
     const vector<Atom> &augmented = op.get_augmented_preconditions();
     for (const Atom &atom : augmented) {
         int var = atom.var;
         int val = atom.value;
-        pre.push_back(atom_index[var][val]);
+        unsigned atom_id = atom_index[var][val];
+        pre.push_back(atom_id);
 
         if (!prepost_var[var]) {
-            // Add the mutexes as deletes.
-            int num_values = atom_index[var].size();
-            for (int k = 0; k < num_values; k++)
-                if (k != val)
-                    del.push_back(atom_index[var][k]);
-            const unordered_set<Atom> augmented_mutexes =
-                inconsistent_atoms[var][val];
-            for (const auto &it : augmented_mutexes)
-                del.push_back(atom_index[it.var][it.value]);
+            del.insert(del.end(), inconsistent_atom_indices[var][val].begin(), inconsistent_atom_indices[var][val].end());
         }
     }
 }
 
 void Op_h2::instantiate_operator_backward(
     const Operator &op, const vector<vector<unsigned>> &atom_index,
-    const vector<vector<unordered_set<Atom>>> &inconsistent_atoms) {
-    vector<bool> prepost_var(inconsistent_atoms.size(), false);
+    const vector<vector<vector<unsigned>>> &inconsistent_atom_indices) {
+    vector<bool> prepost_var(atom_index.size(), false);
 
     const vector<Operator::Prevail> &prevail = op.get_prevail();
     for (unsigned j = 0; j < prevail.size(); j++)
@@ -904,122 +1002,119 @@ void Op_h2::instantiate_operator_backward(
 
     const vector<Operator::PrePost> &pre_post = op.get_pre_post();
     for (unsigned j = 0; j < pre_post.size(); j++) {
-        if (pre_post[j].pre != -1) {
+        if (pre_post[j].pre != -1)
             push_add(atom_index, pre_post[j].var, pre_post[j].pre);
-        }
 
-        // Revise this part. Currently backward h2 is deactivated with
-        // conditional effects.
-        if (!pre_post[j].is_conditional_effect) { // naive support for
-                                                  // conditional effects
+        if (!pre_post[j].is_conditional_effect) {
             push_pre(atom_index, pre_post[j].var, pre_post[j].post);
             prepost_var[pre_post[j].var->get_level()] = true;
         }
 
-        if (pre_post[j].is_conditional_effect) { // naive support for
-                                                 // conditional effects
+        if (pre_post[j].is_conditional_effect) {
             vector<Operator::EffCond> effect_conds = pre_post[j].effect_conds;
             for (unsigned k = 0; k < effect_conds.size(); k++)
                 push_add(atom_index, effect_conds[k].var, effect_conds[k].cond);
         }
     }
 
-    // fluents mutex with prevails are e-deleted: add as negative effect
     for (unsigned j = 0; j < prevail.size(); j++) {
         int var = prevail[j].var->get_level();
         int prev = prevail[j].prev;
+        if (var == -1) continue;
 
-        if (var == -1)
-            continue;
-
-        // fluents that belong to the same variable
-        for (int k = 0; k < static_cast<int>(atom_index[var].size()); k++)
-            if (k != prev)
-                del.push_back(atom_index[var][k]);
-
-        // fluents mutex with the prevail
-        const unordered_set<Atom> prev_mutexes = inconsistent_atoms[var][prev];
-        for (const auto &it : prev_mutexes)
-            del.push_back(atom_index[it.var][it.value]);
+        del.insert(del.end(), inconsistent_atom_indices[var][prev].begin(), inconsistent_atom_indices[var][prev].end());
     }
 
-    // Fluents mutex with pres are e-deleted: add as negative effect.
     for (size_t j = 0; j < pre_post.size(); j++) {
-        if (pre_post[j].is_conditional_effect)
-            continue;
-        // pre.push_back(atom_index[prevail[j].var][prevail[j].prev]);
+        if (pre_post[j].is_conditional_effect) continue;
         int var = pre_post[j].var->get_level();
         int pre = pre_post[j].pre;
-        if (var == -1 || pre == -1)
-            continue;
+        if (var == -1 || pre == -1) continue;
 
-        // Fluents that belong to the same variable.
-        int num_values = atom_index[var].size();
-        for (int k = 0; k < num_values; k++)
-            if (k != pre)
-                del.push_back(atom_index[var][k]);
-
-        // Fluents mutex with the add.
-        const unordered_set<Atom> pre_mutexes = inconsistent_atoms[var][pre];
-        for (const auto &it : pre_mutexes)
-            del.push_back(atom_index[it.var][it.value]);
+        del.insert(del.end(), inconsistent_atom_indices[var][pre].begin(), inconsistent_atom_indices[var][pre].end());
     }
 
-    // Augmented preconditions from the disambiguation.
     const vector<Atom> &augmented = op.get_augmented_preconditions();
     for (const Atom &atom : augmented) {
         int var = atom.var;
         int val = atom.value;
-        // Add the precondition as an add.
-        if (!prepost_var[var])
-            pre.push_back(atom_index[var][val]);
+        if (!prepost_var[var]) {
+            unsigned atom_id = atom_index[var][val];
+            pre.push_back(atom_id);
+        }
 
-        // Add the mutexes as deletes.
-        int num_values = atom_index[var].size();
-        for (int k = 0; k < num_values; k++)
-            if (k != atom.value)
-                del.push_back(atom_index[var][k]);
-        const unordered_set<Atom> augmented_mutexes =
-            inconsistent_atoms[var][val];
-        for (const auto &it : augmented_mutexes)
-            del.push_back(atom_index[it.var][it.value]);
+        del.insert(del.end(), inconsistent_atom_indices[var][val].begin(), inconsistent_atom_indices[var][val].end());
     }
 
-    // Potential preconditions from the disambiguation.
+    // Potential preconditions from the disambiguation. For values of the same
+    // variable, only atoms mutex with *all* candidates are guaranteed deleted,
+    // so we take the per-variable intersection of their mutex lists.
     const vector<Atom> &potential = op.get_potential_preconditions();
-    // For each variable, the set of potential deletes to add the set of
-    // mutexes with ALL potential preconditions as deletes.
-    unordered_map<int, unordered_set<Atom>> potential_deletes;
-    for (const Atom &atom : potential) {
-        int potential_var = atom.var;
-        int potential_val = atom.value;
+    if (!potential.empty()) {
+        // Group potential preconditions by variable
+        unordered_map<int, vector<int>> potential_by_var;
+        for (const Atom &atom : potential) {
+            potential_by_var[atom.var].push_back(atom.value);
+            unsigned atom_id = atom_index[atom.var][atom.value];
+            add.push_back(atom_id);
+        }
 
-        // Add the precondition as an add.
-        add.push_back(atom_index[potential_var][potential_val]);
+        // For each variable with potential preconditions, compute the
+        // intersection of delete sets using sparse dirty lists instead of
+        // scanning all atoms.
+        unsigned total_atoms = 0;
+        for (const auto &var_atoms : atom_index)
+            total_atoms += var_atoms.size();
+        thread_local vector<uint8_t> pd_bits;
+        thread_local vector<uint8_t> pd_intersect;
+        thread_local vector<unsigned> pd_list;
+        thread_local vector<unsigned> pd_intersect_dirty;
+        if (pd_bits.size() < total_atoms) {
+            pd_bits.resize(total_atoms, false);
+            pd_intersect.resize(total_atoms, false);
+        }
 
-        // Update the potential deletes.
-        unordered_set<Atom> potential_deletes_aux =
-            inconsistent_atoms[potential_var][potential_val]; // copy
-        int num_values = atom_index[potential_var].size();
-        for (int k = 0; k < num_values; k++)
-            if (k != potential_val)
-                potential_deletes_aux.insert(atom);
+        for (const auto &[var, vals] : potential_by_var) {
+            pd_list.clear();
+            for (size_t vi = 0; vi < vals.size(); ++vi) {
+                int val = vals[vi];
+                if (vi == 0) {
+                    // Initialize from the combined mutex list (cross-var + same-var).
+                    for (unsigned idx : inconsistent_atom_indices[var][val]) {
+                        if (!pd_bits[idx]) {
+                            pd_bits[idx] = true;
+                            pd_list.push_back(idx);
+                        }
+                    }
+                } else {
+                    // Mark second set, then filter the current intersection list.
+                    for (unsigned idx : inconsistent_atom_indices[var][val]) {
+                        if (!pd_intersect[idx]) {
+                            pd_intersect[idx] = true;
+                            pd_intersect_dirty.push_back(idx);
+                        }
+                    }
 
-        if (potential_deletes.count(potential_var)) {
-            unordered_set<Atom> intersect;
-            for (const Atom &atom : potential_deletes[potential_var]) {
-                if (potential_deletes_aux.contains(atom)) {
-                    intersect.insert(atom);
+                    size_t write_idx = 0;
+                    for (unsigned idx : pd_list) {
+                        if (pd_intersect[idx]) {
+                            pd_list[write_idx++] = idx;
+                        } else {
+                            pd_bits[idx] = false;
+                        }
+                    }
+                    pd_list.resize(write_idx);
+                    for (unsigned idx : pd_intersect_dirty)
+                        pd_intersect[idx] = false;
+                    pd_intersect_dirty.clear();
                 }
             }
-            potential_deletes[potential_var].swap(intersect);
-        } else {
-            potential_deletes[potential_var].swap(potential_deletes_aux);
-        }
-    }
-    for (const auto &[var, deletes] : potential_deletes) {
-        for (const auto &atom : deletes) {
-            del.push_back(atom_index[atom.var][atom.value]);
+
+            // Append the intersection to del and clean up pd_bits.
+            for (unsigned idx : pd_list) {
+                del.push_back(idx);
+                pd_bits[idx] = false;
+            }
         }
     }
 }

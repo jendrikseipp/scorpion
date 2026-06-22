@@ -172,7 +172,7 @@ vector<int> Operator::get_signature() const {
             pp_sig.push_back(var);
             pp_sig.push_back(val);
         }
-        pp_sigs.push_back(std::move(pp_sig));
+        pp_sigs.push_back(move(pp_sig));
     }
     sort(pp_sigs.begin(), pp_sigs.end());
     for (const auto &pp_sig : pp_sigs) {
@@ -190,7 +190,7 @@ void remove_duplicate_operators(vector<Operator> &operators) {
     for (size_t i = 0; i < operators.size(); ++i) {
         if (seen.insert(operators[i].get_signature()).second) {
             if (new_index != i)
-                operators[new_index] = std::move(operators[i]);
+                operators[new_index] = move(operators[i]);
             ++new_index;
         }
     }
@@ -230,38 +230,57 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
         return;
 
     const int num_vars = h2.get_num_variables();
-    vector<int> preconditions(num_vars, -1);
-    vector<bool> original(num_vars, false);
 
-    vector<bool> effect_var(num_vars, false);
+    // Use thread_local scratch buffers to avoid repeated allocation
+    thread_local vector<int> preconditions;
+    thread_local vector<uint8_t> original;
+    thread_local vector<uint8_t> effect_var;
+    thread_local vector<int> dirty_indices;
+
+    // Ensure correct size, then full-clear the scratch state each call.
+    if (static_cast<int>(preconditions.size()) != num_vars) {
+        preconditions.assign(num_vars, -1);
+        original.assign(num_vars, false);
+        effect_var.assign(num_vars, false);
+    } else {
+        fill(preconditions.begin(), preconditions.end(), -1);
+        fill(original.begin(), original.end(), false);
+        fill(effect_var.begin(), effect_var.end(), false);
+    }
+    dirty_indices.clear();
     vector<Atom> effects;
     effects.reserve(pre_post.size());
 
     vector<Atom> known_values;
-    known_values.reserve(
-        prevail.size() + pre_post.size() + augmented_preconditions.size());
+    known_values.reserve(num_vars);
+
+    const auto mark_dirty = [&](int var) {
+        if (preconditions[var] == -1 && !original[var] && !effect_var[var])
+            dirty_indices.push_back(var);
+    };
 
     for (const Prevail &prev : prevail) {
         int var = prev.var->get_level();
         if (var != -1) {
+            mark_dirty(var);
             preconditions[var] = prev.prev;
-            known_values.emplace_back(var, prev.prev);
             original[var] = true;
         }
     }
     for (const PrePost &effect : pre_post) {
         int var = effect.var->get_level();
         if (var != -1) {
-            preconditions[var] = effect.pre;
-            known_values.emplace_back(var, effect.pre);
-            original[var] = (preconditions[var] != -1);
+            mark_dirty(var);
+            int pre = effect.pre;
+            preconditions[var] = pre;
+            original[var] = (pre != -1);
             effect_var[var] = true;
             effects.emplace_back(var, effect.post);
         }
     }
     for (const auto &atom : augmented_preconditions) {
+        mark_dirty(atom.var);
         preconditions[atom.var] = atom.value;
-        known_values.push_back(atom);
         original[atom.var] = true;
     }
 
@@ -271,114 +290,160 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
     precond_with_indices.reserve(num_vars);
     for (int i = 0; i < num_vars; i++) {
         if (preconditions[i] != -1) {
-            if (h2.is_unreachable(i, preconditions[i])) {
+            unsigned atom_id = h2.get_atom_id(i, preconditions[i]);
+            if (h2.is_unreachable_by_id(atom_id)) {
                 spurious = true;
                 return;
             }
-            precond_with_indices.emplace_back(
-                i, h2.get_atom_id(i, preconditions[i]));
+            precond_with_indices.emplace_back(i, atom_id);
         }
     }
 
     // Check pairwise mutex using precomputed indices.
+    // precond_with_indices is built in increasing variable order, and atom ids
+    // are assigned by variable order too, so the stored atom ids are ordered.
     for (size_t i = 0; i < precond_with_indices.size(); i++) {
+        unsigned atom_i = precond_with_indices[i].second;
         for (size_t j = i + 1; j < precond_with_indices.size(); j++) {
-            if (h2.are_mutex_by_index(
-                    precond_with_indices[i].second,
-                    precond_with_indices[j].second)) {
+            if (h2.are_mutex_by_ordered_index(
+                    atom_i, precond_with_indices[j].second)) {
                 spurious = true;
                 return;
             }
         }
     }
+
+    // Build "blocked" bitset: an atom is blocked if it's mutex with ANY known precondition.
+    // This replaces O(|known| * |domain|) mutex_status lookups with bitset ops.
+    int total_atoms = h2.get_num_atoms();
+
+    // Thread-local blocked bitsets to avoid allocation overhead
+    // Thread-local blocked bitsets to avoid allocation overhead.
+    thread_local vector<uint8_t> blocked;       // mutex with any known precond or same-var
+    thread_local vector<uint8_t> eff_blocked;   // mutex with any effect atom or same-var
+    // Clear the blocked bitsets (full clear each call).
+    if (static_cast<int>(blocked.size()) < total_atoms) {
+        blocked.assign(total_atoms, false);
+        eff_blocked.assign(total_atoms, false);
+    } else {
+        fill(blocked.begin(), blocked.begin() + total_atoms, false);
+        fill(eff_blocked.begin(), eff_blocked.begin() + total_atoms, false);
+    }
+
+    // Fill blocked: the mutex lists already include same-variable alternatives.
+    for (const auto &[kvar, atom_idx] : precond_with_indices) {
+        int kval = preconditions[kvar];
+        for (unsigned m : h2.get_mutex_indices(kvar, kval))
+            blocked[m] = true;
+    }
+
+    // Fill eff_blocked: effect mutex lists also include same-variable alternatives.
+    for (const Atom &eff : effects) {
+        for (unsigned m : h2.get_mutex_indices(eff.var, eff.value))
+            eff_blocked[m] = true;
+    }
+
+    // blocked already contains all constraints implied by the original
+    // preconditions/effects. known_values is used only for newly resolved
+    // values in the iterative disambiguation loop below.
+    known_values.clear();
 
     vector<pair<unsigned, vector<unsigned>>> candidates;
     candidates.reserve(num_vars);
     for (int i = 0; i < num_vars; i++) {
-        // Consider unknown preconditions only.
         if (preconditions[i] != -1)
             continue;
 
         const int num_vals = h2.get_num_values(i);
-        vector<unsigned> candidate_values;
-        candidate_values.reserve(num_vals);
-        // add every reachable fluent
-        for (int j = 0; j < num_vals; j++)
-            candidate_values.push_back(j);
+        bool check_eff = !effect_var[i];
+        int num_unreachable = h2.get_num_unreachable_values(i);
 
-        candidates.emplace_back(i, std::move(candidate_values));
-    }
 
-    // Precompute p_indices for effects (these don't change).
-    vector<unsigned> effect_indices;
-    effect_indices.reserve(effects.size());
-    for (const Atom &effect : effects) {
-        effect_indices.push_back(h2.get_atom_id(effect.var, effect.value));
-    }
-
-    // Actual disambiguation process.
-    while (!known_values.empty()) {
-        // Precompute p_indices for known_values at start of each iteration.
-        // Skip entries with value == -1 (undefined preconditions).
-        vector<unsigned> known_indices;
-        known_indices.reserve(known_values.size());
-        for (const Atom &atom : known_values) {
-            if (atom.value != -1) {
-                known_indices.push_back(h2.get_atom_id(atom.var, atom.value));
+        // Count and collect surviving values using bitset checks.
+        int reachable_count = 0;
+        vector<unsigned> surviving_values;
+        surviving_values.reserve(num_vals);
+        if (num_unreachable == 0) {
+            reachable_count = num_vals;
+            for (int j = 0; j < num_vals; j++) {
+                unsigned atom_ij = h2.get_atom_id(i, j);
+                if (!blocked[atom_ij] && !(check_eff && eff_blocked[atom_ij]))
+                    surviving_values.push_back(j);
+            }
+        } else {
+            for (int j = 0; j < num_vals; j++) {
+                unsigned atom_ij = h2.get_atom_id(i, j);
+                if (h2.is_unreachable_by_id(atom_ij))
+                    continue;
+                reachable_count++;
+                if (!blocked[atom_ij] && !(check_eff && eff_blocked[atom_ij]))
+                    surviving_values.push_back(j);
             }
         }
 
+        if (reachable_count == 0) {
+            spurious = true;
+            return;
+        }
+        if (surviving_values.empty()) {
+            spurious = true;
+            return;
+        }
+        if (surviving_values.size() == static_cast<size_t>(reachable_count) &&
+            surviving_values.size() > 1) {
+            // No values eliminated — skip
+            continue;
+        }
+        if (surviving_values.size() == 1) {
+            // Resolve directly
+            mark_dirty(i);
+            preconditions[i] = surviving_values[0];
+            known_values.emplace_back(i, surviving_values[0]);
+            continue;
+        }
+
+        // Multiple surviving values — retain only the current survivors.
+        candidates.emplace_back(i, std::move(surviving_values));
+    }
+
+    // Disambiguation loop: extend blocked set with newly resolved atoms
+    while (!known_values.empty()) {
+        // Build additional blocked atoms from newly known values
+        vector<unsigned> new_atoms;
+        for (const Atom &atom : known_values) {
+            int kvar = atom.var, kval = atom.value;
+            for (unsigned m : h2.get_mutex_indices(kvar, kval)) {
+                if (!blocked[m]) {
+                    blocked[m] = true;
+                    new_atoms.push_back(m);
+                }
+            }
+        }
+
+        if (new_atoms.empty()) break; // No new constraints
+
         vector<Atom> aux_values;
         aux_values.reserve(candidates.size());
-        // For each unknown variable.
         for (size_t cand_idx = 0; cand_idx < candidates.size();) {
             auto &[var, candidate_var] = candidates[cand_idx];
-            bool check_effects = !effect_var[var];
+            bool check_eff = !effect_var[var];
 
-            // We eliminate candidates mutex with other things.
             size_t write_idx = 0;
-            for (size_t read_idx = 0; read_idx < candidate_var.size();
-                 ++read_idx) {
-                unsigned val = candidate_var[read_idx];
-                if (h2.is_unreachable(var, val))
-                    continue;
-
-                unsigned p1 = h2.get_atom_id(var, val);
-
-                bool mutex = false;
-                for (unsigned p2 : known_indices) {
-                    if (h2.are_mutex_by_index(p1, p2)) {
-                        mutex = true;
-                        break;
-                    }
-                }
-
-                if (!mutex && check_effects) {
-                    for (unsigned p2 : effect_indices) {
-                        if (h2.are_mutex_by_index(p1, p2)) {
-                            mutex = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!mutex) {
+            for (size_t ri = 0; ri < candidate_var.size(); ri++) {
+                int val = candidate_var[ri];
+                unsigned atom_v = h2.get_atom_id(var, val);
+                if (!blocked[atom_v] && !(check_eff && eff_blocked[atom_v]))
                     candidate_var[write_idx++] = val;
-                }
             }
             candidate_var.resize(write_idx);
 
-            // We check the remaining candidates.
             if (candidate_var.empty()) {
-                // If no fluent is possible for a given variable, the operator
-                // is spurious.
                 spurious = true;
                 return;
             } else if (candidate_var.size() == 1) {
-                // Add the single possible fluent to preconditions and
-                // aux_values and remove the variable from candidates.
                 int new_val = candidate_var[0];
                 aux_values.emplace_back(var, new_val);
+                mark_dirty(var);
                 preconditions[var] = new_val;
                 candidates[cand_idx] = std::move(candidates.back());
                 candidates.pop_back();
@@ -386,17 +451,31 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
                 ++cand_idx;
             }
         }
-
         known_values.swap(aux_values);
     }
 
+
     // New preconditions are added.
-    for (int i = 0; i < num_vars; i++)
+    for (int i : dirty_indices)
         if (preconditions[i] != -1 && !original[i])
             augmented_preconditions.push_back(Atom{i, preconditions[i]});
 
     // Potential preconditions are set (important for backwards h^2)
-    // Note: they may overlap with augmented preconditions
+    // Note: they may overlap with augmented preconditions.
+    // The exact upper bound is monotone nonincreasing across repeated
+    // disambiguation calls because augmented preconditions only accumulate, so
+    // once capacity has been grown on the first call we can reuse it.
+    if (potential_preconditions.capacity() == 0) {
+        size_t potential_preconditions_upper_bound = 0;
+        for (const PrePost &effect : pre_post) {
+            if (effect.pre != -1)
+                continue;
+            int var = effect.var->get_level();
+            potential_preconditions_upper_bound +=
+                (preconditions[var] != -1) ? 1 : h2.get_num_values(var);
+        }
+        potential_preconditions.reserve(potential_preconditions_upper_bound);
+    }
     potential_preconditions.clear();
     for (const PrePost &effect : pre_post) {
         // For each undefined precondition.
@@ -409,18 +488,10 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
             continue;
         }
 
-        // For each fluent, check conflicts using precomputed indices.
+        // For each fluent, check conflicts using the blocked bitset (O(1) per value)
         for (int val = 0; val < h2.get_num_values(var); val++) {
-            unsigned p1 = h2.get_atom_id(var, val);
-            bool conflict = false;
-            for (const auto &[k, p2] : precond_with_indices) {
-                if (h2.are_mutex_by_index(p1, p2)) {
-                    conflict = true;
-                    break;
-                }
-            }
-
-            if (!conflict)
+            unsigned atom_v = h2.get_atom_id(var, val);
+            if (!blocked[atom_v])
                 potential_preconditions.emplace_back(var, val);
         }
     }

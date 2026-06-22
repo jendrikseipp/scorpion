@@ -10,7 +10,6 @@
 #include <cassert>
 #include <cstdint>
 #include <ctime>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -24,11 +23,13 @@ inline constexpr int UNSOLVABLE = -2;
 inline constexpr int TIMEOUT = -1;
 
 class Op_h2 {
+
     void push_pre(
         const std::vector<std::vector<unsigned>> &atom_index, Variable *var,
         int val) {
         if (var->get_level() >= 0) {
-            pre.push_back(atom_index[var->get_level()][val]);
+            unsigned atom = atom_index[var->get_level()][val];
+            pre.push_back(atom);
         }
     }
 
@@ -36,27 +37,30 @@ class Op_h2 {
         const std::vector<std::vector<unsigned>> &atom_index, Variable *var,
         int val) {
         if (var->get_level() >= 0) {
-            add.push_back(atom_index[var->get_level()][val]);
+            unsigned atom = atom_index[var->get_level()][val];
+            add.push_back(atom);
         }
     }
 
+    // Both append (possibly duplicate) del candidates to `del`; the Op_h2
+    // constructor then sorts, uniques, and removes add atoms.
     void instantiate_operator_backward(
         const Operator &op,
         const std::vector<std::vector<unsigned>> &atom_index,
-        const std::vector<std::vector<std::unordered_set<Atom>>>
-            &inconsistent_atoms);
+        const std::vector<std::vector<std::vector<unsigned>>>
+            &inconsistent_atom_indices);
     void instantiate_operator_forward(
         const Operator &op,
         const std::vector<std::vector<unsigned>> &atom_index,
-        const std::vector<std::vector<std::unordered_set<Atom>>>
-            &inconsistent_atoms);
+        const std::vector<std::vector<std::vector<unsigned>>>
+            &inconsistent_atom_indices);
 
 public:
     Op_h2(
         const Operator &op,
         const std::vector<std::vector<unsigned>> &atom_index,
-        const std::vector<std::vector<std::unordered_set<Atom>>>
-            &inconsistent_atoms,
+        const std::vector<std::vector<std::vector<unsigned>>>
+            &inconsistent_atom_indices,
         bool regression);
 
     std::vector<unsigned> pre;
@@ -69,9 +73,12 @@ class H2Mutexes {
     int num_vars;
     std::vector<int> domain_sizes;
 
-    std::unordered_set<Atom> static_atoms;
-    std::vector<std::vector<bool>> unreachable;
-    std::vector<std::vector<std::unordered_set<Atom>>> inconsistent_atoms;
+    std::vector<uint8_t> static_atoms;
+    std::vector<uint8_t> unreachable_atoms;
+    std::vector<int> num_unreachable_by_var;
+    // Per-atom mutex lists as atom indices, iterated by the hot paths
+    // (same-variable + cross-variable mutexes).
+    std::vector<std::vector<std::vector<unsigned>>> inconsistent_atom_indices;
 
     size_t num_atoms;
     // Reachability status for atom pairs and individual atoms (diagonal).
@@ -79,18 +86,14 @@ class H2Mutexes {
     // 1) / 2.
     std::vector<Reachability> mutex_status;
     std::vector<Op_h2> h2_ops;
-    // Per-operator cache: marks atoms already processed
-    std::vector<bool> operator_atom_cache;
+    // Per-operator cache removed — delta tracking handles this in run_fixpoint
 
     std::vector<std::vector<unsigned>> atom_index;
     std::vector<Atom> atom_index_reverse;
     // Precomputed offsets for fast pair indexing
     std::vector<unsigned> atom_pair_offsets;
 
-    Reachability evaluate_atoms(const std::vector<unsigned> &atoms);
-
     // Helper methods for modular fixpoint computation
-    bool apply_operator(unsigned op_id, std::vector<bool> &in_add_or_del);
     void run_fixpoint();
     int collect_mutexes(
         const std::vector<Variable *> &variables,
@@ -126,10 +129,6 @@ class H2Mutexes {
 
     void set_atom_not_reached(int atom_id);
 
-    bool check_initial_state_is_dead_end(
-        const std::vector<Variable *> &variables,
-        const State &initial_state) const;
-
     bool check_goal_state_is_unreachable(
         const std::vector<std::pair<Variable *, int>> &goal) const;
 public:
@@ -147,24 +146,29 @@ public:
         const std::vector<std::pair<Variable *, int>> &goal,
         std::vector<MutexGroup> &mutexes, bool regression);
 
-    bool are_mutex(int var1, int val1, int var2, int val2) const {
-        if (val1 == -1 || val2 == -1)
-            return false;
-
-        if (var1 == var2) // Same variable: mutex iff different value.
-            return val1 != val2; // TODO: || unreachable[var1][val1]
-        unsigned p1 = atom_index[var1][val1];
-        unsigned p2 = atom_index[var2][val2];
-        return mutex_status[get_atom_pair_id(p1, p2)] == Reachability::SPURIOUS;
+    // Fast path for callers that already know the atom ids are ordered.
+    bool are_mutex_by_ordered_index(unsigned a1, unsigned a2) const {
+        assert(a1 <= a2);
+        return mutex_status[atom_pair_offsets[a1] + a2] ==
+               Reachability::SPURIOUS;
     }
 
-    // Faster version when atom_index values are already known
-    bool are_mutex_by_index(unsigned a1, unsigned a2) const {
-        return mutex_status[get_atom_pair_id(a1, a2)] == Reachability::SPURIOUS;
+    // Get the list of atom indices that are mutex with (var, value)
+    // Used for building "blocked" bitsets in disambiguation
+    const std::vector<unsigned> &get_mutex_indices(int var, int value) const {
+        return inconsistent_atom_indices[var][value];
     }
 
     unsigned get_atom_id(int var, int value) const {
         return atom_index[var][value];
+    }
+
+    int get_atom_var_by_id(unsigned atom_id) const {
+        return atom_index_reverse[atom_id].var;
+    }
+
+    int get_num_unreachable_values(int var) const {
+        return num_unreachable_by_var[var];
     }
 
     int get_num_variables() const {
@@ -175,8 +179,12 @@ public:
         return domain_sizes[var];
     }
 
-    bool is_unreachable(int var, int value) const {
-        return unreachable[var][value];
+    int get_num_atoms() const {
+        return num_atoms;
+    }
+
+    bool is_unreachable_by_id(unsigned atom_id) const {
+        return unreachable_atoms[atom_id];
     }
 
     int detect_unreachable_atoms(
@@ -184,7 +192,6 @@ public:
         const std::vector<std::pair<Variable *, int>> &goal);
 
     bool remove_spurious_operators(std::vector<Operator> &operators);
-    void set_unreachable_atoms(const std::vector<Variable *> &variables);
 
     bool initialize(
         const std::vector<Variable *> &variables,

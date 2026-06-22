@@ -77,6 +77,14 @@ def get_parser():
 
     parser.add_pattern("preprocessor_time", r"Preprocessor time: (.+)s\n", type=float)
     parser.add_pattern("preprocessor_memory", r"Preprocessor peak memory: (.+) KB\n", type=int)
+    # Peak memory (max RSS) measured externally by /usr/bin/time -v, so it is
+    # available uniformly for every revision (incl. those that do not self-report
+    # "Preprocessor peak memory"). Used by the preprocessor-revisions experiment.
+    parser.add_pattern(
+        "peak_memory_kb",
+        r"Maximum resident set size \(kbytes\): (\d+)\n",
+        type=int,
+    )
     for name in ["task size", "variables", "facts", "operators", "mutex groups"]:
         parser.add_pattern(f"preprocessor_{name.replace(' ', '_')}", rf"Preprocessor {name}: (.+)\n", type=int)
 

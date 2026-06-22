@@ -1,6 +1,5 @@
 #include "max_dag.h"
 
-#include <cassert>
 #include <iostream>
 #include <map>
 

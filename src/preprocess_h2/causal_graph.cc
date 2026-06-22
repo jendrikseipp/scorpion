@@ -29,7 +29,6 @@
 #include "scc.h"
 #include "variable.h"
 
-#include <cassert>
 #include <iostream>
 
 using namespace std;
