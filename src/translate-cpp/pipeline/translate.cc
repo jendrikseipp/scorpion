@@ -90,6 +90,47 @@ StripsToSas build_dictionary(
     return out;
 }
 
+// Facts (FDR pairs) implied by a fact: in every state containing p, all pairs
+// in implied_facts[p] must also hold. Used only with --add-implied-preconditions.
+using ImpliedFacts = std::map<VarVal, std::vector<VarVal>>;
+
+/*
+  Port of Python's build_implied_facts (main.py). The only exploited case is:
+  p encodes a STRIPS proposition X, q encodes "not Y", and X and Y are mutex.
+  For q to encode "not Y", Y must form a fact group of size 1 ("lonely"); then
+  every other fact in Y's mutex group implies "not Y" = (Y's var, 1).
+*/
+ImpliedFacts build_implied_facts(const fact_groups::ComputedGroups &groups,
+                                 const StripsToSas &strips_to_sas) {
+    // Lonely propositions: size-1 fact groups -> their SAS variable number
+    // (the proposition is encoded as (var, 0); see build_dictionary).
+    std::unordered_map<std::string, int> lonely;
+    for (std::size_t var = 0; var < groups.groups.size(); ++var) {
+        if (groups.groups[var].size() == 1) {
+            const auto &prop = static_cast<const Atom &>(*groups.groups[var][0]);
+            lonely[atom_key(prop)] = static_cast<int>(var);
+        }
+    }
+    ImpliedFacts implied;
+    for (const auto &mutex_group : groups.mutex_groups) {
+        for (std::size_t i = 0; i < mutex_group.size(); ++i) {
+            const auto &prop = static_cast<const Atom &>(*mutex_group[i]);
+            auto lit = lonely.find(atom_key(prop));
+            if (lit == lonely.end()) continue;
+            VarVal prop_is_false{lit->second, 1};
+            for (std::size_t j = 0; j < mutex_group.size(); ++j) {
+                if (j == i) continue;
+                const auto &other = static_cast<const Atom &>(*mutex_group[j]);
+                auto dit = strips_to_sas.dict.find(atom_key(other));
+                if (dit == strips_to_sas.dict.end()) continue;
+                for (const auto &fact : dit->second)
+                    implied[fact].push_back(prop_is_false);
+            }
+        }
+    }
+    return implied;
+}
+
 // Map var -> set of allowed values (for a condition under construction).
 using CondMap = std::unordered_map<int, std::set<int>>;
 
@@ -141,12 +182,21 @@ translate_strips_conditions_aux(
             }
         }
         if (!done && !new_condition.empty()) {
-            // Pick the smallest-cardinality new_condition entry.
+            // Pick the smallest-cardinality candidate, breaking ties by the
+            // order the representations appear in the dictionary. Python sorts
+            // new_condition.items() by cardinality with a stable sort, so among
+            // equal sizes it keeps the first-inserted (= dictionary) order. We
+            // must iterate the dictionary entries (it->second) here rather than
+            // the unordered new_condition map, whose iteration order is
+            // unspecified -- otherwise full-encoding facts with several equal-
+            // size representations pick a different variable than Python.
             int best_var = -1;
             std::size_t best_size = SIZE_MAX;
-            for (const auto &[v, vals] : new_condition) {
-                if (vals.size() < best_size) {
-                    best_size = vals.size(); best_var = v;
+            for (const auto &[var, val] : it->second) {
+                auto nit = new_condition.find(var);
+                if (nit != new_condition.end() && nit->second.size() < best_size) {
+                    best_size = nit->second.size();
+                    best_var = var;
                 }
             }
             condition[best_var] = std::move(new_condition[best_var]);
@@ -242,8 +292,20 @@ std::optional<SASOperator> build_sas_operator(
     std::unordered_map<int, int> condition,
     std::map<int, std::map<int, std::vector<std::unordered_map<int, int>>>>
         &effects_by_variable,
-    int cost, const std::vector<int> &ranges) {
+    int cost, const std::vector<int> &ranges,
+    const ImpliedFacts &implied_facts) {
     std::unordered_map<int, int> prevail_and_pre = condition;
+    // Facts implied by the operator's (prevail + pre) condition. Computed from
+    // the full condition before the effects loop erases entries from it.
+    std::set<VarVal> implied_precondition;
+    if (get_options().add_implied_preconditions) {
+        for (const auto &[var, val] : condition) {
+            auto it = implied_facts.find(VarVal{var, val});
+            if (it != implied_facts.end())
+                implied_precondition.insert(it->second.begin(),
+                                            it->second.end());
+        }
+    }
     std::vector<std::tuple<int, int, int, std::vector<VarVal>>> pre_post;
     for (auto &[var, effects_on_var] : effects_by_variable) {
         int orig_pre = -1;
@@ -280,6 +342,16 @@ std::optional<SASOperator> build_sas_operator(
                     eff_conds.clear();
                     eff_conds.emplace_back();
                 }
+            }
+            // If the (prevail+pre) condition implies the variable already holds
+            // the value being changed away from (1 - post), make that an
+            // explicit precondition. Mirrors Python's add_implied_preconditions
+            // branch, which is gated on ranges[var] == 2 (independently of the
+            // prune_stupid_effect_conditions simplification above).
+            if (ranges[var] == 2 && get_options().add_implied_preconditions &&
+                pre == -1 &&
+                implied_precondition.contains(VarVal{var, 1 - post})) {
+                pre = 1 - post;
             }
             for (auto &eff_cond : eff_conds) {
                 std::vector<VarVal> filtered;
@@ -329,7 +401,8 @@ std::optional<SASOperator> translate_strips_operator_aux(
     const PropositionalAction &op, const AtomToVarVals &dict,
     const std::vector<int> &ranges, const AtomToVarVals &mutex_dict,
     const std::vector<int> &mutex_ranges,
-    const std::unordered_map<int, int> &condition) {
+    const std::unordered_map<int, int> &condition,
+    const ImpliedFacts &implied_facts) {
     std::map<int, std::map<int, std::vector<std::unordered_map<int, int>>>>
         effects_by_variable;
     std::map<int, std::vector<std::vector<ConditionPtr>>> add_conds_by_var;
@@ -395,13 +468,14 @@ std::optional<SASOperator> translate_strips_operator_aux(
         }
     }
     return build_sas_operator(op.name, condition, effects_by_variable,
-                              op.cost, ranges);
+                              op.cost, ranges, implied_facts);
 }
 
 std::vector<SASOperator> translate_strips_operator(
     const PropositionalAction &op, const AtomToVarVals &dict,
     const std::vector<int> &ranges, const AtomToVarVals &mutex_dict,
-    const std::vector<int> &mutex_ranges) {
+    const std::vector<int> &mutex_ranges,
+    const ImpliedFacts &implied_facts) {
     std::vector<SASOperator> result;
     auto conds = translate_strips_conditions(op.precondition, dict, ranges,
                                              mutex_dict, mutex_ranges);
@@ -409,7 +483,7 @@ std::vector<SASOperator> translate_strips_operator(
     for (const auto &c : *conds) {
         auto op_out = translate_strips_operator_aux(op, dict, ranges,
                                                     mutex_dict, mutex_ranges,
-                                                    c);
+                                                    c, implied_facts);
         if (op_out) result.push_back(std::move(*op_out));
     }
     return result;
@@ -500,6 +574,12 @@ SASTask pddl_to_sas(Task &task) {
     auto strips_to_sas = build_dictionary(groups.groups, use_partial);
     auto mutex_dict = build_dictionary(groups.mutex_groups, false);
 
+    // Facts implied by other facts (only used by --add-implied-preconditions).
+    ImpliedFacts implied_facts;
+    if (get_options().add_implied_preconditions)
+        implied_facts = build_implied_facts(groups, strips_to_sas);
+
+
     // Build init.
     SASInit sas_init;
     sas_init.values.assign(strips_to_sas.ranges.size(), 0);
@@ -549,7 +629,7 @@ SASTask pddl_to_sas(Task &task) {
             if (!op) continue;
             auto sub = translate_strips_operator(
                 *op, strips_to_sas.dict, strips_to_sas.ranges,
-                mutex_dict.dict, mutex_dict.ranges);
+                mutex_dict.dict, mutex_dict.ranges, implied_facts);
             for (auto &o : sub) sas_operators.push_back(std::move(o));
         }
         return 0;
