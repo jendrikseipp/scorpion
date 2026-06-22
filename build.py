@@ -52,13 +52,11 @@ Build configurations
 
 --all         Alias to build all build configurations.
 --debug       Alias to build the default debug build configuration.
---with-translate-cpp
-              Deprecated no-op: the C++ translator port (src/translate-cpp/)
-              is now always built and installed at builds/<config>/bin/
-              translate-cpp, alongside the search binary, so Lab's
-              CachedFastDownwardRevision keeps it across cache cleanup. The
-              flag is still accepted for backward compatibility.
 --help        Print this message and exit.
+
+The C++ translator port (src/translate-cpp/) is always built and installed at
+builds/<config>/bin/translate-cpp, alongside the search binary, so Lab's
+CachedFastDownwardRevision keeps it across cache cleanup.
 
 Make options
   All other parameters are forwarded to the build step.
@@ -170,9 +168,6 @@ def main():
             config_names.append(DEBUG_CONFIG_NAME)
         elif arg == "--all":
             config_names.extend(sorted(CONFIGS.keys()))
-        elif arg == "--with-translate-cpp":
-            # Deprecated no-op: the C++ translator is always built (below).
-            pass
         elif arg in CONFIGS:
             config_names.append(arg)
         else:

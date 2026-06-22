@@ -29,7 +29,7 @@ directory to check more; tasks are discovered recursively, so both the flat
 domain/problem layout and nested layouts are handled.
 
 Requires the C++ translator to be built:
-    ./build.py release --with-translate-cpp
+    ./build.py release
 
 Examples:
     ./test-translator-equivalence.py

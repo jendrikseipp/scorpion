@@ -78,9 +78,9 @@ def run_translate(args):
     #   2. FD_TRANSLATE_CPP=<path>                 -> use that path
     #      (path must exist; otherwise we fall through to (3)).
     #   3. builds/<args.build>/bin/translate-cpp   -> the location that
-    #      `./build.py --with-translate-cpp` installs to, and that
-    #      Lab's CachedFastDownwardRevision preserves (only
-    #      `builds/*/bin/` survives cache cleanup).
+    #      `./build.py` installs the C++ translator to, and that Lab's
+    #      CachedFastDownwardRevision preserves (only `builds/*/bin/`
+    #      survives cache cleanup).
     #   4. src/translate-cpp/build/translate       -> local-dev shortcut
     #      for users who built the standalone cmake project directly
     #      without going through build.py.
@@ -115,7 +115,7 @@ def run_translate(args):
                 "binary was found. Looked for FD_TRANSLATE_CPP, "
                 f"builds/{args.build}/bin/translate-cpp, and "
                 "src/translate-cpp/build/translate. Run "
-                "`./build.py --with-translate-cpp`.")
+                "`./build.py`.")
 
     if cpp_binary is not None:
         cmd = [str(cpp_binary)] + args.translate_inputs + args.translate_options
