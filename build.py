@@ -53,11 +53,11 @@ Build configurations
 --all         Alias to build all build configurations.
 --debug       Alias to build the default debug build configuration.
 --with-translate-cpp
-              In addition to the search component, build the C++
-              translator port (src/translate-cpp/) and install its
-              binary at builds/<config>/bin/translate -- alongside the
-              search binary, so Lab's CachedFastDownwardRevision keeps
-              it across cache cleanup. Off by default.
+              Deprecated no-op: the C++ translator port (src/translate-cpp/)
+              is now always built and installed at builds/<config>/bin/
+              translate-cpp, alongside the search binary, so Lab's
+              CachedFastDownwardRevision keeps it across cache cleanup. The
+              flag is still accepted for backward compatibility.
 --help        Print this message and exit.
 
 Make options
@@ -162,7 +162,6 @@ def build_translate_cpp(config_name):
 def main():
     config_names = []
     build_parameters = []
-    with_translate_cpp = False
     for arg in sys.argv[1:]:
         if arg == "--help" or arg == "-h":
             print_usage()
@@ -172,7 +171,8 @@ def main():
         elif arg == "--all":
             config_names.extend(sorted(CONFIGS.keys()))
         elif arg == "--with-translate-cpp":
-            with_translate_cpp = True
+            # Deprecated no-op: the C++ translator is always built (below).
+            pass
         elif arg in CONFIGS:
             config_names.append(arg)
         else:
@@ -181,8 +181,8 @@ def main():
         config_names.append(DEFAULT_CONFIG_NAME)
     for config_name in config_names:
         build(config_name, CONFIGS[config_name], build_parameters)
-        if with_translate_cpp:
-            build_translate_cpp(config_name)
+        # Always build the C++ translator port alongside the search component.
+        build_translate_cpp(config_name)
 
 
 if __name__ == "__main__":
