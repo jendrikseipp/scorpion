@@ -153,8 +153,8 @@ bash src/translate-cpp/tests/run_validation.sh
 
 # Force the Python translator from fast-downward.py:
 FD_TRANSLATE_PY=1 ./fast-downward.py --translate <domain> <problem>
-# Point the driver at a specific C++ binary:
-FD_TRANSLATE_CPP=/path/to/translate ./fast-downward.py --translate <domain> <problem>
+# Force the C++ translator:
+./fast-downward.py --translator cpp --translate <domain> <problem>
 ```
 
 ## Provenance
