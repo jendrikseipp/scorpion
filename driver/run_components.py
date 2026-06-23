@@ -74,7 +74,7 @@ def run_translate(args):
 
     # Selection rules for the translator backend:
     #
-    #   1. --translator=py  or FD_TRANSLATE_PY=1   -> force Python.
+    #   1. --translator=py                         -> force Python.
     #   2. builds/<args.build>/bin/translate-cpp   -> the location that
     #      `./build.py` installs the C++ translator to, and that Lab's
     #      CachedFastDownwardRevision preserves (only `builds/*/bin/`
@@ -89,9 +89,7 @@ def run_translate(args):
     # falling all the way through to (4) an error rather than a silent
     # fallback (because the user explicitly asked for the C++ port).
     translator_choice = getattr(args, "translator", None)
-    force_python = (
-        translator_choice == "py" or
-        os.environ.get("FD_TRANSLATE_PY") == "1")
+    force_python = translator_choice == "py"
     cpp_binary = None
     if not force_python:
         try:

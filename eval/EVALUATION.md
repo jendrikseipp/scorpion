@@ -152,7 +152,7 @@ src/translate-cpp/build/translate \
 bash src/translate-cpp/tests/run_validation.sh
 
 # Force the Python translator from fast-downward.py:
-FD_TRANSLATE_PY=1 ./fast-downward.py --translate <domain> <problem>
+./fast-downward.py --translator py --translate <domain> <problem>
 # Force the C++ translator:
 ./fast-downward.py --translator cpp --translate <domain> <problem>
 ```

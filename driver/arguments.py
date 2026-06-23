@@ -397,9 +397,7 @@ def parse_args():
     driver_other.add_argument(
         "--translator", choices=["cpp", "py"], default=None,
         help="force a specific translator implementation: 'cpp' uses the "
-             "C++ port (built by build.py), 'py' uses the Python translator. "
-             "'py' has the same effect as setting FD_TRANSLATE_PY=1 in the "
-             "environment.")
+             "C++ port (built by build.py), 'py' uses the Python translator.")
     driver_other.add_argument(
         "--build",
         help="BUILD can be a predefined build name like release "
