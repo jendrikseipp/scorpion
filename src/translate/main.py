@@ -531,6 +531,36 @@ def unsolvable_sas_task(msg):
     print("%s! Generating unsolvable task..." % msg)
     return trivial_task(solvable=False)
 
+def append_static_atoms(task, sas_task, atoms):
+    """Dump static atoms belonging to non-static predicates.
+
+    A predicate is static if all its groundings are static. We dump static atoms
+    belonging to static predicates in dump_static_atoms() in instantiate.py.
+    There are also predicates where only a subset of their groundings are static
+    and we dump those static atoms here.
+    Examples for such static atoms:
+      Blocksworld: on(b1,b1), on(b2,b2), etc.
+      Sokoban: clear(x) for cells x that are ouside the wall
+      Spanner: at(nut1, gate), etc.
+      Visitall: visited(x) for start location x
+
+    We do not dump static atoms that are always false, such as the Blocksworld
+    atoms above.
+    """
+    sas_atoms = {
+        atom
+        for values in sas_task.variables.value_names
+        for atom in values
+    }
+    pddl_initial_state_atoms = set(task.init)
+    static_atoms = {
+        atom for atom in atoms
+        if str(atom) not in sas_atoms
+        and atom in pddl_initial_state_atoms}
+    with open(instantiate.STATIC_ATOMS_FILE, "a") as f:
+        for atom in static_atoms:
+            instantiate.print_atom(atom, file=f)
+
 def pddl_to_sas(task):
     with timers.timing("Instantiating", block=True):
         (relaxed_reachable, atoms, actions, goal_list, axioms,
@@ -617,6 +647,8 @@ def pddl_to_sas(task):
         ax.condition.sort()
     sas_task.axioms.sort(key=lambda ax: (ax.condition, ax.effect))
 
+    if get_options().dump_static_atoms:
+        append_static_atoms(task, sas_task, atoms)
     return sas_task
 
 
@@ -700,11 +732,30 @@ def dump_statistics(sas_task):
         print("Translator peak memory: %d KB" % peak_memory)
 
 
+def dump_predicates(task, path):
+    predicates = [
+        (predicate.name, len(predicate.arguments))
+        for predicate in task.predicates
+        if not predicate.name.startswith("=")
+    ]
+    predicates += [(pddl_type.name, 1) for pddl_type in task.types]
+
+    with open(path, "w") as f:
+        f.write("\n".join(f"{name},{arity}"
+                          for name, arity in sorted(predicates)))
+
+
 def main():
     timer = timers.Timer()
     with timers.timing("Parsing", True):
         task = pddl_parser.open(
             domain_filename=get_options().domain, task_filename=get_options().task)
+    if get_options().dump_predicates:
+        dump_predicates(task, "predicates.txt")
+
+    if get_options().stop_after_parsing_pddl:
+        print("Done! %s" % timer)
+        return
 
     with timers.timing("Normalizing task"):
         normalize.normalize(task)
@@ -717,6 +768,11 @@ def main():
                     del action.effects[index]
 
     sas_task = pddl_to_sas(task)
+    if not get_options().keep_duplicate_operators:
+        original_num_operators = len(sas_task.operators)
+        with timers.timing("Removing duplicate operators"):
+            removed = sas_task.remove_duplicate_operators()
+        print(f"Removed {removed} duplicate operators ({len(sas_task.operators)} of {original_num_operators} remaining).")
     dump_statistics(sas_task)
 
     with timers.timing("Writing output"):

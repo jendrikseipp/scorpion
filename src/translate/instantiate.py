@@ -8,6 +8,54 @@ from translate import build_model
 from translate import pddl_to_prolog
 from translate import pddl
 from translate import timers
+from translate.options import get_options
+
+STATIC_ATOMS_FILE = "static-atoms.txt"
+
+def print_atom(atom, file):
+    atom_name = str(atom)
+    assert atom_name.startswith("Atom ")
+    print(atom_name[len("Atom "):], file=file)
+
+def add_type_predicates(types):
+    result = []
+    for k, l in types.items():
+        for obj in l:
+            result.append("Atom %s(%s)" % (k, obj))
+    return result
+
+def dump_static_atoms(task, model):
+    """Dump all atoms belonging to static predicates.
+
+    A predicate is static if all its groundings are static. There are predicates
+    where only a subset of their groundings are static. We dump static atoms
+    belonging to non-static predicates in append_static_atoms() in translate.py.
+    """
+    all_predicates = set()
+    fluent_predicates = set()
+    for action in task.actions:
+        for effect in action.effects:
+            fluent_predicates.add(effect.literal.predicate)
+            all_predicates.add(effect.literal.predicate)
+        if isinstance(action.precondition, pddl.Conjunction):
+            for precond in action.precondition.parts:
+                all_predicates.add(precond.predicate)
+        else:
+            assert isinstance(action.precondition, pddl.Atom)
+            all_predicates.add(action.precondition.predicate)
+    for axiom in task.axioms:
+        fluent_predicates.add(axiom.name)
+    types = get_objects_by_type(task.objects, task.types)
+    type_predicates = add_type_predicates(types)
+    static_predicates = all_predicates - fluent_predicates
+    initial_state_atoms = set(task.init)
+    with open(STATIC_ATOMS_FILE, "w") as f:
+        for atom in model:
+            if atom.predicate in static_predicates:
+                assert atom in initial_state_atoms, atom
+                print_atom(atom, file=f)
+        for t in type_predicates:
+            print_atom(t, file=f)
 
 def get_fluent_facts(task, model):
     fluent_predicates = set()
@@ -115,6 +163,8 @@ def instantiate(task: pddl.Task, model: Any) -> Tuple[
 def explore(task):
     prog = pddl_to_prolog.translate(task)
     model = build_model.compute_model(prog)
+    if get_options().dump_static_atoms:
+        dump_static_atoms(task, model)
     with timers.timing("Completing instantiation"):
         return instantiate(task, model)
 

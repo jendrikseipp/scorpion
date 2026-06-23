@@ -7,9 +7,13 @@
 
 #include <vector>
 
+class OperatorID;
 class OperatorProxy;
 class State;
 class TaskProxy;
+namespace successor_generator {
+class SuccessorGenerator;
+}
 
 namespace utils {
 class LogProxy;
@@ -33,7 +37,6 @@ public:
     bool is_dead_end() const;
 
     int get_g() const;
-    int get_real_g() const;
 
     void open_initial();
     void open_new_node(
@@ -59,12 +62,24 @@ class SearchSpace {
 
     StateRegistry &state_registry;
     utils::LogProxy &log;
+
+    // Return the sequence of states from the initial state to the given goal
+    // state by following parent_state_id pointers. The returned vector
+    // includes both the initial state (at index 0) and the goal state (at the
+    // last index).
+    std::vector<State> trace_states(const State &goal_state) const;
 public:
     SearchSpace(StateRegistry &state_registry, utils::LogProxy &log);
 
     SearchNode get_node(const State &state);
-    void trace_path(
-        const State &goal_state, std::vector<OperatorID> &path) const;
+
+    // Recompute operator path by following parent pointers (via trace_states)
+    // and picking, in each state, an applicable operator that reaches the next
+    // state.
+    std::vector<OperatorID> trace_path(
+        const TaskProxy &task_proxy,
+        const successor_generator::SuccessorGenerator &successor_generator,
+        const State &goal_state) const;
 
     void dump(const TaskProxy &task_proxy) const;
     void print_statistics() const;

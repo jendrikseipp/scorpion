@@ -1,6 +1,7 @@
 #ifndef CARTESIAN_ABSTRACTIONS_COST_SATURATION_H
 #define CARTESIAN_ABSTRACTIONS_COST_SATURATION_H
 
+#include "flaw_search.h"
 #include "refinement_hierarchy.h"
 #include "split_selector.h"
 
@@ -16,6 +17,7 @@ class LogProxy;
 
 namespace cartesian_abstractions {
 class CartesianHeuristicFunction;
+enum class DotGraphVerbosity;
 class SubtaskGenerator;
 
 /*
@@ -28,18 +30,25 @@ class SubtaskGenerator;
 class CostSaturation {
     const std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators;
     const int max_states;
-    const int max_non_looping_transitions;
+    const int max_transitions;
     const double max_time;
-    const PickSplit pick_split;
     const bool use_general_costs;
+    const PickFlawedAbstractState pick_flawed_abstract_state;
+    const PickSplit pick_split;
+    const PickSplit tiebreak_split;
+    const int max_concrete_states_per_abstract_state;
+    const int max_state_expansions;
+    const TransitionRepresentation transition_representation;
+    const int memory_padding_mb;
     utils::RandomNumberGenerator &rng;
     utils::LogProxy &log;
+    const cartesian_abstractions::DotGraphVerbosity dot_graph_verbosity;
 
+    void (*fast_downward_new_handler)();
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
-    int num_abstractions;
     int num_states;
-    int num_non_looping_transitions;
+    int num_transitions;
 
     void reset(const TaskProxy &task_proxy);
     void reduce_remaining_costs(const std::vector<int> &saturated_costs);
@@ -56,13 +65,23 @@ public:
     CostSaturation(
         const std::vector<std::shared_ptr<SubtaskGenerator>>
             &subtask_generators,
-        int max_states, int max_non_looping_transitions, double max_time,
-        PickSplit pick_split, bool use_general_costs,
-        utils::RandomNumberGenerator &rng, utils::LogProxy &log);
+        int max_states, int max_transitions, double max_time,
+        bool use_general_costs,
+        PickFlawedAbstractState pick_flawed_abstract_state,
+        PickSplit pick_split, PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state, int max_state_expansions,
+        TransitionRepresentation transition_representation,
+        int memory_padding_mb, utils::RandomNumberGenerator &rng,
+        utils::LogProxy &log, DotGraphVerbosity dot_graph_verbosity);
 
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
         const std::shared_ptr<AbstractTask> &task);
 };
+
+extern int get_subtask_limit(int limit, int used, int remaining_subtasks);
+extern std::vector<int> compute_saturated_costs(
+    const Abstraction &abstraction, const std::vector<int> &h_values,
+    bool use_general_costs);
 }
 
 #endif

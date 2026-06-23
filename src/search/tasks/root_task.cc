@@ -102,6 +102,8 @@ public:
     virtual vector<int> get_initial_state_values() const override;
     virtual void convert_ancestor_state_values(
         vector<int> &values, const AbstractTask *ancestor_task) const override;
+    virtual bool does_convert_ancestor_state_values(
+        const AbstractTask *ancestor_task) const override;
 };
 
 class TaskParser {
@@ -876,6 +878,14 @@ void RootTask::convert_ancestor_state_values(
     if (this != ancestor_task) {
         ABORT("Invalid state conversion");
     }
+}
+
+bool RootTask::does_convert_ancestor_state_values(
+    const AbstractTask *ancestor_task) const {
+    if (this != ancestor_task) {
+        ABORT("Invalid state conversion query");
+    }
+    return false;
 }
 
 void read_root_task(istream &in) {

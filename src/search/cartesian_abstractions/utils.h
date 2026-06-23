@@ -1,13 +1,13 @@
 #ifndef CARTESIAN_ABSTRACTIONS_UTILS_H
 #define CARTESIAN_ABSTRACTIONS_UTILS_H
 
+#include "types.h"
+
 #include "../task_proxy.h"
 
 #include "../utils/hash.h"
 
 #include <memory>
-#include <unordered_set>
-#include <utility>
 #include <vector>
 
 class AbstractTask;
@@ -16,7 +16,18 @@ namespace additive_heuristic {
 class AdditiveHeuristic;
 }
 
+namespace plugins {
+class Feature;
+}
+
 namespace cartesian_abstractions {
+class Abstraction;
+
+extern bool g_hacked_sort_transitions;
+
+extern std::unique_ptr<additive_heuristic::AdditiveHeuristic>
+create_additive_heuristic(const std::shared_ptr<AbstractTask> &task);
+
 /*
   The set of relaxed-reachable facts is the possibly-before set of facts that
   can be reached in the delete-relaxation before 'fact' is reached the first
@@ -26,6 +37,13 @@ extern utils::HashSet<FactProxy> get_relaxed_possible_before(
     const TaskProxy &task, const FactProxy &fact);
 
 extern std::vector<int> get_domain_sizes(const TaskProxy &task);
+
+extern void add_common_cegar_options(plugins::Feature &feature);
+
+extern std::string create_dot_graph(
+    const TaskProxy &task_proxy, const Abstraction &abstraction);
+extern void write_to_file(
+    const std::string &file_name, const std::string &content);
 }
 
 /*

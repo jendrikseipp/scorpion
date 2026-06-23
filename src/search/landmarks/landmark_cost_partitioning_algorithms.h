@@ -12,6 +12,14 @@
 class ConstBitsetView;
 class OperatorsProxy;
 
+namespace cost_saturation {
+enum class ScoringFunction;
+}
+
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace landmarks {
 class Landmark;
 class LandmarkGraph;
@@ -33,7 +41,19 @@ public:
 };
 
 class UniformCostPartitioningAlgorithm : public CostPartitioningAlgorithm {
-    bool use_action_landmarks;
+    const bool use_action_landmarks;
+    const bool reuse_costs;
+    const bool greedy;
+    const cost_saturation::ScoringFunction scoring_function;
+
+    const std::shared_ptr<utils::RandomNumberGenerator> rng;
+
+    // Store vectors as members to avoid allocations.
+    const std::vector<double> original_costs;
+    std::vector<double> remaining_costs;
+
+    std::vector<int> compute_landmark_order(
+        const std::vector<std::vector<int>> &achievers_by_lm);
 
     /*
       TODO: We are aware that the following three function names are not
@@ -54,15 +74,52 @@ class UniformCostPartitioningAlgorithm : public CostPartitioningAlgorithm {
         ConstBitsetView &future);
     double third_pass(
         const std::vector<const LandmarkNode *> &uncovered_landmarks,
-        const std::vector<int> &landmarks_achieved_by_operator,
-        ConstBitsetView &past, ConstBitsetView &future);
+        std::vector<int> &landmarks_achieved_by_operator, ConstBitsetView &past,
+        ConstBitsetView &future);
 public:
     UniformCostPartitioningAlgorithm(
         const std::vector<int> &operator_costs, const LandmarkGraph &graph,
-        bool use_action_landmarks);
+        bool use_action_landmarks, bool reuse_costs, bool greedy,
+        enum cost_saturation::ScoringFunction,
+        const std::shared_ptr<utils::RandomNumberGenerator> &rng);
 
     virtual double get_cost_partitioned_heuristic_value(
-        const LandmarkStatusManager &landmark_status_manager,
+        const LandmarkStatusManager &lm_status_manager,
+        const State &ancestor_state) override;
+};
+
+class LandmarkCanonicalHeuristic : public CostPartitioningAlgorithm {
+    std::vector<std::vector<int>> compute_max_additive_subsets(
+        const ConstBitsetView &past_landmarks,
+        const std::vector<const LandmarkNode *> &relevant_landmarks);
+    int compute_minimum_landmark_cost(
+        const LandmarkNode &lm_node, bool past) const;
+public:
+    LandmarkCanonicalHeuristic(
+        const std::vector<int> &operator_costs, const LandmarkGraph &graph);
+
+    virtual double get_cost_partitioned_heuristic_value(
+        const LandmarkStatusManager &lm_status_manager,
+        const State &ancestor_state) override;
+};
+
+class LandmarkPhO : public CostPartitioningAlgorithm {
+    // See comment for OptimalCostPartitioningAlgorithm.
+    const bool saturate;
+    lp::LPSolver lp_solver;
+    std::vector<lp::LPConstraint> lp_constraints;
+    lp::LinearProgram lp;
+
+    lp::LinearProgram build_initial_lp();
+
+    double compute_landmark_cost(const LandmarkNode &lm, bool past) const;
+public:
+    LandmarkPhO(
+        const std::vector<int> &operator_costs, const LandmarkGraph &graph,
+        bool saturate, lp::LPSolverType solver_type);
+
+    virtual double get_cost_partitioned_heuristic_value(
+        const LandmarkStatusManager &lm_status_manager,
         const State &ancestor_state) override;
 };
 

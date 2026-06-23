@@ -16,6 +16,7 @@ REPO = os.path.dirname(os.path.dirname(DIR))
 # C++ source trees whose style is enforced with clang-format.
 STYLE_DIRS = [
     os.path.join(REPO, "src", "search"),
+    os.path.join(REPO, "src", "preprocess_h2"),
     os.path.join(REPO, "src", "translate-cpp"),
 ]
 CLANG_FORMAT_VERSION = "18"
@@ -60,12 +61,11 @@ def get_clang_format_version():
 def main():
     args = parse_args()
     if not args.force and args.modify and styled_files_are_dirty():
-        sys.exit("Error: src/search or src/translate-cpp has uncommitted "
-                 "changes.")
+        sys.exit("Error: a styled source tree has uncommitted changes.")
     src_files = []
     for style_dir in STYLE_DIRS:
         src_files += utils.get_src_files(
-            style_dir, (".h", ".cc"), ignore_dirs=["build"])
+            style_dir, (".h", ".cc"), ignore_dirs=["ext", "build"])
     print(f"Checking {len(src_files)} files with clang-format.")
     config_file = os.path.join(REPO, ".clang-format")
     executable = f"clang-format-{CLANG_FORMAT_VERSION}"

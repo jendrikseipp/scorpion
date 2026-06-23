@@ -1,8 +1,10 @@
 #ifndef CARTESIAN_ABSTRACTIONS_CEGAR_H
 #define CARTESIAN_ABSTRACTIONS_CEGAR_H
 
-#include "abstract_search.h"
+#include "flaw_search.h"
 #include "split_selector.h"
+#include "transition_rewirer.h"
+#include "types.h"
 
 #include "../task_proxy.h"
 
@@ -17,7 +19,8 @@ class LogProxy;
 
 namespace cartesian_abstractions {
 class Abstraction;
-struct Flaw;
+enum class DotGraphVerbosity;
+class ShortestPaths;
 
 /*
   Iteratively refine a Cartesian abstraction with counterexample-guided
@@ -31,16 +34,22 @@ class CEGAR {
     const TaskProxy task_proxy;
     const std::vector<int> domain_sizes;
     const int max_states;
-    const int max_non_looping_transitions;
-    const SplitSelector split_selector;
+    const int max_stored_transitions;
+    const PickFlawedAbstractState pick_flawed_abstract_state;
 
+    const std::shared_ptr<TransitionRewirer> transition_rewirer;
     std::unique_ptr<Abstraction> abstraction;
-    AbstractSearch abstract_search;
+    std::unique_ptr<ShortestPaths> shortest_paths;
+    std::unique_ptr<FlawSearch> flaw_search;
 
     // Limit the time for building the abstraction.
     utils::CountdownTimer timer;
 
     utils::LogProxy &log;
+    const DotGraphVerbosity dot_graph_verbosity;
+
+    // Only used for logging progress.
+    int old_abstract_solution_cost = -1;
 
     bool may_keep_refining() const;
 
@@ -52,27 +61,30 @@ class CEGAR {
       for other subtasks with a single goal fact doesn't hurt and
       simplifies the implementation.
     */
-    void separate_facts_unreachable_before_goal();
-
-    /* Try to convert the abstract solution into a concrete trace. Return the
-       first encountered flaw or nullptr if there is no flaw. */
-    std::unique_ptr<Flaw> find_flaw(const Solution &solution);
+    void separate_facts_unreachable_before_goal() const;
 
     // Build abstraction.
-    void refinement_loop(utils::RandomNumberGenerator &rng);
+    void refinement_loop();
 
-    void print_statistics();
+    void dump_dot_graph() const;
+    void print_statistics() const;
 
 public:
     CEGAR(
         const std::shared_ptr<AbstractTask> &task, int max_states,
-        int max_non_looping_transitions, double max_time, PickSplit pick,
-        utils::RandomNumberGenerator &rng, utils::LogProxy &log);
+        int max_transitions, double max_time,
+        PickFlawedAbstractState pick_flawed_abstract_state,
+        PickSplit pick_split, PickSplit tiebreak_split,
+        int max_concrete_states_per_abstract_state, int max_state_expansions,
+        TransitionRepresentation transition_representation,
+        utils::RandomNumberGenerator &rng, utils::LogProxy &log,
+        DotGraphVerbosity dot_graph_verbosity);
     ~CEGAR();
 
     CEGAR(const CEGAR &) = delete;
 
     std::unique_ptr<Abstraction> extract_abstraction();
+    std::vector<int> get_goal_distances() const;
 };
 }
 

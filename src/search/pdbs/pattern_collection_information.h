@@ -28,6 +28,7 @@ class PatternCollectionInformation {
     TaskProxy task_proxy;
     std::shared_ptr<PatternCollection> patterns;
     std::shared_ptr<PDBCollection> pdbs;
+    std::shared_ptr<ProjectionCollection> projections;
     std::shared_ptr<std::vector<PatternClique>> pattern_cliques;
     utils::LogProxy &log;
 
@@ -43,6 +44,7 @@ public:
     ~PatternCollectionInformation() = default;
 
     void set_pdbs(const std::shared_ptr<PDBCollection> &pdbs);
+    void set_projections(std::shared_ptr<ProjectionCollection> &projections);
     void set_pattern_cliques(
         const std::shared_ptr<std::vector<PatternClique>> &pattern_cliques);
 
@@ -52,6 +54,7 @@ public:
 
     std::shared_ptr<PatternCollection> get_patterns() const;
     std::shared_ptr<PDBCollection> get_pdbs();
+    std::shared_ptr<ProjectionCollection> get_projections();
     std::shared_ptr<std::vector<PatternClique>> get_pattern_cliques();
 };
 }

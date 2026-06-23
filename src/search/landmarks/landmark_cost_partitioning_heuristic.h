@@ -5,12 +5,22 @@
 
 #include "../lp/lp_solver.h"
 
+namespace cost_saturation {
+enum class ScoringFunction;
+}
+
 namespace landmarks {
 class CostPartitioningAlgorithm;
 
 enum class CostPartitioningMethod {
     OPTIMAL,
     UNIFORM,
+    OPPORTUNISTIC_UNIFORM,
+    GREEDY_ZERO_ONE,
+    SATURATED,
+    CANONICAL,
+    PHO,
+    SATURATED_PHO,
 };
 
 class LandmarkCostPartitioningHeuristic : public LandmarkHeuristic {
@@ -20,7 +30,8 @@ class LandmarkCostPartitioningHeuristic : public LandmarkHeuristic {
         const std::shared_ptr<LandmarkFactory> &landmark_factory);
     void set_cost_partitioning_algorithm(
         CostPartitioningMethod cost_partitioning, lp::LPSolverType lpsolver,
-        bool use_action_landmarks);
+        bool use_action_landmarks,
+        cost_saturation::ScoringFunction scoring_function, int random_seed);
 
     int get_heuristic_value(const State &ancestor_state) override;
 public:
@@ -30,7 +41,8 @@ public:
         const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
         const std::string &description, utils::Verbosity verbosity,
         CostPartitioningMethod cost_partitioning, bool alm,
-        lp::LPSolverType lpsolver);
+        lp::LPSolverType lpsolver,
+        cost_saturation::ScoringFunction scoring_function, int random_seed);
 
     virtual bool dead_ends_are_reliable() const override;
 };

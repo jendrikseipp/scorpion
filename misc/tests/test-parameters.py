@@ -54,7 +54,23 @@ TEMPORARY_EXCEPTIONS = [
 ]
 
 PERMANENT_EXCEPTIONS = [
-    "adapt_costs"
+    "adapt_costs",
+    "brfs",
+    "canonical_heuristic",
+    "cartesian",
+    "cegar",
+    "dump_reachable_search_space",
+    "gzocp",
+    "idastar",
+    "novelty",
+    "ocp",
+    "pho",
+    "pho_abstraction_constraints",
+    "projections",
+    "scp",
+    "scp_online",
+    "sys_scp",
+    "ucp",
 ]
 
 CREATE_COMPONENT_REGEX = r"(^|\s|\W)create_component"

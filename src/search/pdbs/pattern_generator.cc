@@ -9,7 +9,7 @@ using namespace std;
 namespace pdbs {
 PatternCollectionGenerator::PatternCollectionGenerator(
     utils::Verbosity verbosity)
-    : log(utils::get_log_for_verbosity(verbosity)) {
+    : log(utils::get_log_for_verbosity(verbosity)), dead_ends(nullptr) {
 }
 
 PatternCollectionInformation PatternCollectionGenerator::generate(

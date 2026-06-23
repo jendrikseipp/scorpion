@@ -1,6 +1,8 @@
 #ifndef CARTESIAN_ABSTRACTIONS_SUBTASK_GENERATORS_H
 #define CARTESIAN_ABSTRACTIONS_SUBTASK_GENERATORS_H
 
+#include "types.h"
+
 #include <memory>
 #include <vector>
 
@@ -11,17 +13,12 @@ namespace landmarks {
 class LandmarkNode;
 }
 
-namespace plugins {
-class Options;
-}
-
 namespace utils {
 class RandomNumberGenerator;
 class LogProxy;
 }
 
 namespace cartesian_abstractions {
-using Facts = std::vector<FactPair>;
 using SharedTasks = std::vector<std::shared_ptr<AbstractTask>>;
 
 enum class FactOrder {

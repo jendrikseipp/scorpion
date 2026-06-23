@@ -3,6 +3,7 @@
 #include "../open_list_factory.h"
 
 #include "../algorithms/ordered_set.h"
+#include "../novelty/novelty_evaluator.h"
 #include "../plugins/options.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
@@ -58,6 +59,13 @@ void LazySearch::initialize() {
     }
 
     path_dependent_evaluators.assign(evals.begin(), evals.end());
+
+    // HACK: we need to notify landmark heuristics before evaluating the novelty
+    // heuristics that depend on them.
+    sort(
+        path_dependent_evaluators.begin(), path_dependent_evaluators.end(),
+        novelty::OrderNoveltyEvaluatorsLastHack());
+
     State initial_state = state_registry.get_initial_state();
     for (Evaluator *evaluator : path_dependent_evaluators) {
         evaluator->notify_initial_state(initial_state);
@@ -108,7 +116,7 @@ void LazySearch::generate_successors() {
     for (OperatorID op_id : successor_operators) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
         int new_g = current_g + get_adjusted_cost(op);
-        int new_real_g = current_real_g + op.get_cost();
+        int new_real_g = real_g_values ? current_real_g + op.get_cost() : -1;
         bool is_preferred = preferred_operators.contains(op_id);
         if (new_real_g < bound) {
             EvaluationContext new_eval_context(
@@ -140,7 +148,9 @@ SearchStatus LazySearch::fetch_next_state() {
 
     SearchNode pred_node = search_space.get_node(current_predecessor);
     current_g = pred_node.get_g() + get_adjusted_cost(current_operator);
-    current_real_g = pred_node.get_real_g() + current_operator.get_cost();
+    current_real_g = real_g_values ? (*real_g_values)[current_predecessor] +
+                                         current_operator.get_cost()
+                                   : -1;
 
     /*
       Note: We mark the node in current_eval_context as "preferred"
@@ -187,6 +197,7 @@ SearchStatus LazySearch::step() {
         if (!open_list->is_dead_end(current_eval_context)) {
             if (current_predecessor_id == StateID::no_state) {
                 node.open_initial();
+                set_real_g(current_state, 0);
                 if (search_progress.check_progress(current_eval_context))
                     statistics.print_checkpoint_line(current_g);
             } else {
@@ -205,6 +216,7 @@ SearchStatus LazySearch::step() {
                         parent_node, current_operator,
                         get_adjusted_cost(current_operator));
                 }
+                set_real_g(parent_state, current_operator, current_state);
             }
             node.close();
             if (check_goal_and_set_plan(current_state))

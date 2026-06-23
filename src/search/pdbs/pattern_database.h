@@ -36,6 +36,10 @@ public:
     int get_multiplier(int var) const {
         return hash_multipliers[var];
     }
+
+    const std::vector<int> &get_hash_multipliers() const {
+        return hash_multipliers;
+    }
 };
 
 class PatternDatabase {

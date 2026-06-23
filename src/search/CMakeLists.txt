@@ -33,6 +33,8 @@
 
 cmake_minimum_required(VERSION 3.16)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext)
+
 # Path containing custom CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(common_cxx_flags)
@@ -62,7 +64,7 @@ if(GIT_REVISION_EXITCODE EQUAL 0)
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if(NOT GIT_DIFF_EXITCODE EQUAL 0)
-        message(WARNING "Building from a repository with uncommited changes.")
+        message(NOTICE "Building from a repository with uncommited changes.")
         set(GIT_REVISION "${GIT_REVISION}-dirty")
     endif()
 else()
@@ -475,6 +477,15 @@ create_fast_downward_library(
 )
 
 create_fast_downward_library(
+    NAME plugin_iw
+    HELP "Iterative width search"
+    SOURCES
+        search_algorithms/iterative_width_search
+    DEPENDS
+        novelty
+)
+
+create_fast_downward_library(
     NAME plugin_astar
     HELP "A* search"
     SOURCES
@@ -482,6 +493,49 @@ create_fast_downward_library(
     DEPENDS
         eager_search
         search_common
+)
+
+create_fast_downward_library(
+    NAME breadth_first_search
+    HELP "Breadth-first search"
+    SOURCES
+        search_algorithms/breadth_first_search
+    DEPENDS
+        search_common
+        null_pruning_method
+)
+
+create_fast_downward_library(
+    NAME exhaustive_search
+    HELP "Exhaustive search"
+    SOURCES
+        search_algorithms/exhaustive_search
+    DEPENDS
+        search_common
+        null_pruning_method
+)
+
+create_fast_downward_library(
+    NAME plugin_idastar
+    HELP "IDA* search"
+    SOURCES
+        search_algorithms/idastar_search
+)
+
+create_fast_downward_library(
+    NAME plugin_iterative_deepening_search
+    HELP "Iterative deepening search"
+    SOURCES
+        search_algorithms/iterative_deepening_search
+    DEPENDS
+        INCREMENTAL_SUCCESSOR_GENERATOR
+)
+
+create_fast_downward_library(
+    NAME plugin_dfs
+    HELP "Depth-first search"
+    SOURCES
+        search_algorithms/depth_first_search
 )
 
 create_fast_downward_library(
@@ -714,6 +768,17 @@ create_fast_downward_library(
 )
 
 create_fast_downward_library(
+    NAME novelty
+    HELP "Novelty-based algorithms"
+    SOURCES
+        novelty/novelty_evaluator
+        novelty/novelty_table
+    DEPENDS
+        task_properties
+    DEPENDENCY_ONLY
+)
+
+create_fast_downward_library(
     NAME core_tasks
     HELP "Core task transformations"
     SOURCES
@@ -729,6 +794,7 @@ create_fast_downward_library(
     SOURCES
         tasks/domain_abstracted_task
         tasks/domain_abstracted_task_factory
+        tasks/inverted_task
         tasks/modified_goals_task
         tasks/modified_operator_costs_task
     DEPENDS
@@ -780,6 +846,16 @@ create_fast_downward_library(
 )
 
 create_fast_downward_library(
+    NAME INCREMENTAL_SUCCESSOR_GENERATOR
+    HELP "Incremental successor generator"
+    SOURCES
+        task_utils/incremental_successor_generator
+    DEPENDS
+        task_properties
+    DEPENDENCY_ONLY
+)
+
+create_fast_downward_library(
     NAME task_properties
     HELP "Task properties"
     SOURCES
@@ -800,17 +876,21 @@ create_fast_downward_library(
     HELP "Plugin containing the code for Cartesian CEGAR heuristics"
     SOURCES
         cartesian_abstractions/abstraction
-        cartesian_abstractions/abstract_search
         cartesian_abstractions/abstract_state
         cartesian_abstractions/additive_cartesian_heuristic
         cartesian_abstractions/cartesian_heuristic_function
         cartesian_abstractions/cartesian_set
         cartesian_abstractions/cegar
         cartesian_abstractions/cost_saturation
+        cartesian_abstractions/flaw
+        cartesian_abstractions/flaw_search
+        cartesian_abstractions/match_tree
         cartesian_abstractions/refinement_hierarchy
         cartesian_abstractions/split_selector
+        cartesian_abstractions/shortest_paths
         cartesian_abstractions/subtask_generators
         cartesian_abstractions/transition
+        cartesian_abstractions/transition_rewirer
         cartesian_abstractions/transition_system
         cartesian_abstractions/types
         cartesian_abstractions/utils
@@ -821,6 +901,50 @@ create_fast_downward_library(
         extra_tasks
         landmarks
         priority_queues
+        task_properties
+)
+
+create_fast_downward_library(
+    NAME cost_partitioning
+    HELP "Cost partitioning over abstraction heuristics"
+    SOURCES
+        cost_saturation/abstraction
+        cost_saturation/abstraction_generator
+        cost_saturation/canonical_heuristic
+        cost_saturation/cartesian_abstraction
+        cost_saturation/cartesian_abstraction_generator
+        cost_saturation/cost_partitioning_heuristic
+        cost_saturation/cost_partitioning_heuristic_collection_generator
+        cost_saturation/diversifier
+        cost_saturation/explicit_abstraction
+        cost_saturation/explicit_projection_factory
+        cost_saturation/greedy_order_utils
+        cost_saturation/max_cost_partitioning_heuristic
+        cost_saturation/max_heuristic
+        cost_saturation/optimal_cost_partitioning_heuristic
+        cost_saturation/order_generator
+        cost_saturation/order_generator_dynamic_greedy
+        cost_saturation/order_generator_greedy
+        cost_saturation/order_generator_random
+        cost_saturation/order_optimizer
+        cost_saturation/pho_heuristic
+        cost_saturation/plugin_group
+        cost_saturation/projection
+        cost_saturation/projection_generator
+        cost_saturation/saturated_cost_partitioning_heuristic
+        cost_saturation/saturated_cost_partitioning_online_heuristic
+        cost_saturation/types
+        cost_saturation/uniform_cost_partitioning_heuristic
+        cost_saturation/unsolvability_heuristic
+        cost_saturation/utils
+        cost_saturation/zero_one_cost_partitioning_heuristic
+    DEPENDS
+        cegar
+        lp_solver
+        pdbs
+        partial_state_tree
+        priority_queues
+        sampling
         task_properties
 )
 
@@ -910,6 +1034,7 @@ create_fast_downward_library(
         operator_counting/delete_relaxation_rr_constraints
         operator_counting/lm_cut_constraints
         operator_counting/operator_counting_heuristic
+        operator_counting/pho_abstraction_constraints
         operator_counting/pho_constraints
         operator_counting/state_equation_constraints
     DEPENDS lp_solver landmark_cut_heuristic pdbs task_properties
@@ -937,8 +1062,10 @@ create_fast_downward_library(
         pdbs/pattern_collection_generator_multiple_random
         pdbs/pattern_collection_generator_multiple
         pdbs/pattern_collection_generator_systematic
+        pdbs/pattern_collection_generator_systematic_scp
         pdbs/pattern_database_factory
         pdbs/pattern_database
+        pdbs/pattern_evaluator
         pdbs/pattern_generator_cegar
         pdbs/pattern_generator_greedy
         pdbs/pattern_generator_manual
@@ -947,6 +1074,7 @@ create_fast_downward_library(
         pdbs/pattern_information
         pdbs/pdb_heuristic
         pdbs/random_pattern
+        pdbs/slim_match_tree
         pdbs/subcategory
         pdbs/types
         pdbs/utils
@@ -988,5 +1116,13 @@ create_fast_downward_library(
     HELP "Algorithm to compute the strongly connected components (SCCs) of a directed graph."
     SOURCES
         algorithms/sccs
+    DEPENDENCY_ONLY
+)
+
+create_fast_downward_library(
+    NAME partial_state_tree
+    HELP "Compact representation of sets of fact conjunctions"
+    SOURCES
+        algorithms/partial_state_tree
     DEPENDENCY_ONLY
 )

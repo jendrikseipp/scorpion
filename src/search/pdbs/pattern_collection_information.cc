@@ -96,6 +96,11 @@ void PatternCollectionInformation::set_pdbs(
     assert(information_is_valid());
 }
 
+void PatternCollectionInformation::set_projections(
+    shared_ptr<ProjectionCollection> &projections_) {
+    projections = projections_;
+}
+
 void PatternCollectionInformation::set_pattern_cliques(
     const shared_ptr<vector<PatternClique>> &pattern_cliques_) {
     pattern_cliques = pattern_cliques_;
@@ -111,6 +116,11 @@ PatternCollectionInformation::get_patterns() const {
 shared_ptr<PDBCollection> PatternCollectionInformation::get_pdbs() {
     create_pdbs_if_missing();
     return pdbs;
+}
+
+shared_ptr<ProjectionCollection>
+PatternCollectionInformation::get_projections() {
+    return projections;
 }
 
 shared_ptr<vector<PatternClique>>

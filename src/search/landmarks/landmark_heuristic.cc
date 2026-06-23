@@ -22,6 +22,9 @@ LandmarkHeuristic::LandmarkHeuristic(
       successor_generator(nullptr) {
 }
 
+LandmarkHeuristic::~LandmarkHeuristic() {
+}
+
 /* TODO: We would prefer the following two functions to be implemented
     somewhere else as more generic graph algorithms. */
 static bool depth_first_search_for_cycle_of_natural_orderings(

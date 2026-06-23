@@ -25,6 +25,15 @@
 
 cmake_minimum_required(VERSION 3.16)
 
+# If it's available, use ccache to cache compilation results. The two ccache options
+# allow sharing compilation results between different build directories.
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND AND NOT WIN32)  # Windows Github Actions find "ccache" --> ignore it.
+    message("Using ccache")
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE
+        "CCACHE_BASEDIR=${CMAKE_CURRENT_SOURCE_DIR} CCACHE_NOHASHDIR=true ccache")
+endif(CCACHE_FOUND AND NOT WIN32)
+
 project(fast-downward
     DESCRIPTION "Fast Downward is a domain-independent classical planning system."
     HOMEPAGE_URL https://www.fast-downward.org/)
@@ -42,4 +51,5 @@ add_custom_command(TARGET translate POST_BUILD
     COMMENT "Copying translator module into output directory")
 
 # Add search component as a subproject.
+add_subdirectory(preprocess_h2)
 add_subdirectory(search)

@@ -51,6 +51,7 @@ public:
         bool use_preferred_operators,
         const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
         const std::string &description, utils::Verbosity verbosity);
+    ~LandmarkHeuristic();
 
     virtual void get_path_dependent_evaluators(
         std::set<Evaluator *> &evals) override {

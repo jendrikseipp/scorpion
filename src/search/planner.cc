@@ -53,9 +53,12 @@ int main(int argc, const char **argv) {
         utils::g_log << "Search time: " << search_timer << endl;
         utils::g_log << "Total time: " << utils::g_timer << endl;
 
-        ExitCode exitcode = search_algorithm->found_solution()
-                                ? ExitCode::SUCCESS
-                                : ExitCode::SEARCH_UNSOLVED_INCOMPLETE;
+        ExitCode exitcode = ExitCode::SEARCH_UNSOLVED_INCOMPLETE;
+        if (search_algorithm->get_status() == SOLVED) {
+            exitcode = ExitCode::SUCCESS;
+        } else if (search_algorithm->get_status() == UNSOLVABLE) {
+            exitcode = ExitCode::SEARCH_UNSOLVABLE;
+        }
         exit_with(exitcode);
     } catch (const utils::ExitException &e) {
         /* To ensure that all destructors are called before the program exits,

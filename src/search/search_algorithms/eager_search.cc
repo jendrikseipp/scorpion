@@ -6,6 +6,7 @@
 #include "../pruning_method.h"
 
 #include "../algorithms/ordered_set.h"
+#include "../novelty/novelty_evaluator.h"
 #include "../plugins/options.h"
 #include "../task_utils/successor_generator.h"
 #include "../utils/logging.h"
@@ -77,6 +78,12 @@ void EagerSearch::initialize() {
 
     path_dependent_evaluators.assign(evals.begin(), evals.end());
 
+    // HACK: we need to notify landmark heuristics before evaluating the novelty
+    // heuristics that depend on them.
+    sort(
+        path_dependent_evaluators.begin(), path_dependent_evaluators.end(),
+        novelty::OrderNoveltyEvaluatorsLastHack());
+
     State initial_state = state_registry.get_initial_state();
     for (Evaluator *evaluator : path_dependent_evaluators) {
         evaluator->notify_initial_state(initial_state);
@@ -98,6 +105,7 @@ void EagerSearch::initialize() {
         start_f_value_statistics(eval_context);
         SearchNode node = search_space.get_node(initial_state);
         node.open_initial();
+        set_real_g(initial_state, 0);
 
         open_list->insert(eval_context, initial_state.get_id());
     }
@@ -224,7 +232,7 @@ void EagerSearch::generate_successors(const SearchNode &node) {
 
     for (OperatorID op_id : applicable_operators) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
-        if ((node.get_real_g() + op.get_cost()) >= bound)
+        if (!check_bound(state, op.get_cost()))
             continue;
 
         State succ_state = state_registry.get_successor_state(state, op);
@@ -262,6 +270,7 @@ void EagerSearch::generate_successors(const SearchNode &node) {
                 continue;
             }
             succ_node.open_new_node(node, op, get_adjusted_cost(op));
+            set_real_g(state, op, succ_state);
 
             open_list->insert(succ_eval_context, succ_state.get_id());
             if (search_progress.check_progress(succ_eval_context)) {
@@ -270,6 +279,7 @@ void EagerSearch::generate_successors(const SearchNode &node) {
             }
         } else if (succ_node.get_g() > node.get_g() + get_adjusted_cost(op)) {
             // We found a new cheapest path to an open or closed state.
+            set_real_g(state, op, succ_state);
             if (succ_node.is_open()) {
                 succ_node.update_open_node_parent(
                     node, op, get_adjusted_cost(op));

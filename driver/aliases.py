@@ -139,6 +139,20 @@ ALIASES["seq-opt-bjolp"] = [
 ALIASES["seq-opt-lmcut"] = [
     "--search", "astar(lmcut())"]
 
+ALIASES["scorpion"] = [
+    "--search", """astar(scp_online([
+        projections(sys_scp(max_time=100, max_time_per_restart=10)),
+        cartesian()],
+        saturator=perimstar, max_time=1000, interval=10K, orders=greedy_orders()),
+        pruning=limited_pruning(pruning=atom_centric_stubborn_sets(), min_required_pruning_ratio=0.2))"""]
+
+ALIASES["nolan"] = [
+    "--evaluator", "hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one), pref=false)",
+    "--evaluator", "hff=ff(transform=adapt_costs(one))",
+    "--search", "lazy(alt([single(hff), single(hff, pref_only=true), single(hlm, pref_only=true), "
+        "tiebreaking([novelty(width=2, evals=[hlm]), hlm, g()])], boost=1000), "
+        "preferred=[hff, hlm], cost_type=one, reopen_closed=false)"]
+
 
 PORTFOLIOS = {}
 for portfolio in PORTFOLIO_DIR.iterdir():

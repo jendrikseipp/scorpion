@@ -79,13 +79,25 @@ def get_arg_parser():
         "--keep-no-ops", action="store_true",
         help="keep operators without effects in the output")
     argparser.add_argument(
+        "--keep-duplicate-operators", action="store_true",
+        help="keep operators with identical preconditions, effects and cost")
+    argparser.add_argument(
         "--dump-task", action="store_true",
         help="dump human-readable SAS+ representation of the task")
+    argparser.add_argument(
+        "--dump-predicates", action="store_true",
+        help="write predicate names and arity to predicates.txt")
+    argparser.add_argument(
+        "--dump-static-atoms", action="store_true",
+        help="write static atoms to static-atoms.txt")
     argparser.add_argument(
         "--layer-strategy", default="min", choices=["min", "max"],
         help="How to assign layers to derived variables. 'min' attempts to put as "
         "many variables into the same layer as possible, while 'max' puts each variable "
         "into its own layer unless it is part of a cycle.")
+    argparser.add_argument(
+        "--stop-after-parsing-pddl", action="store_true",
+        help="exit after parsing PDDL files (PDDL linting mode)")
     return argparser
 
 

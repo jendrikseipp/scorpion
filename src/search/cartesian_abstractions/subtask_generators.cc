@@ -27,7 +27,7 @@ class SortFactsByIncreasingHaddValues {
     // Can't store as unique_ptr since the class needs copy-constructor.
     shared_ptr<additive_heuristic::AdditiveHeuristic> hadd;
 
-    int get_cost(const FactPair &fact) {
+    int get_cost(const FactPair &fact) const {
         return hadd->get_cost_for_cegar(fact.var, fact.value);
     }
 
@@ -49,13 +49,9 @@ public:
 static void remove_initial_state_facts(
     const TaskProxy &task_proxy, Facts &facts) {
     State initial_state = task_proxy.get_initial_state();
-    facts.erase(
-        remove_if(
-            facts.begin(), facts.end(),
-            [&](FactPair fact) {
-                return initial_state[fact.var].get_value() == fact.value;
-            }),
-        facts.end());
+    erase_if(facts, [&](FactPair fact) {
+        return initial_state[fact.var].get_value() == fact.value;
+    });
 }
 
 static void order_facts(

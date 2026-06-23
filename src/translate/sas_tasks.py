@@ -109,6 +109,23 @@ class SASTask:
         for axiom in self.axioms:
             axiom.output(stream)
 
+    def remove_duplicate_operators(self):
+        """Remove operators with identical prevail, pre_post and cost,
+        keeping the first occurrence. Returns the number removed."""
+        seen = set()
+        unique = []
+        for op in self.operators:
+            key = (op.cost,
+                   tuple(op.prevail),
+                   tuple((var, pre, post, tuple(sorted(cond)))
+                         for var, pre, post, cond in op.pre_post))
+            if key not in seen:
+                seen.add(key)
+                unique.append(op)
+        removed = len(self.operators) - len(unique)
+        self.operators = unique
+        return removed
+
     def get_encoding_size(self):
         task_size = 0
         task_size += self.variables.get_encoding_size()
