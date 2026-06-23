@@ -14,12 +14,15 @@ This checks only py-vs-cpp equivalence. Determinism of each translator is
 checked separately by test-translator.py (pass --translator cpp for the C++
 variant).
 
-By default only a small, fast regression set is checked: a task from each
+Benchmarks are not bundled: tasks are read from a downward-benchmarks checkout
+given by the DOWNWARD_BENCHMARKS environment variable (or a directory argument).
+
+By default only a small, fast regression set is checked: one task from each
 family that exposed a past py-vs-cpp divergence --
   - assembly, freecell, psr-large, psr-middle, settlers-sat18-adl,
     thoughtful-sat14-strips, trucks-strips: axiom/mutex/sort divergences;
-  - ged-positional, philosophers: invariant-finder RNG-driven exploration;
-  - miconic, logistics: MaxDAG variable ordering in multi-variable SCCs;
+  - ged-opt14-strips, philosophers: invariant-finder RNG-driven exploration;
+  - miconic, logistics98: MaxDAG variable ordering in multi-variable SCCs;
   - pathways, sokoban-sat11-strips: SCC DFS visit order;
   - blocks: GroupCoverQueue mutex tie-break direction;
   - storage: SCC-order-dependent variable numbering;
@@ -33,7 +36,7 @@ Requires the C++ translator to be built:
 
 Examples:
     ./test-translator-equivalence.py
-    ./test-translator-equivalence.py misc/tests/benchmarks all
+    ./test-translator-equivalence.py $DOWNWARD_BENCHMARKS all
     ./test-translator-equivalence.py /path/to/downward-benchmarks gripper:prob01.pddl
 """
 
@@ -50,17 +53,20 @@ import time
 DIR = Path(__file__).resolve().parent
 REPO = DIR.parents[1]
 DRIVER = REPO / "fast-downward.py"
-DEFAULT_BENCHMARKS = REPO / "misc" / "tests" / "benchmarks"
+# Benchmarks are not bundled; point at a downward-benchmarks checkout via the
+# DOWNWARD_BENCHMARKS environment variable (or pass a directory explicitly).
+DEFAULT_BENCHMARKS = os.environ.get("DOWNWARD_BENCHMARKS")
 
-# Default task set: the smallest task from each family that exposed a past
-# py-vs-cpp divergence (the regression set). Kept small so the check is fast;
-# pass an explicit suite ("all", "first", or "<family>:<problem>") to override.
+# Default task set: one task from each family that exposed a past py-vs-cpp
+# divergence (the regression set), as <domain>:<problem> within the benchmarks
+# directory. Kept small so the check is fast; pass an explicit suite ("all",
+# "first", or "<family>:<problem>") to override.
 DEFAULT_TASKS = [
     "assembly:prob01.pddl",
     "blocks:probBLOCKS-4-0.pddl",
     "freecell:p01.pddl",
-    "ged-positional:d-1-3.pddl",
-    "logistics:p01.pddl",
+    "ged-opt14-strips:d-1-3.pddl",
+    "logistics98:prob28.pddl",
     "miconic:s1-0.pddl",
     "parking-sat14-strips:p_28_2.pddl",
     "pathways:p12.pddl",
@@ -166,9 +172,8 @@ def check_one(domain, problem):
 def main():
     p = argparse.ArgumentParser(
         description=HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("benchmarks_dir", nargs="?", default=str(DEFAULT_BENCHMARKS),
-                   help="benchmark directory (default: "
-                        "misc/tests/benchmarks)")
+    p.add_argument("benchmarks_dir", nargs="?", default=DEFAULT_BENCHMARKS,
+                   help="benchmark directory (default: $DOWNWARD_BENCHMARKS)")
     p.add_argument("suite", nargs="*", default=DEFAULT_TASKS,
                    help='task selection (default: the small per-family '
                         'regression set). "all", "first" (first task per '
@@ -180,6 +185,9 @@ def main():
                         "are wall-clock and inflate under parallelism; the "
                         "elapsed line reflects the real speedup.")
     args = p.parse_args()
+    if not args.benchmarks_dir:
+        sys.exit("No benchmark directory: set the DOWNWARD_BENCHMARKS "
+                 "environment variable or pass a directory explicitly.")
     benchmarks_dir = Path(args.benchmarks_dir).resolve()
     if not benchmarks_dir.is_dir():
         sys.exit(f"Not a directory: {benchmarks_dir}")

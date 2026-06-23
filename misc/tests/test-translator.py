@@ -21,7 +21,9 @@ import sys
 DIR = Path(__file__).resolve().parent
 REPO = DIR.parents[1]
 DRIVER = REPO / "fast-downward.py"
-DEFAULT_BENCHMARKS = DIR / "benchmarks"
+# Benchmarks are not bundled; point at a downward-benchmarks checkout via the
+# DOWNWARD_BENCHMARKS environment variable (or pass a directory explicitly).
+DEFAULT_BENCHMARKS = os.environ.get("DOWNWARD_BENCHMARKS")
 
 # Default task set: the smallest task from each family that exposed a past
 # py-vs-cpp divergence (the regression set). Kept small so the check is fast;
@@ -41,8 +43,8 @@ DEFAULT_TASKS = [
 def parse_args():
     parser = argparse.ArgumentParser(description=HELP)
     parser.add_argument(
-        "benchmarks_dir", nargs="?", default=str(DEFAULT_BENCHMARKS),
-        help="path to benchmark directory (default: misc/tests/benchmarks)")
+        "benchmarks_dir", nargs="?", default=DEFAULT_BENCHMARKS,
+        help="path to benchmark directory (default: $DOWNWARD_BENCHMARKS)")
     parser.add_argument(
         "suite", nargs="*", default=DEFAULT_TASKS,
         help='task selection (default: the small per-family regression set). '
@@ -57,6 +59,9 @@ def parse_args():
         help="which translator to test (default: the driver's default). "
              "Use 'cpp' to check determinism of the C++ translator.")
     args = parser.parse_args()
+    if not args.benchmarks_dir:
+        sys.exit("No benchmark directory: set the DOWNWARD_BENCHMARKS "
+                 "environment variable or pass a directory explicitly.")
     args.benchmarks_dir = Path(args.benchmarks_dir).resolve()
     return args
 

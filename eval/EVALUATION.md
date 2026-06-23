@@ -19,8 +19,8 @@ suites executed on a cluster.
 
 ## Test suite (10 instances)
 
-The instances are the PDDL benchmarks bundled in
-`misc/tests/benchmarks/`:
+The instances below are taken from a downward-benchmarks checkout (the
+`$DOWNWARD_BENCHMARKS` directory); they are no longer bundled in the repository:
 
 | # | Domain | Problem | PDDL fragment exercised |
 |---|---|---|---|
@@ -144,12 +144,13 @@ cmake --build src/translate-cpp/build -j
 
 # Run a single instance (writes output.sas in cwd).
 src/translate-cpp/build/translate \
-    misc/tests/benchmarks/logistics/domain.pddl \
-    misc/tests/benchmarks/logistics/p01.pddl
+    "$DOWNWARD_BENCHMARKS"/logistics98/domain.pddl \
+    "$DOWNWARD_BENCHMARKS"/logistics98/prob01.pddl
 
-# Compare against the Python translator on the bundled suite,
+# Compare against the Python translator on a downward-benchmarks checkout,
 # enforcing 120 s / 2 GiB per run.
-bash src/translate-cpp/tests/run_validation.sh
+DOWNWARD_BENCHMARKS=/path/to/downward-benchmarks \
+    bash src/translate-cpp/tests/run_validation.sh
 
 # Force the Python translator from fast-downward.py:
 ./fast-downward.py --translator py --translate <domain> <problem>

@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-# Validate the C++ translator against the Python translator on every
-# benchmark in misc/tests/benchmarks/, enforcing 120s / 2GiB per run.
-# Usage: tests/run_validation.sh [bench_root]
+# Validate the C++ translator against the Python translator on every benchmark
+# in a downward-benchmarks checkout, enforcing 120s / 2GiB per run.
+# Usage: tests/run_validation.sh [bench_root]   (default: $DOWNWARD_BENCHMARKS)
 
 set -uo pipefail
 
-bench_root="${1:-misc/tests/benchmarks}"
+bench_root="${1:-${DOWNWARD_BENCHMARKS:-}}"
+if [[ -z ${bench_root} ]]; then
+    echo "No benchmark directory: set DOWNWARD_BENCHMARKS or pass one as \$1."
+    exit 1
+fi
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 repo_root="$(cd "${here}/../.." && pwd)"
 cpp_bin="${here}/build/translate"
