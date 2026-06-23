@@ -43,6 +43,9 @@ struct Options {
 
     // Operators.
     bool keep_no_ops = false;
+    // --keep-duplicate-operators disables removing operators with identical
+    // prevail, pre_post and cost (removal is on by default, matching Python).
+    bool keep_duplicate_operators = false;
 
     // Debug.
     bool dump_task = false;

@@ -65,6 +65,11 @@ struct SASTask {
     std::vector<SASAxiom> axioms;
     bool metric = false;
 
+    // Remove operators with identical prevail, pre_post and cost, keeping the
+    // first occurrence. Returns the number removed. Mirrors the Python
+    // translator's SASTask.remove_duplicate_operators.
+    int remove_duplicate_operators();
+
     void output(std::ostream &os) const;
 };
 }

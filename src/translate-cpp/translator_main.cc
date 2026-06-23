@@ -129,6 +129,13 @@ int main(int argc, const char **argv) {
         if (opts.dump_task) task.dump(utils::log());
 
         auto sas_task = pipeline::pddl_to_sas(task);
+        if (!opts.keep_duplicate_operators) {
+            size_t before = sas_task.operators.size();
+            int removed = sas_task.remove_duplicate_operators();
+            utils::log() << "Removed " << removed << " duplicate operators ("
+                         << sas_task.operators.size() << " of " << before
+                         << " remaining)." << endl;
+        }
         dump_statistics(sas_task);
 
         utils::log() << "Writing output..." << endl;

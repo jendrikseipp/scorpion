@@ -5,9 +5,36 @@
 #include <charconv>
 #include <set>
 #include <string>
+#include <tuple>
+#include <vector>
 
 using namespace std;
 namespace translate::sas {
+
+int SASTask::remove_duplicate_operators() {
+    // Key mirrors Python's: (cost, prevail, pre_post) with each effect
+    // condition sorted (variable reordering can leave conditions unsorted) and
+    // the prevail/pre_post entries kept in their current order. Operators are
+    // already sorted by (name, prevail, pre_post), so among duplicates the
+    // first-named one survives -- matching the Python translator.
+    using Key = tuple<int, vector<VarVal>,
+                      vector<tuple<int, int, int, vector<VarVal>>>>;
+    set<Key> seen;
+    vector<SASOperator> unique;
+    unique.reserve(operators.size());
+    for (auto &op : operators) {
+        auto pre_post = op.pre_post;
+        for (auto &[var, pre, post, cond] : pre_post)
+            ranges::sort(cond);
+        Key key{op.cost, op.prevail, move(pre_post)};
+        if (seen.insert(move(key)).second)
+            unique.push_back(move(op));
+    }
+    int removed = static_cast<int>(operators.size() - unique.size());
+    operators = move(unique);
+    return removed;
+}
+
 namespace {
 /*
   Fast writer that appends to a string buffer using locale-free

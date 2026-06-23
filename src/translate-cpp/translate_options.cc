@@ -16,7 +16,8 @@ void usage(ostream &os, const char *prog) {
        << "    [--sas-file FILE] [--invariant-generation-max-time SECS]\n"
        << "    [--add-implied-preconditions] [--keep-unreachable-facts]\n"
        << "    [--skip-variable-reordering] [--keep-unimportant-variables]\n"
-       << "    [--keep-no-ops] [--no-cpython-rng] [--dump-task]\n"
+       << "    [--keep-no-ops] [--keep-duplicate-operators]\n"
+       << "    [--no-cpython-rng] [--dump-task]\n"
        << "    [--layer-strategy {min,max}]\n"
        << "    DOMAIN_PDDL TASK_PDDL\n";
 }
@@ -74,6 +75,8 @@ void parse_options(int argc, const char *const *argv) {
             o.filter_unimportant_vars = false;
         } else if (a == "--keep-no-ops") {
             o.keep_no_ops = true;
+        } else if (a == "--keep-duplicate-operators") {
+            o.keep_duplicate_operators = true;
         } else if (a == "--no-cpython-rng") {
             o.cpython_rng = false;
         } else if (a == "--dump-task") {
