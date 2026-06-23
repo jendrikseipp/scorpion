@@ -13,6 +13,7 @@
 #include <variant>
 #include <vector>
 
+using namespace std;
 namespace translate::grounding {
 using namespace pddl;
 
@@ -31,10 +32,10 @@ namespace {
   - If a PNE is provided (only for action costs), require its definition
     predicate.
 */
-std::vector<Atom> condition_to_rule_body(
-    const std::vector<TypedObject> &parameters, const ConditionPtr &condition,
+vector<Atom> condition_to_rule_body(
+    const vector<TypedObject> &parameters, const ConditionPtr &condition,
     const PrimitiveNumericExpression *pne) {
-    std::vector<Atom> result;
+    vector<Atom> result;
     for (const auto &par : parameters) {
         result.emplace_back(
             type_predicate_name(par.type_name),
@@ -52,7 +53,7 @@ std::vector<Atom> condition_to_rule_body(
             }
             cur = q.body[0];
         }
-        std::vector<ConditionPtr> parts;
+        vector<ConditionPtr> parts;
         if (cur->kind() == Condition::Kind::CONJUNCTION)
             parts = cur->parts();
         else
@@ -64,7 +65,7 @@ std::vector<Atom> condition_to_rule_body(
             }
             if (part->kind() != Condition::Kind::ATOM &&
                 part->kind() != Condition::Kind::NEGATED_ATOM) {
-                throw std::runtime_error(
+                throw runtime_error(
                     "Condition not normalized: cannot build rule body");
             }
             const auto &lit = static_cast<const Literal &>(*part);
@@ -72,7 +73,7 @@ std::vector<Atom> condition_to_rule_body(
                 ArgList args;
                 args.reserve(lit.args.size());
                 for (const auto &a : lit.args) args.emplace_back(a);
-                result.emplace_back(lit.predicate, std::move(args));
+                result.emplace_back(lit.predicate, move(args));
             }
         }
     }
@@ -81,7 +82,7 @@ std::vector<Atom> condition_to_rule_body(
         ArgList args;
         args.reserve(pne->args.size());
         for (const auto &a : pne->args) args.emplace_back(a);
-        result.emplace_back("@def-" + pne->symbol, std::move(args));
+        result.emplace_back("@def-" + pne->symbol, move(args));
     }
     return result;
 }
@@ -92,11 +93,11 @@ std::vector<Atom> condition_to_rule_body(
   instantiate pass can map back to the source action/axiom even when
   multiple actions share a name (e.g., after split_disjunctions).
 */
-std::string action_head_predicate(int action_index) {
-    return "@a$" + std::to_string(action_index);
+string action_head_predicate(int action_index) {
+    return "@a$" + to_string(action_index);
 }
-std::string axiom_head_predicate(int axiom_index) {
-    return "@x$" + std::to_string(axiom_index);
+string axiom_head_predicate(int axiom_index) {
+    return "@x$" + to_string(axiom_index);
 }
 
 Atom action_head(const Action &action, int action_index) {
@@ -109,7 +110,7 @@ Atom action_head(const Action &action, int action_index) {
             static_cast<const ExistentialCondition &>(*action.precondition);
         for (const auto &p : q.parameters) variables.emplace_back(p.name);
     }
-    return Atom(action_head_predicate(action_index), std::move(variables));
+    return Atom(action_head_predicate(action_index), move(variables));
 }
 
 Atom axiom_head(const Axiom &axiom, int axiom_index) {
@@ -122,14 +123,14 @@ Atom axiom_head(const Axiom &axiom, int axiom_index) {
             static_cast<const ExistentialCondition &>(*axiom.condition);
         for (const auto &p : q.parameters) variables.emplace_back(p.name);
     }
-    return Atom(axiom_head_predicate(axiom_index), std::move(variables));
+    return Atom(axiom_head_predicate(axiom_index), move(variables));
 }
 
 void add_typed_object(Program &prog, const TypedObject &obj,
-                      const std::unordered_map<std::string,
+                      const unordered_map<string,
                                                const Type *> &type_dict) {
     auto it = type_dict.find(obj.type_name);
-    std::vector<std::string> chain;
+    vector<string> chain;
     chain.push_back(obj.type_name);
     if (it != type_dict.end())
         for (const auto &sup : it->second->supertype_names)
@@ -141,34 +142,34 @@ void add_typed_object(Program &prog, const TypedObject &obj,
 }
 
 void translate_facts(Program &prog, const Task &task) {
-    std::unordered_map<std::string, const Type *> type_dict;
+    unordered_map<string, const Type *> type_dict;
     for (const auto &t : task.types) type_dict[t.name] = &t;
     for (const auto &obj : task.objects)
         add_typed_object(prog, obj, type_dict);
     for (const auto &elem : task.init) {
         if (auto *atom =
-                std::get_if<std::shared_ptr<const pddl::Atom>>(&elem)) {
+                get_if<shared_ptr<const pddl::Atom>>(&elem)) {
             if (*atom) {
                 ArgList args;
                 args.reserve((*atom)->args.size());
                 for (const auto &a : (*atom)->args) args.emplace_back(a);
-                prog.add_fact(Atom((*atom)->predicate, std::move(args)));
+                prog.add_fact(Atom((*atom)->predicate, move(args)));
             }
-        } else if (auto *as = std::get_if<std::shared_ptr<Assign>>(&elem)) {
+        } else if (auto *as = get_if<shared_ptr<Assign>>(&elem)) {
             if (*as && (*as)->fluent) {
                 ArgList args;
                 args.reserve((*as)->fluent->args.size());
                 for (const auto &a : (*as)->fluent->args)
                     args.emplace_back(a);
                 prog.add_fact(
-                    Atom("@def-" + (*as)->fluent->symbol, std::move(args)));
+                    Atom("@def-" + (*as)->fluent->symbol, move(args)));
             }
         }
     }
 }
 
 void build_exploration_rules(Program &prog, const Task &task) {
-    for (std::size_t i = 0; i < task.actions.size(); ++i) {
+    for (size_t i = 0; i < task.actions.size(); ++i) {
         const Action &action = task.actions[i];
         Atom head = action_head(action, static_cast<int>(i));
         const PrimitiveNumericExpression *pne = nullptr;
@@ -186,17 +187,17 @@ void build_exploration_rules(Program &prog, const Task &task) {
             if (!eff.literal) continue;
             const auto &lit = static_cast<const Literal &>(*eff.literal);
             if (lit.negated()) continue;
-            std::vector<Atom> rule_body = {head};
+            vector<Atom> rule_body = {head};
             auto sub = condition_to_rule_body({}, eff.condition, nullptr);
-            for (auto &c : sub) rule_body.push_back(std::move(c));
+            for (auto &c : sub) rule_body.push_back(move(c));
             ArgList eff_args;
             eff_args.reserve(lit.args.size());
             for (const auto &a : lit.args) eff_args.emplace_back(a);
             prog.add_rule(Rule{rule_body, Atom(lit.predicate,
-                                               std::move(eff_args))});
+                                               move(eff_args))});
         }
     }
-    for (std::size_t i = 0; i < task.axioms.size(); ++i) {
+    for (size_t i = 0; i < task.axioms.size(); ++i) {
         const Axiom &axiom = task.axioms[i];
         Atom app_head = axiom_head(axiom, static_cast<int>(i));
         auto app_body = condition_to_rule_body(axiom.parameters,
@@ -206,7 +207,7 @@ void build_exploration_rules(Program &prog, const Task &task) {
         ArgList eff_args;
         for (int j = 0; j < axiom.num_external_parameters; ++j)
             eff_args.emplace_back(axiom.parameters[j].name);
-        Atom eff_head(axiom.name, std::move(eff_args));
+        Atom eff_head(axiom.name, move(eff_args));
         prog.add_rule(Rule{{app_head}, eff_head});
     }
     // Goal rule.
@@ -220,10 +221,10 @@ void build_exploration_rules(Program &prog, const Task &task) {
 
 Program build_program(const Task &task) {
     Program prog;
-    std::cout << "Generating Datalog program..." << std::endl;
+    cout << "Generating Datalog program..." << endl;
     translate_facts(prog, task);
     build_exploration_rules(prog, task);
-    std::cout << "Normalizing Datalog program..." << std::endl;
+    cout << "Normalizing Datalog program..." << endl;
     prog.normalize();
     return prog;
 }

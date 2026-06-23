@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_GROUNDING_MODEL_H
-#define TRANSLATE_GROUNDING_MODEL_H
+#ifndef GROUNDING_MODEL_H
+#define GROUNDING_MODEL_H
 
 #include "program.h"
 

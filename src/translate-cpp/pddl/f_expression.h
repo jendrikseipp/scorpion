@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PDDL_F_EXPRESSION_H
-#define TRANSLATE_PDDL_F_EXPRESSION_H
+#ifndef PDDL_F_EXPRESSION_H
+#define PDDL_F_EXPRESSION_H
 
 #include <cstddef>
 #include <memory>

@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PDDL_ACTION_H
-#define TRANSLATE_PDDL_ACTION_H
+#ifndef PDDL_ACTION_H
+#define PDDL_ACTION_H
 
 #include "condition.h"
 #include "effect.h"

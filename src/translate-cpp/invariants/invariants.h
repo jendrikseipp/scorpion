@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_INVARIANTS_INVARIANTS_H
-#define TRANSLATE_INVARIANTS_INVARIANTS_H
+#ifndef INVARIANTS_INVARIANTS_H
+#define INVARIANTS_INVARIANTS_H
 
 #include "../pddl/action.h"
 #include "../pddl/condition.h"
@@ -66,12 +66,12 @@ public:
         const pddl::Literal &own_literal, const pddl::Literal &other_literal,
         std::vector<InvariantPart> &result) const;
 
-    std::size_t hash() const noexcept;
+    std::size_t get_hash() const noexcept;
 };
 
 struct InvariantPartHash {
     std::size_t operator()(const InvariantPart &p) const noexcept {
-        return p.hash();
+        return p.get_hash();
     }
 };
 
@@ -90,7 +90,7 @@ public:
         return parts.empty() ? 0 : parts.front().arity();
     }
     bool operator==(const Invariant &o) const;
-    std::size_t hash() const noexcept;
+    std::size_t get_hash() const noexcept;
 
     /*
       Run the H2-style balance check for this invariant candidate.
@@ -136,7 +136,7 @@ private:
 
 struct InvariantHash {
     std::size_t operator()(const Invariant &i) const noexcept {
-        return i.hash();
+        return i.get_hash();
     }
 };
 }

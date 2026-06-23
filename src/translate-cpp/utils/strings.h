@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_UTILS_STRINGS_H
-#define TRANSLATE_UTILS_STRINGS_H
+#ifndef UTILS_STRINGS_H
+#define UTILS_STRINGS_H
 
 #include <string>
 #include <string_view>

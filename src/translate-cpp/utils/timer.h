@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_UTILS_TIMER_H
-#define TRANSLATE_UTILS_TIMER_H
+#ifndef UTILS_TIMER_H
+#define UTILS_TIMER_H
 
 #include <chrono>
 #include <string>

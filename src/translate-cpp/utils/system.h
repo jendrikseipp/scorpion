@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_UTILS_SYSTEM_H
-#define TRANSLATE_UTILS_SYSTEM_H
+#ifndef UTILS_SYSTEM_H
+#define UTILS_SYSTEM_H
 
 #include <stdexcept>
 #include <string>

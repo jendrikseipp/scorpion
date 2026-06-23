@@ -18,6 +18,7 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
+using namespace std;
 using namespace translate;
 
 namespace {
@@ -37,8 +38,8 @@ extern "C" void handle_sigxcpu(int) {
 }
 
 void handle_bad_alloc() {
-    std::cerr << "\nTranslator ran out of memory" << std::endl;
-    std::_Exit(static_cast<int>(utils::ExitCode::TRANSLATE_OUT_OF_MEMORY));
+    cerr << "\nTranslator ran out of memory" << endl;
+    _Exit(static_cast<int>(utils::ExitCode::TRANSLATE_OUT_OF_MEMORY));
 }
 
 void install_signal_and_error_handlers() {
@@ -50,8 +51,8 @@ void install_signal_and_error_handlers() {
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESETHAND;
     sigaction(SIGXCPU, &sa, nullptr);
-    // std::bad_alloc: matches Python's MemoryError -> exit(20).
-    std::set_new_handler(handle_bad_alloc);
+    // bad_alloc: matches Python's MemoryError -> exit(20).
+    set_new_handler(handle_bad_alloc);
 }
 }
 
@@ -77,19 +78,19 @@ void dump_statistics(const sas::SASTask &task) {
         task_size += 1 + static_cast<int>(ax.condition.size());
 
     utils::log() << "Translator variables: " << task.variables.ranges.size()
-                 << std::endl;
-    utils::log() << "Translator derived variables: " << derived << std::endl;
-    utils::log() << "Translator facts: " << facts << std::endl;
+                 << endl;
+    utils::log() << "Translator derived variables: " << derived << endl;
+    utils::log() << "Translator facts: " << facts << endl;
     utils::log() << "Translator goal facts: " << task.goal.pairs.size()
-                 << std::endl;
+                 << endl;
     utils::log() << "Translator mutex groups: " << task.mutexes.size()
-                 << std::endl;
+                 << endl;
     utils::log() << "Translator total mutex groups size: " << mutex_total
-                 << std::endl;
+                 << endl;
     utils::log() << "Translator operators: " << task.operators.size()
-                 << std::endl;
-    utils::log() << "Translator axioms: " << task.axioms.size() << std::endl;
-    utils::log() << "Translator task size: " << task_size << std::endl;
+                 << endl;
+    utils::log() << "Translator axioms: " << task.axioms.size() << endl;
+    utils::log() << "Translator task size: " << task_size << endl;
 }
 }
 
@@ -99,25 +100,25 @@ int main(int argc, const char **argv) {
         parse_options(argc, argv);
         const Options &opts = get_options();
 
-        utils::log() << "Fast Downward translator (C++ port)" << std::endl;
+        utils::log() << "Fast Downward translator (C++ port)" << endl;
         // Phase log lines use the Python translator's wording and
         // "[%.3fs CPU, %.3fs wall-clock]" format so Lab's stock
         // translator parser captures them as translator_time_<phase>.
-        utils::log() << "Parsing..." << std::endl;
+        utils::log() << "Parsing..." << endl;
         utils::PhaseTimer parse_t;
         auto domain_sexpr = parser::parse_pddl_file("domain", opts.domain);
         auto task_sexpr = parser::parse_pddl_file("task", opts.task);
         auto task = parser::parse_task(domain_sexpr, task_sexpr);
-        utils::log() << "Parsing: " << parse_t.str() << std::endl;
+        utils::log() << "Parsing: " << parse_t.str() << endl;
 
-        utils::log() << "Normalizing task..." << std::endl;
+        utils::log() << "Normalizing task..." << endl;
         utils::PhaseTimer normalize_t;
         normalize::normalize(task);
-        utils::log() << "Normalizing task: " << normalize_t.str() << std::endl;
+        utils::log() << "Normalizing task: " << normalize_t.str() << endl;
 
         if (opts.generate_relaxed_task) {
             for (auto &action : task.actions) {
-                std::erase_if(action.effects, [](const pddl::Effect &e) {
+                erase_if(action.effects, [](const pddl::Effect &e) {
                     if (!e.literal) return false;
                     const auto &lit =
                         static_cast<const pddl::Literal &>(*e.literal);
@@ -130,34 +131,34 @@ int main(int argc, const char **argv) {
         auto sas_task = pipeline::pddl_to_sas(task);
         dump_statistics(sas_task);
 
-        utils::log() << "Writing output..." << std::endl;
+        utils::log() << "Writing output..." << endl;
         utils::PhaseTimer write_t;
-        std::ofstream out(opts.sas_file);
+        ofstream out(opts.sas_file);
         if (!out)
             utils::exit_with(utils::ExitCode::TRANSLATE_CRITICAL_ERROR,
                              "Could not open output file: " + opts.sas_file);
         sas_task.output(out);
-        utils::log() << "Writing output: " << write_t.str() << std::endl;
+        utils::log() << "Writing output: " << write_t.str() << endl;
 
         struct rusage ru;
         getrusage(RUSAGE_SELF, &ru);
         utils::log() << "Translator peak memory: " << ru.ru_maxrss << " KB"
-                     << std::endl;
+                     << endl;
         utils::log() << "Done! "
                      << utils::format_timing(utils::cpu_seconds(),
                                              utils::elapsed_seconds())
-                     << std::endl;
+                     << endl;
         return 0;
     } catch (const parser::ParseError &e) {
-        std::cerr << "Parse error:\n" << e.what() << std::endl;
+        cerr << "Parse error:\n" << e.what() << endl;
         return static_cast<int>(utils::ExitCode::TRANSLATE_INPUT_ERROR);
     } catch (const utils::ExitException &e) {
         return static_cast<int>(e.get_exit_code());
-    } catch (const std::bad_alloc &) {
-        std::cerr << "\nTranslator ran out of memory" << std::endl;
+    } catch (const bad_alloc &) {
+        cerr << "\nTranslator ran out of memory" << endl;
         return static_cast<int>(utils::ExitCode::TRANSLATE_OUT_OF_MEMORY);
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+    } catch (const exception &e) {
+        cerr << "Error: " << e.what() << endl;
         return static_cast<int>(utils::ExitCode::TRANSLATE_CRITICAL_ERROR);
     }
 }

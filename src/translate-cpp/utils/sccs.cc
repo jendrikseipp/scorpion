@@ -3,18 +3,19 @@
 #include <algorithm>
 #include <vector>
 
+using namespace std;
 namespace translate::utils {
 namespace {
 struct TarjanState {
-    const std::vector<std::vector<int>> &graph;
-    std::vector<int> index;
-    std::vector<int> lowlink;
-    std::vector<int> stack_idx;
-    std::vector<int> stack;
-    std::vector<std::vector<int>> sccs;
+    const vector<vector<int>> &graph;
+    vector<int> index;
+    vector<int> lowlink;
+    vector<int> stack_idx;
+    vector<int> stack;
+    vector<vector<int>> sccs;
     int current_index = 1;
 
-    explicit TarjanState(const std::vector<std::vector<int>> &g)
+    explicit TarjanState(const vector<vector<int>> &g)
         : graph(g), index(g.size(), 0), lowlink(g.size(), 0),
           stack_idx(g.size(), -1) {}
 
@@ -24,7 +25,7 @@ struct TarjanState {
             int v;
             int next_succ;
         };
-        std::vector<Frame> work;
+        vector<Frame> work;
         work.push_back({v, 0});
         index[v] = current_index;
         lowlink[v] = current_index;
@@ -45,7 +46,7 @@ struct TarjanState {
                     stack.push_back(w);
                     work.push_back({w, 0});
                 } else if (stack_idx[w] >= 0) {
-                    lowlink[f.v] = std::min(lowlink[f.v], index[w]);
+                    lowlink[f.v] = min(lowlink[f.v], index[w]);
                 }
             } else {
                 int cur = f.v;
@@ -60,33 +61,33 @@ struct TarjanState {
                       and produced reverse order, which led to
                       different variable numbering downstream.
                     */
-                    std::size_t scc_begin = stack.size();
+                    size_t scc_begin = stack.size();
                     int top;
                     do {
                         --scc_begin;
                         top = stack[scc_begin];
                     } while (top != cur);
-                    std::vector<int> scc(stack.begin() + scc_begin,
+                    vector<int> scc(stack.begin() + scc_begin,
                                          stack.end());
                     for (int n : scc) stack_idx[n] = -1;
                     stack.resize(scc_begin);
-                    sccs.push_back(std::move(scc));
+                    sccs.push_back(move(scc));
                 }
                 if (!work.empty())
                     lowlink[work.back().v] =
-                        std::min(lowlink[work.back().v], lowlink[cur]);
+                        min(lowlink[work.back().v], lowlink[cur]);
             }
         }
     }
 };
 }
 
-std::vector<std::vector<int>> get_sccs_adjacency_list(
-    const std::vector<std::vector<int>> &adjacency_list) {
+vector<vector<int>> get_sccs_adjacency_list(
+    const vector<vector<int>> &adjacency_list) {
     TarjanState ts(adjacency_list);
-    for (std::size_t i = 0; i < adjacency_list.size(); ++i)
+    for (size_t i = 0; i < adjacency_list.size(); ++i)
         if (ts.index[i] == 0) ts.visit(static_cast<int>(i));
-    std::reverse(ts.sccs.begin(), ts.sccs.end());
+    reverse(ts.sccs.begin(), ts.sccs.end());
     return ts.sccs;
 }
 }

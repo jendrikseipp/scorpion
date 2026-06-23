@@ -3,33 +3,34 @@
 #include <algorithm>
 #include <stdexcept>
 
+using namespace std;
 namespace translate::pddl {
-Requirements::Requirements(std::vector<std::string> reqs)
-    : requirements(std::move(reqs)) {
+Requirements::Requirements(vector<string> reqs)
+    : requirements(move(reqs)) {
     for (const auto &r : requirements) {
-        auto it = std::ranges::find(REQUIREMENT_LABELS, r);
+        auto it = ranges::find(REQUIREMENT_LABELS, r);
         if (it == REQUIREMENT_LABELS.end())
-            throw std::runtime_error("Invalid requirement: " + r);
+            throw runtime_error("Invalid requirement: " + r);
     }
 }
 
-std::ostream &operator<<(std::ostream &os, const Requirements &r) {
-    for (std::size_t i = 0; i < r.requirements.size(); ++i) {
+ostream &operator<<(ostream &os, const Requirements &r) {
+    for (size_t i = 0; i < r.requirements.size(); ++i) {
         if (i) os << ", ";
         os << r.requirements[i];
     }
     return os;
 }
 
-Axiom *Task::add_axiom(std::vector<TypedObject> parameters, ConditionPtr cond) {
-    std::string name = "new-axiom@" + std::to_string(axiom_counter++);
+Axiom *Task::add_axiom(vector<TypedObject> parameters, ConditionPtr cond) {
+    string name = "new-axiom@" + to_string(axiom_counter++);
     predicates.emplace_back(name, parameters);
     int arity = static_cast<int>(parameters.size());
-    axioms.emplace_back(name, std::move(parameters), arity, std::move(cond));
+    axioms.emplace_back(name, move(parameters), arity, move(cond));
     return &axioms.back();
 }
 
-void Task::dump(std::ostream &os) const {
+void Task::dump(ostream &os) const {
     os << "Problem " << domain_name << ": " << task_name
        << " [" << requirements << "]\n"
        << "Types:\n";
@@ -47,7 +48,7 @@ void Task::dump(std::ostream &os) const {
     os << "Init:\n";
     for (const auto &i : init) {
         os << "  ";
-        std::visit([&os](const auto &v) {
+        visit([&os](const auto &v) {
             if (v) v->dump(os, 0);
         }, i);
     }

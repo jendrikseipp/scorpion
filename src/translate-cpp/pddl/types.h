@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PDDL_TYPES_H
-#define TRANSLATE_PDDL_TYPES_H
+#ifndef PDDL_TYPES_H
+#define PDDL_TYPES_H
 
 #include <optional>
 #include <ostream>

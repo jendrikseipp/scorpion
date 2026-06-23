@@ -4,19 +4,20 @@
 
 #include <iostream>
 
+using namespace std;
 namespace translate::utils {
-std::ostream &log() {
-    return std::cout;
+ostream &log() {
+    return cout;
 }
 
 ScopedTimerLog::ScopedTimerLog(const char *label)
     : label(label), start_seconds(elapsed_seconds()) {
-    log() << label << "..." << std::endl;
+    log() << label << "..." << endl;
 }
 
 ScopedTimerLog::~ScopedTimerLog() {
     double elapsed = elapsed_seconds() - start_seconds;
     log() << "Done! [" << elapsed << "s CPU, " << elapsed << "s wall-clock]"
-          << std::endl;
+          << endl;
 }
 }

@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PARSER_PARSER_H
-#define TRANSLATE_PARSER_PARSER_H
+#ifndef PARSER_PARSER_H
+#define PARSER_PARSER_H
 
 #include "../pddl/task.h"
 #include "sexpr.h"

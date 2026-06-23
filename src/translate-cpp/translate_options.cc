@@ -6,9 +6,10 @@
 #include <string>
 #include <string_view>
 
+using namespace std;
 namespace translate {
 namespace {
-void usage(std::ostream &os, const char *prog) {
+void usage(ostream &os, const char *prog) {
     os << "usage: " << prog
        << " [--relaxed] [--full-encoding]\n"
        << "    [--invariant-generation-max-candidates N]\n"
@@ -20,17 +21,17 @@ void usage(std::ostream &os, const char *prog) {
        << "    DOMAIN_PDDL TASK_PDDL\n";
 }
 
-[[noreturn]] void die(const char *prog, const std::string &msg) {
-    std::cerr << prog << ": " << msg << "\n";
-    usage(std::cerr, prog);
-    throw std::runtime_error(msg);
+[[noreturn]] void die(const char *prog, const string &msg) {
+    cerr << prog << ": " << msg << "\n";
+    usage(cerr, prog);
+    throw runtime_error(msg);
 }
 
-int parse_int(const char *prog, std::string_view s, const char *flag) {
+int parse_int(const char *prog, string_view s, const char *flag) {
     try {
-        return std::stoi(std::string(s));
-    } catch (const std::exception &) {
-        die(prog, std::string(flag) + " requires an integer argument");
+        return stoi(string(s));
+    } catch (const exception &) {
+        die(prog, string(flag) + " requires an integer argument");
     }
 }
 }
@@ -43,12 +44,12 @@ Options &get_options() {
 void parse_options(int argc, const char *const *argv) {
     Options &o = get_options();
     const char *prog = argc > 0 ? argv[0] : "translate";
-    std::vector<std::string> positionals;
+    vector<string> positionals;
     for (int i = 1; i < argc; ++i) {
-        std::string_view a = argv[i];
+        string_view a = argv[i];
         auto next = [&]() -> const char * {
             if (++i >= argc)
-                die(prog, std::string(a) + " requires an argument");
+                die(prog, string(a) + " requires an argument");
             return argv[i];
         };
         if (a == "--relaxed") {
@@ -78,15 +79,15 @@ void parse_options(int argc, const char *const *argv) {
         } else if (a == "--dump-task") {
             o.dump_task = true;
         } else if (a == "--layer-strategy") {
-            std::string v = next();
+            string v = next();
             if (v != "min" && v != "max")
                 die(prog, "--layer-strategy must be 'min' or 'max'");
-            o.layer_strategy = std::move(v);
+            o.layer_strategy = move(v);
         } else if (a == "--help" || a == "-h") {
-            usage(std::cout, prog);
-            std::exit(0);
+            usage(cout, prog);
+            exit(0);
         } else if (!a.empty() && a[0] == '-') {
-            die(prog, "unknown option " + std::string(a));
+            die(prog, "unknown option " + string(a));
         } else {
             positionals.emplace_back(a);
         }

@@ -2,14 +2,15 @@
 
 #include "logging.h"
 
+using namespace std;
 namespace translate::utils {
 void exit_with(ExitCode code) {
-    throw ExitException(code, std::string());
+    throw ExitException(code, string());
 }
 
-void exit_with(ExitCode code, const std::string &message) {
+void exit_with(ExitCode code, const string &message) {
     if (!message.empty())
-        log() << message << std::endl;
+        log() << message << endl;
     throw ExitException(code, message);
 }
 }

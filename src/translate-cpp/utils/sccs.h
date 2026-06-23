@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_UTILS_SCCS_H
-#define TRANSLATE_UTILS_SCCS_H
+#ifndef UTILS_SCCS_H
+#define UTILS_SCCS_H
 
 #include <vector>
 

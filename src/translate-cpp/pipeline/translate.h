@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PIPELINE_TRANSLATE_H
-#define TRANSLATE_PIPELINE_TRANSLATE_H
+#ifndef PIPELINE_TRANSLATE_H
+#define PIPELINE_TRANSLATE_H
 
 #include "../pddl/task.h"
 #include "../sas/sas_task.h"

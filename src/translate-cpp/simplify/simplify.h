@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_SIMPLIFY_SIMPLIFY_H
-#define TRANSLATE_SIMPLIFY_SIMPLIFY_H
+#ifndef SIMPLIFY_SIMPLIFY_H
+#define SIMPLIFY_SIMPLIFY_H
 
 #include "../sas/sas_task.h"
 

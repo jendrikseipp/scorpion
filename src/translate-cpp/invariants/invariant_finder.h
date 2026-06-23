@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_INVARIANTS_INVARIANT_FINDER_H
-#define TRANSLATE_INVARIANTS_INVARIANT_FINDER_H
+#ifndef INVARIANTS_INVARIANT_FINDER_H
+#define INVARIANTS_INVARIANT_FINDER_H
 
 #include "../pddl/action.h"
 #include "../pddl/condition.h"

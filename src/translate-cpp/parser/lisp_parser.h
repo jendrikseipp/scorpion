@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PARSER_LISP_PARSER_H
-#define TRANSLATE_PARSER_LISP_PARSER_H
+#ifndef PARSER_LISP_PARSER_H
+#define PARSER_LISP_PARSER_H
 
 #include "sexpr.h"
 

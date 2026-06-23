@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_UTILS_LOGGING_H
-#define TRANSLATE_UTILS_LOGGING_H
+#ifndef UTILS_LOGGING_H
+#define UTILS_LOGGING_H
 
 #include <iostream>
 

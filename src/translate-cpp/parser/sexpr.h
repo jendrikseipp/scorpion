@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PARSER_SEXPR_H
-#define TRANSLATE_PARSER_SEXPR_H
+#ifndef PARSER_SEXPR_H
+#define PARSER_SEXPR_H
 
 #include <memory>
 #include <ostream>

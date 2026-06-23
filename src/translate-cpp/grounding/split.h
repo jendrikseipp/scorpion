@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_GROUNDING_SPLIT_H
-#define TRANSLATE_GROUNDING_SPLIT_H
+#ifndef GROUNDING_SPLIT_H
+#define GROUNDING_SPLIT_H
 
 #include "program.h"
 

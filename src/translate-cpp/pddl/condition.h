@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PDDL_CONDITION_H
-#define TRANSLATE_PDDL_CONDITION_H
+#ifndef PDDL_CONDITION_H
+#define PDDL_CONDITION_H
 
 #include "types.h"
 

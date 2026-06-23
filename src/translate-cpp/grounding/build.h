@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_GROUNDING_BUILD_H
-#define TRANSLATE_GROUNDING_BUILD_H
+#ifndef GROUNDING_BUILD_H
+#define GROUNDING_BUILD_H
 
 #include "../pddl/task.h"
 #include "program.h"

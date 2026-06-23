@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PDDL_TASK_H
-#define TRANSLATE_PDDL_TASK_H
+#ifndef PDDL_TASK_H
+#define PDDL_TASK_H
 
 #include "action.h"
 #include "axiom.h"

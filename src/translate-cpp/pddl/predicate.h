@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PDDL_PREDICATE_H
-#define TRANSLATE_PDDL_PREDICATE_H
+#ifndef PDDL_PREDICATE_H
+#define PDDL_PREDICATE_H
 
 #include "types.h"
 

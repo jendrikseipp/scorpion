@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_UTILS_GRAPH_H
-#define TRANSLATE_UTILS_GRAPH_H
+#ifndef UTILS_GRAPH_H
+#define UTILS_GRAPH_H
 
 #include <cstddef>
 #include <string>

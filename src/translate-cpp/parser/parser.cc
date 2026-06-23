@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+using namespace std;
 namespace translate::parser {
 using pddl::Action;
 using pddl::Atom;
@@ -46,13 +47,13 @@ namespace {
 
 class Context {
 public:
-    std::vector<std::string> trace;
+    vector<string> trace;
 
-    [[noreturn]] void error(const std::string &message,
+    [[noreturn]] void error(const string &message,
                             const Sexpr *item = nullptr,
                             const char *syntax = nullptr) const {
-        std::ostringstream os;
-        for (std::size_t i = 0; i < trace.size(); ++i)
+        ostringstream os;
+        for (size_t i = 0; i < trace.size(); ++i)
             os << (i ? "\n\t->" : "") << trace[i];
         os << "\n" << message;
         if (syntax) os << "\nSyntax: " << syntax;
@@ -65,26 +66,26 @@ public:
 
     struct Layer {
         Context *ctx;
-        explicit Layer(Context *c, std::string s) : ctx(c) {
-            ctx->trace.push_back(std::move(s));
+        explicit Layer(Context *c, string s) : ctx(c) {
+            ctx->trace.push_back(move(s));
         }
         ~Layer() { ctx->trace.pop_back(); }
         Layer(const Layer &) = delete;
         Layer &operator=(const Layer &) = delete;
     };
 
-    Layer layer(std::string description) {
-        return Layer(this, std::move(description));
+    Layer layer(string description) {
+        return Layer(this, move(description));
     }
 };
 
 /* ----------------------------- warnings ----------------------------- */
 
-std::set<std::string> printed_warnings;
+set<string> printed_warnings;
 
-void print_warning(const std::string &msg) {
+void print_warning(const string &msg) {
     if (printed_warnings.insert(msg).second)
-        std::cerr << "Warning: " << msg << "\n";
+        cerr << "Warning: " << msg << "\n";
 }
 
 /* ----------------------------- helpers ------------------------------ */
@@ -119,9 +120,9 @@ constexpr const char *SYNTAX_TASK_PROBLEM_NAME = "(problem NAME)";
 constexpr const char *SYNTAX_TASK_DOMAIN_NAME = "(:domain NAME)";
 constexpr const char *SYNTAX_METRIC = "(:metric minimize (total-cost))";
 
-const std::string TYPED_LIST_SEPARATOR = "-";
+const string TYPED_LIST_SEPARATOR = "-";
 
-const char *condition_tag_to_syntax(const std::string &tag) {
+const char *condition_tag_to_syntax(const string &tag) {
     if (tag == "and") return SYNTAX_CONDITION_AND;
     if (tag == "or") return SYNTAX_CONDITION_OR;
     if (tag == "imply") return SYNTAX_CONDITION_IMPLY;
@@ -134,34 +135,34 @@ const char *condition_tag_to_syntax(const std::string &tag) {
 void check_word(Context &ctx, const Sexpr &word, const char *description,
                 const char *syntax = nullptr) {
     if (!word.is_atom())
-        ctx.error(std::string(description) + " is expected to be a word.",
+        ctx.error(string(description) + " is expected to be a word.",
                   &word, syntax);
 }
 
 void check_list(Context &ctx, const Sexpr &alist, const char *description,
                 const char *syntax = nullptr) {
     if (!alist.is_list())
-        ctx.error(std::string(description) + " is expected to be a block.",
+        ctx.error(string(description) + " is expected to be a block.",
                   &alist, syntax);
 }
 
 void check_named_block(Context &ctx, const Sexpr &alist,
-                       const std::vector<std::string> &names,
+                       const vector<string> &names,
                        const char *syntax = nullptr) {
     bool ok = alist.is_list() && !alist.list().empty() &&
               alist.list()[0].is_atom() &&
-              std::ranges::find(names,
+              ranges::find(names,
                         alist.list()[0].atom()) != names.end();
     if (!ok) {
-        std::string msg = "Expected a non-empty block starting with any of "
+        string msg = "Expected a non-empty block starting with any of "
                           "the following words: ";
-        for (std::size_t i = 0; i < names.size(); ++i)
+        for (size_t i = 0; i < names.size(); ++i)
             msg += (i ? ", " : "") + names[i];
         ctx.error(msg, &alist, syntax);
     }
 }
 
-bool starts_with_qmark(const std::string &s) {
+bool starts_with_qmark(const string &s) {
     return !s.empty() && s.front() == '?';
 }
 
@@ -195,27 +196,27 @@ Type construct_type(Context &ctx, const Sexpr &curr_type,
   - `constructor` controls how items are constructed (typed object or type).
 */
 template<class Item, class Construct>
-std::vector<Item> parse_typed_list_typed(
+vector<Item> parse_typed_list_typed(
     Context &ctx, const SexprList &alist, bool only_variables,
     bool either_allowed, const Construct &constructor,
-    const std::string &default_type = "object") {
+    const string &default_type = "object") {
     auto layer = ctx.layer("Parsing typed list");
-    std::vector<Item> result;
-    std::size_t cursor = 0;
+    vector<Item> result;
+    size_t cursor = 0;
     int group_number = 1;
     while (cursor < alist.size()) {
         auto group_layer = ctx.layer(
-            "Parsing " + std::to_string(group_number) + ". group of typed list");
+            "Parsing " + to_string(group_number) + ". group of typed list");
         // Find separator '-' starting from cursor.
-        std::size_t sep = cursor;
+        size_t sep = cursor;
         for (; sep < alist.size(); ++sep) {
             if (alist[sep].is_atom() &&
                 alist[sep].atom() == TYPED_LIST_SEPARATOR)
                 break;
         }
         Sexpr type_sexpr;
-        std::size_t items_end;
-        std::size_t next_cursor;
+        size_t items_end;
+        size_t next_cursor;
         if (sep == alist.size()) {
             items_end = alist.size();
             type_sexpr = Sexpr(default_type);
@@ -227,7 +228,7 @@ std::vector<Item> parse_typed_list_typed(
             }
             items_end = sep;
             if (items_end == cursor) {
-                std::ostringstream os;
+                ostringstream os;
                 write_lispified(os, Sexpr(alist));
                 print_warning("Expected something before the separator '" +
                               TYPED_LIST_SEPARATOR + "'. Got: " + os.str());
@@ -246,7 +247,7 @@ std::vector<Item> parse_typed_list_typed(
                 }
             }
         }
-        for (std::size_t i = cursor; i < items_end; ++i) {
+        for (size_t i = cursor; i < items_end; ++i) {
             const Sexpr &item = alist[i];
             if (only_variables) {
                 if (!item.is_atom() || !starts_with_qmark(item.atom())) {
@@ -262,16 +263,16 @@ std::vector<Item> parse_typed_list_typed(
     return result;
 }
 
-std::vector<TypedObject> parse_typed_list(
+vector<TypedObject> parse_typed_list(
     Context &ctx, const SexprList &alist, bool only_variables = false,
     bool either_allowed = false,
-    const std::string &default_type = "object") {
+    const string &default_type = "object") {
     return parse_typed_list_typed<TypedObject>(
         ctx, alist, only_variables, either_allowed,
         construct_typed_object, default_type);
 }
 
-std::vector<Type> parse_type_list(Context &ctx, const SexprList &alist) {
+vector<Type> parse_type_list(Context &ctx, const SexprList &alist) {
     return parse_typed_list_typed<Type>(
         ctx, alist, /*only_variables=*/false, /*either_allowed=*/false,
         construct_type, "object");
@@ -281,23 +282,23 @@ std::vector<Type> parse_type_list(Context &ctx, const SexprList &alist) {
 
 Requirements parse_requirements(Context &ctx, const SexprList &alist) {
     auto layer = ctx.layer("Parsing requirements");
-    std::vector<std::string> req_strings;
+    vector<string> req_strings;
     req_strings.reserve(alist.size());
     for (const auto &item : alist) {
         check_word(ctx, item, "Requirement label");
         req_strings.push_back(item.atom());
     }
     try {
-        return Requirements(std::move(req_strings));
-    } catch (const std::exception &e) {
-        ctx.error(std::string("Error in requirements.\nReason: ") + e.what());
+        return Requirements(move(req_strings));
+    } catch (const exception &e) {
+        ctx.error(string("Error in requirements.\nReason: ") + e.what());
     }
 }
 
 /* ----------------------------- predicates --------------------------- */
 
 Predicate parse_predicate(Context &ctx, const SexprList &alist) {
-    std::string name;
+    string name;
     {
         auto l = ctx.layer("Parsing predicate name");
         if (alist.empty()) {
@@ -310,15 +311,15 @@ Predicate parse_predicate(Context &ctx, const SexprList &alist) {
     SexprList rest(alist.begin() + 1, alist.end());
     auto args = parse_typed_list(ctx, rest, /*only_variables=*/true,
                                  /*either_allowed=*/true);
-    return Predicate(name, std::move(args));
+    return Predicate(name, move(args));
 }
 
-std::vector<Predicate> parse_predicates(Context &ctx, const SexprList &alist) {
+vector<Predicate> parse_predicates(Context &ctx, const SexprList &alist) {
     auto l = ctx.layer("Parsing predicates");
-    std::vector<Predicate> result;
+    vector<Predicate> result;
     int no = 1;
     for (const auto &entry : alist) {
-        auto pred_layer = ctx.layer("Parsing predicate #" + std::to_string(no));
+        auto pred_layer = ctx.layer("Parsing predicate #" + to_string(no));
         if (!entry.is_list())
             ctx.error("Invalid predicate definition.", &entry,
                       SYNTAX_PREDICATE);
@@ -336,7 +337,7 @@ Function parse_function(Context &ctx, const Sexpr &alist_sexpr,
                   SYNTAX_FUNCTION);
     }
     const SexprList &alist = alist_sexpr.list();
-    std::string name;
+    string name;
     {
         auto l = ctx.layer("Parsing function name");
         check_word(ctx, alist[0], "Function name");
@@ -346,21 +347,21 @@ Function parse_function(Context &ctx, const Sexpr &alist_sexpr,
     SexprList rest(alist.begin() + 1, alist.end());
     auto args = parse_typed_list(ctx, rest);
     check_word(ctx, type_sexpr, "Function type");
-    std::string type_name = type_sexpr.atom();
+    string type_name = type_sexpr.atom();
     if (type_name != "number") {
         throw ParseError("Error: object fluents not supported\n"
                          "(function " + name + " has type " + type_name + ")");
     }
-    return Function(name, std::move(args), type_name);
+    return Function(name, move(args), type_name);
 }
 
 /* --------------------------- conditions ----------------------------- */
 
-using PredicateMap = std::unordered_map<std::string, const Predicate *>;
-using TypeMap = std::unordered_map<std::string, const Type *>;
+using PredicateMap = unordered_map<string, const Predicate *>;
+using TypeMap = unordered_map<string, const Type *>;
 
-std::pair<std::string, int> get_predicate_id_and_arity(
-    Context &ctx, const std::string &text, const TypeMap &type_dict,
+pair<string, int> get_predicate_id_and_arity(
+    Context &ctx, const string &text, const TypeMap &type_dict,
     const PredicateMap &predicate_dict) {
     auto type_it = type_dict.find(text);
     auto pred_it = predicate_dict.find(text);
@@ -380,25 +381,25 @@ std::pair<std::string, int> get_predicate_id_and_arity(
 }
 
 // Validate a predicate-name + term-list. Previously this took a
-// pre-built `unordered_set<std::string>` of valid predicate names, but
+// pre-built `unordered_set<string>` of valid predicate names, but
 // callers were rebuilding that 464K-entry set from `predicate_dict`
 // for every literal -- the dominant parse-time cost on pre-grounded
 // large domains like trucks-strips/p29. We just consult
 // `predicate_dict` directly now.
 void check_predicate_and_terms_existence(
-    Context &ctx, const std::string &predicate_name,
+    Context &ctx, const string &predicate_name,
     const SexprList &terms,
     const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &valid_term_names) {
+    const unordered_set<string> &valid_term_names) {
     if (!predicate_dict.contains(predicate_name))
         ctx.error("Undefined predicate", nullptr, predicate_name.c_str());
     for (const auto &term : terms) {
         if (!term.is_atom())
             ctx.error("Argument must be a word.", &term);
-        const std::string &t = term.atom();
+        const string &t = term.atom();
         if (!valid_term_names.contains(t)) {
             const char *kind = (starts_with_qmark(t)) ? "variable" : "object";
-            ctx.error(std::string("Undefined ") + kind, nullptr, t.c_str());
+            ctx.error(string("Undefined ") + kind, nullptr, t.c_str());
         }
     }
 }
@@ -406,7 +407,7 @@ void check_predicate_and_terms_existence(
 ConditionPtr parse_literal(
     Context &ctx, const SexprList &alist, const TypeMap &type_dict,
     const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &term_names,
+    const unordered_set<string> &term_names,
     bool negated = false) {
     auto l = ctx.layer("Parsing literal");
     if (alist.empty()) {
@@ -430,7 +431,7 @@ ConditionPtr parse_literal(
     }
     if (!current[0].is_atom())
         ctx.error("Predicate name must be a word.", &current[0]);
-    std::string predicate_name = current[0].atom();
+    string predicate_name = current[0].atom();
     SexprList terms(current.begin() + 1, current.end());
 
     check_predicate_and_terms_existence(ctx, predicate_name, terms,
@@ -442,50 +443,50 @@ ConditionPtr parse_literal(
     if (arity != got_arity) {
         Sexpr e(current);
         ctx.error("Predicate '" + predicate_name + "' of arity " +
-                  std::to_string(arity) + " used with " +
-                  std::to_string(got_arity) + " arguments.", &e);
+                  to_string(arity) + " used with " +
+                  to_string(got_arity) + " arguments.", &e);
     }
-    std::vector<std::string> arg_names;
+    vector<string> arg_names;
     arg_names.reserve(terms.size());
     for (const auto &t : terms) arg_names.push_back(t.atom());
     if (negated)
-        return std::make_shared<NegatedAtom>(pred_id, std::move(arg_names));
-    return std::make_shared<Atom>(pred_id, std::move(arg_names));
+        return make_shared<NegatedAtom>(pred_id, move(arg_names));
+    return make_shared<Atom>(pred_id, move(arg_names));
 }
 
 ConditionPtr parse_condition_aux(
     Context &ctx, const Sexpr &alist_sexpr, bool negated,
     const TypeMap &type_dict, const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &term_names);
+    const unordered_set<string> &term_names);
 
 ConditionPtr parse_condition(
     Context &ctx, const Sexpr &alist_sexpr, const TypeMap &type_dict,
     const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &term_names) {
+    const unordered_set<string> &term_names) {
     auto l = ctx.layer("Parsing condition");
     ConditionPtr condition = parse_condition_aux(
         ctx, alist_sexpr, false, type_dict, predicate_dict, term_names);
-    std::unordered_map<std::string, std::string> type_map;
-    std::unordered_map<std::string, std::string> renamings;
+    unordered_map<string, string> type_map;
+    unordered_map<string, string> renamings;
     return condition->uniquify_variables(type_map, renamings)->simplified();
 }
 
 ConditionPtr parse_condition_aux(
     Context &ctx, const Sexpr &alist_sexpr, bool negated,
     const TypeMap &type_dict, const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &term_names) {
+    const unordered_set<string> &term_names) {
     if (!alist_sexpr.is_list()) {
         ctx.error("Expected a condition block.", &alist_sexpr);
     }
     const SexprList &alist = alist_sexpr.list();
     if (alist.empty()) {
-        return std::make_shared<Conjunction>(std::vector<ConditionPtr>{});
+        return make_shared<Conjunction>(vector<ConditionPtr>{});
     }
     if (!alist[0].is_atom()) {
         ctx.error("Expected logical operator or predicate name", &alist[0]);
     }
-    const std::string &tag = alist[0].atom();
-    std::vector<TypedObject> parameters;
+    const string &tag = alist[0].atom();
+    vector<TypedObject> parameters;
     SexprList args;
     if (tag == "and" || tag == "or" || tag == "not" || tag == "imply") {
         args = SexprList(alist.begin() + 1, alist.end());
@@ -520,17 +521,17 @@ ConditionPtr parse_condition_aux(
         ctx.error("Expected logical operator or predicate name", &alist[0]);
     }
 
-    for (std::size_t k = 0; k < args.size(); ++k) {
+    for (size_t k = 0; k < args.size(); ++k) {
         if (!args[k].is_list() || args[k].list().empty()) {
             const char *syntax = condition_tag_to_syntax(tag);
             ctx.error("'" + tag + "' expects as argument #" +
-                      std::to_string(k + 1) + " a non-empty block.",
+                      to_string(k + 1) + " a non-empty block.",
                       &args[k], syntax);
         }
     }
 
-    std::vector<ConditionPtr> parts;
-    std::string effective_tag = tag;
+    vector<ConditionPtr> parts;
+    string effective_tag = tag;
     if (tag == "imply") {
         parts.push_back(parse_condition_aux(ctx, args[0], !negated,
                                             type_dict, predicate_dict,
@@ -539,7 +540,7 @@ ConditionPtr parse_condition_aux(
                                             predicate_dict, term_names));
         effective_tag = "or";
     } else {
-        std::unordered_set<std::string> new_term_names = term_names;
+        unordered_set<string> new_term_names = term_names;
         if (tag == "forall" || tag == "exists")
             for (const auto &p : parameters)
                 new_term_names.insert(p.name);
@@ -552,21 +553,21 @@ ConditionPtr parse_condition_aux(
 
     if ((effective_tag == "and" && !negated) ||
         (effective_tag == "or" && negated)) {
-        return std::make_shared<Conjunction>(std::move(parts));
+        return make_shared<Conjunction>(move(parts));
     }
     if ((effective_tag == "or" && !negated) ||
         (effective_tag == "and" && negated)) {
-        return std::make_shared<Disjunction>(std::move(parts));
+        return make_shared<Disjunction>(move(parts));
     }
     if ((effective_tag == "forall" && !negated) ||
         (effective_tag == "exists" && negated)) {
-        return std::make_shared<UniversalCondition>(std::move(parameters),
-                                                    std::move(parts));
+        return make_shared<UniversalCondition>(move(parameters),
+                                                    move(parts));
     }
     if ((effective_tag == "exists" && !negated) ||
         (effective_tag == "forall" && negated)) {
-        return std::make_shared<ExistentialCondition>(std::move(parameters),
-                                                      std::move(parts));
+        return make_shared<ExistentialCondition>(move(parameters),
+                                                      move(parts));
     }
     // effective_tag == "not"
     return parts[0];
@@ -574,14 +575,14 @@ ConditionPtr parse_condition_aux(
 
 /* ----------------------------- expressions -------------------------- */
 
-bool is_nonnegative_int_literal(const std::string &s) {
+bool is_nonnegative_int_literal(const string &s) {
     if (s.empty()) return false;
     for (char c : s)
         if (c < '0' || c > '9') return false;
     return true;
 }
 
-bool is_decimal_literal(const std::string &s) {
+bool is_decimal_literal(const string &s) {
     bool seen_dot = false;
     for (char c : s) {
         if (c == '.') {
@@ -602,44 +603,44 @@ pddl::FExprPtr parse_expression(Context &ctx, const Sexpr &exp) {
             ctx.error("Expression cannot be an empty block.", &exp,
                       SYNTAX_EXPRESSION);
         check_word(ctx, lst[0], "Function symbol");
-        std::vector<std::string> args;
+        vector<string> args;
         args.reserve(lst.size() - 1);
-        for (std::size_t i = 1; i < lst.size(); ++i)
+        for (size_t i = 1; i < lst.size(); ++i)
             args.push_back(lst[i].atom());
-        return std::make_shared<pddl::PrimitiveNumericExpression>(
-            lst[0].atom(), std::move(args));
+        return make_shared<pddl::PrimitiveNumericExpression>(
+            lst[0].atom(), move(args));
     }
-    const std::string &s = exp.atom();
+    const string &s = exp.atom();
     if (s.size() >= 1 && s[0] == '-')
         ctx.error("Negative numbers are not allowed.", &exp, SYNTAX_EXPRESSION);
     if (is_nonnegative_int_literal(s))
-        return std::make_shared<pddl::NumericConstant>(std::stoll(s));
+        return make_shared<pddl::NumericConstant>(stoll(s));
     if (is_decimal_literal(s))
         ctx.error("Fractional numbers are not supported.", &exp,
                   SYNTAX_EXPRESSION);
-    return std::make_shared<pddl::PrimitiveNumericExpression>(
-        s, std::vector<std::string>{});
+    return make_shared<pddl::PrimitiveNumericExpression>(
+        s, vector<string>{});
 }
 
-std::shared_ptr<pddl::FunctionAssignment> parse_assignment(
+shared_ptr<pddl::FunctionAssignment> parse_assignment(
     Context &ctx, const SexprList &alist) {
     auto l = ctx.layer("Parsing Assignment");
     if (alist.size() != 3)
         ctx.error("Assignment expects two arguments", nullptr,
                   SYNTAX_ASSIGNMENT);
-    const std::string &op = alist[0].atom();
+    const string &op = alist[0].atom();
     auto head = parse_expression(ctx, alist[1]);
     auto exp = parse_expression(ctx, alist[2]);
     if (head->kind() != pddl::FunctionalExpression::Kind::PNE) {
         ctx.error("Left-hand side of assignment must be a function "
                   "expression.", &alist[1]);
     }
-    auto pne_head = std::const_pointer_cast<pddl::PrimitiveNumericExpression>(
-        std::static_pointer_cast<const pddl::PrimitiveNumericExpression>(head));
+    auto pne_head = const_pointer_cast<pddl::PrimitiveNumericExpression>(
+        static_pointer_cast<const pddl::PrimitiveNumericExpression>(head));
     if (op == "=") {
-        return std::make_shared<pddl::Assign>(pne_head, exp);
+        return make_shared<pddl::Assign>(pne_head, exp);
     } else if (op == "increase") {
-        return std::make_shared<pddl::Increase>(pne_head, exp);
+        return make_shared<pddl::Increase>(pne_head, exp);
     }
     ctx.error("Unsupported assignment operator '" + op +
               "'. Use '=' or 'increase'.");
@@ -650,7 +651,7 @@ std::shared_ptr<pddl::FunctionAssignment> parse_assignment(
 pddl::AnyEffectPtr parse_effect_tree(
     Context &ctx, const Sexpr &alist_sexpr,
     const TypeMap &type_dict, const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &term_names) {
+    const unordered_set<string> &term_names) {
     if (!alist_sexpr.is_list() || alist_sexpr.list().empty()) {
         ctx.error("All (sub-)effects have to be a non-empty blocks.",
                   &alist_sexpr);
@@ -659,15 +660,15 @@ pddl::AnyEffectPtr parse_effect_tree(
     if (!alist[0].is_atom()) {
         ctx.error("Effect head must be a word.", &alist[0]);
     }
-    const std::string &tag = alist[0].atom();
+    const string &tag = alist[0].atom();
     if (tag == "and") {
-        std::vector<pddl::AnyEffectPtr> effects;
-        for (std::size_t i = 1; i < alist.size(); ++i) {
+        vector<pddl::AnyEffectPtr> effects;
+        for (size_t i = 1; i < alist.size(); ++i) {
             check_list(ctx, alist[i], "Each sub-effect of a conjunction");
             effects.push_back(parse_effect_tree(ctx, alist[i], type_dict,
                                                 predicate_dict, term_names));
         }
-        return std::make_shared<pddl::ConjunctiveEffect>(std::move(effects));
+        return make_shared<pddl::ConjunctiveEffect>(move(effects));
     }
     if (tag == "forall") {
         if (alist.size() != 3)
@@ -679,13 +680,13 @@ pddl::AnyEffectPtr parse_effect_tree(
         auto parameters = parse_typed_list(ctx, alist[1].list());
         check_list(ctx, alist[2], "Second argument (EFFECT) of 'forall'",
                    SYNTAX_EFFECT_FORALL);
-        std::unordered_set<std::string> nested = term_names;
+        unordered_set<string> nested = term_names;
         for (const auto &p : parameters)
             nested.insert(p.name);
         auto eff = parse_effect_tree(ctx, alist[2], type_dict, predicate_dict,
                                      nested);
-        return std::make_shared<pddl::UniversalEffect>(std::move(parameters),
-                                                       std::move(eff));
+        return make_shared<pddl::UniversalEffect>(move(parameters),
+                                                       move(eff));
     }
     if (tag == "when") {
         if (alist.size() != 3)
@@ -699,8 +700,8 @@ pddl::AnyEffectPtr parse_effect_tree(
                    SYNTAX_EFFECT_WHEN);
         auto effect = parse_effect_tree(ctx, alist[2], type_dict,
                                         predicate_dict, term_names);
-        return std::make_shared<pddl::ConditionalEffect>(std::move(condition),
-                                                         std::move(effect));
+        return make_shared<pddl::ConditionalEffect>(move(condition),
+                                                         move(effect));
     }
     if (tag == "increase") {
         if (alist.size() != 3 ||
@@ -712,27 +713,27 @@ pddl::AnyEffectPtr parse_effect_tree(
         }
         auto assignment = parse_assignment(ctx, alist);
         // CostEffect wraps an Increase.
-        auto incr = std::dynamic_pointer_cast<Increase>(assignment);
+        auto incr = dynamic_pointer_cast<Increase>(assignment);
         if (!incr) {
             ctx.error("'increase' assignment expected.");
         }
-        return std::make_shared<pddl::CostEffect>(std::move(incr));
+        return make_shared<pddl::CostEffect>(move(incr));
     }
     // Simple effect.
     TypeMap empty_types;
     auto lit = parse_literal(ctx, alist, empty_types, predicate_dict,
                              term_names);
-    return std::make_shared<pddl::SimpleEffect>(std::move(lit));
+    return make_shared<pddl::SimpleEffect>(move(lit));
 }
 
-bool effect_in_result(const Effect &target, const std::vector<Effect> &result) {
+bool effect_in_result(const Effect &target, const vector<Effect> &result) {
     for (const auto &e : result)
         if (e.equals(target)) return true;
     return false;
 }
 
 void add_effect(const pddl::AnyEffectPtr &tmp_effect,
-                std::vector<Effect> &result) {
+                vector<Effect> &result) {
     if (!tmp_effect) return;
     if (tmp_effect->kind() == pddl::AnyEffect::Kind::CONJUNCTIVE) {
         const auto &c = static_cast<pddl::ConjunctiveEffect &>(*tmp_effect);
@@ -740,8 +741,8 @@ void add_effect(const pddl::AnyEffectPtr &tmp_effect,
             add_effect(e, result);
         return;
     }
-    std::vector<TypedObject> parameters;
-    ConditionPtr condition = std::make_shared<pddl::Truth>();
+    vector<TypedObject> parameters;
+    ConditionPtr condition = make_shared<pddl::Truth>();
     ConditionPtr literal;
     if (tmp_effect->kind() == pddl::AnyEffect::Kind::UNIVERSAL) {
         const auto &u = static_cast<pddl::UniversalEffect &>(*tmp_effect);
@@ -770,7 +771,7 @@ void add_effect(const pddl::AnyEffectPtr &tmp_effect,
     Effect new_effect(parameters, condition, literal);
     Effect contradiction(parameters, condition, literal->negate());
     if (!effect_in_result(contradiction, result)) {
-        result.push_back(std::move(new_effect));
+        result.push_back(move(new_effect));
     } else {
         // Add-after-delete semantics: prefer the positive effect.
         const auto &lit = static_cast<const pddl::Literal &>(*literal);
@@ -779,20 +780,20 @@ void add_effect(const pddl::AnyEffectPtr &tmp_effect,
             return;
         }
         // The new effect is positive; remove the existing negative.
-        auto it = std::ranges::find_if(result,
+        auto it = ranges::find_if(result,
                                [&](const Effect &e) {
                                    return e.equals(contradiction);
                                });
         if (it != result.end()) result.erase(it);
-        result.push_back(std::move(new_effect));
+        result.push_back(move(new_effect));
     }
 }
 
-std::shared_ptr<Increase> parse_effects(
+shared_ptr<Increase> parse_effects(
     Context &ctx, const Sexpr &alist_sexpr,
-    std::vector<Effect> &result,
+    vector<Effect> &result,
     const TypeMap &type_dict, const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &term_names) {
+    const unordered_set<string> &term_names) {
     auto l = ctx.layer("Parsing effect");
     auto tmp = parse_effect_tree(ctx, alist_sexpr, type_dict, predicate_dict,
                                  term_names);
@@ -805,11 +806,11 @@ std::shared_ptr<Increase> parse_effects(
 
 /* ------------------------------- actions ---------------------------- */
 
-std::optional<Action> parse_action(
+optional<Action> parse_action(
     Context &ctx, const SexprList &alist, const TypeMap &type_dict,
     const PredicateMap &predicate_dict,
-    std::unordered_set<std::string> &constant_names) {
-    std::string name;
+    unordered_set<string> &constant_names) {
+    string name;
     {
         auto l = ctx.layer("Parsing action name");
         if (alist.size() < 4) {
@@ -824,16 +825,16 @@ std::optional<Action> parse_action(
         name = alist[1].atom();
     }
     auto outer = ctx.layer("Parsing action '" + name + "'");
-    std::size_t idx = 2;
-    std::vector<TypedObject> parameters;
+    size_t idx = 2;
+    vector<TypedObject> parameters;
     ConditionPtr precondition;
-    std::vector<Effect> effects;
-    std::shared_ptr<Increase> cost;
+    vector<Effect> effects;
+    shared_ptr<Increase> cost;
 
     {
         auto l = ctx.layer("Parsing parameters");
         if (idx >= alist.size())
-            ctx.error("Missing fields. Expecting " + std::string(SYNTAX_ACTION));
+            ctx.error("Missing fields. Expecting " + string(SYNTAX_ACTION));
         if (alist[idx].is_atom() && alist[idx].atom() == ":parameters") {
             ++idx;
             if (idx >= alist.size())
@@ -853,8 +854,8 @@ std::optional<Action> parse_action(
       and a 12 MB domain file -- the wholesale copy was ~27 % of
       runtime per perf record).
     */
-    std::unordered_set<std::string> &term_names = constant_names;
-    std::vector<std::string> pushed_params;
+    unordered_set<string> &term_names = constant_names;
+    vector<string> pushed_params;
     pushed_params.reserve(parameters.size());
     for (const auto &p : parameters) {
         if (term_names.insert(p.name).second)
@@ -867,7 +868,7 @@ std::optional<Action> parse_action(
         auto l = ctx.layer("Parsing precondition");
         if (idx >= alist.size()) {
             pop_params();
-            ctx.error("Missing fields. Expecting " + std::string(SYNTAX_ACTION));
+            ctx.error("Missing fields. Expecting " + string(SYNTAX_ACTION));
         }
         if (alist[idx].is_atom() && alist[idx].atom() == ":precondition") {
             ++idx;
@@ -880,15 +881,15 @@ std::optional<Action> parse_action(
                                            predicate_dict, term_names);
             ++idx;
         } else {
-            precondition = std::make_shared<Conjunction>(
-                std::vector<ConditionPtr>{});
+            precondition = make_shared<Conjunction>(
+                vector<ConditionPtr>{});
         }
     }
     {
         auto l = ctx.layer("Parsing effect");
         if (idx >= alist.size()) {
             pop_params();
-            ctx.error("Missing fields. Expecting " + std::string(SYNTAX_ACTION));
+            ctx.error("Missing fields. Expecting " + string(SYNTAX_ACTION));
         }
         if (!alist[idx].is_atom() || alist[idx].atom() != ":effect") {
             pop_params();
@@ -909,18 +910,18 @@ std::optional<Action> parse_action(
     }
     pop_params();
     if (idx != alist.size())
-        ctx.error("Too many fields. Expecting " + std::string(SYNTAX_ACTION));
+        ctx.error("Too many fields. Expecting " + string(SYNTAX_ACTION));
     if (!effects.empty() || get_options().keep_no_ops) {
         int n = static_cast<int>(parameters.size());
-        return Action(name, std::move(parameters), n, std::move(precondition),
-                      std::move(effects), std::move(cost));
+        return Action(name, move(parameters), n, move(precondition),
+                      move(effects), move(cost));
     }
-    return std::nullopt;
+    return nullopt;
 }
 
 Axiom parse_axiom(Context &ctx, const SexprList &alist,
                   const TypeMap &type_dict, const PredicateMap &predicate_dict,
-                  std::unordered_set<std::string> &constant_names) {
+                  unordered_set<string> &constant_names) {
     Predicate predicate;
     {
         auto l = ctx.layer("Parsing derived predicate");
@@ -941,8 +942,8 @@ Axiom parse_axiom(Context &ctx, const SexprList &alist,
     }
     // Same push/pop trick as parse_action -- avoid copying the
     // potentially-large constant_names set per axiom.
-    std::unordered_set<std::string> &term_names = constant_names;
-    std::vector<std::string> pushed;
+    unordered_set<string> &term_names = constant_names;
+    vector<string> pushed;
     pushed.reserve(predicate.arguments.size());
     for (const auto &a : predicate.arguments) {
         if (term_names.insert(a.name).second) pushed.push_back(a.name);
@@ -951,32 +952,32 @@ Axiom parse_axiom(Context &ctx, const SexprList &alist,
                                      term_names);
     for (const auto &n : pushed) term_names.erase(n);
     int arity = static_cast<int>(predicate.arguments.size());
-    return Axiom(predicate.name, std::move(predicate.arguments), arity,
-                 std::move(condition));
+    return Axiom(predicate.name, move(predicate.arguments), arity,
+                 move(condition));
 }
 
-void parse_axioms_and_actions(Context &ctx, const std::vector<Sexpr> &entries,
+void parse_axioms_and_actions(Context &ctx, const vector<Sexpr> &entries,
                               const TypeMap &type_dict,
                               const PredicateMap &predicate_dict,
-                              std::unordered_set<std::string> &constant_names,
-                              std::vector<Axiom> &axioms,
-                              std::vector<Action> &actions) {
+                              unordered_set<string> &constant_names,
+                              vector<Axiom> &axioms,
+                              vector<Action> &actions) {
     int no = 1;
     for (const auto &entry : entries) {
-        auto l = ctx.layer("Parsing axiom/action entry #" + std::to_string(no));
+        auto l = ctx.layer("Parsing axiom/action entry #" + to_string(no));
         check_named_block(ctx, entry, {":derived", ":action"});
-        const std::string &head = entry.list()[0].atom();
+        const string &head = entry.list()[0].atom();
         if (head == ":derived") {
             auto layer2 = ctx.layer(
-                "Parsing " + std::to_string(axioms.size() + 1) + ". axiom");
+                "Parsing " + to_string(axioms.size() + 1) + ". axiom");
             axioms.push_back(parse_axiom(ctx, entry.list(), type_dict,
                                          predicate_dict, constant_names));
         } else {
             auto layer2 = ctx.layer(
-                "Parsing action #" + std::to_string(actions.size() + 1));
+                "Parsing action #" + to_string(actions.size() + 1));
             auto action = parse_action(ctx, entry.list(), type_dict,
                                        predicate_dict, constant_names);
-            if (action) actions.push_back(std::move(*action));
+            if (action) actions.push_back(move(*action));
         }
         ++no;
     }
@@ -986,20 +987,20 @@ void parse_axioms_and_actions(Context &ctx, const std::vector<Sexpr> &entries,
 
 void check_atom_consistency(
     Context &ctx, const Atom &atom,
-    std::unordered_map<std::shared_ptr<const Atom>, bool, pddl::ConditionPtrHash,
+    unordered_map<shared_ptr<const Atom>, bool, pddl::ConditionPtrHash,
                        pddl::ConditionPtrEqual> &values,
     bool value) {
-    auto key = std::make_shared<const Atom>(atom);
+    auto key = make_shared<const Atom>(atom);
     auto it = values.find(key);
     if (it != values.end()) {
         bool prev = it->second;
         if (prev != value) {
-            std::ostringstream os;
+            ostringstream os;
             atom.dump(os, 0);
             ctx.error("Error in initial state specification\nReason: " +
                       os.str() + " is true and false.");
         } else {
-            std::ostringstream os;
+            ostringstream os;
             atom.dump(os, 0);
             if (!value) os << "(negated)";
             print_warning(os.str() +
@@ -1008,19 +1009,19 @@ void check_atom_consistency(
     }
 }
 
-std::vector<pddl::InitElement> parse_init(
+vector<pddl::InitElement> parse_init(
     Context &ctx, const SexprList &alist, const PredicateMap &predicate_dict,
-    const std::unordered_set<std::string> &term_names) {
-    std::vector<pddl::InitElement> initial;
-    std::unordered_map<std::shared_ptr<pddl::PrimitiveNumericExpression>,
-                       std::shared_ptr<pddl::Assign>>
+    const unordered_set<string> &term_names) {
+    vector<pddl::InitElement> initial;
+    unordered_map<shared_ptr<pddl::PrimitiveNumericExpression>,
+                       shared_ptr<pddl::Assign>>
         initial_assignments;
-    std::unordered_map<std::shared_ptr<const Atom>, bool,
+    unordered_map<shared_ptr<const Atom>, bool,
                        pddl::ConditionPtrHash, pddl::ConditionPtrEqual>
         initial_proposition_values;
 
-    for (std::size_t k = 1; k < alist.size(); ++k) {
-        auto l = ctx.layer("Parsing element #" + std::to_string(k) +
+    for (size_t k = 1; k < alist.size(); ++k) {
+        auto l = ctx.layer("Parsing element #" + to_string(k) +
                            " in init block");
         const Sexpr &fact = alist[k];
         if (!fact.is_list() || fact.list().empty()) {
@@ -1031,7 +1032,7 @@ std::vector<pddl::InitElement> parse_init(
         const SexprList &flist = fact.list();
         if (flist[0].is_atom() && flist[0].atom() == "=") {
             auto assignment = parse_assignment(ctx, flist);
-            auto assign = std::dynamic_pointer_cast<pddl::Assign>(assignment);
+            auto assign = dynamic_pointer_cast<pddl::Assign>(assignment);
             if (!assign) {
                 ctx.error("Initial state assignment must use '='.");
             }
@@ -1044,10 +1045,10 @@ std::vector<pddl::InitElement> parse_init(
             for (auto &[fl, prev] : initial_assignments) {
                 if (*fl == *assign->fluent) {
                     auto prev_const =
-                        std::static_pointer_cast<const pddl::NumericConstant>(
+                        static_pointer_cast<const pddl::NumericConstant>(
                             prev->expression);
                     auto new_const =
-                        std::static_pointer_cast<const pddl::NumericConstant>(
+                        static_pointer_cast<const pddl::NumericConstant>(
                             assign->expression);
                     if (prev_const->value == new_const->value) {
                         print_warning("assignment specified twice in initial "
@@ -1071,14 +1072,14 @@ std::vector<pddl::InitElement> parse_init(
         if (flist[0].is_atom() && flist[0].atom() == "not") {
             atom_value = false;
             if (flist.size() != 2)
-                ctx.error("Expecting " + std::string(SYNTAX_LITERAL_NEGATED) +
+                ctx.error("Expecting " + string(SYNTAX_LITERAL_NEGATED) +
                           " for negated atoms.");
             if (!flist[1].is_list() || flist[1].list().empty())
                 ctx.error("Invalid negated fact.", nullptr,
                           SYNTAX_LITERAL_NEGATED);
             atom_list = flist[1].list();
         }
-        const std::string &pname = atom_list[0].atom();
+        const string &pname = atom_list[0].atom();
         SexprList terms(atom_list.begin() + 1, atom_list.end());
         check_predicate_and_terms_existence(ctx, pname, terms,
                                             predicate_dict, term_names);
@@ -1088,16 +1089,16 @@ std::vector<pddl::InitElement> parse_init(
         if (expected_arity != got_arity) {
             Sexpr e(atom_list);
             ctx.error("Predicate '" + pname + "' of arity " +
-                      std::to_string(expected_arity) + " used with " +
-                      std::to_string(got_arity) + " arguments.", &e);
+                      to_string(expected_arity) + " used with " +
+                      to_string(got_arity) + " arguments.", &e);
         }
-        std::vector<std::string> arg_names;
+        vector<string> arg_names;
         arg_names.reserve(terms.size());
         for (const auto &t : terms) arg_names.push_back(t.atom());
-        Atom atom(pname, std::move(arg_names));
+        Atom atom(pname, move(arg_names));
         check_atom_consistency(ctx, atom, initial_proposition_values,
                                atom_value);
-        auto atom_ptr = std::make_shared<const Atom>(std::move(atom));
+        auto atom_ptr = make_shared<const Atom>(move(atom));
         initial_proposition_values[atom_ptr] = atom_value;
     }
     for (auto &[atom, val] : initial_proposition_values) {
@@ -1109,14 +1110,14 @@ std::vector<pddl::InitElement> parse_init(
 /* --------------------------- task aggregation ----------------------- */
 
 void check_for_duplicates(Context &ctx,
-                          const std::vector<std::string> &elements,
-                          const std::string &element_type) {
-    std::set<std::string> seen, duplicates;
+                          const vector<string> &elements,
+                          const string &element_type) {
+    set<string> seen, duplicates;
     for (const auto &el : elements) {
         if (!seen.insert(el).second) duplicates.insert(el);
     }
     if (!duplicates.empty()) {
-        std::string msg = "Found the following duplicate " + element_type +
+        string msg = "Found the following duplicate " + element_type +
                           "s: ";
         bool first = true;
         for (const auto &d : duplicates) {
@@ -1131,10 +1132,10 @@ void check_for_duplicates(Context &ctx,
     }
 }
 
-void set_supertypes(std::vector<Type> &types) {
-    std::unordered_map<std::string, std::size_t> idx;
-    std::vector<std::pair<std::string, std::string>> child_types;
-    for (std::size_t i = 0; i < types.size(); ++i) {
+void set_supertypes(vector<Type> &types) {
+    unordered_map<string, size_t> idx;
+    vector<pair<string, string>> child_types;
+    for (size_t i = 0; i < types.size(); ++i) {
         types[i].supertype_names.clear();
         idx[types[i].name] = i;
         if (types[i].basetype_name && !types[i].basetype_name->empty())
@@ -1148,14 +1149,14 @@ void set_supertypes(std::vector<Type> &types) {
 }
 
 struct DomainPart {
-    std::string domain_name;
+    string domain_name;
     Requirements requirements;
-    std::vector<Type> types;
-    std::vector<TypedObject> constants;
-    std::vector<Predicate> predicates;
-    std::vector<Function> functions;
-    std::vector<Action> actions;
-    std::vector<Axiom> axioms;
+    vector<Type> types;
+    vector<TypedObject> constants;
+    vector<Predicate> predicates;
+    vector<Function> functions;
+    vector<Action> actions;
+    vector<Axiom> axioms;
 };
 
 DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
@@ -1182,34 +1183,34 @@ DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
     out.requirements = Requirements({":strips"});
     out.types.emplace_back("object");
 
-    const std::vector<std::string> correct_order = {
+    const vector<string> correct_order = {
         ":requirements", ":types", ":constants", ":predicates", ":functions"};
-    const std::vector<std::string> action_axiom = {":derived", ":action"};
-    std::vector<std::string> seen_fields;
-    std::size_t idx = 2;
-    std::vector<Sexpr> entries; // saved action/axiom-style entries
+    const vector<string> action_axiom = {":derived", ":action"};
+    vector<string> seen_fields;
+    size_t idx = 2;
+    vector<Sexpr> entries; // saved action/axiom-style entries
     bool first_action_seen = false;
     for (; idx < top.size(); ++idx) {
-        std::vector<std::string> allowed = correct_order;
+        vector<string> allowed = correct_order;
         for (const auto &n : action_axiom) allowed.push_back(n);
         check_named_block(ctx, top[idx], allowed);
-        const std::string &field = top[idx].list()[0].atom();
-        if (std::ranges::find(correct_order, field) ==
+        const string &field = top[idx].list()[0].atom();
+        if (ranges::find(correct_order, field) ==
             correct_order.end()) {
             entries.push_back(top[idx]);
             first_action_seen = true;
             ++idx;
             break;
         }
-        if (std::ranges::find(seen_fields, field) !=
+        if (ranges::find(seen_fields, field) !=
             seen_fields.end()) {
             ctx.error("Error in domain specification\nReason: two '" + field +
                       "' specifications.");
         }
         if (!seen_fields.empty()) {
-            auto a = std::ranges::find(correct_order,
+            auto a = ranges::find(correct_order,
                                seen_fields.back());
-            auto b = std::ranges::find(correct_order,
+            auto b = ranges::find(correct_order,
                                field);
             if (a > b) {
                 print_warning(field +
@@ -1230,7 +1231,7 @@ DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
                               "which is a reserved type that cannot be "
                               "redeclared.");
                 }
-                out.types.push_back(std::move(t));
+                out.types.push_back(move(t));
             }
         } else if (field == ":constants") {
             auto cl = ctx.layer("Parsing constants");
@@ -1262,7 +1263,7 @@ DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
     for (const auto &t : out.types) type_dict[t.name] = &t;
     PredicateMap predicate_dict;
     for (const auto &p : out.predicates) predicate_dict[p.name] = &p;
-    std::unordered_set<std::string> constant_names;
+    unordered_set<string> constant_names;
     for (const auto &c : out.constants) constant_names.insert(c.name);
     parse_axioms_and_actions(ctx, entries, type_dict, predicate_dict,
                              constant_names, out.axioms, out.actions);
@@ -1270,11 +1271,11 @@ DomainPart parse_domain_pddl(Context &ctx, const Sexpr &domain_pddl) {
 }
 
 struct TaskPart {
-    std::string task_name;
-    std::string task_domain_name;
+    string task_name;
+    string task_domain_name;
     Requirements task_requirements;
-    std::vector<TypedObject> objects;
-    std::vector<pddl::InitElement> init;
+    vector<TypedObject> objects;
+    vector<pddl::InitElement> init;
     ConditionPtr goal;
     bool use_metric = false;
 };
@@ -1282,13 +1283,13 @@ struct TaskPart {
 TaskPart parse_task_pddl(Context &ctx, const Sexpr &task_pddl,
                         const TypeMap &type_dict,
                         const PredicateMap &predicate_dict,
-                        const std::unordered_set<std::string> &constant_names) {
+                        const unordered_set<string> &constant_names) {
     TaskPart out;
     auto l = ctx.layer("Parsing task");
     if (!task_pddl.is_list())
         ctx.error("Invalid definition of a PDDL task.");
     const SexprList &top = task_pddl.list();
-    std::size_t i = 0;
+    size_t i = 0;
     if (i >= top.size() || !top[i].is_atom() || top[i].atom() != "define")
         ctx.error("Task definition expected to start with '(define ");
     ++i;
@@ -1328,7 +1329,7 @@ TaskPart parse_task_pddl(Context &ctx, const Sexpr &task_pddl,
         out.task_requirements = parse_requirements(ctx, body);
         ++i;
     } else {
-        out.task_requirements = Requirements(std::vector<std::string>{});
+        out.task_requirements = Requirements(vector<string>{});
     }
     // Optional :objects
     if (i < top.size()) {
@@ -1344,7 +1345,7 @@ TaskPart parse_task_pddl(Context &ctx, const Sexpr &task_pddl,
     if (i >= top.size())
         ctx.error("Missing :init block.");
     check_named_block(ctx, top[i], {":init"});
-    std::unordered_set<std::string> term_names = constant_names;
+    unordered_set<string> term_names = constant_names;
     for (const auto &o : out.objects) term_names.insert(o.name);
     out.init = parse_init(ctx, top[i].list(), predicate_dict, term_names);
     ++i;
@@ -1400,7 +1401,7 @@ pddl::Task parse_task(const Sexpr &domain, const Sexpr &task) {
     for (const auto &t : dom.types) type_dict[t.name] = &t;
     PredicateMap predicate_dict;
     for (const auto &p : dom.predicates) predicate_dict[p.name] = &p;
-    std::unordered_set<std::string> constant_names;
+    unordered_set<string> constant_names;
     for (const auto &c : dom.constants) constant_names.insert(c.name);
 
     auto tp = parse_task_pddl(ctx, task, type_dict, predicate_dict,
@@ -1412,20 +1413,20 @@ pddl::Task parse_task(const Sexpr &domain, const Sexpr &task) {
     }
 
     // Merge requirements (sorted, deduplicated).
-    std::set<std::string> merged_reqs(dom.requirements.requirements.begin(),
+    set<string> merged_reqs(dom.requirements.requirements.begin(),
                                       dom.requirements.requirements.end());
     for (const auto &r : tp.task_requirements.requirements)
         merged_reqs.insert(r);
-    std::vector<std::string> merged_req_list(merged_reqs.begin(),
+    vector<string> merged_req_list(merged_reqs.begin(),
                                              merged_reqs.end());
-    Requirements requirements(std::move(merged_req_list));
+    Requirements requirements(move(merged_req_list));
 
     // Combine constants and objects into one list (constants first).
-    std::vector<TypedObject> objects = std::move(dom.constants);
-    for (auto &o : tp.objects) objects.push_back(std::move(o));
+    vector<TypedObject> objects = move(dom.constants);
+    for (auto &o : tp.objects) objects.push_back(move(o));
 
     // Check for duplicates.
-    std::vector<std::string> object_names, action_names;
+    vector<string> object_names, action_names;
     object_names.reserve(objects.size());
     for (const auto &o : objects) object_names.push_back(o.name);
     check_for_duplicates(ctx, object_names, "object");
@@ -1435,23 +1436,23 @@ pddl::Task parse_task(const Sexpr &domain, const Sexpr &task) {
 
     // Add equality identities to init.
     for (const auto &o : objects) {
-        auto eq = std::make_shared<const Atom>(
-            "=", std::vector<std::string>{o.name, o.name});
+        auto eq = make_shared<const Atom>(
+            "=", vector<string>{o.name, o.name});
         tp.init.emplace_back(eq);
     }
 
     pddl::Task t;
-    t.domain_name = std::move(dom.domain_name);
-    t.task_name = std::move(tp.task_name);
-    t.requirements = std::move(requirements);
-    t.types = std::move(dom.types);
-    t.objects = std::move(objects);
-    t.predicates = std::move(dom.predicates);
-    t.functions = std::move(dom.functions);
-    t.init = std::move(tp.init);
-    t.goal = std::move(tp.goal);
-    t.actions = std::move(dom.actions);
-    t.axioms = std::move(dom.axioms);
+    t.domain_name = move(dom.domain_name);
+    t.task_name = move(tp.task_name);
+    t.requirements = move(requirements);
+    t.types = move(dom.types);
+    t.objects = move(objects);
+    t.predicates = move(dom.predicates);
+    t.functions = move(dom.functions);
+    t.init = move(tp.init);
+    t.goal = move(tp.goal);
+    t.actions = move(dom.actions);
+    t.axioms = move(dom.axioms);
     t.use_min_cost_metric = tp.use_metric;
     return t;
 }

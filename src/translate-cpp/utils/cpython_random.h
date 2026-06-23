@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_UTILS_CPYTHON_RANDOM_H
-#define TRANSLATE_UTILS_CPYTHON_RANDOM_H
+#ifndef UTILS_CPYTHON_RANDOM_H
+#define UTILS_CPYTHON_RANDOM_H
 
 #include <cstddef>
 #include <cstdint>

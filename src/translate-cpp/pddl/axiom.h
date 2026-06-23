@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_PDDL_AXIOM_H
-#define TRANSLATE_PDDL_AXIOM_H
+#ifndef PDDL_AXIOM_H
+#define PDDL_AXIOM_H
 
 #include "condition.h"
 

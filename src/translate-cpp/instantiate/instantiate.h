@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_INSTANTIATE_INSTANTIATE_H
-#define TRANSLATE_INSTANTIATE_INSTANTIATE_H
+#ifndef INSTANTIATE_INSTANTIATE_H
+#define INSTANTIATE_INSTANTIATE_H
 
 #include "../grounding/program.h"
 #include "../pddl/task.h"

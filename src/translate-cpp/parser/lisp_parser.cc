@@ -5,8 +5,9 @@
 #include <sstream>
 #include <string>
 
+using namespace std;
 namespace translate::parser {
-void write_lispified(std::ostream &os, const Sexpr &expr) {
+void write_lispified(ostream &os, const Sexpr &expr) {
     if (expr.is_atom()) {
         os << expr.atom();
         return;
@@ -21,26 +22,26 @@ void write_lispified(std::ostream &os, const Sexpr &expr) {
     os << ")";
 }
 
-std::string lispified(const Sexpr &expr) {
-    std::ostringstream os;
+string lispified(const Sexpr &expr) {
+    ostringstream os;
     write_lispified(os, expr);
     return os.str();
 }
 
 namespace {
-void to_lower_inplace(std::string &s) {
+void to_lower_inplace(string &s) {
     for (auto &c : s)
-        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
 }
 }
 
-std::vector<std::string> tokenize(std::istream &input) {
-    std::vector<std::string> tokens;
-    std::string line;
-    while (std::getline(input, line)) {
+vector<string> tokenize(istream &input) {
+    vector<string> tokens;
+    string line;
+    while (getline(input, line)) {
         // Strip comments at the first ';'.
         auto sc = line.find(';');
-        if (sc != std::string::npos)
+        if (sc != string::npos)
             line.resize(sc);
         // Validate ASCII outside of comments. The PDDL parser accepts any
         // bytes in comments (we already stripped them), so we only check
@@ -52,7 +53,7 @@ std::vector<std::string> tokenize(std::istream &input) {
         }
         // Pad parens and '?' so they tokenize cleanly. The original Python
         // replaces "(" with " ( ", ")" with " ) ", and "?" with " ?".
-        std::string padded;
+        string padded;
         padded.reserve(line.size() * 2);
         for (char c : line) {
             if (c == '(' || c == ')') {
@@ -67,25 +68,25 @@ std::vector<std::string> tokenize(std::istream &input) {
             }
         }
         // Split on whitespace, lowercasing each token.
-        std::istringstream iss(padded);
-        std::string tok;
+        istringstream iss(padded);
+        string tok;
         while (iss >> tok) {
             to_lower_inplace(tok);
-            tokens.push_back(std::move(tok));
+            tokens.push_back(move(tok));
         }
     }
     return tokens;
 }
 
 namespace {
-Sexpr parse_list_aux(const std::vector<std::string> &tokens, std::size_t &i) {
+Sexpr parse_list_aux(const vector<string> &tokens, size_t &i) {
     // Leading '(' has already been consumed.
     SexprList result;
     while (true) {
         if (i >= tokens.size())
             throw ParseError("Missing ')'");
-        const std::string &t = tokens[i++];
-        if (t == ")") return Sexpr(std::move(result));
+        const string &t = tokens[i++];
+        if (t == ")") return Sexpr(move(result));
         if (t == "(") {
             result.emplace_back(parse_list_aux(tokens, i));
         } else {
@@ -95,16 +96,16 @@ Sexpr parse_list_aux(const std::vector<std::string> &tokens, std::size_t &i) {
 }
 }
 
-Sexpr parse_nested_list(std::istream &input) {
+Sexpr parse_nested_list(istream &input) {
     auto tokens = tokenize(input);
-    std::size_t i = 0;
+    size_t i = 0;
     if (i >= tokens.size() || tokens[i] != "(")
         throw ParseError("Expected '('");
     ++i; // consume opening paren
     Sexpr result = parse_list_aux(tokens, i);
     if (i < tokens.size()) {
-        std::string remaining;
-        for (std::size_t k = i; k < tokens.size(); ++k) {
+        string remaining;
+        for (size_t k = i; k < tokens.size(); ++k) {
             if (k > i) remaining += " ";
             remaining += tokens[k];
         }
@@ -113,8 +114,8 @@ Sexpr parse_nested_list(std::istream &input) {
     return result;
 }
 
-Sexpr parse_pddl_file(const std::string &kind, const std::string &filename) {
-    std::ifstream input(filename);
+Sexpr parse_pddl_file(const string &kind, const string &filename) {
+    ifstream input(filename);
     if (!input)
         throw ParseError("Could not open " + kind + " file: " + filename);
     try {

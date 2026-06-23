@@ -13,47 +13,48 @@
 #include <unordered_map>
 #include <unordered_set>
 
+using namespace std;
 namespace translate::axioms {
 using namespace pddl;
 
-std::string atom_key(const Atom &atom) {
-    std::string k = atom.predicate;
+string atom_key(const Atom &atom) {
+    string k = atom.predicate;
     for (const auto &a : atom.args) { k.push_back('\x1f'); k += a; }
     return k;
 }
 
 namespace {
-std::string literal_atom_key(const Literal &lit) {
-    std::string k = lit.predicate;
+string literal_atom_key(const Literal &lit) {
+    string k = lit.predicate;
     for (const auto &a : lit.args) { k.push_back('\x1f'); k += a; }
     return k;
 }
 
 struct AxiomDependencies {
-    std::unordered_set<std::string> derived_variables;
-    std::unordered_map<std::string, std::unordered_set<std::string>>
+    unordered_set<string> derived_variables;
+    unordered_map<string, unordered_set<string>>
         positive_dependencies;
-    std::unordered_map<std::string, std::unordered_set<std::string>>
+    unordered_map<string, unordered_set<string>>
         negative_dependencies;
     // Key -> representative atom (an Atom object for the derived variable).
-    std::unordered_map<std::string, std::shared_ptr<const Atom>> repr;
+    unordered_map<string, shared_ptr<const Atom>> repr;
 
     AxiomDependencies() = default;
     explicit AxiomDependencies(
-        const std::vector<std::shared_ptr<PropositionalAxiom>> &axioms) {
+        const vector<shared_ptr<PropositionalAxiom>> &axioms) {
         for (const auto &ax : axioms) {
             if (!ax || !ax->effect) continue;
-            std::string k = atom_key(*ax->effect);
+            string k = atom_key(*ax->effect);
             derived_variables.insert(k);
             repr[k] = ax->effect;
         }
         for (const auto &ax : axioms) {
             if (!ax || !ax->effect) continue;
-            std::string head = atom_key(*ax->effect);
+            string head = atom_key(*ax->effect);
             for (const auto &lit_cond : ax->condition) {
                 if (!lit_cond) continue;
                 const auto &lit = static_cast<const Literal &>(*lit_cond);
-                std::string body_key = literal_atom_key(lit);
+                string body_key = literal_atom_key(lit);
                 if (derived_variables.contains(body_key)) {
                     if (lit.negated())
                         negative_dependencies[head].insert(body_key);
@@ -65,8 +66,8 @@ struct AxiomDependencies {
     }
 
     void remove_unnecessary_variables(
-        const std::unordered_set<std::string> &necessary) {
-        std::unordered_set<std::string> kept;
+        const unordered_set<string> &necessary) {
+        unordered_set<string> kept;
         for (const auto &v : derived_variables) {
             if (necessary.contains(v)) kept.insert(v);
             else {
@@ -74,19 +75,19 @@ struct AxiomDependencies {
                 negative_dependencies.erase(v);
             }
         }
-        derived_variables = std::move(kept);
+        derived_variables = move(kept);
     }
 };
 
-std::unordered_set<std::string> compute_necessary_atoms(
+unordered_set<string> compute_necessary_atoms(
     const AxiomDependencies &deps,
-    const std::vector<ConditionPtr> &goals,
-    const std::vector<std::shared_ptr<PropositionalAction>> &operators) {
-    std::unordered_set<std::string> necessary;
+    const vector<ConditionPtr> &goals,
+    const vector<shared_ptr<PropositionalAction>> &operators) {
+    unordered_set<string> necessary;
     for (const auto &g : goals) {
         if (!g) continue;
         const auto &lit = static_cast<const Literal &>(*g);
-        std::string key = literal_atom_key(lit);
+        string key = literal_atom_key(lit);
         if (deps.derived_variables.contains(key)) necessary.insert(key);
     }
     for (const auto &op : operators) {
@@ -94,7 +95,7 @@ std::unordered_set<std::string> compute_necessary_atoms(
         for (const auto &pre : op->precondition) {
             if (!pre) continue;
             const auto &lit = static_cast<const Literal &>(*pre);
-            std::string key = literal_atom_key(lit);
+            string key = literal_atom_key(lit);
             if (deps.derived_variables.contains(key)) necessary.insert(key);
         }
         auto walk = [&](const auto &effects) {
@@ -102,7 +103,7 @@ std::unordered_set<std::string> compute_necessary_atoms(
                 for (const auto &c : conds) {
                     if (!c) continue;
                     const auto &lit = static_cast<const Literal &>(*c);
-                    std::string key = literal_atom_key(lit);
+                    string key = literal_atom_key(lit);
                     if (deps.derived_variables.contains(key))
                         necessary.insert(key);
                 }
@@ -111,12 +112,12 @@ std::unordered_set<std::string> compute_necessary_atoms(
         walk(op->add_effects);
         walk(op->del_effects);
     }
-    std::vector<std::string> stack(necessary.begin(), necessary.end());
+    vector<string> stack(necessary.begin(), necessary.end());
     while (!stack.empty()) {
-        std::string atom = std::move(stack.back());
+        string atom = move(stack.back());
         stack.pop_back();
-        auto add = [&](const std::unordered_map<std::string,
-                       std::unordered_set<std::string>> &deps_map) {
+        auto add = [&](const unordered_map<string,
+                       unordered_set<string>> &deps_map) {
             auto it = deps_map.find(atom);
             if (it == deps_map.end()) return;
             for (const auto &body : it->second)
@@ -128,17 +129,17 @@ std::unordered_set<std::string> compute_necessary_atoms(
     return necessary;
 }
 
-std::vector<std::vector<std::string>> compute_sccs(
+vector<vector<string>> compute_sccs(
     const AxiomDependencies &deps) {
-    std::vector<std::string> sorted_vars(deps.derived_variables.begin(),
+    vector<string> sorted_vars(deps.derived_variables.begin(),
                                          deps.derived_variables.end());
-    std::ranges::sort(sorted_vars);
-    std::unordered_map<std::string, int> idx;
-    for (std::size_t i = 0; i < sorted_vars.size(); ++i)
+    ranges::sort(sorted_vars);
+    unordered_map<string, int> idx;
+    for (size_t i = 0; i < sorted_vars.size(); ++i)
         idx[sorted_vars[i]] = static_cast<int>(i);
-    std::vector<std::vector<int>> adj(sorted_vars.size());
-    for (std::size_t i = 0; i < sorted_vars.size(); ++i) {
-        std::set<std::string> combined;
+    vector<vector<int>> adj(sorted_vars.size());
+    for (size_t i = 0; i < sorted_vars.size(); ++i) {
+        set<string> combined;
         auto add_combined = [&](const auto &m) {
             auto it = m.find(sorted_vars[i]);
             if (it == m.end()) return;
@@ -149,28 +150,28 @@ std::vector<std::vector<std::string>> compute_sccs(
         for (const auto &v : combined) adj[i].push_back(idx[v]);
     }
     auto idx_sccs = utils::get_sccs_adjacency_list(adj);
-    std::vector<std::vector<std::string>> result;
+    vector<vector<string>> result;
     for (const auto &scc : idx_sccs) {
-        std::vector<std::string> names;
+        vector<string> names;
         names.reserve(scc.size());
         for (int j : scc) names.push_back(sorted_vars[j]);
-        result.push_back(std::move(names));
+        result.push_back(move(names));
     }
     return result;
 }
 
 struct AxiomCluster {
-    std::vector<std::string> variables;
+    vector<string> variables;
     // For each variable in cluster, the axioms producing it.
-    std::unordered_map<std::string,
-                       std::vector<std::shared_ptr<PropositionalAxiom>>> axioms;
-    std::set<int> positive_children;
-    std::set<int> negative_children;
+    unordered_map<string,
+                       vector<shared_ptr<PropositionalAxiom>>> axioms;
+    set<int> positive_children;
+    set<int> negative_children;
     int layer = 0;
 };
 
-std::vector<std::shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
-    std::vector<std::shared_ptr<PropositionalAxiom>> axioms) {
+vector<shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
+    vector<shared_ptr<PropositionalAxiom>> axioms) {
     if (axioms.empty()) return axioms;
     // Strict-weak order on condition literals by (predicate, args, negated).
     auto lit_less = [](const ConditionPtr &x, const ConditionPtr &y) {
@@ -183,22 +184,22 @@ std::vector<std::shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
     // Deduplicate condition entries within each axiom; leaves each
     // axiom's condition sorted by `lit_less`.
     for (auto &ax : axioms) {
-        std::vector<ConditionPtr> uniq = ax->condition;
-        std::ranges::sort(uniq, lit_less);
-        uniq.erase(std::ranges::begin(std::ranges::unique(
+        vector<ConditionPtr> uniq = ax->condition;
+        ranges::sort(uniq, lit_less);
+        uniq.erase(ranges::begin(ranges::unique(
                        uniq, [&](const ConditionPtr &x, const ConditionPtr &y) {
                            return !lit_less(x, y) && !lit_less(y, x);
                        })),
                    uniq.end());
-        ax->condition = std::move(uniq);
+        ax->condition = move(uniq);
     }
-    std::vector<bool> skip(axioms.size(), false);
+    vector<bool> skip(axioms.size(), false);
     // Drop axioms whose (positive) effect atom occurs in their own condition:
     // such a rule can only fire when its head already holds, so it is
     // redundant. Matches Python's `if axiom.effect in axiom.condition` in
     // compute_simplified_axioms. These are also excluded as dominators below
     // (Python never adds them to axioms_by_literal).
-    for (std::size_t i = 0; i < axioms.size(); ++i) {
+    for (size_t i = 0; i < axioms.size(); ++i) {
         const auto &eff = *axioms[i]->effect;
         for (const auto &c : axioms[i]->condition) {
             const auto &l = static_cast<const Literal &>(*c);
@@ -211,52 +212,52 @@ std::vector<std::shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
     }
     // Remove dominated axioms: i dominates j iff i's condition is a subset
     // of j's. Both conditions are sorted by `lit_less`, so the subset test
-    // is a single linear merge via std::ranges::includes (O(|ci|+|cj|))
+    // is a single linear merge via ranges::includes (O(|ci|+|cj|))
     // rather than a nested scan (O(|ci|*|cj|)). A skipped axiom never acts as
     // a dominator (matches Python skipping ids in axioms_to_skip).
-    for (std::size_t i = 0; i < axioms.size(); ++i) {
+    for (size_t i = 0; i < axioms.size(); ++i) {
         if (skip[i]) continue;
-        for (std::size_t j = 0; j < axioms.size(); ++j) {
+        for (size_t j = 0; j < axioms.size(); ++j) {
             if (i == j || skip[j]) continue;
             const auto &ci = axioms[i]->condition;
             const auto &cj = axioms[j]->condition;
             if (ci.size() > cj.size()) continue;
-            if (std::ranges::includes(cj, ci, lit_less)) skip[j] = true;
+            if (ranges::includes(cj, ci, lit_less)) skip[j] = true;
         }
     }
-    std::vector<std::shared_ptr<PropositionalAxiom>> out;
-    for (std::size_t i = 0; i < axioms.size(); ++i)
-        if (!skip[i]) out.push_back(std::move(axioms[i]));
+    vector<shared_ptr<PropositionalAxiom>> out;
+    for (size_t i = 0; i < axioms.size(); ++i)
+        if (!skip[i]) out.push_back(move(axioms[i]));
     return out;
 }
 }
 
 AxiomLayering handle_axioms(
-    const std::vector<std::shared_ptr<PropositionalAction>> &operators,
-    const std::vector<std::shared_ptr<PropositionalAxiom>> &axioms_in,
-    const std::vector<ConditionPtr> &goals,
-    const std::string &layer_strategy) {
+    const vector<shared_ptr<PropositionalAction>> &operators,
+    const vector<shared_ptr<PropositionalAxiom>> &axioms_in,
+    const vector<ConditionPtr> &goals,
+    const string &layer_strategy) {
     AxiomDependencies deps(axioms_in);
     auto necessary = compute_necessary_atoms(deps, goals, operators);
     deps.remove_unnecessary_variables(necessary);
 
     auto sccs = compute_sccs(deps);
-    std::vector<AxiomCluster> clusters;
+    vector<AxiomCluster> clusters;
     clusters.reserve(sccs.size());
-    std::unordered_map<std::string, int> var_to_cluster;
-    for (std::size_t i = 0; i < sccs.size(); ++i) {
+    unordered_map<string, int> var_to_cluster;
+    for (size_t i = 0; i < sccs.size(); ++i) {
         AxiomCluster c;
         c.variables = sccs[i];
         for (const auto &v : c.variables) {
             c.axioms[v] = {};
             var_to_cluster[v] = static_cast<int>(i);
         }
-        clusters.push_back(std::move(c));
+        clusters.push_back(move(c));
     }
     // Assign axioms to clusters.
     for (const auto &ax : axioms_in) {
         if (!ax || !ax->effect) continue;
-        std::string key = atom_key(*ax->effect);
+        string key = atom_key(*ax->effect);
         auto it = var_to_cluster.find(key);
         if (it == var_to_cluster.end()) continue;
         clusters[it->second].axioms[key].push_back(ax);
@@ -264,16 +265,16 @@ AxiomLayering handle_axioms(
     int removed = 0;
     for (auto &c : clusters) {
         for (auto &[v, ax_list] : c.axioms) {
-            std::size_t old = ax_list.size();
-            ax_list = compute_simplified_axioms(std::move(ax_list));
+            size_t old = ax_list.size();
+            ax_list = compute_simplified_axioms(move(ax_list));
             removed += static_cast<int>(old - ax_list.size());
         }
     }
-    std::cout << "Translator axioms removed by simplifying: " << removed
-              << std::endl;
+    cout << "Translator axioms removed by simplifying: " << removed
+              << endl;
     // Compute inter-cluster links.
-    auto add_links = [&](const std::unordered_map<std::string,
-                         std::unordered_set<std::string>> &m, bool negative) {
+    auto add_links = [&](const unordered_map<string,
+                         unordered_set<string>> &m, bool negative) {
         for (const auto &[from, deps_set] : m) {
             auto from_it = var_to_cluster.find(from);
             if (from_it == var_to_cluster.end()) continue;
@@ -282,7 +283,7 @@ AxiomLayering handle_axioms(
                 if (to_it == var_to_cluster.end()) continue;
                 if (from_it->second == to_it->second) {
                     if (negative)
-                        throw std::runtime_error(
+                        throw runtime_error(
                             "Error: The axioms are not stratifiable.");
                     continue;
                 }
@@ -308,9 +309,9 @@ AxiomLayering handle_axioms(
         for (auto it = clusters.rbegin(); it != clusters.rend(); ++it) {
             int layer = 0;
             for (int child : it->positive_children)
-                layer = std::max(layer, clusters[child].layer);
+                layer = max(layer, clusters[child].layer);
             for (int child : it->negative_children)
-                layer = std::max(layer, clusters[child].layer + 1);
+                layer = max(layer, clusters[child].layer + 1);
             it->layer = layer;
         }
     }
@@ -319,7 +320,7 @@ AxiomLayering handle_axioms(
     for (auto &c : clusters) {
         for (auto &v : c.variables) {
             out.axiom_layers[v] = c.layer;
-            for (auto &ax : c.axioms[v]) out.axioms.push_back(std::move(ax));
+            for (auto &ax : c.axioms[v]) out.axioms.push_back(move(ax));
         }
     }
     return out;

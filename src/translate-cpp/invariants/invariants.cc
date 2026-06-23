@@ -11,16 +11,17 @@
 #include <unordered_map>
 #include <unordered_set>
 
+using namespace std;
 namespace translate::invariants {
 using namespace pddl;
 
 // ----- InvariantPart -------------------------------------------------------
 
-std::vector<std::string> InvariantPart::get_parameters(
+vector<string> InvariantPart::get_parameters(
     const Literal &literal) const {
     int n = arity();
-    std::vector<std::string> result(n);
-    for (std::size_t pos = 0; pos < args.size(); ++pos) {
+    vector<string> result(n);
+    for (size_t pos = 0; pos < args.size(); ++pos) {
         int v = args[pos];
         if (v == COUNTED) continue;
         result[v] = literal.args[pos];
@@ -29,20 +30,20 @@ std::vector<std::string> InvariantPart::get_parameters(
 }
 
 ConditionPtr InvariantPart::instantiate(
-    const std::vector<std::string> &parameters_tuple) const {
-    std::vector<std::string> a;
+    const vector<string> &parameters_tuple) const {
+    vector<string> a;
     a.reserve(args.size());
     for (int v : args) {
         if (v == COUNTED) a.push_back("?X");
         else a.push_back(parameters_tuple[v]);
     }
-    return std::make_shared<Atom>(predicate, std::move(a));
+    return make_shared<Atom>(predicate, move(a));
 }
 
-std::size_t InvariantPart::hash() const noexcept {
-    std::size_t h = std::hash<std::string>{}(predicate);
+size_t InvariantPart::get_hash() const noexcept {
+    size_t h = hash<string>{}(predicate);
     for (int a : args)
-        h ^= std::hash<int>{}(a) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+        h ^= hash<int>{}(a) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
     return h;
 }
 
@@ -53,46 +54,46 @@ namespace {
   a flat list of (preimg-element, img-element) pairs.
 */
 void instantiate_factored_mapping(
-    const std::vector<std::pair<std::vector<int>,
-                                std::vector<int>>> &pairs,
-    std::size_t depth, std::vector<std::pair<int, int>> &current,
-    const std::function<void(const std::vector<std::pair<int, int>> &)> &emit) {
+    const vector<pair<vector<int>,
+                                vector<int>>> &pairs,
+    size_t depth, vector<pair<int, int>> &current,
+    const function<void(const vector<pair<int, int>> &)> &emit) {
     if (depth == pairs.size()) { emit(current); return; }
     const auto &[preimg, img] = pairs[depth];
-    std::vector<int> perm = img;
-    std::ranges::sort(perm);
+    vector<int> perm = img;
+    ranges::sort(perm);
     do {
-        std::size_t added = preimg.size();
-        for (std::size_t i = 0; i < preimg.size(); ++i)
+        size_t added = preimg.size();
+        for (size_t i = 0; i < preimg.size(); ++i)
             current.emplace_back(preimg[i], perm[i]);
         instantiate_factored_mapping(pairs, depth + 1, current, emit);
-        for (std::size_t i = 0; i < added; ++i) current.pop_back();
-    } while (std::next_permutation(perm.begin(), perm.end()));
+        for (size_t i = 0; i < added; ++i) current.pop_back();
+    } while (next_permutation(perm.begin(), perm.end()));
 }
 }
 
 void InvariantPart::possible_matches(
     const Literal &own_literal, const Literal &other_literal,
-    std::vector<InvariantPart> &result) const {
+    vector<InvariantPart> &result) const {
     int allowed_omissions =
         static_cast<int>(other_literal.args.size()) - arity();
     if (allowed_omissions != 0 && allowed_omissions != 1) return;
 
     auto own_params = get_parameters(own_literal);
-    std::unordered_map<std::string, std::vector<int>> own_arg_to_params;
-    for (std::size_t k = 0; k < own_params.size(); ++k)
+    unordered_map<string, vector<int>> own_arg_to_params;
+    for (size_t k = 0; k < own_params.size(); ++k)
         own_arg_to_params[own_params[k]].push_back(static_cast<int>(k));
 
-    std::unordered_map<std::string, std::vector<int>> other_arg_to_pos;
-    for (std::size_t i = 0; i < other_literal.args.size(); ++i)
+    unordered_map<string, vector<int>> other_arg_to_pos;
+    for (size_t i = 0; i < other_literal.args.size(); ++i)
         other_arg_to_pos[other_literal.args[i]].push_back(static_cast<int>(i));
 
-    std::vector<std::pair<std::vector<int>, std::vector<int>>> factored;
+    vector<pair<vector<int>, vector<int>>> factored;
     int remaining_omissions = allowed_omissions;
     for (auto &[key, other_positions] : other_arg_to_pos) {
         auto it = own_arg_to_params.find(key);
-        std::vector<int> inv_params = (it == own_arg_to_params.end())
-                                          ? std::vector<int>{}
+        vector<int> inv_params = (it == own_arg_to_params.end())
+                                          ? vector<int>{}
                                           : it->second;
         int len_diff = static_cast<int>(inv_params.size()) -
                        static_cast<int>(other_positions.size());
@@ -105,27 +106,27 @@ void InvariantPart::possible_matches(
         }
         factored.emplace_back(other_positions, inv_params);
     }
-    std::vector<std::pair<int, int>> current;
+    vector<pair<int, int>> current;
     instantiate_factored_mapping(factored, 0, current,
-        [&](const std::vector<std::pair<int, int>> &mapping) {
-            std::vector<int> args(other_literal.args.size(), COUNTED);
+        [&](const vector<pair<int, int>> &mapping) {
+            vector<int> args(other_literal.args.size(), COUNTED);
             int omitted = -1;
             for (const auto &[other_pos, inv_var] : mapping) {
                 if (inv_var == COUNTED) omitted = other_pos;
                 else args[other_pos] = inv_var;
             }
-            result.emplace_back(other_literal.predicate, std::move(args),
+            result.emplace_back(other_literal.predicate, move(args),
                                 omitted);
         });
 }
 
 // ----- Invariant -----------------------------------------------------------
 
-Invariant::Invariant(std::vector<InvariantPart> parts_) {
+Invariant::Invariant(vector<InvariantPart> parts_) {
     // Deduplicate by predicate (matching Python: at most one part per pred).
-    std::sort(parts_.begin(), parts_.end());
-    parts_.erase(std::unique(parts_.begin(), parts_.end()), parts_.end());
-    parts = std::move(parts_);
+    sort(parts_.begin(), parts_.end());
+    parts_.erase(unique(parts_.begin(), parts_.end()), parts_.end());
+    parts = move(parts_);
     compute_predicate_map();
 }
 
@@ -133,7 +134,7 @@ Invariant::Invariant(const Invariant &other) : parts(other.parts) {
     compute_predicate_map();
 }
 
-Invariant::Invariant(Invariant &&other) noexcept : parts(std::move(other.parts)) {
+Invariant::Invariant(Invariant &&other) noexcept : parts(move(other.parts)) {
     compute_predicate_map();
     other.predicate_to_part_.clear();
 }
@@ -148,7 +149,7 @@ Invariant &Invariant::operator=(const Invariant &other) {
 
 Invariant &Invariant::operator=(Invariant &&other) noexcept {
     if (this != &other) {
-        parts = std::move(other.parts);
+        parts = move(other.parts);
         compute_predicate_map();
         other.predicate_to_part_.clear();
     }
@@ -163,19 +164,19 @@ void Invariant::compute_predicate_map() {
 
 bool Invariant::operator==(const Invariant &o) const {
     if (parts.size() != o.parts.size()) return false;
-    for (std::size_t i = 0; i < parts.size(); ++i)
+    for (size_t i = 0; i < parts.size(); ++i)
         if (!(parts[i] == o.parts[i])) return false;
     return true;
 }
 
-std::size_t Invariant::hash() const noexcept {
-    std::size_t h = 0;
+size_t Invariant::get_hash() const noexcept {
+    size_t h = 0;
     for (const auto &p : parts)
-        h ^= p.hash() + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+        h ^= p.get_hash() + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
     return h;
 }
 
-std::vector<std::string> Invariant::get_parameters(const Literal &atom) const {
+vector<string> Invariant::get_parameters(const Literal &atom) const {
     auto it = predicate_to_part_.find(atom.predicate);
     if (it == predicate_to_part_.end()) return {};
     return it->second->get_parameters(atom);
@@ -186,18 +187,18 @@ EqualityConjunction Invariant::get_cover_equivalence_conjunction(
     auto it = predicate_to_part_.find(literal.predicate);
     if (it == predicate_to_part_.end()) return {};
     const InvariantPart &part = *it->second;
-    std::vector<std::pair<Term, Term>> eqs;
-    for (std::size_t pos = 0; pos < part.args.size(); ++pos) {
+    vector<pair<Term, Term>> eqs;
+    for (size_t pos = 0; pos < part.args.size(); ++pos) {
         int v = part.args[pos];
         if (v == COUNTED) continue;
         eqs.emplace_back(Term(v), Term(literal.args[pos]));
     }
-    return EqualityConjunction(std::move(eqs));
+    return EqualityConjunction(move(eqs));
 }
 
 namespace {
-std::vector<const Literal *> get_literals(const ConditionPtr &cond) {
-    std::vector<const Literal *> out;
+vector<const Literal *> get_literals(const ConditionPtr &cond) {
+    vector<const Literal *> out;
     if (!cond) return out;
     if (cond->kind() == Condition::Kind::ATOM ||
         cond->kind() == Condition::Kind::NEGATED_ATOM) {
@@ -216,23 +217,23 @@ std::vector<const Literal *> get_literals(const ConditionPtr &cond) {
 void ensure_inequality(ConstraintSystem &system,
                        const Literal &l1, const Literal &l2) {
     if (l1.predicate == l2.predicate && !l1.args.empty()) {
-        std::vector<std::pair<Term, Term>> parts;
-        std::size_t n = std::min(l1.args.size(), l2.args.size());
-        for (std::size_t i = 0; i < n; ++i)
+        vector<pair<Term, Term>> parts;
+        size_t n = min(l1.args.size(), l2.args.size());
+        for (size_t i = 0; i < n; ++i)
             parts.emplace_back(Term(l1.args[i]), Term(l2.args[i]));
         system.add_inequality_disjunction(
-            InequalityDisjunction(std::move(parts)));
+            InequalityDisjunction(move(parts)));
     }
 }
 
 void ensure_conjunction_sat(ConstraintSystem &system,
-                            std::initializer_list<std::vector<const Literal *>>
+                            initializer_list<vector<const Literal *>>
                                 groups) {
-    std::unordered_map<std::string, std::vector<const Literal *>> pos, neg;
+    unordered_map<string, vector<const Literal *>> pos, neg;
     for (const auto &grp : groups) {
         for (const auto *lit : grp) {
             if (lit->predicate == "=") {
-                std::vector<std::pair<Term, Term>> parts;
+                vector<pair<Term, Term>> parts;
                 if (lit->args.size() == 2)
                     parts.emplace_back(Term(lit->args[0]), Term(lit->args[1]));
                 if (lit->negated()) {
@@ -254,13 +255,13 @@ void ensure_conjunction_sat(ConstraintSystem &system,
         if (it == neg.end()) continue;
         for (const auto *p : p_atoms) {
             for (const auto *n : it->second) {
-                std::vector<std::pair<Term, Term>> parts;
-                std::size_t m = std::min(p->args.size(), n->args.size());
-                for (std::size_t i = 0; i < m; ++i)
+                vector<pair<Term, Term>> parts;
+                size_t m = min(p->args.size(), n->args.size());
+                for (size_t i = 0; i < m; ++i)
                     parts.emplace_back(Term(n->args[i]), Term(p->args[i]));
                 if (!parts.empty())
                     system.add_inequality_disjunction(
-                        InequalityDisjunction(std::move(parts)));
+                        InequalityDisjunction(move(parts)));
             }
         }
     }
@@ -269,23 +270,23 @@ void ensure_conjunction_sat(ConstraintSystem &system,
 
 bool Invariant::check_balance(
     BalanceChecker &checker,
-    const std::function<void(Invariant)> &enqueue_func) const {
+    const function<void(Invariant)> &enqueue_func) const {
     // Collect actions threatening any of our parts.
-    std::vector<const Action *> actions_to_check;
-    std::unordered_set<const Action *> seen;
-    std::vector<InvariantPart> sorted_parts = parts;
-    std::sort(sorted_parts.begin(), sorted_parts.end());
+    vector<const Action *> actions_to_check;
+    unordered_set<const Action *> seen;
+    vector<InvariantPart> sorted_parts = parts;
+    sort(sorted_parts.begin(), sorted_parts.end());
     for (const auto &part : sorted_parts) {
         for (const auto *a : checker.get_threats(part.predicate)) {
             if (seen.insert(a).second) actions_to_check.push_back(a);
         }
     }
     // For determinism we randomize order; without RNG seeded the same as
-    // Python (314159), we draw uniformly via std::mt19937. The user accepted
+    // Python (314159), we draw uniformly via mt19937. The user accepted
     // semantic equivalence (not byte-identical).
     while (!actions_to_check.empty()) {
         int pos = checker.next_index(actions_to_check.size());
-        std::swap(actions_to_check[pos], actions_to_check.back());
+        swap(actions_to_check[pos], actions_to_check.back());
         const Action *action = actions_to_check.back();
         actions_to_check.pop_back();
         const Action *heavy = checker.get_heavy_action(action);
@@ -296,7 +297,7 @@ bool Invariant::check_balance(
 }
 
 bool Invariant::operator_too_heavy(const Action &h_action) const {
-    std::vector<const Effect *> add_effects;
+    vector<const Effect *> add_effects;
     for (const auto &eff : h_action.effects) {
         if (!eff.literal) continue;
         const auto &lit = static_cast<const Literal &>(*eff.literal);
@@ -305,8 +306,8 @@ bool Invariant::operator_too_heavy(const Action &h_action) const {
             add_effects.push_back(&eff);
     }
     if (add_effects.size() <= 1) return false;
-    for (std::size_t i = 0; i < add_effects.size(); ++i) {
-        for (std::size_t j = i + 1; j < add_effects.size(); ++j) {
+    for (size_t i = 0; i < add_effects.size(); ++i) {
+        for (size_t j = i + 1; j < add_effects.size(); ++j) {
             const auto &lit1 = static_cast<const Literal &>(*add_effects[i]->literal);
             const auto &lit2 = static_cast<const Literal &>(*add_effects[j]->literal);
             ConstraintSystem system;
@@ -318,7 +319,7 @@ bool Invariant::operator_too_heavy(const Action &h_action) const {
             auto pre_lits = get_literals(h_action.precondition);
             auto cond1 = get_literals(add_effects[i]->condition);
             auto cond2 = get_literals(add_effects[j]->condition);
-            std::vector<const Literal *> n1, n2;
+            vector<const Literal *> n1, n2;
             auto neg1 = lit1.negate();
             auto neg2 = lit2.negate();
             n1.push_back(static_cast<const Literal *>(neg1.get()));
@@ -332,8 +333,8 @@ bool Invariant::operator_too_heavy(const Action &h_action) const {
 
 bool Invariant::operator_unbalanced(
     const Action &action,
-    const std::function<void(Invariant)> &enqueue_func) const {
-    std::vector<const Effect *> add_effects, del_effects;
+    const function<void(Invariant)> &enqueue_func) const {
+    vector<const Effect *> add_effects, del_effects;
     for (const auto &eff : action.effects) {
         if (!eff.literal) continue;
         const auto &lit = static_cast<const Literal &>(*eff.literal);
@@ -349,19 +350,19 @@ bool Invariant::operator_unbalanced(
 
 bool Invariant::add_effect_unbalanced(
     const Action &action, const Effect &add_effect,
-    const std::vector<const Effect *> &del_effects,
-    const std::function<void(Invariant)> &enqueue_func) const {
+    const vector<const Effect *> &del_effects,
+    const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
-    std::unordered_map<std::string, std::vector<ConditionPtr>> produced;
+    unordered_map<string, vector<ConditionPtr>> produced;
     auto extend_produced = [&](const ConditionPtr &c) {
         for (const auto *lit : get_literals(c))
             produced[lit->predicate].push_back(
                 lit->negated()
-                    ? std::static_pointer_cast<const Condition>(
-                          std::make_shared<NegatedAtom>(lit->predicate,
+                    ? static_pointer_cast<const Condition>(
+                          make_shared<NegatedAtom>(lit->predicate,
                                                         lit->args))
-                    : std::static_pointer_cast<const Condition>(
-                          std::make_shared<Atom>(lit->predicate, lit->args)));
+                    : static_pointer_cast<const Condition>(
+                          make_shared<Atom>(lit->predicate, lit->args)));
     };
     extend_produced(action.precondition);
     extend_produced(add_effect.condition);
@@ -375,9 +376,9 @@ bool Invariant::add_effect_unbalanced(
     ConstraintSystem param_system;
     auto cover_copy = add_cover;
     const auto *repr_ptr = cover_copy.get_representative();
-    std::unordered_map<Term, Term, TermHash> repr;
+    unordered_map<Term, Term, TermHash> repr;
     if (repr_ptr) repr = *repr_ptr;
-    std::vector<std::string> params;
+    vector<string> params;
     for (const auto &p : action.parameters) params.push_back(p.name);
     for (const auto &p : add_effect.parameters) params.push_back(p.name);
     for (const auto &p : params) {
@@ -386,16 +387,16 @@ bool Invariant::add_effect_unbalanced(
         Term r = (it == repr.end()) ? t : it->second;
         if (is_variable_or_param(r)) param_system.add_not_constant(p);
     }
-    for (std::size_t i = 0; i < params.size(); ++i) {
-        for (std::size_t j = i + 1; j < params.size(); ++j) {
+    for (size_t i = 0; i < params.size(); ++i) {
+        for (size_t j = i + 1; j < params.size(); ++j) {
             Term ti(params[i]), tj(params[j]);
             auto ri_it = repr.find(ti); auto rj_it = repr.find(tj);
             Term ri = (ri_it == repr.end()) ? ti : ri_it->second;
             Term rj = (rj_it == repr.end()) ? tj : rj_it->second;
             if (!(ri == rj)) {
-                std::vector<std::pair<Term, Term>> parts = {{ti, tj}};
+                vector<pair<Term, Term>> parts = {{ti, tj}};
                 param_system.add_inequality_disjunction(
-                    InequalityDisjunction(std::move(parts)));
+                    InequalityDisjunction(move(parts)));
             }
         }
     }
@@ -409,8 +410,8 @@ bool Invariant::add_effect_unbalanced(
 
 bool Invariant::balances(
     const Effect &del_effect, const Effect &add_effect,
-    const std::unordered_map<std::string,
-                             std::vector<ConditionPtr>> &produced,
+    const unordered_map<string,
+                             vector<ConditionPtr>> &produced,
     const EqualityConjunction &add_cover,
     const ConstraintSystem &param_system) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
@@ -419,24 +420,24 @@ bool Invariant::balances(
     // Build balance system.
     ConstraintSystem balance_system;
     auto cond_lits = get_literals(del_effect.condition);
-    std::vector<const Literal *> all_lits = cond_lits;
+    vector<const Literal *> all_lits = cond_lits;
     auto del_neg = del_lit.negate();
     all_lits.push_back(static_cast<const Literal *>(del_neg.get()));
     for (const auto *lit : all_lits) {
-        std::vector<EqualityConjunction> possibilities;
+        vector<EqualityConjunction> possibilities;
         auto it = produced.find(lit->predicate);
         if (it == produced.end()) return false;
         for (const auto &match : it->second) {
             const auto &m = static_cast<const Literal &>(*match);
             if (m.negated() != lit->negated()) continue;
-            std::vector<std::pair<Term, Term>> eqs;
-            std::size_t n = std::min(lit->args.size(), m.args.size());
-            for (std::size_t i = 0; i < n; ++i)
+            vector<pair<Term, Term>> eqs;
+            size_t n = min(lit->args.size(), m.args.size());
+            for (size_t i = 0; i < n; ++i)
                 eqs.emplace_back(Term(lit->args[i]), Term(m.args[i]));
-            possibilities.emplace_back(std::move(eqs));
+            possibilities.emplace_back(move(eqs));
         }
         if (possibilities.empty()) return false;
-        balance_system.add_equality_DNF(std::move(possibilities));
+        balance_system.add_equality_DNF(move(possibilities));
     }
     ensure_inequality(balance_system, add_lit, del_lit);
 
@@ -451,7 +452,7 @@ bool Invariant::balances(
 
 void Invariant::refine_candidate(
     const Effect &add_effect, const Action &action,
-    const std::function<void(Invariant)> &enqueue_func) const {
+    const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
     auto pit = predicate_to_part_.find(add_lit.predicate);
     if (pit == predicate_to_part_.end()) return;
@@ -462,19 +463,19 @@ void Invariant::refine_candidate(
         if (!lit.negated()) continue;
         if (predicate_to_part_.contains(lit.predicate))
             continue;
-        std::vector<InvariantPart> matches;
+        vector<InvariantPart> matches;
         part.possible_matches(add_lit, lit, matches);
         for (auto &m : matches) {
-            std::vector<InvariantPart> new_parts = parts;
-            new_parts.push_back(std::move(m));
+            vector<InvariantPart> new_parts = parts;
+            new_parts.push_back(move(m));
             // Deduplicate by predicate: skip if duplicate predicate.
-            std::set<std::string> preds;
+            set<string> preds;
             bool dup = false;
             for (const auto &p : new_parts) {
                 if (!preds.insert(p.predicate).second) { dup = true; break; }
             }
             if (dup) continue;
-            enqueue_func(Invariant(std::move(new_parts)));
+            enqueue_func(Invariant(move(new_parts)));
         }
     }
 }

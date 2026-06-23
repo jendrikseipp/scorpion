@@ -3,11 +3,12 @@
 #include <algorithm>
 #include <functional>
 
+using namespace std;
 namespace translate::invariants {
-std::size_t TermHash::operator()(const Term &t) const noexcept {
-    if (auto *s = std::get_if<std::string>(&t))
-        return std::hash<std::string>{}(*s);
-    return std::hash<int>{}(std::get<int>(t)) ^ 0xabcdef01u;
+size_t TermHash::operator()(const Term &t) const noexcept {
+    if (auto *s = get_if<string>(&t))
+        return hash<string>{}(*s);
+    return hash<int>{}(get<int>(t)) ^ 0xabcdef01u;
 }
 
 bool term_less(const Term &a, const Term &b) {
@@ -15,31 +16,31 @@ bool term_less(const Term &a, const Term &b) {
     // ints, numeric.
     if (a.index() != b.index())
         return a.index() < b.index();
-    if (auto *as = std::get_if<std::string>(&a))
-        return *as < std::get<std::string>(b);
-    return std::get<int>(a) < std::get<int>(b);
+    if (auto *as = get_if<string>(&a))
+        return *as < get<string>(b);
+    return get<int>(a) < get<int>(b);
 }
 
 bool is_variable_or_param(const Term &t) {
-    if (auto *s = std::get_if<std::string>(&t))
+    if (auto *s = get_if<string>(&t))
         return !s->empty() && s->front() == '?';
     return true; // int (invariant parameter) counts as a variable-like term
 }
 
 bool is_object(const Term &t) {
-    if (auto *s = std::get_if<std::string>(&t))
+    if (auto *s = get_if<string>(&t))
         return !s->empty() && s->front() != '?';
     return false;
 }
 
-std::string term_to_string(const Term &t) {
-    if (auto *s = std::get_if<std::string>(&t)) return *s;
-    return "@p" + std::to_string(std::get<int>(t));
+string term_to_string(const Term &t) {
+    if (auto *s = get_if<string>(&t)) return *s;
+    return "@p" + to_string(get<int>(t));
 }
 
 namespace {
 struct UnionFind {
-    std::unordered_map<Term, Term, TermHash> parent;
+    unordered_map<Term, Term, TermHash> parent;
     Term &find(const Term &x) {
         auto it = parent.find(x);
         if (it == parent.end()) {
@@ -68,7 +69,7 @@ void EqualityConjunction::compute_representatives() {
     for (const auto &[a, b] : equalities) uf.unite(a, b);
 
     // Group by root.
-    std::unordered_map<Term, std::vector<Term>, TermHash> classes;
+    unordered_map<Term, vector<Term>, TermHash> classes;
     for (const auto &[t, _] : uf.parent) {
         Term r = uf.find(t);
         classes[r].push_back(t);
@@ -76,8 +77,8 @@ void EqualityConjunction::compute_representatives() {
     representative_.clear();
     for (const auto &[root, members] : classes) {
         // Find at most one object; prioritize objects over variables/ints.
-        std::vector<Term> objects;
-        std::vector<Term> non_objects;
+        vector<Term> objects;
+        vector<Term> non_objects;
         for (const auto &m : members) {
             if (is_object(m)) objects.push_back(m);
             else non_objects.push_back(m);
@@ -98,7 +99,7 @@ bool EqualityConjunction::is_consistent() {
     return *consistent_;
 }
 
-const std::unordered_map<Term, Term, TermHash> *
+const unordered_map<Term, Term, TermHash> *
 EqualityConjunction::get_representative() {
     if (!consistent_) compute_representatives();
     if (!*consistent_) return nullptr;
@@ -118,8 +119,8 @@ namespace {
 // Enumerate cartesian product of choices, calling fn(picks) for each.
 template<class Fn>
 void cartesian_product(
-    const std::vector<std::vector<EqualityConjunction>> &dnfs,
-    std::vector<const EqualityConjunction *> &picks, std::size_t depth, Fn fn) {
+    const vector<vector<EqualityConjunction>> &dnfs,
+    vector<const EqualityConjunction *> &picks, size_t depth, Fn fn) {
     if (depth == dnfs.size()) { fn(picks); return; }
     for (const auto &choice : dnfs[depth]) {
         picks.push_back(&choice);
@@ -131,15 +132,15 @@ void cartesian_product(
 
 bool ConstraintSystem::is_solvable() const {
     bool found = false;
-    std::vector<const EqualityConjunction *> picks;
+    vector<const EqualityConjunction *> picks;
     cartesian_product(equality_DNFs, picks, 0,
-        [&](const std::vector<const EqualityConjunction *> &p) {
+        [&](const vector<const EqualityConjunction *> &p) {
             if (found) return;
             // Combine equalities.
-            std::vector<std::pair<Term, Term>> all;
+            vector<pair<Term, Term>> all;
             for (const auto *c : p)
                 for (const auto &e : c->equalities) all.push_back(e);
-            EqualityConjunction combined(std::move(all));
+            EqualityConjunction combined(move(all));
             if (!combined.is_consistent()) return;
             const auto *rep = combined.get_representative();
             // not_constant check.

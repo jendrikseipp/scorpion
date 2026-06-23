@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_SAS_SAS_TASK_H
-#define TRANSLATE_SAS_SAS_TASK_H
+#ifndef SAS_SAS_TASK_H
+#define SAS_SAS_TASK_H
 
 #include <ostream>
 #include <string>

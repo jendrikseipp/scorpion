@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_AXIOMS_AXIOM_RULES_H
-#define TRANSLATE_AXIOMS_AXIOM_RULES_H
+#ifndef AXIOMS_AXIOM_RULES_H
+#define AXIOMS_AXIOM_RULES_H
 
 #include "../pddl/action.h"
 #include "../pddl/axiom.h"

@@ -6,30 +6,31 @@
 #include <set>
 #include <string>
 
+using namespace std;
 namespace translate::sas {
 namespace {
 /*
-  Fast writer that appends to a std::string buffer using locale-free
-  std::to_chars for integers. Used by SASTask::output to avoid the
+  Fast writer that appends to a string buffer using locale-free
+  to_chars for integers. Used by SASTask::output to avoid the
   per-`<<` locale handling that dominated the output phase: dumping a
   10 MB output.sas with operator<< was ~150 ms; the fast writer reduces
   this to a few tens of ms.
 */
 class FastWriter {
 public:
-    std::string &buf;
-    explicit FastWriter(std::string &b) : buf(b) {}
+    string &buf;
+    explicit FastWriter(string &b) : buf(b) {}
     void put(char c) { buf.push_back(c); }
-    void put(std::string_view s) { buf.append(s); }
-    void put(const std::string &s) { buf.append(s); }
+    void put(string_view s) { buf.append(s); }
+    void put(const string &s) { buf.append(s); }
     void put(int n) {
-        std::array<char, 16> tmp;
-        auto r = std::to_chars(tmp.data(), tmp.data() + tmp.size(), n);
+        array<char, 16> tmp;
+        auto r = to_chars(tmp.data(), tmp.data() + tmp.size(), n);
         buf.append(tmp.data(), r.ptr);
     }
-    void put(std::size_t n) {
-        std::array<char, 24> tmp;
-        auto r = std::to_chars(tmp.data(), tmp.data() + tmp.size(), n);
+    void put(size_t n) {
+        array<char, 24> tmp;
+        auto r = to_chars(tmp.data(), tmp.data() + tmp.size(), n);
         buf.append(tmp.data(), r.ptr);
     }
     void nl() { buf.push_back('\n'); }
@@ -37,43 +38,43 @@ public:
 
 void write_variables(FastWriter &w, const SASVariables &vars) {
     w.put(vars.ranges.size()); w.nl();
-    for (std::size_t i = 0; i < vars.ranges.size(); ++i) {
-        w.put(std::string_view("begin_variable")); w.nl();
-        w.put(std::string_view("var")); w.put(i); w.nl();
+    for (size_t i = 0; i < vars.ranges.size(); ++i) {
+        w.put(string_view("begin_variable")); w.nl();
+        w.put(string_view("var")); w.put(i); w.nl();
         w.put(vars.axiom_layers[i]); w.nl();
         w.put(vars.ranges[i]); w.nl();
         for (const auto &v : vars.value_names[i]) { w.put(v); w.nl(); }
-        w.put(std::string_view("end_variable")); w.nl();
+        w.put(string_view("end_variable")); w.nl();
     }
 }
 
 void write_mutex(FastWriter &w, const SASMutexGroup &m) {
-    w.put(std::string_view("begin_mutex_group")); w.nl();
+    w.put(string_view("begin_mutex_group")); w.nl();
     w.put(m.facts.size()); w.nl();
     for (const auto &[v, val] : m.facts) {
         w.put(v); w.put(' '); w.put(val); w.nl();
     }
-    w.put(std::string_view("end_mutex_group")); w.nl();
+    w.put(string_view("end_mutex_group")); w.nl();
 }
 
 void write_init(FastWriter &w, const SASInit &init) {
-    w.put(std::string_view("begin_state")); w.nl();
+    w.put(string_view("begin_state")); w.nl();
     for (int v : init.values) { w.put(v); w.nl(); }
-    w.put(std::string_view("end_state")); w.nl();
+    w.put(string_view("end_state")); w.nl();
 }
 
 void write_goal(FastWriter &w, const SASGoal &goal) {
-    w.put(std::string_view("begin_goal")); w.nl();
+    w.put(string_view("begin_goal")); w.nl();
     w.put(goal.pairs.size()); w.nl();
     for (const auto &[v, val] : goal.pairs) {
         w.put(v); w.put(' '); w.put(val); w.nl();
     }
-    w.put(std::string_view("end_goal")); w.nl();
+    w.put(string_view("end_goal")); w.nl();
 }
 
 void write_operator(FastWriter &w, const SASOperator &op) {
     // Strip outer parens for name as Python does.
-    std::string_view clean = op.name;
+    string_view clean = op.name;
     if (clean.size() >= 2 && clean.front() == '(' && clean.back() == ')')
         clean = clean.substr(1, clean.size() - 2);
 
@@ -87,7 +88,7 @@ void write_operator(FastWriter &w, const SASOperator &op) {
       would put pre_post in ascending post-remap-var order, which is
       a different (but valid) order from Python's.
     */
-    w.put(std::string_view("begin_operator")); w.nl();
+    w.put(string_view("begin_operator")); w.nl();
     w.put(clean); w.nl();
     w.put(op.prevail.size()); w.nl();
     for (const auto &[v, val] : op.prevail) {
@@ -104,75 +105,75 @@ void write_operator(FastWriter &w, const SASOperator &op) {
         w.put(' '); w.put(post); w.nl();
     }
     w.put(op.cost); w.nl();
-    w.put(std::string_view("end_operator")); w.nl();
+    w.put(string_view("end_operator")); w.nl();
 }
 
 void write_axiom(FastWriter &w, const SASAxiom &ax) {
     auto cond = ax.condition;
-    std::ranges::sort(cond);
-    w.put(std::string_view("begin_rule")); w.nl();
+    ranges::sort(cond);
+    w.put(string_view("begin_rule")); w.nl();
     w.put(cond.size()); w.nl();
     for (const auto &[v, val] : cond) {
         w.put(v); w.put(' '); w.put(val); w.nl();
     }
     w.put(ax.effect.first); w.put(' '); w.put(1 - ax.effect.second);
     w.put(' '); w.put(ax.effect.second); w.nl();
-    w.put(std::string_view("end_rule")); w.nl();
+    w.put(string_view("end_rule")); w.nl();
 }
 }
 
 // Legacy ostream-based versions retained for callers that pass an
 // ostream (e.g. dump for debugging). The fast path is via SASTask::output
 // which routes through FastWriter + a single ofstream::write.
-void SASVariables::output(std::ostream &os) const {
-    std::string buf; FastWriter w(buf); write_variables(w, *this);
-    os.write(buf.data(), static_cast<std::streamsize>(buf.size()));
+void SASVariables::output(ostream &os) const {
+    string buf; FastWriter w(buf); write_variables(w, *this);
+    os.write(buf.data(), static_cast<streamsize>(buf.size()));
 }
 int SASVariables::get_encoding_size() const {
     int size = static_cast<int>(ranges.size());
     for (int r : ranges) size += r;
     return size;
 }
-SASMutexGroup::SASMutexGroup(std::vector<VarVal> f) : facts(std::move(f)) {
-    std::ranges::sort(facts);
+SASMutexGroup::SASMutexGroup(vector<VarVal> f) : facts(move(f)) {
+    ranges::sort(facts);
 }
-void SASMutexGroup::output(std::ostream &os) const {
-    std::string buf; FastWriter w(buf); write_mutex(w, *this);
-    os.write(buf.data(), static_cast<std::streamsize>(buf.size()));
+void SASMutexGroup::output(ostream &os) const {
+    string buf; FastWriter w(buf); write_mutex(w, *this);
+    os.write(buf.data(), static_cast<streamsize>(buf.size()));
 }
-void SASInit::output(std::ostream &os) const {
-    std::string buf; FastWriter w(buf); write_init(w, *this);
-    os.write(buf.data(), static_cast<std::streamsize>(buf.size()));
+void SASInit::output(ostream &os) const {
+    string buf; FastWriter w(buf); write_init(w, *this);
+    os.write(buf.data(), static_cast<streamsize>(buf.size()));
 }
-SASGoal::SASGoal(std::vector<VarVal> p) : pairs(std::move(p)) {
-    std::ranges::sort(pairs);
+SASGoal::SASGoal(vector<VarVal> p) : pairs(move(p)) {
+    ranges::sort(pairs);
 }
-void SASGoal::output(std::ostream &os) const {
-    std::string buf; FastWriter w(buf); write_goal(w, *this);
-    os.write(buf.data(), static_cast<std::streamsize>(buf.size()));
+void SASGoal::output(ostream &os) const {
+    string buf; FastWriter w(buf); write_goal(w, *this);
+    os.write(buf.data(), static_cast<streamsize>(buf.size()));
 }
-void SASOperator::output(std::ostream &os) const {
-    std::string buf; FastWriter w(buf); write_operator(w, *this);
-    os.write(buf.data(), static_cast<std::streamsize>(buf.size()));
+void SASOperator::output(ostream &os) const {
+    string buf; FastWriter w(buf); write_operator(w, *this);
+    os.write(buf.data(), static_cast<streamsize>(buf.size()));
 }
-void SASAxiom::output(std::ostream &os) const {
-    std::string buf; FastWriter w(buf); write_axiom(w, *this);
-    os.write(buf.data(), static_cast<std::streamsize>(buf.size()));
+void SASAxiom::output(ostream &os) const {
+    string buf; FastWriter w(buf); write_axiom(w, *this);
+    os.write(buf.data(), static_cast<streamsize>(buf.size()));
 }
 
-void SASTask::output(std::ostream &os) const {
-    // Stream everything into a single std::string buffer using locale-free
+void SASTask::output(ostream &os) const {
+    // Stream everything into a single string buffer using locale-free
     // formatters, then write it out with one os.write() call.
-    std::string buf;
+    string buf;
     buf.reserve(1u << 20); // start at 1 MB
     FastWriter w(buf);
 
-    w.put(std::string_view("begin_version")); w.nl();
+    w.put(string_view("begin_version")); w.nl();
     w.put(SAS_FILE_VERSION); w.nl();
-    w.put(std::string_view("end_version")); w.nl();
-    w.put(std::string_view("begin_metric")); w.nl();
+    w.put(string_view("end_version")); w.nl();
+    w.put(string_view("begin_metric")); w.nl();
     w.put(metric ? 1 : 0); w.nl();
-    w.put(std::string_view("end_metric")); w.nl();
+    w.put(string_view("end_metric")); w.nl();
 
     write_variables(w, variables);
     w.put(mutexes.size()); w.nl();
@@ -193,8 +194,8 @@ void SASTask::output(std::ostream &os) const {
     // before ordering the rules, so both the rule sort key and the emitted
     // conditions use the same order -- matching the Python translator, whose
     // final axiom sort also operates on per-rule-sorted conditions.
-    for (auto &a : axs) std::ranges::sort(a.condition);
-    std::ranges::sort(axs,
+    for (auto &a : axs) ranges::sort(a.condition);
+    ranges::sort(axs,
               [](const SASAxiom &a, const SASAxiom &b) {
                   if (a.condition != b.condition) return a.condition < b.condition;
                   return a.effect < b.effect;
@@ -202,6 +203,6 @@ void SASTask::output(std::ostream &os) const {
     w.put(axs.size()); w.nl();
     for (const auto &a : axs) write_axiom(w, a);
 
-    os.write(buf.data(), static_cast<std::streamsize>(buf.size()));
+    os.write(buf.data(), static_cast<streamsize>(buf.size()));
 }
 }

@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_GROUNDING_SYMBOLS_H
-#define TRANSLATE_GROUNDING_SYMBOLS_H
+#ifndef GROUNDING_SYMBOLS_H
+#define GROUNDING_SYMBOLS_H
 
 #include <cstddef>
 #include <string>

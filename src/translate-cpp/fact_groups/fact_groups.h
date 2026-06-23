@@ -1,5 +1,5 @@
-#ifndef TRANSLATE_FACT_GROUPS_FACT_GROUPS_H
-#define TRANSLATE_FACT_GROUPS_FACT_GROUPS_H
+#ifndef FACT_GROUPS_FACT_GROUPS_H
+#define FACT_GROUPS_FACT_GROUPS_H
 
 #include "../pddl/condition.h"
 #include "../pddl/task.h"

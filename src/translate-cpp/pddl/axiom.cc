@@ -1,12 +1,13 @@
 #include "axiom.h"
 
+using namespace std;
 namespace translate::pddl {
-Axiom::Axiom(std::string name_, std::vector<TypedObject> parameters_,
+Axiom::Axiom(string name_, vector<TypedObject> parameters_,
              int n, ConditionPtr condition_)
-    : name(std::move(name_)),
-      parameters(std::move(parameters_)),
+    : name(move(name_)),
+      parameters(move(parameters_)),
       num_external_parameters(n),
-      condition(std::move(condition_)) {
+      condition(move(condition_)) {
     uniquify_variables();
 }
 
@@ -14,12 +15,12 @@ void Axiom::uniquify_variables() {
     type_map.clear();
     for (const auto &p : parameters)
         type_map[p.name] = p.type_name;
-    std::unordered_map<std::string, std::string> empty_renamings;
+    unordered_map<string, string> empty_renamings;
     if (condition)
         condition = condition->uniquify_variables(type_map, empty_renamings);
 }
 
-void Axiom::dump(std::ostream &os) const {
+void Axiom::dump(ostream &os) const {
     os << "Axiom " << name << "(";
     for (int i = 0; i < num_external_parameters; ++i) {
         if (i) os << ", ";
@@ -29,7 +30,7 @@ void Axiom::dump(std::ostream &os) const {
     if (condition) condition->dump(os, 1);
 }
 
-void PropositionalAxiom::dump(std::ostream &os) const {
+void PropositionalAxiom::dump(ostream &os) const {
     os << name << "\n";
     for (const auto &lit : condition) {
         os << "PRE: ";

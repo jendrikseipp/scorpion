@@ -4,12 +4,13 @@
 #include <numeric>
 #include <set>
 
+using namespace std;
 namespace translate::utils {
-std::vector<std::pair<std::string, std::string>> transitive_closure(
-    const std::vector<std::pair<std::string, std::string>> &pairs) {
-    std::set<std::pair<std::string, std::string>> result(pairs.begin(),
+vector<pair<string, string>> transitive_closure(
+    const vector<pair<string, string>> &pairs) {
+    set<pair<string, string>> result(pairs.begin(),
                                                          pairs.end());
-    std::set<std::string> nodes;
+    set<string> nodes;
     for (const auto &p : pairs) {
         nodes.insert(p.first);
         nodes.insert(p.second);
@@ -27,7 +28,7 @@ std::vector<std::pair<std::string, std::string>> transitive_closure(
 }
 
 namespace {
-int find_root(std::vector<int> &parent, int x) {
+int find_root(vector<int> &parent, int x) {
     while (parent[x] != x) {
         parent[x] = parent[parent[x]];
         x = parent[x];
@@ -36,20 +37,20 @@ int find_root(std::vector<int> &parent, int x) {
 }
 }
 
-std::vector<int> connected_components(
-    std::size_t num_nodes, const std::vector<std::pair<int, int>> &edges) {
-    std::vector<int> parent(num_nodes);
-    std::iota(parent.begin(), parent.end(), 0);
+vector<int> connected_components(
+    size_t num_nodes, const vector<pair<int, int>> &edges) {
+    vector<int> parent(num_nodes);
+    iota(parent.begin(), parent.end(), 0);
     for (const auto &[u, v] : edges) {
         int ru = find_root(parent, u);
         int rv = find_root(parent, v);
         if (ru != rv) parent[ru] = rv;
     }
     // Re-number roots to small consecutive ids.
-    std::vector<int> id(num_nodes, -1);
+    vector<int> id(num_nodes, -1);
     int next_id = 0;
-    std::vector<int> result(num_nodes);
-    for (std::size_t i = 0; i < num_nodes; ++i) {
+    vector<int> result(num_nodes);
+    for (size_t i = 0; i < num_nodes; ++i) {
         int r = find_root(parent, static_cast<int>(i));
         if (id[r] == -1) id[r] = next_id++;
         result[i] = id[r];
