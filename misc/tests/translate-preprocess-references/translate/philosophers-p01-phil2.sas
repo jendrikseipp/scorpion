@@ -653,107 +653,31 @@ end_operator
 36
 begin_rule
 3
-11 0
-14 2
-1 0
-20 1 0
-end_rule
-begin_rule
-3
-11 0
-14 2
-15 1
-20 1 0
-end_rule
-begin_rule
-3
-11 1
-14 2
-15 0
-17 1 0
-end_rule
-begin_rule
-3
-11 2
-10 2
 0 0
+10 2
+11 2
 34 1 0
 end_rule
 begin_rule
 3
-11 2
-10 2
-9 1
-34 1 0
-end_rule
-begin_rule
-3
-11 3
-10 2
-9 0
-32 1 0
-end_rule
-begin_rule
-3
-12 0
-10 2
 0 0
-29 1 0
-end_rule
-begin_rule
-3
+10 2
 12 0
-10 2
-9 1
 29 1 0
 end_rule
 begin_rule
 3
-12 1
-10 2
-9 0
-26 1 0
-end_rule
-begin_rule
-3
-12 2
-14 2
 1 0
-24 1 0
+11 0
+14 2
+20 1 0
 end_rule
 begin_rule
 3
+1 0
 12 2
 14 2
-15 1
 24 1 0
-end_rule
-begin_rule
-3
-12 3
-14 2
-15 0
-22 1 0
-end_rule
-begin_rule
-1
-14 0
-2 1 0
-end_rule
-begin_rule
-1
-14 1
-2 1 0
-end_rule
-begin_rule
-1
-10 0
-2 1 0
-end_rule
-begin_rule
-1
-10 1
-2 1 0
 end_rule
 begin_rule
 2
@@ -816,14 +740,80 @@ begin_rule
 31 1 0
 end_rule
 begin_rule
-1
-20 1
-21 1 0
+3
+9 0
+10 2
+11 3
+32 1 0
+end_rule
+begin_rule
+3
+9 0
+10 2
+12 1
+26 1 0
+end_rule
+begin_rule
+3
+9 1
+10 2
+11 2
+34 1 0
+end_rule
+begin_rule
+3
+9 1
+10 2
+12 0
+29 1 0
 end_rule
 begin_rule
 1
-17 1
-19 1 0
+10 0
+2 1 0
+end_rule
+begin_rule
+1
+10 1
+2 1 0
+end_rule
+begin_rule
+3
+11 0
+14 2
+15 1
+20 1 0
+end_rule
+begin_rule
+3
+11 1
+14 2
+15 0
+17 1 0
+end_rule
+begin_rule
+3
+12 2
+14 2
+15 1
+24 1 0
+end_rule
+begin_rule
+3
+12 3
+14 2
+15 0
+22 1 0
+end_rule
+begin_rule
+1
+14 0
+2 1 0
+end_rule
+begin_rule
+1
+14 1
+2 1 0
 end_rule
 begin_rule
 1
@@ -832,28 +822,18 @@ begin_rule
 end_rule
 begin_rule
 1
-34 1
-35 1 0
+17 1
+19 1 0
 end_rule
 begin_rule
 1
-32 1
-33 1 0
+20 1
+21 1 0
 end_rule
 begin_rule
 1
-29 1
-30 1 0
-end_rule
-begin_rule
-1
-26 1
-28 1 0
-end_rule
-begin_rule
-1
-26 1
-27 1 0
+22 1
+23 1 0
 end_rule
 begin_rule
 1
@@ -862,6 +842,26 @@ begin_rule
 end_rule
 begin_rule
 1
-22 1
-23 1 0
+26 1
+27 1 0
+end_rule
+begin_rule
+1
+26 1
+28 1 0
+end_rule
+begin_rule
+1
+29 1
+30 1 0
+end_rule
+begin_rule
+1
+32 1
+33 1 0
+end_rule
+begin_rule
+1
+34 1
+35 1 0
 end_rule

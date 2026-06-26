@@ -1,6 +1,7 @@
 #include "variable_order.h"
 
 #include "../translate_options.h"
+
 #include "../utils/sccs.h"
 
 #include <algorithm>
@@ -31,7 +32,8 @@ public:
         num_variables = static_cast<int>(task.variables.ranges.size());
         weighted_graph.assign(num_variables, {});
         predecessor_graph.assign(num_variables, {});
-        for (const auto &[v, val] : task.goal.pairs) goal_map[v] = val;
+        for (const auto &[v, val] : task.goal.pairs)
+            goal_map[v] = val;
         weight_from_ops(task.operators);
         weight_from_axioms(task.axioms);
     }
@@ -39,12 +41,15 @@ public:
     void weight_from_ops(const vector<SASOperator> &operators) {
         for (const auto &op : operators) {
             vector<int> source_vars;
-            for (const auto &[v, _] : op.prevail) source_vars.push_back(v);
+            for (const auto &[v, _] : op.prevail)
+                source_vars.push_back(v);
             for (const auto &[v, pre, post, cond] : op.pre_post)
-                if (pre != -1) source_vars.push_back(v);
+                if (pre != -1)
+                    source_vars.push_back(v);
             for (const auto &[tgt, pre, post, cond] : op.pre_post) {
                 auto extra = source_vars;
-                for (const auto &[cv, cval] : cond) extra.push_back(cv);
+                for (const auto &[cv, cval] : cond)
+                    extra.push_back(cv);
                 for (int src : extra) {
                     if (src != tgt) {
                         ++weighted_graph[src][tgt];
@@ -70,8 +75,10 @@ public:
     vector<vector<int>> get_sccs() const {
         vector<vector<int>> adj(num_variables);
         for (int s = 0; s < num_variables; ++s)
-            for (const auto &[t, _] : weighted_graph[s]) adj[s].push_back(t);
-        for (auto &v : adj) ranges::sort(v);
+            for (const auto &[t, _] : weighted_graph[s])
+                adj[s].push_back(t);
+        for (auto &v : adj)
+            ranges::sort(v);
         return utils::get_sccs_adjacency_list(adj);
     }
 
@@ -90,15 +97,15 @@ public:
             // edge for the actual decrement bookkeeping. Mirrors the
             // construction in src/translate/variable_order.py.
             unordered_set<int> scc_set(scc.begin(), scc.end());
-            unordered_map<int, vector<pair<int, int>>>
-                subgraph;
+            unordered_map<int, vector<pair<int, int>>> subgraph;
             for (int var : scc) {
                 auto &edges = subgraph[var];
                 // weighted_graph[var] is a map<int,int> -> already
                 // sorted by target id, matching Python's
                 // sorted(items()).
                 for (const auto &[tgt, cost] : weighted_graph[var]) {
-                    if (!scc_set.contains(tgt)) continue;
+                    if (!scc_set.contains(tgt))
+                        continue;
                     if (goal_map.contains(tgt))
                         edges.emplace_back(tgt, 100000 + cost);
                     edges.emplace_back(tgt, cost);
@@ -129,8 +136,7 @@ public:
       on parking-sat14-strips.
     */
     static vector<int> max_dag_order(
-        const unordered_map<int, vector<pair<int, int>>>
-            &subgraph,
+        const unordered_map<int, vector<pair<int, int>>> &subgraph,
         const vector<int> &input_order) {
         unordered_map<int, int> incoming_weights;
         for (const auto &[_src, edges] : subgraph) {
@@ -148,12 +154,12 @@ public:
 
         // Min-heap of distinct weight values (lazy deletion: we never
         // remove eagerly, only the bucket-empty case).
-        priority_queue<int, vector<int>, greater<int>>
-            weights;
+        priority_queue<int, vector<int>, greater<int>> weights;
         {
             unordered_set<int> seen;
             for (const auto &[w, _] : weight_to_nodes)
-                if (seen.insert(w).second) weights.push(w);
+                if (seen.insert(w).second)
+                    weights.push(w);
         }
 
         unordered_set<int> done;
@@ -186,11 +192,14 @@ public:
             done.insert(min_elem);
             result.push_back(min_elem);
             auto sit = subgraph.find(min_elem);
-            if (sit == subgraph.end()) continue;
+            if (sit == subgraph.end())
+                continue;
             for (const auto &[target, w] : sit->second) {
-                if (done.contains(target)) continue;
+                if (done.contains(target))
+                    continue;
                 int decrement = w % 100000;
-                if (decrement == 0) continue;
+                if (decrement == 0)
+                    continue;
                 int old_iw = incoming_weights[target];
                 int new_iw = old_iw - decrement;
                 incoming_weights[target] = new_iw;
@@ -208,12 +217,15 @@ public:
         unordered_set<int> necessary;
         vector<int> stack;
         for (const auto &[v, _] : goal.pairs) {
-            if (necessary.insert(v).second) stack.push_back(v);
+            if (necessary.insert(v).second)
+                stack.push_back(v);
         }
         while (!stack.empty()) {
-            int n = stack.back(); stack.pop_back();
+            int n = stack.back();
+            stack.pop_back();
             for (int pred : predecessor_graph[n])
-                if (necessary.insert(pred).second) stack.push_back(pred);
+                if (necessary.insert(pred).second)
+                    stack.push_back(pred);
         }
         return necessary;
     }
@@ -243,13 +255,15 @@ public:
         task.variables.value_names = move(names);
         // Init.
         vector<int> new_init;
-        for (int var : ordering) new_init.push_back(task.init.values[var]);
+        for (int var : ordering)
+            new_init.push_back(task.init.values[var]);
         task.init.values = move(new_init);
         // Goal.
         vector<VarVal> new_goal;
         for (const auto &[v, val] : task.goal.pairs) {
             auto it = new_var.find(v);
-            if (it != new_var.end()) new_goal.emplace_back(it->second, val);
+            if (it != new_var.end())
+                new_goal.emplace_back(it->second, val);
         }
         ranges::sort(new_goal);
         task.goal.pairs = move(new_goal);
@@ -271,26 +285,27 @@ public:
             }
         }
         cout << new_mutexes.size() << " of " << task.mutexes.size()
-                  << " mutex groups necessary." << endl;
+             << " mutex groups necessary." << endl;
         task.mutexes = move(new_mutexes);
         // Operators.
         vector<SASOperator> new_ops;
         for (auto &op : task.operators) {
-            vector<tuple<int, int, int, vector<VarVal>>>
-                new_pre_post;
+            vector<tuple<int, int, int, vector<VarVal>>> new_pre_post;
             for (auto &[v, pre, post, cond] : op.pre_post) {
                 auto it = new_var.find(v);
-                if (it == new_var.end()) continue;
+                if (it == new_var.end())
+                    continue;
                 vector<VarVal> new_cond;
                 for (const auto &[cv, cval] : cond) {
                     auto cit = new_var.find(cv);
                     if (cit != new_var.end())
                         new_cond.emplace_back(cit->second, cval);
                 }
-                new_pre_post.emplace_back(it->second, pre, post,
-                                          move(new_cond));
+                new_pre_post.emplace_back(
+                    it->second, pre, post, move(new_cond));
             }
-            if (new_pre_post.empty() && !get_options().keep_no_ops) continue;
+            if (new_pre_post.empty() && !get_options().keep_no_ops)
+                continue;
             vector<VarVal> new_prevail;
             for (const auto &[v, val] : op.prevail) {
                 auto it = new_var.find(v);
@@ -302,13 +317,14 @@ public:
             new_ops.push_back(move(op));
         }
         cout << new_ops.size() << " of " << task.operators.size()
-                  << " operators necessary." << endl;
+             << " operators necessary." << endl;
         task.operators = move(new_ops);
         // Axioms.
         vector<SASAxiom> new_ax;
         for (auto &ax : task.axioms) {
             auto it = new_var.find(ax.effect.first);
-            if (it == new_var.end()) continue;
+            if (it == new_var.end())
+                continue;
             vector<VarVal> new_cond;
             for (const auto &[v, val] : ax.condition) {
                 auto cit = new_var.find(v);
@@ -320,15 +336,16 @@ public:
             new_ax.push_back(move(ax));
         }
         cout << new_ax.size() << " of " << task.axioms.size()
-                  << " axiom rules necessary." << endl;
+             << " axiom rules necessary." << endl;
         task.axioms = move(new_ax);
     }
 };
 }
 
-void find_and_apply_variable_order(SASTask &task, bool reorder_vars,
-                                   bool filter_unimportant_vars) {
-    if (!reorder_vars && !filter_unimportant_vars) return;
+void find_and_apply_variable_order(
+    SASTask &task, bool reorder_vars, bool filter_unimportant_vars) {
+    if (!reorder_vars && !filter_unimportant_vars)
+        return;
     CausalGraph cg(task);
     vector<int> order;
     if (reorder_vars) {
@@ -340,9 +357,11 @@ void find_and_apply_variable_order(SASTask &task, bool reorder_vars,
     if (filter_unimportant_vars) {
         auto necessary = cg.important_vars(task.goal);
         cout << necessary.size() << " of " << order.size()
-                  << " variables necessary." << endl;
+             << " variables necessary." << endl;
         vector<int> filtered;
-        for (int v : order) if (necessary.contains(v)) filtered.push_back(v);
+        for (int v : order)
+            if (necessary.contains(v))
+                filtered.push_back(v);
         order = move(filtered);
     }
     VariableOrder vo(move(order));

@@ -38,18 +38,15 @@ vector<Atom> condition_to_rule_body(
     vector<Atom> result;
     for (const auto &par : parameters) {
         result.emplace_back(
-            type_predicate_name(par.type_name),
-            ArgList{Arg(par.name)});
+            type_predicate_name(par.type_name), ArgList{Arg(par.name)});
     }
     if (condition && condition->kind() != Condition::Kind::TRUTH) {
         ConditionPtr cur = condition;
         if (cur->kind() == Condition::Kind::EXISTENTIAL) {
-            const auto &q =
-                static_cast<const ExistentialCondition &>(*cur);
+            const auto &q = static_cast<const ExistentialCondition &>(*cur);
             for (const auto &par : q.parameters) {
                 result.emplace_back(
-                    type_predicate_name(par.type_name),
-                    ArgList{Arg(par.name)});
+                    type_predicate_name(par.type_name), ArgList{Arg(par.name)});
             }
             cur = q.body[0];
         }
@@ -59,7 +56,8 @@ vector<Atom> condition_to_rule_body(
         else
             parts = {cur};
         for (const auto &part : parts) {
-            if (!part) continue;
+            if (!part)
+                continue;
             if (part->kind() == Condition::Kind::FALSITY) {
                 return {Atom("@always-false", {})};
             }
@@ -72,7 +70,8 @@ vector<Atom> condition_to_rule_body(
             if (!lit.negated()) {
                 ArgList args;
                 args.reserve(lit.args.size());
-                for (const auto &a : lit.args) args.emplace_back(a);
+                for (const auto &a : lit.args)
+                    args.emplace_back(a);
                 result.emplace_back(lit.predicate, move(args));
             }
         }
@@ -81,7 +80,8 @@ vector<Atom> condition_to_rule_body(
         // @def-<symbol>(pne.args...)
         ArgList args;
         args.reserve(pne->args.size());
-        for (const auto &a : pne->args) args.emplace_back(a);
+        for (const auto &a : pne->args)
+            args.emplace_back(a);
         result.emplace_back("@def-" + pne->symbol, move(args));
     }
     return result;
@@ -103,12 +103,14 @@ string axiom_head_predicate(int axiom_index) {
 Atom action_head(const Action &action, int action_index) {
     ArgList variables;
     variables.reserve(action.parameters.size());
-    for (const auto &p : action.parameters) variables.emplace_back(p.name);
+    for (const auto &p : action.parameters)
+        variables.emplace_back(p.name);
     if (action.precondition &&
         action.precondition->kind() == Condition::Kind::EXISTENTIAL) {
         const auto &q =
             static_cast<const ExistentialCondition &>(*action.precondition);
-        for (const auto &p : q.parameters) variables.emplace_back(p.name);
+        for (const auto &p : q.parameters)
+            variables.emplace_back(p.name);
     }
     return Atom(action_head_predicate(action_index), move(variables));
 }
@@ -116,19 +118,21 @@ Atom action_head(const Action &action, int action_index) {
 Atom axiom_head(const Axiom &axiom, int axiom_index) {
     ArgList variables;
     variables.reserve(axiom.parameters.size());
-    for (const auto &p : axiom.parameters) variables.emplace_back(p.name);
+    for (const auto &p : axiom.parameters)
+        variables.emplace_back(p.name);
     if (axiom.condition &&
         axiom.condition->kind() == Condition::Kind::EXISTENTIAL) {
         const auto &q =
             static_cast<const ExistentialCondition &>(*axiom.condition);
-        for (const auto &p : q.parameters) variables.emplace_back(p.name);
+        for (const auto &p : q.parameters)
+            variables.emplace_back(p.name);
     }
     return Atom(axiom_head_predicate(axiom_index), move(variables));
 }
 
-void add_typed_object(Program &prog, const TypedObject &obj,
-                      const unordered_map<string,
-                                               const Type *> &type_dict) {
+void add_typed_object(
+    Program &prog, const TypedObject &obj,
+    const unordered_map<string, const Type *> &type_dict) {
     auto it = type_dict.find(obj.type_name);
     vector<string> chain;
     chain.push_back(obj.type_name);
@@ -136,23 +140,23 @@ void add_typed_object(Program &prog, const TypedObject &obj,
         for (const auto &sup : it->second->supertype_names)
             chain.push_back(sup);
     for (const auto &t : chain) {
-        prog.add_fact(Atom(type_predicate_name(t),
-                           ArgList{Arg(obj.name)}));
+        prog.add_fact(Atom(type_predicate_name(t), ArgList{Arg(obj.name)}));
     }
 }
 
 void translate_facts(Program &prog, const Task &task) {
     unordered_map<string, const Type *> type_dict;
-    for (const auto &t : task.types) type_dict[t.name] = &t;
+    for (const auto &t : task.types)
+        type_dict[t.name] = &t;
     for (const auto &obj : task.objects)
         add_typed_object(prog, obj, type_dict);
     for (const auto &elem : task.init) {
-        if (auto *atom =
-                get_if<shared_ptr<const pddl::Atom>>(&elem)) {
+        if (auto *atom = get_if<shared_ptr<const pddl::Atom>>(&elem)) {
             if (*atom) {
                 ArgList args;
                 args.reserve((*atom)->args.size());
-                for (const auto &a : (*atom)->args) args.emplace_back(a);
+                for (const auto &a : (*atom)->args)
+                    args.emplace_back(a);
                 prog.add_fact(Atom((*atom)->predicate, move(args)));
             }
         } else if (auto *as = get_if<shared_ptr<Assign>>(&elem)) {
@@ -179,29 +183,32 @@ void build_exploration_rules(Program &prog, const Task &task) {
             pne = static_cast<const PrimitiveNumericExpression *>(
                 action.cost->expression.get());
         }
-        auto body = condition_to_rule_body(action.parameters,
-                                           action.precondition, pne);
+        auto body =
+            condition_to_rule_body(action.parameters, action.precondition, pne);
         prog.add_rule(Rule{body, head});
 
         for (const auto &eff : action.effects) {
-            if (!eff.literal) continue;
+            if (!eff.literal)
+                continue;
             const auto &lit = static_cast<const Literal &>(*eff.literal);
-            if (lit.negated()) continue;
+            if (lit.negated())
+                continue;
             vector<Atom> rule_body = {head};
             auto sub = condition_to_rule_body({}, eff.condition, nullptr);
-            for (auto &c : sub) rule_body.push_back(move(c));
+            for (auto &c : sub)
+                rule_body.push_back(move(c));
             ArgList eff_args;
             eff_args.reserve(lit.args.size());
-            for (const auto &a : lit.args) eff_args.emplace_back(a);
-            prog.add_rule(Rule{rule_body, Atom(lit.predicate,
-                                               move(eff_args))});
+            for (const auto &a : lit.args)
+                eff_args.emplace_back(a);
+            prog.add_rule(Rule{rule_body, Atom(lit.predicate, move(eff_args))});
         }
     }
     for (size_t i = 0; i < task.axioms.size(); ++i) {
         const Axiom &axiom = task.axioms[i];
         Atom app_head = axiom_head(axiom, static_cast<int>(i));
-        auto app_body = condition_to_rule_body(axiom.parameters,
-                                               axiom.condition, nullptr);
+        auto app_body =
+            condition_to_rule_body(axiom.parameters, axiom.condition, nullptr);
         prog.add_rule(Rule{app_body, app_head});
         // External params head.
         ArgList eff_args;

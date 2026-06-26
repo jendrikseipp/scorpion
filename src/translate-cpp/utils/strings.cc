@@ -7,8 +7,9 @@ using namespace std;
 namespace translate::utils {
 string to_lower(string_view s) {
     string out(s);
-    transform(out.begin(), out.end(), out.begin(),
-                   [](unsigned char c) { return tolower(c); });
+    transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
+        return tolower(c);
+    });
     return out;
 }
 

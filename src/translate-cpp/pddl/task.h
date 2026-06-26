@@ -16,11 +16,19 @@
 
 namespace translate::pddl {
 inline const std::vector<std::string> REQUIREMENT_LABELS = {
-    ":strips", ":adl", ":typing", ":negation", ":equality",
-    ":negative-preconditions", ":disjunctive-preconditions",
-    ":existential-preconditions", ":universal-preconditions",
-    ":quantified-preconditions", ":conditional-effects",
-    ":derived-predicates", ":action-costs",
+    ":strips",
+    ":adl",
+    ":typing",
+    ":negation",
+    ":equality",
+    ":negative-preconditions",
+    ":disjunctive-preconditions",
+    ":existential-preconditions",
+    ":universal-preconditions",
+    ":quantified-preconditions",
+    ":conditional-effects",
+    ":derived-predicates",
+    ":action-costs",
 };
 
 class Requirements {
@@ -34,8 +42,8 @@ public:
 std::ostream &operator<<(std::ostream &os, const Requirements &r);
 
 // An init element is either a ground atom or a numeric function assignment.
-using InitElement = std::variant<std::shared_ptr<const Atom>,
-                                 std::shared_ptr<Assign>>;
+using InitElement =
+    std::variant<std::shared_ptr<const Atom>, std::shared_ptr<Assign>>;
 
 class Task {
 public:

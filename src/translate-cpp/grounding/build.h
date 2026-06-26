@@ -1,8 +1,9 @@
 #ifndef GROUNDING_BUILD_H
 #define GROUNDING_BUILD_H
 
-#include "../pddl/task.h"
 #include "program.h"
+
+#include "../pddl/task.h"
 
 namespace translate::grounding {
 /*

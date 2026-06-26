@@ -23,9 +23,12 @@ class Sexpr {
 public:
     using Value = std::variant<std::string, SexprList>;
 
-    Sexpr() : value_(std::string{}) {}
-    Sexpr(std::string s) : value_(std::move(s)) {}
-    Sexpr(SexprList list) : value_(std::move(list)) {}
+    Sexpr() : value_(std::string{}) {
+    }
+    Sexpr(std::string s) : value_(std::move(s)) {
+    }
+    Sexpr(SexprList list) : value_(std::move(list)) {
+    }
 
     bool is_atom() const {
         return std::holds_alternative<std::string>(value_);
@@ -33,9 +36,15 @@ public:
     bool is_list() const {
         return std::holds_alternative<SexprList>(value_);
     }
-    const std::string &atom() const { return std::get<std::string>(value_); }
-    const SexprList &list() const { return std::get<SexprList>(value_); }
-    SexprList &list() { return std::get<SexprList>(value_); }
+    const std::string &atom() const {
+        return std::get<std::string>(value_);
+    }
+    const SexprList &list() const {
+        return std::get<SexprList>(value_);
+    }
+    SexprList &list() {
+        return std::get<SexprList>(value_);
+    }
 
 private:
     Value value_;

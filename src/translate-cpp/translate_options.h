@@ -36,7 +36,8 @@ struct Options {
 
     // Filtering.
     bool filter_unreachable_facts = true; // --keep-unreachable-facts -> false
-    bool filter_unimportant_vars = true;  // --keep-unimportant-variables -> false
+    bool filter_unimportant_vars =
+        true; // --keep-unimportant-variables -> false
 
     // Variable ordering.
     bool reorder_variables = true; // --skip-variable-reordering -> false

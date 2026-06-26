@@ -8,8 +8,7 @@ using namespace std;
 namespace translate::utils {
 vector<pair<string, string>> transitive_closure(
     const vector<pair<string, string>> &pairs) {
-    set<pair<string, string>> result(pairs.begin(),
-                                                         pairs.end());
+    set<pair<string, string>> result(pairs.begin(), pairs.end());
     set<string> nodes;
     for (const auto &p : pairs) {
         nodes.insert(p.first);
@@ -18,7 +17,8 @@ vector<pair<string, string>> transitive_closure(
     // Warshall over the node set.
     for (const auto &k : nodes) {
         for (const auto &i : nodes) {
-            if (!result.contains({i, k})) continue;
+            if (!result.contains({i, k}))
+                continue;
             for (const auto &j : nodes)
                 if (result.contains({k, j}))
                     result.insert({i, j});
@@ -44,7 +44,8 @@ vector<int> connected_components(
     for (const auto &[u, v] : edges) {
         int ru = find_root(parent, u);
         int rv = find_root(parent, v);
-        if (ru != rv) parent[ru] = rv;
+        if (ru != rv)
+            parent[ru] = rv;
     }
     // Re-number roots to small consecutive ids.
     vector<int> id(num_nodes, -1);
@@ -52,7 +53,8 @@ vector<int> connected_components(
     vector<int> result(num_nodes);
     for (size_t i = 0; i < num_nodes; ++i) {
         int r = find_root(parent, static_cast<int>(i));
-        if (id[r] == -1) id[r] = next_id++;
+        if (id[r] == -1)
+            id[r] = next_id++;
         result[i] = id[r];
     }
     return result;

@@ -1,5 +1,7 @@
 #include "translate.h"
 
+#include "../translate_options.h"
+
 #include "../axioms/axiom_rules.h"
 #include "../fact_groups/fact_groups.h"
 #include "../grounding/build.h"
@@ -11,7 +13,6 @@
 #include "../sas/sas_task.h"
 #include "../simplify/simplify.h"
 #include "../simplify/variable_order.h"
-#include "../translate_options.h"
 #include "../utils/timer.h"
 
 #include <algorithm>
@@ -43,7 +44,10 @@ using sas::VarVal;
 namespace {
 string atom_key(const Atom &atom) {
     string k = atom.predicate;
-    for (const auto &a : atom.args) { k.push_back('\x1f'); k += a; }
+    for (const auto &a : atom.args) {
+        k.push_back('\x1f');
+        k += a;
+    }
     return k;
 }
 
@@ -53,16 +57,18 @@ string atom_key(const Atom &atom) {
 // returned reference is only valid until the next call; callers use it
 // immediately for a single find(). Negation does not affect the key, so this
 // also lets negated-literal lookups skip building a temporary positive Atom.
-const string &atom_key_scratch(const string &predicate,
-                                    const vector<string> &args) {
+const string &atom_key_scratch(
+    const string &predicate, const vector<string> &args) {
     static thread_local string buf;
     buf.assign(predicate);
-    for (const auto &a : args) { buf.push_back('\x1f'); buf += a; }
+    for (const auto &a : args) {
+        buf.push_back('\x1f');
+        buf += a;
+    }
     return buf;
 }
 
-using AtomToVarVals =
-    unordered_map<string, vector<VarVal>>;
+using AtomToVarVals = unordered_map<string, vector<VarVal>>;
 
 struct StripsToSas {
     vector<int> ranges;
@@ -70,15 +76,14 @@ struct StripsToSas {
 };
 
 StripsToSas build_dictionary(
-    const vector<vector<ConditionPtr>> &groups,
-    bool assert_partial) {
+    const vector<vector<ConditionPtr>> &groups, bool assert_partial) {
     StripsToSas out;
     out.ranges.reserve(groups.size());
     for (size_t var = 0; var < groups.size(); ++var) {
         for (size_t val = 0; val < groups[var].size(); ++val) {
             const auto &atom = static_cast<const Atom &>(*groups[var][val]);
-            out.dict[atom_key(atom)].push_back({
-                static_cast<int>(var), static_cast<int>(val)});
+            out.dict[atom_key(atom)].push_back(
+                {static_cast<int>(var), static_cast<int>(val)});
         }
         out.ranges.push_back(static_cast<int>(groups[var].size()) + 1);
     }
@@ -93,7 +98,8 @@ StripsToSas build_dictionary(
 }
 
 // Facts (FDR pairs) implied by a fact: in every state containing p, all pairs
-// in implied_facts[p] must also hold. Used only with --add-implied-preconditions.
+// in implied_facts[p] must also hold. Used only with
+// --add-implied-preconditions.
 using ImpliedFacts = map<VarVal, vector<VarVal>>;
 
 /*
@@ -102,14 +108,16 @@ using ImpliedFacts = map<VarVal, vector<VarVal>>;
   For q to encode "not Y", Y must form a fact group of size 1 ("lonely"); then
   every other fact in Y's mutex group implies "not Y" = (Y's var, 1).
 */
-ImpliedFacts build_implied_facts(const fact_groups::ComputedGroups &groups,
-                                 const StripsToSas &strips_to_sas) {
+ImpliedFacts build_implied_facts(
+    const fact_groups::ComputedGroups &groups,
+    const StripsToSas &strips_to_sas) {
     // Lonely propositions: size-1 fact groups -> their SAS variable number
     // (the proposition is encoded as (var, 0); see build_dictionary).
     unordered_map<string, int> lonely;
     for (size_t var = 0; var < groups.groups.size(); ++var) {
         if (groups.groups[var].size() == 1) {
-            const auto &prop = static_cast<const Atom &>(*groups.groups[var][0]);
+            const auto &prop =
+                static_cast<const Atom &>(*groups.groups[var][0]);
             lonely[atom_key(prop)] = static_cast<int>(var);
         }
     }
@@ -118,13 +126,16 @@ ImpliedFacts build_implied_facts(const fact_groups::ComputedGroups &groups,
         for (size_t i = 0; i < mutex_group.size(); ++i) {
             const auto &prop = static_cast<const Atom &>(*mutex_group[i]);
             auto lit = lonely.find(atom_key(prop));
-            if (lit == lonely.end()) continue;
+            if (lit == lonely.end())
+                continue;
             VarVal prop_is_false{lit->second, 1};
             for (size_t j = 0; j < mutex_group.size(); ++j) {
-                if (j == i) continue;
+                if (j == i)
+                    continue;
                 const auto &other = static_cast<const Atom &>(*mutex_group[j]);
                 auto dit = strips_to_sas.dict.find(atom_key(other));
-                if (dit == strips_to_sas.dict.end()) continue;
+                if (dit == strips_to_sas.dict.end())
+                    continue;
                 for (const auto &fact : dit->second)
                     implied[fact].push_back(prop_is_false);
             }
@@ -136,22 +147,25 @@ ImpliedFacts build_implied_facts(const fact_groups::ComputedGroups &groups,
 // Map var -> set of allowed values (for a condition under construction).
 using CondMap = unordered_map<int, set<int>>;
 
-optional<vector<unordered_map<int, int>>>
-translate_strips_conditions_aux(
-    const vector<ConditionPtr> &conditions,
-    const AtomToVarVals &dict, const vector<int> &ranges) {
+optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
+    const vector<ConditionPtr> &conditions, const AtomToVarVals &dict,
+    const vector<int> &ranges) {
     CondMap condition;
     // Positive literals first.
     for (const auto &c : conditions) {
-        if (!c) continue;
+        if (!c)
+            continue;
         const auto &lit = static_cast<const Literal &>(*c);
-        if (lit.negated()) continue;
+        if (lit.negated())
+            continue;
         auto it = dict.find(atom_key_scratch(lit.predicate, lit.args));
-        if (it == dict.end()) continue; // static
+        if (it == dict.end())
+            continue; // static
         for (const auto &[var, val] : it->second) {
             auto cit = condition.find(var);
             if (cit != condition.end()) {
-                if (!cit->second.contains(val)) return nullopt;
+                if (!cit->second.contains(val))
+                    return nullopt;
                 cit->second = {val};
             } else {
                 condition[var] = {val};
@@ -160,17 +174,21 @@ translate_strips_conditions_aux(
     }
     // Negative literals.
     for (const auto &c : conditions) {
-        if (!c) continue;
+        if (!c)
+            continue;
         const auto &lit = static_cast<const Literal &>(*c);
-        if (!lit.negated()) continue;
+        if (!lit.negated())
+            continue;
         auto it = dict.find(atom_key_scratch(lit.predicate, lit.args));
-        if (it == dict.end()) continue;
+        if (it == dict.end())
+            continue;
         bool done = false;
         CondMap new_condition;
         for (const auto &[var, val] : it->second) {
             set<int> poss_vals;
             for (int v = 0; v < ranges[var]; ++v)
-                if (v != val) poss_vals.insert(v);
+                if (v != val)
+                    poss_vals.insert(v);
             auto cit = condition.find(var);
             if (cit == condition.end()) {
                 new_condition[var] = move(poss_vals);
@@ -178,8 +196,10 @@ translate_strips_conditions_aux(
                 done = true;
                 set<int> intersection;
                 for (int v : cit->second)
-                    if (poss_vals.contains(v)) intersection.insert(v);
-                if (intersection.empty()) return nullopt;
+                    if (poss_vals.contains(v))
+                        intersection.insert(v);
+                if (intersection.empty())
+                    return nullopt;
                 cit->second = move(intersection);
             }
         }
@@ -196,7 +216,8 @@ translate_strips_conditions_aux(
             size_t best_size = SIZE_MAX;
             for (const auto &[var, val] : it->second) {
                 auto nit = new_condition.find(var);
-                if (nit != new_condition.end() && nit->second.size() < best_size) {
+                if (nit != new_condition.end() &&
+                    nit->second.size() < best_size) {
                     best_size = nit->second.size();
                     best_var = var;
                 }
@@ -207,15 +228,15 @@ translate_strips_conditions_aux(
     // Multiply-out the condition.
     vector<pair<int, set<int>>> sorted_conds(
         condition.begin(), condition.end());
-    ranges::sort(sorted_conds,
-              [](const auto &a, const auto &b) {
-                  return a.second.size() < b.second.size();
-              });
+    ranges::sort(sorted_conds, [](const auto &a, const auto &b) {
+        return a.second.size() < b.second.size();
+    });
     vector<unordered_map<int, int>> flat_conds = {{}};
     for (const auto &[var, vals] : sorted_conds) {
         if (vals.size() == 1) {
             int val = *vals.begin();
-            for (auto &cond : flat_conds) cond[var] = val;
+            for (auto &cond : flat_conds)
+                cond[var] = val;
         } else {
             vector<unordered_map<int, int>> new_conds;
             for (const auto &cond : flat_conds) {
@@ -231,30 +252,29 @@ translate_strips_conditions_aux(
     return flat_conds;
 }
 
-optional<vector<unordered_map<int, int>>>
-translate_strips_conditions(
-    const vector<ConditionPtr> &conditions,
-    const AtomToVarVals &dict, const vector<int> &ranges,
-    const AtomToVarVals &mutex_dict,
+optional<vector<unordered_map<int, int>>> translate_strips_conditions(
+    const vector<ConditionPtr> &conditions, const AtomToVarVals &dict,
+    const vector<int> &ranges, const AtomToVarVals &mutex_dict,
     const vector<int> &mutex_ranges) {
-    if (conditions.empty()) return vector<unordered_map<int, int>>{{}};
-    auto mtx = translate_strips_conditions_aux(conditions, mutex_dict,
-                                               mutex_ranges);
-    if (!mtx) return nullopt;
+    if (conditions.empty())
+        return vector<unordered_map<int, int>>{{}};
+    auto mtx =
+        translate_strips_conditions_aux(conditions, mutex_dict, mutex_ranges);
+    if (!mtx)
+        return nullopt;
     return translate_strips_conditions_aux(conditions, dict, ranges);
 }
 
-optional<vector<unordered_map<int, int>>>
-negate_and_translate_condition(
-    const vector<vector<ConditionPtr>> &condition,
-    const AtomToVarVals &dict, const vector<int> &ranges,
-    const AtomToVarVals &mutex_dict,
+optional<vector<unordered_map<int, int>>> negate_and_translate_condition(
+    const vector<vector<ConditionPtr>> &condition, const AtomToVarVals &dict,
+    const vector<int> &ranges, const AtomToVarVals &mutex_dict,
     const vector<int> &mutex_ranges) {
     vector<unordered_map<int, int>> negation;
     // An empty group inside `condition` means "always satisfied" — the
     // negation is unsatisfiable. (Matches Python's `if [] in condition`.)
     for (const auto &group : condition)
-        if (group.empty()) return nullopt;
+        if (group.empty())
+            return nullopt;
     /*
       No add-effect conditions at all means there is no condition under
       which an add fires, so the "no-add-fires" disjunction is vacuously
@@ -272,30 +292,31 @@ negate_and_translate_condition(
         vector<ConditionPtr> combination;
         for (size_t i = 0; i < condition.size(); ++i)
             combination.push_back(condition[i][idx[i]]->negate());
-        auto cond = translate_strips_conditions(combination, dict, ranges,
-                                                mutex_dict, mutex_ranges);
-        if (cond) for (auto &c : *cond) negation.push_back(move(c));
+        auto cond = translate_strips_conditions(
+            combination, dict, ranges, mutex_dict, mutex_ranges);
+        if (cond)
+            for (auto &c : *cond)
+                negation.push_back(move(c));
         // Increment.
         size_t k = condition.size();
         while (k > 0) {
             --k;
-            if (++idx[k] < condition[k].size()) break;
+            if (++idx[k] < condition[k].size())
+                break;
             idx[k] = 0;
-            if (k == 0) return negation.empty() ? nullopt
-                                                : make_optional(negation);
+            if (k == 0)
+                return negation.empty() ? nullopt : make_optional(negation);
         }
-        if (k == 0 && idx[0] == 0) break;
+        if (k == 0 && idx[0] == 0)
+            break;
     }
     return negation.empty() ? nullopt : make_optional(negation);
 }
 
 optional<SASOperator> build_sas_operator(
-    const string &name,
-    unordered_map<int, int> condition,
-    map<int, map<int, vector<unordered_map<int, int>>>>
-        &effects_by_variable,
-    int cost, const vector<int> &ranges,
-    const ImpliedFacts &implied_facts) {
+    const string &name, unordered_map<int, int> condition,
+    map<int, map<int, vector<unordered_map<int, int>>>> &effects_by_variable,
+    int cost, const vector<int> &ranges, const ImpliedFacts &implied_facts) {
     unordered_map<int, int> prevail_and_pre = condition;
     // Facts implied by the operator's (prevail + pre) condition. Computed from
     // the full condition before the effects loop erases entries from it.
@@ -304,19 +325,21 @@ optional<SASOperator> build_sas_operator(
         for (const auto &[var, val] : condition) {
             auto it = implied_facts.find(VarVal{var, val});
             if (it != implied_facts.end())
-                implied_precondition.insert(it->second.begin(),
-                                            it->second.end());
+                implied_precondition.insert(
+                    it->second.begin(), it->second.end());
         }
     }
     vector<tuple<int, int, int, vector<VarVal>>> pre_post;
     for (auto &[var, effects_on_var] : effects_by_variable) {
         int orig_pre = -1;
         auto cit = condition.find(var);
-        if (cit != condition.end()) orig_pre = cit->second;
+        if (cit != condition.end())
+            orig_pre = cit->second;
         bool added = false;
         for (auto &[post, eff_conds] : effects_on_var) {
             int pre = orig_pre;
-            if (pre == post) continue;
+            if (pre == post)
+                continue;
             /*
               prune_stupid_effect_conditions for binary variables.
               If `var` has range 2 and no effect produces the dual value
@@ -327,8 +350,7 @@ optional<SASOperator> build_sas_operator(
               and is required for matching Python's operator encoding on
               binary-var-heavy domains (satellite, airport, miconic-adl).
             */
-            if (ranges[var] == 2 &&
-                !effects_on_var.contains(1 - post)) {
+            if (ranges[var] == 2 && !effects_on_var.contains(1 - post)) {
                 int dual_val = 1 - post;
                 bool sweep_to_empty = false;
                 for (auto &eff_cond : eff_conds) {
@@ -362,21 +384,25 @@ optional<SASOperator> build_sas_operator(
                     auto pit = prevail_and_pre.find(cv);
                     if (pit != prevail_and_pre.end()) {
                         if (pit->second != cval) {
-                            contradict = true; break;
+                            contradict = true;
+                            break;
                         }
                     } else {
                         filtered.emplace_back(cv, cval);
                     }
                 }
-                if (contradict) continue;
+                if (contradict)
+                    continue;
                 ranges::sort(filtered);
                 pre_post.emplace_back(var, pre, post, move(filtered));
                 added = true;
             }
         }
-        if (added) condition.erase(var);
+        if (added)
+            condition.erase(var);
     }
-    if (pre_post.empty() && !get_options().keep_no_ops) return nullopt;
+    if (pre_post.empty() && !get_options().keep_no_ops)
+        return nullopt;
     /*
       Canonicalize pre_post: sort by (var, pre, post, cond) and dedupe.
       Matches Python's SASOperator._canonical_pre_post. We do this once
@@ -388,11 +414,11 @@ optional<SASOperator> build_sas_operator(
       a different ordering than Python's canonical-then-remap flow.
     */
     ranges::sort(pre_post);
-    pre_post.erase(unique(pre_post.begin(), pre_post.end()),
-                   pre_post.end());
+    pre_post.erase(unique(pre_post.begin(), pre_post.end()), pre_post.end());
     SASOperator op;
     op.name = name;
-    for (const auto &[v, val] : condition) op.prevail.emplace_back(v, val);
+    for (const auto &[v, val] : condition)
+        op.prevail.emplace_back(v, val);
     ranges::sort(op.prevail);
     op.pre_post = move(pre_post);
     op.cost = cost;
@@ -402,22 +428,22 @@ optional<SASOperator> build_sas_operator(
 optional<SASOperator> translate_strips_operator_aux(
     const PropositionalAction &op, const AtomToVarVals &dict,
     const vector<int> &ranges, const AtomToVarVals &mutex_dict,
-    const vector<int> &mutex_ranges,
-    const unordered_map<int, int> &condition,
+    const vector<int> &mutex_ranges, const unordered_map<int, int> &condition,
     const ImpliedFacts &implied_facts) {
-    map<int, map<int, vector<unordered_map<int, int>>>>
-        effects_by_variable;
+    map<int, map<int, vector<unordered_map<int, int>>>> effects_by_variable;
     map<int, vector<vector<ConditionPtr>>> add_conds_by_var;
 
     for (const auto &[conds, fact] : op.add_effects) {
-        if (!fact) continue;
-        auto eff_cond_list =
-            translate_strips_conditions(conds, dict, ranges, mutex_dict,
-                                        mutex_ranges);
-        if (!eff_cond_list) continue;
+        if (!fact)
+            continue;
+        auto eff_cond_list = translate_strips_conditions(
+            conds, dict, ranges, mutex_dict, mutex_ranges);
+        if (!eff_cond_list)
+            continue;
         const auto &flit = static_cast<const Literal &>(*fact);
         auto it = dict.find(atom_key_scratch(flit.predicate, flit.args));
-        if (it == dict.end()) continue;
+        if (it == dict.end())
+            continue;
         for (const auto &[var, val] : it->second) {
             for (const auto &ec : *eff_cond_list)
                 effects_by_variable[var][val].push_back(ec);
@@ -437,14 +463,16 @@ optional<SASOperator> translate_strips_operator_aux(
     vector<int> del_var_order;
     unordered_map<int, vector<pair<int, CondPtr>>> del_by_var;
     for (const auto &[conds, fact] : op.del_effects) {
-        if (!fact) continue;
-        auto eff_cond_list =
-            translate_strips_conditions(conds, dict, ranges, mutex_dict,
-                                        mutex_ranges);
-        if (!eff_cond_list) continue;
+        if (!fact)
+            continue;
+        auto eff_cond_list = translate_strips_conditions(
+            conds, dict, ranges, mutex_dict, mutex_ranges);
+        if (!eff_cond_list)
+            continue;
         const auto &flit = static_cast<const Literal &>(*fact);
         auto it = dict.find(atom_key_scratch(flit.predicate, flit.args));
-        if (it == dict.end()) continue;
+        if (it == dict.end())
+            continue;
         // One shared condition object per translated effect-condition, reused
         // across every representation of this deleted fact.
         vector<CondPtr> shared;
@@ -452,7 +480,8 @@ optional<SASOperator> translate_strips_operator_aux(
         for (const auto &ec : *eff_cond_list)
             shared.push_back(make_shared<unordered_map<int, int>>(ec));
         for (const auto &[var, val] : it->second) {
-            if (!del_by_var.contains(var)) del_var_order.push_back(var);
+            if (!del_by_var.contains(var))
+                del_var_order.push_back(var);
             for (const auto &sp : shared)
                 del_by_var[var].emplace_back(val, sp);
         }
@@ -462,20 +491,23 @@ optional<SASOperator> translate_strips_operator_aux(
     for (int var : del_var_order) {
         auto no_add = negate_and_translate_condition(
             add_conds_by_var[var], dict, ranges, mutex_dict, mutex_ranges);
-        if (!no_add) continue;
+        if (!no_add)
+            continue;
         int none_of_those = ranges[var] - 1;
         for (auto &[val, cond_ptr] : del_by_var[var]) {
             auto &cond = *cond_ptr;
             auto cit = cond.find(var);
-            if (cit != cond.end() && cit->second != val) continue;
-            cond[var] = val;  // mutate the shared condition (guards accumulate)
+            if (cit != cond.end() && cit->second != val)
+                continue;
+            cond[var] = val; // mutate the shared condition (guards accumulate)
             for (const auto &no_add_cond : *no_add) {
                 unordered_map<int, int> new_cond = cond;
                 bool bad = false;
                 for (const auto &[cv, cval] : no_add_cond) {
                     auto pit = new_cond.find(cv);
                     if (pit != new_cond.end() && pit->second != cval) {
-                        bad = true; break;
+                        bad = true;
+                        break;
                     }
                     new_cond[cv] = cval;
                 }
@@ -485,24 +517,25 @@ optional<SASOperator> translate_strips_operator_aux(
             }
         }
     }
-    return build_sas_operator(op.name, condition, effects_by_variable,
-                              op.cost, ranges, implied_facts);
+    return build_sas_operator(
+        op.name, condition, effects_by_variable, op.cost, ranges,
+        implied_facts);
 }
 
 vector<SASOperator> translate_strips_operator(
     const PropositionalAction &op, const AtomToVarVals &dict,
     const vector<int> &ranges, const AtomToVarVals &mutex_dict,
-    const vector<int> &mutex_ranges,
-    const ImpliedFacts &implied_facts) {
+    const vector<int> &mutex_ranges, const ImpliedFacts &implied_facts) {
     vector<SASOperator> result;
-    auto conds = translate_strips_conditions(op.precondition, dict, ranges,
-                                             mutex_dict, mutex_ranges);
-    if (!conds) return result;
+    auto conds = translate_strips_conditions(
+        op.precondition, dict, ranges, mutex_dict, mutex_ranges);
+    if (!conds)
+        return result;
     for (const auto &c : *conds) {
-        auto op_out = translate_strips_operator_aux(op, dict, ranges,
-                                                    mutex_dict, mutex_ranges,
-                                                    c, implied_facts);
-        if (op_out) result.push_back(move(*op_out));
+        auto op_out = translate_strips_operator_aux(
+            op, dict, ranges, mutex_dict, mutex_ranges, c, implied_facts);
+        if (op_out)
+            result.push_back(move(*op_out));
     }
     return result;
 }
@@ -512,16 +545,20 @@ vector<SASAxiom> translate_strips_axiom(
     const vector<int> &ranges, const AtomToVarVals &mutex_dict,
     const vector<int> &mutex_ranges) {
     vector<SASAxiom> out;
-    auto conds = translate_strips_conditions(ax.condition, dict, ranges,
-                                             mutex_dict, mutex_ranges);
-    if (!conds) return out;
-    if (!ax.effect) return out;
+    auto conds = translate_strips_conditions(
+        ax.condition, dict, ranges, mutex_dict, mutex_ranges);
+    if (!conds)
+        return out;
+    if (!ax.effect)
+        return out;
     auto it = dict.find(atom_key(*ax.effect));
-    if (it == dict.end() || it->second.size() != 1) return out;
+    if (it == dict.end() || it->second.size() != 1)
+        return out;
     VarVal eff = it->second.front();
     for (const auto &c : *conds) {
         SASAxiom sa;
-        for (const auto &[v, val] : c) sa.condition.emplace_back(v, val);
+        for (const auto &[v, val] : c)
+            sa.condition.emplace_back(v, val);
         ranges::sort(sa.condition);
         sa.effect = eff;
         out.push_back(move(sa));
@@ -552,32 +589,35 @@ SASTask pddl_to_sas(Task &task) {
         return v;
     };
     cout << "Instantiating..." << endl;
-    auto prog = phase("Generating Datalog program",
-                      [&] { return grounding::build_program(task); });
-    phase("Normalizing Datalog program",
-          [&] { grounding::split_rules(prog); return 0; });
-    auto model = phase("Computing model",
-                       [&] { return grounding::compute_model(prog); });
-    auto inst = phase("Completing instantiation",
-                      [&] { return instantiate::instantiate(task, model); });
+    auto prog = phase("Generating Datalog program", [&] {
+        return grounding::build_program(task);
+    });
+    phase("Normalizing Datalog program", [&] {
+        grounding::split_rules(prog);
+        return 0;
+    });
+    auto model = phase(
+        "Computing model", [&] { return grounding::compute_model(prog); });
+    auto inst = phase("Completing instantiation", [&] {
+        return instantiate::instantiate(task, model);
+    });
 
     if (!inst.relaxed_reachable) {
-        cout << "No relaxed solution! Generating unsolvable task..."
-                  << endl;
+        cout << "No relaxed solution! Generating unsolvable task..." << endl;
         return trivial_task(false);
     }
     if (!inst.instantiated_goal) {
-        cout << "Trivially false goal! Generating unsolvable task..."
-                  << endl;
+        cout << "Trivially false goal! Generating unsolvable task..." << endl;
         return trivial_task(false);
     }
     AtomSet negative_in_goal;
     for (const auto &g : *inst.instantiated_goal) {
-        if (!g) continue;
+        if (!g)
+            continue;
         const auto &lit = static_cast<const Literal &>(*g);
         if (lit.negated()) {
-            negative_in_goal.insert(make_shared<const Atom>(
-                lit.predicate, lit.args));
+            negative_in_goal.insert(
+                make_shared<const Atom>(lit.predicate, lit.args));
         }
     }
 
@@ -606,9 +646,11 @@ SASTask pddl_to_sas(Task &task) {
         if (!holds_alternative<shared_ptr<const Atom>>(elem))
             continue;
         const auto &ap = get<shared_ptr<const Atom>>(elem);
-        if (!ap) continue;
+        if (!ap)
+            continue;
         auto it = strips_to_sas.dict.find(atom_key(*ap));
-        if (it == strips_to_sas.dict.end()) continue;
+        if (it == strips_to_sas.dict.end())
+            continue;
         for (const auto &[var, val] : it->second)
             sas_init.values[var] = val;
     }
@@ -617,8 +659,7 @@ SASTask pddl_to_sas(Task &task) {
         *inst.instantiated_goal, strips_to_sas.dict, strips_to_sas.ranges,
         mutex_dict.dict, mutex_dict.ranges);
     if (!goal_conds) {
-        cout << "Goal violates a mutex! Generating unsolvable task..."
-                  << endl;
+        cout << "Goal violates a mutex! Generating unsolvable task..." << endl;
         return trivial_task(false);
     }
     if (goal_conds->size() != 1)
@@ -643,29 +684,33 @@ SASTask pddl_to_sas(Task &task) {
     vector<SASOperator> sas_operators;
     phase("Translating task", [&] {
         for (const auto &op : inst.instantiated_actions) {
-            if (!op) continue;
+            if (!op)
+                continue;
             auto sub = translate_strips_operator(
-                *op, strips_to_sas.dict, strips_to_sas.ranges,
-                mutex_dict.dict, mutex_dict.ranges, implied_facts);
-            for (auto &o : sub) sas_operators.push_back(move(o));
+                *op, strips_to_sas.dict, strips_to_sas.ranges, mutex_dict.dict,
+                mutex_dict.ranges, implied_facts);
+            for (auto &o : sub)
+                sas_operators.push_back(move(o));
         }
         return 0;
     });
     // Build SAS axioms from the simplified axiom list.
     vector<SASAxiom> sas_axioms;
     for (const auto &ax : axiom_layering.axioms) {
-        if (!ax) continue;
-        auto sub = translate_strips_axiom(*ax, strips_to_sas.dict,
-                                          strips_to_sas.ranges,
-                                          mutex_dict.dict,
-                                          mutex_dict.ranges);
-        for (auto &a : sub) sas_axioms.push_back(move(a));
+        if (!ax)
+            continue;
+        auto sub = translate_strips_axiom(
+            *ax, strips_to_sas.dict, strips_to_sas.ranges, mutex_dict.dict,
+            mutex_dict.ranges);
+        for (auto &a : sub)
+            sas_axioms.push_back(move(a));
     }
     // Build axiom layers vector.
     vector<int> axiom_layers(strips_to_sas.ranges.size(), -1);
     for (const auto &[key, layer] : axiom_layering.axiom_layers) {
         auto it = strips_to_sas.dict.find(key);
-        if (it == strips_to_sas.dict.end() || it->second.empty()) continue;
+        if (it == strips_to_sas.dict.end() || it->second.empty())
+            continue;
         axiom_layers[it->second.front().first] = layer;
     }
 
@@ -681,14 +726,16 @@ SASTask pddl_to_sas(Task &task) {
         for (const auto &grp : groups.mutex_groups) {
             vector<VarVal> facts;
             for (const auto &f : grp) {
-                if (!f) continue;
+                if (!f)
+                    continue;
                 auto it = strips_to_sas.dict.find(
                     atom_key(static_cast<const Atom &>(*f)));
                 if (it == strips_to_sas.dict.end() || it->second.size() != 1)
                     continue;
                 facts.push_back(it->second.front());
             }
-            if (facts.size() >= 2) sas_mutexes.emplace_back(move(facts));
+            if (facts.size() >= 2)
+                sas_mutexes.emplace_back(move(facts));
         }
     }
 
@@ -699,12 +746,13 @@ SASTask pddl_to_sas(Task &task) {
     // operator order in the output reflects the pre-remap canonical sort
     // rather than a post-remap one (which is what SASOperator::output
     // used to do).
-    ranges::sort(sas_operators,
-              [](const SASOperator &a, const SASOperator &b) {
-                  if (a.name != b.name) return a.name < b.name;
-                  if (a.prevail != b.prevail) return a.prevail < b.prevail;
-                  return a.pre_post < b.pre_post;
-              });
+    ranges::sort(sas_operators, [](const SASOperator &a, const SASOperator &b) {
+        if (a.name != b.name)
+            return a.name < b.name;
+        if (a.prevail != b.prevail)
+            return a.prevail < b.prevail;
+        return a.pre_post < b.pre_post;
+    });
     SASTask sas_task;
     sas_task.variables = move(sas_vars);
     sas_task.mutexes = move(sas_mutexes);
@@ -727,7 +775,7 @@ SASTask pddl_to_sas(Task &task) {
             return trivial_task(true);
         }
         cout << "Detecting unreachable propositions: " << simplify_t.str()
-                  << endl;
+             << endl;
     }
     if (get_options().reorder_variables ||
         get_options().filter_unimportant_vars) {
@@ -736,8 +784,7 @@ SASTask pddl_to_sas(Task &task) {
         simplify::find_and_apply_variable_order(
             sas_task, get_options().reorder_variables,
             get_options().filter_unimportant_vars);
-        cout << "Reordering and filtering variables: " << vo_t.str()
-                  << endl;
+        cout << "Reordering and filtering variables: " << vo_t.str() << endl;
     }
     // Axioms are emitted in canonical (condition, effect) order by
     // SASTask::output (post-remap), matching the Python translator's final

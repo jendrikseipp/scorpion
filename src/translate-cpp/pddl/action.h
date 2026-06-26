@@ -33,10 +33,12 @@ public:
     // PDDL type name. Used by normalize and the Datalog grounder.
     std::unordered_map<std::string, std::string> type_map;
 
-    Action() : num_external_parameters(0) {}
-    Action(std::string name, std::vector<TypedObject> parameters,
-           int num_external_parameters, ConditionPtr precondition,
-           std::vector<Effect> effects, std::shared_ptr<Increase> cost);
+    Action() : num_external_parameters(0) {
+    }
+    Action(
+        std::string name, std::vector<TypedObject> parameters,
+        int num_external_parameters, ConditionPtr precondition,
+        std::vector<Effect> effects, std::shared_ptr<Increase> cost);
 
     // Build type_map from parameters and uniquify quantifier-bound variables
     // in the precondition and effects relative to it. Mirrors Python's
@@ -56,11 +58,10 @@ public:
     std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>> del_effects;
     int cost;
 
-    PropositionalAction(std::string name,
-                        std::vector<ConditionPtr> precondition,
-                        std::vector<std::pair<std::vector<ConditionPtr>,
-                                              ConditionPtr>> effects,
-                        int cost);
+    PropositionalAction(
+        std::string name, std::vector<ConditionPtr> precondition,
+        std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>> effects,
+        int cost);
 
     void dump(std::ostream &os) const;
 };

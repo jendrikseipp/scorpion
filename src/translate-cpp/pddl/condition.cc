@@ -15,7 +15,8 @@ size_t hash_value(const T &v) {
 }
 
 bool ConditionPtrEqual::matches(const ConditionPtr &c, const AtomView &v) {
-    if (!c || c->kind() != Condition::Kind::ATOM) return false;
+    if (!c || c->kind() != Condition::Kind::ATOM)
+        return false;
     const auto &lit = static_cast<const Literal &>(*c);
     return lit.predicate == v.predicate && lit.args == v.args;
 }
@@ -31,19 +32,22 @@ unordered_set<string> Condition::free_variables() const {
 
 bool Condition::has_disjunction() const {
     for (const auto &p : parts())
-        if (p->has_disjunction()) return true;
+        if (p->has_disjunction())
+            return true;
     return false;
 }
 
 bool Condition::has_existential_part() const {
     for (const auto &p : parts())
-        if (p->has_existential_part()) return true;
+        if (p->has_existential_part())
+            return true;
     return false;
 }
 
 bool Condition::has_universal_part() const {
     for (const auto &p : parts())
-        if (p->has_universal_part()) return true;
+        if (p->has_universal_part())
+            return true;
     return false;
 }
 
@@ -65,20 +69,27 @@ void Falsity::dump(ostream &os, int indent) const {
     os << string(indent * 2, ' ') << "Falsity\n";
 }
 
-ConditionPtr Truth::negate() const { return make_shared<Falsity>(); }
-ConditionPtr Falsity::negate() const { return make_shared<Truth>(); }
+ConditionPtr Truth::negate() const {
+    return make_shared<Falsity>();
+}
+ConditionPtr Falsity::negate() const {
+    return make_shared<Truth>();
+}
 
 // -- Literal -----------------------------------------------------------------
 
 Literal::Literal(string predicate, vector<string> args)
-    : predicate(move(predicate)), args(move(args)),
-      cached_hash(detail::literal_hash(this->predicate, this->args)) {}
+    : predicate(move(predicate)),
+      args(move(args)),
+      cached_hash(detail::literal_hash(this->predicate, this->args)) {
+}
 
 void Literal::dump(ostream &os, int indent) const {
     os << string(indent * 2, ' ');
     os << (negated() ? "NegatedAtom " : "Atom ") << predicate << "(";
     for (size_t i = 0; i < args.size(); ++i) {
-        if (i) os << ", ";
+        if (i)
+            os << ", ";
         os << args[i];
     }
     os << ")\n";
@@ -93,17 +104,19 @@ unordered_set<string> Literal::free_variables() const {
 }
 
 bool Atom::equals(const Condition &other) const {
-    if (other.kind() != Kind::ATOM) return false;
+    if (other.kind() != Kind::ATOM)
+        return false;
     const auto &o = static_cast<const Atom &>(other);
-    return cached_hash == o.cached_hash &&
-           predicate == o.predicate && args == o.args;
+    return cached_hash == o.cached_hash && predicate == o.predicate &&
+           args == o.args;
 }
 
 bool NegatedAtom::equals(const Condition &other) const {
-    if (other.kind() != Kind::NEGATED_ATOM) return false;
+    if (other.kind() != Kind::NEGATED_ATOM)
+        return false;
     const auto &o = static_cast<const NegatedAtom &>(other);
-    return cached_hash == o.cached_hash &&
-           predicate == o.predicate && args == o.args;
+    return cached_hash == o.cached_hash && predicate == o.predicate &&
+           args == o.args;
 }
 
 ConditionPtr Atom::negate() const {
@@ -125,19 +138,23 @@ JunctorCondition::JunctorCondition(vector<ConditionPtr> children, Kind k)
 }
 
 bool JunctorCondition::equals(const Condition &other) const {
-    if (other.kind() != kind()) return false;
+    if (other.kind() != kind())
+        return false;
     const auto &o = static_cast<const JunctorCondition &>(other);
-    if (cached_hash != o.cached_hash) return false;
-    if (children.size() != o.children.size()) return false;
+    if (cached_hash != o.cached_hash)
+        return false;
+    if (children.size() != o.children.size())
+        return false;
     ConditionPtrEqual eq;
     for (size_t i = 0; i < children.size(); ++i)
-        if (!eq(children[i], o.children[i])) return false;
+        if (!eq(children[i], o.children[i]))
+            return false;
     return true;
 }
 
 void JunctorCondition::dump(ostream &os, int indent) const {
-    const char *label = (kind() == Kind::CONJUNCTION) ? "Conjunction"
-                                                      : "Disjunction";
+    const char *label =
+        (kind() == Kind::CONJUNCTION) ? "Conjunction" : "Disjunction";
     os << string(indent * 2, ' ') << label << "\n";
     for (const auto &c : children)
         c->dump(os, indent + 1);
@@ -161,11 +178,9 @@ ConditionPtr Disjunction::negate() const {
 
 // -- QuantifiedCondition -----------------------------------------------------
 
-QuantifiedCondition::QuantifiedCondition(vector<TypedObject> parameters,
-                                         vector<ConditionPtr> body,
-                                         Kind k)
-    : parameters(move(parameters)), body(move(body)),
-      cached_hash(0) {
+QuantifiedCondition::QuantifiedCondition(
+    vector<TypedObject> parameters, vector<ConditionPtr> body, Kind k)
+    : parameters(move(parameters)), body(move(body)), cached_hash(0) {
     size_t h = hash_value<int>(static_cast<int>(k));
     for (const auto &p : this->parameters) {
         hash_combine(h, hash_value<string>(p.name));
@@ -177,23 +192,28 @@ QuantifiedCondition::QuantifiedCondition(vector<TypedObject> parameters,
 }
 
 bool QuantifiedCondition::equals(const Condition &other) const {
-    if (other.kind() != kind()) return false;
+    if (other.kind() != kind())
+        return false;
     const auto &o = static_cast<const QuantifiedCondition &>(other);
-    if (cached_hash != o.cached_hash) return false;
-    if (parameters.size() != o.parameters.size()) return false;
-    if (body.size() != o.body.size()) return false;
+    if (cached_hash != o.cached_hash)
+        return false;
+    if (parameters.size() != o.parameters.size())
+        return false;
+    if (body.size() != o.body.size())
+        return false;
     for (size_t i = 0; i < parameters.size(); ++i)
-        if (parameters[i] != o.parameters[i]) return false;
+        if (parameters[i] != o.parameters[i])
+            return false;
     ConditionPtrEqual eq;
     for (size_t i = 0; i < body.size(); ++i)
-        if (!eq(body[i], o.body[i])) return false;
+        if (!eq(body[i], o.body[i]))
+            return false;
     return true;
 }
 
 void QuantifiedCondition::dump(ostream &os, int indent) const {
-    const char *label =
-        (kind() == Kind::UNIVERSAL) ? "UniversalCondition"
-                                    : "ExistentialCondition";
+    const char *label = (kind() == Kind::UNIVERSAL) ? "UniversalCondition"
+                                                    : "ExistentialCondition";
     os << string(indent * 2, ' ') << label;
     for (size_t i = 0; i < parameters.size(); ++i)
         os << (i == 0 ? " " : ", ") << parameters[i];
@@ -214,28 +234,23 @@ ConditionPtr UniversalCondition::negate() const {
     negated_body.reserve(body.size());
     for (const auto &b : body)
         negated_body.push_back(b->negate());
-    return make_shared<ExistentialCondition>(parameters,
-                                                  move(negated_body));
+    return make_shared<ExistentialCondition>(parameters, move(negated_body));
 }
 
 // -- instantiate() -----------------------------------------------------------
 
 bool Condition::instantiate(
     const unordered_map<string, string> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
     vector<ConditionPtr> &) const {
     throw runtime_error("Cannot instantiate condition: not normalized");
 }
 
 bool Falsity::instantiate(
     const unordered_map<string, string> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
     vector<ConditionPtr> &) const {
     return false;
 }
@@ -244,9 +259,9 @@ namespace {
 // Resolve `args` under `m` into the caller-owned `out` buffer. Callers
 // pass a reused scratch vector so probing init/fluent facts during
 // instantiation does not heap-allocate a fresh vector per literal.
-void resolve_args_into(vector<string> &out,
-                       const vector<string> &args,
-                       const unordered_map<string, string> &m) {
+void resolve_args_into(
+    vector<string> &out, const vector<string> &args,
+    const unordered_map<string, string> &m) {
     out.clear();
     out.reserve(args.size());
     for (const auto &a : args) {
@@ -258,10 +273,10 @@ void resolve_args_into(vector<string> &out,
 
 bool Atom::instantiate(
     const unordered_map<string, string> &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &fluent_facts,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
+        &init_facts,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
+        &fluent_facts,
     vector<ConditionPtr> &result) const {
     static thread_local vector<string> scratch;
     resolve_args_into(scratch, args, var_mapping);
@@ -279,10 +294,10 @@ bool Atom::instantiate(
 
 bool NegatedAtom::instantiate(
     const unordered_map<string, string> &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &fluent_facts,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
+        &init_facts,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
+        &fluent_facts,
     vector<ConditionPtr> &result) const {
     static thread_local vector<string> scratch;
     resolve_args_into(scratch, args, var_mapping);
@@ -297,10 +312,10 @@ bool NegatedAtom::instantiate(
 
 bool Conjunction::instantiate(
     const unordered_map<string, string> &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &fluent_facts,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
+        &init_facts,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
+        &fluent_facts,
     vector<ConditionPtr> &result) const {
     for (const auto &p : children) {
         if (p && !p->instantiate(var_mapping, init_facts, fluent_facts, result))
@@ -311,14 +326,14 @@ bool Conjunction::instantiate(
 
 bool ExistentialCondition::instantiate(
     const unordered_map<string, string> &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash,
-                             ConditionPtrEqual> &fluent_facts,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
+        &init_facts,
+    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
+        &fluent_facts,
     vector<ConditionPtr> &result) const {
     if (!body.empty() && body[0])
-        return body[0]->instantiate(var_mapping, init_facts, fluent_facts,
-                                    result);
+        return body[0]->instantiate(
+            var_mapping, init_facts, fluent_facts, result);
     return true;
 }
 
@@ -327,14 +342,17 @@ ConditionPtr ExistentialCondition::negate() const {
     negated_body.reserve(body.size());
     for (const auto &b : body)
         negated_body.push_back(b->negate());
-    return make_shared<UniversalCondition>(parameters,
-                                                move(negated_body));
+    return make_shared<UniversalCondition>(parameters, move(negated_body));
 }
 
 // -- simplified() ------------------------------------------------------------
 
-ConditionPtr Truth::simplified() const { return make_shared<Truth>(); }
-ConditionPtr Falsity::simplified() const { return make_shared<Falsity>(); }
+ConditionPtr Truth::simplified() const {
+    return make_shared<Truth>();
+}
+ConditionPtr Falsity::simplified() const {
+    return make_shared<Falsity>();
+}
 ConditionPtr Literal::simplified() const {
     if (negated())
         return make_shared<NegatedAtom>(predicate, args);
@@ -347,22 +365,24 @@ ConditionPtr Conjunction::simplified() const {
     for (const auto &child : children) {
         ConditionPtr s = child->simplified();
         switch (s->kind()) {
-            case Kind::CONJUNCTION: {
-                const auto &c = static_cast<const Conjunction &>(*s);
-                for (const auto &p : c.children)
-                    result.push_back(p);
-                break;
-            }
-            case Kind::FALSITY:
-                return make_shared<Falsity>();
-            case Kind::TRUTH:
-                break;
-            default:
-                result.push_back(move(s));
+        case Kind::CONJUNCTION: {
+            const auto &c = static_cast<const Conjunction &>(*s);
+            for (const auto &p : c.children)
+                result.push_back(p);
+            break;
+        }
+        case Kind::FALSITY:
+            return make_shared<Falsity>();
+        case Kind::TRUTH:
+            break;
+        default:
+            result.push_back(move(s));
         }
     }
-    if (result.empty()) return make_shared<Truth>();
-    if (result.size() == 1) return result.front();
+    if (result.empty())
+        return make_shared<Truth>();
+    if (result.size() == 1)
+        return result.front();
     return make_shared<Conjunction>(move(result));
 }
 
@@ -372,22 +392,24 @@ ConditionPtr Disjunction::simplified() const {
     for (const auto &child : children) {
         ConditionPtr s = child->simplified();
         switch (s->kind()) {
-            case Kind::DISJUNCTION: {
-                const auto &d = static_cast<const Disjunction &>(*s);
-                for (const auto &p : d.children)
-                    result.push_back(p);
-                break;
-            }
-            case Kind::TRUTH:
-                return make_shared<Truth>();
-            case Kind::FALSITY:
-                break;
-            default:
-                result.push_back(move(s));
+        case Kind::DISJUNCTION: {
+            const auto &d = static_cast<const Disjunction &>(*s);
+            for (const auto &p : d.children)
+                result.push_back(p);
+            break;
+        }
+        case Kind::TRUTH:
+            return make_shared<Truth>();
+        case Kind::FALSITY:
+            break;
+        default:
+            result.push_back(move(s));
         }
     }
-    if (result.empty()) return make_shared<Falsity>();
-    if (result.size() == 1) return result.front();
+    if (result.empty())
+        return make_shared<Falsity>();
+    if (result.size() == 1)
+        return result.front();
     return make_shared<Disjunction>(move(result));
 }
 
@@ -400,10 +422,8 @@ ConditionPtr QuantifiedCondition::simplified() const {
     }
     vector<ConditionPtr> new_body = {simplified_body};
     if (kind() == Kind::UNIVERSAL)
-        return make_shared<UniversalCondition>(parameters,
-                                                    move(new_body));
-    return make_shared<ExistentialCondition>(parameters,
-                                                  move(new_body));
+        return make_shared<UniversalCondition>(parameters, move(new_body));
+    return make_shared<ExistentialCondition>(parameters, move(new_body));
 }
 
 // -- uniquify_variables() ----------------------------------------------------
@@ -422,7 +442,7 @@ ConditionPtr Condition::uniquify_variables(
 }
 
 ConditionPtr Literal::uniquify_variables(
-    unordered_map<string, string> &/*type_map*/,
+    unordered_map<string, string> & /*type_map*/,
     const unordered_map<string, string> &renamings) const {
     return rename_variables(renamings);
 }
@@ -453,15 +473,15 @@ ConditionPtr QuantifiedCondition::uniquify_variables(
     vector<TypedObject> new_params;
     new_params.reserve(parameters.size());
     for (const auto &par : parameters)
-        new_params.push_back(pddl::uniquify_name(par, type_map, local_renamings));
+        new_params.push_back(
+            pddl::uniquify_name(par, type_map, local_renamings));
     vector<ConditionPtr> new_body;
     new_body.reserve(body.size());
     for (const auto &b : body)
         new_body.push_back(b->uniquify_variables(type_map, local_renamings));
     if (kind() == Kind::UNIVERSAL)
-        return make_shared<UniversalCondition>(move(new_params),
-                                                    move(new_body));
-    return make_shared<ExistentialCondition>(move(new_params),
-                                                  move(new_body));
+        return make_shared<UniversalCondition>(
+            move(new_params), move(new_body));
+    return make_shared<ExistentialCondition>(move(new_params), move(new_body));
 }
 }

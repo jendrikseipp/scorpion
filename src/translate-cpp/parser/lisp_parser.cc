@@ -15,7 +15,8 @@ void write_lispified(ostream &os, const Sexpr &expr) {
     os << "(";
     bool first = true;
     for (const auto &child : expr.list()) {
-        if (!first) os << " ";
+        if (!first)
+            os << " ";
         first = false;
         write_lispified(os, child);
     }
@@ -86,7 +87,8 @@ Sexpr parse_list_aux(const vector<string> &tokens, size_t &i) {
         if (i >= tokens.size())
             throw ParseError("Missing ')'");
         const string &t = tokens[i++];
-        if (t == ")") return Sexpr(move(result));
+        if (t == ")")
+            return Sexpr(move(result));
         if (t == "(") {
             result.emplace_back(parse_list_aux(tokens, i));
         } else {
@@ -106,7 +108,8 @@ Sexpr parse_nested_list(istream &input) {
     if (i < tokens.size()) {
         string remaining;
         for (size_t k = i; k < tokens.size(); ++k) {
-            if (k > i) remaining += " ";
+            if (k > i)
+                remaining += " ";
             remaining += tokens[k];
         }
         throw ParseError("Tokens remaining after parsing: " + remaining);
@@ -121,8 +124,9 @@ Sexpr parse_pddl_file(const string &kind, const string &filename) {
     try {
         return parse_nested_list(input);
     } catch (const ParseError &e) {
-        throw ParseError("Error: Could not parse " + kind + " file: " +
-                         filename + "\nReason: " + e.what());
+        throw ParseError(
+            "Error: Could not parse " + kind + " file: " + filename +
+            "\nReason: " + e.what());
     }
 }
 }

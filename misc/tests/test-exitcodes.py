@@ -19,16 +19,23 @@ TRANSLATE_TASKS = {
     "large": "satellite/p25-HC-pfile5.pddl",
 }
 
+# The resource-limit tests below pin the Python translator: the default C++
+# translator is fast and memory-lean enough that it finishes the "large" task
+# well within a 1s / 75M limit, so it never trips them. These tests check that
+# the driver maps the translator's out-of-time/out-of-memory exits to the right
+# codes, which the Python translator triggers reliably on this task.
 TRANSLATE_TESTS = [
     ("small", [], [], defaultdict(lambda: returncodes.SUCCESS)),
     # We cannot set time limits on Windows and thus expect DRIVER_UNSUPPORTED
     # as exit code in this case.
-    ("large", ["--translate-time-limit", "1s"], [], defaultdict(
+    ("large", ["--translator", "py", "--translate-time-limit", "1s"], [],
+     defaultdict(
         lambda: returncodes.TRANSLATE_OUT_OF_TIME,
         win32=returncodes.DRIVER_UNSUPPORTED)),
     # We cannot set/enforce memory limits on Windows/macOS and thus expect
     # DRIVER_UNSUPPORTED as exit code in those cases.
-    ("large", ["--translate-memory-limit", "75M"], [], defaultdict(
+    ("large", ["--translator", "py", "--translate-memory-limit", "75M"], [],
+     defaultdict(
         lambda: returncodes.TRANSLATE_OUT_OF_MEMORY,
         darwin=returncodes.DRIVER_UNSUPPORTED,
         win32=returncodes.DRIVER_UNSUPPORTED)),

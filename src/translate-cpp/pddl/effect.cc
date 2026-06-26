@@ -3,16 +3,18 @@
 using namespace std;
 namespace translate::pddl {
 namespace {
-string pad(int indent) { return string(indent * 2, ' '); }
+string pad(int indent) {
+    return string(indent * 2, ' ');
+}
 }
 
 void SimpleEffect::dump(ostream &os, int indent) const {
     os << pad(indent) << "SimpleEffect\n";
-    if (literal) literal->dump(os, indent + 1);
+    if (literal)
+        literal->dump(os, indent + 1);
 }
 
-ConjunctiveEffect::ConjunctiveEffect(vector<AnyEffectPtr> effects)
-    : effects() {
+ConjunctiveEffect::ConjunctiveEffect(vector<AnyEffectPtr> effects) : effects() {
     for (auto &e : effects) {
         if (e && e->kind() == Kind::CONJUNCTIVE) {
             auto &c = static_cast<ConjunctiveEffect &>(*e);
@@ -27,7 +29,8 @@ ConjunctiveEffect::ConjunctiveEffect(vector<AnyEffectPtr> effects)
 void ConjunctiveEffect::dump(ostream &os, int indent) const {
     os << pad(indent) << "ConjunctiveEffect\n";
     for (const auto &e : effects)
-        if (e) e->dump(os, indent + 1);
+        if (e)
+            e->dump(os, indent + 1);
 }
 
 ConditionalEffect::ConditionalEffect(ConditionPtr cond, AnyEffectPtr eff) {
@@ -46,13 +49,14 @@ ConditionalEffect::ConditionalEffect(ConditionPtr cond, AnyEffectPtr eff) {
 void ConditionalEffect::dump(ostream &os, int indent) const {
     os << pad(indent) << "ConditionalEffect\n";
     os << pad(indent + 1) << "if\n";
-    if (condition) condition->dump(os, indent + 2);
+    if (condition)
+        condition->dump(os, indent + 2);
     os << pad(indent + 1) << "then\n";
-    if (effect) effect->dump(os, indent + 2);
+    if (effect)
+        effect->dump(os, indent + 2);
 }
 
-UniversalEffect::UniversalEffect(vector<TypedObject> params,
-                                 AnyEffectPtr eff) {
+UniversalEffect::UniversalEffect(vector<TypedObject> params, AnyEffectPtr eff) {
     // Merge nested universal effects (matching the Python translator).
     if (eff && eff->kind() == Kind::UNIVERSAL) {
         auto &inner = static_cast<UniversalEffect &>(*eff);
@@ -71,12 +75,14 @@ void UniversalEffect::dump(ostream &os, int indent) const {
     for (size_t i = 0; i < parameters.size(); ++i)
         os << (i == 0 ? " " : ", ") << parameters[i];
     os << ")\n";
-    if (effect) effect->dump(os, indent + 1);
+    if (effect)
+        effect->dump(os, indent + 1);
 }
 
 void CostEffect::dump(ostream &os, int indent) const {
     os << pad(indent) << "CostEffect\n";
-    if (effect) effect->dump(os, indent + 1);
+    if (effect)
+        effect->dump(os, indent + 1);
 }
 
 // -- normalize() / extract_cost() --------------------------------------------
@@ -110,10 +116,8 @@ AnyEffectPtr ConditionalEffect::normalize() const {
     }
     if (inner->kind() == Kind::UNIVERSAL) {
         auto &u = static_cast<UniversalEffect &>(*inner);
-        auto cond_child = make_shared<ConditionalEffect>(condition,
-                                                              u.effect);
-        return make_shared<UniversalEffect>(u.parameters,
-                                                 move(cond_child));
+        auto cond_child = make_shared<ConditionalEffect>(condition, u.effect);
+        return make_shared<UniversalEffect>(u.parameters, move(cond_child));
     }
     return make_shared<ConditionalEffect>(condition, move(inner));
 }
@@ -134,26 +138,26 @@ AnyEffectPtr UniversalEffect::normalize() const {
 
 pair<shared_ptr<CostEffect>, AnyEffectPtr> extract_cost(
     const AnyEffectPtr &effect) {
-    if (!effect) return {nullptr, nullptr};
+    if (!effect)
+        return {nullptr, nullptr};
     switch (effect->kind()) {
-        case AnyEffect::Kind::COST:
-            return {static_pointer_cast<CostEffect>(effect), nullptr};
-        case AnyEffect::Kind::CONJUNCTIVE: {
-            auto &c = static_cast<ConjunctiveEffect &>(*effect);
-            shared_ptr<CostEffect> cost;
-            vector<AnyEffectPtr> rest;
-            rest.reserve(c.effects.size());
-            for (const auto &e : c.effects) {
-                if (e && e->kind() == AnyEffect::Kind::COST)
-                    cost = static_pointer_cast<CostEffect>(e);
-                else
-                    rest.push_back(e);
-            }
-            return {cost,
-                    make_shared<ConjunctiveEffect>(move(rest))};
+    case AnyEffect::Kind::COST:
+        return {static_pointer_cast<CostEffect>(effect), nullptr};
+    case AnyEffect::Kind::CONJUNCTIVE: {
+        auto &c = static_cast<ConjunctiveEffect &>(*effect);
+        shared_ptr<CostEffect> cost;
+        vector<AnyEffectPtr> rest;
+        rest.reserve(c.effects.size());
+        for (const auto &e : c.effects) {
+            if (e && e->kind() == AnyEffect::Kind::COST)
+                cost = static_pointer_cast<CostEffect>(e);
+            else
+                rest.push_back(e);
         }
-        default:
-            return {nullptr, effect};
+        return {cost, make_shared<ConjunctiveEffect>(move(rest))};
+    }
+    default:
+        return {nullptr, effect};
     }
 }
 
@@ -177,8 +181,10 @@ void Effect::dump(ostream &os, int indent) const {
         p += "  ";
     }
     os << p << "if\n";
-    if (condition) condition->dump(os, indent + (parameters.empty() ? 1 : 2));
+    if (condition)
+        condition->dump(os, indent + (parameters.empty() ? 1 : 2));
     os << p << "then\n";
-    if (literal) literal->dump(os, indent + (parameters.empty() ? 1 : 2));
+    if (literal)
+        literal->dump(os, indent + (parameters.empty() ? 1 : 2));
 }
 }

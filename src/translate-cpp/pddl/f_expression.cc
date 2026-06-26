@@ -26,7 +26,8 @@ PrimitiveNumericExpression::PrimitiveNumericExpression(
 void PrimitiveNumericExpression::dump(ostream &os, int indent) const {
     os << string(indent * 2, ' ') << "PNE " << symbol << "(";
     for (size_t i = 0; i < args.size(); ++i) {
-        if (i) os << ", ";
+        if (i)
+            os << ", ";
         os << args[i];
     }
     os << ")\n";
@@ -40,7 +41,9 @@ bool PrimitiveNumericExpression::operator==(
 void FunctionAssignment::dump(ostream &os, int indent) const {
     os << string(indent * 2, ' ')
        << (kind() == Kind::ASSIGN ? "Assign" : "Increase") << "\n";
-    if (fluent) fluent->dump(os, indent + 1);
-    if (expression) expression->dump(os, indent + 1);
+    if (fluent)
+        fluent->dump(os, indent + 1);
+    if (expression)
+        expression->dump(os, indent + 1);
 }
 }

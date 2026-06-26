@@ -10,8 +10,7 @@ using namespace std;
 namespace translate {
 namespace {
 void usage(ostream &os, const char *prog) {
-    os << "usage: " << prog
-       << " [--relaxed] [--full-encoding]\n"
+    os << "usage: " << prog << " [--relaxed] [--full-encoding]\n"
        << "    [--invariant-generation-max-candidates N]\n"
        << "    [--sas-file FILE] [--invariant-generation-max-time SECS]\n"
        << "    [--add-implied-preconditions] [--keep-unreachable-facts]\n"
@@ -58,8 +57,8 @@ void parse_options(int argc, const char *const *argv) {
         } else if (a == "--full-encoding") {
             o.use_partial_encoding = false;
         } else if (a == "--invariant-generation-max-candidates") {
-            o.invariant_generation_max_candidates =
-                parse_int(prog, next(), "--invariant-generation-max-candidates");
+            o.invariant_generation_max_candidates = parse_int(
+                prog, next(), "--invariant-generation-max-candidates");
         } else if (a == "--sas-file") {
             o.sas_file = next();
         } else if (a == "--invariant-generation-max-time") {

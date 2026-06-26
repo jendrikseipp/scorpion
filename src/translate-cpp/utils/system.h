@@ -23,9 +23,14 @@ class ExitException : public std::exception {
     std::string message;
 public:
     ExitException(ExitCode code, std::string msg)
-        : exit_code(code), message(std::move(msg)) {}
-    ExitCode get_exit_code() const { return exit_code; }
-    const char *what() const noexcept override { return message.c_str(); }
+        : exit_code(code), message(std::move(msg)) {
+    }
+    ExitCode get_exit_code() const {
+        return exit_code;
+    }
+    const char *what() const noexcept override {
+        return message.c_str();
+    }
 };
 
 [[noreturn]] void exit_with(ExitCode code);

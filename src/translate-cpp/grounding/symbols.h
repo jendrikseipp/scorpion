@@ -29,14 +29,19 @@ class SymbolTable {
 public:
     int intern(const std::string &s) {
         auto it = ids_.find(s);
-        if (it != ids_.end()) return it->second;
+        if (it != ids_.end())
+            return it->second;
         int id = static_cast<int>(names_.size());
         names_.push_back(s);
         ids_.emplace(s, id);
         return id;
     }
-    const std::string &name(int id) const { return names_[id]; }
-    std::size_t size() const { return names_.size(); }
+    const std::string &name(int id) const {
+        return names_[id];
+    }
+    std::size_t size() const {
+        return names_.size();
+    }
 
 private:
     std::vector<std::string> names_;

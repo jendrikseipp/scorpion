@@ -1,7 +1,8 @@
 #include "fact_groups.h"
 
-#include "../invariants/invariant_finder.h"
 #include "../translate_options.h"
+
+#include "../invariants/invariant_finder.h"
 
 #include <algorithm>
 #include <iostream>
@@ -16,7 +17,8 @@ using namespace pddl;
 namespace {
 int find_placeholder(const Atom &atom) {
     for (size_t i = 0; i < atom.args.size(); ++i)
-        if (atom.args[i] == "?X") return static_cast<int>(i);
+        if (atom.args[i] == "?X")
+            return static_cast<int>(i);
     return -1;
 }
 
@@ -25,17 +27,19 @@ vector<ConditionPtr> expand_group(
     const AtomSet &reachable_facts) {
     vector<ConditionPtr> result;
     for (const auto &fact : group) {
-        if (!fact || fact->kind() != Condition::Kind::ATOM) continue;
+        if (!fact || fact->kind() != Condition::Kind::ATOM)
+            continue;
         const auto &atom = static_cast<const Atom &>(*fact);
         int pos = find_placeholder(atom);
         if (pos < 0) {
-            if (reachable_facts.contains(fact)) result.push_back(fact);
+            if (reachable_facts.contains(fact))
+                result.push_back(fact);
         } else {
             for (const auto &obj : task.objects) {
                 auto new_args = atom.args;
                 new_args[pos] = obj.name;
-                auto candidate = make_shared<const Atom>(
-                    atom.predicate, move(new_args));
+                auto candidate =
+                    make_shared<const Atom>(atom.predicate, move(new_args));
                 if (reachable_facts.contains(candidate))
                     result.push_back(candidate);
             }
@@ -55,13 +59,16 @@ vector<vector<ConditionPtr>> instantiate_groups(
 }
 
 string atom_to_string(const ConditionPtr &c) {
-    if (!c) return "";
+    if (!c)
+        return "";
     const auto &lit = static_cast<const Literal &>(*c);
     ostringstream os;
-    if (lit.negated()) os << "Negated";
+    if (lit.negated())
+        os << "Negated";
     os << "Atom " << lit.predicate << "(";
     for (size_t i = 0; i < lit.args.size(); ++i) {
-        if (i) os << ", ";
+        if (i)
+            os << ", ";
         os << lit.args[i];
     }
     os << ")";
@@ -69,32 +76,34 @@ string atom_to_string(const ConditionPtr &c) {
 }
 
 bool atom_less(const ConditionPtr &a, const ConditionPtr &b) {
-    if (!a || !b) return a.get() < b.get();
+    if (!a || !b)
+        return a.get() < b.get();
     const auto &la = static_cast<const Literal &>(*a);
     const auto &lb = static_cast<const Literal &>(*b);
-    if (la.predicate != lb.predicate) return la.predicate < lb.predicate;
+    if (la.predicate != lb.predicate)
+        return la.predicate < lb.predicate;
     return la.args < lb.args;
 }
 
-vector<vector<ConditionPtr>> sort_groups(
-    vector<vector<ConditionPtr>> groups) {
-    for (auto &g : groups) ranges::sort(g, atom_less);
-    ranges::sort(groups,
-              [](const vector<ConditionPtr> &a,
-                 const vector<ConditionPtr> &b) {
-                  return lexicographical_compare(
-                      a.begin(), a.end(), b.begin(), b.end(), atom_less);
-              });
+vector<vector<ConditionPtr>> sort_groups(vector<vector<ConditionPtr>> groups) {
+    for (auto &g : groups)
+        ranges::sort(g, atom_less);
+    ranges::sort(
+        groups,
+        [](const vector<ConditionPtr> &a, const vector<ConditionPtr> &b) {
+            return lexicographical_compare(
+                a.begin(), a.end(), b.begin(), b.end(), atom_less);
+        });
     return groups;
 }
 
 vector<vector<ConditionPtr>> collect_all_mutex_groups(
-    const vector<vector<ConditionPtr>> &groups,
-    const AtomSet &atoms) {
+    const vector<vector<ConditionPtr>> &groups, const AtomSet &atoms) {
     vector<vector<ConditionPtr>> result;
     AtomSet uncovered = atoms;
     for (const auto &g : groups) {
-        for (const auto &a : g) uncovered.erase(a);
+        for (const auto &a : g)
+            uncovered.erase(a);
         result.push_back(g);
     }
     vector<ConditionPtr> remaining(uncovered.begin(), uncovered.end());
@@ -105,15 +114,16 @@ vector<vector<ConditionPtr>> collect_all_mutex_groups(
 }
 
 vector<vector<ConditionPtr>> choose_groups(
-    const vector<vector<ConditionPtr>> &groups_in,
-    const AtomSet &atoms, const AtomSet &negative_in_goal) {
+    const vector<vector<ConditionPtr>> &groups_in, const AtomSet &atoms,
+    const AtomSet &negative_in_goal) {
     // Optionally remove negative-in-goal atoms.
     vector<vector<ConditionPtr>> groups;
     groups.reserve(groups_in.size());
     for (const auto &g : groups_in) {
         vector<ConditionPtr> filtered;
         for (const auto &a : g)
-            if (!negative_in_goal.contains(a)) filtered.push_back(a);
+            if (!negative_in_goal.contains(a))
+                filtered.push_back(a);
         groups.push_back(move(filtered));
     }
     const int n = static_cast<int>(groups.size());
@@ -133,11 +143,13 @@ vector<vector<ConditionPtr>> choose_groups(
       live sizes with an int-counter array plus an atom->containing-groups index
       (rather than a hash set per group) to keep this O(sum of group sizes).
     */
-    unordered_map<ConditionPtr, vector<int>,
-                       ConditionPtrHash, ConditionPtrEqual> atom_to_groups;
+    unordered_map<
+        ConditionPtr, vector<int>, ConditionPtrHash, ConditionPtrEqual>
+        atom_to_groups;
     if (use_partial)
         for (int i = 0; i < n; ++i)
-            for (const auto &a : groups[i]) atom_to_groups[a].push_back(i);
+            for (const auto &a : groups[i])
+                atom_to_groups[a].push_back(i);
 
     vector<int> remaining(n);
     int max_size = 0;
@@ -158,7 +170,8 @@ vector<vector<ConditionPtr>> choose_groups(
             while (!bucket.empty()) {
                 int cand = bucket.back();
                 bucket.pop_back();
-                if (remaining[cand] == max_size) return cand;
+                if (remaining[cand] == max_size)
+                    return cand;
                 groups_by_size[remaining[cand]].push_back(cand);
             }
             --max_size;
@@ -173,10 +186,12 @@ vector<vector<ConditionPtr>> choose_groups(
         if (use_partial) {
             // The live members of `top` are its still-uncovered atoms.
             for (const auto &a : groups[top])
-                if (!covered.contains(a)) chosen.push_back(a);
+                if (!covered.contains(a))
+                    chosen.push_back(a);
             for (const auto &a : chosen) {
                 covered.insert(a);
-                for (int g : atom_to_groups[a]) --remaining[g];
+                for (int g : atom_to_groups[a])
+                    --remaining[g];
             }
         } else {
             chosen = groups[top];
@@ -186,11 +201,13 @@ vector<vector<ConditionPtr>> choose_groups(
 
     AtomSet uncovered = atoms;
     for (const auto &g : result)
-        for (const auto &a : g) uncovered.erase(a);
+        for (const auto &a : g)
+            uncovered.erase(a);
     vector<ConditionPtr> singles(uncovered.begin(), uncovered.end());
     cout << singles.size() << " uncovered facts" << endl;
     ranges::sort(singles, atom_less);
-    for (const auto &a : singles) result.push_back({a});
+    for (const auto &a : singles)
+        result.push_back({a});
     return result;
 }
 
@@ -200,7 +217,8 @@ vector<vector<string>> build_translation_key(
     keys.reserve(groups.size());
     for (const auto &g : groups) {
         vector<string> key;
-        for (const auto &f : g) key.push_back(atom_to_string(f));
+        for (const auto &f : g)
+            key.push_back(atom_to_string(f));
         if (g.size() == 1) {
             const auto &lit = static_cast<const Literal &>(*g[0]);
             auto neg = lit.negate();
@@ -216,8 +234,7 @@ vector<vector<string>> build_translation_key(
 
 ComputedGroups compute_groups(
     const Task &task, const AtomSet &atoms,
-    const vector<vector<vector<string>>>
-        *reachable_action_parameters,
+    const vector<vector<vector<string>>> *reachable_action_parameters,
     const AtomSet &negative_in_goal) {
     auto raw = invariants::get_groups(task, reachable_action_parameters);
     auto instantiated = instantiate_groups(raw, task, atoms);

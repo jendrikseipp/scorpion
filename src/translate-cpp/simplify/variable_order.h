@@ -10,8 +10,8 @@ namespace translate::simplify {
 
   Mirrors translate/variable_order.py.find_and_apply_variable_order.
 */
-void find_and_apply_variable_order(sas::SASTask &task, bool reorder_vars,
-                                   bool filter_unimportant_vars);
+void find_and_apply_variable_order(
+    sas::SASTask &task, bool reorder_vars, bool filter_unimportant_vars);
 }
 
 #endif

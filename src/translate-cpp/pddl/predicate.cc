@@ -7,7 +7,8 @@ template<class StreamT, class ListT>
 void write_args(StreamT &os, const ListT &args) {
     os << "(";
     for (size_t i = 0; i < args.size(); ++i) {
-        if (i) os << ", ";
+        if (i)
+            os << ", ";
         os << args[i];
     }
     os << ")";

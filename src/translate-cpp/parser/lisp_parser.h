@@ -23,8 +23,9 @@ std::vector<std::string> tokenize(std::istream &input);
 Sexpr parse_nested_list(std::istream &input);
 
 // Convenience: parse a file containing a PDDL description.
-Sexpr parse_pddl_file(const std::string &kind /*"domain" or "task"*/,
-                      const std::string &filename);
+Sexpr parse_pddl_file(
+    const std::string &kind /*"domain" or "task"*/,
+    const std::string &filename);
 }
 
 #endif

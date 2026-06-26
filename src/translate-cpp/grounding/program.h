@@ -34,16 +34,29 @@ struct Arg {
     int v = 0; // >= 0: symbol id; < 0: position p stored as -(p+1)
 
     Arg() = default;
-    Arg(const std::string &s) : v(symbols().intern(s)) {}
-    Arg(const char *s) : v(symbols().intern(std::string(s))) {}
-    explicit Arg(int position) : v(-(position + 1)) {}
+    Arg(const std::string &s) : v(symbols().intern(s)) {
+    }
+    Arg(const char *s) : v(symbols().intern(std::string(s))) {
+    }
+    explicit Arg(int position) : v(-(position + 1)) {
+    }
 
-    bool is_symbol() const noexcept { return v >= 0; }
-    bool is_position() const noexcept { return v < 0; }
-    int position() const noexcept { return -v - 1; }
-    const std::string &name() const { return symbols().name(v); }
+    bool is_symbol() const noexcept {
+        return v >= 0;
+    }
+    bool is_position() const noexcept {
+        return v < 0;
+    }
+    int position() const noexcept {
+        return -v - 1;
+    }
+    const std::string &name() const {
+        return symbols().name(v);
+    }
 
-    bool operator==(const Arg &o) const noexcept { return v == o.v; }
+    bool operator==(const Arg &o) const noexcept {
+        return v == o.v;
+    }
 };
 
 /*
@@ -59,16 +72,20 @@ inline std::string arg_to_string(const Arg &a) {
     return a.is_symbol() ? a.name() : std::to_string(a.position());
 }
 inline bool is_variable(const Arg &a) {
-    if (!a.is_symbol()) return false;
+    if (!a.is_symbol())
+        return false;
     const std::string &s = a.name();
     return !s.empty() && s.front() == '?';
 }
 inline bool is_constant(const Arg &a) {
-    if (!a.is_symbol()) return false;
+    if (!a.is_symbol())
+        return false;
     const std::string &s = a.name();
     return s.empty() || s.front() != '?';
 }
-inline bool is_int(const Arg &a) { return a.is_position(); }
+inline bool is_int(const Arg &a) {
+    return a.is_position();
+}
 
 struct Atom {
     // Interned predicate-name id (shares symbols() with Arg). Interning makes
@@ -79,11 +96,15 @@ struct Atom {
 
     Atom() = default;
     Atom(int predicate, ArgList args)
-        : predicate(predicate), args(std::move(args)) {}
+        : predicate(predicate), args(std::move(args)) {
+    }
     Atom(const std::string &predicate, ArgList args)
-        : predicate(symbols().intern(predicate)), args(std::move(args)) {}
+        : predicate(symbols().intern(predicate)), args(std::move(args)) {
+    }
 
-    const std::string &predicate_name() const { return symbols().name(predicate); }
+    const std::string &predicate_name() const {
+        return symbols().name(predicate);
+    }
 
     bool operator==(const Atom &other) const {
         return predicate == other.predicate && args == other.args;
@@ -97,7 +118,12 @@ struct AtomHash {
 
 std::ostream &operator<<(std::ostream &os, const Atom &a);
 
-enum class RuleKind { NONE, JOIN, PRODUCT, PROJECT };
+enum class RuleKind {
+    NONE,
+    JOIN,
+    PRODUCT,
+    PROJECT
+};
 
 struct Rule {
     std::vector<Atom> conditions;

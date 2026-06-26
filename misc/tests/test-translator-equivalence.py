@@ -154,7 +154,8 @@ def check_one(domain, problem):
     name = f"{problem.parent.name}:{problem.name}"
     with tempfile.TemporaryDirectory() as tmp:
         pyd, cppd = Path(tmp) / "py", Path(tmp) / "cpp"
-        pyd.mkdir(); cppd.mkdir()
+        pyd.mkdir()
+        cppd.mkdir()
         rc_py, py_time = translate("py", domain, problem, pyd)
         rc_cpp, cpp_time = translate("cpp", domain, problem, cppd)
         py_sas, cpp_sas = pyd / "output.sas", cppd / "output.sas"

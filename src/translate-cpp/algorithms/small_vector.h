@@ -49,12 +49,14 @@ class SmallVector {
         T *heap;
     } storage_;
 
-    bool is_inline() const noexcept { return capacity_ <= N; }
+    bool is_inline() const noexcept {
+        return capacity_ <= N;
+    }
 
     T *data_ptr() noexcept {
-        return is_inline() ? std::launder(reinterpret_cast<T *>(
-                                 storage_.inline_buffer))
-                           : storage_.heap;
+        return is_inline()
+                   ? std::launder(reinterpret_cast<T *>(storage_.inline_buffer))
+                   : storage_.heap;
     }
     const T *data_ptr() const noexcept {
         return is_inline() ? std::launder(reinterpret_cast<const T *>(
@@ -85,8 +87,8 @@ class SmallVector {
         capacity_ = static_cast<std::uint32_t>(new_cap);
     }
 
-    // Move elements out of o assuming *this is empty and inline (capacity_ == N,
-    // so data_ptr() refers to our inline buffer). Leaves o empty and inline.
+    // Move elements out of o assuming *this is empty and inline (capacity_ ==
+    // N, so data_ptr() refers to our inline buffer). Leaves o empty and inline.
     void move_from(SmallVector &&o) noexcept {
         if (o.is_inline()) {
             std::uninitialized_move(o.begin(), o.end(), data_ptr());
@@ -121,7 +123,9 @@ public:
         size_ = o.size_;
     }
 
-    SmallVector(SmallVector &&o) noexcept { move_from(std::move(o)); }
+    SmallVector(SmallVector &&o) noexcept {
+        move_from(std::move(o));
+    }
 
     SmallVector &operator=(const SmallVector &o) {
         if (this != &o) {
@@ -156,14 +160,19 @@ public:
             grow(n);
     }
 
-    void push_back(const T &value) { emplace_back(value); }
-    void push_back(T &&value) { emplace_back(std::move(value)); }
+    void push_back(const T &value) {
+        emplace_back(value);
+    }
+    void push_back(T &&value) {
+        emplace_back(std::move(value));
+    }
 
     template<typename... Args>
     T &emplace_back(Args &&...args) {
         if (size_ == capacity_)
             grow(static_cast<std::size_t>(capacity_) * 2);
-        T *p = std::construct_at(data_ptr() + size_, std::forward<Args>(args)...);
+        T *p =
+            std::construct_at(data_ptr() + size_, std::forward<Args>(args)...);
         ++size_;
         return *p;
     }
@@ -174,19 +183,39 @@ public:
         size_ = 0;
     }
 
-    T &operator[](std::size_t i) noexcept { return data_ptr()[i]; }
-    const T &operator[](std::size_t i) const noexcept { return data_ptr()[i]; }
+    T &operator[](std::size_t i) noexcept {
+        return data_ptr()[i];
+    }
+    const T &operator[](std::size_t i) const noexcept {
+        return data_ptr()[i];
+    }
 
-    std::size_t size() const noexcept { return size_; }
-    bool empty() const noexcept { return size_ == 0; }
+    std::size_t size() const noexcept {
+        return size_;
+    }
+    bool empty() const noexcept {
+        return size_ == 0;
+    }
 
-    T *data() noexcept { return data_ptr(); }
-    const T *data() const noexcept { return data_ptr(); }
+    T *data() noexcept {
+        return data_ptr();
+    }
+    const T *data() const noexcept {
+        return data_ptr();
+    }
 
-    iterator begin() noexcept { return data_ptr(); }
-    iterator end() noexcept { return data_ptr() + size_; }
-    const_iterator begin() const noexcept { return data_ptr(); }
-    const_iterator end() const noexcept { return data_ptr() + size_; }
+    iterator begin() noexcept {
+        return data_ptr();
+    }
+    iterator end() noexcept {
+        return data_ptr() + size_;
+    }
+    const_iterator begin() const noexcept {
+        return data_ptr();
+    }
+    const_iterator end() const noexcept {
+        return data_ptr() + size_;
+    }
 
     bool operator==(const SmallVector &o) const {
         return size_ == o.size_ && std::equal(begin(), end(), o.begin());

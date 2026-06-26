@@ -16,8 +16,11 @@ struct TarjanState {
     int current_index = 1;
 
     explicit TarjanState(const vector<vector<int>> &g)
-        : graph(g), index(g.size(), 0), lowlink(g.size(), 0),
-          stack_idx(g.size(), -1) {}
+        : graph(g),
+          index(g.size(), 0),
+          lowlink(g.size(), 0),
+          stack_idx(g.size(), -1) {
+    }
 
     void visit(int v) {
         // Iterative DFS using an explicit stack frame.
@@ -67,9 +70,9 @@ struct TarjanState {
                         --scc_begin;
                         top = stack[scc_begin];
                     } while (top != cur);
-                    vector<int> scc(stack.begin() + scc_begin,
-                                         stack.end());
-                    for (int n : scc) stack_idx[n] = -1;
+                    vector<int> scc(stack.begin() + scc_begin, stack.end());
+                    for (int n : scc)
+                        stack_idx[n] = -1;
                     stack.resize(scc_begin);
                     sccs.push_back(move(scc));
                 }
@@ -86,7 +89,8 @@ vector<vector<int>> get_sccs_adjacency_list(
     const vector<vector<int>> &adjacency_list) {
     TarjanState ts(adjacency_list);
     for (size_t i = 0; i < adjacency_list.size(); ++i)
-        if (ts.index[i] == 0) ts.visit(static_cast<int>(i));
+        if (ts.index[i] == 0)
+            ts.visit(static_cast<int>(i));
     reverse(ts.sccs.begin(), ts.sccs.end());
     return ts.sccs;
 }

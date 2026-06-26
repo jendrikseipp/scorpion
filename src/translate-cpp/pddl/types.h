@@ -24,7 +24,8 @@ public:
     std::vector<std::string> supertype_names;
 
     Type(std::string name, std::optional<std::string> basetype_name = {})
-        : name(std::move(name)), basetype_name(std::move(basetype_name)) {}
+        : name(std::move(name)), basetype_name(std::move(basetype_name)) {
+    }
 
     std::string get_predicate_name() const {
         return type_predicate_name(name);
@@ -40,7 +41,8 @@ public:
 
     TypedObject() = default;
     TypedObject(std::string name, std::string type_name)
-        : name(std::move(name)), type_name(std::move(type_name)) {}
+        : name(std::move(name)), type_name(std::move(type_name)) {
+    }
 
     bool operator==(const TypedObject &other) const {
         return name == other.name && type_name == other.type_name;

@@ -19,9 +19,11 @@ public:
     // Populated by uniquify_variables(); like Action::type_map.
     std::unordered_map<std::string, std::string> type_map;
 
-    Axiom() : num_external_parameters(0) {}
-    Axiom(std::string name, std::vector<TypedObject> parameters,
-          int num_external_parameters, ConditionPtr condition);
+    Axiom() : num_external_parameters(0) {
+    }
+    Axiom(
+        std::string name, std::vector<TypedObject> parameters,
+        int num_external_parameters, ConditionPtr condition);
 
     void uniquify_variables();
 
@@ -34,10 +36,13 @@ public:
     std::vector<ConditionPtr> condition; // list of literals
     std::shared_ptr<const Atom> effect;
 
-    PropositionalAxiom(std::string name, std::vector<ConditionPtr> condition,
-                       std::shared_ptr<const Atom> effect)
-        : name(std::move(name)), condition(std::move(condition)),
-          effect(std::move(effect)) {}
+    PropositionalAxiom(
+        std::string name, std::vector<ConditionPtr> condition,
+        std::shared_ptr<const Atom> effect)
+        : name(std::move(name)),
+          condition(std::move(condition)),
+          effect(std::move(effect)) {
+    }
 
     void dump(std::ostream &os) const;
 };

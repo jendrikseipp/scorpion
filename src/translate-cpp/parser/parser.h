@@ -1,8 +1,9 @@
 #ifndef PARSER_PARSER_H
 #define PARSER_PARSER_H
 
-#include "../pddl/task.h"
 #include "sexpr.h"
+
+#include "../pddl/task.h"
 
 #include <memory>
 

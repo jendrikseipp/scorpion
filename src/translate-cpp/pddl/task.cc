@@ -5,8 +5,7 @@
 
 using namespace std;
 namespace translate::pddl {
-Requirements::Requirements(vector<string> reqs)
-    : requirements(move(reqs)) {
+Requirements::Requirements(vector<string> reqs) : requirements(move(reqs)) {
     for (const auto &r : requirements) {
         auto it = ranges::find(REQUIREMENT_LABELS, r);
         if (it == REQUIREMENT_LABELS.end())
@@ -16,7 +15,8 @@ Requirements::Requirements(vector<string> reqs)
 
 ostream &operator<<(ostream &os, const Requirements &r) {
     for (size_t i = 0; i < r.requirements.size(); ++i) {
-        if (i) os << ", ";
+        if (i)
+            os << ", ";
         os << r.requirements[i];
     }
     return os;
@@ -31,8 +31,8 @@ Axiom *Task::add_axiom(vector<TypedObject> parameters, ConditionPtr cond) {
 }
 
 void Task::dump(ostream &os) const {
-    os << "Problem " << domain_name << ": " << task_name
-       << " [" << requirements << "]\n"
+    os << "Problem " << domain_name << ": " << task_name << " [" << requirements
+       << "]\n"
        << "Types:\n";
     for (const auto &t : types)
         os << "  " << t << "\n";
@@ -48,12 +48,16 @@ void Task::dump(ostream &os) const {
     os << "Init:\n";
     for (const auto &i : init) {
         os << "  ";
-        visit([&os](const auto &v) {
-            if (v) v->dump(os, 0);
-        }, i);
+        visit(
+            [&os](const auto &v) {
+                if (v)
+                    v->dump(os, 0);
+            },
+            i);
     }
     os << "Goal:\n";
-    if (goal) goal->dump(os, 1);
+    if (goal)
+        goal->dump(os, 1);
     os << "Actions:\n";
     for (const auto &a : actions)
         a.dump(os);

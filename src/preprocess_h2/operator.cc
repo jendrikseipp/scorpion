@@ -313,14 +313,17 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
         }
     }
 
-    // Build "blocked" bitset: an atom is blocked if it's mutex with ANY known precondition.
-    // This replaces O(|known| * |domain|) mutex_status lookups with bitset ops.
+    // Build "blocked" bitset: an atom is blocked if it's mutex with ANY known
+    // precondition. This replaces O(|known| * |domain|) mutex_status lookups
+    // with bitset ops.
     int total_atoms = h2.get_num_atoms();
 
     // Thread-local blocked bitsets to avoid allocation overhead
     // Thread-local blocked bitsets to avoid allocation overhead.
-    thread_local vector<uint8_t> blocked;       // mutex with any known precond or same-var
-    thread_local vector<uint8_t> eff_blocked;   // mutex with any effect atom or same-var
+    thread_local vector<uint8_t>
+        blocked; // mutex with any known precond or same-var
+    thread_local vector<uint8_t>
+        eff_blocked; // mutex with any effect atom or same-var
     // Clear the blocked bitsets (full clear each call).
     if (static_cast<int>(blocked.size()) < total_atoms) {
         blocked.assign(total_atoms, false);
@@ -337,7 +340,8 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
             blocked[m] = true;
     }
 
-    // Fill eff_blocked: effect mutex lists also include same-variable alternatives.
+    // Fill eff_blocked: effect mutex lists also include same-variable
+    // alternatives.
     for (const Atom &eff : effects) {
         for (unsigned m : h2.get_mutex_indices(eff.var, eff.value))
             eff_blocked[m] = true;
@@ -357,7 +361,6 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
         const int num_vals = h2.get_num_values(i);
         bool check_eff = !effect_var[i];
         int num_unreachable = h2.get_num_unreachable_values(i);
-
 
         // Count and collect surviving values using bitset checks.
         int reachable_count = 0;
@@ -420,7 +423,8 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
             }
         }
 
-        if (new_atoms.empty()) break; // No new constraints
+        if (new_atoms.empty())
+            break; // No new constraints
 
         vector<Atom> aux_values;
         aux_values.reserve(candidates.size());
@@ -453,7 +457,6 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
         }
         known_values.swap(aux_values);
     }
-
 
     // New preconditions are added.
     for (int i : dirty_indices)
@@ -488,7 +491,8 @@ void Operator::remove_ambiguity(const H2Mutexes &h2) {
             continue;
         }
 
-        // For each fluent, check conflicts using the blocked bitset (O(1) per value)
+        // For each fluent, check conflicts using the blocked bitset (O(1) per
+        // value)
         for (int val = 0; val < h2.get_num_values(var); val++) {
             unsigned atom_v = h2.get_atom_id(var, val);
             if (!blocked[atom_v])

@@ -20,8 +20,7 @@ struct Result {
       the goal is impossible due to static facts.
     */
     std::optional<std::vector<pddl::ConditionPtr>> instantiated_goal;
-    std::vector<std::shared_ptr<pddl::PropositionalAxiom>>
-        instantiated_axioms;
+    std::vector<std::shared_ptr<pddl::PropositionalAxiom>> instantiated_axioms;
     // For each action (by index in task.actions), the list of argument
     // tuples that gave a reachable grounding (mirrors Python's
     // reachable_action_parameters dict).
@@ -33,8 +32,8 @@ struct Result {
   Walk the Datalog model and produce instantiated actions, axioms, and
   goal. The task must be normalized.
 */
-Result instantiate(const pddl::Task &task,
-                   const std::vector<grounding::Atom> &model);
+Result instantiate(
+    const pddl::Task &task, const std::vector<grounding::Atom> &model);
 }
 
 #endif

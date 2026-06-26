@@ -1,12 +1,13 @@
 #include "instantiate.h"
 
+#include "../translate_options.h"
+
 #include "../pddl/action.h"
 #include "../pddl/axiom.h"
 #include "../pddl/condition.h"
 #include "../pddl/effect.h"
 #include "../pddl/f_expression.h"
 #include "../pddl/task.h"
-#include "../translate_options.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -30,8 +31,10 @@ constexpr const char *GOAL_REACHABLE = "@goal-reachable";
 
 int try_extract_index(const string &predicate, const char *prefix) {
     size_t pref_len = char_traits<char>::length(prefix);
-    if (predicate.size() <= pref_len) return -1;
-    if (predicate.compare(0, pref_len, prefix) != 0) return -1;
+    if (predicate.size() <= pref_len)
+        return -1;
+    if (predicate.compare(0, pref_len, prefix) != 0)
+        return -1;
     try {
         return stoi(predicate.substr(pref_len));
     } catch (...) {
@@ -49,21 +52,23 @@ unordered_set<string> get_fluent_predicates(const Task &task) {
             }
         }
     }
-    for (const auto &x : task.axioms) out.insert(x.name);
+    for (const auto &x : task.axioms)
+        out.insert(x.name);
     return out;
 }
 
-AtomSet build_atom_set(const vector<grounding::Atom> &model,
-                       const unordered_set<string> &fluent_preds) {
+AtomSet build_atom_set(
+    const vector<grounding::Atom> &model,
+    const unordered_set<string> &fluent_preds) {
     AtomSet out;
     for (const auto &a : model) {
-        if (!fluent_preds.contains(a.predicate_name())) continue;
+        if (!fluent_preds.contains(a.predicate_name()))
+            continue;
         vector<string> args;
         args.reserve(a.args.size());
         for (const auto &x : a.args)
             args.push_back(grounding::arg_to_string(x));
-        out.insert(make_shared<const Atom>(a.predicate_name(),
-                                                move(args)));
+        out.insert(make_shared<const Atom>(a.predicate_name(), move(args)));
     }
     return out;
 }
@@ -72,22 +77,22 @@ AtomSet build_init_facts(const Task &task) {
     AtomSet out;
     for (const auto &elem : task.init) {
         if (auto *ap = get_if<shared_ptr<const Atom>>(&elem))
-            if (*ap) out.insert(*ap);
+            if (*ap)
+                out.insert(*ap);
     }
     return out;
 }
 
 // PNE-to-expression map for init assignments.
-unordered_map<string,
-                   shared_ptr<const FunctionalExpression>>
+unordered_map<string, shared_ptr<const FunctionalExpression>>
 build_init_assignments(const Task &task) {
-    unordered_map<string,
-                       shared_ptr<const FunctionalExpression>> out;
+    unordered_map<string, shared_ptr<const FunctionalExpression>> out;
     for (const auto &elem : task.init) {
         if (auto *as = get_if<shared_ptr<Assign>>(&elem)) {
             if (*as && (*as)->fluent) {
                 string key = (*as)->fluent->symbol;
-                for (const auto &a : (*as)->fluent->args) key += "\x1f" + a;
+                for (const auto &a : (*as)->fluent->args)
+                    key += "\x1f" + a;
                 out[key] = (*as)->expression;
             }
         }
@@ -95,11 +100,11 @@ build_init_assignments(const Task &task) {
     return out;
 }
 
-unordered_map<string, vector<string>>
-get_objects_by_type(const Task &task) {
+unordered_map<string, vector<string>> get_objects_by_type(const Task &task) {
     unordered_map<string, vector<string>> result;
     unordered_map<string, vector<string>> supertypes;
-    for (const auto &t : task.types) supertypes[t.name] = t.supertype_names;
+    for (const auto &t : task.types)
+        supertypes[t.name] = t.supertype_names;
     for (const auto &obj : task.objects) {
         result[obj.type_name].push_back(obj.name);
         for (const auto &sup : supertypes[obj.type_name])
@@ -113,41 +118,37 @@ get_objects_by_type(const Task &task) {
 void for_each_assignment(
     const vector<TypedObject> &parameters,
     unordered_map<string, string> &var_mapping,
-    const unordered_map<string,
-                             vector<string>> &objects_by_type,
-    const function<void()> &fn,
-    size_t depth = 0) {
+    const unordered_map<string, vector<string>> &objects_by_type,
+    const function<void()> &fn, size_t depth = 0) {
     if (depth == parameters.size()) {
         fn();
         return;
     }
     const auto &par = parameters[depth];
     auto it = objects_by_type.find(par.type_name);
-    if (it == objects_by_type.end()) return;
+    if (it == objects_by_type.end())
+        return;
     for (const auto &obj : it->second) {
         var_mapping[par.name] = obj;
-        for_each_assignment(parameters, var_mapping, objects_by_type, fn,
-                            depth + 1);
+        for_each_assignment(
+            parameters, var_mapping, objects_by_type, fn, depth + 1);
     }
 }
 
 void instantiate_effect(
-    const Effect &eff,
-    unordered_map<string, string> &var_mapping,
+    const Effect &eff, unordered_map<string, string> &var_mapping,
     const AtomSet &init_facts, const AtomSet &fluent_facts,
-    const unordered_map<string,
-                             vector<string>> &objects_by_type,
+    const unordered_map<string, vector<string>> &objects_by_type,
     vector<pair<vector<ConditionPtr>, ConditionPtr>> &result) {
     auto inst_once = [&]() {
         vector<ConditionPtr> condition;
         if (eff.condition &&
-            !eff.condition->instantiate(var_mapping, init_facts,
-                                        fluent_facts, condition))
+            !eff.condition->instantiate(
+                var_mapping, init_facts, fluent_facts, condition))
             return;
         vector<ConditionPtr> lit_out;
-        if (eff.literal &&
-            !eff.literal->instantiate(var_mapping, init_facts, fluent_facts,
-                                      lit_out))
+        if (eff.literal && !eff.literal->instantiate(
+                               var_mapping, init_facts, fluent_facts, lit_out))
             return;
         if (!lit_out.empty()) {
             result.emplace_back(move(condition), move(lit_out[0]));
@@ -156,8 +157,8 @@ void instantiate_effect(
     if (eff.parameters.empty()) {
         inst_once();
     } else {
-        for_each_assignment(eff.parameters, var_mapping, objects_by_type,
-                            inst_once);
+        for_each_assignment(
+            eff.parameters, var_mapping, objects_by_type, inst_once);
     }
 }
 
@@ -169,14 +170,11 @@ long long evaluate_constant(const FunctionalExpression &expr) {
 }
 
 shared_ptr<PropositionalAction> instantiate_action(
-    const Action &action, const vector<string> &args,
-    const AtomSet &init_facts,
-    const unordered_map<string,
-                             shared_ptr<const FunctionalExpression>>
+    const Action &action, const vector<string> &args, const AtomSet &init_facts,
+    const unordered_map<string, shared_ptr<const FunctionalExpression>>
         &init_assignments,
     const AtomSet &fluent_facts,
-    const unordered_map<string,
-                             vector<string>> &objects_by_type,
+    const unordered_map<string, vector<string>> &objects_by_type,
     bool use_metric) {
     if (args.size() != action.parameters.size())
         return nullptr;
@@ -199,15 +197,16 @@ shared_ptr<PropositionalAction> instantiate_action(
     // load-bearing for byte-identical output and stable sort key.
     string name = "(" + action.name + " ";
     for (int i = 0; i < action.num_external_parameters; ++i) {
-        if (i > 0) name.push_back(' ');
+        if (i > 0)
+            name.push_back(' ');
         name += args[i];
     }
     name.push_back(')');
 
     vector<ConditionPtr> precondition;
     if (action.precondition &&
-        !action.precondition->instantiate(var_mapping, init_facts,
-                                          fluent_facts, precondition))
+        !action.precondition->instantiate(
+            var_mapping, init_facts, fluent_facts, precondition))
         return nullptr;
 
     vector<pair<vector<ConditionPtr>, ConditionPtr>> effects;
@@ -216,13 +215,14 @@ shared_ptr<PropositionalAction> instantiate_action(
             // A parameterless effect adds no bindings, and instantiate()
             // only reads var_mapping, so share the action's mapping
             // directly instead of copying the whole map per effect.
-            instantiate_effect(eff, var_mapping, init_facts, fluent_facts,
-                               objects_by_type, effects);
+            instantiate_effect(
+                eff, var_mapping, init_facts, fluent_facts, objects_by_type,
+                effects);
         } else {
-            unordered_map<string, string> local_mapping =
-                var_mapping;
-            instantiate_effect(eff, local_mapping, init_facts, fluent_facts,
-                               objects_by_type, effects);
+            unordered_map<string, string> local_mapping = var_mapping;
+            instantiate_effect(
+                eff, local_mapping, init_facts, fluent_facts, objects_by_type,
+                effects);
         }
     }
     if (!effects.empty() || get_options().keep_no_ops) {
@@ -259,15 +259,14 @@ shared_ptr<PropositionalAction> instantiate_action(
             }
         }
         return make_shared<PropositionalAction>(
-            name, move(precondition), move(effects),
-            static_cast<int>(cost));
+            name, move(precondition), move(effects), static_cast<int>(cost));
     }
     return nullptr;
 }
 
 shared_ptr<PropositionalAxiom> instantiate_axiom(
-    const Axiom &axiom, const vector<string> &args,
-    const AtomSet &init_facts, const AtomSet &fluent_facts) {
+    const Axiom &axiom, const vector<string> &args, const AtomSet &init_facts,
+    const AtomSet &fluent_facts) {
     if (args.size() != axiom.parameters.size())
         return nullptr;
     unordered_map<string, string> var_mapping;
@@ -280,15 +279,16 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
         name_args.push_back(args[i]);
     string name = "(";
     for (size_t i = 0; i < name_args.size(); ++i) {
-        if (i) name.push_back(' ');
+        if (i)
+            name.push_back(' ');
         name += name_args[i];
     }
     name.push_back(')');
 
     vector<ConditionPtr> condition;
     if (axiom.condition &&
-        !axiom.condition->instantiate(var_mapping, init_facts,
-                                      fluent_facts, condition))
+        !axiom.condition->instantiate(
+            var_mapping, init_facts, fluent_facts, condition))
         return nullptr;
 
     vector<string> eff_args;
@@ -298,8 +298,7 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
         auto it = var_mapping.find(n);
         eff_args.push_back(it == var_mapping.end() ? n : it->second);
     }
-    auto effect = make_shared<const Atom>(axiom.name,
-                                                move(eff_args));
+    auto effect = make_shared<const Atom>(axiom.name, move(eff_args));
     return make_shared<PropositionalAxiom>(
         move(name), move(condition), move(effect));
 }
@@ -315,8 +314,7 @@ optional<vector<ConditionPtr>> instantiate_goal(
 }
 }
 
-Result instantiate(const Task &task,
-                   const vector<grounding::Atom> &model) {
+Result instantiate(const Task &task, const vector<grounding::Atom> &model) {
     Result out;
     out.reachable_action_parameters.resize(task.actions.size());
     auto fluent_preds = get_fluent_predicates(task);
@@ -330,44 +328,47 @@ Result instantiate(const Task &task,
             out.relaxed_reachable = true;
             continue;
         }
-        int action_idx = try_extract_index(atom.predicate_name(), ACTION_PREFIX);
+        int action_idx =
+            try_extract_index(atom.predicate_name(), ACTION_PREFIX);
         if (action_idx >= 0 &&
             action_idx < static_cast<int>(task.actions.size())) {
             const Action &action = task.actions[action_idx];
-            if (atom.args.size() < action.parameters.size()) continue;
+            if (atom.args.size() < action.parameters.size())
+                continue;
             vector<string> args;
             args.reserve(action.parameters.size());
             for (size_t i = 0; i < action.parameters.size(); ++i)
                 args.push_back(grounding::arg_to_string(atom.args[i]));
-            auto inst = instantiate_action(action, args, init_facts,
-                                           init_assignments, out.fluent_facts,
-                                           objects_by_type,
-                                           task.use_min_cost_metric);
+            auto inst = instantiate_action(
+                action, args, init_facts, init_assignments, out.fluent_facts,
+                objects_by_type, task.use_min_cost_metric);
             // Move args into reachable_action_parameters after the
             // instantiate_action call, saving one vector<string> copy
             // per processed model atom.
-            out.reachable_action_parameters[action_idx].push_back(
-                move(args));
-            if (inst) out.instantiated_actions.push_back(move(inst));
+            out.reachable_action_parameters[action_idx].push_back(move(args));
+            if (inst)
+                out.instantiated_actions.push_back(move(inst));
             continue;
         }
         int axiom_idx = try_extract_index(atom.predicate_name(), AXIOM_PREFIX);
         if (axiom_idx >= 0 &&
             axiom_idx < static_cast<int>(task.axioms.size())) {
             const Axiom &axiom = task.axioms[axiom_idx];
-            if (atom.args.size() < axiom.parameters.size()) continue;
+            if (atom.args.size() < axiom.parameters.size())
+                continue;
             vector<string> args;
             args.reserve(axiom.parameters.size());
             for (size_t i = 0; i < axiom.parameters.size(); ++i)
                 args.push_back(grounding::arg_to_string(atom.args[i]));
-            auto inst = instantiate_axiom(axiom, args, init_facts,
-                                          out.fluent_facts);
-            if (inst) out.instantiated_axioms.push_back(move(inst));
+            auto inst =
+                instantiate_axiom(axiom, args, init_facts, out.fluent_facts);
+            if (inst)
+                out.instantiated_axioms.push_back(move(inst));
             continue;
         }
     }
-    out.instantiated_goal = instantiate_goal(task.goal, init_facts,
-                                             out.fluent_facts);
+    out.instantiated_goal =
+        instantiate_goal(task.goal, init_facts, out.fluent_facts);
     return out;
 }
 }

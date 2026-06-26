@@ -57,8 +57,8 @@ public:
     Atom effect;
     vector<Atom> conditions;
     virtual ~BuildRule() = default;
-    BuildRule(Atom e, vector<Atom> c)
-        : effect(move(e)), conditions(move(c)) {}
+    BuildRule(Atom e, vector<Atom> c) : effect(move(e)), conditions(move(c)) {
+    }
     /*
       `atom_index` is the position of `new_atom` in the model's `items`
       vector. Join/product rules store that index (4 bytes) rather than
@@ -68,16 +68,16 @@ public:
       groundings (rovers-large-simple: the join index held ~9.7M args
       copies, ~2.7 GB).
     */
-    virtual void update_index(const Atom &new_atom, int atom_index,
-                              int cond_index) = 0;
+    virtual void update_index(
+        const Atom &new_atom, int atom_index, int cond_index) = 0;
     /*
       `enqueue` takes args by rvalue so each emitted atom can be moved
       into the queue's seen-set construction instead of copied. `items`
       is the model vector, used to dereference stored atom indices.
     */
-    virtual void fire(const Atom &new_atom, int cond_index,
-                      const vector<Atom> &items,
-                      const function<void(int, ArgList &&)> &enqueue) = 0;
+    virtual void fire(
+        const Atom &new_atom, int cond_index, const vector<Atom> &items,
+        const function<void(int, ArgList &&)> &enqueue) = 0;
 
 protected:
     // Compute effect args using one new condition match.
@@ -95,10 +95,11 @@ protected:
 class ProjectRuleB : public BuildRule {
 public:
     using BuildRule::BuildRule;
-    void update_index(const Atom &, int, int) override {}
-    void fire(const Atom &new_atom, int cond_index,
-              const vector<Atom> &,
-              const function<void(int, ArgList &&)> &enqueue) override {
+    void update_index(const Atom &, int, int) override {
+    }
+    void fire(
+        const Atom &new_atom, int cond_index, const vector<Atom> &,
+        const function<void(int, ArgList &&)> &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
         enqueue(effect.predicate, move(eff_args));
     }
@@ -112,24 +113,24 @@ public:
     // into the model's `items` vector. We dereference items[idx].args in
     // fire(); storing indices instead of args copies keeps the join
     // index from duplicating every atom's args.
-    array<unordered_map<string, vector<int>>, 2>
-        atoms_by_key;
+    array<unordered_map<string, vector<int>>, 2> atoms_by_key;
 
-    JoinRuleB(Atom e, vector<Atom> c)
-        : BuildRule(move(e), move(c)) {
+    JoinRuleB(Atom e, vector<Atom> c) : BuildRule(move(e), move(c)) {
         const auto &la = conditions[0].args;
         const auto &ra = conditions[1].args;
         vector<int> lvars, rvars;
         for (const auto &a : la)
-            if (a.is_position()) lvars.push_back(a.position());
+            if (a.is_position())
+                lvars.push_back(a.position());
         for (const auto &a : ra)
-            if (a.is_position()) rvars.push_back(a.position());
+            if (a.is_position())
+                rvars.push_back(a.position());
         ranges::sort(lvars);
         ranges::sort(rvars);
         vector<int> common;
-        set_intersection(lvars.begin(), lvars.end(),
-                              rvars.begin(), rvars.end(),
-                              back_inserter(common));
+        set_intersection(
+            lvars.begin(), lvars.end(), rvars.begin(), rvars.end(),
+            back_inserter(common));
         for (int side = 0; side < 2; ++side) {
             const auto &args = conditions[side].args;
             for (int var : common) {
@@ -147,27 +148,30 @@ public:
         string k;
         for (int p : pos) {
             const Arg &a = atom.args[p];
-            if (a.is_symbol()) k.append(a.name());
-            else k += to_string(a.position());
+            if (a.is_symbol())
+                k.append(a.name());
+            else
+                k += to_string(a.position());
             k.push_back('\x1f');
         }
         return k;
     }
 
-    void update_index(const Atom &new_atom, int atom_index,
-                      int cond_index) override {
+    void update_index(
+        const Atom &new_atom, int atom_index, int cond_index) override {
         string k = key_of(new_atom, common_positions[cond_index]);
         atoms_by_key[cond_index][k].push_back(atom_index);
     }
 
-    void fire(const Atom &new_atom, int cond_index,
-              const vector<Atom> &items,
-              const function<void(int, ArgList &&)> &enqueue) override {
+    void fire(
+        const Atom &new_atom, int cond_index, const vector<Atom> &items,
+        const function<void(int, ArgList &&)> &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
         string k = key_of(new_atom, common_positions[cond_index]);
         int other = 1 - cond_index;
         auto it = atoms_by_key[other].find(k);
-        if (it == atoms_by_key[other].end()) return;
+        if (it == atoms_by_key[other].end())
+            return;
         const auto &other_cond = conditions[other];
         for (int stored_idx : it->second) {
             const auto &stored_args = items[stored_idx].args;
@@ -190,46 +194,51 @@ public:
     ProductRuleB(Atom e, vector<Atom> c)
         : BuildRule(move(e), move(c)),
           atoms_by_index(conditions.size()),
-          empty_index_count(static_cast<int>(conditions.size())) {}
+          empty_index_count(static_cast<int>(conditions.size())) {
+    }
 
-    void update_index([[maybe_unused]] const Atom &new_atom, int atom_index,
-                      int cond_index) override {
-        if (atoms_by_index[cond_index].empty()) --empty_index_count;
+    void update_index(
+        [[maybe_unused]] const Atom &new_atom, int atom_index,
+        int cond_index) override {
+        if (atoms_by_index[cond_index].empty())
+            --empty_index_count;
         atoms_by_index[cond_index].push_back(atom_index);
     }
 
-    void fire(const Atom &new_atom, int cond_index,
-              const vector<Atom> &items,
-              const function<void(int, ArgList &&)> &enqueue) override {
-        if (empty_index_count > 0) return;
+    void fire(
+        const Atom &new_atom, int cond_index, const vector<Atom> &items,
+        const function<void(int, ArgList &&)> &enqueue) override {
+        if (empty_index_count > 0)
+            return;
         // Bindings from the new_atom for cond_index already applied via
         // prepare_effect.
         auto eff_args = prepare_effect(new_atom, cond_index);
         // For each other condition, iterate over all atoms; collect bindings.
         vector<int> positions;
         for (int p = 0; p < static_cast<int>(conditions.size()); ++p)
-            if (p != cond_index) positions.push_back(p);
+            if (p != cond_index)
+                positions.push_back(p);
 
         // Recurse over positions, building eff_args.
-        function<void(size_t, ArgList &)> recurse =
-            [&](size_t k, ArgList &args) {
-                if (k == positions.size()) {
-                    auto copy = args;
-                    enqueue(effect.predicate, move(copy));
-                    return;
+        function<void(size_t, ArgList &)> recurse = [&](size_t k,
+                                                        ArgList &args) {
+            if (k == positions.size()) {
+                auto copy = args;
+                enqueue(effect.predicate, move(copy));
+                return;
+            }
+            int p = positions[k];
+            const auto &cond = conditions[p];
+            for (int stored_idx : atoms_by_index[p]) {
+                const auto &atom_args = items[stored_idx].args;
+                auto next_args = args;
+                for (size_t i = 0; i < cond.args.size(); ++i) {
+                    if (cond.args[i].is_position())
+                        next_args[cond.args[i].position()] = atom_args[i];
                 }
-                int p = positions[k];
-                const auto &cond = conditions[p];
-                for (int stored_idx : atoms_by_index[p]) {
-                    const auto &atom_args = items[stored_idx].args;
-                    auto next_args = args;
-                    for (size_t i = 0; i < cond.args.size(); ++i) {
-                        if (cond.args[i].is_position())
-                            next_args[cond.args[i].position()] = atom_args[i];
-                    }
-                    recurse(k + 1, next_args);
-                }
-            };
+                recurse(k + 1, next_args);
+            }
+        };
         recurse(0, eff_args);
     }
 };
@@ -240,18 +249,18 @@ vector<unique_ptr<BuildRule>> convert_rules(const Program &prog) {
     for (const auto &r : prog.rules) {
         auto [eff, conds] = variables_to_numbers(r.effect, r.conditions);
         switch (r.kind) {
-            case RuleKind::JOIN:
-                result.push_back(make_unique<JoinRuleB>(eff, conds));
-                break;
-            case RuleKind::PRODUCT:
-                result.push_back(make_unique<ProductRuleB>(eff, conds));
-                break;
-            case RuleKind::PROJECT:
-                result.push_back(make_unique<ProjectRuleB>(eff, conds));
-                break;
-            default:
-                throw runtime_error(
-                    "Rule has no kind set; was split_rules() called?");
+        case RuleKind::JOIN:
+            result.push_back(make_unique<JoinRuleB>(eff, conds));
+            break;
+        case RuleKind::PRODUCT:
+            result.push_back(make_unique<ProductRuleB>(eff, conds));
+            break;
+        case RuleKind::PROJECT:
+            result.push_back(make_unique<ProjectRuleB>(eff, conds));
+            break;
+        default:
+            throw runtime_error(
+                "Rule has no kind set; was split_rules() called?");
         }
     }
     return result;
@@ -298,18 +307,25 @@ public:
     // owns `out` and clears it before each call; this lets the inner
     // vector storage be reused across the entire model build, avoiding
     // an allocation per atom.
-    void unify(const Atom &atom,
-               vector<pair<int, int>> &out) const {
+    void unify(const Atom &atom, vector<pair<int, int>> &out) const {
         auto it = by_predicate.find(atom.predicate);
-        if (it == by_predicate.end()) return;
+        if (it == by_predicate.end())
+            return;
         for (const auto &ref : it->second) {
             bool ok = true;
             for (const auto &[p, v] : ref.constants) {
-                if (p >= static_cast<int>(atom.args.size())) { ok = false; break; }
+                if (p >= static_cast<int>(atom.args.size())) {
+                    ok = false;
+                    break;
+                }
                 const Arg &a = atom.args[p];
-                if (!a.is_symbol() || a.v != v) { ok = false; break; }
+                if (!a.is_symbol() || a.v != v) {
+                    ok = false;
+                    break;
+                }
             }
-            if (ok) out.emplace_back(ref.rule_index, ref.cond_index);
+            if (ok)
+                out.emplace_back(ref.rule_index, ref.cond_index);
         }
     }
 };
@@ -344,7 +360,9 @@ private:
     vector<size_t> hashes;
     struct IdxHash {
         const vector<size_t> *hashes;
-        size_t operator()(int i) const noexcept { return (*hashes)[i]; }
+        size_t operator()(int i) const noexcept {
+            return (*hashes)[i];
+        }
     };
     struct IdxEq {
         const vector<Atom> *items;
@@ -375,14 +393,19 @@ public:
         : seen(0, IdxHash{&hashes}, IdxEq{&items}, &pool) {
         // Matches Python's `num_pushes = len(atoms)` initial count.
         pushes = initial.size();
-        for (auto &a : initial) insert_if_new(move(a));
+        for (auto &a : initial)
+            insert_if_new(move(a));
     }
-    bool empty() const { return pos >= items.size(); }
+    bool empty() const {
+        return pos >= items.size();
+    }
     void push(int pred, ArgList &&args) {
         ++pushes; // count every push attempt, like Python's queue.push
         insert_if_new(Atom(pred, move(args)));
     }
-    Atom pop() { return items[pos++]; }
+    Atom pop() {
+        return items[pos++];
+    }
 };
 }
 
@@ -392,8 +415,9 @@ vector<Atom> compute_model(const Program &prog) {
     Unifier unifier;
     for (size_t i = 0; i < rules.size(); ++i) {
         for (size_t k = 0; k < rules[i]->conditions.size(); ++k) {
-            unifier.insert(static_cast<int>(i), static_cast<int>(k),
-                           rules[i]->conditions[k]);
+            unifier.insert(
+                static_cast<int>(i), static_cast<int>(k),
+                rules[i]->conditions[k]);
         }
     }
     vector<Atom> fact_atoms = prog.facts;
@@ -408,16 +432,17 @@ vector<Atom> compute_model(const Program &prog) {
         // Index of the atom in queue.items, captured before pop advances.
         int idx = static_cast<int>(queue.pos);
         Atom next = queue.pop();
-        if (next.predicate_name().find('$') != string::npos) ++auxiliary;
-        else ++relevant;
+        if (next.predicate_name().find('$') != string::npos)
+            ++auxiliary;
+        else
+            ++relevant;
         matches.clear();
         unifier.unify(next, matches);
         for (const auto &[ri, ci] : matches) {
             rules[ri]->update_index(next, idx, ci);
-            rules[ri]->fire(next, ci, queue.items,
-                            [&](int p, ArgList &&args) {
-                                queue.push(p, move(args));
-                            });
+            rules[ri]->fire(next, ci, queue.items, [&](int p, ArgList &&args) {
+                queue.push(p, move(args));
+            });
         }
     }
     cout << relevant << " relevant atoms" << endl;

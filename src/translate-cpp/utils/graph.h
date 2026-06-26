@@ -22,8 +22,7 @@ std::vector<std::pair<std::string, std::string>> transitive_closure(
   node i.
 */
 std::vector<int> connected_components(
-    std::size_t num_nodes,
-    const std::vector<std::pair<int, int>> &edges);
+    std::size_t num_nodes, const std::vector<std::pair<int, int>> &edges);
 }
 
 #endif

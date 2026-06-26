@@ -1,10 +1,11 @@
 #ifndef INVARIANTS_INVARIANTS_H
 #define INVARIANTS_INVARIANTS_H
 
+#include "constraints.h"
+
 #include "../pddl/action.h"
 #include "../pddl/condition.h"
 #include "../pddl/effect.h"
-#include "constraints.h"
 
 #include <cstddef>
 #include <functional>
@@ -25,10 +26,13 @@ public:
     std::vector<int> args; // Each entry: invariant parameter index, or COUNTED.
     int omitted_pos; // -1 if no position is omitted.
 
-    InvariantPart() : omitted_pos(-1) {}
+    InvariantPart() : omitted_pos(-1) {
+    }
     InvariantPart(std::string predicate, std::vector<int> args, int omitted)
-        : predicate(std::move(predicate)), args(std::move(args)),
-          omitted_pos(omitted) {}
+        : predicate(std::move(predicate)),
+          args(std::move(args)),
+          omitted_pos(omitted) {
+    }
 
     int arity() const {
         return omitted_pos < 0 ? static_cast<int>(args.size())
@@ -39,7 +43,8 @@ public:
         return predicate == o.predicate && args == o.args;
     }
     bool operator<(const InvariantPart &o) const {
-        if (predicate != o.predicate) return predicate < o.predicate;
+        if (predicate != o.predicate)
+            return predicate < o.predicate;
         return args < o.args;
     }
 
@@ -125,8 +130,8 @@ private:
         const std::function<void(Invariant)> &enqueue_func) const;
     bool balances(
         const pddl::Effect &del_effect, const pddl::Effect &add_effect,
-        const std::unordered_map<std::string,
-                                 std::vector<pddl::ConditionPtr>> &produced,
+        const std::unordered_map<std::string, std::vector<pddl::ConditionPtr>>
+            &produced,
         const EqualityConjunction &add_cover,
         const ConstraintSystem &param_system) const;
     void refine_candidate(

@@ -35,36 +35,37 @@ void for_each_condition(Task &task, Fn fn) {
     size_t n_axioms = task.axioms.size();
     for (size_t i = 0; i < n_actions; ++i) {
         // Precondition.
-        fn([&](){ return task.actions[i].type_map; },
-           [&](){ return task.actions[i].precondition; },
-           [&](ConditionPtr c){ task.actions[i].precondition = move(c); });
+        fn([&]() { return task.actions[i].type_map; },
+           [&]() { return task.actions[i].precondition; },
+           [&](ConditionPtr c) { task.actions[i].precondition = move(c); });
         // Effect conditions.
         size_t n_effects = task.actions[i].effects.size();
         for (size_t k = 0; k < n_effects; ++k) {
-            fn([&](){ return task.actions[i].type_map; },
-               [&](){ return task.actions[i].effects[k].condition; },
-               [&](ConditionPtr c){
+            fn([&]() { return task.actions[i].type_map; },
+               [&]() { return task.actions[i].effects[k].condition; },
+               [&](ConditionPtr c) {
                    task.actions[i].effects[k].condition = move(c);
                });
         }
     }
     for (size_t i = 0; i < n_axioms; ++i) {
-        fn([&](){ return task.axioms[i].type_map; },
-           [&](){ return task.axioms[i].condition; },
-           [&](ConditionPtr c){ task.axioms[i].condition = move(c); });
+        fn([&]() { return task.axioms[i].type_map; },
+           [&]() { return task.axioms[i].condition; },
+           [&](ConditionPtr c) { task.axioms[i].condition = move(c); });
     }
     // Goal.
-    fn([&]() -> TypeMap {
-           // The goal has no type_map field; populate one by walking it.
-           TypeMap m;
-           if (task.goal) {
-               unordered_map<string, string> renamings;
-               (void)task.goal->uniquify_variables(m, renamings);
-           }
-           return m;
-       },
-       [&](){ return task.goal; },
-       [&](ConditionPtr c){ task.goal = move(c); });
+    fn(
+        [&]() -> TypeMap {
+            // The goal has no type_map field; populate one by walking it.
+            TypeMap m;
+            if (task.goal) {
+                unordered_map<string, string> renamings;
+                (void)task.goal->uniquify_variables(m, renamings);
+            }
+            return m;
+        },
+        [&]() { return task.goal; },
+        [&](ConditionPtr c) { task.goal = move(c); });
 }
 
 bool is_literal(const Condition &c) {
@@ -105,18 +106,20 @@ struct AxiomKeyHash {
 struct AxiomKeyEqual {
     bool operator()(const AxiomKey &a, const AxiomKey &b) const {
         ConditionPtrEqual eq;
-        if (!eq(a.condition, b.condition)) return false;
-        if (a.parameters.size() != b.parameters.size()) return false;
+        if (!eq(a.condition, b.condition))
+            return false;
+        if (a.parameters.size() != b.parameters.size())
+            return false;
         for (size_t i = 0; i < a.parameters.size(); ++i)
-            if (a.parameters[i] != b.parameters[i]) return false;
+            if (a.parameters[i] != b.parameters[i])
+                return false;
         return true;
     }
 };
 
 ConditionPtr remove_universal_recurse(
     Task &task, const TypeMap &type_map,
-    unordered_map<AxiomKey, string, AxiomKeyHash, AxiomKeyEqual>
-        &memo,
+    unordered_map<AxiomKey, string, AxiomKeyHash, AxiomKeyEqual> &memo,
     const ConditionPtr &condition) {
     if (condition->kind() == Condition::Kind::UNIVERSAL) {
         auto axiom_condition = condition->negate();
@@ -136,8 +139,8 @@ ConditionPtr remove_universal_recurse(
         string axiom_name =
             (memo_it != memo.end()) ? memo_it->second : string();
         if (axiom_name.empty()) {
-            ConditionPtr inner_processed = remove_universal_recurse(
-                task, type_map, memo, axiom_condition);
+            ConditionPtr inner_processed =
+                remove_universal_recurse(task, type_map, memo, axiom_condition);
             vector<TypedObject> params_copy = typed_params;
             axiom_name =
                 task.add_axiom(move(params_copy), inner_processed)->name;
@@ -149,8 +152,7 @@ ConditionPtr remove_universal_recurse(
             memo[key] = axiom_name;
         }
         vector<string> arg_names = params_names;
-        return make_shared<NegatedAtom>(move(axiom_name),
-                                             move(arg_names));
+        return make_shared<NegatedAtom>(move(axiom_name), move(arg_names));
     }
     // Recurse over children and rebuild via change_parts.
     vector<ConditionPtr> new_parts;
@@ -163,31 +165,35 @@ ConditionPtr remove_universal_recurse(
 
 void remove_universal_quantifiers(Task &task) {
     unordered_map<AxiomKey, string, AxiomKeyHash, AxiomKeyEqual> memo;
-    for_each_condition(task,
-        [&](auto get_tm, auto get_c, auto set_c) {
-            auto c = get_c();
-            if (c && c->has_universal_part()) {
-                auto tm = get_tm();
-                set_c(remove_universal_recurse(task, tm, memo, c));
-            }
-        });
+    for_each_condition(task, [&](auto get_tm, auto get_c, auto set_c) {
+        auto c = get_c();
+        if (c && c->has_universal_part()) {
+            auto tm = get_tm();
+            set_c(remove_universal_recurse(task, tm, memo, c));
+        }
+    });
 }
 
 /* [2] substitute_complicated_goal ------------------------------------- */
 
 void substitute_complicated_goal(Task &task) {
-    if (!task.goal) return;
+    if (!task.goal)
+        return;
     const Condition &g = *task.goal;
-    if (is_literal(g)) return;
+    if (is_literal(g))
+        return;
     if (g.kind() == Condition::Kind::CONJUNCTION) {
         bool all_literals = true;
         for (const auto &p : g.parts())
-            if (!p || !is_literal(*p)) { all_literals = false; break; }
-        if (all_literals) return;
+            if (!p || !is_literal(*p)) {
+                all_literals = false;
+                break;
+            }
+        if (all_literals)
+            return;
     }
     auto new_axiom = task.add_axiom({}, task.goal);
-    task.goal = make_shared<Atom>(new_axiom->name,
-                                       vector<string>{});
+    task.goal = make_shared<Atom>(new_axiom->name, vector<string>{});
 }
 
 /* [3] build_DNF ------------------------------------------------------- */
@@ -203,12 +209,14 @@ ConditionPtr build_dnf_recurse(const ConditionPtr &condition) {
             other.push_back(move(p));
         }
     }
-    if (disjunctive.empty()) return condition;
+    if (disjunctive.empty())
+        return condition;
 
     if (condition->kind() == Condition::Kind::DISJUNCTION) {
         vector<ConditionPtr> result = other;
         for (const auto &d : disjunctive) {
-            for (const auto &q : d->parts()) result.push_back(q);
+            for (const auto &q : d->parts())
+                result.push_back(q);
         }
         return make_shared<Disjunction>(move(result));
     }
@@ -221,8 +229,7 @@ ConditionPtr build_dnf_recurse(const ConditionPtr &condition) {
         return make_shared<Disjunction>(move(result));
     }
     // Conjunction case: distribute.
-    vector<ConditionPtr> result_parts = {
-        make_shared<Conjunction>(other)};
+    vector<ConditionPtr> result_parts = {make_shared<Conjunction>(other)};
     while (!disjunctive.empty()) {
         auto prev = move(result_parts);
         result_parts.clear();
@@ -231,8 +238,7 @@ ConditionPtr build_dnf_recurse(const ConditionPtr &condition) {
         for (const auto &p1 : prev) {
             for (const auto &p2 : to_distribute->parts()) {
                 vector<ConditionPtr> conj = {p1, p2};
-                result_parts.push_back(
-                    make_shared<Conjunction>(move(conj)));
+                result_parts.push_back(make_shared<Conjunction>(move(conj)));
             }
         }
     }
@@ -240,12 +246,11 @@ ConditionPtr build_dnf_recurse(const ConditionPtr &condition) {
 }
 
 void build_DNF(Task &task) {
-    for_each_condition(task,
-        [&](auto /*get_tm*/, auto get_c, auto set_c) {
-            auto c = get_c();
-            if (c && c->has_disjunction())
-                set_c(build_dnf_recurse(c)->simplified());
-        });
+    for_each_condition(task, [&](auto /*get_tm*/, auto get_c, auto set_c) {
+        auto c = get_c();
+        if (c && c->has_disjunction())
+            set_c(build_dnf_recurse(c)->simplified());
+    });
 }
 
 /* [4] split_disjunctions --------------------------------------------- */
@@ -323,39 +328,40 @@ ConditionPtr move_existential_recurse(const ConditionPtr &condition) {
         else
             other_parts.push_back(move(p));
     }
-    if (existential_parts.empty()) return condition;
+    if (existential_parts.empty())
+        return condition;
 
     if (condition->kind() == Condition::Kind::EXISTENTIAL) {
         const auto &q = static_cast<const ExistentialCondition &>(*condition);
         const auto &inner =
             static_cast<const ExistentialCondition &>(*existential_parts[0]);
         vector<TypedObject> new_params = q.parameters;
-        for (const auto &p : inner.parameters) new_params.push_back(p);
-        return make_shared<ExistentialCondition>(move(new_params),
-                                                      inner.body);
+        for (const auto &p : inner.parameters)
+            new_params.push_back(p);
+        return make_shared<ExistentialCondition>(move(new_params), inner.body);
     }
     // Conjunction: pull existentials out.
     vector<TypedObject> new_params;
     vector<ConditionPtr> new_conjunction_parts = other_parts;
     for (const auto &ep : existential_parts) {
         const auto &q = static_cast<const ExistentialCondition &>(*ep);
-        for (const auto &p : q.parameters) new_params.push_back(p);
-        for (const auto &b : q.body) new_conjunction_parts.push_back(b);
+        for (const auto &p : q.parameters)
+            new_params.push_back(p);
+        for (const auto &b : q.body)
+            new_conjunction_parts.push_back(b);
     }
     auto new_conjunction =
         make_shared<Conjunction>(move(new_conjunction_parts));
     return make_shared<ExistentialCondition>(
-        move(new_params),
-        vector<ConditionPtr>{new_conjunction});
+        move(new_params), vector<ConditionPtr>{new_conjunction});
 }
 
 void move_existential_quantifiers(Task &task) {
-    for_each_condition(task,
-        [&](auto /*get_tm*/, auto get_c, auto set_c) {
-            auto c = get_c();
-            if (c && c->has_existential_part())
-                set_c(move_existential_recurse(c)->simplified());
-        });
+    for_each_condition(task, [&](auto /*get_tm*/, auto get_c, auto set_c) {
+        auto c = get_c();
+        if (c && c->has_existential_part())
+            set_c(move_existential_recurse(c)->simplified());
+    });
 }
 
 /* [5a-c] eliminate existential quantifiers --------------------------- */
@@ -366,7 +372,8 @@ void eliminate_existential_quantifiers_from_axioms(Task &task) {
             x.condition->kind() == Condition::Kind::EXISTENTIAL) {
             const auto &q =
                 static_cast<const ExistentialCondition &>(*x.condition);
-            for (const auto &p : q.parameters) x.parameters.push_back(p);
+            for (const auto &p : q.parameters)
+                x.parameters.push_back(p);
             x.condition = q.body[0];
         }
     }
@@ -378,7 +385,8 @@ void eliminate_existential_quantifiers_from_preconditions(Task &task) {
             a.precondition->kind() == Condition::Kind::EXISTENTIAL) {
             const auto &q =
                 static_cast<const ExistentialCondition &>(*a.precondition);
-            for (const auto &p : q.parameters) a.parameters.push_back(p);
+            for (const auto &p : q.parameters)
+                a.parameters.push_back(p);
             a.precondition = q.body[0];
         }
     }
@@ -391,7 +399,8 @@ void eliminate_existential_quantifiers_from_conditional_effects(Task &task) {
                 e.condition->kind() == Condition::Kind::EXISTENTIAL) {
                 const auto &q =
                     static_cast<const ExistentialCondition &>(*e.condition);
-                for (const auto &p : q.parameters) e.parameters.push_back(p);
+                for (const auto &p : q.parameters)
+                    e.parameters.push_back(p);
                 e.condition = q.body[0];
             }
         }
@@ -402,7 +411,8 @@ void eliminate_existential_quantifiers_from_conditional_effects(Task &task) {
 
 void verify_axiom_predicates(const Task &task) {
     set<string> axiom_names;
-    for (const auto &x : task.axioms) axiom_names.insert(x.name);
+    for (const auto &x : task.axioms)
+        axiom_names.insert(x.name);
     for (const auto &i : task.init) {
         if (holds_alternative<shared_ptr<const Atom>>(i)) {
             const auto &atom = get<shared_ptr<const Atom>>(i);
@@ -415,7 +425,8 @@ void verify_axiom_predicates(const Task &task) {
     }
     for (const auto &a : task.actions) {
         for (const auto &e : a.effects) {
-            if (!e.literal) continue;
+            if (!e.literal)
+                continue;
             const auto &lit = static_cast<const Literal &>(*e.literal);
             if (axiom_names.contains(lit.predicate)) {
                 throw runtime_error(

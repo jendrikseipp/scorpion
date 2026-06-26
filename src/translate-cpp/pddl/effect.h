@@ -22,7 +22,11 @@ using AnyEffectPtr = std::shared_ptr<AnyEffect>;
 class AnyEffect {
 public:
     enum class Kind {
-        SIMPLE, CONJUNCTIVE, CONDITIONAL, UNIVERSAL, COST
+        SIMPLE,
+        CONJUNCTIVE,
+        CONDITIONAL,
+        UNIVERSAL,
+        COST
     };
     virtual ~AnyEffect() = default;
     virtual Kind kind() const = 0;
@@ -40,8 +44,11 @@ class SimpleEffect final : public AnyEffect {
 public:
     ConditionPtr literal; // Atom or NegatedAtom
 
-    explicit SimpleEffect(ConditionPtr literal) : literal(std::move(literal)) {}
-    Kind kind() const override { return Kind::SIMPLE; }
+    explicit SimpleEffect(ConditionPtr literal) : literal(std::move(literal)) {
+    }
+    Kind kind() const override {
+        return Kind::SIMPLE;
+    }
     void dump(std::ostream &os, int indent) const override;
     AnyEffectPtr normalize() const override;
 };
@@ -51,7 +58,9 @@ public:
     std::vector<AnyEffectPtr> effects; // flattened on construction
 
     explicit ConjunctiveEffect(std::vector<AnyEffectPtr> effects);
-    Kind kind() const override { return Kind::CONJUNCTIVE; }
+    Kind kind() const override {
+        return Kind::CONJUNCTIVE;
+    }
     void dump(std::ostream &os, int indent) const override;
     AnyEffectPtr normalize() const override;
 };
@@ -62,7 +71,9 @@ public:
     AnyEffectPtr effect;
 
     ConditionalEffect(ConditionPtr condition, AnyEffectPtr effect);
-    Kind kind() const override { return Kind::CONDITIONAL; }
+    Kind kind() const override {
+        return Kind::CONDITIONAL;
+    }
     void dump(std::ostream &os, int indent) const override;
     AnyEffectPtr normalize() const override;
 };
@@ -73,7 +84,9 @@ public:
     AnyEffectPtr effect;
 
     UniversalEffect(std::vector<TypedObject> parameters, AnyEffectPtr effect);
-    Kind kind() const override { return Kind::UNIVERSAL; }
+    Kind kind() const override {
+        return Kind::UNIVERSAL;
+    }
     void dump(std::ostream &os, int indent) const override;
     AnyEffectPtr normalize() const override;
 };
@@ -83,8 +96,11 @@ public:
     std::shared_ptr<Increase> effect;
 
     explicit CostEffect(std::shared_ptr<Increase> effect)
-        : effect(std::move(effect)) {}
-    Kind kind() const override { return Kind::COST; }
+        : effect(std::move(effect)) {
+    }
+    Kind kind() const override {
+        return Kind::COST;
+    }
     void dump(std::ostream &os, int indent) const override;
     AnyEffectPtr normalize() const override;
 };
@@ -106,11 +122,13 @@ public:
     ConditionPtr condition;
     ConditionPtr literal; // Atom or NegatedAtom
 
-    Effect(std::vector<TypedObject> parameters, ConditionPtr condition,
-           ConditionPtr literal)
+    Effect(
+        std::vector<TypedObject> parameters, ConditionPtr condition,
+        ConditionPtr literal)
         : parameters(std::move(parameters)),
           condition(std::move(condition)),
-          literal(std::move(literal)) {}
+          literal(std::move(literal)) {
+    }
 
     void dump(std::ostream &os, int indent = 0) const;
     bool equals(const Effect &other) const;

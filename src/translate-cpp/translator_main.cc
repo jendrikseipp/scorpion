@@ -1,8 +1,9 @@
+#include "translate_options.h"
+
 #include "normalize/normalize.h"
 #include "parser/lisp_parser.h"
 #include "parser/parser.h"
 #include "pipeline/translate.h"
-#include "translate_options.h"
 #include "utils/logging.h"
 #include "utils/system.h"
 #include "utils/timer.h"
@@ -46,7 +47,7 @@ void install_signal_and_error_handlers() {
     // SIGXCPU: driver/limits.py setrlimit(RLIMIT_CPU, ...). Default
     // action would terminate the process and the driver would report
     // a negative returncode (visible as 232 in shell wrappers).
-    struct sigaction sa{};
+    struct sigaction sa {};
     sa.sa_handler = handle_sigxcpu;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESETHAND;
@@ -59,19 +60,25 @@ void install_signal_and_error_handlers() {
 namespace {
 void dump_statistics(const sas::SASTask &task) {
     int derived = 0;
-    for (int l : task.variables.axiom_layers) if (l >= 0) ++derived;
+    for (int l : task.variables.axiom_layers)
+        if (l >= 0)
+            ++derived;
     int facts = 0;
-    for (int r : task.variables.ranges) facts += r;
+    for (int r : task.variables.ranges)
+        facts += r;
     int mutex_total = 0;
-    for (const auto &m : task.mutexes) mutex_total += static_cast<int>(m.facts.size());
+    for (const auto &m : task.mutexes)
+        mutex_total += static_cast<int>(m.facts.size());
     int task_size = task.variables.get_encoding_size();
-    for (const auto &m : task.mutexes) task_size += static_cast<int>(m.facts.size());
+    for (const auto &m : task.mutexes)
+        task_size += static_cast<int>(m.facts.size());
     task_size += static_cast<int>(task.goal.pairs.size());
     for (const auto &op : task.operators) {
         task_size += 1 + static_cast<int>(op.prevail.size());
         for (const auto &[v, pre, post, cond] : op.pre_post) {
             task_size += 1 + static_cast<int>(cond.size());
-            if (pre != -1) ++task_size;
+            if (pre != -1)
+                ++task_size;
         }
     }
     for (const auto &ax : task.axioms)
@@ -81,14 +88,11 @@ void dump_statistics(const sas::SASTask &task) {
                  << endl;
     utils::log() << "Translator derived variables: " << derived << endl;
     utils::log() << "Translator facts: " << facts << endl;
-    utils::log() << "Translator goal facts: " << task.goal.pairs.size()
-                 << endl;
-    utils::log() << "Translator mutex groups: " << task.mutexes.size()
-                 << endl;
+    utils::log() << "Translator goal facts: " << task.goal.pairs.size() << endl;
+    utils::log() << "Translator mutex groups: " << task.mutexes.size() << endl;
     utils::log() << "Translator total mutex groups size: " << mutex_total
                  << endl;
-    utils::log() << "Translator operators: " << task.operators.size()
-                 << endl;
+    utils::log() << "Translator operators: " << task.operators.size() << endl;
     utils::log() << "Translator axioms: " << task.axioms.size() << endl;
     utils::log() << "Translator task size: " << task_size << endl;
 }
@@ -119,14 +123,16 @@ int main(int argc, const char **argv) {
         if (opts.generate_relaxed_task) {
             for (auto &action : task.actions) {
                 erase_if(action.effects, [](const pddl::Effect &e) {
-                    if (!e.literal) return false;
+                    if (!e.literal)
+                        return false;
                     const auto &lit =
                         static_cast<const pddl::Literal &>(*e.literal);
                     return lit.negated();
                 });
             }
         }
-        if (opts.dump_task) task.dump(utils::log());
+        if (opts.dump_task)
+            task.dump(utils::log());
 
         auto sas_task = pipeline::pddl_to_sas(task);
         if (!opts.keep_duplicate_operators) {
@@ -142,8 +148,9 @@ int main(int argc, const char **argv) {
         utils::PhaseTimer write_t;
         ofstream out(opts.sas_file);
         if (!out)
-            utils::exit_with(utils::ExitCode::TRANSLATE_CRITICAL_ERROR,
-                             "Could not open output file: " + opts.sas_file);
+            utils::exit_with(
+                utils::ExitCode::TRANSLATE_CRITICAL_ERROR,
+                "Could not open output file: " + opts.sas_file);
         sas_task.output(out);
         utils::log() << "Writing output: " << write_t.str() << endl;
 
@@ -152,8 +159,8 @@ int main(int argc, const char **argv) {
         utils::log() << "Translator peak memory: " << ru.ru_maxrss << " KB"
                      << endl;
         utils::log() << "Done! "
-                     << utils::format_timing(utils::cpu_seconds(),
-                                             utils::elapsed_seconds())
+                     << utils::format_timing(
+                            utils::cpu_seconds(), utils::elapsed_seconds())
                      << endl;
         return 0;
     } catch (const parser::ParseError &e) {

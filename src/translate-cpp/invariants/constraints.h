@@ -30,7 +30,8 @@ public:
 
     EqualityConjunction() = default;
     explicit EqualityConjunction(std::vector<std::pair<Term, Term>> equalities)
-        : equalities(std::move(equalities)) {}
+        : equalities(std::move(equalities)) {
+    }
 
     bool is_consistent();
     const std::unordered_map<Term, Term, TermHash> *get_representative();
@@ -47,7 +48,8 @@ public:
 
     InequalityDisjunction() = default;
     explicit InequalityDisjunction(std::vector<std::pair<Term, Term>> parts)
-        : parts(std::move(parts)) {}
+        : parts(std::move(parts)) {
+    }
 };
 
 class ConstraintSystem {

@@ -17,8 +17,7 @@ ostream &operator<<(ostream &os, const TypedObject &o) {
 }
 
 TypedObject uniquify_name(
-    const TypedObject &obj,
-    unordered_map<string, string> &type_map,
+    const TypedObject &obj, unordered_map<string, string> &type_map,
     unordered_map<string, string> &renamings) {
     if (!type_map.contains(obj.name)) {
         type_map.emplace(obj.name, obj.type_name);

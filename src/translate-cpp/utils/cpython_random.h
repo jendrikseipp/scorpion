@@ -39,10 +39,12 @@ public:
 
     // Equivalent to CPython's random.randrange(n) / _randbelow(n).
     std::uint64_t randbelow(std::uint64_t n) {
-        if (n == 0) return 0;
+        if (n == 0)
+            return 0;
         int k = bit_length(n);
         std::uint64_t r = getrandbits(k);
-        while (r >= n) r = getrandbits(k);
+        while (r >= n)
+            r = getrandbits(k);
         return r;
     }
 
@@ -58,15 +60,18 @@ private:
 
     static int bit_length(std::uint64_t n) {
         int b = 0;
-        while (n) { ++b; n >>= 1; }
+        while (n) {
+            ++b;
+            n >>= 1;
+        }
         return b;
     }
 
     void init_genrand(std::uint32_t s) {
         mt_[0] = s;
         for (mti_ = 1; mti_ < N; ++mti_)
-            mt_[mti_] = 1812433253U * (mt_[mti_ - 1] ^ (mt_[mti_ - 1] >> 30))
-                        + static_cast<std::uint32_t>(mti_);
+            mt_[mti_] = 1812433253U * (mt_[mti_ - 1] ^ (mt_[mti_ - 1] >> 30)) +
+                        static_cast<std::uint32_t>(mti_);
     }
 
     void init_by_array(const std::uint32_t *init_key, std::size_t key_length) {
@@ -74,17 +79,26 @@ private:
         std::size_t i = 1, j = 0;
         std::size_t k = (N > key_length ? N : key_length);
         for (; k; --k) {
-            mt_[i] = (mt_[i] ^ ((mt_[i - 1] ^ (mt_[i - 1] >> 30)) * 1664525U))
-                     + init_key[j] + static_cast<std::uint32_t>(j);
-            ++i; ++j;
-            if (i >= N) { mt_[0] = mt_[N - 1]; i = 1; }
-            if (j >= key_length) j = 0;
+            mt_[i] = (mt_[i] ^ ((mt_[i - 1] ^ (mt_[i - 1] >> 30)) * 1664525U)) +
+                     init_key[j] + static_cast<std::uint32_t>(j);
+            ++i;
+            ++j;
+            if (i >= N) {
+                mt_[0] = mt_[N - 1];
+                i = 1;
+            }
+            if (j >= key_length)
+                j = 0;
         }
         for (k = N - 1; k; --k) {
-            mt_[i] = (mt_[i] ^ ((mt_[i - 1] ^ (mt_[i - 1] >> 30)) * 1566083941U))
-                     - static_cast<std::uint32_t>(i);
+            mt_[i] =
+                (mt_[i] ^ ((mt_[i - 1] ^ (mt_[i - 1] >> 30)) * 1566083941U)) -
+                static_cast<std::uint32_t>(i);
             ++i;
-            if (i >= N) { mt_[0] = mt_[N - 1]; i = 1; }
+            if (i >= N) {
+                mt_[0] = mt_[N - 1];
+                i = 1;
+            }
         }
         mt_[0] = 0x80000000U;
     }
@@ -121,7 +135,8 @@ private:
         std::uint64_t result = 0;
         for (int shift = 0; k > 0; shift += 32, k -= 32) {
             std::uint32_t r = genrand_uint32();
-            if (k < 32) r >>= (32 - k);
+            if (k < 32)
+                r >>= (32 - k);
             result |= static_cast<std::uint64_t>(r) << shift;
         }
         return result;
