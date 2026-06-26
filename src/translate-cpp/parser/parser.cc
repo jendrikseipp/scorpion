@@ -380,12 +380,10 @@ pair<string, int> get_predicate_id_and_arity(
     return {the_type->get_predicate_name(), 1};
 }
 
-// Validate a predicate-name + term-list. Previously this took a
-// pre-built `unordered_set<string>` of valid predicate names, but
-// callers were rebuilding that 464K-entry set from `predicate_dict`
-// for every literal -- the dominant parse-time cost on pre-grounded
-// large domains like trucks-strips/p29. We just consult
-// `predicate_dict` directly now.
+// Validate a predicate-name + term-list. Consults `predicate_dict`
+// directly rather than a pre-built set of valid predicate names:
+// rebuilding that set from `predicate_dict` for every literal was the
+// dominant parse-time cost on pre-grounded large domains (trucks-strips/p29).
 void check_predicate_and_terms_existence(
     Context &ctx, const string &predicate_name,
     const SexprList &terms,

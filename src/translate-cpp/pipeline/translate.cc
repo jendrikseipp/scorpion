@@ -597,7 +597,6 @@ SASTask pddl_to_sas(Task &task) {
     if (get_options().add_implied_preconditions)
         implied_facts = build_implied_facts(groups, strips_to_sas);
 
-
     // Build init.
     SASInit sas_init;
     sas_init.values.assign(strips_to_sas.ranges.size(), 0);
