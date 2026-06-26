@@ -21,8 +21,6 @@ import sys
 DIR = Path(__file__).resolve().parent
 REPO = DIR.parents[1]
 DRIVER = REPO / "fast-downward.py"
-# Benchmarks are not bundled; point at a downward-benchmarks checkout via the
-# DOWNWARD_BENCHMARKS environment variable (or pass a directory explicitly).
 DEFAULT_BENCHMARKS = os.environ.get("DOWNWARD_BENCHMARKS")
 
 # Default task set: the smallest task from each family that exposed a past
@@ -109,16 +107,12 @@ def _get_all_tasks_by_domain(benchmarks_dir):
         domain_dir for domain_dir in benchmarks_dir.iterdir()
         if domain_dir.is_dir() and
         not str(domain_dir.name).startswith((".", "_", "unofficial")) and
-        str(domain_dir.name) not in blacklisted_domains and
-        # Skip container dirs (e.g. autoresearch/) that hold sub-suites rather
-        # than problem files directly.
-        any(f.is_file() and f.suffix == ".pddl" for f in domain_dir.iterdir())]
+        str(domain_dir.name) not in blacklisted_domains]
     for domain in domains:
         path = benchmarks_dir / domain
         tasks[domain] = [
             benchmarks_dir / domain / f
-            for f in sorted(path.iterdir())
-            if f.is_file() and "domain" not in str(f)]
+            for f in sorted(path.iterdir()) if "domain" not in str(f)]
     return sorted(tasks.values())
 
 

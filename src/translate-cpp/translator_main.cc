@@ -100,7 +100,7 @@ int main(int argc, const char **argv) {
         parse_options(argc, argv);
         const Options &opts = get_options();
 
-        utils::log() << "Fast Downward translator (C++ port)" << endl;
+        utils::log() << "Running Fast Downward translator (C++ port)." << endl;
         // Phase log lines use the Python translator's wording and
         // "[%.3fs CPU, %.3fs wall-clock]" format so Lab's stock
         // translator parser captures them as translator_time_<phase>.

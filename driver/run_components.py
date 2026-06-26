@@ -82,45 +82,10 @@ def run_translate(args):
         args.translate_memory_limit, args.overall_memory_limit
     )
 
-    # Selection rules for the translator backend:
-    #
-    #   1. --translator=py                         -> force Python.
-    #   2. builds/<args.build>/bin/translate-cpp   -> the location that
-    #      `./build.py` installs the C++ translator to, and that Lab's
-    #      CachedFastDownwardRevision preserves (only `builds/*/bin/`
-    #      survives cache cleanup).
-    #   3. src/translate-cpp/build/translate       -> local-dev shortcut
-    #      for users who built the standalone cmake project directly
-    #      without going through build.py.
-    #   4. otherwise                               -> fall back to the
-    #      Python translator.
-    #
-    # --translator=cpp doesn't add a new lookup path; it just makes
-    # falling all the way through to (4) an error rather than a silent
-    # fallback (because the user explicitly asked for the C++ port).
-    translator_choice = getattr(args, "translator", None)
-    force_python = translator_choice == "py"
-    cpp_binary = None
-    if not force_python:
-        try:
-            cpp_binary = try_get_executable(args.build, REL_TRANSLATE_CPP_PATH)
-        except IncompleteBuildError:
-            here = Path(__file__).resolve().parent.parent
-            candidate = here / "src" / "translate-cpp" / "build" / "translate"
-            if candidate.exists():
-                cpp_binary = candidate
-        if cpp_binary is None and translator_choice == "cpp":
-            returncodes.exit_with_driver_input_error(
-                "--translator cpp was requested but no C++ translator "
-                f"binary was found. Looked for builds/{args.build}/bin/"
-                "translate-cpp and src/translate-cpp/build/translate. "
-                "Run `./build.py`.")
-
-    if cpp_binary is not None:
-        cmd = [str(cpp_binary)] + args.translate_inputs + args.translate_options
-        translate = cpp_binary
+    if args.translator == "cpp":
+        translate = get_executable(args.build, REL_TRANSLATE_CPP_PATH)
+        cmd = [str(translate)] + args.translate_inputs + args.translate_options
     else:
-        # Check existence of translate in build.
         translate = get_executable(args.build, REL_TRANSLATE_PATH)
         assert sys.executable, "Path to interpreter could not be found"
         cmd = (
@@ -137,13 +102,6 @@ def run_translate(args):
         memory_limit=memory_limit,
         prepend_to_python_path=translate.parent,
     )
-
-    # subprocess.Popen captures stderr as bytes; decode for string
-    # comparisons / printing. Without this the `"MemoryError" not in
-    # line` check below raises TypeError ("bytes-like required, not
-    # str") whenever the translator exits with code 20 and writes
-    # anything to stderr -- exactly the case our C++ translator's
-    # std::bad_alloc handler triggers.
     if isinstance(stderr, bytes):
         stderr = stderr.decode("utf-8", errors="replace")
 

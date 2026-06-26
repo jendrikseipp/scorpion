@@ -15,8 +15,8 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(DIR))
 # C++ source trees whose style is enforced with clang-format.
 STYLE_DIRS = [
-    os.path.join(REPO, "src", "search"),
     os.path.join(REPO, "src", "preprocess_h2"),
+    os.path.join(REPO, "src", "search"),
     os.path.join(REPO, "src", "translate-cpp"),
 ]
 CLANG_FORMAT_VERSION = "18"
@@ -65,7 +65,7 @@ def main():
     src_files = []
     for style_dir in STYLE_DIRS:
         src_files += utils.get_src_files(
-            style_dir, (".h", ".cc"), ignore_dirs=["ext", "build"])
+            style_dir, (".h", ".cc"), ignore_dirs=["ext"])
     print(f"Checking {len(src_files)} files with clang-format.")
     config_file = os.path.join(REPO, ".clang-format")
     executable = f"clang-format-{CLANG_FORMAT_VERSION}"

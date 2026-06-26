@@ -747,6 +747,7 @@ def dump_predicates(task, path):
 
 def main():
     timer = timers.Timer()
+    print("Running Fast Downward translator (Python).")
     with timers.timing("Parsing", True):
         task = pddl_parser.open(
             domain_filename=get_options().domain, task_filename=get_options().task)

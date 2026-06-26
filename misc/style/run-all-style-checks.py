@@ -52,8 +52,7 @@ def check_cc_files():
     """
     cc_files = (
         utils.get_src_files(os.path.join(SRC_DIR, "search"), (".cc",)) +
-        utils.get_src_files(os.path.join(SRC_DIR, "translate-cpp"), (".cc",),
-                            ignore_dirs=["build"]))
+        utils.get_src_files(os.path.join(SRC_DIR, "translate-cpp"), (".cc",)))
     print("Checking style of {} *.cc files".format(len(cc_files)))
     return subprocess.call(["./check-cc-file.py"] + cc_files, cwd=DIR) == 0
 
