@@ -16,8 +16,10 @@
 #include <iostream>
 #include <new>
 #include <string>
-#include <sys/resource.h>
+
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 using namespace std;
 using namespace translate;
@@ -30,6 +32,7 @@ namespace {
   shell-mangled signal-killed codes like 232 (= 256 + (-24) for a
   process killed by SIGXCPU).
 */
+#ifndef _WIN32
 extern "C" void handle_sigxcpu(int) {
     static const char msg[] = "\nTranslator hit the time limit\n";
     // async-signal-safe path: write() + _exit() are; printf/exit are not.
@@ -37,6 +40,7 @@ extern "C" void handle_sigxcpu(int) {
     (void)r;
     _exit(static_cast<int>(utils::ExitCode::TRANSLATE_OUT_OF_TIME));
 }
+#endif
 
 void handle_bad_alloc() {
     cerr << "\nTranslator ran out of memory" << endl;
@@ -44,14 +48,17 @@ void handle_bad_alloc() {
 }
 
 void install_signal_and_error_handlers() {
+#ifndef _WIN32
     // SIGXCPU: driver/limits.py setrlimit(RLIMIT_CPU, ...). Default
     // action would terminate the process and the driver would report
     // a negative returncode (visible as 232 in shell wrappers).
+    // Windows has neither SIGXCPU nor the driver's resource limits.
     struct sigaction sa {};
     sa.sa_handler = handle_sigxcpu;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESETHAND;
     sigaction(SIGXCPU, &sa, nullptr);
+#endif
     // bad_alloc: matches Python's MemoryError -> exit(20).
     set_new_handler(handle_bad_alloc);
 }
@@ -154,10 +161,8 @@ int main(int argc, const char **argv) {
         sas_task.output(out);
         utils::log() << "Writing output: " << write_t.str() << endl;
 
-        struct rusage ru;
-        getrusage(RUSAGE_SELF, &ru);
-        utils::log() << "Translator peak memory: " << ru.ru_maxrss << " KB"
-                     << endl;
+        utils::log() << "Translator peak memory: "
+                     << utils::get_peak_memory_in_kb() << " KB" << endl;
         utils::log() << "Done! "
                      << utils::format_timing(
                             utils::cpu_seconds(), utils::elapsed_seconds())

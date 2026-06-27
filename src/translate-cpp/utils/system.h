@@ -35,6 +35,10 @@ public:
 
 [[noreturn]] void exit_with(ExitCode code);
 [[noreturn]] void exit_with(ExitCode code, const std::string &message);
+
+// Peak memory usage of this process in KB, or -1 if it cannot be determined
+// (e.g. on Windows, where we don't link the required platform API).
+long get_peak_memory_in_kb();
 }
 
 #endif

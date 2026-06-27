@@ -1,6 +1,8 @@
 #ifndef ATOM_H
 #define ATOM_H
 
+#include <compare>
+
 struct Atom {
     int var;
     int value;

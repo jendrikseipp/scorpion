@@ -27,6 +27,25 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
         -Wmissing-declarations -Wzero-as-null-pointer-constant)
     add_compile_options("$<$<CONFIG:Release>:-DNDEBUG;-fomit-frame-pointer>")
     add_link_options(-g)
+    # clang >= 15 warns about unqualified std::move/std::forward calls, but we
+    # use `using namespace std;` throughout. Disable it (mirrors src/search).
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang"
+       AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15)
+        add_compile_options(-Wno-unqualified-std-cast-call)
+    endif()
+elseif(MSVC)
+    # Enable exceptions and use warning level 4, mirroring src/preprocess_h2.
+    # Disable warnings that currently trigger in the code (same set as the
+    # other components); the Windows CI builds with /WX (warnings as errors).
+    add_compile_options(/EHsc /W4
+        /wd4100  # unreferenced formal parameter
+        /wd4127  # conditional expression is constant
+        /wd4244  # conversion with possible loss of data
+        /wd4267  # conversion from size_t to int with possible loss of data
+        /wd4456  # declaration hides previous local declaration
+        /wd4458  # declaration hides class member
+        /wd4459  # declaration hides global declaration
+        /wd4702) # unreachable code
 endif()
 
 set(TRANSLATE_SOURCES

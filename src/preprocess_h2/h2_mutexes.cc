@@ -30,11 +30,6 @@ Op_h2::Op_h2(
     }
     triggered = NOT_REACHED;
 
-    // Compute total atoms for bitset sizing
-    unsigned total_atoms = 0;
-    for (const auto &var_atoms : atom_index)
-        total_atoms += var_atoms.size();
-
     pre.reserve(
         op.get_prevail().size() + op.get_pre_post().size() +
         op.get_augmented_preconditions().size());
