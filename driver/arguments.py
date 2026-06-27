@@ -410,9 +410,9 @@ def parse_args():
         "--alias",
         help="run a config with an alias (e.g. seq-sat-lama-2011)")
     driver_other.add_argument(
-        "--translator", choices=["cpp", "py"], default="cpp",
-        help="force a specific translator implementation: 'cpp' uses the "
-             "C++ port (built by build.py), 'py' uses the Python translator.")
+        "--translator", choices=["cpp", "py"], default="py",
+        help="select the translator implementation: 'py' uses the Python "
+             "translator (default), 'cpp' uses the faster C++ port.")
     driver_other.add_argument(
         "--build",
         help="BUILD can be a predefined build name like release "
