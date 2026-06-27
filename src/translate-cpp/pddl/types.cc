@@ -1,5 +1,7 @@
 #include "types.h"
 
+#include <string>
+
 using namespace std;
 namespace translate::pddl {
 string type_predicate_name(string_view type_name) {

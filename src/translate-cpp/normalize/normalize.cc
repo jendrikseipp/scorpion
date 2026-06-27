@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace std;

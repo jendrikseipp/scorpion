@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <string>
 
 using namespace std;
 namespace translate::grounding {

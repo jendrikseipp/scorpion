@@ -17,6 +17,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 
 using namespace std;
 namespace translate::invariants {

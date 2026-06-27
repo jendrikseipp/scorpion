@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <functional>
+#include <string>
+#include <variant>
 
 using namespace std;
 namespace translate::invariants {

@@ -8,6 +8,7 @@
 #include "../pddl/task.h"
 #include "../utils/cpython_random.h"
 
+#include <cstddef>
 #include <random>
 #include <unordered_map>
 #include <vector>
