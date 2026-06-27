@@ -364,7 +364,7 @@ Function parse_function(
     SexprList rest(alist.begin() + 1, alist.end());
     auto args = parse_typed_list(ctx, rest);
     check_word(ctx, type_sexpr, "Function type");
-    string type_name = type_sexpr.atom();
+    const string &type_name = type_sexpr.atom();
     if (type_name != "number") {
         throw ParseError(
             "Error: object fluents not supported\n"
@@ -638,7 +638,7 @@ pddl::FExprPtr parse_expression(Context &ctx, const Sexpr &exp) {
             lst[0].atom(), move(args));
     }
     const string &s = exp.atom();
-    if (s.size() >= 1 && s[0] == '-')
+    if (!s.empty() && s[0] == '-')
         ctx.error("Negative numbers are not allowed.", &exp, SYNTAX_EXPRESSION);
     if (is_nonnegative_int_literal(s))
         return make_shared<pddl::NumericConstant>(stoll(s));

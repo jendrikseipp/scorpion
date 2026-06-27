@@ -256,6 +256,7 @@ vector<vector<ConditionPtr>> get_groups(
         vector<ConditionPtr> group;
         auto sorted_parts = key.first->parts;
         sort(sorted_parts.begin(), sorted_parts.end());
+        group.reserve(sorted_parts.size());
         for (const auto &part : sorted_parts)
             group.push_back(part.instantiate(key.second));
         result.push_back(move(group));

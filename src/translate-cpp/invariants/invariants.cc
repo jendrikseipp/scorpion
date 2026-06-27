@@ -398,6 +398,7 @@ bool Invariant::add_effect_unbalanced(
     if (repr_ptr)
         repr = *repr_ptr;
     vector<string> params;
+    params.reserve(action.parameters.size() + add_effect.parameters.size());
     for (const auto &p : action.parameters)
         params.push_back(p.name);
     for (const auto &p : add_effect.parameters)

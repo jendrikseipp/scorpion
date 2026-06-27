@@ -36,6 +36,7 @@ vector<Atom> condition_to_rule_body(
     const vector<TypedObject> &parameters, const ConditionPtr &condition,
     const PrimitiveNumericExpression *pne) {
     vector<Atom> result;
+    result.reserve(parameters.size());
     for (const auto &par : parameters) {
         result.emplace_back(
             type_predicate_name(par.type_name), ArgList{Arg(par.name)});

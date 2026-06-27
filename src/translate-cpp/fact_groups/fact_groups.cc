@@ -217,6 +217,7 @@ vector<vector<string>> build_translation_key(
     keys.reserve(groups.size());
     for (const auto &g : groups) {
         vector<string> key;
+        key.reserve(g.size());
         for (const auto &f : g)
             key.push_back(atom_to_string(f));
         if (g.size() == 1) {

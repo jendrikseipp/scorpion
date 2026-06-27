@@ -225,6 +225,7 @@ vector<Rule> split_rule(const Rule &rule, Program &prog) {
         return split_into_binary_rules(rule, prog);
     }
     vector<Rule> projected_rules;
+    projected_rules.reserve(components.size());
     for (auto &comp : components)
         projected_rules.push_back(project_rule(rule.effect, comp, prog));
     vector<Rule> result;
@@ -234,6 +235,7 @@ vector<Rule> split_rule(const Rule &rule, Program &prog) {
             result.push_back(move(r));
     }
     vector<Atom> combining_conds;
+    combining_conds.reserve(projected_rules.size() + trivial.size());
     for (auto &pr : projected_rules)
         combining_conds.push_back(pr.effect);
     for (auto &t : trivial)

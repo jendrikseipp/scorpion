@@ -34,7 +34,7 @@ bool contains_add_effect_for(
 
 PropositionalAction::PropositionalAction(
     string name_, vector<ConditionPtr> precondition_,
-    vector<pair<vector<ConditionPtr>, ConditionPtr>> effects, int cost_)
+    const vector<pair<vector<ConditionPtr>, ConditionPtr>> &effects, int cost_)
     : name(move(name_)), precondition(move(precondition_)), cost(cost_) {
     for (const auto &[cond, lit] : effects) {
         if (!lit)

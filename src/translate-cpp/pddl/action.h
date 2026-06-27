@@ -60,7 +60,8 @@ public:
 
     PropositionalAction(
         std::string name, std::vector<ConditionPtr> precondition,
-        std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>> effects,
+        const std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>>
+            &effects,
         int cost);
 
     void dump(std::ostream &os) const;

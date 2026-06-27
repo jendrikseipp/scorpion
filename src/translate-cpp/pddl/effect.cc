@@ -14,7 +14,7 @@ void SimpleEffect::dump(ostream &os, int indent) const {
         literal->dump(os, indent + 1);
 }
 
-ConjunctiveEffect::ConjunctiveEffect(vector<AnyEffectPtr> effects) : effects() {
+ConjunctiveEffect::ConjunctiveEffect(vector<AnyEffectPtr> effects) {
     for (auto &e : effects) {
         if (e && e->kind() == Kind::CONJUNCTIVE) {
             auto &c = static_cast<ConjunctiveEffect &>(*e);

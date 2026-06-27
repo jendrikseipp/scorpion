@@ -41,6 +41,7 @@ public:
     void weight_from_ops(const vector<SASOperator> &operators) {
         for (const auto &op : operators) {
             vector<int> source_vars;
+            source_vars.reserve(op.prevail.size() + op.pre_post.size());
             for (const auto &[v, _] : op.prevail)
                 source_vars.push_back(v);
             for (const auto &[v, pre, post, cond] : op.pre_post)
@@ -255,6 +256,7 @@ public:
         task.variables.value_names = move(names);
         // Init.
         vector<int> new_init;
+        new_init.reserve(ordering.size());
         for (int var : ordering)
             new_init.push_back(task.init.values[var]);
         task.init.values = move(new_init);
