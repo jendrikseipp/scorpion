@@ -1,20 +1,6 @@
 # Fast Downward translator, C++ port.
-#
-# This is a standalone executable that reads PDDL (domain + problem)
-# and writes a SAS+ task file (output.sas), mirroring the behavior of
-# src/translate (the Python translator).
 
 cmake_minimum_required(VERSION 3.16)
-
-# If it's available, use ccache to cache compilation results, mirroring the
-# top-level src/CMakeLists.txt. The two ccache options allow sharing
-# compilation results between different build directories.
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND AND NOT WIN32)  # Windows GitHub Actions find "ccache" --> ignore it.
-    message("Using ccache")
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE
-        "CCACHE_BASEDIR=${CMAKE_CURRENT_SOURCE_DIR} CCACHE_NOHASHDIR=true ccache")
-endif()
 
 project(downward_translate LANGUAGES CXX)
 
@@ -91,6 +77,9 @@ set(TRANSLATE_SOURCES
     pipeline/translate.cc
 )
 
-add_executable(translate ${TRANSLATE_SOURCES})
+# The target is named translate-cpp (not translate) so its binary does not
+# collide with the Python translator package that the build drops at
+# builds/<config>/bin/translate/.
+add_executable(translate-cpp ${TRANSLATE_SOURCES})
 
-target_include_directories(translate PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(translate-cpp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
