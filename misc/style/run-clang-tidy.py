@@ -26,7 +26,7 @@ IGNORES = [
 ]
 
 
-def check_search_code_with_clang_tidy():
+def check_cpp_code_with_clang_tidy():
     # clang-tidy needs the CMake files.
     build_dir = os.path.join(REPO, "builds", "clang-tidy")
     if not os.path.exists(build_dir):
@@ -38,13 +38,20 @@ def check_search_code_with_clang_tidy():
     # when passing -DCMAKE_EXPORT_COMPILE_COMMANDS=ON, but the resulting file
     # contains no header files.
     search_dir = os.path.join(REPO, "src/search")
-    src_files = utils.get_src_files(search_dir, (".h", ".cc"))
-    compile_commands = [{
-        "directory": os.path.join(build_dir, "search"),
-        "command": "g++ -std=c++20 -c {}".format(src_file),
-        "file": src_file}
-        for src_file in src_files
-    ]
+    translate_dir = os.path.join(REPO, "src/translate-cpp")
+    compile_commands = []
+    for src_file in utils.get_src_files(search_dir, (".h", ".cc")):
+        compile_commands.append({
+            "directory": os.path.join(build_dir, "search"),
+            "command": "g++ -std=c++20 -c {}".format(src_file),
+            "file": src_file})
+    # The translator is a standalone CMake project whose headers are included
+    # relative to its own source root, so we add it to the include path.
+    for src_file in utils.get_src_files(translate_dir, (".h", ".cc")):
+        compile_commands.append({
+            "directory": build_dir,
+            "command": "g++ -std=c++20 -I {} -c {}".format(translate_dir, src_file),
+            "file": src_file})
     with open(os.path.join(build_dir, "compile_commands.json"), "w") as f:
         json.dump(compile_commands, f, indent=2)
 
@@ -138,4 +145,4 @@ def check_search_code_with_clang_tidy():
         sys.exit(p.stderr)
 
 
-check_search_code_with_clang_tidy()
+check_cpp_code_with_clang_tidy()

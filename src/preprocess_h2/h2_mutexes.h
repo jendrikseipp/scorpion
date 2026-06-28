@@ -23,7 +23,6 @@ inline constexpr int UNSOLVABLE = -2;
 inline constexpr int TIMEOUT = -1;
 
 class Op_h2 {
-
     void push_pre(
         const std::vector<std::vector<unsigned>> &atom_index, Variable *var,
         int val) {

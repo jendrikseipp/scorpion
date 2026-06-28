@@ -4,6 +4,9 @@ __pycache__/
 /docs/search/*.md
 /output.sas
 /preprocessed-output.sas
+# stray translator artifacts written by misc/tests/test-translator.py
+/misc/tests/output.sas
+/misc/tests/translator-output-*.txt
 /sas_plan
 /sas_plan.*
 /builds/
@@ -11,4 +14,3 @@ __pycache__/
 /experiments/*/data/
 /misc/.tox/
 /misc/autodoc/downward-xmlrpc.secret
-/misc/tests/output.sas

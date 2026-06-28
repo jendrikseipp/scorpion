@@ -636,6 +636,17 @@ def pddl_to_sas(task):
                 sas_task, get_options().reorder_variables,
                 get_options().filter_unimportant_vars)
 
+    # Emit axioms in a canonical order using the *final* (post-reorder)
+    # variable numbers. SASTask.__init__ already sorts by (condition, effect),
+    # but with the pre-reorder numbering; re-sorting here with the same key on
+    # the remapped numbers makes the order independent of variable reordering
+    # and lets the C++ port (which sorts axioms by (condition, effect) at
+    # output time, also post-remap) match byte-for-byte. Axiom rule order is
+    # semantically irrelevant (axioms are evaluated by layer to a fixpoint).
+    for ax in sas_task.axioms:
+        ax.condition.sort()
+    sas_task.axioms.sort(key=lambda ax: (ax.condition, ax.effect))
+
     if get_options().dump_static_atoms:
         append_static_atoms(task, sas_task, atoms)
     return sas_task
@@ -736,6 +747,7 @@ def dump_predicates(task, path):
 
 def main():
     timer = timers.Timer()
+    print("Running Fast Downward translator (Python).")
     with timers.timing("Parsing", True):
         task = pddl_parser.open(
             domain_filename=get_options().domain, task_filename=get_options().task)

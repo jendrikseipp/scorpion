@@ -22,6 +22,7 @@ else:
     returncodes.exit_with_driver_unsupported_error("Unsupported OS: " + os.name)
 
 REL_TRANSLATE_PATH = Path("translate")
+REL_TRANSLATE_CPP_PATH = Path(f"translate-cpp{BINARY_EXT}")
 REL_SEARCH_PATH = Path(f"downward{BINARY_EXT}")
 # Older versions of VAL use lower case, newer versions upper case. We prefer the
 # older version because this is what our build instructions recommend.
@@ -81,16 +82,18 @@ def run_translate(args):
         args.translate_memory_limit, args.overall_memory_limit
     )
 
-    # Check existence of translate in build.
-    translate = get_executable(args.build, REL_TRANSLATE_PATH)
-
-    assert sys.executable, "Path to interpreter could not be found"
-    cmd = (
-        [sys.executable]
-        + ["-m", "translate"]
-        + args.translate_inputs
-        + args.translate_options
-    )
+    if args.translator == "cpp":
+        translate = get_executable(args.build, REL_TRANSLATE_CPP_PATH)
+        cmd = [str(translate)] + args.translate_inputs + args.translate_options
+    else:
+        translate = get_executable(args.build, REL_TRANSLATE_PATH)
+        assert sys.executable, "Path to interpreter could not be found"
+        cmd = (
+            [sys.executable]
+            + ["-m", "translate"]
+            + args.translate_inputs
+            + args.translate_options
+        )
 
     stderr, returncode = call.get_error_output_and_returncode(
         "translator",
@@ -99,6 +102,8 @@ def run_translate(args):
         memory_limit=memory_limit,
         prepend_to_python_path=translate.parent,
     )
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
 
     # We collect stderr of the translator and print it here, unless
     # the translator ran out of memory and all output in stderr is

@@ -141,6 +141,9 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
 
 ### New translator options
 
+- Scorpion ships a C++ port of the translator that produces the same output as
+  the Python translator but runs much faster. The Python translator is used by
+  default; pass `--translator cpp` to use the C++ port.
 - Use `--dump-predicates` and `--dump-static-atoms` to write files with
   information that's useful for learning domain control knowledge.
 

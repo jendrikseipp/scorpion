@@ -30,11 +30,6 @@ Op_h2::Op_h2(
     }
     triggered = NOT_REACHED;
 
-    // Compute total atoms for bitset sizing
-    unsigned total_atoms = 0;
-    for (const auto &var_atoms : atom_index)
-        total_atoms += var_atoms.size();
-
     pre.reserve(
         op.get_prevail().size() + op.get_pre_post().size() +
         op.get_augmented_preconditions().size());
@@ -45,8 +40,7 @@ Op_h2::Op_h2(
         instantiate_operator_backward(
             op, atom_index, inconsistent_atom_indices);
     } else {
-        instantiate_operator_forward(
-            op, atom_index, inconsistent_atom_indices);
+        instantiate_operator_forward(op, atom_index, inconsistent_atom_indices);
     }
 
     // Sort pre and add by atom id. run_fixpoint's precondition check assumes
@@ -104,8 +98,8 @@ bool compute_h2_mutexes(
                 int mutexes_detected;
                 try {
                     mutexes_detected = h2.compute(
-                        variables, operators, axioms, initial_state, goals, mutexes,
-                        regression);
+                        variables, operators, axioms, initial_state, goals,
+                        mutexes, regression);
                 } catch (const TimeoutException &) {
                     mutexes_detected = TIMEOUT;
                 }
@@ -137,10 +131,12 @@ bool compute_h2_mutexes(
                     } else if (unreachable_result == UNSOLVABLE) {
                         return false;
                     }
-                    cout << "  Unreachable fluents found: " << unreachable_result
-                         << endl;
+                    cout << "  Unreachable fluents found: "
+                         << unreachable_result << endl;
                 } else {
-                    cout << "  Skipping unreachable-fluent detection (no new h2 facts)." << endl;
+                    cout
+                        << "  Skipping unreachable-fluent detection (no new h2 facts)."
+                        << endl;
                 }
                 bool unreachable_detected = unreachable_result != 0;
 
@@ -153,9 +149,11 @@ bool compute_h2_mutexes(
                 }
                 cout << "  Spurious operators removed." << endl;
 
-                update_progression |= spurious_detected || unreachable_detected ||
+                update_progression |= spurious_detected ||
+                                      unreachable_detected ||
                                       (regression && mutexes_detected);
-                update_regression |= spurious_detected || unreachable_detected ||
+                update_regression |= spurious_detected ||
+                                     unreachable_detected ||
                                      (!regression && mutexes_detected);
             }
         }
@@ -364,8 +362,9 @@ bool H2Mutexes::initialize(
                        same variable. */
                     unsigned atom1_id = atom_index[atom1.var][atom1.value];
                     unsigned atom2_id = atom_index[atom2.var][atom2.value];
-                    // Use mutex_status as the dedup oracle: a pair may appear in
-                    // several mutex groups, so only record it the first time.
+                    // Use mutex_status as the dedup oracle: a pair may appear
+                    // in several mutex groups, so only record it the first
+                    // time.
                     unsigned pair = get_atom_pair_id(atom1_id, atom2_id);
                     if (mutex_status[pair] != SPURIOUS) {
                         inconsistent_atom_indices[atom1.var][atom1.value]
@@ -374,7 +373,6 @@ bool H2Mutexes::initialize(
                             .push_back(atom1_id);
                         mutex_status[pair] = SPURIOUS;
                     }
-
                 }
             }
         }
@@ -506,7 +504,8 @@ bool H2Mutexes::init_values_regression(
     }
 
     if (any_not_reached) {
-        // Single sequential sweep through mutex_status to apply all not-reached markers
+        // Single sequential sweep through mutex_status to apply all not-reached
+        // markers
         for (unsigned atom1 = 0; atom1 < num_atoms; atom1++) {
             bool snr1 = should_be_not_reached[atom1];
             // Diagonal entry
@@ -515,7 +514,8 @@ bool H2Mutexes::init_values_regression(
                 mutex_status[diag] = NOT_REACHED;
             // Off-diagonal entries (atom1, atom2) for atom2 > atom1
             unsigned pair_id = atom_pair_offsets[atom1] + atom1 + 1;
-            for (unsigned atom2 = atom1 + 1; atom2 < num_atoms; atom2++, pair_id++) {
+            for (unsigned atom2 = atom1 + 1; atom2 < num_atoms;
+                 atom2++, pair_id++) {
                 if ((snr1 || should_be_not_reached[atom2]) &&
                     mutex_status[pair_id] == REACHED) {
                     mutex_status[pair_id] = NOT_REACHED;
@@ -578,7 +578,8 @@ void H2Mutexes::init_h2_operators(
     }
 }
 
-// run_fixpoint inlines the operator application logic for better delta tracking.
+// run_fixpoint inlines the operator application logic for better delta
+// tracking.
 
 // Run the fixpoint computation to determine reachable atom pairs.
 // Throws TimeoutException if time limit exceeded.
@@ -597,7 +598,8 @@ void H2Mutexes::run_fixpoint() {
 
     // Track per-operator: was it already triggered in a previous iteration?
     vector<uint8_t> was_triggered(h2_ops.size(), 0);
-    // Per-operator: index into reached_atoms up to which atoms have been checked
+    // Per-operator: index into reached_atoms up to which atoms have been
+    // checked
     vector<size_t> op_checked_up_to(h2_ops.size(), 0);
     // Per-operator: list of atoms that failed precondition check, and for each
     // the precondition atom that blocked it (mutex_status[blocker, atom] was
@@ -660,10 +662,9 @@ void H2Mutexes::run_fixpoint() {
             const auto find_blocker = [&](unsigned atom_i) -> unsigned {
                 unsigned atom_i_row = atom_pair_offsets[atom_i];
                 for (unsigned pre_atom : op_pre) {
-                    unsigned pos =
-                        (pre_atom < atom_i)
-                            ? (atom_pair_offsets[pre_atom] + atom_i)
-                            : (atom_i_row + pre_atom);
+                    unsigned pos = (pre_atom < atom_i)
+                                       ? (atom_pair_offsets[pre_atom] + atom_i)
+                                       : (atom_i_row + pre_atom);
                     if (mutex_status[pos] != REACHED)
                         return pre_atom;
                 }
@@ -674,9 +675,9 @@ void H2Mutexes::run_fixpoint() {
                 for (unsigned p : op_add) {
                     if (atom_i == p)
                         continue;
-                    unsigned pos =
-                        (p < atom_i) ? (atom_pair_offsets[p] + atom_i)
-                                     : (atom_i_row + p);
+                    unsigned pos = (p < atom_i)
+                                       ? (atom_pair_offsets[p] + atom_i)
+                                       : (atom_i_row + p);
                     if (mutex_status[pos] == NOT_REACHED) {
                         mutex_status[pos] = REACHED;
                         updated = true;
@@ -700,7 +701,8 @@ void H2Mutexes::run_fixpoint() {
                     reached_atoms.push_back(p);
                     updated = true;
                 }
-                for (unsigned add_j = add_i + 1; add_j < op_add.size(); add_j++) {
+                for (unsigned add_j = add_i + 1; add_j < op_add.size();
+                     add_j++) {
                     unsigned q = op_add[add_j];
                     unsigned pos_pq = p_row + q;
                     if (mutex_status[pos_pq] == NOT_REACHED) {
@@ -896,7 +898,8 @@ int H2Mutexes::compute(
     cout << "Computing " << (regression ? "backward" : "forward")
          << " h^2 mutexes..." << endl;
 
-    // Initialize operator-atom cache (no longer used - delta tracking replaces it)
+    // Initialize operator-atom cache (no longer used - delta tracking replaces
+    // it)
 
     // Run fixpoint computation (may throw TimeoutException)
     run_fixpoint();
@@ -963,7 +966,9 @@ void Op_h2::instantiate_operator_forward(
         if (var == -1)
             continue;
 
-        del.insert(del.end(), inconsistent_atom_indices[var][prev].begin(), inconsistent_atom_indices[var][prev].end());
+        del.insert(
+            del.end(), inconsistent_atom_indices[var][prev].begin(),
+            inconsistent_atom_indices[var][prev].end());
     }
 
     for (unsigned j = 0; j < pre_post.size(); j++) {
@@ -975,7 +980,9 @@ void Op_h2::instantiate_operator_forward(
         if (var == -1)
             continue;
 
-        del.insert(del.end(), inconsistent_atom_indices[var][post].begin(), inconsistent_atom_indices[var][post].end());
+        del.insert(
+            del.end(), inconsistent_atom_indices[var][post].begin(),
+            inconsistent_atom_indices[var][post].end());
     }
 
     const vector<Atom> &augmented = op.get_augmented_preconditions();
@@ -986,7 +993,9 @@ void Op_h2::instantiate_operator_forward(
         pre.push_back(atom_id);
 
         if (!prepost_var[var]) {
-            del.insert(del.end(), inconsistent_atom_indices[var][val].begin(), inconsistent_atom_indices[var][val].end());
+            del.insert(
+                del.end(), inconsistent_atom_indices[var][val].begin(),
+                inconsistent_atom_indices[var][val].end());
         }
     }
 }
@@ -1020,18 +1029,25 @@ void Op_h2::instantiate_operator_backward(
     for (unsigned j = 0; j < prevail.size(); j++) {
         int var = prevail[j].var->get_level();
         int prev = prevail[j].prev;
-        if (var == -1) continue;
+        if (var == -1)
+            continue;
 
-        del.insert(del.end(), inconsistent_atom_indices[var][prev].begin(), inconsistent_atom_indices[var][prev].end());
+        del.insert(
+            del.end(), inconsistent_atom_indices[var][prev].begin(),
+            inconsistent_atom_indices[var][prev].end());
     }
 
     for (size_t j = 0; j < pre_post.size(); j++) {
-        if (pre_post[j].is_conditional_effect) continue;
+        if (pre_post[j].is_conditional_effect)
+            continue;
         int var = pre_post[j].var->get_level();
         int pre = pre_post[j].pre;
-        if (var == -1 || pre == -1) continue;
+        if (var == -1 || pre == -1)
+            continue;
 
-        del.insert(del.end(), inconsistent_atom_indices[var][pre].begin(), inconsistent_atom_indices[var][pre].end());
+        del.insert(
+            del.end(), inconsistent_atom_indices[var][pre].begin(),
+            inconsistent_atom_indices[var][pre].end());
     }
 
     const vector<Atom> &augmented = op.get_augmented_preconditions();
@@ -1043,7 +1059,9 @@ void Op_h2::instantiate_operator_backward(
             pre.push_back(atom_id);
         }
 
-        del.insert(del.end(), inconsistent_atom_indices[var][val].begin(), inconsistent_atom_indices[var][val].end());
+        del.insert(
+            del.end(), inconsistent_atom_indices[var][val].begin(),
+            inconsistent_atom_indices[var][val].end());
     }
 
     // Potential preconditions from the disambiguation. For values of the same
@@ -1079,7 +1097,8 @@ void Op_h2::instantiate_operator_backward(
             for (size_t vi = 0; vi < vals.size(); ++vi) {
                 int val = vals[vi];
                 if (vi == 0) {
-                    // Initialize from the combined mutex list (cross-var + same-var).
+                    // Initialize from the combined mutex list (cross-var +
+                    // same-var).
                     for (unsigned idx : inconsistent_atom_indices[var][val]) {
                         if (!pd_bits[idx]) {
                             pd_bits[idx] = true;
@@ -1087,7 +1106,8 @@ void Op_h2::instantiate_operator_backward(
                         }
                     }
                 } else {
-                    // Mark second set, then filter the current intersection list.
+                    // Mark second set, then filter the current intersection
+                    // list.
                     for (unsigned idx : inconsistent_atom_indices[var][val]) {
                         if (!pd_intersect[idx]) {
                             pd_intersect[idx] = true;

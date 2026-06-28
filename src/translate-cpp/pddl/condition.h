@@ -1,0 +1,458 @@
+#ifndef PDDL_CONDITION_H
+#define PDDL_CONDITION_H
+
+#include "types.h"
+
+#include <cstddef>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace translate::pddl {
+/*
+  Conditions are immutable, hashable, and shared (matching the Python
+  translator). Use std::shared_ptr<const Condition> to refer to a node.
+
+  Compound conditions (Conjunction, Disjunction, quantifiers) hold their
+  child conditions in `parts`. Literals (Atom, NegatedAtom) hold predicate
+  and string-typed arguments. Truth/Falsity are constants.
+
+  Algorithmic transforms (simplify, normalize, untyped, instantiate, ...)
+  live in dedicated modules (normalize.cc, instantiate.cc, ...). Only
+  structural, context-free operations are placed here as virtual methods.
+*/
+
+class Condition;
+using ConditionPtr = std::shared_ptr<const Condition>;
+
+struct ConditionPtrHash;
+struct ConditionPtrEqual;
+
+class Condition {
+public:
+    enum class Kind {
+        TRUTH,
+        FALSITY,
+        ATOM,
+        NEGATED_ATOM,
+        CONJUNCTION,
+        DISJUNCTION,
+        UNIVERSAL,
+        EXISTENTIAL
+    };
+
+    virtual ~Condition() = default;
+
+    virtual Kind kind() const = 0;
+    virtual std::size_t hash() const = 0;
+    virtual bool equals(const Condition &other) const = 0;
+    virtual void dump(std::ostream &os, int indent = 0) const = 0;
+
+    virtual const std::vector<ConditionPtr> &parts() const {
+        static const std::vector<ConditionPtr> empty;
+        return empty;
+    }
+
+    virtual ConditionPtr negate() const = 0;
+
+    // ?-prefixed argument names (PDDL variable convention).
+    virtual std::unordered_set<std::string> free_variables() const;
+    virtual bool has_disjunction() const;
+    virtual bool has_existential_part() const;
+    virtual bool has_universal_part() const;
+
+    // Returns a structurally simplified equivalent condition (flatten nested
+    // junctors, drop Truth from conjunctions / Falsity from disjunctions,
+    // collapse single-element junctions). Mirrors Python's
+    // Condition.simplified.
+    virtual ConditionPtr simplified() const = 0;
+
+    // Return a clone of this condition with its children replaced by
+    // `new_parts`. Constants and literals ignore `new_parts` and return a
+    // copy of themselves; junctors rebuild with the new children; quantifiers
+    // keep their parameter list and replace the body.
+    virtual ConditionPtr change_parts(
+        std::vector<ConditionPtr> new_parts) const = 0;
+
+    /*
+      Instantiate this (normalized) condition under `var_mapping`,
+      appending ground literals (positive Atom or NegatedAtom) to
+      `result`. Returns false if the condition is provably false in this
+      context (the caller then drops the action/axiom); true otherwise.
+
+      Default implementation throws std::runtime_error: only Truth,
+      Falsity, Conjunction, ExistentialCondition, Atom and NegatedAtom
+      can appear in normalized conditions, and each overrides this.
+    */
+    virtual bool instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const;
+
+    /*
+      Make all quantifier-bound variable names globally unique. `type_map`
+      accumulates (name -> type_name) bindings; `renamings` is a fresh map
+      per quantifier scope (copied across nested quantifiers).
+    */
+    virtual ConditionPtr uniquify_variables(
+        std::unordered_map<std::string, std::string> &type_map,
+        const std::unordered_map<std::string, std::string> &renamings) const;
+};
+
+namespace detail {
+// boost::hash_combine-style mixing, shared by all condition hashers.
+inline void hash_combine(std::size_t &seed, std::size_t value) noexcept {
+    seed ^= value + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+}
+// Hash recipe for a (positive or negated) literal. Centralised here so
+// Literal's cached_hash and AtomView below stay bit-for-bit identical.
+inline std::size_t literal_hash(
+    const std::string &predicate,
+    const std::vector<std::string> &args) noexcept {
+    std::size_t h = std::hash<std::string>{}(predicate);
+    for (const auto &a : args)
+        hash_combine(h, std::hash<std::string>{}(a));
+    return h;
+}
+}
+
+/*
+  A non-owning view of a positive ground atom (predicate name + already
+  resolved argument list). Used as a heterogeneous lookup key against an
+  AtomSet so instantiate() can probe init/fluent facts without allocating
+  a shared_ptr<Atom>. The hash is bit-for-bit identical to Literal's
+  cached_hash so view-based lookups land in the same bucket as the owned
+  Atom entries.
+*/
+struct AtomView {
+    const std::string &predicate;
+    const std::vector<std::string> &args;
+    std::size_t cached_hash;
+    AtomView(const std::string &p, const std::vector<std::string> &a)
+        : predicate(p), args(a), cached_hash(detail::literal_hash(p, a)) {
+    }
+};
+
+struct ConditionPtrHash {
+    using is_transparent = void;
+    std::size_t operator()(const ConditionPtr &c) const noexcept {
+        return c ? c->hash() : 0;
+    }
+    std::size_t operator()(const AtomView &v) const noexcept {
+        return v.cached_hash;
+    }
+};
+
+struct ConditionPtrEqual {
+    using is_transparent = void;
+    bool operator()(const ConditionPtr &a, const ConditionPtr &b) const {
+        if (a.get() == b.get())
+            return true;
+        if (!a || !b)
+            return false;
+        if (a->kind() != b->kind())
+            return false;
+        return a->equals(*b);
+    }
+    // Match a stored condition against a positive-atom view.
+    bool operator()(const ConditionPtr &c, const AtomView &v) const {
+        return matches(c, v);
+    }
+    bool operator()(const AtomView &v, const ConditionPtr &c) const {
+        return matches(c, v);
+    }
+
+private:
+    static bool matches(const ConditionPtr &c, const AtomView &v);
+};
+
+// Set of ground atoms (used by Condition::instantiate, instantiate.cc).
+using AtomSet =
+    std::unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>;
+
+class Truth final : public Condition {
+public:
+    Kind kind() const override {
+        return Kind::TRUTH;
+    }
+    std::size_t hash() const override;
+    bool equals(const Condition &other) const override {
+        return other.kind() == Kind::TRUTH;
+    }
+    void dump(std::ostream &os, int indent) const override;
+    ConditionPtr negate() const override;
+    ConditionPtr simplified() const override;
+    ConditionPtr change_parts(std::vector<ConditionPtr>) const override {
+        return std::make_shared<Truth>();
+    }
+    bool instantiate(
+        const std::unordered_map<std::string, std::string> &,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+        std::vector<ConditionPtr> &) const override {
+        return true;
+    }
+};
+
+class Falsity final : public Condition {
+public:
+    Kind kind() const override {
+        return Kind::FALSITY;
+    }
+    std::size_t hash() const override;
+    bool equals(const Condition &other) const override {
+        return other.kind() == Kind::FALSITY;
+    }
+    void dump(std::ostream &os, int indent) const override;
+    ConditionPtr negate() const override;
+    ConditionPtr simplified() const override;
+    ConditionPtr change_parts(std::vector<ConditionPtr>) const override {
+        return std::make_shared<Falsity>();
+    }
+    bool instantiate(
+        const std::unordered_map<std::string, std::string> &,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+        std::vector<ConditionPtr> &) const override;
+};
+
+class Literal : public Condition {
+public:
+    std::string predicate;
+    std::vector<std::string> args;
+
+protected:
+    std::size_t cached_hash;
+    Literal(std::string predicate, std::vector<std::string> args);
+
+public:
+    std::size_t hash() const override {
+        return cached_hash;
+    }
+    void dump(std::ostream &os, int indent) const override;
+    std::unordered_set<std::string> free_variables() const override;
+    virtual bool negated() const = 0;
+    ConditionPtr
+    simplified() const override; // identity (literals don't simplify)
+    ConditionPtr uniquify_variables(
+        std::unordered_map<std::string, std::string> &type_map,
+        const std::unordered_map<std::string, std::string> &renamings)
+        const override;
+    ConditionPtr change_parts(std::vector<ConditionPtr>) const override;
+
+    // Return a new literal with each occurrence of an argument name replaced
+    // according to `renamings`. Used by Action::uniquify_variables, etc.
+    ConditionPtr rename_variables(
+        const std::unordered_map<std::string, std::string> &renamings) const;
+};
+
+class Atom final : public Literal {
+public:
+    Atom(std::string predicate, std::vector<std::string> args)
+        : Literal(std::move(predicate), std::move(args)) {
+    }
+    Kind kind() const override {
+        return Kind::ATOM;
+    }
+    bool equals(const Condition &other) const override;
+    ConditionPtr negate() const override;
+    bool negated() const override {
+        return false;
+    }
+    bool instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const override;
+};
+
+class NegatedAtom final : public Literal {
+public:
+    NegatedAtom(std::string predicate, std::vector<std::string> args)
+        : Literal(std::move(predicate), std::move(args)) {
+    }
+    Kind kind() const override {
+        return Kind::NEGATED_ATOM;
+    }
+    bool equals(const Condition &other) const override;
+    ConditionPtr negate() const override;
+    bool negated() const override {
+        return true;
+    }
+    bool instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const override;
+};
+
+class JunctorCondition : public Condition {
+public:
+    std::vector<ConditionPtr> children;
+    std::size_t cached_hash;
+
+protected:
+    JunctorCondition(std::vector<ConditionPtr> children, Kind k);
+
+public:
+    const std::vector<ConditionPtr> &parts() const override {
+        return children;
+    }
+    std::size_t hash() const override {
+        return cached_hash;
+    }
+    bool equals(const Condition &other) const override;
+    void dump(std::ostream &os, int indent) const override;
+};
+
+class Conjunction final : public JunctorCondition {
+public:
+    explicit Conjunction(std::vector<ConditionPtr> children)
+        : JunctorCondition(std::move(children), Kind::CONJUNCTION) {
+    }
+    Kind kind() const override {
+        return Kind::CONJUNCTION;
+    }
+    ConditionPtr negate() const override;
+    ConditionPtr simplified() const override;
+    ConditionPtr change_parts(
+        std::vector<ConditionPtr> new_parts) const override {
+        return std::make_shared<Conjunction>(std::move(new_parts));
+    }
+    bool instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const override;
+};
+
+class Disjunction final : public JunctorCondition {
+public:
+    explicit Disjunction(std::vector<ConditionPtr> children)
+        : JunctorCondition(std::move(children), Kind::DISJUNCTION) {
+    }
+    Kind kind() const override {
+        return Kind::DISJUNCTION;
+    }
+    ConditionPtr negate() const override;
+    bool has_disjunction() const override {
+        return true;
+    }
+    ConditionPtr simplified() const override;
+    ConditionPtr change_parts(
+        std::vector<ConditionPtr> new_parts) const override {
+        return std::make_shared<Disjunction>(std::move(new_parts));
+    }
+};
+
+class QuantifiedCondition : public Condition {
+public:
+    std::vector<TypedObject> parameters;
+    std::vector<ConditionPtr> body; // always size 1 (per Python)
+    std::size_t cached_hash;
+
+protected:
+    QuantifiedCondition(
+        std::vector<TypedObject> parameters, std::vector<ConditionPtr> body,
+        Kind k);
+
+public:
+    const std::vector<ConditionPtr> &parts() const override {
+        return body;
+    }
+    std::size_t hash() const override {
+        return cached_hash;
+    }
+    bool equals(const Condition &other) const override;
+    void dump(std::ostream &os, int indent) const override;
+    std::unordered_set<std::string> free_variables() const override;
+    ConditionPtr simplified() const override;
+    ConditionPtr uniquify_variables(
+        std::unordered_map<std::string, std::string> &type_map,
+        const std::unordered_map<std::string, std::string> &renamings)
+        const override;
+};
+
+class UniversalCondition final : public QuantifiedCondition {
+public:
+    UniversalCondition(
+        std::vector<TypedObject> parameters, std::vector<ConditionPtr> body)
+        : QuantifiedCondition(
+              std::move(parameters), std::move(body), Kind::UNIVERSAL) {
+    }
+    Kind kind() const override {
+        return Kind::UNIVERSAL;
+    }
+    ConditionPtr negate() const override;
+    bool has_universal_part() const override {
+        return true;
+    }
+    ConditionPtr change_parts(
+        std::vector<ConditionPtr> new_parts) const override {
+        return std::make_shared<UniversalCondition>(
+            parameters, std::move(new_parts));
+    }
+};
+
+class ExistentialCondition final : public QuantifiedCondition {
+public:
+    ExistentialCondition(
+        std::vector<TypedObject> parameters, std::vector<ConditionPtr> body)
+        : QuantifiedCondition(
+              std::move(parameters), std::move(body), Kind::EXISTENTIAL) {
+    }
+    Kind kind() const override {
+        return Kind::EXISTENTIAL;
+    }
+    ConditionPtr negate() const override;
+    bool has_existential_part() const override {
+        return true;
+    }
+    ConditionPtr change_parts(
+        std::vector<ConditionPtr> new_parts) const override {
+        return std::make_shared<ExistentialCondition>(
+            parameters, std::move(new_parts));
+    }
+    bool instantiate(
+        const std::unordered_map<std::string, std::string> &var_mapping,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
+        const std::unordered_set<
+            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        std::vector<ConditionPtr> &result) const override;
+};
+
+// Convenience factories.
+inline ConditionPtr make_truth() {
+    return std::make_shared<Truth>();
+}
+inline ConditionPtr make_falsity() {
+    return std::make_shared<Falsity>();
+}
+inline ConditionPtr make_atom(
+    std::string predicate, std::vector<std::string> args) {
+    return std::make_shared<Atom>(std::move(predicate), std::move(args));
+}
+inline ConditionPtr make_negated_atom(
+    std::string predicate, std::vector<std::string> args) {
+    return std::make_shared<NegatedAtom>(std::move(predicate), std::move(args));
+}
+}
+
+#endif

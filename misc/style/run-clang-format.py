@@ -13,8 +13,12 @@ import utils
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(DIR))
-SEARCH_DIR = os.path.join(REPO, "src", "search")
-PREPROCESS_DIR = os.path.join(REPO, "src", "preprocess_h2")
+# C++ source trees whose style is enforced with clang-format.
+STYLE_DIRS = [
+    os.path.join(REPO, "src", "preprocess_h2"),
+    os.path.join(REPO, "src", "search"),
+    os.path.join(REPO, "src", "translate-cpp"),
+]
 CLANG_FORMAT_VERSION = "18"
 
 
@@ -29,11 +33,11 @@ def parse_args():
     return parser.parse_args()
 
 
-def search_files_are_dirty():
+def styled_files_are_dirty():
     if os.path.exists(os.path.join(REPO, ".git")):
-        cmd = ["git", "status", "--porcelain", SEARCH_DIR, PREPROCESS_DIR]
+        cmd = ["git", "status", "--porcelain"] + STYLE_DIRS
     elif os.path.exists(os.path.join(REPO, ".hg")):
-        cmd = ["hg", "status", SEARCH_DIR, PREPROCESS_DIR]
+        cmd = ["hg", "status"] + STYLE_DIRS
     else:
         sys.exit("Error: repo must contain a .git or .hg directory.")
     return bool(subprocess.check_output(cmd, cwd=REPO))
@@ -56,10 +60,12 @@ def get_clang_format_version():
 
 def main():
     args = parse_args()
-    if not args.force and args.modify and search_files_are_dirty():
-        sys.exit(f"Error: {SEARCH_DIR} has uncommited changes.")
-    src_files = utils.get_src_files(SEARCH_DIR, (".h", ".cc"), ("ext",))
-    src_files += utils.get_src_files(PREPROCESS_DIR, (".h", ".cc"), ("ext",))
+    if not args.force and args.modify and styled_files_are_dirty():
+        sys.exit("Error: a styled source tree has uncommitted changes.")
+    src_files = []
+    for style_dir in STYLE_DIRS:
+        src_files += utils.get_src_files(
+            style_dir, (".h", ".cc"), ignore_dirs=["ext"])
     print(f"Checking {len(src_files)} files with clang-format.")
     config_file = os.path.join(REPO, ".clang-format")
     executable = f"clang-format-{CLANG_FORMAT_VERSION}"

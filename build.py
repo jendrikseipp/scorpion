@@ -53,6 +53,10 @@ Build configurations
 --debug       Alias to build the default debug build configuration.
 --help        Print this message and exit.
 
+The C++ translator port (src/translate-cpp/) is always built and installed at
+builds/<config>/bin/translate-cpp, alongside the search binary, so Lab's
+CachedFastDownwardRevision keeps it across cache cleanup.
+
 Make options
   All other parameters are forwarded to the build step.
 

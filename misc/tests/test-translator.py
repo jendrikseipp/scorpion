@@ -21,23 +21,45 @@ import sys
 DIR = Path(__file__).resolve().parent
 REPO = DIR.parents[1]
 DRIVER = REPO / "fast-downward.py"
+DEFAULT_BENCHMARKS = os.environ.get("DOWNWARD_BENCHMARKS")
+
+# Default task set: the smallest task from each family that exposed a past
+# py-vs-cpp divergence (the regression set). Kept small so the check is fast;
+# these stress the determinism-prone code (invariant synthesis, axioms, fact
+# groups). Pass an explicit suite to override.
+DEFAULT_TASKS = [
+    "assembly:prob01.pddl",
+    "freecell:p01.pddl",
+    "psr-large:p27-s172-n25-l2-f10.pddl",
+    "psr-middle:p03-s28-n2-l5-f10.pddl",
+    "settlers-sat18-adl:p01.pddl",
+    "thoughtful-sat14-strips:bootstrap-typed-01.pddl",
+    "trucks-strips:p05.pddl",
+]
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description=HELP)
     parser.add_argument(
-        "benchmarks_dir",
-        help="path to benchmark directory")
+        "benchmarks_dir", nargs="?", default=DEFAULT_BENCHMARKS,
+        help="path to benchmark directory (default: $DOWNWARD_BENCHMARKS)")
     parser.add_argument(
-        "suite", nargs="*", default=["first"],
-        help='Use "all" to test all benchmarks, '
-             '"first" to test the first task of each domain (default), '
-             'or "<domain>:<problem>" to test individual tasks')
+        "suite", nargs="*", default=DEFAULT_TASKS,
+        help='task selection (default: the small per-family regression set). '
+             'Use "all" to test all benchmarks, "first" to test the first task '
+             'of each domain, or "<domain>:<problem>" for individual tasks')
     parser.add_argument(
         "--runs-per-task",
         help="translate each task this many times and compare the outputs",
         type=int, default=3)
+    parser.add_argument(
+        "--translator", choices=["py", "cpp"], default=None,
+        help="which translator to test (default: the driver's default). "
+             "Use 'cpp' to check determinism of the C++ translator.")
     args = parser.parse_args()
+    if not args.benchmarks_dir:
+        sys.exit("No benchmark directory: set the DOWNWARD_BENCHMARKS "
+                 "environment variable or pass a directory explicitly.")
     args.benchmarks_dir = Path(args.benchmarks_dir).resolve()
     return args
 
@@ -46,10 +68,13 @@ def get_task_name(path):
     return "-".join(str(path).split("/")[-2:])
 
 
-def translate_task(task_file):
+def translate_task(task_file, translator=None):
     print(f"Translate {get_task_name(task_file)}", flush=True)
     sys.stdout.flush()
-    cmd = [sys.executable, str(DRIVER), "--translate", str(task_file)]
+    cmd = [sys.executable, str(DRIVER)]
+    if translator:
+        cmd += ["--translator", translator]
+    cmd += ["--translate", str(task_file)]
     try:
         output = subprocess.check_output(cmd, encoding=sys.getfilesystemencoding())
     except OSError as err:
@@ -113,8 +138,8 @@ def cleanup():
         f.unlink()
 
 
-def write_combined_output(output_file, task):
-    log = translate_task(task)
+def write_combined_output(output_file, task, translator=None):
+    log = translate_task(task, translator)
     with open(output_file, "w") as combined_output:
         combined_output.write(log)
         with open("output.sas") as output_sas:
@@ -127,10 +152,10 @@ def main():
     cleanup()
     for task in get_tasks(args):
         base_file = "translator-output-0.txt"
-        write_combined_output(base_file, task)
+        write_combined_output(base_file, task, args.translator)
         for i in range(1, args.runs_per_task):
             compared_file = f"translator-output-{i}.txt"
-            write_combined_output(compared_file, task)
+            write_combined_output(compared_file, task, args.translator)
             files = [base_file, compared_file]
             try:
                 subprocess.check_call(["diff", "-q"] + files)
