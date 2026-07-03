@@ -693,6 +693,13 @@ SASTask pddl_to_sas(Task &task) {
     auto inst = phase("Completing instantiation", [&] {
         return instantiate::instantiate(task, model, prog.predicate_roles);
     });
+    // The grounded model and the Datalog program are only needed through
+    // instantiation. Release them now (they can be hundreds of MB on large
+    // tasks) so the memory-heavy STRIPS->SAS phases below don't hold them --
+    // on logistics/blocksworld-large the peak occurs during translation, not
+    // grounding, so this directly lowers peak RSS.
+    model = std::vector<grounding::Atom>{};
+    prog = grounding::Program{};
 
     if (!inst.relaxed_reachable) {
         cout << "No relaxed solution! Generating unsolvable task..." << endl;
