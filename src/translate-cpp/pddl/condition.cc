@@ -76,6 +76,7 @@ ConditionPtr Falsity::negate() const {
 Literal::Literal(string predicate, vector<string> args)
     : predicate(move(predicate)),
       args(move(args)),
+      predicate_id(grounding::symbols().intern(this->predicate)),
       cached_hash(detail::literal_hash(this->predicate, this->args)) {
 }
 
@@ -253,9 +254,9 @@ namespace {
 // `key` is a caller-owned reused buffer so probing does not allocate per
 // literal (SmallVector keeps the small arg list inline).
 void resolve_key(
-    GroundKey &key, const std::string &predicate,
-    const vector<string> &args, const VarMapping &m) {
-    key.predicate = grounding::symbols().intern(predicate);
+    GroundKey &key, int predicate_id, const vector<string> &args,
+    const VarMapping &m) {
+    key.predicate = predicate_id;
     key.args.clear();
     for (const auto &a : args) {
         auto it = m.find(a);
@@ -269,7 +270,7 @@ bool Atom::instantiate(
     const VarMapping &var_mapping, const InitFactSet &init_facts,
     const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
     static thread_local GroundKey key;
-    resolve_key(key, predicate, args, var_mapping);
+    resolve_key(key, predicate_id, args, var_mapping);
     // On a fluent hit, reuse the canonical owned fluent atom instead of
     // minting a fresh equal one.
     auto it = fluent_facts.find(key);
@@ -285,7 +286,7 @@ bool NegatedAtom::instantiate(
     const VarMapping &var_mapping, const InitFactSet &init_facts,
     const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
     static thread_local GroundKey key;
-    resolve_key(key, predicate, args, var_mapping);
+    resolve_key(key, predicate_id, args, var_mapping);
     if (fluent_facts.contains(key)) {
         // Materialize the resolved argument names only on this (rarer) path.
         vector<string> resolved;

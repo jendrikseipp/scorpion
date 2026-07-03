@@ -261,6 +261,10 @@ class Literal : public Condition {
 public:
     std::string predicate;
     std::vector<std::string> args;
+    // Interned predicate id (grounding symbol table), cached at construction so
+    // instantiation builds integer ground-fact keys without re-interning the
+    // predicate name on every probe.
+    int predicate_id;
 
 protected:
     std::size_t cached_hash;
