@@ -109,15 +109,31 @@ public:
     }
 };
 
+// Join key: the interned arg ids at the common positions. Args are already
+// interned ints (Arg::v), so the key is a small int tuple -- no per-firing
+// string building or separator characters, unlike the former '\x1f'-joined
+// name string. Almost always <= 2 common variables, so it stays inline.
+using JoinKey = small_vector::SmallVector<int, 2>;
+struct JoinKeyHash {
+    size_t operator()(const JoinKey &k) const noexcept {
+        size_t h = 1469598103934665603ULL; // FNV-1a
+        for (size_t i = 0; i < k.size(); ++i) {
+            h ^= static_cast<size_t>(static_cast<unsigned>(k[i]));
+            h *= 1099511628211ULL;
+        }
+        return h;
+    }
+};
+
 class JoinRuleB : public BuildRule {
 public:
     // Positions of common variable args in each of the two conditions.
     array<vector<int>, 2> common_positions;
-    // For each side: key (tuple of common-arg values) -> list of indices
-    // into the model's `items` vector. We dereference items[idx].args in
-    // fire(); storing indices instead of args copies keeps the join
-    // index from duplicating every atom's args.
-    array<unordered_map<string, vector<int>>, 2> atoms_by_key;
+    // For each side: key (interned arg ids at the common positions) -> list of
+    // indices into the model's `items` vector. We dereference items[idx].args
+    // in fire(); storing indices instead of args copies keeps the join index
+    // from duplicating every atom's args.
+    array<unordered_map<JoinKey, vector<int>, JoinKeyHash>, 2> atoms_by_key;
 
     JoinRuleB(Atom e, vector<Atom> c) : BuildRule(move(e), move(c)) {
         const auto &la = conditions[0].args;
@@ -148,22 +164,17 @@ public:
         }
     }
 
-    static string key_of(const Atom &atom, const vector<int> &pos) {
-        string k;
-        for (int p : pos) {
-            const Arg &a = atom.args[p];
-            if (a.is_symbol())
-                k.append(a.name());
-            else
-                k += to_string(a.position());
-            k.push_back('\x1f');
-        }
+    static JoinKey key_of(const Atom &atom, const vector<int> &pos) {
+        JoinKey k;
+        k.reserve(pos.size());
+        for (int p : pos)
+            k.push_back(atom.args[p].v);
         return k;
     }
 
     void update_index(
         const Atom &new_atom, int atom_index, int cond_index) override {
-        string k = key_of(new_atom, common_positions[cond_index]);
+        JoinKey k = key_of(new_atom, common_positions[cond_index]);
         atoms_by_key[cond_index][k].push_back(atom_index);
     }
 
@@ -171,7 +182,7 @@ public:
         const Atom &new_atom, int cond_index, const vector<Atom> &items,
         const function<void(int, ArgList &&)> &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
-        string k = key_of(new_atom, common_positions[cond_index]);
+        JoinKey k = key_of(new_atom, common_positions[cond_index]);
         int other = 1 - cond_index;
         auto it = atoms_by_key[other].find(k);
         if (it == atoms_by_key[other].end())
