@@ -18,7 +18,7 @@ int SASTask::remove_duplicate_operators() {
     // already sorted by (name, prevail, pre_post), so among duplicates the
     // first-named one survives -- matching the Python translator.
     using Key = tuple<
-        int, vector<VarVal>, vector<tuple<int, int, int, vector<VarVal>>>>;
+        int, vector<VarVal>, vector<PrePost>>;
     set<Key> seen;
     vector<SASOperator> unique;
     unique.reserve(operators.size());

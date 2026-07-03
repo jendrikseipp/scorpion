@@ -293,7 +293,7 @@ public:
         // Operators.
         vector<SASOperator> new_ops;
         for (auto &op : task.operators) {
-            vector<tuple<int, int, int, vector<VarVal>>> new_pre_post;
+            vector<PrePost> new_pre_post;
             for (auto &[v, pre, post, cond] : op.pre_post) {
                 auto it = new_var.find(v);
                 if (it == new_var.end())

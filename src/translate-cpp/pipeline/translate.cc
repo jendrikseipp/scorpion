@@ -34,6 +34,7 @@ using namespace pddl;
 using sas::SASAxiom;
 using sas::SASGoal;
 using sas::SASInit;
+using sas::PrePost;
 using sas::SASMutexGroup;
 using sas::SASOperator;
 using sas::SASTask;
@@ -424,7 +425,7 @@ optional<SASOperator> build_sas_operator(
                     it->second.begin(), it->second.end());
         }
     }
-    vector<tuple<int, int, int, vector<VarVal>>> pre_post;
+    vector<PrePost> pre_post;
     for (auto &[var, effects_on_var] : effects_by_variable) {
         int orig_pre = -1;
         auto cit = condition.find(var);

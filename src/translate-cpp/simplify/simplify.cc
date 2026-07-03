@@ -242,7 +242,7 @@ bool translate_operator(const Renaming &r, SASOperator &op) {
 
     vector<int> pp_vars;
     pp_vars.reserve(op.pre_post.size());
-    vector<tuple<int, int, int, vector<VarVal>>> new_pre_post;
+    vector<PrePost> new_pre_post;
     for (const auto &[var_no, pre, post, cond] : op.pre_post) {
         auto [new_var_no, new_post] = r.translate(var_no, post);
         if (new_post == ALWAYS_TRUE)
