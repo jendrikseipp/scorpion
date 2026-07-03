@@ -1,0 +1,5 @@
+# Autoresearch loop artifacts (not source).
+/build/
+/build-*/
+/translate-baseline
+/autoresearch.golden/
