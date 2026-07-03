@@ -31,6 +31,48 @@ using ConditionPtr = std::shared_ptr<const Condition>;
 struct ConditionPtrHash;
 struct ConditionPtrEqual;
 
+/*
+  Binding from a parameter name (e.g. "?x") to an object name, used while
+  instantiating a normalized condition. An action/axiom has only a handful of
+  parameters, so a flat vector with linear lookup beats std::unordered_map here:
+  it holds one buffer instead of a node per entry (instantiate_action rebuilds
+  the binding for every ground action, so the map's clear()+re-insert otherwise
+  frees and re-allocates those nodes millions of times) and it avoids hashing
+  the short "?x" keys. Only lookups matter; iteration order is irrelevant.
+*/
+class VarMapping {
+public:
+    using value_type = std::pair<std::string, std::string>;
+    using const_iterator = std::vector<value_type>::const_iterator;
+
+    const_iterator begin() const {
+        return entries_.begin();
+    }
+    const_iterator end() const {
+        return entries_.end();
+    }
+    const_iterator find(const std::string &key) const {
+        for (auto it = entries_.begin(); it != entries_.end(); ++it)
+            if (it->first == key)
+                return it;
+        return entries_.end();
+    }
+    // Insert-or-access, like std::unordered_map::operator[].
+    std::string &operator[](const std::string &key) {
+        for (auto &e : entries_)
+            if (e.first == key)
+                return e.second;
+        entries_.emplace_back(key, std::string());
+        return entries_.back().second;
+    }
+    void clear() {
+        entries_.clear();
+    }
+
+private:
+    std::vector<value_type> entries_;
+};
+
 class Condition {
 public:
     enum class Kind {
@@ -88,7 +130,7 @@ public:
       can appear in normalized conditions, and each overrides this.
     */
     virtual bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
+        const VarMapping &var_mapping,
         const std::unordered_set<
             ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
         const std::unordered_set<
@@ -192,7 +234,7 @@ public:
         return std::make_shared<Truth>();
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &,
+        const VarMapping &,
         const std::unordered_set<
             ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
         const std::unordered_set<
@@ -218,7 +260,7 @@ public:
         return std::make_shared<Falsity>();
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &,
+        const VarMapping &,
         const std::unordered_set<
             ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
         const std::unordered_set<
@@ -270,7 +312,7 @@ public:
         return false;
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
+        const VarMapping &var_mapping,
         const std::unordered_set<
             ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
         const std::unordered_set<
@@ -292,7 +334,7 @@ public:
         return true;
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
+        const VarMapping &var_mapping,
         const std::unordered_set<
             ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
         const std::unordered_set<
@@ -334,7 +376,7 @@ public:
         return std::make_shared<Conjunction>(std::move(new_parts));
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
+        const VarMapping &var_mapping,
         const std::unordered_set<
             ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
         const std::unordered_set<
@@ -430,7 +472,7 @@ public:
             parameters, std::move(new_parts));
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
+        const VarMapping &var_mapping,
         const std::unordered_set<
             ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
         const std::unordered_set<

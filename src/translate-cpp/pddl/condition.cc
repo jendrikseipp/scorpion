@@ -240,7 +240,7 @@ ConditionPtr UniversalCondition::negate() const {
 // -- instantiate() -----------------------------------------------------------
 
 bool Condition::instantiate(
-    const unordered_map<string, string> &,
+    const VarMapping &,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
     vector<ConditionPtr> &) const {
@@ -248,7 +248,7 @@ bool Condition::instantiate(
 }
 
 bool Falsity::instantiate(
-    const unordered_map<string, string> &,
+    const VarMapping &,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
     vector<ConditionPtr> &) const {
@@ -261,7 +261,7 @@ namespace {
 // instantiation does not heap-allocate a fresh vector per literal.
 void resolve_args_into(
     vector<string> &out, const vector<string> &args,
-    const unordered_map<string, string> &m) {
+    const VarMapping &m) {
     out.clear();
     out.reserve(args.size());
     for (const auto &a : args) {
@@ -272,7 +272,7 @@ void resolve_args_into(
 }
 
 bool Atom::instantiate(
-    const unordered_map<string, string> &var_mapping,
+    const VarMapping &var_mapping,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
         &init_facts,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
@@ -293,7 +293,7 @@ bool Atom::instantiate(
 }
 
 bool NegatedAtom::instantiate(
-    const unordered_map<string, string> &var_mapping,
+    const VarMapping &var_mapping,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
         &init_facts,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
@@ -311,7 +311,7 @@ bool NegatedAtom::instantiate(
 }
 
 bool Conjunction::instantiate(
-    const unordered_map<string, string> &var_mapping,
+    const VarMapping &var_mapping,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
         &init_facts,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
@@ -325,7 +325,7 @@ bool Conjunction::instantiate(
 }
 
 bool ExistentialCondition::instantiate(
-    const unordered_map<string, string> &var_mapping,
+    const VarMapping &var_mapping,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
         &init_facts,
     const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>

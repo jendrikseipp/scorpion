@@ -103,7 +103,7 @@ unordered_map<string, vector<string>> get_objects_by_type(const Task &task) {
 // each parameter, calling `fn(var_mapping)` for each assignment.
 void for_each_assignment(
     const vector<TypedObject> &parameters,
-    unordered_map<string, string> &var_mapping,
+    VarMapping &var_mapping,
     const unordered_map<string, vector<string>> &objects_by_type,
     const function<void()> &fn, size_t depth = 0) {
     if (depth == parameters.size()) {
@@ -122,7 +122,7 @@ void for_each_assignment(
 }
 
 void instantiate_effect(
-    const Effect &eff, unordered_map<string, string> &var_mapping,
+    const Effect &eff, VarMapping &var_mapping,
     const AtomSet &init_facts, const AtomSet &fluent_facts,
     const unordered_map<string, vector<string>> &objects_by_type,
     vector<pair<vector<ConditionPtr>, ConditionPtr>> &result) {
@@ -165,10 +165,10 @@ shared_ptr<PropositionalAction> instantiate_action(
     if (args.size() != action.parameters.size())
         return nullptr;
     // Reused across ground actions (instantiate_action is never re-entrant):
-    // clearing keeps the bucket array, avoiding a fresh map allocation per
-    // ground action in the dominant instantiation phase. Parameterised
+    // clear() keeps the backing buffer, so rebinding per ground action neither
+    // frees nor re-allocates in the dominant instantiation phase. Parameterised
     // effects still take their own copy before binding extra parameters.
-    static thread_local unordered_map<string, string> var_mapping;
+    static thread_local VarMapping var_mapping;
     var_mapping.clear();
     for (size_t i = 0; i < action.parameters.size(); ++i)
         var_mapping[action.parameters[i].name] = args[i];
@@ -205,7 +205,7 @@ shared_ptr<PropositionalAction> instantiate_action(
                 eff, var_mapping, init_facts, fluent_facts, objects_by_type,
                 effects);
         } else {
-            unordered_map<string, string> local_mapping = var_mapping;
+            VarMapping local_mapping = var_mapping;
             instantiate_effect(
                 eff, local_mapping, init_facts, fluent_facts, objects_by_type,
                 effects);
@@ -255,7 +255,7 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
     const AtomSet &fluent_facts) {
     if (args.size() != axiom.parameters.size())
         return nullptr;
-    unordered_map<string, string> var_mapping;
+    VarMapping var_mapping;
     for (size_t i = 0; i < axiom.parameters.size(); ++i)
         var_mapping[axiom.parameters[i].name] = args[i];
 
@@ -293,7 +293,7 @@ optional<vector<ConditionPtr>> instantiate_goal(
     const ConditionPtr &goal, const AtomSet &init_facts,
     const AtomSet &fluent_facts) {
     vector<ConditionPtr> result;
-    unordered_map<string, string> empty;
+    VarMapping empty;
     if (goal && !goal->instantiate(empty, init_facts, fluent_facts, result))
         return nullopt;
     return result;
