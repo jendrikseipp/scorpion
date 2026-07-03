@@ -782,7 +782,7 @@ SASTask pddl_to_sas(Task &task) {
     // Build operators.
     vector<SASOperator> sas_operators;
     phase("Translating task", [&] {
-        for (auto &op : inst.instantiated_actions) {
+        for (const auto &op : inst.instantiated_actions) {
             if (!op)
                 continue;
             auto sub = translate_strips_operator(
@@ -790,11 +790,6 @@ SASTask pddl_to_sas(Task &task) {
                 mutex_dict.ranges, implied_facts);
             for (auto &o : sub)
                 sas_operators.push_back(move(o));
-            // Release the (string-heavy) instantiated action as soon as it is
-            // translated: it is not needed downstream, and holding all of them
-            // while the SAS operators accumulate is the peak on operator-heavy
-            // tasks (logistics-large).
-            op.reset();
         }
         return 0;
     });
