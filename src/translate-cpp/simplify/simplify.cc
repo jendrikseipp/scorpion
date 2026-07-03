@@ -209,8 +209,12 @@ void apply_to_goal(const Renaming &r, SASGoal &goal) {
     goal.pairs = move(pairs);
 }
 
-optional<SASOperator> translate_operator(
-    const Renaming &r, const SASOperator &op) {
+// Renumber `op`'s variables under `r` in place, returning true to keep it or
+// false to drop it. Modifying in place (rather than returning a fresh operator)
+// avoids a second full operators vector -- the double representation was the
+// peak on operator-heavy tasks -- and keeps the (unchanged) name and cost
+// without copying them. All of `op` is read before its fields are reassigned.
+bool translate_operator(const Renaming &r, SASOperator &op) {
     // Build applicability conditions (prevail + pre). Sorted by var; each
     // var appears at most once (preconditions can't conflict with
     // prevails, and SASOperator::validate guarantees pre uniqueness per
@@ -225,7 +229,7 @@ optional<SASOperator> translate_operator(
     }
     ranges::sort(applicability);
     if (!convert_pairs(r, applicability))
-        return nullopt;
+        return false;
 
     auto find_app = [&](int var) -> int {
         auto it = lower_bound(
@@ -248,7 +252,7 @@ optional<SASOperator> translate_operator(
             auto [_, np] = r.translate(var_no, pre);
             if (np == ALWAYS_FALSE) {
                 // Shouldn't happen if applicability was converted ok.
-                return nullopt;
+                return false;
             }
             new_pre = np;
         }
@@ -272,7 +276,7 @@ optional<SASOperator> translate_operator(
         pp_vars.push_back(new_var_no);
     }
     if (new_pre_post.empty() && !get_options().keep_no_ops)
-        return nullopt;
+        return false;
 
     ranges::sort(pp_vars);
     pp_vars.erase(unique(pp_vars.begin(), pp_vars.end()), pp_vars.end());
@@ -288,12 +292,10 @@ optional<SASOperator> translate_operator(
     ranges::sort(new_pre_post);
     new_pre_post.erase(
         unique(new_pre_post.begin(), new_pre_post.end()), new_pre_post.end());
-    SASOperator out;
-    out.name = op.name;
-    out.prevail = move(new_prevail);
-    out.pre_post = move(new_pre_post);
-    out.cost = op.cost;
-    return out;
+    op.prevail = move(new_prevail);
+    op.pre_post = move(new_pre_post);
+    // name and cost are unchanged -- left in place, not copied.
+    return true;
 }
 }
 
@@ -307,17 +309,22 @@ void filter_unreachable_propositions(SASTask &task) {
     apply_to_mutexes(r, task.mutexes);
     apply_to_init(r, task.init);
     apply_to_goal(r, task.goal);
-    vector<SASOperator> new_ops;
-    int removed = 0;
-    for (auto &op : task.operators) {
-        auto nop = translate_operator(r, op);
-        if (nop)
-            new_ops.push_back(move(*nop));
-        else
+    // Renumber operators in place and compact out the removed ones, so a
+    // second full operators vector never coexists with the first (that double
+    // representation was the peak on operator-heavy tasks). Order is preserved.
+    size_t removed = 0;
+    size_t kept = 0;
+    for (size_t i = 0; i < task.operators.size(); ++i) {
+        if (translate_operator(r, task.operators[i])) {
+            if (kept != i)
+                task.operators[kept] = move(task.operators[i]);
+            ++kept;
+        } else {
             ++removed;
+        }
     }
+    task.operators.resize(kept);
     cout << removed << " operators removed" << endl;
-    task.operators = move(new_ops);
     vector<SASAxiom> new_ax;
     int ax_removed = 0;
     for (auto &ax : task.axioms) {
