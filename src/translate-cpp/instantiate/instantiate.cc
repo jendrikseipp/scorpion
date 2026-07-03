@@ -43,10 +43,20 @@ unordered_set<int> get_fluent_predicates(const Task &task) {
     return out;
 }
 
-AtomSet build_atom_set(
+// Build the reachable fluent facts in two shapes that share one Atom object
+// each: the string AtomSet returned in the Result (consumed by fact_groups)
+// and the integer-keyed FluentFactMap used for the hot instantiation probe.
+// The model atoms already carry interned predicate/object ids, so the integer
+// key is read straight off them.
+struct FluentFacts {
+    AtomSet set;         // for the Result / fact_groups
+    FluentFactMap by_id; // for probing (GroundKey -> canonical Atom)
+};
+
+FluentFacts build_fluent_facts(
     const vector<grounding::Atom> &model,
     const unordered_set<int> &fluent_preds) {
-    AtomSet out;
+    FluentFacts out;
     for (const auto &a : model) {
         if (!fluent_preds.contains(a.predicate))
             continue;
@@ -54,17 +64,29 @@ AtomSet build_atom_set(
         args.reserve(a.args.size());
         for (const auto &x : a.args)
             args.push_back(grounding::arg_to_string(x));
-        out.insert(make_shared<const Atom>(a.predicate_name(), move(args)));
+        auto atom = make_shared<const Atom>(a.predicate_name(), move(args));
+        GroundKey key;
+        key.predicate = a.predicate;
+        for (const auto &x : a.args)
+            key.args.push_back(x.v);
+        out.set.insert(atom);
+        out.by_id.emplace(move(key), move(atom));
     }
     return out;
 }
 
-AtomSet build_init_facts(const Task &task) {
-    AtomSet out;
+// Static init facts, keyed by integer ground key for the instantiation probe.
+InitFactSet build_init_facts(const Task &task) {
+    InitFactSet out;
     for (const auto &elem : task.init) {
-        if (auto *ap = get_if<shared_ptr<const Atom>>(&elem))
-            if (*ap)
-                out.insert(*ap);
+        auto *ap = get_if<shared_ptr<const Atom>>(&elem);
+        if (!ap || !*ap)
+            continue;
+        GroundKey key;
+        key.predicate = grounding::symbols().intern((*ap)->predicate);
+        for (const auto &arg : (*ap)->args)
+            key.args.push_back(grounding::symbols().intern(arg));
+        out.insert(move(key));
     }
     return out;
 }
@@ -86,15 +108,19 @@ build_init_assignments(const Task &task) {
     return out;
 }
 
-unordered_map<string, vector<string>> get_objects_by_type(const Task &task) {
-    unordered_map<string, vector<string>> result;
+// Objects grouped by (super)type, as interned object ids -- so binding a
+// parameter during instantiation stores an id directly, feeding the integer
+// ground-fact probe without any string work.
+unordered_map<string, vector<int>> get_objects_by_type(const Task &task) {
+    unordered_map<string, vector<int>> result;
     unordered_map<string, vector<string>> supertypes;
     for (const auto &t : task.types)
         supertypes[t.name] = t.supertype_names;
     for (const auto &obj : task.objects) {
-        result[obj.type_name].push_back(obj.name);
+        int id = grounding::symbols().intern(obj.name);
+        result[obj.type_name].push_back(id);
         for (const auto &sup : supertypes[obj.type_name])
-            result[sup].push_back(obj.name);
+            result[sup].push_back(id);
     }
     return result;
 }
@@ -104,7 +130,7 @@ unordered_map<string, vector<string>> get_objects_by_type(const Task &task) {
 void for_each_assignment(
     const vector<TypedObject> &parameters,
     VarMapping &var_mapping,
-    const unordered_map<string, vector<string>> &objects_by_type,
+    const unordered_map<string, vector<int>> &objects_by_type,
     const function<void()> &fn, size_t depth = 0) {
     if (depth == parameters.size()) {
         fn();
@@ -123,8 +149,8 @@ void for_each_assignment(
 
 void instantiate_effect(
     const Effect &eff, VarMapping &var_mapping,
-    const AtomSet &init_facts, const AtomSet &fluent_facts,
-    const unordered_map<string, vector<string>> &objects_by_type,
+    const InitFactSet &init_facts, const FluentFactMap &fluent_facts,
+    const unordered_map<string, vector<int>> &objects_by_type,
     vector<pair<vector<ConditionPtr>, ConditionPtr>> &result) {
     auto inst_once = [&]() {
         vector<ConditionPtr> condition;
@@ -156,11 +182,12 @@ long long evaluate_constant(const FunctionalExpression &expr) {
 }
 
 shared_ptr<PropositionalAction> instantiate_action(
-    const Action &action, const vector<string> &args, const AtomSet &init_facts,
+    const Action &action, const vector<string> &args,
+    const InitFactSet &init_facts,
     const unordered_map<string, shared_ptr<const FunctionalExpression>>
         &init_assignments,
-    const AtomSet &fluent_facts,
-    const unordered_map<string, vector<string>> &objects_by_type,
+    const FluentFactMap &fluent_facts,
+    const unordered_map<string, vector<int>> &objects_by_type,
     bool use_metric) {
     if (args.size() != action.parameters.size())
         return nullptr;
@@ -171,7 +198,8 @@ shared_ptr<PropositionalAction> instantiate_action(
     static thread_local VarMapping var_mapping;
     var_mapping.clear();
     for (size_t i = 0; i < action.parameters.size(); ++i)
-        var_mapping[action.parameters[i].name] = args[i];
+        var_mapping[action.parameters[i].name] =
+            grounding::symbols().intern(args[i]);
 
     // Build the grounded name using only external parameters.
     //
@@ -227,7 +255,9 @@ shared_ptr<PropositionalAction> instantiate_action(
                     for (const auto &a : pne.args) {
                         auto it = var_mapping.find(a);
                         resolved_args.push_back(
-                            it == var_mapping.end() ? a : it->second);
+                            it == var_mapping.end()
+                                ? a
+                                : grounding::symbols().name(it->second));
                     }
                     string key = pne.symbol;
                     for (const auto &a : resolved_args)
@@ -251,13 +281,14 @@ shared_ptr<PropositionalAction> instantiate_action(
 }
 
 shared_ptr<PropositionalAxiom> instantiate_axiom(
-    const Axiom &axiom, const vector<string> &args, const AtomSet &init_facts,
-    const AtomSet &fluent_facts) {
+    const Axiom &axiom, const vector<string> &args,
+    const InitFactSet &init_facts, const FluentFactMap &fluent_facts) {
     if (args.size() != axiom.parameters.size())
         return nullptr;
     VarMapping var_mapping;
     for (size_t i = 0; i < axiom.parameters.size(); ++i)
-        var_mapping[axiom.parameters[i].name] = args[i];
+        var_mapping[axiom.parameters[i].name] =
+            grounding::symbols().intern(args[i]);
 
     vector<string> name_args;
     name_args.push_back(axiom.name);
@@ -282,7 +313,9 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
     for (int i = 0; i < axiom.num_external_parameters; ++i) {
         const auto &n = axiom.parameters[i].name;
         auto it = var_mapping.find(n);
-        eff_args.push_back(it == var_mapping.end() ? n : it->second);
+        eff_args.push_back(
+            it == var_mapping.end() ? n
+                                    : grounding::symbols().name(it->second));
     }
     auto effect = make_shared<const Atom>(axiom.name, move(eff_args));
     return make_shared<PropositionalAxiom>(
@@ -290,8 +323,8 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
 }
 
 optional<vector<ConditionPtr>> instantiate_goal(
-    const ConditionPtr &goal, const AtomSet &init_facts,
-    const AtomSet &fluent_facts) {
+    const ConditionPtr &goal, const InitFactSet &init_facts,
+    const FluentFactMap &fluent_facts) {
     vector<ConditionPtr> result;
     VarMapping empty;
     if (goal && !goal->instantiate(empty, init_facts, fluent_facts, result))
@@ -306,7 +339,9 @@ Result instantiate(
     Result out;
     out.reachable_action_parameters.resize(task.actions.size());
     auto fluent_preds = get_fluent_predicates(task);
-    out.fluent_facts = build_atom_set(model, fluent_preds);
+    auto fluent = build_fluent_facts(model, fluent_preds);
+    out.fluent_facts = move(fluent.set);
+    const FluentFactMap &fluent_facts = fluent.by_id;
     auto init_facts = build_init_facts(task);
     auto init_assignments = build_init_assignments(task);
     auto objects_by_type = get_objects_by_type(task);
@@ -326,7 +361,7 @@ Result instantiate(
             for (size_t i = 0; i < action.parameters.size(); ++i)
                 args.push_back(grounding::arg_to_string(atom.args[i]));
             auto inst = instantiate_action(
-                action, args, init_facts, init_assignments, out.fluent_facts,
+                action, args, init_facts, init_assignments, fluent_facts,
                 objects_by_type, task.use_min_cost_metric);
             // Move args into reachable_action_parameters after the
             // instantiate_action call, saving one vector<string> copy
@@ -346,7 +381,7 @@ Result instantiate(
             for (size_t i = 0; i < axiom.parameters.size(); ++i)
                 args.push_back(grounding::arg_to_string(atom.args[i]));
             auto inst =
-                instantiate_axiom(axiom, args, init_facts, out.fluent_facts);
+                instantiate_axiom(axiom, args, init_facts, fluent_facts);
             if (inst)
                 out.instantiated_axioms.push_back(move(inst));
             break;
@@ -356,7 +391,7 @@ Result instantiate(
         }
     }
     out.instantiated_goal =
-        instantiate_goal(task.goal, init_facts, out.fluent_facts);
+        instantiate_goal(task.goal, init_facts, fluent_facts);
     return out;
 }
 }

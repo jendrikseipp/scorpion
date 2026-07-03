@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#include "algorithms/small_vector.h"
+
 #include <cstddef>
 #include <memory>
 #include <ostream>
@@ -32,17 +34,20 @@ struct ConditionPtrHash;
 struct ConditionPtrEqual;
 
 /*
-  Binding from a parameter name (e.g. "?x") to an object name, used while
-  instantiating a normalized condition. An action/axiom has only a handful of
-  parameters, so a flat vector with linear lookup beats std::unordered_map here:
+  Binding from a parameter name (e.g. "?x") to an interned object id, used
+  while instantiating a normalized condition. An action/axiom has only a handful
+  of parameters, so a flat vector with linear lookup beats std::unordered_map:
   it holds one buffer instead of a node per entry (instantiate_action rebuilds
   the binding for every ground action, so the map's clear()+re-insert otherwise
   frees and re-allocates those nodes millions of times) and it avoids hashing
-  the short "?x" keys. Only lookups matter; iteration order is irrelevant.
+  the short "?x" keys. The value is the object's interned id (from the grounding
+  symbol table) so literal instantiation can build integer ground-fact keys and
+  probe init/fluent facts with int comparisons instead of string hashing. Only
+  lookups matter; iteration order is irrelevant.
 */
 class VarMapping {
 public:
-    using value_type = std::pair<std::string, std::string>;
+    using value_type = std::pair<std::string, int>;
     using const_iterator = std::vector<value_type>::const_iterator;
 
     const_iterator begin() const {
@@ -58,11 +63,11 @@ public:
         return entries_.end();
     }
     // Insert-or-access, like std::unordered_map::operator[].
-    std::string &operator[](const std::string &key) {
+    int &operator[](const std::string &key) {
         for (auto &e : entries_)
             if (e.first == key)
                 return e.second;
-        entries_.emplace_back(key, std::string());
+        entries_.emplace_back(key, 0);
         return entries_.back().second;
     }
     void clear() {
@@ -72,6 +77,33 @@ public:
 private:
     std::vector<value_type> entries_;
 };
+
+/*
+  Integer key for a ground atom: interned predicate id + interned object-id
+  args (ids from the grounding symbol table, shared with the Datalog model).
+  Comparing/hashing ints replaces the string hashing + memcmp that dominated
+  the instantiation phase when init/fluent facts were probed as string atoms.
+*/
+struct GroundKey {
+    int predicate;
+    small_vector::SmallVector<int, 4> args;
+    bool operator==(const GroundKey &o) const {
+        return predicate == o.predicate && args == o.args;
+    }
+};
+struct GroundKeyHash {
+    std::size_t operator()(const GroundKey &k) const noexcept {
+        std::size_t h = std::hash<int>{}(k.predicate);
+        for (int a : k.args)
+            h ^= std::hash<int>{}(a) + 0x9e3779b97f4a7c15ULL + (h << 6) +
+                 (h >> 2);
+        return h;
+    }
+};
+// Reachable fluent facts -> the canonical ground Atom (reused on positive hits).
+using FluentFactMap = std::unordered_map<GroundKey, ConditionPtr, GroundKeyHash>;
+// Static init facts (membership only).
+using InitFactSet = std::unordered_set<GroundKey, GroundKeyHash>;
 
 class Condition {
 public:
@@ -130,11 +162,8 @@ public:
       can appear in normalized conditions, and each overrides this.
     */
     virtual bool instantiate(
-        const VarMapping &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        const VarMapping &var_mapping, const InitFactSet &init_facts,
+        const FluentFactMap &fluent_facts,
         std::vector<ConditionPtr> &result) const;
 
     /*
@@ -234,11 +263,7 @@ public:
         return std::make_shared<Truth>();
     }
     bool instantiate(
-        const VarMapping &,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+        const VarMapping &, const InitFactSet &, const FluentFactMap &,
         std::vector<ConditionPtr> &) const override {
         return true;
     }
@@ -260,11 +285,7 @@ public:
         return std::make_shared<Falsity>();
     }
     bool instantiate(
-        const VarMapping &,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+        const VarMapping &, const InitFactSet &, const FluentFactMap &,
         std::vector<ConditionPtr> &) const override;
 };
 
@@ -312,11 +333,8 @@ public:
         return false;
     }
     bool instantiate(
-        const VarMapping &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        const VarMapping &var_mapping, const InitFactSet &init_facts,
+        const FluentFactMap &fluent_facts,
         std::vector<ConditionPtr> &result) const override;
 };
 
@@ -334,11 +352,8 @@ public:
         return true;
     }
     bool instantiate(
-        const VarMapping &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        const VarMapping &var_mapping, const InitFactSet &init_facts,
+        const FluentFactMap &fluent_facts,
         std::vector<ConditionPtr> &result) const override;
 };
 
@@ -376,11 +391,8 @@ public:
         return std::make_shared<Conjunction>(std::move(new_parts));
     }
     bool instantiate(
-        const VarMapping &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        const VarMapping &var_mapping, const InitFactSet &init_facts,
+        const FluentFactMap &fluent_facts,
         std::vector<ConditionPtr> &result) const override;
 };
 
@@ -472,11 +484,8 @@ public:
             parameters, std::move(new_parts));
     }
     bool instantiate(
-        const VarMapping &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
+        const VarMapping &var_mapping, const InitFactSet &init_facts,
+        const FluentFactMap &fluent_facts,
         std::vector<ConditionPtr> &result) const override;
 };
 

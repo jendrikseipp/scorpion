@@ -1,5 +1,7 @@
 #include "condition.h"
 
+#include "../grounding/symbols.h"
+
 #include <functional>
 #include <stdexcept>
 
@@ -240,83 +242,73 @@ ConditionPtr UniversalCondition::negate() const {
 // -- instantiate() -----------------------------------------------------------
 
 bool Condition::instantiate(
-    const VarMapping &,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+    const VarMapping &, const InitFactSet &, const FluentFactMap &,
     vector<ConditionPtr> &) const {
     throw runtime_error("Cannot instantiate condition: not normalized");
 }
 
 bool Falsity::instantiate(
-    const VarMapping &,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
+    const VarMapping &, const InitFactSet &, const FluentFactMap &,
     vector<ConditionPtr> &) const {
     return false;
 }
 
 namespace {
-// Resolve `args` under `m` into the caller-owned `out` buffer. Callers
-// pass a reused scratch vector so probing init/fluent facts during
-// instantiation does not heap-allocate a fresh vector per literal.
-void resolve_args_into(
-    vector<string> &out, const vector<string> &args,
-    const VarMapping &m) {
-    out.clear();
-    out.reserve(args.size());
+// Resolve this literal's args under `m` into the integer ground-fact `key`
+// (interned predicate id + object-id args). A parameter argument resolves to
+// its bound object id via `m`; a constant argument is interned on the spot.
+// `key` is a caller-owned reused buffer so probing does not allocate per
+// literal (SmallVector keeps the small arg list inline).
+void resolve_key(
+    GroundKey &key, const std::string &predicate,
+    const vector<string> &args, const VarMapping &m) {
+    key.predicate = grounding::symbols().intern(predicate);
+    key.args.clear();
     for (const auto &a : args) {
         auto it = m.find(a);
-        out.push_back(it == m.end() ? a : it->second);
+        key.args.push_back(
+            it == m.end() ? grounding::symbols().intern(a) : it->second);
     }
 }
 }
 
 bool Atom::instantiate(
-    const VarMapping &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &fluent_facts,
-    vector<ConditionPtr> &result) const {
-    static thread_local vector<string> scratch;
-    resolve_args_into(scratch, args, var_mapping);
-    AtomView view(predicate, scratch);
-    // Probe via the view (no allocation). On a hit, reuse the canonical
-    // owned fluent atom instead of minting a fresh equal one.
-    auto it = fluent_facts.find(view);
+    const VarMapping &var_mapping, const InitFactSet &init_facts,
+    const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
+    static thread_local GroundKey key;
+    resolve_key(key, predicate, args, var_mapping);
+    // On a fluent hit, reuse the canonical owned fluent atom instead of
+    // minting a fresh equal one.
+    auto it = fluent_facts.find(key);
     if (it != fluent_facts.end()) {
-        result.push_back(*it);
-    } else if (!init_facts.contains(view)) {
+        result.push_back(it->second);
+    } else if (!init_facts.contains(key)) {
         return false;
     }
     return true;
 }
 
 bool NegatedAtom::instantiate(
-    const VarMapping &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &fluent_facts,
-    vector<ConditionPtr> &result) const {
-    static thread_local vector<string> scratch;
-    resolve_args_into(scratch, args, var_mapping);
-    AtomView view(predicate, scratch);
-    if (fluent_facts.contains(view)) {
-        result.push_back(make_shared<NegatedAtom>(predicate, scratch));
-    } else if (init_facts.contains(view)) {
+    const VarMapping &var_mapping, const InitFactSet &init_facts,
+    const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
+    static thread_local GroundKey key;
+    resolve_key(key, predicate, args, var_mapping);
+    if (fluent_facts.contains(key)) {
+        // Materialize the resolved argument names only on this (rarer) path.
+        vector<string> resolved;
+        resolved.reserve(key.args.size());
+        for (int id : key.args)
+            resolved.push_back(grounding::symbols().name(id));
+        result.push_back(make_shared<NegatedAtom>(predicate, move(resolved)));
+    } else if (init_facts.contains(key)) {
         return false;
     }
     return true;
 }
 
 bool Conjunction::instantiate(
-    const VarMapping &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &fluent_facts,
-    vector<ConditionPtr> &result) const {
+    const VarMapping &var_mapping, const InitFactSet &init_facts,
+    const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
     for (const auto &p : children) {
         if (p && !p->instantiate(var_mapping, init_facts, fluent_facts, result))
             return false;
@@ -325,12 +317,8 @@ bool Conjunction::instantiate(
 }
 
 bool ExistentialCondition::instantiate(
-    const VarMapping &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &fluent_facts,
-    vector<ConditionPtr> &result) const {
+    const VarMapping &var_mapping, const InitFactSet &init_facts,
+    const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
     if (!body.empty() && body[0])
         return body[0]->instantiate(
             var_mapping, init_facts, fluent_facts, result);
