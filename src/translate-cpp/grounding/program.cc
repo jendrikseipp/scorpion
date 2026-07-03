@@ -75,7 +75,7 @@ ostream &operator<<(ostream &os, const Rule &r) {
 void Program::add_fact(Atom atom) {
     for (const auto &a : atom.args) {
         if (a.is_symbol())
-            objects.insert(a.name());
+            objects.insert(a.v);
     }
     facts.push_back(move(atom));
 }
@@ -166,9 +166,9 @@ void Program::normalize() {
     if (must_add_predicate) {
         cout << "Unbound effect variables: Adding @object predicate." << endl;
         // Snapshot objects to avoid invalidating during add_fact.
-        vector<string> objs(objects.begin(), objects.end());
-        for (const auto &o : objs)
-            add_fact(Atom("@object", ArgList{Arg(o)}));
+        vector<int> objs(objects.begin(), objects.end());
+        for (int o : objs)
+            add_fact(Atom("@object", ArgList{Arg::from_symbol(o)}));
     }
     // split_duplicate_arguments
     bool printed = false;

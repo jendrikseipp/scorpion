@@ -42,6 +42,15 @@ struct Arg {
     explicit Arg(int position) : v(-(position + 1)) {
     }
 
+    // Build an Arg directly from an already-interned symbol id (>= 0), without
+    // re-interning a name. (The int constructor above means "position", so this
+    // needs to be a named factory.)
+    static Arg from_symbol(int id) {
+        Arg a;
+        a.v = id;
+        return a;
+    }
+
     bool is_symbol() const noexcept {
         return v >= 0;
     }
@@ -164,7 +173,9 @@ class Program {
 public:
     std::vector<Atom> facts;
     std::vector<Rule> rules;
-    std::unordered_set<std::string> objects;
+    // Interned ids of every object appearing in a fact argument, used only to
+    // synthesize @object facts for otherwise-unbound effect variables.
+    std::unordered_set<int> objects;
     // Role of each head predicate (by interned id), for the instantiation
     // pass. See PredicateRoles.
     PredicateRoles predicate_roles;
