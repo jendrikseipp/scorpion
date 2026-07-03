@@ -507,6 +507,11 @@ vector<Atom> compute_model(const Program &prog) {
             symbols().name(id).find('$') != string::npos ? 1 : 0;
     size_t relevant = 0, auxiliary = 0;
     vector<pair<int, int>> matches;
+    // Built once and reused: the callback only refers to `queue` (stable across
+    // the loop), so there is no need to reconstruct a std::function for every
+    // one of the millions of rule firings.
+    const function<void(int, ArgList &&)> enqueue =
+        [&](int p, ArgList &&args) { queue.push(p, move(args)); };
     while (!queue.empty()) {
         // Index of the atom in queue.items, captured before pop advances.
         int idx = static_cast<int>(queue.pos);
@@ -519,9 +524,7 @@ vector<Atom> compute_model(const Program &prog) {
         unifier.unify(next, matches);
         for (const auto &[ri, ci] : matches) {
             rules[ri]->update_index(next, idx, ci);
-            rules[ri]->fire(next, ci, queue.items, [&](int p, ArgList &&args) {
-                queue.push(p, move(args));
-            });
+            rules[ri]->fire(next, ci, queue.items, enqueue);
         }
     }
     cout << relevant << " relevant atoms" << endl;
