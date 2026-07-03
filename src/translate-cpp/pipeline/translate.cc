@@ -145,34 +145,22 @@ ImpliedFacts build_implied_facts(
     return implied;
 }
 
-// Map var -> allowed values (for a condition under construction). The value
-// list is kept sorted and duplicate-free, so it behaves like the std::set it
-// replaces (same ascending iteration order). A SmallVector keeps the common
-// small value-sets (single-valued positive literals, binary-variable negatives)
-// inline, removing the per-value heap allocation that dominated the malloc/free
-// churn of the "Translating task" phase on operator-heavy domains.
-using ValueSet = small_vector::SmallVector<int, 4>;
-using CondMap = unordered_map<int, ValueSet>;
-
-inline bool value_set_contains(const ValueSet &s, int v) {
-    return binary_search(s.begin(), s.end(), v);
-}
-
 /*
-  A small partial assignment (variable -> value), kept sorted by variable.
-  Replaces unordered_map<int,int> for the tiny per-operator condition and
-  effect-condition maps: a flat vector collapses each map to a single buffer
-  instead of a control block plus one node allocation per entry, cutting the
-  malloc/free churn that dominates the "Translating task" phase. It offers the
-  map-like subset the callers use. Every consumer sorts these pairs before
-  emitting them, so the deterministic sorted-by-variable iteration order leaves
-  the output unchanged.
+  A small map from an int variable to Value, kept sorted by variable in a flat
+  vector. Replaces the per-operator unordered_map<int, ...> maps of the
+  "Translating task" phase: a flat vector collapses each map to a single buffer
+  instead of a control block plus a node allocation per entry, which removes the
+  malloc/free churn that dominated that phase. It offers the map-like subset the
+  callers use (find/[]/erase/iterate). Every consumer sorts the resulting pairs
+  before emitting them, so the deterministic sorted-by-variable iteration order
+  leaves the output byte-identical.
 */
-class VarMap {
+template<typename Value>
+class FlatMap {
 public:
-    using value_type = pair<int, int>;
-    using iterator = vector<value_type>::iterator;
-    using const_iterator = vector<value_type>::const_iterator;
+    using value_type = pair<int, Value>;
+    using iterator = typename vector<value_type>::iterator;
+    using const_iterator = typename vector<value_type>::const_iterator;
 
     iterator begin() {
         return entries_.begin();
@@ -203,11 +191,11 @@ public:
     }
 
     // Insert-or-access, like std::map::operator[], keeping entries sorted.
-    int &operator[](int var) {
+    Value &operator[](int var) {
         auto it = lower_bound_(var);
         if (it != entries_.end() && it->first == var)
             return it->second;
-        return entries_.insert(it, {var, 0})->second;
+        return entries_.insert(it, {var, Value{}})->second;
     }
 
     void erase(const_iterator it) {
@@ -225,14 +213,26 @@ private:
     vector<value_type> entries_;
 
     iterator lower_bound_(int var) {
-        return ranges::lower_bound(
-            entries_, var, {}, &value_type::first);
+        return ranges::lower_bound(entries_, var, {}, &value_type::first);
     }
     const_iterator lower_bound_(int var) const {
-        return ranges::lower_bound(
-            entries_, var, {}, &value_type::first);
+        return ranges::lower_bound(entries_, var, {}, &value_type::first);
     }
 };
+
+// Value set for a variable under construction: sorted, duplicate-free. A
+// SmallVector keeps the common small sets (single-valued positive literals,
+// binary-variable negatives) inline, avoiding a per-value heap allocation.
+using ValueSet = small_vector::SmallVector<int, 4>;
+// var -> allowed values (behaves like the std::set<int> it replaces: same
+// ascending iteration order, no red-black-tree node per value).
+using CondMap = FlatMap<ValueSet>;
+// var -> value: a partial assignment (operator/effect conditions).
+using VarMap = FlatMap<int>;
+
+inline bool value_set_contains(const ValueSet &s, int v) {
+    return binary_search(s.begin(), s.end(), v);
+}
 
 optional<vector<VarMap>> translate_strips_conditions_aux(
     const vector<ConditionPtr> &conditions, const AtomToVarVals &dict,
