@@ -158,7 +158,83 @@ inline bool value_set_contains(const ValueSet &s, int v) {
     return binary_search(s.begin(), s.end(), v);
 }
 
-optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
+/*
+  A small partial assignment (variable -> value), kept sorted by variable.
+  Replaces unordered_map<int,int> for the tiny per-operator condition and
+  effect-condition maps: a flat vector collapses each map to a single buffer
+  instead of a control block plus one node allocation per entry, cutting the
+  malloc/free churn that dominates the "Translating task" phase. It offers the
+  map-like subset the callers use. Every consumer sorts these pairs before
+  emitting them, so the deterministic sorted-by-variable iteration order leaves
+  the output unchanged.
+*/
+class VarMap {
+public:
+    using value_type = pair<int, int>;
+    using iterator = vector<value_type>::iterator;
+    using const_iterator = vector<value_type>::const_iterator;
+
+    iterator begin() {
+        return entries_.begin();
+    }
+    iterator end() {
+        return entries_.end();
+    }
+    const_iterator begin() const {
+        return entries_.begin();
+    }
+    const_iterator end() const {
+        return entries_.end();
+    }
+    size_t size() const {
+        return entries_.size();
+    }
+    bool empty() const {
+        return entries_.empty();
+    }
+
+    iterator find(int var) {
+        auto it = lower_bound_(var);
+        return (it != entries_.end() && it->first == var) ? it : entries_.end();
+    }
+    const_iterator find(int var) const {
+        auto it = lower_bound_(var);
+        return (it != entries_.end() && it->first == var) ? it : entries_.end();
+    }
+
+    // Insert-or-access, like std::map::operator[], keeping entries sorted.
+    int &operator[](int var) {
+        auto it = lower_bound_(var);
+        if (it != entries_.end() && it->first == var)
+            return it->second;
+        return entries_.insert(it, {var, 0})->second;
+    }
+
+    void erase(const_iterator it) {
+        entries_.erase(it);
+    }
+    void erase(int var) {
+        auto it = find(var);
+        if (it != entries_.end())
+            entries_.erase(it);
+    }
+
+private:
+    // Sorted by variable; linear scan for lookup/insert, but these maps hold a
+    // handful of entries so this beats a hash map on both time and allocation.
+    vector<value_type> entries_;
+
+    iterator lower_bound_(int var) {
+        return ranges::lower_bound(
+            entries_, var, {}, &value_type::first);
+    }
+    const_iterator lower_bound_(int var) const {
+        return ranges::lower_bound(
+            entries_, var, {}, &value_type::first);
+    }
+};
+
+optional<vector<VarMap>> translate_strips_conditions_aux(
     const vector<ConditionPtr> &conditions, const AtomToVarVals &dict,
     const vector<int> &ranges) {
     CondMap condition;
@@ -244,14 +320,14 @@ optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
     ranges::sort(sorted_conds, [](const auto &a, const auto &b) {
         return a.second.size() < b.second.size();
     });
-    vector<unordered_map<int, int>> flat_conds = {{}};
+    vector<VarMap> flat_conds = {{}};
     for (const auto &[var, vals] : sorted_conds) {
         if (vals.size() == 1) {
             int val = vals[0];
             for (auto &cond : flat_conds)
                 cond[var] = val;
         } else {
-            vector<unordered_map<int, int>> new_conds;
+            vector<VarMap> new_conds;
             for (const auto &cond : flat_conds) {
                 for (int val : vals) {
                     auto nc = cond;
@@ -265,12 +341,12 @@ optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
     return flat_conds;
 }
 
-optional<vector<unordered_map<int, int>>> translate_strips_conditions(
+optional<vector<VarMap>> translate_strips_conditions(
     const vector<ConditionPtr> &conditions, const AtomToVarVals &dict,
     const vector<int> &ranges, const AtomToVarVals &mutex_dict,
     const vector<int> &mutex_ranges) {
     if (conditions.empty())
-        return vector<unordered_map<int, int>>{{}};
+        return vector<VarMap>{{}};
     auto mtx =
         translate_strips_conditions_aux(conditions, mutex_dict, mutex_ranges);
     if (!mtx)
@@ -278,11 +354,11 @@ optional<vector<unordered_map<int, int>>> translate_strips_conditions(
     return translate_strips_conditions_aux(conditions, dict, ranges);
 }
 
-optional<vector<unordered_map<int, int>>> negate_and_translate_condition(
+optional<vector<VarMap>> negate_and_translate_condition(
     const vector<vector<ConditionPtr>> &condition, const AtomToVarVals &dict,
     const vector<int> &ranges, const AtomToVarVals &mutex_dict,
     const vector<int> &mutex_ranges) {
-    vector<unordered_map<int, int>> negation;
+    vector<VarMap> negation;
     // An empty group inside `condition` means "always satisfied" — the
     // negation is unsatisfiable. (Matches Python's `if [] in condition`.)
     for (const auto &group : condition)
@@ -327,10 +403,10 @@ optional<vector<unordered_map<int, int>>> negate_and_translate_condition(
 }
 
 optional<SASOperator> build_sas_operator(
-    const string &name, unordered_map<int, int> condition,
-    map<int, map<int, vector<unordered_map<int, int>>>> &effects_by_variable,
+    const string &name, VarMap condition,
+    map<int, map<int, vector<VarMap>>> &effects_by_variable,
     int cost, const vector<int> &ranges, const ImpliedFacts &implied_facts) {
-    unordered_map<int, int> prevail_and_pre = condition;
+    VarMap prevail_and_pre = condition;
     // Facts implied by the operator's (prevail + pre) condition. Computed from
     // the full condition before the effects loop erases entries from it.
     set<VarVal> implied_precondition;
@@ -441,9 +517,9 @@ optional<SASOperator> build_sas_operator(
 optional<SASOperator> translate_strips_operator_aux(
     const PropositionalAction &op, const AtomToVarVals &dict,
     const vector<int> &ranges, const AtomToVarVals &mutex_dict,
-    const vector<int> &mutex_ranges, const unordered_map<int, int> &condition,
+    const vector<int> &mutex_ranges, const VarMap &condition,
     const ImpliedFacts &implied_facts) {
-    map<int, map<int, vector<unordered_map<int, int>>>> effects_by_variable;
+    map<int, map<int, vector<VarMap>>> effects_by_variable;
     map<int, vector<vector<ConditionPtr>>> add_conds_by_var;
 
     for (const auto &[conds, fact] : op.add_effects) {
@@ -472,7 +548,7 @@ optional<SASOperator> translate_strips_operator_aux(
     // reproduce this exactly with shared condition maps processed in insertion
     // order; the accumulation is what makes the encoding byte-identical to
     // Python under --full-encoding (e.g. cavediving-14-adl).
-    using CondPtr = shared_ptr<unordered_map<int, int>>;
+    using CondPtr = shared_ptr<VarMap>;
     vector<int> del_var_order;
     unordered_map<int, vector<pair<int, CondPtr>>> del_by_var;
     for (const auto &[conds, fact] : op.del_effects) {
@@ -491,7 +567,7 @@ optional<SASOperator> translate_strips_operator_aux(
         vector<CondPtr> shared;
         shared.reserve(eff_cond_list->size());
         for (const auto &ec : *eff_cond_list)
-            shared.push_back(make_shared<unordered_map<int, int>>(ec));
+            shared.push_back(make_shared<VarMap>(ec));
         for (const auto &[var, val] : it->second) {
             if (!del_by_var.contains(var))
                 del_var_order.push_back(var);
@@ -514,7 +590,7 @@ optional<SASOperator> translate_strips_operator_aux(
                 continue;
             cond[var] = val; // mutate the shared condition (guards accumulate)
             for (const auto &no_add_cond : *no_add) {
-                unordered_map<int, int> new_cond = cond;
+                VarMap new_cond = cond;
                 bool bad = false;
                 for (const auto &[cv, cval] : no_add_cond) {
                     auto pit = new_cond.find(cv);
