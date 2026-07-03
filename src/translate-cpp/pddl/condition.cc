@@ -16,13 +16,6 @@ size_t hash_value(const T &v) {
 }
 }
 
-bool ConditionPtrEqual::matches(const ConditionPtr &c, const AtomView &v) {
-    if (!c || c->kind() != Condition::Kind::ATOM)
-        return false;
-    const auto &lit = static_cast<const Literal &>(*c);
-    return lit.predicate == v.predicate && lit.args == v.args;
-}
-
 unordered_set<string> Condition::free_variables() const {
     unordered_set<string> result;
     for (const auto &p : parts()) {
