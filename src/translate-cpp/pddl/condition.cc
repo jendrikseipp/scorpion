@@ -65,10 +65,10 @@ void Falsity::dump(ostream &os, int indent) const {
 }
 
 ConditionPtr Truth::negate() const {
-    return make_shared<Falsity>();
+    return make_falsity();
 }
 ConditionPtr Falsity::negate() const {
-    return make_shared<Truth>();
+    return make_truth();
 }
 
 // -- Literal -----------------------------------------------------------------
@@ -329,10 +329,10 @@ ConditionPtr ExistentialCondition::negate() const {
 // -- simplified() ------------------------------------------------------------
 
 ConditionPtr Truth::simplified() const {
-    return make_shared<Truth>();
+    return make_truth();
 }
 ConditionPtr Falsity::simplified() const {
-    return make_shared<Falsity>();
+    return make_falsity();
 }
 ConditionPtr Literal::simplified() const {
     if (negated())
@@ -353,7 +353,7 @@ ConditionPtr Conjunction::simplified() const {
             break;
         }
         case Kind::FALSITY:
-            return make_shared<Falsity>();
+            return make_falsity();
         case Kind::TRUTH:
             break;
         default:
@@ -361,7 +361,7 @@ ConditionPtr Conjunction::simplified() const {
         }
     }
     if (result.empty())
-        return make_shared<Truth>();
+        return make_truth();
     if (result.size() == 1)
         return result.front();
     return make_shared<Conjunction>(move(result));
@@ -380,7 +380,7 @@ ConditionPtr Disjunction::simplified() const {
             break;
         }
         case Kind::TRUTH:
-            return make_shared<Truth>();
+            return make_truth();
         case Kind::FALSITY:
             break;
         default:
@@ -388,7 +388,7 @@ ConditionPtr Disjunction::simplified() const {
         }
     }
     if (result.empty())
-        return make_shared<Falsity>();
+        return make_falsity();
     if (result.size() == 1)
         return result.front();
     return make_shared<Disjunction>(move(result));

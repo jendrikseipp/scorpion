@@ -485,12 +485,16 @@ public:
         std::vector<GroundLiteral> &result) const override;
 };
 
-// Convenience factories.
+// Convenience factories. Truth and Falsity are immutable, value-equal
+// constants, so hand out shared singletons instead of allocating a fresh node
+// on every call (they are minted throughout normalize/simplify).
 inline ConditionPtr make_truth() {
-    return std::make_shared<Truth>();
+    static const ConditionPtr instance = std::make_shared<Truth>();
+    return instance;
 }
 inline ConditionPtr make_falsity() {
-    return std::make_shared<Falsity>();
+    static const ConditionPtr instance = std::make_shared<Falsity>();
+    return instance;
 }
 inline ConditionPtr make_atom(
     std::string predicate, std::vector<std::string> args) {
