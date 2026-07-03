@@ -120,10 +120,19 @@ struct GroundLiteral {
     bool operator==(const GroundLiteral &) const = default;
 };
 
-// Reachable fluent facts -> dense FactId (assigned in insertion order).
-using FluentFactMap = std::unordered_map<GroundKey, FactId, GroundKeyHash>;
-// Static init facts (membership only).
-using InitFactSet = std::unordered_set<GroundKey, GroundKeyHash>;
+// Marks a fact that is static and true in the initial state (present in init
+// but not a reachable fluent). Distinguished from a fluent fact's FactId (>= 0)
+// and from a fact absent from the map (unreachable / static-false).
+inline constexpr FactId STATIC_FACT = -1;
+
+// One map for all ground-fact membership tests during instantiation: a
+// reachable fluent fact maps to its dense FactId (>= 0); a static-true init
+// fact maps to STATIC_FACT; anything absent is unreachable / static-false.
+// Merging the former fluent map and init set lets each literal be classified
+// with a single probe instead of two.
+using FactMap = std::unordered_map<GroundKey, FactId, GroundKeyHash>;
+// Kept name for the fluent-fact table exposed to the translator.
+using FluentFactMap = FactMap;
 
 class Condition {
 public:
@@ -182,8 +191,7 @@ public:
       can appear in normalized conditions, and each overrides this.
     */
     virtual bool instantiate(
-        const VarMapping &var_mapping, const InitFactSet &init_facts,
-        const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const;
 
     /*
@@ -251,7 +259,7 @@ public:
         return std::make_shared<Truth>();
     }
     bool instantiate(
-        const VarMapping &, const InitFactSet &, const FluentFactMap &,
+        const VarMapping &, const FluentFactMap &,
         std::vector<GroundLiteral> &) const override {
         return true;
     }
@@ -273,7 +281,7 @@ public:
         return std::make_shared<Falsity>();
     }
     bool instantiate(
-        const VarMapping &, const InitFactSet &, const FluentFactMap &,
+        const VarMapping &, const FluentFactMap &,
         std::vector<GroundLiteral> &) const override;
 };
 
@@ -325,8 +333,7 @@ public:
         return false;
     }
     bool instantiate(
-        const VarMapping &var_mapping, const InitFactSet &init_facts,
-        const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const override;
 };
 
@@ -344,8 +351,7 @@ public:
         return true;
     }
     bool instantiate(
-        const VarMapping &var_mapping, const InitFactSet &init_facts,
-        const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const override;
 };
 
@@ -383,8 +389,7 @@ public:
         return std::make_shared<Conjunction>(std::move(new_parts));
     }
     bool instantiate(
-        const VarMapping &var_mapping, const InitFactSet &init_facts,
-        const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const override;
 };
 
@@ -476,8 +481,7 @@ public:
             parameters, std::move(new_parts));
     }
     bool instantiate(
-        const VarMapping &var_mapping, const InitFactSet &init_facts,
-        const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const override;
 };
 

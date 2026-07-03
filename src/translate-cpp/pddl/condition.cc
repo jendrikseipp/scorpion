@@ -236,13 +236,13 @@ ConditionPtr UniversalCondition::negate() const {
 // -- instantiate() -----------------------------------------------------------
 
 bool Condition::instantiate(
-    const VarMapping &, const InitFactSet &, const FluentFactMap &,
+    const VarMapping &, const FluentFactMap &,
     vector<GroundLiteral> &) const {
     throw runtime_error("Cannot instantiate condition: not normalized");
 }
 
 bool Falsity::instantiate(
-    const VarMapping &, const InitFactSet &, const FluentFactMap &,
+    const VarMapping &, const FluentFactMap &,
     vector<GroundLiteral> &) const {
     return false;
 }
@@ -267,51 +267,54 @@ void resolve_key(
 }
 
 bool Atom::instantiate(
-    const VarMapping &var_mapping, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts, vector<GroundLiteral> &result) const {
+    const VarMapping &var_mapping, const FluentFactMap &facts,
+    vector<GroundLiteral> &result) const {
     static thread_local GroundKey key;
     resolve_key(key, predicate_id, args, var_mapping);
-    // On a fluent hit, reuse the canonical owned fluent atom instead of
-    // minting a fresh equal one.
-    auto it = fluent_facts.find(key);
-    if (it != fluent_facts.end()) {
-        result.push_back({it->second, false});
-    } else if (!init_facts.contains(key)) {
+    // Single probe: fluent -> a real precondition on that fact; static-true ->
+    // drop the (satisfied) literal; absent -> the literal is false, so the
+    // caller drops the action.
+    auto it = facts.find(key);
+    if (it == facts.end())
         return false;
-    }
+    if (it->second != STATIC_FACT)
+        result.push_back({it->second, false});
     return true;
 }
 
 bool NegatedAtom::instantiate(
-    const VarMapping &var_mapping, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts, vector<GroundLiteral> &result) const {
+    const VarMapping &var_mapping, const FluentFactMap &facts,
+    vector<GroundLiteral> &result) const {
     static thread_local GroundKey key;
     resolve_key(key, predicate_id, args, var_mapping);
-    auto it = fluent_facts.find(key);
-    if (it != fluent_facts.end()) {
+    // Mirror image of Atom: absent (static-false) -> negation holds, drop the
+    // literal; static-true -> negation is false, drop the action; fluent ->
+    // a real negative precondition.
+    auto it = facts.find(key);
+    if (it == facts.end())
+        return true;
+    if (it->second != STATIC_FACT) {
         result.push_back({it->second, true});
-    } else if (init_facts.contains(key)) {
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool Conjunction::instantiate(
-    const VarMapping &var_mapping, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts, vector<GroundLiteral> &result) const {
+    const VarMapping &var_mapping, const FluentFactMap &facts,
+    vector<GroundLiteral> &result) const {
     for (const auto &p : children) {
-        if (p && !p->instantiate(var_mapping, init_facts, fluent_facts, result))
+        if (p && !p->instantiate(var_mapping, facts, result))
             return false;
     }
     return true;
 }
 
 bool ExistentialCondition::instantiate(
-    const VarMapping &var_mapping, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts, vector<GroundLiteral> &result) const {
+    const VarMapping &var_mapping, const FluentFactMap &facts,
+    vector<GroundLiteral> &result) const {
     if (!body.empty() && body[0])
-        return body[0]->instantiate(
-            var_mapping, init_facts, fluent_facts, result);
+        return body[0]->instantiate(var_mapping, facts, result);
     return true;
 }
 

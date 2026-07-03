@@ -90,9 +90,10 @@ ConditionPtr to_condition(
     return make_shared<NegatedAtom>(atom->predicate, atom->args);
 }
 
-// Static init facts, keyed by integer ground key for the instantiation probe.
-InitFactSet build_init_facts(const Task &task) {
-    InitFactSet out;
+// Add static-true init facts to the fact map: each init atom whose ground key
+// is not already a reachable fluent fact is a static fact, marked STATIC_FACT.
+// (Fluent facts were inserted with their FactId first and take priority.)
+void add_static_init_facts(const Task &task, FactMap &facts) {
     for (const auto &elem : task.init) {
         auto *ap = get_if<shared_ptr<const Atom>>(&elem);
         if (!ap || !*ap)
@@ -101,9 +102,8 @@ InitFactSet build_init_facts(const Task &task) {
         key.predicate = grounding::symbols().intern((*ap)->predicate);
         for (const auto &arg : (*ap)->args)
             key.args.push_back(grounding::symbols().intern(arg));
-        out.insert(move(key));
+        facts.emplace(move(key), STATIC_FACT);
     }
-    return out;
 }
 
 // PNE-to-expression map for init assignments.
@@ -164,18 +164,18 @@ void for_each_assignment(
 
 void instantiate_effect(
     const Effect &eff, VarMapping &var_mapping,
-    const InitFactSet &init_facts, const FluentFactMap &fluent_facts,
+    const FluentFactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
     vector<pair<vector<GroundLiteral>, GroundLiteral>> &result) {
     auto inst_once = [&]() {
         vector<GroundLiteral> condition;
         if (eff.condition &&
             !eff.condition->instantiate(
-                var_mapping, init_facts, fluent_facts, condition))
+                var_mapping, fluent_facts, condition))
             return;
         vector<GroundLiteral> lit_out;
         if (eff.literal && !eff.literal->instantiate(
-                               var_mapping, init_facts, fluent_facts, lit_out))
+                               var_mapping, fluent_facts, lit_out))
             return;
         if (!lit_out.empty()) {
             result.emplace_back(move(condition), move(lit_out[0]));
@@ -198,7 +198,6 @@ long long evaluate_constant(const FunctionalExpression &expr) {
 
 shared_ptr<PropositionalAction> instantiate_action(
     const Action &action, const vector<string> &args,
-    const InitFactSet &init_facts,
     const unordered_map<string, shared_ptr<const FunctionalExpression>>
         &init_assignments,
     const FluentFactMap &fluent_facts,
@@ -235,7 +234,7 @@ shared_ptr<PropositionalAction> instantiate_action(
     vector<GroundLiteral> precondition;
     if (action.precondition &&
         !action.precondition->instantiate(
-            var_mapping, init_facts, fluent_facts, precondition))
+            var_mapping, fluent_facts, precondition))
         return nullptr;
 
     vector<pair<vector<GroundLiteral>, GroundLiteral>> effects;
@@ -245,12 +244,12 @@ shared_ptr<PropositionalAction> instantiate_action(
             // only reads var_mapping, so share the action's mapping
             // directly instead of copying the whole map per effect.
             instantiate_effect(
-                eff, var_mapping, init_facts, fluent_facts, objects_by_type,
+                eff, var_mapping, fluent_facts, objects_by_type,
                 effects);
         } else {
             VarMapping local_mapping = var_mapping;
             instantiate_effect(
-                eff, local_mapping, init_facts, fluent_facts, objects_by_type,
+                eff, local_mapping, fluent_facts, objects_by_type,
                 effects);
         }
     }
@@ -297,7 +296,7 @@ shared_ptr<PropositionalAction> instantiate_action(
 
 shared_ptr<PropositionalAxiom> instantiate_axiom(
     const Axiom &axiom, const vector<string> &args,
-    const InitFactSet &init_facts, const FluentFactMap &fluent_facts,
+    const FluentFactMap &fluent_facts,
     const vector<shared_ptr<const Atom>> &fact_by_id) {
     if (args.size() != axiom.parameters.size())
         return nullptr;
@@ -321,7 +320,7 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
     vector<GroundLiteral> condition_lits;
     if (axiom.condition &&
         !axiom.condition->instantiate(
-            var_mapping, init_facts, fluent_facts, condition_lits))
+            var_mapping, fluent_facts, condition_lits))
         return nullptr;
     // Axioms are few: keep the downstream (axiom_rules) atom-based.
     vector<ConditionPtr> condition;
@@ -344,12 +343,11 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
 }
 
 optional<vector<ConditionPtr>> instantiate_goal(
-    const ConditionPtr &goal, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts,
+    const ConditionPtr &goal, const FluentFactMap &fluent_facts,
     const vector<shared_ptr<const Atom>> &fact_by_id) {
     vector<GroundLiteral> lits;
     VarMapping empty;
-    if (goal && !goal->instantiate(empty, init_facts, fluent_facts, lits))
+    if (goal && !goal->instantiate(empty, fluent_facts, lits))
         return nullopt;
     vector<ConditionPtr> result;
     result.reserve(lits.size());
@@ -371,7 +369,7 @@ Result instantiate(
     out.fact_by_id = move(fluent.fact_by_id);
     const FluentFactMap &fluent_facts = out.fluent_fact_ids;
     const auto &fact_by_id = out.fact_by_id;
-    auto init_facts = build_init_facts(task);
+    add_static_init_facts(task, out.fluent_fact_ids);
     auto init_assignments = build_init_assignments(task);
     auto objects_by_type = get_objects_by_type(task);
 
@@ -399,7 +397,7 @@ Result instantiate(
                 arg_ids.push_back(atom.args[i].v);
             }
             auto inst = instantiate_action(
-                action, args, init_facts, init_assignments, fluent_facts,
+                action, args, init_assignments, fluent_facts,
                 objects_by_type, task.use_min_cost_metric);
             out.reachable_action_parameters[action_idx].push_back(
                 move(arg_ids));
@@ -418,7 +416,7 @@ Result instantiate(
                 args.push_back(grounding::arg_to_string(atom.args[i]));
             auto inst =
                 instantiate_axiom(
-                axiom, args, init_facts, fluent_facts, fact_by_id);
+                axiom, args, fluent_facts, fact_by_id);
             if (inst)
                 out.instantiated_axioms.push_back(move(inst));
             break;
@@ -428,7 +426,7 @@ Result instantiate(
         }
     }
     out.instantiated_goal =
-        instantiate_goal(task.goal, init_facts, fluent_facts, fact_by_id);
+        instantiate_goal(task.goal, fluent_facts, fact_by_id);
     return out;
 }
 }
