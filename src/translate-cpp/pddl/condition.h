@@ -33,6 +33,11 @@ using ConditionPtr = std::shared_ptr<const Condition>;
 struct ConditionPtrHash;
 struct ConditionPtrEqual;
 
+// Shared singletons for the two immutable constants (defined below, once the
+// Truth/Falsity types are complete).
+ConditionPtr make_truth();
+ConditionPtr make_falsity();
+
 /*
   Binding from a parameter name (e.g. "?x") to an interned object id, used
   while instantiating a normalized condition. An action/axiom has only a handful
@@ -130,8 +135,6 @@ inline constexpr FactId STATIC_FACT = -1;
 // its dense FactId (>= 0); a static-true init fact maps to STATIC_FACT;
 // anything absent is unreachable / static-false.
 using FactMap = std::unordered_map<GroundKey, FactId, GroundKeyHash>;
-// Kept name for the fluent-fact table exposed to the translator.
-using FluentFactMap = FactMap;
 
 class Condition {
 public:
@@ -190,7 +193,7 @@ public:
       can appear in normalized conditions, and each overrides this.
     */
     virtual bool instantiate(
-        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const;
 
     /*
@@ -258,7 +261,7 @@ public:
         return std::make_shared<Truth>();
     }
     bool instantiate(
-        const VarMapping &, const FluentFactMap &,
+        const VarMapping &, const FactMap &,
         std::vector<GroundLiteral> &) const override {
         return true;
     }
@@ -280,7 +283,7 @@ public:
         return std::make_shared<Falsity>();
     }
     bool instantiate(
-        const VarMapping &, const FluentFactMap &,
+        const VarMapping &, const FactMap &,
         std::vector<GroundLiteral> &) const override;
 };
 
@@ -332,7 +335,7 @@ public:
         return false;
     }
     bool instantiate(
-        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const override;
 };
 
@@ -350,7 +353,7 @@ public:
         return true;
     }
     bool instantiate(
-        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const override;
 };
 
@@ -388,7 +391,7 @@ public:
         return std::make_shared<Conjunction>(std::move(new_parts));
     }
     bool instantiate(
-        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const override;
 };
 
@@ -480,7 +483,7 @@ public:
             parameters, std::move(new_parts));
     }
     bool instantiate(
-        const VarMapping &var_mapping, const FluentFactMap &fluent_facts,
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
         std::vector<GroundLiteral> &result) const override;
 };
 

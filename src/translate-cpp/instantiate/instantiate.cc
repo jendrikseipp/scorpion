@@ -44,14 +44,14 @@ unordered_set<int> get_fluent_predicates(const Task &task) {
 }
 
 // Three shared shapes of the reachable fluent facts (one Atom per fact): the
-// AtomSet in the Result (fact_groups), the FluentFactMap GroundKey->FactId (the
+// AtomSet in the Result (fact_groups), the FactMap GroundKey->FactId (the
 // instantiation probe + building the FactId->(var,val) table), and fact_by_id
 // FactId->Atom (rebuilding the few axiom/goal literals as atoms). Each distinct
 // fluent fact gets a dense FactId in model order.
 struct FluentFacts {
-    AtomSet set;
-    FluentFactMap by_id;
-    std::vector<std::shared_ptr<const Atom>> fact_by_id;
+    AtomSet set;                                    // for fact_groups
+    FactMap ids;                                    // GroundKey -> FactId
+    std::vector<std::shared_ptr<const Atom>> fact_by_id; // FactId -> Atom
 };
 
 FluentFacts build_fluent_facts(
@@ -73,7 +73,7 @@ FluentFacts build_fluent_facts(
             args.push_back(grounding::arg_to_string(x));
         auto atom = make_shared<const Atom>(a.predicate_name(), move(args));
         out.set.insert(atom);
-        out.by_id.emplace(move(key), id);
+        out.ids.emplace(move(key), id);
         out.fact_by_id.push_back(move(atom));
     }
     return out;
@@ -164,7 +164,7 @@ void for_each_assignment(
 
 void instantiate_effect(
     const Effect &eff, VarMapping &var_mapping,
-    const FluentFactMap &fluent_facts,
+    const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
     vector<pair<vector<GroundLiteral>, GroundLiteral>> &result) {
     auto inst_once = [&]() {
@@ -200,7 +200,7 @@ shared_ptr<PropositionalAction> instantiate_action(
     const Action &action, const vector<string> &args,
     const unordered_map<string, shared_ptr<const FunctionalExpression>>
         &init_assignments,
-    const FluentFactMap &fluent_facts,
+    const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
     bool use_metric) {
     if (args.size() != action.parameters.size())
@@ -296,7 +296,7 @@ shared_ptr<PropositionalAction> instantiate_action(
 
 shared_ptr<PropositionalAxiom> instantiate_axiom(
     const Axiom &axiom, const vector<string> &args,
-    const FluentFactMap &fluent_facts,
+    const FactMap &fluent_facts,
     const vector<shared_ptr<const Atom>> &fact_by_id) {
     if (args.size() != axiom.parameters.size())
         return nullptr;
@@ -343,7 +343,7 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
 }
 
 optional<vector<ConditionPtr>> instantiate_goal(
-    const ConditionPtr &goal, const FluentFactMap &fluent_facts,
+    const ConditionPtr &goal, const FactMap &fluent_facts,
     const vector<shared_ptr<const Atom>> &fact_by_id) {
     vector<GroundLiteral> lits;
     VarMapping empty;
@@ -365,9 +365,9 @@ Result instantiate(
     auto fluent_preds = get_fluent_predicates(task);
     auto fluent = build_fluent_facts(model, fluent_preds);
     out.fluent_facts = move(fluent.set);
-    out.fluent_fact_ids = move(fluent.by_id);
+    out.fluent_fact_ids = move(fluent.ids);
     out.fact_by_id = move(fluent.fact_by_id);
-    const FluentFactMap &fluent_facts = out.fluent_fact_ids;
+    const FactMap &fluent_facts = out.fluent_fact_ids;
     const auto &fact_by_id = out.fact_by_id;
     add_static_init_facts(task, out.fluent_fact_ids);
     auto init_assignments = build_init_assignments(task);

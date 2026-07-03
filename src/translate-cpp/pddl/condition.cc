@@ -236,13 +236,13 @@ ConditionPtr UniversalCondition::negate() const {
 // -- instantiate() -----------------------------------------------------------
 
 bool Condition::instantiate(
-    const VarMapping &, const FluentFactMap &,
+    const VarMapping &, const FactMap &,
     vector<GroundLiteral> &) const {
     throw runtime_error("Cannot instantiate condition: not normalized");
 }
 
 bool Falsity::instantiate(
-    const VarMapping &, const FluentFactMap &,
+    const VarMapping &, const FactMap &,
     vector<GroundLiteral> &) const {
     return false;
 }
@@ -267,7 +267,7 @@ void resolve_key(
 }
 
 bool Atom::instantiate(
-    const VarMapping &var_mapping, const FluentFactMap &facts,
+    const VarMapping &var_mapping, const FactMap &facts,
     vector<GroundLiteral> &result) const {
     static thread_local GroundKey key;
     resolve_key(key, predicate_id, args, var_mapping);
@@ -283,7 +283,7 @@ bool Atom::instantiate(
 }
 
 bool NegatedAtom::instantiate(
-    const VarMapping &var_mapping, const FluentFactMap &facts,
+    const VarMapping &var_mapping, const FactMap &facts,
     vector<GroundLiteral> &result) const {
     static thread_local GroundKey key;
     resolve_key(key, predicate_id, args, var_mapping);
@@ -301,7 +301,7 @@ bool NegatedAtom::instantiate(
 }
 
 bool Conjunction::instantiate(
-    const VarMapping &var_mapping, const FluentFactMap &facts,
+    const VarMapping &var_mapping, const FactMap &facts,
     vector<GroundLiteral> &result) const {
     for (const auto &p : children) {
         if (p && !p->instantiate(var_mapping, facts, result))
@@ -311,7 +311,7 @@ bool Conjunction::instantiate(
 }
 
 bool ExistentialCondition::instantiate(
-    const VarMapping &var_mapping, const FluentFactMap &facts,
+    const VarMapping &var_mapping, const FactMap &facts,
     vector<GroundLiteral> &result) const {
     if (!body.empty() && body[0])
         return body[0]->instantiate(var_mapping, facts, result);

@@ -45,7 +45,7 @@ namespace {
 // fluent fact (e.g. a static init atom). Used only on the non-hot ConditionPtr
 // paths (fact groups, init, goal, axioms, mutexes); the hot operator loop
 // carries FactIds directly in its GroundLiterals.
-FactId fact_id_of(const Literal &lit, const FluentFactMap &ids) {
+FactId fact_id_of(const Literal &lit, const FactMap &ids) {
     GroundKey key;
     key.predicate = lit.predicate_id;
     key.args.reserve(lit.args.size());
@@ -68,7 +68,7 @@ struct StripsToSas {
 
 StripsToSas build_dictionary(
     const vector<vector<ConditionPtr>> &groups, size_t num_facts,
-    const FluentFactMap &fluent_ids, bool assert_partial) {
+    const FactMap &fluent_ids, bool assert_partial) {
     StripsToSas out;
     out.factvals.resize(num_facts);
     out.ranges.reserve(groups.size());
@@ -104,7 +104,7 @@ using ImpliedFacts = map<VarVal, vector<VarVal>>;
 */
 ImpliedFacts build_implied_facts(
     const fact_groups::ComputedGroups &groups, const StripsToSas &strips_to_sas,
-    const FluentFactMap &fluent_ids) {
+    const FactMap &fluent_ids) {
     // Lonely propositions: size-1 fact groups -> their SAS variable number
     // (the proposition is encoded as (var, 0); see build_dictionary).
     unordered_map<FactId, int> lonely;
@@ -143,7 +143,7 @@ ImpliedFacts build_implied_facts(
 // Convert atom-based literals (goal, axioms) to GroundLiterals so they share
 // the operator translation path. Every kept literal is a fluent fact.
 vector<GroundLiteral> to_ground_literals(
-    const vector<ConditionPtr> &lits, const FluentFactMap &fluent_ids) {
+    const vector<ConditionPtr> &lits, const FactMap &fluent_ids) {
     vector<GroundLiteral> out;
     out.reserve(lits.size());
     for (const auto &c : lits) {
@@ -634,7 +634,7 @@ vector<SASOperator> translate_strips_operator(
 vector<SASAxiom> translate_strips_axiom(
     const PropositionalAxiom &ax, const FactToVarVals &factvals,
     const vector<int> &ranges, const FactToVarVals &mutex_factvals,
-    const vector<int> &mutex_ranges, const FluentFactMap &fluent_ids) {
+    const vector<int> &mutex_ranges, const FactMap &fluent_ids) {
     vector<SASAxiom> out;
     auto conds = translate_strips_conditions(
         to_ground_literals(ax.condition, fluent_ids), factvals, ranges,
@@ -728,7 +728,7 @@ SASTask pddl_to_sas(Task &task) {
     });
 
     bool use_partial = get_options().use_partial_encoding;
-    const FluentFactMap &fluent_ids = inst.fluent_fact_ids;
+    const FactMap &fluent_ids = inst.fluent_fact_ids;
     size_t num_facts = inst.fact_by_id.size();
     auto strips_to_sas =
         build_dictionary(groups.groups, num_facts, fluent_ids, use_partial);

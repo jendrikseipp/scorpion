@@ -17,7 +17,7 @@ struct Result {
     // are stored as GroundLiteral (FactId + sign); these let the translator map
     // fact-group atoms to FactIds (to build the FactId -> (var,val) table) and
     // rebuild the few axiom/goal literals as atoms.
-    pddl::FluentFactMap fluent_fact_ids;
+    pddl::FactMap fluent_fact_ids;
     std::vector<std::shared_ptr<const pddl::Atom>> fact_by_id;
     std::vector<std::shared_ptr<pddl::PropositionalAction>>
         instantiated_actions;
