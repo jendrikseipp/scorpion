@@ -25,7 +25,7 @@ using namespace pddl;
 
 BalanceChecker::BalanceChecker(
     const Task &task,
-    const vector<vector<vector<string>>> *reachable_action_parameters)
+    const vector<vector<vector<int>>> *reachable_action_parameters)
     : random_(314159), cpython_random_(314159) {
     patched_actions_.reserve(task.actions.size());
     heavy_actions_.reserve(task.actions.size());
@@ -174,7 +174,7 @@ vector<Invariant> initial_invariants(const Task &task, int limit) {
 
 vector<Invariant> find_invariants(
     const Task &task,
-    const vector<vector<vector<string>>> *reachable_action_parameters) {
+    const vector<vector<vector<int>>> *reachable_action_parameters) {
     const Options &opts = get_options();
     int limit = opts.invariant_generation_max_candidates;
     auto initial = initial_invariants(task, limit);
@@ -208,7 +208,7 @@ vector<Invariant> find_invariants(
 
 vector<vector<ConditionPtr>> get_groups(
     const Task &task,
-    const vector<vector<vector<string>>> *reachable_action_parameters) {
+    const vector<vector<vector<int>>> *reachable_action_parameters) {
     cout << "Finding invariants..." << endl;
     auto invariants = find_invariants(task, reachable_action_parameters);
     cout << "Checking invariant weight..." << endl;

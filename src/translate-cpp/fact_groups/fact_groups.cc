@@ -235,7 +235,7 @@ vector<vector<string>> build_translation_key(
 
 ComputedGroups compute_groups(
     const Task &task, const AtomSet &atoms,
-    const vector<vector<vector<string>>> *reachable_action_parameters,
+    const vector<vector<vector<int>>> *reachable_action_parameters,
     const AtomSet &negative_in_goal) {
     auto raw = invariants::get_groups(task, reachable_action_parameters);
     auto instantiated = instantiate_groups(raw, task, atoms);

@@ -18,7 +18,7 @@ class BalanceChecker {
 public:
     BalanceChecker(
         const pddl::Task &task,
-        const std::vector<std::vector<std::vector<std::string>>>
+        const std::vector<std::vector<std::vector<int>>>
             *reachable_action_parameters);
 
     const std::vector<const pddl::Action *> &get_threats(
@@ -44,7 +44,7 @@ private:
 */
 std::vector<Invariant> find_invariants(
     const pddl::Task &task,
-    const std::vector<std::vector<std::vector<std::string>>>
+    const std::vector<std::vector<std::vector<int>>>
         *reachable_action_parameters);
 
 /*
@@ -52,7 +52,7 @@ std::vector<Invariant> find_invariants(
 */
 std::vector<std::vector<pddl::ConditionPtr>> get_groups(
     const pddl::Task &task,
-    const std::vector<std::vector<std::vector<std::string>>>
+    const std::vector<std::vector<std::vector<int>>>
         *reachable_action_parameters);
 }
 

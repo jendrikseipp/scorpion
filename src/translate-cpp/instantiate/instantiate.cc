@@ -358,15 +358,22 @@ Result instantiate(
                 break;
             vector<string> args;
             args.reserve(action.parameters.size());
-            for (size_t i = 0; i < action.parameters.size(); ++i)
+            // Interned object ids for the reachable-parameters table (kept for
+            // invariant finding). Storing ids instead of the argument strings
+            // shrinks this long-lived table ~8x and lets its only consumer
+            // (BalanceChecker's "ever equal?" test) compare ints; equal object
+            // names always intern to the same id, so the test is unchanged.
+            vector<int> arg_ids;
+            arg_ids.reserve(action.parameters.size());
+            for (size_t i = 0; i < action.parameters.size(); ++i) {
                 args.push_back(grounding::arg_to_string(atom.args[i]));
+                arg_ids.push_back(atom.args[i].v);
+            }
             auto inst = instantiate_action(
                 action, args, init_facts, init_assignments, fluent_facts,
                 objects_by_type, task.use_min_cost_metric);
-            // Move args into reachable_action_parameters after the
-            // instantiate_action call, saving one vector<string> copy
-            // per processed model atom.
-            out.reachable_action_parameters[action_idx].push_back(move(args));
+            out.reachable_action_parameters[action_idx].push_back(
+                move(arg_ids));
             if (inst)
                 out.instantiated_actions.push_back(move(inst));
             break;
