@@ -189,6 +189,9 @@ public:
         auto it = lower_bound_(var);
         return (it != entries_.end() && it->first == var) ? it : entries_.end();
     }
+    bool contains(int var) const {
+        return find(var) != entries_.end();
+    }
 
     // Insert-or-access, like std::map::operator[], keeping entries sorted.
     Value &operator[](int var) {
@@ -404,7 +407,7 @@ optional<vector<VarMap>> negate_and_translate_condition(
 
 optional<SASOperator> build_sas_operator(
     const string &name, VarMap condition,
-    map<int, map<int, vector<VarMap>>> &effects_by_variable,
+    FlatMap<FlatMap<vector<VarMap>>> &effects_by_variable,
     int cost, const vector<int> &ranges, const ImpliedFacts &implied_facts) {
     VarMap prevail_and_pre = condition;
     // Facts implied by the operator's (prevail + pre) condition. Computed from
@@ -519,7 +522,7 @@ optional<SASOperator> translate_strips_operator_aux(
     const vector<int> &ranges, const AtomToVarVals &mutex_dict,
     const vector<int> &mutex_ranges, const VarMap &condition,
     const ImpliedFacts &implied_facts) {
-    map<int, map<int, vector<VarMap>>> effects_by_variable;
+    FlatMap<FlatMap<vector<VarMap>>> effects_by_variable;
     map<int, vector<vector<ConditionPtr>>> add_conds_by_var;
 
     for (const auto &[conds, fact] : op.add_effects) {
