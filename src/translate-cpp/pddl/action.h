@@ -51,16 +51,18 @@ public:
 class PropositionalAction {
 public:
     std::string name;
-    // Each precondition is an Atom or NegatedAtom.
-    std::vector<ConditionPtr> precondition;
+    // Ground literals as (FactId, sign); see GroundLiteral in condition.h.
+    std::vector<GroundLiteral> precondition;
     // Each effect: (condition list, literal).
-    std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>> add_effects;
-    std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>> del_effects;
+    std::vector<std::pair<std::vector<GroundLiteral>, GroundLiteral>>
+        add_effects;
+    std::vector<std::pair<std::vector<GroundLiteral>, GroundLiteral>>
+        del_effects;
     int cost;
 
     PropositionalAction(
-        std::string name, std::vector<ConditionPtr> precondition,
-        const std::vector<std::pair<std::vector<ConditionPtr>, ConditionPtr>>
+        std::string name, std::vector<GroundLiteral> precondition,
+        const std::vector<std::pair<std::vector<GroundLiteral>, GroundLiteral>>
             &effects,
         int cost);
 

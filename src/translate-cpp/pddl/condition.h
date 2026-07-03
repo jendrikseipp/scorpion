@@ -100,8 +100,28 @@ struct GroundKeyHash {
         return h;
     }
 };
-// Reachable fluent facts -> the canonical ground Atom (reused on positive hits).
-using FluentFactMap = std::unordered_map<GroundKey, ConditionPtr, GroundKeyHash>;
+// A dense index over the reachable fluent facts (0 .. #fluent-1), assigned
+// when the fluent-fact table is built.
+using FactId = int;
+
+/*
+  An instantiated ground literal: a fluent fact (by dense FactId) plus a sign.
+  Replaces shared_ptr<Atom> for the many instantiated action literals -- 8 bytes
+  with no Atom object or strings, versus a 16-byte shared_ptr plus a
+  string-bearing Atom. Downstream (STRIPS->SAS translation) only needs the
+  fact's identity and the sign, both captured here.
+*/
+struct GroundLiteral {
+    FactId fact;
+    bool negated;
+    GroundLiteral negate() const {
+        return {fact, !negated};
+    }
+    bool operator==(const GroundLiteral &) const = default;
+};
+
+// Reachable fluent facts -> dense FactId (assigned in insertion order).
+using FluentFactMap = std::unordered_map<GroundKey, FactId, GroundKeyHash>;
 // Static init facts (membership only).
 using InitFactSet = std::unordered_set<GroundKey, GroundKeyHash>;
 
@@ -164,7 +184,7 @@ public:
     virtual bool instantiate(
         const VarMapping &var_mapping, const InitFactSet &init_facts,
         const FluentFactMap &fluent_facts,
-        std::vector<ConditionPtr> &result) const;
+        std::vector<GroundLiteral> &result) const;
 
     /*
       Make all quantifier-bound variable names globally unique. `type_map`
@@ -232,7 +252,7 @@ public:
     }
     bool instantiate(
         const VarMapping &, const InitFactSet &, const FluentFactMap &,
-        std::vector<ConditionPtr> &) const override {
+        std::vector<GroundLiteral> &) const override {
         return true;
     }
 };
@@ -254,7 +274,7 @@ public:
     }
     bool instantiate(
         const VarMapping &, const InitFactSet &, const FluentFactMap &,
-        std::vector<ConditionPtr> &) const override;
+        std::vector<GroundLiteral> &) const override;
 };
 
 class Literal : public Condition {
@@ -307,7 +327,7 @@ public:
     bool instantiate(
         const VarMapping &var_mapping, const InitFactSet &init_facts,
         const FluentFactMap &fluent_facts,
-        std::vector<ConditionPtr> &result) const override;
+        std::vector<GroundLiteral> &result) const override;
 };
 
 class NegatedAtom final : public Literal {
@@ -326,7 +346,7 @@ public:
     bool instantiate(
         const VarMapping &var_mapping, const InitFactSet &init_facts,
         const FluentFactMap &fluent_facts,
-        std::vector<ConditionPtr> &result) const override;
+        std::vector<GroundLiteral> &result) const override;
 };
 
 class JunctorCondition : public Condition {
@@ -365,7 +385,7 @@ public:
     bool instantiate(
         const VarMapping &var_mapping, const InitFactSet &init_facts,
         const FluentFactMap &fluent_facts,
-        std::vector<ConditionPtr> &result) const override;
+        std::vector<GroundLiteral> &result) const override;
 };
 
 class Disjunction final : public JunctorCondition {
@@ -458,7 +478,7 @@ public:
     bool instantiate(
         const VarMapping &var_mapping, const InitFactSet &init_facts,
         const FluentFactMap &fluent_facts,
-        std::vector<ConditionPtr> &result) const override;
+        std::vector<GroundLiteral> &result) const override;
 };
 
 // Convenience factories.

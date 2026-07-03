@@ -88,8 +88,13 @@ struct AxiomDependencies {
 
 unordered_set<string> compute_necessary_atoms(
     const AxiomDependencies &deps, const vector<ConditionPtr> &goals,
-    const vector<shared_ptr<PropositionalAction>> &operators) {
+    const vector<shared_ptr<PropositionalAction>> &operators,
+    const vector<shared_ptr<const Atom>> &fact_by_id) {
     unordered_set<string> necessary;
+    // Without derived predicates nothing is necessary -- and skipping here
+    // avoids scanning every action's literals on the common axiom-free tasks.
+    if (deps.derived_variables.empty())
+        return necessary;
     for (const auto &g : goals) {
         if (!g)
             continue;
@@ -98,28 +103,21 @@ unordered_set<string> compute_necessary_atoms(
         if (deps.derived_variables.contains(key))
             necessary.insert(key);
     }
+    // Action literals are GroundLiterals; recover the atom key via fact_by_id.
+    auto check = [&](const GroundLiteral &gl) {
+        string key = atom_key(*fact_by_id[gl.fact]);
+        if (deps.derived_variables.contains(key))
+            necessary.insert(key);
+    };
     for (const auto &op : operators) {
         if (!op)
             continue;
-        for (const auto &pre : op->precondition) {
-            if (!pre)
-                continue;
-            const auto &lit = static_cast<const Literal &>(*pre);
-            string key = literal_atom_key(lit);
-            if (deps.derived_variables.contains(key))
-                necessary.insert(key);
-        }
+        for (const auto &pre : op->precondition)
+            check(pre);
         auto walk = [&](const auto &effects) {
-            for (const auto &[conds, _] : effects) {
-                for (const auto &c : conds) {
-                    if (!c)
-                        continue;
-                    const auto &lit = static_cast<const Literal &>(*c);
-                    string key = literal_atom_key(lit);
-                    if (deps.derived_variables.contains(key))
-                        necessary.insert(key);
-                }
-            }
+            for (const auto &[conds, _] : effects)
+                for (const auto &c : conds)
+                    check(c);
         };
         walk(op->add_effects);
         walk(op->del_effects);
@@ -261,9 +259,12 @@ vector<shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
 AxiomLayering handle_axioms(
     const vector<shared_ptr<PropositionalAction>> &operators,
     const vector<shared_ptr<PropositionalAxiom>> &axioms_in,
-    const vector<ConditionPtr> &goals, const string &layer_strategy) {
+    const vector<ConditionPtr> &goals,
+    const vector<shared_ptr<const Atom>> &fact_by_id,
+    const string &layer_strategy) {
     AxiomDependencies deps(axioms_in);
-    auto necessary = compute_necessary_atoms(deps, goals, operators);
+    auto necessary =
+        compute_necessary_atoms(deps, goals, operators, fact_by_id);
     deps.remove_unnecessary_variables(necessary);
 
     auto sccs = compute_sccs(deps);
@@ -347,7 +348,7 @@ AxiomLayering handle_axioms(
     AxiomLayering out;
     for (auto &c : clusters) {
         for (auto &v : c.variables) {
-            out.axiom_layers[v] = c.layer;
+            out.axiom_layers.push_back({deps.repr.at(v), c.layer});
             for (auto &ax : c.axioms[v])
                 out.axioms.push_back(move(ax));
         }

@@ -237,13 +237,13 @@ ConditionPtr UniversalCondition::negate() const {
 
 bool Condition::instantiate(
     const VarMapping &, const InitFactSet &, const FluentFactMap &,
-    vector<ConditionPtr> &) const {
+    vector<GroundLiteral> &) const {
     throw runtime_error("Cannot instantiate condition: not normalized");
 }
 
 bool Falsity::instantiate(
     const VarMapping &, const InitFactSet &, const FluentFactMap &,
-    vector<ConditionPtr> &) const {
+    vector<GroundLiteral> &) const {
     return false;
 }
 
@@ -268,14 +268,14 @@ void resolve_key(
 
 bool Atom::instantiate(
     const VarMapping &var_mapping, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
+    const FluentFactMap &fluent_facts, vector<GroundLiteral> &result) const {
     static thread_local GroundKey key;
     resolve_key(key, predicate_id, args, var_mapping);
     // On a fluent hit, reuse the canonical owned fluent atom instead of
     // minting a fresh equal one.
     auto it = fluent_facts.find(key);
     if (it != fluent_facts.end()) {
-        result.push_back(it->second);
+        result.push_back({it->second, false});
     } else if (!init_facts.contains(key)) {
         return false;
     }
@@ -284,16 +284,12 @@ bool Atom::instantiate(
 
 bool NegatedAtom::instantiate(
     const VarMapping &var_mapping, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
+    const FluentFactMap &fluent_facts, vector<GroundLiteral> &result) const {
     static thread_local GroundKey key;
     resolve_key(key, predicate_id, args, var_mapping);
-    if (fluent_facts.contains(key)) {
-        // Materialize the resolved argument names only on this (rarer) path.
-        vector<string> resolved;
-        resolved.reserve(key.args.size());
-        for (int id : key.args)
-            resolved.push_back(grounding::symbols().name(id));
-        result.push_back(make_shared<NegatedAtom>(predicate, move(resolved)));
+    auto it = fluent_facts.find(key);
+    if (it != fluent_facts.end()) {
+        result.push_back({it->second, true});
     } else if (init_facts.contains(key)) {
         return false;
     }
@@ -302,7 +298,7 @@ bool NegatedAtom::instantiate(
 
 bool Conjunction::instantiate(
     const VarMapping &var_mapping, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
+    const FluentFactMap &fluent_facts, vector<GroundLiteral> &result) const {
     for (const auto &p : children) {
         if (p && !p->instantiate(var_mapping, init_facts, fluent_facts, result))
             return false;
@@ -312,7 +308,7 @@ bool Conjunction::instantiate(
 
 bool ExistentialCondition::instantiate(
     const VarMapping &var_mapping, const InitFactSet &init_facts,
-    const FluentFactMap &fluent_facts, vector<ConditionPtr> &result) const {
+    const FluentFactMap &fluent_facts, vector<GroundLiteral> &result) const {
     if (!body.empty() && body[0])
         return body[0]->instantiate(
             var_mapping, init_facts, fluent_facts, result);

@@ -43,57 +43,52 @@ using sas::SASVariables;
 using sas::VarVal;
 
 namespace {
-string atom_key(const Atom &atom) {
-    string k = atom.predicate;
-    for (const auto &a : atom.args) {
-        k.push_back('\x1f');
-        k += a;
-    }
-    return k;
+// FactId of a ground atom via the fluent-fact table, or -1 if it is not a
+// fluent fact (e.g. a static init atom). Used only on the non-hot ConditionPtr
+// paths (fact groups, init, goal, axioms, mutexes); the hot operator loop
+// carries FactIds directly in its GroundLiterals.
+FactId fact_id_of(const Literal &lit, const FluentFactMap &ids) {
+    GroundKey key;
+    key.predicate = lit.predicate_id;
+    key.args.reserve(lit.args.size());
+    for (const auto &a : lit.args)
+        key.args.push_back(grounding::symbols().intern(a));
+    auto it = ids.find(key);
+    return it == ids.end() ? -1 : it->second;
 }
 
-// Same key as atom_key(), but written into a reused thread-local buffer and
-// returned by reference, so the hot per-literal dict lookups in the
-// "Translating task" phase don't heap-allocate a key string each time. The
-// returned reference is only valid until the next call; callers use it
-// immediately for a single find(). Negation does not affect the key, so this
-// also lets negated-literal lookups skip building a temporary positive Atom.
-const string &atom_key_scratch(
-    const string &predicate, const vector<string> &args) {
-    static thread_local string buf;
-    buf.assign(predicate);
-    for (const auto &a : args) {
-        buf.push_back('\x1f');
-        buf += a;
-    }
-    return buf;
-}
-
-using AtomToVarVals = unordered_map<string, vector<VarVal>>;
+// FactId -> its SAS (var, val) representations. Indexed by FactId; an empty
+// entry means the fact is absent from these groups (the old string-dict miss).
+// Replaces the string atom_key dictionary: the millions of per-literal operator
+// lookups become an int index instead of building and hashing a key.
+using FactToVarVals = vector<vector<VarVal>>;
 
 struct StripsToSas {
     vector<int> ranges;
-    AtomToVarVals dict;
+    FactToVarVals factvals;
 };
 
 StripsToSas build_dictionary(
-    const vector<vector<ConditionPtr>> &groups, bool assert_partial) {
+    const vector<vector<ConditionPtr>> &groups, size_t num_facts,
+    const FluentFactMap &fluent_ids, bool assert_partial) {
     StripsToSas out;
+    out.factvals.resize(num_facts);
     out.ranges.reserve(groups.size());
     for (size_t var = 0; var < groups.size(); ++var) {
         for (size_t val = 0; val < groups[var].size(); ++val) {
             const auto &atom = static_cast<const Atom &>(*groups[var][val]);
-            out.dict[atom_key(atom)].push_back(
-                {static_cast<int>(var), static_cast<int>(val)});
+            FactId f = fact_id_of(atom, fluent_ids);
+            if (f >= 0)
+                out.factvals[f].push_back(
+                    {static_cast<int>(var), static_cast<int>(val)});
         }
         out.ranges.push_back(static_cast<int>(groups[var].size()) + 1);
     }
     if (assert_partial) {
-        for (const auto &[_, v] : out.dict) {
-            if (v.size() != 1)
+        for (const auto &vv : out.factvals)
+            if (vv.size() > 1)
                 throw runtime_error(
                     "use-partial-encoding: atom must be in at most one group");
-        }
     }
     return out;
 }
@@ -110,23 +105,25 @@ using ImpliedFacts = map<VarVal, vector<VarVal>>;
   every other fact in Y's mutex group implies "not Y" = (Y's var, 1).
 */
 ImpliedFacts build_implied_facts(
-    const fact_groups::ComputedGroups &groups,
-    const StripsToSas &strips_to_sas) {
+    const fact_groups::ComputedGroups &groups, const StripsToSas &strips_to_sas,
+    const FluentFactMap &fluent_ids) {
     // Lonely propositions: size-1 fact groups -> their SAS variable number
     // (the proposition is encoded as (var, 0); see build_dictionary).
-    unordered_map<string, int> lonely;
+    unordered_map<FactId, int> lonely;
     for (size_t var = 0; var < groups.groups.size(); ++var) {
         if (groups.groups[var].size() == 1) {
             const auto &prop =
                 static_cast<const Atom &>(*groups.groups[var][0]);
-            lonely[atom_key(prop)] = static_cast<int>(var);
+            FactId f = fact_id_of(prop, fluent_ids);
+            if (f >= 0)
+                lonely[f] = static_cast<int>(var);
         }
     }
     ImpliedFacts implied;
     for (const auto &mutex_group : groups.mutex_groups) {
         for (size_t i = 0; i < mutex_group.size(); ++i) {
             const auto &prop = static_cast<const Atom &>(*mutex_group[i]);
-            auto lit = lonely.find(atom_key(prop));
+            auto lit = lonely.find(fact_id_of(prop, fluent_ids));
             if (lit == lonely.end())
                 continue;
             VarVal prop_is_false{lit->second, 1};
@@ -134,15 +131,29 @@ ImpliedFacts build_implied_facts(
                 if (j == i)
                     continue;
                 const auto &other = static_cast<const Atom &>(*mutex_group[j]);
-                auto dit = strips_to_sas.dict.find(atom_key(other));
-                if (dit == strips_to_sas.dict.end())
+                FactId f = fact_id_of(other, fluent_ids);
+                if (f < 0)
                     continue;
-                for (const auto &fact : dit->second)
+                for (const auto &fact : strips_to_sas.factvals[f])
                     implied[fact].push_back(prop_is_false);
             }
         }
     }
     return implied;
+}
+
+// Convert atom-based literals (goal, axioms) to GroundLiterals so they share
+// the operator translation path. Every kept literal is a fluent fact.
+vector<GroundLiteral> to_ground_literals(
+    const vector<ConditionPtr> &lits, const FluentFactMap &fluent_ids) {
+    vector<GroundLiteral> out;
+    out.reserve(lits.size());
+    for (const auto &c : lits) {
+        const auto &lit = static_cast<const Literal &>(*c);
+        FactId f = fact_id_of(lit, fluent_ids);
+        out.push_back({f, lit.negated()});
+    }
+    return out;
 }
 
 /*
@@ -238,20 +249,17 @@ inline bool value_set_contains(const ValueSet &s, int v) {
 }
 
 optional<vector<VarMap>> translate_strips_conditions_aux(
-    const vector<ConditionPtr> &conditions, const AtomToVarVals &dict,
+    const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
     const vector<int> &ranges) {
     CondMap condition;
     // Positive literals first.
-    for (const auto &c : conditions) {
-        if (!c)
+    for (const auto &lit : conditions) {
+        if (lit.negated)
             continue;
-        const auto &lit = static_cast<const Literal &>(*c);
-        if (lit.negated())
-            continue;
-        auto it = dict.find(atom_key_scratch(lit.predicate, lit.args));
-        if (it == dict.end())
-            continue; // static
-        for (const auto &[var, val] : it->second) {
+        const auto &varvals = factvals[lit.fact];
+        if (varvals.empty())
+            continue; // static (absent from these groups)
+        for (const auto &[var, val] : varvals) {
             auto cit = condition.find(var);
             if (cit != condition.end()) {
                 if (!value_set_contains(cit->second, val))
@@ -263,18 +271,15 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
         }
     }
     // Negative literals.
-    for (const auto &c : conditions) {
-        if (!c)
+    for (const auto &lit : conditions) {
+        if (!lit.negated)
             continue;
-        const auto &lit = static_cast<const Literal &>(*c);
-        if (!lit.negated())
-            continue;
-        auto it = dict.find(atom_key_scratch(lit.predicate, lit.args));
-        if (it == dict.end())
+        const auto &varvals = factvals[lit.fact];
+        if (varvals.empty())
             continue;
         bool done = false;
         CondMap new_condition;
-        for (const auto &[var, val] : it->second) {
+        for (const auto &[var, val] : varvals) {
             // Ascending order => sorted and duplicate-free by construction.
             ValueSet poss_vals;
             poss_vals.reserve(ranges[var] - 1);
@@ -306,7 +311,7 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
             // size representations pick a different variable than Python.
             int best_var = -1;
             size_t best_size = SIZE_MAX;
-            for (const auto &[var, val] : it->second) {
+            for (const auto &[var, val] : varvals) {
                 auto nit = new_condition.find(var);
                 if (nit != new_condition.end() &&
                     nit->second.size() < best_size) {
@@ -345,22 +350,22 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
 }
 
 optional<vector<VarMap>> translate_strips_conditions(
-    const vector<ConditionPtr> &conditions, const AtomToVarVals &dict,
-    const vector<int> &ranges, const AtomToVarVals &mutex_dict,
+    const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
+    const vector<int> &ranges, const FactToVarVals &mutex_factvals,
     const vector<int> &mutex_ranges) {
     if (conditions.empty())
         return vector<VarMap>{{}};
-    auto mtx =
-        translate_strips_conditions_aux(conditions, mutex_dict, mutex_ranges);
+    auto mtx = translate_strips_conditions_aux(
+        conditions, mutex_factvals, mutex_ranges);
     if (!mtx)
         return nullopt;
-    return translate_strips_conditions_aux(conditions, dict, ranges);
+    return translate_strips_conditions_aux(conditions, factvals, ranges);
 }
 
 optional<vector<VarMap>> negate_and_translate_condition(
-    const vector<vector<ConditionPtr>> &condition, const AtomToVarVals &dict,
-    const vector<int> &ranges, const AtomToVarVals &mutex_dict,
-    const vector<int> &mutex_ranges) {
+    const vector<vector<GroundLiteral>> &condition,
+    const FactToVarVals &factvals, const vector<int> &ranges,
+    const FactToVarVals &mutex_factvals, const vector<int> &mutex_ranges) {
     vector<VarMap> negation;
     // An empty group inside `condition` means "always satisfied" — the
     // negation is unsatisfiable. (Matches Python's `if [] in condition`.)
@@ -381,11 +386,11 @@ optional<vector<VarMap>> negate_and_translate_condition(
     // Iterate over the cartesian product of literals.
     vector<size_t> idx(condition.size(), 0);
     while (true) {
-        vector<ConditionPtr> combination;
+        vector<GroundLiteral> combination;
         for (size_t i = 0; i < condition.size(); ++i)
-            combination.push_back(condition[i][idx[i]]->negate());
+            combination.push_back(condition[i][idx[i]].negate());
         auto cond = translate_strips_conditions(
-            combination, dict, ranges, mutex_dict, mutex_ranges);
+            combination, factvals, ranges, mutex_factvals, mutex_ranges);
         if (cond)
             for (auto &c : *cond)
                 negation.push_back(move(c));
@@ -518,25 +523,22 @@ optional<SASOperator> build_sas_operator(
 }
 
 optional<SASOperator> translate_strips_operator_aux(
-    const PropositionalAction &op, const AtomToVarVals &dict,
-    const vector<int> &ranges, const AtomToVarVals &mutex_dict,
+    const PropositionalAction &op, const FactToVarVals &factvals,
+    const vector<int> &ranges, const FactToVarVals &mutex_factvals,
     const vector<int> &mutex_ranges, const VarMap &condition,
     const ImpliedFacts &implied_facts) {
     FlatMap<FlatMap<vector<VarMap>>> effects_by_variable;
-    map<int, vector<vector<ConditionPtr>>> add_conds_by_var;
+    map<int, vector<vector<GroundLiteral>>> add_conds_by_var;
 
     for (const auto &[conds, fact] : op.add_effects) {
-        if (!fact)
-            continue;
         auto eff_cond_list = translate_strips_conditions(
-            conds, dict, ranges, mutex_dict, mutex_ranges);
+            conds, factvals, ranges, mutex_factvals, mutex_ranges);
         if (!eff_cond_list)
             continue;
-        const auto &flit = static_cast<const Literal &>(*fact);
-        auto it = dict.find(atom_key_scratch(flit.predicate, flit.args));
-        if (it == dict.end())
+        const auto &varvals = factvals[fact.fact];
+        if (varvals.empty())
             continue;
-        for (const auto &[var, val] : it->second) {
+        for (const auto &[var, val] : varvals) {
             for (const auto &ec : *eff_cond_list)
                 effects_by_variable[var][val].push_back(ec);
             add_conds_by_var[var].push_back(conds);
@@ -555,15 +557,12 @@ optional<SASOperator> translate_strips_operator_aux(
     vector<int> del_var_order;
     unordered_map<int, vector<pair<int, CondPtr>>> del_by_var;
     for (const auto &[conds, fact] : op.del_effects) {
-        if (!fact)
-            continue;
         auto eff_cond_list = translate_strips_conditions(
-            conds, dict, ranges, mutex_dict, mutex_ranges);
+            conds, factvals, ranges, mutex_factvals, mutex_ranges);
         if (!eff_cond_list)
             continue;
-        const auto &flit = static_cast<const Literal &>(*fact);
-        auto it = dict.find(atom_key_scratch(flit.predicate, flit.args));
-        if (it == dict.end())
+        const auto &varvals = factvals[fact.fact];
+        if (varvals.empty())
             continue;
         // One shared condition object per translated effect-condition, reused
         // across every representation of this deleted fact.
@@ -571,7 +570,7 @@ optional<SASOperator> translate_strips_operator_aux(
         shared.reserve(eff_cond_list->size());
         for (const auto &ec : *eff_cond_list)
             shared.push_back(make_shared<VarMap>(ec));
-        for (const auto &[var, val] : it->second) {
+        for (const auto &[var, val] : varvals) {
             if (!del_by_var.contains(var))
                 del_var_order.push_back(var);
             for (const auto &sp : shared)
@@ -582,7 +581,8 @@ optional<SASOperator> translate_strips_operator_aux(
     // effect guarded by "the deleted value held and no add effect triggers".
     for (int var : del_var_order) {
         auto no_add = negate_and_translate_condition(
-            add_conds_by_var[var], dict, ranges, mutex_dict, mutex_ranges);
+            add_conds_by_var[var], factvals, ranges, mutex_factvals,
+            mutex_ranges);
         if (!no_add)
             continue;
         int none_of_those = ranges[var] - 1;
@@ -615,17 +615,18 @@ optional<SASOperator> translate_strips_operator_aux(
 }
 
 vector<SASOperator> translate_strips_operator(
-    const PropositionalAction &op, const AtomToVarVals &dict,
-    const vector<int> &ranges, const AtomToVarVals &mutex_dict,
+    const PropositionalAction &op, const FactToVarVals &factvals,
+    const vector<int> &ranges, const FactToVarVals &mutex_factvals,
     const vector<int> &mutex_ranges, const ImpliedFacts &implied_facts) {
     vector<SASOperator> result;
     auto conds = translate_strips_conditions(
-        op.precondition, dict, ranges, mutex_dict, mutex_ranges);
+        op.precondition, factvals, ranges, mutex_factvals, mutex_ranges);
     if (!conds)
         return result;
     for (const auto &c : *conds) {
         auto op_out = translate_strips_operator_aux(
-            op, dict, ranges, mutex_dict, mutex_ranges, c, implied_facts);
+            op, factvals, ranges, mutex_factvals, mutex_ranges, c,
+            implied_facts);
         if (op_out)
             result.push_back(move(*op_out));
     }
@@ -633,20 +634,21 @@ vector<SASOperator> translate_strips_operator(
 }
 
 vector<SASAxiom> translate_strips_axiom(
-    const PropositionalAxiom &ax, const AtomToVarVals &dict,
-    const vector<int> &ranges, const AtomToVarVals &mutex_dict,
-    const vector<int> &mutex_ranges) {
+    const PropositionalAxiom &ax, const FactToVarVals &factvals,
+    const vector<int> &ranges, const FactToVarVals &mutex_factvals,
+    const vector<int> &mutex_ranges, const FluentFactMap &fluent_ids) {
     vector<SASAxiom> out;
     auto conds = translate_strips_conditions(
-        ax.condition, dict, ranges, mutex_dict, mutex_ranges);
+        to_ground_literals(ax.condition, fluent_ids), factvals, ranges,
+        mutex_factvals, mutex_ranges);
     if (!conds)
         return out;
     if (!ax.effect)
         return out;
-    auto it = dict.find(atom_key(*ax.effect));
-    if (it == dict.end() || it->second.size() != 1)
+    FactId ef = fact_id_of(*ax.effect, fluent_ids);
+    if (ef < 0 || factvals[ef].size() != 1)
         return out;
-    VarVal eff = it->second.front();
+    VarVal eff = factvals[ef].front();
     for (const auto &c : *conds) {
         SASAxiom sa;
         for (const auto &[v, val] : c)
@@ -728,13 +730,17 @@ SASTask pddl_to_sas(Task &task) {
     });
 
     bool use_partial = get_options().use_partial_encoding;
-    auto strips_to_sas = build_dictionary(groups.groups, use_partial);
-    auto mutex_dict = build_dictionary(groups.mutex_groups, false);
+    const FluentFactMap &fluent_ids = inst.fluent_fact_ids;
+    size_t num_facts = inst.fact_by_id.size();
+    auto strips_to_sas =
+        build_dictionary(groups.groups, num_facts, fluent_ids, use_partial);
+    auto mutex_dict =
+        build_dictionary(groups.mutex_groups, num_facts, fluent_ids, false);
 
     // Facts implied by other facts (only used by --add-implied-preconditions).
     ImpliedFacts implied_facts;
     if (get_options().add_implied_preconditions)
-        implied_facts = build_implied_facts(groups, strips_to_sas);
+        implied_facts = build_implied_facts(groups, strips_to_sas, fluent_ids);
 
     // Build init.
     SASInit sas_init;
@@ -747,16 +753,17 @@ SASTask pddl_to_sas(Task &task) {
         const auto &ap = get<shared_ptr<const Atom>>(elem);
         if (!ap)
             continue;
-        auto it = strips_to_sas.dict.find(atom_key(*ap));
-        if (it == strips_to_sas.dict.end())
+        FactId f = fact_id_of(*ap, fluent_ids);
+        if (f < 0)
             continue;
-        for (const auto &[var, val] : it->second)
+        for (const auto &[var, val] : strips_to_sas.factvals[f])
             sas_init.values[var] = val;
     }
     // Build goal.
+    auto goal_gl = to_ground_literals(*inst.instantiated_goal, fluent_ids);
     auto goal_conds = translate_strips_conditions(
-        *inst.instantiated_goal, strips_to_sas.dict, strips_to_sas.ranges,
-        mutex_dict.dict, mutex_dict.ranges);
+        goal_gl, strips_to_sas.factvals, strips_to_sas.ranges,
+        mutex_dict.factvals, mutex_dict.ranges);
     if (!goal_conds) {
         cout << "Goal violates a mutex! Generating unsolvable task..." << endl;
         return trivial_task(false);
@@ -776,7 +783,8 @@ SASTask pddl_to_sas(Task &task) {
     auto axiom_layering = phase("Processing axioms", [&] {
         return axioms::handle_axioms(
             inst.instantiated_actions, inst.instantiated_axioms,
-            *inst.instantiated_goal, get_options().layer_strategy);
+            *inst.instantiated_goal, inst.fact_by_id,
+            get_options().layer_strategy);
     });
 
     // Build operators.
@@ -786,8 +794,8 @@ SASTask pddl_to_sas(Task &task) {
             if (!op)
                 continue;
             auto sub = translate_strips_operator(
-                *op, strips_to_sas.dict, strips_to_sas.ranges, mutex_dict.dict,
-                mutex_dict.ranges, implied_facts);
+                *op, strips_to_sas.factvals, strips_to_sas.ranges,
+                mutex_dict.factvals, mutex_dict.ranges, implied_facts);
             for (auto &o : sub)
                 sas_operators.push_back(move(o));
         }
@@ -799,18 +807,18 @@ SASTask pddl_to_sas(Task &task) {
         if (!ax)
             continue;
         auto sub = translate_strips_axiom(
-            *ax, strips_to_sas.dict, strips_to_sas.ranges, mutex_dict.dict,
-            mutex_dict.ranges);
+            *ax, strips_to_sas.factvals, strips_to_sas.ranges,
+            mutex_dict.factvals, mutex_dict.ranges, fluent_ids);
         for (auto &a : sub)
             sas_axioms.push_back(move(a));
     }
     // Build axiom layers vector.
     vector<int> axiom_layers(strips_to_sas.ranges.size(), -1);
-    for (const auto &[key, layer] : axiom_layering.axiom_layers) {
-        auto it = strips_to_sas.dict.find(key);
-        if (it == strips_to_sas.dict.end() || it->second.empty())
+    for (const auto &[effect, layer] : axiom_layering.axiom_layers) {
+        FactId f = fact_id_of(*effect, fluent_ids);
+        if (f < 0 || strips_to_sas.factvals[f].empty())
             continue;
-        axiom_layers[it->second.front().first] = layer;
+        axiom_layers[strips_to_sas.factvals[f].front().first] = layer;
     }
 
     // Variables.
@@ -827,11 +835,10 @@ SASTask pddl_to_sas(Task &task) {
             for (const auto &f : grp) {
                 if (!f)
                     continue;
-                auto it = strips_to_sas.dict.find(
-                    atom_key(static_cast<const Atom &>(*f)));
-                if (it == strips_to_sas.dict.end() || it->second.size() != 1)
+                FactId fid = fact_id_of(static_cast<const Atom &>(*f), fluent_ids);
+                if (fid < 0 || strips_to_sas.factvals[fid].size() != 1)
                     continue;
-                facts.push_back(it->second.front());
+                facts.push_back(strips_to_sas.factvals[fid].front());
             }
             if (facts.size() >= 2)
                 sas_mutexes.emplace_back(move(facts));
