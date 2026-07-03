@@ -9,6 +9,8 @@
 #include "../pddl/f_expression.h"
 #include "../pddl/task.h"
 
+#include "../utils/hash.h"
+
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -17,6 +19,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 
 using namespace std;
@@ -106,18 +109,30 @@ void add_static_init_facts(const Task &task, FactMap &facts) {
     }
 }
 
+// Identity of a primitive numeric expression: its function symbol and argument
+// names. A pair keyed map replaces the old symbol + '\x1f' + args string key --
+// no separator-byte convention, and the cost lookup no longer rebuilds a joined
+// string per ground action.
+using PneKey = pair<string, vector<string>>;
+struct PneKeyHash {
+    size_t operator()(const PneKey &k) const noexcept {
+        size_t h = std::hash<string>{}(k.first);
+        for (const auto &a : k.second)
+            utils::hash_combine(h, std::hash<string>{}(a));
+        return h;
+    }
+};
+using InitAssignments =
+    unordered_map<PneKey, shared_ptr<const FunctionalExpression>, PneKeyHash>;
+
 // PNE-to-expression map for init assignments.
-unordered_map<string, shared_ptr<const FunctionalExpression>>
-build_init_assignments(const Task &task) {
-    unordered_map<string, shared_ptr<const FunctionalExpression>> out;
+InitAssignments build_init_assignments(const Task &task) {
+    InitAssignments out;
     for (const auto &elem : task.init) {
         if (auto *as = get_if<shared_ptr<Assign>>(&elem)) {
-            if (*as && (*as)->fluent) {
-                string key = (*as)->fluent->symbol;
-                for (const auto &a : (*as)->fluent->args)
-                    key += "\x1f" + a;
-                out[key] = (*as)->expression;
-            }
+            if (*as && (*as)->fluent)
+                out[{(*as)->fluent->symbol, (*as)->fluent->args}] =
+                    (*as)->expression;
         }
     }
     return out;
@@ -198,8 +213,7 @@ long long evaluate_constant(const FunctionalExpression &expr) {
 
 shared_ptr<PropositionalAction> instantiate_action(
     const Action &action, const vector<string> &args,
-    const unordered_map<string, shared_ptr<const FunctionalExpression>>
-        &init_assignments,
+    const InitAssignments &init_assignments,
     const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
     bool use_metric) {
@@ -273,10 +287,8 @@ shared_ptr<PropositionalAction> instantiate_action(
                                 ? a
                                 : grounding::symbols().name(it->second));
                     }
-                    string key = pne.symbol;
-                    for (const auto &a : resolved_args)
-                        key += "\x1f" + a;
-                    auto it = init_assignments.find(key);
+                    auto it = init_assignments.find(
+                        PneKey{pne.symbol, move(resolved_args)});
                     if (it == init_assignments.end())
                         throw runtime_error(
                             "Could not find PNE initialization for cost");
