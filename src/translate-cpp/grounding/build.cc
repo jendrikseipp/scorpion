@@ -177,6 +177,8 @@ void build_exploration_rules(Program &prog, const Task &task) {
     for (size_t i = 0; i < task.actions.size(); ++i) {
         const Action &action = task.actions[i];
         Atom head = action_head(action, static_cast<int>(i));
+        prog.predicate_roles.set(
+            head.predicate, PredicateRole::ACTION, static_cast<int>(i));
         const PrimitiveNumericExpression *pne = nullptr;
         if (action.cost && action.cost->expression &&
             action.cost->expression->kind() ==
@@ -208,6 +210,8 @@ void build_exploration_rules(Program &prog, const Task &task) {
     for (size_t i = 0; i < task.axioms.size(); ++i) {
         const Axiom &axiom = task.axioms[i];
         Atom app_head = axiom_head(axiom, static_cast<int>(i));
+        prog.predicate_roles.set(
+            app_head.predicate, PredicateRole::AXIOM, static_cast<int>(i));
         auto app_body =
             condition_to_rule_body(axiom.parameters, axiom.condition, nullptr);
         prog.add_rule(Rule{app_body, app_head});
@@ -221,6 +225,7 @@ void build_exploration_rules(Program &prog, const Task &task) {
     // Goal rule.
     if (task.goal) {
         Atom head("@goal-reachable", {});
+        prog.predicate_roles.set(head.predicate, PredicateRole::GOAL_REACHABLE);
         auto body = condition_to_rule_body({}, task.goal, nullptr);
         prog.add_rule(Rule{body, head});
     }

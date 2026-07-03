@@ -10,8 +10,6 @@
 #include "../pddl/task.h"
 
 #include <algorithm>
-#include <cstdlib>
-#include <cstring>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -26,23 +24,6 @@ namespace translate::instantiate {
 using namespace pddl;
 
 namespace {
-constexpr const char *ACTION_PREFIX = "@a$";
-constexpr const char *AXIOM_PREFIX = "@x$";
-constexpr const char *GOAL_REACHABLE = "@goal-reachable";
-
-int try_extract_index(const string &predicate, const char *prefix) {
-    size_t pref_len = char_traits<char>::length(prefix);
-    if (predicate.size() <= pref_len)
-        return -1;
-    if (predicate.compare(0, pref_len, prefix) != 0)
-        return -1;
-    try {
-        return stoi(predicate.substr(pref_len));
-    } catch (...) {
-        return -1;
-    }
-}
-
 unordered_set<string> get_fluent_predicates(const Task &task) {
     unordered_set<string> out;
     for (const auto &a : task.actions) {
@@ -315,7 +296,9 @@ optional<vector<ConditionPtr>> instantiate_goal(
 }
 }
 
-Result instantiate(const Task &task, const vector<grounding::Atom> &model) {
+Result instantiate(
+    const Task &task, const vector<grounding::Atom> &model,
+    const grounding::PredicateRoles &roles) {
     Result out;
     out.reachable_action_parameters.resize(task.actions.size());
     auto fluent_preds = get_fluent_predicates(task);
@@ -325,17 +308,15 @@ Result instantiate(const Task &task, const vector<grounding::Atom> &model) {
     auto objects_by_type = get_objects_by_type(task);
 
     for (const auto &atom : model) {
-        if (atom.predicate_name() == GOAL_REACHABLE) {
+        switch (roles.role_of(atom.predicate)) {
+        case grounding::PredicateRole::GOAL_REACHABLE:
             out.relaxed_reachable = true;
-            continue;
-        }
-        int action_idx =
-            try_extract_index(atom.predicate_name(), ACTION_PREFIX);
-        if (action_idx >= 0 &&
-            action_idx < static_cast<int>(task.actions.size())) {
+            break;
+        case grounding::PredicateRole::ACTION: {
+            int action_idx = roles.index_of(atom.predicate);
             const Action &action = task.actions[action_idx];
             if (atom.args.size() < action.parameters.size())
-                continue;
+                break;
             vector<string> args;
             args.reserve(action.parameters.size());
             for (size_t i = 0; i < action.parameters.size(); ++i)
@@ -349,14 +330,13 @@ Result instantiate(const Task &task, const vector<grounding::Atom> &model) {
             out.reachable_action_parameters[action_idx].push_back(move(args));
             if (inst)
                 out.instantiated_actions.push_back(move(inst));
-            continue;
+            break;
         }
-        int axiom_idx = try_extract_index(atom.predicate_name(), AXIOM_PREFIX);
-        if (axiom_idx >= 0 &&
-            axiom_idx < static_cast<int>(task.axioms.size())) {
+        case grounding::PredicateRole::AXIOM: {
+            int axiom_idx = roles.index_of(atom.predicate);
             const Axiom &axiom = task.axioms[axiom_idx];
             if (atom.args.size() < axiom.parameters.size())
-                continue;
+                break;
             vector<string> args;
             args.reserve(axiom.parameters.size());
             for (size_t i = 0; i < axiom.parameters.size(); ++i)
@@ -365,7 +345,10 @@ Result instantiate(const Task &task, const vector<grounding::Atom> &model) {
                 instantiate_axiom(axiom, args, init_facts, out.fluent_facts);
             if (inst)
                 out.instantiated_axioms.push_back(move(inst));
-            continue;
+            break;
+        }
+        case grounding::PredicateRole::OTHER:
+            break;
         }
     }
     out.instantiated_goal =

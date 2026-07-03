@@ -600,7 +600,7 @@ SASTask pddl_to_sas(Task &task) {
     auto model = phase(
         "Computing model", [&] { return grounding::compute_model(prog); });
     auto inst = phase("Completing instantiation", [&] {
-        return instantiate::instantiate(task, model);
+        return instantiate::instantiate(task, model, prog.predicate_roles);
     });
 
     if (!inst.relaxed_reachable) {

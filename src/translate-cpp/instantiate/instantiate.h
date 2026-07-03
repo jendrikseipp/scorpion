@@ -33,7 +33,8 @@ struct Result {
   goal. The task must be normalized.
 */
 Result instantiate(
-    const pddl::Task &task, const std::vector<grounding::Atom> &model);
+    const pddl::Task &task, const std::vector<grounding::Atom> &model,
+    const grounding::PredicateRoles &roles);
 }
 
 #endif

@@ -9,6 +9,7 @@
 #include <functional>
 #include <ostream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -125,6 +126,42 @@ enum class RuleKind {
     PROJECT
 };
 
+/*
+  The role of a Datalog head predicate, so the instantiation pass can map a
+  model atom back to its source without parsing the predicate's (mangled)
+  name. Populated at program-generation time in build.cc; every other
+  predicate is implicitly OTHER.
+*/
+enum class PredicateRole {
+    OTHER,
+    ACTION,        // @a$<i>: applicability head of task.actions[i]
+    AXIOM,         // @x$<i>: applicability head of task.axioms[i]
+    GOAL_REACHABLE // @goal-reachable
+};
+
+class PredicateRoles {
+public:
+    void set(int predicate_id, PredicateRole role, int index = -1) {
+        info_[predicate_id] = {role, index};
+    }
+    PredicateRole role_of(int predicate_id) const {
+        auto it = info_.find(predicate_id);
+        return it == info_.end() ? PredicateRole::OTHER : it->second.role;
+    }
+    // Source index (into task.actions / task.axioms) for ACTION/AXIOM roles.
+    int index_of(int predicate_id) const {
+        auto it = info_.find(predicate_id);
+        return it == info_.end() ? -1 : it->second.index;
+    }
+
+private:
+    struct Info {
+        PredicateRole role;
+        int index;
+    };
+    std::unordered_map<int, Info> info_;
+};
+
 struct Rule {
     std::vector<Atom> conditions;
     Atom effect;
@@ -143,6 +180,9 @@ public:
     std::vector<Atom> facts;
     std::vector<Rule> rules;
     std::unordered_set<std::string> objects;
+    // Role of each head predicate (by interned id), for the instantiation
+    // pass. See PredicateRoles.
+    PredicateRoles predicate_roles;
 
     void add_fact(Atom atom);
     void add_rule(Rule rule);
