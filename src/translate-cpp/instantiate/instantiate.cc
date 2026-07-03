@@ -24,27 +24,31 @@ namespace translate::instantiate {
 using namespace pddl;
 
 namespace {
-unordered_set<string> get_fluent_predicates(const Task &task) {
-    unordered_set<string> out;
+// Interned ids of the predicates that can appear as (action/axiom) effects.
+// Comparing interned ids lets build_atom_set test each model atom with an int
+// lookup instead of hashing its predicate name; equal names always intern to
+// the same id, so the membership test is equivalent.
+unordered_set<int> get_fluent_predicates(const Task &task) {
+    unordered_set<int> out;
     for (const auto &a : task.actions) {
         for (const auto &eff : a.effects) {
             if (eff.literal) {
                 const auto &lit = static_cast<const Literal &>(*eff.literal);
-                out.insert(lit.predicate);
+                out.insert(grounding::symbols().intern(lit.predicate));
             }
         }
     }
     for (const auto &x : task.axioms)
-        out.insert(x.name);
+        out.insert(grounding::symbols().intern(x.name));
     return out;
 }
 
 AtomSet build_atom_set(
     const vector<grounding::Atom> &model,
-    const unordered_set<string> &fluent_preds) {
+    const unordered_set<int> &fluent_preds) {
     AtomSet out;
     for (const auto &a : model) {
-        if (!fluent_preds.contains(a.predicate_name()))
+        if (!fluent_preds.contains(a.predicate))
             continue;
         vector<string> args;
         args.reserve(a.args.size());
