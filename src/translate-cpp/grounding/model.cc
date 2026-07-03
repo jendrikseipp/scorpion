@@ -441,13 +441,22 @@ vector<Atom> compute_model(const Program &prog) {
 
     cout << "Generated " << rules.size() << " rules." << endl;
     cout << "Computing model..." << endl;
+    // Precompute which predicate ids are auxiliary (name contains '$'), so the
+    // hot pop-loop tests a flag by id instead of resolving each of the
+    // (millions of) derived atoms' predicate names to a string and scanning
+    // it. No predicates are interned during model computation, so the table
+    // covers every predicate the loop can see.
+    vector<char> is_auxiliary(symbols().size(), 0);
+    for (size_t id = 0; id < is_auxiliary.size(); ++id)
+        is_auxiliary[id] =
+            symbols().name(id).find('$') != string::npos ? 1 : 0;
     size_t relevant = 0, auxiliary = 0;
     vector<pair<int, int>> matches;
     while (!queue.empty()) {
         // Index of the atom in queue.items, captured before pop advances.
         int idx = static_cast<int>(queue.pos);
         Atom next = queue.pop();
-        if (next.predicate_name().find('$') != string::npos)
+        if (is_auxiliary[next.predicate])
             ++auxiliary;
         else
             ++relevant;
