@@ -145,8 +145,18 @@ ImpliedFacts build_implied_facts(
     return implied;
 }
 
-// Map var -> set of allowed values (for a condition under construction).
-using CondMap = unordered_map<int, set<int>>;
+// Map var -> allowed values (for a condition under construction). The value
+// list is kept sorted and duplicate-free, so it behaves like the std::set it
+// replaces (same ascending iteration order). A SmallVector keeps the common
+// small value-sets (single-valued positive literals, binary-variable negatives)
+// inline, removing the per-value heap allocation that dominated the malloc/free
+// churn of the "Translating task" phase on operator-heavy domains.
+using ValueSet = small_vector::SmallVector<int, 4>;
+using CondMap = unordered_map<int, ValueSet>;
+
+inline bool value_set_contains(const ValueSet &s, int v) {
+    return binary_search(s.begin(), s.end(), v);
+}
 
 optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
     const vector<ConditionPtr> &conditions, const AtomToVarVals &dict,
@@ -165,7 +175,7 @@ optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
         for (const auto &[var, val] : it->second) {
             auto cit = condition.find(var);
             if (cit != condition.end()) {
-                if (!cit->second.contains(val))
+                if (!value_set_contains(cit->second, val))
                     return nullopt;
                 cit->second = {val};
             } else {
@@ -186,19 +196,21 @@ optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
         bool done = false;
         CondMap new_condition;
         for (const auto &[var, val] : it->second) {
-            set<int> poss_vals;
+            // Ascending order => sorted and duplicate-free by construction.
+            ValueSet poss_vals;
+            poss_vals.reserve(ranges[var] - 1);
             for (int v = 0; v < ranges[var]; ++v)
                 if (v != val)
-                    poss_vals.insert(v);
+                    poss_vals.push_back(v);
             auto cit = condition.find(var);
             if (cit == condition.end()) {
                 new_condition[var] = move(poss_vals);
             } else {
                 done = true;
-                set<int> intersection;
-                for (int v : cit->second)
-                    if (poss_vals.contains(v))
-                        intersection.insert(v);
+                ValueSet intersection;
+                set_intersection(
+                    cit->second.begin(), cit->second.end(), poss_vals.begin(),
+                    poss_vals.end(), back_inserter(intersection));
                 if (intersection.empty())
                     return nullopt;
                 cit->second = move(intersection);
@@ -227,7 +239,7 @@ optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
         }
     }
     // Multiply-out the condition.
-    vector<pair<int, set<int>>> sorted_conds(
+    vector<pair<int, ValueSet>> sorted_conds(
         condition.begin(), condition.end());
     ranges::sort(sorted_conds, [](const auto &a, const auto &b) {
         return a.second.size() < b.second.size();
@@ -235,7 +247,7 @@ optional<vector<unordered_map<int, int>>> translate_strips_conditions_aux(
     vector<unordered_map<int, int>> flat_conds = {{}};
     for (const auto &[var, vals] : sorted_conds) {
         if (vals.size() == 1) {
-            int val = *vals.begin();
+            int val = vals[0];
             for (auto &cond : flat_conds)
                 cond[var] = val;
         } else {
