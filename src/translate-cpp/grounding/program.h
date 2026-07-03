@@ -72,21 +72,6 @@ using ArgList = small_vector::SmallVector<Arg, 4>;
 inline std::string arg_to_string(const Arg &a) {
     return a.is_symbol() ? a.name() : std::to_string(a.position());
 }
-inline bool is_variable(const Arg &a) {
-    if (!a.is_symbol())
-        return false;
-    const std::string &s = a.name();
-    return !s.empty() && s.front() == '?';
-}
-inline bool is_constant(const Arg &a) {
-    if (!a.is_symbol())
-        return false;
-    const std::string &s = a.name();
-    return s.empty() || s.front() != '?';
-}
-inline bool is_int(const Arg &a) {
-    return a.is_position();
-}
 
 struct Atom {
     // Interned predicate-name id (shares symbols() with Arg). Interning makes

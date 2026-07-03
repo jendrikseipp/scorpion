@@ -30,8 +30,6 @@ AxiomLayering handle_axioms(
     const std::vector<std::shared_ptr<const pddl::Atom>> &fact_by_id,
     const std::string &layer_strategy);
 
-// Build a canonical string key for a (positive) atom used in layer maps.
-std::string atom_key(const pddl::Atom &atom);
 }
 
 #endif

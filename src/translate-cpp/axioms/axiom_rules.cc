@@ -17,17 +17,10 @@ using namespace std;
 namespace translate::axioms {
 using namespace pddl;
 
-string atom_key(const Atom &atom) {
-    string k = atom.predicate;
-    for (const auto &a : atom.args) {
-        k.push_back('\x1f');
-        k += a;
-    }
-    return k;
-}
-
 namespace {
-string literal_atom_key(const Literal &lit) {
+// Identity key for a (positive or negated) literal, used to key the derived-
+// variable dependency graph. Sign-independent: predicate + '\x1f'-joined args.
+string atom_key(const Literal &lit) {
     string k = lit.predicate;
     for (const auto &a : lit.args) {
         k.push_back('\x1f');
@@ -61,7 +54,7 @@ struct AxiomDependencies {
                 if (!lit_cond)
                     continue;
                 const auto &lit = static_cast<const Literal &>(*lit_cond);
-                string body_key = literal_atom_key(lit);
+                string body_key = atom_key(lit);
                 if (derived_variables.contains(body_key)) {
                     if (lit.negated())
                         negative_dependencies[head].insert(body_key);
@@ -99,7 +92,7 @@ unordered_set<string> compute_necessary_atoms(
         if (!g)
             continue;
         const auto &lit = static_cast<const Literal &>(*g);
-        string key = literal_atom_key(lit);
+        string key = atom_key(lit);
         if (deps.derived_variables.contains(key))
             necessary.insert(key);
     }
