@@ -529,6 +529,9 @@ vector<Atom> compute_model(const Program &prog) {
     cout << auxiliary << " auxiliary atoms" << endl;
     cout << queue.items.size() << " final queue length" << endl;
     cout << queue.pushes << " total queue pushes" << endl;
-    return queue.items;
+    // Move (not copy) the model out: queue.items is a member of a local, so a
+    // plain return would copy the whole ~500 MB atom vector on large groundings
+    // -- a transient that both spikes peak RSS and wastes time.
+    return std::move(queue.items);
 }
 }
