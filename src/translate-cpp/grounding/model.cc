@@ -377,7 +377,7 @@ public:
 */
 class IndexSet {
 public:
-    IndexSet(const vector<Atom> &items, const vector<size_t> &hashes)
+    IndexSet(const vector<Atom> &items, const vector<uint32_t> &hashes)
         : items_(&items), hashes_(&hashes) {
     }
     // Insert index `idx` (its atom already appended to items/hashes). Returns
@@ -402,7 +402,7 @@ public:
 private:
     static constexpr int EMPTY = -1;
     const vector<Atom> *items_;
-    const vector<size_t> *hashes_;
+    const vector<uint32_t> *hashes_;
     vector<int> slots_;
     size_t cap_ = 0;
     size_t count_ = 0;
@@ -446,12 +446,12 @@ private:
         x ^= x >> 31;
         return x;
     }
-    vector<size_t> hashes;
+    vector<uint32_t> hashes;
     IndexSet seen{items, hashes};
 
     // Append `a` to items, keep it only if not already seen.
     void insert_if_new(Atom &&a) {
-        hashes.push_back(mix_hash(AtomHash{}(a)));
+        hashes.push_back(static_cast<uint32_t>(mix_hash(AtomHash{}(a))));
         items.push_back(move(a));
         int idx = static_cast<int>(items.size()) - 1;
         if (!seen.insert(idx)) {
