@@ -8,7 +8,7 @@
 using namespace std;
 namespace translate::pddl {
 namespace {
-using detail::hash_combine;
+using utils::hash_combine;
 
 template<class T>
 size_t hash_value(const T &v) {

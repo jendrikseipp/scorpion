@@ -6,6 +6,8 @@
 #include "../pddl/condition.h"
 #include "../pddl/effect.h"
 
+#include "../utils/hash.h"
+
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
@@ -47,7 +49,7 @@ ConditionPtr InvariantPart::instantiate(
 size_t InvariantPart::get_hash() const noexcept {
     size_t h = hash<string>{}(predicate);
     for (int a : args)
-        h ^= hash<int>{}(a) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+        utils::hash_combine(h, hash<int>{}(a));
     return h;
 }
 
@@ -182,7 +184,7 @@ bool Invariant::operator==(const Invariant &o) const {
 size_t Invariant::get_hash() const noexcept {
     size_t h = 0;
     for (const auto &p : parts)
-        h ^= p.get_hash() + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+        utils::hash_combine(h, p.get_hash());
     return h;
 }
 

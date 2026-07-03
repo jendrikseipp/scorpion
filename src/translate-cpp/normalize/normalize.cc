@@ -6,6 +6,8 @@
 #include "../pddl/effect.h"
 #include "../pddl/task.h"
 
+#include "../utils/hash.h"
+
 #include <algorithm>
 #include <iostream>
 #include <set>
@@ -96,10 +98,8 @@ struct AxiomKeyHash {
     size_t operator()(const AxiomKey &k) const noexcept {
         size_t h = k.condition ? k.condition->hash() : 0;
         for (const auto &p : k.parameters) {
-            size_t x = hash<string>{}(p.name);
-            h ^= x + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
-            x = hash<string>{}(p.type_name);
-            h ^= x + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+            utils::hash_combine(h, hash<string>{}(p.name));
+            utils::hash_combine(h, hash<string>{}(p.type_name));
         }
         return h;
     }

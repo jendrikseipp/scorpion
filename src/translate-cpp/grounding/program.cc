@@ -1,5 +1,7 @@
 #include "program.h"
 
+#include "../utils/hash.h"
+
 #include <algorithm>
 #include <iostream>
 #include <string>
@@ -9,12 +11,6 @@ namespace translate::grounding {
 SymbolTable &symbols() {
     static SymbolTable table;
     return table;
-}
-
-namespace {
-inline void hash_combine(size_t &seed, size_t v) {
-    seed ^= v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
-}
 }
 
 bool Atom::operator<(const Atom &other) const {
@@ -48,7 +44,7 @@ bool Atom::operator<(const Atom &other) const {
 size_t AtomHash::operator()(const Atom &a) const noexcept {
     size_t h = hash<int>{}(a.predicate);
     for (const auto &x : a.args)
-        hash_combine(h, hash<int>{}(x.v));
+        utils::hash_combine(h, hash<int>{}(x.v));
     return h;
 }
 

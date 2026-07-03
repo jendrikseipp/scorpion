@@ -5,6 +5,8 @@
 
 #include "algorithms/small_vector.h"
 
+#include "../utils/hash.h"
+
 #include <cstddef>
 #include <memory>
 #include <ostream>
@@ -207,10 +209,6 @@ public:
 };
 
 namespace detail {
-// boost::hash_combine-style mixing, shared by all condition hashers.
-inline void hash_combine(std::size_t &seed, std::size_t value) noexcept {
-    seed ^= value + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
-}
 // Hash recipe for a (positive or negated) literal, used for Literal's
 // cached_hash.
 inline std::size_t literal_hash(
@@ -218,7 +216,7 @@ inline std::size_t literal_hash(
     const std::vector<std::string> &args) noexcept {
     std::size_t h = std::hash<std::string>{}(predicate);
     for (const auto &a : args)
-        hash_combine(h, std::hash<std::string>{}(a));
+        utils::hash_combine(h, std::hash<std::string>{}(a));
     return h;
 }
 }

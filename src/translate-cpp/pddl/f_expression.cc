@@ -1,15 +1,11 @@
 #include "f_expression.h"
 
+#include "../utils/hash.h"
+
 #include <functional>
 
 using namespace std;
 namespace translate::pddl {
-namespace {
-inline void hash_combine(size_t &seed, size_t v) {
-    seed ^= v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
-}
-}
-
 void NumericConstant::dump(ostream &os, int indent) const {
     os << string(indent * 2, ' ') << "NumericConstant " << value << "\n";
 }
@@ -19,7 +15,7 @@ PrimitiveNumericExpression::PrimitiveNumericExpression(
     : symbol(move(symbol)), args(move(args)), cached_hash(0) {
     size_t h = hash<string>{}(this->symbol);
     for (const auto &a : this->args)
-        hash_combine(h, hash<string>{}(a));
+        utils::hash_combine(h, hash<string>{}(a));
     cached_hash = h;
 }
 
