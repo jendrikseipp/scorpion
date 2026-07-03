@@ -127,6 +127,16 @@ struct GroundLiteral {
     bool operator==(const GroundLiteral &) const = default;
 };
 
+// One instantiated (conditional) effect: `literal` fires when every ground
+// literal in `conditions` holds (an empty list is an unconditional effect).
+// Replaces the anonymous pair<vector<GroundLiteral>, GroundLiteral>; member
+// order matches the old pair so structured bindings and aggregate init still
+// work.
+struct GroundEffect {
+    std::vector<GroundLiteral> conditions;
+    GroundLiteral literal;
+};
+
 // Marks a fact that is static and true in the initial state (present in init
 // but not a reachable fluent). Distinguished from a fluent fact's FactId (>= 0)
 // and from a fact absent from the map (unreachable / static-false).

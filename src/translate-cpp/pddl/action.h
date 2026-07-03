@@ -54,15 +54,15 @@ public:
     // Ground literals as (FactId, sign); see GroundLiteral in condition.h.
     std::vector<GroundLiteral> precondition;
     // Each effect: (condition list, literal).
-    std::vector<std::pair<std::vector<GroundLiteral>, GroundLiteral>>
+    std::vector<GroundEffect>
         add_effects;
-    std::vector<std::pair<std::vector<GroundLiteral>, GroundLiteral>>
+    std::vector<GroundEffect>
         del_effects;
     int cost;
 
     PropositionalAction(
         std::string name, std::vector<GroundLiteral> precondition,
-        const std::vector<std::pair<std::vector<GroundLiteral>, GroundLiteral>>
+        const std::vector<GroundEffect>
             &effects,
         int cost);
 

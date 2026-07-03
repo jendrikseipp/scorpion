@@ -181,7 +181,7 @@ void instantiate_effect(
     const Effect &eff, VarMapping &var_mapping,
     const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
-    vector<pair<vector<GroundLiteral>, GroundLiteral>> &result) {
+    vector<GroundEffect> &result) {
     auto inst_once = [&]() {
         vector<GroundLiteral> condition;
         if (eff.condition &&
@@ -251,7 +251,7 @@ shared_ptr<PropositionalAction> instantiate_action(
             var_mapping, fluent_facts, precondition))
         return nullptr;
 
-    vector<pair<vector<GroundLiteral>, GroundLiteral>> effects;
+    vector<GroundEffect> effects;
     for (const auto &eff : action.effects) {
         if (eff.parameters.empty()) {
             // A parameterless effect adds no bindings, and instantiate()
