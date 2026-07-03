@@ -125,11 +125,10 @@ struct GroundLiteral {
 // and from a fact absent from the map (unreachable / static-false).
 inline constexpr FactId STATIC_FACT = -1;
 
-// One map for all ground-fact membership tests during instantiation: a
-// reachable fluent fact maps to its dense FactId (>= 0); a static-true init
-// fact maps to STATIC_FACT; anything absent is unreachable / static-false.
-// Merging the former fluent map and init set lets each literal be classified
-// with a single probe instead of two.
+// One map for all ground-fact membership tests during instantiation, so each
+// literal is classified with a single probe: a reachable fluent fact maps to
+// its dense FactId (>= 0); a static-true init fact maps to STATIC_FACT;
+// anything absent is unreachable / static-false.
 using FactMap = std::unordered_map<GroundKey, FactId, GroundKeyHash>;
 // Kept name for the fluent-fact table exposed to the translator.
 using FluentFactMap = FactMap;

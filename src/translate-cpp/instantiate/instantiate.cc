@@ -25,9 +25,9 @@ using namespace pddl;
 
 namespace {
 // Interned ids of the predicates that can appear as (action/axiom) effects.
-// Comparing interned ids lets build_atom_set test each model atom with an int
-// lookup instead of hashing its predicate name; equal names always intern to
-// the same id, so the membership test is equivalent.
+// build_fluent_facts uses these to select the fluent atoms from the model with
+// an int lookup instead of hashing each atom's predicate name (equal names
+// always intern to the same id).
 unordered_set<int> get_fluent_predicates(const Task &task) {
     unordered_set<int> out;
     for (const auto &a : task.actions) {

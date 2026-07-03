@@ -215,12 +215,12 @@ void apply_to_goal(const Renaming &r, SASGoal &goal) {
 // peak on operator-heavy tasks -- and keeps the (unchanged) name and cost
 // without copying them. All of `op` is read before its fields are reassigned.
 bool translate_operator(const Renaming &r, SASOperator &op) {
-    // Build applicability conditions (prevail + pre). Sorted by var; each
-    // var appears at most once (preconditions can't conflict with
-    // prevails, and SASOperator::validate guarantees pre uniqueness per
-    // var). We use the sorted vector directly as the lookup table:
-    // binary search is fast for ~5 entries and avoids the per-operator
-    // unordered_map/unordered_set allocations that dominated this loop
+    // Build applicability conditions (prevail + pre). Sorted by var; each var
+    // appears at most once (a prevail and a pre never name the same var, and
+    // pre_post is canonicalized to one entry per var). We use the sorted vector
+    // directly as the lookup table: binary search is fast for ~5 entries and
+    // avoids the per-operator unordered_map/unordered_set allocations that
+    // dominated this loop
     // on operator-heavy tasks (115 k operators on logistics/p01).
     vector<VarVal> applicability = op.prevail;
     for (const auto &[v, pre, post, cond] : op.pre_post) {

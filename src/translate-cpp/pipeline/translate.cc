@@ -56,9 +56,9 @@ FactId fact_id_of(const Literal &lit, const FluentFactMap &ids) {
 }
 
 // FactId -> its SAS (var, val) representations. Indexed by FactId; an empty
-// entry means the fact is absent from these groups (the old string-dict miss).
-// Replaces the string atom_key dictionary: the millions of per-literal operator
-// lookups become an int index instead of building and hashing a key.
+// entry means the fact is absent from these groups. Keying operator-literal
+// lookups by FactId makes them an int index rather than building and hashing a
+// per-literal string key.
 using FactToVarVals = vector<vector<VarVal>>;
 
 struct StripsToSas {
@@ -846,10 +846,9 @@ SASTask pddl_to_sas(Task &task) {
     // Sort operators by (name, prevail, pre_post) at SAS construction
     // time -- before simplify and variable_order touch the task. That
     // matches Python's SASTask.__init__ ordering exactly. variable_order's
-    // remap then renames var numbers without resorting, so the final
-    // operator order in the output reflects the pre-remap canonical sort
-    // rather than a post-remap one (which is what SASOperator::output
-    // used to do).
+    // remap then renames var numbers without resorting, so the final operator
+    // order in the output reflects this pre-remap canonical sort, not a
+    // post-remap one.
     ranges::sort(sas_operators, [](const SASOperator &a, const SASOperator &b) {
         if (a.name != b.name)
             return a.name < b.name;

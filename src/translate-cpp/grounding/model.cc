@@ -109,9 +109,8 @@ public:
 };
 
 // Join key: the interned arg ids at the common positions. Args are already
-// interned ints (Arg::v), so the key is a small int tuple -- no per-firing
-// string building or separator characters, unlike the former '\x1f'-joined
-// name string. Almost always <= 2 common variables, so it stays inline.
+// interned ints (Arg::v), so the key is a small int tuple with no per-firing
+// string building. Almost always <= 2 common variables, so it stays inline.
 using JoinKey = small_vector::SmallVector<int, 2>;
 struct JoinKeyHash {
     size_t operator()(const JoinKey &k) const noexcept {

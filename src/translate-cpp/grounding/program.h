@@ -23,9 +23,9 @@ namespace translate::grounding {
 
   Constants and variables are interned into the process-wide symbol
   table and stored as a 4-byte id (>= 0). Positions are stored inline
-  as negative values, p encoded as -(p+1). This replaces the former
-  std::variant<std::string,int> (~40 bytes + a heap buffer per atom),
-  which dominated peak memory on hard-to-ground instances (~10M atoms).
+  as negative values, p encoded as -(p+1). Keeping the whole argument in
+  4 bytes (rather than a string or variant) is what keeps peak memory in
+  check on hard-to-ground instances (~10M atoms).
 
   Equality and hashing use the raw id directly (equal names always
   intern to the same id). Ordering that must stay byte-compatible with
