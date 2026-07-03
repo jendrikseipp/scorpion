@@ -7,7 +7,6 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <memory_resource>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -363,6 +362,68 @@ public:
   ever grows (pop just advances `pos`), so stored indices stay valid;
   reallocation moves the buffer but the index->Atom mapping is unchanged.
 */
+/*
+  Open-addressing set of atom indices, used to deduplicate derived atoms.
+  It stores a single 4-byte index per slot in a flat table (with -1 marking an
+  empty slot), rather than a node per element as std::unordered_set does. On the
+  huge groundings this halves peak memory: the former pmr::unordered_set<int>
+  cost ~24 bytes per element in nodes plus, because its monotonic arena never
+  freed anything, every historical bucket array from each rehash (rovers-large:
+  ~590 MB of the ~1.25 GB peak). Growth here reallocates one flat table and
+  frees the old one.
+
+  Hashing uses the caller's cached `hashes` vector (so growth never recomputes
+  AtomHash); equality dereferences `items` on a hash collision.
+*/
+class IndexSet {
+public:
+    IndexSet(const vector<Atom> &items, const vector<size_t> &hashes)
+        : items_(&items), hashes_(&hashes) {
+    }
+    // Insert index `idx` (its atom already appended to items/hashes). Returns
+    // true if newly inserted, false if an equal atom was already present.
+    bool insert(int idx) {
+        if (cap_ == 0 || (count_ + 1) * 10 > cap_ * 7) // keep load factor < 0.7
+            grow();
+        size_t mask = cap_ - 1;
+        size_t h = (*hashes_)[idx] & mask;
+        while (slots_[h] != EMPTY) {
+            int other = slots_[h];
+            if ((*hashes_)[other] == (*hashes_)[idx] &&
+                (*items_)[other] == (*items_)[idx])
+                return false;
+            h = (h + 1) & mask;
+        }
+        slots_[h] = idx;
+        ++count_;
+        return true;
+    }
+
+private:
+    static constexpr int EMPTY = -1;
+    const vector<Atom> *items_;
+    const vector<size_t> *hashes_;
+    vector<int> slots_;
+    size_t cap_ = 0;
+    size_t count_ = 0;
+
+    void grow() {
+        size_t new_cap = cap_ ? cap_ * 2 : (size_t{1} << 16);
+        vector<int> new_slots(new_cap, EMPTY);
+        size_t mask = new_cap - 1;
+        for (int idx : slots_) {
+            if (idx == EMPTY)
+                continue;
+            size_t h = (*hashes_)[idx] & mask;
+            while (new_slots[h] != EMPTY)
+                h = (h + 1) & mask;
+            new_slots[h] = idx;
+        }
+        slots_.swap(new_slots);
+        cap_ = new_cap;
+    }
+};
+
 class AtomQueue {
 public:
     vector<Atom> items;
@@ -372,40 +433,35 @@ public:
 private:
     // Hash of items[i], cached so the dedup set never recomputes AtomHash
     // (which hashes the predicate string + args) when it rehashes on growth.
+    // A splitmix64 finalizer is folded in so IndexSet can mask the low bits
+    // directly: AtomHash leaves small/clustered low bits (e.g. 0-arity atoms
+    // hash to their small predicate id), which would make open-addressing's
+    // linear probing degrade catastrophically. Mixing is bijective, so it adds
+    // no collisions.
+    static size_t mix_hash(size_t x) noexcept {
+        x ^= x >> 30;
+        x *= 0xbf58476d1ce4e5b9ULL;
+        x ^= x >> 27;
+        x *= 0x94d049bb133111ebULL;
+        x ^= x >> 31;
+        return x;
+    }
     vector<size_t> hashes;
-    struct IdxHash {
-        const vector<size_t> *hashes;
-        size_t operator()(int i) const noexcept {
-            return (*hashes)[i];
-        }
-    };
-    struct IdxEq {
-        const vector<Atom> *items;
-        bool operator()(int a, int b) const noexcept {
-            return (*items)[a] == (*items)[b];
-        }
-    };
-    // The dedup set only ever grows, so allocate its nodes from a monotonic
-    // arena (bump-allocate, freed all at once on destruction) instead of a
-    // per-node malloc/free. This removes the allocator churn that dominated
-    // grounding. `pool` must be declared before `seen` so it outlives it.
-    pmr::monotonic_buffer_resource pool;
-    pmr::unordered_set<int, IdxHash, IdxEq> seen;
+    IndexSet seen{items, hashes};
 
     // Append `a` to items, keep it only if not already seen.
     void insert_if_new(Atom &&a) {
-        hashes.push_back(AtomHash{}(a));
+        hashes.push_back(mix_hash(AtomHash{}(a)));
         items.push_back(move(a));
         int idx = static_cast<int>(items.size()) - 1;
-        if (!seen.insert(idx).second) {
+        if (!seen.insert(idx)) {
             items.pop_back();
             hashes.pop_back();
         }
     }
 
 public:
-    explicit AtomQueue(vector<Atom> initial)
-        : seen(0, IdxHash{&hashes}, IdxEq{&items}, &pool) {
+    explicit AtomQueue(vector<Atom> initial) {
         // Matches Python's `num_pushes = len(atoms)` initial count.
         pushes = initial.size();
         for (auto &a : initial)
