@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -61,18 +60,7 @@ vector<vector<ConditionPtr>> instantiate_groups(
 string atom_to_string(const ConditionPtr &c) {
     if (!c)
         return "";
-    const auto &lit = static_cast<const Literal &>(*c);
-    ostringstream os;
-    if (lit.negated())
-        os << "Negated";
-    os << "Atom " << lit.predicate << "(";
-    for (size_t i = 0; i < lit.args.size(); ++i) {
-        if (i)
-            os << ", ";
-        os << lit.args[i];
-    }
-    os << ")";
-    return os.str();
+    return static_cast<const Literal &>(*c).str();
 }
 
 bool atom_less(const ConditionPtr &a, const ConditionPtr &b) {

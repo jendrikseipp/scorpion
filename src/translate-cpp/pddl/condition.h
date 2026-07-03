@@ -303,6 +303,9 @@ public:
         return cached_hash;
     }
     void dump(std::ostream &os, int indent) const override;
+    // Python-style rendering, e.g. "Atom on(a, b)" / "NegatedAtom on(a, b)".
+    // Used for SAS value names and dump output.
+    std::string str() const;
     std::unordered_set<std::string> free_variables() const override;
     virtual bool negated() const = 0;
     ConditionPtr

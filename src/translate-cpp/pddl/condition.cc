@@ -80,15 +80,21 @@ Literal::Literal(string predicate, vector<string> args)
       cached_hash(detail::literal_hash(this->predicate, this->args)) {
 }
 
-void Literal::dump(ostream &os, int indent) const {
-    os << string(indent * 2, ' ');
-    os << (negated() ? "NegatedAtom " : "Atom ") << predicate << "(";
+string Literal::str() const {
+    string s = negated() ? "NegatedAtom " : "Atom ";
+    s += predicate;
+    s += '(';
     for (size_t i = 0; i < args.size(); ++i) {
         if (i)
-            os << ", ";
-        os << args[i];
+            s += ", ";
+        s += args[i];
     }
-    os << ")\n";
+    s += ')';
+    return s;
+}
+
+void Literal::dump(ostream &os, int indent) const {
+    os << string(indent * 2, ' ') << str() << "\n";
 }
 
 unordered_set<string> Literal::free_variables() const {
