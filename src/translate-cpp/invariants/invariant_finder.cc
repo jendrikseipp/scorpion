@@ -37,20 +37,36 @@ BalanceChecker::BalanceChecker(
             i < reachable_action_parameters->size() &&
             act.parameters.size() >= 2) {
             const auto &params = (*reachable_action_parameters)[i];
-            vector<pair<int, int>> inequal_pairs;
-            for (size_t p1 = 0; p1 < act.parameters.size(); ++p1) {
-                for (size_t p2 = p1 + 1; p2 < act.parameters.size(); ++p2) {
-                    bool ever_equal = false;
-                    for (const auto &t : params)
-                        if (t.size() > p2 && t[p1] == t[p2]) {
-                            ever_equal = true;
-                            break;
-                        }
-                    if (!ever_equal)
-                        inequal_pairs.emplace_back(
-                            static_cast<int>(p1), static_cast<int>(p2));
-                }
+            // A parameter pair gets an inequality precondition iff no reachable
+            // tuple ever binds both to the same object. Rather than rescan the
+            // whole (large) tuple table once per pair, make a single pass over
+            // the table and mark each pair the first time it is seen equal,
+            // stopping early once every pair has been marked. Same result and
+            // pair order; one read of the table instead of one per pair.
+            struct PairFlag {
+                int p1, p2;
+                bool ever_equal = false;
+            };
+            vector<PairFlag> pairs;
+            for (size_t p1 = 0; p1 < act.parameters.size(); ++p1)
+                for (size_t p2 = p1 + 1; p2 < act.parameters.size(); ++p2)
+                    pairs.push_back(
+                        {static_cast<int>(p1), static_cast<int>(p2)});
+            size_t remaining = pairs.size();
+            for (const auto &t : params) {
+                if (remaining == 0)
+                    break;
+                for (auto &pf : pairs)
+                    if (!pf.ever_equal && t.size() > static_cast<size_t>(pf.p2) &&
+                        t[pf.p1] == t[pf.p2]) {
+                        pf.ever_equal = true;
+                        --remaining;
+                    }
             }
+            vector<pair<int, int>> inequal_pairs;
+            for (const auto &pf : pairs)
+                if (!pf.ever_equal)
+                    inequal_pairs.emplace_back(pf.p1, pf.p2);
             if (!inequal_pairs.empty()) {
                 vector<ConditionPtr> parts;
                 parts.push_back(patched.precondition);
