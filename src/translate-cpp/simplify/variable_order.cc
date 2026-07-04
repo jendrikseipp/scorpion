@@ -49,15 +49,20 @@ public:
                 if (pre != -1)
                     source_vars.push_back(v);
             for (const auto &[tgt, pre, post, cond] : op.pre_post) {
-                auto extra = source_vars;
-                for (const auto &[cv, cval] : cond)
-                    extra.push_back(cv);
-                for (int src : extra) {
+                // Sources for this effect are the operator's source_vars plus
+                // this effect's own condition variables. Iterate both in place
+                // rather than copy source_vars and append per effect (the
+                // condition is empty on STRIPS, so the copy bought nothing).
+                auto add_edge = [&](int src) {
                     if (src != tgt) {
                         ++weighted_graph[src][tgt];
                         predecessor_graph[tgt].insert(src);
                     }
-                }
+                };
+                for (int src : source_vars)
+                    add_edge(src);
+                for (const auto &[cv, cval] : cond)
+                    add_edge(cv);
             }
         }
     }
