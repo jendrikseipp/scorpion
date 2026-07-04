@@ -76,7 +76,7 @@ FluentFacts build_fluent_facts(
             args.push_back(grounding::arg_to_string(x));
         auto atom = make_shared<const Atom>(a.predicate_name(), move(args));
         out.set.insert(atom);
-        out.ids.emplace(move(key), id);
+        out.ids.insert(move(key), id);
         out.fact_by_id.push_back(move(atom));
     }
     return out;
@@ -105,7 +105,7 @@ void add_static_init_facts(const Task &task, FactMap &facts) {
         key.predicate = grounding::symbols().intern((*ap)->predicate);
         for (const auto &arg : (*ap)->args)
             key.args.push_back(grounding::symbols().intern(arg));
-        facts.emplace(move(key), STATIC_FACT);
+        facts.insert(move(key), STATIC_FACT);
     }
 }
 

@@ -146,7 +146,87 @@ inline constexpr FactId STATIC_FACT = -1;
 // literal is classified with a single probe: a reachable fluent fact maps to
 // its dense FactId (>= 0); a static-true init fact maps to STATIC_FACT;
 // anything absent is unreachable / static-false.
-using FactMap = std::unordered_map<GroundKey, FactId, GroundKeyHash>;
+//
+// Built once, then probed once per instantiated literal (millions of times).
+// A flat open-addressing table keeps each key/value inline, so a probe is a
+// hash plus a contiguous scan of slots instead of a node-pointer chase; the
+// splitmix finalizer spreads GroundKeyHash's low bits so linear probing stays
+// short. `insert` is first-wins (like unordered_map::emplace): fluent facts
+// are inserted before static-init facts and keep priority.
+class FactMap {
+public:
+    void reserve(std::size_t n) {
+        std::size_t cap = 16;
+        while (cap * 7 < n * 10)
+            cap <<= 1;
+        if (cap > cap_)
+            rehash(cap);
+    }
+    void insert(GroundKey key, FactId id) {
+        if (cap_ == 0 || (count_ + 1) * 10 > cap_ * 7)
+            rehash(cap_ ? cap_ * 2 : 16);
+        std::size_t mask = cap_ - 1;
+        std::size_t h = mix(GroundKeyHash{}(key)) & mask;
+        while (slots_[h].id != EMPTY) {
+            if (slots_[h].key == key)
+                return; // first insert wins
+            h = (h + 1) & mask;
+        }
+        slots_[h].key = std::move(key);
+        slots_[h].id = id;
+        ++count_;
+    }
+    // Pointer to the stored FactId for `key`, or nullptr if absent.
+    const FactId *find(const GroundKey &key) const {
+        if (cap_ == 0)
+            return nullptr;
+        std::size_t mask = cap_ - 1;
+        std::size_t h = mix(GroundKeyHash{}(key)) & mask;
+        while (slots_[h].id != EMPTY) {
+            if (slots_[h].key == key)
+                return &slots_[h].id;
+            h = (h + 1) & mask;
+        }
+        return nullptr;
+    }
+    std::size_t size() const {
+        return count_;
+    }
+
+private:
+    static constexpr FactId EMPTY = -2; // valid ids are >= 0; STATIC_FACT is -1
+    struct Slot {
+        GroundKey key;
+        FactId id = EMPTY;
+    };
+    std::vector<Slot> slots_;
+    std::size_t cap_ = 0;
+    std::size_t count_ = 0;
+
+    static std::size_t mix(std::size_t x) noexcept {
+        x ^= x >> 30;
+        x *= 0xbf58476d1ce4e5b9ULL;
+        x ^= x >> 27;
+        x *= 0x94d049bb133111ebULL;
+        x ^= x >> 31;
+        return x;
+    }
+    void rehash(std::size_t new_cap) {
+        std::vector<Slot> old = std::move(slots_);
+        slots_.assign(new_cap, Slot{});
+        cap_ = new_cap;
+        count_ = 0;
+        std::size_t mask = new_cap - 1;
+        for (auto &s : old)
+            if (s.id != EMPTY) {
+                std::size_t h = mix(GroundKeyHash{}(s.key)) & mask;
+                while (slots_[h].id != EMPTY)
+                    h = (h + 1) & mask;
+                slots_[h] = std::move(s);
+                ++count_;
+            }
+    }
+};
 
 class Condition {
 public:

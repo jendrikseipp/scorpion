@@ -52,8 +52,8 @@ FactId fact_id_of(const Literal &lit, const FactMap &ids) {
     key.args.reserve(lit.args.size());
     for (const auto &a : lit.args)
         key.args.push_back(grounding::symbols().intern(a));
-    auto it = ids.find(key);
-    return it == ids.end() ? -1 : it->second;
+    const FactId *id = ids.find(key);
+    return id ? *id : -1;
 }
 
 // FactId -> its SAS (var, val) representations. Indexed by FactId; an empty

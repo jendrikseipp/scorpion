@@ -280,11 +280,11 @@ bool Atom::instantiate(
     // Single probe: fluent -> a real precondition on that fact; static-true ->
     // drop the (satisfied) literal; absent -> the literal is false, so the
     // caller drops the action.
-    auto it = facts.find(key);
-    if (it == facts.end())
+    const FactId *id = facts.find(key);
+    if (!id)
         return false;
-    if (it->second != STATIC_FACT)
-        result.push_back({it->second, false});
+    if (*id != STATIC_FACT)
+        result.push_back({*id, false});
     return true;
 }
 
@@ -296,11 +296,11 @@ bool NegatedAtom::instantiate(
     // Mirror image of Atom: absent (static-false) -> negation holds, drop the
     // literal; static-true -> negation is false, drop the action; fluent ->
     // a real negative precondition.
-    auto it = facts.find(key);
-    if (it == facts.end())
+    const FactId *id = facts.find(key);
+    if (!id)
         return true;
-    if (it->second != STATIC_FACT) {
-        result.push_back({it->second, true});
+    if (*id != STATIC_FACT) {
+        result.push_back({*id, true});
         return true;
     }
     return false;
