@@ -71,15 +71,20 @@ public:
       groundings (rovers-large-simple: the join index held ~9.7M args
       copies, ~2.7 GB).
     */
-    virtual void update_index(
-        const Atom &new_atom, int atom_index, int cond_index) = 0;
     /*
-      `enqueue` takes args by rvalue so each emitted atom can be moved
-      into the queue's seen-set construction instead of copied. `items`
-      is the model vector, used to dereference stored atom indices.
+      Register `new_atom` (matching condition `cond_index`, stored at
+      `atom_index` in the model) in this rule's join index, then emit every
+      atom it produces by joining against the already-seen atoms. Index-then-
+      emit is a single step so a join rule computes the atom's key once (it
+      serves both the insert and the lookup) instead of once per phase.
+
+      `enqueue` takes args by rvalue so each emitted atom can be moved into the
+      queue's seen-set construction instead of copied. `items` is the model
+      vector, used to dereference stored atom indices.
     */
-    virtual void fire(
-        const Atom &new_atom, int cond_index, const vector<Atom> &items,
+    virtual void process(
+        const Atom &new_atom, int atom_index, int cond_index,
+        const vector<Atom> &items,
         const function<void(int, ArgList &&)> &enqueue) = 0;
 
 protected:
@@ -98,10 +103,8 @@ protected:
 class ProjectRuleB : public BuildRule {
 public:
     using BuildRule::BuildRule;
-    void update_index(const Atom &, int, int) override {
-    }
-    void fire(
-        const Atom &new_atom, int cond_index, const vector<Atom> &,
+    void process(
+        const Atom &new_atom, int, int cond_index, const vector<Atom> &,
         const function<void(int, ArgList &&)> &enqueue) override {
         auto eff_args = prepare_effect(new_atom, cond_index);
         enqueue(effect.predicate, move(eff_args));
@@ -170,21 +173,19 @@ public:
         return k;
     }
 
-    void update_index(
-        const Atom &new_atom, int atom_index, int cond_index) override {
+    void process(
+        const Atom &new_atom, int atom_index, int cond_index,
+        const vector<Atom> &items,
+        const function<void(int, ArgList &&)> &enqueue) override {
+        // The atom's key on this condition serves both to index it and to look
+        // up matches on the other condition, so compute it once.
         JoinKey k = key_of(new_atom, common_positions[cond_index]);
         atoms_by_key[cond_index][k].push_back(atom_index);
-    }
-
-    void fire(
-        const Atom &new_atom, int cond_index, const vector<Atom> &items,
-        const function<void(int, ArgList &&)> &enqueue) override {
-        auto eff_args = prepare_effect(new_atom, cond_index);
-        JoinKey k = key_of(new_atom, common_positions[cond_index]);
         int other = 1 - cond_index;
         auto it = atoms_by_key[other].find(k);
         if (it == atoms_by_key[other].end())
             return;
+        auto eff_args = prepare_effect(new_atom, cond_index);
         const auto &other_cond = conditions[other];
         for (int stored_idx : it->second) {
             const auto &stored_args = items[stored_idx].args;
@@ -210,17 +211,13 @@ public:
           empty_index_count(static_cast<int>(conditions.size())) {
     }
 
-    void update_index(
-        [[maybe_unused]] const Atom &new_atom, int atom_index,
-        int cond_index) override {
+    void process(
+        const Atom &new_atom, int atom_index, int cond_index,
+        const vector<Atom> &items,
+        const function<void(int, ArgList &&)> &enqueue) override {
         if (atoms_by_index[cond_index].empty())
             --empty_index_count;
         atoms_by_index[cond_index].push_back(atom_index);
-    }
-
-    void fire(
-        const Atom &new_atom, int cond_index, const vector<Atom> &items,
-        const function<void(int, ArgList &&)> &enqueue) override {
         if (empty_index_count > 0)
             return;
         // Bindings from the new_atom for cond_index already applied via
@@ -522,10 +519,8 @@ vector<Atom> compute_model(const Program &prog) {
             ++relevant;
         matches.clear();
         unifier.unify(next, matches);
-        for (const auto &[ri, ci] : matches) {
-            rules[ri]->update_index(next, idx, ci);
-            rules[ri]->fire(next, ci, queue.items, enqueue);
-        }
+        for (const auto &[ri, ci] : matches)
+            rules[ri]->process(next, idx, ci, queue.items, enqueue);
     }
     cout << relevant << " relevant atoms" << endl;
     cout << auxiliary << " auxiliary atoms" << endl;
