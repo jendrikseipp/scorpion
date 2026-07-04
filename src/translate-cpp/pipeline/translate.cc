@@ -790,10 +790,8 @@ SASTask pddl_to_sas(Task &task) {
     vector<SASOperator> sas_operators;
     phase("Translating task", [&] {
         for (const auto &op : inst.instantiated_actions) {
-            if (!op)
-                continue;
             auto sub = translate_strips_operator(
-                *op, strips_to_sas.factvals, strips_to_sas.ranges,
+                op, strips_to_sas.factvals, strips_to_sas.ranges,
                 mutex_dict.factvals, mutex_dict.ranges, implied_facts);
             for (auto &o : sub)
                 sas_operators.push_back(move(o));

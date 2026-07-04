@@ -99,7 +99,7 @@ struct AxiomDependencies {
 
 KeySet compute_necessary_atoms(
     const AxiomDependencies &deps, const vector<ConditionPtr> &goals,
-    const vector<shared_ptr<PropositionalAction>> &operators,
+    const vector<PropositionalAction> &operators,
     const vector<shared_ptr<const Atom>> &fact_by_id) {
     KeySet necessary;
     // Without derived predicates nothing is necessary -- and skipping here
@@ -121,17 +121,15 @@ KeySet compute_necessary_atoms(
             necessary.insert(key);
     };
     for (const auto &op : operators) {
-        if (!op)
-            continue;
-        for (const auto &pre : op->precondition)
+        for (const auto &pre : op.precondition)
             check(pre);
         auto walk = [&](const auto &effects) {
             for (const auto &[conds, _] : effects)
                 for (const auto &c : conds)
                     check(c);
         };
-        walk(op->add_effects);
-        walk(op->del_effects);
+        walk(op.add_effects);
+        walk(op.del_effects);
     }
     vector<AtomKey> stack(necessary.begin(), necessary.end());
     while (!stack.empty()) {
@@ -268,7 +266,7 @@ vector<shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
 }
 
 AxiomLayering handle_axioms(
-    const vector<shared_ptr<PropositionalAction>> &operators,
+    const vector<PropositionalAction> &operators,
     const vector<shared_ptr<PropositionalAxiom>> &axioms_in,
     const vector<ConditionPtr> &goals,
     const vector<shared_ptr<const Atom>> &fact_by_id,

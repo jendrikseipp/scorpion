@@ -23,7 +23,7 @@ struct AxiomLayering {
 };
 
 AxiomLayering handle_axioms(
-    const std::vector<std::shared_ptr<pddl::PropositionalAction>> &operators,
+    const std::vector<pddl::PropositionalAction> &operators,
     const std::vector<std::shared_ptr<pddl::PropositionalAxiom>> &axioms,
     const std::vector<pddl::ConditionPtr> &goals,
     // FactId -> Atom, to recover atom keys from action GroundLiterals.

@@ -19,8 +19,11 @@ struct Result {
     // rebuild the few axiom/goal literals as atoms.
     pddl::FactMap fluent_fact_ids;
     std::vector<std::shared_ptr<const pddl::Atom>> fact_by_id;
-    std::vector<std::shared_ptr<pddl::PropositionalAction>>
-        instantiated_actions;
+    // Held by value: no one shares ownership, and on the hard instances this
+    // is millions of actions -- a shared_ptr each would add a control block and
+    // a pointer indirection in the two hottest consumers (axiom analysis and
+    // the translate loop).
+    std::vector<pddl::PropositionalAction> instantiated_actions;
     /*
       The instantiated goal as a list of literals, or std::nullopt if
       the goal is impossible due to static facts.

@@ -211,14 +211,14 @@ long long evaluate_constant(const FunctionalExpression &expr) {
     throw runtime_error("cost expression is not a numeric constant");
 }
 
-shared_ptr<PropositionalAction> instantiate_action(
+optional<PropositionalAction> instantiate_action(
     const Action &action, const vector<string> &args,
     const InitAssignments &init_assignments,
     const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
     bool use_metric) {
     if (args.size() != action.parameters.size())
-        return nullptr;
+        return nullopt;
     // Reused across ground actions (instantiate_action is never re-entrant):
     // clear() keeps the backing buffer, so rebinding per ground action neither
     // frees nor re-allocates in the dominant instantiation phase. Parameterised
@@ -249,7 +249,7 @@ shared_ptr<PropositionalAction> instantiate_action(
     if (action.precondition &&
         !action.precondition->instantiate(
             var_mapping, fluent_facts, precondition))
-        return nullptr;
+        return nullopt;
 
     vector<GroundEffect> effects;
     for (const auto &eff : action.effects) {
@@ -300,10 +300,10 @@ shared_ptr<PropositionalAction> instantiate_action(
                 cost = 0;
             }
         }
-        return make_shared<PropositionalAction>(
+        return PropositionalAction(
             name, move(precondition), move(effects), static_cast<int>(cost));
     }
-    return nullptr;
+    return nullopt;
 }
 
 shared_ptr<PropositionalAxiom> instantiate_axiom(
@@ -414,7 +414,7 @@ Result instantiate(
             out.reachable_action_parameters[action_idx].push_back(
                 move(arg_ids));
             if (inst)
-                out.instantiated_actions.push_back(move(inst));
+                out.instantiated_actions.push_back(move(*inst));
             break;
         }
         case grounding::PredicateRole::AXIOM: {
