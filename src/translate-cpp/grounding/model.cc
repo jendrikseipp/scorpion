@@ -221,35 +221,36 @@ public:
         if (empty_index_count > 0)
             return;
         // Bindings from the new_atom for cond_index already applied via
-        // prepare_effect.
-        auto eff_args = prepare_effect(new_atom, cond_index);
-        // For each other condition, iterate over all atoms; collect bindings.
-        vector<int> positions;
-        for (int p = 0; p < static_cast<int>(conditions.size()); ++p)
-            if (p != cond_index)
-                positions.push_back(p);
+        // prepare_effect. Recurse over the other conditions in ascending
+        // order, skipping cond_index in place.
+        ArgList eff_args = prepare_effect(new_atom, cond_index);
+        recurse(0, cond_index, eff_args, items, enqueue);
+    }
 
-        // Recurse over positions, building eff_args.
-        function<void(size_t, ArgList &)> recurse = [&](size_t k,
-                                                        ArgList &args) {
-            if (k == positions.size()) {
-                auto copy = args;
-                enqueue(effect.predicate, move(copy));
-                return;
-            }
-            int p = positions[k];
-            const auto &cond = conditions[p];
-            for (int stored_idx : atoms_by_index[p]) {
-                const auto &atom_args = items[stored_idx].args;
-                auto next_args = args;
-                for (size_t i = 0; i < cond.args.size(); ++i) {
-                    if (cond.args[i].is_position())
-                        next_args[cond.args[i].position()] = atom_args[i];
-                }
-                recurse(k + 1, next_args);
-            }
-        };
-        recurse(0, eff_args);
+private:
+    // Emit one atom per assignment of the not-yet-bound conditions (all except
+    // cond_index) to already-seen atoms. A plain recursive member -- no
+    // per-firing std::function or `positions` vector, both of which heap-
+    // allocated in the model's hottest loop.
+    void recurse(
+        int p, int cond_index, const ArgList &args, const vector<Atom> &items,
+        const function<void(int, ArgList &&)> &enqueue) const {
+        if (p == cond_index)
+            ++p;
+        if (p >= static_cast<int>(conditions.size())) {
+            ArgList copy = args;
+            enqueue(effect.predicate, std::move(copy));
+            return;
+        }
+        const auto &cond = conditions[p];
+        for (int stored_idx : atoms_by_index[p]) {
+            const auto &atom_args = items[stored_idx].args;
+            ArgList next_args = args;
+            for (size_t i = 0; i < cond.args.size(); ++i)
+                if (cond.args[i].is_position())
+                    next_args[cond.args[i].position()] = atom_args[i];
+            recurse(p + 1, cond_index, next_args, items, enqueue);
+        }
     }
 };
 
