@@ -30,18 +30,21 @@ struct DTG {
         if (u >= 0 && u < size && v >= 0 && v < size && u != v)
             arcs[u].insert(v);
     }
-    set<int> reachable() const {
-        set<int> seen;
-        seen.insert(init);
+    // Dense membership vector (indexed by value, 1 if reachable from init)
+    // rather than a set<int>: values are 0..size-1, so the BFS marks and tests
+    // in O(1) without tree-node churn, and the consumer only needs membership.
+    vector<char> reachable() const {
+        vector<char> seen(size, 0);
+        seen[init] = 1;
         vector<int> stack = {init};
         while (!stack.empty()) {
             int n = stack.back();
             stack.pop_back();
-            if (n < 0 || n >= size)
-                continue;
             for (int m : arcs[n])
-                if (seen.insert(m).second)
+                if (!seen[m]) {
+                    seen[m] = 1;
                     stack.push_back(m);
+                }
         }
         return seen;
     }
@@ -61,10 +64,14 @@ vector<DTG> build_dtgs(const SASTask &task) {
             dtgs[var_no].add_arc(pre_spec, post);
         }
     };
-    auto effective_pre = [](int var_no, const unordered_map<int, int> &conds,
+    auto effective_pre = [](int var_no, const vector<VarVal> &conds,
                             const vector<VarVal> &eff_cond) -> optional<int> {
-        auto it = conds.find(var_no);
-        int result = (it == conds.end()) ? -1 : it->second;
+        int result = -1;
+        for (const auto &[cv, cval] : conds)
+            if (cv == var_no) {
+                result = cval;
+                break;
+            }
         for (const auto &[cv, cval] : eff_cond) {
             if (cv == var_no) {
                 if (result == -1)
@@ -75,13 +82,18 @@ vector<DTG> build_dtgs(const SASTask &task) {
         }
         return result;
     };
+    // Reused across operators (prevail and pre_post touch disjoint variables,
+    // so no key collides): clear() keeps the buffer, so the per-operator
+    // condition table costs no allocation after warmup, unlike the previous
+    // unordered_map built fresh for each of millions of operators.
+    vector<VarVal> conds;
     for (const auto &op : task.operators) {
-        unordered_map<int, int> conds;
+        conds.clear();
         for (const auto &[v, val] : op.prevail)
-            conds[v] = val;
+            conds.emplace_back(v, val);
         for (const auto &[v, pre, post, cond] : op.pre_post)
             if (pre != -1)
-                conds[v] = pre;
+                conds.emplace_back(v, pre);
         for (const auto &[v, pre, post, cond] : op.pre_post) {
             auto ep = effective_pre(v, conds, cond);
             if (ep)
@@ -103,8 +115,11 @@ struct Renaming {
     int num_removed_values = 0;
 
     void register_variable(
-        int old_size, int init_value, const set<int> &new_domain) {
-        if (new_domain.size() == 1) {
+        int old_size, int init_value, const vector<char> &new_domain) {
+        int domain_size = 0;
+        for (int v = 0; v < old_size; ++v)
+            domain_size += new_domain[v];
+        if (domain_size == 1) {
             vector<int> nv(old_size, ALWAYS_FALSE);
             nv[init_value] = ALWAYS_TRUE;
             new_var_nos.push_back(-1);
@@ -114,7 +129,7 @@ struct Renaming {
             vector<int> nv(old_size, ALWAYS_FALSE);
             int counter = 0;
             for (int v = 0; v < old_size; ++v) {
-                if (new_domain.contains(v))
+                if (new_domain[v])
                     nv[v] = counter++;
                 else
                     ++num_removed_values;
