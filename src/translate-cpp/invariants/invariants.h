@@ -128,11 +128,22 @@ private:
         const pddl::Action &action, const pddl::Effect &add_effect,
         const std::vector<const pddl::Effect *> &del_effects,
         const std::function<void(Invariant)> &enqueue_func) const;
+    /*
+      A literal "produced" by the action (from its precondition or an effect
+      condition), as a pointer plus an explicit sign. Keeping the sign outside
+      the literal lets the negation of an existing literal be represented
+      without materializing a new Atom: the balance check only reads
+      (predicate, args, sign), and it runs per (candidate x action x effect).
+    */
+    struct ProducedLit {
+        const pddl::Literal *lit;
+        bool negated;
+    };
+    using ProducedMap =
+        std::unordered_map<std::string, std::vector<ProducedLit>>;
     bool balances(
         const pddl::Effect &del_effect, const pddl::Effect &add_effect,
-        const std::unordered_map<std::string, std::vector<pddl::ConditionPtr>>
-            &produced,
-        const EqualityConjunction &add_cover,
+        const ProducedMap &produced, const EqualityConjunction &add_cover,
         const ConstraintSystem &param_system) const;
     void refine_candidate(
         const pddl::Effect &add_effect, const pddl::Action &action,

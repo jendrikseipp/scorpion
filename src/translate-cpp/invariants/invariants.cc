@@ -377,23 +377,15 @@ bool Invariant::add_effect_unbalanced(
     const vector<const Effect *> &del_effects,
     const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
-    unordered_map<string, vector<ConditionPtr>> produced;
+    ProducedMap produced;
     auto extend_produced = [&](const ConditionPtr &c) {
         for (const auto *lit : get_literals(c))
-            produced[lit->predicate].push_back(
-                lit->negated()
-                    ? static_pointer_cast<const Condition>(
-                          make_shared<NegatedAtom>(lit->predicate, lit->args))
-                    : static_pointer_cast<const Condition>(
-                          make_shared<Atom>(lit->predicate, lit->args)));
+            produced[lit->predicate].push_back({lit, lit->negated()});
     };
     extend_produced(action.precondition);
     extend_produced(add_effect.condition);
-    {
-        auto neg = add_lit.negate();
-        const auto &nl = static_cast<const Literal &>(*neg);
-        produced[nl.predicate].push_back(neg);
-    }
+    // The add effect's negation is produced too: same literal, flipped sign.
+    produced[add_lit.predicate].push_back({&add_lit, !add_lit.negated()});
     auto add_cover = get_cover_equivalence_conjunction(add_lit);
 
     ConstraintSystem param_system;
@@ -439,31 +431,31 @@ bool Invariant::add_effect_unbalanced(
 
 bool Invariant::balances(
     const Effect &del_effect, const Effect &add_effect,
-    const unordered_map<string, vector<ConditionPtr>> &produced,
-    const EqualityConjunction &add_cover,
+    const ProducedMap &produced, const EqualityConjunction &add_cover,
     const ConstraintSystem &param_system) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
     const auto &del_lit = static_cast<const Literal &>(*del_effect.literal);
 
-    // Build balance system.
+    // Build balance system. The delete effect's condition literals keep their
+    // sign; the deleted literal itself participates negated (sign flip only,
+    // no materialized negation).
     ConstraintSystem balance_system;
-    auto cond_lits = get_literals(del_effect.condition);
-    vector<const Literal *> all_lits = cond_lits;
-    auto del_neg = del_lit.negate();
-    all_lits.push_back(static_cast<const Literal *>(del_neg.get()));
-    for (const auto *lit : all_lits) {
+    vector<ProducedLit> all_lits;
+    for (const auto *lit : get_literals(del_effect.condition))
+        all_lits.push_back({lit, lit->negated()});
+    all_lits.push_back({&del_lit, !del_lit.negated()});
+    for (const auto &[lit, lit_negated] : all_lits) {
         vector<EqualityConjunction> possibilities;
         auto it = produced.find(lit->predicate);
         if (it == produced.end())
             return false;
-        for (const auto &match : it->second) {
-            const auto &m = static_cast<const Literal &>(*match);
-            if (m.negated() != lit->negated())
+        for (const auto &m : it->second) {
+            if (m.negated != lit_negated)
                 continue;
             vector<pair<Term, Term>> eqs;
-            size_t n = min(lit->args.size(), m.args.size());
+            size_t n = min(lit->args.size(), m.lit->args.size());
             for (size_t i = 0; i < n; ++i)
-                eqs.emplace_back(Term(lit->args[i]), Term(m.args[i]));
+                eqs.emplace_back(Term(lit->args[i]), Term(m.lit->args[i]));
             possibilities.emplace_back(move(eqs));
         }
         if (possibilities.empty())
