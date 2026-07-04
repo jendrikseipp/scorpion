@@ -107,7 +107,6 @@ BalanceChecker::BalanceChecker(
         heavy_actions_.push_back(move(heavy));
     }
     for (size_t i = 0; i < patched_actions_.size(); ++i) {
-        action_to_heavy_[&patched_actions_[i]] = &heavy_actions_[i];
         for (const auto &eff : patched_actions_[i].effects) {
             if (!eff.literal)
                 continue;
@@ -115,23 +114,19 @@ BalanceChecker::BalanceChecker(
             if (lit.negated())
                 continue;
             auto &list = predicates_to_add_actions_[lit.predicate];
-            if (list.empty() || list.back() != &patched_actions_[i])
-                list.push_back(&patched_actions_[i]);
+            if (list.empty() || list.back() != static_cast<int>(i))
+                list.push_back(static_cast<int>(i));
         }
     }
+    action_stamp_.assign(patched_actions_.size(), 0);
 }
 
-const vector<const Action *> &BalanceChecker::get_threats(
+const vector<int> &BalanceChecker::get_threats(
     const string &predicate) const {
     auto it = predicates_to_add_actions_.find(predicate);
     if (it == predicates_to_add_actions_.end())
         return empty_;
     return it->second;
-}
-
-const Action *BalanceChecker::get_heavy_action(const Action *action) const {
-    auto it = action_to_heavy_.find(action);
-    return it == action_to_heavy_.end() ? nullptr : it->second;
 }
 
 int BalanceChecker::next_index(size_t upper_bound) {

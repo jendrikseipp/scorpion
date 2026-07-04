@@ -286,14 +286,17 @@ void ensure_conjunction_sat(
 bool Invariant::check_balance(
     BalanceChecker &checker,
     const function<void(Invariant)> &enqueue_func) const {
-    // Collect actions threatening any of our parts.
-    vector<const Action *> actions_to_check;
-    unordered_set<const Action *> seen;
+    // Collect actions threatening any of our parts, first occurrence winning;
+    // the checker's epoch stamp deduplicates without per-call allocations
+    // (schema-heavy domains run this for every candidate over tens of
+    // thousands of actions -- a per-call hash set dominated the phase).
+    vector<int> actions_to_check;
+    checker.begin_action_set();
     vector<InvariantPart> sorted_parts = parts;
     sort(sorted_parts.begin(), sorted_parts.end());
     for (const auto &part : sorted_parts) {
-        for (const auto *a : checker.get_threats(part.predicate)) {
-            if (seen.insert(a).second)
+        for (int a : checker.get_threats(part.predicate)) {
+            if (checker.insert_action(a))
                 actions_to_check.push_back(a);
         }
     }
@@ -303,12 +306,11 @@ bool Invariant::check_balance(
     while (!actions_to_check.empty()) {
         int pos = checker.next_index(actions_to_check.size());
         swap(actions_to_check[pos], actions_to_check.back());
-        const Action *action = actions_to_check.back();
+        int action = actions_to_check.back();
         actions_to_check.pop_back();
-        const Action *heavy = checker.get_heavy_action(action);
-        if (operator_too_heavy(*heavy))
+        if (operator_too_heavy(checker.heavy_action(action)))
             return false;
-        if (operator_unbalanced(*action, enqueue_func))
+        if (operator_unbalanced(checker.action(action), enqueue_func))
             return false;
     }
     return true;
