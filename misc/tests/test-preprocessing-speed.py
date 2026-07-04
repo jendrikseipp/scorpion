@@ -54,6 +54,27 @@ TASKS = [
     "zenotravel/p06.pddl",
 ]
 
+# Grounding- and memory-heavy instances that stress the translator (from the
+# C++-translator speed/memory tuning). These live in other benchmark
+# collections, so each is tagged with the collection it resolves against:
+#   htg      -- the hard-to-ground domains, github.com/abcorrea/htg-domains
+#   downward -- the aibasel/downward-benchmarks collection
+EXTRA_TASKS = [
+    ("htg", "rovers-large-simple/p-r1-w1500-o1-1-g2-goal-2.pddl"),
+    ("htg", "logistics-large-simple/p-a1-c1-s1250-p10-t1-g2-goal-2.pddl"),
+    ("htg", "blocksworld-large-simple/p-700-3-goal-3.pddl"),
+    ("htg", "genome-edit-distance-positional/d-9-8.pddl"),
+    ("downward", "nurikabe-sat18-adl/p09.pddl"),
+    ("downward", "satellite/p30-HC-pfile10.pddl"),
+]
+
+# Environment variable pointing at each benchmark collection's root.
+COLLECTION_ENV = {
+    "autoscale": "AUTOSCALE_BENCHMARKS_SAT",
+    "downward": "DOWNWARD_BENCHMARKS",
+    "htg": "HTG_BENCHMARKS",
+}
+
 PLANNER_TIME_RE = re.compile(r"^INFO\s+Planner time: ([0-9]+(?:\.[0-9]+)?)s$", re.MULTILINE)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -70,15 +91,29 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_benchmarks_dir() -> Path:
-    try:
-        return Path(os.environ["AUTOSCALE_BENCHMARKS_SAT"]).resolve()
-    except KeyError:
-        sys.exit("AUTOSCALE_BENCHMARKS_SAT must point to the autoscale benchmarks")
+def all_tasks() -> list[tuple[str, str]]:
+    """(collection, "domain/problem.pddl") for every task, in order."""
+    return [("autoscale", task) for task in TASKS] + EXTRA_TASKS
 
 
-def task_to_output_path(output_dir: Path, task: str) -> Path:
-    return output_dir / Path(task).with_suffix(".sas")
+_roots: dict[str, Path] = {}
+
+
+def collection_root(collection: str) -> Path:
+    """Resolve (and cache) a benchmark collection's root from its env var."""
+    if collection not in _roots:
+        env = COLLECTION_ENV[collection]
+        try:
+            _roots[collection] = Path(os.environ[env]).resolve()
+        except KeyError:
+            sys.exit(f"{env} must be set to run the '{collection}' tasks")
+    return _roots[collection]
+
+
+def task_to_output_path(output_dir: Path, collection: str, task: str) -> Path:
+    # Namespace by collection so equal relative paths in different collections
+    # do not collide.
+    return output_dir / collection / Path(task).with_suffix(".sas")
 
 
 def parse_planner_time(output: str) -> float:
@@ -131,13 +166,13 @@ def run_preprocessor(input_file: Path, output_file: Path) -> float:
     return (after.ru_utime + after.ru_stime) - (before.ru_utime + before.ru_stime)
 
 
-def translate_all(benchmarks_dir: Path) -> None:
+def translate_all() -> None:
     TRANSLATE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     total_cpu = 0.0
 
-    for task in TASKS:
-        print(f"=== Translating {task} ===")
-        output_file = task_to_output_path(TRANSLATE_OUTPUT_DIR, task)
+    for collection, task in all_tasks():
+        print(f"=== Translating {task} ({collection}) ===")
+        output_file = task_to_output_path(TRANSLATE_OUTPUT_DIR, collection, task)
         output_file.parent.mkdir(parents=True, exist_ok=True)
         output_file.unlink(missing_ok=True)
 
@@ -147,7 +182,7 @@ def translate_all(benchmarks_dir: Path) -> None:
             "--translate",
             "--sas-file",
             str(output_file),
-            str(benchmarks_dir / task),
+            str(collection_root(collection) / task),
         ])
         if not output_file.exists():
             sys.exit(f"Translator did not create {output_file}")
@@ -163,10 +198,10 @@ def preprocess_all() -> None:
     PREPROCESS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     total_cpu = 0.0
 
-    for task in TASKS:
-        print(f"=== Preprocessing {task} ===")
-        input_file = task_to_output_path(TRANSLATE_OUTPUT_DIR, task)
-        output_file = task_to_output_path(PREPROCESS_OUTPUT_DIR, task)
+    for collection, task in all_tasks():
+        print(f"=== Preprocessing {task} ({collection}) ===")
+        input_file = task_to_output_path(TRANSLATE_OUTPUT_DIR, collection, task)
+        output_file = task_to_output_path(PREPROCESS_OUTPUT_DIR, collection, task)
 
         if not input_file.exists():
             sys.exit(f"Missing translator output: {input_file}\nRun '{Path(__file__).name} translate' first.")
@@ -189,8 +224,7 @@ def main() -> None:
     args = parse_args()
 
     if args.mode == "translate":
-        benchmarks_dir = get_benchmarks_dir()
-        translate_all(benchmarks_dir)
+        translate_all()
     else:
         preprocess_all()
 
