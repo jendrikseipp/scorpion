@@ -211,6 +211,36 @@ long long evaluate_constant(const FunctionalExpression &expr) {
     throw runtime_error("cost expression is not a numeric constant");
 }
 
+// Ground the action's cost under `var_mapping`: 1 without a metric; otherwise
+// evaluate its cost expression (a constant directly, or a PNE looked up in the
+// initial assignments), or 0 if the action has no cost expression.
+long long resolve_action_cost(
+    const Action &action, const VarMapping &var_mapping,
+    const InitAssignments &init_assignments, bool use_metric) {
+    if (!use_metric)
+        return 1;
+    if (!action.cost || !action.cost->expression)
+        return 0;
+    // Instantiate the cost expression: if it's a PNE, look up in
+    // init_assignments; else if it's a constant, use it.
+    if (action.cost->expression->kind() != FunctionalExpression::Kind::PNE)
+        return evaluate_constant(*action.cost->expression);
+    const auto &pne = static_cast<const PrimitiveNumericExpression &>(
+        *action.cost->expression);
+    vector<string> resolved_args;
+    resolved_args.reserve(pne.args.size());
+    for (const auto &a : pne.args) {
+        auto it = var_mapping.find(a);
+        resolved_args.push_back(
+            it == var_mapping.end() ? a
+                                    : grounding::symbols().name(it->second));
+    }
+    auto it = init_assignments.find(PneKey{pne.symbol, move(resolved_args)});
+    if (it == init_assignments.end())
+        throw runtime_error("Could not find PNE initialization for cost");
+    return evaluate_constant(*it->second);
+}
+
 optional<PropositionalAction> instantiate_action(
     const Action &action, const vector<string> &args,
     const InitAssignments &init_assignments,
@@ -268,38 +298,8 @@ optional<PropositionalAction> instantiate_action(
         }
     }
     if (!effects.empty() || get_options().keep_no_ops) {
-        long long cost = 1;
-        if (use_metric) {
-            if (action.cost && action.cost->expression) {
-                // Instantiate the cost expression: if it's a PNE, look up
-                // in init_assignments; else if it's a constant, use it.
-                if (action.cost->expression->kind() ==
-                    FunctionalExpression::Kind::PNE) {
-                    const auto &pne =
-                        static_cast<const PrimitiveNumericExpression &>(
-                            *action.cost->expression);
-                    vector<string> resolved_args;
-                    resolved_args.reserve(pne.args.size());
-                    for (const auto &a : pne.args) {
-                        auto it = var_mapping.find(a);
-                        resolved_args.push_back(
-                            it == var_mapping.end()
-                                ? a
-                                : grounding::symbols().name(it->second));
-                    }
-                    auto it = init_assignments.find(
-                        PneKey{pne.symbol, move(resolved_args)});
-                    if (it == init_assignments.end())
-                        throw runtime_error(
-                            "Could not find PNE initialization for cost");
-                    cost = evaluate_constant(*it->second);
-                } else {
-                    cost = evaluate_constant(*action.cost->expression);
-                }
-            } else {
-                cost = 0;
-            }
-        }
+        long long cost = resolve_action_cost(
+            action, var_mapping, init_assignments, use_metric);
         return PropositionalAction(
             name, move(precondition), move(effects), static_cast<int>(cost));
     }
