@@ -22,6 +22,12 @@ namespace translate::simplify {
 using namespace sas;
 
 namespace {
+// Weight added to each causal-graph edge pointing at a goal variable, so goal
+// variables accumulate a large incoming weight and MaxDAG orders them last. The
+// boost is far larger than any real edge weight, so `w % GOAL_EDGE_WEIGHT`
+// recovers the unboosted weight. Mirrors src/translate/variable_order.py.
+constexpr int GOAL_EDGE_WEIGHT = 100000;
+
 class CausalGraph {
 public:
     vector<map<int, int>> weighted_graph; // src -> tgt -> weight
@@ -122,7 +128,7 @@ public:
                     if (!scc_set.contains(tgt))
                         continue;
                     if (goal_map.contains(tgt))
-                        edges.emplace_back(tgt, 100000 + cost);
+                        edges.emplace_back(tgt, GOAL_EDGE_WEIGHT + cost);
                     edges.emplace_back(tgt, cost);
                 }
             }
@@ -188,9 +194,14 @@ public:
             auto &entries = weight_to_nodes[min_key];
             int min_elem = -1;
             bool elem_found = false;
-            while (!entries.empty() &&
-                   (!elem_found || done.contains(min_elem) ||
-                    min_key > incoming_weights[min_elem])) {
+            // A popped node is not a valid pick if none was found yet, it is
+            // already placed, or its live incoming weight has since dropped
+            // below the bucket key it was filed under (it was re-filed cheaper).
+            auto invalid_pick = [&] {
+                return !elem_found || done.contains(min_elem) ||
+                       min_key > incoming_weights[min_elem];
+            };
+            while (!entries.empty() && invalid_pick()) {
                 min_elem = entries.front();
                 entries.pop_front();
                 elem_found = true;
@@ -199,10 +210,8 @@ public:
                 weight_to_nodes.erase(min_key);
                 weights.pop();
             }
-            if (!elem_found || done.contains(min_elem) ||
-                min_key > incoming_weights[min_elem]) {
+            if (invalid_pick())
                 continue;
-            }
 
             done.insert(min_elem);
             result.push_back(min_elem);
@@ -212,7 +221,7 @@ public:
             for (const auto &[target, w] : sit->second) {
                 if (done.contains(target))
                     continue;
-                int decrement = w % 100000;
+                int decrement = w % GOAL_EDGE_WEIGHT;
                 if (decrement == 0)
                     continue;
                 int old_iw = incoming_weights[target];
