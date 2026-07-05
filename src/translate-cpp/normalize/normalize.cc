@@ -367,45 +367,36 @@ void move_existential_quantifiers(Task &task) {
 
 /* [5a-c] eliminate existential quantifiers --------------------------- */
 
-void eliminate_existential_quantifiers_from_axioms(Task &task) {
-    for (auto &x : task.axioms) {
-        if (x.condition &&
-            x.condition->kind() == Condition::Kind::EXISTENTIAL) {
-            const auto &q =
-                static_cast<const ExistentialCondition &>(*x.condition);
-            for (const auto &p : q.parameters)
-                x.parameters.push_back(p);
-            x.condition = q.body[0];
-        }
+namespace {
+// If `condition` is an outermost existential, pull its bound variables up into
+// `parameters` and replace it with the quantifier body. In a normalized
+// condition the existential is top-level, so this flattens it into the owning
+// axiom/action/effect.
+void lift_existential(vector<TypedObject> &parameters, ConditionPtr &condition) {
+    if (condition && condition->kind() == Condition::Kind::EXISTENTIAL) {
+        const auto &q =
+            static_cast<const ExistentialCondition &>(*condition);
+        for (const auto &p : q.parameters)
+            parameters.push_back(p);
+        condition = q.body[0];
     }
+}
+}
+
+void eliminate_existential_quantifiers_from_axioms(Task &task) {
+    for (auto &x : task.axioms)
+        lift_existential(x.parameters, x.condition);
 }
 
 void eliminate_existential_quantifiers_from_preconditions(Task &task) {
-    for (auto &a : task.actions) {
-        if (a.precondition &&
-            a.precondition->kind() == Condition::Kind::EXISTENTIAL) {
-            const auto &q =
-                static_cast<const ExistentialCondition &>(*a.precondition);
-            for (const auto &p : q.parameters)
-                a.parameters.push_back(p);
-            a.precondition = q.body[0];
-        }
-    }
+    for (auto &a : task.actions)
+        lift_existential(a.parameters, a.precondition);
 }
 
 void eliminate_existential_quantifiers_from_conditional_effects(Task &task) {
-    for (auto &a : task.actions) {
-        for (auto &e : a.effects) {
-            if (e.condition &&
-                e.condition->kind() == Condition::Kind::EXISTENTIAL) {
-                const auto &q =
-                    static_cast<const ExistentialCondition &>(*e.condition);
-                for (const auto &p : q.parameters)
-                    e.parameters.push_back(p);
-                e.condition = q.body[0];
-            }
-        }
-    }
+    for (auto &a : task.actions)
+        for (auto &e : a.effects)
+            lift_existential(e.parameters, e.condition);
 }
 
 /* [7] verify_axiom_predicates ---------------------------------------- */
