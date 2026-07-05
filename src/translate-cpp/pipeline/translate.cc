@@ -527,7 +527,12 @@ optional<SASOperator> translate_strips_operator_aux(
     const vector<int> &mutex_ranges, const VarMap &condition,
     const ImpliedFacts &implied_facts) {
     FlatMap<FlatMap<vector<VarMap>>> effects_by_variable;
-    map<int, vector<vector<GroundLiteral>>> add_conds_by_var;
+    // Per-operator by-var lookups. FlatMap (a sorted vector) rather than a
+    // std::map / unordered_map: these hold a handful of entries but are built
+    // fresh for every operator, so a tree/hash node per entry across millions
+    // of operators is pure allocator churn. Iteration order is not used (the
+    // del loop below walks del_var_order); both are pure var-keyed lookups.
+    FlatMap<vector<vector<GroundLiteral>>> add_conds_by_var;
 
     for (const auto &[conds, fact] : op.add_effects) {
         auto eff_cond_list = translate_strips_conditions(
@@ -554,7 +559,7 @@ optional<SASOperator> translate_strips_operator_aux(
     // Python under --full-encoding (e.g. cavediving-14-adl).
     using CondPtr = shared_ptr<VarMap>;
     vector<int> del_var_order;
-    unordered_map<int, vector<pair<int, CondPtr>>> del_by_var;
+    FlatMap<vector<pair<int, CondPtr>>> del_by_var;
     for (const auto &[conds, fact] : op.del_effects) {
         auto eff_cond_list = translate_strips_conditions(
             conds, factvals, ranges, mutex_factvals, mutex_ranges);
