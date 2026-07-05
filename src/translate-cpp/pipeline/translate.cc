@@ -247,11 +247,12 @@ inline bool value_set_contains(const ValueSet &s, int v) {
     return binary_search(s.begin(), s.end(), v);
 }
 
-optional<vector<VarMap>> translate_strips_conditions_aux(
+// Intersect `condition` with the positive literals: each pins its variable(s)
+// to a single value. Returns false if that contradicts an existing entry (the
+// condition is then unsatisfiable).
+bool add_positive_conditions(
     const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
-    const vector<int> &ranges) {
-    CondMap condition;
-    // Positive literals first.
+    CondMap &condition) {
     for (const auto &lit : conditions) {
         if (lit.negated)
             continue;
@@ -262,14 +263,21 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
             auto cit = condition.find(var);
             if (cit != condition.end()) {
                 if (!value_set_contains(cit->second, val))
-                    return nullopt;
+                    return false;
                 cit->second = {val};
             } else {
                 condition[var] = {val};
             }
         }
     }
-    // Negative literals.
+    return true;
+}
+
+// Refine `condition` with the negative literals: each excludes one value from
+// its variable's domain. Returns false if that empties a domain.
+bool add_negative_conditions(
+    const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
+    const vector<int> &ranges, CondMap &condition) {
     for (const auto &lit : conditions) {
         if (!lit.negated)
             continue;
@@ -295,7 +303,7 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
                     cit->second.begin(), cit->second.end(), poss_vals.begin(),
                     poss_vals.end(), back_inserter(intersection));
                 if (intersection.empty())
-                    return nullopt;
+                    return false;
                 cit->second = move(intersection);
             }
         }
@@ -321,7 +329,13 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
             condition[best_var] = move(new_condition[best_var]);
         }
     }
-    // Multiply-out the condition.
+    return true;
+}
+
+// Multiply-out a per-variable value-set condition into the list of concrete
+// (var -> value) assignments (the DNF terms). Variables are expanded
+// smallest-domain first, matching Python's ordering.
+vector<VarMap> expand_condition_map(const CondMap &condition) {
     vector<pair<int, ValueSet>> sorted_conds(
         condition.begin(), condition.end());
     ranges::sort(sorted_conds, [](const auto &a, const auto &b) {
@@ -346,6 +360,17 @@ optional<vector<VarMap>> translate_strips_conditions_aux(
         }
     }
     return flat_conds;
+}
+
+optional<vector<VarMap>> translate_strips_conditions_aux(
+    const vector<GroundLiteral> &conditions, const FactToVarVals &factvals,
+    const vector<int> &ranges) {
+    CondMap condition;
+    if (!add_positive_conditions(conditions, factvals, condition))
+        return nullopt;
+    if (!add_negative_conditions(conditions, factvals, ranges, condition))
+        return nullopt;
+    return expand_condition_map(condition);
 }
 
 optional<vector<VarMap>> translate_strips_conditions(
@@ -676,6 +701,115 @@ SASTask trivial_task(bool solvable) {
 }
 }
 
+// Positive-atom shells of the goal's negated literals; fact-group selection
+// drops these so a negated goal fact is not put in a mutex group with the
+// facts it excludes.
+AtomSet collect_negative_in_goal(const vector<ConditionPtr> &goal) {
+    AtomSet negative_in_goal;
+    for (const auto &g : goal) {
+        if (!g)
+            continue;
+        const auto &lit = static_cast<const Literal &>(*g);
+        if (lit.negated())
+            negative_in_goal.insert(
+                make_shared<const Atom>(lit.predicate, lit.args));
+    }
+    return negative_in_goal;
+}
+
+// Initial SAS state: every variable starts at its "none of those" value, then
+// each true init atom overrides the variables encoding it.
+SASInit build_sas_init(
+    const StripsToSas &dict, const Task &task, const FactMap &fluent_ids) {
+    SASInit sas_init;
+    sas_init.values.assign(dict.ranges.size(), 0);
+    for (size_t v = 0; v < dict.ranges.size(); ++v)
+        sas_init.values[v] = dict.ranges[v] - 1;
+    for (const auto &elem : task.init) {
+        if (!holds_alternative<shared_ptr<const Atom>>(elem))
+            continue;
+        const auto &ap = get<shared_ptr<const Atom>>(elem);
+        if (!ap)
+            continue;
+        FactId f = fact_id_of(*ap, fluent_ids);
+        if (f < 0)
+            continue;
+        for (const auto &[var, val] : dict.factvals[f])
+            sas_init.values[var] = val;
+    }
+    return sas_init;
+}
+
+// Per-variable axiom layer (-1 for non-derived), keyed off each layered
+// axiom effect's SAS variable.
+vector<int> build_axiom_layers(
+    const StripsToSas &dict, const axioms::AxiomLayering &layering,
+    const FactMap &fluent_ids) {
+    vector<int> axiom_layers(dict.ranges.size(), -1);
+    for (const auto &[effect, layer] : layering.axiom_layers) {
+        FactId f = fact_id_of(*effect, fluent_ids);
+        if (f < 0 || dict.factvals[f].empty())
+            continue;
+        axiom_layers[dict.factvals[f].front().first] = layer;
+    }
+    return axiom_layers;
+}
+
+// SAS mutex groups: only under partial encoding, and only for groups whose
+// facts each map to a single (var, val) pair.
+vector<SASMutexGroup> build_sas_mutexes(
+    const fact_groups::ComputedGroups &groups, const StripsToSas &dict,
+    const FactMap &fluent_ids, bool use_partial) {
+    vector<SASMutexGroup> sas_mutexes;
+    if (!use_partial)
+        return sas_mutexes;
+    for (const auto &grp : groups.mutex_groups) {
+        vector<VarVal> facts;
+        for (const auto &f : grp) {
+            if (!f)
+                continue;
+            FactId fid = fact_id_of(static_cast<const Atom &>(*f), fluent_ids);
+            if (fid < 0 || dict.factvals[fid].size() != 1)
+                continue;
+            facts.push_back(dict.factvals[fid].front());
+        }
+        if (facts.size() >= 2)
+            sas_mutexes.emplace_back(move(facts));
+    }
+    return sas_mutexes;
+}
+
+// Sort operators by (name, prevail, pre_post) at SAS construction time --
+// before simplify and variable_order touch the task -- matching Python's
+// SASTask.__init__ ordering exactly. variable_order's remap then renames var
+// numbers without resorting, so the final operator order reflects this
+// pre-remap canonical sort.
+//
+// Sort operator INDICES, then apply the permutation once: sorting ints keeps
+// introsort's swaps cheap and cache-friendly, and each 88-byte SASOperator is
+// moved exactly once (in the rebuild) instead of on every swap -- ~20% off the
+// sort on operator-heavy tasks. Operator names are unique, so the order is
+// fully determined (byte-identical to the direct sort).
+void sort_operators_canonically(vector<SASOperator> &operators) {
+    vector<int> order(operators.size());
+    for (size_t i = 0; i < order.size(); ++i)
+        order[i] = static_cast<int>(i);
+    ranges::sort(order, [&](int a, int b) {
+        const SASOperator &oa = operators[a];
+        const SASOperator &ob = operators[b];
+        if (oa.name != ob.name)
+            return oa.name < ob.name;
+        if (oa.prevail != ob.prevail)
+            return oa.prevail < ob.prevail;
+        return oa.pre_post < ob.pre_post;
+    });
+    vector<SASOperator> sorted;
+    sorted.reserve(operators.size());
+    for (int i : order)
+        sorted.push_back(std::move(operators[i]));
+    operators = std::move(sorted);
+}
+
 SASTask pddl_to_sas(Task &task) {
     // Label each phase with the Python translator's wording and print
     // the "[%.3fs CPU, %.3fs wall-clock]" suffix so Lab's stock
@@ -715,16 +849,8 @@ SASTask pddl_to_sas(Task &task) {
         cout << "Trivially false goal! Generating unsolvable task..." << endl;
         return trivial_task(false);
     }
-    AtomSet negative_in_goal;
-    for (const auto &g : *inst.instantiated_goal) {
-        if (!g)
-            continue;
-        const auto &lit = static_cast<const Literal &>(*g);
-        if (lit.negated()) {
-            negative_in_goal.insert(
-                make_shared<const Atom>(lit.predicate, lit.args));
-        }
-    }
+    AtomSet negative_in_goal =
+        collect_negative_in_goal(*inst.instantiated_goal);
 
     cout << "Computing fact groups..." << endl;
     auto groups = phase("Computing fact groups", [&] {
@@ -747,22 +873,7 @@ SASTask pddl_to_sas(Task &task) {
         implied_facts = build_implied_facts(groups, strips_to_sas, fluent_ids);
 
     // Build init.
-    SASInit sas_init;
-    sas_init.values.assign(strips_to_sas.ranges.size(), 0);
-    for (size_t v = 0; v < strips_to_sas.ranges.size(); ++v)
-        sas_init.values[v] = strips_to_sas.ranges[v] - 1;
-    for (const auto &elem : task.init) {
-        if (!holds_alternative<shared_ptr<const Atom>>(elem))
-            continue;
-        const auto &ap = get<shared_ptr<const Atom>>(elem);
-        if (!ap)
-            continue;
-        FactId f = fact_id_of(*ap, fluent_ids);
-        if (f < 0)
-            continue;
-        for (const auto &[var, val] : strips_to_sas.factvals[f])
-            sas_init.values[var] = val;
-    }
+    SASInit sas_init = build_sas_init(strips_to_sas, task, fluent_ids);
     // Build goal.
     auto goal_gl = to_ground_literals(*inst.instantiated_goal, fluent_ids);
     auto goal_conds = translate_strips_conditions(
@@ -814,70 +925,18 @@ SASTask pddl_to_sas(Task &task) {
         for (auto &a : sub)
             sas_axioms.push_back(move(a));
     }
-    // Build axiom layers vector.
-    vector<int> axiom_layers(strips_to_sas.ranges.size(), -1);
-    for (const auto &[effect, layer] : axiom_layering.axiom_layers) {
-        FactId f = fact_id_of(*effect, fluent_ids);
-        if (f < 0 || strips_to_sas.factvals[f].empty())
-            continue;
-        axiom_layers[strips_to_sas.factvals[f].front().first] = layer;
-    }
-
     // Variables.
     SASVariables sas_vars;
     sas_vars.ranges = strips_to_sas.ranges;
-    sas_vars.axiom_layers = move(axiom_layers);
+    sas_vars.axiom_layers =
+        build_axiom_layers(strips_to_sas, axiom_layering, fluent_ids);
     sas_vars.value_names = groups.translation_key;
 
-    // Mutex key: groups represented in strips_to_sas dict.
-    vector<SASMutexGroup> sas_mutexes;
-    if (use_partial) {
-        for (const auto &grp : groups.mutex_groups) {
-            vector<VarVal> facts;
-            for (const auto &f : grp) {
-                if (!f)
-                    continue;
-                FactId fid = fact_id_of(static_cast<const Atom &>(*f), fluent_ids);
-                if (fid < 0 || strips_to_sas.factvals[fid].size() != 1)
-                    continue;
-                facts.push_back(strips_to_sas.factvals[fid].front());
-            }
-            if (facts.size() >= 2)
-                sas_mutexes.emplace_back(move(facts));
-        }
-    }
+    vector<SASMutexGroup> sas_mutexes =
+        build_sas_mutexes(groups, strips_to_sas, fluent_ids, use_partial);
 
-    // Sort operators by (name, prevail, pre_post) at SAS construction
-    // time -- before simplify and variable_order touch the task. That
-    // matches Python's SASTask.__init__ ordering exactly. variable_order's
-    // remap then renames var numbers without resorting, so the final operator
-    // order in the output reflects this pre-remap canonical sort, not a
-    // post-remap one.
-    // Sort operator INDICES by (name, prevail, pre_post), then apply the
-    // permutation once. Sorting ints keeps introsort's O(n log n) swaps cheap
-    // and cache-friendly; each 88-byte SASOperator is moved exactly once (in
-    // the rebuild) instead of on every swap -- ~20% off the sort on operator-
-    // heavy tasks. Operator names are unique, so the order is fully determined
-    // (byte-identical to the direct sort).
-    {
-        vector<int> order(sas_operators.size());
-        for (size_t i = 0; i < order.size(); ++i)
-            order[i] = static_cast<int>(i);
-        ranges::sort(order, [&](int a, int b) {
-            const SASOperator &oa = sas_operators[a];
-            const SASOperator &ob = sas_operators[b];
-            if (oa.name != ob.name)
-                return oa.name < ob.name;
-            if (oa.prevail != ob.prevail)
-                return oa.prevail < ob.prevail;
-            return oa.pre_post < ob.pre_post;
-        });
-        vector<SASOperator> sorted;
-        sorted.reserve(sas_operators.size());
-        for (int i : order)
-            sorted.push_back(std::move(sas_operators[i]));
-        sas_operators = std::move(sorted);
-    }
+    sort_operators_canonically(sas_operators);
+
     SASTask sas_task;
     sas_task.variables = move(sas_vars);
     sas_task.mutexes = move(sas_mutexes);
