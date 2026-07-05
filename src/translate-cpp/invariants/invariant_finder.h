@@ -51,6 +51,14 @@ public:
     }
 
 private:
+    // Constructor phases (each fills the members below).
+    void build_patched_actions(
+        const pddl::Task &task,
+        const std::vector<std::vector<std::vector<int>>>
+            *reachable_action_parameters);
+    void build_heavy_actions();
+    void build_predicate_map();
+
     std::vector<pddl::Action> patched_actions_; // owns patched actions
     std::vector<pddl::Action> heavy_actions_; // owns heavy versions (aligned)
     std::unordered_map<std::string, std::vector<int>>
