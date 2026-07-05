@@ -23,20 +23,45 @@ constexpr int ALWAYS_TRUE = -3;
 struct DTG {
     int init;
     int size;
-    vector<set<int>> arcs;
-    explicit DTG(int init_val, int sz) : init(init_val), size(sz), arcs(sz) {
+    // Specific transitions pre -> post (from operators with a precondition on
+    // this variable). Flat vectors, not set<int>: the BFS skips already-seen
+    // targets, so duplicate arcs are harmless and we avoid a tree node (plus its
+    // malloc) per arc -- the hot spot of this phase on variables with large
+    // domains.
+    vector<vector<int>> arcs;
+    // A "pre == -1" effect can set the variable to `post` from *any* value, so
+    // `post` is reachable from init unconditionally. Recording that as one flag
+    // avoids materializing an arc from every one of the (up to `size`) values to
+    // `post` -- the quadratic blowup that dominated operator-heavy tasks with
+    // wide variable domains (e.g. ferry).
+    vector<char> unconditional;
+    explicit DTG(int init_val, int sz)
+        : init(init_val), size(sz), arcs(sz), unconditional(sz, 0) {
     }
     void add_arc(int u, int v) {
         if (u >= 0 && u < size && v >= 0 && v < size && u != v)
-            arcs[u].insert(v);
+            arcs[u].push_back(v);
     }
-    // Dense membership vector (indexed by value, 1 if reachable from init)
-    // rather than a set<int>: values are 0..size-1, so the BFS marks and tests
-    // in O(1) without tree-node churn, and the consumer only needs membership.
+    void add_unconditional(int v) {
+        if (v >= 0 && v < size)
+            unconditional[v] = 1;
+    }
+    // Dense membership vector (indexed by value, 1 if reachable from init):
+    // values are 0..size-1, so the BFS marks and tests in O(1), and the consumer
+    // only needs membership. Seeds are init plus every unconditionally-reachable
+    // value.
     vector<char> reachable() const {
         vector<char> seen(size, 0);
-        seen[init] = 1;
-        vector<int> stack = {init};
+        vector<int> stack;
+        if (init >= 0 && init < size) {
+            seen[init] = 1;
+            stack.push_back(init);
+        }
+        for (int v = 0; v < size; ++v)
+            if (unconditional[v] && !seen[v]) {
+                seen[v] = 1;
+                stack.push_back(v);
+            }
         while (!stack.empty()) {
             int n = stack.back();
             stack.pop_back();
@@ -56,13 +81,10 @@ vector<DTG> build_dtgs(const SASTask &task) {
     for (size_t i = 0; i < task.variables.ranges.size(); ++i)
         dtgs.emplace_back(task.init.values[i], task.variables.ranges[i]);
     auto add_arc_var = [&](int var_no, int pre_spec, int post) {
-        if (pre_spec == -1) {
-            for (int p = 0; p < task.variables.ranges[var_no]; ++p)
-                if (p != post)
-                    dtgs[var_no].add_arc(p, post);
-        } else {
+        if (pre_spec == -1)
+            dtgs[var_no].add_unconditional(post);
+        else
             dtgs[var_no].add_arc(pre_spec, post);
-        }
     };
     auto effective_pre = [](int var_no, const vector<VarVal> &conds,
                             const vector<VarVal> &eff_cond) -> optional<int> {
