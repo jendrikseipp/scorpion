@@ -25,18 +25,30 @@ namespace {
 class CausalGraph {
 public:
     vector<map<int, int>> weighted_graph; // src -> tgt -> weight
-    vector<set<int>> predecessor_graph;
+    // tgt -> its predecessors (deduplicated). Derived once from weighted_graph
+    // after weighting rather than maintained per edge: weighted_graph[src]
+    // already holds each src->tgt edge exactly once, so one pass yields the
+    // dedup'd predecessor lists without a set<int> insert (plus a tree-node
+    // malloc) on every one of the millions of operator-effect-source edges.
+    vector<vector<int>> predecessor_graph;
     int num_variables;
     unordered_map<int, int> goal_map;
 
     explicit CausalGraph(const SASTask &task) {
         num_variables = static_cast<int>(task.variables.ranges.size());
         weighted_graph.assign(num_variables, {});
-        predecessor_graph.assign(num_variables, {});
         for (const auto &[v, val] : task.goal.pairs)
             goal_map[v] = val;
         weight_from_ops(task.operators);
         weight_from_axioms(task.axioms);
+        build_predecessor_graph();
+    }
+
+    void build_predecessor_graph() {
+        predecessor_graph.assign(num_variables, {});
+        for (int src = 0; src < num_variables; ++src)
+            for (const auto &[tgt, _] : weighted_graph[src])
+                predecessor_graph[tgt].push_back(src);
     }
 
     void weight_from_ops(const vector<SASOperator> &operators) {
@@ -54,10 +66,8 @@ public:
                 // rather than copy source_vars and append per effect (the
                 // condition is empty on STRIPS, so the copy bought nothing).
                 auto add_edge = [&](int src) {
-                    if (src != tgt) {
+                    if (src != tgt)
                         ++weighted_graph[src][tgt];
-                        predecessor_graph[tgt].insert(src);
-                    }
                 };
                 for (int src : source_vars)
                     add_edge(src);
@@ -71,10 +81,8 @@ public:
         for (const auto &ax : axioms) {
             int tgt = ax.effect.first;
             for (const auto &[src, _] : ax.condition) {
-                if (src != tgt) {
+                if (src != tgt)
                     ++weighted_graph[src][tgt];
-                    predecessor_graph[tgt].insert(src);
-                }
             }
         }
     }
