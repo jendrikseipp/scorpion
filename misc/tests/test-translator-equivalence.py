@@ -26,19 +26,29 @@ variant).
 Benchmarks are not bundled: tasks are read from a downward-benchmarks checkout
 given by the DOWNWARD_BENCHMARKS environment variable (or a directory argument).
 
-By default only a small, fast regression set is checked: one task from each
-family that exposed a past py-vs-cpp divergence --
-  - assembly, freecell, psr-large, psr-middle, settlers-sat18-adl,
-    thoughtful-sat14-strips, trucks-strips: axiom/mutex/sort divergences;
-  - ged-opt14-strips, philosophers: invariant-finder RNG-driven exploration;
-  - miconic, logistics98: MaxDAG variable ordering in multi-variable SCCs;
-  - pathways, sokoban-sat11-strips: SCC DFS visit order;
-  - blocks: GroupCoverQueue mutex tie-break direction;
-  - storage: SCC-order-dependent variable numbering;
-  - parking-sat14-strips: MaxDAG cyclic-SCC variable ordering.
-Pass an explicit suite ("all" or "first") and/or a different benchmark
-directory to check more; tasks are discovered recursively, so both the flat
-domain/problem layout and nested layouts are handled.
+The default run checks two things (see OPTION_TASKS, FAMILY_TASKS, CONFIGS):
+  - Option coverage: an option-diverse set (one task from each family that
+    exposed a past py-vs-cpp divergence) is checked under EVERY option config,
+    so every option path is exercised. The families and the divergences they
+    guard: assembly/freecell/psr-large/psr-middle/settlers-sat18-adl/
+    thoughtful-sat14-strips/trucks-strips (axiom/mutex/sort), ged-opt14-strips/
+    philosophers (invariant-finder RNG), miconic/logistics98 (MaxDAG SCC
+    ordering), pathways/sokoban-sat11-strips (SCC DFS order), blocks
+    (GroupCoverQueue tie-break), storage (SCC variable numbering),
+    parking-sat14-strips (MaxDAG cyclic-SCC ordering).
+  - Domain coverage: the smallest task of EVERY domain family is checked under
+    default options, so no family goes untested. The full option matrix is not
+    applied here (domain coverage does not need it, and it would multiply the
+    few families whose smallest task is still large, e.g. organic-synthesis).
+
+Pass an explicit suite ("all", "first", or "<domain>:<problem>" entries) and/or
+a different benchmark directory to instead check those tasks under every config;
+tasks are discovered recursively, so both the flat domain/problem layout and
+nested layouts are handled.
+
+To regenerate FAMILY_TASKS when the benchmark set changes, pick the smallest
+resolvable problem per family (strip -opt/-sat/-agl/-mco/year/-strips/-adl
+suffixes to group domains into families).
 
 Requires the C++ translator to be built:
     ./build.py release
@@ -66,11 +76,10 @@ DRIVER = REPO / "fast-downward.py"
 # DOWNWARD_BENCHMARKS environment variable (or pass a directory explicitly).
 DEFAULT_BENCHMARKS = os.environ.get("DOWNWARD_BENCHMARKS")
 
-# Default task set: one task from each family that exposed a past py-vs-cpp
-# divergence (the regression set), as <domain>:<problem> within the benchmarks
-# directory. Kept small so the check is fast; pass an explicit suite ("all",
-# "first", or "<family>:<problem>") to override.
-DEFAULT_TASKS = [
+# Option-coverage set: one task from each family that exposed a past py-vs-cpp
+# divergence. These are checked under EVERY option config (see CONFIGS), so the
+# option paths are exercised on feature-diverse tasks. Kept small and fast.
+OPTION_TASKS = [
     "assembly:prob01.pddl",
     "blocks:probBLOCKS-4-0.pddl",
     "freecell:p01.pddl",
@@ -109,6 +118,92 @@ CONFIGS = [
     ("keep-duplicate-operators", ["--keep-duplicate-operators"]),
     ("layer-strategy=max", ["--layer-strategy", "max"]),
     ("no-invariants", ["--invariant-generation-max-candidates", "0"]),
+]
+
+# Domain-coverage set: the smallest task of every domain family in
+# downward-benchmarks (one per family, so every family's translation is
+# exercised at least once). These are checked under DEFAULT options only, not
+# the full CONFIGS matrix -- domain coverage does not need every option, and
+# running the matrix here would multiply the few families whose smallest task is
+# still large (e.g. organic-synthesis, which has no small instance). Regenerate
+# with the helper in the module docstring if the benchmark set changes.
+FAMILY_TASKS = [
+    "agricola-opt18-strips:p01.pddl",
+    "airport:p01-airport1-p1.pddl",
+    "assembly:prob01.pddl",
+    "barman-opt11-strips:pfile01-004.pddl",
+    "blocks:probBLOCKS-4-1.pddl",
+    "caldera-opt18-adl:p03.pddl",
+    "caldera-split-opt18-adl:p03.pddl",
+    "cavediving-14-adl:testing07_easy.pddl",
+    "childsnack-opt14-strips:child-snack_pfile01.pddl",
+    "citycar-opt14-adl:p2-2-2-1-2.pddl",
+    "data-network-opt18-strips:p01.pddl",
+    "depot:p01.pddl",
+    "driverlog:p01.pddl",
+    "elevators-opt08-strips:p01.pddl",
+    "flashfill-sat18-adl:p01.pddl",
+    "floortile-opt11-strips:opt-p01-002.pddl",
+    "folding-opt23-adl:p01.pddl",
+    "freecell:p01.pddl",
+    "ged-opt14-strips:d-1-4.pddl",
+    "grid:prob01.pddl",
+    "gripper:prob01.pddl",
+    "hiking-opt14-strips:ptesting-1-2-3.pddl",
+    "labyrinth-opt23-adl:p01.pddl",
+    "logistics00:probLOGISTICS-4-1.pddl",
+    "maintenance-opt14-adl:maintenance-1-3-010-010-2-002.pddl",
+    "miconic-simpleadl:s1-0.pddl",
+    "movie:prob01.pddl",
+    "mprime:prob25.pddl",
+    "mystery:prob25.pddl",
+    "nomystery-opt11-strips:p11.pddl",
+    "nurikabe-opt18-adl:p01.pddl",
+    "openstacks-strips:p02.pddl",
+    "optical-telegraphs:p01-opt2.pddl",
+    # organic-synthesis (non-split) is intentionally omitted: every instance
+    # grounds so large that the Python translator needs >100 GB and tens of
+    # minutes (the C++ translator handles it in ~45 s), so there is no instance
+    # a py-vs-cpp check can use as a reference. The closely related
+    # organic-synthesis-split family (below) covers the same translation paths
+    # at a tractable size; the full family is still checked (as a skip) under an
+    # explicit "all" run.
+    "organic-synthesis-split-sat18-strips:p01.pddl",
+    "parcprinter-08-strips:p01.pddl",
+    "parking-opt11-strips:pfile03-012.pddl",
+    "pathways:p01.pddl",
+    "pegsol-08-strips:p01.pddl",
+    "petri-net-alignment-opt18-strips:p17.pddl",
+    "philosophers:p01-phil2.pddl",
+    "pipesworld-notankage:p01-net1-b6-g2.pddl",
+    "pipesworld-tankage:p11-net2-b10-g2-t30.pddl",
+    "psr-large:p01-s29-n2-l5-f30.pddl",
+    "psr-middle:p02-s23-n2-l3-f70.pddl",
+    "psr-small:p01-s2-n1-l2-f50.pddl",
+    "quantum-layout-opt23-strips:p07.pddl",
+    "recharging-robots-opt23-adl:p01.pddl",
+    "ricochet-robots-opt23-adl:p11.pddl",
+    "rovers:p02.pddl",
+    "rubiks-cube-opt23-adl:p09.pddl",
+    "satellite:p01-pfile1.pddl",
+    "scanalyzer-08-strips:p23.pddl",
+    "schedule:probschedule-2-0.pddl",
+    "settlers-opt18-adl:p01.pddl",
+    "slitherlink-opt23-adl:p01.pddl",
+    "snake-opt18-strips:p04.pddl",
+    "sokoban-opt08-strips:p03.pddl",
+    "spider-opt18-strips:p01.pddl",
+    "storage:p01.pddl",
+    "termes-opt18-strips:p02.pddl",
+    "tetris-opt14-strips:p02-4.pddl",
+    "thoughtful-sat14-strips:bootstrap-typed-03.pddl",
+    "tidybot-opt11-strips:p01.pddl",
+    "tpp:p01.pddl",
+    "transport-opt08-strips:p01.pddl",
+    "trucks-strips:p01.pddl",
+    "visitall-opt11-strips:problem02-half.pddl",
+    "woodworking-sat08-strips:p11.pddl",
+    "zenotravel:p01.pddl",
 ]
 
 
@@ -220,10 +315,12 @@ def main():
         description=HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("benchmarks_dir", nargs="?", default=DEFAULT_BENCHMARKS,
                    help="benchmark directory (default: $DOWNWARD_BENCHMARKS)")
-    p.add_argument("suite", nargs="*", default=DEFAULT_TASKS,
-                   help='task selection (default: the small per-family '
-                        'regression set). "all", "first" (first task per '
-                        'domain), or "<domain>:<problem>" entries.')
+    p.add_argument("suite", nargs="*", default=None,
+                   help='task selection. Default: the option-coverage set under '
+                        'every config PLUS one small task per family under '
+                        'default options. Pass "all", "first" (first task per '
+                        'domain), or "<domain>:<problem>" entries to instead '
+                        'check those tasks under every config.')
     p.add_argument("-j", "--jobs", type=int,
                    default=min(os.cpu_count() or 4, 8),
                    help="number of tasks to translate in parallel "
@@ -238,21 +335,37 @@ def main():
     if not benchmarks_dir.is_dir():
         sys.exit(f"Not a directory: {benchmarks_dir}")
 
-    tasks = select(discover_tasks(benchmarks_dir), args.suite, benchmarks_dir)
-    if not tasks:
+    all_tasks = discover_tasks(benchmarks_dir)
+    # Build the (domain, problem, config-label, options) run specs.
+    run_specs = {}  # keyed by (domain, problem, label) to dedupe
+    def add(pairs, configs):
+        for d, prob in pairs:
+            for label, opts in configs:
+                run_specs.setdefault((d, prob, label), opts)
+    if not args.suite:
+        # Default: option matrix on the option-coverage set + one small task per
+        # family under default options (domain coverage).
+        add(select(all_tasks, OPTION_TASKS, benchmarks_dir), CONFIGS)
+        add(select(all_tasks, FAMILY_TASKS, benchmarks_dir), [("default", [])])
+    else:
+        # Explicit suite: check the given tasks under every config.
+        add(select(all_tasks, args.suite, benchmarks_dir), CONFIGS)
+    specs = [(d, p, label, opts) for (d, p, label), opts in run_specs.items()]
+    if not specs:
         sys.exit(f"No tasks found under {benchmarks_dir}")
 
-    jobs = max(1, min(args.jobs, len(tasks) * len(CONFIGS)))
-    runs = len(tasks) * len(CONFIGS)
-    print(f"Comparing py vs cpp translator output on {len(tasks)} task(s) x "
-          f"{len(CONFIGS)} option config(s) = {runs} run(s) "
+    runs = len(specs)
+    n_tasks = len({(d, p) for d, p, _, _ in specs})
+    jobs = max(1, min(args.jobs, runs))
+    print(f"Comparing py vs cpp translator output on {n_tasks} task(s), "
+          f"{runs} (task, option-config) run(s) "
           f"from {benchmarks_dir} ({jobs} parallel job(s))\n")
     identical, mismatch, errors, skipped = [], [], [], []
     py_total = cpp_total = 0.0
     start = time.perf_counter()
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as ex:
         futures = [ex.submit(check_one, d, p, label, opts)
-                   for d, p in tasks for label, opts in CONFIGS]
+                   for d, p, label, opts in specs]
         for fut in concurrent.futures.as_completed(futures):
             name, status, py_time, cpp_time, detail = fut.result()
             py_total += py_time
