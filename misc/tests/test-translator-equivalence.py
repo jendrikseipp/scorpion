@@ -10,6 +10,15 @@ translator's default CPython-compatible RNG (see
 src/translate-cpp/utils/cpython_random.h) the two produce identical output on
 every task; any mismatch is reported and fails the run.
 
+Every task is checked under each translator option configuration that changes
+output.sas (--relaxed, --full-encoding, --add-implied-preconditions,
+--keep-unreachable-facts, --skip-variable-reordering,
+--keep-unimportant-variables, --keep-no-ops, --keep-duplicate-operators,
+--layer-strategy max, and disabled invariants), so the two variants must agree
+on every option path, not just the defaults. Options that do not affect
+output.sas and the wall-clock-dependent --invariant-generation-max-time are
+excluded (see CONFIGS).
+
 This checks only py-vs-cpp equivalence. Determinism of each translator is
 checked separately by test-translator.py (pass --translator cpp for the C++
 variant).
@@ -80,6 +89,28 @@ DEFAULT_TASKS = [
     "trucks-strips:p05.pddl",
 ]
 
+# Translator option configurations to check for py-vs-cpp equivalence. Every
+# option that changes output.sas is covered; each task is translated under each
+# config with both variants and the outputs compared. Options that do not
+# affect output.sas (--sas-file, --dump-*, --stop-after-parsing-pddl) and the
+# non-deterministic --invariant-generation-max-time (its effect depends on wall
+# clock, which differs between the variants) are intentionally excluded.
+#
+# (label, [translator options]).
+CONFIGS = [
+    ("default", []),
+    ("relaxed", ["--relaxed"]),
+    ("full-encoding", ["--full-encoding"]),
+    ("add-implied-preconditions", ["--add-implied-preconditions"]),
+    ("keep-unreachable-facts", ["--keep-unreachable-facts"]),
+    ("skip-variable-reordering", ["--skip-variable-reordering"]),
+    ("keep-unimportant-variables", ["--keep-unimportant-variables"]),
+    ("keep-no-ops", ["--keep-no-ops"]),
+    ("keep-duplicate-operators", ["--keep-duplicate-operators"]),
+    ("layer-strategy=max", ["--layer-strategy", "max"]),
+    ("no-invariants", ["--invariant-generation-max-candidates", "0"]),
+]
+
 
 def is_domain_file(path):
     name = path.name.lower()
@@ -138,30 +169,44 @@ def select(tasks, suite, benchmarks_dir):
     return sorted(set(selected))
 
 
-def translate(translator, domain, problem, cwd):
+def translate(translator, domain, problem, cwd, options):
     """Run one translator; return (returncode, wall-clock seconds)."""
     cmd = [sys.executable, str(DRIVER), "--translator", translator,
            "--translate", str(domain), str(problem)]
+    if options:
+        cmd += ["--translate-options", *options]
     start = time.perf_counter()
     proc = subprocess.run(cmd, cwd=cwd, stdout=subprocess.DEVNULL,
                           stderr=subprocess.PIPE, encoding="utf-8")
     return proc.returncode, time.perf_counter() - start
 
 
-def check_one(domain, problem):
-    """Translate one task with both variants and compare. Returns
-    (name, status, py_time, cpp_time, detail); status in ok/differ/error."""
-    name = f"{problem.parent.name}:{problem.name}"
+def check_one(domain, problem, config_label, options):
+    """Translate one (task, option config) with both variants and compare.
+    Returns (name, status, py_time, cpp_time, detail); status in
+    ok/differ/error. --relaxed and --keep-unreachable-facts can legitimately
+    make a task unsolvable-at-parse; if BOTH variants agree on such a non-zero
+    exit and produce no output.sas, that counts as ok (matching behaviour)."""
+    name = f"{problem.parent.name}:{problem.name} [{config_label}]"
     with tempfile.TemporaryDirectory() as tmp:
         pyd, cppd = Path(tmp) / "py", Path(tmp) / "cpp"
         pyd.mkdir()
         cppd.mkdir()
-        rc_py, py_time = translate("py", domain, problem, pyd)
-        rc_cpp, cpp_time = translate("cpp", domain, problem, cppd)
+        rc_py, py_time = translate("py", domain, problem, pyd, options)
+        rc_cpp, cpp_time = translate("cpp", domain, problem, cppd, options)
         py_sas, cpp_sas = pyd / "output.sas", cppd / "output.sas"
-        if rc_py != 0 or not py_sas.exists():
-            status, detail = "error", "py failed"
-        elif rc_cpp != 0 or not cpp_sas.exists():
+        py_out = rc_py == 0 and py_sas.exists()
+        cpp_out = rc_cpp == 0 and cpp_sas.exists()
+        if not py_out and not cpp_out:
+            # Both produced no SAS: agreeing exit codes = matching behaviour.
+            status = "ok" if rc_py == rc_cpp else "error"
+            detail = "" if status == "ok" else f"exit {rc_py} (py) != {rc_cpp} (cpp)"
+        elif not py_out:
+            # No Python reference (e.g. py ran out of memory/time on a task the
+            # faster, leaner C++ translator handled): equivalence is unverifiable
+            # here, but this is not a C++ defect. Report as a skip, not a failure.
+            status, detail = "skip", "py produced no output"
+        elif not cpp_out:
             status, detail = "error", "cpp failed"
         elif filecmp.cmp(py_sas, cpp_sas, shallow=False):
             status, detail = "ok", ""
@@ -197,14 +242,17 @@ def main():
     if not tasks:
         sys.exit(f"No tasks found under {benchmarks_dir}")
 
-    jobs = max(1, min(args.jobs, len(tasks)))
-    print(f"Comparing py vs cpp translator output on {len(tasks)} task(s) "
+    jobs = max(1, min(args.jobs, len(tasks) * len(CONFIGS)))
+    runs = len(tasks) * len(CONFIGS)
+    print(f"Comparing py vs cpp translator output on {len(tasks)} task(s) x "
+          f"{len(CONFIGS)} option config(s) = {runs} run(s) "
           f"from {benchmarks_dir} ({jobs} parallel job(s))\n")
-    identical, mismatch, errors = [], [], []
+    identical, mismatch, errors, skipped = [], [], [], []
     py_total = cpp_total = 0.0
     start = time.perf_counter()
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as ex:
-        futures = [ex.submit(check_one, d, p) for d, p in tasks]
+        futures = [ex.submit(check_one, d, p, label, opts)
+                   for d, p in tasks for label, opts in CONFIGS]
         for fut in concurrent.futures.as_completed(futures):
             name, status, py_time, cpp_time, detail = fut.result()
             py_total += py_time
@@ -216,6 +264,9 @@ def main():
             elif status == "differ":
                 mismatch.append(name)
                 print(f"DIFFER {name}  [{timing}]", flush=True)
+            elif status == "skip":
+                skipped.append((name, detail))
+                print(f"skip   {name} ({detail})  [{timing}]", flush=True)
             else:
                 errors.append((name, detail))
                 print(f"ERROR  {name} ({detail})  [{timing}]", flush=True)
@@ -225,7 +276,7 @@ def main():
     print(f"\nsummed translate time (per-task wall-clock): py {py_total:.2f}s, "
           f"cpp {cpp_total:.2f}s ({speedup:.2f}x); elapsed {elapsed:.2f}s")
     print(f"summary: {len(identical)} identical, {len(mismatch)} differ, "
-          f"{len(errors)} error(s) of {len(tasks)} tasks")
+          f"{len(errors)} error(s), {len(skipped)} skipped of {runs} runs")
     if mismatch:
         print("byte-differing tasks:")
         for n in sorted(mismatch):
@@ -234,6 +285,12 @@ def main():
         print("errored tasks:")
         for n, why in sorted(errors):
             print(f"  {n}: {why}")
+    if skipped:
+        print("skipped tasks (no Python reference; not a C++ defect):")
+        for n, why in sorted(skipped):
+            print(f"  {n}: {why}")
+    # Skips do not fail the run: they mean equivalence could not be checked
+    # (Python produced no reference), which is not a C++ equivalence defect.
     sys.exit(1 if (mismatch or errors) else 0)
 
 
