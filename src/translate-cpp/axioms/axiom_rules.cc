@@ -263,6 +263,28 @@ vector<shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
             out.push_back(move(axioms[i]));
     return out;
 }
+
+// Assign each axiom cluster a layer, traversing clusters in reverse
+// (topological tail first). "max" gives every cluster its own layer; the
+// default packs clusters into the fewest layers the dependencies allow (a
+// negated dependency forces the dependent one layer higher).
+void assign_axiom_layers(
+    vector<AxiomCluster> &clusters, const string &layer_strategy) {
+    if (layer_strategy == "max") {
+        int layer = 0;
+        for (auto it = clusters.rbegin(); it != clusters.rend(); ++it)
+            it->layer = layer++;
+    } else {
+        for (auto it = clusters.rbegin(); it != clusters.rend(); ++it) {
+            int layer = 0;
+            for (int child : it->positive_children)
+                layer = max(layer, clusters[child].layer);
+            for (int child : it->negative_children)
+                layer = max(layer, clusters[child].layer + 1);
+            it->layer = layer;
+        }
+    }
+}
 }
 
 AxiomLayering handle_axioms(
@@ -337,22 +359,7 @@ AxiomLayering handle_axioms(
     add_links(deps.positive_dependencies, false);
     add_links(deps.negative_dependencies, true);
 
-    // Layer assignment, traversing clusters in reverse (topological tail
-    // first).
-    if (layer_strategy == "max") {
-        int layer = 0;
-        for (auto it = clusters.rbegin(); it != clusters.rend(); ++it)
-            it->layer = layer++;
-    } else {
-        for (auto it = clusters.rbegin(); it != clusters.rend(); ++it) {
-            int layer = 0;
-            for (int child : it->positive_children)
-                layer = max(layer, clusters[child].layer);
-            for (int child : it->negative_children)
-                layer = max(layer, clusters[child].layer + 1);
-            it->layer = layer;
-        }
-    }
+    assign_axiom_layers(clusters, layer_strategy);
 
     AxiomLayering out;
     for (auto &c : clusters) {
