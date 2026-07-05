@@ -282,6 +282,17 @@ public:
     }
     bool equals(const Condition &other) const override;
     void dump(std::ostream &os, int indent) const override;
+
+protected:
+    // De Morgan helper: this junction's children, each negated. Conjunction and
+    // Disjunction wrap the result in the opposite junctor.
+    std::vector<ConditionPtr> negated_children() const;
+    // Shared And/Or simplification: flatten nested junctors of the same kind,
+    // drop the identity element and collapse on the absorbing element, then
+    // unwrap a single-child (or empty) result. `absorbing_kind` is FALSITY for
+    // a Conjunction (And) and TRUTH for a Disjunction (Or); the identity is the
+    // other constant. The result junctor's type is taken from kind().
+    ConditionPtr simplify_junctor(Kind absorbing_kind) const;
 };
 
 class Conjunction final : public JunctorCondition {

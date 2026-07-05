@@ -162,20 +162,20 @@ void JunctorCondition::dump(ostream &os, int indent) const {
         c->dump(os, indent + 1);
 }
 
-ConditionPtr Conjunction::negate() const {
+vector<ConditionPtr> JunctorCondition::negated_children() const {
     vector<ConditionPtr> negated;
     negated.reserve(children.size());
     for (const auto &c : children)
         negated.push_back(c->negate());
-    return make_shared<Disjunction>(move(negated));
+    return negated;
+}
+
+ConditionPtr Conjunction::negate() const {
+    return make_shared<Disjunction>(negated_children());
 }
 
 ConditionPtr Disjunction::negate() const {
-    vector<ConditionPtr> negated;
-    negated.reserve(children.size());
-    for (const auto &c : children)
-        negated.push_back(c->negate());
-    return make_shared<Conjunction>(move(negated));
+    return make_shared<Conjunction>(negated_children());
 }
 
 // -- QuantifiedCondition -----------------------------------------------------
@@ -346,58 +346,45 @@ ConditionPtr Literal::simplified() const {
     return make_shared<Atom>(predicate, args);
 }
 
-ConditionPtr Conjunction::simplified() const {
+ConditionPtr JunctorCondition::simplify_junctor(Kind absorbing_kind) const {
+    const Kind self = kind();
+    const Kind identity_kind =
+        absorbing_kind == Kind::FALSITY ? Kind::TRUTH : Kind::FALSITY;
+    auto constant = [](Kind k) {
+        return k == Kind::FALSITY ? make_falsity() : make_truth();
+    };
     vector<ConditionPtr> result;
     result.reserve(children.size());
     for (const auto &child : children) {
         ConditionPtr s = child->simplified();
-        switch (s->kind()) {
-        case Kind::CONJUNCTION: {
-            const auto &c = static_cast<const Conjunction &>(*s);
-            for (const auto &p : c.children)
+        Kind sk = s->kind();
+        if (sk == self) {
+            // Flatten a nested junctor of the same kind.
+            const auto &j = static_cast<const JunctorCondition &>(*s);
+            for (const auto &p : j.children)
                 result.push_back(p);
-            break;
-        }
-        case Kind::FALSITY:
-            return make_falsity();
-        case Kind::TRUTH:
-            break;
-        default:
+        } else if (sk == absorbing_kind) {
+            return constant(absorbing_kind);
+        } else if (sk != identity_kind) {
             result.push_back(move(s));
         }
+        // identity children are dropped.
     }
     if (result.empty())
-        return make_truth();
+        return constant(identity_kind);
     if (result.size() == 1)
         return result.front();
-    return make_shared<Conjunction>(move(result));
+    if (self == Kind::CONJUNCTION)
+        return make_shared<Conjunction>(move(result));
+    return make_shared<Disjunction>(move(result));
+}
+
+ConditionPtr Conjunction::simplified() const {
+    return simplify_junctor(Kind::FALSITY);
 }
 
 ConditionPtr Disjunction::simplified() const {
-    vector<ConditionPtr> result;
-    result.reserve(children.size());
-    for (const auto &child : children) {
-        ConditionPtr s = child->simplified();
-        switch (s->kind()) {
-        case Kind::DISJUNCTION: {
-            const auto &d = static_cast<const Disjunction &>(*s);
-            for (const auto &p : d.children)
-                result.push_back(p);
-            break;
-        }
-        case Kind::TRUTH:
-            return make_truth();
-        case Kind::FALSITY:
-            break;
-        default:
-            result.push_back(move(s));
-        }
-    }
-    if (result.empty())
-        return make_falsity();
-    if (result.size() == 1)
-        return result.front();
-    return make_shared<Disjunction>(move(result));
+    return simplify_junctor(Kind::TRUTH);
 }
 
 ConditionPtr QuantifiedCondition::simplified() const {
