@@ -36,7 +36,3 @@ uv run ./2026-07-04-C-py-vs-cpp.py build start parse fetch equivalence
 
 On a Slurm cluster the environment is detected automatically and the steps are
 submitted as a dependency chain.
-
-## Artifacts
-
-- `campaign-summary.html`, `py-vs-cpp-summary.html` — rendered result summaries.
