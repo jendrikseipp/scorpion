@@ -84,6 +84,38 @@ public:
     }
 };
 
+/*
+  RAII scope for an action's/axiom's parameter names. Parameters are added to
+  the caller's shared term-name set (rather than copying the whole constant set
+  per action, which dominated parsing on pre-grounded large domains) for the
+  duration of parsing the precondition/effect, and removed on any exit -- normal
+  return or the ParseError thrown by Context::error. Only names not already
+  present are inserted and later removed, so an existing constant of the same
+  name is left untouched.
+*/
+class ScopedTermNames {
+public:
+    ScopedTermNames(
+        unordered_set<string> &scope,
+        const vector<pddl::TypedObject> &parameters)
+        : scope_(scope) {
+        pushed_.reserve(parameters.size());
+        for (const auto &p : parameters)
+            if (scope_.insert(p.name).second)
+                pushed_.push_back(p.name);
+    }
+    ~ScopedTermNames() {
+        for (const auto &n : pushed_)
+            scope_.erase(n);
+    }
+    ScopedTermNames(const ScopedTermNames &) = delete;
+    ScopedTermNames &operator=(const ScopedTermNames &) = delete;
+
+private:
+    unordered_set<string> &scope_;
+    vector<string> pushed_;
+};
+
 /* ----------------------------- warnings ----------------------------- */
 
 set<string> printed_warnings;
@@ -879,38 +911,21 @@ optional<Action> parse_action(
             ++idx;
         }
     }
-    /*
-      Use the caller's `constant_names` set as the term-name scope and
-      push the action's parameters into it for the duration of parsing
-      the precondition/effect, then erase them. This avoids copying
-      the full constant set per action, which was the dominant cost on
-      pre-grounded large domains (trucks-strips/p29 has 56 770 actions
-      and a 12 MB domain file -- the wholesale copy was ~27 % of
-      runtime per perf record).
-    */
+    // Scope the action's parameters into the caller's `constant_names` set for
+    // the duration of parsing; the guard removes them on any exit (see
+    // ScopedTermNames). Using the shared set avoids copying the full constant
+    // set per action -- the dominant cost on pre-grounded large domains
+    // (trucks-strips/p29: 56 770 actions, 12 MB domain, ~27 % of runtime).
     unordered_set<string> &term_names = constant_names;
-    vector<string> pushed_params;
-    pushed_params.reserve(parameters.size());
-    for (const auto &p : parameters) {
-        if (term_names.insert(p.name).second)
-            pushed_params.push_back(p.name);
-    }
-    auto pop_params = [&]() {
-        for (const auto &n : pushed_params)
-            term_names.erase(n);
-    };
+    ScopedTermNames param_scope(term_names, parameters);
     {
         auto l = ctx.layer("Parsing precondition");
-        if (idx >= alist.size()) {
-            pop_params();
+        if (idx >= alist.size())
             ctx.error("Missing fields. Expecting " + string(SYNTAX_ACTION));
-        }
         if (alist[idx].is_atom() && alist[idx].atom() == ":precondition") {
             ++idx;
-            if (idx >= alist.size()) {
-                pop_params();
+            if (idx >= alist.size())
                 ctx.error("Missing precondition.", nullptr, SYNTAX_ACTION);
-            }
             check_list(ctx, alist[idx], "Precondition", SYNTAX_ACTION);
             precondition = parse_condition(
                 ctx, alist[idx], type_dict, predicate_dict, term_names);
@@ -921,21 +936,15 @@ optional<Action> parse_action(
     }
     {
         auto l = ctx.layer("Parsing effect");
-        if (idx >= alist.size()) {
-            pop_params();
+        if (idx >= alist.size())
             ctx.error("Missing fields. Expecting " + string(SYNTAX_ACTION));
-        }
-        if (!alist[idx].is_atom() || alist[idx].atom() != ":effect") {
-            pop_params();
+        if (!alist[idx].is_atom() || alist[idx].atom() != ":effect")
             ctx.error(
                 "Effect tag is expected to be ':effect'", &alist[idx],
                 SYNTAX_ACTION);
-        }
         ++idx;
-        if (idx >= alist.size()) {
-            pop_params();
+        if (idx >= alist.size())
             ctx.error("Missing effect.", nullptr, SYNTAX_ACTION);
-        }
         check_list(ctx, alist[idx], "Effect", SYNTAX_ACTION);
         if (!alist[idx].list().empty()) {
             cost = parse_effects(
@@ -944,7 +953,6 @@ optional<Action> parse_action(
         }
         ++idx;
     }
-    pop_params();
     if (idx != alist.size())
         ctx.error("Too many fields. Expecting " + string(SYNTAX_ACTION));
     if (!effects.empty() || get_options().keep_no_ops) {
@@ -980,19 +988,13 @@ Axiom parse_axiom(
             "block.",
             nullptr, SYNTAX_AXIOM);
     }
-    // Same push/pop trick as parse_action -- avoid copying the
-    // potentially-large constant_names set per axiom.
+    // Same shared-scope trick as parse_action (avoid copying the
+    // potentially-large constant_names set per axiom); the guard removes the
+    // arguments on return.
     unordered_set<string> &term_names = constant_names;
-    vector<string> pushed;
-    pushed.reserve(predicate.arguments.size());
-    for (const auto &a : predicate.arguments) {
-        if (term_names.insert(a.name).second)
-            pushed.push_back(a.name);
-    }
+    ScopedTermNames param_scope(term_names, predicate.arguments);
     auto condition =
         parse_condition(ctx, alist[2], type_dict, predicate_dict, term_names);
-    for (const auto &n : pushed)
-        term_names.erase(n);
     int arity = static_cast<int>(predicate.arguments.size());
     return Axiom(
         predicate.name, move(predicate.arguments), arity, move(condition));
@@ -1054,17 +1056,96 @@ void check_atom_consistency(
     }
 }
 
+// Init-state accumulators, keyed for value-equality de-duplication.
+using InitAssignments = unordered_map<
+    shared_ptr<pddl::PrimitiveNumericExpression>, shared_ptr<pddl::Assign>>;
+using InitPropositionValues = unordered_map<
+    shared_ptr<const Atom>, bool, pddl::ConditionPtrHash,
+    pddl::ConditionPtrEqual>;
+
+// Parse one "(= fluent constant)" init element, appending it to `initial`
+// unless the same fluent was already assigned (same value: warn and drop;
+// different value: error).
+void parse_init_assignment(
+    Context &ctx, const SexprList &flist, InitAssignments &initial_assignments,
+    vector<pddl::InitElement> &initial) {
+    auto assignment = parse_assignment(ctx, flist);
+    auto assign = dynamic_pointer_cast<pddl::Assign>(assignment);
+    if (!assign)
+        ctx.error("Initial state assignment must use '='.");
+    if (assign->expression->kind() !=
+        pddl::FunctionalExpression::Kind::CONSTANT)
+        ctx.error("Illegal assignment in initial state specification.");
+    // Look up by fluent value (PNE equality).
+    for (auto &[fl, prev] : initial_assignments) {
+        if (*fl == *assign->fluent) {
+            auto prev_const = static_pointer_cast<const pddl::NumericConstant>(
+                prev->expression);
+            auto new_const = static_pointer_cast<const pddl::NumericConstant>(
+                assign->expression);
+            if (prev_const->value == new_const->value)
+                print_warning("assignment specified twice in initial "
+                              "state specification");
+            else
+                ctx.error("Error in initial state specification\n"
+                          "Reason: conflicting assignment for fluent.");
+            return;
+        }
+    }
+    initial_assignments[assign->fluent] = assign;
+    initial.emplace_back(assign);
+}
+
+// Parse one (possibly negated) init atom, recording its truth value (checked
+// for consistency against earlier occurrences).
+void parse_init_atom(
+    Context &ctx, const SexprList &flist, const PredicateMap &predicate_dict,
+    const unordered_set<string> &term_names,
+    InitPropositionValues &initial_proposition_values) {
+    bool atom_value = true;
+    SexprList atom_list = flist;
+    if (flist[0].is_atom() && flist[0].atom() == "not") {
+        atom_value = false;
+        if (flist.size() != 2)
+            ctx.error(
+                "Expecting " + string(SYNTAX_LITERAL_NEGATED) +
+                " for negated atoms.");
+        if (!flist[1].is_list() || flist[1].list().empty())
+            ctx.error(
+                "Invalid negated fact.", nullptr, SYNTAX_LITERAL_NEGATED);
+        atom_list = flist[1].list();
+    }
+    const string &pname = atom_list[0].atom();
+    SexprList terms(atom_list.begin() + 1, atom_list.end());
+    check_predicate_and_terms_existence(
+        ctx, pname, terms, predicate_dict, term_names);
+    auto pred_it = predicate_dict.find(pname);
+    int expected_arity = pred_it->second->get_arity();
+    int got_arity = static_cast<int>(terms.size());
+    if (expected_arity != got_arity) {
+        Sexpr e(atom_list);
+        ctx.error(
+            "Predicate '" + pname + "' of arity " + to_string(expected_arity) +
+                " used with " + to_string(got_arity) + " arguments.",
+            &e);
+    }
+    vector<string> arg_names;
+    arg_names.reserve(terms.size());
+    for (const auto &t : terms)
+        arg_names.push_back(t.atom());
+    Atom atom(pname, move(arg_names));
+    check_atom_consistency(
+        ctx, atom, initial_proposition_values, atom_value);
+    auto atom_ptr = make_shared<const Atom>(move(atom));
+    initial_proposition_values[atom_ptr] = atom_value;
+}
+
 vector<pddl::InitElement> parse_init(
     Context &ctx, const SexprList &alist, const PredicateMap &predicate_dict,
     const unordered_set<string> &term_names) {
     vector<pddl::InitElement> initial;
-    unordered_map<
-        shared_ptr<pddl::PrimitiveNumericExpression>, shared_ptr<pddl::Assign>>
-        initial_assignments;
-    unordered_map<
-        shared_ptr<const Atom>, bool, pddl::ConditionPtrHash,
-        pddl::ConditionPtrEqual>
-        initial_proposition_values;
+    InitAssignments initial_assignments;
+    InitPropositionValues initial_proposition_values;
 
     for (size_t k = 1; k < alist.size(); ++k) {
         auto l =
@@ -1077,80 +1158,12 @@ vector<pddl::InitElement> parse_init(
                 "({=,increase} EXPRESSION EXPRESSION)");
         }
         const SexprList &flist = fact.list();
-        if (flist[0].is_atom() && flist[0].atom() == "=") {
-            auto assignment = parse_assignment(ctx, flist);
-            auto assign = dynamic_pointer_cast<pddl::Assign>(assignment);
-            if (!assign) {
-                ctx.error("Initial state assignment must use '='.");
-            }
-            if (assign->expression->kind() !=
-                pddl::FunctionalExpression::Kind::CONSTANT) {
-                ctx.error("Illegal assignment in initial state specification.");
-            }
-            // Look up by fluent value (PNE equality).
-            bool merged = false;
-            for (auto &[fl, prev] : initial_assignments) {
-                if (*fl == *assign->fluent) {
-                    auto prev_const =
-                        static_pointer_cast<const pddl::NumericConstant>(
-                            prev->expression);
-                    auto new_const =
-                        static_pointer_cast<const pddl::NumericConstant>(
-                            assign->expression);
-                    if (prev_const->value == new_const->value) {
-                        print_warning("assignment specified twice in initial "
-                                      "state specification");
-                    } else {
-                        ctx.error("Error in initial state specification\n"
-                                  "Reason: conflicting assignment for fluent.");
-                    }
-                    merged = true;
-                    break;
-                }
-            }
-            if (!merged) {
-                initial_assignments[assign->fluent] = assign;
-                initial.emplace_back(assign);
-            }
-            continue;
-        }
-        bool atom_value = true;
-        SexprList atom_list = flist;
-        if (flist[0].is_atom() && flist[0].atom() == "not") {
-            atom_value = false;
-            if (flist.size() != 2)
-                ctx.error(
-                    "Expecting " + string(SYNTAX_LITERAL_NEGATED) +
-                    " for negated atoms.");
-            if (!flist[1].is_list() || flist[1].list().empty())
-                ctx.error(
-                    "Invalid negated fact.", nullptr, SYNTAX_LITERAL_NEGATED);
-            atom_list = flist[1].list();
-        }
-        const string &pname = atom_list[0].atom();
-        SexprList terms(atom_list.begin() + 1, atom_list.end());
-        check_predicate_and_terms_existence(
-            ctx, pname, terms, predicate_dict, term_names);
-        auto pred_it = predicate_dict.find(pname);
-        int expected_arity = pred_it->second->get_arity();
-        int got_arity = static_cast<int>(terms.size());
-        if (expected_arity != got_arity) {
-            Sexpr e(atom_list);
-            ctx.error(
-                "Predicate '" + pname + "' of arity " +
-                    to_string(expected_arity) + " used with " +
-                    to_string(got_arity) + " arguments.",
-                &e);
-        }
-        vector<string> arg_names;
-        arg_names.reserve(terms.size());
-        for (const auto &t : terms)
-            arg_names.push_back(t.atom());
-        Atom atom(pname, move(arg_names));
-        check_atom_consistency(
-            ctx, atom, initial_proposition_values, atom_value);
-        auto atom_ptr = make_shared<const Atom>(move(atom));
-        initial_proposition_values[atom_ptr] = atom_value;
+        if (flist[0].is_atom() && flist[0].atom() == "=")
+            parse_init_assignment(ctx, flist, initial_assignments, initial);
+        else
+            parse_init_atom(
+                ctx, flist, predicate_dict, term_names,
+                initial_proposition_values);
     }
     for (auto &[atom, val] : initial_proposition_values) {
         if (val)
