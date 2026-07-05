@@ -2,6 +2,7 @@
 
 #include "../translate_options.h"
 
+#include "../grounding/symbols.h"
 #include "../invariants/invariant_finder.h"
 
 #include <algorithm>
@@ -21,26 +22,65 @@ int find_placeholder(const Atom &atom) {
     return -1;
 }
 
+/*
+  Integer-keyed membership index over the reachable ground atoms, mapping each
+  atom's key (interned predicate id + interned object-id args) to its stored
+  ConditionPtr. Built once for group expansion.
+
+  Group expansion probes reachability once per (group fact x object) candidate.
+  Keying on interned ints -- predicate_id is already cached on every Literal and
+  object names were interned during grounding, so intern() is a plain lookup --
+  lets each probe hash a few ints and return the *stored* atom pointer, instead
+  of the previous approach that allocated a fresh shared_ptr<Atom> (copying the
+  predicate and args strings) and value-hashed it for every candidate. On
+  object-heavy tasks that expansion was the fact-groups hot spot (e.g. sokoban),
+  dominated by Atom alloc/free churn and string hashing.
+*/
+using ReachableIndex = unordered_map<GroundKey, ConditionPtr, GroundKeyHash>;
+
+GroundKey atom_key(const Literal &lit) {
+    GroundKey key;
+    key.predicate = lit.predicate_id;
+    key.args.reserve(lit.args.size());
+    for (const auto &a : lit.args)
+        key.args.push_back(grounding::symbols().intern(a));
+    return key;
+}
+
+ReachableIndex build_reachable_index(const AtomSet &reachable_facts) {
+    ReachableIndex index;
+    index.reserve(reachable_facts.size());
+    for (const auto &f : reachable_facts) {
+        if (!f || f->kind() != Condition::Kind::ATOM)
+            continue;
+        index.emplace(atom_key(static_cast<const Literal &>(*f)), f);
+    }
+    return index;
+}
+
 vector<ConditionPtr> expand_group(
     const vector<ConditionPtr> &group, const Task &task,
-    const AtomSet &reachable_facts) {
+    const ReachableIndex &reachable) {
     vector<ConditionPtr> result;
     for (const auto &fact : group) {
         if (!fact || fact->kind() != Condition::Kind::ATOM)
             continue;
         const auto &atom = static_cast<const Atom &>(*fact);
         int pos = find_placeholder(atom);
+        GroundKey key = atom_key(atom);
         if (pos < 0) {
-            if (reachable_facts.contains(fact))
-                result.push_back(fact);
+            auto it = reachable.find(key);
+            if (it != reachable.end())
+                result.push_back(it->second);
         } else {
+            // The group's result is re-sorted by sort_groups, so pushing the
+            // reachable atoms in object order (rather than the atom identity
+            // the old code minted) is equivalent.
             for (const auto &obj : task.objects) {
-                auto new_args = atom.args;
-                new_args[pos] = obj.name;
-                auto candidate =
-                    make_shared<const Atom>(atom.predicate, move(new_args));
-                if (reachable_facts.contains(candidate))
-                    result.push_back(candidate);
+                key.args[pos] = grounding::symbols().intern(obj.name);
+                auto it = reachable.find(key);
+                if (it != reachable.end())
+                    result.push_back(it->second);
             }
         }
     }
@@ -50,10 +90,11 @@ vector<ConditionPtr> expand_group(
 vector<vector<ConditionPtr>> instantiate_groups(
     const vector<vector<ConditionPtr>> &groups, const Task &task,
     const AtomSet &reachable_facts) {
+    ReachableIndex reachable = build_reachable_index(reachable_facts);
     vector<vector<ConditionPtr>> result;
     result.reserve(groups.size());
     for (const auto &g : groups)
-        result.push_back(expand_group(g, task, reachable_facts));
+        result.push_back(expand_group(g, task, reachable));
     return result;
 }
 
