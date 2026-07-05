@@ -23,20 +23,12 @@ int find_placeholder(const Atom &atom) {
 }
 
 /*
-  Integer-keyed membership index over the reachable ground atoms, mapping each
-  atom's key (interned predicate id + interned object-id args) to its stored
-  ConditionPtr. Built once for group expansion.
-
-  Group expansion probes reachability once per (group fact x object) candidate.
-  Keying on interned ints -- predicate_id is already cached on every Literal and
-  object names were interned during grounding, so intern() is a plain lookup --
-  lets each probe hash a few ints and return the *stored* atom pointer, instead
-  of the previous approach that allocated a fresh shared_ptr<Atom> (copying the
-  predicate and args strings) and value-hashed it for every candidate. On
-  object-heavy tasks that expansion was the fact-groups hot spot (e.g. sokoban),
-  dominated by Atom alloc/free churn and string hashing.
+  Integer key for a reachable atom (or a wildcard pattern): interned predicate
+  id + interned object-id args, with WILDCARD in the one placeholder position.
+  predicate_id is already cached on every Literal, and object names were interned
+  during grounding, so building a key is a handful of plain intern() lookups.
 */
-using ReachableIndex = unordered_map<GroundKey, ConditionPtr, GroundKeyHash>;
+constexpr int WILDCARD = -1; // interned ids are >= 0
 
 GroundKey atom_key(const Literal &lit) {
     GroundKey key;
@@ -47,20 +39,46 @@ GroundKey atom_key(const Literal &lit) {
     return key;
 }
 
+/*
+  Reachability index for mutex-group expansion.
+
+  A group candidate is a lifted atom that is either fully concrete or has one
+  "?X" placeholder; expansion keeps every reachable ground atom that matches.
+  Rather than allocate a fresh ground Atom and value-hash strings per candidate
+  (the previous approach, and the fact-groups hot spot on object-heavy tasks
+  like sokoban), we index the reachable atoms on interned-int keys:
+
+    - `exact`: key -> stored atom, for concrete candidates (one probe each).
+    - `by_wildcard`: for each reachable atom and each argument position, the key
+      with that position blanked to WILDCARD -> the atoms sharing that pattern.
+      A placeholder candidate then does a single lookup that returns *all* its
+      matches at once, instead of looping over every object and probing each.
+*/
+struct ReachableIndex {
+    unordered_map<GroundKey, ConditionPtr, GroundKeyHash> exact;
+    unordered_map<GroundKey, vector<ConditionPtr>, GroundKeyHash> by_wildcard;
+};
+
 ReachableIndex build_reachable_index(const AtomSet &reachable_facts) {
     ReachableIndex index;
-    index.reserve(reachable_facts.size());
+    index.exact.reserve(reachable_facts.size());
     for (const auto &f : reachable_facts) {
         if (!f || f->kind() != Condition::Kind::ATOM)
             continue;
-        index.emplace(atom_key(static_cast<const Literal &>(*f)), f);
+        GroundKey key = atom_key(static_cast<const Literal &>(*f));
+        for (size_t pos = 0; pos < key.args.size(); ++pos) {
+            int obj = key.args[pos];
+            key.args[pos] = WILDCARD;
+            index.by_wildcard[key].push_back(f);
+            key.args[pos] = obj;
+        }
+        index.exact.emplace(move(key), f);
     }
     return index;
 }
 
 vector<ConditionPtr> expand_group(
-    const vector<ConditionPtr> &group, const Task &task,
-    const ReachableIndex &reachable) {
+    const vector<ConditionPtr> &group, const ReachableIndex &reachable) {
     vector<ConditionPtr> result;
     for (const auto &fact : group) {
         if (!fact || fact->kind() != Condition::Kind::ATOM)
@@ -69,32 +87,31 @@ vector<ConditionPtr> expand_group(
         int pos = find_placeholder(atom);
         GroundKey key = atom_key(atom);
         if (pos < 0) {
-            auto it = reachable.find(key);
-            if (it != reachable.end())
+            auto it = reachable.exact.find(key);
+            if (it != reachable.exact.end())
                 result.push_back(it->second);
         } else {
-            // The group's result is re-sorted by sort_groups, so pushing the
-            // reachable atoms in object order (rather than the atom identity
-            // the old code minted) is equivalent.
-            for (const auto &obj : task.objects) {
-                key.args[pos] = grounding::symbols().intern(obj.name);
-                auto it = reachable.find(key);
-                if (it != reachable.end())
-                    result.push_back(it->second);
-            }
+            // All reachable atoms matching the pattern in one lookup. The
+            // group's result is re-sorted by sort_groups, so their order here
+            // (rather than the object order the old code walked) is equivalent.
+            key.args[pos] = WILDCARD;
+            auto it = reachable.by_wildcard.find(key);
+            if (it != reachable.by_wildcard.end())
+                result.insert(
+                    result.end(), it->second.begin(), it->second.end());
         }
     }
     return result;
 }
 
 vector<vector<ConditionPtr>> instantiate_groups(
-    const vector<vector<ConditionPtr>> &groups, const Task &task,
+    const vector<vector<ConditionPtr>> &groups,
     const AtomSet &reachable_facts) {
     ReachableIndex reachable = build_reachable_index(reachable_facts);
     vector<vector<ConditionPtr>> result;
     result.reserve(groups.size());
     for (const auto &g : groups)
-        result.push_back(expand_group(g, task, reachable));
+        result.push_back(expand_group(g, reachable));
     return result;
 }
 
@@ -267,7 +284,7 @@ ComputedGroups compute_groups(
     const vector<vector<vector<int>>> *reachable_action_parameters,
     const AtomSet &negative_in_goal) {
     auto raw = invariants::get_groups(task, reachable_action_parameters);
-    auto instantiated = instantiate_groups(raw, task, atoms);
+    auto instantiated = instantiate_groups(raw, atoms);
     auto sorted = sort_groups(move(instantiated));
     ComputedGroups out;
     out.mutex_groups = collect_all_mutex_groups(sorted, atoms);
