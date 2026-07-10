@@ -60,9 +60,9 @@ TASKS = [
 #   htg      -- the hard-to-ground domains, github.com/abcorrea/htg-domains
 #   downward -- the aibasel/downward-benchmarks collection
 EXTRA_TASKS = [
-    ("htg", "rovers-large-simple/p-r1-w1500-o1-1-g2-goal-2.pddl"),
-    ("htg", "logistics-large-simple/p-a1-c1-s1250-p10-t1-g2-goal-2.pddl"),
-    ("htg", "blocksworld-large-simple/p-700-3-goal-3.pddl"),
+    ("htg", "rovers-large-simple/goal-2/p-r1-w1500-o1-1-g2.pddl"),
+    ("htg", "logistics-large-simple/goal-2/p-a1-c1-s1250-p10-t1-g2.pddl"),
+    ("htg", "blocksworld-large-simple/goal-3/p-700-3.pddl"),
     ("htg", "genome-edit-distance-positional/d-9-8.pddl"),
     ("downward", "nurikabe-sat18-adl/p09.pddl"),
     ("downward", "satellite/p30-HC-pfile10.pddl"),
@@ -87,7 +87,7 @@ PREPROCESS_OUTPUT_DIR = REPO_ROOT / "misc/tests/.preprocessing-speed/preprocesse
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["translate", "preprocess"])
+    parser.add_argument("mode", choices=["translate", "translate-cpp", "preprocess"])
     return parser.parse_args()
 
 
@@ -166,12 +166,12 @@ def run_preprocessor(input_file: Path, output_file: Path) -> float:
     return (after.ru_utime + after.ru_stime) - (before.ru_utime + before.ru_stime)
 
 
-def translate_all() -> None:
+def translate_all(translator: str = "py") -> None:
     TRANSLATE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     total_cpu = 0.0
 
     for collection, task in all_tasks():
-        print(f"=== Translating {task} ({collection}) ===")
+        print(f"=== Translating {task} ({collection}) [{translator}] ===")
         output_file = task_to_output_path(TRANSLATE_OUTPUT_DIR, collection, task)
         output_file.parent.mkdir(parents=True, exist_ok=True)
         output_file.unlink(missing_ok=True)
@@ -179,6 +179,8 @@ def translate_all() -> None:
         task_cpu = run_driver_command([
             sys.executable,
             str(DRIVER),
+            "--translator",
+            translator,
             "--translate",
             "--sas-file",
             str(output_file),
@@ -191,7 +193,7 @@ def translate_all() -> None:
         print(f"Translator CPU time: {task_cpu:.2f}s")
 
     print()
-    print(f"Total translator CPU time: {total_cpu:.2f}s")
+    print(f"Total translator CPU time ({translator}): {total_cpu:.2f}s")
 
 
 def preprocess_all() -> None:
@@ -224,7 +226,9 @@ def main() -> None:
     args = parse_args()
 
     if args.mode == "translate":
-        translate_all()
+        translate_all("py")
+    elif args.mode == "translate-cpp":
+        translate_all("cpp")
     else:
         preprocess_all()
 
