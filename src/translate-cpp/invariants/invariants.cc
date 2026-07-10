@@ -171,8 +171,19 @@ Invariant &Invariant::operator=(Invariant &&other) noexcept {
 
 void Invariant::compute_predicate_map() {
     predicate_to_part_.clear();
+    predicate_to_part_.reserve(parts.size());
     for (const auto &p : parts)
-        predicate_to_part_[p.predicate] = &p;
+        predicate_to_part_.emplace_back(p.predicate, &p);
+}
+
+const InvariantPart *Invariant::part_or_null(const string &predicate) const {
+    // Last match wins, matching the previous map's insert-assign semantics
+    // (parts are unique by predicate in practice, so this returns the one part).
+    const InvariantPart *found = nullptr;
+    for (const auto &[pred, part] : predicate_to_part_)
+        if (pred == predicate)
+            found = part;
+    return found;
 }
 
 bool Invariant::operator==(const Invariant &o) const {
@@ -192,18 +203,18 @@ size_t Invariant::get_hash() const noexcept {
 }
 
 vector<string> Invariant::get_parameters(const Literal &atom) const {
-    auto it = predicate_to_part_.find(atom.predicate);
-    if (it == predicate_to_part_.end())
+    const InvariantPart *part = part_or_null(atom.predicate);
+    if (!part)
         return {};
-    return it->second->get_parameters(atom);
+    return part->get_parameters(atom);
 }
 
 EqualityConjunction Invariant::get_cover_equivalence_conjunction(
     const Literal &literal) const {
-    auto it = predicate_to_part_.find(literal.predicate);
-    if (it == predicate_to_part_.end())
+    const InvariantPart *found = part_or_null(literal.predicate);
+    if (!found)
         return {};
-    const InvariantPart &part = *it->second;
+    const InvariantPart &part = *found;
     vector<pair<Term, Term>> eqs;
     for (size_t pos = 0; pos < part.args.size(); ++pos) {
         int v = part.args[pos];
@@ -325,7 +336,7 @@ bool Invariant::operator_too_heavy(const Action &h_action) const {
         if (!eff.literal)
             continue;
         const auto &lit = static_cast<const Literal &>(*eff.literal);
-        if (!lit.negated() && predicate_to_part_.contains(lit.predicate))
+        if (!lit.negated() && part_or_null(lit.predicate))
             add_effects.push_back(&eff);
     }
     if (add_effects.size() <= 1)
@@ -365,7 +376,7 @@ bool Invariant::operator_unbalanced(
         if (!eff.literal)
             continue;
         const auto &lit = static_cast<const Literal &>(*eff.literal);
-        if (!predicate_to_part_.contains(lit.predicate))
+        if (!part_or_null(lit.predicate))
             continue;
         (lit.negated() ? del_effects : add_effects).push_back(&eff);
     }
@@ -479,17 +490,17 @@ void Invariant::refine_candidate(
     const Effect &add_effect, const Action &action,
     const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
-    auto pit = predicate_to_part_.find(add_lit.predicate);
-    if (pit == predicate_to_part_.end())
+    const InvariantPart *found = part_or_null(add_lit.predicate);
+    if (!found)
         return;
-    const InvariantPart &part = *pit->second;
+    const InvariantPart &part = *found;
     for (const auto &del_eff : action.effects) {
         if (!del_eff.literal)
             continue;
         const auto &lit = static_cast<const Literal &>(*del_eff.literal);
         if (!lit.negated())
             continue;
-        if (predicate_to_part_.contains(lit.predicate))
+        if (part_or_null(lit.predicate))
             continue;
         vector<InvariantPart> matches;
         part.possible_matches(add_lit, lit, matches);

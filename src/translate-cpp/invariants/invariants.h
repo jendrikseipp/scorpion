@@ -13,6 +13,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace translate::invariants {
@@ -115,7 +116,14 @@ public:
 
 private:
     void compute_predicate_map();
-    std::unordered_map<std::string, const InvariantPart *> predicate_to_part_;
+    // The part (if any) whose predicate matches, or nullptr. An invariant has a
+    // handful of parts, so predicate_to_part_ is a flat vector scanned linearly
+    // rather than a hash map: it allocates one buffer instead of a node per
+    // part (the map was rebuilt on every candidate copy) and avoids hashing
+    // predicate strings on the many balance-check probes.
+    const InvariantPart *part_or_null(const std::string &predicate) const;
+    std::vector<std::pair<std::string, const InvariantPart *>>
+        predicate_to_part_;
 
     EqualityConjunction get_cover_equivalence_conjunction(
         const pddl::Literal &literal) const;
