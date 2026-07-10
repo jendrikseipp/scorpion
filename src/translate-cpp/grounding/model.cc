@@ -239,7 +239,7 @@ private:
             ++p;
         if (p >= static_cast<int>(conditions.size())) {
             ArgList copy = args;
-            enqueue(effect.predicate, std::move(copy));
+            enqueue(effect.predicate, move(copy));
             return;
         }
         const auto &cond = conditions[p];
@@ -530,6 +530,6 @@ vector<Atom> compute_model(const Program &prog) {
     // Move (not copy) the model out: queue.items is a member of a local, so a
     // plain return would copy the whole ~500 MB atom vector on large groundings
     // -- a transient that both spikes peak RSS and wastes time.
-    return std::move(queue.items);
+    return move(queue.items);
 }
 }

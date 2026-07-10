@@ -53,7 +53,7 @@ unordered_set<int> get_fluent_predicates(const Task &task) {
 struct FluentFacts {
     AtomSet set; // for fact_groups
     FactMap ids; // GroundKey -> FactId
-    std::vector<std::shared_ptr<const Atom>> fact_by_id; // FactId -> Atom
+    vector<shared_ptr<const Atom>> fact_by_id; // FactId -> Atom
 };
 
 FluentFacts build_fluent_facts(
@@ -85,7 +85,7 @@ FluentFacts build_fluent_facts(
 // literals, which stay ConditionPtr-based downstream).
 ConditionPtr to_condition(
     const GroundLiteral &lit,
-    const std::vector<std::shared_ptr<const Atom>> &fact_by_id) {
+    const vector<shared_ptr<const Atom>> &fact_by_id) {
     const auto &atom = fact_by_id[lit.fact];
     if (!lit.negated)
         return atom;
@@ -115,9 +115,9 @@ void add_static_init_facts(const Task &task, FactMap &facts) {
 using PneKey = pair<string, vector<string>>;
 struct PneKeyHash {
     size_t operator()(const PneKey &k) const noexcept {
-        size_t h = std::hash<string>{}(k.first);
+        size_t h = hash<string>{}(k.first);
         for (const auto &a : k.second)
-            utils::hash_combine(h, std::hash<string>{}(a));
+            utils::hash_combine(h, hash<string>{}(a));
         return h;
     }
 };
