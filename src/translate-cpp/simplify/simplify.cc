@@ -23,25 +23,53 @@ constexpr int ALWAYS_TRUE = -3;
 struct DTG {
     int init;
     int size;
-    vector<set<int>> arcs;
-    explicit DTG(int init_val, int sz) : init(init_val), size(sz), arcs(sz) {
+    // Specific transitions pre -> post (from operators with a precondition on
+    // this variable). Flat vectors, not set<int>: the BFS skips already-seen
+    // targets, so duplicate arcs are harmless and we avoid a tree node (plus
+    // its malloc) per arc -- the hot spot of this phase on variables with large
+    // domains.
+    vector<vector<int>> arcs;
+    // A "pre == -1" effect can set the variable to `post` from *any* value, so
+    // `post` is reachable from init unconditionally. Recording that as one flag
+    // avoids materializing an arc from every one of the (up to `size`) values
+    // to `post` -- the quadratic blowup that dominated operator-heavy tasks
+    // with wide variable domains (e.g. ferry).
+    vector<char> unconditional;
+    explicit DTG(int init_val, int sz)
+        : init(init_val), size(sz), arcs(sz), unconditional(sz, 0) {
     }
     void add_arc(int u, int v) {
         if (u >= 0 && u < size && v >= 0 && v < size && u != v)
-            arcs[u].insert(v);
+            arcs[u].push_back(v);
     }
-    set<int> reachable() const {
-        set<int> seen;
-        seen.insert(init);
-        vector<int> stack = {init};
+    void add_unconditional(int v) {
+        if (v >= 0 && v < size)
+            unconditional[v] = 1;
+    }
+    // Dense membership vector (indexed by value, 1 if reachable from init):
+    // values are 0..size-1, so the BFS marks and tests in O(1), and the
+    // consumer only needs membership. Seeds are init plus every
+    // unconditionally-reachable value.
+    vector<char> reachable() const {
+        vector<char> seen(size, 0);
+        vector<int> stack;
+        if (init >= 0 && init < size) {
+            seen[init] = 1;
+            stack.push_back(init);
+        }
+        for (int v = 0; v < size; ++v)
+            if (unconditional[v] && !seen[v]) {
+                seen[v] = 1;
+                stack.push_back(v);
+            }
         while (!stack.empty()) {
             int n = stack.back();
             stack.pop_back();
-            if (n < 0 || n >= size)
-                continue;
             for (int m : arcs[n])
-                if (seen.insert(m).second)
+                if (!seen[m]) {
+                    seen[m] = 1;
                     stack.push_back(m);
+                }
         }
         return seen;
     }
@@ -53,18 +81,19 @@ vector<DTG> build_dtgs(const SASTask &task) {
     for (size_t i = 0; i < task.variables.ranges.size(); ++i)
         dtgs.emplace_back(task.init.values[i], task.variables.ranges[i]);
     auto add_arc_var = [&](int var_no, int pre_spec, int post) {
-        if (pre_spec == -1) {
-            for (int p = 0; p < task.variables.ranges[var_no]; ++p)
-                if (p != post)
-                    dtgs[var_no].add_arc(p, post);
-        } else {
+        if (pre_spec == -1)
+            dtgs[var_no].add_unconditional(post);
+        else
             dtgs[var_no].add_arc(pre_spec, post);
-        }
     };
-    auto effective_pre = [](int var_no, const unordered_map<int, int> &conds,
+    auto effective_pre = [](int var_no, const vector<VarVal> &conds,
                             const vector<VarVal> &eff_cond) -> optional<int> {
-        auto it = conds.find(var_no);
-        int result = (it == conds.end()) ? -1 : it->second;
+        int result = -1;
+        for (const auto &[cv, cval] : conds)
+            if (cv == var_no) {
+                result = cval;
+                break;
+            }
         for (const auto &[cv, cval] : eff_cond) {
             if (cv == var_no) {
                 if (result == -1)
@@ -75,13 +104,18 @@ vector<DTG> build_dtgs(const SASTask &task) {
         }
         return result;
     };
+    // Reused across operators (prevail and pre_post touch disjoint variables,
+    // so no key collides): clear() keeps the buffer, so the per-operator
+    // condition table costs no allocation after warmup, unlike the previous
+    // unordered_map built fresh for each of millions of operators.
+    vector<VarVal> conds;
     for (const auto &op : task.operators) {
-        unordered_map<int, int> conds;
+        conds.clear();
         for (const auto &[v, val] : op.prevail)
-            conds[v] = val;
+            conds.emplace_back(v, val);
         for (const auto &[v, pre, post, cond] : op.pre_post)
             if (pre != -1)
-                conds[v] = pre;
+                conds.emplace_back(v, pre);
         for (const auto &[v, pre, post, cond] : op.pre_post) {
             auto ep = effective_pre(v, conds, cond);
             if (ep)
@@ -103,8 +137,11 @@ struct Renaming {
     int num_removed_values = 0;
 
     void register_variable(
-        int old_size, int init_value, const set<int> &new_domain) {
-        if (new_domain.size() == 1) {
+        int old_size, int init_value, const vector<char> &new_domain) {
+        int domain_size = 0;
+        for (int v = 0; v < old_size; ++v)
+            domain_size += new_domain[v];
+        if (domain_size == 1) {
             vector<int> nv(old_size, ALWAYS_FALSE);
             nv[init_value] = ALWAYS_TRUE;
             new_var_nos.push_back(-1);
@@ -114,7 +151,7 @@ struct Renaming {
             vector<int> nv(old_size, ALWAYS_FALSE);
             int counter = 0;
             for (int v = 0; v < old_size; ++v) {
-                if (new_domain.contains(v))
+                if (new_domain[v])
                     nv[v] = counter++;
                 else
                     ++num_removed_values;
@@ -209,14 +246,18 @@ void apply_to_goal(const Renaming &r, SASGoal &goal) {
     goal.pairs = move(pairs);
 }
 
-optional<SASOperator> translate_operator(
-    const Renaming &r, const SASOperator &op) {
-    // Build applicability conditions (prevail + pre). Sorted by var; each
-    // var appears at most once (preconditions can't conflict with
-    // prevails, and SASOperator::validate guarantees pre uniqueness per
-    // var). We use the sorted vector directly as the lookup table:
-    // binary search is fast for ~5 entries and avoids the per-operator
-    // unordered_map/unordered_set allocations that dominated this loop
+// Renumber `op`'s variables under `r` in place, returning true to keep it or
+// false to drop it. Modifying in place (rather than returning a fresh operator)
+// avoids a second full operators vector -- the double representation was the
+// peak on operator-heavy tasks -- and keeps the (unchanged) name and cost
+// without copying them. All of `op` is read before its fields are reassigned.
+bool translate_operator(const Renaming &r, SASOperator &op) {
+    // Build applicability conditions (prevail + pre). Sorted by var; each var
+    // appears at most once (a prevail and a pre never name the same var, and
+    // pre_post is canonicalized to one entry per var). We use the sorted vector
+    // directly as the lookup table: binary search is fast for ~5 entries and
+    // avoids the per-operator unordered_map/unordered_set allocations that
+    // dominated this loop
     // on operator-heavy tasks (115 k operators on logistics/p01).
     vector<VarVal> applicability = op.prevail;
     for (const auto &[v, pre, post, cond] : op.pre_post) {
@@ -225,7 +266,7 @@ optional<SASOperator> translate_operator(
     }
     ranges::sort(applicability);
     if (!convert_pairs(r, applicability))
-        return nullopt;
+        return false;
 
     auto find_app = [&](int var) -> int {
         auto it = lower_bound(
@@ -238,7 +279,7 @@ optional<SASOperator> translate_operator(
 
     vector<int> pp_vars;
     pp_vars.reserve(op.pre_post.size());
-    vector<tuple<int, int, int, vector<VarVal>>> new_pre_post;
+    vector<PrePost> new_pre_post;
     for (const auto &[var_no, pre, post, cond] : op.pre_post) {
         auto [new_var_no, new_post] = r.translate(var_no, post);
         if (new_post == ALWAYS_TRUE)
@@ -248,7 +289,7 @@ optional<SASOperator> translate_operator(
             auto [_, np] = r.translate(var_no, pre);
             if (np == ALWAYS_FALSE) {
                 // Shouldn't happen if applicability was converted ok.
-                return nullopt;
+                return false;
             }
             new_pre = np;
         }
@@ -272,7 +313,7 @@ optional<SASOperator> translate_operator(
         pp_vars.push_back(new_var_no);
     }
     if (new_pre_post.empty() && !get_options().keep_no_ops)
-        return nullopt;
+        return false;
 
     ranges::sort(pp_vars);
     pp_vars.erase(unique(pp_vars.begin(), pp_vars.end()), pp_vars.end());
@@ -288,12 +329,10 @@ optional<SASOperator> translate_operator(
     ranges::sort(new_pre_post);
     new_pre_post.erase(
         unique(new_pre_post.begin(), new_pre_post.end()), new_pre_post.end());
-    SASOperator out;
-    out.name = op.name;
-    out.prevail = move(new_prevail);
-    out.pre_post = move(new_pre_post);
-    out.cost = op.cost;
-    return out;
+    op.prevail = move(new_prevail);
+    op.pre_post = move(new_pre_post);
+    // name and cost are unchanged -- left in place, not copied.
+    return true;
 }
 }
 
@@ -307,17 +346,22 @@ void filter_unreachable_propositions(SASTask &task) {
     apply_to_mutexes(r, task.mutexes);
     apply_to_init(r, task.init);
     apply_to_goal(r, task.goal);
-    vector<SASOperator> new_ops;
-    int removed = 0;
-    for (auto &op : task.operators) {
-        auto nop = translate_operator(r, op);
-        if (nop)
-            new_ops.push_back(move(*nop));
-        else
+    // Renumber operators in place and compact out the removed ones, so a
+    // second full operators vector never coexists with the first (that double
+    // representation was the peak on operator-heavy tasks). Order is preserved.
+    size_t removed = 0;
+    size_t kept = 0;
+    for (size_t i = 0; i < task.operators.size(); ++i) {
+        if (translate_operator(r, task.operators[i])) {
+            if (kept != i)
+                task.operators[kept] = move(task.operators[i]);
+            ++kept;
+        } else {
             ++removed;
+        }
     }
+    task.operators.resize(kept);
     cout << removed << " operators removed" << endl;
-    task.operators = move(new_ops);
     vector<SASAxiom> new_ax;
     int ax_removed = 0;
     for (auto &ax : task.axioms) {

@@ -5,6 +5,7 @@
 #include "../pddl/action.h"
 #include "../pddl/condition.h"
 #include "../pddl/effect.h"
+#include "../utils/hash.h"
 
 #include <algorithm>
 #include <functional>
@@ -47,7 +48,7 @@ ConditionPtr InvariantPart::instantiate(
 size_t InvariantPart::get_hash() const noexcept {
     size_t h = hash<string>{}(predicate);
     for (int a : args)
-        h ^= hash<int>{}(a) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+        utils::hash_combine(h, hash<int>{}(a));
     return h;
 }
 
@@ -142,9 +143,13 @@ Invariant::Invariant(const Invariant &other) : parts(other.parts) {
     compute_predicate_map();
 }
 
-Invariant::Invariant(Invariant &&other) noexcept : parts(move(other.parts)) {
-    compute_predicate_map();
-    other.predicate_to_part_.clear();
+Invariant::Invariant(Invariant &&other) noexcept
+    : parts(move(other.parts)),
+      predicate_to_part_(move(other.predicate_to_part_)) {
+    // A vector move transfers the buffer without relocating elements, so the
+    // pointers in predicate_to_part_ (which point into `parts`) stay valid --
+    // move the map rather than rebuild it. `other` is left with an empty parts
+    // vector and an empty map, consistently moved-from.
 }
 
 Invariant &Invariant::operator=(const Invariant &other) {
@@ -158,16 +163,28 @@ Invariant &Invariant::operator=(const Invariant &other) {
 Invariant &Invariant::operator=(Invariant &&other) noexcept {
     if (this != &other) {
         parts = move(other.parts);
-        compute_predicate_map();
-        other.predicate_to_part_.clear();
+        // See the move constructor: the pointers survive the buffer transfer.
+        predicate_to_part_ = move(other.predicate_to_part_);
     }
     return *this;
 }
 
 void Invariant::compute_predicate_map() {
     predicate_to_part_.clear();
+    predicate_to_part_.reserve(parts.size());
     for (const auto &p : parts)
-        predicate_to_part_[p.predicate] = &p;
+        predicate_to_part_.emplace_back(p.predicate, &p);
+}
+
+const InvariantPart *Invariant::part_or_null(const string &predicate) const {
+    // Last match wins, matching the previous map's insert-assign semantics
+    // (parts are unique by predicate in practice, so this returns the one
+    // part).
+    const InvariantPart *found = nullptr;
+    for (const auto &[pred, part] : predicate_to_part_)
+        if (pred == predicate)
+            found = part;
+    return found;
 }
 
 bool Invariant::operator==(const Invariant &o) const {
@@ -182,23 +199,23 @@ bool Invariant::operator==(const Invariant &o) const {
 size_t Invariant::get_hash() const noexcept {
     size_t h = 0;
     for (const auto &p : parts)
-        h ^= p.get_hash() + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+        utils::hash_combine(h, p.get_hash());
     return h;
 }
 
 vector<string> Invariant::get_parameters(const Literal &atom) const {
-    auto it = predicate_to_part_.find(atom.predicate);
-    if (it == predicate_to_part_.end())
+    const InvariantPart *part = part_or_null(atom.predicate);
+    if (!part)
         return {};
-    return it->second->get_parameters(atom);
+    return part->get_parameters(atom);
 }
 
 EqualityConjunction Invariant::get_cover_equivalence_conjunction(
     const Literal &literal) const {
-    auto it = predicate_to_part_.find(literal.predicate);
-    if (it == predicate_to_part_.end())
+    const InvariantPart *found = part_or_null(literal.predicate);
+    if (!found)
         return {};
-    const InvariantPart &part = *it->second;
+    const InvariantPart &part = *found;
     vector<pair<Term, Term>> eqs;
     for (size_t pos = 0; pos < part.args.size(); ++pos) {
         int v = part.args[pos];
@@ -284,14 +301,17 @@ void ensure_conjunction_sat(
 bool Invariant::check_balance(
     BalanceChecker &checker,
     const function<void(Invariant)> &enqueue_func) const {
-    // Collect actions threatening any of our parts.
-    vector<const Action *> actions_to_check;
-    unordered_set<const Action *> seen;
+    // Collect actions threatening any of our parts, first occurrence winning;
+    // the checker's epoch stamp deduplicates without per-call allocations
+    // (schema-heavy domains run this for every candidate over tens of
+    // thousands of actions -- a per-call hash set dominated the phase).
+    vector<int> actions_to_check;
+    checker.begin_action_set();
     vector<InvariantPart> sorted_parts = parts;
     sort(sorted_parts.begin(), sorted_parts.end());
     for (const auto &part : sorted_parts) {
-        for (const auto *a : checker.get_threats(part.predicate)) {
-            if (seen.insert(a).second)
+        for (int a : checker.get_threats(part.predicate)) {
+            if (checker.insert_action(a))
                 actions_to_check.push_back(a);
         }
     }
@@ -301,12 +321,11 @@ bool Invariant::check_balance(
     while (!actions_to_check.empty()) {
         int pos = checker.next_index(actions_to_check.size());
         swap(actions_to_check[pos], actions_to_check.back());
-        const Action *action = actions_to_check.back();
+        int action = actions_to_check.back();
         actions_to_check.pop_back();
-        const Action *heavy = checker.get_heavy_action(action);
-        if (operator_too_heavy(*heavy))
+        if (operator_too_heavy(checker.heavy_action(action)))
             return false;
-        if (operator_unbalanced(*action, enqueue_func))
+        if (operator_unbalanced(checker.action(action), enqueue_func))
             return false;
     }
     return true;
@@ -318,7 +337,7 @@ bool Invariant::operator_too_heavy(const Action &h_action) const {
         if (!eff.literal)
             continue;
         const auto &lit = static_cast<const Literal &>(*eff.literal);
-        if (!lit.negated() && predicate_to_part_.contains(lit.predicate))
+        if (!lit.negated() && part_or_null(lit.predicate))
             add_effects.push_back(&eff);
     }
     if (add_effects.size() <= 1)
@@ -358,7 +377,7 @@ bool Invariant::operator_unbalanced(
         if (!eff.literal)
             continue;
         const auto &lit = static_cast<const Literal &>(*eff.literal);
-        if (!predicate_to_part_.contains(lit.predicate))
+        if (!part_or_null(lit.predicate))
             continue;
         (lit.negated() ? del_effects : add_effects).push_back(&eff);
     }
@@ -373,23 +392,15 @@ bool Invariant::add_effect_unbalanced(
     const vector<const Effect *> &del_effects,
     const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
-    unordered_map<string, vector<ConditionPtr>> produced;
+    ProducedMap produced;
     auto extend_produced = [&](const ConditionPtr &c) {
         for (const auto *lit : get_literals(c))
-            produced[lit->predicate].push_back(
-                lit->negated()
-                    ? static_pointer_cast<const Condition>(
-                          make_shared<NegatedAtom>(lit->predicate, lit->args))
-                    : static_pointer_cast<const Condition>(
-                          make_shared<Atom>(lit->predicate, lit->args)));
+            produced[lit->predicate].push_back({lit, lit->negated()});
     };
     extend_produced(action.precondition);
     extend_produced(add_effect.condition);
-    {
-        auto neg = add_lit.negate();
-        const auto &nl = static_cast<const Literal &>(*neg);
-        produced[nl.predicate].push_back(neg);
-    }
+    // The add effect's negation is produced too: same literal, flipped sign.
+    produced[add_lit.predicate].push_back({&add_lit, !add_lit.negated()});
     auto add_cover = get_cover_equivalence_conjunction(add_lit);
 
     ConstraintSystem param_system;
@@ -435,31 +446,31 @@ bool Invariant::add_effect_unbalanced(
 
 bool Invariant::balances(
     const Effect &del_effect, const Effect &add_effect,
-    const unordered_map<string, vector<ConditionPtr>> &produced,
-    const EqualityConjunction &add_cover,
+    const ProducedMap &produced, const EqualityConjunction &add_cover,
     const ConstraintSystem &param_system) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
     const auto &del_lit = static_cast<const Literal &>(*del_effect.literal);
 
-    // Build balance system.
+    // Build balance system. The delete effect's condition literals keep their
+    // sign; the deleted literal itself participates negated (sign flip only,
+    // no materialized negation).
     ConstraintSystem balance_system;
-    auto cond_lits = get_literals(del_effect.condition);
-    vector<const Literal *> all_lits = cond_lits;
-    auto del_neg = del_lit.negate();
-    all_lits.push_back(static_cast<const Literal *>(del_neg.get()));
-    for (const auto *lit : all_lits) {
+    vector<ProducedLit> all_lits;
+    for (const auto *lit : get_literals(del_effect.condition))
+        all_lits.push_back({lit, lit->negated()});
+    all_lits.push_back({&del_lit, !del_lit.negated()});
+    for (const auto &[lit, lit_negated] : all_lits) {
         vector<EqualityConjunction> possibilities;
-        auto it = produced.find(lit->predicate);
-        if (it == produced.end())
+        const auto *group = produced.find_group(lit->predicate);
+        if (!group)
             return false;
-        for (const auto &match : it->second) {
-            const auto &m = static_cast<const Literal &>(*match);
-            if (m.negated() != lit->negated())
+        for (const auto &m : *group) {
+            if (m.negated != lit_negated)
                 continue;
             vector<pair<Term, Term>> eqs;
-            size_t n = min(lit->args.size(), m.args.size());
+            size_t n = min(lit->args.size(), m.lit->args.size());
             for (size_t i = 0; i < n; ++i)
-                eqs.emplace_back(Term(lit->args[i]), Term(m.args[i]));
+                eqs.emplace_back(Term(lit->args[i]), Term(m.lit->args[i]));
             possibilities.emplace_back(move(eqs));
         }
         if (possibilities.empty())
@@ -480,17 +491,17 @@ void Invariant::refine_candidate(
     const Effect &add_effect, const Action &action,
     const function<void(Invariant)> &enqueue_func) const {
     const auto &add_lit = static_cast<const Literal &>(*add_effect.literal);
-    auto pit = predicate_to_part_.find(add_lit.predicate);
-    if (pit == predicate_to_part_.end())
+    const InvariantPart *found = part_or_null(add_lit.predicate);
+    if (!found)
         return;
-    const InvariantPart &part = *pit->second;
+    const InvariantPart &part = *found;
     for (const auto &del_eff : action.effects) {
         if (!del_eff.literal)
             continue;
         const auto &lit = static_cast<const Literal &>(*del_eff.literal);
         if (!lit.negated())
             continue;
-        if (predicate_to_part_.contains(lit.predicate))
+        if (part_or_null(lit.predicate))
             continue;
         vector<InvariantPart> matches;
         part.possible_matches(add_lit, lit, matches);

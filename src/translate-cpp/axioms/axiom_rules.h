@@ -13,18 +13,23 @@
 namespace translate::axioms {
 struct AxiomLayering {
     std::vector<std::shared_ptr<pddl::PropositionalAxiom>> axioms;
-    // Atom hash key (predicate + args concatenated) -> layer index.
-    std::unordered_map<std::string, int> axiom_layers;
+    // Layer index for each derived variable, identified by its effect atom (so
+    // the caller can map it to a FactId in its own fluent-fact table).
+    struct LayeredEffect {
+        std::shared_ptr<const pddl::Atom> effect;
+        int layer;
+    };
+    std::vector<LayeredEffect> axiom_layers;
 };
 
 AxiomLayering handle_axioms(
-    const std::vector<std::shared_ptr<pddl::PropositionalAction>> &operators,
+    const std::vector<pddl::PropositionalAction> &operators,
     const std::vector<std::shared_ptr<pddl::PropositionalAxiom>> &axioms,
     const std::vector<pddl::ConditionPtr> &goals,
+    // FactId -> Atom, to recover atom keys from action GroundLiterals.
+    const std::vector<std::shared_ptr<const pddl::Atom>> &fact_by_id,
     const std::string &layer_strategy);
 
-// Build a canonical string key for a (positive) atom used in layer maps.
-std::string atom_key(const pddl::Atom &atom);
 }
 
 #endif

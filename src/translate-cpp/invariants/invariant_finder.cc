@@ -23,49 +23,81 @@ using namespace std;
 namespace translate::invariants {
 using namespace pddl;
 
+namespace {
+// Copy `act` and, for each parameter pair that no reachable tuple ever binds to
+// the same object, add an inequality (!= p1 p2) precondition. Rather than
+// rescan the whole (large) tuple table once per pair, make a single pass over
+// the table and mark each pair the first time it is seen equal, stopping early
+// once every pair has been marked -- same result and pair order, one read of
+// the table instead of one per pair.
+Action patch_action_inequalities(
+    const Action &act, const vector<vector<int>> &reachable_tuples) {
+    Action patched = act;
+    if (act.parameters.size() < 2)
+        return patched;
+    struct PairFlag {
+        int p1, p2;
+        bool ever_equal = false;
+    };
+    vector<PairFlag> pairs;
+    for (size_t p1 = 0; p1 < act.parameters.size(); ++p1)
+        for (size_t p2 = p1 + 1; p2 < act.parameters.size(); ++p2)
+            pairs.push_back({static_cast<int>(p1), static_cast<int>(p2)});
+    size_t remaining = pairs.size();
+    for (const auto &t : reachable_tuples) {
+        if (remaining == 0)
+            break;
+        for (auto &pf : pairs)
+            if (!pf.ever_equal && t.size() > static_cast<size_t>(pf.p2) &&
+                t[pf.p1] == t[pf.p2]) {
+                pf.ever_equal = true;
+                --remaining;
+            }
+    }
+    vector<pair<int, int>> inequal_pairs;
+    for (const auto &pf : pairs)
+        if (!pf.ever_equal)
+            inequal_pairs.emplace_back(pf.p1, pf.p2);
+    if (!inequal_pairs.empty()) {
+        vector<ConditionPtr> parts;
+        parts.push_back(patched.precondition);
+        for (const auto &[p1, p2] : inequal_pairs)
+            parts.push_back(make_shared<NegatedAtom>(
+                "=", vector<string>{
+                         act.parameters[p1].name, act.parameters[p2].name}));
+        patched.precondition =
+            make_shared<Conjunction>(move(parts))->simplified();
+    }
+    return patched;
+}
+}
+
 BalanceChecker::BalanceChecker(
     const Task &task,
-    const vector<vector<vector<string>>> *reachable_action_parameters)
+    const vector<vector<vector<int>>> *reachable_action_parameters)
     : random_(314159), cpython_random_(314159) {
+    build_patched_actions(task, reachable_action_parameters);
+    build_heavy_actions();
+    build_predicate_map();
+}
+
+void BalanceChecker::build_patched_actions(
+    const Task &task,
+    const vector<vector<vector<int>>> *reachable_action_parameters) {
     patched_actions_.reserve(task.actions.size());
-    heavy_actions_.reserve(task.actions.size());
     for (size_t i = 0; i < task.actions.size(); ++i) {
         const Action &act = task.actions[i];
-        Action patched = act;
-        // Add inequality preconditions based on reachable parameter tuples.
         if (reachable_action_parameters &&
-            i < reachable_action_parameters->size() &&
-            act.parameters.size() >= 2) {
-            const auto &params = (*reachable_action_parameters)[i];
-            vector<pair<int, int>> inequal_pairs;
-            for (size_t p1 = 0; p1 < act.parameters.size(); ++p1) {
-                for (size_t p2 = p1 + 1; p2 < act.parameters.size(); ++p2) {
-                    bool ever_equal = false;
-                    for (const auto &t : params)
-                        if (t.size() > p2 && t[p1] == t[p2]) {
-                            ever_equal = true;
-                            break;
-                        }
-                    if (!ever_equal)
-                        inequal_pairs.emplace_back(
-                            static_cast<int>(p1), static_cast<int>(p2));
-                }
-            }
-            if (!inequal_pairs.empty()) {
-                vector<ConditionPtr> parts;
-                parts.push_back(patched.precondition);
-                for (const auto &[p1, p2] : inequal_pairs) {
-                    parts.push_back(make_shared<NegatedAtom>(
-                        "=",
-                        vector<string>{
-                            act.parameters[p1].name, act.parameters[p2].name}));
-                }
-                patched.precondition =
-                    make_shared<Conjunction>(move(parts))->simplified();
-            }
-        }
-        patched_actions_.push_back(move(patched));
+            i < reachable_action_parameters->size())
+            patched_actions_.push_back(patch_action_inequalities(
+                act, (*reachable_action_parameters)[i]));
+        else
+            patched_actions_.push_back(act);
     }
+}
+
+void BalanceChecker::build_heavy_actions() {
+    heavy_actions_.reserve(patched_actions_.size());
     for (auto &patched : patched_actions_) {
         // Build heavy action: duplicate universal effects.
         vector<Effect> heavy_effects;
@@ -90,8 +122,10 @@ BalanceChecker::BalanceChecker(
         }
         heavy_actions_.push_back(move(heavy));
     }
+}
+
+void BalanceChecker::build_predicate_map() {
     for (size_t i = 0; i < patched_actions_.size(); ++i) {
-        action_to_heavy_[&patched_actions_[i]] = &heavy_actions_[i];
         for (const auto &eff : patched_actions_[i].effects) {
             if (!eff.literal)
                 continue;
@@ -99,23 +133,18 @@ BalanceChecker::BalanceChecker(
             if (lit.negated())
                 continue;
             auto &list = predicates_to_add_actions_[lit.predicate];
-            if (list.empty() || list.back() != &patched_actions_[i])
-                list.push_back(&patched_actions_[i]);
+            if (list.empty() || list.back() != static_cast<int>(i))
+                list.push_back(static_cast<int>(i));
         }
     }
+    action_stamp_.assign(patched_actions_.size(), 0);
 }
 
-const vector<const Action *> &BalanceChecker::get_threats(
-    const string &predicate) const {
+const vector<int> &BalanceChecker::get_threats(const string &predicate) const {
     auto it = predicates_to_add_actions_.find(predicate);
     if (it == predicates_to_add_actions_.end())
         return empty_;
     return it->second;
-}
-
-const Action *BalanceChecker::get_heavy_action(const Action *action) const {
-    auto it = action_to_heavy_.find(action);
-    return it == action_to_heavy_.end() ? nullptr : it->second;
 }
 
 int BalanceChecker::next_index(size_t upper_bound) {
@@ -174,7 +203,7 @@ vector<Invariant> initial_invariants(const Task &task, int limit) {
 
 vector<Invariant> find_invariants(
     const Task &task,
-    const vector<vector<vector<string>>> *reachable_action_parameters) {
+    const vector<vector<vector<int>>> *reachable_action_parameters) {
     const Options &opts = get_options();
     int limit = opts.invariant_generation_max_candidates;
     auto initial = initial_invariants(task, limit);
@@ -208,7 +237,7 @@ vector<Invariant> find_invariants(
 
 vector<vector<ConditionPtr>> get_groups(
     const Task &task,
-    const vector<vector<vector<string>>> *reachable_action_parameters) {
+    const vector<vector<vector<int>>> *reachable_action_parameters) {
     cout << "Finding invariants..." << endl;
     auto invariants = find_invariants(task, reachable_action_parameters);
     cout << "Checking invariant weight..." << endl;

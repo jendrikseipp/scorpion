@@ -1,7 +1,12 @@
 #ifndef PDDL_CONDITION_H
 #define PDDL_CONDITION_H
 
+#include "ground_facts.h"
 #include "types.h"
+
+#include "algorithms/small_vector.h"
+
+#include "../utils/hash.h"
 
 #include <cstddef>
 #include <memory>
@@ -30,6 +35,15 @@ using ConditionPtr = std::shared_ptr<const Condition>;
 
 struct ConditionPtrHash;
 struct ConditionPtrEqual;
+
+// Shared singletons for the two immutable constants (defined below, once the
+// Truth/Falsity types are complete).
+ConditionPtr make_truth();
+ConditionPtr make_falsity();
+
+// VarMapping, GroundKey, GroundLiteral, GroundEffect and FactMap -- the
+// ground-fact runtime types referenced by the instantiate() signatures below
+// -- now live in ground_facts.h (included above).
 
 class Condition {
 public:
@@ -88,12 +102,8 @@ public:
       can appear in normalized conditions, and each overrides this.
     */
     virtual bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
-        std::vector<ConditionPtr> &result) const;
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
+        std::vector<GroundLiteral> &result) const;
 
     /*
       Make all quantifier-bound variable names globally unique. `type_map`
@@ -106,51 +116,25 @@ public:
 };
 
 namespace detail {
-// boost::hash_combine-style mixing, shared by all condition hashers.
-inline void hash_combine(std::size_t &seed, std::size_t value) noexcept {
-    seed ^= value + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
-}
-// Hash recipe for a (positive or negated) literal. Centralised here so
-// Literal's cached_hash and AtomView below stay bit-for-bit identical.
+// Hash recipe for a (positive or negated) literal, used for Literal's
+// cached_hash.
 inline std::size_t literal_hash(
     const std::string &predicate,
     const std::vector<std::string> &args) noexcept {
     std::size_t h = std::hash<std::string>{}(predicate);
     for (const auto &a : args)
-        hash_combine(h, std::hash<std::string>{}(a));
+        utils::hash_combine(h, std::hash<std::string>{}(a));
     return h;
 }
 }
 
-/*
-  A non-owning view of a positive ground atom (predicate name + already
-  resolved argument list). Used as a heterogeneous lookup key against an
-  AtomSet so instantiate() can probe init/fluent facts without allocating
-  a shared_ptr<Atom>. The hash is bit-for-bit identical to Literal's
-  cached_hash so view-based lookups land in the same bucket as the owned
-  Atom entries.
-*/
-struct AtomView {
-    const std::string &predicate;
-    const std::vector<std::string> &args;
-    std::size_t cached_hash;
-    AtomView(const std::string &p, const std::vector<std::string> &a)
-        : predicate(p), args(a), cached_hash(detail::literal_hash(p, a)) {
-    }
-};
-
 struct ConditionPtrHash {
-    using is_transparent = void;
     std::size_t operator()(const ConditionPtr &c) const noexcept {
         return c ? c->hash() : 0;
-    }
-    std::size_t operator()(const AtomView &v) const noexcept {
-        return v.cached_hash;
     }
 };
 
 struct ConditionPtrEqual {
-    using is_transparent = void;
     bool operator()(const ConditionPtr &a, const ConditionPtr &b) const {
         if (a.get() == b.get())
             return true;
@@ -160,19 +144,9 @@ struct ConditionPtrEqual {
             return false;
         return a->equals(*b);
     }
-    // Match a stored condition against a positive-atom view.
-    bool operator()(const ConditionPtr &c, const AtomView &v) const {
-        return matches(c, v);
-    }
-    bool operator()(const AtomView &v, const ConditionPtr &c) const {
-        return matches(c, v);
-    }
-
-private:
-    static bool matches(const ConditionPtr &c, const AtomView &v);
 };
 
-// Set of ground atoms (used by Condition::instantiate, instantiate.cc).
+// Set of ground atoms (the Result's fluent facts; used by fact_groups).
 using AtomSet =
     std::unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>;
 
@@ -192,12 +166,8 @@ public:
         return std::make_shared<Truth>();
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-        std::vector<ConditionPtr> &) const override {
+        const VarMapping &, const FactMap &,
+        std::vector<GroundLiteral> &) const override {
         return true;
     }
 };
@@ -218,18 +188,18 @@ public:
         return std::make_shared<Falsity>();
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-        std::vector<ConditionPtr> &) const override;
+        const VarMapping &, const FactMap &,
+        std::vector<GroundLiteral> &) const override;
 };
 
 class Literal : public Condition {
 public:
     std::string predicate;
     std::vector<std::string> args;
+    // Interned predicate id (grounding symbol table), cached at construction so
+    // instantiation builds integer ground-fact keys without re-interning the
+    // predicate name on every probe.
+    int predicate_id;
 
 protected:
     std::size_t cached_hash;
@@ -240,6 +210,9 @@ public:
         return cached_hash;
     }
     void dump(std::ostream &os, int indent) const override;
+    // Python-style rendering, e.g. "Atom on(a, b)" / "NegatedAtom on(a, b)".
+    // Used for SAS value names and dump output.
+    std::string str() const;
     std::unordered_set<std::string> free_variables() const override;
     virtual bool negated() const = 0;
     ConditionPtr
@@ -270,12 +243,8 @@ public:
         return false;
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
-        std::vector<ConditionPtr> &result) const override;
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
+        std::vector<GroundLiteral> &result) const override;
 };
 
 class NegatedAtom final : public Literal {
@@ -292,12 +261,8 @@ public:
         return true;
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
-        std::vector<ConditionPtr> &result) const override;
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
+        std::vector<GroundLiteral> &result) const override;
 };
 
 class JunctorCondition : public Condition {
@@ -317,6 +282,17 @@ public:
     }
     bool equals(const Condition &other) const override;
     void dump(std::ostream &os, int indent) const override;
+
+protected:
+    // De Morgan helper: this junction's children, each negated. Conjunction and
+    // Disjunction wrap the result in the opposite junctor.
+    std::vector<ConditionPtr> negated_children() const;
+    // Shared And/Or simplification: flatten nested junctors of the same kind,
+    // drop the identity element and collapse on the absorbing element, then
+    // unwrap a single-child (or empty) result. `absorbing_kind` is FALSITY for
+    // a Conjunction (And) and TRUTH for a Disjunction (Or); the identity is the
+    // other constant. The result junctor's type is taken from kind().
+    ConditionPtr simplify_junctor(Kind absorbing_kind) const;
 };
 
 class Conjunction final : public JunctorCondition {
@@ -334,12 +310,8 @@ public:
         return std::make_shared<Conjunction>(std::move(new_parts));
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
-        std::vector<ConditionPtr> &result) const override;
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
+        std::vector<GroundLiteral> &result) const override;
 };
 
 class Disjunction final : public JunctorCondition {
@@ -430,20 +402,20 @@ public:
             parameters, std::move(new_parts));
     }
     bool instantiate(
-        const std::unordered_map<std::string, std::string> &var_mapping,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &init_facts,
-        const std::unordered_set<
-            ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &fluent_facts,
-        std::vector<ConditionPtr> &result) const override;
+        const VarMapping &var_mapping, const FactMap &fluent_facts,
+        std::vector<GroundLiteral> &result) const override;
 };
 
-// Convenience factories.
+// Convenience factories. Truth and Falsity are immutable, value-equal
+// constants, so hand out shared singletons instead of allocating a fresh node
+// on every call (they are minted throughout normalize/simplify).
 inline ConditionPtr make_truth() {
-    return std::make_shared<Truth>();
+    static const ConditionPtr instance = std::make_shared<Truth>();
+    return instance;
 }
 inline ConditionPtr make_falsity() {
-    return std::make_shared<Falsity>();
+    static const ConditionPtr instance = std::make_shared<Falsity>();
+    return instance;
 }
 inline ConditionPtr make_atom(
     std::string predicate, std::vector<std::string> args) {

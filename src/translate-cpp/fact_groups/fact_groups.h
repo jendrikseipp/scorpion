@@ -30,7 +30,7 @@ struct ComputedGroups {
 
 ComputedGroups compute_groups(
     const pddl::Task &task, const pddl::AtomSet &atoms,
-    const std::vector<std::vector<std::vector<std::string>>>
+    const std::vector<std::vector<std::vector<int>>>
         *reachable_action_parameters,
     const pddl::AtomSet &negative_in_goal);
 }

@@ -1,24 +1,19 @@
 #include "condition.h"
 
+#include "../grounding/symbols.h"
+
 #include <functional>
 #include <stdexcept>
 
 using namespace std;
 namespace translate::pddl {
 namespace {
-using detail::hash_combine;
+using utils::hash_combine;
 
 template<class T>
 size_t hash_value(const T &v) {
     return hash<T>{}(v);
 }
-}
-
-bool ConditionPtrEqual::matches(const ConditionPtr &c, const AtomView &v) {
-    if (!c || c->kind() != Condition::Kind::ATOM)
-        return false;
-    const auto &lit = static_cast<const Literal &>(*c);
-    return lit.predicate == v.predicate && lit.args == v.args;
 }
 
 unordered_set<string> Condition::free_variables() const {
@@ -70,10 +65,10 @@ void Falsity::dump(ostream &os, int indent) const {
 }
 
 ConditionPtr Truth::negate() const {
-    return make_shared<Falsity>();
+    return make_falsity();
 }
 ConditionPtr Falsity::negate() const {
-    return make_shared<Truth>();
+    return make_truth();
 }
 
 // -- Literal -----------------------------------------------------------------
@@ -81,18 +76,25 @@ ConditionPtr Falsity::negate() const {
 Literal::Literal(string predicate, vector<string> args)
     : predicate(move(predicate)),
       args(move(args)),
+      predicate_id(grounding::symbols().intern(this->predicate)),
       cached_hash(detail::literal_hash(this->predicate, this->args)) {
 }
 
-void Literal::dump(ostream &os, int indent) const {
-    os << string(indent * 2, ' ');
-    os << (negated() ? "NegatedAtom " : "Atom ") << predicate << "(";
+string Literal::str() const {
+    string s = negated() ? "NegatedAtom " : "Atom ";
+    s += predicate;
+    s += '(';
     for (size_t i = 0; i < args.size(); ++i) {
         if (i)
-            os << ", ";
-        os << args[i];
+            s += ", ";
+        s += args[i];
     }
-    os << ")\n";
+    s += ')';
+    return s;
+}
+
+void Literal::dump(ostream &os, int indent) const {
+    os << string(indent * 2, ' ') << str() << "\n";
 }
 
 unordered_set<string> Literal::free_variables() const {
@@ -160,20 +162,20 @@ void JunctorCondition::dump(ostream &os, int indent) const {
         c->dump(os, indent + 1);
 }
 
-ConditionPtr Conjunction::negate() const {
+vector<ConditionPtr> JunctorCondition::negated_children() const {
     vector<ConditionPtr> negated;
     negated.reserve(children.size());
     for (const auto &c : children)
         negated.push_back(c->negate());
-    return make_shared<Disjunction>(move(negated));
+    return negated;
+}
+
+ConditionPtr Conjunction::negate() const {
+    return make_shared<Disjunction>(negated_children());
 }
 
 ConditionPtr Disjunction::negate() const {
-    vector<ConditionPtr> negated;
-    negated.reserve(children.size());
-    for (const auto &c : children)
-        negated.push_back(c->negate());
-    return make_shared<Conjunction>(move(negated));
+    return make_shared<Conjunction>(negated_children());
 }
 
 // -- QuantifiedCondition -----------------------------------------------------
@@ -240,100 +242,83 @@ ConditionPtr UniversalCondition::negate() const {
 // -- instantiate() -----------------------------------------------------------
 
 bool Condition::instantiate(
-    const unordered_map<string, string> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-    vector<ConditionPtr> &) const {
+    const VarMapping &, const FactMap &, vector<GroundLiteral> &) const {
     throw runtime_error("Cannot instantiate condition: not normalized");
 }
 
 bool Falsity::instantiate(
-    const unordered_map<string, string> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual> &,
-    vector<ConditionPtr> &) const {
+    const VarMapping &, const FactMap &, vector<GroundLiteral> &) const {
     return false;
 }
 
 namespace {
-// Resolve `args` under `m` into the caller-owned `out` buffer. Callers
-// pass a reused scratch vector so probing init/fluent facts during
-// instantiation does not heap-allocate a fresh vector per literal.
-void resolve_args_into(
-    vector<string> &out, const vector<string> &args,
-    const unordered_map<string, string> &m) {
-    out.clear();
-    out.reserve(args.size());
+// Resolve this literal's args under `m` into the integer ground-fact `key`
+// (interned predicate id + object-id args). A parameter argument resolves to
+// its bound object id via `m`; a constant argument is interned on the spot.
+// `key` is a caller-owned reused buffer so probing does not allocate per
+// literal (SmallVector keeps the small arg list inline).
+void resolve_key(
+    GroundKey &key, int predicate_id, const vector<string> &args,
+    const VarMapping &m) {
+    key.predicate = predicate_id;
+    key.args.clear();
     for (const auto &a : args) {
         auto it = m.find(a);
-        out.push_back(it == m.end() ? a : it->second);
+        key.args.push_back(
+            it == m.end() ? grounding::symbols().intern(a) : it->second);
     }
 }
 }
 
 bool Atom::instantiate(
-    const unordered_map<string, string> &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &fluent_facts,
-    vector<ConditionPtr> &result) const {
-    static thread_local vector<string> scratch;
-    resolve_args_into(scratch, args, var_mapping);
-    AtomView view(predicate, scratch);
-    // Probe via the view (no allocation). On a hit, reuse the canonical
-    // owned fluent atom instead of minting a fresh equal one.
-    auto it = fluent_facts.find(view);
-    if (it != fluent_facts.end()) {
-        result.push_back(*it);
-    } else if (!init_facts.contains(view)) {
+    const VarMapping &var_mapping, const FactMap &facts,
+    vector<GroundLiteral> &result) const {
+    static thread_local GroundKey key;
+    resolve_key(key, predicate_id, args, var_mapping);
+    // Single probe: fluent -> a real precondition on that fact; static-true ->
+    // drop the (satisfied) literal; absent -> the literal is false, so the
+    // caller drops the action.
+    const FactId *id = facts.find(key);
+    if (!id)
         return false;
-    }
+    if (*id != STATIC_FACT)
+        result.push_back({*id, false});
     return true;
 }
 
 bool NegatedAtom::instantiate(
-    const unordered_map<string, string> &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &fluent_facts,
-    vector<ConditionPtr> &result) const {
-    static thread_local vector<string> scratch;
-    resolve_args_into(scratch, args, var_mapping);
-    AtomView view(predicate, scratch);
-    if (fluent_facts.contains(view)) {
-        result.push_back(make_shared<NegatedAtom>(predicate, scratch));
-    } else if (init_facts.contains(view)) {
-        return false;
+    const VarMapping &var_mapping, const FactMap &facts,
+    vector<GroundLiteral> &result) const {
+    static thread_local GroundKey key;
+    resolve_key(key, predicate_id, args, var_mapping);
+    // Mirror image of Atom: absent (static-false) -> negation holds, drop the
+    // literal; static-true -> negation is false, drop the action; fluent ->
+    // a real negative precondition.
+    const FactId *id = facts.find(key);
+    if (!id)
+        return true;
+    if (*id != STATIC_FACT) {
+        result.push_back({*id, true});
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool Conjunction::instantiate(
-    const unordered_map<string, string> &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &fluent_facts,
-    vector<ConditionPtr> &result) const {
+    const VarMapping &var_mapping, const FactMap &facts,
+    vector<GroundLiteral> &result) const {
     for (const auto &p : children) {
-        if (p && !p->instantiate(var_mapping, init_facts, fluent_facts, result))
+        if (p && !p->instantiate(var_mapping, facts, result))
             return false;
     }
     return true;
 }
 
 bool ExistentialCondition::instantiate(
-    const unordered_map<string, string> &var_mapping,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &init_facts,
-    const unordered_set<ConditionPtr, ConditionPtrHash, ConditionPtrEqual>
-        &fluent_facts,
-    vector<ConditionPtr> &result) const {
+    const VarMapping &var_mapping, const FactMap &facts,
+    vector<GroundLiteral> &result) const {
     if (!body.empty() && body[0])
-        return body[0]->instantiate(
-            var_mapping, init_facts, fluent_facts, result);
+        return body[0]->instantiate(var_mapping, facts, result);
     return true;
 }
 
@@ -348,10 +333,10 @@ ConditionPtr ExistentialCondition::negate() const {
 // -- simplified() ------------------------------------------------------------
 
 ConditionPtr Truth::simplified() const {
-    return make_shared<Truth>();
+    return make_truth();
 }
 ConditionPtr Falsity::simplified() const {
-    return make_shared<Falsity>();
+    return make_falsity();
 }
 ConditionPtr Literal::simplified() const {
     if (negated())
@@ -359,58 +344,45 @@ ConditionPtr Literal::simplified() const {
     return make_shared<Atom>(predicate, args);
 }
 
-ConditionPtr Conjunction::simplified() const {
+ConditionPtr JunctorCondition::simplify_junctor(Kind absorbing_kind) const {
+    const Kind self = kind();
+    const Kind identity_kind =
+        absorbing_kind == Kind::FALSITY ? Kind::TRUTH : Kind::FALSITY;
+    auto constant = [](Kind k) {
+        return k == Kind::FALSITY ? make_falsity() : make_truth();
+    };
     vector<ConditionPtr> result;
     result.reserve(children.size());
     for (const auto &child : children) {
         ConditionPtr s = child->simplified();
-        switch (s->kind()) {
-        case Kind::CONJUNCTION: {
-            const auto &c = static_cast<const Conjunction &>(*s);
-            for (const auto &p : c.children)
+        Kind sk = s->kind();
+        if (sk == self) {
+            // Flatten a nested junctor of the same kind.
+            const auto &j = static_cast<const JunctorCondition &>(*s);
+            for (const auto &p : j.children)
                 result.push_back(p);
-            break;
-        }
-        case Kind::FALSITY:
-            return make_shared<Falsity>();
-        case Kind::TRUTH:
-            break;
-        default:
+        } else if (sk == absorbing_kind) {
+            return constant(absorbing_kind);
+        } else if (sk != identity_kind) {
             result.push_back(move(s));
         }
+        // identity children are dropped.
     }
     if (result.empty())
-        return make_shared<Truth>();
+        return constant(identity_kind);
     if (result.size() == 1)
         return result.front();
-    return make_shared<Conjunction>(move(result));
+    if (self == Kind::CONJUNCTION)
+        return make_shared<Conjunction>(move(result));
+    return make_shared<Disjunction>(move(result));
+}
+
+ConditionPtr Conjunction::simplified() const {
+    return simplify_junctor(Kind::FALSITY);
 }
 
 ConditionPtr Disjunction::simplified() const {
-    vector<ConditionPtr> result;
-    result.reserve(children.size());
-    for (const auto &child : children) {
-        ConditionPtr s = child->simplified();
-        switch (s->kind()) {
-        case Kind::DISJUNCTION: {
-            const auto &d = static_cast<const Disjunction &>(*s);
-            for (const auto &p : d.children)
-                result.push_back(p);
-            break;
-        }
-        case Kind::TRUTH:
-            return make_shared<Truth>();
-        case Kind::FALSITY:
-            break;
-        default:
-            result.push_back(move(s));
-        }
-    }
-    if (result.empty())
-        return make_shared<Falsity>();
-    if (result.size() == 1)
-        return result.front();
-    return make_shared<Disjunction>(move(result));
+    return simplify_junctor(Kind::TRUTH);
 }
 
 ConditionPtr QuantifiedCondition::simplified() const {

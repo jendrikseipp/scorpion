@@ -1,5 +1,6 @@
 #include "axiom_rules.h"
 
+#include "../grounding/symbols.h"
 #include "../pddl/action.h"
 #include "../pddl/axiom.h"
 #include "../pddl/condition.h"
@@ -7,41 +8,60 @@
 
 #include <algorithm>
 #include <iostream>
-#include <map>
 #include <set>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace std;
 namespace translate::axioms {
 using namespace pddl;
 
-string atom_key(const Atom &atom) {
-    string k = atom.predicate;
-    for (const auto &a : atom.args) {
-        k.push_back('\x1f');
-        k += a;
-    }
-    return k;
+namespace {
+/*
+  Sign-independent identity of a (positive or negated) literal, used to key the
+  derived-variable dependency graph. The predicate id is cached on every Literal
+  and object names were interned during grounding, so this is the same interned
+  GroundKey the rest of the translator uses -- membership and dependency lookups
+  become int hash/compare instead of hashing and memcmp-ing predicate/argument
+  strings (the dominant cost of axiom processing on derived-predicate-heavy
+  tasks). The only place that needs the *name* order is the derived-variable
+  sort in compute_sccs, which sorts via the representative Atom (see there).
+*/
+using AtomKey = GroundKey;
+// Hashed set/map over AtomKeys, the workhorse containers of this file.
+using KeySet = unordered_set<AtomKey, GroundKeyHash>;
+template<typename V>
+using KeyMap = unordered_map<AtomKey, V, GroundKeyHash>;
+
+AtomKey atom_key(const Literal &lit) {
+    AtomKey key;
+    key.predicate = lit.predicate_id;
+    key.args.reserve(lit.args.size());
+    for (const auto &a : lit.args)
+        key.args.push_back(grounding::symbols().intern(a));
+    return key;
 }
 
-namespace {
-string literal_atom_key(const Literal &lit) {
-    string k = lit.predicate;
-    for (const auto &a : lit.args) {
-        k.push_back('\x1f');
-        k += a;
-    }
-    return k;
+// Order two derived variables by their representative atom's (predicate, args)
+// names -- the lexicographic order the translator has always emitted derived
+// variables in. GroundKey's own ordering is by interned id, which is not name
+// order, so the byte-critical sort in compute_sccs routes through this instead.
+bool atom_name_less(const Atom &a, const Atom &b) {
+    if (a.predicate != b.predicate)
+        return a.predicate < b.predicate;
+    return a.args < b.args;
 }
 
 struct AxiomDependencies {
-    unordered_set<string> derived_variables;
-    unordered_map<string, unordered_set<string>> positive_dependencies;
-    unordered_map<string, unordered_set<string>> negative_dependencies;
+    KeySet derived_variables;
+    KeyMap<KeySet> positive_dependencies;
+    KeyMap<KeySet> negative_dependencies;
     // Key -> representative atom (an Atom object for the derived variable).
-    unordered_map<string, shared_ptr<const Atom>> repr;
+    KeyMap<shared_ptr<const Atom>> repr;
 
     AxiomDependencies() = default;
     explicit AxiomDependencies(
@@ -49,19 +69,19 @@ struct AxiomDependencies {
         for (const auto &ax : axioms) {
             if (!ax || !ax->effect)
                 continue;
-            string k = atom_key(*ax->effect);
+            AtomKey k = atom_key(*ax->effect);
             derived_variables.insert(k);
             repr[k] = ax->effect;
         }
         for (const auto &ax : axioms) {
             if (!ax || !ax->effect)
                 continue;
-            string head = atom_key(*ax->effect);
+            AtomKey head = atom_key(*ax->effect);
             for (const auto &lit_cond : ax->condition) {
                 if (!lit_cond)
                     continue;
                 const auto &lit = static_cast<const Literal &>(*lit_cond);
-                string body_key = literal_atom_key(lit);
+                AtomKey body_key = atom_key(lit);
                 if (derived_variables.contains(body_key)) {
                     if (lit.negated())
                         negative_dependencies[head].insert(body_key);
@@ -72,8 +92,8 @@ struct AxiomDependencies {
         }
     }
 
-    void remove_unnecessary_variables(const unordered_set<string> &necessary) {
-        unordered_set<string> kept;
+    void remove_unnecessary_variables(const KeySet &necessary) {
+        KeySet kept;
         for (const auto &v : derived_variables) {
             if (necessary.contains(v))
                 kept.insert(v);
@@ -86,89 +106,93 @@ struct AxiomDependencies {
     }
 };
 
-unordered_set<string> compute_necessary_atoms(
+KeySet compute_necessary_atoms(
     const AxiomDependencies &deps, const vector<ConditionPtr> &goals,
-    const vector<shared_ptr<PropositionalAction>> &operators) {
-    unordered_set<string> necessary;
+    const vector<PropositionalAction> &operators,
+    const vector<shared_ptr<const Atom>> &fact_by_id) {
+    KeySet necessary;
+    // Without derived predicates nothing is necessary -- and skipping here
+    // avoids scanning every action's literals on the common axiom-free tasks.
+    if (deps.derived_variables.empty())
+        return necessary;
     for (const auto &g : goals) {
         if (!g)
             continue;
         const auto &lit = static_cast<const Literal &>(*g);
-        string key = literal_atom_key(lit);
+        AtomKey key = atom_key(lit);
         if (deps.derived_variables.contains(key))
             necessary.insert(key);
     }
+    // Action literals are GroundLiterals; recover the atom key via fact_by_id.
+    auto check = [&](const GroundLiteral &gl) {
+        AtomKey key = atom_key(*fact_by_id[gl.fact]);
+        if (deps.derived_variables.contains(key))
+            necessary.insert(key);
+    };
     for (const auto &op : operators) {
-        if (!op)
-            continue;
-        for (const auto &pre : op->precondition) {
-            if (!pre)
-                continue;
-            const auto &lit = static_cast<const Literal &>(*pre);
-            string key = literal_atom_key(lit);
-            if (deps.derived_variables.contains(key))
-                necessary.insert(key);
-        }
+        for (const auto &pre : op.precondition)
+            check(pre);
         auto walk = [&](const auto &effects) {
-            for (const auto &[conds, _] : effects) {
-                for (const auto &c : conds) {
-                    if (!c)
-                        continue;
-                    const auto &lit = static_cast<const Literal &>(*c);
-                    string key = literal_atom_key(lit);
-                    if (deps.derived_variables.contains(key))
-                        necessary.insert(key);
-                }
-            }
+            for (const auto &[conds, _] : effects)
+                for (const auto &c : conds)
+                    check(c);
         };
-        walk(op->add_effects);
-        walk(op->del_effects);
+        walk(op.add_effects);
+        walk(op.del_effects);
     }
-    vector<string> stack(necessary.begin(), necessary.end());
+    vector<AtomKey> stack(necessary.begin(), necessary.end());
     while (!stack.empty()) {
-        string atom = move(stack.back());
+        AtomKey atom = move(stack.back());
         stack.pop_back();
-        auto add =
-            [&](const unordered_map<string, unordered_set<string>> &deps_map) {
-                auto it = deps_map.find(atom);
-                if (it == deps_map.end())
-                    return;
-                for (const auto &body : it->second)
-                    if (necessary.insert(body).second)
-                        stack.push_back(body);
-            };
+        auto add = [&](const KeyMap<KeySet> &deps_map) {
+            auto it = deps_map.find(atom);
+            if (it == deps_map.end())
+                return;
+            for (const auto &body : it->second)
+                if (necessary.insert(body).second)
+                    stack.push_back(body);
+        };
         add(deps.positive_dependencies);
         add(deps.negative_dependencies);
     }
     return necessary;
 }
 
-vector<vector<string>> compute_sccs(const AxiomDependencies &deps) {
-    vector<string> sorted_vars(
+vector<vector<AtomKey>> compute_sccs(const AxiomDependencies &deps) {
+    vector<AtomKey> sorted_vars(
         deps.derived_variables.begin(), deps.derived_variables.end());
-    ranges::sort(sorted_vars);
-    unordered_map<string, int> idx;
+    ranges::sort(sorted_vars, [&deps](const AtomKey &a, const AtomKey &b) {
+        return atom_name_less(*deps.repr.at(a), *deps.repr.at(b));
+    });
+    KeyMap<int> idx;
     for (size_t i = 0; i < sorted_vars.size(); ++i)
         idx[sorted_vars[i]] = static_cast<int>(i);
     vector<vector<int>> adj(sorted_vars.size());
     for (size_t i = 0; i < sorted_vars.size(); ++i) {
-        set<string> combined;
-        auto add_combined = [&](const auto &m) {
+        // Neighbours are this variable's positive+negative dependencies, as
+        // ascending sorted_vars indices. A dependency of a necessary variable
+        // is itself necessary (compute_necessary_atoms closes over
+        // dependencies), so every referenced variable is in idx.
+        // Sorting+deduping the indices matches the old name-ordered
+        // set<AtomKey> (sorted_vars is name-sorted, so index order == name
+        // order) without hashing string keys.
+        vector<int> &nbrs = adj[i];
+        auto add_neighbors = [&](const auto &m) {
             auto it = m.find(sorted_vars[i]);
             if (it == m.end())
                 return;
             for (const auto &v : it->second)
-                combined.insert(v);
+                nbrs.push_back(idx.at(v));
         };
-        add_combined(deps.positive_dependencies);
-        add_combined(deps.negative_dependencies);
-        for (const auto &v : combined)
-            adj[i].push_back(idx[v]);
+        add_neighbors(deps.positive_dependencies);
+        add_neighbors(deps.negative_dependencies);
+        ranges::sort(nbrs);
+        nbrs.erase(ranges::begin(ranges::unique(nbrs)), nbrs.end());
     }
     auto idx_sccs = utils::get_sccs_adjacency_list(adj);
-    vector<vector<string>> result;
+    vector<vector<AtomKey>> result;
     for (const auto &scc : idx_sccs) {
-        vector<string> names;
+        vector<AtomKey> names;
         names.reserve(scc.size());
         for (int j : scc)
             names.push_back(sorted_vars[j]);
@@ -178,9 +202,9 @@ vector<vector<string>> compute_sccs(const AxiomDependencies &deps) {
 }
 
 struct AxiomCluster {
-    vector<string> variables;
+    vector<AtomKey> variables;
     // For each variable in cluster, the axioms producing it.
-    unordered_map<string, vector<shared_ptr<PropositionalAxiom>>> axioms;
+    KeyMap<vector<shared_ptr<PropositionalAxiom>>> axioms;
     set<int> positive_children;
     set<int> negative_children;
     int layer = 0;
@@ -256,20 +280,45 @@ vector<shared_ptr<PropositionalAxiom>> compute_simplified_axioms(
             out.push_back(move(axioms[i]));
     return out;
 }
+
+// Assign each axiom cluster a layer, traversing clusters in reverse
+// (topological tail first). "max" gives every cluster its own layer; the
+// default packs clusters into the fewest layers the dependencies allow (a
+// negated dependency forces the dependent one layer higher).
+void assign_axiom_layers(
+    vector<AxiomCluster> &clusters, const string &layer_strategy) {
+    if (layer_strategy == "max") {
+        int layer = 0;
+        for (auto it = clusters.rbegin(); it != clusters.rend(); ++it)
+            it->layer = layer++;
+    } else {
+        for (auto it = clusters.rbegin(); it != clusters.rend(); ++it) {
+            int layer = 0;
+            for (int child : it->positive_children)
+                layer = max(layer, clusters[child].layer);
+            for (int child : it->negative_children)
+                layer = max(layer, clusters[child].layer + 1);
+            it->layer = layer;
+        }
+    }
+}
 }
 
 AxiomLayering handle_axioms(
-    const vector<shared_ptr<PropositionalAction>> &operators,
+    const vector<PropositionalAction> &operators,
     const vector<shared_ptr<PropositionalAxiom>> &axioms_in,
-    const vector<ConditionPtr> &goals, const string &layer_strategy) {
+    const vector<ConditionPtr> &goals,
+    const vector<shared_ptr<const Atom>> &fact_by_id,
+    const string &layer_strategy) {
     AxiomDependencies deps(axioms_in);
-    auto necessary = compute_necessary_atoms(deps, goals, operators);
+    auto necessary =
+        compute_necessary_atoms(deps, goals, operators, fact_by_id);
     deps.remove_unnecessary_variables(necessary);
 
     auto sccs = compute_sccs(deps);
     vector<AxiomCluster> clusters;
     clusters.reserve(sccs.size());
-    unordered_map<string, int> var_to_cluster;
+    KeyMap<int> var_to_cluster;
     for (size_t i = 0; i < sccs.size(); ++i) {
         AxiomCluster c;
         c.variables = sccs[i];
@@ -283,7 +332,7 @@ AxiomLayering handle_axioms(
     for (const auto &ax : axioms_in) {
         if (!ax || !ax->effect)
             continue;
-        string key = atom_key(*ax->effect);
+        AtomKey key = atom_key(*ax->effect);
         auto it = var_to_cluster.find(key);
         if (it == var_to_cluster.end())
             continue;
@@ -299,8 +348,7 @@ AxiomLayering handle_axioms(
     }
     cout << "Translator axioms removed by simplifying: " << removed << endl;
     // Compute inter-cluster links.
-    auto add_links = [&](const unordered_map<string, unordered_set<string>> &m,
-                         bool negative) {
+    auto add_links = [&](const KeyMap<KeySet> &m, bool negative) {
         for (const auto &[from, deps_set] : m) {
             auto from_it = var_to_cluster.find(from);
             if (from_it == var_to_cluster.end())
@@ -327,27 +375,12 @@ AxiomLayering handle_axioms(
     add_links(deps.positive_dependencies, false);
     add_links(deps.negative_dependencies, true);
 
-    // Layer assignment, traversing clusters in reverse (topological tail
-    // first).
-    if (layer_strategy == "max") {
-        int layer = 0;
-        for (auto it = clusters.rbegin(); it != clusters.rend(); ++it)
-            it->layer = layer++;
-    } else {
-        for (auto it = clusters.rbegin(); it != clusters.rend(); ++it) {
-            int layer = 0;
-            for (int child : it->positive_children)
-                layer = max(layer, clusters[child].layer);
-            for (int child : it->negative_children)
-                layer = max(layer, clusters[child].layer + 1);
-            it->layer = layer;
-        }
-    }
+    assign_axiom_layers(clusters, layer_strategy);
 
     AxiomLayering out;
     for (auto &c : clusters) {
         for (auto &v : c.variables) {
-            out.axiom_layers[v] = c.layer;
+            out.axiom_layers.push_back({deps.repr.at(v), c.layer});
             for (auto &ax : c.axioms[v])
                 out.axioms.push_back(move(ax));
         }

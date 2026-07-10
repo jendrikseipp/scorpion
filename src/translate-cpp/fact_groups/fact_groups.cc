@@ -2,11 +2,11 @@
 
 #include "../translate_options.h"
 
+#include "../grounding/symbols.h"
 #include "../invariants/invariant_finder.h"
 
 #include <algorithm>
 #include <iostream>
-#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -22,57 +22,104 @@ int find_placeholder(const Atom &atom) {
     return -1;
 }
 
+/*
+  Integer key for a reachable atom (or a wildcard pattern): interned predicate
+  id + interned object-id args, with WILDCARD in the one placeholder position.
+  predicate_id is already cached on every Literal, and object names were
+  interned during grounding, so building a key is a handful of plain intern()
+  lookups.
+*/
+constexpr int WILDCARD = -1; // interned ids are >= 0
+
+GroundKey atom_key(const Literal &lit) {
+    GroundKey key;
+    key.predicate = lit.predicate_id;
+    key.args.reserve(lit.args.size());
+    for (const auto &a : lit.args)
+        key.args.push_back(grounding::symbols().intern(a));
+    return key;
+}
+
+/*
+  Reachability index for mutex-group expansion.
+
+  A group candidate is a lifted atom that is either fully concrete or has one
+  "?X" placeholder; expansion keeps every reachable ground atom that matches.
+  Rather than allocate a fresh ground Atom and value-hash strings per candidate
+  (the previous approach, and the fact-groups hot spot on object-heavy tasks
+  like sokoban), we index the reachable atoms on interned-int keys:
+
+    - `exact`: key -> stored atom, for concrete candidates (one probe each).
+    - `by_wildcard`: for each reachable atom and each argument position, the key
+      with that position blanked to WILDCARD -> the atoms sharing that pattern.
+      A placeholder candidate then does a single lookup that returns *all* its
+      matches at once, instead of looping over every object and probing each.
+*/
+struct ReachableIndex {
+    unordered_map<GroundKey, ConditionPtr, GroundKeyHash> exact;
+    unordered_map<GroundKey, vector<ConditionPtr>, GroundKeyHash> by_wildcard;
+};
+
+ReachableIndex build_reachable_index(const AtomSet &reachable_facts) {
+    ReachableIndex index;
+    index.exact.reserve(reachable_facts.size());
+    for (const auto &f : reachable_facts) {
+        if (!f || f->kind() != Condition::Kind::ATOM)
+            continue;
+        GroundKey key = atom_key(static_cast<const Literal &>(*f));
+        for (size_t pos = 0; pos < key.args.size(); ++pos) {
+            int obj = key.args[pos];
+            key.args[pos] = WILDCARD;
+            index.by_wildcard[key].push_back(f);
+            key.args[pos] = obj;
+        }
+        index.exact.emplace(move(key), f);
+    }
+    return index;
+}
+
 vector<ConditionPtr> expand_group(
-    const vector<ConditionPtr> &group, const Task &task,
-    const AtomSet &reachable_facts) {
+    const vector<ConditionPtr> &group, const ReachableIndex &reachable) {
     vector<ConditionPtr> result;
     for (const auto &fact : group) {
         if (!fact || fact->kind() != Condition::Kind::ATOM)
             continue;
         const auto &atom = static_cast<const Atom &>(*fact);
         int pos = find_placeholder(atom);
+        GroundKey key = atom_key(atom);
         if (pos < 0) {
-            if (reachable_facts.contains(fact))
-                result.push_back(fact);
+            auto it = reachable.exact.find(key);
+            if (it != reachable.exact.end())
+                result.push_back(it->second);
         } else {
-            for (const auto &obj : task.objects) {
-                auto new_args = atom.args;
-                new_args[pos] = obj.name;
-                auto candidate =
-                    make_shared<const Atom>(atom.predicate, move(new_args));
-                if (reachable_facts.contains(candidate))
-                    result.push_back(candidate);
-            }
+            // All reachable atoms matching the pattern in one lookup. The
+            // group's result is re-sorted by sort_groups, so their order here
+            // (rather than the object order the old code walked) is equivalent.
+            key.args[pos] = WILDCARD;
+            auto it = reachable.by_wildcard.find(key);
+            if (it != reachable.by_wildcard.end())
+                result.insert(
+                    result.end(), it->second.begin(), it->second.end());
         }
     }
     return result;
 }
 
 vector<vector<ConditionPtr>> instantiate_groups(
-    const vector<vector<ConditionPtr>> &groups, const Task &task,
+    const vector<vector<ConditionPtr>> &groups,
     const AtomSet &reachable_facts) {
+    ReachableIndex reachable = build_reachable_index(reachable_facts);
     vector<vector<ConditionPtr>> result;
     result.reserve(groups.size());
     for (const auto &g : groups)
-        result.push_back(expand_group(g, task, reachable_facts));
+        result.push_back(expand_group(g, reachable));
     return result;
 }
 
 string atom_to_string(const ConditionPtr &c) {
     if (!c)
         return "";
-    const auto &lit = static_cast<const Literal &>(*c);
-    ostringstream os;
-    if (lit.negated())
-        os << "Negated";
-    os << "Atom " << lit.predicate << "(";
-    for (size_t i = 0; i < lit.args.size(); ++i) {
-        if (i)
-            os << ", ";
-        os << lit.args[i];
-    }
-    os << ")";
-    return os.str();
+    return static_cast<const Literal &>(*c).str();
 }
 
 bool atom_less(const ConditionPtr &a, const ConditionPtr &b) {
@@ -80,7 +127,10 @@ bool atom_less(const ConditionPtr &a, const ConditionPtr &b) {
         return a.get() < b.get();
     const auto &la = static_cast<const Literal &>(*a);
     const auto &lb = static_cast<const Literal &>(*b);
-    if (la.predicate != lb.predicate)
+    // Same predicate iff same cached id: use the int compare for the common
+    // equal-predicate case, and only compare predicate *names* (for byte-
+    // identical name ordering) when the predicates actually differ.
+    if (la.predicate_id != lb.predicate_id)
         return la.predicate < lb.predicate;
     return la.args < lb.args;
 }
@@ -97,16 +147,27 @@ vector<vector<ConditionPtr>> sort_groups(vector<vector<ConditionPtr>> groups) {
     return groups;
 }
 
+// Dense id per reachable atom. The group/selection atoms are the very same
+// shared_ptr<Condition> instances stored in `atoms`, so we key
+// covered/uncovered state on an int id (via the atom's address) rather than
+// value-hashing the shared_ptr in hash containers that are otherwise
+// rebuilt/copied per call.
+using AtomIds = unordered_map<const Condition *, int>;
+
 vector<vector<ConditionPtr>> collect_all_mutex_groups(
-    const vector<vector<ConditionPtr>> &groups, const AtomSet &atoms) {
+    const vector<vector<ConditionPtr>> &groups, const AtomSet &atoms,
+    const AtomIds &id_of) {
     vector<vector<ConditionPtr>> result;
-    AtomSet uncovered = atoms;
+    vector<char> in_group(id_of.size(), 0);
     for (const auto &g : groups) {
         for (const auto &a : g)
-            uncovered.erase(a);
+            in_group[id_of.at(a.get())] = 1;
         result.push_back(g);
     }
-    vector<ConditionPtr> remaining(uncovered.begin(), uncovered.end());
+    vector<ConditionPtr> remaining;
+    for (const auto &a : atoms)
+        if (!in_group[id_of.at(a.get())])
+            remaining.push_back(a);
     ranges::sort(remaining, atom_less);
     for (const auto &a : remaining)
         result.push_back({a});
@@ -115,7 +176,7 @@ vector<vector<ConditionPtr>> collect_all_mutex_groups(
 
 vector<vector<ConditionPtr>> choose_groups(
     const vector<vector<ConditionPtr>> &groups_in, const AtomSet &atoms,
-    const AtomSet &negative_in_goal) {
+    const AtomSet &negative_in_goal, const AtomIds &id_of) {
     // Optionally remove negative-in-goal atoms.
     vector<vector<ConditionPtr>> groups;
     groups.reserve(groups_in.size());
@@ -143,13 +204,11 @@ vector<vector<ConditionPtr>> choose_groups(
       live sizes with an int-counter array plus an atom->containing-groups index
       (rather than a hash set per group) to keep this O(sum of group sizes).
     */
-    unordered_map<
-        ConditionPtr, vector<int>, ConditionPtrHash, ConditionPtrEqual>
-        atom_to_groups;
+    vector<vector<int>> atom_to_groups(id_of.size());
     if (use_partial)
         for (int i = 0; i < n; ++i)
             for (const auto &a : groups[i])
-                atom_to_groups[a].push_back(i);
+                atom_to_groups[id_of.at(a.get())].push_back(i);
 
     vector<int> remaining(n);
     int max_size = 0;
@@ -179,18 +238,19 @@ vector<vector<ConditionPtr>> choose_groups(
         return -1;
     };
 
-    AtomSet covered;
+    vector<char> covered(id_of.size(), 0);
     vector<vector<ConditionPtr>> result;
     for (int top = next_top(); top >= 0; top = next_top()) {
         vector<ConditionPtr> chosen;
         if (use_partial) {
             // The live members of `top` are its still-uncovered atoms.
             for (const auto &a : groups[top])
-                if (!covered.contains(a))
+                if (!covered[id_of.at(a.get())])
                     chosen.push_back(a);
             for (const auto &a : chosen) {
-                covered.insert(a);
-                for (int g : atom_to_groups[a])
+                const int id = id_of.at(a.get());
+                covered[id] = 1;
+                for (int g : atom_to_groups[id])
                     --remaining[g];
             }
         } else {
@@ -199,11 +259,14 @@ vector<vector<ConditionPtr>> choose_groups(
         result.push_back(move(chosen));
     }
 
-    AtomSet uncovered = atoms;
+    vector<char> in_result(id_of.size(), 0);
     for (const auto &g : result)
         for (const auto &a : g)
-            uncovered.erase(a);
-    vector<ConditionPtr> singles(uncovered.begin(), uncovered.end());
+            in_result[id_of.at(a.get())] = 1;
+    vector<ConditionPtr> singles;
+    for (const auto &a : atoms)
+        if (!in_result[id_of.at(a.get())])
+            singles.push_back(a);
     cout << singles.size() << " uncovered facts" << endl;
     ranges::sort(singles, atom_less);
     for (const auto &a : singles)
@@ -235,14 +298,21 @@ vector<vector<string>> build_translation_key(
 
 ComputedGroups compute_groups(
     const Task &task, const AtomSet &atoms,
-    const vector<vector<vector<string>>> *reachable_action_parameters,
+    const vector<vector<vector<int>>> *reachable_action_parameters,
     const AtomSet &negative_in_goal) {
     auto raw = invariants::get_groups(task, reachable_action_parameters);
-    auto instantiated = instantiate_groups(raw, task, atoms);
+    auto instantiated = instantiate_groups(raw, atoms);
     auto sorted = sort_groups(move(instantiated));
     ComputedGroups out;
-    out.mutex_groups = collect_all_mutex_groups(sorted, atoms);
-    auto chosen = choose_groups(sorted, atoms, negative_in_goal);
+    // Dense id per reachable atom (see AtomIds), assigned once and shared by
+    // both selection passes below.
+    AtomIds id_of;
+    id_of.reserve(atoms.size());
+    int next_id = 0;
+    for (const auto &a : atoms)
+        id_of.emplace(a.get(), next_id++);
+    out.mutex_groups = collect_all_mutex_groups(sorted, atoms, id_of);
+    auto chosen = choose_groups(sorted, atoms, negative_in_goal, id_of);
     out.groups = sort_groups(move(chosen));
     out.translation_key = build_translation_key(out.groups);
     return out;

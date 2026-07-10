@@ -3,55 +3,30 @@
 using namespace std;
 namespace translate::pddl {
 namespace {
-bool same_atom_and_args(const Literal &a, const Literal &b) {
-    return a.predicate == b.predicate && a.args == b.args;
-}
-
 bool contains_add_effect_for(
-    const vector<pair<vector<ConditionPtr>, ConditionPtr>> &add_effects,
-    const vector<ConditionPtr> &cond, const Literal &positive) {
-    for (const auto &[c, lit] : add_effects) {
-        if (c.size() != cond.size() || !lit)
-            continue;
-        if (lit->kind() != Condition::Kind::ATOM)
-            continue;
-        const auto &eff_lit = static_cast<const Literal &>(*lit);
-        if (!same_atom_and_args(eff_lit, positive))
-            continue;
-        ConditionPtrEqual eq;
-        bool conds_equal = true;
-        for (size_t i = 0; i < c.size(); ++i)
-            if (!eq(c[i], cond[i])) {
-                conds_equal = false;
-                break;
-            }
-        if (conds_equal)
+    const vector<GroundEffect> &add_effects, const vector<GroundLiteral> &cond,
+    FactId fact) {
+    for (const auto &[c, lit] : add_effects)
+        if (lit.fact == fact && c == cond)
             return true;
-    }
     return false;
 }
 }
 
 PropositionalAction::PropositionalAction(
-    string name_, vector<ConditionPtr> precondition_,
-    const vector<pair<vector<ConditionPtr>, ConditionPtr>> &effects, int cost_)
+    string name_, vector<GroundLiteral> precondition_,
+    const vector<GroundEffect> &effects, int cost_)
     : name(move(name_)), precondition(move(precondition_)), cost(cost_) {
-    for (const auto &[cond, lit] : effects) {
-        if (!lit)
-            continue;
-        const auto &literal = static_cast<const Literal &>(*lit);
-        if (!literal.negated())
+    for (const auto &[cond, lit] : effects)
+        if (!lit.negated)
             add_effects.emplace_back(cond, lit);
-    }
-    for (auto &[cond, lit] : effects) {
-        if (!lit)
+    // A negated effect deletes the fact: record it as the positive fact in
+    // del_effects (dropping duplicates already covered by an equal add effect).
+    for (const auto &[cond, lit] : effects) {
+        if (!lit.negated)
             continue;
-        const auto &literal = static_cast<const Literal &>(*lit);
-        if (!literal.negated())
-            continue;
-        auto positive = make_shared<Atom>(literal.predicate, literal.args);
-        if (!contains_add_effect_for(add_effects, cond, *positive))
-            del_effects.emplace_back(cond, positive);
+        if (!contains_add_effect_for(add_effects, cond, lit.fact))
+            del_effects.emplace_back(cond, GroundLiteral{lit.fact, false});
     }
 }
 
@@ -111,24 +86,26 @@ void Action::dump(ostream &os) const {
 }
 
 void PropositionalAction::dump(ostream &os) const {
+    auto lit = [&os](const GroundLiteral &l) {
+        os << (l.negated ? "!" : "") << "fact" << l.fact;
+    };
     os << name << "\n";
-    for (const auto &f : precondition) {
+    for (const auto &l : precondition) {
         os << "PRE: ";
-        if (f)
-            f->dump(os, 0);
+        lit(l);
+        os << "\n";
     }
-    auto dump_effects = [&os](const auto &effects, const char *label) {
+    auto dump_effects = [&](const auto &effects, const char *label) {
         for (const auto &[cond, fact] : effects) {
             os << label << ": ";
             for (size_t i = 0; i < cond.size(); ++i) {
                 if (i)
                     os << ", ";
-                if (cond[i])
-                    cond[i]->dump(os, 0);
+                lit(cond[i]);
             }
             os << " -> ";
-            if (fact)
-                fact->dump(os, 0);
+            lit(fact);
+            os << "\n";
         }
     };
     dump_effects(add_effects, "ADD");

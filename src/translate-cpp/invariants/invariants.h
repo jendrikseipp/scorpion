@@ -13,6 +13,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace translate::invariants {
@@ -115,7 +116,14 @@ public:
 
 private:
     void compute_predicate_map();
-    std::unordered_map<std::string, const InvariantPart *> predicate_to_part_;
+    // The part (if any) whose predicate matches, or nullptr. An invariant has a
+    // handful of parts, so predicate_to_part_ is a flat vector scanned linearly
+    // rather than a hash map: it allocates one buffer instead of a node per
+    // part (the map was rebuilt on every candidate copy) and avoids hashing
+    // predicate strings on the many balance-check probes.
+    const InvariantPart *part_or_null(const std::string &predicate) const;
+    std::vector<std::pair<std::string, const InvariantPart *>>
+        predicate_to_part_;
 
     EqualityConjunction get_cover_equivalence_conjunction(
         const pddl::Literal &literal) const;
@@ -128,11 +136,48 @@ private:
         const pddl::Action &action, const pddl::Effect &add_effect,
         const std::vector<const pddl::Effect *> &del_effects,
         const std::function<void(Invariant)> &enqueue_func) const;
+    /*
+      A literal "produced" by the action (from its precondition or an effect
+      condition), as a pointer plus an explicit sign. Keeping the sign outside
+      the literal lets the negation of an existing literal be represented
+      without materializing a new Atom: the balance check only reads
+      (predicate, args, sign), and it runs per (candidate x action x effect).
+    */
+    struct ProducedLit {
+        const pddl::Literal *lit;
+        bool negated;
+    };
+    /*
+      Produced literals grouped by predicate. A flat vector rather than a hash
+      map: an action produces only a handful of predicates, so linear lookup
+      beats a per-predicate node allocation plus predicate-string hashing on
+      every (candidate x add-effect) rebuild.
+    */
+    class ProducedMap {
+    public:
+        // Insert-or-access the group for `predicate` (used while building).
+        std::vector<ProducedLit> &operator[](const std::string &predicate) {
+            for (auto &e : entries_)
+                if (e.first == predicate)
+                    return e.second;
+            entries_.emplace_back(predicate, std::vector<ProducedLit>{});
+            return entries_.back().second;
+        }
+        // The group for `predicate`, or nullptr if none was produced.
+        const std::vector<ProducedLit> *find_group(
+            const std::string &predicate) const {
+            for (const auto &e : entries_)
+                if (e.first == predicate)
+                    return &e.second;
+            return nullptr;
+        }
+
+    private:
+        std::vector<std::pair<std::string, std::vector<ProducedLit>>> entries_;
+    };
     bool balances(
         const pddl::Effect &del_effect, const pddl::Effect &add_effect,
-        const std::unordered_map<std::string, std::vector<pddl::ConditionPtr>>
-            &produced,
-        const EqualityConjunction &add_cover,
+        const ProducedMap &produced, const EqualityConjunction &add_cover,
         const ConstraintSystem &param_system) const;
     void refine_candidate(
         const pddl::Effect &add_effect, const pddl::Action &action,

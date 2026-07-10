@@ -9,6 +9,7 @@
 #include <functional>
 #include <ostream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -22,9 +23,9 @@ namespace translate::grounding {
 
   Constants and variables are interned into the process-wide symbol
   table and stored as a 4-byte id (>= 0). Positions are stored inline
-  as negative values, p encoded as -(p+1). This replaces the former
-  std::variant<std::string,int> (~40 bytes + a heap buffer per atom),
-  which dominated peak memory on hard-to-ground instances (~10M atoms).
+  as negative values, p encoded as -(p+1). Keeping the whole argument in
+  4 bytes (rather than a string or variant) is what keeps peak memory in
+  check on hard-to-ground instances (~10M atoms).
 
   Equality and hashing use the raw id directly (equal names always
   intern to the same id). Ordering that must stay byte-compatible with
@@ -39,6 +40,15 @@ struct Arg {
     Arg(const char *s) : v(symbols().intern(std::string(s))) {
     }
     explicit Arg(int position) : v(-(position + 1)) {
+    }
+
+    // Build an Arg directly from an already-interned symbol id (>= 0), without
+    // re-interning a name. (The int constructor above means "position", so this
+    // needs to be a named factory.)
+    static Arg from_symbol(int id) {
+        Arg a;
+        a.v = id;
+        return a;
     }
 
     bool is_symbol() const noexcept {
@@ -70,21 +80,6 @@ using ArgList = small_vector::SmallVector<Arg, 4>;
 
 inline std::string arg_to_string(const Arg &a) {
     return a.is_symbol() ? a.name() : std::to_string(a.position());
-}
-inline bool is_variable(const Arg &a) {
-    if (!a.is_symbol())
-        return false;
-    const std::string &s = a.name();
-    return !s.empty() && s.front() == '?';
-}
-inline bool is_constant(const Arg &a) {
-    if (!a.is_symbol())
-        return false;
-    const std::string &s = a.name();
-    return s.empty() || s.front() != '?';
-}
-inline bool is_int(const Arg &a) {
-    return a.is_position();
 }
 
 struct Atom {
@@ -125,6 +120,42 @@ enum class RuleKind {
     PROJECT
 };
 
+/*
+  The role of a Datalog head predicate, so the instantiation pass can map a
+  model atom back to its source without parsing the predicate's (mangled)
+  name. Populated at program-generation time in build.cc; every other
+  predicate is implicitly OTHER.
+*/
+enum class PredicateRole {
+    OTHER,
+    ACTION, // @a$<i>: applicability head of task.actions[i]
+    AXIOM, // @x$<i>: applicability head of task.axioms[i]
+    GOAL_REACHABLE // @goal-reachable
+};
+
+class PredicateRoles {
+public:
+    void set(int predicate_id, PredicateRole role, int index = -1) {
+        info_[predicate_id] = {role, index};
+    }
+    PredicateRole role_of(int predicate_id) const {
+        auto it = info_.find(predicate_id);
+        return it == info_.end() ? PredicateRole::OTHER : it->second.role;
+    }
+    // Source index (into task.actions / task.axioms) for ACTION/AXIOM roles.
+    int index_of(int predicate_id) const {
+        auto it = info_.find(predicate_id);
+        return it == info_.end() ? -1 : it->second.index;
+    }
+
+private:
+    struct Info {
+        PredicateRole role;
+        int index;
+    };
+    std::unordered_map<int, Info> info_;
+};
+
 struct Rule {
     std::vector<Atom> conditions;
     Atom effect;
@@ -142,7 +173,12 @@ class Program {
 public:
     std::vector<Atom> facts;
     std::vector<Rule> rules;
-    std::unordered_set<std::string> objects;
+    // Interned ids of every object appearing in a fact argument, used only to
+    // synthesize @object facts for otherwise-unbound effect variables.
+    std::unordered_set<int> objects;
+    // Role of each head predicate (by interned id), for the instantiation
+    // pass. See PredicateRoles.
+    PredicateRoles predicate_roles;
 
     void add_fact(Atom atom);
     void add_rule(Rule rule);

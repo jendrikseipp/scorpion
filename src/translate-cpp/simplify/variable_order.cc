@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
-#include <map>
 #include <numeric>
 #include <queue>
 #include <set>
@@ -22,24 +21,66 @@ namespace translate::simplify {
 using namespace sas;
 
 namespace {
+// Weight added to each causal-graph edge pointing at a goal variable, so goal
+// variables accumulate a large incoming weight and MaxDAG orders them last. The
+// boost is far larger than any real edge weight, so `w % GOAL_EDGE_WEIGHT`
+// recovers the unboosted weight. Mirrors src/translate/variable_order.py.
+constexpr int GOAL_EDGE_WEIGHT = 100000;
+
 class CausalGraph {
 public:
-    vector<map<int, int>> weighted_graph; // src -> tgt -> weight
-    vector<set<int>> predecessor_graph;
+    vector<vector<pair<int, int>>>
+        weighted_graph; // src -> sorted (tgt, weight)
+    // tgt -> its predecessors (deduplicated). Derived once from weighted_graph
+    // after weighting rather than maintained per edge: weighted_graph[src]
+    // already holds each src->tgt edge exactly once, so one pass yields the
+    // dedup'd predecessor lists without a set<int> insert (plus a tree-node
+    // malloc) on every one of the millions of operator-effect-source edges.
+    vector<vector<int>> predecessor_graph;
     int num_variables;
     unordered_map<int, int> goal_map;
 
     explicit CausalGraph(const SASTask &task) {
         num_variables = static_cast<int>(task.variables.ranges.size());
         weighted_graph.assign(num_variables, {});
-        predecessor_graph.assign(num_variables, {});
         for (const auto &[v, val] : task.goal.pairs)
             goal_map[v] = val;
-        weight_from_ops(task.operators);
-        weight_from_axioms(task.axioms);
+        // Collect every src->tgt edge occurrence flat (one push per occurrence,
+        // no per-edge tree node), then sort+reduce each source's targets into
+        // (tgt, weight) pairs. This replaces `++weighted_graph[src][tgt]` on a
+        // std::map over millions of operator-effect edges with a contiguous
+        // sort; weighted_graph stays sorted by tgt, as get_ordering requires.
+        vector<vector<int>> raw_targets(num_variables);
+        weight_from_ops(task.operators, raw_targets);
+        weight_from_axioms(task.axioms, raw_targets);
+        for (int src = 0; src < num_variables; ++src)
+            weighted_graph[src] = reduce_to_weighted(move(raw_targets[src]));
+        build_predecessor_graph();
     }
 
-    void weight_from_ops(const vector<SASOperator> &operators) {
+    // Sort target occurrences and run-length-reduce them to (tgt, weight).
+    static vector<pair<int, int>> reduce_to_weighted(vector<int> targets) {
+        ranges::sort(targets);
+        vector<pair<int, int>> weighted;
+        for (int tgt : targets) {
+            if (!weighted.empty() && weighted.back().first == tgt)
+                ++weighted.back().second;
+            else
+                weighted.emplace_back(tgt, 1);
+        }
+        return weighted;
+    }
+
+    void build_predecessor_graph() {
+        predecessor_graph.assign(num_variables, {});
+        for (int src = 0; src < num_variables; ++src)
+            for (const auto &[tgt, _] : weighted_graph[src])
+                predecessor_graph[tgt].push_back(src);
+    }
+
+    void weight_from_ops(
+        const vector<SASOperator> &operators,
+        vector<vector<int>> &raw_targets) {
         for (const auto &op : operators) {
             vector<int> source_vars;
             source_vars.reserve(op.prevail.size() + op.pre_post.size());
@@ -49,27 +90,29 @@ public:
                 if (pre != -1)
                     source_vars.push_back(v);
             for (const auto &[tgt, pre, post, cond] : op.pre_post) {
-                auto extra = source_vars;
+                // Sources for this effect are the operator's source_vars plus
+                // this effect's own condition variables. Iterate both in place
+                // rather than copy source_vars and append per effect (the
+                // condition is empty on STRIPS, so the copy bought nothing).
+                auto add_edge = [&](int src) {
+                    if (src != tgt)
+                        raw_targets[src].push_back(tgt);
+                };
+                for (int src : source_vars)
+                    add_edge(src);
                 for (const auto &[cv, cval] : cond)
-                    extra.push_back(cv);
-                for (int src : extra) {
-                    if (src != tgt) {
-                        ++weighted_graph[src][tgt];
-                        predecessor_graph[tgt].insert(src);
-                    }
-                }
+                    add_edge(cv);
             }
         }
     }
 
-    void weight_from_axioms(const vector<SASAxiom> &axioms) {
+    void weight_from_axioms(
+        const vector<SASAxiom> &axioms, vector<vector<int>> &raw_targets) {
         for (const auto &ax : axioms) {
             int tgt = ax.effect.first;
             for (const auto &[src, _] : ax.condition) {
-                if (src != tgt) {
-                    ++weighted_graph[src][tgt];
-                    predecessor_graph[tgt].insert(src);
-                }
+                if (src != tgt)
+                    raw_targets[src].push_back(tgt);
             }
         }
     }
@@ -102,14 +145,14 @@ public:
             unordered_map<int, vector<pair<int, int>>> subgraph;
             for (int var : scc) {
                 auto &edges = subgraph[var];
-                // weighted_graph[var] is a map<int,int> -> already
-                // sorted by target id, matching Python's
+                // weighted_graph[var] is already sorted by target id
+                // (see reduce_to_weighted), matching Python's
                 // sorted(items()).
                 for (const auto &[tgt, cost] : weighted_graph[var]) {
                     if (!scc_set.contains(tgt))
                         continue;
                     if (goal_map.contains(tgt))
-                        edges.emplace_back(tgt, 100000 + cost);
+                        edges.emplace_back(tgt, GOAL_EDGE_WEIGHT + cost);
                     edges.emplace_back(tgt, cost);
                 }
             }
@@ -175,9 +218,15 @@ public:
             auto &entries = weight_to_nodes[min_key];
             int min_elem = -1;
             bool elem_found = false;
-            while (!entries.empty() &&
-                   (!elem_found || done.contains(min_elem) ||
-                    min_key > incoming_weights[min_elem])) {
+            // A popped node is not a valid pick if none was found yet, it is
+            // already placed, or its live incoming weight has since dropped
+            // below the bucket key it was filed under (it was re-filed
+            // cheaper).
+            auto invalid_pick = [&] {
+                return !elem_found || done.contains(min_elem) ||
+                       min_key > incoming_weights[min_elem];
+            };
+            while (!entries.empty() && invalid_pick()) {
                 min_elem = entries.front();
                 entries.pop_front();
                 elem_found = true;
@@ -186,10 +235,8 @@ public:
                 weight_to_nodes.erase(min_key);
                 weights.pop();
             }
-            if (!elem_found || done.contains(min_elem) ||
-                min_key > incoming_weights[min_elem]) {
+            if (invalid_pick())
                 continue;
-            }
 
             done.insert(min_elem);
             result.push_back(min_elem);
@@ -199,7 +246,7 @@ public:
             for (const auto &[target, w] : sit->second) {
                 if (done.contains(target))
                     continue;
-                int decrement = w % 100000;
+                int decrement = w % GOAL_EDGE_WEIGHT;
                 if (decrement == 0)
                     continue;
                 int old_iw = incoming_weights[target];
@@ -293,7 +340,7 @@ public:
         // Operators.
         vector<SASOperator> new_ops;
         for (auto &op : task.operators) {
-            vector<tuple<int, int, int, vector<VarVal>>> new_pre_post;
+            vector<PrePost> new_pre_post;
             for (auto &[v, pre, post, cond] : op.pre_post) {
                 auto it = new_var.find(v);
                 if (it == new_var.end())

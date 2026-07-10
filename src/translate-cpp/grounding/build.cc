@@ -101,34 +101,32 @@ string axiom_head_predicate(int axiom_index) {
     return "@x$" + to_string(axiom_index);
 }
 
-Atom action_head(const Action &action, int action_index) {
+// Auxiliary head atom for an action/axiom: its parameters, plus any variables
+// bound by an outermost existential in its condition, under `head_predicate`.
+Atom make_head(
+    const string &head_predicate, const vector<TypedObject> &parameters,
+    const ConditionPtr &condition) {
     ArgList variables;
-    variables.reserve(action.parameters.size());
-    for (const auto &p : action.parameters)
+    variables.reserve(parameters.size());
+    for (const auto &p : parameters)
         variables.emplace_back(p.name);
-    if (action.precondition &&
-        action.precondition->kind() == Condition::Kind::EXISTENTIAL) {
-        const auto &q =
-            static_cast<const ExistentialCondition &>(*action.precondition);
+    if (condition && condition->kind() == Condition::Kind::EXISTENTIAL) {
+        const auto &q = static_cast<const ExistentialCondition &>(*condition);
         for (const auto &p : q.parameters)
             variables.emplace_back(p.name);
     }
-    return Atom(action_head_predicate(action_index), move(variables));
+    return Atom(head_predicate, move(variables));
+}
+
+Atom action_head(const Action &action, int action_index) {
+    return make_head(
+        action_head_predicate(action_index), action.parameters,
+        action.precondition);
 }
 
 Atom axiom_head(const Axiom &axiom, int axiom_index) {
-    ArgList variables;
-    variables.reserve(axiom.parameters.size());
-    for (const auto &p : axiom.parameters)
-        variables.emplace_back(p.name);
-    if (axiom.condition &&
-        axiom.condition->kind() == Condition::Kind::EXISTENTIAL) {
-        const auto &q =
-            static_cast<const ExistentialCondition &>(*axiom.condition);
-        for (const auto &p : q.parameters)
-            variables.emplace_back(p.name);
-    }
-    return Atom(axiom_head_predicate(axiom_index), move(variables));
+    return make_head(
+        axiom_head_predicate(axiom_index), axiom.parameters, axiom.condition);
 }
 
 void add_typed_object(
@@ -177,6 +175,8 @@ void build_exploration_rules(Program &prog, const Task &task) {
     for (size_t i = 0; i < task.actions.size(); ++i) {
         const Action &action = task.actions[i];
         Atom head = action_head(action, static_cast<int>(i));
+        prog.predicate_roles.set(
+            head.predicate, PredicateRole::ACTION, static_cast<int>(i));
         const PrimitiveNumericExpression *pne = nullptr;
         if (action.cost && action.cost->expression &&
             action.cost->expression->kind() ==
@@ -208,6 +208,8 @@ void build_exploration_rules(Program &prog, const Task &task) {
     for (size_t i = 0; i < task.axioms.size(); ++i) {
         const Axiom &axiom = task.axioms[i];
         Atom app_head = axiom_head(axiom, static_cast<int>(i));
+        prog.predicate_roles.set(
+            app_head.predicate, PredicateRole::AXIOM, static_cast<int>(i));
         auto app_body =
             condition_to_rule_body(axiom.parameters, axiom.condition, nullptr);
         prog.add_rule(Rule{app_body, app_head});
@@ -221,6 +223,7 @@ void build_exploration_rules(Program &prog, const Task &task) {
     // Goal rule.
     if (task.goal) {
         Atom head("@goal-reachable", {});
+        prog.predicate_roles.set(head.predicate, PredicateRole::GOAL_REACHABLE);
         auto body = condition_to_rule_body({}, task.goal, nullptr);
         prog.add_rule(Rule{body, head});
     }
