@@ -147,8 +147,34 @@ private:
         const pddl::Literal *lit;
         bool negated;
     };
-    using ProducedMap =
-        std::unordered_map<std::string, std::vector<ProducedLit>>;
+    /*
+      Produced literals grouped by predicate. A flat vector rather than a hash
+      map: an action produces only a handful of predicates, so linear lookup
+      beats a per-predicate node allocation plus predicate-string hashing on
+      every (candidate x add-effect) rebuild.
+    */
+    class ProducedMap {
+    public:
+        // Insert-or-access the group for `predicate` (used while building).
+        std::vector<ProducedLit> &operator[](const std::string &predicate) {
+            for (auto &e : entries_)
+                if (e.first == predicate)
+                    return e.second;
+            entries_.emplace_back(predicate, std::vector<ProducedLit>{});
+            return entries_.back().second;
+        }
+        // The group for `predicate`, or nullptr if none was produced.
+        const std::vector<ProducedLit> *find_group(
+            const std::string &predicate) const {
+            for (const auto &e : entries_)
+                if (e.first == predicate)
+                    return &e.second;
+            return nullptr;
+        }
+
+    private:
+        std::vector<std::pair<std::string, std::vector<ProducedLit>>> entries_;
+    };
     bool balances(
         const pddl::Effect &del_effect, const pddl::Effect &add_effect,
         const ProducedMap &produced, const EqualityConjunction &add_cover,

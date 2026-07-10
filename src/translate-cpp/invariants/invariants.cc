@@ -460,10 +460,10 @@ bool Invariant::balances(
     all_lits.push_back({&del_lit, !del_lit.negated()});
     for (const auto &[lit, lit_negated] : all_lits) {
         vector<EqualityConjunction> possibilities;
-        auto it = produced.find(lit->predicate);
-        if (it == produced.end())
+        const auto *group = produced.find_group(lit->predicate);
+        if (!group)
             return false;
-        for (const auto &m : it->second) {
+        for (const auto &m : *group) {
             if (m.negated != lit_negated)
                 continue;
             vector<pair<Term, Term>> eqs;
