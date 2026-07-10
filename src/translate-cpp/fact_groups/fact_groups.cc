@@ -144,16 +144,26 @@ vector<vector<ConditionPtr>> sort_groups(vector<vector<ConditionPtr>> groups) {
     return groups;
 }
 
+// Dense id per reachable atom. The group/selection atoms are the very same
+// shared_ptr<Condition> instances stored in `atoms`, so we key covered/uncovered
+// state on an int id (via the atom's address) rather than value-hashing the
+// shared_ptr in hash containers that are otherwise rebuilt/copied per call.
+using AtomIds = unordered_map<const Condition *, int>;
+
 vector<vector<ConditionPtr>> collect_all_mutex_groups(
-    const vector<vector<ConditionPtr>> &groups, const AtomSet &atoms) {
+    const vector<vector<ConditionPtr>> &groups, const AtomSet &atoms,
+    const AtomIds &id_of) {
     vector<vector<ConditionPtr>> result;
-    AtomSet uncovered = atoms;
+    vector<char> in_group(id_of.size(), 0);
     for (const auto &g : groups) {
         for (const auto &a : g)
-            uncovered.erase(a);
+            in_group[id_of.at(a.get())] = 1;
         result.push_back(g);
     }
-    vector<ConditionPtr> remaining(uncovered.begin(), uncovered.end());
+    vector<ConditionPtr> remaining;
+    for (const auto &a : atoms)
+        if (!in_group[id_of.at(a.get())])
+            remaining.push_back(a);
     ranges::sort(remaining, atom_less);
     for (const auto &a : remaining)
         result.push_back({a});
@@ -162,7 +172,7 @@ vector<vector<ConditionPtr>> collect_all_mutex_groups(
 
 vector<vector<ConditionPtr>> choose_groups(
     const vector<vector<ConditionPtr>> &groups_in, const AtomSet &atoms,
-    const AtomSet &negative_in_goal) {
+    const AtomSet &negative_in_goal, const AtomIds &id_of) {
     // Optionally remove negative-in-goal atoms.
     vector<vector<ConditionPtr>> groups;
     groups.reserve(groups_in.size());
@@ -190,13 +200,11 @@ vector<vector<ConditionPtr>> choose_groups(
       live sizes with an int-counter array plus an atom->containing-groups index
       (rather than a hash set per group) to keep this O(sum of group sizes).
     */
-    unordered_map<
-        ConditionPtr, vector<int>, ConditionPtrHash, ConditionPtrEqual>
-        atom_to_groups;
+    vector<vector<int>> atom_to_groups(id_of.size());
     if (use_partial)
         for (int i = 0; i < n; ++i)
             for (const auto &a : groups[i])
-                atom_to_groups[a].push_back(i);
+                atom_to_groups[id_of.at(a.get())].push_back(i);
 
     vector<int> remaining(n);
     int max_size = 0;
@@ -226,18 +234,19 @@ vector<vector<ConditionPtr>> choose_groups(
         return -1;
     };
 
-    AtomSet covered;
+    vector<char> covered(id_of.size(), 0);
     vector<vector<ConditionPtr>> result;
     for (int top = next_top(); top >= 0; top = next_top()) {
         vector<ConditionPtr> chosen;
         if (use_partial) {
             // The live members of `top` are its still-uncovered atoms.
             for (const auto &a : groups[top])
-                if (!covered.contains(a))
+                if (!covered[id_of.at(a.get())])
                     chosen.push_back(a);
             for (const auto &a : chosen) {
-                covered.insert(a);
-                for (int g : atom_to_groups[a])
+                const int id = id_of.at(a.get());
+                covered[id] = 1;
+                for (int g : atom_to_groups[id])
                     --remaining[g];
             }
         } else {
@@ -246,11 +255,14 @@ vector<vector<ConditionPtr>> choose_groups(
         result.push_back(move(chosen));
     }
 
-    AtomSet uncovered = atoms;
+    vector<char> in_result(id_of.size(), 0);
     for (const auto &g : result)
         for (const auto &a : g)
-            uncovered.erase(a);
-    vector<ConditionPtr> singles(uncovered.begin(), uncovered.end());
+            in_result[id_of.at(a.get())] = 1;
+    vector<ConditionPtr> singles;
+    for (const auto &a : atoms)
+        if (!in_result[id_of.at(a.get())])
+            singles.push_back(a);
     cout << singles.size() << " uncovered facts" << endl;
     ranges::sort(singles, atom_less);
     for (const auto &a : singles)
@@ -288,8 +300,15 @@ ComputedGroups compute_groups(
     auto instantiated = instantiate_groups(raw, atoms);
     auto sorted = sort_groups(move(instantiated));
     ComputedGroups out;
-    out.mutex_groups = collect_all_mutex_groups(sorted, atoms);
-    auto chosen = choose_groups(sorted, atoms, negative_in_goal);
+    // Dense id per reachable atom (see AtomIds), assigned once and shared by
+    // both selection passes below.
+    AtomIds id_of;
+    id_of.reserve(atoms.size());
+    int next_id = 0;
+    for (const auto &a : atoms)
+        id_of.emplace(a.get(), next_id++);
+    out.mutex_groups = collect_all_mutex_groups(sorted, atoms, id_of);
+    auto chosen = choose_groups(sorted, atoms, negative_in_goal, id_of);
     out.groups = sort_groups(move(chosen));
     out.translation_key = build_translation_key(out.groups);
     return out;
