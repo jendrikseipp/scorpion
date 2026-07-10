@@ -127,7 +127,10 @@ bool atom_less(const ConditionPtr &a, const ConditionPtr &b) {
         return a.get() < b.get();
     const auto &la = static_cast<const Literal &>(*a);
     const auto &lb = static_cast<const Literal &>(*b);
-    if (la.predicate != lb.predicate)
+    // Same predicate iff same cached id: use the int compare for the common
+    // equal-predicate case, and only compare predicate *names* (for byte-
+    // identical name ordering) when the predicates actually differ.
+    if (la.predicate_id != lb.predicate_id)
         return la.predicate < lb.predicate;
     return la.args < lb.args;
 }
