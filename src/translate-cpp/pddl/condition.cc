@@ -242,14 +242,12 @@ ConditionPtr UniversalCondition::negate() const {
 // -- instantiate() -----------------------------------------------------------
 
 bool Condition::instantiate(
-    const VarMapping &, const FactMap &,
-    vector<GroundLiteral> &) const {
+    const VarMapping &, const FactMap &, vector<GroundLiteral> &) const {
     throw runtime_error("Cannot instantiate condition: not normalized");
 }
 
 bool Falsity::instantiate(
-    const VarMapping &, const FactMap &,
-    vector<GroundLiteral> &) const {
+    const VarMapping &, const FactMap &, vector<GroundLiteral> &) const {
     return false;
 }
 

@@ -196,7 +196,8 @@ public:
             bool elem_found = false;
             // A popped node is not a valid pick if none was found yet, it is
             // already placed, or its live incoming weight has since dropped
-            // below the bucket key it was filed under (it was re-filed cheaper).
+            // below the bucket key it was filed under (it was re-filed
+            // cheaper).
             auto invalid_pick = [&] {
                 return !elem_found || done.contains(min_elem) ||
                        min_key > incoming_weights[min_elem];

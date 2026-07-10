@@ -135,15 +135,14 @@ KeySet compute_necessary_atoms(
     while (!stack.empty()) {
         AtomKey atom = move(stack.back());
         stack.pop_back();
-        auto add =
-            [&](const KeyMap<KeySet> &deps_map) {
-                auto it = deps_map.find(atom);
-                if (it == deps_map.end())
-                    return;
-                for (const auto &body : it->second)
-                    if (necessary.insert(body).second)
-                        stack.push_back(body);
-            };
+        auto add = [&](const KeyMap<KeySet> &deps_map) {
+            auto it = deps_map.find(atom);
+            if (it == deps_map.end())
+                return;
+            for (const auto &body : it->second)
+                if (necessary.insert(body).second)
+                    stack.push_back(body);
+        };
         add(deps.positive_dependencies);
         add(deps.negative_dependencies);
     }
@@ -331,8 +330,7 @@ AxiomLayering handle_axioms(
     }
     cout << "Translator axioms removed by simplifying: " << removed << endl;
     // Compute inter-cluster links.
-    auto add_links = [&](const KeyMap<KeySet> &m,
-                         bool negative) {
+    auto add_links = [&](const KeyMap<KeySet> &m, bool negative) {
         for (const auto &[from, deps_set] : m) {
             auto from_it = var_to_cluster.find(from);
             if (from_it == var_to_cluster.end())

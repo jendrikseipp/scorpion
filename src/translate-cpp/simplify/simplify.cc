@@ -25,15 +25,15 @@ struct DTG {
     int size;
     // Specific transitions pre -> post (from operators with a precondition on
     // this variable). Flat vectors, not set<int>: the BFS skips already-seen
-    // targets, so duplicate arcs are harmless and we avoid a tree node (plus its
-    // malloc) per arc -- the hot spot of this phase on variables with large
+    // targets, so duplicate arcs are harmless and we avoid a tree node (plus
+    // its malloc) per arc -- the hot spot of this phase on variables with large
     // domains.
     vector<vector<int>> arcs;
     // A "pre == -1" effect can set the variable to `post` from *any* value, so
     // `post` is reachable from init unconditionally. Recording that as one flag
-    // avoids materializing an arc from every one of the (up to `size`) values to
-    // `post` -- the quadratic blowup that dominated operator-heavy tasks with
-    // wide variable domains (e.g. ferry).
+    // avoids materializing an arc from every one of the (up to `size`) values
+    // to `post` -- the quadratic blowup that dominated operator-heavy tasks
+    // with wide variable domains (e.g. ferry).
     vector<char> unconditional;
     explicit DTG(int init_val, int sz)
         : init(init_val), size(sz), arcs(sz), unconditional(sz, 0) {
@@ -47,9 +47,9 @@ struct DTG {
             unconditional[v] = 1;
     }
     // Dense membership vector (indexed by value, 1 if reachable from init):
-    // values are 0..size-1, so the BFS marks and tests in O(1), and the consumer
-    // only needs membership. Seeds are init plus every unconditionally-reachable
-    // value.
+    // values are 0..size-1, so the BFS marks and tests in O(1), and the
+    // consumer only needs membership. Seeds are init plus every
+    // unconditionally-reachable value.
     vector<char> reachable() const {
         vector<char> seen(size, 0);
         vector<int> stack;

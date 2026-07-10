@@ -31,10 +31,10 @@
 using namespace std;
 namespace translate::pipeline {
 using namespace pddl;
+using sas::PrePost;
 using sas::SASAxiom;
 using sas::SASGoal;
 using sas::SASInit;
-using sas::PrePost;
 using sas::SASMutexGroup;
 using sas::SASOperator;
 using sas::SASTask;
@@ -436,8 +436,8 @@ optional<vector<VarMap>> negate_and_translate_condition(
 
 optional<SASOperator> build_sas_operator(
     const string &name, VarMap condition,
-    FlatMap<FlatMap<vector<VarMap>>> &effects_by_variable,
-    int cost, const vector<int> &ranges, const ImpliedFacts &implied_facts) {
+    FlatMap<FlatMap<vector<VarMap>>> &effects_by_variable, int cost,
+    const vector<int> &ranges, const ImpliedFacts &implied_facts) {
     VarMap prevail_and_pre = condition;
     // Facts implied by the operator's (prevail + pre) condition. Computed from
     // the full condition before the effects loop erases entries from it.
@@ -805,8 +805,8 @@ void sort_operators_canonically(vector<SASOperator> &operators) {
     vector<SASOperator> sorted;
     sorted.reserve(operators.size());
     for (int i : order)
-        sorted.push_back(std::move(operators[i]));
-    operators = std::move(sorted);
+        sorted.push_back(move(operators[i]));
+    operators = move(sorted);
 }
 }
 
@@ -838,7 +838,7 @@ SASTask pddl_to_sas(Task &task) {
     // tasks) so the memory-heavy STRIPS->SAS phases below don't hold them --
     // on logistics/blocksworld-large the peak occurs during translation, not
     // grounding, so this directly lowers peak RSS.
-    model = std::vector<grounding::Atom>{};
+    model = vector<grounding::Atom>{};
     prog = grounding::Program{};
 
     if (!inst.relaxed_reachable) {

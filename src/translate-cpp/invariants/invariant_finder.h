@@ -17,9 +17,8 @@ namespace translate::invariants {
 class BalanceChecker {
 public:
     BalanceChecker(
-        const pddl::Task &task,
-        const std::vector<std::vector<std::vector<int>>>
-            *reachable_action_parameters);
+        const pddl::Task &task, const std::vector<std::vector<std::vector<int>>>
+                                    *reachable_action_parameters);
 
     // Actions that add `predicate`, as indices for action() / heavy_action().
     // Indices (rather than pointers) let callers deduplicate threats with the
@@ -53,9 +52,8 @@ public:
 private:
     // Constructor phases (each fills the members below).
     void build_patched_actions(
-        const pddl::Task &task,
-        const std::vector<std::vector<std::vector<int>>>
-            *reachable_action_parameters);
+        const pddl::Task &task, const std::vector<std::vector<std::vector<int>>>
+                                    *reachable_action_parameters);
     void build_heavy_actions();
     void build_predicate_map();
 
@@ -75,17 +73,15 @@ private:
   invariants.
 */
 std::vector<Invariant> find_invariants(
-    const pddl::Task &task,
-    const std::vector<std::vector<std::vector<int>>>
-        *reachable_action_parameters);
+    const pddl::Task &task, const std::vector<std::vector<std::vector<int>>>
+                                *reachable_action_parameters);
 
 /*
   Convert confirmed invariants into mutex groups (lists of ground atoms).
 */
 std::vector<std::vector<pddl::ConditionPtr>> get_groups(
-    const pddl::Task &task,
-    const std::vector<std::vector<std::vector<int>>>
-        *reachable_action_parameters);
+    const pddl::Task &task, const std::vector<std::vector<std::vector<int>>>
+                                *reachable_action_parameters);
 }
 
 #endif

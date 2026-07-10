@@ -1111,8 +1111,7 @@ void parse_init_atom(
                 "Expecting " + string(SYNTAX_LITERAL_NEGATED) +
                 " for negated atoms.");
         if (!flist[1].is_list() || flist[1].list().empty())
-            ctx.error(
-                "Invalid negated fact.", nullptr, SYNTAX_LITERAL_NEGATED);
+            ctx.error("Invalid negated fact.", nullptr, SYNTAX_LITERAL_NEGATED);
         atom_list = flist[1].list();
     }
     const string &pname = atom_list[0].atom();
@@ -1134,8 +1133,7 @@ void parse_init_atom(
     for (const auto &t : terms)
         arg_names.push_back(t.atom());
     Atom atom(pname, move(arg_names));
-    check_atom_consistency(
-        ctx, atom, initial_proposition_values, atom_value);
+    check_atom_consistency(ctx, atom, initial_proposition_values, atom_value);
     auto atom_ptr = make_shared<const Atom>(move(atom));
     initial_proposition_values[atom_ptr] = atom_value;
 }

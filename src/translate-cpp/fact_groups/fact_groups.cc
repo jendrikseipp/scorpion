@@ -25,8 +25,9 @@ int find_placeholder(const Atom &atom) {
 /*
   Integer key for a reachable atom (or a wildcard pattern): interned predicate
   id + interned object-id args, with WILDCARD in the one placeholder position.
-  predicate_id is already cached on every Literal, and object names were interned
-  during grounding, so building a key is a handful of plain intern() lookups.
+  predicate_id is already cached on every Literal, and object names were
+  interned during grounding, so building a key is a handful of plain intern()
+  lookups.
 */
 constexpr int WILDCARD = -1; // interned ids are >= 0
 

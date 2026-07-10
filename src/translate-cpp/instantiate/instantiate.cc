@@ -8,7 +8,6 @@
 #include "../pddl/effect.h"
 #include "../pddl/f_expression.h"
 #include "../pddl/task.h"
-
 #include "../utils/hash.h"
 
 #include <algorithm>
@@ -52,8 +51,8 @@ unordered_set<int> get_fluent_predicates(const Task &task) {
 // FactId->Atom (rebuilding the few axiom/goal literals as atoms). Each distinct
 // fluent fact gets a dense FactId in model order.
 struct FluentFacts {
-    AtomSet set;                                    // for fact_groups
-    FactMap ids;                                    // GroundKey -> FactId
+    AtomSet set; // for fact_groups
+    FactMap ids; // GroundKey -> FactId
     std::vector<std::shared_ptr<const Atom>> fact_by_id; // FactId -> Atom
 };
 
@@ -158,8 +157,7 @@ unordered_map<string, vector<int>> get_objects_by_type(const Task &task) {
 // Recursively iterate over the cartesian product of objects-by-type for
 // each parameter, calling `fn(var_mapping)` for each assignment.
 void for_each_assignment(
-    const vector<TypedObject> &parameters,
-    VarMapping &var_mapping,
+    const vector<TypedObject> &parameters, VarMapping &var_mapping,
     const unordered_map<string, vector<int>> &objects_by_type,
     const function<void()> &fn, size_t depth = 0) {
     if (depth == parameters.size()) {
@@ -178,19 +176,17 @@ void for_each_assignment(
 }
 
 void instantiate_effect(
-    const Effect &eff, VarMapping &var_mapping,
-    const FactMap &fluent_facts,
+    const Effect &eff, VarMapping &var_mapping, const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
     vector<GroundEffect> &result) {
     auto inst_once = [&]() {
         vector<GroundLiteral> condition;
         if (eff.condition &&
-            !eff.condition->instantiate(
-                var_mapping, fluent_facts, condition))
+            !eff.condition->instantiate(var_mapping, fluent_facts, condition))
             return;
         vector<GroundLiteral> lit_out;
-        if (eff.literal && !eff.literal->instantiate(
-                               var_mapping, fluent_facts, lit_out))
+        if (eff.literal &&
+            !eff.literal->instantiate(var_mapping, fluent_facts, lit_out))
             return;
         if (!lit_out.empty()) {
             result.emplace_back(move(condition), move(lit_out[0]));
@@ -243,8 +239,7 @@ long long resolve_action_cost(
 
 optional<PropositionalAction> instantiate_action(
     const Action &action, const vector<string> &args,
-    const InitAssignments &init_assignments,
-    const FactMap &fluent_facts,
+    const InitAssignments &init_assignments, const FactMap &fluent_facts,
     const unordered_map<string, vector<int>> &objects_by_type,
     bool use_metric) {
     if (args.size() != action.parameters.size())
@@ -276,9 +271,8 @@ optional<PropositionalAction> instantiate_action(
     name.push_back(')');
 
     vector<GroundLiteral> precondition;
-    if (action.precondition &&
-        !action.precondition->instantiate(
-            var_mapping, fluent_facts, precondition))
+    if (action.precondition && !action.precondition->instantiate(
+                                   var_mapping, fluent_facts, precondition))
         return nullopt;
 
     vector<GroundEffect> effects;
@@ -288,13 +282,11 @@ optional<PropositionalAction> instantiate_action(
             // only reads var_mapping, so share the action's mapping
             // directly instead of copying the whole map per effect.
             instantiate_effect(
-                eff, var_mapping, fluent_facts, objects_by_type,
-                effects);
+                eff, var_mapping, fluent_facts, objects_by_type, effects);
         } else {
             VarMapping local_mapping = var_mapping;
             instantiate_effect(
-                eff, local_mapping, fluent_facts, objects_by_type,
-                effects);
+                eff, local_mapping, fluent_facts, objects_by_type, effects);
         }
     }
     if (!effects.empty() || get_options().keep_no_ops) {
@@ -307,8 +299,7 @@ optional<PropositionalAction> instantiate_action(
 }
 
 shared_ptr<PropositionalAxiom> instantiate_axiom(
-    const Axiom &axiom, const vector<string> &args,
-    const FactMap &fluent_facts,
+    const Axiom &axiom, const vector<string> &args, const FactMap &fluent_facts,
     const vector<shared_ptr<const Atom>> &fact_by_id) {
     if (args.size() != axiom.parameters.size())
         return nullptr;
@@ -330,9 +321,8 @@ shared_ptr<PropositionalAxiom> instantiate_axiom(
     name.push_back(')');
 
     vector<GroundLiteral> condition_lits;
-    if (axiom.condition &&
-        !axiom.condition->instantiate(
-            var_mapping, fluent_facts, condition_lits))
+    if (axiom.condition && !axiom.condition->instantiate(
+                               var_mapping, fluent_facts, condition_lits))
         return nullptr;
     // Axioms are few: keep the downstream (axiom_rules) atom-based.
     vector<ConditionPtr> condition;
@@ -409,8 +399,8 @@ Result instantiate(
                 arg_ids.push_back(atom.args[i].v);
             }
             auto inst = instantiate_action(
-                action, args, init_assignments, fluent_facts,
-                objects_by_type, task.use_min_cost_metric);
+                action, args, init_assignments, fluent_facts, objects_by_type,
+                task.use_min_cost_metric);
             out.reachable_action_parameters[action_idx].push_back(
                 move(arg_ids));
             if (inst)
@@ -427,8 +417,7 @@ Result instantiate(
             for (size_t i = 0; i < axiom.parameters.size(); ++i)
                 args.push_back(grounding::arg_to_string(atom.args[i]));
             auto inst =
-                instantiate_axiom(
-                axiom, args, fluent_facts, fact_by_id);
+                instantiate_axiom(axiom, args, fluent_facts, fact_by_id);
             if (inst)
                 out.instantiated_axioms.push_back(move(inst));
             break;

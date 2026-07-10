@@ -5,7 +5,6 @@
 #include "../pddl/condition.h"
 #include "../pddl/effect.h"
 #include "../pddl/task.h"
-
 #include "../utils/hash.h"
 
 #include <algorithm>
@@ -372,10 +371,10 @@ namespace {
 // `parameters` and replace it with the quantifier body. In a normalized
 // condition the existential is top-level, so this flattens it into the owning
 // axiom/action/effect.
-void lift_existential(vector<TypedObject> &parameters, ConditionPtr &condition) {
+void lift_existential(
+    vector<TypedObject> &parameters, ConditionPtr &condition) {
     if (condition && condition->kind() == Condition::Kind::EXISTENTIAL) {
-        const auto &q =
-            static_cast<const ExistentialCondition &>(*condition);
+        const auto &q = static_cast<const ExistentialCondition &>(*condition);
         for (const auto &p : q.parameters)
             parameters.push_back(p);
         condition = q.body[0];

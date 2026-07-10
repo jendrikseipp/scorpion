@@ -5,7 +5,6 @@
 #include "../pddl/action.h"
 #include "../pddl/condition.h"
 #include "../pddl/effect.h"
-
 #include "../utils/hash.h"
 
 #include <algorithm>

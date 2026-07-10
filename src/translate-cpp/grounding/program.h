@@ -128,8 +128,8 @@ enum class RuleKind {
 */
 enum class PredicateRole {
     OTHER,
-    ACTION,        // @a$<i>: applicability head of task.actions[i]
-    AXIOM,         // @x$<i>: applicability head of task.axioms[i]
+    ACTION, // @a$<i>: applicability head of task.actions[i]
+    AXIOM, // @x$<i>: applicability head of task.axioms[i]
     GOAL_REACHABLE // @goal-reachable
 };
 

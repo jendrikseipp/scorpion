@@ -4,8 +4,8 @@ using namespace std;
 namespace translate::pddl {
 namespace {
 bool contains_add_effect_for(
-    const vector<GroundEffect> &add_effects,
-    const vector<GroundLiteral> &cond, FactId fact) {
+    const vector<GroundEffect> &add_effects, const vector<GroundLiteral> &cond,
+    FactId fact) {
     for (const auto &[c, lit] : add_effects)
         if (lit.fact == fact && c == cond)
             return true;
@@ -15,8 +15,7 @@ bool contains_add_effect_for(
 
 PropositionalAction::PropositionalAction(
     string name_, vector<GroundLiteral> precondition_,
-    const vector<GroundEffect> &effects,
-    int cost_)
+    const vector<GroundEffect> &effects, int cost_)
     : name(move(name_)), precondition(move(precondition_)), cost(cost_) {
     for (const auto &[cond, lit] : effects)
         if (!lit.negated)

@@ -65,7 +65,8 @@ Action patch_action_inequalities(
             parts.push_back(make_shared<NegatedAtom>(
                 "=", vector<string>{
                          act.parameters[p1].name, act.parameters[p2].name}));
-        patched.precondition = make_shared<Conjunction>(move(parts))->simplified();
+        patched.precondition =
+            make_shared<Conjunction>(move(parts))->simplified();
     }
     return patched;
 }
@@ -139,8 +140,7 @@ void BalanceChecker::build_predicate_map() {
     action_stamp_.assign(patched_actions_.size(), 0);
 }
 
-const vector<int> &BalanceChecker::get_threats(
-    const string &predicate) const {
+const vector<int> &BalanceChecker::get_threats(const string &predicate) const {
     auto it = predicates_to_add_actions_.find(predicate);
     if (it == predicates_to_add_actions_.end())
         return empty_;
