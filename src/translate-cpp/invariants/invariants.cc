@@ -143,9 +143,13 @@ Invariant::Invariant(const Invariant &other) : parts(other.parts) {
     compute_predicate_map();
 }
 
-Invariant::Invariant(Invariant &&other) noexcept : parts(move(other.parts)) {
-    compute_predicate_map();
-    other.predicate_to_part_.clear();
+Invariant::Invariant(Invariant &&other) noexcept
+    : parts(move(other.parts)),
+      predicate_to_part_(move(other.predicate_to_part_)) {
+    // A vector move transfers the buffer without relocating elements, so the
+    // pointers in predicate_to_part_ (which point into `parts`) stay valid --
+    // move the map rather than rebuild it. `other` is left with an empty parts
+    // vector and an empty map, consistently moved-from.
 }
 
 Invariant &Invariant::operator=(const Invariant &other) {
@@ -159,8 +163,8 @@ Invariant &Invariant::operator=(const Invariant &other) {
 Invariant &Invariant::operator=(Invariant &&other) noexcept {
     if (this != &other) {
         parts = move(other.parts);
-        compute_predicate_map();
-        other.predicate_to_part_.clear();
+        // See the move constructor: the pointers survive the buffer transfer.
+        predicate_to_part_ = move(other.predicate_to_part_);
     }
     return *this;
 }
