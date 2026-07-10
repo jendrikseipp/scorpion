@@ -170,11 +170,12 @@ vector<vector<AtomKey>> compute_sccs(const AxiomDependencies &deps) {
     vector<vector<int>> adj(sorted_vars.size());
     for (size_t i = 0; i < sorted_vars.size(); ++i) {
         // Neighbours are this variable's positive+negative dependencies, as
-        // ascending sorted_vars indices. A dependency of a necessary variable is
-        // itself necessary (compute_necessary_atoms closes over dependencies),
-        // so every referenced variable is in idx. Sorting+deduping the indices
-        // matches the old name-ordered set<AtomKey> (sorted_vars is name-sorted,
-        // so index order == name order) without hashing string keys.
+        // ascending sorted_vars indices. A dependency of a necessary variable
+        // is itself necessary (compute_necessary_atoms closes over
+        // dependencies), so every referenced variable is in idx.
+        // Sorting+deduping the indices matches the old name-ordered
+        // set<AtomKey> (sorted_vars is name-sorted, so index order == name
+        // order) without hashing string keys.
         vector<int> &nbrs = adj[i];
         auto add_neighbors = [&](const auto &m) {
             auto it = m.find(sorted_vars[i]);

@@ -148,9 +148,10 @@ vector<vector<ConditionPtr>> sort_groups(vector<vector<ConditionPtr>> groups) {
 }
 
 // Dense id per reachable atom. The group/selection atoms are the very same
-// shared_ptr<Condition> instances stored in `atoms`, so we key covered/uncovered
-// state on an int id (via the atom's address) rather than value-hashing the
-// shared_ptr in hash containers that are otherwise rebuilt/copied per call.
+// shared_ptr<Condition> instances stored in `atoms`, so we key
+// covered/uncovered state on an int id (via the atom's address) rather than
+// value-hashing the shared_ptr in hash containers that are otherwise
+// rebuilt/copied per call.
 using AtomIds = unordered_map<const Condition *, int>;
 
 vector<vector<ConditionPtr>> collect_all_mutex_groups(

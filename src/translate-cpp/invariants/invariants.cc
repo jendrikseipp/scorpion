@@ -178,7 +178,8 @@ void Invariant::compute_predicate_map() {
 
 const InvariantPart *Invariant::part_or_null(const string &predicate) const {
     // Last match wins, matching the previous map's insert-assign semantics
-    // (parts are unique by predicate in practice, so this returns the one part).
+    // (parts are unique by predicate in practice, so this returns the one
+    // part).
     const InvariantPart *found = nullptr;
     for (const auto &[pred, part] : predicate_to_part_)
         if (pred == predicate)

@@ -29,7 +29,8 @@ constexpr int GOAL_EDGE_WEIGHT = 100000;
 
 class CausalGraph {
 public:
-    vector<vector<pair<int, int>>> weighted_graph; // src -> sorted (tgt, weight)
+    vector<vector<pair<int, int>>>
+        weighted_graph; // src -> sorted (tgt, weight)
     // tgt -> its predecessors (deduplicated). Derived once from weighted_graph
     // after weighting rather than maintained per edge: weighted_graph[src]
     // already holds each src->tgt edge exactly once, so one pass yields the
@@ -78,7 +79,8 @@ public:
     }
 
     void weight_from_ops(
-        const vector<SASOperator> &operators, vector<vector<int>> &raw_targets) {
+        const vector<SASOperator> &operators,
+        vector<vector<int>> &raw_targets) {
         for (const auto &op : operators) {
             vector<int> source_vars;
             source_vars.reserve(op.prevail.size() + op.pre_post.size());
