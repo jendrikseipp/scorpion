@@ -1,14 +1,13 @@
 #include "axiom_rules.h"
 
+#include "../grounding/symbols.h"
 #include "../pddl/action.h"
 #include "../pddl/axiom.h"
 #include "../pddl/condition.h"
-#include "../utils/hash.h"
 #include "../utils/sccs.h"
 
 #include <algorithm>
 #include <iostream>
-#include <map>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -24,27 +23,37 @@ using namespace pddl;
 namespace {
 /*
   Sign-independent identity of a (positive or negated) literal, used to key the
-  derived-variable dependency graph: its predicate name and argument names.
-  A pair<predicate, args> compares element-wise, exactly like Python's atom
-  tuple, so the derived variables sort into the same order the translator has
-  always emitted -- with no separator-byte convention to reason about.
+  derived-variable dependency graph. The predicate id is cached on every Literal
+  and object names were interned during grounding, so this is the same interned
+  GroundKey the rest of the translator uses -- membership and dependency lookups
+  become int hash/compare instead of hashing and memcmp-ing predicate/argument
+  strings (the dominant cost of axiom processing on derived-predicate-heavy
+  tasks). The only place that needs the *name* order is the derived-variable
+  sort in compute_sccs, which sorts via the representative Atom (see there).
 */
-using AtomKey = pair<string, vector<string>>;
-struct AtomKeyHash {
-    size_t operator()(const AtomKey &k) const noexcept {
-        size_t h = hash<string>{}(k.first);
-        for (const auto &a : k.second)
-            utils::hash_combine(h, hash<string>{}(a));
-        return h;
-    }
-};
+using AtomKey = GroundKey;
 // Hashed set/map over AtomKeys, the workhorse containers of this file.
-using KeySet = unordered_set<AtomKey, AtomKeyHash>;
+using KeySet = unordered_set<AtomKey, GroundKeyHash>;
 template<typename V>
-using KeyMap = unordered_map<AtomKey, V, AtomKeyHash>;
+using KeyMap = unordered_map<AtomKey, V, GroundKeyHash>;
 
 AtomKey atom_key(const Literal &lit) {
-    return {lit.predicate, lit.args};
+    AtomKey key;
+    key.predicate = lit.predicate_id;
+    key.args.reserve(lit.args.size());
+    for (const auto &a : lit.args)
+        key.args.push_back(grounding::symbols().intern(a));
+    return key;
+}
+
+// Order two derived variables by their representative atom's (predicate, args)
+// names -- the lexicographic order the translator has always emitted derived
+// variables in. GroundKey's own ordering is by interned id, which is not name
+// order, so the byte-critical sort in compute_sccs routes through this instead.
+bool atom_name_less(const Atom &a, const Atom &b) {
+    if (a.predicate != b.predicate)
+        return a.predicate < b.predicate;
+    return a.args < b.args;
 }
 
 struct AxiomDependencies {
@@ -152,24 +161,32 @@ KeySet compute_necessary_atoms(
 vector<vector<AtomKey>> compute_sccs(const AxiomDependencies &deps) {
     vector<AtomKey> sorted_vars(
         deps.derived_variables.begin(), deps.derived_variables.end());
-    ranges::sort(sorted_vars);
+    ranges::sort(sorted_vars, [&deps](const AtomKey &a, const AtomKey &b) {
+        return atom_name_less(*deps.repr.at(a), *deps.repr.at(b));
+    });
     KeyMap<int> idx;
     for (size_t i = 0; i < sorted_vars.size(); ++i)
         idx[sorted_vars[i]] = static_cast<int>(i);
     vector<vector<int>> adj(sorted_vars.size());
     for (size_t i = 0; i < sorted_vars.size(); ++i) {
-        set<AtomKey> combined;
-        auto add_combined = [&](const auto &m) {
+        // Neighbours are this variable's positive+negative dependencies, as
+        // ascending sorted_vars indices. A dependency of a necessary variable is
+        // itself necessary (compute_necessary_atoms closes over dependencies),
+        // so every referenced variable is in idx. Sorting+deduping the indices
+        // matches the old name-ordered set<AtomKey> (sorted_vars is name-sorted,
+        // so index order == name order) without hashing string keys.
+        vector<int> &nbrs = adj[i];
+        auto add_neighbors = [&](const auto &m) {
             auto it = m.find(sorted_vars[i]);
             if (it == m.end())
                 return;
             for (const auto &v : it->second)
-                combined.insert(v);
+                nbrs.push_back(idx.at(v));
         };
-        add_combined(deps.positive_dependencies);
-        add_combined(deps.negative_dependencies);
-        for (const auto &v : combined)
-            adj[i].push_back(idx[v]);
+        add_neighbors(deps.positive_dependencies);
+        add_neighbors(deps.negative_dependencies);
+        ranges::sort(nbrs);
+        nbrs.erase(ranges::begin(ranges::unique(nbrs)), nbrs.end());
     }
     auto idx_sccs = utils::get_sccs_adjacency_list(adj);
     vector<vector<AtomKey>> result;
