@@ -699,7 +699,6 @@ SASTask trivial_task(bool solvable) {
     t.metric = true;
     return t;
 }
-}
 
 // Positive-atom shells of the goal's negated literals; fact-group selection
 // drops these so a negated goal fact is not put in a mutex group with the
@@ -808,6 +807,7 @@ void sort_operators_canonically(vector<SASOperator> &operators) {
     for (int i : order)
         sorted.push_back(std::move(operators[i]));
     operators = std::move(sorted);
+}
 }
 
 SASTask pddl_to_sas(Task &task) {
