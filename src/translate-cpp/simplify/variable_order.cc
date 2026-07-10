@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
-#include <map>
 #include <numeric>
 #include <queue>
 #include <set>
@@ -30,7 +29,7 @@ constexpr int GOAL_EDGE_WEIGHT = 100000;
 
 class CausalGraph {
 public:
-    vector<map<int, int>> weighted_graph; // src -> tgt -> weight
+    vector<vector<pair<int, int>>> weighted_graph; // src -> sorted (tgt, weight)
     // tgt -> its predecessors (deduplicated). Derived once from weighted_graph
     // after weighting rather than maintained per edge: weighted_graph[src]
     // already holds each src->tgt edge exactly once, so one pass yields the
@@ -45,9 +44,30 @@ public:
         weighted_graph.assign(num_variables, {});
         for (const auto &[v, val] : task.goal.pairs)
             goal_map[v] = val;
-        weight_from_ops(task.operators);
-        weight_from_axioms(task.axioms);
+        // Collect every src->tgt edge occurrence flat (one push per occurrence,
+        // no per-edge tree node), then sort+reduce each source's targets into
+        // (tgt, weight) pairs. This replaces `++weighted_graph[src][tgt]` on a
+        // std::map over millions of operator-effect edges with a contiguous
+        // sort; weighted_graph stays sorted by tgt, as get_ordering requires.
+        vector<vector<int>> raw_targets(num_variables);
+        weight_from_ops(task.operators, raw_targets);
+        weight_from_axioms(task.axioms, raw_targets);
+        for (int src = 0; src < num_variables; ++src)
+            weighted_graph[src] = reduce_to_weighted(move(raw_targets[src]));
         build_predecessor_graph();
+    }
+
+    // Sort target occurrences and run-length-reduce them to (tgt, weight).
+    static vector<pair<int, int>> reduce_to_weighted(vector<int> targets) {
+        ranges::sort(targets);
+        vector<pair<int, int>> weighted;
+        for (int tgt : targets) {
+            if (!weighted.empty() && weighted.back().first == tgt)
+                ++weighted.back().second;
+            else
+                weighted.emplace_back(tgt, 1);
+        }
+        return weighted;
     }
 
     void build_predecessor_graph() {
@@ -57,7 +77,8 @@ public:
                 predecessor_graph[tgt].push_back(src);
     }
 
-    void weight_from_ops(const vector<SASOperator> &operators) {
+    void weight_from_ops(
+        const vector<SASOperator> &operators, vector<vector<int>> &raw_targets) {
         for (const auto &op : operators) {
             vector<int> source_vars;
             source_vars.reserve(op.prevail.size() + op.pre_post.size());
@@ -73,7 +94,7 @@ public:
                 // condition is empty on STRIPS, so the copy bought nothing).
                 auto add_edge = [&](int src) {
                     if (src != tgt)
-                        ++weighted_graph[src][tgt];
+                        raw_targets[src].push_back(tgt);
                 };
                 for (int src : source_vars)
                     add_edge(src);
@@ -83,12 +104,13 @@ public:
         }
     }
 
-    void weight_from_axioms(const vector<SASAxiom> &axioms) {
+    void weight_from_axioms(
+        const vector<SASAxiom> &axioms, vector<vector<int>> &raw_targets) {
         for (const auto &ax : axioms) {
             int tgt = ax.effect.first;
             for (const auto &[src, _] : ax.condition) {
                 if (src != tgt)
-                    ++weighted_graph[src][tgt];
+                    raw_targets[src].push_back(tgt);
             }
         }
     }
@@ -121,8 +143,8 @@ public:
             unordered_map<int, vector<pair<int, int>>> subgraph;
             for (int var : scc) {
                 auto &edges = subgraph[var];
-                // weighted_graph[var] is a map<int,int> -> already
-                // sorted by target id, matching Python's
+                // weighted_graph[var] is already sorted by target id
+                // (see reduce_to_weighted), matching Python's
                 // sorted(items()).
                 for (const auto &[tgt, cost] : weighted_graph[var]) {
                     if (!scc_set.contains(tgt))
