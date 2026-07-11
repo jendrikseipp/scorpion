@@ -13,6 +13,7 @@
 #include "../utils/logging.h"
 #include "../utils/rng_options.h"
 
+#include <bit>
 #include <cassert>
 #include <numeric>
 
@@ -148,6 +149,72 @@ void reduce_costs(
         }
         assert(remaining >= 0);
     }
+}
+
+void reduce_costs_unguarded(
+    vector<int> &remaining_costs, const vector<int> &saturated_costs) {
+    assert(remaining_costs.size() == saturated_costs.size());
+    for (size_t i = 0; i < remaining_costs.size(); ++i) {
+        int &remaining = remaining_costs[i];
+        int saturated = saturated_costs[i];
+        if (remaining == INF) {
+            // Left addition: x - y = x for all values y if x is infinite.
+        } else if (saturated == -INF) {
+            remaining = INF;
+        } else {
+            assert(saturated != INF);
+            remaining -= saturated;
+        }
+    }
+}
+
+vector<int> compute_scf(
+    const Abstraction &abstraction, const vector<int> &goal_distances,
+    bool use_general_costs) {
+    vector<int> saturated_costs =
+        abstraction.compute_saturated_costs(goal_distances);
+    if (!use_general_costs) {
+        for (int &cost : saturated_costs) {
+            cost = max(cost, 0);
+        }
+    }
+    return saturated_costs;
+}
+
+PackedInts compress_costs(const vector<int> &costs) {
+    int max_finite_cost = 0;
+    for (int cost : costs) {
+        assert(cost >= 0);
+        max_finite_cost = max((cost != INF) * cost, max_finite_cost);
+    }
+    /* Increasing all finite costs by 1 and mapping INF to 0 yields a compact
+       packing without a special case for INF. */
+    unsigned int range = max_finite_cost + 1;
+    int bits_per_cost = bit_width(range);
+    assert(bits_per_cost >= 1);
+
+    PackedInts packed_data;
+    packed_data.reserve((bits_per_cost * costs.size() + 7) / 8);
+    uint64_t buffer = 0;
+    int bits_in_buffer = 0;
+    for (int cost : costs) {
+        cost = (cost == INF) ? 0 : cost + 1;
+
+        // Shift the number into the buffer.
+        buffer |= static_cast<uint64_t>(cost) << bits_in_buffer;
+        bits_in_buffer += bits_per_cost;
+
+        // Extract 8-bit chunks into packed_data.
+        while (bits_in_buffer >= 8) {
+            packed_data.push_back(static_cast<uint8_t>(buffer));
+            buffer >>= 8;
+            bits_in_buffer -= 8;
+        }
+    }
+    if (bits_in_buffer > 0) {
+        packed_data.push_back(static_cast<uint8_t>(buffer));
+    }
+    return packed_data;
 }
 
 bool use_explicit_transitions(

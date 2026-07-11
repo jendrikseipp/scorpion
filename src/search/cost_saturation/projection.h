@@ -96,6 +96,9 @@ class Projection : public Abstraction {
 
     std::vector<bool> looping_operators;
 
+    // Lazily computed by operator_is_scp_active().
+    mutable std::vector<bool> scp_active_operators;
+
     std::vector<RankedOperator> ranked_operators;
     std::unique_ptr<pdbs::SlimMatchTree> match_tree_backward;
 
@@ -188,6 +191,8 @@ class Projection : public Abstraction {
     bool is_consistent(
         int state_index, const std::vector<FactPair> &abstract_facts) const;
 
+    void compute_scp_active_operators() const;
+
 public:
     Projection(
         const TaskProxy &task_proxy, const std::shared_ptr<TaskInfo> &task_info,
@@ -200,6 +205,9 @@ public:
         const std::vector<int> &h_values) const override;
     virtual int get_num_operators() const override;
     virtual bool operator_is_active(int op_id) const override;
+    virtual bool operator_is_scp_active(int op_id) const override;
+    virtual std::vector<bool> get_operators_with_non_increasing_remaining_cost()
+    const override;
     virtual bool operator_induces_self_loop(int op_id) const override;
     virtual void for_each_transition(
         const TransitionCallback &callback) const override;

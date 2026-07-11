@@ -14,3 +14,7 @@ __pycache__/
 /experiments/*/data/
 /misc/.tox/
 /misc/autodoc/downward-xmlrpc.secret
+
+# Autoresearch working directory
+.autoresearch/
+autoresearch.jsonl

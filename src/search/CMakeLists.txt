@@ -173,6 +173,7 @@ create_fast_downward_library(
         utils/markup
         utils/math
         utils/memory
+        utils/murmurhash3
         utils/rng
         utils/rng_options
         utils/strings
@@ -234,6 +235,14 @@ create_fast_downward_library(
     HELP "Type-based open list"
     SOURCES
         open_lists/type_based_open_list
+)
+
+create_fast_downward_library(
+    NAME connected_components
+    HELP "Connected components via disjoint sets"
+    SOURCES
+        algorithms/connected_components
+    DEPENDENCY_ONLY
 )
 
 create_fast_downward_library(
@@ -933,6 +942,9 @@ create_fast_downward_library(
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
         cost_saturation/saturated_cost_partitioning_online_heuristic
+        cost_saturation/structured_scp_order_generator
+        cost_saturation/structured_scp_order_generator_full
+        cost_saturation/structured_scp_order_heuristic
         cost_saturation/types
         cost_saturation/uniform_cost_partitioning_heuristic
         cost_saturation/unsolvability_heuristic
@@ -940,6 +952,7 @@ create_fast_downward_library(
         cost_saturation/zero_one_cost_partitioning_heuristic
     DEPENDS
         cegar
+        connected_components
         lp_solver
         pdbs
         partial_state_tree

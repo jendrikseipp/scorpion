@@ -12,6 +12,8 @@
 #include "../utils/math.h"
 
 #include <cassert>
+#include <deque>
+#include <map>
 #include <unordered_map>
 
 using namespace std;
@@ -589,6 +591,131 @@ int Projection::get_num_states() const {
 
 bool Projection::operator_is_active(int op_id) const {
     return task_info->operator_is_active(pattern, op_id);
+}
+
+bool Projection::operator_is_scp_active(int op_id) const {
+    if (scp_active_operators.empty()) {
+        compute_scp_active_operators();
+    }
+    return scp_active_operators[op_id];
+}
+
+void Projection::compute_scp_active_operators() const {
+    scp_active_operators = vector<bool>(looping_operators.size(), false);
+    vector<bool> is_goal_state(num_states, false);
+    for (int goal_state : goal_states) {
+        is_goal_state[goal_state] = true;
+    }
+    vector<int> applicable_operators;
+    for (int state_id = 0; state_id < num_states; ++state_id) {
+        applicable_operators.clear();
+        match_tree_backward->get_applicable_operator_ids(
+            state_id, applicable_operators);
+        for (int ranked_op_id : applicable_operators) {
+            const RankedOperator &op = ranked_operators[ranked_op_id];
+            int predecessor = state_id - op.hash_effect;
+            if (predecessor == state_id) {
+                // Self-loop.
+                continue;
+            }
+            if (is_goal_state[state_id] && is_goal_state[predecessor]) {
+                // Transition between two goal states.
+                continue;
+            }
+            for (int op_id : label_to_operators.get_slice(op.label)) {
+                scp_active_operators[op_id] = true;
+            }
+        }
+    }
+}
+
+/* Compute the operators whose saturated cost is guaranteed to be
+   non-negative, so subtracting the saturated costs never increases the
+   remaining costs. Currently, there are three reasons why an operator o is
+   non-increasing:
+   1. o induces a self loop
+        (then sat(o) = max{..., h(s)-h(s), ...} = max{..., 0, ...} >= 0)
+   2. o leads to a goal state at least once
+        (then sat(o) = max{..., h(s)-0, ...} = max{..., h(s), ...} >= 0)
+   3. o is guaranteed to be on a shortest path to the goal
+        (then sat(o) = max{..., (h(s')+cost(o)) - h(s'), ...} >= cost(o) >= 0)
+*/
+vector<bool> Projection::get_operators_with_non_increasing_remaining_cost()
+const {
+    vector<bool> result(looping_operators.size(), false);
+
+    // "1. o induces a self loop"
+    for (size_t op_id = 0; op_id < looping_operators.size(); ++op_id) {
+        if (operator_induces_self_loop(op_id)) {
+            result[op_id] = true;
+        }
+    }
+
+    // "2. o leads to a goal state at least once"
+    vector<int> applicable_operators;
+    for (int goal : goal_states) {
+        applicable_operators.clear();
+        match_tree_backward->get_applicable_operator_ids(
+            goal, applicable_operators);
+        for (int ranked_op_id : applicable_operators) {
+            const RankedOperator &op = ranked_operators[ranked_op_id];
+            for (int op_id : label_to_operators.get_slice(op.label)) {
+                result[op_id] = true;
+            }
+        }
+    }
+
+    // "3. o is guaranteed to be on a shortest path to the goal"
+    vector<bool> expanded(num_states, false);
+    vector<bool> unique(num_states, true);
+    vector<vector<int>> op_ids_by_state(num_states);
+
+    deque<pair<int, vector<int>>> open;
+    for (int goal : goal_states) {
+        open.emplace_back(goal, vector<int>());
+        unique[goal] = false;
+    }
+
+    while (!open.empty()) {
+        auto [state_index, ops] = move(open.front());
+        open.pop_front();
+
+        if (expanded[state_index]) {
+            unique[state_index] = false;
+            continue;
+        }
+        assert(op_ids_by_state[state_index].empty());
+        op_ids_by_state[state_index] = move(ops);
+
+        // Regress abstract state.
+        applicable_operators.clear();
+        match_tree_backward->get_applicable_operator_ids(
+            state_index, applicable_operators);
+        map<int, vector<int>> predecessor_ids;
+        for (int ranked_op_id : applicable_operators) {
+            const RankedOperator &op = ranked_operators[ranked_op_id];
+            int predecessor = state_index - op.hash_effect;
+            vector<int> &ops_to_predecessor = predecessor_ids[predecessor];
+            for (int op_id : label_to_operators.get_slice(op.label)) {
+                ops_to_predecessor.push_back(op_id);
+            }
+        }
+        for (pair<int, vector<int>> pred : predecessor_ids) {
+            if (unique[pred.first]) {
+                open.push_back(move(pred));
+            }
+        }
+        expanded[state_index] = true;
+    }
+
+    for (int state_id = 0; state_id < num_states; ++state_id) {
+        if (unique[state_id]) {
+            for (int op_id : op_ids_by_state[state_id]) {
+                result[op_id] = true;
+            }
+        }
+    }
+    return result;
 }
 
 bool Projection::operator_induces_self_loop(int op_id) const {

@@ -1,0 +1,286 @@
+#ifndef COST_SATURATION_STRUCTURED_SCP_ORDER_GENERATOR_H
+#define COST_SATURATION_STRUCTURED_SCP_ORDER_GENERATOR_H
+
+#include "types.h"
+#include "utils.h"
+
+#include "../task_proxy.h"
+
+#include "../algorithms/connected_components.h"
+#include "../utils/logging.h"
+#include "../utils/timer.h"
+
+#include "gtl/bit_vector.hpp"
+#include "gtl/phmap.hpp"
+
+#include <cstdint>
+#include <memory>
+#include <utility>
+#include <vector>
+
+namespace plugins {
+class Feature;
+class Options;
+}
+
+namespace cost_saturation {
+using Costs = std::vector<int>;
+using CompressedCosts = PackedInts;
+using CompressedCostsHash = PackedIntMurmurHash;
+using CostKey = uint32_t;
+using NodeKey = std::pair<CostKey, std::vector<int>>;
+using NodeKeyHash = PairUint32VectorIntHash;
+
+extern bool g_hacked_use_affecting_labels;
+extern bool g_hacked_use_non_negative_labels;
+extern bool g_hacked_use_infinite_labels;
+extern bool g_hacked_use_cost_partitioning_check;
+extern bool g_hacked_cache_scf_functions;
+extern int g_hacked_max_lookup_table_cache_resizes;
+
+/*
+  Node in the DAG that represents a structured saturated cost partitioning:
+  leaves look up goal distances in tables, inner nodes maximize or sum over
+  the values of their children.
+*/
+struct SSCPNode {
+    /* This is a unique positive value for max and sum nodes, and a unique
+       negative one for lookup nodes. */
+    int index;
+
+    // The level corresponds to the depth of the DAG rooted at this node.
+    int level;
+
+    std::vector<std::shared_ptr<SSCPNode>> children;
+
+    bool complete;
+
+    // Used only for lookup nodes.
+    SSCPNode()
+        : level(0), complete(true) {
+        ++num_lookup_nodes;
+        index = -num_lookup_nodes;
+    }
+
+    // Used only for compositional (max and sum) nodes.
+    explicit SSCPNode(std::vector<std::shared_ptr<SSCPNode>> &&children)
+        : index(num_compositional_nodes),
+          level(0),
+          children(move(children)),
+          complete(false) {
+        ++num_compositional_nodes;
+    }
+
+    virtual ~SSCPNode() = default;
+
+    virtual void update() {}
+
+    static int num_compositional_nodes;
+    static int num_lookup_nodes;
+};
+
+struct CompositionalSSCPNode : public SSCPNode {
+    explicit CompositionalSSCPNode(
+        std::vector<std::shared_ptr<SSCPNode>> &&children)
+        : SSCPNode(move(children)) {
+    }
+
+    void update() override {
+        level = 0;
+        complete = !children.empty();
+        for (const std::shared_ptr<SSCPNode> &child : children) {
+            if (child) {
+                level = std::max(level, child->level);
+                complete = complete && child->complete;
+            } else {
+                complete = false;
+            }
+        }
+        ++level;
+    }
+};
+
+struct MaxSSCPNode : public CompositionalSSCPNode {
+    explicit MaxSSCPNode(std::vector<std::shared_ptr<SSCPNode>> &&children)
+        : CompositionalSSCPNode(move(children)) {
+        ++num_max_nodes;
+    }
+
+    static int num_max_nodes;
+};
+
+struct SumSSCPNode : public CompositionalSSCPNode {
+    explicit SumSSCPNode(std::vector<std::shared_ptr<SSCPNode>> &&children)
+        : CompositionalSSCPNode(move(children)) {
+        ++num_sum_nodes;
+        if (is_non_trivial()) {
+            ++num_nontrivial_sum_nodes;
+        }
+    }
+
+    // A SumSSCPNode is trivial iff all of its children are LookupSSCPNodes.
+    bool is_non_trivial() const;
+
+    static int num_sum_nodes;
+    static int num_nontrivial_sum_nodes;
+};
+
+struct LookupSSCPNode : public SSCPNode {
+    int abstraction_id;
+    int lookup_table_id;
+
+    LookupSSCPNode(int abstraction_id, int lookup_table_id)
+        : SSCPNode(),
+          abstraction_id(abstraction_id),
+          lookup_table_id(lookup_table_id) {
+    }
+
+    void update() override {
+        assert(level == 0);
+        assert(complete);
+    }
+};
+
+enum class InstructionType {
+    MAX,
+    SUM,
+};
+
+struct Instruction {
+    const InstructionType type;
+    const std::vector<int> ids;
+
+    Instruction(InstructionType type, std::vector<int> ids)
+        : type(type), ids(move(ids)) {
+    }
+};
+
+struct UnsolvabilityInfo {
+    int abstraction_id;
+    std::vector<bool> unsolvable_states;
+    bool useful;
+
+    UnsolvabilityInfo(int abstraction_id, int num_abstract_states)
+        : abstraction_id(abstraction_id),
+          unsolvable_states(num_abstract_states, false),
+          useful(false) {
+    }
+};
+
+struct StructuredSCPOrder {
+    AbstractionFunctions abs_functions;
+    std::vector<UnsolvabilityInfo> unsolvability_infos;
+    std::vector<Instruction> instructions;
+    std::vector<std::vector<std::vector<int>>> lookup_tables;
+};
+
+class StructuredSCPOrderGenerator {
+public:
+    StructuredSCPOrderGenerator(
+        const std::shared_ptr<AbstractTask> &transform,
+        Abstractions abstractions, bool use_unsolvability_infos,
+        bool use_general_cp, bool cache_lookup_tables,
+        bool time_connected_components, utils::Verbosity verbosity);
+    virtual ~StructuredSCPOrderGenerator() = default;
+
+    StructuredSCPOrder generate();
+
+protected:
+    Abstractions abstractions;
+    std::vector<UnsolvabilityInfo> unsolvability_infos;
+    const TaskProxy task_proxy;
+    const bool use_general_cp;
+    const bool use_unsolvability;
+    const bool cache_lookup_tables;
+    const bool time_connected_components;
+    bool precomputed_conflicting_ops;
+    int recomputed_lookup_tables;
+    int lookup_cache_hits;
+    double max_lookup_table_entries;
+    utils::LogProxy log;
+    gtl::flat_hash_map<CompressedCosts, CostKey, CompressedCostsHash>
+    compressed_costs_cache;
+    std::vector<gtl::flat_hash_map<CostKey, const int>> lookup_tables_cache;
+
+    virtual std::shared_ptr<SSCPNode> create_sscp_order_dag() = 0;
+
+    std::shared_ptr<LookupSSCPNode> create_lookup_node(
+        const Costs &costs, int abstraction_id);
+
+    std::vector<std::vector<int>> compute_independent_abstractions(
+        const std::vector<int> &pending_abstraction_ids,
+        const Costs &remaining_costs);
+
+    StructuredSCPOrder create_structured_scp_order(
+        std::shared_ptr<SSCPNode> &root_node);
+
+    void precompute_operator_properties(
+        const std::vector<int> &relevant_abstraction_ids);
+
+    const std::vector<int> &get_lookup_table(
+        const std::shared_ptr<LookupSSCPNode> &node) const {
+        return lookup_tables[node->abstraction_id][node->lookup_table_id];
+    }
+
+    Costs get_saturated_costs(
+        const std::shared_ptr<LookupSSCPNode> &node) const;
+
+    Costs compute_remaining_costs(
+        const std::shared_ptr<LookupSSCPNode> &node,
+        const Costs &remaining_costs) const;
+
+    CostKey lookup_costs_or_register(const Costs &costs);
+
+    void dump_tree(const std::shared_ptr<SSCPNode> &node) const;
+    void dump_node(
+        const std::shared_ptr<SSCPNode> &node,
+        const std::shared_ptr<SSCPNode> &parent) const;
+
+private:
+    std::vector<std::vector<std::shared_ptr<LookupSSCPNode>>>
+    lookup_sscp_node_cache;
+    std::vector<std::vector<std::vector<int>>> lookup_tables;
+    std::vector<Costs> scf_cache;
+
+    std::vector<std::vector<gtl::bit_vector>> conflicting_ops;
+    std::vector<gtl::bit_vector> relevant_ops_by_abstraction;
+    std::vector<std::vector<bool>> op_has_nonincreasing_remaining_costs;
+    utils::Timer cc_generation;
+    utils::Timer cc_computation;
+
+    /* Determine for each relevant abstraction the set of operators that
+       affects that abstraction. */
+    void precompute_relevant_ops(
+        const std::vector<bool> &abstraction_is_relevant);
+
+    /* Determine for all operators and relevant abstractions if the operator
+       is guaranteed nonincreasing in the abstraction (i.e., if the saturated
+       cost of the operator is guaranteed non-negative). */
+    void precompute_ops_with_nonincreasing_remaining_cost(
+        const std::vector<bool> &abstraction_is_relevant);
+
+    /* Determine for each pair of relevant abstractions the set of
+       conflicting operators (i.e., the operators that affect both
+       abstractions). */
+    void precompute_conflicting_ops(
+        const std::vector<bool> &abstraction_is_relevant);
+
+    /* Determine for each operator that is potentially conflicting for the
+       abstractions id1 and id2 if it is conflicting given the current
+       remaining costs. */
+    void check_and_add_dependency(
+        ccp::DisjointSet &dependency_graph, int id1, int id2,
+        const Costs &remaining_costs);
+
+    void create_compact_lookup_tables();
+};
+
+extern void add_structured_order_generator_options_to_parser(
+    plugins::Feature &feature);
+extern std::tuple<
+    std::shared_ptr<AbstractTask>, Abstractions, bool, bool, utils::Verbosity>
+get_structured_scp_order_generator_arguments_from_options(
+    const plugins::Options &opts);
+}
+
+#endif

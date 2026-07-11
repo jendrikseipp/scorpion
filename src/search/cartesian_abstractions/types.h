@@ -4,7 +4,7 @@
 #include <deque>
 #include <limits>
 #include <memory>
-#include <parallel_hashmap/phmap.h>
+#include <gtl/phmap.hpp>
 #include <unordered_set>
 #include <vector>
 
@@ -43,7 +43,7 @@ using Loops = std::vector<int>;
 using Matcher = std::vector<MatcherVariable>;
 using NodeID = int;
 using Operators = std::vector<int>;
-using OptimalTransitions = phmap::flat_hash_map<int, std::vector<int>>;
+using OptimalTransitions = gtl::flat_hash_map<int, std::vector<int>>;
 using Solution = std::deque<Transition>;
 using Transitions = std::vector<Transition>;
 
