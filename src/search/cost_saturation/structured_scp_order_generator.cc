@@ -173,21 +173,10 @@ void StructuredSCPOrderGenerator::precompute_conflicting_ops(
 bool StructuredSCPOrderGenerator::is_non_trivial_sum_node(
     NodeId node) const {
     return nodes[node].type == NodeType::SUM &&
-           any_of(nodes[node].children.begin(), nodes[node].children.end(),
+           any_of(nodes.children_begin(node), nodes.children_end(node),
                   [&](NodeId child) {
                       return nodes[child].type != NodeType::LOOKUP;
                   });
-}
-
-NodeId StructuredSCPOrderGenerator::add_compositional_node(
-    NodeType type, vector<NodeId> &&children) {
-    assert(type == NodeType::MAX || type == NodeType::SUM);
-    int level = 0;
-    for (NodeId child : children) {
-        level = max(level, nodes[child].level);
-    }
-    nodes.push_back(SSCPNode{type, level + 1, move(children), -1, -1});
-    return nodes.size() - 1;
 }
 
 StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
@@ -302,9 +291,7 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
         }
     }
     lookup_tables[abstraction_id].push_back(move(goal_distances));
-    nodes.push_back(
-        SSCPNode{NodeType::LOOKUP, 0, {}, abstraction_id, lookup_table_id});
-    NodeId node = nodes.size() - 1;
+    NodeId node = nodes.add_lookup_node(abstraction_id, lookup_table_id);
 
     lookup_sscp_node_cache[abstraction_id].push_back(node);
     if (options.cache_scf_functions) {
@@ -458,13 +445,14 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
 
 namespace {
 void collect_compositional_nodes(
-    const vector<SSCPNode> &nodes, NodeId node, vector<bool> &marked,
+    const NodeArena &nodes, NodeId node, vector<bool> &marked,
     vector<NodeId> &reachable) {
     if (nodes[node].type != NodeType::LOOKUP && !marked[node]) {
         marked[node] = true;
         reachable.push_back(node);
-        for (NodeId child : nodes[node].children) {
-            collect_compositional_nodes(nodes, child, marked, reachable);
+        for (const NodeId *child = nodes.children_begin(node);
+             child != nodes.children_end(node); ++child) {
+            collect_compositional_nodes(nodes, *child, marked, reachable);
         }
     }
 }
@@ -530,7 +518,7 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     // Create the instructions for the compositional nodes.
     int64_t total_ids = 0;
     for (NodeId node : reachable_compositional_nodes) {
-        total_ids += nodes[node].children.size();
+        total_ids += nodes[node].num_children;
     }
     Instructions instructions;
     instructions.reserve(reachable_compositional_nodes.size(), total_ids);
@@ -541,7 +529,7 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     int num_reachable_non_trivial_sum_nodes = 0;
     int num_reachable_max_nodes = 0;
     for (NodeId node : reachable_compositional_nodes) {
-        assert(!nodes[node].children.empty());
+        assert(nodes[node].num_children > 0);
         value_ids[node] = value_id;
         ++value_id;
 
@@ -556,16 +544,13 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
                 ++num_reachable_non_trivial_sum_nodes;
             }
         }
-        for (NodeId child : nodes[node].children) {
-            assert(value_ids[child] != -1);
-            assert(value_ids[child] < value_ids[node]);
-            instructions.ids.push_back(value_ids[child]);
+        for (const NodeId *child = nodes.children_begin(node);
+             child != nodes.children_end(node); ++child) {
+            assert(value_ids[*child] != -1);
+            assert(value_ids[*child] < value_ids[node]);
+            instructions.ids.push_back(value_ids[*child]);
         }
         instructions.id_offsets.push_back(instructions.ids.size());
-        /* The node's instruction replaces its children list; parents only
-           need the value id. Releasing the children early keeps the peak
-           memory close to one copy of the DAG structure. */
-        utils::release_vector_memory(nodes[node].children);
     }
     AbstractionFunctions abs_functions;
     abs_functions.reserve(abstractions.size());

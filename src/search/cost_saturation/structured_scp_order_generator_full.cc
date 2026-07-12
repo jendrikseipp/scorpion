@@ -58,9 +58,9 @@ NodeId StructuredSCPOrderGeneratorFull::create_sum_node(
         }
         if (nodes[child].type == NodeType::SUM) {
             // Splice nested sum nodes into this sum node.
-            for (NodeId grand_child : nodes[child].children) {
-                children.push_back(grand_child);
-            }
+            children.insert(
+                children.end(), nodes.children_begin(child),
+                nodes.children_end(child));
         } else {
             children.push_back(child);
         }
@@ -80,7 +80,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_sum_node(
         }
     }
 
-    NodeId node = add_compositional_node(NodeType::SUM, move(children));
+    NodeId node = nodes.add_compositional_node(NodeType::SUM, children);
     if (prune_duplicates) {
         sum_sscp_node_post_cache.insert(node);
     }
@@ -266,9 +266,8 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
 
         if (nodes[child].type == NodeType::MAX) {
             // Splice nested max nodes into this max node.
-            for (NodeId grand_child : nodes[child].children) {
-                unique_children.insert(grand_child);
-            }
+            unique_children.insert(
+                nodes.children_begin(child), nodes.children_end(child));
         } else {
             unique_children.insert(child);
         }
@@ -291,7 +290,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         if (it != max_sscp_node_post_cache.end()) {
             max_node = *it;
         } else {
-            max_node = add_compositional_node(NodeType::MAX, move(children));
+            max_node = nodes.add_compositional_node(NodeType::MAX, children);
             if (prune_duplicates) {
                 max_sscp_node_post_cache.insert(max_node);
             }

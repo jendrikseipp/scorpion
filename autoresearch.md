@@ -36,9 +36,12 @@ dedup-cache key vectors, instructions.
 - run 30 KEEP (mem 0.760, time 0.943): flattened Instructions struct
   (types/id_offsets/ids shared buffers) instead of a vector per
   instruction; also tightens the evaluation loop.
-- next big lever: arena/index representation for SSCPNodes (2.9M
-  shared_ptr nodes with vector<shared_ptr> children remain the largest
-  memory block).
+- run 31 KEEP (mem 0.644, time 0.79): flat arena of SSCPNode structs with
+  integer node ids replaces the shared_ptr hierarchy (no vptr/control
+  blocks/dynamic_pointer_cast; also fixes never-reset static counters).
+  -15% memory and 16% faster in one change.
+- next: children pool (slices into one shared buffer) to remove the
+  per-node vector<NodeId> heap block (~56B/node x 2.9M).
 
 ## Objective
 

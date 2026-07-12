@@ -11,6 +11,7 @@
 
 #include "gtl/phmap.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <deque>
 #include <memory>
@@ -55,8 +56,9 @@ enum class NodeType : uint8_t {
 /*
   Node in the DAG that represents a structured saturated cost partitioning:
   leaves look up goal distances in tables, inner nodes maximize or sum over
-  the values of their children. Nodes live in the arena of their generator
-  and refer to their children by node id.
+  the values of their children. Nodes live in the arena of their generator;
+  the children of max and sum nodes are a slice of the generator's shared
+  children pool.
 */
 struct SSCPNode {
     NodeType type;
@@ -64,12 +66,64 @@ struct SSCPNode {
     // The level corresponds to the depth of the DAG rooted at this node.
     int level;
 
-    // Children of max and sum nodes (empty for lookup nodes).
-    std::vector<NodeId> children;
+    // Children slice of max and sum nodes (empty for lookup nodes).
+    int64_t children_offset;
+    int num_children;
 
     // Lookup table position (only used for lookup nodes).
     int abstraction_id;
     int lookup_table_id;
+};
+
+/*
+  All DAG nodes of a generator with their children. Storing the children of
+  all nodes in one shared pool avoids a heap-allocated vector per node.
+*/
+struct NodeArena {
+    std::vector<SSCPNode> nodes;
+    std::vector<NodeId> children_pool;
+
+    const SSCPNode &operator[](NodeId node) const {
+        return nodes[node];
+    }
+
+    int size() const {
+        return nodes.size();
+    }
+
+    NodeId add_lookup_node(int abstraction_id, int lookup_table_id) {
+        nodes.push_back(
+            SSCPNode{
+                NodeType::LOOKUP, 0, 0, 0, abstraction_id,
+                lookup_table_id});
+        return nodes.size() - 1;
+    }
+
+    NodeId add_compositional_node(
+        NodeType type, const std::vector<NodeId> &children) {
+        assert(type == NodeType::MAX || type == NodeType::SUM);
+        int level = 0;
+        for (NodeId child : children) {
+            level = std::max(level, nodes[child].level);
+        }
+        int64_t offset = children_pool.size();
+        children_pool.insert(
+            children_pool.end(), children.begin(), children.end());
+        nodes.push_back(
+            SSCPNode{
+                type, level + 1, offset,
+                static_cast<int>(children.size()), -1, -1});
+        return nodes.size() - 1;
+    }
+
+    // Children of the given max or sum node.
+    const NodeId *children_begin(NodeId node) const {
+        return children_pool.data() + nodes[node].children_offset;
+    }
+
+    const NodeId *children_end(NodeId node) const {
+        return children_begin(node) + nodes[node].num_children;
+    }
 };
 
 enum class InstructionType : uint8_t {
@@ -144,32 +198,45 @@ struct SaturatedCostFunction {
 struct NodeChildrenHash {
     using is_transparent = void;
 
-    const std::vector<SSCPNode> *nodes;
+    const NodeArena *arena;
 
     size_t operator()(const std::vector<NodeId> &children) const {
-        return VectorIntMurmurHash()(children);
+        return hash_bytes(
+            children.data(), children.size() * sizeof(NodeId),
+            children.size());
     }
 
     size_t operator()(NodeId node) const {
-        return VectorIntMurmurHash()((*nodes)[node].children);
+        int num_children = (*arena)[node].num_children;
+        return hash_bytes(
+            arena->children_begin(node), num_children * sizeof(NodeId),
+            num_children);
     }
 };
 
 struct NodeChildrenEqual {
     using is_transparent = void;
 
-    const std::vector<SSCPNode> *nodes;
+    const NodeArena *arena;
 
     bool operator()(NodeId node, const std::vector<NodeId> &children) const {
-        return (*nodes)[node].children == children;
+        return (*arena)[node].num_children ==
+               static_cast<int>(children.size()) &&
+               std::equal(
+                   children.begin(), children.end(),
+                   arena->children_begin(node));
     }
 
     bool operator()(const std::vector<NodeId> &children, NodeId node) const {
-        return (*nodes)[node].children == children;
+        return (*this)(node, children);
     }
 
     bool operator()(NodeId node1, NodeId node2) const {
-        return (*nodes)[node1].children == (*nodes)[node2].children;
+        return (*arena)[node1].num_children ==
+               (*arena)[node2].num_children &&
+               std::equal(
+                   arena->children_begin(node1), arena->children_end(node1),
+                   arena->children_begin(node2));
     }
 };
 
@@ -223,13 +290,10 @@ protected:
        are created on the first lookup with a cost key. */
     std::vector<std::vector<int>> lookup_tables_cache;
 
-    // Arena holding all DAG nodes; node ids are indices into this vector.
-    std::vector<SSCPNode> nodes;
+    // All DAG nodes with their children; node ids index into the arena.
+    NodeArena nodes;
 
     virtual NodeId create_sscp_order_dag() = 0;
-
-    NodeId add_compositional_node(
-        NodeType type, std::vector<NodeId> &&children);
 
     // A sum node is trivial iff all of its children are lookup nodes.
     bool is_non_trivial_sum_node(NodeId node) const;
