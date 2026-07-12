@@ -33,6 +33,12 @@ dedup-cache key vectors, instructions.
 - run 29 KEEP (mem 0.806, time 0.957): free construction caches before the
   instruction phase; release each node's children right after its
   instruction is built.
+- run 30 KEEP (mem 0.760, time 0.943): flattened Instructions struct
+  (types/id_offsets/ids shared buffers) instead of a vector per
+  instruction; also tightens the evaluation loop.
+- next big lever: arena/index representation for SSCPNodes (2.9M
+  shared_ptr nodes with vector<shared_ptr> children remain the largest
+  memory block).
 
 ## Objective
 
