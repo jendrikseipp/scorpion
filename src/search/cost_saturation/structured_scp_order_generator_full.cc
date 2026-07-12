@@ -99,6 +99,27 @@ struct ScheduledChildren {
     vector<shared_ptr<LookupSSCPNode>> nodes;
     vector<Costs> saturated_costs;
 };
+
+/* Like reduce_costs_unguarded(), but additionally records the operators
+   with negative saturated cost. Fused into one loop to halve the memory
+   traffic over the vectors. */
+void reduce_costs_unguarded_and_track_negative(
+    Costs &remaining_costs, const Costs &saturated_costs,
+    vector<uint8_t> &op_has_negative_scf) {
+    assert(remaining_costs.size() == saturated_costs.size());
+    assert(op_has_negative_scf.size() == saturated_costs.size());
+    for (size_t i = 0; i < remaining_costs.size(); ++i) {
+        int remaining = remaining_costs[i];
+        int saturated = saturated_costs[i];
+        assert(remaining == INF || saturated != INF);
+        int difference = static_cast<int>(
+            static_cast<unsigned int>(remaining) -
+            static_cast<unsigned int>(saturated));
+        remaining_costs[i] =
+            (remaining == INF || saturated == -INF) ? INF : difference;
+        op_has_negative_scf[i] |= (saturated < 0);
+    }
+}
 }
 
 shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
@@ -124,15 +145,15 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         if (scheduled_child) {
             Costs saturated_cost = get_saturated_costs(scheduled_child);
             if (check_cost_partitioning) {
-                /* Use the unguarded version to see if the children together
-                   want more cost than what is available. */
-                reduce_costs_unguarded(
-                    overall_remaining_costs, saturated_cost);
+                /* Use the unguarded reduction to see if the children
+                   together want more cost than what is available. */
                 if (use_general_cp) {
-                    for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
-                        op_has_negative_scf[op_id] |=
-                            (saturated_cost[op_id] < 0);
-                    }
+                    reduce_costs_unguarded_and_track_negative(
+                        overall_remaining_costs, saturated_cost,
+                        op_has_negative_scf);
+                } else {
+                    reduce_costs_unguarded(
+                        overall_remaining_costs, saturated_cost);
                 }
             }
             scheduled_children.abstraction_ids.push_back(abstraction_id);
