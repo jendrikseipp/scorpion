@@ -330,15 +330,17 @@ StructuredSCPOrderGenerator::compute_independent_abstractions(
     size_t num_pending = pending_abstraction_ids.size();
     for (size_t i = 0; i < num_pending; ++i) {
         int i_parent = dependency_graph.find(pending_abstraction_ids[i]);
-        size_t i_size = dependency_graph.get_set_size(i);
         for (size_t j = i + 1; j < num_pending; ++j) {
             if (i_parent !=
                 dependency_graph.find(pending_abstraction_ids[j])) {
                 check_and_add_dependency(
                     dependency_graph, pending_abstraction_ids[i],
                     pending_abstraction_ids[j], remaining_costs);
-                i_size = dependency_graph.get_set_size(i);
-                if (i_size == num_pending) {
+                /* Only pending abstractions are ever united, so a set of
+                   size num_pending must contain all of them and no further
+                   checks can change the components. */
+                if (dependency_graph.get_set_size(
+                        pending_abstraction_ids[i]) == num_pending) {
                     goto endloop;
                 }
                 i_parent = dependency_graph.find(pending_abstraction_ids[i]);
