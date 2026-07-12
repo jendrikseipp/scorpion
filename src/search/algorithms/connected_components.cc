@@ -1,5 +1,6 @@
 #include "connected_components.h"
 
+#include <algorithm>
 #include <numeric>
 #include <unordered_map>
 #include <utility>
@@ -96,6 +97,14 @@ vector<vector<int>> DisjointSet::get_connected_components() {
 
 vector<vector<int>> DisjointSet::get_connected_components(
     const vector<int> &elements) {
+    // Fast path for the common case that all elements are in one set.
+    if (!elements.empty()) {
+        int first_root = find(elements[0]);
+        if (all_of(elements.begin(), elements.end(),
+                   [&](int i) {return find(i) == first_root;})) {
+            return {elements};
+        }
+    }
     // Group elements by their representative.
     unordered_map<int, vector<int>> components_map;
     for (int i : elements) {

@@ -114,6 +114,12 @@ This scaling cliff is the main cost of the approach.
 - run 12 KEEP (0.556): mutable pq/label_costs/applicable_operators members
   in Projection::compute_goal_distances (27k calls/task on satellite).
 
+- run 16 DISCARD: hoist per-child buffers in create_max_node — 2% worse.
+- run 17 KEEP (0.259, 52%!): cache PRUNED_LOOKUP sentinel for all-zero /
+  dead-end-only lookup outcomes — those Dijkstras were recomputed for every
+  recurrence of the same cost function. Overall now 3.9x faster than the
+  integration baseline.
+
 Insights:
 - transitions=explicit for projections makes sscp construction ~38% faster
   on satellite at equal memory (config-level; probes pin implicit, so this
