@@ -531,7 +531,7 @@ vector<int> Projection::compute_goal_distances(
 
     // Assign each label the cost of cheapest operator that the label covers.
     int num_labels = label_to_operators.size();
-    vector<int> label_costs;
+    label_costs.clear();
     label_costs.reserve(num_labels);
     for (int label_id = 0; label_id < num_labels; ++label_id) {
         int min_cost = INF;
@@ -544,14 +544,14 @@ vector<int> Projection::compute_goal_distances(
     vector<int> distances(num_states, INF);
 
     // Initialize queue.
-    priority_queues::AdaptiveQueue<int> pq;
+    pq.clear();
     for (int goal : goal_states) {
         pq.push(0, goal);
         distances[goal] = 0;
     }
 
     // Reuse vector to save allocations.
-    vector<int> applicable_operators;
+    applicable_operators.clear();
 
     // Run Dijkstra loop.
     while (!pq.empty()) {

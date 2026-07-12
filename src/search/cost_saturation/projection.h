@@ -6,6 +6,7 @@
 #include "../abstract_task.h"
 
 #include "../algorithms/array_pool.h"
+#include "../algorithms/priority_queues.h"
 #include "../pdbs/types.h"
 
 #include <functional>
@@ -98,6 +99,11 @@ class Projection : public Abstraction {
 
     // Lazily computed by operator_is_scp_active().
     mutable std::vector<bool> scp_active_operators;
+
+    // Reused across compute_goal_distances() calls to save allocations.
+    mutable priority_queues::AdaptiveQueue<int> pq;
+    mutable std::vector<int> label_costs;
+    mutable std::vector<int> applicable_operators;
 
     std::vector<RankedOperator> ranked_operators;
     std::unique_ptr<pdbs::SlimMatchTree> match_tree_backward;
