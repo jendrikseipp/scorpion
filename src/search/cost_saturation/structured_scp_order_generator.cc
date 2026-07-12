@@ -177,12 +177,20 @@ void StructuredSCPOrderGenerator::precompute_conflicting_ops(
     conflicting_ops = vector<vector<OpMask>>(
         abstractions.size(),
         vector<OpMask>(abstractions.size(), OpMask(num_words, 0)));
+    statically_conflicting_pairs = vector<OpMask>(
+        abstractions.size(),
+        OpMask(get_num_mask_words(abstractions.size()), 0));
     for (size_t id1 = 0; id1 < abstractions.size(); ++id1) {
         if (abstraction_is_relevant[id1]) {
             for (size_t id2 = id1 + 1; id2 < abstractions.size(); ++id2) {
                 if (abstraction_is_relevant[id2]) {
-                    compute_conflicting_ops(
-                        id1, id2, conflicting_ops[id1][id2]);
+                    OpMask &conflict = conflicting_ops[id1][id2];
+                    compute_conflicting_ops(id1, id2, conflict);
+                    if (any_of(conflict.begin(), conflict.end(),
+                               [](uint64_t word) {return word != 0;})) {
+                        set_mask_bit(statically_conflicting_pairs[id1], id2);
+                        set_mask_bit(statically_conflicting_pairs[id2], id1);
+                    }
                 }
             }
         }
@@ -376,6 +384,12 @@ StructuredSCPOrderGenerator::compute_independent_abstractions(
     for (size_t i = 0; i < num_pending; ++i) {
         int i_parent = dependency_graph.find(pending_abstraction_ids[i]);
         for (size_t j = i + 1; j < num_pending; ++j) {
+            if (precomputed_conflicting_ops &&
+                !test_mask_bit(
+                    statically_conflicting_pairs[pending_abstraction_ids[i]],
+                    pending_abstraction_ids[j])) {
+                continue;
+            }
             if (i_parent !=
                 dependency_graph.find(pending_abstraction_ids[j])) {
                 check_and_add_dependency(

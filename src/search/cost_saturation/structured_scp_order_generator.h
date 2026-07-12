@@ -343,6 +343,10 @@ private:
     mutable std::unique_ptr<SaturatedCostFunction> scf_scratch;
 
     std::vector<std::vector<OpMask>> conflicting_ops;
+    /* Bit matrix over abstraction pairs: bit id2 in row id1 is set iff the
+       pair has any conflicting operator at all. Pairs without a bit can
+       never become dependent and are skipped in the independence checks. */
+    std::vector<OpMask> statically_conflicting_pairs;
     std::vector<OpMask> relevant_ops_by_abstraction;
     std::vector<OpMask> inf_donating_ops_by_abstraction;
     // Bit set iff the operator is guaranteed nonincreasing (default: set).
