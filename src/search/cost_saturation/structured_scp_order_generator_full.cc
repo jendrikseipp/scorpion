@@ -14,7 +14,7 @@
 using namespace std;
 
 namespace cost_saturation {
-shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
+NodeId StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
     cout << "Abstractions: " << abstractions.size() << endl;
     vector<int> abstraction_ids(abstractions.size());
     iota(abstraction_ids.begin(), abstraction_ids.end(), 0);
@@ -26,68 +26,61 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
         ? compute_independent_abstractions(abstraction_ids, context)
         : vector<vector<int>>({abstraction_ids});
     assert(!independent_abstractions.empty());
-    shared_ptr<SSCPNode> root_node = (independent_abstractions.size() == 1)
+    NodeId root_node = (independent_abstractions.size() == 1)
         ? create_max_node(context, independent_abstractions[0])
         : create_sum_node(context, independent_abstractions);
     // Release the considerable amount of memory used by the hash maps.
-    SSCPNodeSet().swap(sum_sscp_node_post_cache);
-    SSCPNodeSet().swap(max_sscp_node_post_cache);
+    SSCPNodeSet(0, NodeChildrenHash{&nodes}, NodeChildrenEqual{&nodes})
+    .swap(sum_sscp_node_post_cache);
+    SSCPNodeSet(0, NodeChildrenHash{&nodes}, NodeChildrenEqual{&nodes})
+    .swap(max_sscp_node_post_cache);
     MaxSSCPNodeHashMap().swap(max_sscp_node_pre_cache);
 
     return root_node;
 }
 
-shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sum_node(
+NodeId StructuredSCPOrderGeneratorFull::create_sum_node(
     const CostContext &context,
     const vector<vector<int>> &independent_abstractions,
-    shared_ptr<LookupSSCPNode> &&scheduled_child) {
-    vector<shared_ptr<SSCPNode>> children;
+    NodeId scheduled_child) {
+    vector<NodeId> children;
     children.reserve(
-        independent_abstractions.size() + (scheduled_child ? 1 : 0));
-    if (scheduled_child) {
-        children.push_back(move(scheduled_child));
+        independent_abstractions.size() + (scheduled_child != NO_NODE));
+    if (scheduled_child != NO_NODE) {
+        children.push_back(scheduled_child);
     }
 
     for (const vector<int> &dependent_abstractions :
          independent_abstractions) {
-        shared_ptr<SSCPNode> child =
-            create_max_node(context, dependent_abstractions);
-        if (dynamic_pointer_cast<SumSSCPNode>(child)) {
+        NodeId child = create_max_node(context, dependent_abstractions);
+        if (child == NO_NODE) {
+            continue;
+        }
+        if (nodes[child].type == NodeType::SUM) {
             // Splice nested sum nodes into this sum node.
-            for (const shared_ptr<SSCPNode> &grand_child : child->children) {
-                assert(grand_child);
+            for (NodeId grand_child : nodes[child].children) {
                 children.push_back(grand_child);
             }
-        } else if (child) {
-            children.push_back(move(child));
+        } else {
+            children.push_back(child);
         }
     }
     if (children.empty()) {
-        return nullptr;
+        return NO_NODE;
     } else if (children.size() == 1) {
         return children[0];
     }
 
-    sort(children.begin(), children.end(),
-         [](const shared_ptr<SSCPNode> &lhs, const shared_ptr<SSCPNode> &rhs) {
-             assert(lhs->index != rhs->index);
-             return lhs->index < rhs->index;
-         });
+    sort(children.begin(), children.end());
 
-    vector<int> hash_key;
     if (prune_duplicates) {
-        hash_key.reserve(children.size());
-        for (const shared_ptr<SSCPNode> &child : children) {
-            hash_key.push_back(child->index);
-        }
-        auto it = sum_sscp_node_post_cache.find(hash_key);
+        auto it = sum_sscp_node_post_cache.find(children);
         if (it != sum_sscp_node_post_cache.end()) {
             return *it;
         }
     }
 
-    shared_ptr<SumSSCPNode> node = make_shared<SumSSCPNode>(move(children));
-    node->update();
+    NodeId node = add_compositional_node(NodeType::SUM, move(children));
     if (prune_duplicates) {
         sum_sscp_node_post_cache.insert(node);
     }
@@ -97,7 +90,7 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sum_node(
 namespace {
 struct ScheduledChildren {
     vector<int> abstraction_ids;
-    vector<shared_ptr<LookupSSCPNode>> nodes;
+    vector<NodeId> nodes;
 };
 
 /* Subtract the saturated costs from the remaining costs. Only visits the
@@ -147,7 +140,7 @@ void reduce_costs_sparse_unguarded_and_track_negative(
 }
 }
 
-shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
+NodeId StructuredSCPOrderGeneratorFull::create_max_node(
     const CostContext &context, const vector<int> &dependent_abstractions) {
     const Costs &costs = context.costs;
     CostKey cost_key = 0;
@@ -166,9 +159,9 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         op_has_negative_scf.assign(costs.size(), false);
     }
     for (int abstraction_id : dependent_abstractions) {
-        shared_ptr<LookupSSCPNode> scheduled_child =
+        NodeId scheduled_child =
             create_lookup_node(costs, cost_key, abstraction_id);
-        if (scheduled_child) {
+        if (scheduled_child != NO_NODE) {
             if (check_cost_partitioning) {
                 const SaturatedCostFunction &saturated_cost =
                     get_saturated_costs(scheduled_child);
@@ -184,11 +177,11 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
                 }
             }
             scheduled_children.abstraction_ids.push_back(abstraction_id);
-            scheduled_children.nodes.push_back(move(scheduled_child));
+            scheduled_children.nodes.push_back(scheduled_child);
         }
     }
     if (scheduled_children.abstraction_ids.empty()) {
-        return nullptr;
+        return NO_NODE;
     } else if (scheduled_children.abstraction_ids.size() == 1) {
         return scheduled_children.nodes[0];
     }
@@ -232,13 +225,12 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         }
     }
 
-    gtl::flat_hash_set<shared_ptr<SSCPNode>> unique_children;
+    gtl::flat_hash_set<NodeId> unique_children;
     assert(dependent_abstractions.size() >= 2);
     for (size_t i = 0; i < scheduled_children.abstraction_ids.size(); ++i) {
         int abstraction_id = scheduled_children.abstraction_ids[i];
-        shared_ptr<LookupSSCPNode> &scheduled_child =
-            scheduled_children.nodes[i];
-        assert(scheduled_child);
+        NodeId scheduled_child = scheduled_children.nodes[i];
+        assert(scheduled_child != NO_NODE);
         const SaturatedCostFunction &scf =
             get_saturated_costs(scheduled_child);
         CostContext remaining_context(context);
@@ -267,50 +259,39 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         } else {
             independent_remaining_abstractions = {remaining_abstractions};
         }
-        shared_ptr<SSCPNode> child = create_sum_node(
+        NodeId child = create_sum_node(
             remaining_context, independent_remaining_abstractions,
-            move(scheduled_child));
-        assert(child);
+            scheduled_child);
+        assert(child != NO_NODE);
 
-        if (dynamic_pointer_cast<MaxSSCPNode>(child)) {
+        if (nodes[child].type == NodeType::MAX) {
             // Splice nested max nodes into this max node.
-            for (const shared_ptr<SSCPNode> &grand_child : child->children) {
-                assert(grand_child);
+            for (NodeId grand_child : nodes[child].children) {
                 unique_children.insert(grand_child);
             }
         } else {
-            unique_children.insert(move(child));
+            unique_children.insert(child);
         }
     }
 
-    shared_ptr<SSCPNode> max_node;
+    NodeId max_node;
     if (unique_children.empty()) {
-        max_node = nullptr;
+        max_node = NO_NODE;
     } else if (unique_children.size() == 1) {
         max_node = *unique_children.begin();
     } else {
-        vector<shared_ptr<SSCPNode>> children(
+        vector<NodeId> children(
             unique_children.begin(), unique_children.end());
-        // Sort children for the hash key.
-        sort(children.begin(), children.end(),
-             [](const shared_ptr<SSCPNode> &lhs,
-                const shared_ptr<SSCPNode> &rhs) {
-                 return lhs->index < rhs->index;
-             });
+        // Sort children for the dedup key.
+        sort(children.begin(), children.end());
 
-        vector<int> post_hash_key;
-        post_hash_key.reserve(children.size());
-        for (const shared_ptr<SSCPNode> &child : children) {
-            post_hash_key.push_back(child->index);
-        }
         auto it = prune_duplicates
-            ? max_sscp_node_post_cache.find(post_hash_key)
+            ? max_sscp_node_post_cache.find(children)
             : max_sscp_node_post_cache.end();
         if (it != max_sscp_node_post_cache.end()) {
             max_node = *it;
         } else {
-            max_node = make_shared<MaxSSCPNode>(move(children));
-            max_node->update();
+            max_node = add_compositional_node(NodeType::MAX, move(children));
             if (prune_duplicates) {
                 max_sscp_node_post_cache.insert(max_node);
             }

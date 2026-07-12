@@ -35,20 +35,6 @@ static bool test_mask_bit(const OpMask &mask, int i) {
     return (mask[i / BITS_PER_WORD] >> (i % BITS_PER_WORD)) & 1;
 }
 
-int SSCPNode::num_compositional_nodes = 0;
-int SSCPNode::num_lookup_nodes = 0;
-int SumSSCPNode::num_sum_nodes = 0;
-int SumSSCPNode::num_nontrivial_sum_nodes = 0;
-int MaxSSCPNode::num_max_nodes = 0;
-
-bool SumSSCPNode::is_non_trivial() const {
-    return any_of(
-        children.begin(), children.end(),
-        [](const shared_ptr<SSCPNode> &child) {
-            return !dynamic_pointer_cast<LookupSSCPNode>(child);
-        });
-}
-
 StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     const shared_ptr<AbstractTask> &transform, Abstractions abstractions,
     const StructuredSCPOptions &options, utils::Verbosity verbosity)
@@ -62,6 +48,7 @@ StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     int num_abstractions = this->abstractions.size();
     lookup_tables.resize(num_abstractions);
     lookup_sscp_node_cache.resize(num_abstractions);
+    scf_cache.resize(num_abstractions);
     unsolvability_infos.reserve(num_abstractions);
     for (int abstraction_id = 0; abstraction_id < num_abstractions;
          ++abstraction_id) {
@@ -183,9 +170,29 @@ void StructuredSCPOrderGenerator::precompute_conflicting_ops(
     utils::release_vector_memory(relevant_ops_by_abstraction);
 }
 
+bool StructuredSCPOrderGenerator::is_non_trivial_sum_node(
+    NodeId node) const {
+    return nodes[node].type == NodeType::SUM &&
+           any_of(nodes[node].children.begin(), nodes[node].children.end(),
+                  [&](NodeId child) {
+                      return nodes[child].type != NodeType::LOOKUP;
+                  });
+}
+
+NodeId StructuredSCPOrderGenerator::add_compositional_node(
+    NodeType type, vector<NodeId> &&children) {
+    assert(type == NodeType::MAX || type == NodeType::SUM);
+    int level = 0;
+    for (NodeId child : children) {
+        level = max(level, nodes[child].level);
+    }
+    nodes.push_back(SSCPNode{type, level + 1, move(children), -1, -1});
+    return nodes.size() - 1;
+}
+
 StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     utils::Timer timer;
-    shared_ptr<SSCPNode> root_node = create_sscp_order_dag();
+    NodeId root_node = create_sscp_order_dag();
     assert(abstractions.size() == unsolvability_infos.size());
     assert(lookup_tables.size() == abstractions.size());
     assert(lookup_sscp_node_cache.size() == abstractions.size());
@@ -193,19 +200,36 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     cout << "Lookup table cache hits: " << lookup_cache_hits << endl;
     cout << "Lookup table cache size: "
          << lookup_tables_cache.size() * abstractions.size() << endl;
-    cout << "SCF cache size: " << scf_cache.size() << endl;
     cout << "Stored cost functions: " << packed_costs_by_key.size() << endl;
+    int num_lookup_nodes = 0;
+    int num_sum_nodes = 0;
+    int num_nontrivial_sum_nodes = 0;
+    int num_max_nodes = 0;
+    for (NodeId node = 0; node < static_cast<int>(nodes.size()); ++node) {
+        switch (nodes[node].type) {
+        case NodeType::LOOKUP:
+            ++num_lookup_nodes;
+            break;
+        case NodeType::MAX:
+            ++num_max_nodes;
+            break;
+        case NodeType::SUM:
+            ++num_sum_nodes;
+            if (is_non_trivial_sum_node(node)) {
+                ++num_nontrivial_sum_nodes;
+            }
+            break;
+        }
+    }
     log << "Time to generate DAG: " << timer() << endl;
-    log << "Depth of DAG: " << (root_node ? root_node->level : 0) << endl;
-    log << "Generated nodes: "
-        << SSCPNode::num_compositional_nodes + SSCPNode::num_lookup_nodes
+    log << "Depth of DAG: "
+        << (root_node == NO_NODE ? 0 : nodes[root_node].level) << endl;
+    log << "Generated nodes: " << nodes.size() << endl;
+    log << "Generated sum nodes: " << num_sum_nodes << endl;
+    log << "Generated nontrivial sum nodes: " << num_nontrivial_sum_nodes
         << endl;
-    log << "Generated sum nodes: " << SumSSCPNode::num_sum_nodes << endl;
-    log << "Generated nontrivial sum nodes: "
-        << SumSSCPNode::num_nontrivial_sum_nodes << endl;
-    log << "Generated max nodes: " << MaxSSCPNode::num_max_nodes << endl;
-    log << "Generated lookup table entries: " << SSCPNode::num_lookup_nodes
-        << endl;
+    log << "Generated max nodes: " << num_max_nodes << endl;
+    log << "Generated lookup table entries: " << num_lookup_nodes << endl;
     return create_structured_scp_order(root_node);
 }
 
@@ -214,7 +238,7 @@ static const int PRUNED_LOOKUP = -1;
 // Sentinel for lookup nodes that have not been computed yet.
 static const int UNKNOWN_LOOKUP = -2;
 
-shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
+NodeId StructuredSCPOrderGenerator::create_lookup_node(
     const Costs &costs, CostKey cost_key, int abstraction_id) {
     bool cache_this_lookup =
         options.cache_lookup_tables && cost_key < max_lookup_table_entries;
@@ -230,7 +254,7 @@ shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
         if (cached_table_id != UNKNOWN_LOOKUP) {
             ++lookup_cache_hits;
             if (cached_table_id == PRUNED_LOOKUP) {
-                return nullptr;
+                return NO_NODE;
             }
             assert(utils::in_bounds(
                        cached_table_id,
@@ -250,7 +274,7 @@ shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
     if (all_of(goal_distances.begin(), goal_distances.end(),
                [](int h) {return h == 0;})) {
         cache_table_for_costs(PRUNED_LOOKUP);
-        return nullptr;
+        return NO_NODE;
     }
 
     /* An abstraction with only 0 and INF values can be pruned from the DAG
@@ -271,27 +295,29 @@ shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
             ++recomputed_lookup_tables;
             if (dead_end_detection_only) {
                 cache_table_for_costs(PRUNED_LOOKUP);
-                return nullptr;
+                return NO_NODE;
             }
             cache_table_for_costs(lookup_table_id);
             return lookup_sscp_node_cache[abstraction_id][lookup_table_id];
         }
     }
     lookup_tables[abstraction_id].push_back(move(goal_distances));
-    auto node = make_shared<LookupSSCPNode>(abstraction_id, lookup_table_id);
+    nodes.push_back(
+        SSCPNode{NodeType::LOOKUP, 0, {}, abstraction_id, lookup_table_id});
+    NodeId node = nodes.size() - 1;
 
     lookup_sscp_node_cache[abstraction_id].push_back(node);
     if (options.cache_scf_functions) {
-        scf_cache.emplace_back(
+        scf_cache[abstraction_id].emplace_back(
             compute_scf(
                 *abstractions[abstraction_id], get_lookup_table(node),
                 options.use_general_cp));
-        // Assert that the node index matches the cache position.
-        assert(static_cast<int>(scf_cache.size()) == -node->index);
+        assert(scf_cache[abstraction_id].size() ==
+               lookup_tables[abstraction_id].size());
     }
     if (dead_end_detection_only) {
         cache_table_for_costs(PRUNED_LOOKUP);
-        return nullptr;
+        return NO_NODE;
     }
     cache_table_for_costs(lookup_table_id);
     return node;
@@ -431,50 +457,43 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
 }
 
 namespace {
-void collect_nodes(
-    const shared_ptr<SSCPNode> &node, vector<bool> &marked,
-    vector<shared_ptr<SSCPNode>> &nodes) {
-    int index = node->index;
-    assert(index < static_cast<int>(marked.size()));
-    if (index >= 0 && !marked[index]) {
-        marked[index] = true;
-        nodes.push_back(node);
-        for (const shared_ptr<SSCPNode> &child : node->children) {
-            assert(child);
-            collect_nodes(child, marked, nodes);
+void collect_compositional_nodes(
+    const vector<SSCPNode> &nodes, NodeId node, vector<bool> &marked,
+    vector<NodeId> &reachable) {
+    if (nodes[node].type != NodeType::LOOKUP && !marked[node]) {
+        marked[node] = true;
+        reachable.push_back(node);
+        for (NodeId child : nodes[node].children) {
+            collect_compositional_nodes(nodes, child, marked, reachable);
         }
     }
 }
 }
 
 StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
-    shared_ptr<SSCPNode> &root_node) {
+    NodeId root_node) {
     // Free the construction-time caches before materializing instructions.
     decltype(cost_key_by_hash)().swap(cost_key_by_hash);
     utils::release_vector_memory(cost_key_overflow);
     utils::release_vector_memory(packed_costs_by_key);
     utils::release_vector_memory(lookup_tables_cache);
-    decltype(scf_cache)().swap(scf_cache);
+    utils::release_vector_memory(scf_cache);
     utils::release_vector_memory(conflicting_ops);
     utils::release_vector_memory(op_has_nonincreasing_remaining_costs);
 
-    // Determine reachable nodes and order them by level.
-    vector<shared_ptr<SSCPNode>> reachable_compositional_nodes;
-    reachable_compositional_nodes.reserve(SSCPNode::num_compositional_nodes);
-    vector<bool> marked(SSCPNode::num_compositional_nodes, false);
-    if (root_node) {
-        collect_nodes(root_node, marked, reachable_compositional_nodes);
+    // Determine reachable compositional nodes and order them by level.
+    vector<NodeId> reachable_compositional_nodes;
+    vector<bool> marked(nodes.size(), false);
+    if (root_node != NO_NODE) {
+        collect_compositional_nodes(
+            nodes, root_node, marked, reachable_compositional_nodes);
         sort(reachable_compositional_nodes.begin(),
              reachable_compositional_nodes.end(),
-             [](const shared_ptr<SSCPNode> &lhs,
-                const shared_ptr<SSCPNode> &rhs) {
-                 return lhs->level < rhs->level;
+             [&](NodeId lhs, NodeId rhs) {
+                 return nodes[lhs].level < nodes[rhs].level;
              });
     }
-    cout << "Unreachable compositional nodes: "
-         << SSCPNode::num_compositional_nodes -
-        reachable_compositional_nodes.size()
-         << endl;
+    utils::release_vector_memory(marked);
 
     // Create compact lookup tables and extract unsolvability information.
     create_compact_lookup_tables();
@@ -493,56 +512,60 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     cout << "Unsolvable abstract states: " << num_unsolvable_states << endl;
     assert(abstractions.size() == unsolvability_infos.size());
 
-    // Assign final indices to lookup nodes.
+    /* Assign each node its value id in the heuristic evaluation: lookup
+       nodes get the positions of their table entries, compositional nodes
+       follow in level order. */
+    vector<int> value_ids(nodes.size(), -1);
     int value_id = 0;
-    for (vector<shared_ptr<LookupSSCPNode>> &lookup_nodes_by_abstraction :
+    int num_lookup_nodes = 0;
+    for (const vector<NodeId> &lookup_nodes_by_abstraction :
          lookup_sscp_node_cache) {
-        for (shared_ptr<LookupSSCPNode> &node : lookup_nodes_by_abstraction) {
-            assert(node->index < 0);
-            node->index = value_id;
+        for (NodeId node : lookup_nodes_by_abstraction) {
+            value_ids[node] = value_id;
             ++value_id;
+            ++num_lookup_nodes;
         }
     }
 
-    // Assign final indices to compositional nodes and create instructions.
+    // Create the instructions for the compositional nodes.
     int64_t total_ids = 0;
-    for (const shared_ptr<SSCPNode> &node : reachable_compositional_nodes) {
-        total_ids += node->children.size();
+    for (NodeId node : reachable_compositional_nodes) {
+        total_ids += nodes[node].children.size();
     }
     Instructions instructions;
     instructions.reserve(reachable_compositional_nodes.size(), total_ids);
     int num_reachable_nodes =
         static_cast<int>(reachable_compositional_nodes.size()) +
-        SSCPNode::num_lookup_nodes;
+        num_lookup_nodes;
     int num_reachable_sum_nodes = 0;
     int num_reachable_non_trivial_sum_nodes = 0;
     int num_reachable_max_nodes = 0;
-    for (shared_ptr<SSCPNode> &node : reachable_compositional_nodes) {
-        assert(!node->children.empty());
-        node->index = value_id;
+    for (NodeId node : reachable_compositional_nodes) {
+        assert(!nodes[node].children.empty());
+        value_ids[node] = value_id;
         ++value_id;
-        assert(all_of(node->children.begin(), node->children.end(),
-                      [&](const shared_ptr<SSCPNode> &child) {
-                          return child->index < node->index;
-                      }));
 
-        InstructionType type;
-        if (dynamic_pointer_cast<MaxSSCPNode>(node)) {
-            type = InstructionType::MAX;
+        if (nodes[node].type == NodeType::MAX) {
+            instructions.types.push_back(InstructionType::MAX);
             ++num_reachable_max_nodes;
         } else {
-            assert(dynamic_pointer_cast<SumSSCPNode>(node));
-            type = InstructionType::SUM;
+            assert(nodes[node].type == NodeType::SUM);
+            instructions.types.push_back(InstructionType::SUM);
             ++num_reachable_sum_nodes;
-            if (dynamic_pointer_cast<SumSSCPNode>(node)->is_non_trivial()) {
+            if (is_non_trivial_sum_node(node)) {
                 ++num_reachable_non_trivial_sum_nodes;
             }
         }
-        instructions.append(type, node->children);
+        for (NodeId child : nodes[node].children) {
+            assert(value_ids[child] != -1);
+            assert(value_ids[child] < value_ids[node]);
+            instructions.ids.push_back(value_ids[child]);
+        }
+        instructions.id_offsets.push_back(instructions.ids.size());
         /* The node's instruction replaces its children list; parents only
-           need the index. Releasing the children early keeps the peak
+           need the value id. Releasing the children early keeps the peak
            memory close to one copy of the DAG structure. */
-        utils::release_vector_memory(node->children);
+        utils::release_vector_memory(nodes[node].children);
     }
     AbstractionFunctions abs_functions;
     abs_functions.reserve(abstractions.size());
@@ -616,16 +639,16 @@ void StructuredSCPOrderGenerator::create_compact_lookup_tables() {
 }
 
 const SaturatedCostFunction &StructuredSCPOrderGenerator::get_saturated_costs(
-    const shared_ptr<LookupSSCPNode> &node) const {
+    NodeId node) const {
+    assert(nodes[node].type == NodeType::LOOKUP);
     if (options.cache_scf_functions) {
-        // Lookup node indices start at -1 and decrease.
-        assert(utils::in_bounds(-node->index - 1, scf_cache));
-        return scf_cache[-node->index - 1];
+        return scf_cache[nodes[node].abstraction_id]
+               [nodes[node].lookup_table_id];
     } else {
         scf_scratch = make_unique<SaturatedCostFunction>(
             compute_scf(
-                *abstractions[node->abstraction_id], get_lookup_table(node),
-                options.use_general_cp));
+                *abstractions[nodes[node].abstraction_id],
+                get_lookup_table(node), options.use_general_cp));
         return *scf_scratch;
     }
 }

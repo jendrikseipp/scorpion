@@ -17,31 +17,35 @@ public:
         bool use_conflicts)
         : StructuredSCPOrderGenerator(
               transform, move(abstractions), options, verbosity),
+          sum_sscp_node_post_cache(
+              0, NodeChildrenHash{&nodes}, NodeChildrenEqual{&nodes}),
+          max_sscp_node_post_cache(
+              0, NodeChildrenHash{&nodes}, NodeChildrenEqual{&nodes}),
           prune_duplicates(prune_duplicates),
           use_conflicts(use_conflicts) {
     }
 
 protected:
-    std::shared_ptr<SSCPNode> create_sscp_order_dag() override;
+    NodeId create_sscp_order_dag() override;
 
 private:
-    std::shared_ptr<SSCPNode> create_sum_node(
+    NodeId create_sum_node(
         const CostContext &context,
         const std::vector<std::vector<int>> &independent_abstractions,
-        std::shared_ptr<LookupSSCPNode> &&scheduled_child = nullptr);
-    std::shared_ptr<SSCPNode> create_max_node(
+        NodeId scheduled_child = NO_NODE);
+    NodeId create_max_node(
         const CostContext &context,
         const std::vector<int> &dependent_abstractions);
 
-    /* Deduplicate compositional nodes by the indices of their children.
-       Sets of the nodes themselves with transparent lookup avoid storing a
-       copy of the index vector per entry. */
+    /* Deduplicate compositional nodes by their children ids. Sets of node
+       ids with transparent lookup avoid storing a copy of the children
+       vector per entry. */
     using SSCPNodeSet = gtl::flat_hash_set<
-        std::shared_ptr<SSCPNode>, NodeChildrenHash, NodeChildrenEqual>;
+        NodeId, NodeChildrenHash, NodeChildrenEqual>;
     SSCPNodeSet sum_sscp_node_post_cache;
     SSCPNodeSet max_sscp_node_post_cache;
-    using MaxSSCPNodeHashMap = gtl::flat_hash_map<
-        NodeKey, std::shared_ptr<SSCPNode>, NodeKeyHash>;
+    using MaxSSCPNodeHashMap =
+        gtl::flat_hash_map<NodeKey, NodeId, NodeKeyHash>;
     MaxSSCPNodeHashMap max_sscp_node_pre_cache;
 
     const bool prune_duplicates;

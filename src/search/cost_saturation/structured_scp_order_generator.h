@@ -42,107 +42,34 @@ struct StructuredSCPOptions {
     int max_lookup_table_cache_resizes;
 };
 
+// Index of a node in the arena of its generator.
+using NodeId = int;
+constexpr NodeId NO_NODE = -1;
+
+enum class NodeType : uint8_t {
+    LOOKUP,
+    MAX,
+    SUM,
+};
+
 /*
   Node in the DAG that represents a structured saturated cost partitioning:
   leaves look up goal distances in tables, inner nodes maximize or sum over
-  the values of their children.
+  the values of their children. Nodes live in the arena of their generator
+  and refer to their children by node id.
 */
 struct SSCPNode {
-    /* This is a unique positive value for max and sum nodes, and a unique
-       negative one for lookup nodes. */
-    int index;
+    NodeType type;
 
     // The level corresponds to the depth of the DAG rooted at this node.
     int level;
 
-    std::vector<std::shared_ptr<SSCPNode>> children;
+    // Children of max and sum nodes (empty for lookup nodes).
+    std::vector<NodeId> children;
 
-    bool complete;
-
-    // Used only for lookup nodes.
-    SSCPNode()
-        : level(0), complete(true) {
-        ++num_lookup_nodes;
-        index = -num_lookup_nodes;
-    }
-
-    // Used only for compositional (max and sum) nodes.
-    explicit SSCPNode(std::vector<std::shared_ptr<SSCPNode>> &&children)
-        : index(num_compositional_nodes),
-          level(0),
-          children(move(children)),
-          complete(false) {
-        ++num_compositional_nodes;
-    }
-
-    virtual ~SSCPNode() = default;
-
-    virtual void update() {}
-
-    static int num_compositional_nodes;
-    static int num_lookup_nodes;
-};
-
-struct CompositionalSSCPNode : public SSCPNode {
-    explicit CompositionalSSCPNode(
-        std::vector<std::shared_ptr<SSCPNode>> &&children)
-        : SSCPNode(move(children)) {
-    }
-
-    void update() override {
-        level = 0;
-        complete = !children.empty();
-        for (const std::shared_ptr<SSCPNode> &child : children) {
-            if (child) {
-                level = std::max(level, child->level);
-                complete = complete && child->complete;
-            } else {
-                complete = false;
-            }
-        }
-        ++level;
-    }
-};
-
-struct MaxSSCPNode : public CompositionalSSCPNode {
-    explicit MaxSSCPNode(std::vector<std::shared_ptr<SSCPNode>> &&children)
-        : CompositionalSSCPNode(move(children)) {
-        ++num_max_nodes;
-    }
-
-    static int num_max_nodes;
-};
-
-struct SumSSCPNode : public CompositionalSSCPNode {
-    explicit SumSSCPNode(std::vector<std::shared_ptr<SSCPNode>> &&children)
-        : CompositionalSSCPNode(move(children)) {
-        ++num_sum_nodes;
-        if (is_non_trivial()) {
-            ++num_nontrivial_sum_nodes;
-        }
-    }
-
-    // A SumSSCPNode is trivial iff all of its children are LookupSSCPNodes.
-    bool is_non_trivial() const;
-
-    static int num_sum_nodes;
-    static int num_nontrivial_sum_nodes;
-};
-
-struct LookupSSCPNode : public SSCPNode {
+    // Lookup table position (only used for lookup nodes).
     int abstraction_id;
     int lookup_table_id;
-
-    LookupSSCPNode(int abstraction_id, int lookup_table_id)
-        : SSCPNode(),
-          abstraction_id(abstraction_id),
-          lookup_table_id(lookup_table_id) {
-    }
-
-    void update() override {
-        assert(level == 0);
-        assert(complete);
-    }
 };
 
 enum class InstructionType : uint8_t {
@@ -165,21 +92,11 @@ struct Instructions {
         return types.size();
     }
 
-    void reserve(int num_instructions, int num_ids) {
+    void reserve(int num_instructions, int64_t num_ids) {
         types.reserve(num_instructions);
         id_offsets.reserve(num_instructions + 1);
         id_offsets.push_back(0);
         ids.reserve(num_ids);
-    }
-
-    void append(
-        InstructionType type, const std::vector<
-            std::shared_ptr<SSCPNode>> &children) {
-        types.push_back(type);
-        for (const std::shared_ptr<SSCPNode> &child : children) {
-            ids.push_back(child->index);
-        }
-        id_offsets.push_back(ids.size());
     }
 };
 
@@ -221,62 +138,38 @@ struct SaturatedCostFunction {
 
 /*
   Transparent hash and equality for deduplicating compositional nodes by
-  the indices of their children, so the caches can store the nodes
-  themselves instead of a copy of the index vector per entry.
+  their children ids, so the caches can store node ids instead of a copy
+  of the children vector per entry.
 */
 struct NodeChildrenHash {
     using is_transparent = void;
 
-    size_t operator()(const std::vector<int> &child_indices) const {
-        return VectorIntMurmurHash()(child_indices);
+    const std::vector<SSCPNode> *nodes;
+
+    size_t operator()(const std::vector<NodeId> &children) const {
+        return VectorIntMurmurHash()(children);
     }
 
-    size_t operator()(const std::shared_ptr<SSCPNode> &node) const {
-        // Only called on rehashes; queries hash the index vector directly.
-        std::vector<int> child_indices;
-        child_indices.reserve(node->children.size());
-        for (const std::shared_ptr<SSCPNode> &child : node->children) {
-            child_indices.push_back(child->index);
-        }
-        return VectorIntMurmurHash()(child_indices);
+    size_t operator()(NodeId node) const {
+        return VectorIntMurmurHash()((*nodes)[node].children);
     }
 };
 
 struct NodeChildrenEqual {
     using is_transparent = void;
 
-    bool operator()(
-        const std::shared_ptr<SSCPNode> &node,
-        const std::vector<int> &child_indices) const {
-        if (node->children.size() != child_indices.size()) {
-            return false;
-        }
-        for (size_t i = 0; i < child_indices.size(); ++i) {
-            if (node->children[i]->index != child_indices[i]) {
-                return false;
-            }
-        }
-        return true;
+    const std::vector<SSCPNode> *nodes;
+
+    bool operator()(NodeId node, const std::vector<NodeId> &children) const {
+        return (*nodes)[node].children == children;
     }
 
-    bool operator()(
-        const std::vector<int> &child_indices,
-        const std::shared_ptr<SSCPNode> &node) const {
-        return (*this)(node, child_indices);
+    bool operator()(const std::vector<NodeId> &children, NodeId node) const {
+        return (*nodes)[node].children == children;
     }
 
-    bool operator()(
-        const std::shared_ptr<SSCPNode> &node1,
-        const std::shared_ptr<SSCPNode> &node2) const {
-        if (node1->children.size() != node2->children.size()) {
-            return false;
-        }
-        for (size_t i = 0; i < node1->children.size(); ++i) {
-            if (node1->children[i]->index != node2->children[i]->index) {
-                return false;
-            }
-        }
-        return true;
+    bool operator()(NodeId node1, NodeId node2) const {
+        return (*nodes)[node1].children == (*nodes)[node2].children;
     }
 };
 
@@ -330,12 +223,23 @@ protected:
        are created on the first lookup with a cost key. */
     std::vector<std::vector<int>> lookup_tables_cache;
 
-    virtual std::shared_ptr<SSCPNode> create_sscp_order_dag() = 0;
+    // Arena holding all DAG nodes; node ids are indices into this vector.
+    std::vector<SSCPNode> nodes;
 
-    /* cost_key must be the key registered for costs with
+    virtual NodeId create_sscp_order_dag() = 0;
+
+    NodeId add_compositional_node(
+        NodeType type, std::vector<NodeId> &&children);
+
+    // A sum node is trivial iff all of its children are lookup nodes.
+    bool is_non_trivial_sum_node(NodeId node) const;
+
+    /* Return the lookup node for evaluating the given abstraction under
+       the given costs, or NO_NODE if the abstraction is useless for these
+       costs. cost_key must be the key registered for costs with
        lookup_costs_or_register(); it is only used if cache_lookup_tables
        is true. */
-    std::shared_ptr<LookupSSCPNode> create_lookup_node(
+    NodeId create_lookup_node(
         const Costs &costs, CostKey cost_key, int abstraction_id);
 
     // Build a CostContext with operator masks for the given costs.
@@ -350,32 +254,30 @@ protected:
         const std::vector<int> &pending_abstraction_ids,
         const CostContext &context);
 
-    StructuredSCPOrder create_structured_scp_order(
-        std::shared_ptr<SSCPNode> &root_node);
+    StructuredSCPOrder create_structured_scp_order(NodeId root_node);
 
     void precompute_operator_properties(
         const std::vector<int> &relevant_abstraction_ids);
 
-    const std::vector<int> &get_lookup_table(
-        const std::shared_ptr<LookupSSCPNode> &node) const {
-        return lookup_tables[node->abstraction_id][node->lookup_table_id];
+    const std::vector<int> &get_lookup_table(NodeId node) const {
+        return lookup_tables[nodes[node].abstraction_id]
+               [nodes[node].lookup_table_id];
     }
 
     /* The returned reference lives as long as the generator with
        cache_scf_functions=true; without the cache it is only valid until
        the next call. */
-    const SaturatedCostFunction &get_saturated_costs(
-        const std::shared_ptr<LookupSSCPNode> &node) const;
+    const SaturatedCostFunction &get_saturated_costs(NodeId node) const;
 
     CostKey lookup_costs_or_register(const Costs &costs);
 
 private:
-    std::vector<std::vector<std::shared_ptr<LookupSSCPNode>>>
-    lookup_sscp_node_cache;
+    // Lookup node per abstraction and lookup table.
+    std::vector<std::vector<NodeId>> lookup_sscp_node_cache;
     std::vector<std::vector<std::vector<int>>> lookup_tables;
-    /* Saturated cost function per lookup node. Deque so that references
-       stay valid while new entries are added. */
-    std::deque<SaturatedCostFunction> scf_cache;
+    /* Saturated cost function per abstraction and lookup table. Deques so
+       that references stay valid while new entries are added. */
+    std::vector<std::deque<SaturatedCostFunction>> scf_cache;
     // Scratch for get_saturated_costs() with cache_scf_functions=false.
     mutable std::unique_ptr<SaturatedCostFunction> scf_scratch;
 
