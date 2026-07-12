@@ -107,18 +107,33 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
     if (prune_duplicates || cache_lookup_tables) {
         cost_key = lookup_costs_or_register(costs);
     }
+    const bool check_cost_partitioning =
+        use_conflicts && g_hacked_use_cost_partitioning_check;
     ScheduledChildren scheduled_children;
     Costs overall_remaining_costs(costs);
+    /* Track for each operator whether some child has negative saturated
+       cost. Updating flags per child is cache-friendlier than checking all
+       children per operator below. */
+    vector<uint8_t> op_has_negative_scf;
+    if (check_cost_partitioning && use_general_cp) {
+        op_has_negative_scf.assign(costs.size(), false);
+    }
     for (int abstraction_id : dependent_abstractions) {
         shared_ptr<LookupSSCPNode> scheduled_child =
             create_lookup_node(costs, cost_key, abstraction_id);
         if (scheduled_child) {
             Costs saturated_cost = get_saturated_costs(scheduled_child);
-            if (use_conflicts && g_hacked_use_cost_partitioning_check) {
+            if (check_cost_partitioning) {
                 /* Use the unguarded version to see if the children together
                    want more cost than what is available. */
                 reduce_costs_unguarded(
                     overall_remaining_costs, saturated_cost);
+                if (use_general_cp) {
+                    for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
+                        op_has_negative_scf[op_id] |=
+                            (saturated_cost[op_id] < 0);
+                    }
+                }
             }
             scheduled_children.abstraction_ids.push_back(abstraction_id);
             scheduled_children.nodes.push_back(move(scheduled_child));
@@ -136,28 +151,16 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
        computing all children on the same cost function. If this makes some
        abstractions independent, we can split this max node into a sum. */
     Costs simulated_costs(costs);
-    if (use_conflicts && g_hacked_use_cost_partitioning_check) {
+    if (check_cost_partitioning) {
         for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
-            if (overall_remaining_costs[op_id] >= 0 && costs[op_id] > 0) {
-                if (!use_general_cp) {
-                    simulated_costs[op_id] = INF;
-                } else {
-                    bool independent = all_of(
-                        scheduled_children.saturated_costs.begin(),
-                        scheduled_children.saturated_costs.end(),
-                        [&op_id](const vector<int> &saturated_cost) {
-                            return saturated_cost[op_id] >= 0;
-                        });
-                    if (independent) {
-                        simulated_costs[op_id] = INF;
-                    }
-                }
+            if (overall_remaining_costs[op_id] >= 0 && costs[op_id] > 0 &&
+                (!use_general_cp || !op_has_negative_scf[op_id])) {
+                simulated_costs[op_id] = INF;
             }
         }
     }
     vector<vector<int>> independent_abstractions;
-    if (use_conflicts && g_hacked_use_cost_partitioning_check &&
-        simulated_costs != costs) {
+    if (check_cost_partitioning && simulated_costs != costs) {
         independent_abstractions = compute_independent_abstractions(
             scheduled_children.abstraction_ids, simulated_costs);
     } else {

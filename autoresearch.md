@@ -86,4 +86,20 @@ This scaling cliff is the main cost of the approach.
 
 ## What's Been Tried
 
-(nothing yet — baseline pending)
+- run 2 DISCARD: hash-index for duplicate lookup-table detection in
+  create_lookup_node — dedup scan is not a bottleneck (the Dijkstra before
+  it is).
+- run 3 KEEP (0.985): branchless reduce_costs{,_unguarded} so GCC
+  vectorizes them (reduce_costs_unguarded had 15% self time). decide.py
+  hovered at RERUN (baseline only has 3 samples); kept on 12/12 sign test.
+- run 4 DISCARD: flipping cache_lookup_tables default alone = 40% SLOWER —
+  compress_costs+hash per create_lookup_node call outweighs the tiny
+  Dijkstras (systematic(2) has ~100-state abstractions).
+- run 5 KEEP (0.775, 21% faster): register cost function once per max node,
+  pass CostKey to create_lookup_node; cost cache keyed on raw vectors
+  (compress_costs deleted); cache_lookup_tables default true. satellite had
+  1.3M recomputed tables for 125 distinct ones.
+
+Profile (satellite sys2, pre-run-5): 37% projection Dijkstra+match tree,
+15% reduce_costs_unguarded, 8% create_max_node self, 11% malloc/free,
+6% BucketQueue, 4% DisjointSet::find. Re-profile after run 5.
