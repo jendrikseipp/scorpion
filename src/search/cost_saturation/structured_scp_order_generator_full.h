@@ -44,9 +44,22 @@ private:
         NodeId, NodeChildrenHash, NodeChildrenEqual>;
     SSCPNodeSet sum_sscp_node_post_cache;
     SSCPNodeSet max_sscp_node_post_cache;
-    using MaxSSCPNodeHashMap =
-        gtl::flat_hash_map<NodeKey, NodeId, NodeKeyHash>;
-    MaxSSCPNodeHashMap max_sscp_node_pre_cache;
+
+    /* Abstraction id sets recur across many max node calls, so we intern
+       them and memoize max nodes under compact (cost key, set id) keys. */
+    gtl::flat_hash_map<std::vector<int>, uint32_t, VectorIntMurmurHash>
+    id_set_registry;
+    gtl::flat_hash_map<uint64_t, NodeId> max_sscp_node_pre_cache;
+
+    uint32_t intern_id_set(const std::vector<int> &ids) {
+        auto [it, inserted] =
+            id_set_registry.emplace(ids, id_set_registry.size());
+        return it->second;
+    }
+
+    uint64_t make_call_key(CostKey cost_key, const std::vector<int> &ids) {
+        return (static_cast<uint64_t>(cost_key) << 32) | intern_id_set(ids);
+    }
 
     const bool prune_duplicates;
     const bool use_conflicts;

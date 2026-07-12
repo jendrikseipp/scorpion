@@ -34,7 +34,8 @@ NodeId StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
     .swap(sum_sscp_node_post_cache);
     SSCPNodeSet(0, NodeChildrenHash{&nodes}, NodeChildrenEqual{&nodes})
     .swap(max_sscp_node_post_cache);
-    MaxSSCPNodeHashMap().swap(max_sscp_node_pre_cache);
+    decltype(id_set_registry)().swap(id_set_registry);
+    decltype(max_sscp_node_pre_cache)().swap(max_sscp_node_pre_cache);
 
     return root_node;
 }
@@ -216,10 +217,11 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
     }
 
     assert(utils::is_sorted_unique(scheduled_children.abstraction_ids));
-    NodeKey pre_hash_key;
+    uint64_t scheduled_key = 0;
     if (prune_duplicates) {
-        pre_hash_key = NodeKey(cost_key, scheduled_children.abstraction_ids);
-        auto it = max_sscp_node_pre_cache.find(pre_hash_key);
+        scheduled_key =
+            make_call_key(cost_key, scheduled_children.abstraction_ids);
+        auto it = max_sscp_node_pre_cache.find(scheduled_key);
         if (it != max_sscp_node_pre_cache.end()) {
             return it->second;
         }
@@ -298,9 +300,8 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
     }
 
     if (prune_duplicates) {
-        max_sscp_node_pre_cache[move(pre_hash_key)] = max_node;
+        max_sscp_node_pre_cache[scheduled_key] = max_node;
     }
-
     return max_node;
 }
 
