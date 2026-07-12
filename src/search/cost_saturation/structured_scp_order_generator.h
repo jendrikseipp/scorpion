@@ -8,7 +8,6 @@
 
 #include "../algorithms/connected_components.h"
 #include "../utils/logging.h"
-#include "../utils/timer.h"
 
 #include "gtl/phmap.hpp"
 
@@ -179,7 +178,7 @@ public:
         const std::shared_ptr<AbstractTask> &transform,
         Abstractions abstractions, bool use_unsolvability_infos,
         bool use_general_cp, bool cache_lookup_tables,
-        bool time_connected_components, utils::Verbosity verbosity);
+        utils::Verbosity verbosity);
     virtual ~StructuredSCPOrderGenerator() = default;
 
     StructuredSCPOrder generate();
@@ -191,7 +190,6 @@ protected:
     const bool use_general_cp;
     const bool use_unsolvability;
     const bool cache_lookup_tables;
-    const bool time_connected_components;
     bool precomputed_conflicting_ops;
     int recomputed_lookup_tables;
     int lookup_cache_hits;
@@ -226,16 +224,7 @@ protected:
     Costs get_saturated_costs(
         const std::shared_ptr<LookupSSCPNode> &node) const;
 
-    Costs compute_remaining_costs(
-        const std::shared_ptr<LookupSSCPNode> &node,
-        const Costs &remaining_costs) const;
-
     CostKey lookup_costs_or_register(const Costs &costs);
-
-    void dump_tree(const std::shared_ptr<SSCPNode> &node) const;
-    void dump_node(
-        const std::shared_ptr<SSCPNode> &node,
-        const std::shared_ptr<SSCPNode> &parent) const;
 
 private:
     std::vector<std::vector<std::shared_ptr<LookupSSCPNode>>>
@@ -254,8 +243,6 @@ private:
        remaining costs (cond). */
     OpMask live_op_mask;
     OpMask cond_op_mask;
-    utils::Timer cc_generation;
-    utils::Timer cc_computation;
 
     /* Determine for each relevant abstraction the set of operators that
        affects that abstraction. */

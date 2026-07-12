@@ -17,7 +17,7 @@ public:
         bool prune_duplicates, bool use_conflicts, bool cache_lookup_tables)
         : StructuredSCPOrderGenerator(
               transform, move(abstractions), use_unsolvability_infos,
-              use_general_cp, cache_lookup_tables, false, verbosity),
+              use_general_cp, cache_lookup_tables, verbosity),
           prune_duplicates(prune_duplicates),
           use_conflicts(use_conflicts) {
     }

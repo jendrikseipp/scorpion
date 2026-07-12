@@ -58,20 +58,16 @@ bool SumSSCPNode::is_non_trivial() const {
 StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     const shared_ptr<AbstractTask> &transform, Abstractions abstractions,
     bool use_unsolvability_infos, bool use_general_cp,
-    bool cache_lookup_tables, bool time_connected_components,
-    utils::Verbosity verbosity)
+    bool cache_lookup_tables, utils::Verbosity verbosity)
     : abstractions(move(abstractions)),
       task_proxy(*transform),
       use_general_cp(use_general_cp),
       use_unsolvability(use_unsolvability_infos),
       cache_lookup_tables(cache_lookup_tables),
-      time_connected_components(time_connected_components),
       precomputed_conflicting_ops(false),
       recomputed_lookup_tables(0),
       lookup_cache_hits(0),
-      log(utils::get_log_for_verbosity(verbosity)),
-      cc_generation(false),
-      cc_computation(false) {
+      log(utils::get_log_for_verbosity(verbosity)) {
     int num_abstractions = this->abstractions.size();
     lookup_tables.resize(num_abstractions);
     lookup_sscp_node_cache.resize(num_abstractions);
@@ -212,10 +208,6 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     cout << "Lookup table cache size: " << lookup_table_cache_size << endl;
     cout << "SCF cache size: " << scf_cache.size() << endl;
     cout << "Stored cost functions: " << cost_key_cache.size() << endl;
-    if (time_connected_components) {
-        cout << "CC generation time: " << cc_generation << endl;
-        cout << "CC computation time: " << cc_computation << endl;
-    }
     log << "Time to generate DAG: " << timer() << endl;
     log << "Depth of DAG: " << (root_node ? root_node->level : 0) << endl;
     log << "Generated nodes: "
@@ -228,45 +220,6 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     log << "Generated lookup table entries: " << SSCPNode::num_lookup_nodes
         << endl;
     return create_structured_scp_order(root_node);
-}
-
-void StructuredSCPOrderGenerator::dump_tree(
-    const shared_ptr<SSCPNode> &node) const {
-    cout << "---- dumping DAG ------" << endl;
-    cout << "overall costs: ";
-    print_indexed_vector(task_properties::get_operator_costs(task_proxy));
-    if (node) {
-        dump_node(node, nullptr);
-    } else {
-        cout << "empty DAG" << endl;
-    }
-}
-
-void StructuredSCPOrderGenerator::dump_node(
-    const shared_ptr<SSCPNode> &node,
-    const shared_ptr<SSCPNode> &parent) const {
-    cout << "node: " << node->index << " at level: " << node->level << endl;
-    if (dynamic_pointer_cast<MaxSSCPNode>(node)) {
-        cout << "max node with " << node->children.size() << " children"
-             << endl;
-    } else if (dynamic_pointer_cast<SumSSCPNode>(node)) {
-        cout << "sum node with " << node->children.size() << " children"
-             << endl;
-    } else if (
-        const auto lookup_node = dynamic_pointer_cast<LookupSSCPNode>(node)) {
-        cout << "lookup node for abstraction: " << lookup_node->abstraction_id
-             << endl;
-    }
-    if (parent) {
-        cout << "parent: " << parent->index << endl;
-    }
-    for (const shared_ptr<SSCPNode> &child : node->children) {
-        if (child) {
-            dump_node(child, node);
-        } else {
-            cout << "null child" << endl;
-        }
-    }
 }
 
 shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
@@ -342,9 +295,6 @@ vector<vector<int>>
 StructuredSCPOrderGenerator::compute_independent_abstractions(
     const vector<int> &pending_abstraction_ids, const Costs &remaining_costs) {
     // Build the dependency graph between the abstractions.
-    if (time_connected_components) {
-        cc_generation.resume();
-    }
     if (g_hacked_use_affecting_labels) {
         /* Classify the operators by remaining cost once per call, so that
            each pair check below only needs a few word-parallel mask
@@ -389,10 +339,6 @@ StructuredSCPOrderGenerator::compute_independent_abstractions(
         }
     }
  endloop:
-    if (time_connected_components) {
-        cc_generation.stop();
-        cc_computation.resume();
-    }
 
     // Compute the connected components of the dependency graph.
     vector<vector<int>> independent_abstractions =
@@ -402,9 +348,6 @@ StructuredSCPOrderGenerator::compute_independent_abstractions(
         sort(component.begin(), component.end());
     }
     sort(independent_abstractions.begin(), independent_abstractions.end());
-    if (time_connected_components) {
-        cc_computation.stop();
-    }
     return independent_abstractions;
 }
 
@@ -650,13 +593,6 @@ Costs StructuredSCPOrderGenerator::get_saturated_costs(
     }
 }
 
-Costs StructuredSCPOrderGenerator::compute_remaining_costs(
-    const shared_ptr<LookupSSCPNode> &node, const Costs &costs) const {
-    Costs remaining_costs(costs);
-    reduce_costs(remaining_costs, get_saturated_costs(node));
-    return remaining_costs;
-}
-
 /* Return the key under which the given cost function is registered in
    cost_key_cache, so that all other hash maps can use the small key instead
    of the full cost function. */
@@ -706,10 +642,6 @@ void add_structured_order_generator_options_to_parser(
     feature.add_option<int>(
         "max_lookup_table_cache_resizes",
         "maximum number of lookup table cache resizes", "-1");
-    feature.add_option<bool>(
-        "collect_time",
-        "time the connected component construction and computation",
-        "false");
     utils::add_log_options_to_feature(feature);
 }
 
