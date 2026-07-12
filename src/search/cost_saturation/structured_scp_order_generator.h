@@ -151,8 +151,8 @@ enum class InstructionType {
 };
 
 struct Instruction {
-    const InstructionType type;
-    const std::vector<int> ids;
+    InstructionType type;
+    std::vector<int> ids;
 
     Instruction(InstructionType type, std::vector<int> ids)
         : type(type), ids(move(ids)) {
@@ -227,7 +227,8 @@ protected:
     bool precomputed_conflicting_ops;
     int recomputed_lookup_tables;
     int lookup_cache_hits;
-    double max_lookup_table_entries;
+    // Maximum number of cost keys cached in lookup_tables_cache.
+    CostKey max_lookup_table_entries;
     utils::LogProxy log;
     gtl::flat_hash_map<Costs, CostKey, VectorIntMurmurHash> cost_key_cache;
     /* lookup_tables_cache[cost_key][abstraction_id] is the lookup table id

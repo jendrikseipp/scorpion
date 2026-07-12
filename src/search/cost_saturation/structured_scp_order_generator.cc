@@ -71,11 +71,11 @@ StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     }
     cout << "Number of abstractions: " << num_abstractions << endl;
     if (options.max_lookup_table_cache_resizes != -1) {
-        // Hash map resizes happen at 87.5% load.
-        max_lookup_table_entries = floor(
+        // Historically, hash map resizes happened at 87.5% load.
+        max_lookup_table_entries = static_cast<CostKey>(
             0.875 * pow(2, options.max_lookup_table_cache_resizes));
     } else {
-        max_lookup_table_entries = numeric_limits<double>::infinity();
+        max_lookup_table_entries = numeric_limits<CostKey>::max();
     }
     cout << "Max lookup table entries: " << max_lookup_table_entries << endl;
 }

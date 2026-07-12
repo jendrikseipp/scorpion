@@ -141,8 +141,20 @@ This scaling cliff is the main cost of the approach.
 - run 22 DISCARD: in-place CostContext mutation with undo (backtracking)
   instead of per-child copies — 1.6% worse and hurts clarity.
 
+- run 23 KEEP (0.188, mem 0.997): dense [cost_key][abstraction] lookup
+  cache instead of per-abstraction hash maps; kept on sign test.
+
+- run 24 DISCARD: reusable member DisjointSet with sparse reset — no win,
+  the per-call allocations were not significant.
+- run 25 KEEP (clarity): non-const Instruction members (restores vector
+  moves) and integer max_lookup_table_entries; metric neutral (0.189).
+
 IMPORTANT for resuming: on DISCARD use `jj restore src` (NOT bare
 `jj restore`), otherwise uncommitted autoresearch.md updates are clobbered.
+
+Not worth it (analyzed, skipped): incremental Zobrist hashing for cost keys
+(saves ~4% murmur but needs collision verification + threading; ugly
+complexity for a small gain).
 
 Insights:
 - Hard domains (driverlog, woodworking, scanalyzer even small instances)
