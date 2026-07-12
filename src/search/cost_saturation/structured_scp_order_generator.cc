@@ -60,6 +60,7 @@ StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     lookup_sscp_node_cache.resize(num_abstractions);
     scf_cache.resize(num_abstractions);
     table_by_restricted_costs.resize(num_abstractions);
+    lookup_tables_cache.initialize(num_abstractions);
     unsolvability_infos.reserve(num_abstractions);
     for (int abstraction_id = 0; abstraction_id < num_abstractions;
          ++abstraction_id) {
@@ -246,8 +247,8 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     assert(lookup_sscp_node_cache.size() == abstractions.size());
     cout << "Recomputed lookup tables: " << recomputed_lookup_tables << endl;
     cout << "Lookup table cache hits: " << lookup_cache_hits << endl;
-    cout << "Lookup table cache size: "
-         << lookup_tables_cache.size() * abstractions.size() << endl;
+    cout << "Lookup table cache size: " << lookup_tables_cache.size()
+         << endl;
     cout << "Stored cost functions: " << packed_costs.size() << endl;
     int num_lookup_nodes = 0;
     int num_sum_nodes = 0;
@@ -289,14 +290,8 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
     bool cache_this_lookup =
         options.cache_lookup_tables && cost_key < max_lookup_table_entries;
     if (cache_this_lookup) {
-        if (cost_key >= lookup_tables_cache.size()) {
-            lookup_tables_cache.resize(cost_key + 1);
-        }
-        vector<int> &row = lookup_tables_cache[cost_key];
-        if (row.empty()) {
-            row.assign(abstractions.size(), UNKNOWN_LOOKUP);
-        }
-        int cached_table_id = row[abstraction_id];
+        int cached_table_id = lookup_tables_cache.get(
+            cost_key, abstraction_id);
         if (cached_table_id != UNKNOWN_LOOKUP) {
             ++lookup_cache_hits;
             if (cached_table_id == PRUNED_LOOKUP) {
@@ -310,7 +305,7 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
     }
     auto cache_table_for_costs = [&](int table_id) {
             if (cache_this_lookup) {
-                lookup_tables_cache[cost_key][abstraction_id] = table_id;
+                lookup_tables_cache.set(cost_key, abstraction_id, table_id);
             }
         };
 
@@ -559,7 +554,7 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     utils::release_vector_memory(cost_key_overflow);
     utils::release_vector_memory(packed_costs.data);
     utils::release_vector_memory(packed_costs.offsets);
-    utils::release_vector_memory(lookup_tables_cache);
+    lookup_tables_cache.release_memory();
     utils::release_vector_memory(table_by_restricted_costs);
     utils::release_vector_memory(relevant_op_ids_by_abstraction);
     utils::release_vector_memory(scf_cache);

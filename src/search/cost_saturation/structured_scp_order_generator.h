@@ -7,6 +7,7 @@
 #include "../task_proxy.h"
 
 #include "../algorithms/connected_components.h"
+#include "../utils/collections.h"
 #include "../utils/logging.h"
 
 #include "gtl/phmap.hpp"
@@ -14,6 +15,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <deque>
+#include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -321,11 +323,66 @@ protected:
     PackedCostsPool packed_costs;
     // Scratch blob for lookup_costs_or_register().
     std::vector<uint8_t> packed_costs_scratch;
-    /* lookup_tables_cache[cost_key][abstraction_id] is the lookup table id
-       for evaluating the abstraction under the cost function with this key
-       (UNKNOWN_LOOKUP if not computed yet, PRUNED_LOOKUP if pruned). Rows
-       are created on the first lookup with a cost key. */
-    std::vector<std::vector<int>> lookup_tables_cache;
+    /* Caches per (cost key, abstraction) the lookup table id for
+       evaluating the abstraction under the cost function (UNKNOWN_LOOKUP
+       if not computed yet, PRUNED_LOOKUP if pruned). Rows are created on
+       the first lookup with a cost key and store 16-bit entries to halve
+       the dominant cache; the rare table ids that do not fit (very large
+       tasks) go to an overflow map, so all id ranges are supported. */
+    class LookupTableCache {
+        std::vector<std::vector<int16_t>> rows;
+        gtl::flat_hash_map<uint64_t, int> overflow;
+        int num_abstractions = 0;
+
+        static const int16_t SMALL_UNKNOWN = -2;
+        static const int16_t SMALL_OVERFLOW = -3;
+
+        static uint64_t overflow_key(CostKey cost_key, int abstraction_id) {
+            return (static_cast<uint64_t>(cost_key) << 32) | abstraction_id;
+        }
+
+    public:
+        void initialize(int num_abstractions) {
+            this->num_abstractions = num_abstractions;
+        }
+
+        int64_t size() const {
+            return static_cast<int64_t>(rows.size()) * num_abstractions;
+        }
+
+        // Returns the table id, PRUNED_LOOKUP or UNKNOWN_LOOKUP.
+        int get(CostKey cost_key, int abstraction_id) {
+            if (cost_key >= rows.size()) {
+                rows.resize(cost_key + 1);
+            }
+            std::vector<int16_t> &row = rows[cost_key];
+            if (row.empty()) {
+                row.assign(num_abstractions, SMALL_UNKNOWN);
+            }
+            int16_t entry = row[abstraction_id];
+            if (entry == SMALL_OVERFLOW) {
+                return overflow.at(overflow_key(cost_key, abstraction_id));
+            }
+            return entry;
+        }
+
+        // table_id is a valid table id or PRUNED_LOOKUP.
+        void set(CostKey cost_key, int abstraction_id, int table_id) {
+            if (table_id > std::numeric_limits<int16_t>::max()) {
+                rows[cost_key][abstraction_id] = SMALL_OVERFLOW;
+                overflow[overflow_key(cost_key, abstraction_id)] = table_id;
+            } else {
+                rows[cost_key][abstraction_id] =
+                    static_cast<int16_t>(table_id);
+            }
+        }
+
+        void release_memory() {
+            utils::release_vector_memory(rows);
+            decltype(overflow)().swap(overflow);
+        }
+    };
+    LookupTableCache lookup_tables_cache;
     /* The goal distances of an abstraction only depend on the costs of its
        relevant operators, so cost functions that agree on them share the
        lookup table. Maps the restricted cost function to the table id (or
