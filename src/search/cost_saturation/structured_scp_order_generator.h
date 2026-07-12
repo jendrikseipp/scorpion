@@ -238,6 +238,37 @@ struct NodeChildrenEqual {
 };
 
 /*
+  Append-only pool of bit-packed cost functions, used to verify hash hits
+  in the cost function registry. One shared buffer avoids a heap-allocated
+  vector per cost function; hard tasks store hundreds of thousands.
+*/
+struct PackedCostsPool {
+    std::vector<uint8_t> data;
+    // Blob of cost function key k is data[offsets[k]..offsets[k + 1]).
+    std::vector<int64_t> offsets = {0};
+
+    int size() const {
+        return offsets.size() - 1;
+    }
+
+    /* Pack the costs with the minimum number of bits per cost. Equal cost
+       functions produce identical blobs, so blobs can be compared with
+       memcmp(). */
+    static void pack(const Costs &costs, std::vector<uint8_t> &blob);
+
+    void append(const std::vector<uint8_t> &blob) {
+        data.insert(data.end(), blob.begin(), blob.end());
+        offsets.push_back(data.size());
+    }
+
+    bool equals(CostKey key, const std::vector<uint8_t> &blob) const {
+        return offsets[key + 1] - offsets[key] ==
+               static_cast<int64_t>(blob.size()) &&
+               std::equal(blob.begin(), blob.end(), data.begin() + offsets[key]);
+    }
+};
+
+/*
   A cost function together with a classification of its operators for the
   dependency checks: live operators always create a dependency between
   abstractions they affect; conditional operators (remaining cost 0) only
@@ -284,7 +315,9 @@ protected:
     gtl::flat_hash_map<uint64_t, CostKey> cost_key_by_hash;
     std::vector<std::pair<uint64_t, CostKey>> cost_key_overflow;
     // Packed cost function per cost key, for verification.
-    std::vector<std::vector<uint8_t>> packed_costs_by_key;
+    PackedCostsPool packed_costs;
+    // Scratch blob for lookup_costs_or_register().
+    std::vector<uint8_t> packed_costs_scratch;
     /* lookup_tables_cache[cost_key][abstraction_id] is the lookup table id
        for evaluating the abstraction under the cost function with this key
        (UNKNOWN_LOOKUP if not computed yet, PRUNED_LOOKUP if pruned). Rows

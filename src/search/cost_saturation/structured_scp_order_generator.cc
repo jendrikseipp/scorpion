@@ -11,6 +11,7 @@
 #include "../utils/logging.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <iostream>
 #include <memory>
@@ -238,7 +239,7 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     cout << "Lookup table cache hits: " << lookup_cache_hits << endl;
     cout << "Lookup table cache size: "
          << lookup_tables_cache.size() * abstractions.size() << endl;
-    cout << "Stored cost functions: " << packed_costs_by_key.size() << endl;
+    cout << "Stored cost functions: " << packed_costs.size() << endl;
     int num_lookup_nodes = 0;
     int num_sum_nodes = 0;
     int num_nontrivial_sum_nodes = 0;
@@ -544,7 +545,8 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     // Free the construction-time caches before materializing instructions.
     decltype(cost_key_by_hash)().swap(cost_key_by_hash);
     utils::release_vector_memory(cost_key_overflow);
-    utils::release_vector_memory(packed_costs_by_key);
+    utils::release_vector_memory(packed_costs.data);
+    utils::release_vector_memory(packed_costs.offsets);
     utils::release_vector_memory(lookup_tables_cache);
     utils::release_vector_memory(table_by_restricted_costs);
     utils::release_vector_memory(relevant_op_ids_by_abstraction);
@@ -720,25 +722,44 @@ const SaturatedCostFunction &StructuredSCPOrderGenerator::get_saturated_costs(
     }
 }
 
-/* Pack a cost function into a compact blob with 1, 2 or 4 bytes per cost,
-   depending on the maximum finite cost. Mapping INF to 0 and finite costs
-   to cost + 1 avoids a special case for INF; the width is stored in the
-   first byte. Byte-granular packing keeps both loops vectorizable. */
-template<typename UInt>
-static void append_packed_values(
-    vector<uint8_t> &packed, const Costs &costs) {
-    size_t offset = packed.size();
-    packed.resize(offset + costs.size() * sizeof(UInt));
-    UInt *values = reinterpret_cast<UInt *>(packed.data() + offset);
-    for (size_t i = 0; i < costs.size(); ++i) {
-        int cost = costs[i];
-        values[i] = (cost == INF)
-            ? 0
-            : static_cast<UInt>(static_cast<unsigned int>(cost) + 1);
+// Map INF to 0 and finite costs to cost + 1 to avoid a special case.
+static unsigned int packed_cost_value(int cost) {
+    return (cost == INF) ? 0 : static_cast<unsigned int>(cost) + 1;
+}
+
+/* Pack with a compile-time width that divides 8, so the loops have fixed
+   stride and vectorize. */
+template<int BITS>
+static void pack_values(const Costs &costs, vector<uint8_t> &blob) {
+    constexpr int PER_BYTE = 8 / BITS;
+    size_t num_full_bytes = costs.size() / PER_BYTE;
+    size_t offset = blob.size();
+    blob.resize(offset + (costs.size() + PER_BYTE - 1) / PER_BYTE, 0);
+    uint8_t *bytes = blob.data() + offset;
+    for (size_t b = 0; b < num_full_bytes; ++b) {
+        uint8_t value = 0;
+        for (int j = 0; j < PER_BYTE; ++j) {
+            value |= packed_cost_value(costs[b * PER_BYTE + j]) << (j * BITS);
+        }
+        bytes[b] = value;
+    }
+    for (size_t i = num_full_bytes * PER_BYTE; i < costs.size(); ++i) {
+        bytes[num_full_bytes] |=
+            packed_cost_value(costs[i]) << (i % PER_BYTE * BITS);
     }
 }
 
-static void pack_costs(const Costs &costs, vector<uint8_t> &packed) {
+template<typename UInt>
+static void pack_values_wide(const Costs &costs, vector<uint8_t> &blob) {
+    size_t offset = blob.size();
+    blob.resize(offset + costs.size() * sizeof(UInt));
+    UInt *values = reinterpret_cast<UInt *>(blob.data() + offset);
+    for (size_t i = 0; i < costs.size(); ++i) {
+        values[i] = static_cast<UInt>(packed_cost_value(costs[i]));
+    }
+}
+
+void PackedCostsPool::pack(const Costs &costs, vector<uint8_t> &blob) {
     unsigned int max_finite_cost = 0;
     for (int cost : costs) {
         assert(cost >= 0);
@@ -746,50 +767,31 @@ static void pack_costs(const Costs &costs, vector<uint8_t> &packed) {
             max_finite_cost,
             (cost == INF) ? 0 : static_cast<unsigned int>(cost));
     }
-    uint8_t bytes_per_cost =
-        (max_finite_cost < 0xFF) ? 1 : ((max_finite_cost < 0xFFFF) ? 2 : 4);
+    uint8_t bits_per_cost = bit_ceil(
+        static_cast<uint8_t>(bit_width(max_finite_cost + 1)));
 
-    packed.clear();
-    packed.reserve(1 + costs.size() * bytes_per_cost);
-    packed.push_back(bytes_per_cost);
-    if (bytes_per_cost == 1) {
-        append_packed_values<uint8_t>(packed, costs);
-    } else if (bytes_per_cost == 2) {
-        append_packed_values<uint16_t>(packed, costs);
-    } else {
-        append_packed_values<uint32_t>(packed, costs);
-    }
-}
-
-// Check whether the packed blob encodes exactly the given cost function.
-template<typename UInt>
-static bool packed_values_equal_costs(
-    const uint8_t *packed, const Costs &costs) {
-    const UInt *values = reinterpret_cast<const UInt *>(packed);
-    for (size_t i = 0; i < costs.size(); ++i) {
-        int cost = costs[i];
-        UInt expected = (cost == INF)
-            ? 0
-            : static_cast<UInt>(static_cast<unsigned int>(cost) + 1);
-        if (values[i] != expected) {
-            return false;
-        }
-    }
-    return true;
-}
-
-static bool packed_equals_costs(
-    const vector<uint8_t> &packed, const Costs &costs) {
-    if (packed.size() != 1 + costs.size() * packed[0]) {
-        return false;
-    }
-    switch (packed[0]) {
+    blob.clear();
+    blob.reserve(1 + (bits_per_cost * costs.size() + 7) / 8);
+    blob.push_back(bits_per_cost);
+    switch (bits_per_cost) {
     case 1:
-        return packed_values_equal_costs<uint8_t>(packed.data() + 1, costs);
+        pack_values<1>(costs, blob);
+        break;
     case 2:
-        return packed_values_equal_costs<uint16_t>(packed.data() + 1, costs);
+        pack_values<2>(costs, blob);
+        break;
+    case 4:
+        pack_values<4>(costs, blob);
+        break;
+    case 8:
+        pack_values_wide<uint8_t>(costs, blob);
+        break;
+    case 16:
+        pack_values_wide<uint16_t>(costs, blob);
+        break;
     default:
-        return packed_values_equal_costs<uint32_t>(packed.data() + 1, costs);
+        pack_values_wide<uint32_t>(costs, blob);
+        break;
     }
 }
 
@@ -801,26 +803,27 @@ CostKey StructuredSCPOrderGenerator::lookup_costs_or_register(
     uint64_t hash = hash_bytes(
         costs.data(), costs.size() * sizeof(int), costs.size());
     auto it = cost_key_by_hash.find(hash);
-    if (it != cost_key_by_hash.end()) {
-        if (packed_equals_costs(packed_costs_by_key[it->second], costs)) {
-            return it->second;
-        }
-        // Hash collision: look for the cost function in the overflow list.
-        for (const auto &[overflow_hash, overflow_key] : cost_key_overflow) {
-            if (overflow_hash == hash &&
-                packed_equals_costs(packed_costs_by_key[overflow_key], costs)) {
-                return overflow_key;
-            }
-        }
-    }
-    CostKey key = packed_costs_by_key.size();
-    packed_costs_by_key.emplace_back();
-    pack_costs(costs, packed_costs_by_key.back());
-    if (it != cost_key_by_hash.end()) {
-        cost_key_overflow.emplace_back(hash, key);
-    } else {
+    if (it == cost_key_by_hash.end()) {
+        CostKey key = packed_costs.size();
+        PackedCostsPool::pack(costs, packed_costs_scratch);
+        packed_costs.append(packed_costs_scratch);
         cost_key_by_hash.emplace(hash, key);
+        return key;
     }
+    PackedCostsPool::pack(costs, packed_costs_scratch);
+    if (packed_costs.equals(it->second, packed_costs_scratch)) {
+        return it->second;
+    }
+    // Hash collision: look for the cost function in the overflow list.
+    for (const auto &[overflow_hash, overflow_key] : cost_key_overflow) {
+        if (overflow_hash == hash &&
+            packed_costs.equals(overflow_key, packed_costs_scratch)) {
+            return overflow_key;
+        }
+    }
+    CostKey key = packed_costs.size();
+    packed_costs.append(packed_costs_scratch);
+    cost_key_overflow.emplace_back(hash, key);
     return key;
 }
 
