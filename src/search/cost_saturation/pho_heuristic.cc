@@ -10,6 +10,7 @@
 #include "../algorithms/partial_state_tree.h"
 #include "../plugins/plugin.h"
 #include "../task_utils/task_properties.h"
+#include "../utils/execution.h"
 #include "../utils/logging.h"
 
 using namespace std;
@@ -37,9 +38,10 @@ PhO::PhO(
     for (int i = 0; i < num_abstractions; ++i) {
         const Abstraction &abstraction = *abstractions[i];
         vector<int> h_values = abstraction.compute_goal_distances(costs);
-        abstraction_has_unsolvable_states[i] = any_of(
-            execution::unseq, h_values.begin(), h_values.end(),
-            [](int x) { return x == cost_saturation::INF; });
+        abstraction_has_unsolvable_states[i] =
+            any_of(utils::unseq, h_values.begin(), h_values.end(), [](int x) {
+                return x == cost_saturation::INF;
+            });
         vector<int> saturated_costs =
             abstraction.compute_saturated_costs(h_values);
         h_values_by_abstraction.push_back(move(h_values));

@@ -6,10 +6,10 @@
 
 #include "../algorithms/priority_queues.h"
 #include "../utils/countdown_timer.h"
+#include "../utils/execution.h"
 #include "../utils/logging.h"
 
 #include <cassert>
-#include <execution>
 #include <map>
 
 using namespace std;
@@ -214,8 +214,8 @@ void ShortestPaths::remove_child(int state, const Transition &child) {
     }
     assert(use_cache);
     Transitions &state_children = children[state];
-    auto it = find(
-        execution::unseq, state_children.begin(), state_children.end(), child);
+    auto it =
+        find(utils::unseq, state_children.begin(), state_children.end(), child);
     assert(it != state_children.end());
     utils::swap_and_pop_from_vector(
         state_children, it - state_children.begin());
@@ -228,7 +228,7 @@ void ShortestPaths::remove_parent(int state, const Transition &parent) {
     assert(use_cache);
     assert(parent.is_defined());
     auto it = find(
-        execution::unseq, parents[state].begin(), parents[state].end(), parent);
+        utils::unseq, parents[state].begin(), parents[state].end(), parent);
     assert(it != parents[state].end());
     utils::swap_and_pop_from_vector(
         parents[state], it - parents[state].begin());
@@ -397,9 +397,7 @@ void ShortestPaths::update_incrementally(
 
             if (use_cache) {
                 if (g_hacked_sort_transitions) {
-                    sort(
-                        execution::unseq, children[state].begin(),
-                        children[state].end());
+                    sort(children[state].begin(), children[state].end());
                 }
                 for (const Transition &t : children[state]) {
                     int prev = t.target_id;
@@ -551,9 +549,7 @@ OptimalTransitions ShortestPaths::get_optimal_transitions(
         }
         if (g_hacked_sort_transitions) {
             for (auto &[op_id, transitions_for_op] : transitions) {
-                sort(
-                    execution::unseq, transitions_for_op.begin(),
-                    transitions_for_op.end());
+                sort(transitions_for_op.begin(), transitions_for_op.end());
             }
         }
     } else {

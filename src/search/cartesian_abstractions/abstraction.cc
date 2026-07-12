@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <execution>
 #include <iostream>
 
 using namespace std;
@@ -104,7 +103,7 @@ Transitions Abstraction::get_incoming_transitions(int state_id) const {
             : match_tree->get_incoming_transitions(*states[state_id]);
 
     if (g_hacked_sort_transitions) {
-        sort(execution::unseq, transitions.begin(), transitions.end());
+        sort(transitions.begin(), transitions.end());
     }
     return transitions;
 }
@@ -116,7 +115,7 @@ Transitions Abstraction::get_outgoing_transitions(int state_id) const {
             : match_tree->get_outgoing_transitions(*states[state_id]);
 
     if (g_hacked_sort_transitions) {
-        sort(execution::unseq, transitions.begin(), transitions.end());
+        sort(transitions.begin(), transitions.end());
     }
     return transitions;
 }

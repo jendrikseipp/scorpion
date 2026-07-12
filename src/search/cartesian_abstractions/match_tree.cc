@@ -11,7 +11,6 @@
 #include "../utils/timer.h"
 
 #include <algorithm>
-#include <execution>
 
 using namespace std;
 

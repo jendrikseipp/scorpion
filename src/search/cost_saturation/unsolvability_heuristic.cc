@@ -4,7 +4,6 @@
 #include "cost_partitioning_heuristic.h"
 
 #include <algorithm>
-#include <execution>
 
 using namespace std;
 
@@ -57,8 +56,7 @@ UnsolvabilityHeuristic::UnsolvabilityHeuristic(
 bool UnsolvabilityHeuristic::is_unsolvable(
     const vector<int> &abstract_state_ids) const {
     return any_of(
-        execution::unseq, unsolvability_infos.begin(),
-        unsolvability_infos.end(),
+        unsolvability_infos.begin(), unsolvability_infos.end(),
         [&abstract_state_ids](const UnsolvabilityInfo &info) {
             return info
                 .unsolvable_states[abstract_state_ids[info.abstraction_id]];
