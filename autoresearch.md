@@ -253,6 +253,24 @@ ALGORITHMIC runs (user steer: attack DAG size):
   edits: the save buffer must be a per-frame local, not a member — the
   recursion re-enters create_max_node.
 
+Consolidation audit (runs 45-49, "only keep what earns its keep"):
+- run 45 KEEP: removed orphaned NodeKey/NodeKeyHash/PairUint32VectorIntHash/
+  VectorUint8MurmurHash (dead since runs 38/41/42).
+- run 46 ABLATION: live/cond context masks removed -> +2.7% time. Masks
+  (runs 13/21) still earn their keep despite sparse conflict masks.
+- run 47 ABLATION: static pair-conflict matrix removed -> +17% time.
+  Run 36 earns its keep.
+- run 48 ABLATION: single-component fast path removed -> +6% time.
+  Run 18 earns its keep.
+- run 49 ABLATION: read-only entry probe removed -> +14% time.
+  Run 39 earns its keep.
+Not ablated: shared-code changes benefiting scp_online too (runs 3, 12);
+caches whose hit counters prove their value (runs 5, 17, 40); data
+structure replacements where the previous version is strictly larger
+(runs 28, 30, 31, 32); mechanisms validated against slower variants
+during their own runs (41, 42); pure removals (14, 15, 25, 33, 45).
+Final verified state: time 0.509, mem 0.297, all checks green.
+
 Zenodo artifact check (10.5281/zenodo.16606498, the code behind the
 paper's experiments): precompute_conflicting_ops() and the on-the-fly path
 both use set_intersection() of the scp-active operator sets, and comments
