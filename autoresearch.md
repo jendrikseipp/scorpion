@@ -208,6 +208,28 @@ Not worth it (analyzed, skipped): incremental Zobrist hashing for cost keys
 (saves ~4% murmur but needs collision verification + threading; ugly
 complexity for a small gain).
 
+Paper analysis (Höft, Speck & Seipp, KR 2025) of union vs intersection:
+- Theorem 6 (SCP*-AFF): h1, h2 are order-independent if the sets
+  L^non-goal (labels with a transition between distinct states, at most
+  one a goal state) are DISJOINT, i.e., independence iff INTERSECTION of
+  the scp-active label sets is empty. Theorem 7 (SCP*-AFF-inf) removes
+  labels with cost(l)=inf from the intersection. operator_is_scp_active()
+  in the code is exactly L^non-goal.
+- The ported branch's union (rel1 | rel2) therefore does NOT implement the
+  paper; it made almost all pairs dependent and disabled the AFF rule
+  (only the inf rule fired). Bug in the ported code, not the paper's
+  theory and not the new code. The paper's reported 4-orders-of-magnitude
+  ADHG reductions match what the intersection rule gives us (rovers06:
+  2.88M -> 14.6k nodes).
+- One genuine corner case the paper's Lemma 1/Theorem 6 gloss over: under
+  general cost partitioning, an operator with NO transition in an
+  abstraction has mscf = -infinity (not saturation-affecting), so
+  saturating that abstraction donates infinite remaining cost to later
+  heuristics, which can change their values. Cannot happen for projections
+  (irrelevant operators self-loop); rare for Cartesian/explicit
+  abstractions. run 34 adds explicit donation terms to the conflict masks
+  to stay exactly value-preserving in this case.
+
 Insights:
 - Hard domains (driverlog, woodworking, scanalyzer even small instances)
   remain infeasible after 5x speedup: the DAG itself explodes (2.3GB on
