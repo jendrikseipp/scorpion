@@ -208,6 +208,22 @@ Not worth it (analyzed, skipped): incremental Zobrist hashing for cost keys
 (saves ~4% murmur but needs collision verification + threading; ugly
 complexity for a small gain).
 
+ALGORITHMIC runs (user steer: attack DAG size):
+- run 34 KEEP (mem 0.324, time 0.926): intersection-based conflicts +
+  inf-donation terms (implements Theorems 6/7 of the paper; ported branch
+  had union = bug). rovers06 DAG 2.88M -> 14.6k nodes; tpp06 from 7GB
+  blowup to 0.007s / 87 nodes (optimal cost verified vs lmcut).
+- run 35 DISCARD: input-keyed memoization with NodeKey vectors (mem 2x);
+  first attempt without the scheduled-key layer re-exploded (satellite
+  timeout) — different inputs prune to the same scheduled set, the
+  scheduled-set cache is what collapses the exponent.
+- run 36 KEEP (time 0.926 -> 0.794): static pair-conflict bit matrix
+  skips statically independent pairs in the O(n^2) loops.
+- run 37 DISCARD (trade-off): interned-set memoization incl. input keys:
+  time 0.65 but mem 0.43. Noted as a time-leaning alternative.
+- run 38 KEEP (mem 0.303, time 0.786): scheduled-set cache keyed by packed
+  (cost key, interned set id).
+
 Paper analysis (Höft, Speck & Seipp, KR 2025) of union vs intersection:
 - Theorem 6 (SCP*-AFF): h1, h2 are order-independent if the sets
   L^non-goal (labels with a transition between distinct states, at most
