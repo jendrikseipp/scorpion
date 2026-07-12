@@ -1,0 +1,18 @@
+2026-07-12 20:40:52,645 INFO     Revision is already cached: "/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/edcb285f3f22eb67972ab5fb07c290136a12750c_e5e41175"
+2026-07-12 20:40:52,782 INFO     Revision is already cached: "/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/ce63324b8443a8b44c1bff8e2ae27c17179d5360_e5e41175"
+2026-07-12 20:40:52,917 INFO     Revision is already cached: "/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/142b89589ae836ec32e74ce4ce236605aae67e63_e5e41175"
+2026-07-12 20:40:53,051 INFO     Revision is already cached: "/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/42f02ccf2c51a63dc5f69ae1ed6d8d87d7b90281_e5e41175"
+2026-07-12 20:40:53,186 INFO     Revision is already cached: "/proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/revision-cache/a525580925207bd9d4e9abe98570cc6835b520ed_e5e41175"
+2026-07-12 20:40:53,380 INFO     Executing sbatch --export PATH /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-grid-steps/j2026-07-13-A-sscp-revisions-01-build
+2026-07-12 20:40:53,406 INFO     Output: Submitted batch job 53882271
+2026-07-12 20:40:53,408 INFO     Grouping 9135 runs into 1827 Slurm tasks.
+2026-07-12 20:40:53,434 INFO     Executing sbatch --export PATH -d afterany:53882271 --kill-on-invalid-dep=yes /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-grid-steps/j2026-07-13-A-sscp-revisions-02-start
+2026-07-12 20:40:53,460 INFO     Output: Submitted batch job 53882272
+2026-07-12 20:40:53,461 INFO     Executing sbatch --export PATH -d afterany:53882272 --kill-on-invalid-dep=yes /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-grid-steps/j2026-07-13-A-sscp-revisions-03-parse
+2026-07-12 20:40:53,482 INFO     Output: Submitted batch job 53882273
+2026-07-12 20:40:53,483 INFO     Executing sbatch --export PATH -d afterany:53882273 --kill-on-invalid-dep=yes /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-grid-steps/j2026-07-13-A-sscp-revisions-04-fetch
+2026-07-12 20:40:53,504 INFO     Output: Submitted batch job 53882274
+2026-07-12 20:40:53,506 INFO     Executing sbatch --export PATH -d afterany:53882274 --kill-on-invalid-dep=yes /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-grid-steps/j2026-07-13-A-sscp-revisions-05-2026-07-13-A-sscp-revisions-abs
+2026-07-12 20:40:53,527 INFO     Output: Submitted batch job 53882275
+2026-07-12 20:40:53,528 INFO     Executing sbatch --export PATH -d afterany:53882275 --kill-on-invalid-dep=yes /proj/dfsplan/users/x_jense/scorpion-dev/experiments/2026-07-sscp-adhg/data/2026-07-13-A-sscp-revisions-grid-steps/j2026-07-13-A-sscp-revisions-06-compress-exp-dir
+2026-07-12 20:40:53,546 INFO     Output: Submitted batch job 53882276
