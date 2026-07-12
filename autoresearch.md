@@ -271,6 +271,17 @@ structure replacements where the previous version is strictly larger
 during their own runs (41, 42); pure removals (14, 15, 25, 33, 45).
 Final verified state: time 0.509, mem 0.297, all checks green.
 
+- run 50 KEEP (clarity, neutral): split generator into sscp_dag.h +
+  cost_function_registry.{h,cc}; sentinels unified; lookup_nodes renamed;
+  mix_op_cost must stay inline in the header (hot loop).
+
+Grid experiment (2026-07-12): experiments/2026-07-sscp-adhg/
+2026-07-13-A-sscp-revisions.py compares 01-integration (edcb285f),
+02-fast (ce63324b), 03-conflicts (142b8958), 04-table-sharing (42f02ccf),
+05-final (a5255809) with sscp/systematic(2) on all optimal STRIPS
+benchmarks (30min/8GiB, validated). Slurm jobs 53882271-76; report lands
+in data/2026-07-13-A-sscp-revisions-eval/.
+
 Zenodo artifact check (10.5281/zenodo.16606498, the code behind the
 paper's experiments): precompute_conflicting_ops() and the on-the-fly path
 both use set_intersection() of the scp-active operator sets, and comments
