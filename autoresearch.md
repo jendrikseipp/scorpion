@@ -123,6 +123,10 @@ This scaling cliff is the main cost of the approach.
 - run 18 KEEP (0.252): retry of run 10's single-component fast path in
   get_connected_components — worthwhile after run 17 shifted the profile.
 
+- run 19 KEEP (0.237): SaturatedCostFunction struct with nonzero_ops;
+  sparse reduce loops in create_max_node (SCFs of small projections are
+  mostly zeros).
+
 Insights:
 - transitions=explicit for projections makes sscp construction ~38% faster
   on satellite at equal memory (config-level; probes pin implicit, so this

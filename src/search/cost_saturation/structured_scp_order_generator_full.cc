@@ -97,7 +97,6 @@ namespace {
 struct ScheduledChildren {
     vector<int> abstraction_ids;
     vector<shared_ptr<LookupSSCPNode>> nodes;
-    vector<SaturatedCostFunction> saturated_costs;
 };
 
 /* Subtract the saturated costs from the remaining costs. Only visits the
@@ -168,9 +167,9 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         shared_ptr<LookupSSCPNode> scheduled_child =
             create_lookup_node(costs, cost_key, abstraction_id);
         if (scheduled_child) {
-            SaturatedCostFunction saturated_cost =
-                get_saturated_costs(scheduled_child);
             if (check_cost_partitioning) {
+                const SaturatedCostFunction &saturated_cost =
+                    get_saturated_costs(scheduled_child);
                 /* Use the unguarded reduction to see if the children
                    together want more cost than what is available. */
                 if (options.use_general_cp) {
@@ -184,8 +183,6 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
             }
             scheduled_children.abstraction_ids.push_back(abstraction_id);
             scheduled_children.nodes.push_back(move(scheduled_child));
-            scheduled_children.saturated_costs.push_back(
-                move(saturated_cost));
         }
     }
     if (scheduled_children.abstraction_ids.empty()) {
@@ -233,11 +230,10 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         int abstraction_id = scheduled_children.abstraction_ids[i];
         shared_ptr<LookupSSCPNode> &scheduled_child =
             scheduled_children.nodes[i];
-        const SaturatedCostFunction &saturated_costs =
-            scheduled_children.saturated_costs[i];
         assert(scheduled_child);
         Costs remaining_costs(costs);
-        reduce_costs_sparse(remaining_costs, saturated_costs);
+        reduce_costs_sparse(
+            remaining_costs, get_saturated_costs(scheduled_child));
         vector<int> remaining_abstractions;
         if (options.use_general_cp) {
             remaining_abstractions.reserve(dependent_abstractions.size() - 1);

@@ -12,6 +12,7 @@
 #include "gtl/phmap.hpp"
 
 #include <cstdint>
+#include <deque>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -240,7 +241,10 @@ protected:
         return lookup_tables[node->abstraction_id][node->lookup_table_id];
     }
 
-    SaturatedCostFunction get_saturated_costs(
+    /* The returned reference lives as long as the generator with
+       cache_scf_functions=true; without the cache it is only valid until
+       the next call. */
+    const SaturatedCostFunction &get_saturated_costs(
         const std::shared_ptr<LookupSSCPNode> &node) const;
 
     CostKey lookup_costs_or_register(const Costs &costs);
@@ -249,7 +253,11 @@ private:
     std::vector<std::vector<std::shared_ptr<LookupSSCPNode>>>
     lookup_sscp_node_cache;
     std::vector<std::vector<std::vector<int>>> lookup_tables;
-    std::vector<SaturatedCostFunction> scf_cache;
+    /* Saturated cost function per lookup node. Deque so that references
+       stay valid while new entries are added. */
+    std::deque<SaturatedCostFunction> scf_cache;
+    // Scratch for get_saturated_costs() with cache_scf_functions=false.
+    mutable std::unique_ptr<SaturatedCostFunction> scf_scratch;
 
     std::vector<std::vector<OpMask>> conflicting_ops;
     std::vector<OpMask> relevant_ops_by_abstraction;
