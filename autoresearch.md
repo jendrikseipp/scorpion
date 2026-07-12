@@ -224,6 +224,11 @@ ALGORITHMIC runs (user steer: attack DAG size):
 - run 38 KEEP (mem 0.303, time 0.786): scheduled-set cache keyed by packed
   (cost key, interned set id).
 
+- run 39 KEEP (mem 0.303, time 0.640): cost key carried in CostContext
+  (register once per context, not per call) + read-only entry probe of the
+  scheduled-set cache (sum-component calls hit it by construction);
+  Pareto-dominates the run-37 trade-off.
+
 Zenodo artifact check (10.5281/zenodo.16606498, the code behind the
 paper's experiments): precompute_conflicting_ops() and the on-the-fly path
 both use set_intersection() of the scp-active operator sets, and comments
