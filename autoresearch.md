@@ -224,6 +224,16 @@ ALGORITHMIC runs (user steer: attack DAG size):
 - run 38 KEEP (mem 0.303, time 0.786): scheduled-set cache keyed by packed
   (cost key, interned set id).
 
+Zenodo artifact check (10.5281/zenodo.16606498, the code behind the
+paper's experiments): precompute_conflicting_ops() and the on-the-fly path
+both use set_intersection() of the scp-active operator sets, and comments
+call relevant ops "saturation affecting labels". So paper AND published
+artifact use the intersection; the union in the structured-scp GitHub
+branch is a later regression (introduced when sorted-vector
+set_intersection was rewritten to bit-vector operations: '|' where '&' was
+meant). The Zenodo artifact also has NO handling for the -infinity
+donation corner case; our donation terms are stricter than both.
+
 Paper analysis (Höft, Speck & Seipp, KR 2025) of union vs intersection:
 - Theorem 6 (SCP*-AFF): h1, h2 are order-independent if the sets
   L^non-goal (labels with a transition between distinct states, at most
