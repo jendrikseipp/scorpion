@@ -449,6 +449,15 @@ void collect_nodes(
 
 StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     shared_ptr<SSCPNode> &root_node) {
+    // Free the construction-time caches before materializing instructions.
+    decltype(cost_key_by_hash)().swap(cost_key_by_hash);
+    utils::release_vector_memory(cost_key_overflow);
+    utils::release_vector_memory(packed_costs_by_key);
+    utils::release_vector_memory(lookup_tables_cache);
+    decltype(scf_cache)().swap(scf_cache);
+    utils::release_vector_memory(conflicting_ops);
+    utils::release_vector_memory(op_has_nonincreasing_remaining_costs);
+
     // Determine reachable nodes and order them by level.
     vector<shared_ptr<SSCPNode>> reachable_compositional_nodes;
     reachable_compositional_nodes.reserve(SSCPNode::num_compositional_nodes);
@@ -469,7 +478,6 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
 
     // Create compact lookup tables and extract unsolvability information.
     create_compact_lookup_tables();
-    lookup_tables_cache = {};
     int useful_unsolvability_infos = 0;
     int num_unsolvable_states = 0;
     for (const UnsolvabilityInfo &info : unsolvability_infos) {
@@ -529,6 +537,10 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
             }
         }
         instructions.emplace_back(type, move(ids));
+        /* The node's instruction replaces its children list; parents only
+           need the index. Releasing the children early keeps the peak
+           memory close to one copy of the DAG structure. */
+        utils::release_vector_memory(node->children);
     }
     AbstractionFunctions abs_functions;
     abs_functions.reserve(abstractions.size());
