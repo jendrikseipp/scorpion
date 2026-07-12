@@ -6,7 +6,6 @@
 
 #include "../utils/murmurhash3.h"
 
-#include <array>
 #include <cstdint>
 #include <execution>
 #include <iostream>
@@ -95,27 +94,6 @@ inline size_t hash_bytes(const void *data, int num_bytes, uint32_t seed) {
 struct VectorIntMurmurHash {
     size_t operator()(const std::vector<int> &v) const {
         return hash_bytes(v.data(), v.size() * sizeof(int), v.size());
-    }
-};
-
-struct VectorUint8MurmurHash {
-    size_t operator()(const std::vector<uint8_t> &v) const {
-        return hash_bytes(v.data(), v.size(), v.size());
-    }
-};
-
-struct PairUint32VectorIntHash {
-    size_t operator()(
-        const std::pair<uint32_t, const std::vector<int>> &v) const {
-        uint32_t seed = v.second.size();
-        // Hash both elements, then hash the concatenated hashes.
-        std::array<uint64_t, 4> hashes;
-        MurmurHash3_x86_128(
-            &v.first, sizeof(uint32_t), seed, hashes.data());
-        MurmurHash3_x86_128(
-            v.second.data(), v.second.size() * sizeof(int), seed + 1,
-            hashes.data() + 2);
-        return hash_bytes(hashes.data(), 4 * sizeof(uint64_t), seed);
     }
 };
 

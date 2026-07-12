@@ -30,8 +30,6 @@ using Costs = std::vector<int>;
 using CostKey = uint32_t;
 // Bit mask over the task's operators, one bit per operator.
 using OpMask = std::vector<uint64_t>;
-using NodeKey = std::pair<CostKey, std::vector<int>>;
-using NodeKeyHash = PairUint32VectorIntHash;
 
 struct StructuredSCPOptions {
     bool use_unsolvability_infos;
