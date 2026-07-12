@@ -239,6 +239,11 @@ ALGORITHMIC runs (user steer: attack DAG size):
   buffer); driverlog 933->649MB. Serial bit-shift packing and per-element
   unpack-verify variants cost +7-9% time and were rejected first.
 
+- run 42 KEEP (mem 0.305, time 0.524): rolling content hash in
+  CostContext updated in O(delta) during reduction (fused
+  reduce_cost_context); removes the full-vector murmur per registration
+  and recovers run 41's time cost.
+
 Zenodo artifact check (10.5281/zenodo.16606498, the code behind the
 paper's experiments): precompute_conflicting_ops() and the on-the-fly path
 both use set_intersection() of the scp-active operator sets, and comments
