@@ -30,8 +30,8 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
         ? create_max_node(context, independent_abstractions[0])
         : create_sum_node(context, independent_abstractions);
     // Release the considerable amount of memory used by the hash maps.
-    SSCPNodeHashMap().swap(sum_sscp_node_post_cache);
-    SSCPNodeHashMap().swap(max_sscp_node_post_cache);
+    SSCPNodeSet().swap(sum_sscp_node_post_cache);
+    SSCPNodeSet().swap(max_sscp_node_post_cache);
     MaxSSCPNodeHashMap().swap(max_sscp_node_pre_cache);
 
     return root_node;
@@ -82,14 +82,14 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sum_node(
         }
         auto it = sum_sscp_node_post_cache.find(hash_key);
         if (it != sum_sscp_node_post_cache.end()) {
-            return it->second;
+            return *it;
         }
     }
 
     shared_ptr<SumSSCPNode> node = make_shared<SumSSCPNode>(move(children));
     node->update();
     if (prune_duplicates) {
-        sum_sscp_node_post_cache[move(hash_key)] = node;
+        sum_sscp_node_post_cache.insert(node);
     }
     return node;
 }
@@ -307,12 +307,12 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
             ? max_sscp_node_post_cache.find(post_hash_key)
             : max_sscp_node_post_cache.end();
         if (it != max_sscp_node_post_cache.end()) {
-            max_node = it->second;
+            max_node = *it;
         } else {
             max_node = make_shared<MaxSSCPNode>(move(children));
             max_node->update();
             if (prune_duplicates) {
-                max_sscp_node_post_cache[move(post_hash_key)] = max_node;
+                max_sscp_node_post_cache.insert(max_node);
             }
         }
     }

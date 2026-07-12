@@ -33,10 +33,13 @@ private:
         const CostContext &context,
         const std::vector<int> &dependent_abstractions);
 
-    using SSCPNodeHashMap = gtl::flat_hash_map<
-        std::vector<int>, std::shared_ptr<SSCPNode>, VectorIntMurmurHash>;
-    SSCPNodeHashMap sum_sscp_node_post_cache;
-    SSCPNodeHashMap max_sscp_node_post_cache;
+    /* Deduplicate compositional nodes by the indices of their children.
+       Sets of the nodes themselves with transparent lookup avoid storing a
+       copy of the index vector per entry. */
+    using SSCPNodeSet = gtl::flat_hash_set<
+        std::shared_ptr<SSCPNode>, NodeChildrenHash, NodeChildrenEqual>;
+    SSCPNodeSet sum_sscp_node_post_cache;
+    SSCPNodeSet max_sscp_node_post_cache;
     using MaxSSCPNodeHashMap = gtl::flat_hash_map<
         NodeKey, std::shared_ptr<SSCPNode>, NodeKeyHash>;
     MaxSSCPNodeHashMap max_sscp_node_pre_cache;

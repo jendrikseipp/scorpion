@@ -196,6 +196,67 @@ struct SaturatedCostFunction {
 };
 
 /*
+  Transparent hash and equality for deduplicating compositional nodes by
+  the indices of their children, so the caches can store the nodes
+  themselves instead of a copy of the index vector per entry.
+*/
+struct NodeChildrenHash {
+    using is_transparent = void;
+
+    size_t operator()(const std::vector<int> &child_indices) const {
+        return VectorIntMurmurHash()(child_indices);
+    }
+
+    size_t operator()(const std::shared_ptr<SSCPNode> &node) const {
+        // Only called on rehashes; queries hash the index vector directly.
+        std::vector<int> child_indices;
+        child_indices.reserve(node->children.size());
+        for (const std::shared_ptr<SSCPNode> &child : node->children) {
+            child_indices.push_back(child->index);
+        }
+        return VectorIntMurmurHash()(child_indices);
+    }
+};
+
+struct NodeChildrenEqual {
+    using is_transparent = void;
+
+    bool operator()(
+        const std::shared_ptr<SSCPNode> &node,
+        const std::vector<int> &child_indices) const {
+        if (node->children.size() != child_indices.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < child_indices.size(); ++i) {
+            if (node->children[i]->index != child_indices[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool operator()(
+        const std::vector<int> &child_indices,
+        const std::shared_ptr<SSCPNode> &node) const {
+        return (*this)(node, child_indices);
+    }
+
+    bool operator()(
+        const std::shared_ptr<SSCPNode> &node1,
+        const std::shared_ptr<SSCPNode> &node2) const {
+        if (node1->children.size() != node2->children.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < node1->children.size(); ++i) {
+            if (node1->children[i]->index != node2->children[i]->index) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
+/*
   A cost function together with a classification of its operators for the
   dependency checks: live operators always create a dependency between
   abstractions they affect; conditional operators (remaining cost 0) only
