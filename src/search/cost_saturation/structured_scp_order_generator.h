@@ -177,6 +177,23 @@ struct StructuredSCPOrder {
     std::vector<std::vector<std::vector<int>>> lookup_tables;
 };
 
+struct SaturatedCostFunction {
+    Costs costs;
+    /* Operators with non-zero saturated cost. Saturated cost functions are
+       usually sparse, so loops over them only need to visit these
+       operators. */
+    std::vector<int> nonzero_ops;
+
+    explicit SaturatedCostFunction(Costs &&_costs)
+        : costs(move(_costs)) {
+        for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
+            if (costs[op_id] != 0) {
+                nonzero_ops.push_back(op_id);
+            }
+        }
+    }
+};
+
 class StructuredSCPOrderGenerator {
 public:
     StructuredSCPOrderGenerator(
@@ -223,7 +240,7 @@ protected:
         return lookup_tables[node->abstraction_id][node->lookup_table_id];
     }
 
-    Costs get_saturated_costs(
+    SaturatedCostFunction get_saturated_costs(
         const std::shared_ptr<LookupSSCPNode> &node) const;
 
     CostKey lookup_costs_or_register(const Costs &costs);
@@ -232,7 +249,7 @@ private:
     std::vector<std::vector<std::shared_ptr<LookupSSCPNode>>>
     lookup_sscp_node_cache;
     std::vector<std::vector<std::vector<int>>> lookup_tables;
-    std::vector<Costs> scf_cache;
+    std::vector<SaturatedCostFunction> scf_cache;
 
     std::vector<std::vector<OpMask>> conflicting_ops;
     std::vector<OpMask> relevant_ops_by_abstraction;

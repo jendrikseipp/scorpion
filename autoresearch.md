@@ -120,6 +120,9 @@ This scaling cliff is the main cost of the approach.
   recurrence of the same cost function. Overall now 3.9x faster than the
   integration baseline.
 
+- run 18 KEEP (0.252): retry of run 10's single-component fast path in
+  get_connected_components — worthwhile after run 17 shifted the profile.
+
 Insights:
 - transitions=explicit for projections makes sscp construction ~38% faster
   on satellite at equal memory (config-level; probes pin implicit, so this

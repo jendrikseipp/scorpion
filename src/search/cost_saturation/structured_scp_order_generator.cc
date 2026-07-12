@@ -277,7 +277,7 @@ shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
 
     lookup_sscp_node_cache[abstraction_id].push_back(node);
     if (options.cache_scf_functions) {
-        scf_cache.push_back(
+        scf_cache.emplace_back(
             compute_scf(
                 *abstractions[abstraction_id], get_lookup_table(node),
                 options.use_general_cp));
@@ -581,16 +581,17 @@ void StructuredSCPOrderGenerator::create_compact_lookup_tables() {
     lookup_tables = move(compact_lookup_tables);
 }
 
-Costs StructuredSCPOrderGenerator::get_saturated_costs(
+SaturatedCostFunction StructuredSCPOrderGenerator::get_saturated_costs(
     const shared_ptr<LookupSSCPNode> &node) const {
     if (options.cache_scf_functions) {
         // Lookup node indices start at -1 and decrease.
         assert(utils::in_bounds(-node->index - 1, scf_cache));
         return scf_cache[-node->index - 1];
     } else {
-        return compute_scf(
-            *abstractions[node->abstraction_id], get_lookup_table(node),
-            options.use_general_cp);
+        return SaturatedCostFunction(
+            compute_scf(
+                *abstractions[node->abstraction_id], get_lookup_table(node),
+                options.use_general_cp));
     }
 }
 

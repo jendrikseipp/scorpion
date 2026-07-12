@@ -97,27 +97,52 @@ namespace {
 struct ScheduledChildren {
     vector<int> abstraction_ids;
     vector<shared_ptr<LookupSSCPNode>> nodes;
-    vector<Costs> saturated_costs;
+    vector<SaturatedCostFunction> saturated_costs;
 };
 
-/* Like reduce_costs_unguarded(), but additionally records the operators
-   with negative saturated cost. Fused into one loop to halve the memory
-   traffic over the vectors. */
-void reduce_costs_unguarded_and_track_negative(
-    Costs &remaining_costs, const Costs &saturated_costs,
-    vector<uint8_t> &op_has_negative_scf) {
-    assert(remaining_costs.size() == saturated_costs.size());
-    assert(op_has_negative_scf.size() == saturated_costs.size());
-    for (size_t i = 0; i < remaining_costs.size(); ++i) {
-        int remaining = remaining_costs[i];
-        int saturated = saturated_costs[i];
+/* Subtract the saturated costs from the remaining costs. Only visits the
+   operators with non-zero saturated cost; the others cannot change the
+   remaining costs. */
+void reduce_costs_sparse(
+    Costs &remaining_costs, const SaturatedCostFunction &scf) {
+    assert(remaining_costs.size() == scf.costs.size());
+    for (int op_id : scf.nonzero_ops) {
+        int remaining = remaining_costs[op_id];
+        int saturated = scf.costs[op_id];
+        assert(remaining >= 0);
+        assert(saturated <= remaining);
         assert(remaining == INF || saturated != INF);
-        int difference = static_cast<int>(
-            static_cast<unsigned int>(remaining) -
-            static_cast<unsigned int>(saturated));
-        remaining_costs[i] =
-            (remaining == INF || saturated == -INF) ? INF : difference;
-        op_has_negative_scf[i] |= (saturated < 0);
+        // Left addition: x - y = x for all values y if x is infinite.
+        if (remaining != INF) {
+            remaining_costs[op_id] =
+                (saturated == -INF) ? INF : remaining - saturated;
+        }
+        assert(remaining_costs[op_id] >= 0);
+    }
+}
+
+/* Like reduce_costs_sparse(), but without the guarantee that the saturated
+   costs fit into the remaining costs, and additionally recording the
+   operators with negative saturated cost. */
+void reduce_costs_sparse_unguarded_and_track_negative(
+    Costs &remaining_costs, const SaturatedCostFunction &scf,
+    vector<uint8_t> &op_has_negative_scf) {
+    assert(remaining_costs.size() == scf.costs.size());
+    assert(op_has_negative_scf.size() == scf.costs.size());
+    for (int op_id : scf.nonzero_ops) {
+        int remaining = remaining_costs[op_id];
+        int saturated = scf.costs[op_id];
+        assert(remaining == INF || saturated != INF);
+        // Left addition: x - y = x for all values y if x is infinite.
+        if (remaining != INF) {
+            remaining_costs[op_id] =
+                (saturated == -INF)
+                ? INF
+                : static_cast<int>(
+                      static_cast<unsigned int>(remaining) -
+                      static_cast<unsigned int>(saturated));
+        }
+        op_has_negative_scf[op_id] |= (saturated < 0);
     }
 }
 }
@@ -143,17 +168,18 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         shared_ptr<LookupSSCPNode> scheduled_child =
             create_lookup_node(costs, cost_key, abstraction_id);
         if (scheduled_child) {
-            Costs saturated_cost = get_saturated_costs(scheduled_child);
+            SaturatedCostFunction saturated_cost =
+                get_saturated_costs(scheduled_child);
             if (check_cost_partitioning) {
                 /* Use the unguarded reduction to see if the children
                    together want more cost than what is available. */
                 if (options.use_general_cp) {
-                    reduce_costs_unguarded_and_track_negative(
+                    reduce_costs_sparse_unguarded_and_track_negative(
                         overall_remaining_costs, saturated_cost,
                         op_has_negative_scf);
                 } else {
                     reduce_costs_unguarded(
-                        overall_remaining_costs, saturated_cost);
+                        overall_remaining_costs, saturated_cost.costs);
                 }
             }
             scheduled_children.abstraction_ids.push_back(abstraction_id);
@@ -207,10 +233,11 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         int abstraction_id = scheduled_children.abstraction_ids[i];
         shared_ptr<LookupSSCPNode> &scheduled_child =
             scheduled_children.nodes[i];
-        Costs &saturated_costs = scheduled_children.saturated_costs[i];
+        const SaturatedCostFunction &saturated_costs =
+            scheduled_children.saturated_costs[i];
         assert(scheduled_child);
         Costs remaining_costs(costs);
-        reduce_costs(remaining_costs, saturated_costs);
+        reduce_costs_sparse(remaining_costs, saturated_costs);
         vector<int> remaining_abstractions;
         if (options.use_general_cp) {
             remaining_abstractions.reserve(dependent_abstractions.size() - 1);
