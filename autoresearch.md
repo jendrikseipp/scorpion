@@ -234,6 +234,11 @@ ALGORITHMIC runs (user steer: attack DAG size):
   abstraction's relevant operators (goal distances only depend on those);
   rovers06 ran 2.7M Dijkstras for 59 distinct tables before this.
 
+- run 41 KEEP (mem 0.305, time 0.529): bit-packed cost blob pool with
+  power-of-two widths (vectorizable pack, memcmp verify, one shared
+  buffer); driverlog 933->649MB. Serial bit-shift packing and per-element
+  unpack-verify variants cost +7-9% time and were rejected first.
+
 Zenodo artifact check (10.5281/zenodo.16606498, the code behind the
 paper's experiments): precompute_conflicting_ops() and the on-the-fly path
 both use set_intersection() of the scp-active operator sets, and comments
