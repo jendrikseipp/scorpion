@@ -94,28 +94,7 @@ struct ScheduledChildren {
     vector<NodeId> nodes;
 };
 
-/* Subtract the saturated costs from the remaining costs. Only visits the
-   operators with non-zero saturated cost; the others cannot change the
-   remaining costs. */
-void reduce_costs_sparse(
-    Costs &remaining_costs, const SaturatedCostFunction &scf) {
-    assert(remaining_costs.size() == scf.costs.size());
-    for (int op_id : scf.nonzero_ops) {
-        int remaining = remaining_costs[op_id];
-        int saturated = scf.costs[op_id];
-        assert(remaining >= 0);
-        assert(saturated <= remaining);
-        assert(remaining == INF || saturated != INF);
-        // Left addition: x - y = x for all values y if x is infinite.
-        if (remaining != INF) {
-            remaining_costs[op_id] =
-                (saturated == -INF) ? INF : remaining - saturated;
-        }
-        assert(remaining_costs[op_id] >= 0);
-    }
-}
-
-/* Like reduce_costs_sparse(), but without the guarantee that the saturated
+/* Like reduce_cost_context(), but without the guarantee that the saturated
    costs fit into the remaining costs, and additionally recording the
    operators with negative saturated cost. */
 void reduce_costs_sparse_unguarded_and_track_negative(
@@ -243,10 +222,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         const SaturatedCostFunction &scf =
             get_saturated_costs(scheduled_child);
         CostContext remaining_context(context);
-        reduce_costs_sparse(remaining_context.costs, scf);
-        update_cost_context(remaining_context, scf.nonzero_ops);
-        remaining_context.key = lookup_costs_or_register(
-            remaining_context.costs);
+        reduce_cost_context(remaining_context, scf);
         vector<int> remaining_abstractions;
         if (options.use_general_cp) {
             remaining_abstractions.reserve(dependent_abstractions.size() - 1);

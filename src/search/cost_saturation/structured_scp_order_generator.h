@@ -278,10 +278,13 @@ struct PackedCostsPool {
 */
 struct CostContext {
     Costs costs;
-    /* Key of the cost function in the generator's cost function registry.
-       Only valid when the context was created or reduced by the generator;
-       temporarily simulated costs leave the key stale. */
+    /* Key of the cost function in the generator's cost function registry
+       and an order-independent content hash (sum of per-operator mixes)
+       that is updated incrementally as costs are reduced. Both are only
+       valid when the context was created or reduced by the generator;
+       temporarily simulated costs leave them stale. */
     CostKey key;
+    uint64_t cost_hash;
     OpMask live_ops;
     OpMask cond_ops;
 };
@@ -356,6 +359,12 @@ protected:
     void update_cost_context(
         CostContext &context, const std::vector<int> &changed_ops) const;
 
+    /* Reduce the context's costs by the saturated cost function and keep
+       hash, key and operator masks in sync. Only visits the operators with
+       non-zero saturated cost. */
+    void reduce_cost_context(
+        CostContext &context, const SaturatedCostFunction &scf);
+
     std::vector<std::vector<int>> compute_independent_abstractions(
         const std::vector<int> &pending_abstraction_ids,
         const CostContext &context);
@@ -375,7 +384,9 @@ protected:
        the next call. */
     const SaturatedCostFunction &get_saturated_costs(NodeId node) const;
 
-    CostKey lookup_costs_or_register(const Costs &costs);
+    /* hash must be the order-independent content hash of costs (sum of
+       mix_op_cost over all operators). */
+    CostKey lookup_costs_or_register(const Costs &costs, uint64_t hash);
 
 private:
     // Lookup node per abstraction and lookup table.

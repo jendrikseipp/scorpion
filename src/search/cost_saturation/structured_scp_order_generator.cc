@@ -22,6 +22,15 @@
 using namespace std;
 
 namespace cost_saturation {
+// Mix an (operator, cost) pair into a 64-bit value (splitmix64 finalizer).
+static uint64_t mix_op_cost(int op_id, int cost) {
+    uint64_t x = static_cast<uint64_t>(op_id) * 0x9E3779B97F4A7C15ULL ^
+        static_cast<uint64_t>(static_cast<unsigned int>(cost));
+    x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ULL;
+    x = (x ^ (x >> 27)) * 0x94D049BB133111EBULL;
+    return x ^ (x >> 31);
+}
+
 static const int BITS_PER_WORD = 64;
 
 static int get_num_mask_words(int num_bits) {
@@ -391,8 +400,11 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
 
 CostContext StructuredSCPOrderGenerator::make_cost_context(
     Costs &&costs) {
-    CostContext context{move(costs), 0, {}, {}};
-    context.key = lookup_costs_or_register(context.costs);
+    CostContext context{move(costs), 0, 0, {}, {}};
+    for (size_t op_id = 0; op_id < context.costs.size(); ++op_id) {
+        context.cost_hash += mix_op_cost(op_id, context.costs[op_id]);
+    }
+    context.key = lookup_costs_or_register(context.costs, context.cost_hash);
     if (options.use_affecting_labels) {
         int num_operators = context.costs.size();
         context.live_ops.assign(get_num_mask_words(num_operators), 0);
@@ -795,13 +807,32 @@ void PackedCostsPool::pack(const Costs &costs, vector<uint8_t> &blob) {
     }
 }
 
+void StructuredSCPOrderGenerator::reduce_cost_context(
+    CostContext &context, const SaturatedCostFunction &scf) {
+    for (int op_id : scf.nonzero_ops) {
+        int remaining = context.costs[op_id];
+        int saturated = scf.costs[op_id];
+        assert(remaining >= 0);
+        assert(saturated <= remaining);
+        assert(remaining == INF || saturated != INF);
+        // Left addition: x - y = x for all values y if x is infinite.
+        if (remaining != INF) {
+            int reduced = (saturated == -INF) ? INF : remaining - saturated;
+            assert(reduced >= 0);
+            context.costs[op_id] = reduced;
+            context.cost_hash += mix_op_cost(op_id, reduced) -
+                mix_op_cost(op_id, remaining);
+        }
+    }
+    update_cost_context(context, scf.nonzero_ops);
+    context.key = lookup_costs_or_register(context.costs, context.cost_hash);
+}
+
 /* Return the key under which the given cost function is registered, so
    that all other hash maps can use the small key instead of the full cost
    function. */
 CostKey StructuredSCPOrderGenerator::lookup_costs_or_register(
-    const Costs &costs) {
-    uint64_t hash = hash_bytes(
-        costs.data(), costs.size() * sizeof(int), costs.size());
+    const Costs &costs, uint64_t hash) {
     auto it = cost_key_by_hash.find(hash);
     if (it == cost_key_by_hash.end()) {
         CostKey key = packed_costs.size();
