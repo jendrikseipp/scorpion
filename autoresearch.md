@@ -229,6 +229,11 @@ ALGORITHMIC runs (user steer: attack DAG size):
   scheduled-set cache (sum-component calls hit it by construction);
   Pareto-dominates the run-37 trade-off.
 
+- run 40 KEEP (mem 0.323, time 0.522): ALGORITHMIC — per-abstraction
+  lookup table cache keyed by the cost function restricted to the
+  abstraction's relevant operators (goal distances only depend on those);
+  rovers06 ran 2.7M Dijkstras for 59 distinct tables before this.
+
 Zenodo artifact check (10.5281/zenodo.16606498, the code behind the
 paper's experiments): precompute_conflicting_ops() and the on-the-fly path
 both use set_intersection() of the scp-active operator sets, and comments
