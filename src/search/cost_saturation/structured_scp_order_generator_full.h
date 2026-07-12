@@ -61,6 +61,25 @@ private:
         return (static_cast<uint64_t>(cost_key) << 32) | intern_id_set(ids);
     }
 
+    /* Look up the cached max node for (cost_key, ids) without interning
+       unseen id sets: only scheduled sets are stored, so an unregistered
+       set cannot hit. */
+    NodeId find_cached_max_node(
+        CostKey cost_key, const std::vector<int> &ids) const {
+        auto set_it = id_set_registry.find(ids);
+        if (set_it != id_set_registry.end()) {
+            auto it = max_sscp_node_pre_cache.find(
+                (static_cast<uint64_t>(cost_key) << 32) | set_it->second);
+            if (it != max_sscp_node_pre_cache.end()) {
+                return it->second;
+            }
+        }
+        return UNCACHED_NODE;
+    }
+
+    // Sentinel distinct from NO_NODE, which is a cachable result.
+    static const NodeId UNCACHED_NODE = -2;
+
     const bool prune_duplicates;
     const bool use_conflicts;
 };

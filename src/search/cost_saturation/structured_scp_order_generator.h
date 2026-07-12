@@ -247,6 +247,10 @@ struct NodeChildrenEqual {
 */
 struct CostContext {
     Costs costs;
+    /* Key of the cost function in the generator's cost function registry.
+       Only valid when the context was created or reduced by the generator;
+       temporarily simulated costs leave the key stale. */
+    CostKey key;
     OpMask live_ops;
     OpMask cond_ops;
 };
@@ -303,8 +307,8 @@ protected:
     NodeId create_lookup_node(
         const Costs &costs, CostKey cost_key, int abstraction_id);
 
-    // Build a CostContext with operator masks for the given costs.
-    CostContext make_cost_context(Costs &&costs) const;
+    // Build a CostContext with cost key and operator masks for the costs.
+    CostContext make_cost_context(Costs &&costs);
 
     /* Recompute the mask bits of the given operators from the costs in the
        context, after the costs of these operators changed. */

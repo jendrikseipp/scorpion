@@ -144,9 +144,16 @@ void reduce_costs_sparse_unguarded_and_track_negative(
 NodeId StructuredSCPOrderGeneratorFull::create_max_node(
     const CostContext &context, const vector<int> &dependent_abstractions) {
     const Costs &costs = context.costs;
-    CostKey cost_key = 0;
-    if (prune_duplicates || options.cache_lookup_tables) {
-        cost_key = lookup_costs_or_register(costs);
+    CostKey cost_key = context.key;
+    /* If the input set was the scheduled set of an earlier call with these
+       costs (always the case when a max node was split into a sum), the
+       cache already knows the result. Probe read-only: only scheduled sets
+       are stored, which keeps the cache small. */
+    if (prune_duplicates) {
+        NodeId cached = find_cached_max_node(cost_key, dependent_abstractions);
+        if (cached != UNCACHED_NODE) {
+            return cached;
+        }
     }
     const bool check_cost_partitioning =
         use_conflicts && options.use_cost_partitioning_check;
@@ -238,6 +245,8 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         CostContext remaining_context(context);
         reduce_costs_sparse(remaining_context.costs, scf);
         update_cost_context(remaining_context, scf.nonzero_ops);
+        remaining_context.key = lookup_costs_or_register(
+            remaining_context.costs);
         vector<int> remaining_abstractions;
         if (options.use_general_cp) {
             remaining_abstractions.reserve(dependent_abstractions.size() - 1);

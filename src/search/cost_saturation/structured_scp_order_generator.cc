@@ -348,8 +348,9 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
 }
 
 CostContext StructuredSCPOrderGenerator::make_cost_context(
-    Costs &&costs) const {
-    CostContext context{move(costs), {}, {}};
+    Costs &&costs) {
+    CostContext context{move(costs), 0, {}, {}};
+    context.key = lookup_costs_or_register(context.costs);
     if (options.use_affecting_labels) {
         int num_operators = context.costs.size();
         context.live_ops.assign(get_num_mask_words(num_operators), 0);
