@@ -43,6 +43,14 @@ dedup-cache key vectors, instructions.
 - run 32 KEEP (mem 0.529, time 0.777): shared children pool with per-node
   slices (children_offset/num_children) instead of a vector per node.
   Segment total so far: -47% memory, -22% time on the memory suite.
+- run 33 KEEP (clarity, neutral): drop the node level field; arena order
+  is topological (children created before parents), so sorting reachable
+  nodes by id replaces the level sort.
+
+Remaining memory ideas (diminishing returns on this suite): pack SSCPNode
+fields via union (~5%), intern the id-set vectors in the max pre-cache,
+malloc fragmentation. The DAG size itself remains the frontier on hard
+tasks.
 
 ## Objective
 
