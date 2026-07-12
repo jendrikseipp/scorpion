@@ -127,6 +127,10 @@ This scaling cliff is the main cost of the approach.
   sparse reduce loops in create_max_node (SCFs of small projections are
   mostly zeros).
 
+- run 20 KEEP (0.196, 17%): deque scf_cache + const-ref
+  get_saturated_costs, no per-child SCF copies (successful retry of run 7
+  after run 19 made the copies heavier). 5.1x faster than integration.
+
 Insights:
 - transitions=explicit for projections makes sscp construction ~38% faster
   on satellite at equal memory (config-level; probes pin implicit, so this

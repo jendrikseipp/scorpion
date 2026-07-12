@@ -195,6 +195,20 @@ struct SaturatedCostFunction {
     }
 };
 
+/*
+  A cost function together with a classification of its operators for the
+  dependency checks: live operators always create a dependency between
+  abstractions they affect; conditional operators (remaining cost 0) only
+  create a dependency between abstractions that do not both guarantee
+  nonincreasing remaining costs. The masks are maintained incrementally as
+  costs are reduced along the DAG construction.
+*/
+struct CostContext {
+    Costs costs;
+    OpMask live_ops;
+    OpMask cond_ops;
+};
+
 class StructuredSCPOrderGenerator {
 public:
     StructuredSCPOrderGenerator(
@@ -226,9 +240,17 @@ protected:
     std::shared_ptr<LookupSSCPNode> create_lookup_node(
         const Costs &costs, CostKey cost_key, int abstraction_id);
 
+    // Build a CostContext with operator masks for the given costs.
+    CostContext make_cost_context(Costs &&costs) const;
+
+    /* Recompute the mask bits of the given operators from the costs in the
+       context, after the costs of these operators changed. */
+    void update_cost_context(
+        CostContext &context, const std::vector<int> &changed_ops) const;
+
     std::vector<std::vector<int>> compute_independent_abstractions(
         const std::vector<int> &pending_abstraction_ids,
-        const Costs &remaining_costs);
+        const CostContext &context);
 
     StructuredSCPOrder create_structured_scp_order(
         std::shared_ptr<SSCPNode> &root_node);
@@ -263,13 +285,6 @@ private:
     std::vector<OpMask> relevant_ops_by_abstraction;
     // Bit set iff the operator is guaranteed nonincreasing (default: set).
     std::vector<OpMask> op_has_nonincreasing_remaining_costs;
-    /* Rebuilt from the remaining costs at the start of each
-       compute_independent_abstractions() call: operators that always create
-       a dependency (live) and operators that only create a dependency
-       between abstractions that do not both guarantee nonincreasing
-       remaining costs (cond). */
-    OpMask live_op_mask;
-    OpMask cond_op_mask;
 
     /* Determine for each relevant abstraction the set of operators that
        affects that abstraction. */
@@ -293,7 +308,7 @@ private:
        remaining costs. */
     void check_and_add_dependency(
         ccp::DisjointSet &dependency_graph, int id1, int id2,
-        const Costs &remaining_costs);
+        const CostContext &context);
 
     void create_compact_lookup_tables();
 };

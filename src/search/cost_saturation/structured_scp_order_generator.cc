@@ -14,6 +14,7 @@
 #include <cmath>
 #include <iostream>
 #include <memory>
+#include <numeric>
 #include <tuple>
 #include <vector>
 
@@ -292,32 +293,46 @@ shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
     return node;
 }
 
-vector<vector<int>>
-StructuredSCPOrderGenerator::compute_independent_abstractions(
-    const vector<int> &pending_abstraction_ids, const Costs &remaining_costs) {
-    // Build the dependency graph between the abstractions.
+CostContext StructuredSCPOrderGenerator::make_cost_context(
+    Costs &&costs) const {
+    CostContext context{move(costs), {}, {}};
     if (options.use_affecting_labels) {
-        /* Classify the operators by remaining cost once per call, so that
-           each pair check below only needs a few word-parallel mask
-           operations. Live operators always create a dependency;
-           conditional operators (cost 0) only between abstractions that do
-           not both guarantee nonincreasing remaining costs. */
-        int num_operators = remaining_costs.size();
-        live_op_mask.assign(get_num_mask_words(num_operators), 0);
-        cond_op_mask.assign(get_num_mask_words(num_operators), 0);
-        for (int op_id = 0; op_id < num_operators; ++op_id) {
-            if (options.use_infinite_labels &&
-                remaining_costs[op_id] == INF) {
-                continue;
-            }
-            if (options.use_non_negative_labels &&
-                remaining_costs[op_id] == 0) {
-                set_mask_bit(cond_op_mask, op_id);
-            } else {
-                set_mask_bit(live_op_mask, op_id);
-            }
+        int num_operators = context.costs.size();
+        context.live_ops.assign(get_num_mask_words(num_operators), 0);
+        context.cond_ops.assign(get_num_mask_words(num_operators), 0);
+        vector<int> all_ops(num_operators);
+        iota(all_ops.begin(), all_ops.end(), 0);
+        update_cost_context(context, all_ops);
+    }
+    return context;
+}
+
+void StructuredSCPOrderGenerator::update_cost_context(
+    CostContext &context, const vector<int> &changed_ops) const {
+    if (!options.use_affecting_labels) {
+        return;
+    }
+    for (int op_id : changed_ops) {
+        uint64_t bit = uint64_t(1) << (op_id % BITS_PER_WORD);
+        uint64_t &live_word = context.live_ops[op_id / BITS_PER_WORD];
+        uint64_t &cond_word = context.cond_ops[op_id / BITS_PER_WORD];
+        live_word &= ~bit;
+        cond_word &= ~bit;
+        if (options.use_infinite_labels && context.costs[op_id] == INF) {
+            continue;
+        }
+        if (options.use_non_negative_labels && context.costs[op_id] == 0) {
+            cond_word |= bit;
+        } else {
+            live_word |= bit;
         }
     }
+}
+
+vector<vector<int>>
+StructuredSCPOrderGenerator::compute_independent_abstractions(
+    const vector<int> &pending_abstraction_ids, const CostContext &context) {
+    // Build the dependency graph between the abstractions.
     ccp::DisjointSet dependency_graph(abstractions.size());
     size_t num_pending = pending_abstraction_ids.size();
     for (size_t i = 0; i < num_pending; ++i) {
@@ -327,7 +342,7 @@ StructuredSCPOrderGenerator::compute_independent_abstractions(
                 dependency_graph.find(pending_abstraction_ids[j])) {
                 check_and_add_dependency(
                     dependency_graph, pending_abstraction_ids[i],
-                    pending_abstraction_ids[j], remaining_costs);
+                    pending_abstraction_ids[j], context);
                 /* Only pending abstractions are ever united, so a set of
                    size num_pending must contain all of them and no further
                    checks can change the components. */
@@ -354,7 +369,7 @@ StructuredSCPOrderGenerator::compute_independent_abstractions(
 
 void StructuredSCPOrderGenerator::check_and_add_dependency(
     ccp::DisjointSet &dependency_graph, int id1, int id2,
-    const Costs &remaining_costs) {
+    const CostContext &context) {
     assert(id1 < id2);
 
     if (options.use_affecting_labels) {
@@ -382,8 +397,9 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
                costs. */
             uint64_t dependency_ops =
                 conflict[w] &
-                (live_op_mask[w] |
-                 (cond_op_mask[w] & ~(nonincreasing1[w] & nonincreasing2[w])));
+                (context.live_ops[w] |
+                 (context.cond_ops[w] &
+                  ~(nonincreasing1[w] & nonincreasing2[w])));
             if (dependency_ops) {
                 dependency_graph.unite(id1, id2);
                 return;
@@ -393,11 +409,11 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
         int num_operators = task_proxy.get_operators().size();
         for (int op_id = 0; op_id < num_operators; ++op_id) {
             if (options.use_infinite_labels &&
-                remaining_costs[op_id] == INF) {
+                context.costs[op_id] == INF) {
                 continue;
             }
             if (options.use_non_negative_labels &&
-                remaining_costs[op_id] == 0 &&
+                context.costs[op_id] == 0 &&
                 test_mask_bit(
                     op_has_nonincreasing_remaining_costs[id1], op_id) &&
                 test_mask_bit(

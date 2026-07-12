@@ -26,11 +26,12 @@ protected:
 
 private:
     std::shared_ptr<SSCPNode> create_sum_node(
-        const Costs &costs,
+        const CostContext &context,
         const std::vector<std::vector<int>> &independent_abstractions,
         std::shared_ptr<LookupSSCPNode> &&scheduled_child = nullptr);
     std::shared_ptr<SSCPNode> create_max_node(
-        const Costs &costs, const std::vector<int> &dependent_abstractions);
+        const CostContext &context,
+        const std::vector<int> &dependent_abstractions);
 
     using SSCPNodeHashMap = gtl::flat_hash_map<
         std::vector<int>, std::shared_ptr<SSCPNode>, VectorIntMurmurHash>;

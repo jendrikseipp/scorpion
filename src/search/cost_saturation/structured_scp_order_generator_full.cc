@@ -20,14 +20,15 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
     iota(abstraction_ids.begin(), abstraction_ids.end(), 0);
 
     precompute_operator_properties(abstraction_ids);
-    Costs costs = task_properties::get_operator_costs(task_proxy);
+    CostContext context = make_cost_context(
+        task_properties::get_operator_costs(task_proxy));
     vector<vector<int>> independent_abstractions = use_conflicts
-        ? compute_independent_abstractions(abstraction_ids, costs)
+        ? compute_independent_abstractions(abstraction_ids, context)
         : vector<vector<int>>({abstraction_ids});
     assert(!independent_abstractions.empty());
     shared_ptr<SSCPNode> root_node = (independent_abstractions.size() == 1)
-        ? create_max_node(costs, independent_abstractions[0])
-        : create_sum_node(costs, independent_abstractions);
+        ? create_max_node(context, independent_abstractions[0])
+        : create_sum_node(context, independent_abstractions);
     // Release the considerable amount of memory used by the hash maps.
     SSCPNodeHashMap().swap(sum_sscp_node_post_cache);
     SSCPNodeHashMap().swap(max_sscp_node_post_cache);
@@ -37,7 +38,7 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
 }
 
 shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sum_node(
-    const Costs &costs,
+    const CostContext &context,
     const vector<vector<int>> &independent_abstractions,
     shared_ptr<LookupSSCPNode> &&scheduled_child) {
     vector<shared_ptr<SSCPNode>> children;
@@ -50,7 +51,7 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_sum_node(
     for (const vector<int> &dependent_abstractions :
          independent_abstractions) {
         shared_ptr<SSCPNode> child =
-            create_max_node(costs, dependent_abstractions);
+            create_max_node(context, dependent_abstractions);
         if (dynamic_pointer_cast<SumSSCPNode>(child)) {
             // Splice nested sum nodes into this sum node.
             for (const shared_ptr<SSCPNode> &grand_child : child->children) {
@@ -147,7 +148,8 @@ void reduce_costs_sparse_unguarded_and_track_negative(
 }
 
 shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
-    const Costs &costs, const vector<int> &dependent_abstractions) {
+    const CostContext &context, const vector<int> &dependent_abstractions) {
+    const Costs &costs = context.costs;
     CostKey cost_key = 0;
     if (prune_duplicates || options.cache_lookup_tables) {
         cost_key = lookup_costs_or_register(costs);
@@ -194,24 +196,30 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
     /* Simulate infinite costs for operators whose cost is not exhausted by
        computing all children on the same cost function. If this makes some
        abstractions independent, we can split this max node into a sum. */
-    Costs simulated_costs(costs);
+    vector<int> simulated_ops;
     if (check_cost_partitioning) {
         for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
             if (overall_remaining_costs[op_id] >= 0 && costs[op_id] > 0 &&
+                costs[op_id] != INF &&
                 (!options.use_general_cp || !op_has_negative_scf[op_id])) {
-                simulated_costs[op_id] = INF;
+                simulated_ops.push_back(op_id);
             }
         }
     }
     vector<vector<int>> independent_abstractions;
-    if (check_cost_partitioning && simulated_costs != costs) {
+    if (!simulated_ops.empty()) {
+        CostContext simulated_context(context);
+        for (int op_id : simulated_ops) {
+            simulated_context.costs[op_id] = INF;
+        }
+        update_cost_context(simulated_context, simulated_ops);
         independent_abstractions = compute_independent_abstractions(
-            scheduled_children.abstraction_ids, simulated_costs);
+            scheduled_children.abstraction_ids, simulated_context);
     } else {
         independent_abstractions = {scheduled_children.abstraction_ids};
     }
     if (independent_abstractions.size() > 1) {
-        return create_sum_node(costs, independent_abstractions);
+        return create_sum_node(context, independent_abstractions);
     }
 
     assert(utils::is_sorted_unique(scheduled_children.abstraction_ids));
@@ -231,9 +239,11 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         shared_ptr<LookupSSCPNode> &scheduled_child =
             scheduled_children.nodes[i];
         assert(scheduled_child);
-        Costs remaining_costs(costs);
-        reduce_costs_sparse(
-            remaining_costs, get_saturated_costs(scheduled_child));
+        const SaturatedCostFunction &scf =
+            get_saturated_costs(scheduled_child);
+        CostContext remaining_context(context);
+        reduce_costs_sparse(remaining_context.costs, scf);
+        update_cost_context(remaining_context, scf.nonzero_ops);
         vector<int> remaining_abstractions;
         if (options.use_general_cp) {
             remaining_abstractions.reserve(dependent_abstractions.size() - 1);
@@ -253,12 +263,12 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         if (use_conflicts) {
             independent_remaining_abstractions =
                 compute_independent_abstractions(
-                    remaining_abstractions, remaining_costs);
+                    remaining_abstractions, remaining_context);
         } else {
             independent_remaining_abstractions = {remaining_abstractions};
         }
         shared_ptr<SSCPNode> child = create_sum_node(
-            remaining_costs, independent_remaining_abstractions,
+            remaining_context, independent_remaining_abstractions,
             move(scheduled_child));
         assert(child);
 
