@@ -94,19 +94,46 @@ void StructuredSCPOrderGenerator::precompute_relevant_ops(
     int num_operators = task_proxy.get_operators().size();
     int num_words = get_num_mask_words(num_operators);
     relevant_ops_by_abstraction.reserve(abstractions.size());
+    inf_donating_ops_by_abstraction.reserve(abstractions.size());
     int abstraction_id = 0;
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
         OpMask relevant_ops(num_words, 0);
+        OpMask inf_donating_ops(num_words, 0);
         if (abstraction_is_relevant[abstraction_id]) {
             for (int op_id = 0; op_id < num_operators; ++op_id) {
                 if (abstraction->operator_is_scp_active(op_id)) {
                     assert(abstraction->operator_is_active(op_id));
                     set_mask_bit(relevant_ops, op_id);
+                } else if (options.use_general_cp &&
+                           !abstraction->operator_is_active(op_id) &&
+                           !abstraction->operator_induces_self_loop(op_id)) {
+                    /* With general cost partitioning, an operator without
+                       any transition gets saturated cost -infinity, so the
+                       abstraction donates infinite remaining cost for it to
+                       all later abstractions. */
+                    set_mask_bit(inf_donating_ops, op_id);
                 }
             }
         }
         relevant_ops_by_abstraction.push_back(move(relevant_ops));
+        inf_donating_ops_by_abstraction.push_back(move(inf_donating_ops));
         ++abstraction_id;
+    }
+}
+
+/* The order of two abstractions can only influence their heuristic values
+   if some operator affects both of them (like for additive pattern
+   databases), or if one abstraction donates infinite remaining cost for an
+   operator that affects the other. */
+void StructuredSCPOrderGenerator::compute_conflicting_ops(
+    int id1, int id2, OpMask &conflict) const {
+    const OpMask &relevant1 = relevant_ops_by_abstraction[id1];
+    const OpMask &relevant2 = relevant_ops_by_abstraction[id2];
+    const OpMask &donating1 = inf_donating_ops_by_abstraction[id1];
+    const OpMask &donating2 = inf_donating_ops_by_abstraction[id2];
+    for (size_t w = 0; w < conflict.size(); ++w) {
+        conflict[w] = (relevant1[w] & relevant2[w]) |
+            (donating1[w] & relevant2[w]) | (donating2[w] & relevant1[w]);
     }
 }
 
@@ -152,15 +179,10 @@ void StructuredSCPOrderGenerator::precompute_conflicting_ops(
         vector<OpMask>(abstractions.size(), OpMask(num_words, 0)));
     for (size_t id1 = 0; id1 < abstractions.size(); ++id1) {
         if (abstraction_is_relevant[id1]) {
-            const OpMask &relevant_ops1 = relevant_ops_by_abstraction[id1];
             for (size_t id2 = id1 + 1; id2 < abstractions.size(); ++id2) {
                 if (abstraction_is_relevant[id2]) {
-                    const OpMask &relevant_ops2 =
-                        relevant_ops_by_abstraction[id2];
-                    OpMask &conflict = conflicting_ops[id1][id2];
-                    for (int w = 0; w < num_words; ++w) {
-                        conflict[w] = relevant_ops1[w] | relevant_ops2[w];
-                    }
+                    compute_conflicting_ops(
+                        id1, id2, conflicting_ops[id1][id2]);
                 }
             }
         }
@@ -168,6 +190,7 @@ void StructuredSCPOrderGenerator::precompute_conflicting_ops(
     // When conflicting ops are precomputed, the relevant ops are not needed
     // anymore.
     utils::release_vector_memory(relevant_ops_by_abstraction);
+    utils::release_vector_memory(inf_donating_ops_by_abstraction);
 }
 
 bool StructuredSCPOrderGenerator::is_non_trivial_sum_node(
@@ -392,12 +415,8 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
         if (precomputed_conflicting_ops) {
             conflicting_ops_of_abstractions = &conflicting_ops[id1][id2];
         } else {
-            const OpMask &relevant_ops1 = relevant_ops_by_abstraction[id1];
-            const OpMask &relevant_ops2 = relevant_ops_by_abstraction[id2];
             OpMask &scratch = conflicting_ops[0][0];
-            for (size_t w = 0; w < scratch.size(); ++w) {
-                scratch[w] = relevant_ops1[w] | relevant_ops2[w];
-            }
+            compute_conflicting_ops(id1, id2, scratch);
             conflicting_ops_of_abstractions = &scratch;
         }
         const OpMask &conflict = *conflicting_ops_of_abstractions;

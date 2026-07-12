@@ -344,6 +344,7 @@ private:
 
     std::vector<std::vector<OpMask>> conflicting_ops;
     std::vector<OpMask> relevant_ops_by_abstraction;
+    std::vector<OpMask> inf_donating_ops_by_abstraction;
     // Bit set iff the operator is guaranteed nonincreasing (default: set).
     std::vector<OpMask> op_has_nonincreasing_remaining_costs;
 
@@ -358,9 +359,11 @@ private:
     void precompute_ops_with_nonincreasing_remaining_cost(
         const std::vector<bool> &abstraction_is_relevant);
 
-    /* Determine for each pair of relevant abstractions the set of
-       conflicting operators (i.e., the operators that affect both
-       abstractions). */
+    /* Determine the set of operators whose remaining cost can make the
+       order of the two abstractions matter. */
+    void compute_conflicting_ops(int id1, int id2, OpMask &conflict) const;
+
+    // Precompute the conflicting operators for all pairs of abstractions.
     void precompute_conflicting_ops(
         const std::vector<bool> &abstraction_is_relevant);
 
