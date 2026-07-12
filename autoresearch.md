@@ -113,7 +113,12 @@ This scaling cliff is the main cost of the approach.
 - run 11 DISCARD: simulated_any_op flag instead of vector compare — noise.
 - run 12 KEEP (0.556): mutable pq/label_costs/applicable_operators members
   in Projection::compute_goal_distances (27k calls/task on satellite).
-
+- run 13 KEEP (0.539): uint64 OpMask word masks + per-call live/cond
+  operator classification for dependency checks; drops gtl::bit_vector.
+- run 14 KEEP (clarity): remove dump_tree/dump_node, collect_time
+  option+timers, dead compute_remaining_costs (-85 lines, neutral).
+- run 15 KEEP (clarity): StructuredSCPOptions struct replaces the
+  g_hacked_* globals (neutral).
 - run 16 DISCARD: hoist per-child buffers in create_max_node — 2% worse.
 - run 17 KEEP (0.259, 52%!): cache PRUNED_LOOKUP sentinel for all-zero /
   dead-end-only lookup outcomes — those Dijkstras were recomputed for every
@@ -130,8 +135,20 @@ This scaling cliff is the main cost of the approach.
 - run 20 KEEP (0.196, 17%): deque scf_cache + const-ref
   get_saturated_costs, no per-child SCF copies (successful retry of run 7
   after run 19 made the copies heavier). 5.1x faster than integration.
+- run 21 KEEP (0.191): CostContext with incrementally maintained live/cond
+  masks threaded through the DAG construction (no O(ops) mask rebuild per
+  compute_independent_abstractions call). 5.2x faster than integration.
+- run 22 DISCARD: in-place CostContext mutation with undo (backtracking)
+  instead of per-child copies — 1.6% worse and hurts clarity.
+
+IMPORTANT for resuming: on DISCARD use `jj restore src` (NOT bare
+`jj restore`), otherwise uncommitted autoresearch.md updates are clobbered.
 
 Insights:
+- Hard domains (driverlog, woodworking, scanalyzer even small instances)
+  remain infeasible after 5x speedup: the DAG itself explodes (2.3GB on
+  driverlog p11 sys2). Constant factors do not move that cliff; memory of
+  DAG nodes is the frontier for hard instances.
 - transitions=explicit for projections makes sscp construction ~38% faster
   on satellite at equal memory (config-level; probes pin implicit, so this
   is a user recommendation, maybe change the sscp default generator string).
