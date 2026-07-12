@@ -40,8 +40,9 @@ dedup-cache key vectors, instructions.
   integer node ids replaces the shared_ptr hierarchy (no vptr/control
   blocks/dynamic_pointer_cast; also fixes never-reset static counters).
   -15% memory and 16% faster in one change.
-- next: children pool (slices into one shared buffer) to remove the
-  per-node vector<NodeId> heap block (~56B/node x 2.9M).
+- run 32 KEEP (mem 0.529, time 0.777): shared children pool with per-node
+  slices (children_offset/num_children) instead of a vector per node.
+  Segment total so far: -47% memory, -22% time on the memory suite.
 
 ## Objective
 
