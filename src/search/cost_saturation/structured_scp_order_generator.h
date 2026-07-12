@@ -290,6 +290,14 @@ protected:
        (UNKNOWN_LOOKUP if not computed yet, PRUNED_LOOKUP if pruned). Rows
        are created on the first lookup with a cost key. */
     std::vector<std::vector<int>> lookup_tables_cache;
+    /* The goal distances of an abstraction only depend on the costs of its
+       relevant operators, so cost functions that agree on them share the
+       lookup table. Maps the restricted cost function to the table id (or
+       PRUNED_LOOKUP), per abstraction. */
+    std::vector<gtl::flat_hash_map<Costs, int, VectorIntMurmurHash>>
+    table_by_restricted_costs;
+    std::vector<std::vector<int>> relevant_op_ids_by_abstraction;
+    Costs restricted_costs_scratch;
 
     // All DAG nodes with their children; node ids index into the arena.
     NodeArena nodes;

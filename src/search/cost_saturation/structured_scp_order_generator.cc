@@ -49,6 +49,7 @@ StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     lookup_tables.resize(num_abstractions);
     lookup_sscp_node_cache.resize(num_abstractions);
     scf_cache.resize(num_abstractions);
+    table_by_restricted_costs.resize(num_abstractions);
     unsolvability_infos.reserve(num_abstractions);
     for (int abstraction_id = 0; abstraction_id < num_abstractions;
          ++abstraction_id) {
@@ -126,6 +127,15 @@ void StructuredSCPOrderGenerator::precompute_relevant_ops(
         relevant_ops_by_abstraction.push_back(move(relevant_ops));
         inf_donating_ops_by_abstraction.push_back(move(inf_donating_ops));
         ++abstraction_id;
+    }
+
+    relevant_op_ids_by_abstraction.resize(abstractions.size());
+    for (size_t id = 0; id < abstractions.size(); ++id) {
+        for (int op_id = 0; op_id < num_operators; ++op_id) {
+            if (test_mask_bit(relevant_ops_by_abstraction[id], op_id)) {
+                relevant_op_ids_by_abstraction[id].push_back(op_id);
+            }
+        }
     }
 }
 
@@ -294,12 +304,43 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
             }
         };
 
+    /* The goal distances only depend on the costs of the abstraction's
+       relevant operators, so cost functions that agree on them share the
+       lookup table and we can skip the goal distance computation. */
+    gtl::flat_hash_map<Costs, int, VectorIntMurmurHash>::iterator
+        restricted_it;
+    bool restrict_costs = !relevant_op_ids_by_abstraction.empty();
+    if (restrict_costs) {
+        restricted_costs_scratch.clear();
+        for (int op_id : relevant_op_ids_by_abstraction[abstraction_id]) {
+            restricted_costs_scratch.push_back(costs[op_id]);
+        }
+        bool inserted;
+        tie(restricted_it, inserted) =
+            table_by_restricted_costs[abstraction_id].try_emplace(
+                restricted_costs_scratch, UNKNOWN_LOOKUP);
+        if (!inserted) {
+            int table_id = restricted_it->second;
+            cache_table_for_costs(table_id);
+            if (table_id == PRUNED_LOOKUP) {
+                return NO_NODE;
+            }
+            return lookup_sscp_node_cache[abstraction_id][table_id];
+        }
+    }
+    auto cache_table_for_restricted_costs = [&](int table_id) {
+            if (restrict_costs) {
+                restricted_it->second = table_id;
+            }
+            cache_table_for_costs(table_id);
+        };
+
     vector<int> goal_distances =
         abstractions[abstraction_id]->compute_goal_distances(costs);
     // Prune this abstraction if all goal distances are 0.
     if (all_of(goal_distances.begin(), goal_distances.end(),
                [](int h) {return h == 0;})) {
-        cache_table_for_costs(PRUNED_LOOKUP);
+        cache_table_for_restricted_costs(PRUNED_LOOKUP);
         return NO_NODE;
     }
 
@@ -320,10 +361,10 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
         if (goal_distances == lookup_table) {
             ++recomputed_lookup_tables;
             if (dead_end_detection_only) {
-                cache_table_for_costs(PRUNED_LOOKUP);
+                cache_table_for_restricted_costs(PRUNED_LOOKUP);
                 return NO_NODE;
             }
-            cache_table_for_costs(lookup_table_id);
+            cache_table_for_restricted_costs(lookup_table_id);
             return lookup_sscp_node_cache[abstraction_id][lookup_table_id];
         }
     }
@@ -340,10 +381,10 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
                lookup_tables[abstraction_id].size());
     }
     if (dead_end_detection_only) {
-        cache_table_for_costs(PRUNED_LOOKUP);
+        cache_table_for_restricted_costs(PRUNED_LOOKUP);
         return NO_NODE;
     }
-    cache_table_for_costs(lookup_table_id);
+    cache_table_for_restricted_costs(lookup_table_id);
     return node;
 }
 
@@ -505,6 +546,8 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     utils::release_vector_memory(cost_key_overflow);
     utils::release_vector_memory(packed_costs_by_key);
     utils::release_vector_memory(lookup_tables_cache);
+    utils::release_vector_memory(table_by_restricted_costs);
+    utils::release_vector_memory(relevant_op_ids_by_abstraction);
     utils::release_vector_memory(scf_cache);
     utils::release_vector_memory(conflicting_ops);
     utils::release_vector_memory(op_has_nonincreasing_remaining_costs);
