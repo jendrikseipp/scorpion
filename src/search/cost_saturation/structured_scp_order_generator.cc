@@ -108,9 +108,17 @@ void StructuredSCPOrderGenerator::precompute_relevant_ops(
                            !abstraction->operator_is_active(op_id) &&
                            !abstraction->operator_induces_self_loop(op_id)) {
                     /* With general cost partitioning, an operator without
-                       any transition gets saturated cost -infinity, so the
-                       abstraction donates infinite remaining cost for it to
-                       all later abstractions. */
+                       any transition has saturated cost -infinity (an empty
+                       supremum), so saturating this abstraction leaves
+                       infinite remaining cost for the operator to all later
+                       abstractions. If the operator affects a later
+                       abstraction, its heuristic values can increase, so
+                       the order of the two abstractions matters even though
+                       their saturation-affecting labels are disjoint.
+                       Abstractions that prune transitions (e.g., Cartesian
+                       abstractions drop transitions of unsolvable states)
+                       can lack an operator that still affects other
+                       abstractions; for projections this never happens. */
                     set_mask_bit(inf_donating_ops, op_id);
                 }
             }
