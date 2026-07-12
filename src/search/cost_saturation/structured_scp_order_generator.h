@@ -63,9 +63,6 @@ enum class NodeType : uint8_t {
 struct SSCPNode {
     NodeType type;
 
-    // The level corresponds to the depth of the DAG rooted at this node.
-    int level;
-
     // Children slice of max and sum nodes (empty for lookup nodes).
     int64_t children_offset;
     int num_children;
@@ -94,25 +91,25 @@ struct NodeArena {
     NodeId add_lookup_node(int abstraction_id, int lookup_table_id) {
         nodes.push_back(
             SSCPNode{
-                NodeType::LOOKUP, 0, 0, 0, abstraction_id,
-                lookup_table_id});
+                NodeType::LOOKUP, 0, 0, abstraction_id, lookup_table_id});
         return nodes.size() - 1;
     }
 
+    /* Children must already exist, so children ids are always smaller than
+       the id of their parent and the arena order is topological. */
     NodeId add_compositional_node(
         NodeType type, const std::vector<NodeId> &children) {
         assert(type == NodeType::MAX || type == NodeType::SUM);
-        int level = 0;
-        for (NodeId child : children) {
-            level = std::max(level, nodes[child].level);
-        }
+        assert(all_of(children.begin(), children.end(),
+                      [&](NodeId child) {
+                          return child < static_cast<int>(nodes.size());
+                      }));
         int64_t offset = children_pool.size();
         children_pool.insert(
             children_pool.end(), children.begin(), children.end());
         nodes.push_back(
             SSCPNode{
-                type, level + 1, offset,
-                static_cast<int>(children.size()), -1, -1});
+                type, offset, static_cast<int>(children.size()), -1, -1});
         return nodes.size() - 1;
     }
 

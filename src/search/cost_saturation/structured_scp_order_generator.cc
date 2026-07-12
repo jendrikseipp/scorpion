@@ -211,8 +211,6 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
         }
     }
     log << "Time to generate DAG: " << timer() << endl;
-    log << "Depth of DAG: "
-        << (root_node == NO_NODE ? 0 : nodes[root_node].level) << endl;
     log << "Generated nodes: " << nodes.size() << endl;
     log << "Generated sum nodes: " << num_sum_nodes << endl;
     log << "Generated nontrivial sum nodes: " << num_nontrivial_sum_nodes
@@ -475,11 +473,10 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     if (root_node != NO_NODE) {
         collect_compositional_nodes(
             nodes, root_node, marked, reachable_compositional_nodes);
+        /* Children are always created before their parents, so sorting by
+           node id yields a topological order. */
         sort(reachable_compositional_nodes.begin(),
-             reachable_compositional_nodes.end(),
-             [&](NodeId lhs, NodeId rhs) {
-                 return nodes[lhs].level < nodes[rhs].level;
-             });
+             reachable_compositional_nodes.end());
     }
     utils::release_vector_memory(marked);
 
