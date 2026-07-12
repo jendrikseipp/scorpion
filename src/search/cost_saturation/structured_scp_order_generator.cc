@@ -62,7 +62,6 @@ StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     int num_abstractions = this->abstractions.size();
     lookup_tables.resize(num_abstractions);
     lookup_sscp_node_cache.resize(num_abstractions);
-    lookup_tables_cache.resize(num_abstractions);
     unsolvability_infos.reserve(num_abstractions);
     for (int abstraction_id = 0; abstraction_id < num_abstractions;
          ++abstraction_id) {
@@ -192,11 +191,8 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     assert(lookup_sscp_node_cache.size() == abstractions.size());
     cout << "Recomputed lookup tables: " << recomputed_lookup_tables << endl;
     cout << "Lookup table cache hits: " << lookup_cache_hits << endl;
-    int lookup_table_cache_size = 0;
-    for (const auto &lookup_table : lookup_tables_cache) {
-        lookup_table_cache_size += lookup_table.size();
-    }
-    cout << "Lookup table cache size: " << lookup_table_cache_size << endl;
+    cout << "Lookup table cache size: "
+         << lookup_tables_cache.size() * abstractions.size() << endl;
     cout << "SCF cache size: " << scf_cache.size() << endl;
     cout << "Stored cost functions: " << cost_key_cache.size() << endl;
     log << "Time to generate DAG: " << timer() << endl;
@@ -215,28 +211,36 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
 
 // Sentinel table id caching that the lookup node was pruned for these costs.
 static const int PRUNED_LOOKUP = -1;
+// Sentinel for lookup nodes that have not been computed yet.
+static const int UNKNOWN_LOOKUP = -2;
 
 shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
     const Costs &costs, CostKey cost_key, int abstraction_id) {
-    if (options.cache_lookup_tables) {
-        if (auto it = lookup_tables_cache[abstraction_id].find(cost_key);
-            it != lookup_tables_cache[abstraction_id].end()) {
+    bool cache_this_lookup =
+        options.cache_lookup_tables && cost_key < max_lookup_table_entries;
+    if (cache_this_lookup) {
+        if (cost_key >= lookup_tables_cache.size()) {
+            lookup_tables_cache.resize(cost_key + 1);
+        }
+        vector<int> &row = lookup_tables_cache[cost_key];
+        if (row.empty()) {
+            row.assign(abstractions.size(), UNKNOWN_LOOKUP);
+        }
+        int cached_table_id = row[abstraction_id];
+        if (cached_table_id != UNKNOWN_LOOKUP) {
             ++lookup_cache_hits;
-            if (it->second == PRUNED_LOOKUP) {
+            if (cached_table_id == PRUNED_LOOKUP) {
                 return nullptr;
             }
-            assert(utils::in_bounds(abstraction_id, lookup_sscp_node_cache));
             assert(utils::in_bounds(
-                       it->second, lookup_sscp_node_cache[abstraction_id]));
-            return lookup_sscp_node_cache[abstraction_id][it->second];
+                       cached_table_id,
+                       lookup_sscp_node_cache[abstraction_id]));
+            return lookup_sscp_node_cache[abstraction_id][cached_table_id];
         }
     }
     auto cache_table_for_costs = [&](int table_id) {
-            if (options.cache_lookup_tables &&
-                lookup_tables_cache[abstraction_id].size() <
-                max_lookup_table_entries) {
-                lookup_tables_cache[abstraction_id].insert(
-                    {cost_key, table_id});
+            if (cache_this_lookup) {
+                lookup_tables_cache[cost_key][abstraction_id] = table_id;
             }
         };
 

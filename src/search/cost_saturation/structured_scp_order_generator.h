@@ -230,7 +230,11 @@ protected:
     double max_lookup_table_entries;
     utils::LogProxy log;
     gtl::flat_hash_map<Costs, CostKey, VectorIntMurmurHash> cost_key_cache;
-    std::vector<gtl::flat_hash_map<CostKey, const int>> lookup_tables_cache;
+    /* lookup_tables_cache[cost_key][abstraction_id] is the lookup table id
+       for evaluating the abstraction under the cost function with this key
+       (UNKNOWN_LOOKUP if not computed yet, PRUNED_LOOKUP if pruned). Rows
+       are created on the first lookup with a cost key. */
+    std::vector<std::vector<int>> lookup_tables_cache;
 
     virtual std::shared_ptr<SSCPNode> create_sscp_order_dag() = 0;
 
