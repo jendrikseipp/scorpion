@@ -230,7 +230,15 @@ protected:
     // Maximum number of cost keys cached in lookup_tables_cache.
     CostKey max_lookup_table_entries;
     utils::LogProxy log;
-    gtl::flat_hash_map<Costs, CostKey, VectorIntMurmurHash> cost_key_cache;
+    /* Cost functions are identified by the 64-bit hash of their raw
+       vector and verified against a packed copy, which shrinks the stored
+       cost functions by 4x; hard tasks register hundreds of thousands of
+       them. Hash collisions land in the (in practice empty) overflow
+       list. */
+    gtl::flat_hash_map<uint64_t, CostKey> cost_key_by_hash;
+    std::vector<std::pair<uint64_t, CostKey>> cost_key_overflow;
+    // Packed cost function per cost key, for verification.
+    std::vector<std::vector<uint8_t>> packed_costs_by_key;
     /* lookup_tables_cache[cost_key][abstraction_id] is the lookup table id
        for evaluating the abstraction under the cost function with this key
        (UNKNOWN_LOOKUP if not computed yet, PRUNED_LOOKUP if pruned). Rows

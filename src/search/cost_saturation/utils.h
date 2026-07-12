@@ -98,6 +98,12 @@ struct VectorIntMurmurHash {
     }
 };
 
+struct VectorUint8MurmurHash {
+    size_t operator()(const std::vector<uint8_t> &v) const {
+        return hash_bytes(v.data(), v.size(), v.size());
+    }
+};
+
 struct PairUint32VectorIntHash {
     size_t operator()(
         const std::pair<uint32_t, const std::vector<int>> &v) const {

@@ -194,7 +194,7 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     cout << "Lookup table cache size: "
          << lookup_tables_cache.size() * abstractions.size() << endl;
     cout << "SCF cache size: " << scf_cache.size() << endl;
-    cout << "Stored cost functions: " << cost_key_cache.size() << endl;
+    cout << "Stored cost functions: " << packed_costs_by_key.size() << endl;
     log << "Time to generate DAG: " << timer() << endl;
     log << "Depth of DAG: " << (root_node ? root_node->level : 0) << endl;
     log << "Generated nodes: "
@@ -616,19 +616,108 @@ const SaturatedCostFunction &StructuredSCPOrderGenerator::get_saturated_costs(
     }
 }
 
-/* Return the key under which the given cost function is registered in
-   cost_key_cache, so that all other hash maps can use the small key instead
-   of the full cost function. */
+/* Pack a cost function into a compact blob with 1, 2 or 4 bytes per cost,
+   depending on the maximum finite cost. Mapping INF to 0 and finite costs
+   to cost + 1 avoids a special case for INF; the width is stored in the
+   first byte. Byte-granular packing keeps both loops vectorizable. */
+template<typename UInt>
+static void append_packed_values(
+    vector<uint8_t> &packed, const Costs &costs) {
+    size_t offset = packed.size();
+    packed.resize(offset + costs.size() * sizeof(UInt));
+    UInt *values = reinterpret_cast<UInt *>(packed.data() + offset);
+    for (size_t i = 0; i < costs.size(); ++i) {
+        int cost = costs[i];
+        values[i] = (cost == INF)
+            ? 0
+            : static_cast<UInt>(static_cast<unsigned int>(cost) + 1);
+    }
+}
+
+static void pack_costs(const Costs &costs, vector<uint8_t> &packed) {
+    unsigned int max_finite_cost = 0;
+    for (int cost : costs) {
+        assert(cost >= 0);
+        max_finite_cost = max(
+            max_finite_cost,
+            (cost == INF) ? 0 : static_cast<unsigned int>(cost));
+    }
+    uint8_t bytes_per_cost =
+        (max_finite_cost < 0xFF) ? 1 : ((max_finite_cost < 0xFFFF) ? 2 : 4);
+
+    packed.clear();
+    packed.reserve(1 + costs.size() * bytes_per_cost);
+    packed.push_back(bytes_per_cost);
+    if (bytes_per_cost == 1) {
+        append_packed_values<uint8_t>(packed, costs);
+    } else if (bytes_per_cost == 2) {
+        append_packed_values<uint16_t>(packed, costs);
+    } else {
+        append_packed_values<uint32_t>(packed, costs);
+    }
+}
+
+// Check whether the packed blob encodes exactly the given cost function.
+template<typename UInt>
+static bool packed_values_equal_costs(
+    const uint8_t *packed, const Costs &costs) {
+    const UInt *values = reinterpret_cast<const UInt *>(packed);
+    for (size_t i = 0; i < costs.size(); ++i) {
+        int cost = costs[i];
+        UInt expected = (cost == INF)
+            ? 0
+            : static_cast<UInt>(static_cast<unsigned int>(cost) + 1);
+        if (values[i] != expected) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool packed_equals_costs(
+    const vector<uint8_t> &packed, const Costs &costs) {
+    if (packed.size() != 1 + costs.size() * packed[0]) {
+        return false;
+    }
+    switch (packed[0]) {
+    case 1:
+        return packed_values_equal_costs<uint8_t>(packed.data() + 1, costs);
+    case 2:
+        return packed_values_equal_costs<uint16_t>(packed.data() + 1, costs);
+    default:
+        return packed_values_equal_costs<uint32_t>(packed.data() + 1, costs);
+    }
+}
+
+/* Return the key under which the given cost function is registered, so
+   that all other hash maps can use the small key instead of the full cost
+   function. */
 CostKey StructuredSCPOrderGenerator::lookup_costs_or_register(
     const Costs &costs) {
-    const auto &it = cost_key_cache.find(costs);
-    if (it != cost_key_cache.end()) {
-        return it->second;
-    } else {
-        CostKey key = cost_key_cache.size();
-        cost_key_cache.emplace(costs, key);
-        return key;
+    uint64_t hash = hash_bytes(
+        costs.data(), costs.size() * sizeof(int), costs.size());
+    auto it = cost_key_by_hash.find(hash);
+    if (it != cost_key_by_hash.end()) {
+        if (packed_equals_costs(packed_costs_by_key[it->second], costs)) {
+            return it->second;
+        }
+        // Hash collision: look for the cost function in the overflow list.
+        for (const auto &[overflow_hash, overflow_key] : cost_key_overflow) {
+            if (overflow_hash == hash &&
+                packed_equals_costs(packed_costs_by_key[overflow_key], costs)) {
+                return overflow_key;
+            }
+        }
     }
+    CostKey key = packed_costs_by_key.size();
+    packed_costs_by_key.emplace_back();
+    pack_costs(costs, packed_costs_by_key.back());
+    if (it != cost_key_by_hash.end()) {
+        cost_key_overflow.emplace_back(hash, key);
+    } else {
+        cost_key_by_hash.emplace(hash, key);
+    }
+    return key;
 }
 
 void add_structured_order_generator_options_to_parser(
