@@ -212,23 +212,39 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     return create_structured_scp_order(root_node);
 }
 
+// Sentinel table id caching that the lookup node was pruned for these costs.
+static const int PRUNED_LOOKUP = -1;
+
 shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
     const Costs &costs, CostKey cost_key, int abstraction_id) {
     if (options.cache_lookup_tables) {
         if (auto it = lookup_tables_cache[abstraction_id].find(cost_key);
             it != lookup_tables_cache[abstraction_id].end()) {
             ++lookup_cache_hits;
+            if (it->second == PRUNED_LOOKUP) {
+                return nullptr;
+            }
             assert(utils::in_bounds(abstraction_id, lookup_sscp_node_cache));
             assert(utils::in_bounds(
                        it->second, lookup_sscp_node_cache[abstraction_id]));
             return lookup_sscp_node_cache[abstraction_id][it->second];
         }
     }
+    auto cache_table_for_costs = [&](int table_id) {
+            if (options.cache_lookup_tables &&
+                lookup_tables_cache[abstraction_id].size() <
+                max_lookup_table_entries) {
+                lookup_tables_cache[abstraction_id].insert(
+                    {cost_key, table_id});
+            }
+        };
+
     vector<int> goal_distances =
         abstractions[abstraction_id]->compute_goal_distances(costs);
     // Prune this abstraction if all goal distances are 0.
     if (all_of(goal_distances.begin(), goal_distances.end(),
                [](int h) {return h == 0;})) {
+        cache_table_for_costs(PRUNED_LOOKUP);
         return nullptr;
     }
 
@@ -248,12 +264,11 @@ shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
             lookup_tables[abstraction_id][lookup_table_id];
         if (goal_distances == lookup_table) {
             ++recomputed_lookup_tables;
-            if (options.cache_lookup_tables &&
-                lookup_tables_cache[abstraction_id].size() <
-                max_lookup_table_entries) {
-                lookup_tables_cache[abstraction_id].insert(
-                    {cost_key, lookup_table_id});
+            if (dead_end_detection_only) {
+                cache_table_for_costs(PRUNED_LOOKUP);
+                return nullptr;
             }
+            cache_table_for_costs(lookup_table_id);
             return lookup_sscp_node_cache[abstraction_id][lookup_table_id];
         }
     }
@@ -261,12 +276,6 @@ shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
     auto node = make_shared<LookupSSCPNode>(abstraction_id, lookup_table_id);
 
     lookup_sscp_node_cache[abstraction_id].push_back(node);
-    if (options.cache_lookup_tables &&
-        lookup_tables_cache[abstraction_id].size() <
-        max_lookup_table_entries) {
-        lookup_tables_cache[abstraction_id].insert(
-            {cost_key, lookup_table_id});
-    }
     if (options.cache_scf_functions) {
         scf_cache.push_back(
             compute_scf(
@@ -276,8 +285,10 @@ shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
         assert(static_cast<int>(scf_cache.size()) == -node->index);
     }
     if (dead_end_detection_only) {
+        cache_table_for_costs(PRUNED_LOOKUP);
         return nullptr;
     }
+    cache_table_for_costs(lookup_table_id);
     return node;
 }
 
