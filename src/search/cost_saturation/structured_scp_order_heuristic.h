@@ -13,7 +13,7 @@ namespace cost_saturation {
 class StructuredSCPOrderHeuristic : public Heuristic {
     AbstractionFunctions abs_functions;
     std::vector<UnsolvabilityInfo> unsolvability_infos;
-    std::vector<Instruction> instructions;
+    Instructions instructions;
     std::vector<std::vector<std::vector<int>>> lookup_tables;
     std::vector<int> values;
 
@@ -23,7 +23,7 @@ public:
         const std::string &description, utils::Verbosity verbosity,
         AbstractionFunctions &&abs_functions,
         std::vector<UnsolvabilityInfo> &&unsolvability_infos,
-        std::vector<Instruction> &&instructions,
+        Instructions &&instructions,
         std::vector<std::vector<std::vector<int>>> &&lookup_tables);
 
     virtual int compute_heuristic(const State &ancestor_state) override;

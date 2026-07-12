@@ -19,6 +19,21 @@ cost functions (cost_key_cache holds FULL cost vectors), 2.88M
 instructions. Main consumers: cost_key_cache (~300MB est.), DAG nodes +
 dedup-cache key vectors, instructions.
 
+## Segment 1 experiment log
+
+- run 26: segment baseline (identical binaries, ref = run-25 commit).
+- run 27 KEEP (mem 0.943, time +0.9%): packed cost function storage;
+  raw-vector hash for identification, byte-packed blobs (1/2/4 bytes per
+  cost) for verification, overflow list for true hash collisions. NOTE:
+  packing in the lookup hot path (bit-granular or without scratch reuse)
+  cost 2-3.5% time; the raw-hash + packed-verify split is what works.
+- run 28 KEEP (mem 0.853, time 0.944): sum/max post caches as hash SETS of
+  the nodes with transparent hash/eq on children indices — no key-vector
+  copy per entry (2.9M entries on rovers06). Memory AND speed win.
+- run 29 KEEP (mem 0.806, time 0.957): free construction caches before the
+  instruction phase; release each node's children right after its
+  instruction is built.
+
 ## Objective
 
 Improve the speed and memory usage of the newly integrated structured SCP

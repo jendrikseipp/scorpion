@@ -14,7 +14,7 @@ StructuredSCPOrderHeuristic::StructuredSCPOrderHeuristic(
     const string &description, utils::Verbosity verbosity,
     AbstractionFunctions &&abs_functions,
     vector<UnsolvabilityInfo> &&unsolvability_infos,
-    vector<Instruction> &&instructions,
+    Instructions &&instructions,
     vector<vector<vector<int>>> &&lookup_tables)
     : Heuristic(transform, cache_estimates, description, verbosity),
       abs_functions(move(abs_functions)),
@@ -42,26 +42,6 @@ StructuredSCPOrderHeuristic::StructuredSCPOrderHeuristic(
     cout << "Initializing structured SCP order heuristic with "
          << this->instructions.size() << " compositional instructions."
          << endl;
-}
-
-namespace {
-int max_val(const vector<int> &values, const vector<int> &ids) {
-    assert(!ids.empty());
-    int result = -INF;
-    for (int id : ids) {
-        result = max(result, values[id]);
-    }
-    return result;
-}
-
-int sum_val(const vector<int> &values, const vector<int> &ids) {
-    assert(!ids.empty());
-    int result = 0;
-    for (int id : ids) {
-        result += values[id];
-    }
-    return result;
-}
 }
 
 int StructuredSCPOrderHeuristic::compute_heuristic(
@@ -96,13 +76,25 @@ int StructuredSCPOrderHeuristic::compute_heuristic(
     }
 
     // Process instructions.
-    for (const Instruction &instruction : instructions) {
-        assert(value_id < values.size());
-        if (instruction.type == InstructionType::MAX) {
-            values[value_id] = max_val(values, instruction.ids);
+    int num_instructions = instructions.size();
+    for (int i = 0; i < num_instructions; ++i) {
+        assert(static_cast<size_t>(value_id) < values.size());
+        int begin = instructions.id_offsets[i];
+        int end = instructions.id_offsets[i + 1];
+        assert(begin < end);
+        if (instructions.types[i] == InstructionType::MAX) {
+            int result = -INF;
+            for (int j = begin; j < end; ++j) {
+                result = max(result, values[instructions.ids[j]]);
+            }
+            values[value_id] = result;
         } else {
-            assert(instruction.type == InstructionType::SUM);
-            values[value_id] = sum_val(values, instruction.ids);
+            assert(instructions.types[i] == InstructionType::SUM);
+            int result = 0;
+            for (int j = begin; j < end; ++j) {
+                result += values[instructions.ids[j]];
+            }
+            values[value_id] = result;
         }
         ++value_id;
     }

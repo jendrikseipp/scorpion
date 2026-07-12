@@ -505,8 +505,12 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
     }
 
     // Assign final indices to compositional nodes and create instructions.
-    vector<Instruction> instructions;
-    instructions.reserve(reachable_compositional_nodes.size());
+    int64_t total_ids = 0;
+    for (const shared_ptr<SSCPNode> &node : reachable_compositional_nodes) {
+        total_ids += node->children.size();
+    }
+    Instructions instructions;
+    instructions.reserve(reachable_compositional_nodes.size(), total_ids);
     int num_reachable_nodes =
         static_cast<int>(reachable_compositional_nodes.size()) +
         SSCPNode::num_lookup_nodes;
@@ -517,13 +521,11 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
         assert(!node->children.empty());
         node->index = value_id;
         ++value_id;
+        assert(all_of(node->children.begin(), node->children.end(),
+                      [&](const shared_ptr<SSCPNode> &child) {
+                          return child->index < node->index;
+                      }));
 
-        vector<int> ids;
-        ids.reserve(node->children.size());
-        for (const shared_ptr<SSCPNode> &child : node->children) {
-            assert(child->index < node->index);
-            ids.push_back(child->index);
-        }
         InstructionType type;
         if (dynamic_pointer_cast<MaxSSCPNode>(node)) {
             type = InstructionType::MAX;
@@ -536,7 +538,7 @@ StructuredSCPOrder StructuredSCPOrderGenerator::create_structured_scp_order(
                 ++num_reachable_non_trivial_sum_nodes;
             }
         }
-        instructions.emplace_back(type, move(ids));
+        instructions.append(type, node->children);
         /* The node's instruction replaces its children list; parents only
            need the index. Releasing the children early keeps the peak
            memory close to one copy of the DAG structure. */

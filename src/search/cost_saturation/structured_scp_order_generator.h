@@ -145,17 +145,41 @@ struct LookupSSCPNode : public SSCPNode {
     }
 };
 
-enum class InstructionType {
+enum class InstructionType : uint8_t {
     MAX,
     SUM,
 };
 
-struct Instruction {
-    InstructionType type;
+/*
+  Flattened list of max/sum instructions. Instruction i has type types[i]
+  and operates on the value ids in [id_offsets[i], id_offsets[i + 1]) of
+  the shared ids buffer. Hard tasks create millions of instructions, so
+  avoiding a heap-allocated vector per instruction saves a lot of memory.
+*/
+struct Instructions {
+    std::vector<InstructionType> types;
+    std::vector<int> id_offsets;
     std::vector<int> ids;
 
-    Instruction(InstructionType type, std::vector<int> ids)
-        : type(type), ids(move(ids)) {
+    int size() const {
+        return types.size();
+    }
+
+    void reserve(int num_instructions, int num_ids) {
+        types.reserve(num_instructions);
+        id_offsets.reserve(num_instructions + 1);
+        id_offsets.push_back(0);
+        ids.reserve(num_ids);
+    }
+
+    void append(
+        InstructionType type, const std::vector<
+            std::shared_ptr<SSCPNode>> &children) {
+        types.push_back(type);
+        for (const std::shared_ptr<SSCPNode> &child : children) {
+            ids.push_back(child->index);
+        }
+        id_offsets.push_back(ids.size());
     }
 };
 
@@ -174,7 +198,7 @@ struct UnsolvabilityInfo {
 struct StructuredSCPOrder {
     AbstractionFunctions abs_functions;
     std::vector<UnsolvabilityInfo> unsolvability_infos;
-    std::vector<Instruction> instructions;
+    Instructions instructions;
     std::vector<std::vector<std::vector<int>>> lookup_tables;
 };
 
