@@ -922,6 +922,7 @@ create_fast_downward_library(
         cost_saturation/canonical_heuristic
         cost_saturation/cartesian_abstraction
         cost_saturation/cartesian_abstraction_generator
+        cost_saturation/cost_function_registry
         cost_saturation/cost_partitioning_heuristic
         cost_saturation/cost_partitioning_heuristic_collection_generator
         cost_saturation/diversifier
@@ -942,6 +943,7 @@ create_fast_downward_library(
         cost_saturation/projection_generator
         cost_saturation/saturated_cost_partitioning_heuristic
         cost_saturation/saturated_cost_partitioning_online_heuristic
+        cost_saturation/sscp_dag
         cost_saturation/structured_scp_order_generator
         cost_saturation/structured_scp_order_generator_full
         cost_saturation/structured_scp_order_heuristic
