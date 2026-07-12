@@ -29,12 +29,15 @@ protected:
     NodeId create_sscp_order_dag() override;
 
 private:
+    /* Both methods use the context as scratch space: they reduce the
+       costs before recursing and restore them afterwards, so the context
+       is unchanged when they return. */
     NodeId create_sum_node(
-        const CostContext &context,
+        CostContext &context,
         const std::vector<std::vector<int>> &independent_abstractions,
         NodeId scheduled_child = NO_NODE);
     NodeId create_max_node(
-        const CostContext &context,
+        CostContext &context,
         const std::vector<int> &dependent_abstractions);
 
     /* Deduplicate compositional nodes by their children ids. Sets of node

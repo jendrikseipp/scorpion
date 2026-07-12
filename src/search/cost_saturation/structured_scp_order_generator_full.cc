@@ -41,7 +41,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_sscp_order_dag() {
 }
 
 NodeId StructuredSCPOrderGeneratorFull::create_sum_node(
-    const CostContext &context,
+    CostContext &context,
     const vector<vector<int>> &independent_abstractions,
     NodeId scheduled_child) {
     vector<NodeId> children;
@@ -121,7 +121,7 @@ void reduce_costs_sparse_unguarded_and_track_negative(
 }
 
 NodeId StructuredSCPOrderGeneratorFull::create_max_node(
-    const CostContext &context, const vector<int> &dependent_abstractions) {
+    CostContext &context, const vector<int> &dependent_abstractions) {
     const Costs &costs = context.costs;
     CostKey cost_key = context.key;
     /* If the input set was the scheduled set of an earlier call with these
@@ -215,14 +215,24 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
 
     gtl::flat_hash_set<NodeId> unique_children;
     assert(dependent_abstractions.size() >= 2);
+    /* Per-frame save buffer: the recursion below re-enters this function,
+       so the buffer must not be shared across frames. */
+    vector<int> saved_costs;
     for (size_t i = 0; i < scheduled_children.abstraction_ids.size(); ++i) {
         int abstraction_id = scheduled_children.abstraction_ids[i];
         NodeId scheduled_child = scheduled_children.nodes[i];
         assert(scheduled_child != NO_NODE);
         const SaturatedCostFunction &scf =
             get_saturated_costs(scheduled_child);
-        CostContext remaining_context(context);
-        reduce_cost_context(remaining_context, scf);
+        /* Reduce the context in place and restore it after handling this
+           child; the delta is sparse, a full copy is not. */
+        saved_costs.clear();
+        for (int op_id : scf.nonzero_ops) {
+            saved_costs.push_back(context.costs[op_id]);
+        }
+        uint64_t saved_hash = context.cost_hash;
+        CostKey saved_key = context.key;
+        reduce_cost_context(context, scf);
         vector<int> remaining_abstractions;
         if (options.use_general_cp) {
             remaining_abstractions.reserve(dependent_abstractions.size() - 1);
@@ -242,14 +252,21 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         if (use_conflicts) {
             independent_remaining_abstractions =
                 compute_independent_abstractions(
-                    remaining_abstractions, remaining_context);
+                    remaining_abstractions, context);
         } else {
             independent_remaining_abstractions = {remaining_abstractions};
         }
         NodeId child = create_sum_node(
-            remaining_context, independent_remaining_abstractions,
-            scheduled_child);
+            context, independent_remaining_abstractions, scheduled_child);
         assert(child != NO_NODE);
+
+        // Restore the context for the next child.
+        for (size_t j = 0; j < scf.nonzero_ops.size(); ++j) {
+            context.costs[scf.nonzero_ops[j]] = saved_costs[j];
+        }
+        context.cost_hash = saved_hash;
+        context.key = saved_key;
+        update_cost_context(context, scf.nonzero_ops);
 
         if (nodes[child].type == NodeType::MAX) {
             // Splice nested max nodes into this max node.
