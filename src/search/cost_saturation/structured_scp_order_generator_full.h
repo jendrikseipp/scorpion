@@ -12,12 +12,11 @@ class StructuredSCPOrderGeneratorFull : public StructuredSCPOrderGenerator {
 public:
     StructuredSCPOrderGeneratorFull(
         const std::shared_ptr<AbstractTask> &transform,
-        Abstractions abstractions, bool use_unsolvability_infos,
-        bool use_general_cp, utils::Verbosity verbosity,
-        bool prune_duplicates, bool use_conflicts, bool cache_lookup_tables)
+        Abstractions abstractions, const StructuredSCPOptions &options,
+        utils::Verbosity verbosity, bool prune_duplicates,
+        bool use_conflicts)
         : StructuredSCPOrderGenerator(
-              transform, move(abstractions), use_unsolvability_infos,
-              use_general_cp, cache_lookup_tables, verbosity),
+              transform, move(abstractions), options, verbosity),
           prune_duplicates(prune_duplicates),
           use_conflicts(use_conflicts) {
     }

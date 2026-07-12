@@ -29,12 +29,17 @@ using OpMask = std::vector<uint64_t>;
 using NodeKey = std::pair<CostKey, std::vector<int>>;
 using NodeKeyHash = PairUint32VectorIntHash;
 
-extern bool g_hacked_use_affecting_labels;
-extern bool g_hacked_use_non_negative_labels;
-extern bool g_hacked_use_infinite_labels;
-extern bool g_hacked_use_cost_partitioning_check;
-extern bool g_hacked_cache_scf_functions;
-extern int g_hacked_max_lookup_table_cache_resizes;
+struct StructuredSCPOptions {
+    bool use_unsolvability_infos;
+    bool use_general_cp;
+    bool cache_lookup_tables;
+    bool use_affecting_labels;
+    bool use_non_negative_labels;
+    bool use_infinite_labels;
+    bool use_cost_partitioning_check;
+    bool cache_scf_functions;
+    int max_lookup_table_cache_resizes;
+};
 
 /*
   Node in the DAG that represents a structured saturated cost partitioning:
@@ -176,8 +181,7 @@ class StructuredSCPOrderGenerator {
 public:
     StructuredSCPOrderGenerator(
         const std::shared_ptr<AbstractTask> &transform,
-        Abstractions abstractions, bool use_unsolvability_infos,
-        bool use_general_cp, bool cache_lookup_tables,
+        Abstractions abstractions, const StructuredSCPOptions &options,
         utils::Verbosity verbosity);
     virtual ~StructuredSCPOrderGenerator() = default;
 
@@ -187,9 +191,7 @@ protected:
     Abstractions abstractions;
     std::vector<UnsolvabilityInfo> unsolvability_infos;
     const TaskProxy task_proxy;
-    const bool use_general_cp;
-    const bool use_unsolvability;
-    const bool cache_lookup_tables;
+    const StructuredSCPOptions options;
     bool precomputed_conflicting_ops;
     int recomputed_lookup_tables;
     int lookup_cache_hits;
@@ -274,7 +276,8 @@ private:
 extern void add_structured_order_generator_options_to_parser(
     plugins::Feature &feature);
 extern std::tuple<
-    std::shared_ptr<AbstractTask>, Abstractions, bool, bool, utils::Verbosity>
+    std::shared_ptr<AbstractTask>, Abstractions, StructuredSCPOptions,
+    utils::Verbosity>
 get_structured_scp_order_generator_arguments_from_options(
     const plugins::Options &opts);
 }

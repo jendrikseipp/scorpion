@@ -125,18 +125,18 @@ void reduce_costs_unguarded_and_track_negative(
 shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
     const Costs &costs, const vector<int> &dependent_abstractions) {
     CostKey cost_key = 0;
-    if (prune_duplicates || cache_lookup_tables) {
+    if (prune_duplicates || options.cache_lookup_tables) {
         cost_key = lookup_costs_or_register(costs);
     }
     const bool check_cost_partitioning =
-        use_conflicts && g_hacked_use_cost_partitioning_check;
+        use_conflicts && options.use_cost_partitioning_check;
     ScheduledChildren scheduled_children;
     Costs overall_remaining_costs(costs);
     /* Track for each operator whether some child has negative saturated
        cost. Updating flags per child is cache-friendlier than checking all
        children per operator below. */
     vector<uint8_t> op_has_negative_scf;
-    if (check_cost_partitioning && use_general_cp) {
+    if (check_cost_partitioning && options.use_general_cp) {
         op_has_negative_scf.assign(costs.size(), false);
     }
     for (int abstraction_id : dependent_abstractions) {
@@ -147,7 +147,7 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
             if (check_cost_partitioning) {
                 /* Use the unguarded reduction to see if the children
                    together want more cost than what is available. */
-                if (use_general_cp) {
+                if (options.use_general_cp) {
                     reduce_costs_unguarded_and_track_negative(
                         overall_remaining_costs, saturated_cost,
                         op_has_negative_scf);
@@ -175,7 +175,7 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
     if (check_cost_partitioning) {
         for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
             if (overall_remaining_costs[op_id] >= 0 && costs[op_id] > 0 &&
-                (!use_general_cp || !op_has_negative_scf[op_id])) {
+                (!options.use_general_cp || !op_has_negative_scf[op_id])) {
                 simulated_costs[op_id] = INF;
             }
         }
@@ -212,7 +212,7 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
         Costs remaining_costs(costs);
         reduce_costs(remaining_costs, saturated_costs);
         vector<int> remaining_abstractions;
-        if (use_general_cp) {
+        if (options.use_general_cp) {
             remaining_abstractions.reserve(dependent_abstractions.size() - 1);
             copy_if(dependent_abstractions.begin(),
                     dependent_abstractions.end(),
@@ -308,32 +308,16 @@ public:
         add_option<bool>(
             "check_conflicts",
             "use the conflict graph to prune the SCP order DAG", "true");
-        add_option<bool>(
-            "cache_lookup_tables",
-            "cache lookup table ids by cost function to avoid recomputing "
-            "goal distances", "true");
+
     }
 
     virtual shared_ptr<StructuredSCPOrderGeneratorFull> create_component(
         const plugins::Options &opts) const override {
-        g_hacked_use_affecting_labels = opts.get<bool>("use_affecting_labels");
-        g_hacked_use_non_negative_labels =
-            opts.get<bool>("use_non_negative_labels");
-        g_hacked_use_infinite_labels = opts.get<bool>("use_infinite_labels");
-        g_hacked_use_cost_partitioning_check =
-            opts.get<bool>("use_cost_partitioning_check");
-        g_hacked_cache_scf_functions = opts.get<bool>("cache_scf_functions");
-        if (g_hacked_use_cost_partitioning_check &&
-            !g_hacked_use_infinite_labels) {
-            ABORT("use_cost_partitioning_check=true requires "
-                  "use_infinite_labels=true");
-        }
         return plugins::make_shared_from_arg_tuples<
             StructuredSCPOrderGeneratorFull>(
             get_structured_scp_order_generator_arguments_from_options(opts),
             opts.get<bool>("prune_duplicates"),
-            opts.get<bool>("check_conflicts"),
-            opts.get<bool>("cache_lookup_tables"));
+            opts.get<bool>("check_conflicts"));
     }
 };
 
