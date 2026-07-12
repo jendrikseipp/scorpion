@@ -100,6 +100,26 @@ This scaling cliff is the main cost of the approach.
   (compress_costs deleted); cache_lookup_tables default true. satellite had
   1.3M recomputed tables for 125 distinct ones.
 
-Profile (satellite sys2, pre-run-5): 37% projection Dijkstra+match tree,
-15% reduce_costs_unguarded, 8% create_max_node self, 11% malloc/free,
-6% BucketQueue, 4% DisjointSet::find. Re-profile after run 5.
+- run 6 KEEP (0.758): incremental op_has_negative_scf flags per child in
+  create_max_node instead of per-op all_of over all children.
+- run 7 DISCARD: const-ref get_saturated_costs via deque cache — copies
+  were not the cost.
+- run 8 KEEP (0.620, 18%!): early exit in compute_independent_abstractions
+  used the loop index instead of pending_abstraction_ids[i]; with the fix
+  the O(n^2) pair loop stops once all pending abstractions are connected.
+- run 9 KEEP (0.610): fuse reduce_costs_unguarded with negative-scf flags.
+- run 10 DISCARD: sort-based get_connected_components + single-component
+  fast path — within noise, longer code.
+- run 11 DISCARD: simulated_any_op flag instead of vector compare — noise.
+- run 12 KEEP (0.556): mutable pq/label_costs/applicable_operators members
+  in Projection::compute_goal_distances (27k calls/task on satellite).
+
+Insights:
+- transitions=explicit for projections makes sscp construction ~38% faster
+  on satellite at equal memory (config-level; probes pin implicit, so this
+  is a user recommendation, maybe change the sscp default generator string).
+- Lookup table cache stats on satellite after run 5: 1.27M hits, 27.7k
+  misses (= real Dijkstras), 512 distinct cost functions.
+- Profile (satellite sys2, post-run-8): 37% projection Dijkstra+match tree
+  (+6% BucketQueue), 10% reduce_costs_unguarded, 10% create_max_node self,
+  12% malloc/free/memmove.

@@ -10,7 +10,6 @@
 #include "../utils/logging.h"
 #include "../utils/timer.h"
 
-#include "gtl/bit_vector.hpp"
 #include "gtl/phmap.hpp"
 
 #include <cstdint>
@@ -26,6 +25,8 @@ class Options;
 namespace cost_saturation {
 using Costs = std::vector<int>;
 using CostKey = uint32_t;
+// Bit mask over the task's operators, one bit per operator.
+using OpMask = std::vector<uint64_t>;
 using NodeKey = std::pair<CostKey, std::vector<int>>;
 using NodeKeyHash = PairUint32VectorIntHash;
 
@@ -242,9 +243,17 @@ private:
     std::vector<std::vector<std::vector<int>>> lookup_tables;
     std::vector<Costs> scf_cache;
 
-    std::vector<std::vector<gtl::bit_vector>> conflicting_ops;
-    std::vector<gtl::bit_vector> relevant_ops_by_abstraction;
-    std::vector<std::vector<bool>> op_has_nonincreasing_remaining_costs;
+    std::vector<std::vector<OpMask>> conflicting_ops;
+    std::vector<OpMask> relevant_ops_by_abstraction;
+    // Bit set iff the operator is guaranteed nonincreasing (default: set).
+    std::vector<OpMask> op_has_nonincreasing_remaining_costs;
+    /* Rebuilt from the remaining costs at the start of each
+       compute_independent_abstractions() call: operators that always create
+       a dependency (live) and operators that only create a dependency
+       between abstractions that do not both guarantee nonincreasing
+       remaining costs (cond). */
+    OpMask live_op_mask;
+    OpMask cond_op_mask;
     utils::Timer cc_generation;
     utils::Timer cc_computation;
 

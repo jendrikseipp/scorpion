@@ -20,6 +20,20 @@
 using namespace std;
 
 namespace cost_saturation {
+static const int BITS_PER_WORD = 64;
+
+static int get_num_mask_words(int num_bits) {
+    return (num_bits + BITS_PER_WORD - 1) / BITS_PER_WORD;
+}
+
+static void set_mask_bit(OpMask &mask, int i) {
+    mask[i / BITS_PER_WORD] |= uint64_t(1) << (i % BITS_PER_WORD);
+}
+
+static bool test_mask_bit(const OpMask &mask, int i) {
+    return (mask[i / BITS_PER_WORD] >> (i % BITS_PER_WORD)) & 1;
+}
+
 int SSCPNode::num_compositional_nodes = 0;
 int SSCPNode::num_lookup_nodes = 0;
 int SumSSCPNode::num_sum_nodes = 0;
@@ -89,10 +103,7 @@ void StructuredSCPOrderGenerator::precompute_operator_properties(
     if (g_hacked_use_affecting_labels || g_hacked_use_non_negative_labels) {
         precompute_relevant_ops(abstraction_is_relevant);
     }
-    if (g_hacked_use_non_negative_labels) {
-        precompute_ops_with_nonincreasing_remaining_cost(
-            abstraction_is_relevant);
-    }
+    precompute_ops_with_nonincreasing_remaining_cost(abstraction_is_relevant);
     cout << "Relevant abstractions: " << relevant_abstraction_ids.size()
          << endl;
     if (g_hacked_use_affecting_labels &&
@@ -100,26 +111,28 @@ void StructuredSCPOrderGenerator::precompute_operator_properties(
         precompute_conflicting_ops(abstraction_is_relevant);
         log << "Precomputed conflicting ops" << endl;
     } else {
-        conflicting_ops = {{gtl::bit_vector(0)}};
+        int num_words = get_num_mask_words(task_proxy.get_operators().size());
+        conflicting_ops = {{OpMask(num_words, 0)}};
     }
 }
 
 void StructuredSCPOrderGenerator::precompute_relevant_ops(
     const vector<bool> &abstraction_is_relevant) {
     int num_operators = task_proxy.get_operators().size();
+    int num_words = get_num_mask_words(num_operators);
     relevant_ops_by_abstraction.reserve(abstractions.size());
     int abstraction_id = 0;
     for (const unique_ptr<Abstraction> &abstraction : abstractions) {
-        gtl::bit_vector relevant_ops(num_operators);
+        OpMask relevant_ops(num_words, 0);
         if (abstraction_is_relevant[abstraction_id]) {
             for (int op_id = 0; op_id < num_operators; ++op_id) {
                 if (abstraction->operator_is_scp_active(op_id)) {
                     assert(abstraction->operator_is_active(op_id));
-                    relevant_ops.set(op_id);
+                    set_mask_bit(relevant_ops, op_id);
                 }
             }
         }
-        relevant_ops_by_abstraction.push_back(relevant_ops);
+        relevant_ops_by_abstraction.push_back(move(relevant_ops));
         ++abstraction_id;
     }
 }
@@ -127,25 +140,30 @@ void StructuredSCPOrderGenerator::precompute_relevant_ops(
 void StructuredSCPOrderGenerator::
 precompute_ops_with_nonincreasing_remaining_cost(
     const vector<bool> &abstraction_is_relevant) {
-    op_has_nonincreasing_remaining_costs = vector<vector<bool>>(
-        abstractions.size(),
-        vector<bool>(task_proxy.get_operators().size(), true));
+    int num_operators = task_proxy.get_operators().size();
+    int num_words = get_num_mask_words(num_operators);
+    // By default, all operators are considered nonincreasing.
+    op_has_nonincreasing_remaining_costs = vector<OpMask>(
+        abstractions.size(), OpMask(num_words, ~uint64_t(0)));
 
     // With non-negative cost partitioning, all operators are nonincreasing.
-    if (use_general_cp) {
+    if (use_general_cp && g_hacked_use_non_negative_labels) {
         for (size_t abstraction_id = 0; abstraction_id < abstractions.size();
              ++abstraction_id) {
             if (abstraction_is_relevant[abstraction_id]) {
                 vector<bool> non_increasing_ops =
                     abstractions[abstraction_id]
                     ->get_operators_with_non_increasing_remaining_cost();
-                size_t op_id =
-                    relevant_ops_by_abstraction[abstraction_id].find_first();
-                while (op_id != gtl::bit_vector::npos) {
-                    op_has_nonincreasing_remaining_costs[abstraction_id]
-                    [op_id] = non_increasing_ops[op_id];
-                    op_id = relevant_ops_by_abstraction[abstraction_id]
-                        .find_next(op_id + 1);
+                OpMask &mask =
+                    op_has_nonincreasing_remaining_costs[abstraction_id];
+                const OpMask &relevant_ops =
+                    relevant_ops_by_abstraction[abstraction_id];
+                for (int op_id = 0; op_id < num_operators; ++op_id) {
+                    if (test_mask_bit(relevant_ops, op_id) &&
+                        !non_increasing_ops[op_id]) {
+                        mask[op_id / BITS_PER_WORD] &=
+                            ~(uint64_t(1) << (op_id % BITS_PER_WORD));
+                    }
                 }
             }
         }
@@ -155,20 +173,21 @@ precompute_ops_with_nonincreasing_remaining_cost(
 void StructuredSCPOrderGenerator::precompute_conflicting_ops(
     const vector<bool> &abstraction_is_relevant) {
     precomputed_conflicting_ops = true;
-    conflicting_ops = vector<vector<gtl::bit_vector>>(
+    int num_words = get_num_mask_words(task_proxy.get_operators().size());
+    conflicting_ops = vector<vector<OpMask>>(
         abstractions.size(),
-        vector<gtl::bit_vector>(
-            abstractions.size(),
-            gtl::bit_vector(task_proxy.get_operators().size())));
+        vector<OpMask>(abstractions.size(), OpMask(num_words, 0)));
     for (size_t id1 = 0; id1 < abstractions.size(); ++id1) {
         if (abstraction_is_relevant[id1]) {
-            const gtl::bit_vector &relevant_ops1 =
-                relevant_ops_by_abstraction[id1];
+            const OpMask &relevant_ops1 = relevant_ops_by_abstraction[id1];
             for (size_t id2 = id1 + 1; id2 < abstractions.size(); ++id2) {
                 if (abstraction_is_relevant[id2]) {
-                    const gtl::bit_vector &relevant_ops2 =
+                    const OpMask &relevant_ops2 =
                         relevant_ops_by_abstraction[id2];
-                    conflicting_ops[id1][id2] = relevant_ops1 | relevant_ops2;
+                    OpMask &conflict = conflicting_ops[id1][id2];
+                    for (int w = 0; w < num_words; ++w) {
+                        conflict[w] = relevant_ops1[w] | relevant_ops2[w];
+                    }
                 }
             }
         }
@@ -326,6 +345,28 @@ StructuredSCPOrderGenerator::compute_independent_abstractions(
     if (time_connected_components) {
         cc_generation.resume();
     }
+    if (g_hacked_use_affecting_labels) {
+        /* Classify the operators by remaining cost once per call, so that
+           each pair check below only needs a few word-parallel mask
+           operations. Live operators always create a dependency;
+           conditional operators (cost 0) only between abstractions that do
+           not both guarantee nonincreasing remaining costs. */
+        int num_operators = remaining_costs.size();
+        live_op_mask.assign(get_num_mask_words(num_operators), 0);
+        cond_op_mask.assign(get_num_mask_words(num_operators), 0);
+        for (int op_id = 0; op_id < num_operators; ++op_id) {
+            if (g_hacked_use_infinite_labels &&
+                remaining_costs[op_id] == INF) {
+                continue;
+            }
+            if (g_hacked_use_non_negative_labels &&
+                remaining_costs[op_id] == 0) {
+                set_mask_bit(cond_op_mask, op_id);
+            } else {
+                set_mask_bit(live_op_mask, op_id);
+            }
+        }
+    }
     ccp::DisjointSet dependency_graph(abstractions.size());
     size_t num_pending = pending_abstraction_ids.size();
     for (size_t i = 0; i < num_pending; ++i) {
@@ -373,38 +414,36 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
     assert(id1 < id2);
 
     if (g_hacked_use_affecting_labels) {
-        const gtl::bit_vector *conflicting_ops_of_abstractions = nullptr;
+        const OpMask *conflicting_ops_of_abstractions = nullptr;
         if (precomputed_conflicting_ops) {
             conflicting_ops_of_abstractions = &conflicting_ops[id1][id2];
         } else {
-            const gtl::bit_vector &relevant_ops1 =
-                relevant_ops_by_abstraction[id1];
-            const gtl::bit_vector &relevant_ops2 =
-                relevant_ops_by_abstraction[id2];
-            conflicting_ops[0][0] = relevant_ops1 | relevant_ops2;
-            conflicting_ops_of_abstractions = &conflicting_ops[0][0];
+            const OpMask &relevant_ops1 = relevant_ops_by_abstraction[id1];
+            const OpMask &relevant_ops2 = relevant_ops_by_abstraction[id2];
+            OpMask &scratch = conflicting_ops[0][0];
+            for (size_t w = 0; w < scratch.size(); ++w) {
+                scratch[w] = relevant_ops1[w] | relevant_ops2[w];
+            }
+            conflicting_ops_of_abstractions = &scratch;
         }
-        size_t op_id = conflicting_ops_of_abstractions->find_first();
-        while (op_id != gtl::bit_vector::npos) {
-            /* If this operator has infinite remaining cost, it does not
-               affect any abstraction. */
-            if (g_hacked_use_infinite_labels &&
-                remaining_costs[op_id] == INF) {
-                op_id = conflicting_ops_of_abstractions->find_next(op_id + 1);
-                continue;
+        const OpMask &conflict = *conflicting_ops_of_abstractions;
+        const OpMask &nonincreasing1 =
+            op_has_nonincreasing_remaining_costs[id1];
+        const OpMask &nonincreasing2 =
+            op_has_nonincreasing_remaining_costs[id2];
+        for (size_t w = 0; w < conflict.size(); ++w) {
+            /* An operator affecting both abstractions creates a dependency
+               if it is live, or if it has remaining cost 0 and the
+               abstractions do not both guarantee nonincreasing remaining
+               costs. */
+            uint64_t dependency_ops =
+                conflict[w] &
+                (live_op_mask[w] |
+                 (cond_op_mask[w] & ~(nonincreasing1[w] & nonincreasing2[w])));
+            if (dependency_ops) {
+                dependency_graph.unite(id1, id2);
+                return;
             }
-            /* If this operator has remaining cost 0 and both abstractions
-               guarantee that the remaining costs stay 0, it does not affect
-               the order of these abstractions. */
-            if (g_hacked_use_non_negative_labels &&
-                remaining_costs[op_id] == 0 &&
-                op_has_nonincreasing_remaining_costs[id1][op_id] &&
-                op_has_nonincreasing_remaining_costs[id2][op_id]) {
-                op_id = conflicting_ops_of_abstractions->find_next(op_id + 1);
-                continue;
-            }
-            dependency_graph.unite(id1, id2);
-            break;
         }
     } else {
         int num_operators = task_proxy.get_operators().size();
@@ -415,8 +454,10 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
             }
             if (g_hacked_use_non_negative_labels &&
                 remaining_costs[op_id] == 0 &&
-                op_has_nonincreasing_remaining_costs[id1][op_id] &&
-                op_has_nonincreasing_remaining_costs[id2][op_id]) {
+                test_mask_bit(
+                    op_has_nonincreasing_remaining_costs[id1], op_id) &&
+                test_mask_bit(
+                    op_has_nonincreasing_remaining_costs[id2], op_id)) {
                 continue;
             }
             dependency_graph.unite(id1, id2);
