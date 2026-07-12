@@ -1,5 +1,24 @@
 # Autoresearch: structured SCP (sscp) speed, memory and clarity
 
+## SEGMENT 1 (current, since 2026-07-12): MEMORY focus
+
+User steer: focus on memory improvements that do not hurt speed; clean
+code. New probe suite (rovers06 added as the 875MB memory stressor;
+elevators_mix and pipesworld dropped) and the reference binary was
+re-frozen at the run-25 commit (ce63324b), so both ratios restart at ~1.0.
+
+Decision rule for segment 1:
+- Primary: decide.py on mem_ratio samples (direction lower).
+- Guard: time_ratio must not regress: discard if the time median worsens
+  by more than ~1.5% with decide-style confidence.
+- Clarity keeps as before (both ratios neutral + clearly simpler diff).
+
+rovers06 memory anatomy (875MB peak, 32 abstractions, ops~1600?):
+2.88M DAG nodes (2.72M sum + 156k max), only 59 lookup tables, 156k stored
+cost functions (cost_key_cache holds FULL cost vectors), 2.88M
+instructions. Main consumers: cost_key_cache (~300MB est.), DAG nodes +
+dedup-cache key vectors, instructions.
+
 ## Objective
 
 Improve the speed and memory usage of the newly integrated structured SCP

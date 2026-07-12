@@ -27,11 +27,12 @@ SSCP_SYS1='astar(sscp(structured_order_generator=structured_order_generator_full
 SSCP_SYS2_B0='astar(sscp(structured_order_generator=structured_order_generator_full(abstraction_generators=[projections(systematic(2))])),bound=0)'
 SSCP_MIX_B0='astar(sscp(structured_order_generator=structured_order_generator_full(abstraction_generators=[projections(systematic(2)),cartesian()])),bound=0)'
 
-# Probes: name / task / config. Mix of DAG-construction-heavy (bound=0) and
-# one full search (heuristic evaluation speed + end-to-end correctness).
-PROBE_NAMES=(satellite_sys2 elevators_mix pipesworld_sys2 driverlog_sys1_search)
-PROBE_TASKS=(satellite elevators pipesworld driverlog)
-PROBE_CONFS=("$SSCP_SYS2_B0" "$SSCP_MIX_B0" "$SSCP_SYS2_B0" "$SSCP_SYS1")
+# Probes: name / task / config. Segment 1 (memory focus): rovers06 is the
+# main memory stressor (875MB, DAG-node dominated); satellite/gripper05/
+# logistics cover construction time; driverlog covers search + correctness.
+PROBE_NAMES=(satellite_sys2 gripper05_sys2 logistics_sys2 rovers06_sys2 driverlog_sys1_search)
+PROBE_TASKS=(satellite gripper05 logistics rovers06 driverlog)
+PROBE_CONFS=("$SSCP_SYS2_B0" "$SSCP_SYS2_B0" "$SSCP_SYS2_B0" "$SSCP_SYS2_B0" "$SSCP_SYS1")
 
 # run BIN TASK CONF -> "total_time peak_mem h_init plan_cost"
 run() {
