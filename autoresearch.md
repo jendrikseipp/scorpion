@@ -244,6 +244,15 @@ ALGORITHMIC runs (user steer: attack DAG size):
   reduce_cost_context); removes the full-vector murmur per registration
   and recovers run 41's time cost.
 
+- run 43 KEEP (mem 0.298, time 0.516): int16 LookupTableCache rows with
+  an overflow map behind a sentinel, so arbitrarily large table id ranges
+  stay supported.
+- run 44 KEEP (mem 0.297, time 0.504): in-place context reduction with
+  sparse per-frame undo (retry of run 22; economics flipped after the
+  context gained hash/key and the call count dropped). CAUTION for future
+  edits: the save buffer must be a per-frame local, not a member — the
+  recursion re-enters create_max_node.
+
 Zenodo artifact check (10.5281/zenodo.16606498, the code behind the
 paper's experiments): precompute_conflicting_ops() and the on-the-fly path
 both use set_intersection() of the scp-active operator sets, and comments
