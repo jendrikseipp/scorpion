@@ -192,8 +192,7 @@ StructuredSCPOrder StructuredSCPOrderGenerator::generate() {
     }
     cout << "Lookup table cache size: " << lookup_table_cache_size << endl;
     cout << "SCF cache size: " << scf_cache.size() << endl;
-    cout << "Stored cost functions: " << compressed_costs_cache.size()
-         << endl;
+    cout << "Stored cost functions: " << cost_key_cache.size() << endl;
     if (time_connected_components) {
         cout << "CC generation time: " << cc_generation << endl;
         cout << "CC computation time: " << cc_computation << endl;
@@ -252,10 +251,8 @@ void StructuredSCPOrderGenerator::dump_node(
 }
 
 shared_ptr<LookupSSCPNode> StructuredSCPOrderGenerator::create_lookup_node(
-    const Costs &costs, int abstraction_id) {
-    CostKey cost_key = 0;
+    const Costs &costs, CostKey cost_key, int abstraction_id) {
     if (cache_lookup_tables) {
-        cost_key = lookup_costs_or_register(costs);
         if (auto it = lookup_tables_cache[abstraction_id].find(cost_key);
             it != lookup_tables_cache[abstraction_id].end()) {
             ++lookup_cache_hits;
@@ -618,17 +615,16 @@ Costs StructuredSCPOrderGenerator::compute_remaining_costs(
 }
 
 /* Return the key under which the given cost function is registered in
-   compressed_costs_cache, so that all other hash maps can use the small key
-   instead of the full cost function. */
+   cost_key_cache, so that all other hash maps can use the small key instead
+   of the full cost function. */
 CostKey StructuredSCPOrderGenerator::lookup_costs_or_register(
     const Costs &costs) {
-    CompressedCosts compressed_costs = compress_costs(costs);
-    const auto &it = compressed_costs_cache.find(compressed_costs);
-    if (it != compressed_costs_cache.end()) {
+    const auto &it = cost_key_cache.find(costs);
+    if (it != cost_key_cache.end()) {
         return it->second;
     } else {
-        CostKey key = compressed_costs_cache.size();
-        compressed_costs_cache.emplace(move(compressed_costs), key);
+        CostKey key = cost_key_cache.size();
+        cost_key_cache.emplace(costs, key);
         return key;
     }
 }

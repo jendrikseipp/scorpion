@@ -103,11 +103,15 @@ struct ScheduledChildren {
 
 shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
     const Costs &costs, const vector<int> &dependent_abstractions) {
+    CostKey cost_key = 0;
+    if (prune_duplicates || cache_lookup_tables) {
+        cost_key = lookup_costs_or_register(costs);
+    }
     ScheduledChildren scheduled_children;
     Costs overall_remaining_costs(costs);
     for (int abstraction_id : dependent_abstractions) {
         shared_ptr<LookupSSCPNode> scheduled_child =
-            create_lookup_node(costs, abstraction_id);
+            create_lookup_node(costs, cost_key, abstraction_id);
         if (scheduled_child) {
             Costs saturated_cost = get_saturated_costs(scheduled_child);
             if (use_conflicts && g_hacked_use_cost_partitioning_check) {
@@ -166,7 +170,6 @@ shared_ptr<SSCPNode> StructuredSCPOrderGeneratorFull::create_max_node(
     assert(utils::is_sorted_unique(scheduled_children.abstraction_ids));
     NodeKey pre_hash_key;
     if (prune_duplicates) {
-        CostKey cost_key = lookup_costs_or_register(costs);
         pre_hash_key = NodeKey(cost_key, scheduled_children.abstraction_ids);
         auto it = max_sscp_node_pre_cache.find(pre_hash_key);
         if (it != max_sscp_node_pre_cache.end()) {
@@ -282,7 +285,9 @@ public:
             "check_conflicts",
             "use the conflict graph to prune the SCP order DAG", "true");
         add_option<bool>(
-            "cache_lookup_tables", "cache lookup tables", "false");
+            "cache_lookup_tables",
+            "cache lookup table ids by cost function to avoid recomputing "
+            "goal distances", "true");
     }
 
     virtual shared_ptr<StructuredSCPOrderGeneratorFull> create_component(

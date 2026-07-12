@@ -25,8 +25,6 @@ class Options;
 
 namespace cost_saturation {
 using Costs = std::vector<int>;
-using CompressedCosts = PackedInts;
-using CompressedCostsHash = PackedIntMurmurHash;
 using CostKey = uint32_t;
 using NodeKey = std::pair<CostKey, std::vector<int>>;
 using NodeKeyHash = PairUint32VectorIntHash;
@@ -198,14 +196,16 @@ protected:
     int lookup_cache_hits;
     double max_lookup_table_entries;
     utils::LogProxy log;
-    gtl::flat_hash_map<CompressedCosts, CostKey, CompressedCostsHash>
-    compressed_costs_cache;
+    gtl::flat_hash_map<Costs, CostKey, VectorIntMurmurHash> cost_key_cache;
     std::vector<gtl::flat_hash_map<CostKey, const int>> lookup_tables_cache;
 
     virtual std::shared_ptr<SSCPNode> create_sscp_order_dag() = 0;
 
+    /* cost_key must be the key registered for costs with
+       lookup_costs_or_register(); it is only used if cache_lookup_tables
+       is true. */
     std::shared_ptr<LookupSSCPNode> create_lookup_node(
-        const Costs &costs, int abstraction_id);
+        const Costs &costs, CostKey cost_key, int abstraction_id);
 
     std::vector<std::vector<int>> compute_independent_abstractions(
         const std::vector<int> &pending_abstraction_ids,

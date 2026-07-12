@@ -83,11 +83,6 @@ extern std::vector<int> compute_scf(
     const Abstraction &abstraction, const std::vector<int> &goal_distances,
     bool use_general_costs);
 
-using PackedInts = std::vector<uint8_t>;
-
-// Pack a vector of non-negative costs into a compact bit-packed format.
-extern PackedInts compress_costs(const std::vector<int> &costs);
-
 /* Hash functors based on MurmurHash3, which hashes whole memory ranges and
    is therefore much faster for long vectors than element-wise hashing. */
 inline size_t hash_bytes(const void *data, int num_bytes, uint32_t seed) {
@@ -100,12 +95,6 @@ inline size_t hash_bytes(const void *data, int num_bytes, uint32_t seed) {
 struct VectorIntMurmurHash {
     size_t operator()(const std::vector<int> &v) const {
         return hash_bytes(v.data(), v.size() * sizeof(int), v.size());
-    }
-};
-
-struct PackedIntMurmurHash {
-    size_t operator()(const PackedInts &v) const {
-        return hash_bytes(v.data(), v.size(), v.size());
     }
 };
 
