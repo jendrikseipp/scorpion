@@ -400,3 +400,22 @@ snake04 / freecell24 / mprime08 with bound=0; METRIC mem_ratio primary
 gtl find_next bug reported upstream (reproduced on master v1.2.0, also
 returns wrong indices: bit_vector(130) set(128), find_next(1) -> 129):
 https://github.com/greg7mdp/gtl/issues/56
+
+Segment 2 runs (metric: geomean peak-memory ratio on snake04/freecell24/
+mprime08 vs run-51 reference; time_ratio secondary; segment-1 suite as
+guard):
+- run 52 KEEP (mem 0.988, time 0.96): sparse SaturatedCostFunction
+  (parallel nonzero_ops/nonzero_costs, dense vector dropped, dead dense
+  reduce_costs_unguarded removed). Snake SCFs turned out ~17-50% dense,
+  so the win is small but consistent; also simpler.
+- Aggregation fix: autoresearch.sh now geomeans per-probe ratios (a sum
+  of peaks let mprime's 2.3GB drown snake04 wins).
+- Sparsity measurement (temp instrumentation): 13-32% of operator costs
+  differ from the ORIGINAL costs per registered function (snake 1121/6504,
+  freecell 1002/3400, mprime 1363/10044, rovers 46/144). Sparse (op,value)
+  delta lists would be LARGER than dense packs -> dead end. Diff BITMASK
+  + packed changed values is strictly smaller -> run 53.
+- run 53 KEEP (mem 0.903, time 0.93; guard improved to time 0.51 /
+  mem 0.294): registry blobs stored as diff bitmask against the first
+  registered cost function (the task costs) + bit-packed changed values.
+  Registry was 86% of mprime08's 2.3GB peak and 46% of snake04 (massif).
