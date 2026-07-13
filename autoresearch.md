@@ -419,3 +419,16 @@ guard):
   mem 0.294): registry blobs stored as diff bitmask against the first
   registered cost function (the task costs) + bit-packed changed values.
   Registry was 86% of mprime08's 2.3GB peak and 46% of snake04 (massif).
+
+- run 54 KEEP (mem 0.879): SSCPNode 32 -> 16 bytes via anonymous unions
+  (children slice vs lookup table position; all accesses type-guarded).
+  time_ratio read 0.98 at load ~50 - interleaved ratios compress toward 1
+  under contention; re-verify when quiet.
+- run 55 KEEP (mem 0.607!): chunked BlobPool for registry blobs. The one
+  big vector's doubling realloc kept old+new copies live (83% of mprime08
+  peak per massif). Guard mem +0.7% relative (reserved last-chunk tail on
+  small tasks). Cumulative per-task peaks vs grid binaries:
+  snake04 7.2GB -> 371MB, freecell24 2.2GB -> 246MB, mprime08 2.3GB -> 711MB.
+- Dead end: interning diff MASKS (mask pool + set ids) - measured distinct
+  masks == stored functions on snake/freecell/mprime (every function has a
+  unique diff set), so interning cannot amortize anything.
