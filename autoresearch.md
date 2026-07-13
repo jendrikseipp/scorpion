@@ -524,3 +524,13 @@ is not yet in a grid.
   (hash map above 1024 abstractions; airport-class rows were 88KiB/key).
   logistics98_14 still OOMs later (DAG size = off-limits frontier), but
   no unbudgeted super-linear allocation remains.
+
+Confirmation grid 2026-07-14-E (09-final = 7fdf9ab6, runs 64+66):
+coverage 665 (barman +1, logistics00/miconic -1 - the same borderline
+tasks that flipped +1 in the previous grid; boundary noise). h identical,
+OOM 444 / OOT 700. The coverage curve has plateaued at 665-666 (+56 over
+integration, +9 over the pre-loop best 03-conflicts): in-scope changes
+are exhausted down to noise-level grid effects. The remaining frontier
+(node-explosion DAGs: parcprinter/psr/rovers/pathways) needs the paper's
+future-work direction (partial order independence), which is off-limits
+per instruction.
