@@ -483,3 +483,9 @@ Speed follow-ups after the confirmation grid (frontier now time-bound):
   the side-effect-free oracle. Reserve tweak was neutral; the +3.5% on
   the probe suite was not recovered (oracle constants), documented as a
   conscious trade.
+
+Confirmation grid 2026-07-14-C (07-speed = 70a66a5d, runs 58-60):
+coverage 661 (06-memory: 660), h identical everywhere, OOT 769 -> 747,
+OOM 380 -> 401 (borderline churn; barman p435 flips at the 30min edge).
+Coverage curve is flattening: remaining failures need either the
+off-limits DAG-size work or larger speed factors.
