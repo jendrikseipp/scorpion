@@ -41,18 +41,19 @@ struct StructuredSCPOptions {
     int max_lookup_table_cache_resizes;
 };
 
+/* A saturated cost function, stored sparsely as parallel vectors of the
+   operators with non-zero saturated cost and their costs. Saturated cost
+   functions of projections are usually sparse, so this saves both the
+   dense vector per cached function and iteration time. */
 struct SaturatedCostFunction {
-    Costs costs;
-    /* Operators with non-zero saturated cost. Saturated cost functions are
-       usually sparse, so loops over them only need to visit these
-       operators. */
     std::vector<int> nonzero_ops;
+    std::vector<int> nonzero_costs;
 
-    explicit SaturatedCostFunction(Costs &&costs)
-        : costs(std::move(costs)) {
-        for (size_t op_id = 0; op_id < this->costs.size(); ++op_id) {
-            if (this->costs[op_id] != 0) {
+    explicit SaturatedCostFunction(const Costs &costs) {
+        for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
+            if (costs[op_id] != 0) {
                 nonzero_ops.push_back(op_id);
+                nonzero_costs.push_back(costs[op_id]);
             }
         }
     }

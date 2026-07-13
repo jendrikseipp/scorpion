@@ -460,9 +460,10 @@ void StructuredSCPOrderGenerator::update_cost_context(
 
 void StructuredSCPOrderGenerator::reduce_cost_context(
     CostContext &context, const SaturatedCostFunction &scf) {
-    for (int op_id : scf.nonzero_ops) {
+    for (size_t i = 0; i < scf.nonzero_ops.size(); ++i) {
+        int op_id = scf.nonzero_ops[i];
         int remaining = context.costs[op_id];
-        int saturated = scf.costs[op_id];
+        int saturated = scf.nonzero_costs[i];
         assert(remaining >= 0);
         assert(saturated <= remaining);
         assert(remaining == INF || saturated != INF);

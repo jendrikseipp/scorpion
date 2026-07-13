@@ -151,24 +151,6 @@ void reduce_costs(
     }
 }
 
-void reduce_costs_unguarded(
-    vector<int> &remaining_costs, const vector<int> &saturated_costs) {
-    assert(remaining_costs.size() == saturated_costs.size());
-    for (size_t i = 0; i < remaining_costs.size(); ++i) {
-        int remaining = remaining_costs[i];
-        int saturated = saturated_costs[i];
-        assert(remaining == INF || saturated != INF);
-        /* Left addition: x - y = x for all values y if x is infinite.
-           Branchless so that the compiler can vectorize the loop; unsigned
-           subtraction avoids signed overflow for saturated == -INF. */
-        int difference = static_cast<int>(
-            static_cast<unsigned int>(remaining) -
-            static_cast<unsigned int>(saturated));
-        remaining_costs[i] =
-            (remaining == INF || saturated == -INF) ? INF : difference;
-    }
-}
-
 vector<int> compute_scf(
     const Abstraction &abstraction, const vector<int> &goal_distances,
     bool use_general_costs) {

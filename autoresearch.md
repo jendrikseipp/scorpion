@@ -378,3 +378,25 @@ Two findings from the grid that probes had missed:
 
 Per-domain coverage vs 03-conflicts after the fix is expected at ~660
 (654 + scanalyzer 5 + tetris 1); not re-run on the grid yet.
+
+## Segment 2 (started 2026-07-13): peak memory during DAG generation
+
+Grid analysis of 05-final's 1173 unsolved tasks: 605 OOM + 239 OOT die
+DURING DAG generation (72%); only 311 die in search. On solved tasks DAG
+time is negligible (median 1% of total). => The lever for coverage is peak
+memory (and node growth) during construction, not construction speed.
+
+Blowup profiles (memory ~ start_mem, i.e. all in construction):
+- node explosion: parcprinter p02 58M nodes/5.9GB, psr p47 40M nodes,
+  zenotravel p11 10M nodes, mprime prob08/17 2.6M nodes at 2.2-4.9GB.
+- cost-function explosion: miconic s10-2 4.5M stored cost fns / 467k nodes.
+- unexplained: snake04 7.0GB with only 220k nodes / 53k cost fns (6504 ops).
+
+New probe suite (autoresearch.sh, ref2 = run-51 binary a3898cb9):
+snake04 / freecell24 / mprime08 with bound=0; METRIC mem_ratio primary
+(peak memory), time_ratio secondary. Old segment-1 suite preserved as
+.autoresearch/time-suite.sh — run it as a guard before committing KEEPs.
+
+gtl find_next bug reported upstream (reproduced on master v1.2.0, also
+returns wrong indices: bit_vector(130) set(128), find_next(1) -> 129):
+https://github.com/greg7mdp/gtl/issues/56

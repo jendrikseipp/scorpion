@@ -55,3 +55,22 @@ Seeded from reading the ported code; ordered roughly by expected value.
 - Duplicate copy_if branches in create_max_node (use_general_cp) — unify.
 - `PackedInts`/hash functor placement in utils.h could move next to their
   only users (structured_scp files).
+
+## Segment 2 leads (from grid + massif, 2026-07-13)
+
+Massif on snake04 with the run-51 binary: peak only 349MB (grid's 7GB was
+the restricted-map explosion, already fixed by run 51). Remaining hogs:
+- 46% CostFunctionRegistry packed blobs (verification copies). Idea:
+  replace full-blob verification with a second independent 64-bit hash
+  (16B/cost fn instead of packed vector); collision odds ~2^-128 but no
+  longer exact-by-construction — discuss before keeping. Alternative:
+  delta-encoding against parent cost function (exact, complex).
+- 20% dense SCF costs vectors in scf_cache: store sparse (op, cost) pairs
+  instead of dense vector + nonzero_ops list. Exact, clean, should help
+  all many-operator domains (snake 6504 ops, mprime 10044 ops).
+- 15% restricted-map keys as vector<int>: pack keys (registry-style blobs)
+  to shrink the budgeted maps further / raise effective budget.
+Node-explosion tasks (mprime08 2.6M, visitall05 2.6M, parcprinter 58M
+nodes): waiting for mprime08 massif; candidates are SSCPNode layout
+(union abstraction_id+lookup_table_id with children fields), NodeId width,
+dedup-set overhead, memo cache entries.

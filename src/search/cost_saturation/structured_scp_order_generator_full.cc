@@ -95,16 +95,35 @@ struct ScheduledChildren {
 };
 
 /* Like reduce_cost_context(), but without the guarantee that the saturated
-   costs fit into the remaining costs, and additionally recording the
+   costs fit into the remaining costs. */
+void reduce_costs_sparse_unguarded(
+    Costs &remaining_costs, const SaturatedCostFunction &scf) {
+    for (size_t i = 0; i < scf.nonzero_ops.size(); ++i) {
+        int remaining = remaining_costs[scf.nonzero_ops[i]];
+        int saturated = scf.nonzero_costs[i];
+        assert(remaining == INF || saturated != INF);
+        // Left addition: x - y = x for all values y if x is infinite.
+        if (remaining != INF) {
+            remaining_costs[scf.nonzero_ops[i]] =
+                (saturated == -INF)
+                ? INF
+                : static_cast<int>(
+                      static_cast<unsigned int>(remaining) -
+                      static_cast<unsigned int>(saturated));
+        }
+    }
+}
+
+/* Like reduce_costs_sparse_unguarded(), but additionally recording the
    operators with negative saturated cost. */
 void reduce_costs_sparse_unguarded_and_track_negative(
     Costs &remaining_costs, const SaturatedCostFunction &scf,
     vector<uint8_t> &op_has_negative_scf) {
-    assert(remaining_costs.size() == scf.costs.size());
-    assert(op_has_negative_scf.size() == scf.costs.size());
-    for (int op_id : scf.nonzero_ops) {
+    assert(remaining_costs.size() == op_has_negative_scf.size());
+    for (size_t i = 0; i < scf.nonzero_ops.size(); ++i) {
+        int op_id = scf.nonzero_ops[i];
         int remaining = remaining_costs[op_id];
-        int saturated = scf.costs[op_id];
+        int saturated = scf.nonzero_costs[i];
         assert(remaining == INF || saturated != INF);
         // Left addition: x - y = x for all values y if x is infinite.
         if (remaining != INF) {
@@ -159,8 +178,8 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
                         overall_remaining_costs, saturated_cost,
                         op_has_negative_scf);
                 } else {
-                    reduce_costs_unguarded(
-                        overall_remaining_costs, saturated_cost.costs);
+                    reduce_costs_sparse_unguarded(
+                        overall_remaining_costs, saturated_cost);
                 }
             }
             scheduled_children.abstraction_ids.push_back(abstraction_id);

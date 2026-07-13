@@ -72,11 +72,6 @@ std::vector<int> get_abstract_state_ids(
 extern void reduce_costs(
     std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
 
-/* Version of reduce_costs() without non-negativity guards, used for checking
-   how much more cost is wanted than what is remaining. */
-extern void reduce_costs_unguarded(
-    std::vector<int> &remaining_costs, const std::vector<int> &saturated_costs);
-
 // Compute the saturated cost function for the given goal distances.
 extern std::vector<int> compute_scf(
     const Abstraction &abstraction, const std::vector<int> &goal_distances,

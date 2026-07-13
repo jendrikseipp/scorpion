@@ -1,45 +1,48 @@
 #!/bin/bash
-# Interleaved A/B benchmark for the structured SCP (sscp) code.
+# Interleaved A/B benchmark for the structured SCP (sscp) code, segment 2:
+# peak memory during DAG generation on blowup tasks.
 #
-# For each probe, runs the fixed reference binary (.autoresearch/ref/downward,
-# built from the integration commit) and the candidate binary back to back on
-# the same pinned core, and reports per-repetition ratios candidate/reference:
+# The grid experiment showed that 72% of unsolved tasks die during DAG
+# generation (605 of them out of memory), so this segment's probes are
+# construction-bound blowup tasks run with bound=0:
 #
-#   METRIC time_ratio=<x>   (primary, lower is better)
-#   METRIC mem_ratio=<x>    (secondary, lower is better)
+#   snake04    (~38s, 7.0GB peak, 220k nodes but huge memory)
+#   freecell24 (~60s, 2.1GB peak, 454k nodes)
+#   mprime08   (~74s, 2.2GB peak, 2.6M nodes; node-explosion profile)
 #
-# Ratios cancel machine-wide drift; the reference never changes, so ratios are
-# comparable across the whole experiment history.
+# For each probe, runs the fixed reference binary (.autoresearch/ref2/downward,
+# built from commit a3898cb9 = run 51) and the candidate binary back to back
+# on the same pinned core and reports per-repetition ratios candidate/reference:
 #
-# Correctness is enforced inline: initial heuristic values (and plan costs for
-# search probes) must match between reference and candidate exactly. Any
-# mismatch or crash exits non-zero.
+#   METRIC mem_ratio=<x>    (primary, lower is better; peak memory)
+#   METRIC time_ratio=<x>   (secondary, lower is better)
+#
+# Before committing a KEEP, also run the segment-1 time suite as a guard:
+#   bash .autoresearch/time-suite.sh   (time_ratio must not regress)
+#
+# Correctness is enforced inline: initial heuristic values must match between
+# reference and candidate exactly. Any mismatch or crash exits non-zero.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-REF="$ROOT/.autoresearch/ref/downward"
+REF="$ROOT/.autoresearch/ref2/downward"
 CAND="$ROOT/builds/release/bin/downward"
 SAS="$ROOT/.autoresearch/sas"
 CORE=4
 REPS=${REPS:-3}
 
-SSCP_SYS1='astar(sscp(structured_order_generator=structured_order_generator_full(abstraction_generators=[projections(systematic(1))])))'
 SSCP_SYS2_B0='astar(sscp(structured_order_generator=structured_order_generator_full(abstraction_generators=[projections(systematic(2))])),bound=0)'
-SSCP_MIX_B0='astar(sscp(structured_order_generator=structured_order_generator_full(abstraction_generators=[projections(systematic(2)),cartesian()])),bound=0)'
 
-# Probes: name / task / config. Segment 1 (memory focus): rovers06 is the
-# main memory stressor (875MB, DAG-node dominated); satellite/gripper05/
-# logistics cover construction time; driverlog covers search + correctness.
-PROBE_NAMES=(satellite_sys2 gripper05_sys2 logistics_sys2 rovers06_sys2 driverlog_sys1_search)
-PROBE_TASKS=(satellite gripper05 logistics rovers06 driverlog)
-PROBE_CONFS=("$SSCP_SYS2_B0" "$SSCP_SYS2_B0" "$SSCP_SYS2_B0" "$SSCP_SYS2_B0" "$SSCP_SYS1")
+PROBE_NAMES=(snake04 freecell24 mprime08)
+PROBE_TASKS=(snake04 freecell24 mprime08)
+PROBE_CONFS=("$SSCP_SYS2_B0" "$SSCP_SYS2_B0" "$SSCP_SYS2_B0")
 
 # run BIN TASK CONF -> "total_time peak_mem h_init plan_cost"
 run() {
     local bin=$1 task=$2 conf=$3 out status
     # Exit code 12 = search finished without a plan (expected for bound=0).
     status=0
-    out=$(timeout 300 taskset -c $CORE "$bin" --search "$conf" \
+    out=$(timeout 600 taskset -c $CORE "$bin" --search "$conf" \
               < "$SAS/$task.sas" 2>&1) || status=$?
     if [[ $status != 0 && $status != 12 ]]; then
         echo "RUN FAILED ($status): $task" >&2
@@ -72,7 +75,10 @@ sanity
 
 benchmark_rep() {
     local report=$1  # 1 = print METRIC lines, 0 = warmup
-    local ref_time=0 cand_time=0 ref_mem=0 cand_mem=0
+    # Geometric mean of per-probe ratios: every probe counts equally, so a
+    # win on a small task is not drowned by a larger one (each grid task
+    # has its own memory limit).
+    local time_ratios=() mem_ratios=()
     for i in "${!PROBE_NAMES[@]}"; do
         local task=${PROBE_TASKS[$i]} conf=${PROBE_CONFS[$i]}
         local r c
@@ -85,14 +91,17 @@ benchmark_rep() {
                  "h $rh vs $ch, cost $rc vs $cc" >&2
             exit 1
         fi
-        ref_time=$(python3 -c "print($ref_time + $rt)")
-        cand_time=$(python3 -c "print($cand_time + $ct)")
-        ref_mem=$((ref_mem + rm))
-        cand_mem=$((cand_mem + cm))
+        time_ratios+=("$ct/$rt")
+        mem_ratios+=("$cm/$rm")
     done
     if [[ "$report" == 1 ]]; then
-        python3 -c "print(f'METRIC time_ratio={$cand_time / $ref_time:.4f}')"
-        python3 -c "print(f'METRIC mem_ratio={$cand_mem / $ref_mem:.4f}')"
+        python3 -c "
+from math import prod
+mem = [${mem_ratios[0]}, ${mem_ratios[1]}, ${mem_ratios[2]}]
+time = [${time_ratios[0]}, ${time_ratios[1]}, ${time_ratios[2]}]
+print(f'METRIC mem_ratio={prod(mem) ** (1 / len(mem)):.4f}')
+print(f'METRIC time_ratio={prod(time) ** (1 / len(time)):.4f}')
+"
     fi
 }
 
