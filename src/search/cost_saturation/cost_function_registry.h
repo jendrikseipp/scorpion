@@ -18,21 +18,30 @@ using CostKey = uint32_t;
 
   Cost functions are identified by an order-independent 64-bit content hash
   (sum of per-operator mixes, so callers can maintain it incrementally) and
-  verified against a bit-packed copy stored in one shared, append-only
-  pool. True hash collisions land in the (in practice empty) overflow list.
+  verified against a copy stored in one shared, append-only pool. Every
+  registered function derives from the first one (the task's costs) by
+  saturation, and typically only a fraction of the operator costs change,
+  so the copies are stored as a bitmask of the operators that differ from
+  the first function plus the bit-packed changed values. True hash
+  collisions land in the (in practice empty) overflow list.
 */
 class CostFunctionRegistry {
     gtl::flat_hash_map<uint64_t, CostKey> key_by_hash;
     std::vector<std::pair<uint64_t, CostKey>> overflow;
+    // Costs of the first registered function; the baseline for the blobs.
+    Costs baseline;
     // Packed blob of cost function key k is data[offsets[k]..offsets[k+1]).
     std::vector<uint8_t> packed_data;
     std::vector<int64_t> packed_offsets = {0};
     std::vector<uint8_t> scratch_blob;
 
-    /* Pack the costs with the minimum power-of-two number of bits per
-       cost. Equal cost functions produce identical blobs, so blobs can be
+    std::vector<unsigned int> scratch_values;
+
+    /* Pack the operators whose cost differs from the baseline as a bitmask
+       plus their values with the minimum power-of-two number of bits per
+       value. Equal cost functions produce identical blobs, so blobs can be
        compared bytewise. */
-    static void pack(const Costs &costs, std::vector<uint8_t> &blob);
+    void pack(const Costs &costs, std::vector<uint8_t> &blob);
 
     bool equals(CostKey key, const std::vector<uint8_t> &blob) const {
         return packed_offsets[key + 1] - packed_offsets[key] ==
