@@ -451,3 +451,14 @@ guard):
   (pack only on append) and hashes restricted queries with murmur (the
   incremental splitmix sum is only needed by the full-context registry).
   Segment 2 so far: mem 1.0 -> 0.42, guard suite mem 0.297 -> 0.282.
+
+## Confirmation grid (2026-07-14-B, revision 06-memory = 1af42509)
+
+Coverage 660 = new best (03-conflicts 656, 05-final 654, integration 609).
+Initial h identical to 05-final on every common task (0 mismatches) -
+exactness held through the entire memory segment. scanalyzer-08 4->4(+4
+vs 05), scanalyzer-opt11 +1, tetris +1, snake +1, logistics00 -1;
+vs 03-conflicts only gains (no domain lost). OOMs halved (774 -> 380),
+failures shifted to out-of-time (381 -> 769): the frontier is time-bound
+again - speed work on DAG generation pays from here. 3 sigkills =
+organic-synthesis translator OOMs (same as previous grids).
