@@ -505,3 +505,6 @@ off-limits DAG-size work or larger speed factors.
   sized-assignment gathers replace push_back loops (restricted scratch
   resize+index, remaining-abstractions pre-sized filter, saved_costs
   reserve). push_back was 10% of freecell24's profile.
+- run 65 DISCARD (+1%): branchless per-block diff masks in matches() -
+  the unconditional 64 compare+shift ops per dirty block cost more than
+  the branchy walk they replaced.
