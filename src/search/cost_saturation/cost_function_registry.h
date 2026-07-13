@@ -94,11 +94,12 @@ class CostFunctionRegistry {
     Costs baseline;
     BlobPool blobs;
     std::vector<uint8_t> scratch_blob;
+    std::vector<uint64_t> scratch_masks;
     std::vector<unsigned int> scratch_values;
 
-    /* Pack the operators whose cost differs from the baseline as a bitmask
-       plus their values with the minimum power-of-two number of bits per
-       value. */
+    /* Pack the operators whose cost differs from the baseline as a dirty
+       block bitmap, per-dirty-block bitmasks and the changed values with
+       the minimum power-of-two number of bits per value. */
     void pack(const Costs &costs, std::vector<uint8_t> &blob);
 
     bool matches(CostKey key, const Costs &costs) const;
