@@ -476,3 +476,10 @@ Speed follow-ups after the confirmation grid (frontier now time-bound):
   repeat rate) - its 26.5% partition cost on 78 abstractions remains the
   top open speed item; partition memoization or faster merge detection
   are the next candidates.
+- run 60 KEEP (psr47 dag 526s -> 382s, guard suite time 0.52 -> 0.452;
+  segment-2 probes +3.5% accepted - they finish far under their limits
+  while psr-class is the OOT frontier): frontier-search connected
+  components replace the union-find pair loop; abstractions_depend() is
+  the side-effect-free oracle. Reserve tweak was neutral; the +3.5% on
+  the probe suite was not recovered (oracle constants), documented as a
+  conscious trade.
