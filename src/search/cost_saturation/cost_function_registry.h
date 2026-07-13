@@ -4,6 +4,7 @@
 #include "gtl/phmap.hpp"
 
 #include <cstdint>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -17,7 +18,10 @@ using CostKey = uint32_t;
   would dominate peak memory on blob-heavy tasks.
 */
 class BlobPool {
-    static constexpr size_t CHUNK_BYTES = 4 << 20;
+    /* Chunks double from 64 KiB up to 4 MiB, so small pools stay small
+       while large pools amortize the chunk bookkeeping. */
+    static constexpr size_t MIN_CHUNK_BYTES = 64 << 10;
+    static constexpr size_t MAX_CHUNK_BYTES = 4 << 20;
 
     struct BlobRef {
         uint32_t chunk;
@@ -36,8 +40,11 @@ public:
     void append(const std::vector<uint8_t> &blob) {
         if (chunks.empty() ||
             chunks.back().size() + blob.size() > chunks.back().capacity()) {
+            size_t chunk_bytes = chunks.empty()
+                ? MIN_CHUNK_BYTES
+                : std::min(MAX_CHUNK_BYTES, 2 * chunks.back().capacity());
             chunks.emplace_back();
-            chunks.back().reserve(std::max(CHUNK_BYTES, blob.size()));
+            chunks.back().reserve(std::max(chunk_bytes, blob.size()));
         }
         std::vector<uint8_t> &chunk = chunks.back();
         refs.push_back(
@@ -47,12 +54,17 @@ public:
         chunk.insert(chunk.end(), blob.begin(), blob.end());
     }
 
-    bool equals(int index, const std::vector<uint8_t> &blob) const {
+    const uint8_t *data(int index) const {
         const BlobRef &ref = refs[index];
-        return ref.length == blob.size() &&
-               std::equal(
-                   blob.begin(), blob.end(),
-                   chunks[ref.chunk].begin() + ref.offset);
+        return chunks[ref.chunk].data() + ref.offset;
+    }
+
+    int64_t memory_in_bytes() const {
+        int64_t bytes = refs.capacity() * sizeof(BlobRef);
+        for (const std::vector<uint8_t> &chunk : chunks) {
+            bytes += chunk.capacity();
+        }
+        return bytes;
     }
 
     void release_memory() {
@@ -86,9 +98,10 @@ class CostFunctionRegistry {
 
     /* Pack the operators whose cost differs from the baseline as a bitmask
        plus their values with the minimum power-of-two number of bits per
-       value. Equal cost functions produce identical blobs, so blobs can be
-       compared bytewise. */
+       value. */
     void pack(const Costs &costs, std::vector<uint8_t> &blob);
+
+    bool matches(CostKey key, const Costs &costs) const;
 
 public:
     // Mix an (operator, cost) pair into a 64-bit value.
@@ -108,9 +121,23 @@ public:
         return blobs.size();
     }
 
+    // Sentinel returned by lookup() for unregistered cost functions.
+    static constexpr CostKey NO_KEY = std::numeric_limits<CostKey>::max();
+
     /* Return the key of the given cost function, registering it if
-       necessary. hash must equal compute_hash(costs). */
+       necessary. hash may be any deterministic hash of the costs; all
+       calls on one registry must use the same hash function. */
     CostKey register_or_lookup(const Costs &costs, uint64_t hash);
+
+    // Return the key of the given cost function, or NO_KEY.
+    CostKey lookup(const Costs &costs, uint64_t hash) const;
+
+    // Approximate footprint of the pool, refs and hash map.
+    int64_t memory_in_bytes() const {
+        return blobs.memory_in_bytes() +
+               key_by_hash.size() *
+               (sizeof(uint64_t) + sizeof(CostKey) + 4);
+    }
 
     void release_memory();
 };

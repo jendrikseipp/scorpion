@@ -144,18 +144,13 @@ void StructuredSCPOrderGenerator::precompute_relevant_ops(
         }
     }
 
-    /* Split the memory budget for the restricted-cost table maps evenly
+    /* Split the memory budget for the restricted-cost table caches evenly
        among the abstractions. */
     int64_t budget_per_abstraction =
         RESTRICTED_COSTS_TABLES_BUDGET_BYTES /
         static_cast<int64_t>(abstractions.size());
-    for (size_t id = 0; id < abstractions.size(); ++id) {
-        int64_t entry_bytes = 48 +
-            4 * static_cast<int64_t>(relevant_op_ids_by_abstraction[id].size());
-        RestrictedCostsTables &tables = table_by_restricted_costs[id];
-        tables.max_entries =
-            max<int64_t>(1024, budget_per_abstraction / entry_bytes);
-        tables.next_check = min(tables.next_check, tables.max_entries);
+    for (RestrictedCostsTables &tables : table_by_restricted_costs) {
+        tables.max_bytes = budget_per_abstraction;
     }
 }
 
@@ -320,47 +315,55 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
         table_by_restricted_costs[abstraction_id];
     bool restrict_costs = !relevant_op_ids_by_abstraction.empty() &&
         !restricted_tables.dropped;
-    gtl::flat_hash_map<Costs, int, VectorIntMurmurHash>::iterator
-        restricted_it;
+    CostKey restricted_key = CostFunctionRegistry::NO_KEY;
     bool restricted_inserted = false;
     if (restrict_costs) {
         restricted_costs_scratch.clear();
         for (int op_id : relevant_op_ids_by_abstraction[abstraction_id]) {
             restricted_costs_scratch.push_back(costs[op_id]);
         }
-        auto &table_ids = restricted_tables.table_ids;
+        vector<int> &table_id_by_key = restricted_tables.table_id_by_key;
         if (!restricted_tables.frozen &&
-            static_cast<int64_t>(table_ids.size()) >=
+            static_cast<int64_t>(table_id_by_key.size()) >=
             restricted_tables.next_check) {
-            /* Geometric checkpoints: drop the map as soon as sharing is
-               evidently rare, so a useless map never grows to its entry
+            /* Geometric checkpoints: drop the cache as soon as sharing is
+               evidently rare, so a useless cache never grows to its byte
                budget. At the budget, keep serving the collected entries
                (sharing was common) but stop growing. */
             if (restricted_tables.hits * 4 <
-                static_cast<int64_t>(table_ids.size())) {
+                static_cast<int64_t>(table_id_by_key.size())) {
                 restricted_tables.dropped = true;
-                decltype(restricted_tables.table_ids)().swap(table_ids);
+                restricted_tables.keys.release_memory();
+                utils::release_vector_memory(table_id_by_key);
                 restrict_costs = false;
-            } else if (static_cast<int64_t>(table_ids.size()) >=
-                       restricted_tables.max_entries) {
+            } else if (restricted_tables.keys.memory_in_bytes() >=
+                       restricted_tables.max_bytes) {
                 restricted_tables.frozen = true;
             } else {
-                restricted_tables.next_check = min(
-                    restricted_tables.next_check * 2,
-                    restricted_tables.max_entries);
+                restricted_tables.next_check *= 2;
             }
         }
         if (restrict_costs) {
+            uint64_t restricted_hash = hash_bytes(
+                restricted_costs_scratch.data(),
+                restricted_costs_scratch.size() * sizeof(int),
+                restricted_costs_scratch.size());
+            CostKey key;
             if (restricted_tables.frozen) {
-                restricted_it = table_ids.find(restricted_costs_scratch);
+                key = restricted_tables.keys.lookup(
+                    restricted_costs_scratch, restricted_hash);
             } else {
-                tie(restricted_it, restricted_inserted) =
-                    table_ids.try_emplace(
-                        restricted_costs_scratch, UNKNOWN_LOOKUP);
+                key = restricted_tables.keys.register_or_lookup(
+                    restricted_costs_scratch, restricted_hash);
+                if (key == table_id_by_key.size()) {
+                    table_id_by_key.push_back(UNKNOWN_LOOKUP);
+                    restricted_key = key;
+                    restricted_inserted = true;
+                }
             }
-            if (!restricted_inserted && restricted_it != table_ids.end()) {
+            if (!restricted_inserted && key != CostFunctionRegistry::NO_KEY) {
                 ++restricted_tables.hits;
-                int table_id = restricted_it->second;
+                int table_id = table_id_by_key[key];
                 cache_table_for_costs(table_id);
                 if (table_id == PRUNED_LOOKUP) {
                     return NO_NODE;
@@ -371,7 +374,7 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
     }
     auto cache_table_for_restricted_costs = [&](int table_id) {
             if (restricted_inserted) {
-                restricted_it->second = table_id;
+                restricted_tables.table_id_by_key[restricted_key] = table_id;
             }
             cache_table_for_costs(table_id);
         };

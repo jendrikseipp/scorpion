@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <bit>
 #include <cassert>
+#include <cstring>
 
 using namespace std;
 
@@ -54,31 +55,15 @@ void CostFunctionRegistry::pack(const Costs &costs, vector<uint8_t> &blob) {
     size_t num_ops = costs.size();
     blob.clear();
 
-    /* First pass: bitmask of the operators whose cost differs from the
-       baseline. Fixed stride, so the loop vectorizes. */
+    // Bitmask of the operators whose cost differs from the baseline.
     size_t mask_bytes = (num_ops + 7) / 8;
     blob.resize(1 + mask_bytes, 0);
     uint8_t *mask = blob.data() + 1;
-    size_t num_full_bytes = num_ops / 8;
-    for (size_t b = 0; b < num_full_bytes; ++b) {
-        uint8_t m = 0;
-        for (int j = 0; j < 8; ++j) {
-            m |= (costs[b * 8 + j] != baseline[b * 8 + j]) << j;
-        }
-        mask[b] = m;
-    }
-    for (size_t i = num_full_bytes * 8; i < num_ops; ++i) {
-        mask[i / 8] |= (costs[i] != baseline[i]) << (i % 8);
-    }
-
-    // Second pass: gather the changed values; only visits the diffs.
     scratch_values.clear();
     unsigned int max_value = 0;
-    for (size_t b = 0; b < mask_bytes; ++b) {
-        unsigned int m = mask[b];
-        while (m) {
-            size_t i = b * 8 + countr_zero(m);
-            m &= m - 1;
+    for (size_t i = 0; i < num_ops; ++i) {
+        if (costs[i] != baseline[i]) {
+            mask[i / 8] |= 1 << (i % 8);
             unsigned int value = packed_cost_value(costs[i]);
             scratch_values.push_back(value);
             max_value = max(max_value, value);
@@ -110,9 +95,74 @@ void CostFunctionRegistry::pack(const Costs &costs, vector<uint8_t> &blob) {
     }
 }
 
+template<int BITS>
+static bool values_match_dense(
+    const uint8_t *mask, const uint8_t *values, const Costs &costs,
+    const Costs &baseline) {
+    constexpr int PER_BYTE = 8 / BITS;
+    constexpr unsigned int VALUE_MASK = (1u << BITS) - 1;
+    size_t value_index = 0;
+    for (size_t i = 0; i < costs.size(); ++i) {
+        if (mask[i / 8] & (1 << (i % 8))) {
+            unsigned int stored =
+                (values[value_index / PER_BYTE] >>
+                 (value_index % PER_BYTE * BITS)) & VALUE_MASK;
+            if (stored != packed_cost_value(costs[i])) {
+                return false;
+            }
+            ++value_index;
+        } else if (costs[i] != baseline[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<typename UInt>
+static bool values_match_wide(
+    const uint8_t *mask, const uint8_t *values, const Costs &costs,
+    const Costs &baseline) {
+    size_t value_index = 0;
+    for (size_t i = 0; i < costs.size(); ++i) {
+        if (mask[i / 8] & (1 << (i % 8))) {
+            UInt stored;
+            memcpy(&stored, values + value_index * sizeof(UInt), sizeof(UInt));
+            if (stored != static_cast<UInt>(packed_cost_value(costs[i]))) {
+                return false;
+            }
+            ++value_index;
+        } else if (costs[i] != baseline[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* Compare the cost function against a stored blob in one mask-guided pass,
+   without materializing the query's blob. */
+bool CostFunctionRegistry::matches(CostKey key, const Costs &costs) const {
+    const uint8_t *blob = blobs.data(key);
+    uint8_t bits_per_value = blob[0];
+    const uint8_t *mask = blob + 1;
+    const uint8_t *values = mask + (costs.size() + 7) / 8;
+    switch (bits_per_value) {
+    case 1:
+        return values_match_dense<1>(mask, values, costs, baseline);
+    case 2:
+        return values_match_dense<2>(mask, values, costs, baseline);
+    case 4:
+        return values_match_dense<4>(mask, values, costs, baseline);
+    case 8:
+        return values_match_wide<uint8_t>(mask, values, costs, baseline);
+    case 16:
+        return values_match_wide<uint16_t>(mask, values, costs, baseline);
+    default:
+        return values_match_wide<uint32_t>(mask, values, costs, baseline);
+    }
+}
+
 CostKey CostFunctionRegistry::register_or_lookup(
     const Costs &costs, uint64_t hash) {
-    assert(hash == compute_hash(costs));
     if (baseline.empty()) {
         baseline = costs;
     }
@@ -124,20 +174,36 @@ CostKey CostFunctionRegistry::register_or_lookup(
         key_by_hash.emplace(hash, key);
         return key;
     }
-    pack(costs, scratch_blob);
-    if (blobs.equals(it->second, scratch_blob)) {
+    if (matches(it->second, costs)) {
         return it->second;
     }
     // Hash collision: look for the cost function in the overflow list.
     for (const auto &[overflow_hash, overflow_key] : overflow) {
-        if (overflow_hash == hash && blobs.equals(overflow_key, scratch_blob)) {
+        if (overflow_hash == hash && matches(overflow_key, costs)) {
             return overflow_key;
         }
     }
     CostKey key = size();
+    pack(costs, scratch_blob);
     blobs.append(scratch_blob);
     overflow.emplace_back(hash, key);
     return key;
+}
+
+CostKey CostFunctionRegistry::lookup(const Costs &costs, uint64_t hash) const {
+    auto it = key_by_hash.find(hash);
+    if (it == key_by_hash.end()) {
+        return NO_KEY;
+    }
+    if (matches(it->second, costs)) {
+        return it->second;
+    }
+    for (const auto &[overflow_hash, overflow_key] : overflow) {
+        if (overflow_hash == hash && matches(overflow_key, costs)) {
+            return overflow_key;
+        }
+    }
+    return NO_KEY;
 }
 
 void CostFunctionRegistry::release_memory() {

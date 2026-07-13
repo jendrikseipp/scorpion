@@ -170,18 +170,19 @@ protected:
     LookupTableCache lookup_tables_cache;
     /* The goal distances of an abstraction only depend on the costs of its
        relevant operators, so cost functions that agree on them share the
-       lookup table. Maps the restricted cost function to the table id (or
-       PRUNED_LOOKUP), per abstraction.
+       lookup table. Maps the restricted cost function (interned in its own
+       registry) to the table id (or PRUNED_LOOKUP), per abstraction.
 
        Distinct restricted cost functions can vastly outnumber the shared
-       tables, so each map stops growing once it reaches its entry budget.
+       tables, so each cache stops growing once it reaches its byte budget.
        If it produced almost no sharing until then, it is dead weight and
-       is dropped entirely. */
+       is dropped entirely; the hit rate is evaluated at doubling sizes. */
     struct RestrictedCostsTables {
-        gtl::flat_hash_map<Costs, int, VectorIntMurmurHash> table_ids;
+        CostFunctionRegistry keys;
+        std::vector<int> table_id_by_key;
         int64_t hits = 0;
-        int64_t max_entries = 0;
-        // Next map size at which the hit rate is evaluated.
+        int64_t max_bytes = 0;
+        // Next cache size (in entries) at which the state is evaluated.
         int64_t next_check = 4096;
         bool frozen = false;
         bool dropped = false;
