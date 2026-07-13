@@ -489,3 +489,10 @@ coverage 661 (06-memory: 660), h identical everywhere, OOT 769 -> 747,
 OOM 380 -> 401 (borderline churn; barman p435 flips at the 30min edge).
 Coverage curve is flattening: remaining failures need either the
 off-limits DAG-size work or larger speed factors.
+- run 61 DISCARD: word-wise mask save/restore instead of the restore-path
+  update_cost_context - neutral on probes and guard.
+- run 62 KEEP (time 0.869 from 0.937, confidence 37x; guard 0.449):
+  negative-scf/exhausted operators tracked as word masks during the sparse
+  child reductions; simulation candidates = live & ~exhausted & ~negative
+  gathered by bit scan (drops two O(ops) passes per max-node call). Legacy
+  per-op scan kept for non-default label options.
