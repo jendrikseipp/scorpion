@@ -221,47 +221,58 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
     /* Simulate infinite costs for operators whose cost is not exhausted by
        computing all children on the same cost function. If this makes some
        abstractions independent, we can split this max node into a sum. */
-    vector<int> simulated_ops;
-    if (check_cost_partitioning) {
-        if (options.use_affecting_labels && options.use_infinite_labels &&
-            options.use_non_negative_labels) {
-            /* With all label options on, the context's live mask is
-               exactly the operators with positive finite cost, so the
-               candidates follow from three word masks. Exhausted bits are
-               only reliable for operators without negative saturated
-               costs, which the negative mask excludes anyway. */
-            for (size_t w = 0; w < num_mask_words; ++w) {
-                uint64_t word = context.live_ops[w] & ~exhausted_ops[w];
-                if (options.use_general_cp) {
-                    word &= ~negative_scf_ops[w];
-                }
-                while (word) {
-                    simulated_ops.push_back(
-                        w * 64 + countr_zero(word));
-                    word &= word - 1;
-                }
+    /* With all label options on, the context's live mask is exactly the
+       operators with positive finite cost, so the simulation candidates
+       follow from three word masks; simulating infinite cost just clears
+       their live bits, and the dependency oracle only reads the masks.
+       Exhausted bits are only reliable for operators without negative
+       saturated costs, which the negative mask excludes anyway. */
+    const bool simulate_with_masks = options.use_affecting_labels &&
+        options.use_infinite_labels && options.use_non_negative_labels;
+    vector<vector<int>> independent_abstractions;
+    bool split_computed = false;
+    if (check_cost_partitioning && simulate_with_masks) {
+        CostContext simulated_context;
+        for (size_t w = 0; w < num_mask_words; ++w) {
+            uint64_t word = context.live_ops[w] & ~exhausted_ops[w];
+            if (options.use_general_cp) {
+                word &= ~negative_scf_ops[w];
             }
-        } else {
-            for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
-                if (overall_remaining_costs[op_id] >= 0 && costs[op_id] > 0 &&
-                    costs[op_id] != INF &&
-                    (!options.use_general_cp ||
-                     !test_op_mask_bit(negative_scf_ops, op_id))) {
-                    simulated_ops.push_back(op_id);
+            if (word) {
+                if (simulated_context.live_ops.empty()) {
+                    simulated_context.live_ops = context.live_ops;
+                    simulated_context.cond_ops = context.cond_ops;
                 }
+                simulated_context.live_ops[w] &= ~word;
             }
+        }
+        if (!simulated_context.live_ops.empty()) {
+            independent_abstractions = compute_independent_abstractions(
+                scheduled_children.abstraction_ids, simulated_context);
+            split_computed = true;
+        }
+    } else if (check_cost_partitioning) {
+        vector<int> simulated_ops;
+        for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
+            if (overall_remaining_costs[op_id] >= 0 && costs[op_id] > 0 &&
+                costs[op_id] != INF &&
+                (!options.use_general_cp ||
+                 !test_op_mask_bit(negative_scf_ops, op_id))) {
+                simulated_ops.push_back(op_id);
+            }
+        }
+        if (!simulated_ops.empty()) {
+            CostContext simulated_context(context);
+            for (int op_id : simulated_ops) {
+                simulated_context.costs[op_id] = INF;
+            }
+            update_cost_context(simulated_context, simulated_ops);
+            independent_abstractions = compute_independent_abstractions(
+                scheduled_children.abstraction_ids, simulated_context);
+            split_computed = true;
         }
     }
-    vector<vector<int>> independent_abstractions;
-    if (!simulated_ops.empty()) {
-        CostContext simulated_context(context);
-        for (int op_id : simulated_ops) {
-            simulated_context.costs[op_id] = INF;
-        }
-        update_cost_context(simulated_context, simulated_ops);
-        independent_abstractions = compute_independent_abstractions(
-            scheduled_children.abstraction_ids, simulated_context);
-    } else {
+    if (!split_computed) {
         independent_abstractions = {scheduled_children.abstraction_ids};
     }
     if (independent_abstractions.size() > 1) {
