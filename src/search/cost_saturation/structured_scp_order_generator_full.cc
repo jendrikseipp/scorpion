@@ -8,6 +8,7 @@
 #include "../utils/collections.h"
 
 #include <algorithm>
+#include <bit>
 #include <iostream>
 #include <numeric>
 
@@ -94,22 +95,36 @@ struct ScheduledChildren {
     vector<NodeId> nodes;
 };
 
+void set_op_mask_bit(OpMask &mask, int op_id) {
+    mask[op_id / 64] |= uint64_t(1) << (op_id % 64);
+}
+
+bool test_op_mask_bit(const OpMask &mask, int op_id) {
+    return (mask[op_id / 64] >> (op_id % 64)) & 1;
+}
+
 /* Like reduce_cost_context(), but without the guarantee that the saturated
-   costs fit into the remaining costs. */
+   costs fit into the remaining costs; operators whose remaining cost turns
+   negative are recorded in exhausted_ops. */
 void reduce_costs_sparse_unguarded(
-    Costs &remaining_costs, const SaturatedCostFunction &scf) {
+    Costs &remaining_costs, const SaturatedCostFunction &scf,
+    OpMask &exhausted_ops) {
     for (size_t i = 0; i < scf.nonzero_ops.size(); ++i) {
-        int remaining = remaining_costs[scf.nonzero_ops[i]];
+        int op_id = scf.nonzero_ops[i];
+        int remaining = remaining_costs[op_id];
         int saturated = scf.nonzero_costs[i];
         assert(remaining == INF || saturated != INF);
         // Left addition: x - y = x for all values y if x is infinite.
         if (remaining != INF) {
-            remaining_costs[scf.nonzero_ops[i]] =
-                (saturated == -INF)
+            int reduced = (saturated == -INF)
                 ? INF
                 : static_cast<int>(
                       static_cast<unsigned int>(remaining) -
                       static_cast<unsigned int>(saturated));
+            remaining_costs[op_id] = reduced;
+            if (reduced < 0) {
+                set_op_mask_bit(exhausted_ops, op_id);
+            }
         }
     }
 }
@@ -118,8 +133,7 @@ void reduce_costs_sparse_unguarded(
    operators with negative saturated cost. */
 void reduce_costs_sparse_unguarded_and_track_negative(
     Costs &remaining_costs, const SaturatedCostFunction &scf,
-    vector<uint8_t> &op_has_negative_scf) {
-    assert(remaining_costs.size() == op_has_negative_scf.size());
+    OpMask &negative_scf_ops, OpMask &exhausted_ops) {
     for (size_t i = 0; i < scf.nonzero_ops.size(); ++i) {
         int op_id = scf.nonzero_ops[i];
         int remaining = remaining_costs[op_id];
@@ -127,14 +141,19 @@ void reduce_costs_sparse_unguarded_and_track_negative(
         assert(remaining == INF || saturated != INF);
         // Left addition: x - y = x for all values y if x is infinite.
         if (remaining != INF) {
-            remaining_costs[op_id] =
-                (saturated == -INF)
+            int reduced = (saturated == -INF)
                 ? INF
                 : static_cast<int>(
                       static_cast<unsigned int>(remaining) -
                       static_cast<unsigned int>(saturated));
+            remaining_costs[op_id] = reduced;
+            if (reduced < 0) {
+                set_op_mask_bit(exhausted_ops, op_id);
+            }
         }
-        op_has_negative_scf[op_id] |= (saturated < 0);
+        if (saturated < 0) {
+            set_op_mask_bit(negative_scf_ops, op_id);
+        }
     }
 }
 }
@@ -157,12 +176,18 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         use_conflicts && options.use_cost_partitioning_check;
     ScheduledChildren scheduled_children;
     Costs overall_remaining_costs(costs);
-    /* Track for each operator whether some child has negative saturated
-       cost. Updating flags per child is cache-friendlier than checking all
+    /* Track per operator whether some child has negative saturated cost
+       and whether the children together want more cost than is available.
+       Updating word masks per child is cache-friendlier than checking all
        children per operator below. */
-    vector<uint8_t> op_has_negative_scf;
-    if (check_cost_partitioning && options.use_general_cp) {
-        op_has_negative_scf.assign(costs.size(), false);
+    size_t num_mask_words = (costs.size() + 63) / 64;
+    OpMask negative_scf_ops;
+    OpMask exhausted_ops;
+    if (check_cost_partitioning) {
+        exhausted_ops.assign(num_mask_words, 0);
+        if (options.use_general_cp) {
+            negative_scf_ops.assign(num_mask_words, 0);
+        }
     }
     for (int abstraction_id : dependent_abstractions) {
         NodeId scheduled_child =
@@ -176,10 +201,11 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
                 if (options.use_general_cp) {
                     reduce_costs_sparse_unguarded_and_track_negative(
                         overall_remaining_costs, saturated_cost,
-                        op_has_negative_scf);
+                        negative_scf_ops, exhausted_ops);
                 } else {
                     reduce_costs_sparse_unguarded(
-                        overall_remaining_costs, saturated_cost);
+                        overall_remaining_costs, saturated_cost,
+                        exhausted_ops);
                 }
             }
             scheduled_children.abstraction_ids.push_back(abstraction_id);
@@ -197,11 +223,32 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
        abstractions independent, we can split this max node into a sum. */
     vector<int> simulated_ops;
     if (check_cost_partitioning) {
-        for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
-            if (overall_remaining_costs[op_id] >= 0 && costs[op_id] > 0 &&
-                costs[op_id] != INF &&
-                (!options.use_general_cp || !op_has_negative_scf[op_id])) {
-                simulated_ops.push_back(op_id);
+        if (options.use_affecting_labels && options.use_infinite_labels &&
+            options.use_non_negative_labels) {
+            /* With all label options on, the context's live mask is
+               exactly the operators with positive finite cost, so the
+               candidates follow from three word masks. Exhausted bits are
+               only reliable for operators without negative saturated
+               costs, which the negative mask excludes anyway. */
+            for (size_t w = 0; w < num_mask_words; ++w) {
+                uint64_t word = context.live_ops[w] & ~exhausted_ops[w];
+                if (options.use_general_cp) {
+                    word &= ~negative_scf_ops[w];
+                }
+                while (word) {
+                    simulated_ops.push_back(
+                        w * 64 + countr_zero(word));
+                    word &= word - 1;
+                }
+            }
+        } else {
+            for (size_t op_id = 0; op_id < costs.size(); ++op_id) {
+                if (overall_remaining_costs[op_id] >= 0 && costs[op_id] > 0 &&
+                    costs[op_id] != INF &&
+                    (!options.use_general_cp ||
+                     !test_op_mask_bit(negative_scf_ops, op_id))) {
+                    simulated_ops.push_back(op_id);
+                }
             }
         }
     }
