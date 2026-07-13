@@ -181,6 +181,8 @@ protected:
         gtl::flat_hash_map<Costs, int, VectorIntMurmurHash> table_ids;
         int64_t hits = 0;
         int64_t max_entries = 0;
+        // Next map size at which the hit rate is evaluated.
+        int64_t next_check = 4096;
         bool frozen = false;
         bool dropped = false;
     };

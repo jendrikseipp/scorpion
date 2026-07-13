@@ -152,8 +152,10 @@ void StructuredSCPOrderGenerator::precompute_relevant_ops(
     for (size_t id = 0; id < abstractions.size(); ++id) {
         int64_t entry_bytes = 48 +
             4 * static_cast<int64_t>(relevant_op_ids_by_abstraction[id].size());
-        table_by_restricted_costs[id].max_entries =
+        RestrictedCostsTables &tables = table_by_restricted_costs[id];
+        tables.max_entries =
             max<int64_t>(1024, budget_per_abstraction / entry_bytes);
+        tables.next_check = min(tables.next_check, tables.max_entries);
     }
 }
 
@@ -329,15 +331,23 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
         auto &table_ids = restricted_tables.table_ids;
         if (!restricted_tables.frozen &&
             static_cast<int64_t>(table_ids.size()) >=
-            restricted_tables.max_entries) {
-            /* The map reached its entry budget. Keep serving the entries
-               collected so far if sharing was common, otherwise drop it. */
-            if (restricted_tables.hits * 4 < restricted_tables.max_entries) {
+            restricted_tables.next_check) {
+            /* Geometric checkpoints: drop the map as soon as sharing is
+               evidently rare, so a useless map never grows to its entry
+               budget. At the budget, keep serving the collected entries
+               (sharing was common) but stop growing. */
+            if (restricted_tables.hits * 4 <
+                static_cast<int64_t>(table_ids.size())) {
                 restricted_tables.dropped = true;
                 decltype(restricted_tables.table_ids)().swap(table_ids);
                 restrict_costs = false;
-            } else {
+            } else if (static_cast<int64_t>(table_ids.size()) >=
+                       restricted_tables.max_entries) {
                 restricted_tables.frozen = true;
+            } else {
+                restricted_tables.next_check = min(
+                    restricted_tables.next_check * 2,
+                    restricted_tables.max_entries);
             }
         }
         if (restrict_costs) {
