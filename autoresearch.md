@@ -496,3 +496,8 @@ off-limits DAG-size work or larger speed factors.
   child reductions; simulation candidates = live & ~exhausted & ~negative
   gathered by bit scan (drops two O(ops) passes per max-node call). Legacy
   per-op scan kept for non-default label options.
+- run 63 KEEP (time 0.609 from 0.869, confidence 174x; guard 0.401):
+  mask-only simulated contexts. The infinite-cost simulation copied the
+  whole cost context and updated masks per operator; with default label
+  options the oracle only reads masks and simulation = clearing live
+  bits, so two mask copies + word-wise clears suffice.
