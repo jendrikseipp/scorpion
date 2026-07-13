@@ -516,3 +516,11 @@ OOM 401 -> 450 (the frontier oscillates back toward memory as tasks
 run further). Cumulative coverage: integration 609 -> 05-final 654 ->
 06-memory 660 -> 07-speed 661 -> 08-speed2 666. Run 64 (-11% time)
 is not yet in a grid.
+- run 66 KEEP (probes/guard neutral; protective): scaling budgets for the
+  three structures super-linear in the abstraction count - conflict masks
+  (512MiB budget, logistics98 prob14 was allocating 1.1GiB), the static
+  conflict matrix (own 64MiB budget, decoupled from the n<=2000 mask gate
+  so 2000-23000-abstraction tasks now get it), and dense lookup rows
+  (hash map above 1024 abstractions; airport-class rows were 88KiB/key).
+  logistics98_14 still OOMs later (DAG size = off-limits frontier), but
+  no unbudgeted super-linear allocation remains.
