@@ -462,3 +462,17 @@ vs 03-conflicts only gains (no domain lost). OOMs halved (774 -> 380),
 failures shifted to out-of-time (381 -> 769): the frontier is time-bound
 again - speed work on DAG generation pays from here. 3 sigkills =
 organic-synthesis translator OOMs (same as previous grids).
+
+Speed follow-ups after the confirmation grid (frontier now time-bound):
+- Evidence: per-child compute_independent_abstractions returns a SINGLE
+  component in 100% of calls on psr47 (45.8M calls, 26.5% of runtime) and
+  mprime08; repeat rate of (cost key, remaining set): mprime 89%, psr 18%.
+  Mask-change rate per reduction 67-95% => "masks unchanged" fast paths
+  are dead ends.
+- run 59 KEEP (time ~0.90, mem unchanged): probe the max-node memo with
+  the unpartitioned remaining set BEFORE computing the partition; on a
+  hit the partition is dead work and skipping it is exactly DAG-preserving
+  (memoized sets never split at schedule time). psr47 unaffected (low
+  repeat rate) - its 26.5% partition cost on 78 abstractions remains the
+  top open speed item; partition memoization or faster merge detection
+  are the next candidates.
