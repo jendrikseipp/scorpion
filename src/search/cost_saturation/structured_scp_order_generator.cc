@@ -318,9 +318,11 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
     CostKey restricted_key = CostFunctionRegistry::NO_KEY;
     bool restricted_inserted = false;
     if (restrict_costs) {
-        restricted_costs_scratch.clear();
-        for (int op_id : relevant_op_ids_by_abstraction[abstraction_id]) {
-            restricted_costs_scratch.push_back(costs[op_id]);
+        const vector<int> &relevant_op_ids =
+            relevant_op_ids_by_abstraction[abstraction_id];
+        restricted_costs_scratch.resize(relevant_op_ids.size());
+        for (size_t i = 0; i < relevant_op_ids.size(); ++i) {
+            restricted_costs_scratch[i] = costs[relevant_op_ids[i]];
         }
         vector<int> &table_id_by_key = restricted_tables.table_id_by_key;
         if (!restricted_tables.frozen &&

@@ -295,6 +295,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
     /* Per-frame save buffer: the recursion below re-enters this function,
        so the buffer must not be shared across frames. */
     vector<int> saved_costs;
+    saved_costs.reserve(64);
     for (size_t i = 0; i < scheduled_children.abstraction_ids.size(); ++i) {
         int abstraction_id = scheduled_children.abstraction_ids[i];
         NodeId scheduled_child = scheduled_children.nodes[i];
@@ -310,21 +311,17 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         uint64_t saved_hash = context.cost_hash;
         CostKey saved_key = context.key;
         reduce_cost_context(context, scf);
-        vector<int> remaining_abstractions;
-        if (options.use_general_cp) {
-            remaining_abstractions.reserve(dependent_abstractions.size() - 1);
-            copy_if(dependent_abstractions.begin(),
-                    dependent_abstractions.end(),
-                    back_inserter(remaining_abstractions),
-                    [&](int abstr_id) {return abstr_id != abstraction_id;});
-        } else {
-            remaining_abstractions.reserve(
-                scheduled_children.abstraction_ids.size() - 1);
-            copy_if(scheduled_children.abstraction_ids.begin(),
-                    scheduled_children.abstraction_ids.end(),
-                    back_inserter(remaining_abstractions),
-                    [&](int abstr_id) {return abstr_id != abstraction_id;});
+        const vector<int> &base_abstractions = options.use_general_cp
+            ? dependent_abstractions
+            : scheduled_children.abstraction_ids;
+        vector<int> remaining_abstractions(base_abstractions.size() - 1);
+        size_t next = 0;
+        for (int abstr_id : base_abstractions) {
+            if (abstr_id != abstraction_id) {
+                remaining_abstractions[next++] = abstr_id;
+            }
         }
+        assert(next == remaining_abstractions.size());
         vector<vector<int>> independent_remaining_abstractions;
         /* If the reduced costs and remaining set already have a memoized
            max node, the partition is irrelevant: the recursion returns the
