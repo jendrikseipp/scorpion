@@ -432,3 +432,22 @@ guard):
 - Dead end: interning diff MASKS (mask pool + set ids) - measured distinct
   masks == stored functions on snake/freecell/mprime (every function has a
   unique diff set), so interning cannot amortize anything.
+
+- run 56 KEEP (probes neutral 0.6076; scanalyzer22 550->339MB at equal h):
+  geometric hit-rate checkpoints (4096, doubling) drop useless
+  restricted-cost caches long before the byte budget. First version had a
+  bug: next_check=4096 exceeded max_entries floors (huge-entry tasks like
+  snake04: 12KB/entry -> floor 1024) so maps grew unchecked to 3x memory;
+  clamp next_check to the budget.
+- run 57 KEEP (mem 0.4184 from 0.6076, time 0.98; guard mem 0.2816):
+  restricted cost functions interned in per-abstraction
+  CostFunctionRegistry instances (diff blobs, chunked pool) instead of
+  vector<int> map keys (70% of freecell24 peak). Byte budget enforced on
+  the registry's real footprint. Iterations that failed on the way:
+  (a) fixed 4MiB first chunk per abstraction -> mem 0.68 (adaptive 64KiB
+  ->4MiB doubling chunks fixed it, also helps small tasks);
+  (b) pack-per-query cost 6% time, SWAR pack attempt 19% -> final design
+  verifies hits with a one-pass mask-guided matches() against baseline
+  (pack only on append) and hashes restricted queries with murmur (the
+  incremental splitmix sum is only needed by the full-context registry).
+  Segment 2 so far: mem 1.0 -> 0.42, guard suite mem 0.297 -> 0.282.
