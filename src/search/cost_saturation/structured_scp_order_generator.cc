@@ -40,6 +40,11 @@ static bool test_mask_bit(const OpMask &mask, int i) {
    growing (see RestrictedCostsTables). */
 static constexpr int64_t RESTRICTED_COSTS_TABLES_BUDGET_BYTES = 256 << 20;
 
+// Budget for the precomputed pairwise conflict masks.
+static constexpr int64_t CONFLICTING_OPS_BUDGET_BYTES = 512 << 20;
+// Budget for the static conflict matrix (one bit per abstraction pair).
+static constexpr int64_t CONFLICT_MATRIX_BUDGET_BYTES = 64 << 20;
+
 StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     const shared_ptr<AbstractTask> &transform, Abstractions abstractions,
     const StructuredSCPOptions &options, utils::Verbosity verbosity)
@@ -86,13 +91,22 @@ void StructuredSCPOrderGenerator::precompute_operator_properties(
     precompute_ops_with_nonincreasing_remaining_cost(abstraction_is_relevant);
     cout << "Relevant abstractions: " << relevant_abstraction_ids.size()
          << endl;
+    /* The precomputed masks take num_abstractions^2 operator masks;
+       above a byte budget only the static conflict matrix (one bit per
+       pair) is kept and the masks are computed on the fly per pair
+       check. For extreme abstraction counts even the matrix is skipped. */
+    int num_words = get_num_mask_words(task_proxy.get_operators().size());
+    int64_t num_all = abstractions.size();
+    int64_t mask_bytes = num_all * num_all * num_words * sizeof(uint64_t);
+    int64_t matrix_bytes = num_all * num_all / 8;
+    conflicting_ops = {{OpMask(num_words, 0)}};
     if (options.use_affecting_labels &&
-        relevant_abstraction_ids.size() <= 2000) {
-        precompute_conflicting_ops(abstraction_is_relevant);
-        log << "Precomputed conflicting ops" << endl;
-    } else {
-        int num_words = get_num_mask_words(task_proxy.get_operators().size());
-        conflicting_ops = {{OpMask(num_words, 0)}};
+        matrix_bytes <= CONFLICT_MATRIX_BUDGET_BYTES) {
+        precompute_conflicting_ops(
+            abstraction_is_relevant,
+            mask_bytes <= CONFLICTING_OPS_BUDGET_BYTES);
+        log << "Precomputed conflicting ops"
+            << (precomputed_conflicting_ops ? " with masks" : "") << endl;
     }
 }
 
@@ -204,12 +218,16 @@ precompute_ops_with_nonincreasing_remaining_cost(
 }
 
 void StructuredSCPOrderGenerator::precompute_conflicting_ops(
-    const vector<bool> &abstraction_is_relevant) {
-    precomputed_conflicting_ops = true;
+    const vector<bool> &abstraction_is_relevant, bool store_masks) {
+    precomputed_conflicting_ops = store_masks;
+    have_static_conflict_matrix = true;
     int num_words = get_num_mask_words(task_proxy.get_operators().size());
-    conflicting_ops = vector<vector<OpMask>>(
-        abstractions.size(),
-        vector<OpMask>(abstractions.size(), OpMask(num_words, 0)));
+    if (store_masks) {
+        conflicting_ops = vector<vector<OpMask>>(
+            abstractions.size(),
+            vector<OpMask>(abstractions.size(), OpMask(num_words, 0)));
+    }
+    OpMask scratch_conflict(num_words, 0);
     statically_conflicting_pairs = vector<OpMask>(
         abstractions.size(),
         OpMask(get_num_mask_words(abstractions.size()), 0));
@@ -217,7 +235,9 @@ void StructuredSCPOrderGenerator::precompute_conflicting_ops(
         if (abstraction_is_relevant[id1]) {
             for (size_t id2 = id1 + 1; id2 < abstractions.size(); ++id2) {
                 if (abstraction_is_relevant[id2]) {
-                    OpMask &conflict = conflicting_ops[id1][id2];
+                    OpMask &conflict = store_masks
+                        ? conflicting_ops[id1][id2]
+                        : scratch_conflict;
                     compute_conflicting_ops(id1, id2, conflict);
                     if (any_of(conflict.begin(), conflict.end(),
                                [](uint64_t word) {return word != 0;})) {
@@ -228,10 +248,12 @@ void StructuredSCPOrderGenerator::precompute_conflicting_ops(
             }
         }
     }
-    // When conflicting ops are precomputed, the relevant ops are not needed
-    // anymore.
-    utils::release_vector_memory(relevant_ops_by_abstraction);
-    utils::release_vector_memory(inf_donating_ops_by_abstraction);
+    if (store_masks) {
+        /* With the masks precomputed, the relevant ops are not needed
+           anymore; without them they feed the on-the-fly computation. */
+        utils::release_vector_memory(relevant_ops_by_abstraction);
+        utils::release_vector_memory(inf_donating_ops_by_abstraction);
+    }
 }
 
 bool StructuredSCPOrderGenerator::is_non_trivial_sum_node(
@@ -539,7 +561,7 @@ bool StructuredSCPOrderGenerator::abstractions_depend(
     if (id1 > id2) {
         swap(id1, id2);
     }
-    if (precomputed_conflicting_ops &&
+    if (have_static_conflict_matrix &&
         !test_mask_bit(statically_conflicting_pairs[id1], id2)) {
         return false;
     }

@@ -100,6 +100,7 @@ protected:
     const TaskProxy task_proxy;
     const StructuredSCPOptions options;
     bool precomputed_conflicting_ops;
+    bool have_static_conflict_matrix = false;
     int recomputed_lookup_tables;
     int lookup_cache_hits;
     // Maximum number of cost keys cached in lookup_tables_cache.
@@ -108,14 +109,18 @@ protected:
     CostFunctionRegistry cost_functions;
     /* Caches per (cost key, abstraction) the lookup table id for
        evaluating the abstraction under the cost function (UNKNOWN_LOOKUP
-       if not computed yet, PRUNED_LOOKUP if pruned). Rows are created on
-       the first lookup with a cost key and store 16-bit entries to halve
-       the dominant cache; the rare table ids that do not fit (very large
-       tasks) go to an overflow map, so all id ranges are supported. */
+       if not computed yet, PRUNED_LOOKUP if pruned). For few abstractions,
+       rows of 16-bit entries are created on the first lookup with a cost
+       key (the rare table ids that do not fit go to the map, so all id
+       ranges are supported). With many abstractions dense rows waste
+       memory on the untouched pairs, so the map holds all entries. */
     class LookupTableCache {
+        static const int MAX_DENSE_ABSTRACTIONS = 1024;
+
         std::vector<std::vector<int16_t>> rows;
         gtl::flat_hash_map<uint64_t, int> overflow;
         int num_abstractions = 0;
+        bool dense = true;
 
         static const int16_t SMALL_OVERFLOW = -3;
 
@@ -126,14 +131,22 @@ protected:
     public:
         void initialize(int num_abstractions) {
             this->num_abstractions = num_abstractions;
+            dense = num_abstractions <= MAX_DENSE_ABSTRACTIONS;
         }
 
         int64_t size() const {
-            return static_cast<int64_t>(rows.size()) * num_abstractions;
+            return dense
+                   ? static_cast<int64_t>(rows.size()) * num_abstractions
+                   : static_cast<int64_t>(overflow.size());
         }
 
         // Returns the table id, PRUNED_LOOKUP or UNKNOWN_LOOKUP.
         int get(CostKey cost_key, int abstraction_id) {
+            if (!dense) {
+                auto it = overflow.find(
+                    overflow_key(cost_key, abstraction_id));
+                return it == overflow.end() ? UNKNOWN_LOOKUP : it->second;
+            }
             if (cost_key >= rows.size()) {
                 rows.resize(cost_key + 1);
             }
@@ -152,7 +165,9 @@ protected:
 
         // table_id is a valid table id or PRUNED_LOOKUP.
         void set(CostKey cost_key, int abstraction_id, int table_id) {
-            if (table_id > std::numeric_limits<int16_t>::max()) {
+            if (!dense) {
+                overflow[overflow_key(cost_key, abstraction_id)] = table_id;
+            } else if (table_id > std::numeric_limits<int16_t>::max()) {
                 rows[cost_key][abstraction_id] = SMALL_OVERFLOW;
                 overflow[overflow_key(cost_key, abstraction_id)] = table_id;
             } else {
@@ -275,7 +290,7 @@ private:
 
     // Precompute the conflicting operators for all pairs of abstractions.
     void precompute_conflicting_ops(
-        const std::vector<bool> &abstraction_is_relevant);
+        const std::vector<bool> &abstraction_is_relevant, bool store_masks);
 
     /* Determine for each operator that is potentially conflicting for the
        abstractions id1 and id2 if it is conflicting given the current
