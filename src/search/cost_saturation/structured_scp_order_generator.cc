@@ -498,62 +498,60 @@ void StructuredSCPOrderGenerator::reduce_cost_context(
 vector<vector<int>>
 StructuredSCPOrderGenerator::compute_independent_abstractions(
     const vector<int> &pending_abstraction_ids, const CostContext &context) {
-    // Build the dependency graph between the abstractions.
-    ccp::DisjointSet dependency_graph(abstractions.size());
-    size_t num_pending = pending_abstraction_ids.size();
-    for (size_t i = 0; i < num_pending; ++i) {
-        int i_parent = dependency_graph.find(pending_abstraction_ids[i]);
-        for (size_t j = i + 1; j < num_pending; ++j) {
-            if (precomputed_conflicting_ops &&
-                !test_mask_bit(
-                    statically_conflicting_pairs[pending_abstraction_ids[i]],
-                    pending_abstraction_ids[j])) {
-                continue;
-            }
-            if (i_parent !=
-                dependency_graph.find(pending_abstraction_ids[j])) {
-                check_and_add_dependency(
-                    dependency_graph, pending_abstraction_ids[i],
-                    pending_abstraction_ids[j], context);
-                /* Only pending abstractions are ever united, so a set of
-                   size num_pending must contain all of them and no further
-                   checks can change the components. */
-                if (dependency_graph.get_set_size(
-                        pending_abstraction_ids[i]) == num_pending) {
-                    goto endloop;
+    /* Grow one component at a time with a frontier search over the
+       implicit dependency graph: each frontier abstraction absorbs the
+       unassigned abstractions it depends on. The common fully-dependent
+       case finishes after the dependencies that witness connectivity,
+       without building an explicit graph or union-find structure. */
+    cc_unassigned.assign(
+        pending_abstraction_ids.begin(), pending_abstraction_ids.end());
+    vector<vector<int>> independent_abstractions;
+    while (!cc_unassigned.empty()) {
+        vector<int> component;
+        component.reserve(cc_unassigned.size());
+        component.push_back(cc_unassigned.back());
+        cc_unassigned.pop_back();
+        // The unprocessed tail of the component is the frontier.
+        for (size_t f = 0; f < component.size() && !cc_unassigned.empty();
+             ++f) {
+            size_t keep = 0;
+            for (size_t k = 0; k < cc_unassigned.size(); ++k) {
+                if (abstractions_depend(
+                        component[f], cc_unassigned[k], context)) {
+                    component.push_back(cc_unassigned[k]);
+                } else {
+                    cc_unassigned[keep++] = cc_unassigned[k];
                 }
-                i_parent = dependency_graph.find(pending_abstraction_ids[i]);
             }
+            cc_unassigned.resize(keep);
         }
-    }
- endloop:
-
-    // Compute the connected components of the dependency graph.
-    vector<vector<int>> independent_abstractions =
-        dependency_graph.get_connected_components(pending_abstraction_ids);
-
-    for (vector<int> &component : independent_abstractions) {
         sort(component.begin(), component.end());
+        independent_abstractions.push_back(move(component));
     }
     sort(independent_abstractions.begin(), independent_abstractions.end());
     return independent_abstractions;
 }
 
-void StructuredSCPOrderGenerator::check_and_add_dependency(
-    ccp::DisjointSet &dependency_graph, int id1, int id2,
-    const CostContext &context) {
-    assert(id1 < id2);
+bool StructuredSCPOrderGenerator::abstractions_depend(
+    int id1, int id2, const CostContext &context) {
+    if (id1 > id2) {
+        swap(id1, id2);
+    }
+    if (precomputed_conflicting_ops &&
+        !test_mask_bit(statically_conflicting_pairs[id1], id2)) {
+        return false;
+    }
 
     if (options.use_affecting_labels) {
-        const OpMask *conflicting_ops_of_abstractions = nullptr;
+        const OpMask *conflict_ptr;
         if (precomputed_conflicting_ops) {
-            conflicting_ops_of_abstractions = &conflicting_ops[id1][id2];
+            conflict_ptr = &conflicting_ops[id1][id2];
         } else {
             OpMask &scratch = conflicting_ops[0][0];
             compute_conflicting_ops(id1, id2, scratch);
-            conflicting_ops_of_abstractions = &scratch;
+            conflict_ptr = &scratch;
         }
-        const OpMask &conflict = *conflicting_ops_of_abstractions;
+        const OpMask &conflict = *conflict_ptr;
         const OpMask &nonincreasing1 =
             op_has_nonincreasing_remaining_costs[id1];
         const OpMask &nonincreasing2 =
@@ -569,10 +567,10 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
                  (context.cond_ops[w] &
                   ~(nonincreasing1[w] & nonincreasing2[w])));
             if (dependency_ops) {
-                dependency_graph.unite(id1, id2);
-                return;
+                return true;
             }
         }
+        return false;
     } else {
         int num_operators = task_proxy.get_operators().size();
         for (int op_id = 0; op_id < num_operators; ++op_id) {
@@ -588,9 +586,9 @@ void StructuredSCPOrderGenerator::check_and_add_dependency(
                     op_has_nonincreasing_remaining_costs[id2], op_id)) {
                 continue;
             }
-            dependency_graph.unite(id1, id2);
-            break;
+            return true;
         }
+        return false;
     }
 }
 

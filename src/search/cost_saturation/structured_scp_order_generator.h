@@ -8,7 +8,6 @@
 
 #include "../task_proxy.h"
 
-#include "../algorithms/connected_components.h"
 #include "../utils/collections.h"
 #include "../utils/logging.h"
 
@@ -281,9 +280,12 @@ private:
     /* Determine for each operator that is potentially conflicting for the
        abstractions id1 and id2 if it is conflicting given the current
        remaining costs. */
-    void check_and_add_dependency(
-        ccp::DisjointSet &dependency_graph, int id1, int id2,
-        const CostContext &context);
+    /* Whether the order of the two abstractions can influence their
+       heuristic values under the context's cost function. */
+    bool abstractions_depend(int id1, int id2, const CostContext &context);
+
+    // Scratch for compute_independent_abstractions().
+    std::vector<int> cc_unassigned;
 
     void create_compact_lookup_tables();
 };
