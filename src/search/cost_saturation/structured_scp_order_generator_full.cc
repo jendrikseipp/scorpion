@@ -268,7 +268,15 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
                     [&](int abstr_id) {return abstr_id != abstraction_id;});
         }
         vector<vector<int>> independent_remaining_abstractions;
-        if (use_conflicts) {
+        /* If the reduced costs and remaining set already have a memoized
+           max node, the partition is irrelevant: the recursion returns the
+           cached node right away. Only memoized sets that did not split
+           when they were scheduled can hit, so skipping the (quadratic)
+           partition on a hit reproduces the DAG exactly. */
+        if (use_conflicts &&
+            !(prune_duplicates &&
+              find_cached_max_node(context.key, remaining_abstractions) !=
+              UNCACHED_NODE)) {
             independent_remaining_abstractions =
                 compute_independent_abstractions(
                     remaining_abstractions, context);
