@@ -26,18 +26,24 @@ enum class NodeType : uint8_t {
   the values of their children. Nodes live in the arena of their generator;
   the children of max and sum nodes are a slice of the arena's shared
   children pool.
+
+  Hard tasks generate tens of millions of nodes, so the two kinds of
+  payload share their storage: lookup nodes have no children and max/sum
+  nodes have no lookup table position.
 */
 struct SSCPNode {
     NodeType type;
-
-    // Children slice of max and sum nodes (empty for lookup nodes).
-    int64_t children_offset;
-    int num_children;
-
-    // Lookup table position (only used for lookup nodes).
-    int abstraction_id;
-    int lookup_table_id;
+    union {
+        int num_children;    // max and sum nodes
+        int abstraction_id;  // lookup nodes
+    };
+    union {
+        int64_t children_offset; // max and sum nodes
+        int lookup_table_id;     // lookup nodes
+    };
 };
+
+static_assert(sizeof(SSCPNode) == 16);
 
 /*
   All DAG nodes of a generator with their children. Storing the children of
@@ -56,9 +62,11 @@ struct NodeArena {
     }
 
     NodeId add_lookup_node(int abstraction_id, int lookup_table_id) {
-        nodes.push_back(
-            SSCPNode{
-                NodeType::LOOKUP, 0, 0, abstraction_id, lookup_table_id});
+        SSCPNode node;
+        node.type = NodeType::LOOKUP;
+        node.abstraction_id = abstraction_id;
+        node.lookup_table_id = lookup_table_id;
+        nodes.push_back(node);
         return nodes.size() - 1;
     }
 
@@ -71,12 +79,13 @@ struct NodeArena {
                            [&](NodeId child) {
                                return child < static_cast<int>(nodes.size());
                            }));
-        int64_t offset = children_pool.size();
+        SSCPNode node;
+        node.type = type;
+        node.num_children = children.size();
+        node.children_offset = children_pool.size();
         children_pool.insert(
             children_pool.end(), children.begin(), children.end());
-        nodes.push_back(
-            SSCPNode{
-                type, offset, static_cast<int>(children.size()), -1, -1});
+        nodes.push_back(node);
         return nodes.size() - 1;
     }
 
