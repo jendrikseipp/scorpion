@@ -501,3 +501,7 @@ off-limits DAG-size work or larger speed factors.
   whole cost context and updated masks per operator; with default label
   options the oracle only reads masks and simulation = clearing live
   bits, so two mask copies + word-wise clears suffice.
+- run 64 KEEP (time 0.544 from 0.609, confidence 128x; guard 0.390):
+  sized-assignment gathers replace push_back loops (restricted scratch
+  resize+index, remaining-abstractions pre-sized filter, saved_costs
+  reserve). push_back was 10% of freecell24's profile.
