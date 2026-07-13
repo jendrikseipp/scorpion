@@ -508,3 +508,11 @@ off-limits DAG-size work or larger speed factors.
 - run 65 DISCARD (+1%): branchless per-block diff masks in matches() -
   the unconditional 64 compare+shift ops per dirty block cost more than
   the branchy walk they replaced.
+
+Confirmation grid 2026-07-14-D (08-speed2 = c3d82144, runs 62-63):
+coverage 666 (+5 over 07-speed: barman/freecell/logistics00/miconic/
+snake +1 each, no losses), h identical everywhere. OOT 747 -> 693,
+OOM 401 -> 450 (the frontier oscillates back toward memory as tasks
+run further). Cumulative coverage: integration 609 -> 05-final 654 ->
+06-memory 660 -> 07-speed 661 -> 08-speed2 666. Run 64 (-11% time)
+is not yet in a grid.
