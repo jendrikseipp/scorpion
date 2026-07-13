@@ -327,3 +327,54 @@ Insights:
 - Profile (satellite sys2, post-run-8): 37% projection Dijkstra+match tree
   (+6% BucketQueue), 10% reduce_costs_unguarded, 10% create_max_node self,
   12% malloc/free/memmove.
+
+- run 51 KEEP (robustness; probes neutral time 0.515/mem 0.297): budget for
+  the restricted-cost table maps (grid regression fix, see below). Each
+  abstraction's map stops growing at its share of a 256 MiB budget; if its
+  hit count is below a quarter of the budget by then, sharing does not pay
+  for this abstraction and the map is dropped. scanalyzer-08 p22 went from
+  OOM at 8 GiB back to 26.7s / 404 MB (revision 03 level) while driverlog
+  keeps the full table-sharing speedup.
+
+## Grid experiment (2026-07-13, all optimal STRIPS, 30min/8GiB)
+
+experiments/2026-07-sscp-adhg/2026-07-13-A-sscp-revisions.py, 5 revisions x
+1827 tasks. Coverage: 01-integration 609, 02-fast 615, 03-conflicts 656,
+04-table-sharing 649, 05-final 654. Geometric means over the 841 tasks
+where every revision built the DAG: dag_time 0.326s -> 0.049s (6.6x),
+search_start_time 0.630s -> 0.138s. Plan costs agree everywhere.
+
+Two findings from the grid that probes had missed:
+
+1. UPSTREAM SOUNDNESS BUG (gtl::bit_vector::find_next). On 28 tasks
+   (barman, openstacks, pathways, psr, tpp, ...) 01-integration reports a
+   HIGHER initial h than all later revisions (e.g. barman pfile01 10 vs 7,
+   tpp p07 38 vs 10). Bisection -> run 13 (commit 5d71f13, OpMask rewrite)
+   changed the values; per-pair instrumentation showed identical inputs but
+   different conflict iteration: the ported branch iterates conflict sets
+   with gtl::bit_vector::find_first/find_next, and find_next(start) misses
+   set bits when start is not word-aligned (standalone repro: bit_vector(66),
+   find_next(43) misses bit 65; 89k failures in a small sweep; vendored gtl
+   copy in src/search/ext/gtl). Missed operators => spurious independence
+   => the DAG sums over NON-order-independent components => h above the
+   true max-over-orders (barman: 10 vs true 7 = value both revisions give
+   with use_affecting_labels=false). Such h values are no SCP value of any
+   order, i.e. potentially inadmissible; costs happened to stay optimal in
+   the grid. Run 13 fixed this silently; 02..05 agree with the
+   affecting-labels-off value everywhere. The Zenodo artifact
+   (10.5281/zenodo.16606498) does NOT use gtl::bit_vector (it uses sorted
+   vectors + set_intersection), so the paper's published code is affected
+   by NEITHER this bug NOR the union/intersection bug; both are exclusive
+   to the GitHub structured-scp branch. No other find_next user exists in
+   our repo (per_state_bitset has its own packing).
+
+2. TABLE-SHARING MEMORY BLOWUP (fixed by run 51). 04/05 lost
+   scanalyzer-08 (4->0), scanalyzer-opt11 (1->0), tetris p02-4 and blocks
+   p? vs 03: table_by_restricted_costs stores every distinct restricted
+   cost vector; on scanalyzer ~all restricted vectors are unique
+   (284k cost keys x 30 abstractions), so the maps ate >8 GiB for ~zero
+   sharing while 03 solves p22 in 25s / 401 MB. Ablation (map disabled)
+   reproduced 03's numbers exactly; run 51 bounds the maps.
+
+Per-domain coverage vs 03-conflicts after the fix is expected at ~660
+(654 + scanalyzer 5 + tetris 1); not re-run on the grid yet.

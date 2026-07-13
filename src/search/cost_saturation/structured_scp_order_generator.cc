@@ -36,6 +36,10 @@ static bool test_mask_bit(const OpMask &mask, int i) {
     return (mask[i / BITS_PER_WORD] >> (i % BITS_PER_WORD)) & 1;
 }
 
+/* Total memory the restricted-cost table maps may occupy before they stop
+   growing (see RestrictedCostsTables). */
+static constexpr int64_t RESTRICTED_COSTS_TABLES_BUDGET_BYTES = 256 << 20;
+
 StructuredSCPOrderGenerator::StructuredSCPOrderGenerator(
     const shared_ptr<AbstractTask> &transform, Abstractions abstractions,
     const StructuredSCPOptions &options, utils::Verbosity verbosity)
@@ -138,6 +142,18 @@ void StructuredSCPOrderGenerator::precompute_relevant_ops(
                 relevant_op_ids_by_abstraction[id].push_back(op_id);
             }
         }
+    }
+
+    /* Split the memory budget for the restricted-cost table maps evenly
+       among the abstractions. */
+    int64_t budget_per_abstraction =
+        RESTRICTED_COSTS_TABLES_BUDGET_BYTES /
+        static_cast<int64_t>(abstractions.size());
+    for (size_t id = 0; id < abstractions.size(); ++id) {
+        int64_t entry_bytes = 48 +
+            4 * static_cast<int64_t>(relevant_op_ids_by_abstraction[id].size());
+        table_by_restricted_costs[id].max_entries =
+            max<int64_t>(1024, budget_per_abstraction / entry_bytes);
     }
 }
 
@@ -298,29 +314,53 @@ NodeId StructuredSCPOrderGenerator::create_lookup_node(
     /* The goal distances only depend on the costs of the abstraction's
        relevant operators, so cost functions that agree on them share the
        lookup table and we can skip the goal distance computation. */
+    RestrictedCostsTables &restricted_tables =
+        table_by_restricted_costs[abstraction_id];
+    bool restrict_costs = !relevant_op_ids_by_abstraction.empty() &&
+        !restricted_tables.dropped;
     gtl::flat_hash_map<Costs, int, VectorIntMurmurHash>::iterator
         restricted_it;
-    bool restrict_costs = !relevant_op_ids_by_abstraction.empty();
+    bool restricted_inserted = false;
     if (restrict_costs) {
         restricted_costs_scratch.clear();
         for (int op_id : relevant_op_ids_by_abstraction[abstraction_id]) {
             restricted_costs_scratch.push_back(costs[op_id]);
         }
-        bool inserted;
-        tie(restricted_it, inserted) =
-            table_by_restricted_costs[abstraction_id].try_emplace(
-                restricted_costs_scratch, UNKNOWN_LOOKUP);
-        if (!inserted) {
-            int table_id = restricted_it->second;
-            cache_table_for_costs(table_id);
-            if (table_id == PRUNED_LOOKUP) {
-                return NO_NODE;
+        auto &table_ids = restricted_tables.table_ids;
+        if (!restricted_tables.frozen &&
+            static_cast<int64_t>(table_ids.size()) >=
+            restricted_tables.max_entries) {
+            /* The map reached its entry budget. Keep serving the entries
+               collected so far if sharing was common, otherwise drop it. */
+            if (restricted_tables.hits * 4 < restricted_tables.max_entries) {
+                restricted_tables.dropped = true;
+                decltype(restricted_tables.table_ids)().swap(table_ids);
+                restrict_costs = false;
+            } else {
+                restricted_tables.frozen = true;
             }
-            return lookup_nodes[abstraction_id][table_id];
+        }
+        if (restrict_costs) {
+            if (restricted_tables.frozen) {
+                restricted_it = table_ids.find(restricted_costs_scratch);
+            } else {
+                tie(restricted_it, restricted_inserted) =
+                    table_ids.try_emplace(
+                        restricted_costs_scratch, UNKNOWN_LOOKUP);
+            }
+            if (!restricted_inserted && restricted_it != table_ids.end()) {
+                ++restricted_tables.hits;
+                int table_id = restricted_it->second;
+                cache_table_for_costs(table_id);
+                if (table_id == PRUNED_LOOKUP) {
+                    return NO_NODE;
+                }
+                return lookup_nodes[abstraction_id][table_id];
+            }
         }
     }
     auto cache_table_for_restricted_costs = [&](int table_id) {
-            if (restrict_costs) {
+            if (restricted_inserted) {
                 restricted_it->second = table_id;
             }
             cache_table_for_costs(table_id);

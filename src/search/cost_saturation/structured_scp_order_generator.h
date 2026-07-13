@@ -170,9 +170,20 @@ protected:
     /* The goal distances of an abstraction only depend on the costs of its
        relevant operators, so cost functions that agree on them share the
        lookup table. Maps the restricted cost function to the table id (or
-       PRUNED_LOOKUP), per abstraction. */
-    std::vector<gtl::flat_hash_map<Costs, int, VectorIntMurmurHash>>
-    table_by_restricted_costs;
+       PRUNED_LOOKUP), per abstraction.
+
+       Distinct restricted cost functions can vastly outnumber the shared
+       tables, so each map stops growing once it reaches its entry budget.
+       If it produced almost no sharing until then, it is dead weight and
+       is dropped entirely. */
+    struct RestrictedCostsTables {
+        gtl::flat_hash_map<Costs, int, VectorIntMurmurHash> table_ids;
+        int64_t hits = 0;
+        int64_t max_entries = 0;
+        bool frozen = false;
+        bool dropped = false;
+    };
+    std::vector<RestrictedCostsTables> table_by_restricted_costs;
     std::vector<std::vector<int>> relevant_op_ids_by_abstraction;
     Costs restricted_costs_scratch;
 
