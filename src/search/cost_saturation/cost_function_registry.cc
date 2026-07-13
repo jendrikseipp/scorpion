@@ -120,26 +120,22 @@ CostKey CostFunctionRegistry::register_or_lookup(
     if (it == key_by_hash.end()) {
         CostKey key = size();
         pack(costs, scratch_blob);
-        packed_data.insert(
-            packed_data.end(), scratch_blob.begin(), scratch_blob.end());
-        packed_offsets.push_back(packed_data.size());
+        blobs.append(scratch_blob);
         key_by_hash.emplace(hash, key);
         return key;
     }
     pack(costs, scratch_blob);
-    if (equals(it->second, scratch_blob)) {
+    if (blobs.equals(it->second, scratch_blob)) {
         return it->second;
     }
     // Hash collision: look for the cost function in the overflow list.
     for (const auto &[overflow_hash, overflow_key] : overflow) {
-        if (overflow_hash == hash && equals(overflow_key, scratch_blob)) {
+        if (overflow_hash == hash && blobs.equals(overflow_key, scratch_blob)) {
             return overflow_key;
         }
     }
     CostKey key = size();
-    packed_data.insert(
-        packed_data.end(), scratch_blob.begin(), scratch_blob.end());
-    packed_offsets.push_back(packed_data.size());
+    blobs.append(scratch_blob);
     overflow.emplace_back(hash, key);
     return key;
 }
@@ -148,8 +144,7 @@ void CostFunctionRegistry::release_memory() {
     decltype(key_by_hash)().swap(key_by_hash);
     utils::release_vector_memory(overflow);
     utils::release_vector_memory(baseline);
-    utils::release_vector_memory(packed_data);
-    utils::release_vector_memory(packed_offsets);
+    blobs.release_memory();
     utils::release_vector_memory(scratch_blob);
     utils::release_vector_memory(scratch_values);
 }

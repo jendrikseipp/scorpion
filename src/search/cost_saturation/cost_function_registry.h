@@ -12,6 +12,56 @@ using Costs = std::vector<int>;
 using CostKey = uint32_t;
 
 /*
+  Append-only pool of byte blobs. Fixed-size chunks avoid the doubling
+  reallocation of one big vector, whose transient old-plus-new copies
+  would dominate peak memory on blob-heavy tasks.
+*/
+class BlobPool {
+    static constexpr size_t CHUNK_BYTES = 4 << 20;
+
+    struct BlobRef {
+        uint32_t chunk;
+        uint32_t offset;
+        uint32_t length;
+    };
+
+    std::vector<std::vector<uint8_t>> chunks;
+    std::vector<BlobRef> refs;
+
+public:
+    int size() const {
+        return refs.size();
+    }
+
+    void append(const std::vector<uint8_t> &blob) {
+        if (chunks.empty() ||
+            chunks.back().size() + blob.size() > chunks.back().capacity()) {
+            chunks.emplace_back();
+            chunks.back().reserve(std::max(CHUNK_BYTES, blob.size()));
+        }
+        std::vector<uint8_t> &chunk = chunks.back();
+        refs.push_back(
+            {static_cast<uint32_t>(chunks.size() - 1),
+             static_cast<uint32_t>(chunk.size()),
+             static_cast<uint32_t>(blob.size())});
+        chunk.insert(chunk.end(), blob.begin(), blob.end());
+    }
+
+    bool equals(int index, const std::vector<uint8_t> &blob) const {
+        const BlobRef &ref = refs[index];
+        return ref.length == blob.size() &&
+               std::equal(
+                   blob.begin(), blob.end(),
+                   chunks[ref.chunk].begin() + ref.offset);
+    }
+
+    void release_memory() {
+        decltype(chunks)().swap(chunks);
+        decltype(refs)().swap(refs);
+    }
+};
+
+/*
   Assigns each distinct cost function a small dense key, so that the
   structured SCP caches can be indexed by key instead of storing full cost
   functions. Hard tasks register hundreds of thousands of cost functions.
@@ -30,11 +80,8 @@ class CostFunctionRegistry {
     std::vector<std::pair<uint64_t, CostKey>> overflow;
     // Costs of the first registered function; the baseline for the blobs.
     Costs baseline;
-    // Packed blob of cost function key k is data[offsets[k]..offsets[k+1]).
-    std::vector<uint8_t> packed_data;
-    std::vector<int64_t> packed_offsets = {0};
+    BlobPool blobs;
     std::vector<uint8_t> scratch_blob;
-
     std::vector<unsigned int> scratch_values;
 
     /* Pack the operators whose cost differs from the baseline as a bitmask
@@ -42,14 +89,6 @@ class CostFunctionRegistry {
        value. Equal cost functions produce identical blobs, so blobs can be
        compared bytewise. */
     void pack(const Costs &costs, std::vector<uint8_t> &blob);
-
-    bool equals(CostKey key, const std::vector<uint8_t> &blob) const {
-        return packed_offsets[key + 1] - packed_offsets[key] ==
-               static_cast<int64_t>(blob.size()) &&
-               std::equal(
-                   blob.begin(), blob.end(),
-                   packed_data.begin() + packed_offsets[key]);
-    }
 
 public:
     // Mix an (operator, cost) pair into a 64-bit value.
@@ -66,7 +105,7 @@ public:
     static uint64_t compute_hash(const Costs &costs);
 
     int size() const {
-        return packed_offsets.size() - 1;
+        return blobs.size();
     }
 
     /* Return the key of the given cost function, registering it if
