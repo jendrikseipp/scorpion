@@ -220,8 +220,9 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
 
     /* Simulate infinite costs for operators whose cost is not exhausted by
        computing all children on the same cost function. If this makes some
-       abstractions independent, we can split this max node into a sum. */
-    /* With all label options on, the context's live mask is exactly the
+       abstractions independent, we can split this max node into a sum.
+
+       With all label options on, the context's live mask is exactly the
        operators with positive finite cost, so the simulation candidates
        follow from three word masks; simulating infinite cost just clears
        their live bits, and the dependency oracle only reads the masks.
@@ -323,15 +324,7 @@ NodeId StructuredSCPOrderGeneratorFull::create_max_node(
         }
         assert(next == remaining_abstractions.size());
         vector<vector<int>> independent_remaining_abstractions;
-        /* If the reduced costs and remaining set already have a memoized
-           max node, the partition is irrelevant: the recursion returns the
-           cached node right away. Only memoized sets that did not split
-           when they were scheduled can hit, so skipping the (quadratic)
-           partition on a hit reproduces the DAG exactly. */
-        if (use_conflicts &&
-            !(prune_duplicates &&
-              find_cached_max_node(context.key, remaining_abstractions) !=
-              UNCACHED_NODE)) {
+        if (use_conflicts) {
             independent_remaining_abstractions =
                 compute_independent_abstractions(
                     remaining_abstractions, context);
