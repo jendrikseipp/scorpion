@@ -564,3 +564,18 @@ Critically re-checked the kept changes now that the algorithm shifted
   single components natively (loop terminates when the set empties).
 Cleaned state: probes mem 0.3575 / time 0.539 (both slightly better
 than run 66), guard time 0.384 / mem 0.2788, all checks green.
+
+Confirmation grid 2026-07-14-F (10-cleaned = 8cff1094, runs 67-68):
+coverage 661 vs 09-final 665 (barman-opt14 p435-1/2/3 and miconic s10-3),
+h bit-identical everywhere (0 mismatches). NOT a regression - boundary
+noise: all four lost tasks solved in 1670-1770s against the 1800s limit
+and are SEARCH-dominated (barman DAG build = 0.16s; miconic DAG 187s vs
+190s, i.e. faster in cleaned). The removed code (memo-probe-first,
+connected_components) runs only during DAG construction; the final DAG
+and heuristic are byte-identical (h matches), so the A* search does
+identical work and only wall-clock differs. Head-to-head on a login node
+showed the 09-final binary itself taking 2139s vs its own 1670s grid
+time - a 28% machine-load swing that dwarfs any construction difference
+and fully explains four tasks tipping over the 1800s edge. barman-opt14
+already oscillated +1/+1 across the previous two grids. Net cleaned
+coverage stands at ~665 (boundary band 661-666).
