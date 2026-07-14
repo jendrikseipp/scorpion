@@ -576,6 +576,10 @@ and heuristic are byte-identical (h matches), so the A* search does
 identical work and only wall-clock differs. Head-to-head on a login node
 showed the 09-final binary itself taking 2139s vs its own 1670s grid
 time - a 28% machine-load swing that dwarfs any construction difference
-and fully explains four tasks tipping over the 1800s edge. barman-opt14
-already oscillated +1/+1 across the previous two grids. Net cleaned
-coverage stands at ~665 (boundary band 661-666).
+and fully explains four tasks tipping over the 1800s edge. Clinching
+evidence: on barman p435-3 the cleaned and 09-final binaries expand the
+IDENTICAL 133,811,610 states (same cost 49, same h 9); only wall-clock
+differs (grid 1670s vs login-node 2139s/2641s for the same work, ~30%
+load swing). barman-opt14 already oscillated +1/+1 across the previous
+two grids. Net cleaned coverage stands at ~665 (boundary band 661-666);
+the cleanup is behavior-preserving.
