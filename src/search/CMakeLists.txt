@@ -238,14 +238,6 @@ create_fast_downward_library(
 )
 
 create_fast_downward_library(
-    NAME connected_components
-    HELP "Connected components via disjoint sets"
-    SOURCES
-        algorithms/connected_components
-    DEPENDENCY_ONLY
-)
-
-create_fast_downward_library(
     NAME dynamic_bitset
     HELP "Poor man's version of boost::dynamic_bitset"
     SOURCES
@@ -954,7 +946,6 @@ create_fast_downward_library(
         cost_saturation/zero_one_cost_partitioning_heuristic
     DEPENDS
         cegar
-        connected_components
         lp_solver
         pdbs
         partial_state_tree
