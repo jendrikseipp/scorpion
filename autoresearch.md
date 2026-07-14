@@ -534,3 +534,33 @@ are exhausted down to noise-level grid effects. The remaining frontier
 (node-explosion DAGs: parcprinter/psr/rovers/pathways) needs the paper's
 future-work direction (partial order independence), which is off-limits
 per instruction.
+
+## Consolidation audit 2 (runs 67-68, "remove useless changes, clean up")
+
+Critically re-checked the kept changes now that the algorithm shifted
+(frontier search, mask-only simulation) since the runs-45-49 audit:
+- run 67 KEEP (removal): algorithms/connected_components library was
+  orphaned when run 60 replaced union-find with frontier search - the
+  last user is gone and it came in with the KR2025 integration. Removed
+  library + CMake wiring (-166 lines). Probes/guard/checks unchanged.
+- run 68 KEEP (removal + clarity): memo-probe-first (run 59) no longer
+  earns its keep - it duplicated create_max_node's entry probe and only
+  paid off against the old expensive union-find partition; neutral on
+  probes AND guard after frontier search. Removed the special case;
+  merged a redundant double comment.
+- Re-ablated and CONFIRMED STILL NEEDED (not removed):
+  * layer-1 cost-key lookup cache: disabling -> ~2x slower (time 0.55
+    -> 1.91), also worse memory (layer-2 restricted cache gets
+    budget-dropped on low-sharing tasks, leaving layer 1 the only
+    catcher of exact recurrences).
+  * static conflict matrix (runs 36/47): disabling -> guard suite
+    +3.5% (0.400 -> 0.414). Margin shrank from run 47's +17% because
+    later work cheapened the mask scan it avoids, but still positive on
+    loosely-coupled tasks (the common case). Densely-coupled tasks
+    (psr/snake/mprime) are slightly faster without it, but the net
+    across the benchmark set favors keeping it.
+- run 48's single-component fast path was in DisjointSet and went away
+  automatically with connected_components; the frontier search handles
+  single components natively (loop terminates when the set empties).
+Cleaned state: probes mem 0.3575 / time 0.539 (both slightly better
+than run 66), guard time 0.384 / mem 0.2788, all checks green.
