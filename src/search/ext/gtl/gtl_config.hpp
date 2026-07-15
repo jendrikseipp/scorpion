@@ -289,10 +289,11 @@
 // ----------------------------------------------------------------------
 // define gtl_hardware_destructive_interference_size
 // ----------------------------------------------------------------------
-#ifdef __cpp_lib_hardware_interference_size
-    #define gtl_hardware_destructive_interference_size std::hardware_destructive_interference_size
-#else
-    #define gtl_hardware_destructive_interference_size 64
-#endif
+// Local modification: always use the constant 64 (the standard cache-line
+// size) instead of std::hardware_destructive_interference_size. GCC 12+
+// rejects the standard constant under -Werror (-Winterference-size) because
+// its value is not ABI-stable. It is only used for cache-line padding, so a
+// fixed 64 is equivalent and portable across GCC, Clang and MSVC.
+#define gtl_hardware_destructive_interference_size 64
 
 #endif // gtl_config_hpp_guard_
