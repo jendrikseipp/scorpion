@@ -121,10 +121,9 @@ unsigned int read_value(const uint8_t *values, size_t index) {
         return (values[index / PER_BYTE] >> (index % PER_BYTE * BITS)) &
                ((1u << BITS) - 1);
     } else {
-        typename std::conditional<
-            BITS == 8, uint8_t,
-            typename std::conditional<BITS == 16, uint16_t, uint32_t>::type>::
-            type v;
+        using ValueType = conditional_t<
+            BITS == 8, uint8_t, conditional_t<BITS == 16, uint16_t, uint32_t>>;
+        ValueType v;
         memcpy(&v, values + index * sizeof(v), sizeof(v));
         return v;
     }
