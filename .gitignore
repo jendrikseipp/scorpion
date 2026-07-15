@@ -17,4 +17,4 @@ __pycache__/
 
 # Autoresearch working directory
 .autoresearch/
-autoresearch.jsonl
+/autoresearch.jsonl

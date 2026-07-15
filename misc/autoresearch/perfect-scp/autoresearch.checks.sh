@@ -3,7 +3,7 @@
 # after a passing benchmark. A failure reverts the experiment like a crash.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 BIN="$ROOT/builds/release/bin/downward"
 SAS="$ROOT/.autoresearch/sas"
 
